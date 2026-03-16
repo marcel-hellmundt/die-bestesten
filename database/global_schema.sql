@@ -3,14 +3,14 @@
 
 -- Tabelle: country
 CREATE TABLE IF NOT EXISTS country (
-    id VARCHAR(3) PRIMARY KEY,  -- Eindeutiges Kürzel, z.B. 'DEU'
+    id CHAR(2) PRIMARY KEY,     -- ISO Alpha-2 Code, z.B. 'DE'
     name VARCHAR(100) NOT NULL  -- Name des Landes
 );
 
 -- Tabelle: club
 CREATE TABLE IF NOT EXISTS club (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
-    country_id VARCHAR(3) NOT NULL,             -- Foreign Key zu country.id
+    country_id CHAR(2) NOT NULL,                -- Foreign Key zu country.id
     name VARCHAR(100) NOT NULL,                 -- Name des Clubs
     short_name VARCHAR(10) DEFAULT NULL,        -- Kurzname/Kürzel, z.B. 'FCB', 'BVB'
     logo_uploaded BOOLEAN DEFAULT FALSE,        -- Gibt an, ob ein Logo für den Club hochgeladen wurde
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS matchday (
 -- Tabelle: player
 CREATE TABLE IF NOT EXISTS player (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
-    country_id VARCHAR(3) DEFAULT NULL,         -- ISO Alpha-3 Code, FK zu country.id
+    country_id CHAR(2) DEFAULT NULL,            -- ISO Alpha-2 Code, FK zu country.id
     first_name VARCHAR(32) DEFAULT NULL,        -- Vorname
     last_name VARCHAR(32) DEFAULT NULL,         -- Nachname
     displayname VARCHAR(32) NOT NULL UNIQUE,    -- Anzeigename, muss eindeutig sein
