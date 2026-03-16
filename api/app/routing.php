@@ -19,6 +19,18 @@ class Routing
     public function __construct()
     {
         $this->routes = [
+            new Route('auth', 'Auth', [
+                'title'       => 'Auth',
+                'description' => 'Authentifizierung — gibt einen JWT zurück (7 Tage gültig)',
+                'endpoints'   => [
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/auth',
+                        'description' => 'Login mit manager_name und password',
+                    ],
+                ],
+            ]),
+
             new Route('country', 'Country', [
                 'title'       => 'Country',
                 'description' => 'ISO Alpha-2 Ländercodes',

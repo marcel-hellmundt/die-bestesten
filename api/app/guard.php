@@ -1,5 +1,6 @@
 <?php
 use \Firebase\JWT\JWT;
+use \Firebase\JWT\Key;
 
 require __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/database/base.database.php';
@@ -13,7 +14,7 @@ class Guard
         $this->db = Database::getInstance();
     }
 
-    public function authorize(array $request, ?string $controllerClass): array
+    public function authorize(?string $controllerClass): array
     {
         // Check if current method is declared public by the controller
         if ($controllerClass && in_array($_SERVER['REQUEST_METHOD'], $controllerClass::$publicMethods)) {
@@ -27,7 +28,7 @@ class Guard
 
         $token = substr($header, 7); // remove "Bearer "
         try {
-            $decoded = JWT::decode($token, $_ENV['JWT_SECRET'], ['HS256']);
+            $decoded = JWT::decode($token, new Key($_ENV['JWT_SECRET'], 'HS256'));
 
             $manager = $this->db->getAuthManagerById($decoded->sub);
             if (!$manager) {

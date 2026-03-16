@@ -65,4 +65,11 @@ class Database
         $query->execute([':id' => $id]);
         return $query->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function getAuthManagerByName(string $name): array|false
+    {
+        $query = $this->con->prepare("SELECT * FROM manager WHERE manager_name = :name LIMIT 1");
+        $query->execute([':name' => $name]);
+        return $query->fetch(PDO::FETCH_ASSOC);
+    }
 }

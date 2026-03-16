@@ -54,7 +54,7 @@ $controllerClass = $routing->resolveClass($request['endpoint']);
 
 // Auth
 $guard      = new Guard();
-$authResult = $guard->authorize($request, $controllerClass);
+$authResult = $guard->authorize($controllerClass);
 
 if (!$authResult['status']) {
     http_response_code(401);
