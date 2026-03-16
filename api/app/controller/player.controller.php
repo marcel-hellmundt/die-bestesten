@@ -7,7 +7,7 @@ class PlayerController extends _BaseController
     protected function get(): mixed
     {
         if ($this->id) {
-            $player = $this->db->getPlayerById($this->id);
+            $player = $this->db->getPlayerDetail($this->id, $this->params['season_id'] ?? null);
             if (!$player) {
                 http_response_code(404);
                 return ['status' => false, 'message' => 'Player not found'];
