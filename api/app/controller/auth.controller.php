@@ -5,14 +5,23 @@ class AuthController extends _BaseController
 {
     public static array $publicMethods = ['POST'];
 
-    protected function get(): mixed    { return $this->methodNotAllowed(); }
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
-    protected function delete(): mixed { return $this->methodNotAllowed(); }
+    protected function get(): mixed
+    {
+        return $this->methodNotAllowed();
+    }
+    protected function patch(): mixed
+    {
+        return $this->methodNotAllowed();
+    }
+    protected function delete(): mixed
+    {
+        return $this->methodNotAllowed();
+    }
 
     protected function post(): mixed
     {
-        $body     = $this->body();
-        $name     = $body['name']     ?? null;
+        $body = $this->body();
+        $name = $body['name'] ?? null;
         $password = $body['password'] ?? null;
 
         if (!$name || !$password) {
@@ -32,14 +41,14 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Account wurde deaktiviert'];
         }
 
-        $now     = time();
+        $now = time();
         $payload = [
-            'sub'          => $manager['id'],
+            'sub' => $manager['id'],
             'manager_name' => $manager['manager_name'],
-            'role'         => $manager['role'],
-            'status'       => $manager['status'],
-            'iat'          => $now,
-            'exp'          => $now + (60 * 60 * 24 * 7),
+            'role' => $manager['role'],
+            'status' => $manager['status'],
+            'iat' => $now,
+            'exp' => $now + (60 * 60 * 24 * 7),
         ];
 
         $token = JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');

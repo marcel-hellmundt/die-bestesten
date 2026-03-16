@@ -26,15 +26,17 @@ class Database
         return self::$_instance;
     }
 
-    protected function __clone() {}
+    protected function __clone()
+    {
+    }
 
     protected function __construct()
     {
-        $host     = $_ENV['DB_HOST'];
-        $user     = $_ENV['DB_USER'];
+        $host = $_ENV['DB_HOST'];
+        $user = $_ENV['DB_USER'];
         $password = $_ENV['DB_PASSWORD'];
 
-        $this->con        = $this->createConnection($host, $_ENV['DB_NAME'],        $user, $password);
+        $this->con = $this->createConnection($host, $_ENV['DB_NAME'], $user, $password);
         $this->con_league = $this->createConnection($host, $_ENV['DB_NAME_LEAGUE'], $user, $password);
     }
 
@@ -46,14 +48,14 @@ class Database
             return $pdo;
         } catch (PDOException $e) {
             http_response_code(500);
-            echo json_encode(['status' => false, 'message' => 'Database connection failed']);
+            echo json_encode(['status' => false, 'message' => 'Database connection failed', 'error' => $e]);
             exit;
         }
     }
 
     public function close(): void
     {
-        $this->con        = null;
+        $this->con = null;
         $this->con_league = null;
     }
 

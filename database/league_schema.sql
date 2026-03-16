@@ -4,9 +4,9 @@
 CREATE TABLE IF NOT EXISTS manager (
     id            CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
     manager_name  VARCHAR(64)  NOT NULL UNIQUE,
-    alias         VARCHAR(64)  NOT NULL UNIQUE,
+    alias         VARCHAR(64)  NULL UNIQUE,
     password      VARCHAR(255) NOT NULL,
-    role          ENUM('admin', 'manager') NOT NULL DEFAULT 'manager',
+    role          ENUM('admin', 'maintainer', 'user') NOT NULL DEFAULT 'user',
     status        ENUM('active', 'blocked') NOT NULL DEFAULT 'active',
     date_of_birth DATE         NULL
 );
