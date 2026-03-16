@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { Country } from '../../core/models/country.model';
 
 @Component({
   selector: 'app-data-country',
@@ -19,9 +20,9 @@ export class CountryDataComponent {
   private state = toSignal(
     this.reload$.pipe(
       switchMap(() => this.api.get<any[]>('country').pipe(
-        map(data => ({ data, loading: false, error: null as string | null })),
-        startWith({ data: [] as any[], loading: true, error: null as string | null }),
-        catchError(() => of({ data: [] as any[], loading: false, error: 'Fehler beim Laden' }))
+        map(data => ({ data: data.map(Country.from), loading: false, error: null as string | null })),
+        startWith({ data: [] as Country[], loading: true, error: null as string | null }),
+        catchError(() => of({ data: [] as Country[], loading: false, error: 'Fehler beim Laden' }))
       ))
     )
   );

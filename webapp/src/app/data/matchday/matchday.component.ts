@@ -3,6 +3,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { DataCacheService } from '../../core/data-cache.service';
+import { Matchday } from '../../core/models/matchday.model';
 
 @Component({
   selector: 'app-data-matchday',
@@ -11,17 +13,22 @@ import { AuthService } from '../../auth/auth.service';
   styleUrl: './matchday.component.scss'
 })
 export class MatchdayDataComponent {
-  private api  = inject(ApiService);
-  private auth = inject(AuthService);
+  private api   = inject(ApiService);
+  private auth  = inject(AuthService);
+  cache         = inject(DataCacheService);
 
   private reload$ = new BehaviorSubject<void>(undefined);
+
+  constructor() {
+    this.cache.ensureSeasons();
+  }
 
   private state = toSignal(
     this.reload$.pipe(
       switchMap(() => this.api.get<any[]>('matchday').pipe(
-        map(data => ({ data, loading: false, error: null as string | null })),
-        startWith({ data: [] as any[], loading: true, error: null as string | null }),
-        catchError(() => of({ data: [] as any[], loading: false, error: 'Fehler beim Laden' }))
+        map(data => ({ data: data.map(Matchday.from), loading: false, error: null as string | null })),
+        startWith({ data: [] as Matchday[], loading: true, error: null as string | null }),
+        catchError(() => of({ data: [] as Matchday[], loading: false, error: 'Fehler beim Laden' }))
       ))
     )
   );

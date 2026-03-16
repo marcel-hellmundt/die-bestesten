@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { Season } from '../../core/models/season.model';
 
 @Component({
   selector: 'app-data-season',
@@ -19,9 +20,9 @@ export class SeasonDataComponent {
   private state = toSignal(
     this.reload$.pipe(
       switchMap(() => this.api.get<any[]>('season').pipe(
-        map(data => ({ data, loading: false, error: null as string | null })),
-        startWith({ data: [] as any[], loading: true, error: null as string | null }),
-        catchError(() => of({ data: [] as any[], loading: false, error: 'Fehler beim Laden' }))
+        map(data => ({ data: data.map(Season.from), loading: false, error: null as string | null })),
+        startWith({ data: [] as Season[], loading: true, error: null as string | null }),
+        catchError(() => of({ data: [] as Season[], loading: false, error: 'Fehler beim Laden' }))
       ))
     )
   );

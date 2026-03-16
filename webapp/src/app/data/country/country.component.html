@@ -1,5 +1,6 @@
-@if (isAdmin()) {
-  <div class="migrate-bar">
+<div class="list-bar">
+  <span class="list-count">{{ items().length }} Einträge</span>
+  @if (isAdmin()) {
     <button class="btn btn-primary"
             [disabled]="migrateState() === 'loading'"
             (click)="migrate()">
@@ -11,8 +12,8 @@
     @if (migrateState() === 'error') {
       <span class="state-msg state-msg--error">Fehler bei der Migration</span>
     }
-  </div>
-}
+  }
+</div>
 
 @if (loading()) {
   <p class="state-msg">Laden…</p>
@@ -23,16 +24,16 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th></th>
           <th>ID</th>
+          <th></th>
           <th>Name</th>
         </tr>
       </thead>
       <tbody>
         @for (item of items(); track item.id) {
           <tr>
-            <td><img src="img/flags/{{ item.id }}.svg" class="flag" /></td>
             <td>{{ item.id }}</td>
+            <td><img src="img/flags/{{ item.id }}.svg" class="flag" /></td>
             <td>{{ item.name }}</td>
           </tr>
         }

@@ -157,6 +157,20 @@
   text-align: right;
 }
 
+// List bar (count + actions above table)
+.list-bar {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-4;
+}
+
+.list-count {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  margin-right: auto;
+}
+
 // Data table
 .table-container {
   background-color: $color-surface;
