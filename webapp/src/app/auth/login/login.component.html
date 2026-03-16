@@ -1,0 +1,41 @@
+<div class="login-page">
+  <div class="login-hero"></div>
+
+  <div class="login-panel">
+    <div class="login-form-wrap">
+      <img class="login-logo squircle" src="/img/logos/die-bestesten.png" alt="die bestesten" />
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            autocomplete="username"
+            placeholder="Dein Name"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Passwort</label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+          />
+        </div>
+
+        @if (error) {
+          <div class="error-message">{{ error }}</div>
+        }
+
+        <button type="submit" class="btn btn-primary btn-full" [disabled]="form.invalid || loading">
+          {{ loading ? 'Anmelden…' : 'Anmelden' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

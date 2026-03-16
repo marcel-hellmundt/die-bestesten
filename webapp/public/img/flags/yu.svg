@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0)">
+<mask id="mask0" mask-type="alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="500" height="500">
+<ellipse cx="250" cy="250" rx="250" ry="250" fill="#C4C4C4"/>
+</mask>
+<g mask="url(#mask0)">
+<path d="M0 0H500V500H0V0Z" fill="#323232"/>
+<path d="M0 166.667H500V500H0V166.667Z" fill="white"/>
+<path d="M0 333.333H500V500H0V333.333Z" fill="#626262"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M249.5 97.716L283.615 202.938L394 202.943L304.699 267.977L338.806 373.202L249.5 308.173L160.194 373.202L194.301 267.977L105 202.943L215.385 202.938L249.5 97.716Z" fill="#626262" stroke="#C8C8C8" stroke-width="10.668"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0">
+<rect width="500" height="500" fill="white"/>
+</clipPath>
+</defs>
+</svg>

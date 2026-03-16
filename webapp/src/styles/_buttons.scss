@@ -1,0 +1,86 @@
+@use 'variables' as *;
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  padding: $space-2 $space-5;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  line-height: 1.5;
+  border-radius: $radius-full;
+  border: 1px solid transparent;
+  transition: background-color $transition-fast,
+              border-color $transition-fast,
+              color $transition-fast,
+              opacity $transition-fast;
+  white-space: nowrap;
+  user-select: none;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.btn-primary {
+  background-color: $color-text;
+  color: #ffffff;
+  border-color: $color-text;
+
+  &:hover {
+    background-color: #1f2937;
+    border-color: #1f2937;
+  }
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: $color-text-muted;
+  border-color: $color-border;
+
+  &:hover {
+    background-color: $color-surface-alt;
+    color: $color-text;
+    border-color: $color-surface-alt;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.btn-danger {
+  background-color: $color-danger;
+  color: #ffffff;
+  border-color: $color-danger;
+
+  &:hover {
+    background-color: $color-danger-hover;
+    border-color: $color-danger-hover;
+  }
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.btn-sm {
+  padding: $space-1 $space-3;
+  font-size: $font-xs;
+}
+
+.btn-lg {
+  padding: $space-3 $space-8;
+  font-size: $font-lg;
+}
+
+.btn-full {
+  width: 100%;
+}

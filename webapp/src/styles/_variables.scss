@@ -1,0 +1,67 @@
+// Colors — base palette
+$color-bg: #f9fafb;
+$color-surface: #ffffff;
+$color-surface-alt: #f3f4f6;
+$color-border: #e5e7eb;
+$color-text: #111827;
+$color-text-muted: #6b7280;
+$color-accent: #b33939;
+$color-accent-hover: #cc4444;
+$color-danger: #ef4444;
+$color-danger-hover: #dc2626;
+$color-success: #16a34a;
+
+// Spacing scale
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 20px;
+$space-6: 24px;
+$space-8: 32px;
+$space-10: 40px;
+$space-12: 48px;
+
+// Border radius
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-xxl: 20%;
+$radius-full: 9999px;
+
+// Transitions
+$transition-fast: 150ms ease;
+$transition-normal: 250ms ease;
+$transition-slow: 400ms ease;
+
+// Font sizes
+$font-xs: 12px;
+$font-sm: 14px;
+$font-md: 16px;
+$font-lg: 18px;
+$font-xl: 20px;
+$font-2xl: 24px;
+$font-3xl: 30px;
+$font-4xl: 36px;
+
+// Font weights
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Z-index scale
+$z-below: -1;
+$z-base: 0;
+$z-raised: 10;
+$z-dropdown: 100;
+$z-sticky: 200;
+$z-overlay: 300;
+$z-modal: 400;
+$z-toast: 500;
+
+// Layout
+$sidebar-width: 220px;
+$mobile-breakpoint: 768px;
+$container-max: 1200px;

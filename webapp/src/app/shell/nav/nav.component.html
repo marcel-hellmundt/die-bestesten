@@ -1,0 +1,20 @@
+<nav class="nav">
+  <div class="nav-brand">die bestesten</div>
+
+  <ul class="nav-items">
+    <li *ngFor="let item of items">
+      <a
+        class="nav-item"
+        [routerLink]="item.route"
+        routerLinkActive="nav-item--active"
+      >
+        <span class="nav-icon">{{ item.icon }}</span>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
+    </li>
+  </ul>
+
+  <button class="nav-logout btn btn-ghost btn-sm" (click)="logout()">
+    Abmelden
+  </button>
+</nav>

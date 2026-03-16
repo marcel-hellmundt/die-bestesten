@@ -1,0 +1,96 @@
+@use '../../../styles/variables' as *;
+
+.login-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+// Left 2/3 — hero image
+.login-hero {
+  flex: 2;
+  background-image: url('/img/login-background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-color: $color-surface-alt;
+
+  filter: brightness(0.55) saturate(0.75) blur(1px);
+
+  @media (max-width: #{$mobile-breakpoint}) {
+    display: none;
+  }
+}
+
+// Right 1/3 — form panel
+.login-panel {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $color-surface;
+  padding: $space-8 $space-6;
+
+  @media (max-width: #{$mobile-breakpoint}) {
+    flex: unset;
+    width: 100%;
+    min-width: 0;
+    padding: $space-6 $space-4;
+  }
+}
+
+.login-form-wrap {
+  width: 100%;
+  max-width: 340px;
+}
+
+.login-logo {
+  display: block;
+  width: 25%;
+  margin: 0 auto $space-8;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+
+  label {
+    display: block;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+    margin-bottom: $space-1;
+  }
+}
+
+.error-message {
+  font-size: $font-sm;
+  color: $color-danger;
+}
+
+/* HTML: <div class="squircle"></div> */
+.squircle {
+  --r: 50%; /* between 0% [square] and 50% [squircle] (you can use pixel as well) */
+
+  --_r: clamp(0%, var(--r)/2, 25%);
+  --_v: calc(var(--_r) * (1 - sqrt(2) / 4));
+  --_p: calc(var(--_v) - var(--_r)/2);
+  clip-path: shape(
+    from var(--_v) var(--_p),
+    curve to 50% 0 with var(--_r) 0,
+    curve to calc(100% - var(--_v)) var(--_p) with calc(100% - var(--_r)) 0,
+    curve to calc(100% - var(--_p)) var(--_v) with calc(100% - 2 * var(--_p)) calc(2 * var(--_p)),
+    curve to 100% 50% with 100% var(--_r),
+    curve to calc(100% - var(--_p)) calc(100% - var(--_v)) with 100% calc(100% - var(--_r)),
+    curve to calc(100% - var(--_v)) calc(100% - var(--_p)) with calc(100% - 2 * var(--_p))
+      calc(100% - 2 * var(--_p)),
+    curve to 50% 100% with calc(100% - var(--_r)) 100%,
+    curve to var(--_v) calc(100% - var(--_p)) with var(--_r) 100%,
+    curve to var(--_p) calc(100% - var(--_v)) with calc(2 * var(--_p)) calc(100% - 2 * var(--_p)),
+    curve to 0 50% with 0 calc(100% - var(--_r)),
+    curve to var(--_p) var(--_v) with 0 var(--_r),
+    curve to var(--_v) var(--_p) with calc(2 * var(--_p)) calc(2 * var(--_p))
+  );
+  aspect-ratio: 1;
+  background: #8458ff;
+}

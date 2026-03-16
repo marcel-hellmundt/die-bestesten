@@ -1,0 +1,8 @@
+@use '../../styles/variables' as *;
+
+.page-title {
+  font-size: $font-2xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin-bottom: $space-6;
+}

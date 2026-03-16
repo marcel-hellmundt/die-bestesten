@@ -1,0 +1,66 @@
+@use 'variables' as *;
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: $space-2 $space-3;
+  font-size: $font-sm;
+  color: $color-text;
+  background-color: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  outline: none;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+  appearance: none;
+
+  &::placeholder {
+    color: $color-text-muted;
+    opacity: 0.7;
+  }
+
+  &:focus {
+    border-color: $color-accent;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: $color-surface-alt;
+  }
+
+  &.ng-invalid.ng-touched {
+    border-color: $color-danger;
+  }
+}
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right $space-3 center;
+  padding-right: $space-8;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  label {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-muted;
+  }
+}
+
+.field-error {
+  font-size: $font-xs;
+  color: $color-danger;
+  margin-top: $space-1;
+}
