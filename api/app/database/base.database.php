@@ -14,6 +14,7 @@ class Database
     use PlayerTrait;
 
     private $con;
+    private $con_league;
 
     protected static $_instance = null;
 
@@ -29,23 +30,20 @@ class Database
 
     protected function __construct()
     {
-        $this->connect();
+        $host     = $_ENV['DB_HOST'];
+        $user     = $_ENV['DB_USER'];
+        $password = $_ENV['DB_PASSWORD'];
+
+        $this->con        = $this->createConnection($host, $_ENV['DB_NAME'],        $user, $password);
+        $this->con_league = $this->createConnection($host, $_ENV['DB_NAME_LEAGUE'], $user, $password);
     }
 
-    private function connect(): void
+    private function createConnection(string $host, string $name, string $user, string $password): \PDO
     {
         try {
-            $host     = $_ENV['DB_HOST'];
-            $name     = $_ENV['DB_NAME'];
-            $user     = $_ENV['DB_USER'];
-            $password = $_ENV['DB_PASSWORD'];
-
-            $this->con = new PDO(
-                "mysql:host=$host;dbname=$name;charset=utf8",
-                $user,
-                $password
-            );
-            $this->con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo = new PDO("mysql:host=$host;dbname=$name;charset=utf8", $user, $password);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            return $pdo;
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode(['status' => false, 'message' => 'Database connection failed']);
@@ -55,20 +53,21 @@ class Database
 
     public function close(): void
     {
-        $this->con = null;
+        $this->con        = null;
+        $this->con_league = null;
     }
 
     // Auth — used by guard; requires manager table (league schema)
     public function getAuthManagerById(string $id): array|false
     {
-        $query = $this->con->prepare("SELECT * FROM manager WHERE manager_id = :id LIMIT 1");
+        $query = $this->con_league->prepare("SELECT * FROM manager WHERE id = :id LIMIT 1");
         $query->execute([':id' => $id]);
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 
     public function getAuthManagerByName(string $name): array|false
     {
-        $query = $this->con->prepare("SELECT * FROM manager WHERE manager_name = :name LIMIT 1");
+        $query = $this->con_league->prepare("SELECT * FROM manager WHERE manager_name = :name LIMIT 1");
         $query->execute([':name' => $name]);
         return $query->fetch(PDO::FETCH_ASSOC);
     }

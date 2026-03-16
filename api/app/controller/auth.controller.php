@@ -34,11 +34,10 @@ class AuthController extends _BaseController
 
         $now     = time();
         $payload = [
-            'sub'          => $manager['manager_id'],
+            'sub'          => $manager['id'],
             'manager_name' => $manager['manager_name'],
             'role'         => $manager['role'],
             'status'       => $manager['status'],
-            'has_photo'    => (bool) $manager['has_photo'],
             'iat'          => $now,
             'exp'          => $now + (60 * 60 * 24 * 7),
         ];

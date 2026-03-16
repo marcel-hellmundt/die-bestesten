@@ -35,7 +35,7 @@ class Guard
                 return ['status' => false, 'message' => 'Authorization Token enthält fehlerhafte Manager-ID'];
             }
 
-            $GLOBALS['auth_manager_id'] = $manager['manager_id'];
+            $GLOBALS['auth_manager_id'] = $manager['id'];
             $GLOBALS['auth_role']       = $manager['role'];
 
             return ['status' => true];
