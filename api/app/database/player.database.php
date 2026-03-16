@@ -2,15 +2,29 @@
 
 trait PlayerTrait
 {
-    public function getPlayerList(?string $countryId = null): array
+    public function getPlayerList(?string $countryId = null, ?string $seasonId = null): array
     {
+        $seasonId = $seasonId ?? $this->getActiveSeasonId();
+
+        $sql = "
+            SELECT p.*,
+                   COALESCE(SUM(pr.points), 0) AS total_points
+            FROM player p
+            LEFT JOIN player_rating pr ON p.id = pr.player_id
+            LEFT JOIN matchday m       ON pr.matchday_id = m.id AND m.season_id = :season_id
+        ";
+
+        $params = [':season_id' => $seasonId];
+
         if ($countryId) {
-            $query = $this->con->prepare("SELECT * FROM player WHERE country_id = :country_id ORDER BY last_name ASC, first_name ASC");
-            $query->execute([':country_id' => $countryId]);
-        } else {
-            $query = $this->con->prepare("SELECT * FROM player ORDER BY last_name ASC, first_name ASC");
-            $query->execute();
+            $sql .= " WHERE p.country_id = :country_id";
+            $params[':country_id'] = $countryId;
         }
+
+        $sql .= " GROUP BY p.id ORDER BY p.last_name ASC, p.first_name ASC";
+
+        $query = $this->con->prepare($sql);
+        $query->execute($params);
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -18,6 +32,8 @@ trait PlayerTrait
     {
         $player = $this->getPlayerById($id);
         if (!$player) return false;
+
+        $seasonId = $seasonId ?? $this->getActiveSeasonId();
 
         // Current club (to_date IS NULL = current contract)
         $q = $this->con->prepare("
@@ -30,15 +46,7 @@ trait PlayerTrait
         $q->execute([':id' => $id]);
         $player['current_club'] = $q->fetch(PDO::FETCH_ASSOC) ?: null;
 
-        // Resolve season: use provided season_id or fall back to active season
-        if (!$seasonId) {
-            $q = $this->con->prepare("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
-            $q->execute();
-            $season = $q->fetch(PDO::FETCH_ASSOC);
-            $seasonId = $season['id'] ?? null;
-        }
-
-        // Season data for this player
+        // Season data and ratings
         if ($seasonId) {
             $q = $this->con->prepare("
                 SELECT price, position, photo_uploaded
@@ -48,8 +56,22 @@ trait PlayerTrait
             ");
             $q->execute([':player_id' => $id, ':season_id' => $seasonId]);
             $player['current_season'] = $q->fetch(PDO::FETCH_ASSOC) ?: null;
+
+            $q = $this->con->prepare("
+                SELECT pr.id, pr.grade, pr.is_starting, pr.is_substitute,
+                       pr.goals, pr.assists, pr.clean_sheet,
+                       pr.red_card, pr.yellow_red_card, pr.points,
+                       m.number AS matchday_number, m.kickoff_date
+                FROM player_rating pr
+                JOIN matchday m ON pr.matchday_id = m.id
+                WHERE pr.player_id = :player_id AND m.season_id = :season_id
+                ORDER BY m.number ASC
+            ");
+            $q->execute([':player_id' => $id, ':season_id' => $seasonId]);
+            $player['ratings'] = $q->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $player['current_season'] = null;
+            $player['ratings']        = [];
         }
 
         return $player;
@@ -60,5 +82,13 @@ trait PlayerTrait
         $query = $this->con->prepare("SELECT * FROM player WHERE id = :id LIMIT 1");
         $query->execute([':id' => $id]);
         return $query->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function getActiveSeasonId(): ?string
+    {
+        $q = $this->con->prepare("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $q->execute();
+        $row = $q->fetch(PDO::FETCH_ASSOC);
+        return $row['id'] ?? null;
     }
 }

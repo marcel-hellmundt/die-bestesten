@@ -105,13 +105,16 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/player',
-                        'description'  => 'Alle Spieler (Basisdaten), optional gefiltert nach Land',
-                        'query_params' => ['country_id' => 'ISO Alpha-2 Code (optional)'],
+                        'description'  => 'Alle Spieler mit aggregierten Punkten der Saison',
+                        'query_params' => [
+                            'country_id' => 'ISO Alpha-2 Code (optional)',
+                            'season_id'  => 'UUID der Saison (optional, default: aktive Saison)',
+                        ],
                     ],
                     [
                         'method'       => 'GET',
                         'path'         => '/player/:id',
-                        'description'  => 'Ein Spieler mit aktuellem Club und Saisondaten',
+                        'description'  => 'Ein Spieler mit aktuellem Club, Saisondaten und allen Spieltagsbewertungen',
                         'path_params'  => [':id' => 'UUID des Spielers'],
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
                     ],

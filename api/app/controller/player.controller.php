@@ -15,7 +15,7 @@ class PlayerController extends _BaseController
             return $player;
         }
 
-        return $this->db->getPlayerList($this->params['country_id'] ?? null);
+        return $this->db->getPlayerList($this->params['country_id'] ?? null, $this->params['season_id'] ?? null);
     }
 
     protected function post(): mixed   { return $this->methodNotAllowed(); }
