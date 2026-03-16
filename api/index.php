@@ -1,0 +1,66 @@
+<?php
+
+// Load environment variables
+foreach (file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+    if (strpos(trim($line), '#') === 0 || strpos($line, '=') === false) continue;
+    [$key, $value] = explode('=', $line, 2);
+    $_ENV[trim($key)] = trim($value);
+}
+
+require __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/app/guard.php';
+require_once __DIR__ . '/app/routing.php';
+
+// CORS
+$allowedOrigins = [
+    'https://die-bestesten.de',
+    'https://data.die-bestesten.de',
+    'https://beta.die-bestesten.de',
+    'http://localhost:4200',
+];
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+}
+header('Access-Control-Allow-Headers: Authorization, Content-Type');
+header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS');
+header('Access-Control-Allow-Credentials: true');
+header('Content-Type: application/json');
+
+// Handle preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
+// Parse URL: /v1/{endpoint}/{id}
+$path     = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+$segments = array_values(array_filter(explode('/', $path)));
+// $segments[0] = version, $segments[1] = endpoint, $segments[2] = id (optional)
+
+$request = [
+    'endpoint' => $segments[1] ?? '',
+    'id'       => $segments[2] ?? null,
+];
+
+// Auth
+$guard    = new Guard();
+$authResult = $guard->authorize($request);
+
+if (!$authResult['status']) {
+    http_response_code(401);
+    echo json_encode($authResult);
+    exit;
+}
+
+// Route and respond
+foreach (glob(__DIR__ . '/app/controller/*.controller.php') as $file) {
+    require_once $file;
+}
+
+$routing    = new Routing();
+$controller = $routing->navigate($request);
+$controller->setRequest($request);
+
+echo json_encode($controller->getResponse());
