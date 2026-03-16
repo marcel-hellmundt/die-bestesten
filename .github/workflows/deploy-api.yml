@@ -16,6 +16,9 @@ jobs:
         working-directory: api
         run: composer install --no-dev --optimize-autoloader
 
+      - name: Install lftp
+        run: sudo apt-get install -y lftp
+
       - name: Upload to FTP
         run: |
           lftp -c "
