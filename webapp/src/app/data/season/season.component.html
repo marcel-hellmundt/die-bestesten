@@ -1,0 +1,22 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Start</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item.id) {
+        <tr>
+          <td>{{ item.id }}</td>
+          <td>{{ item.start_date }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

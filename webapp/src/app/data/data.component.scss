@@ -6,3 +6,28 @@
   color: $color-text;
   margin-bottom: $space-6;
 }
+
+.sub-nav {
+  display: flex;
+  gap: $space-1;
+  border-bottom: 1px solid $color-border;
+  margin-bottom: $space-6;
+}
+
+.sub-nav-item {
+  padding: $space-2 $space-4;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color $transition-fast, border-color $transition-fast;
+
+  &:hover { color: $color-text; }
+
+  &--active {
+    color: $color-text;
+    border-bottom-color: $color-text;
+  }
+}

@@ -1,0 +1,26 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>ID</th>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr>
+            <td><img src="img/flags/{{ item.id }}.svg" class="flag" /></td>
+            <td>{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

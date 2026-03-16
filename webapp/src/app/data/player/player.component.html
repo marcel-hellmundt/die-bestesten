@@ -1,0 +1,30 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Vorname</th>
+        <th>Nachname</th>
+        <th>Anzeigename</th>
+        <th>Land</th>
+        <th>Punkte</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item.id) {
+        <tr>
+          <td>{{ item.id }}</td>
+          <td>{{ item.first_name }}</td>
+          <td>{{ item.last_name }}</td>
+          <td>{{ item.displayname }}</td>
+          <td>{{ item.country_id }}</td>
+          <td>{{ item.total_points }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
