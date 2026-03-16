@@ -18,8 +18,9 @@ class Routing
     public function __construct()
     {
         $this->routes = [
-            new Route('country', 'Country'),
-            new Route('season',  'Season'),
+            new Route('country',  'Country'),
+            new Route('season',   'Season'),
+            new Route('matchday', 'Matchday'),
         ];
     }
 
