@@ -12,6 +12,10 @@
   gap: $space-1;
   border-bottom: 1px solid $color-border;
   margin-bottom: $space-6;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
 }
 
 .sub-nav-item {

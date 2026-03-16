@@ -163,6 +163,13 @@
   border: 1px solid $color-border;
   border-radius: $radius-xl;
   padding: $space-3;
+
+  @media (max-width: $mobile-breakpoint) {
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    padding-inline: 0;
+  }
 }
 
 .data-table {
