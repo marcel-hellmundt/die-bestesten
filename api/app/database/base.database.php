@@ -1,9 +1,11 @@
 <?php
 require_once 'country.database.php';
+require_once 'season.database.php';
 
 class Database
 {
     use CountryTrait;
+    use SeasonTrait;
 
     private $con;
 

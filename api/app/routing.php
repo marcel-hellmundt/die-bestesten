@@ -19,6 +19,7 @@ class Routing
     {
         $this->routes = [
             new Route('country', 'Country'),
+            new Route('season',  'Season'),
         ];
     }
 
