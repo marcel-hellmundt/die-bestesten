@@ -37,11 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Parse URL: /v1/{endpoint}/{id}
 $path     = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $segments = array_values(array_filter(explode('/', $path)));
-// $segments[0] = version, $segments[1] = endpoint, $segments[2] = id (optional)
+// $segments[0] = endpoint, $segments[1] = id (optional)
 
 $request = [
-    'endpoint' => $segments[1] ?? '',
-    'id'       => $segments[2] ?? null,
+    'endpoint' => $segments[0] ?? '',
+    'id'       => $segments[1] ?? null,
 ];
 
 // Load controllers and resolve route
