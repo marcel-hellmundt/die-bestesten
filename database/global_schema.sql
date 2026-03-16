@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS matchday (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     season_id CHAR(36) NOT NULL,                -- Foreign Key zu season.id
     start_date DATE NOT NULL,                   -- Startdatum, ab wann Spieler offiziell in diesem Spieltag sind
-    kickoff_date DATE NOT NULL,                 -- Bis wann Spieler ihre Aufstellung anpassen können
+    kickoff_date DATETIME NOT NULL,             -- Bis wann Spieler ihre Aufstellung anpassen können
     number INT NOT NULL,                        -- Nummer des Spieltages (z.B. 12)
     FOREIGN KEY (season_id) REFERENCES season(id)
 );

@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith } from 'rxjs';
+import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 
@@ -14,11 +14,15 @@ export class PlayerDataComponent {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
 
+  private reload$ = new BehaviorSubject<void>(undefined);
+
   private state = toSignal(
-    this.api.get<any[]>('player').pipe(
-      map(data => ({ data, loading: false, error: null as string | null })),
-      startWith({ data: [] as any[], loading: true, error: null as string | null }),
-      catchError(() => of({ data: [] as any[], loading: false, error: 'Fehler beim Laden' }))
+    this.reload$.pipe(
+      switchMap(() => this.api.get<any[]>('player').pipe(
+        map(data => ({ data, loading: false, error: null as string | null })),
+        startWith({ data: [] as any[], loading: true, error: null as string | null }),
+        catchError(() => of({ data: [] as any[], loading: false, error: 'Fehler beim Laden' }))
+      ))
     )
   );
 
@@ -32,7 +36,10 @@ export class PlayerDataComponent {
   migrate(): void {
     this.migrateState.set('loading');
     this.api.post<{ status: boolean; migrated: number }>('player/migrate').subscribe({
-      next: () => this.migrateState.set('success'),
+      next: () => {
+        this.migrateState.set('success');
+        this.reload$.next();
+      },
       error: () => this.migrateState.set('error'),
     });
   }
