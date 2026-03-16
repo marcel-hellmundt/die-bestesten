@@ -17,14 +17,11 @@ jobs:
         run: composer install --no-dev --optimize-autoloader
 
       - name: Upload to FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./api/
-          server-dir: /html/claude_api/
-          protocol: ftps-legacy
-          exclude: |
-            **/.git*
-            **/.env
+        run: |
+          lftp -c "
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ssl:verify-certificate false;
+            open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+            mirror --reverse --delete --exclude .env --exclude .git --verbose ./api/ /html/claude_api/;
+          "
