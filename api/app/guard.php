@@ -13,10 +13,10 @@ class Guard
         $this->db = Database::getInstance();
     }
 
-    public function authorize(array $request): array
+    public function authorize(array $request, ?string $controllerClass): array
     {
-        // Public endpoints
-        if ($request['endpoint'] === 'country' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        // Check if current method is declared public by the controller
+        if ($controllerClass && in_array($_SERVER['REQUEST_METHOD'], $controllerClass::$publicMethods)) {
             return ['status' => true];
         }
 

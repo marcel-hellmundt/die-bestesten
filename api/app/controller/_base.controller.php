@@ -3,6 +3,9 @@ require_once __DIR__ . '/../database/base.database.php';
 
 abstract class _BaseController
 {
+    // Override in child controllers to declare public HTTP methods
+    public static array $publicMethods = [];
+
     public Database $db;
     public string $endpoint = '';
     public ?string $id      = null;

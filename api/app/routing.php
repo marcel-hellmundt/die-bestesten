@@ -22,6 +22,16 @@ class Routing
         ];
     }
 
+    public function resolveClass(string $endpoint): ?string
+    {
+        foreach ($this->routes as $route) {
+            if ($route->getName() === $endpoint) {
+                return $route->getClass() . 'Controller';
+            }
+        }
+        return null;
+    }
+
     public function navigate(array $request): _BaseController
     {
         foreach ($this->routes as $route) {

@@ -2,6 +2,8 @@
 
 class CountryController extends _BaseController
 {
+    public static array $publicMethods = ['GET'];
+
 	protected function get(): mixed
 	{
 		if ($this->id) {

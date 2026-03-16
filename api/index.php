@@ -44,9 +44,17 @@ $request = [
     'id'       => $segments[2] ?? null,
 ];
 
+// Load controllers and resolve route
+foreach (glob(__DIR__ . '/app/controller/*.controller.php') as $file) {
+    require_once $file;
+}
+
+$routing         = new Routing();
+$controllerClass = $routing->resolveClass($request['endpoint']);
+
 // Auth
-$guard    = new Guard();
-$authResult = $guard->authorize($request);
+$guard      = new Guard();
+$authResult = $guard->authorize($request, $controllerClass);
 
 if (!$authResult['status']) {
     http_response_code(401);
@@ -54,12 +62,6 @@ if (!$authResult['status']) {
     exit;
 }
 
-// Route and respond
-foreach (glob(__DIR__ . '/app/controller/*.controller.php') as $file) {
-    require_once $file;
-}
-
-$routing    = new Routing();
 $controller = $routing->navigate($request);
 $controller->setRequest($request);
 
