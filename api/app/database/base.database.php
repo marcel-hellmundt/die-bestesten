@@ -2,12 +2,14 @@
 require_once 'country.database.php';
 require_once 'season.database.php';
 require_once 'matchday.database.php';
+require_once 'club.database.php';
 
 class Database
 {
     use CountryTrait;
     use SeasonTrait;
     use MatchdayTrait;
+    use ClubTrait;
 
     private $con;
 
