@@ -44,6 +44,14 @@ export class AuthService {
     }
   }
 
+  getRole(): string | null {
+    return (this.getPayload()?.['role'] as string) ?? null;
+  }
+
+  isAdmin(): boolean {
+    return this.getRole() === 'admin';
+  }
+
   getPayload(): Record<string, unknown> | null {
     const token = this.getToken();
     if (!token) return null;

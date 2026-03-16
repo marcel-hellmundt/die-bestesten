@@ -15,6 +15,7 @@ class Database
 
     private $con;
     private $con_league;
+    private $con_old;
 
     protected static $_instance = null;
 
@@ -38,6 +39,7 @@ class Database
 
         $this->con = $this->createConnection($host, $_ENV['DB_NAME'], $user, $password);
         $this->con_league = $this->createConnection($host, $_ENV['DB_NAME_LEAGUE'], $user, $password);
+        $this->con_old = $this->createConnection($host, $_ENV['DB_NAME_OLD'], $user, $password);
     }
 
     private function createConnection(string $host, string $name, string $user, string $password): \PDO
@@ -57,6 +59,7 @@ class Database
     {
         $this->con = null;
         $this->con_league = null;
+        $this->con_old = null;
     }
 
     // Auth — used by guard; requires manager table (league schema)

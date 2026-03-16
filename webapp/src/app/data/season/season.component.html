@@ -1,22 +1,40 @@
+@if (isAdmin()) {
+  <div class="migrate-bar">
+    <button class="btn btn-primary"
+            [disabled]="migrateState() === 'loading'"
+            (click)="migrate()">
+      {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
+    </button>
+    @if (migrateState() === 'success') {
+      <span class="state-msg">Migration erfolgreich</span>
+    }
+    @if (migrateState() === 'error') {
+      <span class="state-msg state-msg--error">Fehler bei der Migration</span>
+    }
+  </div>
+}
+
 @if (loading()) {
   <p class="state-msg">Laden…</p>
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Start</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (item of items(); track item.id) {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
         <tr>
-          <td>{{ item.id }}</td>
-          <td>{{ item.start_date }}</td>
+          <th>ID</th>
+          <th>Start</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.start_date }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 }

@@ -22,4 +22,24 @@ trait SeasonTrait
         $query->execute();
         return $query->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function migrateSeason(): array
+    {
+        $rows = $this->con_old->query("SELECT season_id, start_date FROM season")
+            ->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $this->con->prepare(
+            "INSERT INTO season (id, start_date) VALUES (:id, :start_date)
+             ON DUPLICATE KEY UPDATE start_date = VALUES(start_date)"
+        );
+
+        foreach ($rows as $row) {
+            $stmt->execute([
+                ':id'         => $row['season_id'],
+                ':start_date' => $row['start_date'],
+            ]);
+        }
+
+        return ['status' => true, 'migrated' => count($rows)];
+    }
 }

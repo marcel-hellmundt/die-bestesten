@@ -18,7 +18,17 @@ class PlayerController extends _BaseController
         return $this->db->getPlayerList($this->params['country_id'] ?? null, $this->params['season_id'] ?? null);
     }
 
-    protected function post(): mixed   { return $this->methodNotAllowed(); }
+    protected function post(): mixed
+    {
+        if ($this->id !== 'migrate') return $this->methodNotAllowed();
+
+        if (($GLOBALS['auth_role'] ?? null) !== 'admin') {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Forbidden'];
+        }
+
+        return $this->db->migratePlayer();
+    }
     protected function patch(): mixed  { return $this->methodNotAllowed(); }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

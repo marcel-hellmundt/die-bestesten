@@ -27,7 +27,17 @@ class SeasonController extends _BaseController
         return $this->db->getSeasonList();
     }
 
-    protected function post(): mixed   { return $this->methodNotAllowed(); }
+    protected function post(): mixed
+    {
+        if ($this->id !== 'migrate') return $this->methodNotAllowed();
+
+        if (($GLOBALS['auth_role'] ?? null) !== 'admin') {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Forbidden'];
+        }
+
+        return $this->db->migrateSeason();
+    }
     protected function patch(): mixed  { return $this->methodNotAllowed(); }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

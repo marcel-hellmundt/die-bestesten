@@ -20,7 +20,14 @@ class CountryController extends _BaseController
 
 	protected function post(): mixed
 	{
-		return $this->methodNotAllowed();
+		if ($this->id !== 'migrate') return $this->methodNotAllowed();
+
+		if (($GLOBALS['auth_role'] ?? null) !== 'admin') {
+			http_response_code(403);
+			return ['status' => false, 'message' => 'Forbidden'];
+		}
+
+		return $this->db->migrateCountry();
 	}
 	protected function patch(): mixed
 	{

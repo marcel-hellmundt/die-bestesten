@@ -84,6 +84,47 @@ trait PlayerTrait
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function migratePlayer(): array
+    {
+        $rows = $this->con_old->query("
+            SELECT player_id, country_code, firstname, lastname, displayname,
+                   city, date_of_birth, height, weight
+            FROM player
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $this->con->prepare(
+            "INSERT INTO player
+                (id, country_id, first_name, last_name, displayname, birth_city, date_of_birth, height_cm, weight_kg)
+             VALUES
+                (:id, :country_id, :first_name, :last_name, :displayname, :birth_city, :date_of_birth, :height_cm, :weight_kg)
+             ON DUPLICATE KEY UPDATE
+               country_id     = VALUES(country_id),
+               first_name     = VALUES(first_name),
+               last_name      = VALUES(last_name),
+               displayname    = VALUES(displayname),
+               birth_city     = VALUES(birth_city),
+               date_of_birth  = VALUES(date_of_birth),
+               height_cm      = VALUES(height_cm),
+               weight_kg      = VALUES(weight_kg)"
+        );
+
+        foreach ($rows as $row) {
+            $stmt->execute([
+                ':id'           => $row['player_id'],
+                ':country_id'   => $row['country_code'],
+                ':first_name'   => $row['firstname'],
+                ':last_name'    => $row['lastname'],
+                ':displayname'  => $row['displayname'],
+                ':birth_city'   => $row['city'],
+                ':date_of_birth'=> $row['date_of_birth'],
+                ':height_cm'    => $row['height'],
+                ':weight_kg'    => $row['weight'],
+            ]);
+        }
+
+        return ['status' => true, 'migrated' => count($rows)];
+    }
+
     private function getActiveSeasonId(): ?string
     {
         $q = $this->con->prepare("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
