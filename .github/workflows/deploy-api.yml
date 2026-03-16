@@ -23,6 +23,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./api/
           server-dir: /html/claude_api/
+          protocol: ftps
           exclude: |
             **/.git*
             **/.env
