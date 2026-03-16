@@ -1,0 +1,10 @@
+# Rewrite Engine aktivieren
+RewriteEngine On
+
+# Sicherstellen, dass es sich nicht um eine existierende Datei oder ein Verzeichnis handelt
+RewriteCond %{SCRIPT_FILENAME} !-d
+RewriteCond %{SCRIPT_FILENAME} !-f
+
+# Weiterleitung der Anfragen an die richtigen API-Versionen
+RewriteRule ^v1/(.*)$ v1/index.php [L,QSA]
+RewriteRule ^v2/(.*)$ v2/index.php [L,QSA]

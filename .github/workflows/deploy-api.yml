@@ -1,0 +1,28 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths: [api/**]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        working-directory: api
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Upload to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./api/
+          server-dir: /html/claude_api/
+          exclude: |
+            **/.git*
+            **/.env
