@@ -22,6 +22,7 @@ class Routing
             new Route('season',   'Season'),
             new Route('matchday', 'Matchday'),
             new Route('club',     'Club'),
+            new Route('player',   'Player'),
         ];
     }
 
