@@ -1,0 +1,37 @@
+name: Deploy Webapp
+
+on:
+  push:
+    branches: [main]
+    paths: [webapp/**]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        working-directory: webapp
+        run: npm ci
+
+      - name: Build
+        working-directory: webapp
+        run: npm run build
+
+      - name: Install lftp
+        run: sudo apt-get install -y lftp
+
+      - name: Upload to FTP
+        run: |
+          lftp -c "
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ssl:verify-certificate false;
+            open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+            mirror --reverse --delete --verbose ./webapp/dist/webapp/browser/ /html/claude/;
+          "
