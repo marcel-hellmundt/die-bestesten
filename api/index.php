@@ -16,6 +16,7 @@ $allowedOrigins = [
     'https://die-bestesten.de',
     'https://data.die-bestesten.de',
     'https://beta.die-bestesten.de',
+    'https://claude.die-bestesten.de',
     'http://localhost:4200',
 ];
 
