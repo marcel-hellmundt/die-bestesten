@@ -7,6 +7,20 @@ export class Club {
     public logo_uploaded: boolean
   ) {}
 
+  get logoUrl(): string {
+    return this.logo_uploaded
+      ? `https://img.die-bestesten.de/img/club/${this.id}.png`
+      : 'img/placeholders/club.png';
+  }
+
+  get logoClass(): string {
+    return this.logo_uploaded ? 'logo' : 'logo logo--placeholder';
+  }
+
+  get flagUrl(): string {
+    return `img/flags/${this.country_id}.svg`;
+  }
+
   static from(data: any): Club {
     return new Club(
       data.id,

@@ -1,7 +1,11 @@
 <div class="list-bar">
-  <input class="input search-input" type="search" placeholder="Suchen…"
-         [value]="searchQuery()"
-         (input)="searchQuery.set($any($event.target).value)" />
+  <input
+    class="input search-input"
+    type="search"
+    placeholder="Suchen…"
+    [value]="searchQuery()"
+    (input)="searchQuery.set($any($event.target).value)"
+  />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
   @if (isAdmin()) {
     <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
@@ -35,8 +39,12 @@
         @for (item of filteredItems(); track item.id) {
           <tr>
             <td class="col-id">{{ item.id }}</td>
-            <td><img src="img/flags/{{ item.country_id }}.svg" class="flag" /></td>
-            <td>{{ item.name }}</td>
+            <td><img [src]="item.flagUrl" class="flag" /></td>
+            <td>
+              <span class="flex items-center gap-2">
+                <img [src]="item.logoUrl" [class]="item.logoClass" /> {{ item.name }}</span
+              >
+            </td>
             <td>{{ item.short_name }}</td>
           </tr>
         }

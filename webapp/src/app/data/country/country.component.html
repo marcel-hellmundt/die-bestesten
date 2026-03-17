@@ -36,7 +36,7 @@
         @for (item of filteredItems(); track item.id) {
           <tr>
             <td class="col-id">{{ item.id }}</td>
-            <td><img src="img/flags/{{ item.id }}.svg" class="flag" /></td>
+            <td><img [src]="item.flagUrl" class="flag" /></td>
             <td>{{ item.name }}</td>
           </tr>
         }

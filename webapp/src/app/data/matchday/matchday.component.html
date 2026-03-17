@@ -1,12 +1,14 @@
 <div class="list-bar">
-  <input class="input search-input" type="search" placeholder="Suchen…"
-         [value]="searchQuery()"
-         (input)="searchQuery.set($any($event.target).value)" />
+  <input
+    class="input search-input"
+    type="search"
+    placeholder="Suchen…"
+    [value]="searchQuery()"
+    (input)="searchQuery.set($any($event.target).value)"
+  />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
   @if (isAdmin()) {
-    <button class="btn btn-primary"
-            [disabled]="migrateState() === 'loading'"
-            (click)="migrate()">
+    <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
       {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
     </button>
     @if (migrateState() === 'success') {
@@ -28,20 +30,20 @@
       <thead>
         <tr>
           <th class="col-id">ID</th>
+          <th>Saison</th>
           <th>Nr.</th>
           <th>Anpfiff</th>
           <th>Start</th>
-          <th>Saison</th>
         </tr>
       </thead>
       <tbody>
         @for (item of filteredItems(); track item.id) {
           <tr>
             <td class="col-id">{{ item.id }}</td>
+            <td>{{ cache.seasonName(item.season_id) }}</td>
             <td>{{ item.number }}</td>
             <td>{{ item.kickoff_date }}</td>
             <td>{{ item.start_date }}</td>
-            <td>{{ cache.seasonName(item.season_id) }}</td>
           </tr>
         }
       </tbody>
