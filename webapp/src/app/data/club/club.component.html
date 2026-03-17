@@ -1,9 +1,10 @@
 <div class="list-bar">
-  <span class="list-count">{{ items().length }} Einträge</span>
+  <input class="input search-input" type="search" placeholder="Suchen…"
+         [value]="searchQuery()"
+         (input)="searchQuery.set($any($event.target).value)" />
+  <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
   @if (isAdmin()) {
-    <button class="btn btn-primary"
-            [disabled]="migrateState() === 'loading'"
-            (click)="migrate()">
+    <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
       {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
     </button>
     @if (migrateState() === 'success') {
@@ -24,19 +25,19 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>ID</th>
+          <th class="col-id">ID</th>
+          <th>Land</th>
           <th>Name</th>
           <th>Kürzel</th>
-          <th>Land</th>
         </tr>
       </thead>
       <tbody>
-        @for (item of items(); track item.id) {
+        @for (item of filteredItems(); track item.id) {
           <tr>
-            <td>{{ item.id }}</td>
+            <td class="col-id">{{ item.id }}</td>
+            <td><img src="img/flags/{{ item.country_id }}.svg" class="flag" /></td>
             <td>{{ item.name }}</td>
             <td>{{ item.short_name }}</td>
-            <td>{{ item.country_id }}</td>
           </tr>
         }
       </tbody>

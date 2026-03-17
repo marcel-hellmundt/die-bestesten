@@ -165,10 +165,18 @@
   margin-bottom: $space-4;
 }
 
+.search-input {
+  flex: 1;
+  max-width: 280px;
+  padding: $space-1 $space-3;
+  font-size: $font-sm;
+}
+
 .list-count {
   font-size: $font-sm;
   color: $color-text-muted;
   margin-right: auto;
+  white-space: nowrap;
 }
 
 // Data table
@@ -183,6 +191,7 @@
     border-right: none;
     border-radius: 0;
     padding-inline: 0;
+    margin-inline: -$space-4; // bleed out of shell-content padding
   }
 }
 
@@ -215,6 +224,13 @@
   }
   tbody tr:last-child td {
     border-bottom: none;
+  }
+}
+
+// ID column — hidden on mobile, visible on desktop
+.col-id {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
   }
 }
 

@@ -1,5 +1,8 @@
 <div class="list-bar">
-  <span class="list-count">{{ items().length }} Einträge</span>
+  <input class="input search-input" type="search" placeholder="Suchen…"
+         [value]="searchQuery()"
+         (input)="searchQuery.set($any($event.target).value)" />
+  <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
   @if (isAdmin()) {
     <button class="btn btn-primary"
             [disabled]="migrateState() === 'loading'"
@@ -24,15 +27,15 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>ID</th>
+          <th class="col-id">ID</th>
           <th>Saison</th>
           <th>Start</th>
         </tr>
       </thead>
       <tbody>
-        @for (item of items(); track item.id) {
+        @for (item of filteredItems(); track item.id) {
           <tr>
-            <td>{{ item.id }}</td>
+            <td class="col-id">{{ item.id }}</td>
             <td>{{ item.displayName }}</td>
             <td>{{ item.start_date }}</td>
           </tr>

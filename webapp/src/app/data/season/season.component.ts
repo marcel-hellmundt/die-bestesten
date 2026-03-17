@@ -31,6 +31,16 @@ export class SeasonDataComponent {
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error   ?? null);
 
+  searchQuery   = signal('');
+  filteredItems = computed(() => {
+    const q = this.searchQuery().toLowerCase().trim();
+    if (!q) return this.items();
+    return this.items().filter(i =>
+      i.displayName.toLowerCase().includes(q) ||
+      i.start_date.includes(q)
+    );
+  });
+
   isAdmin      = computed(() => this.auth.isAdmin());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
 

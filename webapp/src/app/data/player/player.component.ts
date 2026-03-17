@@ -31,6 +31,17 @@ export class PlayerDataComponent {
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error   ?? null);
 
+  searchQuery   = signal('');
+  filteredItems = computed(() => {
+    const q = this.searchQuery().toLowerCase().trim();
+    if (!q) return this.items();
+    return this.items().filter(i =>
+      i.displayname.toLowerCase().includes(q) ||
+      (i.first_name ?? '').toLowerCase().includes(q) ||
+      (i.last_name  ?? '').toLowerCase().includes(q)
+    );
+  });
+
   isAdmin      = computed(() => this.auth.isAdmin());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
 

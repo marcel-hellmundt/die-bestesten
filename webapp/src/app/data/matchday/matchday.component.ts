@@ -37,6 +37,18 @@ export class MatchdayDataComponent {
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error   ?? null);
 
+  searchQuery   = signal('');
+  filteredItems = computed(() => {
+    const q = this.searchQuery().toLowerCase().trim();
+    if (!q) return this.items();
+    return this.items().filter(i =>
+      String(i.number).includes(q) ||
+      i.start_date.includes(q) ||
+      i.kickoff_date.includes(q) ||
+      this.cache.seasonName(i.season_id).toLowerCase().includes(q)
+    );
+  });
+
   isAdmin      = computed(() => this.auth.isAdmin());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
 
