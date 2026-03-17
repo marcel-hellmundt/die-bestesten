@@ -7,10 +7,23 @@
 
   <hr class="nav-divider" />
 
+  <ul class="nav-mobile">
+    @for (item of mobileNavItems; track item.route) {
+      <li>
+        <a class="nav-item" [routerLink]="item.route" routerLinkActive="nav-item--active">
+          <app-icon [name]="item.icon" class="nav-icon"></app-icon>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      </li>
+    }
+  </ul>
+
   <div class="nav-groups-top">
     @for (group of topGroups; track group.label) {
       <div class="nav-group">
-        <span class="nav-group-label">{{ group.label }}</span>
+        @if (group.label) {
+          <span class="nav-group-label">{{ group.label }}</span>
+        }
         <ul class="nav-items">
           @for (item of group.items; track item.route) {
             <li>
@@ -28,7 +41,9 @@
   <div class="nav-groups-bottom">
     @for (group of bottomGroups; track group.label) {
       <div class="nav-group">
-        <span class="nav-group-label">{{ group.label }}</span>
+        @if (group.label) {
+          <span class="nav-group-label">{{ group.label }}</span>
+        }
         <ul class="nav-items">
           @for (item of group.items; track item.route) {
             <li>

@@ -9,8 +9,12 @@ export class Player {
     public date_of_birth: string | null,
     public height_cm: number | null,
     public weight_kg: number | null,
-    public total_points: number
+    public total_points: number,
   ) {}
+
+  get flagUrl(): string {
+    return `img/flags/${this.country_id}.svg`;
+  }
 
   static from(data: any): Player {
     return new Player(
@@ -23,7 +27,7 @@ export class Player {
       data.date_of_birth ?? null,
       data.height_cm ?? null,
       data.weight_kg ?? null,
-      data.total_points ?? 0
+      data.total_points ?? 0,
     );
   }
 }

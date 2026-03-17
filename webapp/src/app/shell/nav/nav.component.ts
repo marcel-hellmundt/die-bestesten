@@ -10,6 +10,7 @@ interface NavItem {
 
 interface NavGroup {
   label: string;
+  icon?: string; // used for mobile bottom nav
   items: NavItem[];
 }
 
@@ -27,24 +28,51 @@ export class NavComponent {
 
   topGroups: NavGroup[] = [
     {
-      label: 'Spiel',
+      label: 'Liga',
+      icon: 'tabelle',
       items: [
-        { label: 'Liga',          icon: 'liga',          route: '/app/liga' },
-        { label: 'Team',          icon: 'team',          route: '/app/team' },
-        { label: 'Transfermarkt', icon: 'transfermarkt', route: '/app/transfermarkt' },
+        { label: 'Spieltag',      icon: 'spieltag',      route: '/app/spieltag' },
+        { label: 'Tabelle',       icon: 'tabelle',       route: '/app/tabelle' },
+        { label: 'Statistiken',   icon: 'statistiken',   route: '/app/liga-statistiken' },
+        { label: 'Ewige Tabelle', icon: 'ewige-tabelle', route: '/app/ewige-tabelle' },
       ]
-    }
+    },
+    {
+      label: 'Team',
+      icon: 'kader',
+      items: [
+        { label: 'Kader',       icon: 'kader',      route: '/app/kader' },
+        { label: 'Aufstellung', icon: 'aufstellung', route: '/app/aufstellung' },
+        { label: 'Finanzen',    icon: 'finanzen',    route: '/app/finanzen' },
+        { label: 'Statistiken', icon: 'statistiken', route: '/app/team-statistiken' },
+      ]
+    },
+    {
+      label: 'Markt',
+      icon: 'transferphasen',
+      items: [
+        { label: 'Spieler',        icon: 'spieler',        route: '/app/spieler' },
+        { label: 'Transferphasen', icon: 'transferphasen', route: '/app/transferphasen' },
+        { label: 'Gebote',         icon: 'gebote',         route: '/app/gebote' },
+      ]
+    },
   ];
 
   bottomGroups: NavGroup[] = [
     {
-      label: 'Sonstiges',
+      label: '',
       items: [
-        { label: 'Settings',        icon: 'settings', route: '/app/settings' },
+        { label: 'Einstellungen',   icon: 'settings', route: '/app/settings' },
         { label: 'Data Management', icon: 'data',     route: '/app/data' },
       ]
     }
   ];
+
+  mobileNavItems: NavItem[] = this.topGroups.map(g => ({
+    label: g.label,
+    icon: g.icon ?? g.items[0].icon,
+    route: g.items[0].route,
+  }));
 
   logout(): void {
     this.auth.logout();

@@ -40,6 +40,13 @@
   margin: $space-4 auto;
 }
 
+// ── Mobile-only bottom bar ────────────────────────────────────────────────────
+
+.nav-mobile {
+  display: none; // shown only on mobile via media query
+  list-style: none;
+}
+
 // ── Groups ────────────────────────────────────────────────────────────────────
 
 .nav-groups-top {
@@ -83,9 +90,11 @@
   border-radius: $radius-md;
   font-size: $font-sm;
   font-weight: $font-weight-medium;
-  color: $color-text-muted;
+  color: $color-text;
   text-decoration: none;
-  transition: background-color $transition-fast, color $transition-fast;
+  transition:
+    background-color $transition-fast,
+    color $transition-fast;
 
   &:hover {
     background-color: $color-surface-alt;
@@ -122,28 +131,16 @@
   .nav-header,
   .nav-divider,
   .nav-group-label,
-  .nav-logout {
+  .nav-logout,
+  .nav-groups-bottom,
+  .nav-groups-top {
     display: none;
   }
 
-  .nav-groups-top,
-  .nav-groups-bottom {
-    flex-direction: row;
-    margin-top: 0;
-    gap: 0;
-  }
-
-  .nav-groups-top {
+  .nav-mobile {
+    display: flex;
     flex: 1;
     justify-content: space-around;
-  }
-
-  .nav-groups-bottom {
-    gap: 0;
-  }
-
-  .nav-items {
-    flex-direction: row;
   }
 
   .nav-item {

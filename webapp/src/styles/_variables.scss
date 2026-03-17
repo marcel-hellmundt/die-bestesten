@@ -61,6 +61,9 @@ $z-overlay: 300;
 $z-modal: 400;
 $z-toast: 500;
 
+// Control height — buttons and inputs are always the same height
+$control-height: 38px;
+
 // Layout
 $sidebar-width: 220px;
 $mobile-breakpoint: 768px;
