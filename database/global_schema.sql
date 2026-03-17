@@ -94,4 +94,31 @@ CREATE TABLE IF NOT EXISTS player_rating (
     INDEX idx_matchday_id (matchday_id)
 );
 
--- Weitere globale Tabellen werden hier hinzugefügt
+-- Tabelle: division (reale Fußball-Spielklassen, z.B. 1. Bundesliga)
+CREATE TABLE IF NOT EXISTS division (
+    id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    name       VARCHAR(100) NOT NULL,           -- z.B. "1. Bundesliga"
+    country_id CHAR(2)      NOT NULL,           -- FK zu country.id
+    FOREIGN KEY (country_id) REFERENCES country(id)
+);
+
+-- Tabelle: club_in_season (Zuordnung Club -> Saison -> Spielklasse + Tabellenplatz)
+CREATE TABLE IF NOT EXISTS club_in_season (
+    id          CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    club_id     CHAR(36) NOT NULL,
+    season_id   CHAR(36) NOT NULL,
+    division_id CHAR(36) NOT NULL,
+    position    INT      DEFAULT NULL,          -- Tabellenplatz am Saisonende
+    FOREIGN KEY (club_id)     REFERENCES club(id),
+    FOREIGN KEY (season_id)   REFERENCES season(id),
+    FOREIGN KEY (division_id) REFERENCES division(id),
+    UNIQUE KEY uk_club_season (club_id, season_id)
+);
+
+-- Tabelle: league (Spiel-Instanzen; jede Liga hat eine eigene Datenbank)
+CREATE TABLE IF NOT EXISTS league (
+    id      CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    slug    VARCHAR(32)  NOT NULL UNIQUE,       -- Login-Identifier, z.B. "bestesten-2025"
+    name    VARCHAR(100) NOT NULL,              -- Anzeigename
+    db_name VARCHAR(64)  NOT NULL               -- Datenbankname der Liga-Datenbank
+);
