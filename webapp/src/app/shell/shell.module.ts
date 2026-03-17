@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { ShellComponent } from './shell.component';
 import { NavComponent } from './nav/nav.component';
 import { AuthGuard } from '../auth/auth.guard';
+import { IconComponent } from '../core/icon/icon.component';
 
 const routes: Routes = [
   {
@@ -18,7 +19,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [ShellComponent, NavComponent],
+  declarations: [ShellComponent, NavComponent, IconComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes)

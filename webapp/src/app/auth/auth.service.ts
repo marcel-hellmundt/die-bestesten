@@ -44,6 +44,10 @@ export class AuthService {
     }
   }
 
+  getManagerName(): string | null {
+    return (this.getPayload()?.['manager_name'] as string) ?? null;
+  }
+
   getRole(): string | null {
     return (this.getPayload()?.['role'] as string) ?? null;
   }

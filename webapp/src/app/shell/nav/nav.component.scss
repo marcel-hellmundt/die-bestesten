@@ -7,18 +7,69 @@
   padding: $space-5 $space-3;
 }
 
-.nav-brand {
-  font-size: $font-sm;
-  font-weight: $font-weight-bold;
-  color: $color-accent;
-  letter-spacing: -0.01em;
+// ── Header ───────────────────────────────────────────────────────────────────
+
+.nav-header {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
   padding: 0 $space-3;
-  margin-bottom: $space-8;
 }
+
+.nav-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+}
+
+.nav-title {
+  font-size: $font-md;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  letter-spacing: -0.01em;
+}
+
+// ── Divider ───────────────────────────────────────────────────────────────────
+
+.nav-divider {
+  border: none;
+  border-top: 1px solid $color-border;
+  width: 80%;
+  margin: $space-4 auto;
+}
+
+// ── Groups ────────────────────────────────────────────────────────────────────
+
+.nav-groups-top {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+}
+
+.nav-groups-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  margin-top: auto;
+}
+
+.nav-group-label {
+  display: block;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0 $space-3;
+  margin-bottom: $space-1;
+}
+
+// ── Items ─────────────────────────────────────────────────────────────────────
 
 .nav-items {
   list-style: none;
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: $space-1;
@@ -35,7 +86,6 @@
   color: $color-text-muted;
   text-decoration: none;
   transition: background-color $transition-fast, color $transition-fast;
-  border-left: 3px solid transparent;
 
   &:hover {
     background-color: $color-surface-alt;
@@ -43,9 +93,8 @@
   }
 
   &--active {
-    color: $color-accent;
-    border-left-color: $color-accent;
-    background-color: rgba($color-accent, 0.08);
+    color: $color-text;
+    background-color: $color-surface-alt;
   }
 }
 
@@ -56,11 +105,12 @@
 }
 
 .nav-logout {
-  margin-top: auto;
   width: 100%;
+  margin-top: $space-3;
 }
 
-// Mobile bottom nav
+// ── Mobile bottom nav ─────────────────────────────────────────────────────────
+
 @media (max-width: #{$mobile-breakpoint}) {
   .nav {
     flex-direction: row;
@@ -69,35 +119,42 @@
     height: 64px;
   }
 
-  .nav-brand {
+  .nav-header,
+  .nav-divider,
+  .nav-group-label,
+  .nav-logout {
     display: none;
+  }
+
+  .nav-groups-top,
+  .nav-groups-bottom {
+    flex-direction: row;
+    margin-top: 0;
+    gap: 0;
+  }
+
+  .nav-groups-top {
+    flex: 1;
+    justify-content: space-around;
+  }
+
+  .nav-groups-bottom {
+    gap: 0;
   }
 
   .nav-items {
     flex-direction: row;
-    flex: 1;
-    gap: 0;
-    justify-content: space-around;
   }
 
   .nav-item {
     flex-direction: column;
     gap: $space-1;
     padding: $space-2 $space-3;
-    border-left: none;
-    border-bottom: 3px solid transparent;
     border-radius: 0;
     font-size: $font-xs;
 
     &--active {
-      border-left-color: transparent;
-      border-bottom-color: $color-accent;
+      border-bottom: 2px solid $color-text;
     }
-  }
-
-  .nav-logout {
-    margin-top: 0;
-    width: auto;
-    flex-shrink: 0;
   }
 }
