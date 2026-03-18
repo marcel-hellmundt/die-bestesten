@@ -32,8 +32,8 @@
   border-color: $color-text;
 
   &:hover {
-    background-color: #1f2937;
-    border-color: #1f2937;
+    background-color: $color-accent;
+    border-color: $color-accent;
   }
 
   &:active {

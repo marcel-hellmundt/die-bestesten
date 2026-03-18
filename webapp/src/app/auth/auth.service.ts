@@ -44,6 +44,10 @@ export class AuthService {
     }
   }
 
+  getManagerId(): string | null {
+    return (this.getPayload()?.['sub'] as string) ?? null;
+  }
+
   getManagerName(): string | null {
     return (this.getPayload()?.['manager_name'] as string) ?? null;
   }

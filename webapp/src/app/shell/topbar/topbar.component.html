@@ -1,0 +1,47 @@
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-search">
+      <app-icon name="search" class="search-icon"></app-icon>
+      <input type="search" placeholder="Suchen…" disabled />
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <button class="topbar-icon-btn" aria-label="Benachrichtigungen">
+      <app-icon name="bell"></app-icon>
+    </button>
+
+    <div class="topbar-user">
+      <button class="user-avatar" (click)="toggleDropdown($event)" aria-label="Benutzermenü">
+        @if (avatarUrl() && !avatarImgFailed()) {
+          <img [src]="avatarUrl()!" class="avatar-img" (error)="onAvatarError()" alt="" />
+        } @else {
+          {{ initials() }}
+        }
+      </button>
+
+      @if (isDropdownOpen()) {
+        <div class="user-dropdown">
+          <div class="dropdown-header">
+            <span class="dropdown-name">{{ managerName() }}</span>
+            <span class="dropdown-role">{{ role() }}</span>
+          </div>
+          <hr class="dropdown-divider" />
+          <button class="dropdown-item" (click)="navigateTo('/app/settings')">
+            <app-icon name="settings"></app-icon>
+            Einstellungen
+          </button>
+          <hr class="dropdown-divider" />
+          <button class="dropdown-item dropdown-item--danger" (click)="logout()">
+            <app-icon name="logout"></app-icon>
+            Abmelden
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+@if (isDropdownOpen()) {
+  <div class="dropdown-backdrop" (click)="closeDropdown()"></div>
+}

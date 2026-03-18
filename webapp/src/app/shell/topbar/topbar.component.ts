@@ -1,0 +1,53 @@
+import { Component, inject, signal, computed } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '../../auth/auth.service';
+
+@Component({
+  selector: 'app-topbar',
+  standalone: false,
+  templateUrl: './topbar.component.html',
+  styleUrl: './topbar.component.scss'
+})
+export class TopbarComponent {
+  private auth   = inject(AuthService);
+  private router = inject(Router);
+
+  isDropdownOpen  = signal(false);
+  avatarImgFailed = signal(false);
+
+  managerName = computed(() => this.auth.getManagerName() ?? '');
+  role        = computed(() => this.auth.getRole() ?? '');
+  avatarUrl   = computed(() => {
+    const id = this.auth.getManagerId();
+    return id ? `https://img.die-bestesten.de/img/manager/${id}.jpg` : null;
+  });
+  initials    = computed(() => {
+    const name = this.managerName();
+    return name
+      ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+      : '?';
+  });
+
+  onAvatarError(): void {
+    this.avatarImgFailed.set(true);
+  }
+
+  toggleDropdown(event: Event): void {
+    event.stopPropagation();
+    this.isDropdownOpen.update(v => !v);
+  }
+
+  closeDropdown(): void {
+    this.isDropdownOpen.set(false);
+  }
+
+  navigateTo(route: string): void {
+    this.closeDropdown();
+    this.router.navigate([route]);
+  }
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
+}

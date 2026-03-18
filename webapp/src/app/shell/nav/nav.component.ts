@@ -1,5 +1,4 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
 
 interface NavItem {
@@ -21,8 +20,7 @@ interface NavGroup {
   styleUrl: './nav.component.scss'
 })
 export class NavComponent {
-  private auth   = inject(AuthService);
-  private router = inject(Router);
+  private auth = inject(AuthService);
 
   managerName = this.auth.getManagerName();
 
@@ -74,8 +72,4 @@ export class NavComponent {
     route: g.items[0].route,
   }));
 
-  logout(): void {
-    this.auth.logout();
-    this.router.navigate(['/login']);
-  }
 }

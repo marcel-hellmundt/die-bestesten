@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { ShellComponent } from './shell.component';
 import { NavComponent } from './nav/nav.component';
+import { TopbarComponent } from './topbar/topbar.component';
 import { AuthGuard } from '../auth/auth.guard';
 import { IconComponent } from '../core/icon/icon.component';
 
@@ -19,7 +20,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [ShellComponent, NavComponent, IconComponent],
+  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes)

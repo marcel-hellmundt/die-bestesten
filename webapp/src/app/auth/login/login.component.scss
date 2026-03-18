@@ -50,17 +50,19 @@
 
 .login-form-wrap {
   width: 100%;
-  max-width: 320px;
-  background-color: $color-surface;
-  border: 1px solid $color-border;
+  max-width: 360px;
   border-radius: $radius-xl;
   padding: $space-8 $space-6;
-}
 
-.login-logo {
-  display: block;
-  width: 28%;
-  margin: 0 auto $space-8;
+  .login-logo {
+    display: block;
+    width: 96px;
+    margin: 0 auto $space-8;
+  }
+
+  input {
+    text-align: center;
+  }
 }
 
 form {

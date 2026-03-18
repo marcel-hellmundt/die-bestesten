@@ -1,0 +1,43 @@
+// Self-hosted fonts
+
+@font-face {
+  font-family: 'Euclid';
+  src: url('/font/euclid_light.ttf') format('truetype');
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Euclid';
+  src: url('/font/euclid_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Euclid';
+  src: url('/font/euclid_medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Euclid';
+  src: url('/font/euclid_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('/font/nunito.ttf') format('truetype');
+  font-weight: 100 900; // variable font range
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bridge';
+  src: url('/font/bridge.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
