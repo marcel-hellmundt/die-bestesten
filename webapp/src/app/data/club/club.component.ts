@@ -1,8 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { DataCacheService } from '../../core/data-cache.service';
 import { Club } from '../../core/models/club.model';
 
 @Component({
@@ -12,8 +13,9 @@ import { Club } from '../../core/models/club.model';
   styleUrl: './club.component.scss'
 })
 export class ClubDataComponent {
-  private api  = inject(ApiService);
-  private auth = inject(AuthService);
+  private api   = inject(ApiService);
+  private auth  = inject(AuthService);
+  cache         = inject(DataCacheService);
 
   private reload$ = new BehaviorSubject<void>(undefined);
 
@@ -41,8 +43,49 @@ export class ClubDataComponent {
     );
   });
 
+  // Previous season = second entry (seasons are DESC by start_date)
+  private prevSeasonId = computed(() => this.cache.seasons()[1]?.id ?? null);
+
+  private prevSeasonState = toSignal(
+    toObservable(this.prevSeasonId).pipe(
+      switchMap(id => {
+        if (!id) return of({ data: [] as any[], loading: false });
+        return this.api.get<any[]>(`club_in_season?season_id=${id}`).pipe(
+          map(data => ({ data, loading: false })),
+          startWith({ data: [] as any[], loading: true }),
+          catchError(() => of({ data: [] as any[], loading: false }))
+        );
+      })
+    )
+  );
+
+  private prevSeasonEntries = computed(() => this.prevSeasonState()?.data ?? []);
+
+  bundesligaClubs = computed(() => {
+    const division = this.cache.divisions().find(d => d.name === '1. Bundesliga');
+    if (!division) return [] as Club[];
+
+    const entries = this.prevSeasonEntries().filter(e => e.division_id === division.id);
+    const ids = new Set(entries.map((e: any) => e.club_id));
+    const positionMap = new Map(entries.map((e: any) => [e.club_id, e.position as number | null]));
+
+    return this.filteredItems()
+      .filter(c => ids.has(c.id))
+      .sort((a, b) => (positionMap.get(a.id) ?? 999) - (positionMap.get(b.id) ?? 999));
+  });
+
+  otherClubs = computed(() => {
+    const blIds = new Set(this.bundesligaClubs().map(c => c.id));
+    return this.filteredItems().filter(c => !blIds.has(c.id));
+  });
+
   isAdmin      = computed(() => this.auth.isAdmin());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  constructor() {
+    this.cache.ensureSeasons();
+    this.cache.ensureDivisions();
+  }
 
   migrate(): void {
     this.migrateState.set('loading');

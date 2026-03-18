@@ -25,30 +25,68 @@
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
-  <div class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th class="col-id">ID</th>
-          <th>Land</th>
-          <th>Name</th>
-          <th>Kürzel</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of filteredItems(); track item.id) {
-          <tr class="row-link" [routerLink]="[item.id]">
-            <td class="col-id">{{ item.id }}</td>
-            <td><img [src]="item.flagUrl" class="flag" /></td>
-            <td>
-              <span class="flex items-center gap-2">
-                <img [src]="item.logoUrl" [class]="item.logoClass" /> {{ item.name }}</span
-              >
-            </td>
-            <td>{{ item.short_name }}</td>
+
+  @if (bundesligaClubs().length > 0) {
+    <h3 class="table-section-title">1. Bundesliga</h3>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-id">ID</th>
+            <th class="col-pos">Platz</th>
+            <th>Land</th>
+            <th>Name</th>
+            <th>Kürzel</th>
           </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          @for (item of bundesligaClubs(); track item.id) {
+            <tr class="row-link" [routerLink]="[item.id]">
+              <td class="col-id">{{ item.id }}</td>
+              <td class="col-pos">{{ $index + 1 }}</td>
+              <td><img [src]="item.flagUrl" class="flag" /></td>
+              <td>
+                <span class="flex items-center gap-2">
+                  <img [src]="item.logoUrl" [class]="item.logoClass" /> {{ item.name }}</span
+                >
+              </td>
+              <td>{{ item.short_name }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (otherClubs().length > 0) {
+    @if (bundesligaClubs().length > 0) {
+      <h3 class="table-section-title">Weitere Vereine</h3>
+    }
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-id">ID</th>
+            <th>Land</th>
+            <th>Name</th>
+            <th>Kürzel</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of otherClubs(); track item.id) {
+            <tr class="row-link" [routerLink]="[item.id]">
+              <td class="col-id">{{ item.id }}</td>
+              <td><img [src]="item.flagUrl" class="flag" /></td>
+              <td>
+                <span class="flex items-center gap-2">
+                  <img [src]="item.logoUrl" [class]="item.logoClass" /> {{ item.name }}</span
+                >
+              </td>
+              <td>{{ item.short_name }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 }

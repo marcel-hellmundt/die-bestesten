@@ -135,8 +135,11 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/club_in_season',
-                        'description'  => 'Alle Einträge eines Clubs, neueste Saison zuerst',
-                        'query_params' => ['club_id' => 'UUID des Clubs'],
+                        'description'  => 'Einträge nach Club (neueste zuerst) oder nach Saison (nach Platz sortiert)',
+                        'query_params' => [
+                            'club_id'   => 'UUID des Clubs',
+                            'season_id' => 'UUID der Saison',
+                        ],
                     ],
                 ],
             ]),

@@ -14,4 +14,15 @@ trait ClubInSeasonTrait
         $query->execute([':club_id' => $clubId]);
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getClubInSeasonBySeason(string $seasonId): array
+    {
+        $query = $this->con->prepare(
+            "SELECT * FROM club_in_season
+             WHERE season_id = :season_id
+             ORDER BY position ASC"
+        );
+        $query->execute([':season_id' => $seasonId]);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

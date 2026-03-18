@@ -267,6 +267,28 @@
   }
 }
 
+// Position column — narrow, centered
+.col-pos {
+  width: 3rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+// Section title above a table group
+.table-section-title {
+  font-family: $font-display;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $color-muted;
+  margin: $space-6 0 $space-2;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
 // Global page title
 .page-title {
   font-family: $font-display;
