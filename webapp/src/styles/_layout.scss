@@ -227,6 +227,9 @@
   tbody tr:hover {
     background-color: $color-surface-alt;
   }
+  tbody tr.row-link {
+    cursor: pointer;
+  }
   tbody tr:last-child td {
     border-bottom: none;
   }

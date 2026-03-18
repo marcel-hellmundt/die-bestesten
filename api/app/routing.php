@@ -110,6 +110,19 @@ class Routing
                 ],
             ]),
 
+            new Route('club_in_season', 'ClubInSeason', [
+                'title'       => 'ClubInSeason',
+                'description' => 'Club-Saison-Zuordnungen mit Division und Tabellenplatz',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/club_in_season',
+                        'description'  => 'Alle Einträge eines Clubs, neueste Saison zuerst',
+                        'query_params' => ['club_id' => 'UUID des Clubs'],
+                    ],
+                ],
+            ]),
+
             new Route('player', 'Player', [
                 'title'       => 'Player',
                 'description' => 'Spieler mit eingebetteten aktuellen Club- und Saisondaten im Detailabruf',

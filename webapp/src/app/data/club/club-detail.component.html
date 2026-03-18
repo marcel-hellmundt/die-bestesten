@@ -1,0 +1,51 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (club(); as c) {
+  <div class="detail-header">
+    <a class="back-link" routerLink="../">← Alle Clubs</a>
+
+    <div class="club-hero">
+      <img [src]="c.logoUrl" [class]="c.logoClass" class="club-logo" alt="" />
+      <div class="club-info">
+        <h1 class="club-name">{{ c.name }}</h1>
+        @if (c.short_name) {
+          <span class="club-short">{{ c.short_name }}</span>
+        }
+        <img [src]="c.flagUrl" class="club-flag" alt="" />
+      </div>
+    </div>
+  </div>
+
+  <section class="detail-section">
+    <h2 class="section-title">Saisons</h2>
+
+    @if (seasonsLoading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (seasons().length === 0) {
+      <p class="state-msg">Keine Saison-Daten vorhanden.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Saison</th>
+              <th>Division</th>
+              <th>Platz</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of seasons(); track s.id) {
+              <tr>
+                <td>{{ cache.seasonName(s.season_id) }}</td>
+                <td>{{ s.division_id }}</td>
+                <td>{{ s.position ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

@@ -5,6 +5,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
 import { ClubDataComponent } from './club/club.component';
+import { ClubDetailComponent } from './club/club-detail.component';
 import { SeasonDataComponent } from './season/season.component';
 import { PlayerDataComponent } from './player/player.component';
 import { MatchdayDataComponent } from './matchday/matchday.component';
@@ -17,6 +18,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'country', pathMatch: 'full' },
       { path: 'country',  component: CountryDataComponent },
       { path: 'club',     component: ClubDataComponent },
+      { path: 'club/:id', component: ClubDetailComponent },
       { path: 'season',   component: SeasonDataComponent },
       { path: 'player',   component: PlayerDataComponent },
       { path: 'matchday', component: MatchdayDataComponent },
@@ -29,13 +31,14 @@ const routes: Routes = [
     DataComponent,
     CountryDataComponent,
     ClubDataComponent,
+    ClubDetailComponent,
     SeasonDataComponent,
     PlayerDataComponent,
     MatchdayDataComponent,
   ],
   imports: [
     CommonModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
   ]
 })
 export class DataModule {}

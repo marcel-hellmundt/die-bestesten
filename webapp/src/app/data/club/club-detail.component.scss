@@ -1,0 +1,69 @@
+@use '../../../styles/variables' as *;
+
+.detail-header {
+  margin-bottom: $space-8;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  text-decoration: none;
+  margin-bottom: $space-6;
+  transition: color $transition-fast;
+
+  &:hover { color: $color-text; }
+}
+
+.club-hero {
+  display: flex;
+  align-items: center;
+  gap: $space-6;
+}
+
+.club-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.club-info {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.club-name {
+  font-size: $font-4xl;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  margin: 0;
+}
+
+.club-short {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.club-flag {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.detail-section {
+  margin-bottom: $space-8;
+}
+
+.section-title {
+  font-size: $font-lg;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $space-4;
+  color: $color-text;
+}
