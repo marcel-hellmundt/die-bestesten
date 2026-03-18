@@ -39,7 +39,7 @@
             @for (s of seasons(); track s.id) {
               <tr>
                 <td>{{ cache.seasonName(s.season_id) }}</td>
-                <td>{{ s.division_id }}</td>
+                <td>{{ cache.divisionName(s.division_id) }}</td>
                 <td>{{ s.position ?? '—' }}</td>
               </tr>
             }

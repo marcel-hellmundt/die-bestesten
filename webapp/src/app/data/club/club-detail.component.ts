@@ -47,5 +47,6 @@ export class ClubDetailComponent {
 
   constructor() {
     this.cache.ensureSeasons();
+    this.cache.ensureDivisions();
   }
 }

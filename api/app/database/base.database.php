@@ -4,6 +4,7 @@ require_once 'season.database.php';
 require_once 'matchday.database.php';
 require_once 'club.database.php';
 require_once 'club_in_season.database.php';
+require_once 'division.database.php';
 require_once 'player.database.php';
 
 class Database
@@ -13,6 +14,7 @@ class Database
     use MatchdayTrait;
     use ClubTrait;
     use ClubInSeasonTrait;
+    use DivisionTrait;
     use PlayerTrait;
 
     private $con;

@@ -110,6 +110,24 @@ class Routing
                 ],
             ]),
 
+            new Route('division', 'Division', [
+                'title'       => 'Division',
+                'description' => 'Spielklassen (1. Bundesliga, 2. Bundesliga, …)',
+                'endpoints'   => [
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/division',
+                        'description' => 'Alle Divisionen, sortiert nach Level',
+                    ],
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/division/:id',
+                        'description' => 'Eine Division per ID',
+                        'path_params' => [':id' => 'UUID der Division'],
+                    ],
+                ],
+            ]),
+
             new Route('club_in_season', 'ClubInSeason', [
                 'title'       => 'ClubInSeason',
                 'description' => 'Club-Saison-Zuordnungen mit Division und Tabellenplatz',
