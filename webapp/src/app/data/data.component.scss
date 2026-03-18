@@ -1,16 +1,8 @@
 @use '../../styles/variables' as *;
 
-.page-title {
-  font-size: $font-2xl;
-  font-weight: $font-weight-semibold;
-  color: $color-text;
-  margin-bottom: $space-6;
-}
-
 .sub-nav {
   display: flex;
   gap: $space-1;
-  border-bottom: 1px solid $color-border;
   margin-bottom: $space-6;
   overflow-x: auto;
   scrollbar-width: none;
@@ -19,19 +11,30 @@
 }
 
 .sub-nav-item {
-  padding: $space-2 $space-4;
+  padding: $space-1 $space-4;
+  height: $control-height;
+  display: inline-flex;
+  align-items: center;
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   color: $color-text-muted;
   text-decoration: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color $transition-fast, border-color $transition-fast;
+  border-radius: $radius-full;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition:
+    color $transition-fast,
+    background-color $transition-fast,
+    border-color $transition-fast;
 
-  &:hover { color: $color-text; }
+  &:hover {
+    color: $color-text;
+    background-color: $color-surface-alt;
+  }
 
   &--active {
     color: $color-text;
-    border-bottom-color: $color-text;
+    background-color: $color-surface-alt;
+    border-color: $color-border;
   }
 }

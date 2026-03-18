@@ -212,11 +212,12 @@
   }
 
   th {
+    font-family: $font-display;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
-    font-size: $font-xs;
+    font-size: $font-sm;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
   }
 
   td {
@@ -261,6 +262,17 @@
   @media (max-width: $mobile-breakpoint) {
     display: none;
   }
+}
+
+// Global page title
+.page-title {
+  font-family: $font-display;
+  font-size: $font-3xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: $color-text;
+  margin-bottom: $space-6;
 }
 
 .state-msg {

@@ -1,16 +1,19 @@
 @use 'variables' as *;
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: $font-body;
   font-size: $font-md;
   font-weight: $font-weight-normal;
   color: $color-text;
   background-color: $color-bg;
+  letter-spacing: -0.01em;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: $font-weight-semibold;
-  line-height: 1.25;
+  font-family: $font-display;
+  font-weight: $font-weight-bold;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
   color: $color-text;
 }
 
@@ -50,3 +53,8 @@ strong {
 .font-medium   { font-weight: $font-weight-medium; }
 .font-semibold { font-weight: $font-weight-semibold; }
 .font-bold     { font-weight: $font-weight-bold; }
+
+.font-display {
+  font-family: $font-display;
+  letter-spacing: 0.01em;
+}

@@ -14,28 +14,28 @@
   align-items: center;
   gap: $space-3;
   padding: 0 $space-3;
-  font-weight: $font-weight-medium;
+
   .manager {
-    font-size: $font-md;
+    font-family: $font-display;
+    font-size: $font-lg;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    color: $color-text;
   }
+
   .team {
     font-size: $font-xs;
     color: $color-text-muted;
+    margin-top: 1px;
   }
 }
 
 .nav-logo {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   flex-shrink: 0;
-}
-
-.nav-title {
-  font-size: $font-md;
-  font-weight: $font-weight-bold;
-  color: $color-text;
-  letter-spacing: -0.01em;
 }
 
 // ── Divider ───────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@
 // ── Mobile-only bottom bar ────────────────────────────────────────────────────
 
 .nav-mobile {
-  display: none; // shown only on mobile via media query
+  display: none;
   list-style: none;
 }
 
@@ -59,25 +59,26 @@
 .nav-groups-top {
   display: flex;
   flex-direction: column;
-  gap: $space-6;
+  gap: $space-5;
 }
 
 .nav-groups-bottom {
   display: flex;
   flex-direction: column;
-  gap: $space-6;
+  gap: $space-5;
   margin-top: auto;
 }
 
 .nav-group-label {
   display: block;
+  font-family: $font-display;
   font-size: $font-xs;
   font-weight: $font-weight-semibold;
   color: $color-text-muted;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.1em;
   padding: 0 $space-3;
-  margin-bottom: $space-1;
+  margin-bottom: $space-2;
 }
 
 // ── Items ─────────────────────────────────────────────────────────────────────
@@ -86,7 +87,7 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: $space-1;
+  gap: 2px;
 }
 
 .nav-item {
@@ -99,9 +100,11 @@
   font-weight: $font-weight-medium;
   color: $color-text-muted;
   text-decoration: none;
+  border-left: 2px solid transparent;
   transition:
     background-color $transition-fast,
-    color $transition-fast;
+    color $transition-fast,
+    border-color $transition-fast;
 
   &:hover {
     background-color: $color-surface-alt;
@@ -111,13 +114,15 @@
   &--active {
     color: $color-text;
     background-color: $color-surface-alt;
+    border-left-color: $color-text;
+    border-radius: 0 $radius-md $radius-md 0;
   }
 }
 
 .nav-icon {
-  font-size: $font-lg;
-  line-height: 1;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .nav-logout {
@@ -155,10 +160,14 @@
     gap: $space-1;
     padding: $space-2 $space-3;
     border-radius: 0;
+    border-left: none;
     font-size: $font-xs;
 
     &--active {
+      border-left: none;
       border-bottom: 2px solid $color-text;
+      border-radius: 0;
+      background-color: transparent;
     }
   }
 }
