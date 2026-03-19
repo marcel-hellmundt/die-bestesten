@@ -63,19 +63,20 @@ export class ClubDataComponent {
 
   bundesligaClubs = computed(() => {
     const division = this.cache.divisions().find(d => d.name === '1. Bundesliga');
-    if (!division) return [] as Club[];
+    if (!division) return [] as { club: Club; position: number | null }[];
 
-    const entries = this.prevSeasonEntries().filter(e => e.division_id === division.id);
-    const ids = new Set(entries.map((e: any) => e.club_id));
+    const entries = this.prevSeasonEntries().filter((e: any) => e.division_id === division.id);
     const positionMap = new Map(entries.map((e: any) => [e.club_id, e.position as number | null]));
+    const ids = new Set(positionMap.keys());
 
     return this.filteredItems()
       .filter(c => ids.has(c.id))
-      .sort((a, b) => (positionMap.get(a.id) ?? 999) - (positionMap.get(b.id) ?? 999));
+      .map(c => ({ club: c, position: positionMap.get(c.id) ?? null }))
+      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
   });
 
   otherClubs = computed(() => {
-    const blIds = new Set(this.bundesligaClubs().map(c => c.id));
+    const blIds = new Set(this.bundesligaClubs().map(e => e.club.id));
     return this.filteredItems().filter(c => !blIds.has(c.id));
   });
 

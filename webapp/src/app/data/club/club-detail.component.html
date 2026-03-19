@@ -19,32 +19,137 @@
   </div>
 
   <section class="detail-section">
-    <h2 class="section-title">Saisons</h2>
-
     @if (seasonsLoading()) {
       <p class="state-msg">Laden…</p>
     } @else if (seasons().length === 0) {
       <p class="state-msg">Keine Saison-Daten vorhanden.</p>
     } @else {
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Saison</th>
-              <th>Division</th>
-              <th>Platz</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of seasons(); track s.id) {
+      <div class="seasons-layout">
+        <div class="seasons-col">
+          <div class="section-header">
+            <h2 class="section-title">Saisons</h2>
+            <button
+              class="btn-edit"
+              [class.btn-edit--active]="isEditing()"
+              (click)="toggleEdit()"
+              [title]="isEditing() ? 'Bearbeitung beenden' : 'Bearbeiten'"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M8.5 1.5l2 2-6 6-2.5.5.5-2.5 6-6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
               <tr>
-                <td>{{ cache.seasonName(s.season_id) }}</td>
-                <td>{{ cache.divisionName(s.division_id) }}</td>
-                <td>{{ s.position ?? '—' }}</td>
+                <th>Saison</th>
+                <th>Division</th>
+                <th>Platz</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (s of seasons(); track s.id) {
+                <tr [class.row--editing]="isEditing()">
+                  <td>{{ cache.seasonName(s.season_id) }}</td>
+
+                  @if (isEditing()) {
+                    <td>
+                      <select
+                        class="input input--sm"
+                        [value]="s.division_id"
+                        (change)="onDivisionChange(s, $event)"
+                        [disabled]="patchingId() === s.id"
+                      >
+                        @for (div of cache.divisions(); track div.id) {
+                          <option [value]="div.id" [selected]="div.id === s.division_id">{{ div.name }}</option>
+                        }
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        class="input input--sm"
+                        type="number"
+                        min="1"
+                        [value]="s.position ?? ''"
+                        (change)="onPositionChange(s, $event)"
+                        [disabled]="patchingId() === s.id"
+                      />
+                    </td>
+                  } @else {
+                    <td>
+                      <span class="division-cell">
+                        <span class="division-badge" [style.background-color]="divisionColor(s.division_id)"></span>
+                        {{ cache.divisionName(s.division_id) }}
+                      </span>
+                    </td>
+                    <td>{{ s.position ?? '—' }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        </div>
+
+        <div class="chart-col">
+          <h2 class="section-title">Platzierungen</h2>
+        @if (chartData(); as chart) {
+          <div class="chart-container">
+            <svg
+              class="position-chart"
+              [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+              [attr.width]="chartW"
+              [attr.height]="chartH"
+              aria-hidden="true"
+            >
+              <!-- Y-axis boundary + label lines -->
+              @for (tick of chart.yTicks; track tick.label) {
+                <line
+                  [attr.x1]="padL" [attr.y1]="tick.y"
+                  [attr.x2]="chartW - padR" [attr.y2]="tick.y"
+                  class="chart-grid"
+                />
+                <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">
+                  {{ tick.label }}
+                </text>
+              }
+
+              <!-- Division boundary lines -->
+              @for (line of chart.divLines; track line.label) {
+                <line
+                  [attr.x1]="padL" [attr.y1]="line.y"
+                  [attr.x2]="chartW - padR" [attr.y2]="line.y"
+                  class="chart-divider"
+                />
+              }
+
+              <!-- Line path -->
+              <path [attr.d]="chart.pathD" class="chart-line" fill="none" />
+
+              <!-- Dots -->
+              @for (pt of chart.points; track pt.label) {
+                <circle
+                  [attr.cx]="pt.x" [attr.cy]="pt.y" r="3.5"
+                  class="chart-dot"
+                  [attr.fill]="pt.color"
+                  [attr.stroke]="pt.color"
+                >
+                  <title>{{ pt.label }}: {{ pt.division }}, Platz {{ pt.position }}</title>
+                </circle>
+              }
+
+              <!-- X-axis labels -->
+              <text [attr.x]="chart.xLabels[0].x" [attr.y]="chartH - 4" class="chart-label chart-label--x-start">
+                {{ chart.xLabels[0].label }}
+              </text>
+              <text [attr.x]="chart.xLabels[1].x" [attr.y]="chartH - 4" class="chart-label chart-label--x-end">
+                {{ chart.xLabels[1].label }}
+              </text>
+            </svg>
+          </div>
+        }
+        </div>
       </div>
     }
   </section>

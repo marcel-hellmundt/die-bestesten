@@ -2,68 +2,204 @@
 
 .detail-header {
   margin-bottom: $space-8;
-}
 
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-1;
-  font-size: $font-sm;
-  color: $color-text-muted;
-  text-decoration: none;
-  margin-bottom: $space-6;
-  transition: color $transition-fast;
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    font-size: $font-sm;
+    color: $color-text-muted;
+    text-decoration: none;
+    margin-bottom: $space-6;
+    transition: color $transition-fast;
 
-  &:hover { color: $color-text; }
-}
+    &:hover { color: $color-text; }
+  }
 
-.club-hero {
-  display: flex;
-  align-items: center;
-  gap: $space-6;
-}
+  .club-hero {
+    display: flex;
+    align-items: center;
+    gap: $space-6;
 
-.club-logo {
-  width: 96px;
-  height: 96px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
+    .club-logo {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
 
-.club-info {
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-}
+    .club-info {
+      display: flex;
+      flex-direction: column;
+      gap: $space-2;
 
-.club-name {
-  font-size: $font-4xl;
-  font-weight: $font-weight-bold;
-  line-height: 1;
-  margin: 0;
-}
+      .club-name {
+        font-size: $font-4xl;
+        font-weight: $font-weight-bold;
+        line-height: 1;
+        margin: 0;
+      }
 
-.club-short {
-  font-size: $font-sm;
-  color: $color-text-muted;
-  font-weight: $font-weight-medium;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
+      .club-short {
+        font-size: $font-sm;
+        color: $color-text-muted;
+        font-weight: $font-weight-medium;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
 
-.club-flag {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
+      .club-flag {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+      }
+    }
+  }
 }
 
 .detail-section {
   margin-bottom: $space-8;
+
+  .section-title {
+    font-size: $font-lg;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $space-4;
+    color: $color-text;
+  }
+
+  .seasons-layout {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 40%);
+    gap: $space-6;
+    align-items: start;
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+
+    .seasons-col,
+    .chart-col {
+      display: flex;
+      flex-direction: column;
+      gap: $space-3;
+
+      .section-title { margin-bottom: 0; }
+    }
+  }
 }
 
-.section-title {
-  font-size: $font-lg;
-  font-weight: $font-weight-semibold;
-  margin-bottom: $space-4;
-  color: $color-text;
+// Section header with edit toggle
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-text;
+  }
+
+  &--active {
+    background: $color-text;
+    border-color: $color-text;
+    color: $color-surface;
+  }
+}
+
+.row--editing td {
+  background: $color-surface-alt;
+}
+
+.input--sm {
+  height: 28px;
+  font-size: $font-sm;
+  padding-inline: $space-2;
+  min-width: 0;
+  width: 100%;
+}
+
+.division-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.division-badge {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.chart-container {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: $space-4;
+  overflow: hidden;
+
+  .position-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+
+    .chart-grid {
+      stroke: $color-border;
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+    }
+
+    .chart-divider {
+      stroke: $color-text-muted;
+      stroke-width: 1;
+      opacity: 0.4;
+    }
+
+    .chart-line {
+      stroke: $color-text;
+      stroke-width: 2;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    .chart-dot {
+      stroke-width: 2;
+    }
+
+    .chart-label {
+      font-family: $font-body;
+      font-size: 10px;
+      fill: $color-text-muted;
+
+      &--y {
+        text-anchor: end;
+        dominant-baseline: middle;
+      }
+
+      &--x-start {
+        dominant-baseline: auto;
+        text-anchor: start;
+      }
+
+      &--x-end {
+        dominant-baseline: auto;
+        text-anchor: end;
+      }
+    }
+  }
 }

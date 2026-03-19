@@ -3,10 +3,11 @@ import { ApiService } from './api.service';
 import { Season } from './models/season.model';
 import { map } from 'rxjs';
 
-interface Division {
+export interface Division {
   id: string;
   name: string;
   level: number;
+  seats: number;
   country_id: string;
 }
 

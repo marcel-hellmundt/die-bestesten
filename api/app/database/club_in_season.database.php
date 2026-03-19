@@ -15,6 +15,28 @@ trait ClubInSeasonTrait
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function updateClubInSeason(string $id, ?string $divisionId, mixed $position): void
+    {
+        $sets   = [];
+        $params = [':id' => $id];
+
+        if ($divisionId !== null) {
+            $sets[]               = 'division_id = :division_id';
+            $params[':division_id'] = $divisionId;
+        }
+        if ($position !== null) {
+            $sets[]            = 'position = :position';
+            $params[':position'] = (int) $position;
+        } else {
+            $sets[]  = 'position = NULL';
+        }
+
+        $query = $this->con->prepare(
+            'UPDATE club_in_season SET ' . implode(', ', $sets) . ' WHERE id = :id'
+        );
+        $query->execute($params);
+    }
+
     public function getClubInSeasonBySeason(string $seasonId): array
     {
         $query = $this->con->prepare(

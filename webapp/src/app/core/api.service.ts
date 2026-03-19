@@ -19,4 +19,10 @@ export class ApiService {
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
     return this.http.post<T>(`${this.base}/${path}`, body, { headers });
   }
+
+  patch<T>(path: string, body: unknown = {}): Observable<T> {
+    const token = this.auth.getToken();
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.patch<T>(`${this.base}/${path}`, body, { headers });
+  }
 }

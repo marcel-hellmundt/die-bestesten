@@ -40,17 +40,17 @@
           </tr>
         </thead>
         <tbody>
-          @for (item of bundesligaClubs(); track item.id) {
-            <tr class="row-link" [routerLink]="[item.id]">
-              <td class="col-id">{{ item.id }}</td>
-              <td class="col-pos">{{ $index + 1 }}</td>
-              <td><img [src]="item.flagUrl" class="flag" /></td>
+          @for (entry of bundesligaClubs(); track entry.club.id) {
+            <tr class="row-link" [routerLink]="[entry.club.id]">
+              <td class="col-id">{{ entry.club.id }}</td>
+              <td class="col-pos">{{ entry.position ?? '—' }}</td>
+              <td><img [src]="entry.club.flagUrl" class="flag" /></td>
               <td>
                 <span class="flex items-center gap-2">
-                  <img [src]="item.logoUrl" [class]="item.logoClass" /> {{ item.name }}</span
+                  <img [src]="entry.club.logoUrl" [class]="entry.club.logoClass" /> {{ entry.club.name }}</span
                 >
               </td>
-              <td>{{ item.short_name }}</td>
+              <td>{{ entry.club.short_name }}</td>
             </tr>
           }
         </tbody>
