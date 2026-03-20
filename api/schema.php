@@ -17,6 +17,28 @@ $methodColors = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Schema</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                background: '#1e293b',
+                primaryColor: '#1e3a5f',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#3b82f6',
+                lineColor: '#64748b',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#0f172a',
+                clusterBkg: '#0f172a',
+                clusterBorder: '#334155',
+                titleColor: '#94a3b8',
+                edgeLabelBackground: '#1e293b',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                fontSize: '13px',
+            }
+        });
+    </script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -127,6 +149,36 @@ $methodColors = [
             color: #334155;
             text-align: right;
         }
+
+        .diagram-section {
+            max-width: 860px;
+            margin: 0 auto 2.5rem;
+        }
+
+        .diagram-section h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 0.25rem;
+        }
+
+        .diagram-section p {
+            font-size: 0.8125rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .diagram-wrap {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .diagram-wrap .mermaid {
+            display: flex;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -135,6 +187,60 @@ $methodColors = [
     <h1>API Schema</h1>
     <p><?= htmlspecialchars('https://api.claude.die-bestesten.de') ?></p>
 </header>
+
+<div class="diagram-section">
+    <h2>Datenbankschema</h2>
+    <p>Pfeile zeigen Fremdschlüssel-Abhängigkeiten. Die Stufen geben die Migrations-Reihenfolge vor — eine Tabelle darf erst befüllt werden, wenn alle Tabellen der vorherigen Stufen vorhanden sind.</p>
+    <div class="diagram-wrap">
+        <pre class="mermaid">
+flowchart TD
+    subgraph S1["① Basis — keine Abhängigkeiten"]
+        direction LR
+        country("country")
+        season("season")
+        league("league")
+    end
+
+    subgraph S2["② Abhängig von Basis"]
+        direction LR
+        club("club")
+        division("division")
+        player("player")
+        matchday("matchday")
+    end
+
+    subgraph S3["③ Verknüpfungstabellen"]
+        direction LR
+        player_in_season("player_in_season")
+        player_in_club("player_in_club")
+        club_in_season("club_in_season")
+    end
+
+    subgraph S4["④ Bewertungen"]
+        player_rating("player_rating")
+    end
+
+    country -->|country_id| club
+    country -->|country_id| division
+    country -.->|country_id ?| player
+
+    season -->|season_id| matchday
+    season -->|season_id| player_in_season
+    season -->|season_id| club_in_season
+
+    player -->|player_id| player_in_season
+    player -->|player_id| player_in_club
+    player -->|player_id| player_rating
+
+    club -->|club_id| player_in_club
+    club -->|club_id| club_in_season
+
+    division -->|division_id| club_in_season
+
+    matchday -->|matchday_id| player_rating
+        </pre>
+    </div>
+</div>
 
 <?php foreach ($routes as $route): ?>
     <?php $docs = $route->docs; if (empty($docs)) continue; ?>
