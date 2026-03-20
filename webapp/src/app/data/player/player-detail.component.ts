@@ -11,6 +11,7 @@ interface PlayerInSeason {
   position: 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD';
   photo_uploaded: number;
   season_start: string;
+  total_points: string;
 }
 
 interface PlayerInClub {

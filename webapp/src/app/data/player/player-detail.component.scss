@@ -130,6 +130,12 @@
   text-align: right;
 }
 
+.col-points-season {
+  font-weight: $font-weight-bold;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .col-date {
   color: $color-text-muted;
   white-space: nowrap;

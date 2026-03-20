@@ -74,13 +74,17 @@ trait PlayerTrait
             $player['ratings']        = [];
         }
 
-        // All seasons (sorted newest first)
+        // All seasons (sorted newest first) with aggregated points
         $q = $this->con->prepare("
             SELECT pis.season_id, pis.price, pis.position, pis.photo_uploaded,
-                   s.start_date AS season_start
+                   s.start_date AS season_start,
+                   COALESCE(SUM(pr.points), 0) AS total_points
             FROM player_in_season pis
             JOIN season s ON s.id = pis.season_id
+            LEFT JOIN matchday m ON m.season_id = pis.season_id
+            LEFT JOIN player_rating pr ON pr.player_id = pis.player_id AND pr.matchday_id = m.id
             WHERE pis.player_id = :player_id
+            GROUP BY pis.season_id, pis.price, pis.position, pis.photo_uploaded, s.start_date
             ORDER BY s.start_date DESC
         ");
         $q->execute([':player_id' => $id]);

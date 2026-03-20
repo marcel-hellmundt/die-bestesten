@@ -56,6 +56,7 @@
                 <th>Saison</th>
                 <th>Position</th>
                 <th>Marktwert</th>
+                <th>Punkte</th>
               </tr>
             </thead>
             <tbody>
@@ -72,6 +73,7 @@
                     </span>
                   </td>
                   <td class="col-price">{{ formatPrice(s.price) }}</td>
+                <td class="col-points-season">{{ s.total_points }}</td>
                 </tr>
               }
             </tbody>
