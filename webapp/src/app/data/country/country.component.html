@@ -1,12 +1,14 @@
 <div class="list-bar">
-  <input class="input search-input" type="search" placeholder="Suchen…"
-         [value]="searchQuery()"
-         (input)="searchQuery.set($any($event.target).value)" />
+  <input
+    class="input search-input"
+    type="search"
+    placeholder="Suchen…"
+    [value]="searchQuery()"
+    (input)="searchQuery.set($any($event.target).value)"
+  />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
   @if (isAdmin()) {
-    <button class="btn btn-primary"
-            [disabled]="migrateState() === 'loading'"
-            (click)="migrate()">
+    <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
       {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
     </button>
     @if (migrateState() === 'success') {
@@ -28,15 +30,14 @@
       <thead>
         <tr>
           <th class="col-id">ID</th>
-          <th></th>
-          <th>Name</th>
+          <th colspan="2">Name</th>
         </tr>
       </thead>
       <tbody>
         @for (item of filteredItems(); track item.id) {
           <tr class="row-link" [routerLink]="[item.id]">
             <td class="col-id">{{ item.id }}</td>
-            <td><img [src]="item.flagUrl" class="flag" /></td>
+            <td class="col-flag"><img [src]="item.flagUrl" class="flag" /></td>
             <td>{{ item.name }}</td>
           </tr>
         }

@@ -5,168 +5,152 @@
   flex-direction: column;
   height: 100%;
   padding: $space-5 $space-3;
-}
 
-// ── Header ───────────────────────────────────────────────────────────────────
+  &-header {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: 0 $space-3;
 
-.nav-header {
-  display: flex;
-  align-items: center;
-  gap: $space-3;
-  padding: 0 $space-3;
+    .manager {
+      font-family: $font-display;
+      font-size: $font-lg;
+      font-weight: $font-weight-semibold;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      color: $color-text;
+    }
 
-  .manager {
-    font-family: $font-display;
-    font-size: $font-lg;
-    font-weight: $font-weight-semibold;
-    letter-spacing: 0.02em;
-    line-height: 1.1;
-    color: $color-text;
-  }
-
-  .team {
-    font-size: $font-xs;
-    color: $color-text-muted;
-    margin-top: 1px;
-  }
-}
-
-.nav-logo {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-// ── Divider ───────────────────────────────────────────────────────────────────
-
-.nav-divider {
-  border: none;
-  border-top: 1px solid $color-border;
-  width: 80%;
-  margin: $space-4 auto;
-}
-
-// ── Mobile-only bottom bar ────────────────────────────────────────────────────
-
-.nav-mobile {
-  display: none;
-  list-style: none;
-}
-
-// ── Groups ────────────────────────────────────────────────────────────────────
-
-.nav-groups-top {
-  display: flex;
-  flex-direction: column;
-  gap: $space-5;
-}
-
-.nav-groups-bottom {
-  display: flex;
-  flex-direction: column;
-  gap: $space-5;
-  margin-top: auto;
-}
-
-.nav-group-label {
-  display: block;
-  font-family: $font-display;
-  font-size: $font-xs;
-  font-weight: $font-weight-semibold;
-  color: $color-text-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 0 $space-3;
-  margin-bottom: $space-2;
-}
-
-// ── Items ─────────────────────────────────────────────────────────────────────
-
-.nav-items {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: $space-3;
-  padding: $space-2 $space-3;
-  border-radius: $radius-md;
-  font-size: $font-sm;
-  font-weight: $font-weight-medium;
-  color: $color-text-muted;
-  text-decoration: none;
-  border-left: 2px solid transparent;
-  transition:
-    background-color $transition-fast,
-    color $transition-fast,
-    border-color $transition-fast;
-
-  &:hover {
-    background-color: $color-surface-alt;
-    color: $color-text;
-  }
-
-  &--active {
-    color: $color-accent;
-    background-color: $color-surface-alt;
-    border-left-color: $color-accent;
-    border-radius: 0 $radius-md $radius-md 0;
-
-    .nav-icon {
-      color: $color-accent;
+    .team {
+      font-size: $font-xs;
+      color: $color-text-muted;
+      margin-top: 1px;
     }
   }
-}
 
-.nav-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
+  &-logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
 
-// ── Mobile bottom nav ─────────────────────────────────────────────────────────
+  &-divider {
+    border: none;
+    border-top: 1px solid $color-border;
+    width: 80%;
+    margin: $space-4 auto;
+  }
 
-@media (max-width: #{$mobile-breakpoint}) {
-  .nav {
+  &-mobile {
+    display: none;
+    list-style: none;
+  }
+
+  &-groups-top {
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+  }
+
+  &-groups-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+    margin-top: auto;
+  }
+
+  &-group-label {
+    display: block;
+    font-family: $font-display;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0 $space-3;
+    margin-bottom: $space-2;
+  }
+
+  &-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &-item {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-2 $space-3;
+    border-radius: $radius-md;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-muted;
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition:
+      background-color $transition-fast,
+      color $transition-fast,
+      border-color $transition-fast;
+
+    &:hover {
+      background-color: $color-surface-alt;
+      color: $color-text;
+    }
+
+    &--active {
+      color: $color-accent;
+      background-color: $color-surface-alt;
+      border-left-color: $color-accent;
+      border-radius: 0 $radius-md $radius-md 0;
+
+      .nav-icon { color: $color-accent; }
+    }
+  }
+
+  &-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  @media (max-width: #{$mobile-breakpoint}) {
     flex-direction: row;
     align-items: center;
     padding: $space-2 $space-4;
     height: 64px;
-  }
 
-  .nav-header,
-  .nav-divider,
-  .nav-group-label,
-  .nav-logout,
-  .nav-groups-bottom,
-  .nav-groups-top {
-    display: none;
-  }
+    &-header,
+    &-divider,
+    &-group-label,
+    &-logout,
+    &-groups-bottom,
+    &-groups-top {
+      display: none;
+    }
 
-  .nav-mobile {
-    display: flex;
-    flex: 1;
-    justify-content: space-around;
-  }
+    &-mobile {
+      display: flex;
+      flex: 1;
+      justify-content: space-around;
+    }
 
-  .nav-item {
-    flex-direction: column;
-    gap: $space-1;
-    padding: $space-2 $space-3;
-    border-radius: 0;
-    border-left: none;
-    font-size: $font-xs;
-
-    &--active {
-      border-left: none;
-      border-bottom: 2px solid $color-text;
+    &-item {
+      flex-direction: column;
+      gap: $space-1;
+      padding: $space-2 $space-3;
       border-radius: 0;
-      background-color: transparent;
+      border-left: none;
+      font-size: $font-xs;
+
+      &--active {
+        border-left: none;
+        border-bottom: 2px solid $color-text;
+        border-radius: 0;
+        background-color: transparent;
+      }
     }
   }
 }

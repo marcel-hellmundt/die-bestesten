@@ -222,6 +222,14 @@
 
   td {
     color: $color-text;
+    &.col-flag {
+      width: 32px;
+      padding-inline: 4px;
+      .flag {
+        height: 24px;
+        width: 24px;
+      }
+    }
   }
 
   tbody tr:hover {

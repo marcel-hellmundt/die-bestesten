@@ -4,7 +4,6 @@
 
 - **API-Änderungen**: Bei jeder Änderung in `/api` müssen `CLAUDE.md` (Datenbankschema + Endpunkte) und `api/schema.php` (routing.php-Docs) mitaktualisiert werden. Danach immer committen **und pushen** — nur durch Push wird die GitHub Action ausgelöst, die die Änderungen auf den Server deployed.
 - **Webapp-Änderungen**: Immer Mobile- und Desktop-Kompatibilität berücksichtigen. Informationen dürfen auf kleinen Screens ausgeblendet oder reduziert werden, wenn der Platz nicht reicht — aber die Kernfunktionalität muss auf beiden nutzbar sein.
-- **Commits**: Nach jeder abgeschlossenen Änderung automatisch committen.
 
 ## Überblick
 

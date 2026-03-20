@@ -1,7 +1,11 @@
 <div class="list-bar">
-  <input class="input search-input" type="search" placeholder="Suchen…"
-         [value]="searchQuery()"
-         (input)="searchQuery.set($any($event.target).value)" />
+  <input
+    class="input search-input"
+    type="search"
+    placeholder="Suchen…"
+    [value]="searchQuery()"
+    (input)="searchQuery.set($any($event.target).value)"
+  />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
 </div>
 
@@ -15,20 +19,21 @@
       <thead>
         <tr>
           <th class="col-id">ID</th>
-          <th>Name</th>
+          <th colspan="2">Name</th>
           <th>Level</th>
           <th>Plätze</th>
-          <th>Land</th>
         </tr>
       </thead>
       <tbody>
         @for (item of filteredItems(); track item.id) {
           <tr>
             <td class="col-id">{{ item.id }}</td>
+            <td class="col-flag">
+              <img [src]="'img/flags/' + item.country_id + '.svg'" class="flag" alt="" />
+            </td>
             <td>{{ item.name }}</td>
             <td>{{ item.level }}</td>
             <td>{{ item.seats }}</td>
-            <td>{{ item.country_id }}</td>
           </tr>
         }
       </tbody>
