@@ -149,9 +149,12 @@ trait PlayerTrait
 
         // 2. Migrate player_in_season
         // Old schema: player_in_season_id (UUID, reusable), has_photo instead of photo_uploaded
-        $seasonRows = $this->con_old->query("
-            SELECT player_in_season_id, player_id, season_id, price, position, has_photo
-            FROM player_in_season
+        $allSeasonRows = $this->con_old->query("
+            SELECT pis.player_in_season_id, pis.player_id, pis.season_id,
+                   pis.price, pis.position, pis.has_photo,
+                   p.player_id IS NOT NULL AS player_exists
+            FROM player_in_season pis
+            LEFT JOIN player p ON p.player_id = pis.player_id
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         $stmtSeason = $this->con->prepare(
@@ -163,7 +166,19 @@ trait PlayerTrait
                photo_uploaded = VALUES(photo_uploaded)"
         );
 
-        foreach ($seasonRows as $row) {
+        $migratedSeasons = 0;
+        $skipped = [];
+
+        foreach ($allSeasonRows as $row) {
+            if (!$row['player_exists']) {
+                $skipped[] = [
+                    'player_in_season_id' => $row['player_in_season_id'],
+                    'player_id'           => $row['player_id'],
+                    'season_id'           => $row['season_id'],
+                ];
+                continue;
+            }
+
             $stmtSeason->execute([
                 ':id'            => $row['player_in_season_id'],
                 ':player_id'     => $row['player_id'],
@@ -172,12 +187,14 @@ trait PlayerTrait
                 ':position'      => $row['position'],
                 ':photo_uploaded'=> $row['has_photo'],
             ]);
+            $migratedSeasons++;
         }
 
         return [
             'status'            => true,
             'migrated_players'  => count($playerRows),
-            'migrated_seasons'  => count($seasonRows),
+            'migrated_seasons'  => $migratedSeasons,
+            'skipped_seasons'   => $skipped,
         ];
     }
 
