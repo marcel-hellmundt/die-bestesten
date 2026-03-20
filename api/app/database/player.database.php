@@ -74,6 +74,30 @@ trait PlayerTrait
             $player['ratings']        = [];
         }
 
+        // All seasons (sorted newest first)
+        $q = $this->con->prepare("
+            SELECT pis.season_id, pis.price, pis.position, pis.photo_uploaded,
+                   s.start_date AS season_start
+            FROM player_in_season pis
+            JOIN season s ON s.id = pis.season_id
+            WHERE pis.player_id = :player_id
+            ORDER BY s.start_date DESC
+        ");
+        $q->execute([':player_id' => $id]);
+        $player['seasons'] = $q->fetchAll(PDO::FETCH_ASSOC);
+
+        // All club stints (sorted newest first)
+        $q = $this->con->prepare("
+            SELECT pic.club_id, pic.from_date, pic.to_date, pic.on_loan,
+                   c.name AS club_name, c.logo_uploaded
+            FROM player_in_club pic
+            JOIN club c ON pic.club_id = c.id
+            WHERE pic.player_id = :player_id
+            ORDER BY pic.from_date DESC
+        ");
+        $q->execute([':player_id' => $id]);
+        $player['clubs'] = $q->fetchAll(PDO::FETCH_ASSOC);
+
         return $player;
     }
 

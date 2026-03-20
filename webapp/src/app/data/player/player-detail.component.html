@@ -1,0 +1,109 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (player(); as p) {
+  <div class="detail-header">
+    <a class="back-link" routerLink="../">← Alle Spieler</a>
+
+    <div class="player-hero">
+      @if (p.country_id) {
+        <img [src]="'img/flags/' + p.country_id + '.svg'" class="player-flag" alt="" />
+      }
+      <div class="player-info">
+        <h1 class="player-name">{{ p.displayname }}</h1>
+        @if (p.first_name || p.last_name) {
+          <span class="player-full-name">{{ p.first_name }} {{ p.last_name }}</span>
+        }
+        <div class="player-meta">
+          @if (p.date_of_birth) {
+            <span class="meta-item">Geb.: <span>{{ formatDate(p.date_of_birth) }}</span></span>
+          }
+          @if (p.birth_city) {
+            <span class="meta-item">{{ p.birth_city }}</span>
+          }
+          @if (p.height_cm) {
+            <span class="meta-item"><span>{{ p.height_cm }}</span> cm</span>
+          }
+          @if (p.weight_kg) {
+            <span class="meta-item"><span>{{ p.weight_kg }}</span> kg</span>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="detail-section">
+    <h2 class="section-title">Saisons</h2>
+    @if (p.seasons.length === 0) {
+      <p class="state-msg">Keine Saison-Daten vorhanden.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Saison</th>
+              <th>Position</th>
+              <th>Marktwert</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of p.seasons; track s.season_id) {
+              <tr>
+                <td>{{ cache.seasonName(s.season_id) }}</td>
+                <td>
+                  <span class="position-badge">
+                    <span class="badge-dot" [style.background-color]="positionColor(s.position)"></span>
+                    {{ positionLabel(s.position) }}
+                  </span>
+                </td>
+                <td class="col-price">{{ formatPrice(s.price) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="detail-section">
+    <h2 class="section-title">Vereinshistorie</h2>
+    @if (p.clubs.length === 0) {
+      <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th colspan="2">Verein</th>
+              <th>Von</th>
+              <th>Bis</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of p.clubs; track c.club_id + c.from_date) {
+              <tr>
+                <td class="col-logo">
+                  <img
+                    [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
+                    class="club-logo"
+                    [class.logo--placeholder]="!c.logo_uploaded"
+                    alt=""
+                  />
+                </td>
+                <td>
+                  {{ c.club_name }}
+                  @if (c.on_loan) {
+                    <span class="loan-badge">Leihe</span>
+                  }
+                </td>
+                <td class="col-date">{{ formatDate(c.from_date) }}</td>
+                <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

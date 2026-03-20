@@ -10,6 +10,7 @@ import { ClubDataComponent } from './club/club.component';
 import { ClubDetailComponent } from './club/club-detail.component';
 import { SeasonDataComponent } from './season/season.component';
 import { PlayerDataComponent } from './player/player.component';
+import { PlayerDetailComponent } from './player/player-detail.component';
 import { MatchdayDataComponent } from './matchday/matchday.component';
 
 const routes: Routes = [
@@ -24,7 +25,8 @@ const routes: Routes = [
       { path: 'club',     component: ClubDataComponent },
       { path: 'club/:id', component: ClubDetailComponent },
       { path: 'season',   component: SeasonDataComponent },
-      { path: 'player',   component: PlayerDataComponent },
+      { path: 'player',      component: PlayerDataComponent },
+      { path: 'player/:id', component: PlayerDetailComponent },
       { path: 'matchday', component: MatchdayDataComponent },
     ]
   }
@@ -40,6 +42,7 @@ const routes: Routes = [
     ClubDetailComponent,
     SeasonDataComponent,
     PlayerDataComponent,
+    PlayerDetailComponent,
     MatchdayDataComponent,
   ],
   imports: [

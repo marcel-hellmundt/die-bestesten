@@ -39,9 +39,9 @@
       </thead>
       <tbody>
         @for (item of filteredItems(); track item.id) {
-          <tr>
+          <tr class="row-link" [routerLink]="[item.id]">
             <td class="col-id">{{ item.id }}</td>
-            <td><img [src]="item.flagUrl" class="flag" /></td>
+            <td><img [src]="item.flagUrl" class="flag" alt="" /></td>
             <td>{{ item.first_name }}</td>
             <td>{{ item.last_name }}</td>
             <td>{{ item.displayname }}</td>
