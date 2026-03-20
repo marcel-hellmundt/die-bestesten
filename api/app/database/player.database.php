@@ -58,7 +58,7 @@ trait PlayerTrait
             $player['current_season'] = $q->fetch(PDO::FETCH_ASSOC) ?: null;
 
             $q = $this->con->prepare("
-                SELECT pr.id, pr.grade, pr.is_starting, pr.is_substitute,
+                SELECT pr.id, pr.grade, pr.participation,
                        pr.goals, pr.assists, pr.clean_sheet,
                        pr.red_card, pr.yellow_red_card, pr.points,
                        m.number AS matchday_number, m.kickoff_date
@@ -258,16 +258,15 @@ trait PlayerTrait
 
         $stmtRating = $this->con->prepare(
             "INSERT INTO player_rating
-                (id, player_id, matchday_id, grade, is_starting, is_substitute,
+                (id, player_id, matchday_id, grade, participation,
                  goals, assists, clean_sheet, red_card, yellow_red_card, points)
              VALUES
-                (:id, :player_id, :matchday_id, :grade, :is_starting, :is_substitute,
+                (:id, :player_id, :matchday_id, :grade, :participation,
                  :goals, :assists, :clean_sheet, :red_card, :yellow_red_card, :points)
              ON DUPLICATE KEY UPDATE
-               grade           = VALUES(grade),
-               is_starting     = VALUES(is_starting),
-               is_substitute   = VALUES(is_substitute),
-               goals           = VALUES(goals),
+               grade         = VALUES(grade),
+               participation = VALUES(participation),
+               goals         = VALUES(goals),
                assists         = VALUES(assists),
                clean_sheet     = VALUES(clean_sheet),
                red_card        = VALUES(red_card),
@@ -297,8 +296,7 @@ trait PlayerTrait
                 ':player_id'     => $row['player_id'],
                 ':matchday_id'   => $matchdayId,
                 ':grade'         => $row['grade'],
-                ':is_starting'   => $row['start_lineup'],
-                ':is_substitute' => $row['substitution'],
+                ':participation' => $row['start_lineup'] ? 'starting' : ($row['substitution'] ? 'substitute' : null),
                 ':goals'         => $row['goals'],
                 ':assists'       => $row['assists'],
                 ':clean_sheet'   => $row['clean_sheet'],

@@ -79,8 +79,7 @@ CREATE TABLE IF NOT EXISTS player_rating (
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
     matchday_id CHAR(36) NOT NULL,              -- FK zu matchday.id
     grade DECIMAL(3,1) NOT NULL,                -- Note, z.B. 1.5; Wertebereich 1.0..6.0
-    is_starting BOOLEAN DEFAULT FALSE,          -- In der Startaufstellung
-    is_substitute BOOLEAN DEFAULT FALSE,        -- Eingesetzt als Einwechselspieler
+    participation ENUM('starting', 'substitute') DEFAULT NULL,  -- 'starting' = Startelf, 'substitute' = Eingewechselt, NULL = nicht gespielt
     goals INT DEFAULT 0,                        -- Tore
     assists INT DEFAULT 0,                      -- Vorlagen
     clean_sheet BOOLEAN DEFAULT FALSE,          -- Weiße Weste
