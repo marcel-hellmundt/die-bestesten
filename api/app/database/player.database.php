@@ -236,6 +236,79 @@ trait PlayerTrait
             $migratedClubs++;
         }
 
+        // 4. Migrate player_rating
+        // Old schema: player_rating_id, season_id + matchday (number) → resolve to matchday_id
+        // Ignored columns: club_id, sds, ligainsider_grade, is_live
+        $allRatingRows = $this->con_old->query("
+            SELECT pr.player_rating_id, pr.player_id, pr.season_id, pr.matchday AS matchday_number,
+                   pr.grade, pr.start_lineup, pr.substitution,
+                   pr.goals, pr.assists, pr.clean_sheet,
+                   pr.red_card, pr.yellow_red_card, pr.points,
+                   p.player_id IS NOT NULL AS player_exists
+            FROM player_rating pr
+            LEFT JOIN player p ON p.player_id = pr.player_id
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Build (season_id + matchday_number) → matchday_id map from new DB
+        $matchdayRows = $this->con->query("SELECT id, season_id, number FROM matchday")->fetchAll(PDO::FETCH_ASSOC);
+        $matchdayMap  = [];
+        foreach ($matchdayRows as $m) {
+            $matchdayMap[$m['season_id'] . '_' . $m['number']] = $m['id'];
+        }
+
+        $stmtRating = $this->con->prepare(
+            "INSERT INTO player_rating
+                (id, player_id, matchday_id, grade, is_starting, is_substitute,
+                 goals, assists, clean_sheet, red_card, yellow_red_card, points)
+             VALUES
+                (:id, :player_id, :matchday_id, :grade, :is_starting, :is_substitute,
+                 :goals, :assists, :clean_sheet, :red_card, :yellow_red_card, :points)
+             ON DUPLICATE KEY UPDATE
+               grade           = VALUES(grade),
+               is_starting     = VALUES(is_starting),
+               is_substitute   = VALUES(is_substitute),
+               goals           = VALUES(goals),
+               assists         = VALUES(assists),
+               clean_sheet     = VALUES(clean_sheet),
+               red_card        = VALUES(red_card),
+               yellow_red_card = VALUES(yellow_red_card),
+               points          = VALUES(points)"
+        );
+
+        $migratedRatings = 0;
+        $skippedRatings  = [];
+
+        foreach ($allRatingRows as $row) {
+            $matchdayId = $matchdayMap[$row['season_id'] . '_' . $row['matchday_number']] ?? null;
+
+            if (!$row['player_exists'] || !$matchdayId) {
+                $skippedRatings[] = [
+                    'player_rating_id' => $row['player_rating_id'],
+                    'player_id'        => $row['player_id'],
+                    'season_id'        => $row['season_id'],
+                    'matchday'         => $row['matchday_number'],
+                    'reason'           => !$row['player_exists'] ? 'player not found' : 'matchday not found',
+                ];
+                continue;
+            }
+
+            $stmtRating->execute([
+                ':id'            => $row['player_rating_id'],
+                ':player_id'     => $row['player_id'],
+                ':matchday_id'   => $matchdayId,
+                ':grade'         => $row['grade'],
+                ':is_starting'   => $row['start_lineup'],
+                ':is_substitute' => $row['substitution'],
+                ':goals'         => $row['goals'],
+                ':assists'       => $row['assists'],
+                ':clean_sheet'   => $row['clean_sheet'],
+                ':red_card'      => $row['red_card'],
+                ':yellow_red_card' => $row['yellow_red_card'],
+                ':points'        => $row['points'],
+            ]);
+            $migratedRatings++;
+        }
+
         return [
             'status'            => true,
             'migrated_players'  => count($playerRows),
@@ -243,6 +316,8 @@ trait PlayerTrait
             'skipped_seasons'   => $skipped,
             'migrated_clubs'    => $migratedClubs,
             'skipped_clubs'     => $skippedClubs,
+            'migrated_ratings'  => $migratedRatings,
+            'skipped_ratings'   => $skippedRatings,
         ];
     }
 

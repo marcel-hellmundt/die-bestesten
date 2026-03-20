@@ -185,6 +185,11 @@ class Routing
                         'path_params'  => [':id' => 'UUID des Spielers'],
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
                     ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/player/migrate',
+                        'description' => 'Migriert player, player_in_season, player_in_club und player_rating aus der alten DB — gibt migrated/skipped-Counts zurück (nur Admin)',
+                    ],
                 ],
             ]),
         ];

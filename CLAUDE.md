@@ -58,6 +58,7 @@ Vollständige Dokumentation unter `api/schema.php`. Endpoints:
 - `GET /season`, `GET /season/:id`, `GET /season/active`
 - `GET /matchday`, `GET /matchday/:id`
 - `GET /player`, `GET /player/:id`
+- `POST /player/migrate` — Migriert player, player_in_season, player_in_club, player_rating aus alter DB; gibt migrated/skipped-Counts zurück
 - `POST /auth` — JWT-Login
 
 ## Liga-spezifische Datenbank
