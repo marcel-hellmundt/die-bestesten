@@ -107,17 +107,16 @@
         }
 
         @if (showAddForm()) {
-          <div class="add-form">
+          <div class="add-form" (keydown.enter)="!adding() && submitAdd()">
             <div class="add-form-row">
               <div class="add-form-field">
                 <label class="add-form-label">Saison</label>
                 <select
                   class="input input--sm"
-                  [value]="newSeasonId()"
-                  (change)="newSeasonId.set($any($event.target).value)"
+                  (change)="onNewSeasonChange($any($event.target).value)"
                 >
                   @for (s of availableSeasons(); track s.id) {
-                    <option [value]="s.id">{{ s.displayName }}</option>
+                    <option [value]="s.id" [selected]="s.id === newSeasonId()">{{ s.displayName }}</option>
                   }
                 </select>
               </div>
@@ -126,12 +125,11 @@
                 <label class="add-form-label">Division</label>
                 <select
                   class="input input--sm"
-                  [value]="newDivisionId()"
                   (change)="newDivisionId.set($any($event.target).value)"
                 >
-                  <option value="">—</option>
+                  <option value="" [selected]="newDivisionId() === ''">—</option>
                   @for (d of cache.divisions(); track d.id) {
-                    <option [value]="d.id">{{ d.name }}</option>
+                    <option [value]="d.id" [selected]="d.id === newDivisionId()">{{ d.name }}</option>
                   }
                 </select>
               </div>
@@ -139,6 +137,7 @@
               <div class="add-form-field add-form-field--sm">
                 <label class="add-form-label">Platz</label>
                 <input
+                  #positionInput
                   class="input input--sm"
                   type="number"
                   min="1"
