@@ -13,7 +13,9 @@
     margin-bottom: $space-6;
     transition: color $transition-fast;
 
-    &:hover { color: $color-text; }
+    &:hover {
+      color: $color-text;
+    }
   }
 
   .player-hero {
@@ -21,9 +23,19 @@
     align-items: center;
     gap: $space-6;
 
+    .player-photo {
+      width: 160px;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+    }
+
     .player-flag {
-      width: 96px;
-      height: 96px;
+      width: 24px;
+      height: 24px;
       object-fit: contain;
       flex-shrink: 0;
     }

@@ -67,6 +67,14 @@ export class PlayerDetailComponent {
   loading = computed(() => this.state()?.loading ?? true);
   error = computed(() => this.state()?.error ?? null);
 
+  latestPhotoUrl = computed(() => {
+    const p = this.player();
+    if (!p) return null;
+    const latest = p.seasons[0]; // sorted newest first
+    if (!latest?.photo_uploaded) return null;
+    return `https://img.die-bestesten.de/img/player/${latest.season_id}/${p.id}.png`;
+  });
+
   private readonly positionColors: Record<string, string> = {
     FORWARD: '#ff3f34',
     MIDFIELDER: '#575fcf',

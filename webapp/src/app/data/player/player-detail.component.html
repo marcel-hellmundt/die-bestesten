@@ -7,26 +7,36 @@
     <a class="back-link" routerLink="../">← Alle Spieler</a>
 
     <div class="player-hero">
-      @if (p.country_id) {
-        <img [src]="'img/flags/' + p.country_id + '.svg'" class="player-flag" alt="" />
+      @if (latestPhotoUrl(); as photoUrl) {
+        <img [src]="photoUrl" class="player-photo" [alt]="p.displayname" />
       }
       <div class="player-info">
         <h1 class="player-name">{{ p.displayname }}</h1>
         @if (p.first_name || p.last_name) {
           <span class="player-full-name">{{ p.first_name }} {{ p.last_name }}</span>
         }
+
         <div class="player-meta">
+          @if (p.country_id) {
+            <img [src]="'img/flags/' + p.country_id + '.svg'" class="player-flag" alt="" />
+          }
           @if (p.date_of_birth) {
-            <span class="meta-item">Geb.: <span>{{ formatDate(p.date_of_birth) }}</span></span>
+            <span class="meta-item"
+              >Geb.: <span>{{ formatDate(p.date_of_birth) }}</span></span
+            >
           }
           @if (p.birth_city) {
             <span class="meta-item">{{ p.birth_city }}</span>
           }
           @if (p.height_cm) {
-            <span class="meta-item"><span>{{ p.height_cm }}</span> cm</span>
+            <span class="meta-item"
+              ><span>{{ p.height_cm }}</span> cm</span
+            >
           }
           @if (p.weight_kg) {
-            <span class="meta-item"><span>{{ p.weight_kg }}</span> kg</span>
+            <span class="meta-item"
+              ><span>{{ p.weight_kg }}</span> kg</span
+            >
           }
         </div>
       </div>
@@ -54,7 +64,10 @@
                   <td>{{ cache.seasonName(s.season_id) }}</td>
                   <td>
                     <span class="position-badge">
-                      <span class="badge-dot" [style.background-color]="positionColor(s.position)"></span>
+                      <span
+                        class="badge-dot"
+                        [style.background-color]="positionColor(s.position)"
+                      ></span>
                       {{ positionLabel(s.position) }}
                     </span>
                   </td>
@@ -76,19 +89,22 @@
             >
               @for (tick of chart.yTicks; track tick.y) {
                 <line
-                  [attr.x1]="padL" [attr.x2]="chartW - padR"
-                  [attr.y1]="tick.y" [attr.y2]="tick.y"
+                  [attr.x1]="padL"
+                  [attr.x2]="chartW - padR"
+                  [attr.y1]="tick.y"
+                  [attr.y2]="tick.y"
                   class="chart-grid"
                 />
-                <text
-                  [attr.x]="padL - 4" [attr.y]="tick.y"
-                  class="chart-label chart-label--y"
-                >{{ tick.label }}</text>
+                <text [attr.x]="padL - 4" [attr.y]="tick.y" class="chart-label chart-label--y">
+                  {{ tick.label }}
+                </text>
               }
               @for (bar of chart.bars; track bar.labelX) {
                 <rect
-                  [attr.x]="bar.x" [attr.y]="bar.y"
-                  [attr.width]="bar.width" [attr.height]="bar.height"
+                  [attr.x]="bar.x"
+                  [attr.y]="bar.y"
+                  [attr.width]="bar.width"
+                  [attr.height]="bar.height"
                   [attr.fill]="bar.color"
                   rx="3"
                 >
@@ -98,7 +114,9 @@
                   [attr.x]="bar.labelX"
                   [attr.y]="chartH - padB + 10"
                   class="chart-label chart-label--x"
-                >{{ bar.label }}</text>
+                >
+                  {{ bar.label }}
+                </text>
               }
             </svg>
           </div>
