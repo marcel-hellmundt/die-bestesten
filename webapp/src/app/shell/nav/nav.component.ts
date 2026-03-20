@@ -60,8 +60,7 @@ export class NavComponent {
     {
       label: '',
       items: [
-        { label: 'Einstellungen',   icon: 'settings', route: '/app/settings' },
-        { label: 'Data Management', icon: 'data',     route: '/app/data' },
+        { label: 'Data Management', icon: 'data', route: '/app/data' },
       ]
     }
   ];
