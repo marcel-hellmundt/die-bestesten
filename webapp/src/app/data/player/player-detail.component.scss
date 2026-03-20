@@ -151,6 +151,123 @@
   text-transform: uppercase;
 }
 
+.ratings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-4;
+
+  .section-title { margin-bottom: 0; }
+}
+
+.input--sm {
+  height: 28px;
+  font-size: $font-sm;
+  padding-inline: $space-2;
+}
+
+.ratings-table {
+  .col-matchday {
+    width: 32px;
+    color: $color-text-muted;
+    text-align: center;
+  }
+
+  .col-part {
+    width: 20px;
+    text-align: center;
+  }
+
+  .col-grade {
+    width: 52px;
+  }
+
+  .col-icons {
+    white-space: nowrap;
+
+    .icon {
+      vertical-align: middle;
+      margin-right: 2px;
+
+      &--goal   { color: #2d3436; }
+      &--assist {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #575fcf;
+      }
+    }
+  }
+
+  .col-card {
+    width: 28px;
+    text-align: center;
+  }
+
+  .col-points {
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+}
+
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  font-variant-numeric: tabular-nums;
+  color: white;
+
+  &--unset {
+    color: $color-text-muted;
+  }
+}
+
+.part-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+
+  &--start { background: #05c46b; }
+  &--sub   { background: #ffd32a; }
+}
+
+.card-wrap {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+
+  .card {
+    position: absolute;
+    width: 8px;
+    height: 12px;
+    border-radius: 2px;
+
+    &--yellow { background: #ffd32a; top: 0; left: 0; }
+    &--red    { background: #ff3f34; top: 2px; left: 4px; }
+  }
+}
+
+.card--red {
+  display: inline-block;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  background: #ff3f34;
+  vertical-align: middle;
+}
+
 .chart-container {
   background: $color-surface;
   border: 1px solid $color-border;

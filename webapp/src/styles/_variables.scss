@@ -67,6 +67,22 @@ $z-overlay: 300;
 $z-modal: 400;
 $z-toast: 500;
 
+// Grade colors (player rating notes 1.0–6.0)
+:root {
+  --grade-unset: #dfe6e9;
+  --grade-10:    #1565c0;
+  --grade-15:    #2e7d32;
+  --grade-20:    #43a047;
+  --grade-25:    #7cb342;
+  --grade-30:    #c0ca33;
+  --grade-35:    #fdd835;
+  --grade-40:    #ffb300;
+  --grade-45:    #fb8c00;
+  --grade-50:    #f4511e;
+  --grade-55:    #d84315;
+  --grade-60:    #212121;
+}
+
 // Control height — buttons and inputs are always the same height
 $control-height: 38px;
 

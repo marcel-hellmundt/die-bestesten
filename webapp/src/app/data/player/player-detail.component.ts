@@ -1,7 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith, switchMap } from 'rxjs';
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
+import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
@@ -22,6 +22,20 @@ interface PlayerInClub {
   on_loan: number;
 }
 
+interface PlayerRating {
+  id: string;
+  grade: string | null;
+  participation: 'starting' | 'substitute' | null;
+  goals: string;
+  assists: string;
+  clean_sheet: string;
+  red_card: string;
+  yellow_red_card: string;
+  points: string | null;
+  matchday_number: string;
+  kickoff_date: string;
+}
+
 interface PlayerDetail {
   id: string;
   country_id: string | null;
@@ -34,6 +48,7 @@ interface PlayerDetail {
   weight_kg: number | null;
   seasons: PlayerInSeason[];
   clubs: PlayerInClub[];
+  ratings: PlayerRating[];
 }
 
 @Component({
@@ -49,17 +64,21 @@ export class PlayerDetailComponent {
 
   private id$ = this.route.paramMap.pipe(map((p) => p.get('id')!));
 
+  selectedSeasonId = signal<string | null>(null);
+  private selectedSeason$ = toObservable(this.selectedSeasonId);
+
   private state = toSignal(
-    this.id$.pipe(
-      switchMap((id) =>
-        this.api.get<PlayerDetail>(`player/${id}`).pipe(
+    combineLatest([this.id$, this.selectedSeason$]).pipe(
+      switchMap(([id, seasonId]) => {
+        const url = seasonId ? `player/${id}?season_id=${seasonId}` : `player/${id}`;
+        return this.api.get<PlayerDetail>(url).pipe(
           map((data) => ({ data, loading: false, error: null as string | null })),
           startWith({ data: null as PlayerDetail | null, loading: true, error: null as string | null }),
           catchError(() =>
             of({ data: null as PlayerDetail | null, loading: false, error: 'Fehler beim Laden' }),
           ),
-        ),
-      ),
+        );
+      }),
     ),
   );
 
@@ -121,6 +140,15 @@ export class PlayerDetailComponent {
     if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + ' M';
     if (price >= 1_000)     return (price / 1_000).toFixed(0) + ' T';
     return String(price);
+  }
+
+  range(n: number | string): number[] {
+    return Array.from({ length: Math.max(0, +n) }, (_, i) => i);
+  }
+
+  gradeVar(grade: string | null): string {
+    if (!grade) return 'var(--grade-unset)';
+    return `var(--grade-${grade.replace('.', '')})`;
   }
 
   // Bar chart

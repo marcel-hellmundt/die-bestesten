@@ -165,4 +165,93 @@
       </div>
     }
   </section>
+
+  <section class="detail-section">
+    <div class="ratings-header">
+      <h2 class="section-title">Bewertungen</h2>
+      @if (p.seasons.length > 0) {
+        <select
+          class="input input--sm"
+          (change)="selectedSeasonId.set($any($event.target).value)"
+        >
+          @for (s of p.seasons; track s.season_id) {
+            <option
+              [value]="s.season_id"
+              [selected]="(selectedSeasonId() ?? p.seasons[0].season_id) === s.season_id"
+            >{{ cache.seasonName(s.season_id) }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    @if (p.ratings.length === 0) {
+      <p class="state-msg">Keine Bewertungen für diese Saison.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table ratings-table">
+          <thead>
+            <tr>
+              <th class="col-matchday">#</th>
+              <th class="col-part"></th>
+              <th class="col-grade">Note</th>
+              <th class="col-icons">Tore</th>
+              <th class="col-icons">Assists</th>
+              <th class="col-card">Karte</th>
+              <th class="col-points">Punkte</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of p.ratings; track r.id) {
+              <tr>
+                <td class="col-matchday">{{ r.matchday_number }}</td>
+                <td class="col-part">
+                  @if (r.participation === 'starting') {
+                    <span class="part-dot part-dot--start" title="Startelf"></span>
+                  } @else if (r.participation === 'substitute') {
+                    <span class="part-dot part-dot--sub" title="Eingewechselt"></span>
+                  }
+                </td>
+                <td class="col-grade">
+                  <span
+                    class="grade-badge"
+                    [style.background]="gradeVar(r.grade)"
+                    [class.grade-badge--unset]="!r.grade"
+                  >{{ r.grade ?? '—' }}</span>
+                </td>
+                <td class="col-icons">
+                  @for (i of range(r.goals); track i) {
+                    <svg class="icon icon--goal" viewBox="0 0 12 12" width="12" height="12" fill="none" aria-hidden="true">
+                      <circle cx="6" cy="6" r="5.5" fill="currentColor"/>
+                      <polygon points="6,3.5 8.4,5.2 7.5,8.0 4.5,8.0 3.6,5.2" fill="white"/>
+                      <line x1="6" y1="3.5" x2="6" y2="0.5" stroke="white" stroke-width="0.7"/>
+                      <line x1="8.4" y1="5.2" x2="11.2" y2="4.3" stroke="white" stroke-width="0.7"/>
+                      <line x1="7.5" y1="8.0" x2="9.2" y2="10.5" stroke="white" stroke-width="0.7"/>
+                      <line x1="4.5" y1="8.0" x2="2.8" y2="10.5" stroke="white" stroke-width="0.7"/>
+                      <line x1="3.6" y1="5.2" x2="0.8" y2="4.3" stroke="white" stroke-width="0.7"/>
+                    </svg>
+                  }
+                </td>
+                <td class="col-icons">
+                  @for (i of range(r.assists); track i) {
+                    <span class="icon icon--assist"></span>
+                  }
+                </td>
+                <td class="col-card">
+                  @if (+r.yellow_red_card) {
+                    <span class="card-wrap">
+                      <span class="card card--yellow"></span>
+                      <span class="card card--red"></span>
+                    </span>
+                  } @else if (+r.red_card) {
+                    <span class="card card--red"></span>
+                  }
+                </td>
+                <td class="col-points">{{ r.points ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
 }
