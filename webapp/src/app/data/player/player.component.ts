@@ -47,7 +47,7 @@ export class PlayerDataComponent {
 
   migrate(): void {
     this.migrateState.set('loading');
-    this.api.post<{ status: boolean; migrated: number }>('player/migrate').subscribe({
+    this.api.post<{ status: boolean; migrated_players: number; migrated_seasons: number }>('player/migrate').subscribe({
       next: () => {
         this.migrateState.set('success');
         this.reload$.next();

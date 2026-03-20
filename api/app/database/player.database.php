@@ -110,13 +110,14 @@ trait PlayerTrait
 
     public function migratePlayer(): array
     {
-        $rows = $this->con_old->query("
+        // 1. Migrate players
+        $playerRows = $this->con_old->query("
             SELECT player_id, country_code, firstname, lastname, displayname,
                    city, date_of_birth, height, weight
             FROM player
         ")->fetchAll(PDO::FETCH_ASSOC);
 
-        $stmt = $this->con->prepare(
+        $stmtPlayer = $this->con->prepare(
             "INSERT INTO player
                 (id, country_id, first_name, last_name, displayname, birth_city, date_of_birth, height_cm, weight_kg)
              VALUES
@@ -132,8 +133,8 @@ trait PlayerTrait
                weight_kg      = VALUES(weight_kg)"
         );
 
-        foreach ($rows as $row) {
-            $stmt->execute([
+        foreach ($playerRows as $row) {
+            $stmtPlayer->execute([
                 ':id'           => $row['player_id'],
                 ':country_id'   => $row['country_code'],
                 ':first_name'   => $row['firstname'],
@@ -146,7 +147,38 @@ trait PlayerTrait
             ]);
         }
 
-        return ['status' => true, 'migrated' => count($rows)];
+        // 2. Migrate player_in_season
+        // Old schema: player_in_season_id (UUID, reusable), has_photo instead of photo_uploaded
+        $seasonRows = $this->con_old->query("
+            SELECT player_in_season_id, player_id, season_id, price, position, has_photo
+            FROM player_in_season
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmtSeason = $this->con->prepare(
+            "INSERT INTO player_in_season (id, player_id, season_id, price, position, photo_uploaded)
+             VALUES (:id, :player_id, :season_id, :price, :position, :photo_uploaded)
+             ON DUPLICATE KEY UPDATE
+               price          = VALUES(price),
+               position       = VALUES(position),
+               photo_uploaded = VALUES(photo_uploaded)"
+        );
+
+        foreach ($seasonRows as $row) {
+            $stmtSeason->execute([
+                ':id'            => $row['player_in_season_id'],
+                ':player_id'     => $row['player_id'],
+                ':season_id'     => $row['season_id'],
+                ':price'         => $row['price'],
+                ':position'      => $row['position'],
+                ':photo_uploaded'=> $row['has_photo'],
+            ]);
+        }
+
+        return [
+            'status'            => true,
+            'migrated_players'  => count($playerRows),
+            'migrated_seasons'  => count($seasonRows),
+        ];
     }
 
     private function getActiveSeasonId(): ?string
