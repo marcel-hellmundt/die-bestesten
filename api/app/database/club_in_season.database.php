@@ -47,4 +47,28 @@ trait ClubInSeasonTrait
         $query->execute([':season_id' => $seasonId]);
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function clubInSeasonExists(string $clubId, string $seasonId): bool
+    {
+        $query = $this->con->prepare(
+            "SELECT COUNT(*) FROM club_in_season WHERE club_id = :club_id AND season_id = :season_id"
+        );
+        $query->execute([':club_id' => $clubId, ':season_id' => $seasonId]);
+        return (int) $query->fetchColumn() > 0;
+    }
+
+    public function createClubInSeason(string $id, string $clubId, string $seasonId, ?string $divisionId, ?int $position): void
+    {
+        $query = $this->con->prepare(
+            "INSERT INTO club_in_season (id, club_id, season_id, division_id, position)
+             VALUES (:id, :club_id, :season_id, :division_id, :position)"
+        );
+        $query->execute([
+            ':id'          => $id,
+            ':club_id'     => $clubId,
+            ':season_id'   => $seasonId,
+            ':division_id' => $divisionId,
+            ':position'    => $position,
+        ]);
+    }
 }

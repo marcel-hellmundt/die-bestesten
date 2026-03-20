@@ -20,7 +20,31 @@ class ClubInSeasonController extends _BaseController
         return ['status' => false, 'message' => 'club_id or season_id query parameter required'];
     }
 
-    protected function post(): mixed { return $this->methodNotAllowed(); }
+    protected function post(): mixed
+    {
+        $body       = $this->body();
+        $clubId     = $body['club_id']     ?? null;
+        $seasonId   = $body['season_id']   ?? null;
+        $divisionId = $body['division_id'] ?? null;
+        $position   = array_key_exists('position', $body)
+            ? ($body['position'] === null ? null : (int) $body['position'])
+            : null;
+
+        if (!$clubId || !$seasonId) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'club_id and season_id are required'];
+        }
+
+        if ($this->db->clubInSeasonExists($clubId, $seasonId)) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Dieser Verein hat bereits einen Eintrag für diese Saison'];
+        }
+
+        $id = $this->generateGUID();
+        $this->db->createClubInSeason($id, $clubId, $seasonId, $divisionId ?: null, $position);
+        http_response_code(201);
+        return ['status' => true, 'id' => $id];
+    }
 
     protected function patch(): mixed
     {

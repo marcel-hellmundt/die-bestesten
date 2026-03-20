@@ -95,6 +95,12 @@
   justify-content: space-between;
 }
 
+.section-header-actions {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
 .btn-edit {
   display: inline-flex;
   align-items: center;
@@ -144,6 +150,82 @@
   height: 8px;
   border-radius: 2px;
   flex-shrink: 0;
+}
+
+// Add form
+.add-form {
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  background: $color-surface-alt;
+}
+
+.add-form-row {
+  display: flex;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+
+.add-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  flex: 1;
+  min-width: 120px;
+
+  &--sm { flex: 0 0 80px; min-width: 0; }
+}
+
+.add-form-label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.add-form-error {
+  font-size: $font-sm;
+  color: #d63031;
+  margin: 0;
+}
+
+.add-form-actions {
+  display: flex;
+  gap: $space-2;
+}
+
+.btn-save {
+  height: 28px;
+  padding-inline: $space-3;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  border: none;
+  border-radius: $radius-sm;
+  background: $color-text;
+  color: $color-surface;
+  cursor: pointer;
+  transition: opacity $transition-fast;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-cancel {
+  height: 28px;
+  padding-inline: $space-3;
+  font-size: $font-sm;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: color $transition-fast, border-color $transition-fast;
+
+  &:hover { color: $color-text; border-color: $color-text; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .chart-container {

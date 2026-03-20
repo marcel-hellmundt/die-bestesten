@@ -48,10 +48,23 @@ export class ClubDetailComponent {
   seasons        = computed(() => this.seasonsState()?.data ?? []);
   seasonsLoading = computed(() => this.seasonsState()?.loading ?? true);
 
+  availableSeasons = computed(() => {
+    const usedIds = new Set(this.seasons().map((s: any) => s.season_id));
+    return this.cache.seasons().filter(s => !usedIds.has(s.id));
+  });
+
   // Edit state
   isEditing  = signal(false);
   patchingId = signal<string | null>(null);
   patchError = signal<string | null>(null);
+
+  // Add form state
+  showAddForm  = signal(false);
+  newSeasonId  = signal('');
+  newDivisionId = signal('');
+  newPosition  = signal('');
+  adding       = signal(false);
+  addError     = signal<string | null>(null);
 
   toggleEdit(): void {
     this.isEditing.update(v => !v);
@@ -75,6 +88,48 @@ export class ClubDetailComponent {
     this.api.patch(`club_in_season/${id}`, body).subscribe({
       next:  () => { this.patchingId.set(null); this.reloadSeasons$.next(); },
       error: () => { this.patchingId.set(null); this.patchError.set(id); },
+    });
+  }
+
+  openAddForm(): void {
+    const seasons   = this.availableSeasons();
+    const divisions = this.cache.divisions();
+    this.newSeasonId.set(seasons[0]?.id ?? '');
+    this.newDivisionId.set(divisions[0]?.id ?? '');
+    this.newPosition.set('');
+    this.addError.set(null);
+    this.showAddForm.set(true);
+  }
+
+  cancelAdd(): void {
+    this.showAddForm.set(false);
+    this.addError.set(null);
+  }
+
+  submitAdd(): void {
+    const clubId = this.club()?.id;
+    if (!clubId || !this.newSeasonId()) return;
+
+    const raw      = this.newPosition().trim();
+    const position = raw === '' ? null : parseInt(raw, 10);
+
+    this.adding.set(true);
+    this.addError.set(null);
+    this.api.post('club_in_season', {
+      club_id:     clubId,
+      season_id:   this.newSeasonId(),
+      division_id: this.newDivisionId() || null,
+      position,
+    }).subscribe({
+      next: () => {
+        this.adding.set(false);
+        this.showAddForm.set(false);
+        this.reloadSeasons$.next();
+      },
+      error: (err: any) => {
+        this.adding.set(false);
+        this.addError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
     });
   }
 

@@ -21,24 +21,38 @@
   <section class="detail-section">
     @if (seasonsLoading()) {
       <p class="state-msg">Laden…</p>
-    } @else if (seasons().length === 0) {
-      <p class="state-msg">Keine Saison-Daten vorhanden.</p>
     } @else {
       <div class="seasons-layout">
         <div class="seasons-col">
           <div class="section-header">
             <h2 class="section-title">Saisons</h2>
-            <button
-              class="btn-edit"
-              [class.btn-edit--active]="isEditing()"
-              (click)="toggleEdit()"
-              [title]="isEditing() ? 'Bearbeitung beenden' : 'Bearbeiten'"
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M8.5 1.5l2 2-6 6-2.5.5.5-2.5 6-6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
-              </svg>
-            </button>
+            <div class="section-header-actions">
+              @if (seasons().length > 0) {
+                <button
+                  class="btn-edit"
+                  [class.btn-edit--active]="isEditing()"
+                  (click)="toggleEdit()"
+                  [title]="isEditing() ? 'Bearbeitung beenden' : 'Bearbeiten'"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M8.5 1.5l2 2-6 6-2.5.5.5-2.5 6-6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              }
+              @if (!showAddForm() && availableSeasons().length > 0) {
+                <button class="btn-edit" (click)="openAddForm()" title="Saison hinzufügen">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              }
+            </div>
           </div>
+
+        @if (seasons().length === 0 && !showAddForm()) {
+          <p class="state-msg">Keine Saison-Daten vorhanden.</p>
+        }
+        @if (seasons().length > 0) {
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -90,6 +104,63 @@
             </tbody>
           </table>
         </div>
+        }
+
+        @if (showAddForm()) {
+          <div class="add-form">
+            <div class="add-form-row">
+              <div class="add-form-field">
+                <label class="add-form-label">Saison</label>
+                <select
+                  class="input input--sm"
+                  [value]="newSeasonId()"
+                  (change)="newSeasonId.set($any($event.target).value)"
+                >
+                  @for (s of availableSeasons(); track s.id) {
+                    <option [value]="s.id">{{ s.displayName }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="add-form-field">
+                <label class="add-form-label">Division</label>
+                <select
+                  class="input input--sm"
+                  [value]="newDivisionId()"
+                  (change)="newDivisionId.set($any($event.target).value)"
+                >
+                  <option value="">—</option>
+                  @for (d of cache.divisions(); track d.id) {
+                    <option [value]="d.id">{{ d.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="add-form-field add-form-field--sm">
+                <label class="add-form-label">Platz</label>
+                <input
+                  class="input input--sm"
+                  type="number"
+                  min="1"
+                  placeholder="—"
+                  [value]="newPosition()"
+                  (input)="newPosition.set($any($event.target).value)"
+                />
+              </div>
+            </div>
+
+            @if (addError()) {
+              <p class="add-form-error">{{ addError() }}</p>
+            }
+
+            <div class="add-form-actions">
+              <button class="btn-save" (click)="submitAdd()" [disabled]="adding() || !newSeasonId()">
+                {{ adding() ? 'Speichern…' : 'Speichern' }}
+              </button>
+              <button class="btn-cancel" (click)="cancelAdd()" [disabled]="adding()">Abbrechen</button>
+            </div>
+          </div>
+        }
         </div>
 
         <div class="chart-col">
