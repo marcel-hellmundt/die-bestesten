@@ -66,4 +66,14 @@ if (!$authResult['status']) {
 $controller = $routing->navigate($request);
 $controller->setRequest($request);
 
-echo json_encode($controller->getResponse());
+try {
+    echo json_encode($controller->getResponse());
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode([
+        'status'  => false,
+        'message' => $e->getMessage(),
+        'file'    => basename($e->getFile()),
+        'line'    => $e->getLine(),
+    ]);
+}
