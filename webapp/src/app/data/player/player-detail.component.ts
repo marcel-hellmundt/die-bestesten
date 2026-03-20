@@ -109,6 +109,59 @@ export class PlayerDetailComponent {
     }).format(price);
   }
 
+  formatPriceShort(price: number): string {
+    if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + ' M';
+    if (price >= 1_000)     return (price / 1_000).toFixed(0) + ' T';
+    return String(price);
+  }
+
+  // Bar chart
+  readonly chartW = 360;
+  readonly chartH = 160;
+  readonly padL   = 44;
+  readonly padR   = 8;
+  readonly padT   = 8;
+  readonly padB   = 24;
+
+  priceChartData = computed(() => {
+    const p = this.player();
+    if (!p || p.seasons.length === 0) return null;
+
+    const sorted = [...p.seasons]
+      .filter((s) => s.price > 0)
+      .sort((a, b) => a.season_start.localeCompare(b.season_start));
+
+    if (sorted.length === 0) return null;
+
+    const maxPrice = Math.max(...sorted.map((s) => s.price));
+    const plotW = this.chartW - this.padL - this.padR;
+    const plotH = this.chartH - this.padT - this.padB;
+    const n     = sorted.length;
+    const slotW = plotW / n;
+    const barW  = Math.min(slotW * 0.65, 40);
+
+    const bars = sorted.map((s, i) => {
+      const barH   = (s.price / maxPrice) * plotH;
+      const x      = this.padL + i * slotW + (slotW - barW) / 2;
+      const y      = this.padT + plotH - barH;
+      const labelX = this.padL + i * slotW + slotW / 2;
+      return {
+        x, y, width: barW, height: barH,
+        color:   this.positionColors[s.position] ?? '#999',
+        label:   this.cache.seasonName(s.season_id),
+        labelX,
+        tooltip: this.formatPrice(s.price),
+      };
+    });
+
+    const yTicks = [
+      { y: this.padT,            label: this.formatPriceShort(maxPrice) },
+      { y: this.padT + plotH,    label: '0' },
+    ];
+
+    return { bars, yTicks };
+  });
+
   constructor() {
     this.cache.ensureSeasons();
   }

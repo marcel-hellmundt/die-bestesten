@@ -38,30 +38,71 @@
     @if (p.seasons.length === 0) {
       <p class="state-msg">Keine Saison-Daten vorhanden.</p>
     } @else {
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Saison</th>
-              <th>Position</th>
-              <th>Marktwert</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of p.seasons; track s.season_id) {
+      <div class="seasons-layout">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
               <tr>
-                <td>{{ cache.seasonName(s.season_id) }}</td>
-                <td>
-                  <span class="position-badge">
-                    <span class="badge-dot" [style.background-color]="positionColor(s.position)"></span>
-                    {{ positionLabel(s.position) }}
-                  </span>
-                </td>
-                <td class="col-price">{{ formatPrice(s.price) }}</td>
+                <th>Saison</th>
+                <th>Position</th>
+                <th>Marktwert</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (s of p.seasons; track s.season_id) {
+                <tr>
+                  <td>{{ cache.seasonName(s.season_id) }}</td>
+                  <td>
+                    <span class="position-badge">
+                      <span class="badge-dot" [style.background-color]="positionColor(s.position)"></span>
+                      {{ positionLabel(s.position) }}
+                    </span>
+                  </td>
+                  <td class="col-price">{{ formatPrice(s.price) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (priceChartData(); as chart) {
+          <div class="chart-container">
+            <svg
+              class="price-chart"
+              [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+              [attr.width]="chartW"
+              [attr.height]="chartH"
+              aria-hidden="true"
+            >
+              @for (tick of chart.yTicks; track tick.y) {
+                <line
+                  [attr.x1]="padL" [attr.x2]="chartW - padR"
+                  [attr.y1]="tick.y" [attr.y2]="tick.y"
+                  class="chart-grid"
+                />
+                <text
+                  [attr.x]="padL - 4" [attr.y]="tick.y"
+                  class="chart-label chart-label--y"
+                >{{ tick.label }}</text>
+              }
+              @for (bar of chart.bars; track bar.labelX) {
+                <rect
+                  [attr.x]="bar.x" [attr.y]="bar.y"
+                  [attr.width]="bar.width" [attr.height]="bar.height"
+                  [attr.fill]="bar.color"
+                  rx="3"
+                >
+                  <title>{{ bar.tooltip }}</title>
+                </rect>
+                <text
+                  [attr.x]="bar.labelX"
+                  [attr.y]="chartH - padB + 10"
+                  class="chart-label chart-label--x"
+                >{{ bar.label }}</text>
+              }
+            </svg>
+          </div>
+        }
       </div>
     }
   </section>
