@@ -89,6 +89,15 @@
     color: $color-text;
   }
 
+  .table-container {
+    width: fit-content;
+    max-width: 100%;
+
+    .data-table {
+      width: auto;
+    }
+  }
+
   .seasons-layout {
     display: grid;
     grid-template-columns: 1fr minmax(0, 38%);
