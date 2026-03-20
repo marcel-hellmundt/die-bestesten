@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
+import { CountryDetailComponent } from './country/country-detail.component';
 import { ClubDataComponent } from './club/club.component';
 import { ClubDetailComponent } from './club/club-detail.component';
 import { SeasonDataComponent } from './season/season.component';
@@ -16,7 +17,8 @@ const routes: Routes = [
     component: DataComponent,
     children: [
       { path: '', redirectTo: 'country', pathMatch: 'full' },
-      { path: 'country',  component: CountryDataComponent },
+      { path: 'country',     component: CountryDataComponent },
+      { path: 'country/:id', component: CountryDetailComponent },
       { path: 'club',     component: ClubDataComponent },
       { path: 'club/:id', component: ClubDetailComponent },
       { path: 'season',   component: SeasonDataComponent },
@@ -30,6 +32,7 @@ const routes: Routes = [
   declarations: [
     DataComponent,
     CountryDataComponent,
+    CountryDetailComponent,
     ClubDataComponent,
     ClubDetailComponent,
     SeasonDataComponent,

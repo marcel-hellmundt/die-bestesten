@@ -1,0 +1,64 @@
+@use '../../../styles/variables' as *;
+
+.detail-header {
+  margin-bottom: $space-8;
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    font-size: $font-sm;
+    color: $color-text-muted;
+    text-decoration: none;
+    margin-bottom: $space-6;
+    transition: color $transition-fast;
+
+    &:hover { color: $color-text; }
+  }
+
+  .country-hero {
+    display: flex;
+    align-items: center;
+    gap: $space-6;
+
+    .country-flag {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .country-name {
+      font-size: $font-4xl;
+      font-weight: $font-weight-bold;
+      line-height: 1;
+      margin: 0;
+    }
+  }
+}
+
+.detail-section {
+  .section-title {
+    font-size: $font-lg;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $space-4;
+    color: $color-text;
+  }
+}
+
+.col-logo {
+  width: 36px;
+  padding-inline: $space-2;
+
+  .club-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.col-short {
+  color: $color-text-muted;
+  font-size: $font-sm;
+}

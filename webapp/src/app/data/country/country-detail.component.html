@@ -1,0 +1,46 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (country(); as c) {
+  <div class="detail-header">
+    <a class="back-link" routerLink="../">← Alle Länder</a>
+
+    <div class="country-hero">
+      <img [src]="c.flagUrl" class="country-flag" alt="" />
+      <h1 class="country-name">{{ c.name }}</h1>
+    </div>
+  </div>
+
+  <section class="detail-section">
+    @if (clubsLoading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (clubs().length === 0) {
+      <p class="state-msg">Keine Clubs vorhanden.</p>
+    } @else {
+      <h2 class="section-title">Clubs ({{ clubs().length }})</h2>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-logo"></th>
+              <th>Name</th>
+              <th>Kürzel</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (club of clubs(); track club.id) {
+              <tr class="row-link" [routerLink]="['/data/club', club.id]">
+                <td class="col-logo">
+                  <img [src]="club.logoUrl" [class]="club.logoClass" class="club-logo" alt="" />
+                </td>
+                <td>{{ club.name }}</td>
+                <td class="col-short">{{ club.short_name ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}
