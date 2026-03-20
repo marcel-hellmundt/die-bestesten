@@ -190,11 +190,59 @@ trait PlayerTrait
             $migratedSeasons++;
         }
 
+        // 3. Migrate player_in_club
+        // Old schema: player_in_club_id (UUID, reusable), is_loan instead of on_loan
+        $allClubRows = $this->con_old->query("
+            SELECT pic.player_in_club_id, pic.player_id, pic.club_id,
+                   pic.from_date, pic.to_date, pic.is_loan,
+                   p.player_id IS NOT NULL AS player_exists,
+                   c.club_id   IS NOT NULL AS club_exists
+            FROM player_in_club pic
+            LEFT JOIN player p ON p.player_id = pic.player_id
+            LEFT JOIN club   c ON c.club_id   = pic.club_id
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmtClub = $this->con->prepare(
+            "INSERT INTO player_in_club (id, player_id, club_id, from_date, to_date, on_loan)
+             VALUES (:id, :player_id, :club_id, :from_date, :to_date, :on_loan)
+             ON DUPLICATE KEY UPDATE
+               from_date = VALUES(from_date),
+               to_date   = VALUES(to_date),
+               on_loan   = VALUES(on_loan)"
+        );
+
+        $migratedClubs = 0;
+        $skippedClubs  = [];
+
+        foreach ($allClubRows as $row) {
+            if (!$row['player_exists'] || !$row['club_exists']) {
+                $skippedClubs[] = [
+                    'player_in_club_id' => $row['player_in_club_id'],
+                    'player_id'         => $row['player_id'],
+                    'club_id'           => $row['club_id'],
+                    'reason'            => !$row['player_exists'] ? 'player not found' : 'club not found',
+                ];
+                continue;
+            }
+
+            $stmtClub->execute([
+                ':id'        => $row['player_in_club_id'],
+                ':player_id' => $row['player_id'],
+                ':club_id'   => $row['club_id'],
+                ':from_date' => $row['from_date'],
+                ':to_date'   => $row['to_date'],
+                ':on_loan'   => $row['is_loan'],
+            ]);
+            $migratedClubs++;
+        }
+
         return [
             'status'            => true,
             'migrated_players'  => count($playerRows),
             'migrated_seasons'  => $migratedSeasons,
             'skipped_seasons'   => $skipped,
+            'migrated_clubs'    => $migratedClubs,
+            'skipped_clubs'     => $skippedClubs,
         ];
     }
 
