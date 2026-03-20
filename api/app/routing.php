@@ -141,6 +141,27 @@ class Routing
                             'season_id' => 'UUID der Saison',
                         ],
                     ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/club_in_season',
+                        'description' => 'Neuen Eintrag anlegen — 409 bei doppelter club_id+season_id Kombination',
+                        'query_params' => [
+                            'club_id'     => 'UUID des Clubs (erforderlich)',
+                            'season_id'   => 'UUID der Saison (erforderlich)',
+                            'division_id' => 'UUID der Division (optional)',
+                            'position'    => 'Tabellenplatz als Integer, null erlaubt (optional)',
+                        ],
+                    ],
+                    [
+                        'method'      => 'PATCH',
+                        'path'        => '/club_in_season/:id',
+                        'description' => 'Division und/oder Tabellenplatz eines Eintrags aktualisieren',
+                        'path_params' => [':id' => 'UUID des Eintrags'],
+                        'query_params' => [
+                            'division_id' => 'UUID der neuen Division (optional)',
+                            'position'    => 'Neuer Tabellenplatz, null erlaubt (optional)',
+                        ],
+                    ],
                 ],
             ]),
 
