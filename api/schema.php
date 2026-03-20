@@ -155,11 +155,67 @@ $methodColors = [
             margin: 0 auto 2.5rem;
         }
 
+        .diagram-section.is-expanded {
+            position: fixed;
+            inset: 0;
+            max-width: none;
+            margin: 0;
+            z-index: 100;
+            background: #0f172a;
+            padding: 2rem;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .diagram-section.is-expanded .diagram-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .diagram-section.is-expanded .diagram-wrap .mermaid {
+            flex: 1;
+            align-items: center;
+        }
+
+        .diagram-section.is-expanded .diagram-wrap .mermaid svg {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+        }
+
+        .diagram-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
         .diagram-section h2 {
             font-size: 1rem;
             font-weight: 600;
             color: #f8fafc;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0;
+        }
+
+        .btn-expand {
+            font-size: 0.75rem;
+            color: #64748b;
+            background: none;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 0.2rem 0.6rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: color 0.15s, border-color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .btn-expand:hover {
+            color: #e2e8f0;
+            border-color: #64748b;
         }
 
         .diagram-section p {
@@ -188,8 +244,11 @@ $methodColors = [
     <p><?= htmlspecialchars('https://api.claude.die-bestesten.de') ?></p>
 </header>
 
-<div class="diagram-section">
-    <h2>Datenbankschema</h2>
+<div class="diagram-section" id="diagram-section">
+    <div class="diagram-header">
+        <h2>Datenbankschema</h2>
+        <button class="btn-expand" onclick="toggleDiagram()">⤢ Erweitern</button>
+    </div>
     <p>Pfeile zeigen Fremdschlüssel-Abhängigkeiten. Die Stufen geben die Migrations-Reihenfolge vor — eine Tabelle darf erst befüllt werden, wenn alle Tabellen der vorherigen Stufen vorhanden sind.</p>
     <div class="diagram-wrap">
         <pre class="mermaid">
@@ -291,5 +350,20 @@ flowchart TD
 
 <footer>Generiert aus routing.php &mdash; <?= date('d.m.Y H:i') ?></footer>
 
+<script>
+    function toggleDiagram() {
+        const section = document.getElementById('diagram-section');
+        const btn     = section.querySelector('.btn-expand');
+        const expanded = section.classList.toggle('is-expanded');
+        btn.textContent = expanded ? '⤡ Verkleinern' : '⤢ Erweitern';
+        document.body.style.overflow = expanded ? 'hidden' : '';
+    }
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            const section = document.getElementById('diagram-section');
+            if (section.classList.contains('is-expanded')) toggleDiagram();
+        }
+    });
+</script>
 </body>
 </html>
