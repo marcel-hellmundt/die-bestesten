@@ -1,0 +1,37 @@
+<div class="list-bar">
+  <input class="input search-input" type="search" placeholder="Suchen…"
+         [value]="searchQuery()"
+         (input)="searchQuery.set($any($event.target).value)" />
+  <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
+</div>
+
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="col-id">ID</th>
+          <th>Name</th>
+          <th>Level</th>
+          <th>Plätze</th>
+          <th>Land</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of filteredItems(); track item.id) {
+          <tr>
+            <td class="col-id">{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.level }}</td>
+            <td>{{ item.seats }}</td>
+            <td>{{ item.country_id }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
