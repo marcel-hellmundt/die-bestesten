@@ -43,8 +43,22 @@ export class ClubDataComponent {
     );
   });
 
-  // Previous season = second entry (seasons are DESC by start_date)
-  private prevSeasonId = computed(() => this.cache.seasons()[1]?.id ?? null);
+  // seasons() is DESC by start_date → [0] = current, [1] = previous
+  private currentSeasonId = computed(() => this.cache.seasons()[0]?.id ?? null);
+  private prevSeasonId    = computed(() => this.cache.seasons()[1]?.id ?? null);
+
+  private currentSeasonState = toSignal(
+    toObservable(this.currentSeasonId).pipe(
+      switchMap(id => {
+        if (!id) return of({ data: [] as any[], loading: false });
+        return this.api.get<any[]>(`club_in_season?season_id=${id}`).pipe(
+          map(data => ({ data, loading: false })),
+          startWith({ data: [] as any[], loading: true }),
+          catchError(() => of({ data: [] as any[], loading: false }))
+        );
+      })
+    )
+  );
 
   private prevSeasonState = toSignal(
     toObservable(this.prevSeasonId).pipe(
@@ -59,18 +73,29 @@ export class ClubDataComponent {
     )
   );
 
-  private prevSeasonEntries = computed(() => this.prevSeasonState()?.data ?? []);
+  private currentSeasonEntries = computed(() => this.currentSeasonState()?.data ?? []);
+  private prevSeasonEntries    = computed(() => this.prevSeasonState()?.data    ?? []);
 
   bundesligaClubs = computed(() => {
     const division = this.cache.divisions().find(d => d.name === '1. Bundesliga');
     if (!division) return [] as { club: Club; position: number | null }[];
 
-    const entries = this.prevSeasonEntries().filter((e: any) => e.division_id === division.id);
-    const positionMap = new Map(entries.map((e: any) => [e.club_id, e.position as number | null]));
-    const ids = new Set(positionMap.keys());
+    // Who is in Bundesliga *this* season
+    const currentIds = new Set(
+      this.currentSeasonEntries()
+        .filter((e: any) => e.division_id === division.id)
+        .map((e: any) => e.club_id as string)
+    );
+
+    // Positions from *previous* season for sorting
+    const positionMap = new Map(
+      this.prevSeasonEntries()
+        .filter((e: any) => e.division_id === division.id)
+        .map((e: any) => [e.club_id as string, e.position as number | null])
+    );
 
     return this.filteredItems()
-      .filter(c => ids.has(c.id))
+      .filter(c => currentIds.has(c.id))
       .map(c => ({ club: c, position: positionMap.get(c.id) ?? null }))
       .sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
   });
