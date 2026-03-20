@@ -95,10 +95,10 @@ export class PlayerDetailComponent {
   });
 
   private readonly positionColors: Record<string, string> = {
-    FORWARD: '#ff3f34',
-    MIDFIELDER: '#575fcf',
-    DEFENDER: '#ffd32a',
-    GOALKEEPER: '#05c46b',
+    FORWARD:    'var(--position-forward)',
+    MIDFIELDER: 'var(--position-midfielder)',
+    DEFENDER:   'var(--position-defender)',
+    GOALKEEPER: 'var(--position-goalkeeper)',
   };
 
   private readonly positionLabels: Record<string, string> = {
@@ -150,6 +150,41 @@ export class PlayerDetailComponent {
     if (!grade) return 'var(--grade-unset)';
     return `var(--grade-${grade.replace('.', '')})`;
   }
+
+  // Points bar chart (per matchday, colored by grade)
+  pointsChartData = computed(() => {
+    const p = this.player();
+    if (!p || p.ratings.length === 0) return null;
+
+    const sorted = p.ratings; // already sorted by matchday_number ASC
+    const maxPts = Math.max(...sorted.map((r) => Math.max(+(r.points ?? 0), 0)), 1);
+    const plotW  = this.chartW - this.padL - this.padR;
+    const plotH  = this.chartH - this.padT - this.padB;
+    const n      = sorted.length;
+    const slotW  = plotW / n;
+    const barW   = Math.min(slotW * 0.65, 40);
+
+    const bars = sorted.map((s, i) => {
+      const pts  = Math.max(+(s.points ?? 0), 0);
+      const barH = (pts / maxPts) * plotH;
+      const x    = this.padL + i * slotW + (slotW - barW) / 2;
+      const y    = this.padT + plotH - barH;
+      return {
+        x, y, width: barW, height: barH,
+        color:   this.gradeVar(s.grade),
+        labelX:  this.padL + i * slotW + slotW / 2,
+        label:   s.matchday_number,
+        tooltip: `ST ${s.matchday_number}: ${pts} Pkt`,
+      };
+    });
+
+    const yTicks = [
+      { y: this.padT,         label: String(maxPts) },
+      { y: this.padT + plotH, label: '0' },
+    ];
+
+    return { bars, yTicks };
+  });
 
   // Bar chart
   readonly chartW = 360;

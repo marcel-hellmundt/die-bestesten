@@ -105,7 +105,7 @@
                   [attr.y]="bar.y"
                   [attr.width]="bar.width"
                   [attr.height]="bar.height"
-                  [attr.fill]="bar.color"
+                  [style.fill]="bar.color"
                   rx="3"
                 >
                   <title>{{ bar.tooltip }}</title>
@@ -125,6 +125,7 @@
     }
   </section>
 
+  <div class="sections-row">
   <section class="detail-section">
     <h2 class="section-title">Vereinshistorie</h2>
     @if (p.clubs.length === 0) {
@@ -187,6 +188,37 @@
     @if (p.ratings.length === 0) {
       <p class="state-msg">Keine Bewertungen für diese Saison.</p>
     } @else {
+      @if (pointsChartData(); as chart) {
+        <div class="chart-container" style="margin-bottom: 16px">
+          <svg
+            class="price-chart"
+            [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+            [attr.width]="chartW"
+            [attr.height]="chartH"
+            aria-hidden="true"
+          >
+            @for (tick of chart.yTicks; track tick.y) {
+              <line
+                [attr.x1]="padL" [attr.x2]="chartW - padR"
+                [attr.y1]="tick.y" [attr.y2]="tick.y"
+                class="chart-grid"
+              />
+              <text [attr.x]="padL - 4" [attr.y]="tick.y" class="chart-label chart-label--y">{{ tick.label }}</text>
+            }
+            @for (bar of chart.bars; track bar.labelX) {
+              <rect
+                [attr.x]="bar.x" [attr.y]="bar.y"
+                [attr.width]="bar.width" [attr.height]="bar.height"
+                [style.fill]="bar.color"
+                rx="3"
+              >
+                <title>{{ bar.tooltip }}</title>
+              </rect>
+              <text [attr.x]="bar.labelX" [attr.y]="chartH - padB + 10" class="chart-label chart-label--x">{{ bar.label }}</text>
+            }
+          </svg>
+        </div>
+      }
       <div class="table-container">
         <table class="data-table ratings-table">
           <thead>
@@ -254,4 +286,5 @@
       </div>
     }
   </section>
+  </div>
 }

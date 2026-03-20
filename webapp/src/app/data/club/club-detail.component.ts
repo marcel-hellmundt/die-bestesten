@@ -185,7 +185,7 @@ export class ClubDetailComponent {
   }
 
   // Chart
-  private readonly levelColors = ['#d63031', '#0984e3', '#00b894'];
+  private readonly levelColors = ['var(--division-level-1)', 'var(--division-level-2)', 'var(--division-level-3)'];
 
   divisionColor(divisionId: string): string {
     const div = this.cache.divisions().find((d) => d.id === divisionId);

@@ -67,6 +67,21 @@ $z-overlay: 300;
 $z-modal: 400;
 $z-toast: 500;
 
+// Position colors (player positions)
+:root {
+  --position-forward:    #ff3f34;
+  --position-midfielder: #575fcf;
+  --position-defender:   #ffd32a;
+  --position-goalkeeper: #05c46b;
+}
+
+// Division level colors (1 = top flight, 2 = second, 3 = third)
+:root {
+  --division-level-1: #d63031;
+  --division-level-2: #0984e3;
+  --division-level-3: #00b894;
+}
+
 // Grade colors (player rating notes 1.0–6.0)
 :root {
   --grade-unset: #dfe6e9;
