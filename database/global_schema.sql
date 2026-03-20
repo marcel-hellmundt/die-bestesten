@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS player_in_club (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
     club_id CHAR(36) NOT NULL,                  -- FK zu club.id
-    from_date DATE DEFAULT NULL,                -- Seit-wann
+    from_date DATE NOT NULL,                    -- Seit-wann
     to_date DATE DEFAULT NULL,                  -- Bis-wann (NULL für aktuelle Verträge)
     on_loan BOOLEAN DEFAULT FALSE,              -- Gibt an, ob der Spieler ausgeliehen ist
     FOREIGN KEY (player_id) REFERENCES player(id),
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS player_rating (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
     matchday_id CHAR(36) NOT NULL,              -- FK zu matchday.id
-    grade DECIMAL(3,1) NOT NULL,                -- Note, z.B. 1.5; Wertebereich 1.0..6.0
+    grade DECIMAL(3,1) DEFAULT NULL,            -- Note, z.B. 1.5; Wertebereich 1.0..6.0
     participation ENUM('starting', 'substitute') DEFAULT NULL,  -- 'starting' = Startelf, 'substitute' = Eingewechselt, NULL = nicht gespielt
     goals INT DEFAULT 0,                        -- Tore
     assists INT DEFAULT 0,                      -- Vorlagen
