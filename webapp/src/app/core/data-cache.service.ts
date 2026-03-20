@@ -1,15 +1,10 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { ApiService } from './api.service';
 import { Season } from './models/season.model';
+import { Division } from './models/division.model';
 import { map } from 'rxjs';
 
-export interface Division {
-  id: string;
-  name: string;
-  level: number;
-  seats: number;
-  country_id: string;
-}
+export { Division } from './models/division.model';
 
 @Injectable({ providedIn: 'root' })
 export class DataCacheService {
@@ -32,7 +27,9 @@ export class DataCacheService {
 
   ensureDivisions(): void {
     if (this.divisionsState().loaded) return;
-    this.api.get<Division[]>('division').subscribe(data => {
+    this.api.get<any[]>('division').pipe(
+      map(data => data.map(Division.from))
+    ).subscribe(data => {
       this.divisionsState.set({ data, loaded: true });
     });
   }

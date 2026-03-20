@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { Division } from '../../core/data-cache.service';
+import { Division } from '../../core/models/division.model';
 
 @Component({
   selector: 'app-data-division',
