@@ -98,16 +98,6 @@
     }
   }
 
-  .seasons-layout {
-    display: grid;
-    grid-template-columns: 1fr minmax(0, 38%);
-    gap: $space-6;
-    align-items: start;
-
-    @media (max-width: 640px) {
-      grid-template-columns: 1fr;
-    }
-  }
 }
 
 .position-badge {
@@ -123,6 +113,12 @@
     transform: skewX(-20deg);
     flex-shrink: 0;
   }
+}
+
+.row--selected {
+  background-color: #e8eef8;
+
+  td { color: #3b6dd4; }
 }
 
 .col-price {
@@ -167,26 +163,32 @@
   text-transform: uppercase;
 }
 
-.sections-row {
-  display: flex;
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: $space-6;
-  align-items: flex-start;
+  align-items: start;
 
   @media (max-width: 640px) {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
-  .detail-section {
-    flex: 1;
-    min-width: 0;
+  .detail-section,
+  .detail-grid__col {
     margin-bottom: 0;
-
-    .table-container {
-      width: 100%;
-
-      .data-table { width: 100%; }
-    }
   }
+
+  .detail-section .table-container {
+    width: 100%;
+
+    .data-table { width: 100%; }
+  }
+}
+
+.detail-grid__col {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
 }
 
 // .section-header is global; override section-title margin inside it

@@ -1,5 +1,12 @@
 @use '../../../styles/variables' as *;
 
+:host {
+  position: sticky;
+  top: 0;
+  z-index: $z-sticky;
+  display: block;
+}
+
 .topbar {
   display: flex;
   align-items: center;

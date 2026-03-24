@@ -43,254 +43,278 @@
     </div>
   </div>
 
+  <!-- Full-width: Bewertungen chart -->
   <section class="detail-section">
     <div class="section-header">
-      <h2 class="section-title">Saisons</h2>
-      <span class="section-count">{{ p.seasons.length }} Saisons</span>
+      <h2 class="section-title">Bewertungen</h2>
     </div>
-    @if (p.seasons.length === 0) {
-      <p class="state-msg">Keine Saison-Daten vorhanden.</p>
-    } @else {
-      <div class="seasons-layout">
+    @if (pointsChartData(); as chart) {
+      <div class="chart-container">
+        <svg
+          class="price-chart"
+          [attr.viewBox]="'0 0 ' + pointsChartW + ' ' + chartH"
+          [attr.width]="pointsChartW"
+          [attr.height]="chartH"
+          aria-hidden="true"
+        >
+          @for (tick of chart.yTicks; track tick.y) {
+            <line
+              [attr.x1]="padL"
+              [attr.x2]="pointsChartW - padR"
+              [attr.y1]="tick.y"
+              [attr.y2]="tick.y"
+              class="chart-grid"
+            />
+            <text [attr.x]="padL - 4" [attr.y]="tick.y" class="chart-label chart-label--y">
+              {{ tick.label }}
+            </text>
+          }
+          @for (bar of chart.bars; track bar.labelX) {
+            <rect
+              [attr.x]="bar.x"
+              [attr.y]="bar.y"
+              [attr.width]="bar.width"
+              [attr.height]="bar.height"
+              [style.fill]="bar.color"
+              rx="3"
+            >
+              <title>{{ bar.tooltip }}</title>
+            </rect>
+            <text
+              [attr.x]="bar.labelX"
+              [attr.y]="chartH - padB + 10"
+              class="chart-label chart-label--x"
+            >
+              {{ bar.label }}
+            </text>
+          }
+          @if (chart.rollingLine) {
+            <polyline
+              [attr.points]="chart.rollingLine"
+              fill="none"
+              stroke="#bf1d00"
+              stroke-width="1.5"
+              stroke-dasharray="4 3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          }
+        </svg>
+      </div>
+    } @else if (p.ratings.length === 0) {
+      <p class="state-msg">Keine Bewertungen für diese Saison.</p>
+    }
+  </section>
+
+  <!-- 3-column grid -->
+  <div class="detail-grid">
+    <!-- Left: Vereinshistorie -->
+    <section class="detail-section">
+      <div class="section-header">
+        <h2 class="section-title">Vereinshistorie</h2>
+        <span class="section-count">{{ p.clubs.length }} Vereine</span>
+      </div>
+      @if (p.clubs.length === 0) {
+        <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
+      } @else {
         <div class="table-container">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Saison</th>
-                <th>Position</th>
-                <th>Marktwert</th>
-                <th>Punkte</th>
+                <th colspan="2">Verein</th>
+                <th>Von</th>
+                <th>Bis</th>
               </tr>
             </thead>
             <tbody>
-              @for (s of p.seasons; track s.season_id) {
+              @for (c of p.clubs; track c.club_id + c.from_date) {
                 <tr>
-                  <td>{{ cache.seasonName(s.season_id) }}</td>
-                  <td>
-                    <span class="position-badge">
-                      <span
-                        class="badge-dot"
-                        [style.background-color]="positionColor(s.position)"
-                      ></span>
-                      {{ positionLabel(s.position) }}
-                    </span>
+                  <td class="col-logo">
+                    <img
+                      [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
+                      class="club-logo"
+                      [class.logo--placeholder]="!c.logo_uploaded"
+                      alt=""
+                    />
                   </td>
-                  <td class="col-price">{{ formatPrice(s.price) }}</td>
-                <td class="col-points-season">{{ s.total_points }}</td>
+                  <td>
+                    {{ c.club_name }}
+                    @if (c.on_loan) {
+                      <span class="loan-badge">Leihe</span>
+                    }
+                  </td>
+                  <td class="col-date">{{ formatDate(c.from_date) }}</td>
+                  <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
+      }
+    </section>
 
-        @if (priceChartData(); as chart) {
-          <div class="chart-container">
-            <svg
-              class="price-chart"
-              [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
-              [attr.width]="chartW"
-              [attr.height]="chartH"
-              aria-hidden="true"
-            >
-              @for (tick of chart.yTicks; track tick.y) {
-                <line
-                  [attr.x1]="padL"
-                  [attr.x2]="chartW - padR"
-                  [attr.y1]="tick.y"
-                  [attr.y2]="tick.y"
-                  class="chart-grid"
-                />
-                <text [attr.x]="padL - 4" [attr.y]="tick.y" class="chart-label chart-label--y">
-                  {{ tick.label }}
-                </text>
-              }
-              @for (bar of chart.bars; track bar.labelX) {
-                <rect
-                  [attr.x]="bar.x"
-                  [attr.y]="bar.y"
-                  [attr.width]="bar.width"
-                  [attr.height]="bar.height"
-                  [style.fill]="bar.color"
-                  rx="3"
-                >
-                  <title>{{ bar.tooltip }}</title>
-                </rect>
-                <text
-                  [attr.x]="bar.labelX"
-                  [attr.y]="chartH - padB + 10"
-                  class="chart-label chart-label--x"
-                >
-                  {{ bar.label }}
-                </text>
-              }
-            </svg>
+    <!-- Middle: Saisons table + price chart below -->
+    <div class="detail-grid__col">
+      <section class="detail-section">
+        <div class="section-header">
+          <h2 class="section-title">Saisons</h2>
+          <span class="section-count">{{ p.seasons.length }} Saisons</span>
+        </div>
+        @if (p.seasons.length === 0) {
+          <p class="state-msg">Keine Saison-Daten vorhanden.</p>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Saison</th>
+                  <th>Position</th>
+                  <th>Marktwert</th>
+                  <th>Punkte</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of p.seasons; track s.season_id) {
+                  <tr
+                    class="row-link"
+                    [class.row--selected]="(selectedSeasonId() ?? p.seasons[0].season_id) === s.season_id"
+                    (click)="selectedSeasonId.set(s.season_id)"
+                  >
+                    <td>{{ cache.seasonName(s.season_id) }}</td>
+                    <td>
+                      <span class="position-badge">
+                        <span
+                          class="badge-dot"
+                          [style.background-color]="positionColor(s.position)"
+                        ></span>
+                        {{ positionLabel(s.position) }}
+                      </span>
+                    </td>
+                    <td class="col-price">{{ formatPrice(s.price) }}</td>
+                    <td class="col-points-season">{{ s.total_points }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
         }
-      </div>
-    }
-  </section>
+      </section>
 
-  <div class="sections-row">
-  <section class="detail-section">
-    <div class="section-header">
-      <h2 class="section-title">Vereinshistorie</h2>
-      <span class="section-count">{{ p.clubs.length }} Vereine</span>
-    </div>
-    @if (p.clubs.length === 0) {
-      <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
-    } @else {
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th colspan="2">Verein</th>
-              <th>Von</th>
-              <th>Bis</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (c of p.clubs; track c.club_id + c.from_date) {
-              <tr>
-                <td class="col-logo">
-                  <img
-                    [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
-                    class="club-logo"
-                    [class.logo--placeholder]="!c.logo_uploaded"
-                    alt=""
-                  />
-                </td>
-                <td>
-                  {{ c.club_name }}
-                  @if (c.on_loan) {
-                    <span class="loan-badge">Leihe</span>
-                  }
-                </td>
-                <td class="col-date">{{ formatDate(c.from_date) }}</td>
-                <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  </section>
-
-  <section class="detail-section">
-    <div class="section-header">
-      <h2 class="section-title">Bewertungen</h2>
-      @if (p.seasons.length > 0) {
-        <select
-          class="input input--sm"
-          (change)="selectedSeasonId.set($any($event.target).value)"
-        >
-          @for (s of p.seasons; track s.season_id) {
-            <option
-              [value]="s.season_id"
-              [selected]="(selectedSeasonId() ?? p.seasons[0].season_id) === s.season_id"
-            >{{ cache.seasonName(s.season_id) }}</option>
-          }
-        </select>
-      }
-    </div>
-
-    @if (p.ratings.length === 0) {
-      <p class="state-msg">Keine Bewertungen für diese Saison.</p>
-    } @else {
-      @if (pointsChartData(); as chart) {
-        <div class="chart-container" style="margin-bottom: 16px">
+      @if (priceChartData(); as chart) {
+        <div class="chart-container">
           <svg
             class="price-chart"
-            [attr.viewBox]="'0 0 ' + pointsChartW + ' ' + chartH"
-            [attr.width]="pointsChartW"
+            [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+            [attr.width]="chartW"
             [attr.height]="chartH"
             aria-hidden="true"
           >
             @for (tick of chart.yTicks; track tick.y) {
               <line
-                [attr.x1]="padL" [attr.x2]="chartW - padR"
-                [attr.y1]="tick.y" [attr.y2]="tick.y"
+                [attr.x1]="padL"
+                [attr.x2]="chartW - padR"
+                [attr.y1]="tick.y"
+                [attr.y2]="tick.y"
                 class="chart-grid"
               />
-              <text [attr.x]="padL - 4" [attr.y]="tick.y" class="chart-label chart-label--y">{{ tick.label }}</text>
+              <text [attr.x]="padL - 4" [attr.y]="tick.y" class="chart-label chart-label--y">
+                {{ tick.label }}
+              </text>
             }
             @for (bar of chart.bars; track bar.labelX) {
               <rect
-                [attr.x]="bar.x" [attr.y]="bar.y"
-                [attr.width]="bar.width" [attr.height]="bar.height"
+                [attr.x]="bar.x"
+                [attr.y]="bar.y"
+                [attr.width]="bar.width"
+                [attr.height]="bar.height"
                 [style.fill]="bar.color"
                 rx="3"
               >
                 <title>{{ bar.tooltip }}</title>
               </rect>
-              <text [attr.x]="bar.labelX" [attr.y]="chartH - padB + 10" class="chart-label chart-label--x">{{ bar.label }}</text>
+              <text
+                [attr.x]="bar.labelX"
+                [attr.y]="chartH - padB + 10"
+                class="chart-label chart-label--x"
+              >
+                {{ bar.label }}
+              </text>
             }
           </svg>
         </div>
       }
-      <div class="table-container">
-        <table class="data-table ratings-table">
-          <thead>
-            <tr>
-              <th class="col-matchday">#</th>
-              <th class="col-part"></th>
-              <th class="col-grade">Note</th>
-              <th class="col-icons">Tore</th>
-              <th class="col-icons">Assists</th>
-              <th class="col-sds"></th>
-              <th class="col-card">Karte</th>
-              <th class="col-points">Punkte</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (r of p.ratings; track r.id) {
+    </div>
+
+    <!-- Right: ratings table -->
+    <section class="detail-section">
+      @if (p.ratings.length === 0) {
+        <p class="state-msg">Keine Bewertungen für diese Saison.</p>
+      } @else {
+        <div class="table-container">
+          <table class="data-table ratings-table">
+            <thead>
               <tr>
-                <td class="col-matchday">{{ r.matchday_number }}</td>
-                <td class="col-part">
-                  @if (r.participation === 'starting') {
-                    <span class="part-dot part-dot--start" title="Startelf"></span>
-                  } @else if (r.participation === 'substitute') {
-                    <span class="part-dot part-dot--sub" title="Eingewechselt"></span>
-                  }
-                </td>
-                <td class="col-grade">
-                  <span
-                    class="grade-badge"
-                    [style.background]="gradeVar(r.grade)"
-                    [class.grade-badge--unset]="!r.grade"
-                  >{{ r.grade ?? '—' }}</span>
-                </td>
-                <td class="col-icons">
-                  @for (i of range(r.goals); track i) {
-                    <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
-                  }
-                </td>
-                <td class="col-icons">
-                  @for (i of range(r.assists); track i) {
-                    <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
-                  }
-                </td>
-                <td class="col-sds">
-                  @if (+r.sds) {
-                    <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
-                  }
-                </td>
-                <td class="col-card">
-                  @if (+r.yellow_red_card) {
-                    <span class="card-wrap">
-                      <span class="card card--yellow"></span>
-                      <span class="card card--red"></span>
-                    </span>
-                  } @else if (+r.red_card) {
-                    <span class="card card--red"></span>
-                  }
-                </td>
-                <td class="col-points">{{ r.points ?? '—' }}</td>
+                <th class="col-matchday">#</th>
+                <th class="col-part"></th>
+                <th class="col-grade">Note</th>
+                <th class="col-icons">Tore</th>
+                <th class="col-icons">Assists</th>
+                <th class="col-sds"></th>
+                <th class="col-card">Karte</th>
+                <th class="col-points">Punkte</th>
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-  </section>
+            </thead>
+            <tbody>
+              @for (r of p.ratings; track r.id) {
+                <tr>
+                  <td class="col-matchday">{{ r.matchday_number }}</td>
+                  <td class="col-part">
+                    @if (r.participation === 'starting') {
+                      <span class="part-dot part-dot--start" title="Startelf"></span>
+                    } @else if (r.participation === 'substitute') {
+                      <span class="part-dot part-dot--sub" title="Eingewechselt"></span>
+                    }
+                  </td>
+                  <td class="col-grade">
+                    <span
+                      class="grade-badge"
+                      [style.background]="gradeVar(r.grade)"
+                      [class.grade-badge--unset]="!r.grade"
+                      >{{ r.grade ?? '—' }}</span
+                    >
+                  </td>
+                  <td class="col-icons">
+                    @for (i of range(r.goals); track i) {
+                      <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
+                    }
+                  </td>
+                  <td class="col-icons">
+                    @for (i of range(r.assists); track i) {
+                      <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
+                    }
+                  </td>
+                  <td class="col-sds">
+                    @if (+r.sds) {
+                      <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
+                    }
+                  </td>
+                  <td class="col-card">
+                    @if (+r.yellow_red_card) {
+                      <span class="card-wrap">
+                        <span class="card card--yellow"></span>
+                        <span class="card card--red"></span>
+                      </span>
+                    } @else if (+r.red_card) {
+                      <span class="card card--red"></span>
+                    }
+                  </td>
+                  <td class="col-points">{{ r.points ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
   </div>
 }

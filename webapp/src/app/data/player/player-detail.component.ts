@@ -159,39 +159,61 @@ export class PlayerDetailComponent {
     if (!p || p.ratings.length === 0) return null;
 
     const sorted = p.ratings; // already sorted by matchday_number ASC
-    const maxPts = Math.max(...sorted.map((r) => Math.max(+(r.points ?? 0), 0)), 1);
+    const rawPts = sorted.map((r) => +(r.points ?? 0));
+    const maxPts = Math.max(...rawPts, 0);
+    const minPts = Math.min(...rawPts, 0);
+    const range  = Math.max(maxPts - minPts, 1);
+
     const plotW  = this.pointsChartW - this.padL - this.padR;
     const plotH  = this.chartH - this.padT - this.padB;
     const n      = sorted.length;
     const slotW  = plotW / n;
     const barW   = Math.min(slotW * 0.65, 40);
 
+    // Y coordinate of the zero baseline
+    const zeroY = this.padT + plotH * (maxPts / range);
+
     const bars = sorted.map((s, i) => {
-      const pts  = Math.max(+(s.points ?? 0), 0);
-      const barH = (pts / maxPts) * plotH;
+      const pts  = +(s.points ?? 0);
+      const barH = (Math.abs(pts) / range) * plotH;
       const x    = this.padL + i * slotW + (slotW - barW) / 2;
-      const y    = this.padT + plotH - barH;
+      const y    = pts >= 0 ? zeroY - barH : zeroY;
       return {
         x, y, width: barW, height: barH,
-        color:   this.gradeVar(s.grade),
+        color:   s.grade ? this.gradeVar(s.grade) : '#9ca3af',
         labelX:  this.padL + i * slotW + slotW / 2,
         label:   s.matchday_number,
         tooltip: `ST ${s.matchday_number}: ${pts} Pkt`,
       };
     });
 
-    const yTicks = [
-      { y: this.padT,         label: String(maxPts) },
-      { y: this.padT + plotH, label: '0' },
+    const yTicks: { y: number; label: string }[] = [
+      { y: zeroY, label: '0' },
     ];
+    if (maxPts > 0) yTicks.unshift({ y: this.padT,        label: String(maxPts) });
+    if (minPts < 0) yTicks.push(  { y: this.padT + plotH, label: String(minPts) });
 
-    return { bars, yTicks };
+    // Rolling average line (5-matchday window)
+    const windowSize = 5;
+    const rollingPts: Array<{ x: number; y: number }> = [];
+    for (let i = windowSize - 1; i < sorted.length; i++) {
+      const avg = rawPts.slice(i - windowSize + 1, i + 1).reduce((a, b) => a + b, 0) / windowSize;
+      rollingPts.push({
+        x: this.padL + i * slotW + slotW / 2,
+        y: Math.max(this.padT, Math.min(this.padT + plotH, zeroY - (avg / range) * plotH)),
+      });
+    }
+    const rollingLine = rollingPts.length >= 2
+      ? rollingPts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+      : null;
+
+    return { bars, yTicks, rollingLine };
   });
 
   // Bar charts – widths tuned to their respective CSS containers
-  // price chart: ~38% grid column ≈ 400px; points chart: ~50% flex column ≈ 530px
-  readonly chartW      = 380; // price chart (seasons section)
-  readonly pointsChartW = 520; // points chart (ratings section)
+  // price chart: 1/3 grid column ≈ 320px; points chart: full-width ≈ 900px
+  readonly chartW       = 380; // price chart (middle grid column)
+  readonly pointsChartW = 900; // points chart (full-width row above grid)
   readonly chartH = 160;
   readonly padL   = 44;
   readonly padR   = 8;

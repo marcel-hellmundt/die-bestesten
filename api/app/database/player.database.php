@@ -300,7 +300,7 @@ trait PlayerTrait
                 ':id'            => $row['player_rating_id'],
                 ':player_id'     => $row['player_id'],
                 ':matchday_id'   => $matchdayId,
-                ':grade'         => $row['grade'],
+                ':grade'         => ($row['grade'] == 0) ? null : $row['grade'],
                 ':participation' => $row['start_lineup'] ? 'starting' : ($row['substitution'] ? 'substitute' : null),
                 ':goals'         => $row['goals'],
                 ':assists'       => $row['assists'],
