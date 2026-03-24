@@ -1,3 +1,23 @@
+@if (!loading() && !error() && items().length > 0) {
+  <div class="stat-grid">
+    <div class="stat-card">
+      <span class="stat-label" style="color: #3b6dd4">Vereine</span>
+      <div class="stat-value">{{ items().length }}</div>
+      <div class="stat-desc">Gesamt</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label" style="color: var(--division-level-1)">Bundesliga</span>
+      <div class="stat-value">{{ bundesligaClubs().length }}</div>
+      <div class="stat-desc">1. Bundesliga</div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label" style="color: var(--division-level-2)">Weitere</span>
+      <div class="stat-value">{{ otherClubs().length }}</div>
+      <div class="stat-desc">Andere Ligen</div>
+    </div>
+  </div>
+}
+
 <div class="list-bar">
   <input
     class="input search-input"
@@ -26,7 +46,10 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   @if (bundesligaClubs().length > 0) {
-    <h3 class="table-section-title">1. Bundesliga</h3>
+    <div class="section-header">
+      <h3 class="table-section-title" style="margin: 0">1. Bundesliga</h3>
+      <span class="section-count">{{ bundesligaClubs().length }} Vereine</span>
+    </div>
     <div class="table-container">
       <table class="data-table">
         <thead>
@@ -59,7 +82,10 @@
 
   @if (otherClubs().length > 0) {
     @if (bundesligaClubs().length > 0) {
-      <h3 class="table-section-title">Weitere Vereine</h3>
+      <div class="section-header">
+        <h3 class="table-section-title" style="margin: 0">Weitere Vereine</h3>
+        <span class="section-count">{{ otherClubs().length }}</span>
+      </div>
     }
     <div class="table-container">
       <table class="data-table">

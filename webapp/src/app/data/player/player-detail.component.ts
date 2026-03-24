@@ -30,6 +30,7 @@ interface PlayerRating {
   goals: string;
   assists: string;
   clean_sheet: string;
+  sds: string;
   red_card: string;
   yellow_red_card: string;
   points: string | null;
@@ -159,7 +160,7 @@ export class PlayerDetailComponent {
 
     const sorted = p.ratings; // already sorted by matchday_number ASC
     const maxPts = Math.max(...sorted.map((r) => Math.max(+(r.points ?? 0), 0)), 1);
-    const plotW  = this.chartW - this.padL - this.padR;
+    const plotW  = this.pointsChartW - this.padL - this.padR;
     const plotH  = this.chartH - this.padT - this.padB;
     const n      = sorted.length;
     const slotW  = plotW / n;
@@ -187,8 +188,10 @@ export class PlayerDetailComponent {
     return { bars, yTicks };
   });
 
-  // Bar chart
-  readonly chartW = 360;
+  // Bar charts – widths tuned to their respective CSS containers
+  // price chart: ~38% grid column ≈ 400px; points chart: ~50% flex column ≈ 530px
+  readonly chartW      = 380; // price chart (seasons section)
+  readonly pointsChartW = 520; // points chart (ratings section)
   readonly chartH = 160;
   readonly padL   = 44;
   readonly padR   = 8;

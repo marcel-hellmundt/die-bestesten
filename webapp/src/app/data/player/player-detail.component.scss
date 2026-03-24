@@ -189,13 +189,8 @@
   }
 }
 
-.ratings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $space-4;
-  margin-bottom: $space-4;
-
+// .section-header is global; override section-title margin inside it
+.section-header {
   .section-title { margin-bottom: 0; }
 }
 
@@ -223,20 +218,17 @@
 
   .col-icons {
     white-space: nowrap;
+  }
 
-    .icon {
-      vertical-align: middle;
-      margin-right: 2px;
+  .col-sds {
+    width: 28px;
+    text-align: center;
+  }
 
-      &--goal   { color: #2d3436; }
-      &--assist {
-        display: inline-block;
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: var(--position-midfielder);
-      }
-    }
+  .rating-icon {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
   }
 
   .col-card {

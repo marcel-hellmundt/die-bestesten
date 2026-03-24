@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS player_rating (
     goals INT DEFAULT 0,                        -- Tore
     assists INT DEFAULT 0,                      -- Vorlagen
     clean_sheet BOOLEAN DEFAULT FALSE,          -- Weiße Weste
+    sds BOOLEAN DEFAULT FALSE,                  -- Spieler des Spiels
     red_card BOOLEAN DEFAULT FALSE,             -- Rote Karte
     yellow_red_card BOOLEAN DEFAULT FALSE,      -- Gelb-Rote Karte
     points INT DEFAULT NULL,                    -- Punkte (kann aus anderen Werten berechnet werden)

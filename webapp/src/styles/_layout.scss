@@ -301,11 +301,65 @@
 .page-title {
   font-family: $font-display;
   font-size: $font-2xl;
-  font-weight: $font-weight-semibold;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-weight: $font-weight-bold;
   color: $color-text;
+  margin-bottom: $space-2;
+}
+
+.page-subtitle {
+  font-size: $font-sm;
+  color: $color-text-muted;
   margin-bottom: $space-6;
+}
+
+// Stat cards — metric overview grid above list tables
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: $space-4;
+  margin-bottom: $space-6;
+}
+
+.stat-card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: $space-5 $space-6;
+
+  .stat-label {
+    display: block;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $space-2;
+  }
+
+  .stat-value {
+    font-size: $font-3xl;
+    font-weight: $font-weight-bold;
+    line-height: 1;
+    color: $color-text;
+    margin-bottom: $space-1;
+  }
+
+  .stat-desc {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+// Section header — title + optional right-side content
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-4;
+
+  .section-count {
+    font-size: $font-sm;
+    color: $color-text-muted;
+    white-space: nowrap;
+  }
 }
 
 .state-msg {

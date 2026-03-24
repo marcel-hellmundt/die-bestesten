@@ -89,11 +89,9 @@
     font-weight: $font-weight-medium;
     color: $color-text-muted;
     text-decoration: none;
-    border-left: 2px solid transparent;
     transition:
       background-color $transition-fast,
-      color $transition-fast,
-      border-color $transition-fast;
+      color $transition-fast;
 
     &:hover {
       background-color: $color-surface-alt;
@@ -101,12 +99,11 @@
     }
 
     &--active {
-      color: $color-accent;
-      background-color: $color-surface-alt;
-      border-left-color: $color-accent;
-      border-radius: 0 $radius-md $radius-md 0;
+      color: #3b6dd4;
+      background-color: #e8eef8;
+      border-radius: $radius-md;
 
-      .nav-icon { color: $color-accent; }
+      .nav-icon { color: #3b6dd4; }
     }
   }
 

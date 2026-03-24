@@ -60,7 +60,7 @@ trait PlayerTrait
             $q = $this->con->prepare("
                 SELECT pr.id, pr.grade, pr.participation,
                        pr.goals, pr.assists, pr.clean_sheet,
-                       pr.red_card, pr.yellow_red_card, pr.points,
+                       pr.sds, pr.red_card, pr.yellow_red_card, pr.points,
                        m.number AS matchday_number, m.kickoff_date
                 FROM player_rating pr
                 JOIN matchday m ON pr.matchday_id = m.id
@@ -242,12 +242,12 @@ trait PlayerTrait
 
         // 4. Migrate player_rating
         // Old schema: player_rating_id, season_id + matchday (number) → resolve to matchday_id
-        // Ignored columns: club_id, sds, ligainsider_grade, is_live
+        // Ignored columns: club_id, ligainsider_grade, is_live
         $allRatingRows = $this->con_old->query("
             SELECT pr.player_rating_id, pr.player_id, pr.season_id, pr.matchday AS matchday_number,
                    pr.grade, pr.start_lineup, pr.substitution,
                    pr.goals, pr.assists, pr.clean_sheet,
-                   pr.red_card, pr.yellow_red_card, pr.points,
+                   pr.sds, pr.red_card, pr.yellow_red_card, pr.points,
                    p.player_id IS NOT NULL AS player_exists
             FROM player_rating pr
             LEFT JOIN player p ON p.player_id = pr.player_id
@@ -263,16 +263,17 @@ trait PlayerTrait
         $stmtRating = $this->con->prepare(
             "INSERT INTO player_rating
                 (id, player_id, matchday_id, grade, participation,
-                 goals, assists, clean_sheet, red_card, yellow_red_card, points)
+                 goals, assists, clean_sheet, sds, red_card, yellow_red_card, points)
              VALUES
                 (:id, :player_id, :matchday_id, :grade, :participation,
-                 :goals, :assists, :clean_sheet, :red_card, :yellow_red_card, :points)
+                 :goals, :assists, :clean_sheet, :sds, :red_card, :yellow_red_card, :points)
              ON DUPLICATE KEY UPDATE
-               grade         = VALUES(grade),
-               participation = VALUES(participation),
-               goals         = VALUES(goals),
+               grade           = VALUES(grade),
+               participation   = VALUES(participation),
+               goals           = VALUES(goals),
                assists         = VALUES(assists),
                clean_sheet     = VALUES(clean_sheet),
+               sds             = VALUES(sds),
                red_card        = VALUES(red_card),
                yellow_red_card = VALUES(yellow_red_card),
                points          = VALUES(points)"
@@ -304,6 +305,7 @@ trait PlayerTrait
                 ':goals'         => $row['goals'],
                 ':assists'       => $row['assists'],
                 ':clean_sheet'   => $row['clean_sheet'],
+                ':sds'           => $row['sds'],
                 ':red_card'      => $row['red_card'],
                 ':yellow_red_card' => $row['yellow_red_card'],
                 ':points'        => $row['points'],

@@ -18,14 +18,13 @@
     display: flex;
     align-items: center;
     gap: $space-2;
-    width: 240px;
+    width: 260px;
     height: $control-height;
     padding: 0 $space-3;
     border: 1px solid $color-border;
     border-radius: $radius-full;
     background-color: $color-surface-alt;
     cursor: not-allowed;
-    opacity: 0.6;
 
     input {
       flex: 1;
@@ -48,12 +47,22 @@
       flex-shrink: 0;
     }
 
+    .search-hint {
+      font-size: $font-xs;
+      color: $color-text-muted;
+      background: $color-border;
+      border-radius: $radius-sm;
+      padding: 1px 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
     @media (max-width: #{$mobile-breakpoint}) {
       width: 36px;
       padding: 0 $space-2;
       justify-content: center;
 
-      input { display: none; }
+      input, .search-hint { display: none; }
     }
   }
 

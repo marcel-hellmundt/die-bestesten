@@ -1,3 +1,20 @@
+@if (!loading() && !error() && items().length > 0) {
+  <div class="stat-grid">
+    <div class="stat-card">
+      <span class="stat-label" style="color: #3b6dd4">Spieler</span>
+      <div class="stat-value">{{ items().length }}</div>
+      <div class="stat-desc">Gesamt migriert</div>
+    </div>
+    @if (filteredItems().length < items().length) {
+      <div class="stat-card">
+        <span class="stat-label" style="color: #7c3aed">Gefiltert</span>
+        <div class="stat-value">{{ filteredItems().length }}</div>
+        <div class="stat-desc">Suchergebnis</div>
+      </div>
+    }
+  </div>
+}
+
 <div class="list-bar">
   <input
     class="input search-input"
