@@ -1,0 +1,162 @@
+@use '../../styles/variables' as *;
+
+.settings-section {
+  max-width: 560px;
+  margin-bottom: $space-10;
+
+  &--danger {
+    padding: $space-6;
+    border: 1px solid $color-danger;
+    border-radius: $radius-lg;
+    background: color-mix(in srgb, $color-danger 5%, transparent);
+  }
+}
+
+.section-title {
+  font-size: $font-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin-bottom: $space-4;
+
+  .settings-section--danger & {
+    color: $color-danger;
+  }
+}
+
+// Profile card
+.profile-card {
+  display: flex;
+  gap: $space-5;
+  align-items: flex-start;
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: $color-surface-alt;
+  border: 2px solid $color-border;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-initials {
+  font-size: $font-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-muted;
+  font-family: $font-display;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  flex: 1;
+}
+
+.info-row {
+  display: flex;
+  gap: $space-3;
+  align-items: center;
+  font-size: $font-sm;
+}
+
+.info-label {
+  color: $color-text-muted;
+  min-width: 56px;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: $color-text;
+  font-weight: $font-weight-medium;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: $color-surface-alt;
+  color: $color-text-muted;
+
+  &--admin {
+    background: color-mix(in srgb, $color-accent 15%, transparent);
+    color: $color-accent;
+  }
+
+  &--maintainer {
+    background: color-mix(in srgb, $color-success 15%, transparent);
+    color: $color-success;
+  }
+}
+
+// Form
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.form-label {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+}
+
+.state-msg--success {
+  color: $color-success;
+}
+
+// Delete confirm
+.danger-description {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  margin-bottom: $space-4;
+}
+
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.delete-confirm__text {
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.delete-confirm__actions {
+  display: flex;
+  gap: $space-3;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .profile-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .info-row {
+    justify-content: center;
+  }
+}

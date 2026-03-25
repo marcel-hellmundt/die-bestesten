@@ -14,7 +14,8 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: '', redirectTo: 'data', pathMatch: 'full' },
-      { path: 'data', loadChildren: () => import('../data/data.module').then(m => m.DataModule) }
+      { path: 'data',     loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
+      { path: 'settings', loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) }
     ]
   }
 ];

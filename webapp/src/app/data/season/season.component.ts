@@ -99,8 +99,108 @@ export class SeasonDataComponent {
     this.selectedMatchday.set(current?.id === matchday.id ? null : matchday);
   }
 
+  private readonly WEEKDAYS = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
+
+  formatDate(dateStr: string | null): string {
+    if (!dateStr) return '—';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}.${m}.${y}`;
+  }
+
+  formatDatetime(dateStr: string | null): string {
+    if (!dateStr) return '—';
+    const dt = new Date(dateStr.replace(' ', 'T'));
+    const weekday = this.WEEKDAYS[dt.getDay()];
+    const d = String(dt.getDate()).padStart(2, '0');
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const y = dt.getFullYear();
+    const h = String(dt.getHours()).padStart(2, '0');
+    const min = String(dt.getMinutes()).padStart(2, '0');
+    return `${weekday} ${d}.${m}.${y} ${h}:${min}`;
+  }
+
   isAdmin      = computed(() => this.auth.isAdmin());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  sanityState    = signal<'idle' | 'loading' | 'done'>('idle');
+  sanityWarnings = signal<string[]>([]);
+
+  runSanityCheck(): void {
+    this.sanityState.set('loading');
+    forkJoin({
+      matchdays:       this.api.get<any[]>('matchday'),
+      transferwindows: this.api.get<any[]>('transferwindow'),
+    }).subscribe({
+      next: ({ matchdays, transferwindows }) => {
+        const warnings: string[] = [];
+        const mds = matchdays.map(Matchday.from);
+        const tws = transferwindows.map(Transferwindow.from);
+        const seasonMap = new Map(this.items().map(s => [s.id, s.displayName]));
+        const matchdayMap = new Map(mds.map(m => [m.id, m]));
+
+        // Saisons: Start muss 1. Juli sein
+        for (const s of this.items()) {
+          const [, mm, dd] = s.start_date.split('-');
+          if (mm !== '07' || dd !== '01') {
+            warnings.push(`Saison ${s.displayName}: Start ${this.formatDate(s.start_date)} ist nicht der 1. Juli`);
+          }
+        }
+
+        // Spieltage: Anpfiff muss Fr. 20:30, Sa. 15:30 oder Di. 18:30 sein
+        for (const md of mds) {
+          if (!md.kickoff_date) continue;
+          const dt = new Date(md.kickoff_date.replace(' ', 'T'));
+          const day = dt.getDay();
+          const h = dt.getHours();
+          const min = dt.getMinutes();
+          const valid =
+            (day === 5 && h === 20 && min === 30) ||
+            (day === 6 && h === 15 && min === 30) ||
+            (day === 2 && h === 18 && min === 30);
+          if (!valid) {
+            const sName = seasonMap.get(md.season_id) ?? md.season_id;
+            warnings.push(`Spieltag ${md.number} (${sName}): Anpfiff ${this.formatDatetime(md.kickoff_date)} ist ungewöhnlich`);
+          }
+        }
+
+        // Transferfenster: Ende muss Mi. 20:00, Do. 20:00 oder Fr. 12:00 sein
+        for (const tw of tws) {
+          const dt = new Date(tw.end_date.replace(' ', 'T'));
+          const day = dt.getDay();
+          const h = dt.getHours();
+          const min = dt.getMinutes();
+          const valid =
+            (day === 3 && h === 20 && min === 0) ||
+            (day === 4 && h === 20 && min === 0) ||
+            (day === 5 && h === 12 && min === 0);
+          if (!valid) {
+            const md = matchdayMap.get(tw.matchday_id);
+            const sName = md ? (seasonMap.get(md.season_id) ?? '') : '';
+            const label = md ? `Spieltag ${md.number} (${sName})` : tw.matchday_id;
+            warnings.push(`TF ${label}: Ende ${this.formatDatetime(tw.end_date)} ist ungewöhnlich`);
+          }
+        }
+
+        // Transferfenster: keine Überschneidungen
+        const sorted = [...tws].sort((a, b) => a.start_date.localeCompare(b.start_date));
+        for (let i = 1; i < sorted.length; i++) {
+          const prev = sorted[i - 1];
+          const curr = sorted[i];
+          if (curr.start_date < prev.end_date) {
+            const getMd = (tw: Transferwindow) => {
+              const m = matchdayMap.get(tw.matchday_id);
+              return m ? `Spieltag ${m.number} (${seasonMap.get(m.season_id) ?? ''})` : tw.matchday_id;
+            };
+            warnings.push(`Überschneidung: TF ${getMd(prev)} (bis ${this.formatDatetime(prev.end_date)}) und TF ${getMd(curr)} (ab ${this.formatDatetime(curr.start_date)})`);
+          }
+        }
+
+        this.sanityWarnings.set(warnings);
+        this.sanityState.set('done');
+      },
+      error: () => this.sanityState.set('idle'),
+    });
+  }
 
   migrate(): void {
     this.migrateState.set('loading');

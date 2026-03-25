@@ -3,6 +3,11 @@
          [value]="searchQuery()"
          (input)="searchQuery.set($any($event.target).value)" />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
+  <button class="btn"
+          [disabled]="sanityState() === 'loading'"
+          (click)="runSanityCheck()">
+    {{ sanityState() === 'loading' ? 'Prüft…' : 'Sanity Check' }}
+  </button>
   @if (isAdmin()) {
     <button class="btn btn-primary"
             [disabled]="migrateState() === 'loading'"
@@ -17,6 +22,21 @@
     }
   }
 </div>
+
+@if (sanityState() === 'done') {
+  <div class="sanity-panel" [class.sanity-panel--ok]="sanityWarnings().length === 0">
+    @if (sanityWarnings().length === 0) {
+      <span class="sanity-ok">Keine Auffälligkeiten gefunden</span>
+    } @else {
+      <span class="sanity-count">{{ sanityWarnings().length }} Warnung{{ sanityWarnings().length === 1 ? '' : 'en' }}</span>
+      <ul class="sanity-list">
+        @for (w of sanityWarnings(); track w) {
+          <li>{{ w }}</li>
+        }
+      </ul>
+    }
+  </div>
+}
 
 @if (loading()) {
   <p class="state-msg">Laden…</p>
@@ -42,7 +62,7 @@
                   [class.row--selected]="selectedSeason()?.id === item.id"
                   (click)="selectSeason(item)">
                 <td>{{ item.displayName }}</td>
-                <td>{{ item.start_date }}</td>
+                <td>{{ formatDate(item.start_date) }}</td>
               </tr>
             }
           </tbody>
@@ -73,8 +93,8 @@
                       [class.row--selected]="selectedMatchday()?.id === md.id"
                       (click)="selectMatchday(md)">
                     <td class="col-number">{{ md.number }}</td>
-                    <td>{{ md.start_date }}</td>
-                    <td>{{ md.kickoff_date }}</td>
+                    <td>{{ formatDate(md.start_date) }}</td>
+                    <td>{{ formatDatetime(md.kickoff_date) }}</td>
                     <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
                   </tr>
                 }
@@ -94,11 +114,11 @@
             <span class="tw-card__label">Fenster {{ i + 1 }}</span>
             <div class="tw-card__row">
               <span class="tw-card__key">Start</span>
-              <span>{{ tw.start_date }}</span>
+              <span>{{ formatDatetime(tw.start_date) }}</span>
             </div>
             <div class="tw-card__row">
               <span class="tw-card__key">Ende</span>
-              <span>{{ tw.end_date }}</span>
+              <span>{{ formatDatetime(tw.end_date) }}</span>
             </div>
           </div>
         }

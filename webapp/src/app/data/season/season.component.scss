@@ -82,3 +82,50 @@
   color: $color-text-muted;
   flex-shrink: 0;
 }
+
+.sanity-panel {
+  border: 1px solid $color-danger;
+  border-radius: $radius-lg;
+  padding: $space-4;
+  margin-bottom: $space-4;
+  background: color-mix(in srgb, $color-danger 8%, transparent);
+
+  &--ok {
+    border-color: $color-success;
+    background: color-mix(in srgb, $color-success 8%, transparent);
+  }
+}
+
+.sanity-ok {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-success;
+}
+
+.sanity-count {
+  display: block;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-danger;
+  margin-bottom: $space-2;
+}
+
+.sanity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  li {
+    font-size: $font-sm;
+    color: $color-text;
+    padding: $space-1 0;
+    border-top: 1px solid color-mix(in srgb, $color-danger 20%, transparent);
+
+    &:first-child {
+      border-top: none;
+    }
+  }
+}

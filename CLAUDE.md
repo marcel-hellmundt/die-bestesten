@@ -142,7 +142,14 @@ Vollständige Dokumentation unter `api/schema.php`. Endpoints:
 - `GET /player`, `GET /player/:id`
 - `POST /player/migrate` — Migriert player, player_in_season, player_in_club, player_rating aus alter DB; gibt migrated/skipped-Counts zurück
 - `POST /auth` — JWT-Login
+- `GET /manager/me` — Eigenes Profil (id, manager_name, alias, role, status); erfordert Auth
+- `PATCH /manager/me` — Passwort ändern; Body: `{ current_password, new_password }`; erfordert Auth
+- `DELETE /manager/me` — Eigenen Account löschen; Body: `{ password }`; erfordert Auth
 
 ## Liga-spezifische Datenbank
 
-`database/league_schema.sql` — noch nicht implementiert (manager, team, team_rating, team_lineup, player_in_team)
+`database/league_schema.sql` — manager-Tabelle implementiert; team, team_rating, team_lineup, player_in_team noch ausstehend
+
+### manager-Tabelle (league DB)
+
+- **manager**: id `CHAR(36)` PK, manager_name `VARCHAR(64)` UNIQUE, alias `VARCHAR(64)` UNIQUE nullable, password `VARCHAR(255)`, role `ENUM(admin,maintainer,user)`, status `ENUM(active,blocked)`, date_of_birth `DATE` nullable

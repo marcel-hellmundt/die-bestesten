@@ -11,7 +11,9 @@ export class ApiService {
   constructor(private http: HttpClient, private auth: AuthService) {}
 
   get<T>(path: string): Observable<T> {
-    return this.http.get<T>(`${this.base}/${path}`);
+    const token = this.auth.getToken();
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.get<T>(`${this.base}/${path}`, { headers });
   }
 
   post<T>(path: string, body: unknown = {}): Observable<T> {
@@ -24,5 +26,11 @@ export class ApiService {
     const token = this.auth.getToken();
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
     return this.http.patch<T>(`${this.base}/${path}`, body, { headers });
+  }
+
+  delete<T>(path: string, body: unknown = {}): Observable<T> {
+    const token = this.auth.getToken();
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.delete<T>(`${this.base}/${path}`, { headers, body });
   }
 }

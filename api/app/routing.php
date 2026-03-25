@@ -192,6 +192,28 @@ class Routing
                 ],
             ]),
 
+            new Route('manager', 'Manager', [
+                'title'       => 'Manager',
+                'description' => 'Eigenes Manager-Konto verwalten (Profil, Passwort, Account löschen)',
+                'endpoints'   => [
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/manager/me',
+                        'description' => 'Eigenes Profil abrufen (id, manager_name, alias, role, status)',
+                    ],
+                    [
+                        'method'      => 'PATCH',
+                        'path'        => '/manager/me',
+                        'description' => 'Passwort ändern — Body: { current_password, new_password }',
+                    ],
+                    [
+                        'method'      => 'DELETE',
+                        'path'        => '/manager/me',
+                        'description' => 'Eigenen Account löschen — Body: { password }',
+                    ],
+                ],
+            ]),
+
             new Route('player', 'Player', [
                 'title'       => 'Player',
                 'description' => 'Spieler mit eingebetteten aktuellen Club- und Saisondaten im Detailabruf',

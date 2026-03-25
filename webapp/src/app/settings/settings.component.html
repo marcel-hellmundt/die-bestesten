@@ -1,0 +1,119 @@
+<h1 class="page-title">Einstellungen</h1>
+
+<!-- Profil -->
+<section class="settings-section">
+  <h2 class="section-title">Mein Konto</h2>
+
+  @if (profileLoading()) {
+    <p class="state-msg">Laden…</p>
+  } @else if (profileError()) {
+    <p class="state-msg state-msg--error">{{ profileError() }}</p>
+  } @else if (profile(); as p) {
+    <div class="profile-card">
+      <div class="profile-avatar">
+        @if (avatarUrl() && !avatarFailed()) {
+          <img [src]="avatarUrl()!" class="avatar-img" (error)="avatarFailed.set(true)" alt="" />
+        } @else {
+          <span class="avatar-initials">{{ initials() }}</span>
+        }
+      </div>
+      <div class="profile-info">
+        <div class="info-row">
+          <span class="info-label">Name</span>
+          <span class="info-value">{{ p.manager_name }}</span>
+        </div>
+        @if (p.alias) {
+          <div class="info-row">
+            <span class="info-label">Alias</span>
+            <span class="info-value">{{ p.alias }}</span>
+          </div>
+        }
+        <div class="info-row">
+          <span class="info-label">Rolle</span>
+          <span class="info-value role-badge role-badge--{{ p.role }}">{{ p.role }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status</span>
+          <span class="info-value">{{ p.status }}</span>
+        </div>
+      </div>
+    </div>
+  }
+</section>
+
+<!-- Passwort ändern -->
+<section class="settings-section">
+  <h2 class="section-title">Passwort ändern</h2>
+
+  <div class="settings-form">
+    <div class="form-field">
+      <label class="form-label">Aktuelles Passwort</label>
+      <input class="input"
+             type="password"
+             placeholder="••••••••"
+             [value]="currentPw()"
+             (input)="currentPw.set($any($event.target).value)" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Neues Passwort</label>
+      <input class="input"
+             type="password"
+             placeholder="••••••••"
+             [value]="newPw()"
+             (input)="newPw.set($any($event.target).value)" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Neues Passwort bestätigen</label>
+      <input class="input"
+             type="password"
+             placeholder="••••••••"
+             [value]="confirmPw()"
+             (input)="confirmPw.set($any($event.target).value)" />
+    </div>
+
+    @if (pwError()) {
+      <p class="state-msg state-msg--error">{{ pwError() }}</p>
+    }
+    @if (pwState() === 'success') {
+      <p class="state-msg state-msg--success">Passwort erfolgreich geändert</p>
+    }
+
+    <button class="btn btn-primary"
+            [disabled]="pwState() === 'loading' || !currentPw() || !newPw() || !confirmPw()"
+            (click)="changePassword()">
+      {{ pwState() === 'loading' ? 'Wird geändert…' : 'Passwort ändern' }}
+    </button>
+  </div>
+</section>
+
+<!-- Konto löschen -->
+<section class="settings-section settings-section--danger">
+  <h2 class="section-title">Konto löschen</h2>
+  <p class="danger-description">Das Löschen deines Kontos ist endgültig und kann nicht rückgängig gemacht werden.</p>
+
+  @if (!deleteConfirmVisible()) {
+    <button class="btn btn-danger" (click)="showDeleteConfirm()">Konto löschen</button>
+  } @else {
+    <div class="delete-confirm">
+      <p class="delete-confirm__text">Gib dein Passwort ein, um dein Konto endgültig zu löschen.</p>
+      <input class="input"
+             type="password"
+             placeholder="Passwort zur Bestätigung"
+             [value]="deletePw()"
+             (input)="deletePw.set($any($event.target).value)" />
+
+      @if (deleteError()) {
+        <p class="state-msg state-msg--error">{{ deleteError() }}</p>
+      }
+
+      <div class="delete-confirm__actions">
+        <button class="btn" (click)="cancelDelete()">Abbrechen</button>
+        <button class="btn btn-danger"
+                [disabled]="deleteState() === 'loading' || !deletePw()"
+                (click)="deleteAccount()">
+          {{ deleteState() === 'loading' ? 'Wird gelöscht…' : 'Endgültig löschen' }}
+        </button>
+      </div>
+    </div>
+  }
+</section>
