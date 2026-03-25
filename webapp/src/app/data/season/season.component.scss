@@ -11,7 +11,8 @@
 }
 
 .season-panel,
-.matchday-panel {
+.matchday-panel,
+.tw-panel {
   flex: 1;
   min-width: 0;
 }
@@ -39,11 +40,10 @@
   font-size: $font-sm;
 }
 
-.tw-cards {
+.tw-panel {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: $space-3;
-  margin-top: $space-4;
 }
 
 .tw-card {
@@ -51,9 +51,6 @@
   border-radius: $radius-lg;
   padding: $space-4;
   background: $color-surface;
-  min-width: 180px;
-  flex: 1;
-  max-width: 260px;
 }
 
 .tw-card__label {
