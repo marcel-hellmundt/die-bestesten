@@ -18,7 +18,7 @@ const routes: Routes = [
     path: '',
     component: DataComponent,
     children: [
-      { path: '', redirectTo: 'country', pathMatch: 'full' },
+      { path: '', redirectTo: 'player', pathMatch: 'full' },
       { path: 'country',     component: CountryDataComponent },
       { path: 'division',    component: DivisionDataComponent },
       { path: 'country/:id', component: CountryDetailComponent },

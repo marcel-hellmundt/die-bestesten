@@ -32,6 +32,9 @@ export class PlayerDataComponent {
   error   = computed(() => this.state()?.error   ?? null);
 
   searchQuery   = signal('');
+  sortCol       = signal<'displayname' | 'total_points'>('total_points');
+  sortDir       = signal<'asc' | 'desc'>('desc');
+
   filteredItems = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.items();
@@ -41,6 +44,26 @@ export class PlayerDataComponent {
       (i.last_name  ?? '').toLowerCase().includes(q)
     );
   });
+
+  sortedItems = computed(() => {
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    return [...this.filteredItems()].sort((a, b) => {
+      const cmp = col === 'total_points'
+        ? a.total_points - b.total_points
+        : a.displayname.localeCompare(b.displayname);
+      return dir === 'asc' ? cmp : -cmp;
+    });
+  });
+
+  sort(col: 'displayname' | 'total_points'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set(col === 'total_points' ? 'desc' : 'asc');
+    }
+  }
 
   isAdmin      = computed(() => this.auth.isAdmin());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');

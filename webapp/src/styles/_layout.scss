@@ -315,7 +315,7 @@
 // Stat cards — metric overview grid above list tables
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
   gap: $space-4;
   margin-bottom: $space-6;
 }
@@ -327,10 +327,13 @@
   padding: $space-5 $space-6;
 
   .stat-label {
-    display: block;
+    display: inline-block;
     font-size: $font-sm;
     font-weight: $font-weight-semibold;
     margin-bottom: $space-2;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: color-mix(in srgb, currentColor 12%, transparent);
   }
 
   .stat-value {
@@ -339,6 +342,7 @@
     line-height: 1;
     color: $color-text;
     margin-bottom: $space-1;
+    text-align: center;
   }
 
   .stat-desc {
@@ -354,12 +358,6 @@
   justify-content: space-between;
   gap: $space-4;
   margin-bottom: $space-4;
-
-  .section-count {
-    font-size: $font-sm;
-    color: $color-text-muted;
-    white-space: nowrap;
-  }
 }
 
 .state-msg {

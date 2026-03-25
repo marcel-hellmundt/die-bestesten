@@ -99,11 +99,11 @@
     }
 
     &--active {
-      color: #3b6dd4;
-      background-color: #e8eef8;
+      color: var(--flat-river);
+      background-color: color-mix(in srgb, var(--flat-river) 12%, transparent);
       border-radius: $radius-md;
 
-      .nav-icon { color: #3b6dd4; }
+      .nav-icon { color: var(--flat-river); }
     }
   }
 

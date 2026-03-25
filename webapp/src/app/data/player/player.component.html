@@ -1,13 +1,13 @@
 @if (!loading() && !error() && items().length > 0) {
   <div class="stat-grid">
     <div class="stat-card">
-      <span class="stat-label" style="color: #3b6dd4">Spieler</span>
+      <span class="stat-label" style="color: var(--flat-carrot)">Spieler</span>
       <div class="stat-value">{{ items().length }}</div>
       <div class="stat-desc">Gesamt migriert</div>
     </div>
     @if (filteredItems().length < items().length) {
       <div class="stat-card">
-        <span class="stat-label" style="color: #7c3aed">Gefiltert</span>
+        <span class="stat-label" style="color: var(--flat-amethyst)">Gefiltert</span>
         <div class="stat-value">{{ filteredItems().length }}</div>
         <div class="stat-desc">Suchergebnis</div>
       </div>
@@ -50,12 +50,18 @@
           <th>Land</th>
           <th>Vorname</th>
           <th>Nachname</th>
-          <th>Anzeigename</th>
-          <th>Punkte</th>
+          <th class="col-sortable" (click)="sort('displayname')">
+            Anzeigename
+            <span class="sort-indicator">{{ sortCol() === 'displayname' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="col-sortable col-points" (click)="sort('total_points')">
+            Punkte
+            <span class="sort-indicator">{{ sortCol() === 'total_points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
         </tr>
       </thead>
       <tbody>
-        @for (item of filteredItems(); track item.id) {
+        @for (item of sortedItems(); track item.id) {
           <tr class="row-link" [routerLink]="[item.id]">
             <td class="col-id">{{ item.id }}</td>
             <td><img [src]="item.flagUrl" class="flag" alt="" /></td>

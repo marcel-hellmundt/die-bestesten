@@ -115,10 +115,17 @@
   }
 }
 
-.row--selected {
-  background-color: #e8eef8;
+.rating-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-3;
+  margin-bottom: $space-4;
+}
 
-  td { color: #3b6dd4; }
+.row--selected {
+  background-color: color-mix(in srgb, var(--flat-river) 12%, transparent);
+
+  td { color: var(--flat-river); }
 }
 
 .col-price {
@@ -169,7 +176,7 @@
   gap: $space-6;
   align-items: start;
 
-  @media (max-width: 640px) {
+  @media (max-width: #{$mobile-breakpoint}) {
     grid-template-columns: 1fr;
   }
 
@@ -180,6 +187,7 @@
 
   .detail-section .table-container {
     width: 100%;
+    overflow-x: auto;
 
     .data-table { width: 100%; }
   }
@@ -220,6 +228,12 @@
 
   .col-icons {
     white-space: nowrap;
+
+    .icons-wrap {
+      display: inline-flex;
+      gap: 2px;
+      align-items: center;
+    }
   }
 
   .col-sds {

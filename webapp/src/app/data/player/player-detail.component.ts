@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
@@ -75,7 +75,6 @@ export class PlayerDetailComponent {
         const url = seasonId ? `player/${id}?season_id=${seasonId}` : `player/${id}`;
         return this.api.get<PlayerDetail>(url).pipe(
           map((data) => ({ data, loading: false, error: null as string | null })),
-          startWith({ data: null as PlayerDetail | null, loading: true, error: null as string | null }),
           catchError(() =>
             of({ data: null as PlayerDetail | null, loading: false, error: 'Fehler beim Laden' }),
           ),
@@ -152,6 +151,15 @@ export class PlayerDetailComponent {
     if (!grade) return 'var(--grade-unset)';
     return `var(--grade-${grade.replace('.', '')})`;
   }
+
+  totalPoints  = computed(() => this.player()?.ratings.reduce((s, r) => s + +(r.points ?? 0), 0) ?? 0);
+  avgGrade     = computed(() => {
+    const graded = (this.player()?.ratings ?? []).filter(r => r.grade !== null);
+    if (!graded.length) return null;
+    return (graded.reduce((s, r) => s + +r.grade!, 0) / graded.length).toFixed(2);
+  });
+  totalGoals   = computed(() => this.player()?.ratings.reduce((s, r) => s + +r.goals,   0) ?? 0);
+  totalAssists = computed(() => this.player()?.ratings.reduce((s, r) => s + +r.assists, 0) ?? 0);
 
   // Points bar chart (per matchday, colored by grade)
   pointsChartData = computed(() => {
