@@ -275,8 +275,10 @@ flowchart TD
         club_in_season("club_in_season")
     end
 
-    subgraph S4["④ Bewertungen"]
+    subgraph S4["④ Bewertungen &amp; Fenster"]
+        direction LR
         player_rating("player_rating")
+        transferwindow("transferwindow")
     end
 
     country -->|country_id| club
@@ -297,6 +299,7 @@ flowchart TD
     division -->|division_id| club_in_season
 
     matchday -->|matchday_id| player_rating
+    matchday -->|matchday_id| transferwindow
         </pre>
     </div>
 </div>

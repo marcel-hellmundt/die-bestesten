@@ -11,7 +11,6 @@ import { ClubDetailComponent } from './club/club-detail.component';
 import { SeasonDataComponent } from './season/season.component';
 import { PlayerDataComponent } from './player/player.component';
 import { PlayerDetailComponent } from './player/player-detail.component';
-import { MatchdayDataComponent } from './matchday/matchday.component';
 
 const routes: Routes = [
   {
@@ -27,7 +26,6 @@ const routes: Routes = [
       { path: 'season',   component: SeasonDataComponent },
       { path: 'player',      component: PlayerDataComponent },
       { path: 'player/:id', component: PlayerDetailComponent },
-      { path: 'matchday', component: MatchdayDataComponent },
     ]
   }
 ];
@@ -43,7 +41,6 @@ const routes: Routes = [
     SeasonDataComponent,
     PlayerDataComponent,
     PlayerDetailComponent,
-    MatchdayDataComponent,
   ],
   imports: [
     CommonModule,

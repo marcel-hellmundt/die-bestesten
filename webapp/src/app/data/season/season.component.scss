@@ -1,6 +1,82 @@
-.migrate-bar {
+@use '../../../../styles/variables' as *;
+
+.season-layout {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: $space-4;
+  align-items: flex-start;
+
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+  }
+}
+
+.season-panel,
+.matchday-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.data-table tbody tr {
+  cursor: pointer;
+
+  &.row--selected {
+    background-color: $color-surface-alt;
+
+    td {
+      color: $color-text;
+      font-weight: $font-weight-medium;
+    }
+  }
+}
+
+.col-number {
+  width: 48px;
+  text-align: center;
+}
+
+.col-tw {
+  width: 40px;
+  text-align: center;
+  color: $color-text-muted;
+  font-size: $font-sm;
+}
+
+.tw-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+  margin-top: $space-4;
+}
+
+.tw-card {
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-4;
+  background: $color-surface;
+  min-width: 180px;
+  flex: 1;
+  max-width: 260px;
+}
+
+.tw-card__label {
+  display: block;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: $space-2;
+}
+
+.tw-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: $space-2;
+  font-size: $font-sm;
+  padding: $space-1 0;
+}
+
+.tw-card__key {
+  color: $color-text-muted;
+  flex-shrink: 0;
 }

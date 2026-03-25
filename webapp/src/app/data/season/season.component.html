@@ -23,24 +23,86 @@
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
-  <div class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th class="col-id">ID</th>
-          <th>Saison</th>
-          <th>Start</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of filteredItems(); track item.id) {
-          <tr>
-            <td class="col-id">{{ item.id }}</td>
-            <td>{{ item.displayName }}</td>
-            <td>{{ item.start_date }}</td>
-          </tr>
+  <div class="season-layout">
+
+    <!-- Linke Spalte: Saisonliste -->
+    <div class="season-panel">
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-id">ID</th>
+              <th>Saison</th>
+              <th>Start</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filteredItems(); track item.id) {
+              <tr [class.row--selected]="selectedSeason()?.id === item.id"
+                  (click)="selectSeason(item)">
+                <td class="col-id">{{ item.id }}</td>
+                <td>{{ item.displayName }}</td>
+                <td>{{ item.start_date }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Rechte Spalte: Spieltage + Transferfenster-Cards -->
+    @if (selectedSeason()) {
+      <div class="matchday-panel">
+        @if (detailLoading()) {
+          <p class="state-msg">Laden…</p>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-number">Nr.</th>
+                  <th>Start</th>
+                  <th>Anpfiff</th>
+                  <th class="col-tw" title="Transferfenster">TF</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (md of matchdays(); track md.id) {
+                  <tr [class.row--selected]="selectedMatchday()?.id === md.id"
+                      (click)="selectMatchday(md)">
+                    <td class="col-number">{{ md.number }}</td>
+                    <td>{{ md.start_date }}</td>
+                    <td>{{ md.kickoff_date }}</td>
+                    <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (selectedMatchday()) {
+            <div class="tw-cards">
+              @for (tw of matchdayTransferwindows(); track tw.id; let i = $index) {
+                <div class="tw-card">
+                  <span class="tw-card__label">Fenster {{ i + 1 }}</span>
+                  <div class="tw-card__row">
+                    <span class="tw-card__key">Start</span>
+                    <span>{{ tw.start_date }}</span>
+                  </div>
+                  <div class="tw-card__row">
+                    <span class="tw-card__key">Ende</span>
+                    <span>{{ tw.end_date }}</span>
+                  </div>
+                </div>
+              }
+              @if (matchdayTransferwindows().length === 0) {
+                <p class="state-msg">Keine Transferfenster vorhanden</p>
+              }
+            </div>
+          }
         }
-      </tbody>
-    </table>
+      </div>
+    }
+
   </div>
 }

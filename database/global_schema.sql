@@ -33,6 +33,15 @@ CREATE TABLE IF NOT EXISTS matchday (
     FOREIGN KEY (season_id) REFERENCES season(id)
 );
 
+-- Tabelle: transferwindow (Transferfenster je Spieltag)
+CREATE TABLE IF NOT EXISTS transferwindow (
+    id          CHAR(36)  NOT NULL PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
+    matchday_id CHAR(36)  NOT NULL,                               -- FK zu matchday.id
+    start_date  DATETIME  NOT NULL,                               -- Beginn des Transferfensters
+    end_date    DATETIME  NOT NULL,                               -- Ende des Transferfensters
+    FOREIGN KEY (matchday_id) REFERENCES matchday(id)
+);
+
 -- Tabelle: player
 CREATE TABLE IF NOT EXISTS player (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID

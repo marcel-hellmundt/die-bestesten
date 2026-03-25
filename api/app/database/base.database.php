@@ -6,6 +6,7 @@ require_once 'club.database.php';
 require_once 'club_in_season.database.php';
 require_once 'division.database.php';
 require_once 'player.database.php';
+require_once 'transferwindow.database.php';
 
 class Database
 {
@@ -16,6 +17,7 @@ class Database
     use ClubInSeasonTrait;
     use DivisionTrait;
     use PlayerTrait;
+    use TransferwindowTrait;
 
     private $con;
     private $con_league;

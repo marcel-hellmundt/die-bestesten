@@ -38,13 +38,14 @@ Das Schema befindet sich in `database/global_schema.sql`.
 - **player_in_season**: id `CHAR(36)` PK, player_id FK→player, season_id FK→season, price `DECIMAL(10,2)`, position `ENUM(GOALKEEPER,DEFENDER,MIDFIELDER,FORWARD)`, photo_uploaded `BOOLEAN` — UNIQUE(player_id, season_id)
 - **player_in_club**: id `CHAR(36)` PK, player_id FK→player, club_id FK→club, from_date `DATE NOT NULL`, to_date `DATE`, on_loan `BOOLEAN` — UNIQUE(player_id, club_id, from_date)
 - **player_rating**: id `CHAR(36)` PK, player_id FK→player, matchday_id FK→matchday, grade `DECIMAL(3,1) NULL`, participation `ENUM('starting','substitute') NULL`, goals, assists, clean_sheet, sds `BOOLEAN`, red_card, yellow_red_card, points — UNIQUE(player_id, matchday_id)
+- **transferwindow**: id `CHAR(36)` PK, matchday_id `CHAR(36)` FK→matchday, start_date `DATETIME`, end_date `DATETIME` — üblicherweise 2, selten 4 Fenster pro Spieltag
 
 ### Migrations-Reihenfolge (FK-Abhängigkeiten)
 
 1. `country`, `season`, `league`
 2. `club`, `division`, `player`, `matchday`
 3. `club_in_season`, `player_in_season`, `player_in_club`
-4. `player_rating`
+4. `player_rating`, `transferwindow`
 
 ## API-Endpunkte
 
@@ -57,6 +58,8 @@ Vollständige Dokumentation unter `api/schema.php`. Endpoints:
 - `GET /country`, `GET /country/:id`
 - `GET /season`, `GET /season/:id`, `GET /season/active`
 - `GET /matchday`, `GET /matchday/:id`
+- `GET /transferwindow`, `GET /transferwindow/:id` — optional gefiltert nach `matchday_id` oder `season_id`
+- `POST /transferwindow/migrate` — Migriert Transferfenster aus alter DB (nur Admin)
 - `GET /player`, `GET /player/:id`
 - `POST /player/migrate` — Migriert player, player_in_season, player_in_club, player_rating aus alter DB; gibt migrated/skipped-Counts zurück
 - `POST /auth` — JWT-Login

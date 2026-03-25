@@ -165,6 +165,33 @@ class Routing
                 ],
             ]),
 
+            new Route('transferwindow', 'Transferwindow', [
+                'title'       => 'Transferwindow',
+                'description' => 'Transferfenster je Spieltag — üblicherweise 2, selten 4 pro Spieltag',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/transferwindow',
+                        'description'  => 'Alle Transferfenster, optional gefiltert nach Spieltag oder Saison',
+                        'query_params' => [
+                            'matchday_id' => 'UUID des Spieltags (optional)',
+                            'season_id'   => 'UUID der Saison (optional) — gibt alle TF der Saison zurück',
+                        ],
+                    ],
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/transferwindow/:id',
+                        'description' => 'Ein Transferfenster per ID',
+                        'path_params' => [':id' => 'UUID des Transferfensters'],
+                    ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/transferwindow/migrate',
+                        'description' => 'Migriert Transferfenster aus der alten DB — gibt migrated-Count zurück (nur Admin)',
+                    ],
+                ],
+            ]),
+
             new Route('player', 'Player', [
                 'title'       => 'Player',
                 'description' => 'Spieler mit eingebetteten aktuellen Club- und Saisondaten im Detailabruf',
