@@ -5,7 +5,7 @@ trait MatchdayTrait
     public function getMatchdayList(?string $seasonId = null): array
     {
         if ($seasonId) {
-            $query = $this->con->prepare("SELECT * FROM matchday WHERE season_id = :season_id ORDER BY number ASC");
+            $query = $this->con->prepare("SELECT * FROM matchday WHERE season_id = :season_id ORDER BY number DESC");
             $query->execute([':season_id' => $seasonId]);
         } else {
             $query = $this->con->prepare("SELECT * FROM matchday ORDER BY start_date DESC");
