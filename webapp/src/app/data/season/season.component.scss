@@ -1,4 +1,4 @@
-@use '../../../../styles/variables' as *;
+@use '../../../styles/variables' as *;
 
 .season-layout {
   display: flex;
@@ -17,8 +17,6 @@
 }
 
 .data-table tbody tr {
-  cursor: pointer;
-
   &.row--selected {
     background-color: $color-surface-alt;
 

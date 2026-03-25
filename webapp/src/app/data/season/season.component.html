@@ -38,7 +38,8 @@
           </thead>
           <tbody>
             @for (item of filteredItems(); track item.id) {
-              <tr [class.row--selected]="selectedSeason()?.id === item.id"
+              <tr class="row-link"
+                  [class.row--selected]="selectedSeason()?.id === item.id"
                   (click)="selectSeason(item)">
                 <td class="col-id">{{ item.id }}</td>
                 <td>{{ item.displayName }}</td>
@@ -68,7 +69,8 @@
               </thead>
               <tbody>
                 @for (md of matchdays(); track md.id) {
-                  <tr [class.row--selected]="selectedMatchday()?.id === md.id"
+                  <tr class="row-link"
+                      [class.row--selected]="selectedMatchday()?.id === md.id"
                       (click)="selectMatchday(md)">
                     <td class="col-number">{{ md.number }}</td>
                     <td>{{ md.start_date }}</td>
