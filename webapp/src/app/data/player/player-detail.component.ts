@@ -264,7 +264,16 @@ export class PlayerDetailComponent {
       { y: this.padT + plotH,    label: '0' },
     ];
 
-    return { bars, yTicks };
+    // Points-per-season overlay line (secondary scale)
+    const maxPts = Math.max(...sorted.map(s => +s.total_points), 1);
+    const ptsLinePts = sorted.map((s, i) => {
+      const x = this.padL + i * slotW + slotW / 2;
+      const y = this.padT + plotH - (+s.total_points / maxPts) * plotH;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+    const pointsLine = ptsLinePts.length >= 2 ? ptsLinePts.join(' ') : null;
+
+    return { bars, yTicks, pointsLine };
   });
 
   constructor() {
