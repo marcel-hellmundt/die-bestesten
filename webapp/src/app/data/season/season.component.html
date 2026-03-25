@@ -27,6 +27,7 @@
 
     <!-- Linke Spalte: Saisonliste -->
     <div class="season-panel">
+      <h2 class="section-title">Saisons</h2>
       <div class="table-container">
         <table class="data-table">
           <thead>
@@ -52,6 +53,7 @@
     <!-- Mittlere Spalte: Spieltage -->
     @if (selectedSeason()) {
       <div class="matchday-panel">
+        <h2 class="section-title">Spieltage</h2>
         @if (detailLoading()) {
           <p class="state-msg">Laden…</p>
         } @else {
@@ -86,6 +88,7 @@
     <!-- Rechte Spalte: Transferfenster-Cards -->
     @if (selectedMatchday()) {
       <div class="tw-panel">
+        <h2 class="section-title">Transferfenster</h2>
         @for (tw of matchdayTransferwindows(); track tw.id; let i = $index) {
           <div class="tw-card">
             <span class="tw-card__label">Fenster {{ i + 1 }}</span>
