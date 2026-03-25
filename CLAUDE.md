@@ -9,7 +9,86 @@
 
 Mono-Repository mit einer Angular-Webapp und einer PHP-REST-API für eine Fantasy-Football-Plattform.
 
-## Struktur
+## Repo-Struktur (High-Level)
+
+```
+die-bestesten/
+├── .github/workflows/        — deploy-api.yml, deploy-webapp.yml (GitHub Actions → Server-Deploy bei Push auf main)
+├── api/                      — PHP REST-API
+│   ├── app/
+│   │   ├── controller/       — Ein Controller pro Ressource (erbt _BaseController)
+│   │   ├── database/         — Ein Trait pro Ressource; alle in base.database.php per use composited
+│   │   ├── guard.php         — JWT-Verifikation (setzt $GLOBALS['auth_role'])
+│   │   └── routing.php       — Route-Objekte mit eingebetteter API-Doku
+│   ├── index.php             — Einstiegspunkt; parst URL → Routing → Controller
+│   ├── schema.php            — Web-UI für API-Doku (Mermaid-ER + Endpunkte aus routing.php)
+│   └── vendor/               — Composer-Dependencies (firebase/php-jwt)
+├── database/
+│   ├── global_schema.sql     — Globales DB-Schema (alle Tabellen)
+│   └── league_schema.sql     — Liga-spezifisches Schema (noch nicht implementiert)
+└── webapp/                   — Angular-Anwendung (siehe unten)
+```
+
+## Webapp-Struktur (Detailed)
+
+```
+webapp/src/
+├── app/
+│   ├── app-module.ts              — Root-Modul
+│   ├── app-routing-module.ts      — Root-Routing: /login → AuthModule, /app → ShellModule
+│   ├── auth/                      — Login + JWT-Guard
+│   │   ├── auth.guard.ts          — Leitet auf /login um wenn kein gültiger Token
+│   │   ├── auth.module.ts
+│   │   ├── auth.service.ts        — Token speichern/lesen, isAdmin(), getToken()
+│   │   └── login/                 — Login-Formular (POST /auth)
+│   ├── core/                      — Shared Services und Models
+│   │   ├── api.service.ts         — HTTP-Wrapper: get<T>(path), post<T>(path, body), patch<T>(path, body)
+│   │   ├── data-cache.service.ts  — Reaktiver Cache für Lookups (z.B. seasonName(id))
+│   │   ├── icon/                  — Icon-Komponente
+│   │   └── models/                — Typisierte Datenmodelle mit statischer from()-Factory
+│   │       ├── club.model.ts
+│   │       ├── country.model.ts
+│   │       ├── division.model.ts
+│   │       ├── matchday.model.ts
+│   │       ├── player.model.ts
+│   │       ├── season.model.ts
+│   │       └── transferwindow.model.ts
+│   ├── data/                      — Data-Management-Modul unter /app/data
+│   │   ├── data.component         — Sub-Nav (Spieler, Clubs, Saisons, Ligen, Länder)
+│   │   ├── data.module.ts         — Lazy-Routing + Declarations aller Data-Komponenten
+│   │   ├── club/                  — Club-Liste + Detail (/data/club, /data/club/:id)
+│   │   ├── country/               — Länder-Liste + Detail (/data/country, /data/country/:id)
+│   │   ├── division/              — Ligen-Liste (/data/division)
+│   │   ├── player/                — Spieler-Liste + Detail (/data/player, /data/player/:id)
+│   │   └── season/                — Master-Detail: Saisons → Spieltage → Transferfenster (/data/season)
+│   └── shell/                     — App-Shell unter /app
+│       ├── shell.module.ts
+│       ├── shell.component        — Layout: Sidebar (nav) + Topbar + <router-outlet>
+│       ├── nav/                   — Sidebar-Navigation; Desktop vertikal, Mobile bottom-bar
+│       └── topbar/                — Topbar
+├── environments/
+│   ├── environment.ts             — apiUrl → lokale API
+│   └── environment.prod.ts        — apiUrl → https://api.claude.die-bestesten.de
+└── styles/                        — Globale SCSS (importiert via styles.scss)
+    ├── index.scss                 — Importiert alle Partials
+    ├── _variables.scss            — Design-Tokens: Farben, Abstände, Radii, Typografie, Breakpoints
+    ├── _layout.scss               — Globale Klassen: .data-table, .table-container, .list-bar,
+    │                                .stat-card, .card, .page-title, .state-msg, .row-link, …
+    ├── _buttons.scss              — .btn, .btn-primary, .btn-danger, …
+    ├── _inputs.scss               — .input
+    ├── _typography.scss
+    ├── _fonts.scss
+    └── _reset.scss
+```
+
+### Patterns in der Webapp
+
+- **State-Management**: Signal-basiert (`signal`, `computed`, `effect`) + RxJS (`BehaviorSubject`, `switchMap`, `forkJoin`) via `toSignal`/`toObservable`
+- **Komponenten-Muster**: `standalone: false`, SCSS per Komponente mit `@use '../../../styles/variables' as *`
+- **Routing**: Lazy-loaded Module; Detail-Routen als Kind-Routen im selben Modul
+- **Globale Styles**: Wiederverwendbare Klassen in `_layout.scss` nutzen (`.row-link`, `.data-table`, `.col-id`, etc.) statt eigene SCSS schreiben
+
+## Struktur (Kurzform)
 
 - **webapp/**: Angular-Anwendung
 - **api/**: PHP REST-API
