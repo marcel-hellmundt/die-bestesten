@@ -111,7 +111,7 @@ Das Schema befindet sich in `database/global_schema.sql`.
 - **league**: id `CHAR(36)` PK, slug `VARCHAR(32)` UNIQUE, name `VARCHAR(100)`, db_name `VARCHAR(64)`
 - **club**: id `CHAR(36)` PK, country_id `CHAR(2)` FK→country, name `VARCHAR(100)`, short_name `VARCHAR(10)`, logo_uploaded `BOOLEAN`
 - **division**: id `CHAR(36)` PK, name `VARCHAR(100)`, level `INT`, seats `INT`, country_id `CHAR(2)` FK→country
-- **matchday**: id `CHAR(36)` PK, season_id `CHAR(36)` FK→season, start_date `DATE`, kickoff_date `DATETIME`, number `INT`
+- **matchday**: id `CHAR(36)` PK, season_id `CHAR(36)` FK→season, start_date `DATE`, kickoff_date `DATETIME`, number `INT`, completed `BOOLEAN` DEFAULT FALSE
 - **player**: id `CHAR(36)` PK, country_id `CHAR(2)` FK→country (nullable), first_name, last_name, displayname `VARCHAR(32)` UNIQUE, birth_city, date_of_birth, height_cm, weight_kg
 - **club_in_season**: id `CHAR(36)` PK, club_id FK→club, season_id FK→season, division_id FK→division, position `INT` nullable — UNIQUE(club_id, season_id)
 - **player_in_season**: id `CHAR(36)` PK, player_id FK→player, season_id FK→season, price `DECIMAL(10,2)`, position `ENUM(GOALKEEPER,DEFENDER,MIDFIELDER,FORWARD)`, photo_uploaded `BOOLEAN` — UNIQUE(player_id, season_id)
@@ -137,10 +137,14 @@ Vollständige Dokumentation unter `api/schema.php`. Endpoints:
 - `GET /country`, `GET /country/:id`
 - `GET /season`, `GET /season/:id`, `GET /season/active`
 - `GET /matchday`, `GET /matchday/:id`
+- `PATCH /matchday/:id` — `completed`-Status setzen; Body: `{ completed: bool }`; erfordert Auth
 - `GET /transferwindow`, `GET /transferwindow/:id` — optional gefiltert nach `matchday_id` oder `season_id`
 - `POST /transferwindow/migrate` — Migriert Transferfenster aus alter DB (nur Admin)
 - `GET /player`, `GET /player/:id`
 - `POST /player/migrate` — Migriert player, player_in_season, player_in_club, player_rating aus alter DB; gibt migrated/skipped-Counts zurück
+- `GET /player_rating?matchday_id=X&club_id=Y` — Ratings eines Clubs an einem Spieltag (mit Spielerinfos)
+- `POST /player_rating/init` — Erstellt leere Ratings für alle aktuellen Spieler eines Clubs; Body: `{ matchday_id, club_id }`; gibt `created`-Count + `existing`-Liste zurück; erfordert Auth
+- `PATCH /player_rating/:id` — Einzelne Bewertung updaten; erfordert Auth
 - `POST /auth` — JWT-Login
 - `GET /manager/me` — Eigenes Profil (id, manager_name, alias, role, status); erfordert Auth
 - `PATCH /manager/me` — Passwort ändern; Body: `{ current_password, new_password }`; erfordert Auth

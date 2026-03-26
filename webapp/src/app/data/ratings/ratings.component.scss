@@ -1,0 +1,162 @@
+@use '../../../styles/variables' as *;
+
+// Matchday pill bar
+.matchday-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-bottom: $space-6;
+}
+
+.matchday-pill {
+  padding: $space-1 $space-3;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+
+  &:hover {
+    background: $color-surface-alt;
+    border-color: $color-text-muted;
+  }
+
+  &--active {
+    background: $color-text;
+    color: $color-surface;
+    border-color: $color-text;
+  }
+
+  &--done {
+    border-color: $color-success;
+    color: $color-success;
+
+    &.matchday-pill--active {
+      background: $color-success;
+      color: $color-surface;
+    }
+  }
+}
+
+.pill-check {
+  font-size: $font-xs;
+}
+
+// Club grid
+.clubs-section {
+  margin-bottom: $space-8;
+}
+
+.section-title {
+  font-size: $font-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin-bottom: $space-4;
+}
+
+.club-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: $space-3;
+}
+
+.club-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3 $space-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+
+  &:hover {
+    background: $color-surface-alt;
+    border-color: $color-text-muted;
+  }
+
+  &--active {
+    border-color: $color-accent;
+    background: color-mix(in srgb, $color-accent 8%, transparent);
+  }
+}
+
+.club-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.club-name {
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  text-align: center;
+  line-height: 1.2;
+}
+
+// Ratings section
+.ratings-section {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.completed-banner {
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, $color-success 10%, transparent);
+  border: 1px solid $color-success;
+  font-size: $font-sm;
+  color: $color-success;
+  font-weight: $font-weight-medium;
+}
+
+.warning-panel {
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, $color-danger 8%, transparent);
+  border: 1px solid $color-danger;
+  font-size: $font-sm;
+  color: $color-text;
+}
+
+.col-player {
+  font-weight: $font-weight-medium;
+}
+
+.col-points {
+  font-weight: $font-weight-bold;
+  color: $color-text;
+}
+
+.position-badge {
+  display: inline-block;
+  padding: 1px $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.complete-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: $space-2;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .club-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+}

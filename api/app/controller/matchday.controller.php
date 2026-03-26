@@ -29,6 +29,24 @@ class MatchdayController extends _BaseController
 
         return $this->db->migrateMatchday();
     }
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
+    protected function patch(): mixed
+    {
+        if (!$this->id) return $this->methodNotAllowed();
+
+        $body = $this->body();
+        if (!array_key_exists('completed', $body)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Feld "completed" fehlt'];
+        }
+
+        $matchday = $this->db->getMatchdayById($this->id);
+        if (!$matchday) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Matchday not found'];
+        }
+
+        $this->db->updateMatchdayCompleted($this->id, (bool) $body['completed']);
+        return ['status' => true];
+    }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

@@ -192,6 +192,33 @@ class Routing
                 ],
             ]),
 
+            new Route('player_rating', 'PlayerRating', [
+                'title'       => 'PlayerRating',
+                'description' => 'Spieler-Bewertungen pro Spieltag erfassen und abrufen',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/player_rating',
+                        'description'  => 'Alle Ratings eines Clubs an einem Spieltag (mit Spieler-Infos)',
+                        'query_params' => [
+                            'matchday_id' => 'UUID des Spieltags (erforderlich)',
+                            'club_id'     => 'UUID des Clubs (erforderlich)',
+                        ],
+                    ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/player_rating/init',
+                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; gibt created-Count + existing-Liste zurück',
+                    ],
+                    [
+                        'method'      => 'PATCH',
+                        'path'        => '/player_rating/:id',
+                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card, points',
+                        'path_params' => [':id' => 'UUID der player_rating-Zeile'],
+                    ],
+                ],
+            ]),
+
             new Route('manager', 'Manager', [
                 'title'       => 'Manager',
                 'description' => 'Eigenes Manager-Konto verwalten (Profil, Passwort, Account löschen)',

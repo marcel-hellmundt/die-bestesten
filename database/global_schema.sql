@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS matchday (
     start_date DATE NOT NULL,                   -- Startdatum, ab wann Spieler offiziell in diesem Spieltag sind
     kickoff_date DATETIME NOT NULL,             -- Bis wann Spieler ihre Aufstellung anpassen können
     number INT NOT NULL,                        -- Nummer des Spieltages (z.B. 12)
+    completed BOOLEAN NOT NULL DEFAULT FALSE,   -- Spieltag abgeschlossen? (Ratings gesperrt wenn TRUE)
     FOREIGN KEY (season_id) REFERENCES season(id)
 );
 

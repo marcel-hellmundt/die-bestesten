@@ -21,6 +21,15 @@ trait MatchdayTrait
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function updateMatchdayCompleted(string $id, bool $completed): bool
+    {
+        $query = $this->con->prepare(
+            "UPDATE matchday SET completed = :completed WHERE id = :id"
+        );
+        $query->execute([':completed' => $completed ? 1 : 0, ':id' => $id]);
+        return $query->rowCount() > 0;
+    }
+
     public function migrateMatchday(): array
     {
         $rows = $this->con_old->query(
