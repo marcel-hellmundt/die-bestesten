@@ -2,7 +2,7 @@
 
 class TransferwindowController extends _BaseController
 {
-    public static array $publicMethods = ['GET'];
+    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'admin'];
 
     protected function get(): mixed
     {
@@ -24,12 +24,6 @@ class TransferwindowController extends _BaseController
     protected function post(): mixed
     {
         if ($this->id !== 'migrate') return $this->methodNotAllowed();
-
-        if (($GLOBALS['auth_role'] ?? null) !== 'admin') {
-            http_response_code(403);
-            return ['status' => false, 'message' => 'Forbidden'];
-        }
-
         return $this->db->migrateTransferwindow();
     }
 

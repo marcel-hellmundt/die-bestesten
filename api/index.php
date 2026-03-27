@@ -58,7 +58,7 @@ $guard      = new Guard();
 $authResult = $guard->authorize($controllerClass);
 
 if (!$authResult['status']) {
-    http_response_code(401);
+    http_response_code($authResult['code'] ?? 401);
     echo json_encode($authResult);
     exit;
 }

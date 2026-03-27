@@ -18,7 +18,7 @@ die-bestesten/
 │   ├── app/
 │   │   ├── controller/       — Ein Controller pro Ressource (erbt _BaseController)
 │   │   ├── database/         — Ein Trait pro Ressource; alle in base.database.php per use composited
-│   │   ├── guard.php         — JWT-Verifikation (setzt $GLOBALS['auth_role'])
+│   │   ├── guard.php         — JWT-Verifikation + RBAC; setzt $GLOBALS['auth_role'] + auth_manager_id; prüft $methodRoles per Controller
 │   │   └── routing.php       — Route-Objekte mit eingebetteter API-Doku
 │   ├── index.php             — Einstiegspunkt; parst URL → Routing → Controller
 │   ├── schema.php            — Web-UI für API-Doku (Mermaid-ER + Endpunkte aus routing.php)
@@ -87,6 +87,21 @@ webapp/src/
 - **Komponenten-Muster**: `standalone: false`, SCSS per Komponente mit `@use '../../../styles/variables' as *`
 - **Routing**: Lazy-loaded Module; Detail-Routen als Kind-Routen im selben Modul
 - **Globale Styles**: Wiederverwendbare Klassen in `_layout.scss` nutzen (`.row-link`, `.data-table`, `.col-id`, etc.) statt eigene SCSS schreiben
+
+## API-Autorisierung (RBAC)
+
+Jeder Controller definiert `$methodRoles` — eine Map von HTTP-Methode → Mindestrolle:
+
+```php
+public static array $methodRoles = ['GET' => 'guest', 'POST' => 'admin', 'PATCH' => 'user'];
+```
+
+Rollen-Hierarchie (aufsteigend): `guest(0) < user(1) < maintainer(2) < admin(3)`
+
+- `guest` = kein Token nötig
+- `user`+ = gültiger JWT erforderlich; Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_role']`
+- Fehlende Method-Einträge = `guest` (kein Auth nötig)
+- 401 = kein Token, 403 = Token vorhanden aber Rolle zu niedrig
 
 ## Struktur (Kurzform)
 

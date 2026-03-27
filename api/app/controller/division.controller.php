@@ -2,7 +2,7 @@
 
 class DivisionController extends _BaseController
 {
-    public static array $publicMethods = ['GET'];
+    public static array $methodRoles = ['GET' => 'guest'];
 
     protected function get(): mixed
     {

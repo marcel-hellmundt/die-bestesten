@@ -3,7 +3,7 @@ use \Firebase\JWT\JWT;
 
 class AuthController extends _BaseController
 {
-    public static array $publicMethods = ['POST'];
+    public static array $methodRoles = ['POST' => 'guest'];
 
     protected function get(): mixed
     {

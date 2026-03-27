@@ -3,8 +3,9 @@ require_once __DIR__ . '/../database/base.database.php';
 
 abstract class _BaseController
 {
-    // Override in child controllers to declare public HTTP methods
-    public static array $publicMethods = [];
+    // Required role per HTTP method: 'guest' | 'user' | 'maintainer' | 'admin'
+    // guest = no auth needed, user = any authenticated user, etc.
+    public static array $methodRoles = [];
 
     public Database $db;
     public string $endpoint = '';

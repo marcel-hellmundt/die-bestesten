@@ -88,6 +88,12 @@ class Routing
                         'description' => 'Ein Spieltag per ID',
                         'path_params' => [':id' => 'UUID des Spieltags'],
                     ],
+                    [
+                        'method'      => 'PATCH',
+                        'path'        => '/matchday/:id',
+                        'description' => 'completed-Status setzen — Body: { completed: bool } (nur Admin)',
+                        'path_params' => [':id' => 'UUID des Spieltags'],
+                    ],
                 ],
             ]),
 
