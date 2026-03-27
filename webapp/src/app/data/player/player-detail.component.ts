@@ -278,6 +278,15 @@ export class PlayerDetailComponent {
     return { bars, yTicks, pointsLine };
   });
 
+  idCopied = signal(false);
+
+  copyId(id: string): void {
+    navigator.clipboard.writeText(id).then(() => {
+      this.idCopied.set(true);
+      setTimeout(() => this.idCopied.set(false), 1500);
+    });
+  }
+
   constructor() {
     this.cache.ensureSeasons();
   }

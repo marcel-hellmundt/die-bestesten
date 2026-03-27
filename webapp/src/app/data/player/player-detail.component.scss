@@ -156,6 +156,27 @@
   }
 }
 
+.id-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: $space-2;
+  padding: 2px $space-3;
+  font-size: $font-xs;
+  font-family: monospace;
+  color: $color-text-muted;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: color $transition-fast, border-color $transition-fast;
+  letter-spacing: 0.02em;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-text-muted;
+  }
+}
+
 .loan-badge {
   display: inline-block;
   font-size: $font-xs;
@@ -224,14 +245,17 @@
     .rating-club-logo {
       width: 20px;
       height: 20px;
+      max-width: unset;
       object-fit: contain;
       display: block;
     }
   }
 
   .col-part {
-    width: 20px;
+    width: 24px;
     text-align: center;
+
+    svg { margin: 0 auto; }
   }
 
   .col-grade {
@@ -288,15 +312,12 @@
   }
 }
 
-.part-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  vertical-align: middle;
-
-  &--start { background: var(--position-goalkeeper); }
-  &--sub   { background: var(--position-defender); }
+.part-icon {
+  width: 18px;
+  height: 18px;
+  max-width: unset;
+  display: block;
+  flex-shrink: 0;
 }
 
 .card-wrap {

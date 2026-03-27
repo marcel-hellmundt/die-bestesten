@@ -39,6 +39,9 @@
             >
           }
         </div>
+        <button class="id-copy-btn" (click)="copyId(p.id)" title="ID kopieren">
+          {{ idCopied() ? 'Kopiert!' : p.id }}
+        </button>
       </div>
     </div>
   </div>
@@ -311,9 +314,26 @@
                   </td>
                   <td class="col-part">
                     @if (r.participation === 'starting') {
-                      <span class="part-dot part-dot--start" title="Startelf"></span>
+                      <img
+                        src="img/icons/part-starting.svg"
+                        class="part-icon"
+                        alt="Startelf"
+                        title="Startelf"
+                      />
                     } @else if (r.participation === 'substitute') {
-                      <span class="part-dot part-dot--sub" title="Eingewechselt"></span>
+                      <img
+                        src="img/icons/part-substitute.svg"
+                        class="part-icon"
+                        alt="Eingewechselt"
+                        title="Eingewechselt"
+                      />
+                    } @else {
+                      <img
+                        src="img/icons/part-none.svg"
+                        class="part-icon"
+                        alt="Nicht eingesetzt"
+                        title="Nicht eingesetzt"
+                      />
                     }
                   </td>
                   <td class="col-grade">
