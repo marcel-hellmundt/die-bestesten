@@ -287,6 +287,7 @@
             <thead>
               <tr>
                 <th class="col-matchday">#</th>
+                <th class="col-club-logo"></th>
                 <th class="col-part"></th>
                 <th class="col-grade">Note</th>
                 <th class="col-icons">Tore</th>
@@ -300,6 +301,14 @@
               @for (r of p.ratings; track r.id) {
                 <tr>
                   <td class="col-matchday">{{ r.matchday_number }}</td>
+                  <td class="col-club-logo">
+                    <img
+                      [src]="clubLogoUrl(r.club_id, +r.club_logo_uploaded)"
+                      class="rating-club-logo"
+                      [class.logo--placeholder]="!+r.club_logo_uploaded"
+                      alt=""
+                    />
+                  </td>
                   <td class="col-part">
                     @if (r.participation === 'starting') {
                       <span class="part-dot part-dot--start" title="Startelf"></span>

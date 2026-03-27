@@ -34,6 +34,8 @@ interface PlayerRating {
   red_card: string;
   yellow_red_card: string;
   points: string | null;
+  club_id: string;
+  club_logo_uploaded: string;
   matchday_number: string;
   kickoff_date: string;
 }

@@ -61,9 +61,11 @@ trait PlayerTrait
                 SELECT pr.id, pr.grade, pr.participation,
                        pr.goals, pr.assists, pr.clean_sheet,
                        pr.sds, pr.red_card, pr.yellow_red_card, pr.points,
+                       pr.club_id, c.logo_uploaded AS club_logo_uploaded,
                        m.number AS matchday_number, m.kickoff_date
                 FROM player_rating pr
                 JOIN matchday m ON pr.matchday_id = m.id
+                JOIN club c     ON c.id = pr.club_id
                 WHERE pr.player_id = :player_id AND m.season_id = :season_id
                 ORDER BY m.number ASC
             ");

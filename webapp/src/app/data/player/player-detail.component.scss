@@ -217,6 +217,18 @@
     text-align: center;
   }
 
+  .col-club-logo {
+    width: 24px;
+    padding-inline: $space-1;
+
+    .rating-club-logo {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      display: block;
+    }
+  }
+
   .col-part {
     width: 20px;
     text-align: center;
