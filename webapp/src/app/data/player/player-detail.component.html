@@ -293,9 +293,9 @@
                 <th class="col-club-logo"></th>
                 <th class="col-part"></th>
                 <th class="col-grade">Note</th>
+                <th class="col-sds"></th>
                 <th class="col-icons">Tore</th>
                 <th class="col-icons">Assists</th>
-                <th class="col-sds"></th>
                 <th class="col-card">Karte</th>
                 <th class="col-points">Punkte</th>
               </tr>
@@ -345,6 +345,13 @@
                     >
                   </td>
                   <td class="col-icons">
+                    @if (+r.sds) {
+                      <span class="icons-wrap">
+                        <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
+                      </span>
+                    }
+                  </td>
+                  <td class="col-icons">
                     <span class="icons-wrap">
                       @for (i of range(r.goals); track i) {
                         <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
@@ -357,11 +364,6 @@
                         <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
                       }
                     </span>
-                  </td>
-                  <td class="col-sds">
-                    @if (+r.sds) {
-                      <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
-                    }
                   </td>
                   <td class="col-card">
                     @if (+r.yellow_red_card) {
