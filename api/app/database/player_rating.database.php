@@ -20,6 +20,7 @@ trait PlayerRatingTrait
                    pis.position,
                    pis.photo_uploaded,
                    pr.id,
+                   pr.club_id,
                    pr.grade,
                    pr.participation,
                    pr.goals,
@@ -29,12 +30,11 @@ trait PlayerRatingTrait
                    pr.red_card,
                    pr.yellow_red_card,
                    pr.points
-            FROM player_in_club pic
-            JOIN player p               ON p.id = pic.player_id
+            FROM player_rating pr
+            JOIN player p                  ON p.id = pr.player_id
             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
-            LEFT JOIN player_rating pr  ON pr.player_id = p.id AND pr.matchday_id = :matchday_id
-            WHERE pic.club_id = :club_id
-              AND pic.to_date IS NULL
+            WHERE pr.matchday_id = :matchday_id
+              AND pr.club_id = :club_id
             ORDER BY pis.position ASC, p.last_name ASC, p.first_name ASC
         ");
         $query->execute([
@@ -64,8 +64,8 @@ trait PlayerRatingTrait
         $playerRows = $players->fetchAll(PDO::FETCH_ASSOC);
 
         $insert = $this->con->prepare(
-            "INSERT IGNORE INTO player_rating (id, player_id, matchday_id)
-             VALUES (UUID(), :player_id, :matchday_id)"
+            "INSERT IGNORE INTO player_rating (id, player_id, matchday_id, club_id)
+             VALUES (UUID(), :player_id, :matchday_id, :club_id)"
         );
 
         $checkExisting = $this->con->prepare(
@@ -91,6 +91,7 @@ trait PlayerRatingTrait
                 $insert->execute([
                     ':player_id'   => $row['player_id'],
                     ':matchday_id' => $matchdayId,
+                    ':club_id'     => $clubId,
                 ]);
                 $created[] = $row['player_id'];
             }

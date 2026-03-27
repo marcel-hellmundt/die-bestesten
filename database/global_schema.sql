@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS player_rating (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
     matchday_id CHAR(36) NOT NULL,              -- FK zu matchday.id
+    club_id CHAR(36) NOT NULL,                  -- FK zu club.id — Club des Spielers zum Zeitpunkt des Spieltags
     grade DECIMAL(3,1) DEFAULT NULL,            -- Note, z.B. 1.5; Wertebereich 1.0..6.0
     participation ENUM('starting', 'substitute') DEFAULT NULL,  -- 'starting' = Startelf, 'substitute' = Eingewechselt, NULL = nicht gespielt
     goals INT DEFAULT 0,                        -- Tore
@@ -99,9 +100,11 @@ CREATE TABLE IF NOT EXISTS player_rating (
     points INT DEFAULT NULL,                    -- Punkte (kann aus anderen Werten berechnet werden)
     FOREIGN KEY (player_id) REFERENCES player(id),
     FOREIGN KEY (matchday_id) REFERENCES matchday(id),
+    FOREIGN KEY (club_id) REFERENCES club(id),
     UNIQUE KEY uk_player_matchday (player_id, matchday_id),
     INDEX idx_player_id (player_id),
-    INDEX idx_matchday_id (matchday_id)
+    INDEX idx_matchday_id (matchday_id),
+    INDEX idx_club_id (club_id)
 );
 
 -- Tabelle: division (reale Fußball-Spielklassen, z.B. 1. Bundesliga)

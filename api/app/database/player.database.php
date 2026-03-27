@@ -242,15 +242,17 @@ trait PlayerTrait
 
         // 4. Migrate player_rating
         // Old schema: player_rating_id, season_id + matchday (number) → resolve to matchday_id
-        // Ignored columns: club_id, ligainsider_grade, is_live
+        // Ignored columns: ligainsider_grade, is_live
         $allRatingRows = $this->con_old->query("
-            SELECT pr.player_rating_id, pr.player_id, pr.season_id, pr.matchday AS matchday_number,
+            SELECT pr.player_rating_id, pr.player_id, pr.club_id, pr.season_id, pr.matchday AS matchday_number,
                    pr.grade, pr.start_lineup, pr.substitution,
                    pr.goals, pr.assists, pr.clean_sheet,
                    pr.sds, pr.red_card, pr.yellow_red_card, pr.points,
-                   p.player_id IS NOT NULL AS player_exists
+                   p.player_id IS NOT NULL AS player_exists,
+                   c.club_id   IS NOT NULL AS club_exists
             FROM player_rating pr
             LEFT JOIN player p ON p.player_id = pr.player_id
+            LEFT JOIN club   c ON c.club_id   = pr.club_id
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         // Build (season_id + matchday_number) → matchday_id map from new DB
@@ -262,12 +264,13 @@ trait PlayerTrait
 
         $stmtRating = $this->con->prepare(
             "INSERT INTO player_rating
-                (id, player_id, matchday_id, grade, participation,
+                (id, player_id, matchday_id, club_id, grade, participation,
                  goals, assists, clean_sheet, sds, red_card, yellow_red_card, points)
              VALUES
-                (:id, :player_id, :matchday_id, :grade, :participation,
+                (:id, :player_id, :matchday_id, :club_id, :grade, :participation,
                  :goals, :assists, :clean_sheet, :sds, :red_card, :yellow_red_card, :points)
              ON DUPLICATE KEY UPDATE
+               club_id         = VALUES(club_id),
                grade           = VALUES(grade),
                participation   = VALUES(participation),
                goals           = VALUES(goals),
@@ -285,13 +288,14 @@ trait PlayerTrait
         foreach ($allRatingRows as $row) {
             $matchdayId = $matchdayMap[$row['season_id'] . '_' . $row['matchday_number']] ?? null;
 
-            if (!$row['player_exists'] || !$matchdayId) {
+            if (!$row['player_exists'] || !$matchdayId || !$row['club_exists']) {
                 $skippedRatings[] = [
                     'player_rating_id' => $row['player_rating_id'],
                     'player_id'        => $row['player_id'],
                     'season_id'        => $row['season_id'],
                     'matchday'         => $row['matchday_number'],
-                    'reason'           => !$row['player_exists'] ? 'player not found' : 'matchday not found',
+                    'reason'           => !$row['player_exists'] ? 'player not found'
+                                       : (!$matchdayId ? 'matchday not found' : 'club not found'),
                 ];
                 continue;
             }
@@ -300,6 +304,7 @@ trait PlayerTrait
                 ':id'            => $row['player_rating_id'],
                 ':player_id'     => $row['player_id'],
                 ':matchday_id'   => $matchdayId,
+                ':club_id'       => $row['club_id'],
                 ':grade'         => ($row['grade'] == 0) ? null : $row['grade'],
                 ':participation' => $row['start_lineup'] ? 'starting' : ($row['substitution'] ? 'substitute' : null),
                 ':goals'         => $row['goals'],
