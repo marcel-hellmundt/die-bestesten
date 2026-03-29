@@ -92,7 +92,7 @@ GET      /player[/:id]
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück
 GET      /player_rating        — ?matchday_id&club_id (mit Spielerinfos)
 POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen — Auth
-PATCH    /player_rating/:id    — Auth
+PATCH    /player_rating/:id    — Auth; 403 wenn Spieltag completed
 POST     /auth                 — JWT-Login
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 PATCH    /manager/me           — {current_password,new_password} — Auth

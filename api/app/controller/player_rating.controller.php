@@ -48,6 +48,18 @@ class PlayerRatingController extends _BaseController
     {
         if (!$this->id) return $this->methodNotAllowed();
 
+        $matchdayId = $this->db->getMatchdayIdForRating($this->id);
+        if (!$matchdayId) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Rating nicht gefunden'];
+        }
+
+        $matchday = $this->db->getMatchdayById($matchdayId);
+        if ($matchday && $matchday['completed']) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Spieltag ist abgeschlossen — Ratings gesperrt'];
+        }
+
         $body = $this->body();
         $updated = $this->db->updatePlayerRating($this->id, $body);
 

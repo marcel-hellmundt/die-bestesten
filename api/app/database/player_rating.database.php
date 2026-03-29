@@ -105,6 +105,19 @@ trait PlayerRatingTrait
     }
 
     /**
+     * Gibt die matchday_id eines player_ratings zurück (oder null wenn nicht gefunden).
+     */
+    public function getMatchdayIdForRating(string $id): ?string
+    {
+        $query = $this->con->prepare(
+            'SELECT matchday_id FROM player_rating WHERE id = :id LIMIT 1'
+        );
+        $query->execute([':id' => $id]);
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+        return $row ? $row['matchday_id'] : null;
+    }
+
+    /**
      * Aktualisiert eine player_rating-Zeile (alle editierbaren Felder).
      */
     public function updatePlayerRating(string $id, array $data): bool
