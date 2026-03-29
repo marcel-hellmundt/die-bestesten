@@ -3,7 +3,6 @@
 @if (pageLoading()) {
   <p class="state-msg">Laden…</p>
 } @else {
-
   <!-- Spieltag-Auswahl -->
   <div class="matchday-bar">
     @for (md of matchdays(); track md.id) {
@@ -11,7 +10,8 @@
         class="matchday-pill"
         [class.matchday-pill--active]="selectedMatchday()?.id === md.id"
         [class.matchday-pill--done]="md.completed"
-        (click)="selectMatchday(md)">
+        (click)="selectMatchday(md)"
+      >
         {{ md.number }}
         @if (md.completed) {
           <span class="pill-check">✓</span>
@@ -27,7 +27,8 @@
         <button
           class="club-tile"
           [class.club-tile--active]="selectedClubId() === club.id"
-          (click)="selectClub(club.id)">
+          (click)="selectClub(club.id)"
+        >
           <img [src]="logoUrl(club)" class="club-tile__logo" [alt]="club.name" />
           <span class="club-tile__name">{{ club.short_name || club.name }}</span>
         </button>
@@ -38,11 +39,13 @@
   <!-- Ratings-Bereich -->
   @if (selectedClubId()) {
     <section class="ratings-section">
-
       <!-- Completed-Banner -->
       @if (selectedMatchday()?.completed) {
         <div class="completed-banner">
-          <span>Spieltag {{ selectedMatchday()!.number }} ist abgeschlossen — Bewertungen sind gesperrt</span>
+          <span
+            >Spieltag {{ selectedMatchday()!.number }} ist abgeschlossen — Bewertungen sind
+            gesperrt</span
+          >
         </div>
       }
 
@@ -67,7 +70,6 @@
       } @else if (ratingsState() === 'error') {
         <p class="state-msg state-msg--error">Fehler beim Laden der Bewertungen</p>
       } @else if (ratingsState() === 'ready') {
-
         @if (ratings().length === 0) {
           <p class="state-msg">Keine Spieler für diesen Club gefunden</p>
         } @else {
@@ -85,34 +87,55 @@
                 </tr>
               </thead>
               <tbody>
-                @for (r of ratings(); track r.id) {
+                @for (r of sortedRatings(); track r.id) {
                   <tr>
                     <td class="col-player">
                       <span class="player-name">{{ r.displayname }}</span>
                     </td>
                     <td>
                       @if (r.position) {
-                        <span class="position-badge"
-                              [style.background-color]="'var(--position-' + r.position.toLowerCase() + ')'">
-                          {{ r.position | slice:0:3 }}
+                        <span
+                          class="position-badge"
+                          [style.background-color]="
+                            'var(--position-' + r.position.toLowerCase() + ')'
+                          "
+                        >
+                          {{ r.position | slice: 0 : 3 }}
                         </span>
                       }
                     </td>
                     <td class="col-points">{{ r.points ?? '—' }}</td>
                     <td>
-                      <span class="grade-badge"
-                            [style.background]="gradeVar(r.grade)"
-                            [class.grade-badge--unset]="!r.grade">
+                      <span
+                        class="grade-badge"
+                        [style.background]="gradeVar(r.grade)"
+                        [class.grade-badge--unset]="!r.grade"
+                      >
                         {{ r.grade !== null ? r.grade.toFixed(1) : '—' }}
                       </span>
                     </td>
                     <td class="col-part">
                       @if (r.participation === 'starting') {
-                        <img src="img/icons/part-starting.svg" class="part-icon" alt="Startelf" title="Startelf" />
+                        <img
+                          src="img/icons/part-starting.svg"
+                          class="part-icon"
+                          alt="Startelf"
+                          title="Startelf"
+                        />
                       } @else if (r.participation === 'substitute') {
-                        <img src="img/icons/part-substitute.svg" class="part-icon" alt="Eingewechselt" title="Eingewechselt" />
+                        <img
+                          src="img/icons/part-substitute.svg"
+                          class="part-icon"
+                          alt="Eingewechselt"
+                          title="Eingewechselt"
+                        />
                       } @else {
-                        <img src="img/icons/part-none.svg" class="part-icon" alt="Nicht eingesetzt" title="Nicht eingesetzt" />
+                        <img
+                          src="img/icons/part-none.svg"
+                          class="part-icon"
+                          alt="Nicht eingesetzt"
+                          title="Nicht eingesetzt"
+                        />
                       }
                     </td>
                     <td>
@@ -138,9 +161,11 @@
           <!-- Als abgeschlossen markieren -->
           @if (isAdmin() && !selectedMatchday()?.completed) {
             <div class="complete-bar">
-              <button class="btn btn-primary"
-                      [disabled]="completeState() === 'loading'"
-                      (click)="markCompleted()">
+              <button
+                class="btn btn-primary"
+                [disabled]="completeState() === 'loading'"
+                (click)="markCompleted()"
+              >
                 {{ completeState() === 'loading' ? 'Wird gespeichert…' : 'Spieltag abschließen' }}
               </button>
             </div>
@@ -149,5 +174,4 @@
       }
     </section>
   }
-
 }

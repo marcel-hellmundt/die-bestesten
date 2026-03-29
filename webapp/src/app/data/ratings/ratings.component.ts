@@ -230,6 +230,24 @@ export class RatingsDataComponent {
       : 'img/placeholders/club.png';
   }
 
+  private static readonly PARTICIPATION_ORDER: Record<string, number> = {
+    starting: 0, substitute: 1
+  };
+  private static readonly POSITION_ORDER: Record<string, number> = {
+    GOALKEEPER: 0, DEFENDER: 1, MIDFIELDER: 2, FORWARD: 3
+  };
+
+  sortedRatings = computed(() =>
+    [...this.ratings()].sort((a, b) => {
+      const pa = RatingsDataComponent.PARTICIPATION_ORDER[a.participation ?? ''] ?? 2;
+      const pb = RatingsDataComponent.PARTICIPATION_ORDER[b.participation ?? ''] ?? 2;
+      if (pa !== pb) return pa - pb;
+      const qa = RatingsDataComponent.POSITION_ORDER[a.position ?? ''] ?? 9;
+      const qb = RatingsDataComponent.POSITION_ORDER[b.position ?? ''] ?? 9;
+      return qa - qb;
+    })
+  );
+
   gradeVar(grade: number | null): string {
     if (!grade) return 'var(--grade-unset)';
     const key = Math.round(grade * 2) * 5; // 1.0→10, 1.5→15, …, 6.0→60
