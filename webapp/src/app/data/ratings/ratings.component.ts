@@ -148,16 +148,16 @@ export class RatingsDataComponent {
   }
 
   // ── Ratings state ──────────────────────────────────────────────
-  ratingsState = signal<'idle' | 'loading' | 'ready' | 'error'>('idle');
-  ratings      = signal<PlayerRating[]>([]);
-  initWarnings = signal<string[]>([]);
-  initCreated  = signal<number>(0);
+  ratingsState      = signal<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  ratings           = signal<PlayerRating[]>([]);
+  initWarnings      = signal<string[]>([]);
+  initCreatedNames  = signal<string[]>([]);
 
   selectClub(clubId: string): void {
     if (this.selectedClubId() === clubId) return;
     this.selectedClubId.set(clubId);
     this.initWarnings.set([]);
-    this.initCreated.set(0);
+    this.initCreatedNames.set([]);
 
     const md = this.selectedMatchday();
     if (!md) return;
@@ -173,8 +173,8 @@ export class RatingsDataComponent {
           if (res.existing?.length > 0) {
             this.initWarnings.set(res.existing.map((e: any) => e.displayname));
           }
-          if (res.created > 0) {
-            this.initCreated.set(res.created);
+          if (res.created?.length > 0) {
+            this.initCreatedNames.set(res.created.map((c: any) => c.displayname));
           }
           this.loadRatings(md.id, clubId);
         },

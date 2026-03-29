@@ -46,19 +46,20 @@
         </div>
       }
 
-      <!-- Init-Erfolg -->
-      @if (initCreated() > 0) {
+      <!-- Init-Erfolg / Warnungen -->
+      @if (initCreatedNames().length > 0) {
         <div class="init-success">
-          <strong>{{ initCreated() }}</strong> neue Ratings angelegt
+          @if (initWarnings().length === 0) {
+            <strong>{{ initCreatedNames().length }}</strong> neue Ratings angelegt
+          } @else {
+            <strong>Neu:</strong> {{ initCreatedNames().join(', ') }}
+          }
         </div>
-      }
-
-      <!-- Init-Warnungen -->
-      @if (initWarnings().length > 0) {
-        <div class="warning-panel">
-          <strong>Achtung:</strong> Für folgende Spieler existierten bereits Ratings und wurden nicht überschrieben:
-          {{ initWarnings().join(', ') }}
-        </div>
+        @if (initWarnings().length > 0) {
+          <div class="warning-panel">
+            <strong>Bereits vorhanden:</strong> {{ initWarnings().join(', ') }}
+          </div>
+        }
       }
 
       @if (ratingsState() === 'loading') {

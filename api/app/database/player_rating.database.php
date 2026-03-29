@@ -93,13 +93,13 @@ trait PlayerRatingTrait
                     ':matchday_id' => $matchdayId,
                     ':club_id'     => $clubId,
                 ]);
-                $created[] = $row['player_id'];
+                $created[] = ['player_id' => $row['player_id'], 'displayname' => $row['displayname']];
             }
         }
 
         return [
             'status'   => true,
-            'created'  => count($created),
+            'created'  => $created,
             'existing' => $existing,
         ];
     }
