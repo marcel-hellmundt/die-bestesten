@@ -8,6 +8,7 @@ require_once 'division.database.php';
 require_once 'player.database.php';
 require_once 'transferwindow.database.php';
 require_once 'player_rating.database.php';
+require_once 'player_in_season.database.php';
 require_once 'manager.database.php';
 
 class Database
@@ -21,6 +22,7 @@ class Database
     use PlayerTrait;
     use TransferwindowTrait;
     use PlayerRatingTrait;
+    use PlayerInSeasonTrait;
     use ManagerTrait;
 
     private $con;

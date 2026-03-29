@@ -4,6 +4,7 @@ import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { Player } from '../../core/models/player.model';
+import { DataCacheService } from '../../core/data-cache.service';
 
 @Component({
   selector: 'app-data-player',
@@ -12,8 +13,9 @@ import { Player } from '../../core/models/player.model';
   styleUrl: './player.component.scss'
 })
 export class PlayerDataComponent {
-  private api  = inject(ApiService);
-  private auth = inject(AuthService);
+  private api   = inject(ApiService);
+  private auth  = inject(AuthService);
+  cache = inject(DataCacheService);
 
   private reload$ = new BehaviorSubject<void>(undefined);
 
@@ -64,6 +66,13 @@ export class PlayerDataComponent {
       this.sortDir.set(col === 'total_points' ? 'desc' : 'asc');
     }
   }
+
+  bundesligaCount = toSignal(
+    this.api.get<{ count: number }>('player_in_season/bundesliga_count').pipe(
+      map(res => res.count),
+      catchError(() => of(null))
+    )
+  );
 
   isAdmin      = computed(() => this.auth.isAdmin());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');

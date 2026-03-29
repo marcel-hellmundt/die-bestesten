@@ -5,6 +5,13 @@
       <div class="stat-value">{{ items().length }}</div>
       <div class="stat-desc">Gesamt migriert</div>
     </div>
+    @if (bundesligaCount() != null) {
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--division-level-1)">Bundesliga</span>
+        <div class="stat-value">{{ bundesligaCount() }}</div>
+        <div class="stat-desc">Spieler aktive Saison</div>
+      </div>
+    }
     @if (filteredItems().length < items().length) {
       <div class="stat-card">
         <span class="stat-label" style="color: var(--flat-amethyst)">Gefiltert</span>

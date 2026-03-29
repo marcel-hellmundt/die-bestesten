@@ -2,173 +2,105 @@
 
 ## Regeln
 
-- **API-Änderungen**: Bei jeder Änderung in `/api` müssen `CLAUDE.md` (Datenbankschema + Endpunkte) und `api/schema.php` (routing.php-Docs) mitaktualisiert werden. Danach immer committen **und pushen** — nur durch Push wird die GitHub Action ausgelöst, die die Änderungen auf den Server deployed.
-- **Webapp-Änderungen**: Immer Mobile- und Desktop-Kompatibilität berücksichtigen. Informationen dürfen auf kleinen Screens ausgeblendet oder reduziert werden, wenn der Platz nicht reicht — aber die Kernfunktionalität muss auf beiden nutzbar sein.
+- **API-Änderungen**: Bei jeder Änderung in `/api` → `CLAUDE.md` + `api/schema.php` aktualisieren, dann committen **und pushen** (Push triggert GitHub Action → Server-Deploy).
+- **Webapp-Änderungen**: Mobile + Desktop berücksichtigen. Infos dürfen auf kleinen Screens reduziert/ausgeblendet werden — Kernfunktionalität muss auf beiden nutzbar sein.
 
-## Überblick
+## Stack
 
-Mono-Repository mit einer Angular-Webapp und einer PHP-REST-API für eine Fantasy-Football-Plattform.
+Angular-Webapp + PHP-REST-API, Fantasy-Football. Frontend: Angular (`standalone: false`, Signal-basiert). Backend: PHP. DB: MySQL.
 
-## Repo-Struktur (High-Level)
+## Repo-Struktur
 
 ```
 die-bestesten/
-├── .github/workflows/        — deploy-api.yml, deploy-webapp.yml (GitHub Actions → Server-Deploy bei Push auf main)
-├── api/                      — PHP REST-API
-│   ├── app/
-│   │   ├── controller/       — Ein Controller pro Ressource (erbt _BaseController)
-│   │   ├── database/         — Ein Trait pro Ressource; alle in base.database.php per use composited
-│   │   ├── guard.php         — JWT-Verifikation + RBAC; setzt $GLOBALS['auth_role'] + auth_manager_id; prüft $methodRoles per Controller
-│   │   └── routing.php       — Route-Objekte mit eingebetteter API-Doku
-│   ├── index.php             — Einstiegspunkt; parst URL → Routing → Controller
-│   ├── schema.php            — Web-UI für API-Doku (Mermaid-ER + Endpunkte aus routing.php)
-│   └── vendor/               — Composer-Dependencies (firebase/php-jwt)
-├── database/
-│   ├── global_schema.sql     — Globales DB-Schema (alle Tabellen)
-│   └── league_schema.sql     — Liga-spezifisches Schema (noch nicht implementiert)
-└── webapp/                   — Angular-Anwendung (siehe unten)
+├── .github/workflows/  — deploy-api.yml, deploy-webapp.yml (Push auf main → Deploy)
+├── api/app/
+│   ├── controller/     — Ein Controller pro Ressource (erbt _BaseController)
+│   ├── database/       — Ein Trait pro Ressource; composited in base.database.php
+│   ├── guard.php       — JWT + RBAC; setzt $GLOBALS['auth_role'/'auth_manager_id']
+│   └── routing.php     — Routen + eingebettete API-Doku
+├── api/index.php       — Einstiegspunkt; parst URL → Routing → Controller
+├── api/schema.php      — Web-UI für API-Doku (Mermaid-ER + Endpunkte aus routing.php)
+├── database/global_schema.sql, league_schema.sql
+└── webapp/
 ```
 
-## Webapp-Struktur (Detailed)
+## Webapp-Struktur
 
 ```
-webapp/src/
-├── app/
-│   ├── app-module.ts              — Root-Modul
-│   ├── app-routing-module.ts      — Root-Routing: /login → AuthModule, /app → ShellModule
-│   ├── auth/                      — Login + JWT-Guard
-│   │   ├── auth.guard.ts          — Leitet auf /login um wenn kein gültiger Token
-│   │   ├── auth.module.ts
-│   │   ├── auth.service.ts        — Token speichern/lesen, isAdmin(), getToken()
-│   │   └── login/                 — Login-Formular (POST /auth)
-│   ├── core/                      — Shared Services und Models
-│   │   ├── api.service.ts         — HTTP-Wrapper: get<T>(path), post<T>(path, body), patch<T>(path, body)
-│   │   ├── data-cache.service.ts  — Reaktiver Cache für Lookups (z.B. seasonName(id))
-│   │   ├── icon/                  — Icon-Komponente
-│   │   └── models/                — Typisierte Datenmodelle mit statischer from()-Factory
-│   │       ├── club.model.ts
-│   │       ├── country.model.ts
-│   │       ├── division.model.ts
-│   │       ├── matchday.model.ts
-│   │       ├── player.model.ts
-│   │       ├── season.model.ts
-│   │       └── transferwindow.model.ts
-│   ├── data/                      — Data-Management-Modul unter /app/data
-│   │   ├── data.component         — Sub-Nav (Spieler, Clubs, Saisons, Ligen, Länder)
-│   │   ├── data.module.ts         — Lazy-Routing + Declarations aller Data-Komponenten
-│   │   ├── club/                  — Club-Liste + Detail (/data/club, /data/club/:id)
-│   │   ├── country/               — Länder-Liste + Detail (/data/country, /data/country/:id)
-│   │   ├── division/              — Ligen-Liste (/data/division)
-│   │   ├── player/                — Spieler-Liste + Detail (/data/player, /data/player/:id)
-│   │   └── season/                — Master-Detail: Saisons → Spieltage → Transferfenster (/data/season)
-│   └── shell/                     — App-Shell unter /app
-│       ├── shell.module.ts
-│       ├── shell.component        — Layout: Sidebar (nav) + Topbar + <router-outlet>
-│       ├── nav/                   — Sidebar-Navigation; Desktop vertikal, Mobile bottom-bar
-│       └── topbar/                — Topbar
-├── environments/
-│   ├── environment.ts             — apiUrl → lokale API
-│   └── environment.prod.ts        — apiUrl → https://api.claude.die-bestesten.de
-└── styles/                        — Globale SCSS (importiert via styles.scss)
-    ├── index.scss                 — Importiert alle Partials
-    ├── _variables.scss            — Design-Tokens: Farben, Abstände, Radii, Typografie, Breakpoints
-    ├── _layout.scss               — Globale Klassen: .data-table, .table-container, .list-bar,
-    │                                .stat-card, .card, .page-title, .state-msg, .row-link, …
-    ├── _buttons.scss              — .btn, .btn-primary, .btn-danger, …
-    ├── _inputs.scss               — .input
-    ├── _typography.scss
-    ├── _fonts.scss
-    └── _reset.scss
+webapp/src/app/
+├── auth/              — Login + JWT-Guard (auth.guard.ts, auth.service.ts, login/)
+├── core/
+│   ├── api.service.ts           — HTTP-Wrapper: get/post/patch<T>(path, body?)
+│   ├── data-cache.service.ts    — Reaktiver Cache für Lookups
+│   └── models/                  — club, country, division, matchday, player, season, transferwindow (je from()-Factory)
+├── data/              — /app/data: club, country, division, player, season (Liste + Detail je)
+└── shell/             — Layout: Sidebar (Desktop vertikal, Mobile bottom-bar) + Topbar
+styles/
+├── _variables.scss    — Design-Tokens: Farben, Abstände, Radii, Typografie, Breakpoints
+├── _layout.scss       — .data-table, .table-container, .list-bar, .stat-card, .card, .page-title, .row-link, …
+└── _buttons.scss, _inputs.scss, _typography.scss, _fonts.scss, _reset.scss
 ```
 
-### Patterns in der Webapp
+### Patterns
 
-- **State-Management**: Signal-basiert (`signal`, `computed`, `effect`) + RxJS (`BehaviorSubject`, `switchMap`, `forkJoin`) via `toSignal`/`toObservable`
-- **Komponenten-Muster**: `standalone: false`, SCSS per Komponente mit `@use '../../../styles/variables' as *`
+- **State**: Signals (`signal`, `computed`, `effect`) + RxJS via `toSignal`/`toObservable`
+- **Komponenten**: `standalone: false`, SCSS mit `@use '../../../styles/variables' as *`
 - **Routing**: Lazy-loaded Module; Detail-Routen als Kind-Routen im selben Modul
-- **Globale Styles**: Wiederverwendbare Klassen in `_layout.scss` nutzen (`.row-link`, `.data-table`, `.col-id`, etc.) statt eigene SCSS schreiben
+- **Styles**: Globale Klassen aus `_layout.scss` verwenden (`.row-link`, `.data-table`, `.col-id`) statt eigene SCSS schreiben
 
 ## API-Autorisierung (RBAC)
 
-Jeder Controller definiert `$methodRoles` — eine Map von HTTP-Methode → Mindestrolle:
-
-```php
-public static array $methodRoles = ['GET' => 'guest', 'POST' => 'admin', 'PATCH' => 'user'];
-```
-
-Rollen-Hierarchie (aufsteigend): `guest(0) < user(1) < maintainer(2) < admin(3)`
-
-- `guest` = kein Token nötig
-- `user`+ = gültiger JWT erforderlich; Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_role']`
-- Fehlende Method-Einträge = `guest` (kein Auth nötig)
-- 401 = kein Token, 403 = Token vorhanden aber Rolle zu niedrig
-
-## Struktur (Kurzform)
-
-- **webapp/**: Angular-Anwendung
-- **api/**: PHP REST-API
-- **database/**: SQL-Dateien für Datenbankschema
-
-## Technologien
-
-- Frontend: Angular (standalone: false, Signal-basiert)
-- Backend: PHP
-- Datenbank: MySQL
+`$methodRoles` pro Controller: HTTP-Methode → Mindestrolle. Hierarchie: `guest(0) < user(1) < maintainer(2) < admin(3)`. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle zu niedrig. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_role']`.
 
 ## Datenbankschema
 
-Das Schema befindet sich in `database/global_schema.sql`.
+Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer country (`CHAR(2)` ISO-Alpha-2).
 
-### Tabellen und Spalten
-
-- **country**: id `CHAR(2)` PK (ISO Alpha-2), name `VARCHAR(100)`
-- **season**: id `CHAR(36)` PK, start_date `DATE` UNIQUE — aktive Saison = höchstes start_date
-- **league**: id `CHAR(36)` PK, slug `VARCHAR(32)` UNIQUE, name `VARCHAR(100)`, db_name `VARCHAR(64)`
-- **club**: id `CHAR(36)` PK, country_id `CHAR(2)` FK→country, name `VARCHAR(100)`, short_name `VARCHAR(10)`, logo_uploaded `BOOLEAN`
-- **division**: id `CHAR(36)` PK, name `VARCHAR(100)`, level `INT`, seats `INT`, country_id `CHAR(2)` FK→country
-- **matchday**: id `CHAR(36)` PK, season_id `CHAR(36)` FK→season, start_date `DATE`, kickoff_date `DATETIME`, number `INT`, completed `BOOLEAN` DEFAULT FALSE
-- **player**: id `CHAR(36)` PK, country_id `CHAR(2)` FK→country (nullable), first_name, last_name, displayname `VARCHAR(32)` UNIQUE, birth_city, date_of_birth, height_cm, weight_kg
-- **club_in_season**: id `CHAR(36)` PK, club_id FK→club, season_id FK→season, division_id FK→division, position `INT` nullable — UNIQUE(club_id, season_id)
-- **player_in_season**: id `CHAR(36)` PK, player_id FK→player, season_id FK→season, price `DECIMAL(10,2)`, position `ENUM(GOALKEEPER,DEFENDER,MIDFIELDER,FORWARD)`, photo_uploaded `BOOLEAN` — UNIQUE(player_id, season_id)
-- **player_in_club**: id `CHAR(36)` PK, player_id FK→player, club_id FK→club, from_date `DATE NOT NULL`, to_date `DATE`, on_loan `BOOLEAN` — UNIQUE(player_id, club_id, from_date)
-- **player_rating**: id `CHAR(36)` PK, player_id FK→player, matchday_id FK→matchday, club_id FK→club (Club des Spielers zum Zeitpunkt des Spieltags), grade `DECIMAL(3,1) NULL`, participation `ENUM('starting','substitute') NULL`, goals, assists, clean_sheet, sds `BOOLEAN`, red_card, yellow_red_card, points — UNIQUE(player_id, matchday_id)
-- **transferwindow**: id `CHAR(36)` PK, matchday_id `CHAR(36)` FK→matchday, start_date `DATETIME`, end_date `DATETIME` — üblicherweise 2, selten 4 Fenster pro Spieltag
-
-### Migrations-Reihenfolge (FK-Abhängigkeiten)
-
-1. `country`, `season`, `league`
-2. `club`, `division`, `player`, `matchday`
-3. `club_in_season`, `player_in_season`, `player_in_club`
-4. `player_rating`, `transferwindow`
+| Tabelle | Spalten |
+|---------|---------|
+| country | id PK, name |
+| season | id PK, start_date UNIQUE — aktiv = höchstes start_date |
+| league | id PK, slug UNIQUE, name, db_name |
+| club | id PK, country_id FK, name, short_name, logo_uploaded BOOL |
+| division | id PK, name, level INT, seats INT, country_id FK |
+| matchday | id PK, season_id FK, start_date DATE, kickoff_date DATETIME, number INT, completed BOOL |
+| player | id PK, country_id FK?, first_name, last_name, displayname UNIQUE, birth_city, date_of_birth, height_cm, weight_kg |
+| club_in_season | id PK, club_id FK, season_id FK, division_id FK, position INT? — UNIQUE(club_id, season_id) |
+| player_in_season | id PK, player_id FK, season_id FK, price DECIMAL, position ENUM(GOALKEEPER/DEFENDER/MIDFIELDER/FORWARD), photo_uploaded — UNIQUE(player_id, season_id) |
+| player_in_club | id PK, player_id FK, club_id FK, from_date DATE, to_date DATE?, on_loan BOOL — UNIQUE(player_id, club_id, from_date) |
+| player_rating | id PK, player_id FK, matchday_id FK, club_id FK (zum Zeitpunkt), grade DECIMAL?, participation ENUM(starting/substitute)?, goals, assists, clean_sheet, sds BOOL, red_card, yellow_red_card, points — UNIQUE(player_id, matchday_id) |
+| transferwindow | id PK, matchday_id FK, start_date DATETIME, end_date DATETIME — 2–4 pro Spieltag |
 
 ## API-Endpunkte
 
-Vollständige Dokumentation unter `api/schema.php`. Endpoints:
+Vollständige Doku: `api/schema.php`.
 
-- `GET/POST /club_in_season` — Saison-Zuordnungen; POST erstellt neu (409 bei Duplikat)
-- `PATCH /club_in_season/:id` — Division/Position aktualisieren
-- `GET /division`, `GET /division/:id`
-- `GET /club`, `GET /club/:id`
-- `GET /country`, `GET /country/:id`
-- `GET /season`, `GET /season/:id`, `GET /season/active`
-- `GET /matchday`, `GET /matchday/:id`
-- `PATCH /matchday/:id` — `completed`-Status setzen; Body: `{ completed: bool }`; erfordert Auth
-- `GET /transferwindow`, `GET /transferwindow/:id` — optional gefiltert nach `matchday_id` oder `season_id`
-- `POST /transferwindow/migrate` — Migriert Transferfenster aus alter DB (nur Admin)
-- `GET /player`, `GET /player/:id`
-- `POST /player/migrate` — Migriert player, player_in_season, player_in_club, player_rating aus alter DB; gibt migrated/skipped-Counts zurück
-- `GET /player_rating?matchday_id=X&club_id=Y` — Ratings eines Clubs an einem Spieltag (mit Spielerinfos)
-- `POST /player_rating/init` — Erstellt leere Ratings für alle aktuellen Spieler eines Clubs; Body: `{ matchday_id, club_id }`; gibt `created`-Count + `existing`-Liste zurück; erfordert Auth
-- `PATCH /player_rating/:id` — Einzelne Bewertung updaten; erfordert Auth
-- `POST /auth` — JWT-Login
-- `GET /manager/me` — Eigenes Profil (id, manager_name, alias, role, status); erfordert Auth
-- `PATCH /manager/me` — Passwort ändern; Body: `{ current_password, new_password }`; erfordert Auth
-- `DELETE /manager/me` — Eigenen Account löschen; Body: `{ password }`; erfordert Auth
+```
+GET/POST /club_in_season       — Saison-Zuordnungen; POST 409 bei Duplikat
+PATCH    /club_in_season/:id   — Division/Position aktualisieren
+GET      /division[/:id]
+GET      /club[/:id]
+GET      /country[/:id]
+GET      /season[/:id|/active]
+GET      /matchday[/:id]
+PATCH    /matchday/:id         — {completed:bool} — Auth
+GET      /transferwindow[/:id] — ?matchday_id|season_id
+POST     /transferwindow/migrate — Admin
+GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
+GET      /player[/:id]
+POST     /player/migrate       — gibt migrated/skipped-Counts zurück
+GET      /player_rating        — ?matchday_id&club_id (mit Spielerinfos)
+POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen — Auth
+PATCH    /player_rating/:id    — Auth
+POST     /auth                 — JWT-Login
+GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
+PATCH    /manager/me           — {current_password,new_password} — Auth
+DELETE   /manager/me           — {password} — Auth
+```
 
-## Liga-spezifische Datenbank
+## Liga-DB (`database/league_schema.sql`)
 
-`database/league_schema.sql` — manager-Tabelle implementiert; team, team_rating, team_lineup, player_in_team noch ausstehend
+**manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, role ENUM(admin/maintainer/user), status ENUM(active/blocked), date_of_birth?
 
-### manager-Tabelle (league DB)
-
-- **manager**: id `CHAR(36)` PK, manager_name `VARCHAR(64)` UNIQUE, alias `VARCHAR(64)` UNIQUE nullable, password `VARCHAR(255)`, role `ENUM(admin,maintainer,user)`, status `ENUM(active,blocked)`, date_of_birth `DATE` nullable
+Ausstehend: team, team_rating, team_lineup, player_in_team

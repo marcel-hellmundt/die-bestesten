@@ -247,6 +247,19 @@ class Routing
                 ],
             ]),
 
+            new Route('player_in_season', 'PlayerInSeason', [
+                'title'       => 'PlayerInSeason',
+                'description' => 'Spieler-Saison-Zuordnungen und Auswertungen',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/player_in_season/bundesliga_count',
+                        'description'  => 'Anzahl der Spieler in der 1. Bundesliga (Level 1, DE) einer Saison',
+                        'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
+                    ],
+                ],
+            ]),
+
             new Route('player', 'Player', [
                 'title'       => 'Player',
                 'description' => 'Spieler mit eingebetteten aktuellen Club- und Saisondaten im Detailabruf',
