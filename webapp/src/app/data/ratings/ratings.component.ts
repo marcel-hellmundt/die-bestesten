@@ -1,8 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
 import { PlayerRating } from '../../core/models/player-rating.model';
 
@@ -33,8 +34,9 @@ interface Division {
   styleUrl: './ratings.component.scss'
 })
 export class RatingsDataComponent {
-  private api  = inject(ApiService);
-  private auth = inject(AuthService);
+  private api   = inject(ApiService);
+  private auth  = inject(AuthService);
+  private cache = inject(DataCacheService);
 
   isAdmin = computed(() => this.auth.isAdmin());
 
@@ -74,6 +76,21 @@ export class RatingsDataComponent {
 
   pageLoading = computed(() => this.pageData()?.loading ?? true);
 
+  // Previous season club_in_season — for position-based sorting
+  private prevSeasonId = computed(() => this.cache.seasons()[1]?.id ?? null);
+
+  private prevSeasonEntries = toSignal(
+    toObservable(this.prevSeasonId).pipe(
+      switchMap(id => {
+        if (!id) return of([] as any[]);
+        return this.api.get<any[]>(`club_in_season?season_id=${id}`).pipe(
+          catchError(() => of([] as any[]))
+        );
+      })
+    ),
+    { initialValue: [] as any[] }
+  );
+
   // Sorted ASC (lowest number = oldest = first uncompleted)
   matchdays = computed(() =>
     [...(this.pageData()?.matchdays ?? [])].sort((a, b) => a.number - b.number)
@@ -85,7 +102,7 @@ export class RatingsDataComponent {
 
     const bundesligaDivIds = new Set(
       pd.divisions
-        .filter(d => Number(d.level) === 1 && d.country_id === 'DE')
+        .filter(d => Number(d.level) === 1 && d.country_id?.toLowerCase() === 'de')
         .map(d => d.id)
     );
     const bundesligaClubIds = new Set(
@@ -93,9 +110,14 @@ export class RatingsDataComponent {
         .filter((cis: ClubInSeason) => bundesligaDivIds.has(cis.division_id))
         .map((cis: ClubInSeason) => cis.club_id)
     );
+    const positionMap = new Map<string, number>(
+      this.prevSeasonEntries()
+        .filter((e: any) => bundesligaDivIds.has(e.division_id) && e.position != null)
+        .map((e: any) => [e.club_id as string, e.position as number])
+    );
     return pd.clubs
       .filter(c => bundesligaClubIds.has(c.id))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => (positionMap.get(a.id) ?? 999) - (positionMap.get(b.id) ?? 999));
   });
 
   // Auto-select: first uncompleted matchday (lowest number), fallback to last
@@ -109,12 +131,13 @@ export class RatingsDataComponent {
   selectedClubId   = signal<string | null>(null);
 
   // Apply auto-selection once data is available
-  private autoSelectEffect = toSignal(
-    toObservable(this.autoSelected).pipe(
-      map(md => { if (md && !this.selectedMatchday()) this.selectedMatchday.set(md); return md; })
-    ),
-    { initialValue: null }
-  );
+  constructor() {
+    this.cache.ensureSeasons();
+    effect(() => {
+      const md = this.autoSelected();
+      if (md && !this.selectedMatchday()) this.selectedMatchday.set(md);
+    });
+  }
 
   selectMatchday(md: Matchday): void {
     this.selectedMatchday.set(md);
@@ -128,11 +151,13 @@ export class RatingsDataComponent {
   ratingsState = signal<'idle' | 'loading' | 'ready' | 'error'>('idle');
   ratings      = signal<PlayerRating[]>([]);
   initWarnings = signal<string[]>([]);
+  initCreated  = signal<number>(0);
 
   selectClub(clubId: string): void {
     if (this.selectedClubId() === clubId) return;
     this.selectedClubId.set(clubId);
     this.initWarnings.set([]);
+    this.initCreated.set(0);
 
     const md = this.selectedMatchday();
     if (!md) return;
@@ -147,6 +172,9 @@ export class RatingsDataComponent {
         next: (res) => {
           if (res.existing?.length > 0) {
             this.initWarnings.set(res.existing.map((e: any) => e.displayname));
+          }
+          if (res.created > 0) {
+            this.initCreated.set(res.created);
           }
           this.loadRatings(md.id, clubId);
         },
@@ -187,12 +215,30 @@ export class RatingsDataComponent {
   }
 
   // ── Helpers ────────────────────────────────────────────────────
+  matchdayById(id: string): Matchday | null {
+    return this.matchdays().find(m => m.id === id) ?? null;
+  }
+
   clubById(id: string | null): Club | null {
     if (!id) return null;
     return this.bundesligaClubs().find(c => c.id === id) ?? null;
   }
 
   logoUrl(club: Club): string {
-    return `https://img.die-bestesten.de/img/club/${club.id}.png`;
+    return club.logo_uploaded
+      ? `https://img.die-bestesten.de/img/club/${club.id}.png`
+      : 'img/placeholders/club.png';
   }
+
+  gradeVar(grade: number | null): string {
+    if (!grade) return 'var(--grade-unset)';
+    const key = Math.round(grade * 2) * 5; // 1.0→10, 1.5→15, …, 6.0→60
+    return `var(--grade-${key})`;
+  }
+
+  range(n: number | null): number[] {
+    if (!n || n <= 0) return [];
+    return Array.from({ length: n }, (_, i) => i);
+  }
+
 }

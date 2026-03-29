@@ -49,21 +49,15 @@
 }
 
 // Club grid
-.clubs-section {
-  margin-bottom: $space-8;
-}
-
-.section-title {
-  font-size: $font-lg;
-  font-weight: $font-weight-semibold;
-  color: $color-text;
-  margin-bottom: $space-4;
-}
-
 .club-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
   gap: $space-3;
+  margin-bottom: $space-6;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  }
 }
 
 .club-tile {
@@ -87,20 +81,20 @@
     border-color: $color-accent;
     background: color-mix(in srgb, $color-accent 8%, transparent);
   }
-}
 
-.club-logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
+  &__logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
 
-.club-name {
-  font-size: $font-xs;
-  font-weight: $font-weight-medium;
-  color: $color-text;
-  text-align: center;
-  line-height: 1.2;
+  &__name {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+    text-align: center;
+    line-height: 1.2;
+  }
 }
 
 // Ratings section
@@ -127,6 +121,55 @@
   border: 1px solid $color-danger;
   font-size: $font-sm;
   color: $color-text;
+}
+
+.init-success {
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, $color-success 10%, transparent);
+  border: 1px solid $color-success;
+  font-size: $font-sm;
+  color: $color-success;
+  font-weight: $font-weight-medium;
+}
+
+.grade-badge {
+  display: inline-block;
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  min-width: 28px;
+  text-align: center;
+
+  &--unset {
+    color: $color-text-muted;
+  }
+}
+
+.col-part {
+  width: 24px;
+  text-align: center;
+}
+
+.part-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  margin: 0 auto;
+}
+
+.icons-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+}
+
+.rating-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .col-player {

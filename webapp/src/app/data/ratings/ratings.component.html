@@ -7,34 +7,32 @@
   <!-- Spieltag-Auswahl -->
   <div class="matchday-bar">
     @for (md of matchdays(); track md.id) {
-      <button class="matchday-pill"
-              [class.matchday-pill--active]="selectedMatchday()?.id === md.id"
-              [class.matchday-pill--done]="md.completed"
-              (click)="selectMatchday(md)">
+      <button
+        class="matchday-pill"
+        [class.matchday-pill--active]="selectedMatchday()?.id === md.id"
+        [class.matchday-pill--done]="md.completed"
+        (click)="selectMatchday(md)">
         {{ md.number }}
-        @if (md.completed) { <span class="pill-check">✓</span> }
+        @if (md.completed) {
+          <span class="pill-check">✓</span>
+        }
       </button>
     }
   </div>
 
   <!-- Bundesliga-Club-Auswahl -->
   @if (bundesligaClubs().length > 0) {
-    <section class="clubs-section">
-      <h2 class="section-title">Club auswählen</h2>
-      <div class="club-grid">
-        @for (club of bundesligaClubs(); track club.id) {
-          <button class="club-tile"
-                  [class.club-tile--active]="selectedClubId() === club.id"
-                  (click)="selectClub(club.id)">
-            <img class="club-logo"
-                 [src]="logoUrl(club)"
-                 [alt]="club.name"
-                 (error)="$any($event.target).style.display='none'" />
-            <span class="club-name">{{ club.short_name || club.name }}</span>
-          </button>
-        }
-      </div>
-    </section>
+    <div class="club-grid">
+      @for (club of bundesligaClubs(); track club.id) {
+        <button
+          class="club-tile"
+          [class.club-tile--active]="selectedClubId() === club.id"
+          (click)="selectClub(club.id)">
+          <img [src]="logoUrl(club)" class="club-tile__logo" [alt]="club.name" />
+          <span class="club-tile__name">{{ club.short_name || club.name }}</span>
+        </button>
+      }
+    </div>
   }
 
   <!-- Ratings-Bereich -->
@@ -45,6 +43,13 @@
       @if (selectedMatchday()?.completed) {
         <div class="completed-banner">
           <span>Spieltag {{ selectedMatchday()!.number }} ist abgeschlossen — Bewertungen sind gesperrt</span>
+        </div>
+      }
+
+      <!-- Init-Erfolg -->
+      @if (initCreated() > 0) {
+        <div class="init-success">
+          <strong>{{ initCreated() }}</strong> neue Ratings angelegt
         </div>
       }
 
@@ -73,7 +78,7 @@
                   <th>Position</th>
                   <th>Punkte</th>
                   <th>Note</th>
-                  <th>Einsatz</th>
+                  <th></th>
                   <th>Tore</th>
                   <th>Vorlagen</th>
                 </tr>
@@ -93,14 +98,36 @@
                       }
                     </td>
                     <td class="col-points">{{ r.points ?? '—' }}</td>
-                    <td>{{ r.grade ?? '—' }}</td>
                     <td>
-                      @if (r.participation === 'starting') { Start }
-                      @else if (r.participation === 'substitute') { Einw. }
-                      @else { — }
+                      <span class="grade-badge"
+                            [style.background]="gradeVar(r.grade)"
+                            [class.grade-badge--unset]="!r.grade">
+                        {{ r.grade !== null ? r.grade.toFixed(1) : '—' }}
+                      </span>
                     </td>
-                    <td>{{ r.goals || '—' }}</td>
-                    <td>{{ r.assists || '—' }}</td>
+                    <td class="col-part">
+                      @if (r.participation === 'starting') {
+                        <img src="img/icons/part-starting.svg" class="part-icon" alt="Startelf" title="Startelf" />
+                      } @else if (r.participation === 'substitute') {
+                        <img src="img/icons/part-substitute.svg" class="part-icon" alt="Eingewechselt" title="Eingewechselt" />
+                      } @else {
+                        <img src="img/icons/part-none.svg" class="part-icon" alt="Nicht eingesetzt" title="Nicht eingesetzt" />
+                      }
+                    </td>
+                    <td>
+                      <span class="icons-wrap">
+                        @for (i of range(r.goals); track i) {
+                          <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
+                        }
+                      </span>
+                    </td>
+                    <td>
+                      <span class="icons-wrap">
+                        @for (i of range(r.assists); track i) {
+                          <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
+                        }
+                      </span>
+                    </td>
                   </tr>
                 }
               </tbody>
