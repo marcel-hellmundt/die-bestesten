@@ -58,7 +58,18 @@ class ManagerController extends _BaseController
             return ['status' => false, 'message' => 'Passwort inkorrekt'];
         }
 
-        $this->db->deleteManagerById($GLOBALS['auth_manager_id']);
+        $name = $manager['manager_name'];
+        $alias = $manager['alias'] ?? null;
+        $id   = $manager['id'];
+
+        $subject = 'Konto-Löschung angefragt: ' . $name;
+        $body    = "Manager möchte sein Konto löschen:\n\n"
+                 . "Name:  $name\n"
+                 . ($alias ? "Alias: $alias\n" : '')
+                 . "ID:    $id\n";
+
+        mail('mail@marcelkrause.de', $subject, $body, 'From: noreply@die-bestesten.de');
+
         return ['status' => true];
     }
 

@@ -96,7 +96,7 @@ PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed
 POST     /auth                 — JWT-Login
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 PATCH    /manager/me           — {current_password,new_password} — Auth
-DELETE   /manager/me           — {password} — Auth
+DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 ```
 
 ## Liga-DB (`database/league_schema.sql`)

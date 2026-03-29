@@ -20,10 +20,5 @@ trait ManagerTrait
         return $q->rowCount() > 0;
     }
 
-    public function deleteManagerById(string $id): bool
-    {
-        $q = $this->con_league->prepare("DELETE FROM manager WHERE id = :id");
-        $q->execute([':id' => $id]);
-        return $q->rowCount() > 0;
-    }
+
 }
