@@ -18,7 +18,8 @@ trait PlayerInSeasonTrait
         $query = $this->con->prepare(
             "SELECT COUNT(DISTINCT pis.player_id) AS cnt
              FROM player_in_season pis
-             JOIN club_in_season cis ON cis.club_id = pis.club_id AND cis.season_id = pis.season_id
+             JOIN player_in_club pic ON pic.player_id = pis.player_id AND pic.to_date IS NULL
+             JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
              JOIN division d ON d.id = cis.division_id
              WHERE pis.season_id = :season_id
                AND d.level = 1
