@@ -284,21 +284,16 @@ trait PlayerTrait
                points          = VALUES(points)"
         );
 
-        $migratedRatings = 0;
-        $skippedRatings  = [];
+        $migratedRatings       = 0;
+        $skippedRatingsByReason = [];
 
         foreach ($allRatingRows as $row) {
             $matchdayId = $matchdayMap[$row['season_id'] . '_' . $row['matchday_number']] ?? null;
 
             if (!$row['player_exists'] || !$matchdayId || !$row['club_exists']) {
-                $skippedRatings[] = [
-                    'player_rating_id' => $row['player_rating_id'],
-                    'player_id'        => $row['player_id'],
-                    'season_id'        => $row['season_id'],
-                    'matchday'         => $row['matchday_number'],
-                    'reason'           => !$row['player_exists'] ? 'player not found'
-                                       : (!$matchdayId ? 'matchday not found' : 'club not found'),
-                ];
+                $reason = !$row['player_exists'] ? 'player not found'
+                        : (!$matchdayId ? 'matchday not found' : 'club not found');
+                $skippedRatingsByReason[$reason] = ($skippedRatingsByReason[$reason] ?? 0) + 1;
                 continue;
             }
 
@@ -328,7 +323,8 @@ trait PlayerTrait
             'migrated_clubs'    => $migratedClubs,
             'skipped_clubs'     => $skippedClubs,
             'migrated_ratings'  => $migratedRatings,
-            'skipped_ratings'   => $skippedRatings,
+            'skipped_ratings'   => array_sum($skippedRatingsByReason),
+            'skipped_ratings_by_reason' => $skippedRatingsByReason,
         ];
     }
 
