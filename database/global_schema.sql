@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS player_rating (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
     matchday_id CHAR(36) NOT NULL,              -- FK zu matchday.id
-    club_id CHAR(36) NOT NULL,                  -- FK zu club.id — Club des Spielers zum Zeitpunkt des Spieltags
+    club_id CHAR(36) DEFAULT NULL,              -- FK zu club.id — Club des Spielers zum Zeitpunkt des Spieltags; NULL für historische Daten ohne Club-Tracking
     grade DECIMAL(3,1) DEFAULT NULL,            -- Note, z.B. 1.5; Wertebereich 1.0..6.0
     participation ENUM('starting', 'substitute') DEFAULT NULL,  -- 'starting' = Startelf, 'substitute' = Eingewechselt, NULL = nicht gespielt
     goals INT DEFAULT 0,                        -- Tore

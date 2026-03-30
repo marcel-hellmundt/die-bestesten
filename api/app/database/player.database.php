@@ -250,11 +250,9 @@ trait PlayerTrait
                    pr.grade, pr.start_lineup, pr.substitution,
                    pr.goals, pr.assists, pr.clean_sheet,
                    pr.sds, pr.red_card, pr.yellow_red_card, pr.points,
-                   p.player_id IS NOT NULL AS player_exists,
-                   c.club_id   IS NOT NULL AS club_exists
+                   p.player_id IS NOT NULL AS player_exists
             FROM player_rating pr
             LEFT JOIN player p ON p.player_id = pr.player_id
-            LEFT JOIN club   c ON c.club_id   = pr.club_id
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         // Build (season_id + matchday_number) → matchday_id map from new DB
@@ -290,9 +288,8 @@ trait PlayerTrait
         foreach ($allRatingRows as $row) {
             $matchdayId = $matchdayMap[$row['season_id'] . '_' . $row['matchday_number']] ?? null;
 
-            if (!$row['player_exists'] || !$matchdayId || !$row['club_exists']) {
-                $reason = !$row['player_exists'] ? 'player not found'
-                        : (!$matchdayId ? 'matchday not found' : 'club not found');
+            if (!$row['player_exists'] || !$matchdayId) {
+                $reason = !$row['player_exists'] ? 'player not found' : 'matchday not found';
                 $skippedRatingsByReason[$reason] = ($skippedRatingsByReason[$reason] ?? 0) + 1;
                 continue;
             }
