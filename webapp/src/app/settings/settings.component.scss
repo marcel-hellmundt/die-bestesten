@@ -92,13 +92,18 @@
   color: $color-text-muted;
 
   &--admin {
-    background: color-mix(in srgb, $color-accent 15%, transparent);
-    color: $color-accent;
+    background: color-mix(in srgb, var(--flat-river) 15%, transparent);
+    color: var(--flat-river);
   }
 
   &--maintainer {
-    background: color-mix(in srgb, $color-success 15%, transparent);
-    color: $color-success;
+    background: color-mix(in srgb, var(--flat-sunflower) 15%, transparent);
+    color: var(--flat-sunflower);
+  }
+
+  &--manager {
+    background: color-mix(in srgb, var(--flat-alizarin) 15%, transparent);
+    color: var(--flat-alizarin);
   }
 }
 
