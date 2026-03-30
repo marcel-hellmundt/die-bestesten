@@ -1,3 +1,60 @@
+@use '../../../styles/variables' as *;
+
+.bundesliga-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: $space-3;
+  margin-bottom: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  }
+}
+
+.club-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3 $space-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  transition: background 0.1s, border-color 0.1s;
+
+  &:hover {
+    background: $color-surface-alt;
+    border-color: $color-text-muted;
+  }
+
+  &__pos {
+    position: absolute;
+    top: $space-1;
+    left: $space-2;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    line-height: 1;
+  }
+
+  &__logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
+  &__name {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+    text-align: center;
+    line-height: 1.2;
+  }
+}
+
 .migrate-bar {
   display: flex;
   align-items: center;

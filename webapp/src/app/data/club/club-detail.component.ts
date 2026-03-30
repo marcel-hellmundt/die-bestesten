@@ -63,6 +63,43 @@ export class ClubDetailComponent {
     return this.cache.seasons().filter((s) => !usedIds.has(s.id));
   });
 
+  idCopied = signal(false);
+  logoUploadState = signal<'idle' | 'loading' | 'error'>('idle');
+  logoBust = signal<number | null>(null);
+
+  @ViewChild('logoInput') logoInput!: ElementRef<HTMLInputElement>;
+
+  onLogoClick(): void {
+    this.logoInput.nativeElement.click();
+  }
+
+  onLogoFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const clubId = this.club()?.id;
+    if (!clubId) return;
+
+    this.logoUploadState.set('loading');
+    this.api.uploadClubLogo(clubId, file).subscribe({
+      next: () => {
+        this.logoBust.set(Date.now());
+        this.logoUploadState.set('idle');
+      },
+      error: () => {
+        this.logoUploadState.set('error');
+        setTimeout(() => this.logoUploadState.set('idle'), 2000);
+      },
+    });
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  copyId(id: string): void {
+    navigator.clipboard.writeText(id).then(() => {
+      this.idCopied.set(true);
+      setTimeout(() => this.idCopied.set(false), 1500);
+    });
+  }
+
   // Edit state
   isEditing = signal(false);
   patchingId = signal<string | null>(null);

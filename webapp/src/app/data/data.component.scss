@@ -7,7 +7,9 @@
   overflow-x: auto;
   scrollbar-width: none;
 
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   &-item {
     padding: $space-1 $space-4;
@@ -36,5 +38,12 @@
       background-color: $color-surface-alt;
       border-color: $color-border;
     }
+  }
+
+  .seperator {
+    height: 26px;
+    width: 1px;
+    background-color: $color-border;
+    margin: 6px 12px;
   }
 }

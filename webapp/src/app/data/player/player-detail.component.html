@@ -48,9 +48,7 @@
 
   <!-- Full-width: Bewertungen chart -->
   <section class="detail-section">
-    <div class="section-header">
-      <h2 class="section-title">Bewertungen</h2>
-    </div>
+    <h2 class="section-header">Bewertungen</h2>
     @if (pointsChartData(); as chart) {
       <div class="chart-container">
         <svg
@@ -113,9 +111,7 @@
   <div class="detail-grid">
     <!-- Left: Vereinshistorie -->
     <section class="detail-section">
-      <div class="section-header">
-        <h2 class="section-title">Vereinshistorie</h2>
-      </div>
+      <h2 class="section-header">Vereinshistorie</h2>
       @if (p.clubs.length === 0) {
         <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
       } @else {
@@ -158,9 +154,7 @@
     <!-- Middle: Saisons table + price chart below -->
     <div class="detail-grid__col">
       <section class="detail-section">
-        <div class="section-header">
-          <h2 class="section-title">Saisons</h2>
-        </div>
+        <h2 class="section-header">Saisons</h2>
         @if (p.seasons.length === 0) {
           <p class="state-msg">Keine Saison-Daten vorhanden.</p>
         } @else {
@@ -279,9 +273,7 @@
           <div class="stat-value">{{ totalAssists() }}</div>
         </div>
       </div>
-      <div class="section-header">
-        <h2 class="section-title">Noten</h2>
-      </div>
+      <h2 class="section-header">Noten</h2>
       @if (p.ratings.length === 0) {
         <p class="state-msg">Keine Bewertungen für diese Saison.</p>
       } @else {

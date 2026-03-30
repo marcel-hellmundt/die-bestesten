@@ -13,7 +13,9 @@
     margin-bottom: $space-6;
     transition: color $transition-fast;
 
-    &:hover { color: $color-text; }
+    &:hover {
+      color: $color-text;
+    }
   }
 
   .club-hero {
@@ -21,11 +23,59 @@
     align-items: center;
     gap: $space-6;
 
-    .club-logo {
-      width: 96px;
-      height: 96px;
-      object-fit: contain;
+    .logo-upload-wrapper {
+      position: relative;
+      width: 124px;
+      height: 124px;
       flex-shrink: 0;
+      cursor: pointer;
+      border-radius: $radius-md;
+      overflow: hidden;
+
+      .club-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transition: opacity 0.15s;
+        display: block;
+      }
+
+      .logo-upload-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transition: opacity 0.15s;
+
+        &--visible {
+          opacity: 1;
+        }
+      }
+
+      &:hover .logo-upload-overlay {
+        opacity: 1;
+      }
+      &:hover .club-logo {
+        opacity: 0.6;
+      }
+    }
+
+    .logo-upload-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .club-info {
@@ -40,18 +90,25 @@
         margin: 0;
       }
 
-      .club-short {
-        font-size: $font-sm;
-        color: $color-text-muted;
-        font-weight: $font-weight-medium;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
+      .club-meta {
+        display: flex;
+        gap: $space-4;
+        flex-wrap: wrap;
+        margin-top: $space-1;
 
-      .club-flag {
-        width: 24px;
-        height: 24px;
-        object-fit: contain;
+        .club-flag {
+          width: 24px;
+          height: 24px;
+          object-fit: contain;
+        }
+
+        .club-short {
+          font-size: $font-sm;
+          color: $color-text-muted;
+          font-weight: $font-weight-medium;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
       }
     }
   }
@@ -59,13 +116,6 @@
 
 .detail-section {
   margin-bottom: $space-8;
-
-  .section-title {
-    font-size: $font-lg;
-    font-weight: $font-weight-semibold;
-    margin-bottom: $space-4;
-    color: $color-text;
-  }
 
   .seasons-layout {
     display: grid;
@@ -82,22 +132,14 @@
       display: flex;
       flex-direction: column;
       gap: $space-3;
-
-      .section-title { margin-bottom: 0; }
     }
   }
 }
 
-.section-header {
+.section-header-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-
-  &-actions {
-    display: flex;
-    align-items: center;
-    gap: $space-2;
-  }
+  gap: $space-2;
 }
 
 .btn-edit {
@@ -111,7 +153,10 @@
   background: transparent;
   color: $color-text-muted;
   cursor: pointer;
-  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+  transition:
+    color $transition-fast,
+    border-color $transition-fast,
+    background $transition-fast;
 
   &:hover {
     color: $color-text;
@@ -173,7 +218,10 @@
     flex: 1;
     min-width: 120px;
 
-    &--sm { flex: 0 0 80px; min-width: 0; }
+    &--sm {
+      flex: 0 0 80px;
+      min-width: 0;
+    }
   }
 
   &-label {
@@ -206,7 +254,10 @@
       cursor: pointer;
       transition: opacity $transition-fast;
 
-      &:disabled { opacity: 0.5; cursor: not-allowed; }
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
 
     .btn-cancel {
@@ -218,10 +269,18 @@
       background: transparent;
       color: $color-text-muted;
       cursor: pointer;
-      transition: color $transition-fast, border-color $transition-fast;
+      transition:
+        color $transition-fast,
+        border-color $transition-fast;
 
-      &:hover { color: $color-text; border-color: $color-text; }
-      &:disabled { opacity: 0.5; cursor: not-allowed; }
+      &:hover {
+        color: $color-text;
+        border-color: $color-text;
+      }
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
   }
 }

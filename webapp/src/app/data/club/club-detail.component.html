@@ -7,13 +7,61 @@
     <a class="back-link" routerLink="../">← Alle Clubs</a>
 
     <div class="club-hero">
-      <img [src]="c.logoUrl" [class]="c.logoClass" class="club-logo" alt="" />
+      <div class="logo-upload-wrapper" (click)="onLogoClick()" title="Logo hochladen">
+        <img
+          [src]="
+            logoBust()
+              ? 'https://img.die-bestesten.de/img/club/' + c.id + '.png?v=' + logoBust()
+              : c.logoUrl
+          "
+          [class]="c.logoClass"
+          class="club-logo"
+          alt=""
+        />
+        <div
+          class="logo-upload-overlay"
+          [class.logo-upload-overlay--visible]="logoUploadState() !== 'idle'"
+        >
+          @if (logoUploadState() === 'loading') {
+            <span class="logo-upload-spinner"></span>
+          } @else if (logoUploadState() === 'error') {
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 6v5M10 14h.01" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
+              <circle cx="10" cy="10" r="8.5" stroke="#fff" stroke-width="1.4" />
+            </svg>
+          } @else {
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M10 13V7M7 10l3-3 3 3"
+                stroke="#fff"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path d="M6 15h8" stroke="#fff" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          }
+        </div>
+      </div>
+      <input
+        #logoInput
+        type="file"
+        accept="image/*"
+        style="display: none"
+        (change)="onLogoFileSelected($event)"
+      />
       <div class="club-info">
         <h1 class="club-name">{{ c.name }}</h1>
-        @if (c.short_name) {
-          <span class="club-short">{{ c.short_name }}</span>
-        }
-        <img [src]="c.flagUrl" class="club-flag" alt="" />
+        <div class="club-meta">
+          <img [src]="c.flagUrl" class="club-flag" alt="" />
+          @if (c.short_name) {
+            <span class="club-short">{{ c.short_name }}</span>
+          }
+        </div>
+
+        <button class="id-copy-btn" (click)="copyId(c.id)" title="ID kopieren">
+          {{ idCopied() ? 'Kopiert!' : c.id }}
+        </button>
       </div>
     </div>
   </div>
@@ -24,8 +72,8 @@
     } @else {
       <div class="seasons-layout">
         <div class="seasons-col">
-          <div class="section-header">
-            <h2 class="section-title">Saisons</h2>
+          <div class="section-header-row">
+            <h2 class="section-header">Saisons</h2>
             <div class="section-header-actions">
               @if (seasons().length > 0) {
                 <button
@@ -35,190 +83,233 @@
                   [title]="isEditing() ? 'Bearbeitung beenden' : 'Bearbeiten'"
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M8.5 1.5l2 2-6 6-2.5.5.5-2.5 6-6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                    <path
+                      d="M8.5 1.5l2 2-6 6-2.5.5.5-2.5 6-6z"
+                      stroke="currentColor"
+                      stroke-width="1.2"
+                      stroke-linejoin="round"
+                    />
                   </svg>
                 </button>
               }
               @if (!showAddForm() && availableSeasons().length > 0) {
                 <button class="btn-edit" (click)="openAddForm()" title="Saison hinzufügen">
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                    <path
+                      d="M6 1v10M1 6h10"
+                      stroke="currentColor"
+                      stroke-width="1.4"
+                      stroke-linecap="round"
+                    />
                   </svg>
                 </button>
               }
             </div>
           </div>
 
-        @if (seasons().length === 0 && !showAddForm()) {
-          <p class="state-msg">Keine Saison-Daten vorhanden.</p>
-        }
-        @if (seasons().length > 0) {
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Saison</th>
-                <th>Division</th>
-                <th>Platz</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (s of seasons(); track s.id) {
-                <tr [class.row--editing]="isEditing()">
-                  <td>{{ cache.seasonName(s.season_id) }}</td>
+          @if (seasons().length === 0 && !showAddForm()) {
+            <p class="state-msg">Keine Saison-Daten vorhanden.</p>
+          }
+          @if (seasons().length > 0) {
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Saison</th>
+                    <th>Division</th>
+                    <th>Platz</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of seasons(); track s.id) {
+                    <tr [class.row--editing]="isEditing()">
+                      <td>{{ cache.seasonName(s.season_id) }}</td>
 
-                  @if (isEditing()) {
-                    <td>
-                      <select
-                        class="input input--sm"
-                        [value]="s.division_id"
-                        (change)="onDivisionChange(s, $event)"
-                        [disabled]="patchingId() === s.id"
-                      >
-                        @for (div of cache.divisions(); track div.id) {
-                          <option [value]="div.id" [selected]="div.id === s.division_id">{{ div.name }}</option>
-                        }
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        class="input input--sm"
-                        type="number"
-                        min="1"
-                        [value]="s.position ?? ''"
-                        (change)="onPositionChange(s, $event)"
-                        [disabled]="patchingId() === s.id"
-                      />
-                    </td>
-                  } @else {
-                    <td>
-                      <span class="division-cell">
-                        <span class="division-badge" [style.background-color]="divisionColor(s.division_id)"></span>
-                        {{ cache.divisionName(s.division_id) }}
-                      </span>
-                    </td>
-                    <td>{{ s.position ?? '—' }}</td>
+                      @if (isEditing()) {
+                        <td>
+                          <select
+                            class="input input--sm"
+                            [value]="s.division_id"
+                            (change)="onDivisionChange(s, $event)"
+                            [disabled]="patchingId() === s.id"
+                          >
+                            @for (div of cache.divisions(); track div.id) {
+                              <option [value]="div.id" [selected]="div.id === s.division_id">
+                                {{ div.name }}
+                              </option>
+                            }
+                          </select>
+                        </td>
+                        <td>
+                          <input
+                            class="input input--sm"
+                            type="number"
+                            min="1"
+                            [value]="s.position ?? ''"
+                            (change)="onPositionChange(s, $event)"
+                            [disabled]="patchingId() === s.id"
+                          />
+                        </td>
+                      } @else {
+                        <td>
+                          <span class="division-cell">
+                            <span
+                              class="division-badge"
+                              [style.background-color]="divisionColor(s.division_id)"
+                            ></span>
+                            {{ cache.divisionName(s.division_id) }}
+                          </span>
+                        </td>
+                        <td>{{ s.position ?? '—' }}</td>
+                      }
+                    </tr>
                   }
-                </tr>
+                </tbody>
+              </table>
+            </div>
+          }
+
+          @if (showAddForm()) {
+            <div class="add-form" (keydown.enter)="!adding() && submitAdd()">
+              <div class="add-form-row">
+                <div class="add-form-field">
+                  <label class="add-form-label">Saison</label>
+                  <select
+                    class="input input--sm"
+                    (change)="onNewSeasonChange($any($event.target).value)"
+                  >
+                    @for (s of availableSeasons(); track s.id) {
+                      <option [value]="s.id" [selected]="s.id === newSeasonId()">
+                        {{ s.displayName }}
+                      </option>
+                    }
+                  </select>
+                </div>
+
+                <div class="add-form-field">
+                  <label class="add-form-label">Division</label>
+                  <select
+                    class="input input--sm"
+                    (change)="newDivisionId.set($any($event.target).value)"
+                  >
+                    <option value="" [selected]="newDivisionId() === ''">—</option>
+                    @for (d of cache.divisions(); track d.id) {
+                      <option [value]="d.id" [selected]="d.id === newDivisionId()">
+                        {{ d.name }}
+                      </option>
+                    }
+                  </select>
+                </div>
+
+                <div class="add-form-field add-form-field--sm">
+                  <label class="add-form-label">Platz</label>
+                  <input
+                    #positionInput
+                    class="input input--sm"
+                    type="number"
+                    min="1"
+                    placeholder="—"
+                    [value]="newPosition()"
+                    (input)="newPosition.set($any($event.target).value)"
+                  />
+                </div>
+              </div>
+
+              @if (addError()) {
+                <p class="add-form-error">{{ addError() }}</p>
               }
-            </tbody>
-          </table>
-        </div>
-        }
 
-        @if (showAddForm()) {
-          <div class="add-form" (keydown.enter)="!adding() && submitAdd()">
-            <div class="add-form-row">
-              <div class="add-form-field">
-                <label class="add-form-label">Saison</label>
-                <select
-                  class="input input--sm"
-                  (change)="onNewSeasonChange($any($event.target).value)"
+              <div class="add-form-actions">
+                <button
+                  class="btn-save"
+                  (click)="submitAdd()"
+                  [disabled]="adding() || !newSeasonId()"
                 >
-                  @for (s of availableSeasons(); track s.id) {
-                    <option [value]="s.id" [selected]="s.id === newSeasonId()">{{ s.displayName }}</option>
-                  }
-                </select>
-              </div>
-
-              <div class="add-form-field">
-                <label class="add-form-label">Division</label>
-                <select
-                  class="input input--sm"
-                  (change)="newDivisionId.set($any($event.target).value)"
-                >
-                  <option value="" [selected]="newDivisionId() === ''">—</option>
-                  @for (d of cache.divisions(); track d.id) {
-                    <option [value]="d.id" [selected]="d.id === newDivisionId()">{{ d.name }}</option>
-                  }
-                </select>
-              </div>
-
-              <div class="add-form-field add-form-field--sm">
-                <label class="add-form-label">Platz</label>
-                <input
-                  #positionInput
-                  class="input input--sm"
-                  type="number"
-                  min="1"
-                  placeholder="—"
-                  [value]="newPosition()"
-                  (input)="newPosition.set($any($event.target).value)"
-                />
+                  {{ adding() ? 'Speichern…' : 'Speichern' }}
+                </button>
+                <button class="btn-cancel" (click)="cancelAdd()" [disabled]="adding()">
+                  Abbrechen
+                </button>
               </div>
             </div>
-
-            @if (addError()) {
-              <p class="add-form-error">{{ addError() }}</p>
-            }
-
-            <div class="add-form-actions">
-              <button class="btn-save" (click)="submitAdd()" [disabled]="adding() || !newSeasonId()">
-                {{ adding() ? 'Speichern…' : 'Speichern' }}
-              </button>
-              <button class="btn-cancel" (click)="cancelAdd()" [disabled]="adding()">Abbrechen</button>
-            </div>
-          </div>
-        }
+          }
         </div>
 
         <div class="chart-col">
-          <h2 class="section-title">Platzierungen</h2>
-        @if (chartData(); as chart) {
-          <div class="chart-container">
-            <svg
-              class="position-chart"
-              [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
-              [attr.width]="chartW"
-              [attr.height]="chartH"
-              aria-hidden="true"
-            >
-              <!-- Y-axis boundary + label lines -->
-              @for (tick of chart.yTicks; track tick.label) {
-                <line
-                  [attr.x1]="padL" [attr.y1]="tick.y"
-                  [attr.x2]="chartW - padR" [attr.y2]="tick.y"
-                  class="chart-grid"
-                />
-                <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">
-                  {{ tick.label }}
-                </text>
-              }
+          <h2 class="section-header">Platzierungen</h2>
+          @if (chartData(); as chart) {
+            <div class="chart-container">
+              <svg
+                class="position-chart"
+                [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+                [attr.width]="chartW"
+                [attr.height]="chartH"
+                aria-hidden="true"
+              >
+                <!-- Y-axis boundary + label lines -->
+                @for (tick of chart.yTicks; track tick.label) {
+                  <line
+                    [attr.x1]="padL"
+                    [attr.y1]="tick.y"
+                    [attr.x2]="chartW - padR"
+                    [attr.y2]="tick.y"
+                    class="chart-grid"
+                  />
+                  <text
+                    [attr.x]="padL - 4"
+                    [attr.y]="tick.y + 4"
+                    class="chart-label chart-label--y"
+                  >
+                    {{ tick.label }}
+                  </text>
+                }
 
-              <!-- Division boundary lines -->
-              @for (line of chart.divLines; track line.label) {
-                <line
-                  [attr.x1]="padL" [attr.y1]="line.y"
-                  [attr.x2]="chartW - padR" [attr.y2]="line.y"
-                  class="chart-divider"
-                />
-              }
+                <!-- Division boundary lines -->
+                @for (line of chart.divLines; track line.label) {
+                  <line
+                    [attr.x1]="padL"
+                    [attr.y1]="line.y"
+                    [attr.x2]="chartW - padR"
+                    [attr.y2]="line.y"
+                    class="chart-divider"
+                  />
+                }
 
-              <!-- Line path -->
-              <path [attr.d]="chart.pathD" class="chart-line" fill="none" />
+                <!-- Line path -->
+                <path [attr.d]="chart.pathD" class="chart-line" fill="none" />
 
-              <!-- Dots -->
-              @for (pt of chart.points; track pt.label) {
-                <circle
-                  [attr.cx]="pt.x" [attr.cy]="pt.y" r="3.5"
-                  class="chart-dot"
-                  [style.fill]="pt.color"
-                  [style.stroke]="pt.color"
+                <!-- Dots -->
+                @for (pt of chart.points; track pt.label) {
+                  <circle
+                    [attr.cx]="pt.x"
+                    [attr.cy]="pt.y"
+                    r="3.5"
+                    class="chart-dot"
+                    [style.fill]="pt.color"
+                    [style.stroke]="pt.color"
+                  >
+                    <title>{{ pt.label }}: {{ pt.division }}, Platz {{ pt.position }}</title>
+                  </circle>
+                }
+
+                <!-- X-axis labels -->
+                <text
+                  [attr.x]="chart.xLabels[0].x"
+                  [attr.y]="chartH - 4"
+                  class="chart-label chart-label--x-start"
                 >
-                  <title>{{ pt.label }}: {{ pt.division }}, Platz {{ pt.position }}</title>
-                </circle>
-              }
-
-              <!-- X-axis labels -->
-              <text [attr.x]="chart.xLabels[0].x" [attr.y]="chartH - 4" class="chart-label chart-label--x-start">
-                {{ chart.xLabels[0].label }}
-              </text>
-              <text [attr.x]="chart.xLabels[1].x" [attr.y]="chartH - 4" class="chart-label chart-label--x-end">
-                {{ chart.xLabels[1].label }}
-              </text>
-            </svg>
-          </div>
-        }
+                  {{ chart.xLabels[0].label }}
+                </text>
+                <text
+                  [attr.x]="chart.xLabels[1].x"
+                  [attr.y]="chartH - 4"
+                  class="chart-label chart-label--x-end"
+                >
+                  {{ chart.xLabels[1].label }}
+                </text>
+              </svg>
+            </div>
+          }
         </div>
       </div>
     }

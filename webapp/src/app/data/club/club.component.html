@@ -46,44 +46,23 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   @if (bundesligaClubs().length > 0) {
-    <div class="section-header">
-      <h3 class="table-section-title" style="margin: 0">1. Bundesliga</h3>
-    </div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="col-id">ID</th>
-            <th class="col-pos">Platz</th>
-            <th colspan="2">Name</th>
-            <th>Kürzel</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (entry of bundesligaClubs(); track entry.club.id) {
-            <tr class="row-link" [routerLink]="[entry.club.id]">
-              <td class="col-id">{{ entry.club.id }}</td>
-              <td class="col-pos">{{ entry.position ?? '—' }}</td>
-              <td class="col-flag"><img [src]="entry.club.flagUrl" class="flag" /></td>
-              <td>
-                <span class="flex items-center gap-2">
-                  <img [src]="entry.club.logoUrl" [class]="entry.club.logoClass" />
-                  {{ entry.club.name }}</span
-                >
-              </td>
-              <td>{{ entry.club.short_name }}</td>
-            </tr>
+    <h3 class="table-section-title">1. Bundesliga</h3>
+    <div class="bundesliga-grid">
+      @for (entry of bundesligaClubs(); track entry.club.id) {
+        <a class="club-tile" [routerLink]="[entry.club.id]">
+          @if (entry.position) {
+            <span class="club-tile__pos">{{ entry.position }}</span>
           }
-        </tbody>
-      </table>
+          <img [src]="entry.club.logoUrl" [class]="entry.club.logoClass" class="club-tile__logo" alt="" />
+          <span class="club-tile__name">{{ entry.club.short_name || entry.club.name }}</span>
+        </a>
+      }
     </div>
   }
 
   @if (otherClubs().length > 0) {
     @if (bundesligaClubs().length > 0) {
-      <div class="section-header">
-        <h3 class="table-section-title" style="margin: 0">Weitere Vereine</h3>
-      </div>
+      <h3 class="table-section-title">Weitere Vereine</h3>
     }
     <div class="table-container">
       <table class="data-table">

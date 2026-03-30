@@ -351,13 +351,19 @@
   }
 }
 
-// Section header — title + optional right-side content
+// Section heading — h2 above a content block
 .section-header {
+  font-size: $font-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+// Section heading row — .section-header h2 + optional right-side actions
+.section-header-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: $space-4;
-  margin-bottom: $space-4;
 }
 
 .state-msg {
@@ -367,5 +373,26 @@
 
   &--error {
     color: $color-danger;
+  }
+}
+
+.id-copy-btn {
+  align-items: center;
+  margin-top: $space-2;
+  padding: 4px $space-3;
+  font-size: $font-xs;
+  color: $color-text-muted;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition:
+    color $transition-fast,
+    border-color $transition-fast;
+  letter-spacing: 0.02em;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-text-muted;
   }
 }
