@@ -57,6 +57,47 @@ trait ClubInSeasonTrait
         return (int) $query->fetchColumn() > 0;
     }
 
+    public function getClubInSeasonById(string $id): array|false
+    {
+        $q = $this->con->prepare("SELECT * FROM club_in_season WHERE id = :id LIMIT 1");
+        $q->execute([':id' => $id]);
+        return $q->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function countClubsInDivisionSeason(string $divisionId, string $seasonId, ?string $excludeId = null): int
+    {
+        $sql = "SELECT COUNT(*) FROM club_in_season WHERE division_id = :division_id AND season_id = :season_id";
+        $params = [':division_id' => $divisionId, ':season_id' => $seasonId];
+        if ($excludeId) {
+            $sql .= ' AND id != :exclude_id';
+            $params[':exclude_id'] = $excludeId;
+        }
+        $q = $this->con->prepare($sql);
+        $q->execute($params);
+        return (int) $q->fetchColumn();
+    }
+
+    public function getDivisionSeats(string $divisionId): ?int
+    {
+        $q = $this->con->prepare("SELECT seats FROM division WHERE id = :id LIMIT 1");
+        $q->execute([':id' => $divisionId]);
+        $row = $q->fetch(PDO::FETCH_ASSOC);
+        return $row ? (int) $row['seats'] : null;
+    }
+
+    public function positionTakenInDivisionSeason(string $divisionId, string $seasonId, int $position, ?string $excludeId = null): bool
+    {
+        $sql = "SELECT COUNT(*) FROM club_in_season WHERE division_id = :division_id AND season_id = :season_id AND position = :position";
+        $params = [':division_id' => $divisionId, ':season_id' => $seasonId, ':position' => $position];
+        if ($excludeId) {
+            $sql .= ' AND id != :exclude_id';
+            $params[':exclude_id'] = $excludeId;
+        }
+        $q = $this->con->prepare($sql);
+        $q->execute($params);
+        return (int) $q->fetchColumn() > 0;
+    }
+
     public function createClubInSeason(string $id, string $clubId, string $seasonId, ?string $divisionId, ?int $position): void
     {
         $query = $this->con->prepare(

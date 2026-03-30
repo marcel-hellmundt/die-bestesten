@@ -40,6 +40,21 @@ class ClubInSeasonController extends _BaseController
             return ['status' => false, 'message' => 'Dieser Verein hat bereits einen Eintrag für diese Saison'];
         }
 
+        if ($divisionId) {
+            $seats = $this->db->getDivisionSeats($divisionId);
+            if ($seats !== null && $this->db->countClubsInDivisionSeason($divisionId, $seasonId) >= $seats) {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Division hat keine freien Plätze mehr (max. ' . $seats . ')'];
+            }
+        }
+
+        if ($divisionId && $position !== null) {
+            if ($this->db->positionTakenInDivisionSeason($divisionId, $seasonId, $position)) {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Position ' . $position . ' ist in dieser Division bereits vergeben'];
+            }
+        }
+
         $id = $this->generateGUID();
         $this->db->createClubInSeason($id, $clubId, $seasonId, $divisionId ?: null, $position);
         http_response_code(201);
@@ -60,6 +75,34 @@ class ClubInSeasonController extends _BaseController
         if (!$divisionId && $position === false) {
             http_response_code(400);
             return ['status' => false, 'message' => 'No fields to update'];
+        }
+
+        $current = $this->db->getClubInSeasonById($this->id);
+        if (!$current) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Eintrag nicht gefunden'];
+        }
+
+        $effectiveDivisionId = $divisionId ?? $current['division_id'];
+        $effectivePosition   = $position !== false ? $position : $current['position'];
+        $seasonId            = $current['season_id'];
+
+        if ($effectiveDivisionId) {
+            $seats = $this->db->getDivisionSeats($effectiveDivisionId);
+            // Only check seats if division changed (moving to a different division)
+            if ($divisionId && $divisionId !== $current['division_id']) {
+                if ($seats !== null && $this->db->countClubsInDivisionSeason($effectiveDivisionId, $seasonId, $this->id) >= $seats) {
+                    http_response_code(409);
+                    return ['status' => false, 'message' => 'Division hat keine freien Plätze mehr (max. ' . $seats . ')'];
+                }
+            }
+
+            if ($effectivePosition !== null) {
+                if ($this->db->positionTakenInDivisionSeason($effectiveDivisionId, $seasonId, (int) $effectivePosition, $this->id)) {
+                    http_response_code(409);
+                    return ['status' => false, 'message' => 'Position ' . $effectivePosition . ' ist in dieser Division bereits vergeben'];
+                }
+            }
         }
 
         $this->db->updateClubInSeason($this->id, $divisionId, $position === false ? null : $position);
