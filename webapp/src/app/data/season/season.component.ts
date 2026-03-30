@@ -119,7 +119,8 @@ export class SeasonDataComponent {
     return `${weekday} ${d}.${m}.${y} ${h}:${min}`;
   }
 
-  isAdmin      = computed(() => this.auth.isAdmin());
+  isAdmin       = computed(() => this.auth.isAdmin());
+  isMaintainer  = computed(() => this.auth.isMaintainer());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   sanityState    = signal<'idle' | 'loading' | 'done'>('idle');
@@ -200,6 +201,10 @@ export class SeasonDataComponent {
       },
       error: () => this.sanityState.set('idle'),
     });
+  }
+
+  addTransferwindow(matchday: Matchday): void {
+    // TODO: implement
   }
 
   migrate(): void {

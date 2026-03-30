@@ -11,8 +11,7 @@
 }
 
 .season-panel,
-.matchday-panel,
-.tw-panel {
+.matchday-panel {
   flex: 1;
   min-width: 0;
 }
@@ -41,9 +40,20 @@
 }
 
 
-.tw-panel {
+.expand-row td {
+  padding: $space-3 $space-4 $space-4;
+  background: $color-surface-alt;
+}
+
+.tw-expand-content {
   display: flex;
   flex-direction: column;
+  gap: $space-3;
+}
+
+.tw-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: $space-3;
 }
 

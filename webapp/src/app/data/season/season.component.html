@@ -97,33 +97,42 @@
                     <td>{{ formatDatetime(md.kickoff_date) }}</td>
                     <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
                   </tr>
+                  @if (selectedMatchday()?.id === md.id) {
+                    <tr class="expand-row">
+                      <td colspan="4">
+                        <div class="tw-expand-content">
+                          @if (matchdayTransferwindows().length === 0) {
+                            <p class="state-msg">Keine Transferfenster vorhanden</p>
+                          } @else {
+                            <div class="tw-cards">
+                              @for (tw of matchdayTransferwindows(); track tw.id; let i = $index) {
+                                <div class="tw-card">
+                                  <span class="tw-card__label">Fenster {{ i + 1 }}</span>
+                                  <div class="tw-card__row">
+                                    <span class="tw-card__key">Start</span>
+                                    <span>{{ formatDatetime(tw.start_date) }}</span>
+                                  </div>
+                                  <div class="tw-card__row">
+                                    <span class="tw-card__key">Ende</span>
+                                    <span>{{ formatDatetime(tw.end_date) }}</span>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                          @if (isMaintainer()) {
+                            <button class="btn btn-ghost btn-sm" (click)="addTransferwindow(md)">
+                              + Transferfenster hinzufügen
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
                 }
               </tbody>
             </table>
           </div>
-        }
-      </div>
-    }
-
-    <!-- Rechte Spalte: Transferfenster-Cards -->
-    @if (selectedMatchday()) {
-      <div class="tw-panel">
-        <h2 class="section-header">Transferfenster</h2>
-        @for (tw of matchdayTransferwindows(); track tw.id; let i = $index) {
-          <div class="tw-card">
-            <span class="tw-card__label">Fenster {{ i + 1 }}</span>
-            <div class="tw-card__row">
-              <span class="tw-card__key">Start</span>
-              <span>{{ formatDatetime(tw.start_date) }}</span>
-            </div>
-            <div class="tw-card__row">
-              <span class="tw-card__key">Ende</span>
-              <span>{{ formatDatetime(tw.end_date) }}</span>
-            </div>
-          </div>
-        }
-        @if (matchdayTransferwindows().length === 0) {
-          <p class="state-msg">Keine Transferfenster vorhanden</p>
         }
       </div>
     }

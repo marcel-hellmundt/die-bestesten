@@ -157,14 +157,15 @@ export class ClubDetailComponent {
 
     if (!existing.length) return mostFrequent();
 
-    const target = this.cache.seasons().find(s => s.id === seasonId);
+    const target = this.cache.seasons().find((s) => s.id === seasonId);
     if (!target) return mostFrequent();
 
     const sorted = [...existing].sort((a, b) => a.season_start.localeCompare(b.season_start));
     const prev = sorted.filter((e: any) => e.season_start < target.start_date).at(-1) ?? null;
     const next = sorted.find((e: any) => e.season_start > target.start_date) ?? null;
 
-    if (prev && next) return prev.division_id === next.division_id ? prev.division_id : mostFrequent();
+    if (prev && next)
+      return prev.division_id === next.division_id ? prev.division_id : mostFrequent();
     if (prev) return prev.division_id;
     if (next) return next.division_id;
     return mostFrequent();
@@ -175,7 +176,9 @@ export class ClubDetailComponent {
   openAddForm(): void {
     const firstSeason = this.availableSeasons()[0];
     this.newSeasonId.set(firstSeason?.id ?? '');
-    this.newDivisionId.set(firstSeason ? this.smartDivision(firstSeason.id) : (this.cache.divisions()[0]?.id ?? ''));
+    this.newDivisionId.set(
+      firstSeason ? this.smartDivision(firstSeason.id) : (this.cache.divisions()[0]?.id ?? ''),
+    );
     this.newPosition.set('');
     this.addError.set(null);
     this.showAddForm.set(true);
@@ -222,7 +225,11 @@ export class ClubDetailComponent {
   }
 
   // Chart
-  private readonly levelColors = ['var(--division-level-1)', 'var(--division-level-2)', 'var(--division-level-3)'];
+  private readonly levelColors = [
+    'var(--division-level-1)',
+    'var(--division-level-2)',
+    'var(--division-level-3)',
+  ];
 
   divisionColor(divisionId: string): string {
     const div = this.cache.divisions().find((d) => d.id === divisionId);
@@ -281,14 +288,6 @@ export class ClubDetailComponent {
 
     const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
 
-    const bottomY = this.chartH - this.padB;
-    const areaD = `M${points[0].x},${bottomY} ${pathD.replace('M', 'L')} L${points[points.length - 1].x},${bottomY} Z`;
-
-    const gradientStops = points.map(p => ({
-      offset: `${(((p.x - this.padL) / plotW) * 100).toFixed(1)}%`,
-      color: p.color,
-    }));
-
     const divLines = sortedDivs.slice(0, -1).map((_, i) => {
       const boundary = offsetMap.get(sortedDivs[i + 1].id)!;
       return { y: toY(boundary + 0.5), label: sortedDivs[i + 1].name };
@@ -304,19 +303,19 @@ export class ClubDetailComponent {
       { x: points[points.length - 1].x, label: points[points.length - 1].label },
     ];
 
-    return { points, pathD, areaD, gradientStops, yTicks, divLines, xLabels };
+    return { points, pathD, yTicks, divLines, xLabels };
   });
 
   private squadState = toSignal(
     this.id$.pipe(
-      switchMap(id =>
+      switchMap((id) =>
         this.api.get<any[]>(`player?club_id=${id}`).pipe(
-          map(data => ({ data, loading: false })),
+          map((data) => ({ data, loading: false })),
           startWith({ data: [] as any[], loading: true }),
-          catchError(() => of({ data: [] as any[], loading: false }))
-        )
-      )
-    )
+          catchError(() => of({ data: [] as any[], loading: false })),
+        ),
+      ),
+    ),
   );
 
   squad = computed(() => this.squadState()?.data ?? []);
@@ -331,9 +330,9 @@ export class ClubDetailComponent {
 
   private readonly positionColors: Record<string, string> = {
     GOALKEEPER: 'var(--position-goalkeeper)',
-    DEFENDER:   'var(--position-defender)',
+    DEFENDER: 'var(--position-defender)',
     MIDFIELDER: 'var(--position-midfielder)',
-    FORWARD:    'var(--position-forward)',
+    FORWARD: 'var(--position-forward)',
   };
 
   positionLabel(pos: string | null): string {

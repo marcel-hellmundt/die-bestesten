@@ -1,22 +1,35 @@
-@if (!loading() && !error() && items().length > 0) {
-  <div class="stat-grid">
-    <div class="stat-card">
-      <span class="stat-label" style="color: var(--flat-river)">Vereine</span>
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="stat-label" style="color: var(--flat-river)">Vereine</span>
+    @if (loading()) {
+      <div class="skeleton skeleton--value"></div>
+      <div class="skeleton skeleton--desc"></div>
+    } @else {
       <div class="stat-value">{{ items().length }}</div>
       <div class="stat-desc">Gesamt</div>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label" style="color: var(--division-level-1)">Bundesliga</span>
+    }
+  </div>
+  <div class="stat-card">
+    <span class="stat-label" style="color: var(--division-level-1)">Bundesliga</span>
+    @if (loading()) {
+      <div class="skeleton skeleton--value"></div>
+      <div class="skeleton skeleton--desc"></div>
+    } @else {
       <div class="stat-value">{{ bundesligaClubs().length }}</div>
       <div class="stat-desc">1. Bundesliga</div>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label" style="color: var(--division-level-2)">Weitere</span>
+    }
+  </div>
+  <div class="stat-card">
+    <span class="stat-label" style="color: var(--division-level-2)">Weitere</span>
+    @if (loading()) {
+      <div class="skeleton skeleton--value"></div>
+      <div class="skeleton skeleton--desc"></div>
+    } @else {
       <div class="stat-value">{{ otherClubs().length }}</div>
       <div class="stat-desc">Andere Ligen</div>
-    </div>
+    }
   </div>
-}
+</div>
 
 <div class="list-bar">
   <input
@@ -27,9 +40,7 @@
     (input)="searchQuery.set($any($event.target).value)"
   />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
-  <button class="btn"
-          [disabled]="sanityState() === 'loading'"
-          (click)="runSanityCheck()">
+  <button class="btn" [disabled]="sanityState() === 'loading'" (click)="runSanityCheck()">
     {{ sanityState() === 'loading' ? 'Prüft…' : 'Sanity Check' }}
   </button>
   @if (isAdmin()) {
@@ -50,7 +61,9 @@
     @if (sanityWarnings().length === 0) {
       <span class="sanity-ok">Keine Auffälligkeiten gefunden</span>
     } @else {
-      <span class="sanity-count">{{ sanityWarnings().length }} Warnung{{ sanityWarnings().length === 1 ? '' : 'en' }}</span>
+      <span class="sanity-count"
+        >{{ sanityWarnings().length }} Warnung{{ sanityWarnings().length === 1 ? '' : 'en' }}</span
+      >
       <ul class="sanity-list">
         @for (w of sanityWarnings(); track w) {
           <li>{{ w }}</li>
@@ -73,7 +86,12 @@
           @if (entry.position) {
             <span class="club-tile__pos">{{ entry.position }}</span>
           }
-          <img [src]="entry.club.logoUrl" [class]="entry.club.logoClass" class="club-tile__logo" alt="" />
+          <img
+            [src]="entry.club.logoUrl"
+            [class]="entry.club.logoClass"
+            class="club-tile__logo"
+            alt=""
+          />
           <span class="club-tile__name">{{ entry.club.short_name || entry.club.name }}</span>
         </a>
       }

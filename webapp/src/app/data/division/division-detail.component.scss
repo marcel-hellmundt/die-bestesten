@@ -13,7 +13,9 @@
     margin-bottom: $space-6;
     transition: color $transition-fast;
 
-    &:hover { color: $color-text; }
+    &:hover {
+      color: $color-text;
+    }
   }
 }
 
@@ -29,7 +31,9 @@
     flex-shrink: 0;
   }
 
-  .page-title { margin: 0; }
+  .page-title {
+    margin: 0;
+  }
 }
 
 .division-meta {
@@ -41,22 +45,29 @@
   color: $color-text-muted;
 }
 
-.meta-sep { color: $color-border; }
+.meta-sep {
+  color: $color-border;
+}
 
-.club-count {
-  display: inline-block;
-  margin-left: $space-3;
-  padding: 2px $space-2;
-  border-radius: $radius-sm;
-  font-size: $font-sm;
-  font-weight: $font-weight-medium;
-  background: $color-surface-alt;
-  color: $color-text-muted;
-  vertical-align: middle;
+.club-count-area {
+  width: 60px;
+  .club-count {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    padding: 6px $space-3;
+    border-radius: $radius-sm;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    border: $color-surface-alt;
+    color: $color-text-muted;
+    vertical-align: middle;
+    white-space: nowrap;
 
-  &--full {
-    background: color-mix(in srgb, $color-success 15%, transparent);
-    color: $color-success;
+    &--full {
+      background: color-mix(in srgb, $color-success 15%, transparent);
+      color: $color-success;
+    }
   }
 }
 

@@ -21,21 +21,22 @@
 
   <section class="detail-section">
     <div class="season-select-bar">
-      <h2 class="section-header">
-        Clubs
-        @if (!clubsLoading()) {
-          <span class="club-count"
-                [class.club-count--full]="clubs().length === d.seats">
-            {{ clubs().length }} / {{ d.seats }}
-          </span>
-        }
-      </h2>
-      <select class="input input--sm season-select"
-              (change)="selectSeason($any($event.target).value)">
+      <h2 class="section-header">Clubs</h2>
+      <select
+        class="input input--sm season-select"
+        (change)="selectSeason($any($event.target).value)"
+      >
         @for (s of cache.seasons(); track s.id) {
           <option [value]="s.id">{{ s.displayName }}</option>
         }
       </select>
+      <div class="club-count-area">
+        @if (!clubsLoading()) {
+          <span class="club-count" [class.club-count--full]="clubs().length === d.seats">
+            {{ clubs().length }} / {{ d.seats }}
+          </span>
+        }
+      </div>
     </div>
 
     @if (clubsLoading()) {
@@ -58,7 +59,12 @@
               <tr class="row-link" [routerLink]="['/app/data/club', entry.club.id]">
                 <td class="col-pos">{{ entry.position ?? '—' }}</td>
                 <td class="col-logo">
-                  <img [src]="entry.club.logoUrl" [class]="entry.club.logoClass" class="club-logo" alt="" />
+                  <img
+                    [src]="entry.club.logoUrl"
+                    [class]="entry.club.logoClass"
+                    class="club-logo"
+                    alt=""
+                  />
                 </td>
                 <td>{{ entry.club.name }}</td>
                 <td class="col-short">{{ entry.club.short_name ?? '—' }}</td>

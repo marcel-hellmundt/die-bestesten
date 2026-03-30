@@ -1,5 +1,37 @@
 @use '../../../styles/variables' as *;
 
+@keyframes shimmer {
+  from {
+    background-position: 200% center;
+  }
+  to {
+    background-position: -200% center;
+  }
+}
+
+.skeleton {
+  border-radius: $radius-lg;
+  background: linear-gradient(
+    90deg,
+    $color-surface-alt 25%,
+    $color-border 50%,
+    $color-surface-alt 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+
+  &--value {
+    height: 30px;
+    width: 48px;
+    margin: 0 auto $space-1;
+  }
+
+  &--desc {
+    height: 12px;
+    width: 80px;
+  }
+}
+
 .bundesliga-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
@@ -23,7 +55,9 @@
   text-decoration: none;
   color: inherit;
   position: relative;
-  transition: background 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
 
   &:hover {
     background: $color-surface-alt;
@@ -41,8 +75,8 @@
   }
 
   &__logo {
-    width: 48px;
-    height: 48px;
+    width: 48px !important;
+    height: 48px !important;
     object-fit: contain;
   }
 
@@ -65,4 +99,5 @@
 .logo {
   height: 28px;
   width: 28px;
+  object-fit: contain;
 }

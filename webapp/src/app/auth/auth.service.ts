@@ -60,6 +60,11 @@ export class AuthService {
     return this.getRole() === 'admin';
   }
 
+  isMaintainer(): boolean {
+    const role = this.getRole();
+    return role === 'maintainer' || role === 'admin';
+  }
+
   getPayload(): Record<string, unknown> | null {
     const token = this.getToken();
     if (!token) return null;
