@@ -12,7 +12,7 @@ class Guard
     // Role hierarchy — higher index = more permissions
     private static array $ROLE_LEVELS = [
         'guest'      => 0,
-        'user'       => 1,
+        'manager'    => 1,
         'maintainer' => 2,
         'admin'      => 3,
     ];

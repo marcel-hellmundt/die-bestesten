@@ -2,7 +2,7 @@
 
 class ManagerController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'user', 'PATCH' => 'user', 'DELETE' => 'user'];
+    public static array $methodRoles = ['GET' => 'manager', 'PATCH' => 'manager', 'DELETE' => 'manager'];
 
     protected function get(): mixed
     {

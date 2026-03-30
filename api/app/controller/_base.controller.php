@@ -3,8 +3,8 @@ require_once __DIR__ . '/../database/base.database.php';
 
 abstract class _BaseController
 {
-    // Required role per HTTP method: 'guest' | 'user' | 'maintainer' | 'admin'
-    // guest = no auth needed, user = any authenticated user, etc.
+    // Required role per HTTP method: 'guest' | 'manager' | 'maintainer' | 'admin'
+    // guest = no auth needed, manager = any authenticated user, etc.
     public static array $methodRoles = [];
 
     public Database $db;

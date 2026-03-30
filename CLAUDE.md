@@ -51,7 +51,7 @@ styles/
 
 ## API-Autorisierung (RBAC)
 
-`$methodRoles` pro Controller: HTTP-Methode → Mindestrolle. Hierarchie: `guest(0) < user(1) < maintainer(2) < admin(3)`. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle zu niedrig. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_role']`.
+`$methodRoles` pro Controller: HTTP-Methode → Mindestrolle. Hierarchie: `guest(0) < manager(1) < maintainer(2) < admin(3)`. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle zu niedrig. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_role']`.
 
 ## Datenbankschema
 
@@ -103,7 +103,7 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 
 ## Liga-DB (`database/league_schema.sql`)
 
-**manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, role ENUM(admin/maintainer/user), status ENUM(active/blocked), deleted BOOL DEFAULT 0, email UNIQUE?, date_of_birth?
+**manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, role ENUM(admin/maintainer/manager) DEFAULT manager, status ENUM(active/blocked), deleted BOOL DEFAULT 0, email UNIQUE?, date_of_birth?
 
 **password_reset_token**: id PK, manager_id FK, token_hash VARCHAR(64) UNIQUE, expires_at DATETIME, used BOOL DEFAULT 0, created_at DATETIME
 
