@@ -237,7 +237,7 @@ class Routing
                     [
                         'method'      => 'PATCH',
                         'path'        => '/manager/me',
-                        'description' => 'Passwort ändern — Body: { current_password, new_password }',
+                        'description' => 'Profil aktualisieren — Body: { current_password, new_password } für Passwort; oder { email } allein für E-Mail-Update (kein Passwort nötig)',
                     ],
                     [
                         'method'      => 'DELETE',

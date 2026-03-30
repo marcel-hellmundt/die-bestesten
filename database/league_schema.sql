@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS manager (
     role          ENUM('admin', 'maintainer', 'user') NOT NULL DEFAULT 'user',
     status        ENUM('active', 'blocked') NOT NULL DEFAULT 'active',
     deleted       TINYINT(1)   NOT NULL DEFAULT 0,
+    email         VARCHAR(255) NULL UNIQUE,
     date_of_birth DATE         NULL
 );
 

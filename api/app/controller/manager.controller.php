@@ -24,6 +24,13 @@ class ManagerController extends _BaseController
         $body            = $this->body();
         $currentPassword = $body['current_password'] ?? null;
         $newPassword     = $body['new_password'] ?? null;
+        $email           = array_key_exists('email', $body) ? $body['email'] : 'NOT_SET';
+
+        // Email-only update — no password required
+        if ($email !== 'NOT_SET' && !$currentPassword && !$newPassword) {
+            $this->db->updateManagerEmail($GLOBALS['auth_manager_id'], $email ?: null);
+            return ['status' => true];
+        }
 
         if (!$currentPassword || !$newPassword) {
             http_response_code(400);
@@ -37,6 +44,11 @@ class ManagerController extends _BaseController
         }
 
         $this->db->updateManagerPassword($GLOBALS['auth_manager_id'], password_hash($newPassword, PASSWORD_DEFAULT));
+
+        if ($email !== 'NOT_SET') {
+            $this->db->updateManagerEmail($GLOBALS['auth_manager_id'], $email ?: null);
+        }
+
         return ['status' => true];
     }
 
