@@ -1,0 +1,64 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (division(); as d) {
+  <div class="detail-header">
+    <a class="back-link" routerLink="../">← Alle Ligen</a>
+
+    <div class="division-hero">
+      <img [src]="d.flagUrl" class="division-flag" alt="" />
+      <div class="division-info">
+        <h1 class="page-title">{{ d.name }}</h1>
+        <div class="division-meta">
+          <span class="meta-item">Level {{ d.level }}</span>
+          <span class="meta-sep">·</span>
+          <span class="meta-item">{{ d.seats }} Plätze</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="detail-section">
+    <div class="season-select-bar">
+      <h2 class="section-header">Clubs</h2>
+      <select class="input input--sm season-select"
+              (change)="selectSeason($any($event.target).value)">
+        @for (s of cache.seasons(); track s.id) {
+          <option [value]="s.id">{{ s.displayName }}</option>
+        }
+      </select>
+    </div>
+
+    @if (clubsLoading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (clubs().length === 0) {
+      <p class="state-msg">Keine Clubs in dieser Division für die gewählte Saison.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-pos">Platz</th>
+              <th class="col-logo"></th>
+              <th>Name</th>
+              <th>Kürzel</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of clubs(); track entry.club.id) {
+              <tr class="row-link" [routerLink]="['/app/data/club', entry.club.id]">
+                <td class="col-pos">{{ entry.position ?? '—' }}</td>
+                <td class="col-logo">
+                  <img [src]="entry.club.logoUrl" [class]="entry.club.logoClass" class="club-logo" alt="" />
+                </td>
+                <td>{{ entry.club.name }}</td>
+                <td class="col-short">{{ entry.club.short_name ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

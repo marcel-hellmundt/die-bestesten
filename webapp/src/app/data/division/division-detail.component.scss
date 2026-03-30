@@ -1,0 +1,78 @@
+@use '../../../styles/variables' as *;
+
+.detail-header {
+  margin-bottom: $space-8;
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    font-size: $font-sm;
+    color: $color-text-muted;
+    text-decoration: none;
+    margin-bottom: $space-6;
+    transition: color $transition-fast;
+
+    &:hover { color: $color-text; }
+  }
+}
+
+.division-hero {
+  display: flex;
+  align-items: center;
+  gap: $space-6;
+
+  .division-flag {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .page-title { margin: 0; }
+}
+
+.division-meta {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-top: $space-2;
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.meta-sep { color: $color-border; }
+
+.season-select-bar {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  margin-bottom: $space-4;
+}
+
+.season-select {
+  margin-left: auto;
+}
+
+.col-pos {
+  width: 56px;
+  color: $color-text-muted;
+  font-size: $font-sm;
+}
+
+.col-logo {
+  width: 36px;
+  padding-inline: $space-2;
+
+  .club-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.col-short {
+  color: $color-text-muted;
+  font-size: $font-sm;
+}

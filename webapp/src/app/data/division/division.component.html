@@ -26,7 +26,7 @@
       </thead>
       <tbody>
         @for (item of filteredItems(); track item.id) {
-          <tr>
+          <tr class="row-link" [routerLink]="[item.id]">
             <td class="col-id">{{ item.id }}</td>
             <td class="col-flag">
               <img [src]="'img/flags/' + item.country_id + '.svg'" class="flag" alt="" />
