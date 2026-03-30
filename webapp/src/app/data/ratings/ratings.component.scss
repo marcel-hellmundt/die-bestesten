@@ -2,15 +2,11 @@
 
 // Matchday pill bar
 .matchday-bar {
-  display: grid;
-  grid-template-columns: repeat(17, auto);
-  justify-content: start;
+  display: flex;
+  flex-wrap: wrap;
   gap: $space-2;
   margin-bottom: $space-6;
-
-  @media (max-width: #{$mobile-breakpoint}) {
-    grid-template-columns: repeat(9, auto);
-  }
+  max-width: 978px; // ~17 pills × 50px + 16 gaps × 8px
 }
 
 .matchday-pill {
@@ -22,10 +18,13 @@
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
   display: flex;
   align-items: center;
   gap: $space-1;
+  width: 50px;
 
   &:hover {
     background: $color-surface-alt;
@@ -75,7 +74,9 @@
   border-radius: $radius-lg;
   background: $color-surface;
   cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
 
   &:hover {
     background: $color-surface-alt;
