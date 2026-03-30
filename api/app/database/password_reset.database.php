@@ -5,7 +5,7 @@ trait PasswordResetTrait
     public function getManagerByEmail(string $email): array|false
     {
         $q = $this->con_league->prepare(
-            "SELECT id, manager_name, alias FROM manager WHERE email = :email AND deleted = 0 LIMIT 1"
+            "SELECT id, manager_name, alias FROM manager WHERE email = :email AND status = 'active' LIMIT 1"
         );
         $q->execute([':email' => $email]);
         return $q->fetch(PDO::FETCH_ASSOC);

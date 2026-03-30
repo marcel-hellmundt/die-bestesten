@@ -103,7 +103,7 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 
 ## Liga-DB (`database/league_schema.sql`)
 
-**manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, role ENUM(admin/maintainer/manager) DEFAULT manager, status ENUM(active/blocked), deleted BOOL DEFAULT 0, email UNIQUE?, date_of_birth?
+**manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, role ENUM(admin/maintainer/manager) DEFAULT manager, status ENUM(active/blocked/deleted) DEFAULT active, email UNIQUE?, date_of_birth?
 
 **password_reset_token**: id PK, manager_id FK, token_hash VARCHAR(64) UNIQUE, expires_at DATETIME, used BOOL DEFAULT 0, created_at DATETIME
 

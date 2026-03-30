@@ -32,7 +32,7 @@ trait ManagerTrait
     public function markManagerDeleted(string $id): void
     {
         $q = $this->con_league->prepare(
-            "UPDATE manager SET deleted = 1 WHERE id = :id"
+            "UPDATE manager SET status = 'deleted' WHERE id = :id"
         );
         $q->execute([':id' => $id]);
     }

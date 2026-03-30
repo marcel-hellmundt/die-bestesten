@@ -7,8 +7,7 @@ CREATE TABLE IF NOT EXISTS manager (
     alias         VARCHAR(64)  NULL DEFAULT NULL UNIQUE,
     password      VARCHAR(255) NOT NULL,
     role          ENUM('admin', 'maintainer', 'manager') NOT NULL DEFAULT 'manager',
-    status        ENUM('active', 'blocked') NOT NULL DEFAULT 'active',
-    deleted       TINYINT(1)   NOT NULL DEFAULT 0,
+    status        ENUM('active', 'blocked', 'deleted') NOT NULL DEFAULT 'active',
     email         VARCHAR(255) NULL UNIQUE,
     date_of_birth DATE         NULL
 );
