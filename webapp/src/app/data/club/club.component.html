@@ -27,6 +27,11 @@
     (input)="searchQuery.set($any($event.target).value)"
   />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
+  <button class="btn"
+          [disabled]="sanityState() === 'loading'"
+          (click)="runSanityCheck()">
+    {{ sanityState() === 'loading' ? 'Prüft…' : 'Sanity Check' }}
+  </button>
   @if (isAdmin()) {
     <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
       {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
@@ -39,6 +44,21 @@
     }
   }
 </div>
+
+@if (sanityState() === 'done') {
+  <div class="sanity-panel" [class.sanity-panel--ok]="sanityWarnings().length === 0">
+    @if (sanityWarnings().length === 0) {
+      <span class="sanity-ok">Keine Auffälligkeiten gefunden</span>
+    } @else {
+      <span class="sanity-count">{{ sanityWarnings().length }} Warnung{{ sanityWarnings().length === 1 ? '' : 'en' }}</span>
+      <ul class="sanity-list">
+        @for (w of sanityWarnings(); track w) {
+          <li>{{ w }}</li>
+        }
+      </ul>
+    }
+  </div>
+}
 
 @if (loading()) {
   <p class="state-msg">Laden…</p>

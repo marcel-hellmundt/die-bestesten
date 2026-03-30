@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
@@ -108,9 +108,68 @@ export class ClubDataComponent {
   isAdmin      = computed(() => this.auth.isAdmin());
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
 
+  sanityState    = signal<'idle' | 'loading' | 'done'>('idle');
+  sanityWarnings = signal<string[]>([]);
+
   constructor() {
     this.cache.ensureSeasons();
     this.cache.ensureDivisions();
+  }
+
+  runSanityCheck(): void {
+    const seasons   = this.cache.seasons();
+    const divisions = this.cache.divisions();
+    if (!seasons.length || !divisions.length) return;
+
+    this.sanityState.set('loading');
+
+    const requests = Object.fromEntries(
+      seasons.map(s => [s.id, this.api.get<any[]>(`club_in_season?season_id=${s.id}`)])
+    );
+
+    forkJoin(requests).subscribe({
+      next: (results: Record<string, any[]>) => {
+        const warnings: string[] = [];
+        const divisionMap = new Map(divisions.map(d => [d.id, d]));
+        const seasonMap   = new Map(seasons.map(s => [s.id, s.displayName]));
+
+        for (const [seasonId, entries] of Object.entries(results)) {
+          const seasonName = seasonMap.get(seasonId) ?? seasonId;
+
+          // Group by division
+          const byDivision = new Map<string, any[]>();
+          for (const e of entries) {
+            if (!e.division_id) continue;
+            if (!byDivision.has(e.division_id)) byDivision.set(e.division_id, []);
+            byDivision.get(e.division_id)!.push(e);
+          }
+
+          for (const [divisionId, divEntries] of byDivision) {
+            const division = divisionMap.get(divisionId);
+            const divName  = division?.name ?? divisionId;
+
+            // Check seats
+            if (division?.seats != null && divEntries.length > division.seats) {
+              warnings.push(`${seasonName} — ${divName}: ${divEntries.length} Clubs, aber nur ${division.seats} Plätze`);
+            }
+
+            // Check duplicate positions
+            const positions = divEntries.map(e => e.position).filter(p => p != null);
+            const seen = new Set<number>();
+            for (const pos of positions) {
+              if (seen.has(pos)) {
+                warnings.push(`${seasonName} — ${divName}: Position ${pos} ist mehrfach vergeben`);
+              }
+              seen.add(pos);
+            }
+          }
+        }
+
+        this.sanityWarnings.set(warnings);
+        this.sanityState.set('done');
+      },
+      error: () => this.sanityState.set('idle'),
+    });
   }
 
   migrate(): void {
