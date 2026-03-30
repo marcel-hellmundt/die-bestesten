@@ -2,10 +2,15 @@
 
 // Matchday pill bar
 .matchday-bar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(17, auto);
+  justify-content: start;
   gap: $space-2;
   margin-bottom: $space-6;
+
+  @media (max-width: #{$mobile-breakpoint}) {
+    grid-template-columns: repeat(9, auto);
+  }
 }
 
 .matchday-pill {
