@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
@@ -17,7 +17,7 @@ export class LoginComponent {
   emailForm: FormGroup;
   loading = false;
   error: string | null = null;
-  mode: Mode = 'login';
+  mode = signal<Mode>('login');
   requestLoading = false;
   requestError: string | null = null;
 
@@ -61,7 +61,7 @@ export class LoginComponent {
       email: this.emailForm.value.email
     }).subscribe({
       next: () => {
-        this.mode = 'sent';
+        this.mode.set('sent');
         this.requestLoading = false;
       },
       error: () => {
@@ -72,13 +72,13 @@ export class LoginComponent {
   }
 
   showRequest(): void {
-    this.mode = 'request';
+    this.mode.set('request');
     this.requestError = null;
     this.emailForm.reset();
   }
 
   backToLogin(): void {
-    this.mode = 'login';
+    this.mode.set('login');
     this.error = null;
   }
 }

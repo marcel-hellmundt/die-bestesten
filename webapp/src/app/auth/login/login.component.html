@@ -5,7 +5,7 @@
     <div class="login-form-wrap">
       <img class="login-logo squircle" src="/img/logos/die-bestesten.png" alt="die bestesten" />
 
-      @if (mode === 'login') {
+      @if (mode() === 'login') {
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="form-group">
             <label for="name">Name</label>
@@ -43,7 +43,7 @@
         </form>
       }
 
-      @if (mode === 'request') {
+      @if (mode() === 'request') {
         <form [formGroup]="emailForm" (ngSubmit)="submitResetRequest()" novalidate>
           <p class="reset-hint">Gib deine E-Mail-Adresse ein. Du erhältst einen Link zum Zurücksetzen deines Passworts.</p>
 
@@ -72,7 +72,7 @@
         </form>
       }
 
-      @if (mode === 'sent') {
+      @if (mode() === 'sent') {
         <p class="reset-hint reset-hint--success">
           Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde ein Link gesendet. Überprüfe dein Postfach.
         </p>
