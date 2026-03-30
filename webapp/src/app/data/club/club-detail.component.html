@@ -236,7 +236,9 @@
         </div>
 
         <div class="chart-col">
-          <h2 class="section-header">Platzierungen</h2>
+          <div class="section-header-row">
+            <h2 class="section-header">Platzierungen</h2>
+          </div>
           @if (chartData(); as chart) {
             <div class="chart-container">
               <svg
@@ -246,6 +248,23 @@
                 [attr.height]="chartH"
                 aria-hidden="true"
               >
+                <defs>
+                  <linearGradient id="chart-color-grad"
+                    gradientUnits="userSpaceOnUse"
+                    [attr.x1]="padL" [attr.x2]="chartW - padR" y1="0" y2="0">
+                    @for (s of chart.gradientStops; track s.offset) {
+                      <stop [attr.offset]="s.offset" [attr.stop-color]="s.color" stop-opacity="0.3" />
+                    }
+                  </linearGradient>
+                  <linearGradient id="chart-fade-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="white" stop-opacity="1" />
+                    <stop offset="100%" stop-color="white" stop-opacity="0" />
+                  </linearGradient>
+                  <mask id="chart-fade-mask">
+                    <rect width="100%" height="100%" fill="url(#chart-fade-grad)" />
+                  </mask>
+                </defs>
+
                 <!-- Y-axis boundary + label lines -->
                 @for (tick of chart.yTicks; track tick.label) {
                   <line
@@ -274,6 +293,9 @@
                     class="chart-divider"
                   />
                 }
+
+                <!-- Area fill -->
+                <path [attr.d]="chart.areaD" fill="url(#chart-color-grad)" mask="url(#chart-fade-mask)" />
 
                 <!-- Line path -->
                 <path [attr.d]="chart.pathD" class="chart-line" fill="none" />
@@ -316,7 +338,9 @@
   </section>
 
   <section class="detail-section">
-    <h2 class="section-header">Aktueller Kader</h2>
+    <div class="section-header-row">
+      <h2 class="section-header">Aktueller Kader</h2>
+    </div>
 
     @if (squadLoading()) {
       <p class="state-msg">Laden…</p>
@@ -337,7 +361,10 @@
                 <td class="col-squad-pos">
                   @if (p.season_position) {
                     <span class="position-badge">
-                      <span class="badge-dot" [style.background-color]="positionColor(p.season_position)"></span>
+                      <span
+                        class="badge-dot"
+                        [style.background-color]="positionColor(p.season_position)"
+                      ></span>
                       {{ positionLabel(p.season_position) }}
                     </span>
                   } @else {

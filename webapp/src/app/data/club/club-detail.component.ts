@@ -281,6 +281,14 @@ export class ClubDetailComponent {
 
     const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
 
+    const bottomY = this.chartH - this.padB;
+    const areaD = `M${points[0].x},${bottomY} ${pathD.replace('M', 'L')} L${points[points.length - 1].x},${bottomY} Z`;
+
+    const gradientStops = points.map(p => ({
+      offset: `${(((p.x - this.padL) / plotW) * 100).toFixed(1)}%`,
+      color: p.color,
+    }));
+
     const divLines = sortedDivs.slice(0, -1).map((_, i) => {
       const boundary = offsetMap.get(sortedDivs[i + 1].id)!;
       return { y: toY(boundary + 0.5), label: sortedDivs[i + 1].name };
@@ -296,7 +304,7 @@ export class ClubDetailComponent {
       { x: points[points.length - 1].x, label: points[points.length - 1].label },
     ];
 
-    return { points, pathD, yTicks, divLines, xLabels };
+    return { points, pathD, areaD, gradientStops, yTicks, divLines, xLabels };
   });
 
   private squadState = toSignal(
