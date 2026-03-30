@@ -43,6 +43,23 @@
 
 .meta-sep { color: $color-border; }
 
+.club-count {
+  display: inline-block;
+  margin-left: $space-3;
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  background: $color-surface-alt;
+  color: $color-text-muted;
+  vertical-align: middle;
+
+  &--full {
+    background: color-mix(in srgb, $color-success 15%, transparent);
+    color: $color-success;
+  }
+}
+
 .season-select-bar {
   display: flex;
   align-items: center;
