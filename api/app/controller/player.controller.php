@@ -15,6 +15,10 @@ class PlayerController extends _BaseController
             return $player;
         }
 
+        if (isset($this->params['club_id'])) {
+            return $this->db->getPlayersInClub($this->params['club_id'], $this->params['season_id'] ?? null);
+        }
+
         return $this->db->getPlayerList($this->params['country_id'] ?? null, $this->params['season_id'] ?? null);
     }
 

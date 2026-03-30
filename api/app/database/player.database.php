@@ -2,6 +2,27 @@
 
 trait PlayerTrait
 {
+    public function getPlayersInClub(string $clubId, ?string $seasonId = null): array
+    {
+        $seasonId = $seasonId ?? $this->getActiveSeasonId();
+
+        $sql = "
+            SELECT p.id, p.first_name, p.last_name, p.displayname, p.country_id,
+                   pis.position AS season_position
+            FROM player_in_club pic
+            JOIN player p ON pic.player_id = p.id
+            LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
+            WHERE pic.club_id = :club_id AND pic.to_date IS NULL
+            ORDER BY
+                FIELD(pis.position, 'GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD', NULL),
+                p.last_name ASC, p.first_name ASC
+        ";
+
+        $query = $this->con->prepare($sql);
+        $query->execute([':club_id' => $clubId, ':season_id' => $seasonId]);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getPlayerList(?string $countryId = null, ?string $seasonId = null): array
     {
         $seasonId = $seasonId ?? $this->getActiveSeasonId();

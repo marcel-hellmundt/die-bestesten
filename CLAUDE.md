@@ -88,7 +88,7 @@ PATCH    /matchday/:id         — {completed:bool} — Auth
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow/migrate — Admin
 GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
-GET      /player[/:id]
+GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück
 GET      /player_rating        — ?matchday_id&club_id (mit Spielerinfos)
 POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen — Maintainer+

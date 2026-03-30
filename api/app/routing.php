@@ -277,10 +277,11 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/player',
-                        'description'  => 'Alle Spieler mit aggregierten Punkten der Saison',
+                        'description'  => 'Alle Spieler mit aggregierten Punkten der Saison; oder aktueller Kader eines Clubs (mit Saisonposition) wenn club_id angegeben',
                         'query_params' => [
                             'country_id' => 'ISO Alpha-2 Code (optional)',
                             'season_id'  => 'UUID der Saison (optional, default: aktive Saison)',
+                            'club_id'    => 'UUID des Clubs — gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position',
                         ],
                     ],
                     [

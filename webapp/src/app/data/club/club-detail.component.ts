@@ -299,6 +299,32 @@ export class ClubDetailComponent {
     return { points, pathD, yTicks, divLines, xLabels };
   });
 
+  private squadState = toSignal(
+    this.id$.pipe(
+      switchMap(id =>
+        this.api.get<any[]>(`player?club_id=${id}`).pipe(
+          map(data => ({ data, loading: false })),
+          startWith({ data: [] as any[], loading: true }),
+          catchError(() => of({ data: [] as any[], loading: false }))
+        )
+      )
+    )
+  );
+
+  squad = computed(() => this.squadState()?.data ?? []);
+  squadLoading = computed(() => this.squadState()?.loading ?? true);
+
+  readonly positionLabels: Record<string, string> = {
+    GOALKEEPER: 'Torwart',
+    DEFENDER: 'Abwehr',
+    MIDFIELDER: 'Mittelfeld',
+    FORWARD: 'Sturm',
+  };
+
+  positionLabel(pos: string | null): string {
+    return pos ? (this.positionLabels[pos] ?? pos) : '—';
+  }
+
   constructor() {
     this.cache.ensureSeasons();
     this.cache.ensureDivisions();

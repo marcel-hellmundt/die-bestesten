@@ -314,4 +314,33 @@
       </div>
     }
   </section>
+
+  <section class="detail-section">
+    <h2 class="section-header">Aktueller Kader</h2>
+
+    @if (squadLoading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (squad().length === 0) {
+      <p class="state-msg">Keine Spieler aktuell in diesem Club.</p>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Position</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of squad(); track p.id) {
+              <tr class="row-link" [routerLink]="['/app/data/player', p.id]">
+                <td>{{ p.displayname }}</td>
+                <td class="col-pos-label">{{ positionLabel(p.season_position) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
 }
