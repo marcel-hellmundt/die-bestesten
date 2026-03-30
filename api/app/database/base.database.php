@@ -10,6 +10,7 @@ require_once 'transferwindow.database.php';
 require_once 'player_rating.database.php';
 require_once 'player_in_season.database.php';
 require_once 'manager.database.php';
+require_once 'password_reset.database.php';
 
 class Database
 {
@@ -24,6 +25,7 @@ class Database
     use PlayerRatingTrait;
     use PlayerInSeasonTrait;
     use ManagerTrait;
+    use PasswordResetTrait;
 
     private $con;
     private $con_league;

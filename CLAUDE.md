@@ -94,6 +94,8 @@ GET      /player_rating        — ?matchday_id&club_id (mit Spielerinfos)
 POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen — Maintainer+
 PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed
 POST     /auth                 — JWT-Login
+POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)
+POST     /auth/password-reset — {token,new_password} — setzt Passwort zurück; 400 wenn Token ungültig/abgelaufen
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} allein für E-Mail — Auth
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
@@ -102,5 +104,7 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 ## Liga-DB (`database/league_schema.sql`)
 
 **manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, role ENUM(admin/maintainer/user), status ENUM(active/blocked), deleted BOOL DEFAULT 0, email UNIQUE?, date_of_birth?
+
+**password_reset_token**: id PK, manager_id FK, token_hash VARCHAR(64) UNIQUE, expires_at DATETIME, used BOOL DEFAULT 0, created_at DATETIME
 
 Ausstehend: team, team_rating, team_lineup, player_in_team

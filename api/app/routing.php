@@ -28,6 +28,16 @@ class Routing
                         'path'        => '/auth',
                         'description' => 'Login mit manager_name und password',
                     ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/auth/password-reset-request',
+                        'description' => 'Passwort-Reset anfordern — Body: { email } — sendet Mail mit Reset-Link (1h gültig); gibt immer status:true zurück (kein E-Mail-Leak)',
+                    ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/auth/password-reset',
+                        'description' => 'Passwort zurücksetzen — Body: { token, new_password } — Token aus dem Reset-Link; 400 wenn ungültig/abgelaufen',
+                    ],
                 ],
             ]),
 

@@ -2,6 +2,9 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { ApiService } from '../../core/api.service';
+
+type Mode = 'login' | 'request' | 'sent';
 
 @Component({
   selector: 'app-login',
@@ -11,17 +14,25 @@ import { AuthService } from '../auth.service';
 })
 export class LoginComponent {
   form: FormGroup;
+  emailForm: FormGroup;
   loading = false;
   error: string | null = null;
+  mode: Mode = 'login';
+  requestLoading = false;
+  requestError: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private api: ApiService
   ) {
     this.form = this.fb.group({
       name:     ['', Validators.required],
       password: ['', Validators.required]
+    });
+    this.emailForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]]
     });
   }
 
@@ -39,5 +50,35 @@ export class LoginComponent {
         this.form.get('password')?.setValue('');
       }
     });
+  }
+
+  submitResetRequest(): void {
+    if (this.emailForm.invalid || this.requestLoading) return;
+    this.requestLoading = true;
+    this.requestError = null;
+
+    this.api.post<any>('auth/password-reset-request', {
+      email: this.emailForm.value.email
+    }).subscribe({
+      next: () => {
+        this.mode = 'sent';
+        this.requestLoading = false;
+      },
+      error: () => {
+        this.requestError = 'Fehler beim Senden. Bitte versuche es erneut.';
+        this.requestLoading = false;
+      }
+    });
+  }
+
+  showRequest(): void {
+    this.mode = 'request';
+    this.requestError = null;
+    this.emailForm.reset();
+  }
+
+  backToLogin(): void {
+    this.mode = 'login';
+    this.error = null;
   }
 }
