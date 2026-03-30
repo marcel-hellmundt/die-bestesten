@@ -47,6 +47,10 @@ class Guard
                 return ['status' => false, 'code' => 401, 'message' => 'Authorization Token enthält fehlerhafte Manager-ID'];
             }
 
+            if ($manager['deleted']) {
+                return ['status' => false, 'code' => 403, 'message' => 'Account wurde gelöscht'];
+            }
+
             $GLOBALS['auth_manager_id'] = $manager['id'];
             $GLOBALS['auth_role']       = $manager['role'];
 

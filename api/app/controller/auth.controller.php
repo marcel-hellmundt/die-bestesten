@@ -36,6 +36,11 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Name oder Passwort inkorrekt'];
         }
 
+        if ($manager['deleted']) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Account wurde gelöscht'];
+        }
+
         if ($manager['status'] === 'blocked') {
             http_response_code(403);
             return ['status' => false, 'message' => 'Account wurde deaktiviert'];

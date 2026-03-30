@@ -70,6 +70,8 @@ class ManagerController extends _BaseController
 
         mail('mail@marcelkrause.de', $subject, $body, 'From: noreply@die-bestesten.de');
 
+        $this->db->markManagerDeleted($id);
+
         return ['status' => true];
     }
 

@@ -20,5 +20,11 @@ trait ManagerTrait
         return $q->rowCount() > 0;
     }
 
-
+    public function markManagerDeleted(string $id): void
+    {
+        $q = $this->con_league->prepare(
+            "UPDATE manager SET deleted = 1 WHERE id = :id"
+        );
+        $q->execute([':id' => $id]);
+    }
 }

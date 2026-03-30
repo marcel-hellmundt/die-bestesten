@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS manager (
     password      VARCHAR(255) NOT NULL,
     role          ENUM('admin', 'maintainer', 'user') NOT NULL DEFAULT 'user',
     status        ENUM('active', 'blocked') NOT NULL DEFAULT 'active',
+    deleted       TINYINT(1)   NOT NULL DEFAULT 0,
     date_of_birth DATE         NULL
 );
 

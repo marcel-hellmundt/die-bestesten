@@ -242,7 +242,7 @@ class Routing
                     [
                         'method'      => 'DELETE',
                         'path'        => '/manager/me',
-                        'description' => 'Eigenen Account löschen — Body: { password }',
+                        'description' => 'Konto-Löschung anfragen — Body: { password } — setzt deleted=1 und sendet Mail an Admin',
                     ],
                 ],
             ]),
