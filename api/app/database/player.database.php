@@ -14,7 +14,8 @@ trait PlayerTrait
             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
             WHERE pic.club_id = :club_id AND pic.to_date IS NULL
             ORDER BY
-                FIELD(pis.position, 'GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD', NULL),
+                CASE WHEN pis.position IS NULL THEN 1 ELSE 0 END,
+                FIELD(pis.position, 'GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'),
                 p.last_name ASC, p.first_name ASC
         ";
 

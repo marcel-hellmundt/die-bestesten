@@ -314,15 +314,26 @@ export class ClubDetailComponent {
   squad = computed(() => this.squadState()?.data ?? []);
   squadLoading = computed(() => this.squadState()?.loading ?? true);
 
-  readonly positionLabels: Record<string, string> = {
-    GOALKEEPER: 'Torwart',
+  private readonly positionLabels: Record<string, string> = {
+    GOALKEEPER: 'Tor',
     DEFENDER: 'Abwehr',
     MIDFIELDER: 'Mittelfeld',
     FORWARD: 'Sturm',
   };
 
+  private readonly positionColors: Record<string, string> = {
+    GOALKEEPER: 'var(--position-goalkeeper)',
+    DEFENDER:   'var(--position-defender)',
+    MIDFIELDER: 'var(--position-midfielder)',
+    FORWARD:    'var(--position-forward)',
+  };
+
   positionLabel(pos: string | null): string {
     return pos ? (this.positionLabels[pos] ?? pos) : '—';
+  }
+
+  positionColor(pos: string): string {
+    return this.positionColors[pos] ?? '#999';
   }
 
   constructor() {
