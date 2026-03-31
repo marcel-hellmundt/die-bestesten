@@ -89,6 +89,11 @@ export class SeasonDataComponent {
     return this.transferwindows().filter(tw => tw.matchday_id === matchdayId).length;
   }
 
+  selectSeasonById(id: string): void {
+    const season = this.items().find(s => s.id === id);
+    if (season) this.selectSeason(season);
+  }
+
   selectSeason(season: Season): void {
     this.selectedSeason.set(season);
     this.selectedMatchday.set(null);

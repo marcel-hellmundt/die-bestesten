@@ -12,8 +12,27 @@
 
 .season-panel,
 .matchday-panel {
-  flex: 1;
+  width: 100%;
   min-width: 0;
+}
+
+.season-select {
+  display: none;
+  width: 100%;
+}
+
+.season-table {
+  display: block;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .season-select {
+    display: block;
+  }
+
+  .season-table {
+    display: none;
+  }
 }
 
 .data-table tbody tr {
@@ -38,7 +57,6 @@
   color: $color-text-muted;
   font-size: $font-sm;
 }
-
 
 .expand-row td {
   padding: $space-3 $space-4 $space-4;
@@ -86,4 +104,3 @@
   color: $color-text-muted;
   flex-shrink: 0;
 }
-

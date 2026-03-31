@@ -1,17 +1,17 @@
 <div class="list-bar">
-  <input class="input search-input" type="search" placeholder="Suchen…"
-         [value]="searchQuery()"
-         (input)="searchQuery.set($any($event.target).value)" />
+  <input
+    class="input search-input"
+    type="search"
+    placeholder="Suchen…"
+    [value]="searchQuery()"
+    (input)="searchQuery.set($any($event.target).value)"
+  />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
-  <button class="btn"
-          [disabled]="sanityState() === 'loading'"
-          (click)="runSanityCheck()">
+  <button class="btn" [disabled]="sanityState() === 'loading'" (click)="runSanityCheck()">
     {{ sanityState() === 'loading' ? 'Prüft…' : 'Sanity Check' }}
   </button>
   @if (isAdmin()) {
-    <button class="btn btn-primary"
-            [disabled]="migrateState() === 'loading'"
-            (click)="migrate()">
+    <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
       {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
     </button>
     @if (migrateState() === 'success') {
@@ -28,7 +28,9 @@
     @if (sanityWarnings().length === 0) {
       <span class="sanity-ok">Keine Auffälligkeiten gefunden</span>
     } @else {
-      <span class="sanity-count">{{ sanityWarnings().length }} Warnung{{ sanityWarnings().length === 1 ? '' : 'en' }}</span>
+      <span class="sanity-count"
+        >{{ sanityWarnings().length }} Warnung{{ sanityWarnings().length === 1 ? '' : 'en' }}</span
+      >
       <ul class="sanity-list">
         @for (w of sanityWarnings(); track w) {
           <li>{{ w }}</li>
@@ -44,11 +46,23 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   <div class="season-layout">
-
-    <!-- Linke Spalte: Saisonliste -->
+    <!-- Linke Spalte: Saisonliste (Desktop: Tabelle, Mobile: Dropdown) -->
     <div class="season-panel">
-      <h2 class="section-header">Saisons</h2>
-      <div class="table-container">
+      <div class="section-header-row">
+        <h2 class="section-header">Saisons</h2>
+      </div>
+
+      <select
+        class="season-select input"
+        [value]="selectedSeason()?.id ?? ''"
+        (change)="selectSeasonById($any($event.target).value)"
+      >
+        @for (item of filteredItems(); track item.id) {
+          <option [value]="item.id">{{ item.displayName }}</option>
+        }
+      </select>
+
+      <div class="table-container season-table">
         <table class="data-table">
           <thead>
             <tr>
@@ -58,9 +72,11 @@
           </thead>
           <tbody>
             @for (item of filteredItems(); track item.id) {
-              <tr class="row-link"
-                  [class.row--selected]="selectedSeason()?.id === item.id"
-                  (click)="selectSeason(item)">
+              <tr
+                class="row-link"
+                [class.row--selected]="selectedSeason()?.id === item.id"
+                (click)="selectSeason(item)"
+              >
                 <td>{{ item.displayName }}</td>
                 <td>{{ formatDate(item.start_date) }}</td>
               </tr>
@@ -73,7 +89,9 @@
     <!-- Mittlere Spalte: Spieltage -->
     @if (selectedSeason()) {
       <div class="matchday-panel">
-        <h2 class="section-header">Spieltage</h2>
+        <div class="section-header-row">
+          <h2 class="section-header">Spieltage</h2>
+        </div>
         @if (detailLoading()) {
           <p class="state-msg">Laden…</p>
         } @else {
@@ -89,9 +107,11 @@
               </thead>
               <tbody>
                 @for (md of matchdays(); track md.id) {
-                  <tr class="row-link"
-                      [class.row--selected]="selectedMatchday()?.id === md.id"
-                      (click)="selectMatchday(md)">
+                  <tr
+                    class="row-link"
+                    [class.row--selected]="selectedMatchday()?.id === md.id"
+                    (click)="selectMatchday(md)"
+                  >
                     <td class="col-number">{{ md.number }}</td>
                     <td>{{ formatDate(md.start_date) }}</td>
                     <td>{{ formatDatetime(md.kickoff_date) }}</td>
@@ -136,6 +156,5 @@
         }
       </div>
     }
-
   </div>
 }
