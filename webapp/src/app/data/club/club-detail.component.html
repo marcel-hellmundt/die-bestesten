@@ -8,6 +8,7 @@
 
     <div class="club-hero">
       <div class="logo-upload-wrapper" (click)="onLogoClick()" title="Logo hochladen">
+
         <img
           [src]="
             logoBust()
@@ -63,6 +64,16 @@
           {{ idCopied() ? 'Kopiert!' : c.id }}
         </button>
       </div>
+
+      @if (c.stadium) {
+        <div class="club-stadium">
+          <span class="club-stadium__label">Stadion</span>
+          <span class="club-stadium__name">{{ c.stadiumDisplayName }}</span>
+          @if (c.stadium.capacity) {
+            <span class="club-stadium__capacity">{{ c.stadium.capacity | number:'1.0-0' }} Plätze</span>
+          }
+        </div>
+      }
     </div>
   </div>
 

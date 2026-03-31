@@ -120,7 +120,7 @@ class Routing
                     [
                         'method'      => 'GET',
                         'path'        => '/club/:id',
-                        'description' => 'Ein Club per ID',
+                        'description' => 'Ein Club per ID — enthält aktuelles Stadion als stadium-Objekt (oder null)',
                         'path_params' => [':id' => 'UUID des Clubs'],
                     ],
                 ],

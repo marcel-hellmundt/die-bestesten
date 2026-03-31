@@ -78,6 +78,37 @@
       }
     }
 
+    .club-stadium {
+      margin-left: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: $space-1;
+
+      &__label {
+        font-size: $font-xs;
+        font-weight: $font-weight-semibold;
+        color: $color-text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      &__name {
+        font-size: $font-lg;
+        font-weight: $font-weight-medium;
+        color: $color-text;
+      }
+
+      &__capacity {
+        font-size: $font-sm;
+        color: $color-text-muted;
+      }
+
+      @media (max-width: $mobile-breakpoint) {
+        display: none;
+      }
+    }
+
     .club-info {
       display: flex;
       flex-direction: column;
