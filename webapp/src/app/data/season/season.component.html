@@ -46,7 +46,7 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   <div class="season-layout">
-    <!-- Linke Spalte: Saisonliste (Desktop: Tabelle, Mobile: Dropdown) -->
+    <!-- Left Colum: Seasons (Desktop: Tabelle, Mobile: Dropdown) -->
     <div class="season-panel">
       <div class="section-header-row">
         <h2 class="section-header">Saisons</h2>
@@ -86,7 +86,7 @@
       </div>
     </div>
 
-    <!-- Mittlere Spalte: Spieltage -->
+    <!-- Right Column: Matchdays -->
     @if (selectedSeason()) {
       <div class="matchday-panel">
         <div class="section-header-row">
@@ -141,9 +141,49 @@
                             </div>
                           }
                           @if (isMaintainer()) {
-                            <button class="btn btn-ghost btn-sm" (click)="addTransferwindow(md)">
-                              + Transferfenster hinzufügen
-                            </button>
+                            @if (addingMatchdayId() === md.id) {
+                              <div class="tw-form">
+                                <div class="tw-form__fields">
+                                  <div class="tw-form__field">
+                                    <label class="tw-form__label">Start</label>
+                                    <input
+                                      class="input"
+                                      type="datetime-local"
+                                      [value]="twFormStart()"
+                                      (input)="twFormStart.set($any($event.target).value)"
+                                    />
+                                  </div>
+                                  <div class="tw-form__field">
+                                    <label class="tw-form__label">Ende</label>
+                                    <input
+                                      class="input"
+                                      type="datetime-local"
+                                      [value]="twFormEnd()"
+                                      (input)="twFormEnd.set($any($event.target).value)"
+                                    />
+                                  </div>
+                                </div>
+                                <div class="tw-form__actions">
+                                  <button
+                                    class="btn btn-sm"
+                                    [disabled]="twSaveState() === 'loading'"
+                                    (click)="cancelTwForm()"
+                                  >Abbrechen</button>
+                                  <button
+                                    class="btn btn-primary btn-sm"
+                                    [disabled]="twSaveState() === 'loading' || !twFormStart() || !twFormEnd()"
+                                    (click)="submitTwForm(md)"
+                                  >{{ twSaveState() === 'loading' ? 'Speichert…' : 'Speichern' }}</button>
+                                </div>
+                                @if (twSaveState() === 'error') {
+                                  <p class="state-msg state-msg--error">{{ twSaveError() }}</p>
+                                }
+                              </div>
+                            } @else {
+                              <button class="btn btn-ghost btn-sm" (click)="addTransferwindow(md)">
+                                + Transferfenster hinzufügen
+                              </button>
+                            }
                           }
                         </div>
                       </td>

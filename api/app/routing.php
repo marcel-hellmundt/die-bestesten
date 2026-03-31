@@ -202,6 +202,11 @@ class Routing
                     ],
                     [
                         'method'      => 'POST',
+                        'path'        => '/transferwindow',
+                        'description' => 'Neues Transferfenster anlegen — Body: { matchday_id, start_date, end_date } — Maintainer+',
+                    ],
+                    [
+                        'method'      => 'POST',
                         'path'        => '/transferwindow/migrate',
                         'description' => 'Migriert Transferfenster aus der alten DB — gibt migrated-Count zurück (nur Admin)',
                     ],

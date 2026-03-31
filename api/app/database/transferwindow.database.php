@@ -31,6 +31,22 @@ trait TransferwindowTrait
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function createTransferwindow(string $matchdayId, string $startDate, string $endDate): array
+    {
+        $id = $this->con->query("SELECT UUID() AS id")->fetchColumn();
+        $stmt = $this->con->prepare(
+            "INSERT INTO transferwindow (id, matchday_id, start_date, end_date)
+             VALUES (:id, :matchday_id, :start_date, :end_date)"
+        );
+        $stmt->execute([
+            ':id'          => $id,
+            ':matchday_id' => $matchdayId,
+            ':start_date'  => $startDate,
+            ':end_date'    => $endDate,
+        ]);
+        return $this->getTransferwindowById($id);
+    }
+
     public function migrateTransferwindow(): array
     {
         $rows = $this->con_old->query(

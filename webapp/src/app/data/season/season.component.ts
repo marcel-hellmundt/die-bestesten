@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, combineLatest, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { Season } from '../../core/models/season.model';
@@ -17,7 +17,8 @@ export class SeasonDataComponent {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
 
-  private reload$ = new BehaviorSubject<void>(undefined);
+  private reload$       = new BehaviorSubject<void>(undefined);
+  private detailReload$ = new BehaviorSubject<void>(undefined);
 
   private seasonState = toSignal(
     this.reload$.pipe(
@@ -57,8 +58,8 @@ export class SeasonDataComponent {
   private selectedSeasonId$ = toObservable(computed(() => this.selectedSeason()?.id ?? null));
 
   private detailState = toSignal(
-    this.selectedSeasonId$.pipe(
-      switchMap(id => {
+    combineLatest([this.selectedSeasonId$, this.detailReload$]).pipe(
+      switchMap(([id]) => {
         if (!id) return of({ matchdays: [] as Matchday[], transferwindows: [] as Transferwindow[], loading: false });
         return forkJoin({
           matchdays:       this.api.get<any[]>(`matchday?season_id=${id}`),
@@ -152,7 +153,7 @@ export class SeasonDataComponent {
           }
         }
 
-        // Spieltage: Anpfiff muss Fr. 20:30, Sa. 15:30 oder Di. 18:30 sein
+        // Spieltage: Anpfiff muss Fr. 20:00, Fr. 20:30, Sa. 15:30 oder Di. 18:30 sein
         for (const md of mds) {
           if (!md.kickoff_date) continue;
           const dt = new Date(md.kickoff_date.replace(' ', 'T'));
@@ -160,6 +161,7 @@ export class SeasonDataComponent {
           const h = dt.getHours();
           const min = dt.getMinutes();
           const valid =
+            (day === 5 && h === 20 && min === 0)  ||
             (day === 5 && h === 20 && min === 30) ||
             (day === 6 && h === 15 && min === 30) ||
             (day === 2 && h === 18 && min === 30);
@@ -169,16 +171,15 @@ export class SeasonDataComponent {
           }
         }
 
-        // Transferfenster: Ende muss Mi. 20:00, Do. 20:00 oder Fr. 12:00 sein
+        // Transferfenster: Ende muss um 20:00 (beliebiger Tag) oder Fr. um 15:00 sein
         for (const tw of tws) {
           const dt = new Date(tw.end_date.replace(' ', 'T'));
           const day = dt.getDay();
           const h = dt.getHours();
           const min = dt.getMinutes();
           const valid =
-            (day === 3 && h === 20 && min === 0) ||
-            (day === 4 && h === 20 && min === 0) ||
-            (day === 5 && h === 12 && min === 0);
+            (h === 20 && min === 0) ||
+            (day === 5 && h === 15 && min === 0);
           if (!valid) {
             const md = matchdayMap.get(tw.matchday_id);
             const sName = md ? (seasonMap.get(md.season_id) ?? '') : '';
@@ -197,7 +198,7 @@ export class SeasonDataComponent {
               const m = matchdayMap.get(tw.matchday_id);
               return m ? `Spieltag ${m.number} (${seasonMap.get(m.season_id) ?? ''})` : tw.matchday_id;
             };
-            warnings.push(`Überschneidung: TF ${getMd(prev)} (bis ${this.formatDatetime(prev.end_date)}) und TF ${getMd(curr)} (ab ${this.formatDatetime(curr.start_date)})`);
+            warnings.push(`Überschneidung: TF ${getMd(prev)} [${prev.id}] (bis ${this.formatDatetime(prev.end_date)}) und TF ${getMd(curr)} [${curr.id}] (ab ${this.formatDatetime(curr.start_date)})`);
           }
         }
 
@@ -208,8 +209,50 @@ export class SeasonDataComponent {
     });
   }
 
+  addingMatchdayId = signal<string | null>(null);
+  twFormStart      = signal('');
+  twFormEnd        = signal('');
+  twSaveState      = signal<'idle' | 'loading' | 'error'>('idle');
+  twSaveError      = signal('');
+
   addTransferwindow(matchday: Matchday): void {
-    // TODO: implement
+    this.addingMatchdayId.set(matchday.id);
+    this.twFormStart.set('');
+    this.twFormEnd.set('');
+    this.twSaveState.set('idle');
+    this.twSaveError.set('');
+  }
+
+  cancelTwForm(): void {
+    this.addingMatchdayId.set(null);
+  }
+
+  private toMysqlDatetime(localDt: string): string {
+    return localDt.replace('T', ' ') + ':00';
+  }
+
+  submitTwForm(matchday: Matchday): void {
+    if (this.twFormStart() >= this.twFormEnd()) {
+      this.twSaveState.set('error');
+      this.twSaveError.set('Start muss vor Ende liegen');
+      return;
+    }
+    this.twSaveState.set('loading');
+    this.api.post<any>('transferwindow', {
+      matchday_id: matchday.id,
+      start_date:  this.toMysqlDatetime(this.twFormStart()),
+      end_date:    this.toMysqlDatetime(this.twFormEnd()),
+    }).subscribe({
+      next: () => {
+        this.addingMatchdayId.set(null);
+        this.twSaveState.set('idle');
+        this.detailReload$.next();
+      },
+      error: (err) => {
+        this.twSaveState.set('error');
+        this.twSaveError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
   }
 
   migrate(): void {
