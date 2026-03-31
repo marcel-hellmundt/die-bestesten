@@ -1,5 +1,6 @@
 <?php
 require_once 'country.database.php';
+require_once 'league.database.php';
 require_once 'season.database.php';
 require_once 'matchday.database.php';
 require_once 'club.database.php';
@@ -15,6 +16,7 @@ require_once 'password_reset.database.php';
 class Database
 {
     use CountryTrait;
+    use LeagueTrait;
     use SeasonTrait;
     use MatchdayTrait;
     use ClubTrait;

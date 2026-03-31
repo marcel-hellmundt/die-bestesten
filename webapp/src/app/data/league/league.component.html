@@ -1,0 +1,41 @@
+<div class="list-bar">
+  <input
+    class="input search-input"
+    type="search"
+    placeholder="Suchen…"
+    [value]="searchQuery()"
+    (input)="searchQuery.set($any($event.target).value)"
+  />
+  <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
+</div>
+
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="col-id">ID</th>
+          <th>Name</th>
+          <th>Slug</th>
+          <th>Datenbank</th>
+          <th class="col-num">Manager</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of filteredItems(); track item.id) {
+          <tr>
+            <td class="col-id">{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td class="col-slug">{{ item.slug }}</td>
+            <td class="col-slug">{{ item.db_name }}</td>
+            <td class="col-num">{{ item.manager_count }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

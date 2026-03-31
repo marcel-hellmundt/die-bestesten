@@ -87,6 +87,7 @@ GET      /country[/:id]
 GET      /season[/:id|/active]
 GET      /matchday[/:id]
 PATCH    /matchday/:id         — {completed:bool} — Auth
+GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
 POST     /transferwindow/migrate — Admin

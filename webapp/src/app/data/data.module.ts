@@ -14,6 +14,7 @@ import { SeasonDataComponent } from './season/season.component';
 import { PlayerDataComponent } from './player/player.component';
 import { PlayerDetailComponent } from './player/player-detail.component';
 import { RatingsDataComponent } from './ratings/ratings.component';
+import { LeagueDataComponent } from './league/league.component';
 
 const routes: Routes = [
   {
@@ -25,6 +26,7 @@ const routes: Routes = [
       { path: 'country/:id',  component: CountryDetailComponent },
       { path: 'division',      component: DivisionDataComponent },
       { path: 'division/:id',  component: DivisionDetailComponent },
+      { path: 'league',        component: LeagueDataComponent },
       { path: 'club',     component: ClubDataComponent },
       { path: 'club/:id', component: ClubDetailComponent },
       { path: 'season',   component: SeasonDataComponent },
@@ -49,6 +51,7 @@ const routes: Routes = [
     PlayerDataComponent,
     PlayerDetailComponent,
     RatingsDataComponent,
+    LeagueDataComponent,
   ],
   imports: [
     CommonModule,

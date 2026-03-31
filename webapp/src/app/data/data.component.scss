@@ -40,6 +40,11 @@
     }
   }
 
+  &-spacer {
+    flex: 1;
+    min-width: $space-6;
+  }
+
   .seperator {
     height: 26px;
     width: 1px;

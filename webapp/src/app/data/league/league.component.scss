@@ -1,0 +1,12 @@
+@use '../../../styles/variables' as *;
+
+.col-num {
+  width: 80px;
+  text-align: right;
+}
+
+.col-slug {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  font-family: monospace;
+}

@@ -41,6 +41,24 @@ class Routing
                 ],
             ]),
 
+            new Route('league', 'League', [
+                'title'       => 'League',
+                'description' => 'Fantasy-Ligen — jede Liga hat eine eigene Datenbank',
+                'endpoints'   => [
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/league',
+                        'description' => 'Alle Ligen, alphabetisch sortiert — enthält manager_count aus der jeweiligen Liga-DB',
+                    ],
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/league/:id',
+                        'description' => 'Eine Liga per ID',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                    ],
+                ],
+            ]),
+
             new Route('country', 'Country', [
                 'title'       => 'Country',
                 'description' => 'ISO Alpha-2 Ländercodes',
