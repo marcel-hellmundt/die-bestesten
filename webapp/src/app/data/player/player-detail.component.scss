@@ -332,6 +332,41 @@
   padding: $space-4;
   overflow: hidden;
 
+  .bar-group {
+    cursor: default;
+
+    rect {
+      transition: opacity 0.1s;
+    }
+
+    &:hover rect {
+      opacity: 0.75;
+    }
+  }
+
+  .bar-tooltip {
+    &__bg {
+      fill: $color-text;
+    }
+
+    &__pts {
+      font-family: $font-body;
+      font-size: 9px;
+      font-weight: 600;
+      fill: #ffffff;
+      text-anchor: middle;
+      dominant-baseline: auto;
+    }
+
+    &__grade {
+      font-family: $font-body;
+      font-size: 8px;
+      fill: rgba(255, 255, 255, 0.7);
+      text-anchor: middle;
+      dominant-baseline: auto;
+    }
+  }
+
   .price-chart {
     display: block;
     width: 100%;

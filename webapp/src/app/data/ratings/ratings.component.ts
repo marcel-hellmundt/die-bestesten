@@ -38,7 +38,8 @@ export class RatingsDataComponent {
   private auth  = inject(AuthService);
   private cache = inject(DataCacheService);
 
-  isAdmin = computed(() => this.auth.isAdmin());
+  isAdmin       = computed(() => this.auth.isAdmin());
+  isMaintainer  = computed(() => this.auth.isMaintainer());
 
   // ── Active season ──────────────────────────────────────────────
   private activeSeasonState = toSignal(
@@ -162,11 +163,11 @@ export class RatingsDataComponent {
     const md = this.selectedMatchday();
     if (!md) return;
 
-    if (md.completed) {
+    if (md.completed || !this.isMaintainer()) {
       // Read-only: just load existing ratings
       this.loadRatings(md.id, clubId);
     } else {
-      // Init empty ratings, then load
+      // Maintainer+: init empty ratings if needed, then load
       this.ratingsState.set('loading');
       this.api.post<any>('player_rating/init', { matchday_id: md.id, club_id: clubId }).subscribe({
         next: (res) => {

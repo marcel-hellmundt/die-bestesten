@@ -83,30 +83,45 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: $space-1;
-
-      &__label {
-        font-size: $font-xs;
-        font-weight: $font-weight-semibold;
-        color: $color-text-muted;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
+      align-self: flex-start;
+      gap: $space-3;
 
       &__name {
-        font-size: $font-lg;
-        font-weight: $font-weight-medium;
-        color: $color-text;
+        font-size: $font-3xl;
+        font-weight: $font-weight-bold;
+        line-height: 1;
+        margin: 0;
       }
 
-      &__capacity {
+      &__meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: $space-2;
+      }
+
+      &__meta-item {
+        display: flex;
+        align-items: center;
+        gap: $space-1;
         font-size: $font-sm;
         color: $color-text-muted;
+
+        svg {
+          flex-shrink: 0;
+          color: $color-text-muted;
+        }
       }
 
       @media (max-width: $mobile-breakpoint) {
         display: none;
       }
+    }
+
+    .club-stadium-photo {
+      height: 124px;
+      border-radius: $radius-xl;
+      border: 1px solid $color-border;
     }
 
     .club-info {

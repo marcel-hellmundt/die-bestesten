@@ -194,6 +194,9 @@ export class PlayerDetailComponent {
         labelX:  this.padL + i * slotW + slotW / 2,
         label:   s.matchday_number,
         tooltip: `ST ${s.matchday_number}: ${pts} Pkt`,
+        pts,
+        grade:   s.grade ?? null,
+        zeroY,
       };
     });
 
@@ -223,6 +226,8 @@ export class PlayerDetailComponent {
   // Bar charts – widths tuned to their respective CSS containers
   // price chart: 1/3 grid column ≈ 320px; points chart: full-width ≈ 900px
   readonly chartW       = 380; // price chart (middle grid column)
+  hoveredBarIndex = signal<number | null>(null);
+
   readonly pointsChartW = 900; // points chart (full-width row above grid)
   readonly chartH = 160;
   readonly padL   = 44;

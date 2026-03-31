@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
+import { IconComponent } from '../shared/icon/icon.component';
 
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
@@ -36,6 +37,7 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [
+    IconComponent,
     DataComponent,
     CountryDataComponent,
     CountryDetailComponent,

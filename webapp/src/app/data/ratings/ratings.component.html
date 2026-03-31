@@ -71,7 +71,7 @@
         <p class="state-msg state-msg--error">Fehler beim Laden der Bewertungen</p>
       } @else if (ratingsState() === 'ready') {
         @if (ratings().length === 0) {
-          <p class="state-msg">Keine Spieler für diesen Club gefunden</p>
+          <p class="state-msg">Noch keine Ratings für diesen Spieltag angelegt</p>
         } @else {
           <div class="table-container">
             <table class="data-table">

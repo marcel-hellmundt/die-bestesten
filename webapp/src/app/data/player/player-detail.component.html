@@ -72,24 +72,54 @@
               {{ tick.label }}
             </text>
           }
-          @for (bar of chart.bars; track bar.labelX) {
-            <rect
-              [attr.x]="bar.x"
-              [attr.y]="bar.y"
-              [attr.width]="bar.width"
-              [attr.height]="bar.height"
-              [style.fill]="bar.color"
-              rx="3"
+          @for (bar of chart.bars; track bar.labelX; let i = $index) {
+            <g
+              class="bar-group"
+              (mouseenter)="hoveredBarIndex.set(i)"
+              (mouseleave)="hoveredBarIndex.set(null)"
             >
-              <title>{{ bar.tooltip }}</title>
-            </rect>
-            <text
-              [attr.x]="bar.labelX"
-              [attr.y]="chartH - padB + 10"
-              class="chart-label chart-label--x"
-            >
-              {{ bar.label }}
-            </text>
+              <rect
+                [attr.x]="bar.x"
+                [attr.y]="bar.y"
+                [attr.width]="bar.width"
+                [attr.height]="bar.height"
+                [style.fill]="bar.color"
+                rx="3"
+              />
+              <text
+                [attr.x]="bar.labelX"
+                [attr.y]="chartH - padB + 10"
+                class="chart-label chart-label--x"
+              >
+                {{ bar.label }}
+              </text>
+            </g>
+          }
+          @if (hoveredBarIndex() !== null; as idx) {
+            @let bar = chart.bars[hoveredBarIndex()!];
+            @let tipW = 64;
+            @let tipH = bar.grade ? 34 : 22;
+            @let tipX = bar.labelX - tipW / 2;
+            @let tipYAbove = (bar.pts >= 0 ? bar.y : bar.zeroY) - tipH - 6;
+            @let tipY = tipYAbove < padT ? (bar.pts >= 0 ? bar.y : bar.zeroY) + bar.height + 6 : tipYAbove;
+            <g class="bar-tooltip" pointer-events="none">
+              <rect
+                [attr.x]="tipX"
+                [attr.y]="tipY"
+                [attr.width]="tipW"
+                [attr.height]="tipH"
+                rx="5"
+                class="bar-tooltip__bg"
+              />
+              <text [attr.x]="bar.labelX" [attr.y]="tipY + 10" class="bar-tooltip__pts">
+                {{ bar.pts }} Pkt
+              </text>
+              @if (bar.grade) {
+                <text [attr.x]="bar.labelX" [attr.y]="tipY + 23" class="bar-tooltip__grade">
+                  Note {{ bar.grade }}
+                </text>
+              }
+            </g>
           }
           @if (chart.rollingLine) {
             <polyline

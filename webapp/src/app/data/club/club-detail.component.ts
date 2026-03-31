@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Club } from '../../core/models/club.model';
 
@@ -14,8 +15,11 @@ import { Club } from '../../core/models/club.model';
 })
 export class ClubDetailComponent {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
   private route = inject(ActivatedRoute);
   cache = inject(DataCacheService);
+
+  isAdmin = computed(() => this.auth.isAdmin());
 
   private id$ = this.route.paramMap.pipe(map((p) => p.get('id')!));
   private reloadSeasons$ = new BehaviorSubject<void>(undefined);
