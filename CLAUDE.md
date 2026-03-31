@@ -71,6 +71,8 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 | player_in_club | id PK, player_id FK, club_id FK, from_date DATE, to_date DATE?, on_loan BOOL — UNIQUE(player_id, club_id, from_date) |
 | player_rating | id PK, player_id FK, matchday_id FK, club_id FK? (zum Zeitpunkt; NULL für historische Daten), grade DECIMAL?, participation ENUM(starting/substitute)?, goals, assists, clean_sheet, sds BOOL, red_card, yellow_red_card, points — UNIQUE(player_id, matchday_id) |
 | transferwindow | id PK, matchday_id FK, start_date DATETIME, end_date DATETIME — 2–4 pro Spieltag |
+| stadium | id PK, official_name, name? (Spitzname/Alltagsname), capacity INT?, lat DECIMAL(9,6)?, lng DECIMAL(9,6)?, opened_date DATE?, closed_date DATE? |
+| club_stadium | id PK, club_id FK, stadium_id FK, from_date DATE, to_date DATE? — UNIQUE(club_id, from_date) |
 
 ## API-Endpunkte
 

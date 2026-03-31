@@ -130,6 +130,30 @@ CREATE TABLE IF NOT EXISTS club_in_season (
     UNIQUE KEY uk_club_season (club_id, season_id)
 );
 
+-- Tabelle: stadium
+CREATE TABLE IF NOT EXISTS stadium (
+    id            CHAR(36)      NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    official_name VARCHAR(100)  NOT NULL,           -- Offizieller Name, z.B. "Fußball Arena München"
+    name          VARCHAR(100)  DEFAULT NULL,        -- Umgangssprachlicher Name, z.B. "Allianz Arena"; NULL wenn kein Spitzname
+    capacity      INT           DEFAULT NULL,        -- Zuschauerkapazität, z.B. 75000
+    lat           DECIMAL(9,6)  DEFAULT NULL,        -- Breitengrad
+    lng           DECIMAL(9,6)  DEFAULT NULL,        -- Längengrad
+    opened_date   DATE          DEFAULT NULL,        -- Eröffnungsdatum
+    closed_date   DATE          DEFAULT NULL         -- Schließungsdatum (NULL = noch in Betrieb)
+);
+
+-- Tabelle: club_stadium (m-n Beziehung club <-> stadium mit Zeitraum)
+CREATE TABLE IF NOT EXISTS club_stadium (
+    id          CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    club_id     CHAR(36) NOT NULL,                  -- FK zu club.id
+    stadium_id  CHAR(36) NOT NULL,                  -- FK zu stadium.id
+    from_date   DATE     NOT NULL,                  -- Seit wann der Club dieses Stadion nutzt
+    to_date     DATE     DEFAULT NULL,              -- Bis wann (NULL = aktuell)
+    FOREIGN KEY (club_id)    REFERENCES club(id),
+    FOREIGN KEY (stadium_id) REFERENCES stadium(id),
+    UNIQUE KEY uk_club_stadium_from (club_id, from_date)
+);
+
 -- Tabelle: league (Spiel-Instanzen; jede Liga hat eine eigene Datenbank)
 CREATE TABLE IF NOT EXISTS league (
     id      CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
