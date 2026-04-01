@@ -1,0 +1,148 @@
+@use '../../styles/variables' as *;
+
+.detail-header {
+  margin-bottom: $space-8;
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    font-size: $font-sm;
+    color: $color-text-muted;
+    text-decoration: none;
+    margin-bottom: $space-6;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $color-text;
+    }
+  }
+
+  .manager-hero {
+    display: flex;
+    align-items: center;
+    gap: $space-6;
+
+    @media (max-width: $mobile-breakpoint) {
+      gap: $space-4;
+    }
+  }
+}
+
+.manager-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: $color-border;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__initial {
+    font-size: $font-3xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 64px;
+    height: 64px;
+
+    &__initial {
+      font-size: $font-xl;
+    }
+  }
+}
+
+.manager-info {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  flex: 1;
+
+  .manager-name {
+    font-size: $font-4xl;
+    font-weight: $font-weight-bold;
+    line-height: 1;
+    margin: 0;
+
+    @media (max-width: $mobile-breakpoint) {
+      font-size: $font-2xl;
+    }
+  }
+
+  .manager-alias {
+    font-size: $font-md;
+    color: $color-text-muted;
+  }
+
+  .manager-role {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-weight: $font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: $space-1;
+  }
+}
+
+.manager-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $space-1;
+  margin-left: auto;
+
+  &__value {
+    font-size: $font-4xl;
+    font-weight: $font-weight-bold;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: $font-weight-medium;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.detail-section {
+  margin-bottom: $space-8;
+}
+
+.col-num {
+  width: 96px;
+  text-align: right;
+}
+
+.col-points {
+  font-weight: $font-weight-semibold;
+}
+
+.team-name {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+
+  .team-color {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+}

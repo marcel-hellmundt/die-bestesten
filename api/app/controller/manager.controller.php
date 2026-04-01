@@ -6,15 +6,25 @@ class ManagerController extends _BaseController
 
     protected function get(): mixed
     {
-        if ($this->id !== 'me') return $this->methodNotAllowed();
-
-        $manager = $this->db->getManagerById($GLOBALS['auth_manager_id']);
-        if (!$manager) {
-            http_response_code(404);
-            return ['status' => false, 'message' => 'Manager not found'];
+        if ($this->id === 'me') {
+            $manager = $this->db->getManagerById($GLOBALS['auth_manager_id']);
+            if (!$manager) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Manager not found'];
+            }
+            return $manager;
         }
 
-        return $manager;
+        if ($this->id) {
+            $manager = $this->db->getManagerWithTeams($this->id);
+            if (!$manager) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Manager not found'];
+            }
+            return $manager;
+        }
+
+        return $this->methodNotAllowed();
     }
 
     protected function patch(): mixed

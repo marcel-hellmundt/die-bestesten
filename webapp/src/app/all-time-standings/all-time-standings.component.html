@@ -16,7 +16,7 @@
       </thead>
       <tbody>
         @for (entry of items(); track entry.id; let i = $index) {
-          <tr [class.row--podium]="i < 3">
+          <tr class="row-link" [routerLink]="[entry.id]" [class.row--podium]="i < 3">
             <td class="col-rank">
               @if (i === 0) { <span class="rank rank--gold">1</span> }
               @else if (i === 1) { <span class="rank rank--silver">2</span> }

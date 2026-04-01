@@ -285,6 +285,12 @@ class Routing
                         'description' => 'Eigenes Profil abrufen (id, manager_name, alias, role, status)',
                     ],
                     [
+                        'method'      => 'GET',
+                        'path'        => '/manager/:id',
+                        'description' => 'Manager per ID — enthält teams[] mit season_id, team_name, total_points, matchdays_played',
+                        'path_params' => [':id' => 'UUID des Managers'],
+                    ],
+                    [
                         'method'      => 'PATCH',
                         'path'        => '/manager/me',
                         'description' => 'Profil aktualisieren — Body: { current_password, new_password } für Passwort; oder { email } allein für E-Mail-Update (kein Passwort nötig)',
