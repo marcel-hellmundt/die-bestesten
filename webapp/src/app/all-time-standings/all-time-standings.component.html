@@ -1,0 +1,52 @@
+<h1 class="page-title">Ewige Tabelle</h1>
+
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th colspan="2">Manager</th>
+          <th class="col-points">Punkte</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of items(); track entry.id; let i = $index) {
+          <tr [class.row--podium]="i < 3">
+            <td class="col-rank">
+              @if (i === 0) { <span class="rank rank--gold">1</span> }
+              @else if (i === 1) { <span class="rank rank--silver">2</span> }
+              @else if (i === 2) { <span class="rank rank--bronze">3</span> }
+              @else { <span class="rank">{{ i + 1 }}</span> }
+            </td>
+            <td class="col-avatar">
+              <div class="avatar">
+                @if (!avatarFailed.has(entry.id)) {
+                  <img
+                    [src]="'https://img.die-bestesten.de/img/manager/' + entry.id + '.jpg'"
+                    [alt]="entry.manager_name"
+                    (error)="onAvatarError(entry.id)"
+                  />
+                }
+                @if (avatarFailed.has(entry.id)) {
+                  <span class="avatar__initial">{{ entry.manager_name[0].toUpperCase() }}</span>
+                }
+              </div>
+            </td>
+            <td>
+              <span class="manager-name">{{ entry.manager_name }}</span>
+              @if (entry.alias) {
+                <span class="manager-alias">{{ entry.alias }}</span>
+              }
+            </td>
+            <td class="col-points">{{ entry.total_points }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

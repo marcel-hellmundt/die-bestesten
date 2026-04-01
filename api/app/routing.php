@@ -64,6 +64,18 @@ class Routing
                 ],
             ]),
 
+            new Route('all_time_standings', 'AllTimeStandings', [
+                'title'       => 'All-Time Standings',
+                'description' => 'Total points per manager across all seasons — Auth',
+                'endpoints'   => [
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/all_time_standings',
+                        'description' => 'All active managers with total points, sorted descending',
+                    ],
+                ],
+            ]),
+
             new Route('country', 'Country', [
                 'title'       => 'Country',
                 'description' => 'ISO Alpha-2 Ländercodes',

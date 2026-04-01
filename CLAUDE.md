@@ -87,6 +87,7 @@ GET      /country[/:id]
 GET      /season[/:id|/active]
 GET      /matchday[/:id]
 PATCH    /matchday/:id         — {completed:bool} — Auth
+GET      /all_time_standings   — Total points per manager (SUM team_rating.points), sorted desc — Auth
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
 POST     /league/migrate       — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
 GET      /transferwindow[/:id] — ?matchday_id|season_id
