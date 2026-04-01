@@ -32,8 +32,17 @@ export class ManagerDetailComponent {
   manager       = computed(() => this.state()?.data ?? null);
   loading       = computed(() => this.state()?.loading ?? true);
   error         = computed(() => this.state()?.error ?? null);
-  teams         = computed(() => this.manager()?.teams ?? []);
-  totalPoints   = computed(() => this.teams().reduce((s: number, t: any) => s + Number(t.total_points), 0));
+  private seasonStartDate = (seasonId: string): string => {
+    return this.cache.seasons().find(s => s.id === seasonId)?.start_date ?? '';
+  };
+
+  teams       = computed(() => {
+    const raw = (this.manager()?.teams ?? []) as any[];
+    return [...raw].sort((a, b) =>
+      this.seasonStartDate(b.season_id).localeCompare(this.seasonStartDate(a.season_id))
+    );
+  });
+  totalPoints = computed(() => this.teams().reduce((s: number, t: any) => s + Number(t.total_points), 0));
 
   avatarFailed = false;
 
