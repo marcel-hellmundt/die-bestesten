@@ -45,6 +45,27 @@ CREATE TABLE IF NOT EXISTS transaction (
     FOREIGN KEY (team_id) REFERENCES team(id)
 );
 
--- CREATE TABLE IF NOT EXISTS team_rating (...);
+-- Tabelle: team_rating (1 Rating pro Team pro Spieltag)
+CREATE TABLE IF NOT EXISTS team_rating (
+    id                  CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    team_id             CHAR(36)    NOT NULL,
+    matchday_id         CHAR(36)    NOT NULL,            -- Referenz auf global_schema.matchday.id (kein FK, cross-DB)
+    points              INT         DEFAULT NULL,
+    max_points          INT         DEFAULT NULL,        -- maximal erreichbare Punkte dieses Spieltags
+    goals               INT         DEFAULT NULL,
+    assists             INT         DEFAULT NULL,
+    clean_sheet         TINYINT(1)  DEFAULT NULL,
+    sds                 INT         DEFAULT NULL,
+    sds_defender        INT         DEFAULT NULL,
+    missed_goals        INT         DEFAULT NULL,
+    points_goalkeeper   INT         DEFAULT NULL,        -- denormalisiert für Performance (aus player_rating aggregiert)
+    points_defender     INT         DEFAULT NULL,
+    points_midfielder   INT         DEFAULT NULL,
+    points_forward      INT         DEFAULT NULL,
+    invalid             TINYINT(1)  NOT NULL DEFAULT 0,  -- 1 = kein Team rechtzeitig aufgestellt
+    FOREIGN KEY (team_id) REFERENCES team(id),
+    UNIQUE KEY uk_team_rating (team_id, matchday_id)
+);
+
 -- CREATE TABLE IF NOT EXISTS team_lineup (...);
 -- CREATE TABLE IF NOT EXISTS player_in_team (...);

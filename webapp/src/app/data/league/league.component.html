@@ -63,26 +63,24 @@
                   } @else if (managers(item.id).length === 0) {
                     <p class="state-msg">Keine Manager</p>
                   } @else {
-                    <table class="data-table manager-table">
-                      <thead>
-                        <tr>
-                          <th>Manager</th>
-                          <th>Alias</th>
-                          <th>Rolle</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (m of managers(item.id); track m.id) {
-                          <tr>
-                            <td>{{ m.manager_name }}</td>
-                            <td class="col-muted">{{ m.alias ?? '—' }}</td>
-                            <td><span class="role-badge role-badge--{{ m.role }}">{{ m.role }}</span></td>
-                            <td><span class="status-badge status-badge--{{ m.status }}">{{ m.status }}</span></td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
+                    <div class="manager-grid">
+                      @for (m of managers(item.id); track m.id) {
+                        <div class="manager-chip">
+                          <div class="manager-chip__avatar">
+                            <img
+                              [src]="'https://img.die-bestesten.de/img/manager/' + m.id + '.jpg'"
+                              [alt]="m.manager_name"
+                              (error)="$any($event.target).style.display='none'"
+                            />
+                            <span class="manager-chip__initials">{{ m.manager_name[0].toUpperCase() }}</span>
+                          </div>
+                          <div class="manager-chip__info">
+                            <span class="manager-chip__name">{{ m.manager_name }}</span>
+                            <span class="role-badge role-badge--{{ m.role }}">{{ m.role }}</span>
+                          </div>
+                        </div>
+                      }
+                    </div>
                   }
                 </div>
               </td>

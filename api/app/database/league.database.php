@@ -70,7 +70,88 @@ trait LeagueTrait
             $migrated++;
         }
 
-        return ['status' => true, 'migrated' => $migrated, 'skipped' => $skipped];
+        // Migrate team_ratings
+        $ratingRows = $this->con_old->query(
+            "SELECT tr.team_rating_id, tr.team_id, tr.matchday_number,
+                    tr.points, tr.max_points, tr.goals, tr.assists,
+                    tr.clean_sheet, tr.sds, tr.sds_defender, tr.missed_goals,
+                    tr.points_goalkeeper, tr.points_defender,
+                    tr.points_midfielder, tr.points_forward,
+                    tr.invalid,
+                    t.season_id
+             FROM team_rating tr
+             JOIN team t ON t.team_id = tr.team_id"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        // Build matchday lookup: (season_id, number) → id
+        $matchdayRows = $this->con->query(
+            "SELECT id, season_id, number FROM matchday"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $matchdayMap = [];
+        foreach ($matchdayRows as $md) {
+            $matchdayMap[$md['season_id'] . '_' . $md['number']] = $md['id'];
+        }
+
+        $stmtRating = $conLeague->prepare(
+            "INSERT INTO team_rating (
+                id, team_id, matchday_id, points, max_points, goals, assists,
+                clean_sheet, sds, sds_defender, missed_goals,
+                points_goalkeeper, points_defender, points_midfielder, points_forward, invalid
+             ) VALUES (
+                :id, :team_id, :matchday_id, :points, :max_points, :goals, :assists,
+                :clean_sheet, :sds, :sds_defender, :missed_goals,
+                :points_goalkeeper, :points_defender, :points_midfielder, :points_forward, :invalid
+             ) ON DUPLICATE KEY UPDATE
+                points             = VALUES(points),
+                max_points         = VALUES(max_points),
+                goals              = VALUES(goals),
+                assists            = VALUES(assists),
+                clean_sheet        = VALUES(clean_sheet),
+                sds                = VALUES(sds),
+                sds_defender       = VALUES(sds_defender),
+                missed_goals       = VALUES(missed_goals),
+                points_goalkeeper  = VALUES(points_goalkeeper),
+                points_defender    = VALUES(points_defender),
+                points_midfielder  = VALUES(points_midfielder),
+                points_forward     = VALUES(points_forward),
+                invalid            = VALUES(invalid)"
+        );
+
+        $migratedRatings = 0;
+        $skippedRatings  = 0;
+
+        foreach ($ratingRows as $row) {
+            $matchdayId = $matchdayMap[$row['season_id'] . '_' . $row['matchday_number']] ?? null;
+            if (!$matchdayId) {
+                $skippedRatings++;
+                continue;
+            }
+            $stmtRating->execute([
+                ':id'               => $row['team_rating_id'],
+                ':team_id'          => $row['team_id'],
+                ':matchday_id'      => $matchdayId,
+                ':points'           => $row['points'],
+                ':max_points'       => $row['max_points'],
+                ':goals'            => $row['goals'],
+                ':assists'          => $row['assists'],
+                ':clean_sheet'      => $row['clean_sheet'],
+                ':sds'              => $row['sds'],
+                ':sds_defender'     => $row['sds_defender'],
+                ':missed_goals'     => $row['missed_goals'],
+                ':points_goalkeeper'=> $row['points_goalkeeper'],
+                ':points_defender'  => $row['points_defender'],
+                ':points_midfielder'=> $row['points_midfielder'],
+                ':points_forward'   => $row['points_forward'],
+                ':invalid'          => $row['invalid'],
+            ]);
+            $migratedRatings++;
+        }
+
+        return [
+            'status'          => true,
+            'teams'           => ['migrated' => $migrated,        'skipped' => $skipped],
+            'team_ratings'    => ['migrated' => $migratedRatings, 'skipped' => $skippedRatings],
+        ];
     }
 
     private function getLeagueManagerCount(string $dbName): int

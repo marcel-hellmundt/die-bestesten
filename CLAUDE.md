@@ -88,7 +88,7 @@ GET      /season[/:id|/active]
 GET      /matchday[/:id]
 PATCH    /matchday/:id         — {completed:bool} — Auth
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
-POST     /league/migrate       — {league_id} — Teams aus Old-DB in Liga-DB migrieren — Admin
+POST     /league/migrate       — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
 POST     /transferwindow/migrate — Admin
@@ -116,4 +116,6 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 
 **transaction**: id PK, team_id FK, amount DECIMAL(10,2), reason VARCHAR(255), matchday_id (cross-DB, kein FK)?, created_at — Budget = SUM(amount) pro team_id
 
-Ausstehend: team_rating, team_lineup, player_in_team
+**team_rating**: id PK, team_id FK, matchday_id (cross-DB), points, max_points, goals, assists, clean_sheet, sds, sds_defender, missed_goals, points_goalkeeper/defender/midfielder/forward (denorm.), invalid BOOL — UNIQUE(team_id, matchday_id)
+
+Ausstehend: team_lineup, player_in_team

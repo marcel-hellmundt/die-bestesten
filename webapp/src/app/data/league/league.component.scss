@@ -16,11 +16,6 @@
   text-align: right;
 }
 
-.col-muted {
-  color: $color-text-muted;
-  font-size: $font-sm;
-}
-
 .expand-row td {
   padding: $space-3 $space-4 $space-4;
   background: $color-surface-alt;
@@ -30,27 +25,67 @@
   padding: $space-1 0;
 }
 
-.manager-table {
-  background: $color-surface;
+.manager-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
 }
 
-.role-badge,
-.status-badge {
+.manager-chip {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+
+  &__avatar {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: $color-border;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+  }
+
+  &__initials {
+    font-size: $font-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    pointer-events: none;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+  }
+}
+
+.role-badge {
   display: inline-block;
   padding: 2px $space-2;
   border-radius: $radius-full;
   font-size: $font-xs;
   font-weight: $font-weight-medium;
-}
 
-.role-badge {
   &--admin      { background: #fef3c7; color: #92400e; }
   &--maintainer { background: #dbeafe; color: #1e40af; }
   &--manager    { background: $color-surface-alt; color: $color-text-muted; }
-}
-
-.status-badge {
-  &--active  { background: #dcfce7; color: #166534; }
-  &--blocked { background: #fee2e2; color: #991b1b; }
-  &--deleted { background: $color-surface-alt; color: $color-text-muted; }
 }
