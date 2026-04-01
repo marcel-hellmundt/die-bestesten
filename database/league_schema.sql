@@ -1,5 +1,5 @@
 -- Liga-spezifische Datenbank Schema
--- Enthält Tabellen für manager, team, team_rating, team_lineup, player_in_team
+-- Enthält Tabellen für manager, team, transaction, team_rating, team_lineup, player_in_team
 
 CREATE TABLE IF NOT EXISTS manager (
     id            CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
@@ -22,7 +22,29 @@ CREATE TABLE IF NOT EXISTS password_reset_token (
     FOREIGN KEY (manager_id) REFERENCES manager(id)
 );
 
--- CREATE TABLE IF NOT EXISTS team (...);
+-- Tabelle: team (1 Team pro Manager pro Saison)
+CREATE TABLE IF NOT EXISTS team (
+    id           CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id   CHAR(36)     NOT NULL,
+    season_id    CHAR(36)     NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
+    team_name    VARCHAR(100) NOT NULL,
+    color        VARCHAR(7)   DEFAULT NULL,         -- Hex-Farbe, z.B. "#3a86ff"
+    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id),
+    UNIQUE KEY uk_team_manager_season (manager_id, season_id)
+);
+
+-- Tabelle: transaction (Einnahmen/Ausgaben pro Team; aktuelles Budget = SUM(amount))
+CREATE TABLE IF NOT EXISTS transaction (
+    id           CHAR(36)      NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    team_id      CHAR(36)      NOT NULL,
+    amount       DECIMAL(10,2) NOT NULL,            -- positiv = Einnahme, negativ = Ausgabe
+    reason       VARCHAR(255)  NOT NULL,            -- z.B. "Spielerkauf: Max Mustermann"
+    matchday_id  CHAR(36)      DEFAULT NULL,        -- Referenz auf global_schema.matchday.id (kein FK, cross-DB); NULL wenn nicht spieltagsbezogen
+    created_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES team(id)
+);
+
 -- CREATE TABLE IF NOT EXISTS team_rating (...);
 -- CREATE TABLE IF NOT EXISTS team_lineup (...);
 -- CREATE TABLE IF NOT EXISTS player_in_team (...);

@@ -10,3 +10,47 @@
   color: $color-text-muted;
   font-family: monospace;
 }
+
+.col-action {
+  width: 100px;
+  text-align: right;
+}
+
+.col-muted {
+  color: $color-text-muted;
+  font-size: $font-sm;
+}
+
+.expand-row td {
+  padding: $space-3 $space-4 $space-4;
+  background: $color-surface-alt;
+}
+
+.league-expand {
+  padding: $space-1 0;
+}
+
+.manager-table {
+  background: $color-surface;
+}
+
+.role-badge,
+.status-badge {
+  display: inline-block;
+  padding: 2px $space-2;
+  border-radius: $radius-full;
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+}
+
+.role-badge {
+  &--admin      { background: #fef3c7; color: #92400e; }
+  &--maintainer { background: #dbeafe; color: #1e40af; }
+  &--manager    { background: $color-surface-alt; color: $color-text-muted; }
+}
+
+.status-badge {
+  &--active  { background: #dcfce7; color: #166534; }
+  &--blocked { background: #fee2e2; color: #991b1b; }
+  &--deleted { background: $color-surface-alt; color: $color-text-muted; }
+}

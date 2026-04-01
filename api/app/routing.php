@@ -56,6 +56,11 @@ class Routing
                         'description' => 'Eine Liga per ID',
                         'path_params' => [':id' => 'UUID der Liga'],
                     ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/league/migrate',
+                        'description' => 'Teams aus der alten DB in die Liga-DB migrieren — Body: { league_id } — Admin',
+                    ],
                 ],
             ]),
 

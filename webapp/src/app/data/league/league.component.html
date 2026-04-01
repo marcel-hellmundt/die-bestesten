@@ -23,17 +23,71 @@
           <th>Slug</th>
           <th>Datenbank</th>
           <th class="col-num">Manager</th>
+          @if (isAdmin()) { <th></th> }
         </tr>
       </thead>
       <tbody>
         @for (item of filteredItems(); track item.id) {
-          <tr>
+          <tr
+            class="row-link"
+            [class.row--selected]="expandedId() === item.id"
+            (click)="toggleLeague(item)"
+          >
             <td class="col-id">{{ item.id }}</td>
             <td>{{ item.name }}</td>
             <td class="col-slug">{{ item.slug }}</td>
             <td class="col-slug">{{ item.db_name }}</td>
             <td class="col-num">{{ item.manager_count }}</td>
+            @if (isAdmin()) {
+              <td class="col-action" (click)="$event.stopPropagation()">
+                @if (migrateState(item.id) === 'success') {
+                  <span class="state-msg">Migriert</span>
+                } @else if (migrateState(item.id) === 'error') {
+                  <span class="state-msg state-msg--error">Fehler</span>
+                } @else {
+                  <button
+                    class="btn btn-sm"
+                    [disabled]="migrateState(item.id) === 'loading'"
+                    (click)="migrate(item)"
+                  >{{ migrateState(item.id) === 'loading' ? 'Läuft…' : 'Migrieren' }}</button>
+                }
+              </td>
+            }
           </tr>
+          @if (expandedId() === item.id) {
+            <tr class="expand-row">
+              <td [colSpan]="isAdmin() ? 6 : 5">
+                <div class="league-expand">
+                  @if (managersLoading()[item.id]) {
+                    <p class="state-msg">Laden…</p>
+                  } @else if (managers(item.id).length === 0) {
+                    <p class="state-msg">Keine Manager</p>
+                  } @else {
+                    <table class="data-table manager-table">
+                      <thead>
+                        <tr>
+                          <th>Manager</th>
+                          <th>Alias</th>
+                          <th>Rolle</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (m of managers(item.id); track m.id) {
+                          <tr>
+                            <td>{{ m.manager_name }}</td>
+                            <td class="col-muted">{{ m.alias ?? '—' }}</td>
+                            <td><span class="role-badge role-badge--{{ m.role }}">{{ m.role }}</span></td>
+                            <td><span class="status-badge status-badge--{{ m.status }}">{{ m.status }}</span></td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
         }
       </tbody>
     </table>
