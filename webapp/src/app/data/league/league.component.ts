@@ -83,13 +83,13 @@ export class LeagueDataComponent {
     return this.migrateStates()[leagueId] ?? 'idle';
   }
 
-  skippedRatings(leagueId: string): { season_id: string; matchday_number: number; count: number }[] {
-    const details = this.migrateResults()[leagueId]?.team_ratings?.skipped_details ?? [];
+  createdMatchdays(leagueId: string): { season_id: string; matchday_number: number }[] {
+    const details = this.migrateResults()[leagueId]?.matchdays_created ?? [];
     return [...details].sort((a: any, b: any) => {
       const aDate = this.cache.seasons().find((s) => s.id === a.season_id)?.start_date ?? '';
       const bDate = this.cache.seasons().find((s) => s.id === b.season_id)?.start_date ?? '';
       if (bDate !== aDate) return bDate.localeCompare(aDate);
-      return Number(b.matchday_number) - Number(a.matchday_number);
+      return Number(a.matchday_number) - Number(b.matchday_number);
     });
   }
 
@@ -100,6 +100,9 @@ export class LeagueDataComponent {
       next: (res) => {
         this.migrateStates.update((s) => ({ ...s, [league.id]: 'success' }));
         this.migrateResults.update((s) => ({ ...s, [league.id]: res }));
+        if (res?.matchdays_created?.length) {
+          console.info('[migrate] matchdays auto-created:', res.matchdays_created);
+        }
       },
       error: () => this.migrateStates.update((s) => ({ ...s, [league.id]: 'error' })),
     });

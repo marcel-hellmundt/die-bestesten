@@ -83,18 +83,19 @@
                     </div>
                   }
 
-                  @if (migrateState(item.id) === 'success' && skippedRatings(item.id).length > 0) {
-                    <div class="migrate-skipped">
-                      <span class="migrate-skipped__title">{{ skippedRatings(item.id).length }} team_ratings nicht migriert (Spieltag nicht in globaler DB)</span>
-                      <ul class="migrate-skipped__list">
-                        @for (entry of skippedRatings(item.id); track entry.season_id + entry.matchday_number) {
-                          <li>{{ cache.seasonName(entry.season_id) }} · Spieltag {{ entry.matchday_number }} <span class="skipped-count">({{ entry.count }} Ratings)</span></li>
-                        }
-                      </ul>
-                    </div>
-                  }
-                  @if (migrateState(item.id) === 'success' && skippedRatings(item.id).length === 0) {
-                    <p class="migrate-ok">Alle team_ratings erfolgreich migriert.</p>
+                  @if (migrateState(item.id) === 'success') {
+                    @if (createdMatchdays(item.id).length > 0) {
+                      <div class="migrate-skipped">
+                        <span class="migrate-skipped__title">{{ createdMatchdays(item.id).length }} fehlende Spieltage automatisch angelegt</span>
+                        <ul class="migrate-skipped__list">
+                          @for (entry of createdMatchdays(item.id); track entry.season_id + entry.matchday_number) {
+                            <li>{{ cache.seasonName(entry.season_id) }} · Spieltag {{ entry.matchday_number }}</li>
+                          }
+                        </ul>
+                      </div>
+                    } @else {
+                      <p class="migrate-ok">Alle team_ratings erfolgreich migriert.</p>
+                    }
                   }
                 </div>
               </td>

@@ -92,6 +92,21 @@ trait LeagueTrait
             $matchdayMap[$md['season_id'] . '_' . $md['number']] = $md['id'];
         }
 
+        // Build season start_date lookup for auto-creating missing matchdays
+        $seasonRows = $this->con->query(
+            "SELECT id, start_date FROM season"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $seasonStartDates = [];
+        foreach ($seasonRows as $s) {
+            $seasonStartDates[$s['id']] = $s['start_date'];
+        }
+
+        $stmtCreateMatchday = $this->con->prepare(
+            "INSERT INTO matchday (id, season_id, number, start_date, kickoff_date, completed)
+             VALUES (:id, :season_id, :number, :start_date, :kickoff_date, 0)
+             ON DUPLICATE KEY UPDATE id = id"
+        );
+
         $stmtRating = $conLeague->prepare(
             "INSERT INTO team_rating (
                 id, team_id, matchday_id, points, max_points, goals, assists,
@@ -117,22 +132,29 @@ trait LeagueTrait
                 invalid            = VALUES(invalid)"
         );
 
-        $migratedRatings = 0;
-        $skippedRatings  = [];
+        $migratedRatings  = 0;
+        $createdMatchdays = [];
 
         foreach ($ratingRows as $row) {
-            $matchdayId = $matchdayMap[$row['season_id'] . '_' . $row['matchday_number']] ?? null;
+            $key = $row['season_id'] . '_' . $row['matchday_number'];
+            $matchdayId = $matchdayMap[$key] ?? null;
             if (!$matchdayId) {
-                $key = $row['season_id'] . '_' . $row['matchday_number'];
-                if (!isset($skippedRatings[$key])) {
-                    $skippedRatings[$key] = [
-                        'season_id'       => $row['season_id'],
-                        'matchday_number' => $row['matchday_number'],
-                        'count'           => 0,
-                    ];
-                }
-                $skippedRatings[$key]['count']++;
-                continue;
+                $newId     = $this->con->query("SELECT UUID()")->fetchColumn();
+                $startDate = $seasonStartDates[$row['season_id']] ?? date('Y-m-d');
+                $stmtCreateMatchday->execute([
+                    ':id'           => $newId,
+                    ':season_id'    => $row['season_id'],
+                    ':number'       => $row['matchday_number'],
+                    ':start_date'   => $startDate,
+                    ':kickoff_date' => $startDate . ' 00:00:00',
+                ]);
+                $matchdayMap[$key] = $newId;
+                $matchdayId        = $newId;
+                $createdMatchdays[$key] = [
+                    'season_id'       => $row['season_id'],
+                    'matchday_number' => $row['matchday_number'],
+                    'matchday_id'     => $newId,
+                ];
             }
             $stmtRating->execute([
                 ':id'               => $row['team_rating_id'],
@@ -158,7 +180,8 @@ trait LeagueTrait
         return [
             'status'          => true,
             'teams'           => ['migrated' => $migrated,        'skipped' => $skipped],
-            'team_ratings'    => ['migrated' => $migratedRatings, 'skipped' => count($skippedRatings), 'skipped_details' => array_values($skippedRatings)],
+            'team_ratings'    => ['migrated' => $migratedRatings],
+            'matchdays_created' => array_values($createdMatchdays),
         ];
     }
 
