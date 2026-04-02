@@ -82,7 +82,8 @@ export class LeagueDataComponent {
     return [...details].sort((a: any, b: any) => {
       const aDate = this.cache.seasons().find(s => s.id === a.season_id)?.start_date ?? '';
       const bDate = this.cache.seasons().find(s => s.id === b.season_id)?.start_date ?? '';
-      return bDate.localeCompare(aDate);
+      if (bDate !== aDate) return bDate.localeCompare(aDate);
+      return Number(a.matchday_number) - Number(b.matchday_number);
     });
   }
 
