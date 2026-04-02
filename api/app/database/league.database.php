@@ -124,10 +124,14 @@ trait LeagueTrait
             $matchdayId = $matchdayMap[$row['season_id'] . '_' . $row['matchday_number']] ?? null;
             if (!$matchdayId) {
                 $key = $row['season_id'] . '_' . $row['matchday_number'];
-                $skippedRatings[$key] = [
-                    'season_id'       => $row['season_id'],
-                    'matchday_number' => $row['matchday_number'],
-                ];
+                if (!isset($skippedRatings[$key])) {
+                    $skippedRatings[$key] = [
+                        'season_id'       => $row['season_id'],
+                        'matchday_number' => $row['matchday_number'],
+                        'count'           => 0,
+                    ];
+                }
+                $skippedRatings[$key]['count']++;
                 continue;
             }
             $stmtRating->execute([

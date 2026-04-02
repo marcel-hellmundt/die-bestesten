@@ -104,6 +104,10 @@
       font-size: $font-sm;
       color: $color-text-muted;
       font-family: monospace;
+
+      .skipped-count {
+        opacity: 0.6;
+      }
     }
   }
 }

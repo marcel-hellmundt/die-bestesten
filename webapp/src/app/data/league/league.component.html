@@ -88,7 +88,7 @@
                       <span class="migrate-skipped__title">{{ skippedRatings(item.id).length }} team_ratings nicht migriert (Spieltag nicht in globaler DB)</span>
                       <ul class="migrate-skipped__list">
                         @for (entry of skippedRatings(item.id); track entry.season_id + entry.matchday_number) {
-                          <li>{{ cache.seasonName(entry.season_id) }} · Spieltag {{ entry.matchday_number }}</li>
+                          <li>{{ cache.seasonName(entry.season_id) }} · Spieltag {{ entry.matchday_number }} <span class="skipped-count">({{ entry.count }} Ratings)</span></li>
                         }
                       </ul>
                     </div>
