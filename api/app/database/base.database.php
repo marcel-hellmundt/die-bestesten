@@ -88,10 +88,12 @@ class Database
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function getAuthManagerByName(string $name): array|false
+    public function getAuthManagerByNameOrEmail(string $identifier): array|false
     {
-        $query = $this->con_league->prepare("SELECT * FROM manager WHERE manager_name = :name LIMIT 1");
-        $query->execute([':name' => $name]);
+        $query = $this->con_league->prepare(
+            "SELECT * FROM manager WHERE manager_name = :identifier OR email = :identifier LIMIT 1"
+        );
+        $query->execute([':identifier' => $identifier]);
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 }

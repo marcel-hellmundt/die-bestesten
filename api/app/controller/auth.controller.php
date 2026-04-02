@@ -37,7 +37,7 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Name oder Passwort fehlen'];
         }
 
-        $manager = $this->db->getAuthManagerByName($name);
+        $manager = $this->db->getAuthManagerByNameOrEmail($name);
 
         if (!$manager || !password_verify($password, $manager['password'])) {
             http_response_code(400);

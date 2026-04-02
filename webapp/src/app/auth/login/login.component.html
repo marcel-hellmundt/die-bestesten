@@ -8,13 +8,13 @@
       @if (mode() === 'login') {
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="form-group">
-            <label for="name">Name</label>
+            <label for="name">Name oder E-Mail</label>
             <input
               id="name"
               type="text"
               formControlName="name"
               autocomplete="username"
-              placeholder="Dein Name"
+              placeholder="Name oder E-Mail-Adresse"
             />
           </div>
 
