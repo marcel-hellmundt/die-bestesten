@@ -1,5 +1,10 @@
 RewriteEngine On
 
+# Block access to sensitive files
+<FilesMatch "^\.env|\.env\..*$">
+    Require all denied
+</FilesMatch>
+
 RewriteCond %{SCRIPT_FILENAME} !-d
 RewriteCond %{SCRIPT_FILENAME} !-f
 
