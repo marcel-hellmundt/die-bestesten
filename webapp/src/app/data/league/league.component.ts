@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, tap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { DataCacheService } from '../../core/data-cache.service';
 import { League } from '../../core/models/league.model';
 
 @Component({
@@ -14,6 +15,7 @@ import { League } from '../../core/models/league.model';
 export class LeagueDataComponent {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
+  cache        = inject(DataCacheService);
 
   isAdmin = computed(() => this.auth.isAdmin());
 
@@ -68,21 +70,29 @@ export class LeagueDataComponent {
     return this.managersCache()[leagueId] ?? [];
   }
 
-  migrateStates = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
+  migrateStates  = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
+  migrateResults = signal<Record<string, any>>({});
 
   migrateState(leagueId: string): 'idle' | 'loading' | 'success' | 'error' {
     return this.migrateStates()[leagueId] ?? 'idle';
   }
 
+  skippedRatings(leagueId: string): { season_id: string; matchday_number: number }[] {
+    const details = this.migrateResults()[leagueId]?.team_ratings?.skipped_details ?? [];
+    return [...details].sort((a: any, b: any) => {
+      const aDate = this.cache.seasons().find(s => s.id === a.season_id)?.start_date ?? '';
+      const bDate = this.cache.seasons().find(s => s.id === b.season_id)?.start_date ?? '';
+      return bDate.localeCompare(aDate);
+    });
+  }
+
   migrate(league: League): void {
     this.migrateStates.update(s => ({ ...s, [league.id]: 'loading' }));
+    this.cache.ensureSeasons();
     this.api.post<any>('league/migrate', { league_id: league.id }).subscribe({
       next: (res) => {
         this.migrateStates.update(s => ({ ...s, [league.id]: 'success' }));
-        console.log(`[migrate] ${league.name}`, res);
-        if (res?.team_ratings?.skipped_details?.length) {
-          console.warn(`[migrate] ${league.name} — ${res.team_ratings.skipped} übersprungene team_ratings (season_id + matchday_number nicht in globaler DB):`, res.team_ratings.skipped_details);
-        }
+        this.migrateResults.update(s => ({ ...s, [league.id]: res }));
       },
       error: () => this.migrateStates.update(s => ({ ...s, [league.id]: 'error' })),
     });
