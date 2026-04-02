@@ -13,10 +13,13 @@ const routes: Routes = [
     component: ShellComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: '', redirectTo: 'data', pathMatch: 'full' },
-      { path: 'data',          loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
-      { path: 'settings',      loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
-      { path: 'all-time-standings', loadChildren: () => import('../all-time-standings/all-time-standings.module').then(m => m.AllTimeStandingsModule) },
+      { path: '', redirectTo: 'liga', pathMatch: 'full' },
+      { path: 'liga',          loadChildren: () => import('../liga/liga.module').then(m => m.LigaModule) },
+      { path: 'team',          loadChildren: () => import('../team/team.module').then(m => m.TeamModule) },
+      { path: 'markt',         loadChildren: () => import('../markt/markt.module').then(m => m.MarktModule) },
+      { path: 'manager',       loadChildren: () => import('../manager/manager.module').then(m => m.ManagerModule) },
+      { path: 'daten',         loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
+      { path: 'einstellungen', loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
     ]
   }
 ];

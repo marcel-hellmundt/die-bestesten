@@ -29,29 +29,29 @@ export class NavComponent {
       label: 'Liga',
       icon: 'tabelle',
       items: [
-        { label: 'Spieltag',      icon: 'spieltag',      route: '/app/spieltag' },
-        { label: 'Tabelle',       icon: 'tabelle',       route: '/app/tabelle' },
-        { label: 'Statistiken',   icon: 'statistiken',   route: '/app/liga-statistiken' },
-        { label: 'Ewige Tabelle', icon: 'ewige-tabelle', route: '/app/all-time-standings' },
+        { label: 'Spieltag',      icon: 'spieltag',      route: '/liga/spieltag' },
+        { label: 'Tabelle',       icon: 'tabelle',       route: '/liga/tabelle' },
+        { label: 'Statistiken',   icon: 'statistiken',   route: '/liga/statistiken' },
+        { label: 'Ewige Tabelle', icon: 'ewige-tabelle', route: '/liga/ewige-tabelle' },
       ]
     },
     {
       label: 'Team',
       icon: 'kader',
       items: [
-        { label: 'Kader',       icon: 'kader',      route: '/app/kader' },
-        { label: 'Aufstellung', icon: 'aufstellung', route: '/app/aufstellung' },
-        { label: 'Finanzen',    icon: 'finanzen',    route: '/app/finanzen' },
-        { label: 'Statistiken', icon: 'statistiken', route: '/app/team-statistiken' },
+        { label: 'Kader',       icon: 'kader',       route: '/team/kader' },
+        { label: 'Aufstellung', icon: 'aufstellung', route: '/team/aufstellung' },
+        { label: 'Finanzen',    icon: 'finanzen',    route: '/team/finanzen' },
+        { label: 'Statistiken', icon: 'statistiken', route: '/team/statistiken' },
       ]
     },
     {
       label: 'Markt',
       icon: 'transferphasen',
       items: [
-        { label: 'Spieler',        icon: 'spieler',        route: '/app/spieler' },
-        { label: 'Transferphasen', icon: 'transferphasen', route: '/app/transferphasen' },
-        { label: 'Gebote',         icon: 'gebote',         route: '/app/gebote' },
+        { label: 'Spieler',        icon: 'spieler',        route: '/markt/spieler' },
+        { label: 'Transferphasen', icon: 'transferphasen', route: '/markt/transferphasen' },
+        { label: 'Gebote',         icon: 'gebote',         route: '/markt/gebote' },
       ]
     },
   ];
@@ -60,7 +60,8 @@ export class NavComponent {
     {
       label: '',
       items: [
-        { label: 'Data Management', icon: 'data', route: '/app/data' },
+        { label: 'Data Management', icon: 'data',     route: '/daten' },
+        { label: 'Einstellungen',   icon: 'settings', route: '/einstellungen' },
       ]
     }
   ];

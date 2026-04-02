@@ -333,7 +333,7 @@
           </thead>
           <tbody>
             @for (p of squad(); track p.id) {
-              <tr class="row-link" [routerLink]="['/app/data/player', p.id]">
+              <tr class="row-link" [routerLink]="['/daten/player', p.id]">
                 <td class="col-squad-pos">
                   @if (p.season_position) {
                     <span class="position-badge">

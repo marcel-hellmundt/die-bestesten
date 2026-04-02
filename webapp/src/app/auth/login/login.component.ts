@@ -43,7 +43,7 @@ export class LoginComponent {
 
     const { name, password } = this.form.value;
     this.auth.login(name, password).subscribe({
-      next: () => this.router.navigate(['/app']),
+      next: () => this.router.navigate(['/']),
       error: () => {
         this.error   = 'Name oder Passwort inkorrekt';
         this.loading = false;
