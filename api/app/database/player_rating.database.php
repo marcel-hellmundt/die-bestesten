@@ -3,8 +3,8 @@
 trait PlayerRatingTrait
 {
     /**
-     * Alle player_ratings für einen Spieltag, gefiltert auf einen Club.
-     * Gibt player-Basisinfos + position aus player_in_season mit zurück.
+     * All player_ratings for a matchday, filtered for a club.
+     * Returns player base info + position from player_in_season.
      */
     public function getPlayerRatingsByMatchdayAndClub(string $matchdayId, string $clubId): array
     {
@@ -46,13 +46,13 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Erstellt leere player_ratings für alle aktuellen Spieler eines Clubs an einem Spieltag.
-     * Verwendet INSERT IGNORE, sodass bestehende Ratings nicht überschrieben werden.
-     * Gibt zurück: Anzahl neu erstellter Ratings + IDs von bereits bestehenden.
+     * Creates empty player_ratings for all current players of a club on a matchday.
+     * Uses INSERT IGNORE so existing ratings are not overwritten.
+     * Returns: count of newly created ratings + IDs of existing ones.
      */
     public function initPlayerRatingsForClub(string $matchdayId, string $clubId): array
     {
-        // Alle aktuellen Spieler des Clubs holen
+        // Fetch all current players of the club
         $players = $this->con->prepare(
             "SELECT p.id AS player_id, p.displayname
              FROM player_in_club pic
@@ -78,7 +78,7 @@ trait PlayerRatingTrait
         $existing = [];
 
         foreach ($playerRows as $row) {
-            // Prüfen ob Rating bereits existiert
+            // Check if rating already exists
             $checkExisting->execute([
                 ':player_id'   => $row['player_id'],
                 ':matchday_id' => $matchdayId,
@@ -105,7 +105,7 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Gibt die matchday_id eines player_ratings zurück (oder null wenn nicht gefunden).
+     * Returns the matchday_id of a player_rating (or null if not found).
      */
     public function getMatchdayIdForRating(string $id): ?string
     {
@@ -118,7 +118,7 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Aktualisiert eine player_rating-Zeile (alle editierbaren Felder).
+     * Updates a player_rating row (all editable fields).
      */
     public function updatePlayerRating(string $id, array $data): bool
     {

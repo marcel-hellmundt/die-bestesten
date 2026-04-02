@@ -47,7 +47,7 @@ export class SeasonDataComponent {
   selectedSeason   = signal<Season | null>(null);
   selectedMatchday = signal<Matchday | null>(null);
 
-  // Vorauswahl: neuste Saison sobald Daten geladen sind
+  // Auto-select: newest season once data is loaded
   private autoSelectEffect = effect(() => {
     const seasons = this.items();
     if (seasons.length > 0 && !this.selectedSeason()) {
@@ -145,7 +145,7 @@ export class SeasonDataComponent {
         const seasonMap = new Map(this.items().map(s => [s.id, s.displayName]));
         const matchdayMap = new Map(mds.map(m => [m.id, m]));
 
-        // Saisons: Start muss 1. Juli sein
+        // Seasons: start must be July 1st
         for (const s of this.items()) {
           const [, mm, dd] = s.start_date.split('-');
           if (mm !== '07' || dd !== '01') {
@@ -153,7 +153,7 @@ export class SeasonDataComponent {
           }
         }
 
-        // Spieltage: Anpfiff muss Fr. 20:00, Fr. 20:30, Sa. 15:30 oder Di. 18:30 sein
+        // Matchdays: kickoff must be Fri 20:00, Fri 20:30, Sat 15:30 or Tue 18:30
         for (const md of mds) {
           if (!md.kickoff_date) continue;
           const dt = new Date(md.kickoff_date.replace(' ', 'T'));
@@ -171,7 +171,7 @@ export class SeasonDataComponent {
           }
         }
 
-        // Transferfenster: Ende muss um 20:00 (beliebiger Tag) oder Fr. um 15:00 sein
+        // Transfer windows: end must be 20:00 (any day) or Fri 15:00
         for (const tw of tws) {
           const dt = new Date(tw.end_date.replace(' ', 'T'));
           const day = dt.getDay();
@@ -188,7 +188,7 @@ export class SeasonDataComponent {
           }
         }
 
-        // Transferfenster: keine Überschneidungen
+        // Transfer windows: no overlaps
         const sorted = [...tws].sort((a, b) => a.start_date.localeCompare(b.start_date));
         for (let i = 1; i < sorted.length; i++) {
           const prev = sorted[i - 1];

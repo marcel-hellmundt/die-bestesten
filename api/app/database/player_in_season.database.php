@@ -3,8 +3,8 @@
 trait PlayerInSeasonTrait
 {
     /**
-     * Anzahl der Spieler in der 1. Bundesliga (Level 1, country_id 'de') einer Saison.
-     * Wenn keine season_id übergeben wird, wird die aktive Saison verwendet.
+     * Count of players in the 1. Bundesliga (level 1, country_id 'de') for a season.
+     * If no season_id is provided, the active season is used.
      */
     public function getBundesligaPlayerCount(?string $seasonId): int
     {
