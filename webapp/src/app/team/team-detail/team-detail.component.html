@@ -1,0 +1,50 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (team(); as t) {
+  <div class="team-header">
+    <div class="team-hero">
+      <div class="team-logo-wrap">
+        @if (t.color) {
+          <span class="team-color-swatch" [style.background-color]="t.color"></span>
+        }
+        @if (!logoFailed) {
+          <img
+            class="team-logo"
+            [src]="'https://img.die-bestesten.de/img/team/' + t.season_id + '/' + t.id + '.png'"
+            [alt]="t.team_name"
+            (error)="logoFailed = true"
+          />
+        }
+      </div>
+
+      <div class="team-info">
+        <h1 class="team-name">{{ t.team_name }}</h1>
+        <span class="team-meta">{{ cache.seasonName(t.season_id) }}</span>
+        <span class="team-meta team-meta--manager">
+          {{ t.manager_name }}@if (t.alias) { &nbsp;&bdquo;{{ t.alias }}&ldquo; }
+        </span>
+      </div>
+
+      <div class="team-stats">
+        <div class="team-stat">
+          <span class="team-stat__value">{{ t.total_points }}</span>
+          <span class="team-stat__label">Punkte</span>
+        </div>
+        <div class="team-stat">
+          <span class="team-stat__value">{{ t.matchdays_played }}</span>
+          <span class="team-stat__label">Spieltage</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="pill-nav">
+      <a class="pill" routerLink="uebersicht" routerLinkActive="pill--active">Übersicht</a>
+      <a class="pill" routerLink="kader" routerLinkActive="pill--active">Kader</a>
+      <a class="pill" routerLink="aufstellung" routerLinkActive="pill--active">Aufstellung</a>
+    </nav>
+  </div>
+
+  <router-outlet />
+}

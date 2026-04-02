@@ -275,6 +275,19 @@ class Routing
                 ],
             ]),
 
+            new Route('team', 'Team', [
+                'title'       => 'Team',
+                'description' => 'Fantasy-Teams pro Manager und Saison',
+                'endpoints'   => [
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/team/:id',
+                        'description' => 'Ein Team per ID — enthält manager_name, alias, total_points, matchdays_played',
+                        'path_params' => [':id' => 'UUID des Teams'],
+                    ],
+                ],
+            ]),
+
             new Route('manager', 'Manager', [
                 'title'       => 'Manager',
                 'description' => 'Eigenes Manager-Konto verwalten (Profil, Passwort, Account löschen)',

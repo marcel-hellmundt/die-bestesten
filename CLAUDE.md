@@ -102,6 +102,7 @@ PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed
 POST     /auth                 — JWT-Login
 POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)
 POST     /auth/password-reset — {token,new_password} — setzt Passwort zurück; 400 wenn Token ungültig/abgelaufen
+GET      /team/:id             — Team per ID (manager_name, alias, total_points, matchdays_played) — Auth
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} allein für E-Mail — Auth
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin

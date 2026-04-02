@@ -53,7 +53,7 @@
           </thead>
           <tbody>
             @for (team of teams(); track team.id) {
-              <tr>
+              <tr class="row-link" [routerLink]="['/team', team.id]">
                 <td>{{ cache.seasonName(team.season_id) }}</td>
                 <td>
                   <span class="team-name">
