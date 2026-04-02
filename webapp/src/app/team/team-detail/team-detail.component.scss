@@ -17,10 +17,8 @@
 
 .team-logo-wrap {
   position: relative;
-  width: 80px;
-  height: 80px;
-  border-radius: $radius-lg;
-  background: $color-surface-alt;
+  width: 124px;
+  height: 124px;
   flex-shrink: 0;
   overflow: hidden;
 
@@ -40,8 +38,8 @@
   }
 
   @media (max-width: $mobile-breakpoint) {
-    width: 56px;
-    height: 56px;
+    width: 72px;
+    height: 72px;
   }
 }
 
@@ -124,7 +122,10 @@
   text-decoration: none;
   white-space: nowrap;
   background: $color-surface;
-  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+  transition:
+    color $transition-fast,
+    border-color $transition-fast,
+    background $transition-fast;
 
   &:hover {
     color: $color-text;

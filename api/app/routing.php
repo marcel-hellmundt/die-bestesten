@@ -275,6 +275,19 @@ class Routing
                 ],
             ]),
 
+            new Route('team_rating', 'TeamRating', [
+                'title'       => 'TeamRating',
+                'description' => 'Team-Bewertungen pro Spieltag — letzter abgeschlossener Spieltag der Saison',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/team_rating',
+                        'description'  => 'Ratings aller Teams für den letzten abgeschlossenen Spieltag — gibt { matchday, ratings[] } zurück',
+                        'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
+                    ],
+                ],
+            ]),
+
             new Route('team', 'Team', [
                 'title'       => 'Team',
                 'description' => 'Fantasy-Teams pro Manager und Saison',

@@ -1,0 +1,43 @@
+@use '../../../styles/variables' as *;
+
+.col-rank {
+  width: 40px;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+}
+
+.col-points {
+  width: 80px;
+  text-align: right;
+  font-weight: $font-weight-semibold;
+}
+
+.team-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.team-logo-wrap {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+
+  .team-color {
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin: auto;
+    margin-top: 11px;
+  }
+
+  .team-logo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
