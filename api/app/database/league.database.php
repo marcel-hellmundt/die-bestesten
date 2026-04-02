@@ -118,12 +118,16 @@ trait LeagueTrait
         );
 
         $migratedRatings = 0;
-        $skippedRatings  = 0;
+        $skippedRatings  = [];
 
         foreach ($ratingRows as $row) {
             $matchdayId = $matchdayMap[$row['season_id'] . '_' . $row['matchday_number']] ?? null;
             if (!$matchdayId) {
-                $skippedRatings++;
+                $key = $row['season_id'] . '_' . $row['matchday_number'];
+                $skippedRatings[$key] = [
+                    'season_id'       => $row['season_id'],
+                    'matchday_number' => $row['matchday_number'],
+                ];
                 continue;
             }
             $stmtRating->execute([
@@ -150,7 +154,7 @@ trait LeagueTrait
         return [
             'status'          => true,
             'teams'           => ['migrated' => $migrated,        'skipped' => $skipped],
-            'team_ratings'    => ['migrated' => $migratedRatings, 'skipped' => $skippedRatings],
+            'team_ratings'    => ['migrated' => $migratedRatings, 'skipped' => count($skippedRatings), 'skipped_details' => array_values($skippedRatings)],
         ];
     }
 

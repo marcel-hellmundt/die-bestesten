@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { DataCacheService } from '../core/data-cache.service';
+import { Team } from '../core/models/team.model';
 
 @Component({
   selector: 'app-manager-detail',
@@ -37,12 +38,12 @@ export class ManagerDetailComponent {
   };
 
   teams       = computed(() => {
-    const raw = (this.manager()?.teams ?? []) as any[];
-    return [...raw].sort((a, b) =>
+    const raw: Team[] = (this.manager()?.teams ?? []).map(Team.from);
+    return raw.sort((a, b) =>
       this.seasonStartDate(b.season_id).localeCompare(this.seasonStartDate(a.season_id))
     );
   });
-  totalPoints = computed(() => this.teams().reduce((s: number, t: any) => s + Number(t.total_points), 0));
+  totalPoints = computed(() => this.teams().reduce((s, t) => s + t.total_points, 0));
 
   avatarFailed = false;
 

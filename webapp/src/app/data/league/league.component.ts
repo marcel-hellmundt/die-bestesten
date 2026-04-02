@@ -77,7 +77,13 @@ export class LeagueDataComponent {
   migrate(league: League): void {
     this.migrateStates.update(s => ({ ...s, [league.id]: 'loading' }));
     this.api.post<any>('league/migrate', { league_id: league.id }).subscribe({
-      next: () => this.migrateStates.update(s => ({ ...s, [league.id]: 'success' })),
+      next: (res) => {
+        this.migrateStates.update(s => ({ ...s, [league.id]: 'success' }));
+        console.log(`[migrate] ${league.name}`, res);
+        if (res?.team_ratings?.skipped_details?.length) {
+          console.warn(`[migrate] ${league.name} — ${res.team_ratings.skipped} übersprungene team_ratings (season_id + matchday_number nicht in globaler DB):`, res.team_ratings.skipped_details);
+        }
+      },
       error: () => this.migrateStates.update(s => ({ ...s, [league.id]: 'error' })),
     });
   }

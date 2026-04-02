@@ -57,9 +57,17 @@
                 <td>{{ cache.seasonName(team.season_id) }}</td>
                 <td>
                   <span class="team-name">
-                    @if (team.color) {
-                      <span class="team-color" [style.background-color]="team.color"></span>
-                    }
+                    <span class="team-logo-wrap">
+                      @if (team.color) {
+                        <span class="team-color" [style.background-color]="team.color"></span>
+                      }
+                      <img
+                        class="team-logo"
+                        [src]="team.logoUrl"
+                        [alt]="team.team_name"
+                        (error)="$any($event.target).style.display='none'"
+                      />
+                    </span>
                     {{ team.team_name }}
                   </span>
                 </td>
