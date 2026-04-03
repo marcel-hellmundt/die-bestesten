@@ -12,12 +12,12 @@ interface AllTimeStandingsEntry {
 }
 
 @Component({
-  selector: 'app-all-time-standings',
+  selector: 'app-hall-of-fame',
   standalone: false,
-  templateUrl: './all-time-standings.component.html',
-  styleUrl: './all-time-standings.component.scss'
+  templateUrl: './hall-of-fame.component.html',
+  styleUrl: './hall-of-fame.component.scss'
 })
-export class AllTimeStandingsComponent {
+export class HallOfFameComponent {
   private api   = inject(ApiService);
   cache         = inject(DataCacheService);
 

@@ -158,7 +158,9 @@
       opacity: 0.85;
       transition: opacity 0.15s;
 
-      &:hover { opacity: 1; }
+      &:hover {
+        opacity: 1;
+      }
     }
 
     .placement-line {
@@ -202,6 +204,15 @@
 
 .col-points {
   font-weight: $font-weight-semibold;
+}
+
+.row--first {
+  background: color-mix(in srgb, $color-success 10%, transparent);
+
+  .col-rank {
+    color: $color-success;
+    font-weight: $font-weight-semibold;
+  }
 }
 
 .team-name {

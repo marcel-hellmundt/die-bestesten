@@ -32,7 +32,7 @@ export class NavComponent {
         { label: 'Spieltag',      icon: 'spieltag',      route: '/liga/spieltag' },
         { label: 'Tabelle',       icon: 'tabelle',       route: '/liga/tabelle' },
         { label: 'Statistiken',   icon: 'statistiken',   route: '/liga/statistiken' },
-        { label: 'Ewige Tabelle', icon: 'ewige-tabelle', route: '/liga/ewige-tabelle' },
+        { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
       ]
     },
     {

@@ -5,7 +5,7 @@ import { LigaComponent } from './liga.component';
 import { MatchdayComponent } from './matchday/matchday.component';
 import { TableComponent } from './table/table.component';
 import { LigaStatsComponent } from './stats/liga-stats.component';
-import { AllTimeStandingsComponent } from '../all-time-standings/all-time-standings.component';
+import { HallOfFameComponent } from '../hall-of-fame/hall-of-fame.component';
 
 const routes: Routes = [
   {
@@ -16,13 +16,13 @@ const routes: Routes = [
       { path: 'spieltag',      component: MatchdayComponent },
       { path: 'tabelle',       component: TableComponent },
       { path: 'statistiken',   component: LigaStatsComponent },
-      { path: 'ewige-tabelle', component: AllTimeStandingsComponent },
+      { path: 'ruhmeshalle', component: HallOfFameComponent },
     ]
   }
 ];
 
 @NgModule({
-  declarations: [LigaComponent, MatchdayComponent, TableComponent, LigaStatsComponent, AllTimeStandingsComponent],
+  declarations: [LigaComponent, MatchdayComponent, TableComponent, LigaStatsComponent, HallOfFameComponent],
   imports: [CommonModule, RouterModule.forChild(routes)]
 })
 export class LigaModule {}

@@ -1,4 +1,4 @@
-<h1 class="page-title">Ewige Tabelle</h1>
+<h1 class="page-title">Ruhmeshalle</h1>
 
 @if (loading()) {
   <p class="state-msg">Laden…</p>
@@ -18,10 +18,15 @@
         @for (entry of items(); track entry.id; let i = $index) {
           <tr class="row-link" [routerLink]="['/manager', entry.id]" [class.row--podium]="i < 3">
             <td class="col-rank">
-              @if (i === 0) { <span class="rank rank--gold">1</span> }
-              @else if (i === 1) { <span class="rank rank--silver">2</span> }
-              @else if (i === 2) { <span class="rank rank--bronze">3</span> }
-              @else { <span class="rank">{{ i + 1 }}</span> }
+              @if (i === 0) {
+                <span class="rank rank--gold">1</span>
+              } @else if (i === 1) {
+                <span class="rank rank--silver">2</span>
+              } @else if (i === 2) {
+                <span class="rank rank--bronze">3</span>
+              } @else {
+                <span class="rank">{{ i + 1 }}</span>
+              }
             </td>
             <td class="col-avatar">
               <div class="avatar">
@@ -56,7 +61,12 @@
         <div class="card award-card">
           <div class="award-card__header">
             @if (award.icon) {
-              <img [src]="'/' + award.icon" class="award-card__icon" alt="" aria-hidden="true" />
+              <img
+                [src]="'/img/icons/' + award.icon + '.png'"
+                class="award-card__icon"
+                alt=""
+                aria-hidden="true"
+              />
             }
             <h2 class="award-card__title">{{ award.name }}</h2>
           </div>
@@ -73,13 +83,19 @@
                       <div class="avatar avatar--sm">
                         @if (!avatarFailed.has(row.winner.manager_id)) {
                           <img
-                            [src]="'https://img.die-bestesten.de/img/manager/' + row.winner.manager_id + '.jpg'"
+                            [src]="
+                              'https://img.die-bestesten.de/img/manager/' +
+                              row.winner.manager_id +
+                              '.jpg'
+                            "
                             [alt]="row.winner.manager_name"
                             (error)="onAvatarError(row.winner.manager_id)"
                           />
                         }
                         @if (avatarFailed.has(row.winner.manager_id)) {
-                          <span class="avatar__initial">{{ row.winner.manager_name[0].toUpperCase() }}</span>
+                          <span class="avatar__initial">{{
+                            row.winner.manager_name[0].toUpperCase()
+                          }}</span>
                         }
                       </div>
                     </td>
@@ -87,7 +103,13 @@
                       @if (!logoFailed.has(row.winner.team_id)) {
                         <img
                           class="team-logo"
-                          [src]="'https://img.die-bestesten.de/img/team/' + row.season_id + '/' + row.winner.team_id + '.png'"
+                          [src]="
+                            'https://img.die-bestesten.de/img/team/' +
+                            row.season_id +
+                            '/' +
+                            row.winner.team_id +
+                            '.png'
+                          "
                           [alt]="row.winner.team_name"
                           (error)="onLogoError(row.winner.team_id)"
                         />
