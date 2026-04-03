@@ -83,6 +83,19 @@ CREATE TABLE IF NOT EXISTS player_in_team (
     UNIQUE KEY uk_player_from (player_id, from_matchday_id)  -- kein Doppelkauf in derselben Transferphase
 );
 
+-- Tabelle: offer (Gebote auf Spieler in einer Transferphase)
+CREATE TABLE IF NOT EXISTS offer (
+    id                  CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    player_id           CHAR(36)    NOT NULL,             -- Referenz auf global_schema.player.id (kein FK, cross-DB)
+    team_id             CHAR(36)    NOT NULL,             -- bietendes Team
+    transferwindow_id   CHAR(36)    NOT NULL,             -- Referenz auf global_schema.transferwindow.id (kein FK, cross-DB)
+    offer_value         INT         NOT NULL,
+    price_snapshot      INT         DEFAULT NULL,         -- Marktwert zum Zeitpunkt des Gebots (denormalisiert für Performance)
+    status              ENUM('pending', 'success', 'lost', 'cancelled') NOT NULL DEFAULT 'pending',
+    created_at          DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES team(id)
+);
+
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
 -- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)
 CREATE TABLE IF NOT EXISTS team_award (
