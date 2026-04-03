@@ -47,31 +47,34 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: $space-4;
+  gap: $space-8;
+}
+
+.luck-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+}
+
+.luck-card__icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
 .luck-card {
   display: flex;
   flex-direction: column;
   gap: $space-3;
-
-  &__label {
-    font-size: $font-xs;
-    font-weight: $font-weight-semibold;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-
-    &--lucky   { color: $color-success; }
-    &--unlucky { color: $color-danger; }
-    &--gold    { color: #b8860b; }
-    &--wood    { color: #8b5e3c; }
-  }
+  width: 100%;
 }
 
 .luck-list {
   display: flex;
   flex-direction: column;
   gap: $space-2;
+  width: 100%;
 }
 
 .luck-item {
@@ -167,10 +170,31 @@
       stroke-dasharray: 4 3;
     }
 
-    .chart-line {
-      stroke-width: 2;
-      stroke-linejoin: round;
-      stroke-linecap: round;
+    .chart-team {
+      cursor: pointer;
+
+      .chart-line {
+        stroke-width: 2;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        transition: stroke-width 0.15s, opacity 0.15s;
+      }
+
+      .chart-line-hit {
+        stroke: transparent;
+        stroke-width: 12;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+
+      &:hover .chart-line {
+        stroke-width: 3.5;
+        opacity: 1;
+      }
+    }
+
+    &:has(.chart-team:hover) .chart-team:not(:hover) .chart-line {
+      opacity: 0.2;
     }
 
     .chart-label {
