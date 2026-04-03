@@ -24,7 +24,9 @@
   line-height: 1;
   color: $color-text;
   cursor: pointer;
-  transition: border-color $transition-fast, color $transition-fast;
+  transition:
+    border-color $transition-fast,
+    color $transition-fast;
   flex-shrink: 0;
 
   &:hover:not(:disabled) {
@@ -236,10 +238,9 @@
 }
 
 .stat-label--accent {
-  color: $color-accent;
+  color: var(--flat-emerald);
 }
 
 .stat-label--danger {
-  color: $color-danger;
+  color: var(--flat-alizarin);
 }
-

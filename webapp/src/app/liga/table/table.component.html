@@ -124,4 +124,31 @@
       }
     </div>
   </div>
+
+  @if (chartData(); as chart) {
+    <div class="card chart-card">
+      <span class="chart-card__label">Saisonverlauf</span>
+      <div class="chart-container">
+        <svg
+          class="season-chart"
+          [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+          [attr.width]="chartW"
+          [attr.height]="chartH"
+          aria-hidden="true"
+        >
+          @for (tick of chart.yTicks; track tick.label) {
+            <line [attr.x1]="padL" [attr.y1]="tick.y" [attr.x2]="chartW - padR" [attr.y2]="tick.y" class="chart-grid" />
+            <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">{{ tick.label }}</text>
+          }
+          @for (t of chart.teams; track t.team_id) {
+            <path [attr.d]="t.pathD" [style.stroke]="t.color" class="chart-line" fill="none">
+              <title>{{ t.team_name }}</title>
+            </path>
+          }
+          <text [attr.x]="chart.xLabels[0].x" [attr.y]="chartH - 4" class="chart-label chart-label--x-start">{{ chart.xLabels[0].label }}</text>
+          <text [attr.x]="chart.xLabels[1].x" [attr.y]="chartH - 4" class="chart-label chart-label--x-end">{{ chart.xLabels[1].label }}</text>
+        </svg>
+      </div>
+    </div>
+  }
 }

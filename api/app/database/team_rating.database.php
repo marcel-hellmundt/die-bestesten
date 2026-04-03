@@ -58,22 +58,41 @@ trait TeamRatingTrait
 
         $luckData = $this->getSeasonLuckStats($ids, $numberById);
 
-        // Build per-team season fine totals from per-matchday data
-        $fineByTeam = [];
+        // Build per-team season fine totals and chart series from per-matchday data
+        $fineByTeam  = [];
+        $chartByTeam = [];
         foreach ($luckData['_all'] as $r) {
             $tid = $r['team_id'];
             $fineByTeam[$tid] = ($fineByTeam[$tid] ?? 0.0) + (float)$r['fine'];
+            if (!isset($chartByTeam[$tid])) {
+                $chartByTeam[$tid] = [
+                    'team_id'   => $tid,
+                    'team_name' => $r['team_name'],
+                    'color'     => $r['color'],
+                    'series'    => [],
+                ];
+            }
+            $chartByTeam[$tid]['series'][] = [
+                'matchday' => (int)$r['matchday_number'],
+                'points'   => (int)$r['points'],
+            ];
         }
         foreach ($rows as &$row) {
             $row['fine'] = $fineByTeam[$row['team_id']] ?? 0.0;
         }
         unset($row);
 
+        foreach ($chartByTeam as &$t) {
+            usort($t['series'], fn($a, $b) => $a['matchday'] <=> $b['matchday']);
+        }
+        unset($t);
+
         unset($luckData['_all']);
 
         return [
             'standings' => $rows,
             'luck'      => $luckData,
+            'chart'     => array_values($chartByTeam),
         ];
     }
 
