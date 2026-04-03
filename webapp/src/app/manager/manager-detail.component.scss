@@ -124,6 +124,49 @@
   margin-bottom: $space-8;
 }
 
+.chart-container {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: $space-4;
+  overflow: hidden;
+
+  .bar-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+
+    .chart-grid {
+      stroke: $color-border;
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+    }
+
+    .bar {
+      opacity: 0.85;
+      transition: opacity 0.15s;
+
+      &:hover { opacity: 1; }
+    }
+
+    .chart-label {
+      font-family: $font-body;
+      font-size: 10px;
+      fill: $color-text-muted;
+
+      &--y {
+        text-anchor: end;
+        dominant-baseline: middle;
+      }
+
+      &--x {
+        text-anchor: middle;
+        dominant-baseline: auto;
+      }
+    }
+  }
+}
+
 .col-num {
   width: 96px;
   text-align: right;

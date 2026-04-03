@@ -35,6 +35,38 @@
     </div>
   </div>
 
+  @if (chartData(); as chart) {
+    <section class="detail-section">
+      <h2 class="section-header">Saisons</h2>
+      <div class="chart-container">
+        <svg
+          class="bar-chart"
+          [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+          aria-hidden="true"
+        >
+          @for (tick of chart.yTicks; track tick.label) {
+            <line [attr.x1]="padL" [attr.y1]="tick.y" [attr.x2]="chartW - padR" [attr.y2]="tick.y" class="chart-grid" />
+            <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">{{ tick.label }}</text>
+          }
+          @for (b of chart.bars; track b.label) {
+            <rect
+              [attr.x]="b.x"
+              [attr.y]="b.y"
+              [attr.width]="b.w"
+              [attr.height]="b.h"
+              [style.fill]="b.color"
+              class="bar"
+              rx="3"
+            >
+              <title>{{ b.label }}: {{ b.points }} Pkt</title>
+            </rect>
+            <text [attr.x]="b.cx" [attr.y]="chartH - 4" class="chart-label chart-label--x">{{ b.label }}</text>
+          }
+        </svg>
+      </div>
+    </section>
+  }
+
   <section class="detail-section">
     <h2 class="section-header">Teams</h2>
 

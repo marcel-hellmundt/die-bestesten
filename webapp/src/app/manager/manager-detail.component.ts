@@ -45,6 +45,46 @@ export class ManagerDetailComponent {
   });
   totalPoints = computed(() => this.teams().reduce((s, t) => s + t.total_points, 0));
 
+  // Bar chart
+  readonly chartW = 360;
+  readonly chartH = 160;
+  readonly padL   = 28;
+  readonly padR   = 12;
+  readonly padT   = 12;
+  readonly padB   = 24;
+
+  chartData = computed(() => {
+    const teams = [...this.teams()].reverse(); // oldest → newest (left → right)
+    if (teams.length === 0) return null;
+
+    const maxPoints = Math.max(...teams.map(t => t.total_points), 1);
+    const plotW = this.chartW - this.padL - this.padR;
+    const plotH = this.chartH - this.padT - this.padB;
+    const n     = teams.length;
+    const barW  = Math.min((plotW / n) * 0.6, 40);
+
+    const toX = (i: number) => this.padL + (i + 0.5) / n * plotW;
+    const toY = (pts: number) => this.padT + plotH - (pts / maxPoints) * plotH;
+
+    const bars = teams.map((t, i) => ({
+      x:      toX(i) - barW / 2,
+      y:      toY(t.total_points),
+      w:      barW,
+      h:      (t.total_points / maxPoints) * plotH,
+      color:  t.color ?? 'var(--color-accent)',
+      label:  this.cache.seasonName(t.season_id),
+      points: t.total_points,
+      cx:     toX(i),
+    }));
+
+    const yTicks = [
+      { y: toY(maxPoints), label: String(maxPoints) },
+      { y: toY(0),         label: '0' },
+    ];
+
+    return { bars, yTicks };
+  });
+
   avatarFailed = false;
 
   constructor() {
