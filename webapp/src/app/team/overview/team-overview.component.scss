@@ -1,17 +1,56 @@
 @use '../../../styles/variables' as *;
 
-.col-num {
-  width: 60px;
-  text-align: right;
+.col-st {
+  width: 36px;
+  color: $color-text-muted;
 }
 
-.col-points {
+.col-rank {
+  width: 36px;
+  text-align: right;
+  color: $color-text-muted;
+}
+
+.col-icons {
+  width: 72px;
+  text-align: left;
+}
+
+.col-cs {
+  width: 36px;
+  text-align: center;
+  color: $color-success;
   font-weight: $font-weight-semibold;
 }
 
-.col-max {
+.col-points {
+  width: 60px;
+  text-align: right;
+  font-weight: $font-weight-semibold;
+}
+
+.col-fine {
+  width: 72px;
+  text-align: right;
+  font-size: $font-xs;
   color: $color-text-muted;
-  font-size: $font-sm;
+
+  &--active {
+    color: $color-danger;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.icons-wrap {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.rating-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .row--invalid {
@@ -29,4 +68,5 @@ tfoot td {
   font-size: $font-xs;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-weight: $font-weight-normal;
 }

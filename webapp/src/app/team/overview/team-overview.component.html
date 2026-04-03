@@ -7,33 +7,62 @@
     <table class="data-table data-table--compact">
       <thead>
         <tr>
-          <th class="col-num">ST</th>
-          <th class="col-num">Punkte</th>
-          <th class="col-num">Max</th>
-          <th class="col-num">Tore</th>
-          <th class="col-num">Assists</th>
-          <th class="col-num">CS</th>
-          <th class="col-num">SdS</th>
+          <th class="col-st">ST</th>
+          <th class="col-rank">#</th>
+          <th class="col-icons">SdS</th>
+          <th class="col-icons">Tore</th>
+          <th class="col-icons">Assists</th>
+          <th class="col-cs">CS</th>
+          <th class="col-points">Punkte</th>
+          <th class="col-fine">Strafe</th>
         </tr>
       </thead>
       <tbody>
         @for (r of ratings(); track r.id) {
           <tr [class.row--invalid]="r.invalid">
-            <td class="col-num">{{ r.matchday_number }}</td>
-            <td class="col-num col-points">{{ r.points }}</td>
-            <td class="col-num col-max">{{ r.max_points }}</td>
-            <td class="col-num">{{ r.goals }}</td>
-            <td class="col-num">{{ r.assists }}</td>
-            <td class="col-num">{{ r.clean_sheet }}</td>
-            <td class="col-num">{{ r.sds ? 'Ja' : '–' }}</td>
+            <td class="col-st">{{ r.matchday_number }}</td>
+            <td class="col-rank">{{ r.placement ?? '–' }}</td>
+            <td class="col-icons">
+              <span class="icons-wrap">
+                @if (+r.sds) {
+                  <img src="/img/icons/sds.png" class="rating-icon" alt="SdS" />
+                }
+              </span>
+            </td>
+            <td class="col-icons">
+              <span class="icons-wrap">
+                @for (g of range(+r.goals); track g) {
+                  <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" />
+                }
+              </span>
+            </td>
+            <td class="col-icons">
+              <span class="icons-wrap">
+                @for (a of range(+r.assists); track a) {
+                  <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" />
+                }
+              </span>
+            </td>
+            <td class="col-cs">@if (+r.clean_sheet) { ✓ }</td>
+            <td class="col-points">{{ r.points }}</td>
+            <td class="col-fine" [class.col-fine--active]="r.fine > 0">
+              @if (r.fine > 0) { {{ r.fine | number:'1.2-2' }} € }
+            </td>
           </tr>
         }
       </tbody>
       <tfoot>
         <tr>
-          <td class="col-num foot-label">Gesamt</td>
-          <td class="col-num col-points">{{ totalPoints() }}</td>
-          <td colspan="5"></td>
+          <td class="col-st foot-label">Gesamt</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td class="col-points">{{ totalPoints() }}</td>
+          <td class="col-fine col-fine--active">
+            @if (totalFine() > 0) { {{ totalFine() | number:'1.2-2' }} € }
+          </td>
         </tr>
       </tfoot>
     </table>

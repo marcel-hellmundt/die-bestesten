@@ -56,14 +56,30 @@ trait ManagerTrait
 
     public function getTeamRatings(string $teamId): array
     {
-        $q = $this->con_league->prepare(
-            "SELECT tr.id, tr.matchday_id, tr.points, tr.max_points,
-                    tr.goals, tr.assists, tr.clean_sheet, tr.sds,
-                    tr.sds_defender, tr.missed_goals, tr.invalid
-             FROM team_rating tr
-             WHERE tr.team_id = :team_id"
-        );
-        $q->execute([':team_id' => $teamId]);
+        // Use window functions to compute placement and fine across all teams per matchday
+        $q = $this->con_league->prepare("
+            WITH ranked AS (
+                SELECT team_id, matchday_id, points, invalid,
+                       RANK() OVER (PARTITION BY matchday_id ORDER BY points DESC) AS placement,
+                       RANK() OVER (PARTITION BY matchday_id ORDER BY points ASC)  AS rank_asc
+                FROM team_rating
+                WHERE invalid = 0
+                  AND matchday_id IN (SELECT matchday_id FROM team_rating WHERE team_id = :team_id_sub)
+            )
+            SELECT tr.id, tr.matchday_id, tr.points, tr.max_points,
+                   tr.goals, tr.assists, tr.clean_sheet, tr.sds,
+                   tr.sds_defender, tr.missed_goals, tr.invalid,
+                   r.placement,
+                   CASE r.rank_asc
+                       WHEN 1 THEN 3.00 WHEN 2 THEN 2.00
+                       WHEN 3 THEN 1.50 WHEN 4 THEN 1.00
+                       ELSE 0
+                   END AS fine
+            FROM team_rating tr
+            LEFT JOIN ranked r ON r.team_id = tr.team_id AND r.matchday_id = tr.matchday_id
+            WHERE tr.team_id = :team_id
+        ");
+        $q->execute([':team_id' => $teamId, ':team_id_sub' => $teamId]);
         $ratings = $q->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($ratings)) return [];
@@ -80,6 +96,8 @@ trait ManagerTrait
             $md = $matchdayMap[$r['matchday_id']] ?? null;
             $r['matchday_number'] = $md ? (int)$md['number'] : null;
             $r['kickoff_date']    = $md ? $md['kickoff_date'] : null;
+            $r['fine']            = (float)($r['fine'] ?? 0.0);
+            $r['placement']       = $r['placement'] !== null ? (int)$r['placement'] : null;
         }
         unset($r);
 
