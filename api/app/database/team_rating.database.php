@@ -27,7 +27,8 @@ trait TeamRatingTrait
         $rq->execute([':matchday_id' => $matchday['id']]);
 
         $sq = $this->con->prepare(
-            "SELECT p.id, p.displayname, p.first_name, p.last_name, pis.photo_uploaded, pis.position
+            "SELECT p.id, p.displayname, pis.photo_uploaded, pis.position,
+                    pr.points, pr.grade, pr.goals, pr.assists, pr.clean_sheet
              FROM player_rating pr
              JOIN player p ON p.id = pr.player_id
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id

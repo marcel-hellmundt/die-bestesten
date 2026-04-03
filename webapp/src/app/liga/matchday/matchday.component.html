@@ -92,7 +92,28 @@
                 />
               }
             </div>
-            <span class="sds-name">{{ p.displayname }}</span>
+            <div class="sds-card__info">
+              <span class="sds-name">{{ p.displayname }}</span>
+              <div class="sds-stats">
+                <span class="sds-points">{{ p.points }}</span>
+                @if (p.grade) {
+                  <span class="sds-grade" [style.background-color]="gradeVar(p.grade)">{{ p.grade }}</span>
+                }
+                @if (+p.goals) {
+                  <span class="sds-stat-item">
+                    <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />{{ p.goals }}
+                  </span>
+                }
+                @if (+p.assists) {
+                  <span class="sds-stat-item">
+                    <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />{{ p.assists }}
+                  </span>
+                }
+                @if (+p.clean_sheet) {
+                  <span class="sds-cs">CS</span>
+                }
+              </div>
+            </div>
           </div>
         </div>
       }

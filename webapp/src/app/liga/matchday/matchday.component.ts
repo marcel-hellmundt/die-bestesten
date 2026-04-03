@@ -45,6 +45,10 @@ export class MatchdayComponent {
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
   range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
+  gradeVar(grade: string | null): string {
+    if (!grade) return 'var(--grade-unset)';
+    return `var(--grade-${grade.replace('.', '')})`;
+  }
 
   constructor() {
     this.cache.ensureSeasons();

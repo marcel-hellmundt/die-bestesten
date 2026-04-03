@@ -65,9 +65,52 @@
   }
 }
 
+.sds-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+}
+
 .sds-name {
   font-size: $font-lg;
   font-weight: $font-weight-semibold;
+}
+
+.sds-stats {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+
+.sds-points {
+  font-size: $font-3xl;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+}
+
+.sds-grade {
+  font-size: $font-sm;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  border-radius: $radius-sm;
+  padding: 2px 8px;
+  line-height: 1.4;
+}
+
+.sds-stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+}
+
+.sds-cs {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-success;
 }
 
 // Compact row override
