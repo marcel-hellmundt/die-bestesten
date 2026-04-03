@@ -13,7 +13,7 @@ trait AwardTrait
 
         // All seasons from global DB, oldest first
         $seasons = $this->con->query(
-            "SELECT id, start_date FROM season ORDER BY start_date ASC"
+            "SELECT id, start_date FROM season ORDER BY start_date DESC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         // All winners from league DB
