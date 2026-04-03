@@ -31,7 +31,7 @@ export class TableComponent {
         )
       )
     ),
-    { initialValue: { data: null as any[], loading: true, error: null as string | null } }
+    { initialValue: { data: null as unknown as any[], loading: true, error: null as string | null } }
   );
 
   rows    = computed(() => this.state().data ?? []);
