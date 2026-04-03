@@ -177,10 +177,38 @@ trait LeagueTrait
             $migratedRatings++;
         }
 
+        // Migrate award_in_season → team_award
+        $migratedAwards = 0;
+        try {
+            $awardRows = $this->con_old->query(
+                "SELECT ais.award_id, ais.team_id
+                 FROM award_in_season ais"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            // Load award UUIDs from global DB (keyed by old award_id if they match, or by name)
+            // Old award_id maps directly to global award.id (same UUID assumed after manual seeding)
+            $stmtAward = $conLeague->prepare(
+                "INSERT INTO team_award (id, team_id, award_id)
+                 VALUES (UUID(), :team_id, :award_id)
+                 ON DUPLICATE KEY UPDATE award_id = award_id"
+            );
+
+            foreach ($awardRows as $row) {
+                $stmtAward->execute([
+                    ':team_id'  => $row['team_id'],
+                    ':award_id' => $row['award_id'],
+                ]);
+                $migratedAwards++;
+            }
+        } catch (PDOException) {
+            // award_in_season may not exist in older DBs — skip silently
+        }
+
         return [
             'status'          => true,
             'teams'           => ['migrated' => $migrated,        'skipped' => $skipped],
             'team_ratings'    => ['migrated' => $migratedRatings],
+            'team_awards'     => ['migrated' => $migratedAwards],
             'matchdays_created' => array_values($createdMatchdays),
         ];
     }

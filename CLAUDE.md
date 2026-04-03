@@ -123,6 +123,6 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 
 **team_rating**: id PK, team_id FK, matchday_id (cross-DB), points, max_points, goals, assists, clean_sheet, sds, sds_defender, missed_goals, points_goalkeeper/defender/midfielder/forward (denorm.), invalid BOOL — UNIQUE(team_id, matchday_id)
 
-**team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK), season_id (cross-DB, kein FK) — UNIQUE(award_id, season_id) — pro Award + Saison genau 1 Gewinner
+**team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK) — UNIQUE(award_id, team_id) — season ergibt sich aus team.season_id
 
 Ausstehend: team_lineup, player_in_team

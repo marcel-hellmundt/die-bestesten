@@ -73,10 +73,9 @@ CREATE TABLE IF NOT EXISTS team_rating (
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
 -- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)
 CREATE TABLE IF NOT EXISTS team_award (
-    id        CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    team_id   CHAR(36) NOT NULL,
-    award_id  CHAR(36) NOT NULL,
-    season_id CHAR(36) NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
+    id       CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    team_id  CHAR(36) NOT NULL,
+    award_id CHAR(36) NOT NULL,              -- Referenz auf global_schema.award.id (kein FK, cross-DB)
     FOREIGN KEY (team_id) REFERENCES team(id),
-    UNIQUE KEY uk_team_award_season (award_id, season_id)   -- pro Award + Saison nur 1 Gewinner
+    UNIQUE KEY uk_team_award (award_id, team_id)  -- ein Team kann denselben Award nicht zweimal gewinnen
 );
