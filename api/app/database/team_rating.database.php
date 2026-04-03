@@ -84,6 +84,12 @@ trait TeamRatingTrait
 
         foreach ($chartByTeam as &$t) {
             usort($t['series'], fn($a, $b) => $a['matchday'] <=> $b['matchday']);
+            $cumulative = 0;
+            foreach ($t['series'] as &$s) {
+                $cumulative += $s['points'];
+                $s['points'] = $cumulative;
+            }
+            unset($s);
         }
         unset($t);
 
