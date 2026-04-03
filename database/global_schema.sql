@@ -161,3 +161,11 @@ CREATE TABLE IF NOT EXISTS league (
     name    VARCHAR(100) NOT NULL,              -- Anzeigename
     db_name VARCHAR(64)  NOT NULL               -- Datenbankname der Liga-Datenbank
 );
+
+-- Tabelle: award (Award-Typen; liganeutral; sort_index = Wichtigkeit, 1 = wichtigster)
+CREATE TABLE IF NOT EXISTS award (
+    id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    name       VARCHAR(100) NOT NULL UNIQUE,
+    icon       VARCHAR(100) NULL DEFAULT NULL,  -- Pfad zum Icon, z.B. "img/icons/trophy.png"
+    sort_index INT          NOT NULL DEFAULT 0
+);

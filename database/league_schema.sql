@@ -70,20 +70,13 @@ CREATE TABLE IF NOT EXISTS team_rating (
 -- CREATE TABLE IF NOT EXISTS team_lineup (...);
 -- CREATE TABLE IF NOT EXISTS player_in_team (...);
 
--- Tabelle: award (Award-Typen; sort_index = Wichtigkeit aufsteigend, 1 = wichtigster)
-CREATE TABLE IF NOT EXISTS award (
-    id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    name       VARCHAR(100) NOT NULL UNIQUE,
-    sort_index INT          NOT NULL DEFAULT 0
-);
-
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
+-- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)
 CREATE TABLE IF NOT EXISTS team_award (
     id        CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     team_id   CHAR(36) NOT NULL,
     award_id  CHAR(36) NOT NULL,
     season_id CHAR(36) NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
-    FOREIGN KEY (team_id)  REFERENCES team(id),
-    FOREIGN KEY (award_id) REFERENCES award(id),
+    FOREIGN KEY (team_id) REFERENCES team(id),
     UNIQUE KEY uk_team_award_season (award_id, season_id)   -- pro Award + Saison nur 1 Gewinner
 );

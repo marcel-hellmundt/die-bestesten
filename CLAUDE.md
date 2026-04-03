@@ -73,6 +73,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 | transferwindow | id PK, matchday_id FK, start_date DATETIME, end_date DATETIME — 2–4 pro Spieltag |
 | stadium | id PK, official_name, name? (Spitzname/Alltagsname), capacity INT?, lat DECIMAL(9,6)?, lng DECIMAL(9,6)?, opened_date DATE?, closed_date DATE? |
 | club_stadium | id PK, club_id FK, stadium_id FK, from_date DATE, to_date DATE? — UNIQUE(club_id, from_date) |
+| award | id PK, name UNIQUE, icon VARCHAR(100)?, sort_index INT — Award-Typen; sort_index = Wichtigkeit (1 = wichtigster) |
 
 ## API-Endpunkte
 
@@ -122,8 +123,6 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 
 **team_rating**: id PK, team_id FK, matchday_id (cross-DB), points, max_points, goals, assists, clean_sheet, sds, sds_defender, missed_goals, points_goalkeeper/defender/midfielder/forward (denorm.), invalid BOOL — UNIQUE(team_id, matchday_id)
 
-**award**: id PK, name UNIQUE, sort_index INT — Award-Typen (z.B. Meisterschaft, Goldene Bürste, Hölzerne Bank); sort_index = Wichtigkeit (1 = wichtigster)
-
-**team_award**: id PK, team_id FK, award_id FK, season_id (cross-DB, kein FK) — UNIQUE(award_id, season_id) — pro Award + Saison genau 1 Gewinner
+**team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK), season_id (cross-DB, kein FK) — UNIQUE(award_id, season_id) — pro Award + Saison genau 1 Gewinner
 
 Ausstehend: team_lineup, player_in_team
