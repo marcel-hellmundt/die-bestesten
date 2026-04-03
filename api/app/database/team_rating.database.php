@@ -55,11 +55,25 @@ trait TeamRatingTrait
         );
         $rq->execute($ids);
         $rows = $rq->fetchAll(PDO::FETCH_ASSOC);
-        $standings = $this->assignFines($rows, 'total_points');
+
+        $luckData = $this->getSeasonLuckStats($ids, $numberById);
+
+        // Build per-team season fine totals from per-matchday data
+        $fineByTeam = [];
+        foreach ($luckData['_all'] as $r) {
+            $tid = $r['team_id'];
+            $fineByTeam[$tid] = ($fineByTeam[$tid] ?? 0.0) + (float)$r['fine'];
+        }
+        foreach ($rows as &$row) {
+            $row['fine'] = $fineByTeam[$row['team_id']] ?? 0.0;
+        }
+        unset($row);
+
+        unset($luckData['_all']);
 
         return [
-            'standings' => $standings,
-            'luck'      => $this->getSeasonLuckStats($ids, $numberById),
+            'standings' => $rows,
+            'luck'      => $luckData,
         ];
     }
 
@@ -122,6 +136,7 @@ trait TeamRatingTrait
         $hoelzerne_bank = array_slice(array_values($gaps), 0, 3);
 
         return [
+            '_all'           => $rows,
             'lucky'          => array_slice(array_values($lucky),   0, 3),
             'unlucky'        => array_slice(array_values($unlucky),  0, 3),
             'goldene_buerste' => $goldene_buerste,
