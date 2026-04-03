@@ -57,6 +57,15 @@
   opacity: 0.4;
 }
 
+.row--first {
+  background: color-mix(in srgb, $color-success 10%, transparent);
+
+  .col-rank {
+    color: $color-success;
+    font-weight: $font-weight-semibold;
+  }
+}
+
 tfoot td {
   border-top: 2px solid $color-border;
   font-weight: $font-weight-semibold;

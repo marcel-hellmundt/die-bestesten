@@ -19,7 +19,7 @@
       </thead>
       <tbody>
         @for (r of ratings(); track r.id) {
-          <tr [class.row--invalid]="r.invalid">
+          <tr [class.row--invalid]="r.invalid" [class.row--first]="r.placement === 1">
             <td class="col-st">{{ r.matchday_number }}</td>
             <td class="col-rank">{{ r.placement ?? '–' }}</td>
             <td class="col-icons">
