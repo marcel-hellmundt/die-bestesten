@@ -1,5 +1,34 @@
 @use '../../../styles/variables' as *;
 
+.season-nav {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-6;
+
+  .page-title { margin: 0; }
+}
+
+.nav-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  font-size: $font-xl;
+  line-height: 1;
+  color: $color-text;
+  cursor: pointer;
+  transition: border-color $transition-fast, color $transition-fast;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) { border-color: $color-text-muted; }
+  &:disabled { color: $color-border; cursor: default; }
+}
+
 .table-layout {
   display: grid;
   grid-template-columns: 1fr 220px;
