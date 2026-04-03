@@ -17,7 +17,7 @@ trait TeamRatingTrait
         $rq = $this->con_league->prepare(
             "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
                     m.manager_name,
-                    tr.points
+                    tr.points, tr.goals, tr.assists, tr.sds
              FROM team_rating tr
              JOIN team t ON t.id = tr.team_id
              JOIN manager m ON m.id = t.manager_id

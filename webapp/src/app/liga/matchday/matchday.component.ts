@@ -34,13 +34,15 @@ export class MatchdayComponent {
     { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
 
-  matchday = computed(() => this.ratingsState().data?.matchday ?? null);
-  ratings  = computed(() => (this.ratingsState().data?.ratings ?? []) as any[]);
-  loading  = computed(() => this.ratingsState().loading ?? true);
-  error    = computed(() => this.ratingsState().error ?? null);
+  matchday    = computed(() => this.ratingsState().data?.matchday ?? null);
+  ratings     = computed(() => (this.ratingsState().data?.ratings ?? []) as any[]);
+  loading     = computed(() => this.ratingsState().loading ?? true);
+  error       = computed(() => this.ratingsState().error ?? null);
+  totalPoints = computed(() => this.ratings().reduce((sum: number, r: any) => sum + Number(r.points), 0));
 
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
+  range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
 
   constructor() {
     this.cache.ensureSeasons();
