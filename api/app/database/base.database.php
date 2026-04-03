@@ -14,12 +14,14 @@ require_once 'player_in_season.database.php';
 require_once 'manager.database.php';
 require_once 'team_rating.database.php';
 require_once 'password_reset.database.php';
+require_once 'award.database.php';
 
 class Database
 {
     use CountryTrait;
     use LeagueTrait;
     use AllTimeStandingsTrait;
+    use AwardTrait;
     use SeasonTrait;
     use MatchdayTrait;
     use ClubTrait;

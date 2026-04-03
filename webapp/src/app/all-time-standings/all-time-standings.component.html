@@ -49,4 +49,60 @@
       </tbody>
     </table>
   </div>
+
+  @if (!awardsLoading() && awards().length > 0) {
+    <div class="awards-grid">
+      @for (award of awards(); track award.id) {
+        <div class="card award-card">
+          <div class="award-card__header">
+            @if (award.icon) {
+              <img [src]="'/' + award.icon" class="award-card__icon" alt="" aria-hidden="true" />
+            }
+            <h2 class="award-card__title">{{ award.name }}</h2>
+          </div>
+          <table class="data-table data-table--compact">
+            <tbody>
+              @for (row of award.seasons; track row.season_id) {
+                <tr
+                  [class.row-link]="row.winner"
+                  [routerLink]="row.winner ? ['/team', row.winner.team_id] : null"
+                >
+                  <td class="col-season">{{ cache.seasonName(row.season_id) }}</td>
+                  @if (row.winner) {
+                    <td class="col-avatar">
+                      <div class="avatar avatar--sm">
+                        @if (!avatarFailed.has(row.winner.manager_id)) {
+                          <img
+                            [src]="'https://img.die-bestesten.de/img/manager/' + row.winner.manager_id + '.jpg'"
+                            [alt]="row.winner.manager_name"
+                            (error)="onAvatarError(row.winner.manager_id)"
+                          />
+                        }
+                        @if (avatarFailed.has(row.winner.manager_id)) {
+                          <span class="avatar__initial">{{ row.winner.manager_name[0].toUpperCase() }}</span>
+                        }
+                      </div>
+                    </td>
+                    <td class="col-logo">
+                      @if (!logoFailed.has(row.winner.team_id)) {
+                        <img
+                          class="team-logo"
+                          [src]="'https://img.die-bestesten.de/img/team/' + row.season_id + '/' + row.winner.team_id + '.png'"
+                          [alt]="row.winner.team_name"
+                          (error)="onLogoError(row.winner.team_id)"
+                        />
+                      }
+                    </td>
+                    <td class="col-winner-name">{{ row.winner.manager_name }}</td>
+                  } @else {
+                    <td colspan="3" class="col-no-winner">Kein Gewinner</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
 }

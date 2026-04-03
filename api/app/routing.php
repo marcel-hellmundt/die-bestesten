@@ -294,6 +294,18 @@ class Routing
                 ],
             ]),
 
+            new Route('award', 'Award', [
+                'title'       => 'Award',
+                'description' => 'Award-Typen und Gewinner pro Saison',
+                'endpoints'   => [
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/award',
+                        'description' => 'Alle Awards mit Gewinnern pro Saison — Auth',
+                    ],
+                ],
+            ]),
+
             new Route('team', 'Team', [
                 'title'       => 'Team',
                 'description' => 'Fantasy-Teams pro Manager und Saison',

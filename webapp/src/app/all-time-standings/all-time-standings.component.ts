@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
 import { ApiService } from '../core/api.service';
+import { DataCacheService } from '../core/data-cache.service';
 
 interface AllTimeStandingsEntry {
   id: string;
@@ -17,7 +18,8 @@ interface AllTimeStandingsEntry {
   styleUrl: './all-time-standings.component.scss'
 })
 export class AllTimeStandingsComponent {
-  private api = inject(ApiService);
+  private api   = inject(ApiService);
+  cache         = inject(DataCacheService);
 
   private state = toSignal(
     this.api.get<AllTimeStandingsEntry[]>('all_time_standings').pipe(
@@ -27,13 +29,27 @@ export class AllTimeStandingsComponent {
     )
   );
 
-  items   = computed(() => this.state()?.data    ?? []);
-  loading = computed(() => this.state()?.loading ?? true);
-  error   = computed(() => this.state()?.error   ?? null);
+  private awardsState = toSignal(
+    this.api.get<any[]>('award').pipe(
+      map(data => ({ data, loading: false })),
+      startWith({ data: [] as any[], loading: true }),
+      catchError(() => of({ data: [] as any[], loading: false }))
+    )
+  );
 
-  avatarFailed = new Set<string>();
+  items         = computed(() => this.state()?.data    ?? []);
+  loading       = computed(() => this.state()?.loading ?? true);
+  error         = computed(() => this.state()?.error   ?? null);
+  awards        = computed(() => this.awardsState()?.data ?? []);
+  awardsLoading = computed(() => this.awardsState()?.loading ?? true);
 
-  onAvatarError(id: string): void {
-    this.avatarFailed.add(id);
+  avatarFailed  = new Set<string>();
+  logoFailed    = new Set<string>();
+
+  onAvatarError(id: string): void { this.avatarFailed.add(id); }
+  onLogoError(id: string): void   { this.logoFailed.add(id); }
+
+  constructor() {
+    this.cache.ensureSeasons();
   }
 }

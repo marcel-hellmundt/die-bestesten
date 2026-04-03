@@ -70,3 +70,79 @@
   color: $color-text-muted;
   display: block;
 }
+
+.awards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-6;
+  margin-top: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.award-card {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    margin-bottom: $space-4;
+  }
+
+  &__icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+    margin: 0;
+  }
+}
+
+.col-season {
+  width: 48px;
+  color: $color-text-muted;
+  font-size: $font-sm;
+}
+
+.col-avatar {
+  width: 36px;
+  padding-right: 0;
+}
+
+.avatar--sm {
+  width: 28px;
+  height: 28px;
+
+  &__initial {
+    font-size: $font-xs;
+  }
+}
+
+.col-logo {
+  width: 28px;
+  padding-right: 0;
+
+  .team-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.col-winner-name {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+}
+
+.col-no-winner {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  font-style: italic;
+}
