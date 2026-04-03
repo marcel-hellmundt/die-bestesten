@@ -53,7 +53,54 @@ trait TeamRatingTrait
         );
         $rq->execute($ids);
         $rows = $rq->fetchAll(PDO::FETCH_ASSOC);
-        return $this->assignFines($rows, 'total_points');
+        $standings = $this->assignFines($rows, 'total_points');
+
+        return [
+            'standings' => $standings,
+            'luck'      => $this->getSeasonLuckStats($ids),
+        ];
+    }
+
+    public function getSeasonLuckStats(array $matchdayIds): array
+    {
+        if (empty($matchdayIds)) return ['lucky' => [], 'unlucky' => []];
+
+        $placeholders = implode(',', array_fill(0, count($matchdayIds), '?'));
+
+        $rq = $this->con_league->prepare("
+            WITH ranked AS (
+                SELECT tr.team_id, tr.matchday_id, tr.points,
+                       t.team_name, t.season_id, t.color, m.manager_name,
+                       RANK() OVER (PARTITION BY tr.matchday_id ORDER BY tr.points ASC) AS rank_asc
+                FROM team_rating tr
+                JOIN team t ON t.id = tr.team_id
+                JOIN manager m ON m.id = t.manager_id
+                WHERE tr.matchday_id IN ($placeholders) AND tr.invalid = 0
+            ),
+            with_fines AS (
+                SELECT *,
+                       CASE rank_asc
+                           WHEN 1 THEN 3.00 WHEN 2 THEN 2.00
+                           WHEN 3 THEN 1.50 WHEN 4 THEN 1.00
+                           ELSE 0
+                       END AS fine
+                FROM ranked
+            )
+            SELECT * FROM with_fines
+        ");
+        $rq->execute($matchdayIds);
+        $rows = $rq->fetchAll(PDO::FETCH_ASSOC);
+
+        $lucky   = array_filter($rows, fn($r) => (float)$r['fine'] === 0.0);
+        $unlucky = array_filter($rows, fn($r) => (float)$r['fine'] > 0.0);
+
+        usort($lucky,   fn($a, $b) => $a['points'] <=> $b['points']);
+        usort($unlucky, fn($a, $b) => $b['points'] <=> $a['points']);
+
+        return [
+            'lucky'   => array_slice(array_values($lucky),   0, 3),
+            'unlucky' => array_slice(array_values($unlucky),  0, 3),
+        ];
     }
 
     public function getTeamRatingsByActiveSeason(string $seasonId, ?int $matchdayNumber = null): array|false

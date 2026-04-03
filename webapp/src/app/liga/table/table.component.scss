@@ -1,5 +1,70 @@
 @use '../../../styles/variables' as *;
 
+.table-layout {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: $space-6;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.main-col {
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.luck-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+
+    &--lucky   { color: $color-success; }
+    &--unlucky { color: $color-danger; }
+  }
+}
+
+.luck-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.luck-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-sm;
+  cursor: pointer;
+
+  &__team {
+    font-weight: $font-weight-medium;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__pts {
+    color: $color-text-muted;
+    flex-shrink: 0;
+    font-size: $font-xs;
+  }
+}
+
 .data-table--compact {
   th, td {
     padding: 6px $space-3;

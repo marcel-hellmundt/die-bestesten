@@ -24,17 +24,19 @@ export class TableComponent {
     toObservable(this.activeSeason).pipe(
       filter(s => s !== null),
       switchMap(s =>
-        this.api.get<any[]>(`team_rating/season?season_id=${s!.id}`).pipe(
+        this.api.get<any>(`team_rating/season?season_id=${s!.id}`).pipe(
           map(data => ({ data, loading: false, error: null as string | null })),
-          startWith({ data: null as unknown as any[], loading: true, error: null as string | null }),
+          startWith({ data: null as any, loading: true, error: null as string | null }),
           catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' }))
         )
       )
     ),
-    { initialValue: { data: null as unknown as any[], loading: true, error: null as string | null } }
+    { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
 
-  rows    = computed(() => this.state().data ?? []);
+  rows    = computed(() => (this.state().data?.standings ?? []) as any[]);
+  lucky   = computed(() => (this.state().data?.luck?.lucky   ?? []) as any[]);
+  unlucky = computed(() => (this.state().data?.luck?.unlucky ?? []) as any[]);
   loading = computed(() => this.state().loading);
   error   = computed(() => this.state().error);
 
