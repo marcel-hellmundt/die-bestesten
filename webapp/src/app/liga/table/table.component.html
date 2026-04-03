@@ -7,7 +7,7 @@
 } @else {
   <div class="season-nav">
     <button class="nav-arrow" (click)="decrement()" [disabled]="!canDecrement()" aria-label="Ältere Saison">‹</button>
-    <h1 class="page-title">{{ selectedSeason()!.displayName }}</h1>
+    <h1 class="page-title">{{ selectedSeason()!.longDisplayName }}</h1>
     <button class="nav-arrow" (click)="increment()" [disabled]="!canIncrement()" aria-label="Neuere Saison">›</button>
   </div>
 
