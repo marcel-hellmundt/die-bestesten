@@ -56,14 +56,23 @@ trait TeamRatingTrait
         return $this->assignFines($rows, 'total_points');
     }
 
-    public function getTeamRatingsByActiveSeason(string $seasonId): array|false
+    public function getTeamRatingsByActiveSeason(string $seasonId, ?int $matchdayNumber = null): array|false
     {
-        $mq = $this->con->prepare(
-            "SELECT id, number, kickoff_date FROM matchday
-             WHERE season_id = :season_id AND completed = 1
-             ORDER BY number DESC LIMIT 1"
-        );
-        $mq->execute([':season_id' => $seasonId]);
+        if ($matchdayNumber !== null) {
+            $mq = $this->con->prepare(
+                "SELECT id, number, kickoff_date FROM matchday
+                 WHERE season_id = :season_id AND number = :number AND completed = 1
+                 LIMIT 1"
+            );
+            $mq->execute([':season_id' => $seasonId, ':number' => $matchdayNumber]);
+        } else {
+            $mq = $this->con->prepare(
+                "SELECT id, number, kickoff_date FROM matchday
+                 WHERE season_id = :season_id AND completed = 1
+                 ORDER BY number DESC LIMIT 1"
+            );
+            $mq->execute([':season_id' => $seasonId]);
+        }
         $matchday = $mq->fetch(PDO::FETCH_ASSOC);
 
         if (!$matchday) return false;
@@ -94,10 +103,18 @@ trait TeamRatingTrait
         $sq->execute([':matchday_id' => $matchday['id'], ':season_id' => $seasonId]);
         $sdsPlayer = $sq->fetch(PDO::FETCH_ASSOC) ?: null;
 
+        $maxQ = $this->con->prepare(
+            "SELECT MAX(number) AS max_number FROM matchday
+             WHERE season_id = :season_id AND completed = 1"
+        );
+        $maxQ->execute([':season_id' => $seasonId]);
+        $maxNumber = (int) $maxQ->fetchColumn();
+
         return [
-            'matchday'   => $matchday,
-            'ratings'    => $ratings,
-            'sds_player' => $sdsPlayer,
+            'matchday'           => $matchday,
+            'ratings'            => $ratings,
+            'sds_player'         => $sdsPlayer,
+            'max_matchday_number' => $maxNumber,
         ];
     }
 }

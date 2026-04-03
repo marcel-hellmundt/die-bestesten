@@ -5,7 +5,11 @@
 } @else if (!matchday()) {
   <p class="state-msg">Noch kein abgeschlossener Spieltag vorhanden.</p>
 } @else {
-  <h1 class="page-title">Spieltag {{ matchday().number }}</h1>
+  <div class="matchday-nav">
+    <button class="nav-arrow" (click)="decrement()" [disabled]="!canDecrement()" aria-label="Vorheriger Spieltag">‹</button>
+    <h1 class="page-title">Spieltag {{ matchday().number }}</h1>
+    <button class="nav-arrow" (click)="increment()" [disabled]="!canIncrement()" aria-label="Nächster Spieltag">›</button>
+  </div>
 
   <div class="matchday-layout">
     <div class="main-col">
