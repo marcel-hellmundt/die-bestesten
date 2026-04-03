@@ -120,8 +120,20 @@
   }
 }
 
-.detail-section {
+.seasons-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-8;
+  align-items: start;
   margin-bottom: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-section {
+  margin-bottom: 0;
 }
 
 .chart-container {
@@ -130,7 +142,6 @@
   border-radius: $radius-xl;
   padding: $space-4;
   overflow: hidden;
-  max-width: 480px;
 
   .bar-chart {
     display: block;

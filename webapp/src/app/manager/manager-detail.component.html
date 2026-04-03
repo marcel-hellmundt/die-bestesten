@@ -35,89 +35,91 @@
     </div>
   </div>
 
-  @if (chartData(); as chart) {
+  <div class="seasons-layout">
     <section class="detail-section">
-      <h2 class="section-header">Saisons</h2>
-      <div class="chart-container">
-        <svg
-          class="bar-chart"
-          [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
-          aria-hidden="true"
-        >
-          @for (tick of chart.yTicks; track tick.label) {
-            <line [attr.x1]="padL" [attr.y1]="tick.y" [attr.x2]="chartW - padR" [attr.y2]="tick.y" class="chart-grid" />
-            <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">{{ tick.label }}</text>
-          }
-          @for (b of chart.bars; track b.label) {
-            <rect
-              [attr.x]="b.x"
-              [attr.y]="b.y"
-              [attr.width]="b.w"
-              [attr.height]="b.h"
-              [style.fill]="b.color"
-              class="bar"
-              rx="3"
-            >
-              <title>{{ b.label }}: {{ b.points }} Pkt</title>
-            </rect>
-            <text [attr.x]="b.cx" [attr.y]="chartH - 4" class="chart-label chart-label--x">{{ b.label }}</text>
-          }
-          @if (chart.pathD) {
-            <path [attr.d]="chart.pathD" class="placement-line" fill="none" />
-          }
-          @for (p of chart.linePoints; track p.x) {
-            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" class="placement-dot">
-              <title>Platz {{ p.placement }} von {{ p.teamCount }}</title>
-            </circle>
-          }
-        </svg>
-      </div>
-    </section>
-  }
+      <h2 class="section-header">Teams</h2>
 
-  <section class="detail-section">
-    <h2 class="section-header">Teams</h2>
-
-    @if (teams().length === 0) {
-      <p class="state-msg">Keine Teams vorhanden.</p>
-    } @else {
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Saison</th>
-              <th>Team</th>
-              <th class="col-num">Spieltage</th>
-              <th class="col-num">Punkte</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (team of teams(); track team.id) {
-              <tr class="row-link" [routerLink]="['/team', team.id]">
-                <td>{{ cache.seasonName(team.season_id) }}</td>
-                <td>
-                  <span class="team-name">
-                    <span class="team-logo-wrap">
-                      @if (team.color) {
-                        <span class="team-color" [style.background-color]="team.color"></span>
-                      }
-                      <img
-                        class="team-logo"
-                        [src]="team.logoUrl"
-                        [alt]="team.team_name"
-                        (error)="$any($event.target).style.display='none'"
-                      />
-                    </span>
-                    {{ team.team_name }}
-                  </span>
-                </td>
-                <td class="col-num">{{ team.matchdays_played }}</td>
-                <td class="col-num col-points">{{ team.total_points }}</td>
+      @if (teams().length === 0) {
+        <p class="state-msg">Keine Teams vorhanden.</p>
+      } @else {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Saison</th>
+                <th>Team</th>
+                <th class="col-num">Spieltage</th>
+                <th class="col-num">Punkte</th>
               </tr>
+            </thead>
+            <tbody>
+              @for (team of teams(); track team.id) {
+                <tr class="row-link" [routerLink]="['/team', team.id]">
+                  <td>{{ cache.seasonName(team.season_id) }}</td>
+                  <td>
+                    <span class="team-name">
+                      <span class="team-logo-wrap">
+                        @if (team.color) {
+                          <span class="team-color" [style.background-color]="team.color"></span>
+                        }
+                        <img
+                          class="team-logo"
+                          [src]="team.logoUrl"
+                          [alt]="team.team_name"
+                          (error)="$any($event.target).style.display='none'"
+                        />
+                      </span>
+                      {{ team.team_name }}
+                    </span>
+                  </td>
+                  <td class="col-num">{{ team.matchdays_played }}</td>
+                  <td class="col-num col-points">{{ team.total_points }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (chartData(); as chart) {
+      <section class="detail-section">
+        <h2 class="section-header">Saisons</h2>
+        <div class="chart-container">
+          <svg
+            class="bar-chart"
+            [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+            aria-hidden="true"
+          >
+            @for (tick of chart.yTicks; track tick.label) {
+              <line [attr.x1]="padL" [attr.y1]="tick.y" [attr.x2]="chartW - padR" [attr.y2]="tick.y" class="chart-grid" />
+              <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">{{ tick.label }}</text>
             }
-          </tbody>
-        </table>
-      </div>
+            @for (b of chart.bars; track b.label) {
+              <rect
+                [attr.x]="b.x"
+                [attr.y]="b.y"
+                [attr.width]="b.w"
+                [attr.height]="b.h"
+                [style.fill]="b.color"
+                class="bar"
+                rx="3"
+              >
+                <title>{{ b.label }}: {{ b.points }} Pkt</title>
+              </rect>
+              <text [attr.x]="b.cx" [attr.y]="chartH - 4" class="chart-label chart-label--x">{{ b.label }}</text>
+            }
+            @if (chart.pathD) {
+              <path [attr.d]="chart.pathD" class="placement-line" fill="none" />
+            }
+            @for (p of chart.linePoints; track p.x) {
+              <circle [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" class="placement-dot">
+                <title>Platz {{ p.placement }} von {{ p.teamCount }}</title>
+              </circle>
+            }
+          </svg>
+        </div>
+      </section>
     }
-  </section>
+  </div>
 }
