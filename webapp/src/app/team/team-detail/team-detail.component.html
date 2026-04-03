@@ -19,9 +19,9 @@
       <div class="team-info">
         <h1 class="team-name">{{ t.team_name }}</h1>
         <span class="team-meta">{{ cache.seasonName(t.season_id) }}</span>
-        <span class="team-meta team-meta--manager">
+        <a class="team-meta team-meta--manager" [routerLink]="['/manager', t.manager_id]">
           {{ t.manager_name }}@if (t.alias) { &nbsp;&bdquo;{{ t.alias }}&ldquo; }
-        </span>
+        </a>
       </div>
 
       <div class="team-stats">

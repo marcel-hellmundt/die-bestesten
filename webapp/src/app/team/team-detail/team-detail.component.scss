@@ -61,6 +61,10 @@
 
     &--manager {
       font-weight: $font-weight-medium;
+      text-decoration: none;
+      color: inherit;
+
+      &:hover { text-decoration: underline; }
     }
   }
 }
