@@ -1,0 +1,32 @@
+@use '../../../styles/variables' as *;
+
+.col-num {
+  width: 60px;
+  text-align: right;
+}
+
+.col-points {
+  font-weight: $font-weight-semibold;
+}
+
+.col-max {
+  color: $color-text-muted;
+  font-size: $font-sm;
+}
+
+.row--invalid {
+  opacity: 0.4;
+}
+
+tfoot td {
+  border-top: 2px solid $color-border;
+  font-weight: $font-weight-semibold;
+  padding-top: $space-3;
+}
+
+.foot-label {
+  color: $color-text-muted;
+  font-size: $font-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

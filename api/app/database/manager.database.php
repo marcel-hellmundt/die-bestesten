@@ -54,6 +54,40 @@ trait ManagerTrait
         return $q->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function getTeamRatings(string $teamId): array
+    {
+        $q = $this->con_league->prepare(
+            "SELECT tr.id, tr.matchday_id, tr.points, tr.max_points,
+                    tr.goals, tr.assists, tr.clean_sheet, tr.sds,
+                    tr.sds_defender, tr.missed_goals, tr.invalid
+             FROM team_rating tr
+             WHERE tr.team_id = :team_id"
+        );
+        $q->execute([':team_id' => $teamId]);
+        $ratings = $q->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($ratings)) return [];
+
+        $matchdayIds  = array_column($ratings, 'matchday_id');
+        $placeholders = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $mq = $this->con->prepare(
+            "SELECT id, number, kickoff_date FROM matchday WHERE id IN ($placeholders)"
+        );
+        $mq->execute($matchdayIds);
+        $matchdayMap = array_column($mq->fetchAll(PDO::FETCH_ASSOC), null, 'id');
+
+        foreach ($ratings as &$r) {
+            $md = $matchdayMap[$r['matchday_id']] ?? null;
+            $r['matchday_number'] = $md ? (int)$md['number'] : null;
+            $r['kickoff_date']    = $md ? $md['kickoff_date'] : null;
+        }
+        unset($r);
+
+        usort($ratings, fn($a, $b) => ($a['matchday_number'] ?? 0) <=> ($b['matchday_number'] ?? 0));
+
+        return $ratings;
+    }
+
     public function updateManagerPassword(string $id, string $hashedPassword): bool
     {
         $q = $this->con_league->prepare(

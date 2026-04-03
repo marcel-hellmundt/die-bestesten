@@ -13,6 +13,11 @@ class TeamController extends _BaseController
             http_response_code(404);
             return ['status' => false, 'message' => 'Team not found'];
         }
+
+        if (isset($this->params['include_ratings'])) {
+            $team['ratings'] = $this->db->getTeamRatings($this->id);
+        }
+
         return $team;
     }
 

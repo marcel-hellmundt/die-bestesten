@@ -1,0 +1,41 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <div class="table-container">
+    <table class="data-table data-table--compact">
+      <thead>
+        <tr>
+          <th class="col-num">ST</th>
+          <th class="col-num">Punkte</th>
+          <th class="col-num">Max</th>
+          <th class="col-num">Tore</th>
+          <th class="col-num">Assists</th>
+          <th class="col-num">CS</th>
+          <th class="col-num">SdS</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of ratings(); track r.id) {
+          <tr [class.row--invalid]="r.invalid">
+            <td class="col-num">{{ r.matchday_number }}</td>
+            <td class="col-num col-points">{{ r.points }}</td>
+            <td class="col-num col-max">{{ r.max_points }}</td>
+            <td class="col-num">{{ r.goals }}</td>
+            <td class="col-num">{{ r.assists }}</td>
+            <td class="col-num">{{ r.clean_sheet }}</td>
+            <td class="col-num">{{ r.sds ? 'Ja' : '–' }}</td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <td class="col-num foot-label">Gesamt</td>
+          <td class="col-num col-points">{{ totalPoints() }}</td>
+          <td colspan="5"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+}

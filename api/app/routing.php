@@ -299,10 +299,11 @@ class Routing
                 'description' => 'Fantasy-Teams pro Manager und Saison',
                 'endpoints'   => [
                     [
-                        'method'      => 'GET',
-                        'path'        => '/team/:id',
-                        'description' => 'Ein Team per ID — enthält manager_name, alias, total_points, matchdays_played',
-                        'path_params' => [':id' => 'UUID des Teams'],
+                        'method'       => 'GET',
+                        'path'         => '/team/:id',
+                        'description'  => 'Ein Team per ID — enthält manager_name, alias, total_points, matchdays_played. Mit ?include_ratings=1 zusätzlich alle team_ratings sortiert nach matchday_number',
+                        'path_params'  => [':id' => 'UUID des Teams'],
+                        'query_params' => ['include_ratings' => '1 → ratings[] anhängen'],
                     ],
                 ],
             ]),
