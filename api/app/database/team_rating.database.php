@@ -2,6 +2,25 @@
 
 trait TeamRatingTrait
 {
+    private function assignFines(array $rows, string $pointsKey): array
+    {
+        $fineByRank = [1 => 3.0, 2 => 2.0, 3 => 1.5, 4 => 1.0];
+
+        // Unique point values sorted ASC → lowest = rank 1
+        $uniquePoints = array_unique(array_column($rows, $pointsKey));
+        sort($uniquePoints);
+        $pointsToFine = [];
+        foreach ($uniquePoints as $rank0 => $pts) {
+            $pointsToFine[$pts] = $fineByRank[$rank0 + 1] ?? 0.0;
+        }
+
+        foreach ($rows as &$row) {
+            $row['fine'] = $pointsToFine[$row[$pointsKey]] ?? 0.0;
+        }
+        unset($row);
+        return $rows;
+    }
+
     public function getSeasonStandings(string $seasonId): array
     {
         $matchdayIds = $this->con->prepare(
@@ -33,7 +52,8 @@ trait TeamRatingTrait
              ORDER BY total_points DESC"
         );
         $rq->execute($ids);
-        return $rq->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $rq->fetchAll(PDO::FETCH_ASSOC);
+        return $this->assignFines($rows, 'total_points');
     }
 
     public function getTeamRatingsByActiveSeason(string $seasonId): array|false
@@ -59,6 +79,8 @@ trait TeamRatingTrait
              ORDER BY tr.points DESC"
         );
         $rq->execute([':matchday_id' => $matchday['id']]);
+        $ratings = $rq->fetchAll(PDO::FETCH_ASSOC);
+        $ratings = $this->assignFines($ratings, 'points');
 
         $sq = $this->con->prepare(
             "SELECT p.id, p.displayname, pis.photo_uploaded, pis.position,
@@ -74,7 +96,7 @@ trait TeamRatingTrait
 
         return [
             'matchday'   => $matchday,
-            'ratings'    => $rq->fetchAll(PDO::FETCH_ASSOC),
+            'ratings'    => $ratings,
             'sds_player' => $sdsPlayer,
         ];
     }

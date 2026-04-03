@@ -23,6 +23,7 @@
                 <th class="col-icons">Assists</th>
                 <th class="col-icons col-cs">CS</th>
                 <th class="col-points">Punkte</th>
+                <th class="col-fine">Strafe</th>
               </tr>
             </thead>
             <tbody>
@@ -72,6 +73,9 @@
                     @if (+r.clean_sheet) { ✓ }
                   </td>
                   <td class="col-points">{{ r.points }}</td>
+                  <td class="col-fine" [class.col-fine--active]="r.fine > 0">
+                    @if (r.fine > 0) { {{ r.fine | number:'1.2-2' }} € }
+                  </td>
                 </tr>
               }
             </tbody>

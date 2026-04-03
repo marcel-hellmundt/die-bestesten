@@ -21,6 +21,18 @@
   font-weight: $font-weight-semibold;
 }
 
+.col-fine {
+  width: 72px;
+  text-align: right;
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  &--active {
+    color: $color-danger;
+    font-weight: $font-weight-semibold;
+  }
+}
+
 .team-cell {
   display: inline-flex;
   align-items: center;
