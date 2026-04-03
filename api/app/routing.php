@@ -285,6 +285,12 @@ class Routing
                         'description'  => 'Ratings aller Teams für den letzten abgeschlossenen Spieltag — gibt { matchday, ratings[] } zurück',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/team_rating/season',
+                        'description'  => 'Saisontabelle — aggregierte Summen (Punkte, Tore, Assists, SdS, …) aller Teams, sortiert nach Punkten',
+                        'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
+                    ],
                 ],
             ]),
 

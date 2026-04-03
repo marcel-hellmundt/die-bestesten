@@ -2,6 +2,40 @@
 
 trait TeamRatingTrait
 {
+    public function getSeasonStandings(string $seasonId): array
+    {
+        $matchdayIds = $this->con->prepare(
+            "SELECT id FROM matchday WHERE season_id = :season_id AND completed = 1"
+        );
+        $matchdayIds->execute([':season_id' => $seasonId]);
+        $ids = array_column($matchdayIds->fetchAll(PDO::FETCH_ASSOC), 'id');
+
+        if (empty($ids)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        $rq = $this->con_league->prepare(
+            "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
+                    m.manager_name,
+                    SUM(tr.points)      AS total_points,
+                    SUM(tr.goals)       AS total_goals,
+                    SUM(tr.assists)     AS total_assists,
+                    SUM(tr.sds)         AS total_sds,
+                    SUM(tr.sds_defender) AS total_sds_defender,
+                    SUM(tr.clean_sheet) AS total_clean_sheet,
+                    SUM(tr.missed_goals) AS total_missed_goals,
+                    COUNT(CASE WHEN tr.invalid = 0 THEN 1 END) AS matchdays_played
+             FROM team_rating tr
+             JOIN team t ON t.id = tr.team_id
+             JOIN manager m ON m.id = t.manager_id
+             WHERE tr.matchday_id IN ($placeholders)
+             GROUP BY t.id, t.team_name, t.color, t.season_id, m.manager_name
+             ORDER BY total_points DESC"
+        );
+        $rq->execute($ids);
+        return $rq->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getTeamRatingsByActiveSeason(string $seasonId): array|false
     {
         $mq = $this->con->prepare(

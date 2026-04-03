@@ -1,0 +1,57 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (rows().length === 0) {
+  <p class="state-msg">Noch keine abgeschlossenen Spieltage vorhanden.</p>
+} @else {
+  <h1 class="page-title">Tabelle</h1>
+
+  <div class="table-container">
+    <table class="data-table data-table--compact">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th>Team</th>
+          <th class="col-num">ST</th>
+          <th class="col-num">SdS</th>
+          <th class="col-num">Tore</th>
+          <th class="col-num">Assists</th>
+          <th class="col-num">CS</th>
+          <th class="col-num col-points">Punkte</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of rows(); track r.team_id; let i = $index) {
+          <tr class="row-link" [routerLink]="['/team', r.team_id]">
+            <td class="col-rank">{{ i + 1 }}</td>
+            <td>
+              <span class="team-cell">
+                <span class="team-logo-wrap">
+                  @if (r.color) {
+                    <span class="team-color" [style.background-color]="r.color"></span>
+                  }
+                  @if (!logoErrors.has(r.team_id)) {
+                    <img
+                      class="team-logo"
+                      [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                      [alt]="r.team_name"
+                      (error)="onLogoError(r.team_id)"
+                    />
+                  }
+                </span>
+                <span class="team-name">{{ r.team_name }}</span>
+              </span>
+            </td>
+            <td class="col-num">{{ r.matchdays_played }}</td>
+            <td class="col-num">{{ r.total_sds }}</td>
+            <td class="col-num">{{ r.total_goals }}</td>
+            <td class="col-num">{{ r.total_assists }}</td>
+            <td class="col-num">{{ r.total_clean_sheet }}</td>
+            <td class="col-num col-points">{{ r.total_points }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

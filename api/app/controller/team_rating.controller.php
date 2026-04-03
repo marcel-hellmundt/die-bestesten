@@ -13,6 +13,10 @@ class TeamRatingController extends _BaseController
             return ['status' => false, 'message' => 'season_id ist erforderlich'];
         }
 
+        if ($this->id === 'season') {
+            return $this->db->getSeasonStandings($seasonId);
+        }
+
         $result = $this->db->getTeamRatingsByActiveSeason($seasonId);
 
         if ($result === false) {
