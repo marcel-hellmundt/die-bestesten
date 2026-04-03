@@ -239,17 +239,7 @@
   color: $color-accent;
 }
 
-.sidebar-placeholder {
-  .placeholder-label {
-    display: block;
-    font-size: $font-sm;
-    font-weight: $font-weight-semibold;
-    color: $color-text-muted;
-    margin-bottom: $space-2;
-  }
-
-  .state-msg {
-    margin: 0;
-    font-size: $font-sm;
-  }
+.stat-label--danger {
+  color: $color-danger;
 }
+

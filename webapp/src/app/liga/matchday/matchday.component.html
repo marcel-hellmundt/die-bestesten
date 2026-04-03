@@ -133,9 +133,9 @@
         <div class="stat-value">{{ totalPoints() }}</div>
       </div>
 
-      <div class="card sidebar-placeholder">
-        <span class="placeholder-label">Kegelstrafen</span>
-        <p class="state-msg">Kommt bald.</p>
+      <div class="stat-card">
+        <span class="stat-label stat-label--danger">Kegelstrafen</span>
+        <div class="stat-value">{{ totalFine() | number:'1.2-2' }} €</div>
       </div>
     </div>
   </div>

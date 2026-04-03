@@ -49,6 +49,7 @@ export class MatchdayComponent {
   loading        = computed(() => this.ratingsState().loading ?? true);
   error          = computed(() => this.ratingsState().error ?? null);
   totalPoints    = computed(() => this.ratings().reduce((sum: number, r: any) => sum + Number(r.points), 0));
+  totalFine      = computed(() => this.ratings().reduce((sum: number, r: any) => sum + Number(r.fine ?? 0), 0));
 
   currentNumber  = computed(() => this.matchday()?.number ?? null);
   canDecrement   = computed(() => (this.currentNumber() ?? 1) > 1);
