@@ -82,7 +82,21 @@ export class ManagerDetailComponent {
       { y: toY(0),         label: '0' },
     ];
 
-    return { bars, yTicks };
+    // Placement line: 1 = top, last = bottom, normalized per season
+    const linePoints = teams
+      .map((t, i) => {
+        if (t.season_placement == null || t.season_team_count == null || t.season_team_count <= 1) return null;
+        const norm = (t.season_placement - 1) / (t.season_team_count - 1); // 0 = 1st, 1 = last
+        const y    = this.padT + norm * plotH;
+        return { x: toX(i), y, placement: t.season_placement, teamCount: t.season_team_count };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+
+    const pathD = linePoints.length >= 2
+      ? linePoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+      : null;
+
+    return { bars, yTicks, linePoints, pathD };
   });
 
   avatarFailed = false;

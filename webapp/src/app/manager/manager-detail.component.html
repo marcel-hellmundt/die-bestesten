@@ -62,6 +62,14 @@
             </rect>
             <text [attr.x]="b.cx" [attr.y]="chartH - 4" class="chart-label chart-label--x">{{ b.label }}</text>
           }
+          @if (chart.pathD) {
+            <path [attr.d]="chart.pathD" class="placement-line" fill="none" />
+          }
+          @for (p of chart.linePoints; track p.x) {
+            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" class="placement-dot">
+              <title>Platz {{ p.placement }} von {{ p.teamCount }}</title>
+            </circle>
+          }
         </svg>
       </div>
     </section>

@@ -20,16 +20,23 @@ trait ManagerTrait
         $manager = $q->fetch(PDO::FETCH_ASSOC);
         if (!$manager) return false;
 
-        $q = $this->con_league->prepare(
-            "SELECT t.id, t.season_id, t.team_name, t.color,
-                    COALESCE(SUM(tr.points), 0) AS total_points,
-                    COUNT(CASE WHEN tr.id IS NOT NULL AND tr.invalid = 0 THEN 1 END) AS matchdays_played
-             FROM team t
-             LEFT JOIN team_rating tr ON tr.team_id = t.id
-             WHERE t.manager_id = :manager_id
-             GROUP BY t.id, t.season_id, t.team_name, t.color
-             ORDER BY t.season_id DESC"
-        );
+        $q = $this->con_league->prepare("
+            WITH season_totals AS (
+                SELECT t.id, t.season_id, t.manager_id, t.team_name, t.color,
+                       COALESCE(SUM(tr.points), 0) AS total_points,
+                       COUNT(CASE WHEN tr.id IS NOT NULL AND tr.invalid = 0 THEN 1 END) AS matchdays_played,
+                       RANK() OVER (PARTITION BY t.season_id ORDER BY COALESCE(SUM(tr.points), 0) DESC) AS season_placement,
+                       COUNT(*) OVER (PARTITION BY t.season_id) AS season_team_count
+                FROM team t
+                LEFT JOIN team_rating tr ON tr.team_id = t.id
+                GROUP BY t.id, t.season_id, t.manager_id, t.team_name, t.color
+            )
+            SELECT id, season_id, team_name, color, total_points, matchdays_played,
+                   season_placement, season_team_count
+            FROM season_totals
+            WHERE manager_id = :manager_id
+            ORDER BY season_id DESC
+        ");
         $q->execute([':manager_id' => $id]);
         $manager['teams'] = $q->fetchAll(PDO::FETCH_ASSOC);
 

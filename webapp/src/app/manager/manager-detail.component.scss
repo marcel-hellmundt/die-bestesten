@@ -130,6 +130,7 @@
   border-radius: $radius-xl;
   padding: $space-4;
   overflow: hidden;
+  max-width: 480px;
 
   .bar-chart {
     display: block;
@@ -147,6 +148,22 @@
       transition: opacity 0.15s;
 
       &:hover { opacity: 1; }
+    }
+
+    .placement-line {
+      stroke: $color-text;
+      stroke-width: 2;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      stroke-dasharray: 4 3;
+      opacity: 0.6;
+    }
+
+    .placement-dot {
+      fill: $color-text;
+      stroke: $color-surface;
+      stroke-width: 1.5;
+      opacity: 0.8;
     }
 
     .chart-label {
