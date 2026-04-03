@@ -68,7 +68,20 @@ CREATE TABLE IF NOT EXISTS team_rating (
 );
 
 -- CREATE TABLE IF NOT EXISTS team_lineup (...);
--- CREATE TABLE IF NOT EXISTS player_in_team (...);
+
+-- Tabelle: player_in_team (Spieler-Zugehörigkeit zu einem Team pro Transferphase)
+-- Applikationsebene stellt sicher: pro Spieler max. 1 aktiver Eintrag (to_matchday_id IS NULL)
+CREATE TABLE IF NOT EXISTS player_in_team (
+    id               CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    team_id          CHAR(36) NOT NULL,
+    player_id        CHAR(36) NOT NULL,             -- Referenz auf global_schema.player.id (kein FK, cross-DB)
+    from_matchday_id CHAR(36) NOT NULL,             -- Transferphase Kauf — Referenz auf global_schema.matchday.id (kein FK, cross-DB)
+    to_matchday_id   CHAR(36) NULL DEFAULT NULL,    -- Transferphase Verkauf — NULL = aktuell aktiv
+    -- offer_id CHAR(36) NULL,                      -- ausstehend: Referenz auf Kaufangebot
+    -- sell_id  CHAR(36) NULL,                      -- ausstehend: Referenz auf Verkaufsangebot
+    FOREIGN KEY (team_id) REFERENCES team(id),
+    UNIQUE KEY uk_player_from (player_id, from_matchday_id)  -- kein Doppelkauf in derselben Transferphase
+);
 
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
 -- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)

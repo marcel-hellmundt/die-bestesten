@@ -125,4 +125,6 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 
 **team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK) — UNIQUE(award_id, team_id) — season ergibt sich aus team.season_id
 
-Ausstehend: team_lineup, player_in_team
+**player_in_team**: id PK, team_id FK, player_id (cross-DB), from_matchday_id (cross-DB, Kauf), to_matchday_id (cross-DB, Verkauf; NULL = aktiv) — UNIQUE(player_id, from_matchday_id) — max. 1 aktives Team pro Spieler wird auf Applikationsebene geprüft
+
+Ausstehend: team_lineup
