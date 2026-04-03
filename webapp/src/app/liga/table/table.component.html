@@ -63,14 +63,42 @@
     </div>
 
     <div class="sidebar">
+      @if (goldeneBuerste().length > 0) {
+        <div class="card luck-card">
+          <span class="luck-card__label luck-card__label--gold">🪮 Goldene Bürste</span>
+          <div class="luck-list">
+            @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
+              <div class="luck-item" [routerLink]="['/team', r.team_id]">
+                <span class="luck-item__team">{{ r.team_name }}</span>
+                <span class="luck-item__meta">ST {{ r.matchday_number }} · {{ r.points }} Pkt</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (hoelzerneBand().length > 0) {
+        <div class="card luck-card">
+          <span class="luck-card__label luck-card__label--wood">🪵 Hölzerne Bank</span>
+          <div class="luck-list">
+            @for (r of hoelzerneBand(); track r.team_id) {
+              <div class="luck-item" [routerLink]="['/team', r.team_id]">
+                <span class="luck-item__team">{{ r.team_name }}</span>
+                <span class="luck-item__meta">−{{ r.gap }} Pkt</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       @if (lucky().length > 0) {
         <div class="card luck-card">
           <span class="luck-card__label luck-card__label--lucky">🍀 Glückspilze</span>
           <div class="luck-list">
-            @for (r of lucky(); track r.team_id) {
+            @for (r of lucky(); track r.team_id + r.matchday_id) {
               <div class="luck-item" [routerLink]="['/team', r.team_id]">
                 <span class="luck-item__team">{{ r.team_name }}</span>
-                <span class="luck-item__pts">{{ r.points }} Pkt</span>
+                <span class="luck-item__meta">ST {{ r.matchday_number }} · {{ r.points }} Pkt</span>
               </div>
             }
           </div>
@@ -81,10 +109,10 @@
         <div class="card luck-card">
           <span class="luck-card__label luck-card__label--unlucky">🫥 Pechvögel</span>
           <div class="luck-list">
-            @for (r of unlucky(); track r.team_id) {
+            @for (r of unlucky(); track r.team_id + r.matchday_id) {
               <div class="luck-item" [routerLink]="['/team', r.team_id]">
                 <span class="luck-item__team">{{ r.team_name }}</span>
-                <span class="luck-item__pts">{{ r.points }} Pkt</span>
+                <span class="luck-item__meta">ST {{ r.matchday_number }} · {{ r.points }} Pkt</span>
               </div>
             }
           </div>

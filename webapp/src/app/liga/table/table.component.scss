@@ -34,6 +34,8 @@
 
     &--lucky   { color: $color-success; }
     &--unlucky { color: $color-danger; }
+    &--gold    { color: #b8860b; }
+    &--wood    { color: #8b5e3c; }
   }
 }
 
@@ -58,7 +60,7 @@
     text-overflow: ellipsis;
   }
 
-  &__pts {
+  &__meta {
     color: $color-text-muted;
     flex-shrink: 0;
     font-size: $font-xs;

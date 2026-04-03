@@ -24,12 +24,14 @@ trait TeamRatingTrait
     public function getSeasonStandings(string $seasonId): array
     {
         $matchdayIds = $this->con->prepare(
-            "SELECT id FROM matchday WHERE season_id = :season_id AND completed = 1"
+            "SELECT id, number FROM matchday WHERE season_id = :season_id AND completed = 1"
         );
         $matchdayIds->execute([':season_id' => $seasonId]);
-        $ids = array_column($matchdayIds->fetchAll(PDO::FETCH_ASSOC), 'id');
+        $matchdayRows = $matchdayIds->fetchAll(PDO::FETCH_ASSOC);
+        $ids = array_column($matchdayRows, 'id');
+        $numberById = array_column($matchdayRows, 'number', 'id');
 
-        if (empty($ids)) return [];
+        if (empty($ids)) return ['standings' => [], 'luck' => ['lucky' => [], 'unlucky' => []]];
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
@@ -57,11 +59,11 @@ trait TeamRatingTrait
 
         return [
             'standings' => $standings,
-            'luck'      => $this->getSeasonLuckStats($ids),
+            'luck'      => $this->getSeasonLuckStats($ids, $numberById),
         ];
     }
 
-    public function getSeasonLuckStats(array $matchdayIds): array
+    public function getSeasonLuckStats(array $matchdayIds, array $numberById): array
     {
         if (empty($matchdayIds)) return ['lucky' => [], 'unlucky' => []];
 
@@ -69,7 +71,7 @@ trait TeamRatingTrait
 
         $rq = $this->con_league->prepare("
             WITH ranked AS (
-                SELECT tr.team_id, tr.matchday_id, tr.points,
+                SELECT tr.team_id, tr.matchday_id, tr.points, tr.max_points,
                        t.team_name, t.season_id, t.color, m.manager_name,
                        RANK() OVER (PARTITION BY tr.matchday_id ORDER BY tr.points ASC) AS rank_asc
                 FROM team_rating tr
@@ -91,15 +93,39 @@ trait TeamRatingTrait
         $rq->execute($matchdayIds);
         $rows = $rq->fetchAll(PDO::FETCH_ASSOC);
 
+        foreach ($rows as &$row) {
+            $row['matchday_number'] = $numberById[$row['matchday_id']] ?? null;
+        }
+        unset($row);
+
+        // Glückspilze / Pechvögel (per matchday)
         $lucky   = array_filter($rows, fn($r) => (float)$r['fine'] === 0.0);
         $unlucky = array_filter($rows, fn($r) => (float)$r['fine'] > 0.0);
-
         usort($lucky,   fn($a, $b) => $a['points'] <=> $b['points']);
         usort($unlucky, fn($a, $b) => $b['points'] <=> $a['points']);
 
+        // Goldene Bürste: 3 team_ratings with fewest points in the season
+        $sorted = $rows;
+        usort($sorted, fn($a, $b) => $a['points'] <=> $b['points']);
+        $goldene_buerste = array_slice(array_values($sorted), 0, 3);
+
+        // Hölzerne Bank: 3 teams with largest SUM(max_points - points)
+        $gaps = [];
+        foreach ($rows as $r) {
+            $tid = $r['team_id'];
+            if (!isset($gaps[$tid])) {
+                $gaps[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'color' => $r['color'], 'season_id' => $r['season_id'], 'gap' => 0];
+            }
+            $gaps[$tid]['gap'] += (int)$r['max_points'] - (int)$r['points'];
+        }
+        usort($gaps, fn($a, $b) => $b['gap'] <=> $a['gap']);
+        $hoelzerne_bank = array_slice(array_values($gaps), 0, 3);
+
         return [
-            'lucky'   => array_slice(array_values($lucky),   0, 3),
-            'unlucky' => array_slice(array_values($unlucky),  0, 3),
+            'lucky'          => array_slice(array_values($lucky),   0, 3),
+            'unlucky'        => array_slice(array_values($unlucky),  0, 3),
+            'goldene_buerste' => $goldene_buerste,
+            'hoelzerne_bank'  => $hoelzerne_bank,
         ];
     }
 
