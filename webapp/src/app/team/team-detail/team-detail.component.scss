@@ -22,13 +22,7 @@
   flex-shrink: 0;
   overflow: hidden;
 
-  .team-color-swatch {
-    position: absolute;
-    inset: 0;
-    opacity: 0.25;
-  }
-
-  .team-logo {
+.team-logo {
     position: absolute;
     inset: 0;
     width: 100%;
