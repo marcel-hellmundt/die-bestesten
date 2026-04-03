@@ -34,8 +34,10 @@ export class MatchdayComponent {
     { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
 
+  seasonId    = computed(() => this.activeSeason()?.id ?? null);
   matchday    = computed(() => this.ratingsState().data?.matchday ?? null);
   ratings     = computed(() => (this.ratingsState().data?.ratings ?? []) as any[]);
+  sdsPlayer   = computed(() => this.ratingsState().data?.sds_player ?? null);
   loading     = computed(() => this.ratingsState().loading ?? true);
   error       = computed(() => this.ratingsState().error ?? null);
   totalPoints = computed(() => this.ratings().reduce((sum: number, r: any) => sum + Number(r.points), 0));

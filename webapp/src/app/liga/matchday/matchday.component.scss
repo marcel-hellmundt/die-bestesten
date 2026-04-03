@@ -11,10 +11,63 @@
   }
 }
 
+.main-col {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  min-width: 0;
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;
   gap: $space-4;
+}
+
+.sds-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &:hover {
+    border-color: $color-text-muted;
+  }
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  &__player {
+    display: flex;
+    align-items: center;
+    gap: $space-4;
+  }
+}
+
+.sds-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-full;
+  background: $color-surface-alt;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.sds-name {
+  font-size: $font-lg;
+  font-weight: $font-weight-semibold;
 }
 
 // Compact row override
@@ -69,6 +122,13 @@
 
 .col-icons {
   white-space: nowrap;
+  text-align: left;
+}
+
+.col-cs {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-success;
 }
 
 .icons-wrap {

@@ -8,59 +8,93 @@
   <h1 class="page-title">Spieltag {{ matchday().number }}</h1>
 
   <div class="matchday-layout">
-    <div class="table-container">
-      @if (ratings().length === 0) {
-        <p class="state-msg">Keine Ratings für diesen Spieltag.</p>
-      } @else {
-        <table class="data-table data-table--compact">
-          <thead>
-            <tr>
-              <th class="col-rank">#</th>
-              <th>Team</th>
-              <th class="col-icons"></th>
-              <th class="col-points">Punkte</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (r of ratings(); track r.team_id; let i = $index) {
-              <tr class="row-link" [routerLink]="['/team', r.team_id]">
-                <td class="col-rank">{{ i + 1 }}</td>
-                <td>
-                  <span class="team-cell">
-                    <span class="team-logo-wrap">
-                      @if (r.color) {
-                        <span class="team-color" [style.background-color]="r.color"></span>
-                      }
-                      @if (!logoErrors.has(r.team_id)) {
-                        <img
-                          class="team-logo"
-                          [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
-                          [alt]="r.team_name"
-                          (error)="onLogoError(r.team_id)"
-                        />
+    <div class="main-col">
+      <div class="table-container">
+        @if (ratings().length === 0) {
+          <p class="state-msg">Keine Ratings für diesen Spieltag.</p>
+        } @else {
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th>Team</th>
+                <th class="col-icons">SdS</th>
+                <th class="col-icons">Tore</th>
+                <th class="col-icons">Assists</th>
+                <th class="col-icons col-cs">CS</th>
+                <th class="col-points">Punkte</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of ratings(); track r.team_id; let i = $index) {
+                <tr class="row-link" [routerLink]="['/team', r.team_id]">
+                  <td class="col-rank">{{ i + 1 }}</td>
+                  <td>
+                    <span class="team-cell">
+                      <span class="team-logo-wrap">
+                        @if (r.color) {
+                          <span class="team-color" [style.background-color]="r.color"></span>
+                        }
+                        @if (!logoErrors.has(r.team_id)) {
+                          <img
+                            class="team-logo"
+                            [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                            [alt]="r.team_name"
+                            (error)="onLogoError(r.team_id)"
+                          />
+                        }
+                      </span>
+                      <span class="team-name">{{ r.team_name }}</span>
+                    </span>
+                  </td>
+                  <td class="col-icons">
+                    <span class="icons-wrap">
+                      @if (+r.sds) {
+                        <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
                       }
                     </span>
-                    <span class="team-name">{{ r.team_name }}</span>
-                  </span>
-                </td>
-                <td class="col-icons">
-                  <span class="icons-wrap">
-                    @if (+r.sds) {
-                      <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
-                    }
-                    @for (i of range(+r.goals); track i) {
-                      <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
-                    }
-                    @for (i of range(+r.assists); track i) {
-                      <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
-                    }
-                  </span>
-                </td>
-                <td class="col-points">{{ r.points }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                  </td>
+                  <td class="col-icons">
+                    <span class="icons-wrap">
+                      @for (g of range(+r.goals); track g) {
+                        <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
+                      }
+                    </span>
+                  </td>
+                  <td class="col-icons">
+                    <span class="icons-wrap">
+                      @for (a of range(+r.assists); track a) {
+                        <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
+                      }
+                    </span>
+                  </td>
+                  <td class="col-icons col-cs">
+                    @if (+r.clean_sheet) { ✓ }
+                  </td>
+                  <td class="col-points">{{ r.points }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+
+      @if (sdsPlayer(); as p) {
+        <div class="card sds-card" [routerLink]="['/daten/player', p.id]">
+          <span class="sds-card__label">Spieler des Spieltags</span>
+          <div class="sds-card__player">
+            <div class="sds-avatar">
+              @if (p.photo_uploaded && seasonId()) {
+                <img
+                  [src]="'https://img.die-bestesten.de/img/player/' + seasonId() + '/' + p.id + '.png'"
+                  [alt]="p.displayname"
+                  (error)="$any($event.target).style.display='none'"
+                />
+              }
+            </div>
+            <span class="sds-name">{{ p.displayname }}</span>
+          </div>
+        </div>
       }
     </div>
 
