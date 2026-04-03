@@ -87,10 +87,12 @@ trait ManagerTrait
         $matchdayIds  = array_column($ratings, 'matchday_id');
         $placeholders = implode(',', array_fill(0, count($matchdayIds), '?'));
         $mq = $this->con->prepare(
-            "SELECT id, number, kickoff_date FROM matchday WHERE id IN ($placeholders)"
+            "SELECT id, number, kickoff_date, completed FROM matchday WHERE id IN ($placeholders)"
         );
         $mq->execute($matchdayIds);
         $matchdayMap = array_column($mq->fetchAll(PDO::FETCH_ASSOC), null, 'id');
+
+        $ratings = array_values(array_filter($ratings, fn($r) => (bool)($matchdayMap[$r['matchday_id']]['completed'] ?? false)));
 
         foreach ($ratings as &$r) {
             $md = $matchdayMap[$r['matchday_id']] ?? null;
