@@ -26,7 +26,7 @@ export class TableComponent {
       switchMap(s =>
         this.api.get<any[]>(`team_rating/season?season_id=${s!.id}`).pipe(
           map(data => ({ data, loading: false, error: null as string | null })),
-          startWith({ data: null as any[], loading: true, error: null as string | null }),
+          startWith({ data: null as unknown as any[], loading: true, error: null as string | null }),
           catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' }))
         )
       )
