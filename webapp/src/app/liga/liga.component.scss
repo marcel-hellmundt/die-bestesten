@@ -1,0 +1,42 @@
+@use '../../styles/variables' as *;
+
+.sub-nav {
+  display: flex;
+  gap: $space-1;
+  margin-bottom: $space-6;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &-item {
+    padding: $space-1 $space-4;
+    height: $control-height;
+    display: inline-flex;
+    align-items: center;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-muted;
+    text-decoration: none;
+    border-radius: $radius-full;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition:
+      color $transition-fast,
+      background-color $transition-fast,
+      border-color $transition-fast;
+
+    &:hover {
+      color: $color-text;
+      background-color: $color-surface-alt;
+    }
+
+    &--active {
+      color: $color-text;
+      background-color: $color-surface-alt;
+      border-color: $color-border;
+    }
+  }
+}
