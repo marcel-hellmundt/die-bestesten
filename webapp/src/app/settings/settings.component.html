@@ -2,7 +2,7 @@
 
 <!-- Profil -->
 <section class="settings-section">
-  <h2 class="section-header">Mein Konto</h2>
+  <div class="section-header-row"><h2 class="section-header">Mein Konto</h2></div>
 
   @if (profileLoading()) {
     <p class="state-msg">Laden…</p>
@@ -43,7 +43,7 @@
 
 <!-- Passwort ändern -->
 <section class="settings-section">
-  <h2 class="section-header">Passwort ändern</h2>
+  <div class="section-header-row"><h2 class="section-header">Passwort ändern</h2></div>
 
   <div class="settings-form">
     <div class="form-field">
@@ -88,7 +88,7 @@
 
 <!-- Konto löschen -->
 <section class="settings-section settings-section--danger">
-  <h2 class="section-header">Konto löschen</h2>
+  <div class="section-header-row"><h2 class="section-header">Konto löschen</h2></div>
   <p class="danger-description">Das Löschen deines Kontos ist endgültig und kann nicht rückgängig gemacht werden.</p>
 
   @if (!deleteConfirmVisible()) {
