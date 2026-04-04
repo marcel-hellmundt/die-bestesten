@@ -1,0 +1,30 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (players().length === 0) {
+  <p class="state-msg">Kein Kader vorhanden.</p>
+} @else {
+  <div class="squad-list">
+    @for (p of players(); track p.id) {
+      <a class="squad-row row-link" [routerLink]="['/data/player', p.id]">
+        <span class="position-badge" [style.background-color]="positionColor(p.position)">
+          {{ positionLabel(p.position) }}
+        </span>
+
+        <div class="player-photo-wrap">
+          @if (photoUrl(p); as url) {
+            <img class="player-photo" [src]="url" [alt]="p.displayname" />
+          } @else {
+            <div class="player-photo player-photo--placeholder"></div>
+          }
+        </div>
+
+        <span class="player-name">{{ p.displayname }}</span>
+
+        <span class="player-price">{{ formatPrice(p.price) }}</span>
+        <span class="player-points">{{ p.points }} Pkt</span>
+      </a>
+    }
+  </div>
+}

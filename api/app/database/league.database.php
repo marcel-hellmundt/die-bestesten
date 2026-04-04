@@ -273,6 +273,12 @@ trait LeagueTrait
         }
 
         // Migrate player_in_team
+        // Ensure offer_id / sell_id / sell-table exist (added after initial schema creation)
+        try { $conLeague->exec("ALTER TABLE player_in_team ADD COLUMN offer_id CHAR(36) NULL DEFAULT NULL"); } catch (PDOException) {}
+        try { $conLeague->exec("ALTER TABLE player_in_team ADD COLUMN sell_id  CHAR(36) NULL DEFAULT NULL"); } catch (PDOException) {}
+        try { $conLeague->exec("ALTER TABLE player_in_team ADD FOREIGN KEY (offer_id) REFERENCES offer(id)"); } catch (PDOException) {}
+        try { $conLeague->exec("ALTER TABLE player_in_team ADD FOREIGN KEY (sell_id)  REFERENCES sell(id)");  } catch (PDOException) {}
+
         $migratedPlayerInTeam = 0;
         $skippedPlayerInTeam  = 0;
         try {

@@ -1,0 +1,86 @@
+@use '../../../styles/variables' as *;
+
+.squad-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-4;
+}
+
+.squad-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  text-decoration: none;
+  color: $color-text;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-surface-alt;
+  }
+}
+
+.position-badge {
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  padding: 2px 4px;
+  border-radius: $radius-sm;
+  letter-spacing: 0.03em;
+}
+
+.player-photo-wrap {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+}
+
+.player-photo {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: $radius-sm;
+
+  &--placeholder {
+    background: $color-surface-alt;
+    border: 1px solid $color-border;
+  }
+}
+
+.player-name {
+  flex: 1;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-price {
+  flex-shrink: 0;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  min-width: 64px;
+  text-align: right;
+}
+
+.player-points {
+  flex-shrink: 0;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  min-width: 56px;
+  text-align: right;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .player-price {
+    display: none;
+  }
+}

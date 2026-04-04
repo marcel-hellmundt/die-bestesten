@@ -94,6 +94,7 @@ POST     /league/migrate       — {league_id} — Teams + TeamRatings aus Old-D
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
 POST     /transferwindow/migrate — Admin
+GET      /player_in_team             — ?team_id (erforderlich) → aktive Spieler mit position, price, points — Auth
 GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück

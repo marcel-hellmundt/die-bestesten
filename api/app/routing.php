@@ -361,6 +361,19 @@ class Routing
                 ],
             ]),
 
+            new Route('player_in_team', 'PlayerInTeam', [
+                'title'       => 'PlayerInTeam',
+                'description' => 'Aktueller Kader eines Fantasy-Teams — Auth',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/player_in_team',
+                        'description'  => 'Alle aktiven Spieler eines Teams (to_matchday_id IS NULL) mit Position, Preis und Saison-Punkten',
+                        'query_params' => ['team_id' => 'UUID des Teams (erforderlich)'],
+                    ],
+                ],
+            ]),
+
             new Route('player', 'Player', [
                 'title'       => 'Player',
                 'description' => 'Spieler mit eingebetteten aktuellen Club- und Saisondaten im Detailabruf',
