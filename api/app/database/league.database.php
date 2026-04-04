@@ -43,8 +43,7 @@ trait LeagueTrait
             "INSERT INTO team (id, manager_id, season_id, team_name, color)
              VALUES (:id, :manager_id, :season_id, :team_name, :color)
              ON DUPLICATE KEY UPDATE
-               team_name = VALUES(team_name),
-               color     = VALUES(color)"
+               team_name = VALUES(team_name)"
         );
 
         $migrated = 0;
@@ -204,11 +203,130 @@ trait LeagueTrait
             // award_in_season may not exist in older DBs — skip silently
         }
 
+        // Migrate offers
+        $migratedOffers = 0;
+        $statusMap = [
+            'pending'   => 'pending',
+            'success'   => 'success',
+            'lost'      => 'lost',
+            'cancelled' => 'cancelled',
+            'rejected'  => 'cancelled',
+            'accepted'  => 'success',
+        ];
+        try {
+            $offerRows = $this->con_old->query(
+                "SELECT offer_id, player_id, team_id, transferwindow_id,
+                        offer_value, price_snapshot, status, offer_date
+                 FROM offer"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtOffer = $conLeague->prepare(
+                "INSERT INTO offer (id, player_id, team_id, transferwindow_id, offer_value, price_snapshot, status, created_at)
+                 VALUES (:id, :player_id, :team_id, :transferwindow_id, :offer_value, :price_snapshot, :status, :created_at)
+                 ON DUPLICATE KEY UPDATE id = id"
+            );
+
+            foreach ($offerRows as $row) {
+                $stmtOffer->execute([
+                    ':id'                => $row['offer_id'],
+                    ':player_id'         => $row['player_id'],
+                    ':team_id'           => $row['team_id'],
+                    ':transferwindow_id' => $row['transferwindow_id'],
+                    ':offer_value'       => $row['offer_value'],
+                    ':price_snapshot'    => $row['price_snapshot'],
+                    ':status'            => $statusMap[$row['status']] ?? 'cancelled',
+                    ':created_at'        => $row['offer_date'],
+                ]);
+                $migratedOffers++;
+            }
+        } catch (PDOException) {
+            // offer may not exist in older DBs — skip silently
+        }
+
+        // Migrate sells
+        $migratedSells = 0;
+        try {
+            $sellRows = $this->con_old->query(
+                "SELECT sell_id, player_id, team_id, transferwindow_id, price, sell_date
+                 FROM sell"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtSell = $conLeague->prepare(
+                "INSERT INTO sell (id, player_id, team_id, transferwindow_id, price, created_at)
+                 VALUES (:id, :player_id, :team_id, :transferwindow_id, :price, :created_at)
+                 ON DUPLICATE KEY UPDATE id = id"
+            );
+
+            foreach ($sellRows as $row) {
+                $stmtSell->execute([
+                    ':id'                => $row['sell_id'],
+                    ':player_id'         => $row['player_id'],
+                    ':team_id'           => $row['team_id'],
+                    ':transferwindow_id' => $row['transferwindow_id'],
+                    ':price'             => $row['price'],
+                    ':created_at'        => $row['sell_date'],
+                ]);
+                $migratedSells++;
+            }
+        } catch (PDOException) {
+            // sell may not exist in older DBs — skip silently
+        }
+
+        // Migrate player_in_team
+        $migratedPlayerInTeam = 0;
+        $skippedPlayerInTeam  = 0;
+        try {
+            $pitRows = $this->con_old->query(
+                "SELECT pit.player_in_team_id, pit.team_id, pit.player_id,
+                        pit.first_matchday, pit.last_matchday, pit.offer_id, pit.sell_id,
+                        t.season_id
+                 FROM player_in_team pit
+                 JOIN team t ON t.team_id = pit.team_id"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtPit = $conLeague->prepare(
+                "INSERT INTO player_in_team (id, team_id, player_id, from_matchday_id, to_matchday_id, offer_id, sell_id)
+                 VALUES (:id, :team_id, :player_id, :from_matchday_id, :to_matchday_id, :offer_id, :sell_id)
+                 ON DUPLICATE KEY UPDATE id = id"
+            );
+
+            foreach ($pitRows as $row) {
+                $fromKey        = $row['season_id'] . '_' . $row['first_matchday'];
+                $fromMatchdayId = $matchdayMap[$fromKey] ?? null;
+                if (!$fromMatchdayId) {
+                    $skippedPlayerInTeam++;
+                    continue;
+                }
+
+                $toMatchdayId = null;
+                if ($row['last_matchday'] !== null) {
+                    $toKey        = $row['season_id'] . '_' . $row['last_matchday'];
+                    $toMatchdayId = $matchdayMap[$toKey] ?? null;
+                }
+
+                $stmtPit->execute([
+                    ':id'               => $row['player_in_team_id'],
+                    ':team_id'          => $row['team_id'],
+                    ':player_id'        => $row['player_id'],
+                    ':from_matchday_id' => $fromMatchdayId,
+                    ':to_matchday_id'   => $toMatchdayId,
+                    ':offer_id'         => $row['offer_id'] ?: null,
+                    ':sell_id'          => $row['sell_id'] ?: null,
+                ]);
+                $migratedPlayerInTeam++;
+            }
+        } catch (PDOException) {
+            // player_in_team may not exist in older DBs — skip silently
+        }
+
         return [
-            'status'          => true,
-            'teams'           => ['migrated' => $migrated,        'skipped' => $skipped],
-            'team_ratings'    => ['migrated' => $migratedRatings],
-            'team_awards'     => ['migrated' => $migratedAwards],
+            'status'            => true,
+            'teams'             => ['migrated' => $migrated,             'skipped' => $skipped],
+            'team_ratings'      => ['migrated' => $migratedRatings],
+            'team_awards'       => ['migrated' => $migratedAwards],
+            'offers'            => ['migrated' => $migratedOffers],
+            'sells'             => ['migrated' => $migratedSells],
+            'player_in_team'    => ['migrated' => $migratedPlayerInTeam, 'skipped' => $skippedPlayerInTeam],
             'matchdays_created' => array_values($createdMatchdays),
         ];
     }

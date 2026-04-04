@@ -69,20 +69,6 @@ CREATE TABLE IF NOT EXISTS team_rating (
 
 -- CREATE TABLE IF NOT EXISTS team_lineup (...);
 
--- Tabelle: player_in_team (Spieler-Zugehörigkeit zu einem Team pro Transferphase)
--- Applikationsebene stellt sicher: pro Spieler max. 1 aktiver Eintrag (to_matchday_id IS NULL)
-CREATE TABLE IF NOT EXISTS player_in_team (
-    id               CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    team_id          CHAR(36) NOT NULL,
-    player_id        CHAR(36) NOT NULL,             -- Referenz auf global_schema.player.id (kein FK, cross-DB)
-    from_matchday_id CHAR(36) NOT NULL,             -- Transferphase Kauf — Referenz auf global_schema.matchday.id (kein FK, cross-DB)
-    to_matchday_id   CHAR(36) NULL DEFAULT NULL,    -- Transferphase Verkauf — NULL = aktuell aktiv
-    -- offer_id CHAR(36) NULL,                      -- ausstehend: Referenz auf Kaufangebot
-    -- sell_id  CHAR(36) NULL,                      -- ausstehend: Referenz auf Verkaufsangebot
-    FOREIGN KEY (team_id) REFERENCES team(id),
-    UNIQUE KEY uk_player_from (player_id, from_matchday_id)  -- kein Doppelkauf in derselben Transferphase
-);
-
 -- Tabelle: offer (Gebote auf Spieler in einer Transferphase)
 CREATE TABLE IF NOT EXISTS offer (
     id                  CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
@@ -94,6 +80,33 @@ CREATE TABLE IF NOT EXISTS offer (
     status              ENUM('pending', 'success', 'lost', 'cancelled') NOT NULL DEFAULT 'pending',
     created_at          DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES team(id)
+);
+
+-- Tabelle: sell (Direktverkauf eines Spielers zu Marktwert)
+CREATE TABLE IF NOT EXISTS sell (
+    id                CHAR(36)  NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    player_id         CHAR(36)  NOT NULL,             -- Referenz auf global_schema.player.id (kein FK, cross-DB)
+    team_id           CHAR(36)  NOT NULL,             -- verkaufendes Team
+    transferwindow_id CHAR(36)  NOT NULL,             -- Referenz auf global_schema.transferwindow.id (kein FK, cross-DB)
+    price             INT       NOT NULL,             -- Marktwert zum Zeitpunkt des Verkaufs
+    created_at        DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES team(id)
+);
+
+-- Tabelle: player_in_team (Spieler-Zugehörigkeit zu einem Team pro Transferphase)
+-- Applikationsebene stellt sicher: pro Spieler max. 1 aktiver Eintrag (to_matchday_id IS NULL)
+CREATE TABLE IF NOT EXISTS player_in_team (
+    id               CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    team_id          CHAR(36) NOT NULL,
+    player_id        CHAR(36) NOT NULL,             -- Referenz auf global_schema.player.id (kein FK, cross-DB)
+    from_matchday_id CHAR(36) NOT NULL,             -- Transferphase Kauf — Referenz auf global_schema.matchday.id (kein FK, cross-DB)
+    to_matchday_id   CHAR(36) NULL DEFAULT NULL,    -- Transferphase Verkauf — NULL = aktuell aktiv
+    offer_id         CHAR(36) NULL DEFAULT NULL,    -- Referenz auf das Kaufangebot
+    sell_id          CHAR(36) NULL DEFAULT NULL,    -- Referenz auf den Verkauf
+    FOREIGN KEY (team_id) REFERENCES team(id),
+    FOREIGN KEY (offer_id) REFERENCES offer(id),
+    FOREIGN KEY (sell_id) REFERENCES sell(id),
+    UNIQUE KEY uk_player_from (player_id, from_matchday_id)  -- kein Doppelkauf in derselben Transferphase
 );
 
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
