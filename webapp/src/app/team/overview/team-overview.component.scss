@@ -1,5 +1,56 @@
 @use '../../../styles/variables' as *;
 
+.charts-row {
+  display: flex;
+  gap: $space-4;
+  padding: $space-4;
+
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+  }
+}
+
+.chart-card {
+  flex: 1;
+  min-width: 0;
+  padding: $space-4;
+}
+
+.chart-title {
+  display: block;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: $space-2;
+}
+
+.chart-svg {
+  display: block;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: $color-border;
+  stroke-width: 1;
+}
+
+.chart-label {
+  font-family: $font-body;
+  fill: $color-text-muted;
+
+  &--y {
+    font-size: 9px;
+    text-anchor: end;
+  }
+
+  &--x {
+    font-size: 9px;
+    text-anchor: middle;
+  }
+}
+
 .col-st {
   width: 36px;
   color: $color-text-muted;

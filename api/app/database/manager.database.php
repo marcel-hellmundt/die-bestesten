@@ -112,6 +112,37 @@ trait ManagerTrait
 
         usort($ratings, fn($a, $b) => ($a['matchday_number'] ?? 0) <=> ($b['matchday_number'] ?? 0));
 
+        // Compute running cumulative rank per matchday
+        $allRatingsQ = $this->con_league->prepare(
+            "SELECT team_id, matchday_id, points, invalid FROM team_rating WHERE matchday_id IN ($placeholders)"
+        );
+        $allRatingsQ->execute($matchdayIds);
+        $byMatchday = [];
+        foreach ($allRatingsQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $byMatchday[$r['matchday_id']][] = $r;
+        }
+
+        $cumPoints = []; // team_id → cumulative points
+        foreach ($ratings as &$r) {
+            foreach ($byMatchday[$r['matchday_id']] ?? [] as $row) {
+                if (!$row['invalid']) {
+                    $cumPoints[$row['team_id']] = ($cumPoints[$row['team_id']] ?? 0) + (int)$row['points'];
+                }
+            }
+            // RANK() — ties share the same rank
+            $sorted = $cumPoints;
+            arsort($sorted);
+            $rank = 0; $count = 0; $prevPts = null; $teamRank = null;
+            foreach ($sorted as $tid => $pts) {
+                $count++;
+                if ($pts !== $prevPts) $rank = $count;
+                if ($tid === $teamId) { $teamRank = $rank; break; }
+                $prevPts = $pts;
+            }
+            $r['running_rank'] = $teamRank;
+        }
+        unset($r);
+
         return $ratings;
     }
 
