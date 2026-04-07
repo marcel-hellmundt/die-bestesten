@@ -138,9 +138,32 @@
   gap: $space-3;
 }
 
-.chart-card {
+.chart-row {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-4;
   margin-top: $space-6;
 
+  .chart-card {
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+  }
+}
+
+.wins-card {
+  width: 160px;
+  flex-shrink: 0;
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 100%;
+  }
+}
+
+.chart-card {
   &__label {
     display: block;
     font-size: $font-xs;
