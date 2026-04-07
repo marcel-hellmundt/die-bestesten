@@ -47,11 +47,12 @@ export class TableComponent {
     { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
 
-  rows           = computed(() => (this.state().data?.standings        ?? []) as any[]);
-  lucky          = computed(() => (this.state().data?.luck?.lucky          ?? []) as any[]);
-  unlucky        = computed(() => (this.state().data?.luck?.unlucky         ?? []) as any[]);
-  goldeneBuerste = computed(() => (this.state().data?.luck?.goldene_buerste ?? []) as any[]);
-  hoelzerneBand  = computed(() => (this.state().data?.luck?.hoelzerne_bank  ?? []) as any[]);
+  rows           = computed(() => (this.state().data?.standings           ?? []) as any[]);
+  lucky          = computed(() => (this.state().data?.luck?.lucky           ?? []) as any[]);
+  unlucky        = computed(() => (this.state().data?.luck?.unlucky          ?? []) as any[]);
+  goldeneBuerste = computed(() => (this.state().data?.luck?.goldene_buerste  ?? []) as any[]);
+  hoelzerneBand  = computed(() => (this.state().data?.luck?.hoelzerne_bank   ?? []) as any[]);
+  matchdayWins   = computed(() => (this.state().data?.luck?.matchday_wins    ?? []) as any[]);
   loading        = computed(() => this.state().loading);
   error          = computed(() => this.state().error);
 

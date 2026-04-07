@@ -153,19 +153,40 @@ trait TeamRatingTrait
         foreach ($rows as $r) {
             $tid = $r['team_id'];
             if (!isset($gaps[$tid])) {
-                $gaps[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'color' => $r['color'], 'season_id' => $r['season_id'], 'gap' => 0];
+                $gaps[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_name' => $r['manager_name'], 'color' => $r['color'], 'season_id' => $r['season_id'], 'gap' => 0];
             }
             $gaps[$tid]['gap'] += (int)$r['max_points'] - (int)$r['points'];
         }
         usort($gaps, fn($a, $b) => $b['gap'] <=> $a['gap']);
         $hoelzerne_bank = array_slice(array_values($gaps), 0, 3);
 
+        // Spieltagssiege: per matchday, team with highest points wins
+        $byMatchday = [];
+        foreach ($rows as $r) {
+            $byMatchday[$r['matchday_id']][] = $r;
+        }
+        $winsByTeam = [];
+        foreach ($byMatchday as $mdRows) {
+            $maxPts = max(array_column($mdRows, 'points'));
+            foreach ($mdRows as $r) {
+                if ((int)$r['points'] === (int)$maxPts) {
+                    $tid = $r['team_id'];
+                    if (!isset($winsByTeam[$tid])) {
+                        $winsByTeam[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_name' => $r['manager_name'], 'wins' => 0];
+                    }
+                    $winsByTeam[$tid]['wins']++;
+                }
+            }
+        }
+        usort($winsByTeam, fn($a, $b) => $b['wins'] <=> $a['wins']);
+
         return [
-            '_all'           => $rows,
-            'lucky'          => array_slice(array_values($lucky),   0, 3),
-            'unlucky'        => array_slice(array_values($unlucky),  0, 3),
-            'goldene_buerste' => $goldene_buerste,
-            'hoelzerne_bank'  => $hoelzerne_bank,
+            '_all'             => $rows,
+            'lucky'            => array_slice(array_values($lucky),   0, 3),
+            'unlucky'          => array_slice(array_values($unlucky),  0, 3),
+            'goldene_buerste'  => $goldene_buerste,
+            'hoelzerne_bank'   => $hoelzerne_bank,
+            'matchday_wins'    => array_values($winsByTeam),
         ];
     }
 
