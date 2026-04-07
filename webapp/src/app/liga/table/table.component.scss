@@ -114,6 +114,14 @@
 .col-num {
   width: 60px;
   text-align: right;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+
+    &.col-points {
+      display: table-cell;
+    }
+  }
 }
 
 .col-points {
@@ -125,6 +133,10 @@
   text-align: right;
   font-size: $font-xs;
   color: $color-text-muted;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
 
   &--active {
     color: $color-danger;
