@@ -9,6 +9,13 @@
     <button class="nav-arrow" (click)="decrement()" [disabled]="!canDecrement()" aria-label="Vorheriger Spieltag">‹</button>
     <h1 class="page-title">Spieltag {{ matchday().number }}</h1>
     <button class="nav-arrow" (click)="increment()" [disabled]="!canIncrement()" aria-label="Nächster Spieltag">›</button>
+    @if (seasons().length > 1) {
+      <select class="season-select" [value]="seasonId()" (change)="onSeasonChange($any($event.target).value)">
+        @for (s of seasons(); track s.id) {
+          <option [value]="s.id">{{ s.displayName }}</option>
+        }
+      </select>
+    }
   </div>
 
   <div class="matchday-layout">

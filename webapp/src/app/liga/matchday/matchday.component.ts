@@ -14,11 +14,23 @@ export class MatchdayComponent {
   private api = inject(ApiService);
   cache       = inject(DataCacheService);
 
-  private activeSeason = computed(() => {
-    const seasons = this.cache.seasons();
-    if (!seasons.length) return null;
-    return seasons.reduce((a, b) => a.start_date > b.start_date ? a : b);
-  });
+  // Seasons sorted newest first for dropdown
+  seasons = computed(() =>
+    [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
+  );
+
+  // Default: newest season
+  private defaultSeasonId = computed(() => this.seasons()[0]?.id ?? null);
+
+  selectedSeasonId = signal<string | null>(null);
+
+  private effectiveSeasonId = computed(() =>
+    this.selectedSeasonId() ?? this.defaultSeasonId()
+  );
+
+  private activeSeason = computed(() =>
+    this.cache.seasons().find(s => s.id === this.effectiveSeasonId()) ?? null
+  );
 
   selectedNumber = signal<number | null>(null);
 
@@ -63,6 +75,11 @@ export class MatchdayComponent {
   increment() {
     const n = this.currentNumber();
     if (n && n < this.maxNumber()) this.selectedNumber.set(n + 1);
+  }
+
+  onSeasonChange(seasonId: string): void {
+    this.selectedSeasonId.set(seasonId);
+    this.selectedNumber.set(null); // reset to latest matchday of new season
   }
 
   logoErrors = new Set<string>();

@@ -11,6 +11,22 @@
   }
 }
 
+.season-select {
+  margin-left: $space-3;
+  height: 32px;
+  padding: 0 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &:hover { border-color: $color-text-muted; }
+  &:focus { outline: none; border-color: $color-text-muted; }
+}
+
 .nav-arrow {
   display: flex;
   align-items: center;
