@@ -68,6 +68,95 @@ trait ManagerTrait
         $manager['highlights']  = array_slice($allRatings, 0, 5);
         $manager['lowlights']   = array_slice(array_reverse($allRatings), 0, 5);
 
+        // Favorite players: players bought in ≥ 2 seasons, sorted by total matchdays
+        $activeSeasonId = $this->con->query(
+            "SELECT id FROM season ORDER BY start_date DESC LIMIT 1"
+        )->fetchColumn();
+
+        $pitQ = $this->con_league->prepare("
+            SELECT pit.player_id, pit.from_matchday_id, pit.to_matchday_id, t.season_id
+            FROM player_in_team pit
+            JOIN team t ON t.id = pit.team_id
+            WHERE t.manager_id = :manager_id
+        ");
+        $pitQ->execute([':manager_id' => $id]);
+        $pitRows = $pitQ->fetchAll(PDO::FETCH_ASSOC);
+
+        $manager['favorite_players'] = [];
+        if (!empty($pitRows)) {
+            // Collect all matchday IDs to resolve numbers in one query
+            $allMdIds = array_values(array_unique(array_filter(array_merge(
+                array_column($pitRows, 'from_matchday_id'),
+                array_column($pitRows, 'to_matchday_id')
+            ))));
+            $mdNumbers = [];
+            if (!empty($allMdIds)) {
+                $ph = implode(',', array_fill(0, count($allMdIds), '?'));
+                $mdQ2 = $this->con->prepare("SELECT id, number FROM matchday WHERE id IN ($ph)");
+                $mdQ2->execute($allMdIds);
+                $mdNumbers = array_column($mdQ2->fetchAll(PDO::FETCH_ASSOC), 'number', 'id');
+            }
+
+            // Aggregate per player
+            $playerAgg = [];
+            foreach ($pitRows as $r) {
+                $pid      = $r['player_id'];
+                $fromNum  = isset($mdNumbers[$r['from_matchday_id']]) ? (int)$mdNumbers[$r['from_matchday_id']] : 1;
+                if ($r['to_matchday_id'] !== null) {
+                    $toNum = isset($mdNumbers[$r['to_matchday_id']]) ? (int)$mdNumbers[$r['to_matchday_id']] : 34;
+                } else {
+                    // NULL to_matchday: still active — use 34 if not current season
+                    $toNum = 34;
+                }
+                $duration = max(0, $toNum - $fromNum + 1);
+
+                if (!isset($playerAgg[$pid])) {
+                    $playerAgg[$pid] = ['total_matchdays' => 0, 'seasons' => []];
+                }
+                $playerAgg[$pid]['total_matchdays'] += $duration;
+                $playerAgg[$pid]['seasons'][$r['season_id']] = true;
+            }
+
+            // Filter: ≥ 2 different seasons
+            $playerAgg = array_filter($playerAgg, fn($d) => count($d['seasons']) >= 2);
+            uasort($playerAgg, fn($a, $b) => $b['total_matchdays'] <=> $a['total_matchdays']);
+            $top5Ids = array_slice(array_keys($playerAgg), 0, 5);
+
+            if (!empty($top5Ids)) {
+                $ph2 = implode(',', array_fill(0, count($top5Ids), '?'));
+                // Get displayname + latest season with photo
+                $pQ = $this->con->prepare("
+                    SELECT p.id, p.displayname,
+                           pis.season_id AS photo_season_id,
+                           pis.photo_uploaded
+                    FROM player p
+                    LEFT JOIN player_in_season pis ON pis.player_id = p.id
+                        AND pis.season_id = (
+                            SELECT pis2.season_id FROM player_in_season pis2
+                            JOIN season s2 ON s2.id = pis2.season_id
+                            WHERE pis2.player_id = p.id AND pis2.photo_uploaded = 1
+                            ORDER BY s2.start_date DESC
+                            LIMIT 1
+                        )
+                    WHERE p.id IN ($ph2)
+                ");
+                $pQ->execute($top5Ids);
+                $playerInfo = array_column($pQ->fetchAll(PDO::FETCH_ASSOC), null, 'id');
+
+                foreach ($top5Ids as $pid) {
+                    $info = $playerInfo[$pid] ?? null;
+                    $manager['favorite_players'][] = [
+                        'player_id'       => $pid,
+                        'displayname'     => $info['displayname'] ?? $pid,
+                        'photo_uploaded'  => (bool)($info['photo_uploaded'] ?? false),
+                        'photo_season_id' => $info['photo_season_id'] ?? null,
+                        'total_matchdays' => $playerAgg[$pid]['total_matchdays'],
+                        'season_count'    => count($playerAgg[$pid]['seasons']),
+                    ];
+                }
+            }
+        }
+
         return $manager;
     }
 

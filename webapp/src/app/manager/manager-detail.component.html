@@ -156,6 +156,32 @@
       </div>
     }
 
+    @if (favoritePlayers().length > 0) {
+      <section class="detail-section fav-section">
+        <div class="section-header-row"><h2 class="section-header">Liebllingsspieler</h2></div>
+        <div class="fav-list">
+          @for (p of favoritePlayers(); track p.player_id) {
+            <a class="fav-player" [routerLink]="['/daten/player', p.player_id]">
+              <div class="fav-avatar">
+                @if (p.photo_uploaded && p.photo_season_id && !playerErrors.has(p.player_id)) {
+                  <img
+                    [src]="'https://img.die-bestesten.de/img/player/' + p.photo_season_id + '/' + p.player_id + '.png'"
+                    [alt]="p.displayname"
+                    (error)="onPlayerError(p.player_id)"
+                  />
+                }
+                @if (!p.photo_uploaded || !p.photo_season_id || playerErrors.has(p.player_id)) {
+                  <span class="fav-avatar__initial">{{ p.displayname[0].toUpperCase() }}</span>
+                }
+              </div>
+              <span class="fav-name">{{ p.displayname }}</span>
+              <span class="fav-meta">{{ p.season_count }}× · {{ p.total_matchdays }} ST</span>
+            </a>
+          }
+        </div>
+      </section>
+    }
+
     @if (chartData(); as chart) {
       <section class="detail-section">
         <div class="section-header-row"><h2 class="section-header">Saisons</h2></div>

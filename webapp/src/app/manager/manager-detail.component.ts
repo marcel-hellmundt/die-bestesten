@@ -44,8 +44,9 @@ export class ManagerDetailComponent {
     );
   });
   totalPoints  = computed(() => this.teams().reduce((s, t) => s + t.total_points, 0));
-  highlights   = computed(() => (this.manager()?.highlights  ?? []) as any[]);
-  lowlights    = computed(() => (this.manager()?.lowlights   ?? []) as any[]);
+  highlights       = computed(() => (this.manager()?.highlights       ?? []) as any[]);
+  lowlights        = computed(() => (this.manager()?.lowlights        ?? []) as any[]);
+  favoritePlayers  = computed(() => (this.manager()?.favorite_players ?? []) as any[]);
 
   // Bar chart
   readonly chartW = 360;
@@ -101,9 +102,11 @@ export class ManagerDetailComponent {
     return { bars, yTicks, linePoints, pathD };
   });
 
-  avatarFailed  = false;
-  logoErrors    = new Set<string>();
-  onLogoError(teamId: string) { this.logoErrors.add(teamId); }
+  avatarFailed   = false;
+  logoErrors     = new Set<string>();
+  playerErrors   = new Set<string>();
+  onLogoError(teamId: string)     { this.logoErrors.add(teamId); }
+  onPlayerError(playerId: string) { this.playerErrors.add(playerId); }
 
   constructor() {
     this.cache.ensureSeasons();

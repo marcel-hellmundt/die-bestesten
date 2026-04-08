@@ -136,6 +136,72 @@
   margin-bottom: 0;
 }
 
+.fav-section {
+  margin-bottom: $space-8;
+}
+
+.fav-list {
+  display: flex;
+  gap: $space-6;
+  flex-wrap: wrap;
+}
+
+.fav-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover .fav-avatar {
+    outline: 2px solid $color-text-muted;
+  }
+}
+
+.fav-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: $radius-full;
+  background: $color-surface-alt;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  outline: 2px solid transparent;
+  transition: outline-color $transition-fast;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__initial {
+    font-size: $font-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+}
+
+.fav-name {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  text-align: center;
+  max-width: 72px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fav-meta {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  text-align: center;
+}
+
 .hl-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
