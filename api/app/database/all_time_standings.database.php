@@ -31,7 +31,7 @@ trait AllTimeStandingsTrait
         if (!empty($validSeasonIds)) {
             $seasonPlaceholders = implode(',', array_fill(0, count($validSeasonIds), '?'));
             $topQuery = $this->con_league->prepare(
-                "SELECT tr.points, tr.matchday_id, t.team_name, t.season_id, m.manager_name
+                "SELECT tr.points, tr.matchday_id, t.id AS team_id, t.team_name, t.season_id, m.id AS manager_id, m.manager_name
                  FROM team_rating tr
                  JOIN team t ON t.id = tr.team_id
                  JOIN manager m ON m.id = t.manager_id
@@ -44,7 +44,7 @@ trait AllTimeStandingsTrait
         }
 
         if (!empty($topMatchdays)) {
-            $matchdayIds  = array_column($topMatchdays, 'matchday_id');
+            $matchdayIds = array_column($topMatchdays, 'matchday_id');
             $placeholders = implode(',', array_fill(0, count($matchdayIds), '?'));
             $mdQuery = $this->con->prepare(
                 "SELECT id, number FROM matchday WHERE id IN ($placeholders)"
@@ -59,7 +59,7 @@ trait AllTimeStandingsTrait
         }
 
         return [
-            'standings'    => $standings,
+            'standings' => $standings,
             'top_matchdays' => $topMatchdays,
         ];
     }

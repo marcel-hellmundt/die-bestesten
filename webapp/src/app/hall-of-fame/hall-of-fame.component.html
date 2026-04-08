@@ -140,6 +140,30 @@
               @for (r of topMatchdays(); track r.matchday_id + r.manager_name; let i = $index) {
                 <tr>
                   <td class="col-rank-sm">{{ i + 1 }}</td>
+                  <td class="col-avatar" style="padding-right:0">
+                    <div class="avatar avatar--sm">
+                      @if (!avatarFailed.has(r.manager_id)) {
+                        <img
+                          [src]="'https://img.die-bestesten.de/img/manager/' + r.manager_id + '.jpg'"
+                          [alt]="r.manager_name"
+                          (error)="onAvatarError(r.manager_id)"
+                        />
+                      }
+                      @if (avatarFailed.has(r.manager_id)) {
+                        <span class="avatar__initial">{{ r.manager_name[0].toUpperCase() }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="col-logo" style="padding-right:0">
+                    @if (!logoFailed.has(r.team_id)) {
+                      <img
+                        class="team-logo"
+                        [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                        [alt]="r.team_name"
+                        (error)="onLogoError(r.team_id)"
+                      />
+                    }
+                  </td>
                   <td>
                     <span class="top-name">{{ r.manager_name }}</span>
                     <span class="top-meta">{{ r.team_name }} · {{ cache.seasonName(r.season_id) }}@if (r.matchday_number) { · ST {{ r.matchday_number }}}</span>

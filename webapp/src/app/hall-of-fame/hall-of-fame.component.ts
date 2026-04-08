@@ -15,8 +15,10 @@ interface TopMatchdayEntry {
   points: number;
   matchday_id: string;
   matchday_number: number | null;
+  team_id: string;
   team_name: string;
   season_id: string;
+  manager_id: string;
   manager_name: string;
 }
 
