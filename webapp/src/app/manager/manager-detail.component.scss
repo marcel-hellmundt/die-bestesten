@@ -136,6 +136,61 @@
   margin-bottom: 0;
 }
 
+.hl-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-8;
+  align-items: start;
+  margin-bottom: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hl-card {
+  min-width: 0;
+}
+
+.col-rank-hl {
+  width: 20px;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+  padding-right: 0;
+}
+
+.col-logo-hl {
+  width: 28px;
+  padding-right: 0;
+}
+
+.hl-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.hl-name {
+  display: block;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+}
+
+.hl-meta {
+  display: block;
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+.col-points-hl {
+  text-align: right;
+  font-weight: $font-weight-semibold;
+  font-size: $font-sm;
+  white-space: nowrap;
+}
+
 .chart-container {
   background: $color-surface;
   border: 1px solid $color-border;

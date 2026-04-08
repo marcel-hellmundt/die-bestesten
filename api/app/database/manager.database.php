@@ -40,6 +40,34 @@ trait ManagerTrait
         $q->execute([':manager_id' => $id]);
         $manager['teams'] = $q->fetchAll(PDO::FETCH_ASSOC);
 
+        // Highlights & Lowlights: top/bottom 5 individual matchday ratings for this manager
+        $hlQ = $this->con_league->prepare("
+            SELECT tr.points, tr.matchday_id, t.id AS team_id, t.team_name, t.season_id, t.color
+            FROM team_rating tr
+            JOIN team t ON t.id = tr.team_id
+            WHERE t.manager_id = :manager_id AND tr.invalid = 0 AND tr.points IS NOT NULL
+            ORDER BY tr.points DESC
+        ");
+        $hlQ->execute([':manager_id' => $id]);
+        $allRatings = $hlQ->fetchAll(PDO::FETCH_ASSOC);
+
+        // Resolve matchday numbers from global DB
+        if (!empty($allRatings)) {
+            $matchdayIds  = array_values(array_unique(array_column($allRatings, 'matchday_id')));
+            $placeholders = implode(',', array_fill(0, count($matchdayIds), '?'));
+            $mdQ = $this->con->prepare("SELECT id, number FROM matchday WHERE id IN ($placeholders)");
+            $mdQ->execute($matchdayIds);
+            $mdNumbers = array_column($mdQ->fetchAll(PDO::FETCH_ASSOC), 'number', 'id');
+            foreach ($allRatings as &$r) {
+                $r['matchday_number'] = $mdNumbers[$r['matchday_id']] ?? null;
+                $r['points'] = (int) $r['points'];
+            }
+            unset($r);
+        }
+
+        $manager['highlights']  = array_slice($allRatings, 0, 5);
+        $manager['lowlights']   = array_slice(array_reverse($allRatings), 0, 5);
+
         return $manager;
     }
 

@@ -43,7 +43,9 @@ export class ManagerDetailComponent {
       this.seasonStartDate(b.season_id).localeCompare(this.seasonStartDate(a.season_id))
     );
   });
-  totalPoints = computed(() => this.teams().reduce((s, t) => s + t.total_points, 0));
+  totalPoints  = computed(() => this.teams().reduce((s, t) => s + t.total_points, 0));
+  highlights   = computed(() => (this.manager()?.highlights  ?? []) as any[]);
+  lowlights    = computed(() => (this.manager()?.lowlights   ?? []) as any[]);
 
   // Bar chart
   readonly chartW = 360;
@@ -99,7 +101,9 @@ export class ManagerDetailComponent {
     return { bars, yTicks, linePoints, pathD };
   });
 
-  avatarFailed = false;
+  avatarFailed  = false;
+  logoErrors    = new Set<string>();
+  onLogoError(teamId: string) { this.logoErrors.add(teamId); }
 
   constructor() {
     this.cache.ensureSeasons();
