@@ -60,7 +60,6 @@ trait ManagerTrait
             $hlQ->execute(array_merge([$id], $validSeasonIds));
             $allRatings = $hlQ->fetchAll(PDO::FETCH_ASSOC);
         }
-        $allRatings = $hlQ->fetchAll(PDO::FETCH_ASSOC);
 
         // Resolve matchday numbers from global DB
         if (!empty($allRatings)) {
