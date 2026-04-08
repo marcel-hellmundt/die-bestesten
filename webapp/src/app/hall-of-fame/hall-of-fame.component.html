@@ -58,18 +58,17 @@
   @if (!awardsLoading() && (awards().length > 0 || topMatchdays().length > 0)) {
     <div class="awards-grid">
       @for (award of awards(); track award.id) {
-        <div class="card award-card">
-          <div class="award-card__header">
-            @if (award.icon) {
-              <img
-                [src]="'/img/icons/' + award.icon + '.png'"
-                class="award-card__icon"
-                alt=""
-                aria-hidden="true"
-              />
-            }
-            <h2 class="award-card__title">{{ award.name }}</h2>
-          </div>
+        <div class="award-wrap">
+          @if (award.icon) {
+            <img
+              [src]="'/img/icons/' + award.icon + '.png'"
+              class="award-icon"
+              alt=""
+              aria-hidden="true"
+            />
+          }
+          <span class="award-label">{{ award.name }}</span>
+          <div class="card award-card">
           <table class="data-table data-table--compact">
             <tbody>
               @for (row of award.seasons; track row.season_id) {
@@ -123,14 +122,14 @@
               }
             </tbody>
           </table>
+          </div>
         </div>
       }
 
       @if (topMatchdays().length > 0) {
-        <div class="card award-card">
-          <div class="award-card__header">
-            <h2 class="award-card__title">Top 5 Einzelspieltage</h2>
-          </div>
+        <div class="award-wrap">
+          <span class="award-label">Top 5 Einzelspieltage</span>
+          <div class="card award-card">
           <table class="data-table data-table--compact">
             <tbody>
               @for (r of topMatchdays(); track r.matchday_id + r.manager_name; let i = $index) {
@@ -145,6 +144,7 @@
               }
             </tbody>
           </table>
+          </div>
         </div>
       }
     </div>
