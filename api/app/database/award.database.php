@@ -36,7 +36,7 @@ trait AwardTrait
                         SUM(max_points - points)     AS total_gap,
                         MIN(points)                  AS min_matchday_points
                  FROM team_rating
-                 WHERE team_id IN ($placeholders) AND invalid = 0
+                 WHERE team_id IN ($placeholders) AND invalid = 0 AND points IS NOT NULL
                  GROUP BY team_id"
             );
             $statsRows->execute($teamIds);
