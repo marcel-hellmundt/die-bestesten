@@ -71,29 +71,32 @@
   display: block;
 }
 
-.top-matchdays-card {
-  margin-top: $space-8;
-}
-
-.section-title {
-  font-size: $font-md;
-  font-weight: $font-weight-semibold;
-  margin: 0 0 $space-4;
-}
-
-.col-season-sm {
-  width: 120px;
-  color: $color-text-muted;
-  font-size: $font-sm;
-}
-
-.col-team-sm {
-  font-size: $font-sm;
-}
-
-.matchday-badge {
+.col-rank-sm {
+  width: 20px;
   color: $color-text-muted;
   font-size: $font-xs;
+  font-weight: $font-weight-medium;
+  padding-right: 0;
+}
+
+.top-name {
+  display: block;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+}
+
+.top-meta {
+  display: block;
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+.col-top-points {
+  width: 36px;
+  text-align: right;
+  font-weight: $font-weight-semibold;
+  font-size: $font-sm;
+  white-space: nowrap;
 }
 
 .awards-grid {

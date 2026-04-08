@@ -55,35 +55,7 @@
     </table>
   </div>
 
-  @if (topMatchdays().length > 0) {
-    <div class="card top-matchdays-card">
-      <h2 class="section-title">Top 5 beste Einzelspieltage</h2>
-      <table class="data-table data-table--compact">
-        <thead>
-          <tr>
-            <th class="col-rank">#</th>
-            <th>Manager</th>
-            <th>Team</th>
-            <th class="col-season-sm">Saison</th>
-            <th class="col-points">Punkte</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (r of topMatchdays(); track r.matchday_id + r.manager_name; let i = $index) {
-            <tr>
-              <td class="col-rank">{{ i + 1 }}</td>
-              <td>{{ r.manager_name }}</td>
-              <td class="col-team-sm">{{ r.team_name }}</td>
-              <td class="col-season-sm">{{ cache.seasonName(r.season_id) }}@if (r.matchday_number) {<span class="matchday-badge"> · ST {{ r.matchday_number }}</span>}</td>
-              <td class="col-points">{{ r.points }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  }
-
-  @if (!awardsLoading() && awards().length > 0) {
+  @if (!awardsLoading() && (awards().length > 0 || topMatchdays().length > 0)) {
     <div class="awards-grid">
       @for (award of awards(); track award.id) {
         <div class="card award-card">
@@ -147,6 +119,28 @@
                   } @else {
                     <td colspan="3" class="col-no-winner">Kein Gewinner</td>
                   }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (topMatchdays().length > 0) {
+        <div class="card award-card">
+          <div class="award-card__header">
+            <h2 class="award-card__title">Top 5 Einzelspieltage</h2>
+          </div>
+          <table class="data-table data-table--compact">
+            <tbody>
+              @for (r of topMatchdays(); track r.matchday_id + r.manager_name; let i = $index) {
+                <tr>
+                  <td class="col-rank-sm">{{ i + 1 }}</td>
+                  <td>
+                    <span class="top-name">{{ r.manager_name }}</span>
+                    <span class="top-meta">{{ r.team_name }} · {{ cache.seasonName(r.season_id) }}@if (r.matchday_number) { · ST {{ r.matchday_number }}}</span>
+                  </td>
+                  <td class="col-top-points">{{ r.points }}</td>
                 </tr>
               }
             </tbody>
