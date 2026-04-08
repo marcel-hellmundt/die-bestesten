@@ -115,8 +115,13 @@
                       }
                     </td>
                     <td class="col-winner-name">{{ row.winner.manager_name }}</td>
+                    @if (awardStat(award.name, row.winner); as stat) {
+                      <td class="col-award-stat">{{ stat }}</td>
+                    } @else {
+                      <td></td>
+                    }
                   } @else {
-                    <td colspan="3" class="col-no-winner">Kein Gewinner</td>
+                    <td colspan="4" class="col-no-winner">Kein Gewinner</td>
                   }
                 </tr>
               }

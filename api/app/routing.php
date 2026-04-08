@@ -301,7 +301,7 @@ class Routing
                     [
                         'method'      => 'GET',
                         'path'        => '/award',
-                        'description' => 'Alle Awards mit Gewinnern pro Saison — Auth',
+                        'description' => 'Alle Awards mit Gewinnern pro Saison inkl. Statistikwerte (total_points, total_gap, min_matchday_points) am winner-Objekt — Auth',
                     ],
                 ],
             ]),

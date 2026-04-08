@@ -59,6 +59,23 @@ export class HallOfFameComponent {
   onAvatarError(id: string): void { this.avatarFailed.add(id); }
   onLogoError(id: string): void   { this.logoFailed.add(id); }
 
+  awardStat(awardName: string, winner: any): number | null {
+    if (!winner) return null;
+    const n = awardName.toLowerCase();
+    if (n.includes('meisterschaft'))  return winner.total_points        ?? null;
+    if (n.includes('bank'))           return winner.total_gap            ?? null;
+    if (n.includes('bürste') || n.includes('burste')) return winner.min_matchday_points ?? null;
+    return null;
+  }
+
+  awardStatLabel(awardName: string): string {
+    const n = awardName.toLowerCase();
+    if (n.includes('meisterschaft'))  return 'Pkt';
+    if (n.includes('bank'))           return 'Pkt Diff';
+    if (n.includes('bürste') || n.includes('burste')) return 'Min Pkt';
+    return '';
+  }
+
   constructor() {
     this.cache.ensureSeasons();
   }

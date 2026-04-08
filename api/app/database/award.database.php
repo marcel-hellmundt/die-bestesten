@@ -25,10 +25,35 @@ trait AwardTrait
              JOIN manager m ON m.id = t.manager_id"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        // Index winners by award_id + season_id
+        // Compute stats for all winner teams in one query
+        $teamIds = array_unique(array_column($winners, 'team_id'));
+        $statsMap = [];
+        if (!empty($teamIds)) {
+            $placeholders = implode(',', array_fill(0, count($teamIds), '?'));
+            $statsRows = $this->con_league->prepare(
+                "SELECT team_id,
+                        SUM(points)                  AS total_points,
+                        SUM(max_points - points)     AS total_gap,
+                        MIN(points)                  AS min_matchday_points
+                 FROM team_rating
+                 WHERE team_id IN ($placeholders) AND invalid = 0
+                 GROUP BY team_id"
+            );
+            $statsRows->execute($teamIds);
+            foreach ($statsRows->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $statsMap[$row['team_id']] = [
+                    'total_points'         => (int) $row['total_points'],
+                    'total_gap'            => (int) $row['total_gap'],
+                    'min_matchday_points'  => (int) $row['min_matchday_points'],
+                ];
+            }
+        }
+
+        // Index winners by award_id + season_id, attach stats
         $winnerMap = [];
         foreach ($winners as $w) {
-            $winnerMap[$w['award_id'] . '_' . $w['season_id']] = $w;
+            $stats = $statsMap[$w['team_id']] ?? [];
+            $winnerMap[$w['award_id'] . '_' . $w['season_id']] = array_merge($w, $stats);
         }
 
         // Build result

@@ -172,6 +172,14 @@
   font-weight: $font-weight-medium;
 }
 
+.col-award-stat {
+  text-align: right;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
 .col-no-winner {
   font-size: $font-sm;
   color: $color-text-muted;
