@@ -18,6 +18,39 @@ trait AllTimeStandingsTrait
              ORDER BY total_points DESC, m.manager_name ASC"
         );
         $query->execute();
-        return $query->fetchAll(PDO::FETCH_ASSOC);
+        $standings = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        // Top 5 best single matchday performances
+        $topQuery = $this->con_league->prepare(
+            "SELECT tr.points, tr.matchday_id, t.team_name, t.season_id, m.manager_name
+             FROM team_rating tr
+             JOIN team t ON t.id = tr.team_id
+             JOIN manager m ON m.id = t.manager_id
+             WHERE tr.invalid = 0
+             ORDER BY tr.points DESC
+             LIMIT 5"
+        );
+        $topQuery->execute();
+        $topMatchdays = $topQuery->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($topMatchdays)) {
+            $matchdayIds  = array_column($topMatchdays, 'matchday_id');
+            $placeholders = implode(',', array_fill(0, count($matchdayIds), '?'));
+            $mdQuery = $this->con->prepare(
+                "SELECT id, number FROM matchday WHERE id IN ($placeholders)"
+            );
+            $mdQuery->execute($matchdayIds);
+            $mdNumbers = array_column($mdQuery->fetchAll(PDO::FETCH_ASSOC), 'number', 'id');
+
+            foreach ($topMatchdays as &$row) {
+                $row['matchday_number'] = $mdNumbers[$row['matchday_id']] ?? null;
+            }
+            unset($row);
+        }
+
+        return [
+            'standings'    => $standings,
+            'top_matchdays' => $topMatchdays,
+        ];
     }
 }

@@ -71,7 +71,7 @@ class Routing
                     [
                         'method'      => 'GET',
                         'path'        => '/all_time_standings',
-                        'description' => 'All active managers with total points, sorted descending',
+                        'description' => 'Returns { standings: [{id, manager_name, alias, total_points}], top_matchdays: [{points, matchday_id, matchday_number, team_name, season_id, manager_name}] }',
                     ],
                 ],
             ]),

@@ -11,6 +11,15 @@ interface AllTimeStandingsEntry {
   total_points: number;
 }
 
+interface TopMatchdayEntry {
+  points: number;
+  matchday_id: string;
+  matchday_number: number | null;
+  team_name: string;
+  season_id: string;
+  manager_name: string;
+}
+
 @Component({
   selector: 'app-hall-of-fame',
   standalone: false,
@@ -22,10 +31,10 @@ export class HallOfFameComponent {
   cache         = inject(DataCacheService);
 
   private state = toSignal(
-    this.api.get<AllTimeStandingsEntry[]>('all_time_standings').pipe(
+    this.api.get<{ standings: AllTimeStandingsEntry[]; top_matchdays: TopMatchdayEntry[] }>('all_time_standings').pipe(
       map(data => ({ data, loading: false, error: null as string | null })),
-      startWith({ data: [] as AllTimeStandingsEntry[], loading: true, error: null as string | null }),
-      catchError(() => of({ data: [] as AllTimeStandingsEntry[], loading: false, error: 'Fehler beim Laden' }))
+      startWith({ data: null as any, loading: true, error: null as string | null }),
+      catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' }))
     )
   );
 
@@ -37,7 +46,8 @@ export class HallOfFameComponent {
     )
   );
 
-  items         = computed(() => this.state()?.data    ?? []);
+  items         = computed(() => (this.state()?.data?.standings    ?? []) as AllTimeStandingsEntry[]);
+  topMatchdays  = computed(() => (this.state()?.data?.top_matchdays ?? []) as TopMatchdayEntry[]);
   loading       = computed(() => this.state()?.loading ?? true);
   error         = computed(() => this.state()?.error   ?? null);
   awards        = computed(() => this.awardsState()?.data ?? []);

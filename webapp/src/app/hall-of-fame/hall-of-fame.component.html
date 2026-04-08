@@ -55,6 +55,34 @@
     </table>
   </div>
 
+  @if (topMatchdays().length > 0) {
+    <div class="card top-matchdays-card">
+      <h2 class="section-title">Top 5 beste Einzelspieltage</h2>
+      <table class="data-table data-table--compact">
+        <thead>
+          <tr>
+            <th class="col-rank">#</th>
+            <th>Manager</th>
+            <th>Team</th>
+            <th class="col-season-sm">Saison</th>
+            <th class="col-points">Punkte</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of topMatchdays(); track r.matchday_id + r.manager_name; let i = $index) {
+            <tr>
+              <td class="col-rank">{{ i + 1 }}</td>
+              <td>{{ r.manager_name }}</td>
+              <td class="col-team-sm">{{ r.team_name }}</td>
+              <td class="col-season-sm">{{ cache.seasonName(r.season_id) }}@if (r.matchday_number) {<span class="matchday-badge"> · ST {{ r.matchday_number }}</span>}</td>
+              <td class="col-points">{{ r.points }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
   @if (!awardsLoading() && awards().length > 0) {
     <div class="awards-grid">
       @for (award of awards(); track award.id) {

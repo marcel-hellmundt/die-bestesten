@@ -71,6 +71,31 @@
   display: block;
 }
 
+.top-matchdays-card {
+  margin-top: $space-8;
+}
+
+.section-title {
+  font-size: $font-md;
+  font-weight: $font-weight-semibold;
+  margin: 0 0 $space-4;
+}
+
+.col-season-sm {
+  width: 120px;
+  color: $color-text-muted;
+  font-size: $font-sm;
+}
+
+.col-team-sm {
+  font-size: $font-sm;
+}
+
+.matchday-badge {
+  color: $color-text-muted;
+  font-size: $font-xs;
+}
+
 .awards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
