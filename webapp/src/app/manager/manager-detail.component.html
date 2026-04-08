@@ -35,7 +35,8 @@
     </div>
   </div>
 
-  <div class="seasons-layout">
+  <!-- Row 1: Teams table + Saisons chart -->
+  <div class="top-row">
     <section class="detail-section">
       <div class="section-header-row"><h2 class="section-header">Teams</h2></div>
 
@@ -76,9 +77,7 @@
                       {{ team.team_name }}
                     </span>
                   </td>
-                  <td class="col-num">
-                    {{ team.season_placement }}
-                  </td>
+                  <td class="col-num">{{ team.season_placement }}</td>
                   <td class="col-num col-points">{{ team.total_points }}</td>
                 </tr>
               }
@@ -88,132 +87,20 @@
       }
     </section>
 
-    @if (highlights().length > 0 || lowlights().length > 0) {
-      <div class="hl-row">
-        @if (highlights().length > 0) {
-          <section class="detail-section hl-card">
-            <div class="section-header-row"><h2 class="section-header">Highlights</h2></div>
-            <div class="table-container">
-              <table class="data-table data-table--compact">
-                <tbody>
-                  @for (r of highlights(); track r.matchday_id + r.team_id; let i = $index) {
-                    <tr class="row-link" [routerLink]="['/team', r.team_id]">
-                      <td class="col-rank-hl">{{ i + 1 }}</td>
-                      <td class="col-logo-hl">
-                        @if (!logoErrors.has(r.team_id)) {
-                          <img
-                            class="hl-logo"
-                            [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
-                            [alt]="r.team_name"
-                            (error)="onLogoError(r.team_id)"
-                          />
-                        }
-                      </td>
-                      <td>
-                        <span class="hl-name">{{ r.team_name }}</span>
-                        <span class="hl-meta">{{ cache.seasonName(r.season_id) }}@if (r.matchday_number) { · ST {{ r.matchday_number }}}</span>
-                      </td>
-                      <td class="col-points-hl">{{ r.points }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </section>
-        }
-
-        @if (lowlights().length > 0) {
-          <section class="detail-section hl-card">
-            <div class="section-header-row"><h2 class="section-header">Lowlights</h2></div>
-            <div class="table-container">
-              <table class="data-table data-table--compact">
-                <tbody>
-                  @for (r of lowlights(); track r.matchday_id + r.team_id; let i = $index) {
-                    <tr class="row-link" [routerLink]="['/team', r.team_id]">
-                      <td class="col-rank-hl">{{ i + 1 }}</td>
-                      <td class="col-logo-hl">
-                        @if (!logoErrors.has(r.team_id)) {
-                          <img
-                            class="hl-logo"
-                            [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
-                            [alt]="r.team_name"
-                            (error)="onLogoError(r.team_id)"
-                          />
-                        }
-                      </td>
-                      <td>
-                        <span class="hl-name">{{ r.team_name }}</span>
-                        <span class="hl-meta">{{ cache.seasonName(r.season_id) }}@if (r.matchday_number) { · ST {{ r.matchday_number }}}</span>
-                      </td>
-                      <td class="col-points-hl">{{ r.points }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </section>
-        }
-      </div>
-    }
-
-    @if (favoritePlayers().length > 0) {
-      <section class="detail-section fav-section">
-        <div class="section-header-row"><h2 class="section-header">Liebllingsspieler</h2></div>
-        <div class="fav-list">
-          @for (p of favoritePlayers(); track p.player_id) {
-            <a class="fav-player" [routerLink]="['/daten/player', p.player_id]">
-              <div class="fav-avatar">
-                @if (p.photo_uploaded && p.photo_season_id && !playerErrors.has(p.player_id)) {
-                  <img
-                    [src]="'https://img.die-bestesten.de/img/player/' + p.photo_season_id + '/' + p.player_id + '.png'"
-                    [alt]="p.displayname"
-                    (error)="onPlayerError(p.player_id)"
-                  />
-                }
-                @if (!p.photo_uploaded || !p.photo_season_id || playerErrors.has(p.player_id)) {
-                  <span class="fav-avatar__initial">{{ p.displayname[0].toUpperCase() }}</span>
-                }
-              </div>
-              <span class="fav-name">{{ p.displayname }}</span>
-              <span class="fav-meta">{{ p.season_count }}× · {{ p.total_matchdays }} ST</span>
-            </a>
-          }
-        </div>
-      </section>
-    }
-
     @if (chartData(); as chart) {
       <section class="detail-section">
         <div class="section-header-row"><h2 class="section-header">Saisons</h2></div>
         <div class="chart-container">
           <svg class="bar-chart" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" aria-hidden="true">
             @for (tick of chart.yTicks; track tick.label) {
-              <line
-                [attr.x1]="padL"
-                [attr.y1]="tick.y"
-                [attr.x2]="chartW - padR"
-                [attr.y2]="tick.y"
-                class="chart-grid"
-              />
-              <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">
-                {{ tick.label }}
-              </text>
+              <line [attr.x1]="padL" [attr.y1]="tick.y" [attr.x2]="chartW - padR" [attr.y2]="tick.y" class="chart-grid" />
+              <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">{{ tick.label }}</text>
             }
             @for (b of chart.bars; track b.label) {
-              <rect
-                [attr.x]="b.x"
-                [attr.y]="b.y"
-                [attr.width]="b.w"
-                [attr.height]="b.h"
-                [style.fill]="b.color"
-                class="bar"
-                rx="3"
-              >
+              <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" [style.fill]="b.color" class="bar" rx="3">
                 <title>{{ b.label }}: {{ b.points }} Pkt</title>
               </rect>
-              <text [attr.x]="b.cx" [attr.y]="chartH - 4" class="chart-label chart-label--x">
-                {{ b.label }}
-              </text>
+              <text [attr.x]="b.cx" [attr.y]="chartH - 4" class="chart-label chart-label--x">{{ b.label }}</text>
             }
             @if (chart.pathD) {
               <path [attr.d]="chart.pathD" class="placement-line" fill="none" />
@@ -228,4 +115,90 @@
       </section>
     }
   </div>
+
+  <!-- Row 2: Lieblingsspieler -->
+  @if (favoritePlayers().length > 0) {
+    <section class="detail-section fav-section">
+      <div class="section-header-row"><h2 class="section-header">Lieblingsspieler</h2></div>
+      <div class="fav-grid">
+        @for (p of favoritePlayers(); track p.player_id) {
+          <a class="card fav-card" [routerLink]="['/daten/player', p.player_id]">
+            <div class="fav-avatar">
+              @if (p.photo_uploaded && p.photo_season_id && !playerErrors.has(p.player_id)) {
+                <img
+                  [src]="'https://img.die-bestesten.de/img/player/' + p.photo_season_id + '/' + p.player_id + '.png'"
+                  [alt]="p.displayname"
+                  (error)="onPlayerError(p.player_id)"
+                />
+              }
+              @if (!p.photo_uploaded || !p.photo_season_id || playerErrors.has(p.player_id)) {
+                <span class="fav-avatar__initial">{{ p.displayname[0].toUpperCase() }}</span>
+              }
+            </div>
+            <span class="fav-name">{{ p.displayname }}</span>
+            <span class="fav-meta">{{ p.season_count }}× · {{ p.total_matchdays }} ST</span>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Row 3: Highlights + Lowlights -->
+  @if (highlights().length > 0 || lowlights().length > 0) {
+    <div class="hl-row">
+      @if (highlights().length > 0) {
+        <section class="detail-section hl-card">
+          <div class="section-header-row"><h2 class="section-header">Highlights</h2></div>
+          <div class="table-container">
+            <table class="data-table data-table--compact">
+              <tbody>
+                @for (r of highlights(); track r.matchday_id + r.team_id; let i = $index) {
+                  <tr class="row-link" [routerLink]="['/team', r.team_id]">
+                    <td class="col-rank-hl">{{ i + 1 }}</td>
+                    <td class="col-logo-hl">
+                      @if (!logoErrors.has(r.team_id)) {
+                        <img class="hl-logo" [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'" [alt]="r.team_name" (error)="onLogoError(r.team_id)" />
+                      }
+                    </td>
+                    <td>
+                      <span class="hl-name">{{ r.team_name }}</span>
+                      <span class="hl-meta">{{ cache.seasonName(r.season_id) }}@if (r.matchday_number) { · ST {{ r.matchday_number }}}</span>
+                    </td>
+                    <td class="col-points-hl">{{ r.points }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+
+      @if (lowlights().length > 0) {
+        <section class="detail-section hl-card">
+          <div class="section-header-row"><h2 class="section-header">Lowlights</h2></div>
+          <div class="table-container">
+            <table class="data-table data-table--compact">
+              <tbody>
+                @for (r of lowlights(); track r.matchday_id + r.team_id; let i = $index) {
+                  <tr class="row-link" [routerLink]="['/team', r.team_id]">
+                    <td class="col-rank-hl">{{ i + 1 }}</td>
+                    <td class="col-logo-hl">
+                      @if (!logoErrors.has(r.team_id)) {
+                        <img class="hl-logo" [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'" [alt]="r.team_name" (error)="onLogoError(r.team_id)" />
+                      }
+                    </td>
+                    <td>
+                      <span class="hl-name">{{ r.team_name }}</span>
+                      <span class="hl-meta">{{ cache.seasonName(r.season_id) }}@if (r.matchday_number) { · ST {{ r.matchday_number }}}</span>
+                    </td>
+                    <td class="col-points-hl">{{ r.points }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    </div>
+  }
 }

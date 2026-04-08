@@ -40,15 +40,26 @@ trait ManagerTrait
         $q->execute([':manager_id' => $id]);
         $manager['teams'] = $q->fetchAll(PDO::FETCH_ASSOC);
 
-        // Highlights & Lowlights: top/bottom 5 individual matchday ratings for this manager
-        $hlQ = $this->con_league->prepare("
-            SELECT tr.points, tr.matchday_id, t.id AS team_id, t.team_name, t.season_id, t.color
-            FROM team_rating tr
-            JOIN team t ON t.id = tr.team_id
-            WHERE t.manager_id = :manager_id AND tr.invalid = 0 AND tr.points IS NOT NULL
-            ORDER BY tr.points DESC
-        ");
-        $hlQ->execute([':manager_id' => $id]);
+        // Highlights & Lowlights: top/bottom 5 individual matchday ratings (from 2017/18 onwards)
+        $validSeasonIds = array_column(
+            $this->con->query("SELECT id FROM season WHERE start_date >= '2017-07-01'")->fetchAll(PDO::FETCH_ASSOC),
+            'id'
+        );
+
+        $allRatings = [];
+        if (!empty($validSeasonIds)) {
+            $seasonPh = implode(',', array_fill(0, count($validSeasonIds), '?'));
+            $hlQ = $this->con_league->prepare("
+                SELECT tr.points, tr.matchday_id, t.id AS team_id, t.team_name, t.season_id, t.color
+                FROM team_rating tr
+                JOIN team t ON t.id = tr.team_id
+                WHERE t.manager_id = ? AND tr.invalid = 0 AND tr.points IS NOT NULL
+                  AND t.season_id IN ($seasonPh)
+                ORDER BY tr.points DESC
+            ");
+            $hlQ->execute(array_merge([$id], $validSeasonIds));
+            $allRatings = $hlQ->fetchAll(PDO::FETCH_ASSOC);
+        }
         $allRatings = $hlQ->fetchAll(PDO::FETCH_ASSOC);
 
         // Resolve matchday numbers from global DB
@@ -69,10 +80,6 @@ trait ManagerTrait
         $manager['lowlights']   = array_slice(array_reverse($allRatings), 0, 5);
 
         // Favorite players: players bought in ≥ 2 seasons, sorted by total matchdays
-        $activeSeasonId = $this->con->query(
-            "SELECT id FROM season ORDER BY start_date DESC LIMIT 1"
-        )->fetchColumn();
-
         $pitQ = $this->con_league->prepare("
             SELECT pit.player_id, pit.from_matchday_id, pit.to_matchday_id, t.season_id
             FROM player_in_team pit
@@ -101,7 +108,7 @@ trait ManagerTrait
             $playerAgg = [];
             foreach ($pitRows as $r) {
                 $pid      = $r['player_id'];
-                $fromNum  = isset($mdNumbers[$r['from_matchday_id']]) ? (int)$mdNumbers[$r['from_matchday_id']] : 1;
+                $fromNum  = (int)($mdNumbers[$r['from_matchday_id']] ?? 1);
                 if ($r['to_matchday_id'] !== null) {
                     $toNum = isset($mdNumbers[$r['to_matchday_id']]) ? (int)$mdNumbers[$r['to_matchday_id']] : 34;
                 } else {

@@ -120,7 +120,7 @@
   }
 }
 
-.seasons-layout {
+.top-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: $space-8;
@@ -140,23 +140,25 @@
   margin-bottom: $space-8;
 }
 
-.fav-list {
-  display: flex;
-  gap: $space-6;
-  flex-wrap: wrap;
+.fav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: $space-4;
 }
 
-.fav-player {
+.fav-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $space-2;
+  gap: $space-3;
+  padding: $space-4;
   text-decoration: none;
   color: inherit;
   cursor: pointer;
+  transition: border-color $transition-fast;
 
-  &:hover .fav-avatar {
-    outline: 2px solid $color-text-muted;
+  &:hover {
+    border-color: $color-text-muted;
   }
 }
 
@@ -170,8 +172,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  outline: 2px solid transparent;
-  transition: outline-color $transition-fast;
 
   img {
     width: 100%;
@@ -190,7 +190,7 @@
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   text-align: center;
-  max-width: 72px;
+  width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
