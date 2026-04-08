@@ -26,7 +26,7 @@ trait AwardTrait
         )->fetchAll(PDO::FETCH_ASSOC);
 
         // Compute stats for all winner teams in one query
-        $teamIds = array_unique(array_column($winners, 'team_id'));
+        $teamIds = array_values(array_unique(array_column($winners, 'team_id')));
         $statsMap = [];
         if (!empty($teamIds)) {
             $placeholders = implode(',', array_fill(0, count($teamIds), '?'));
