@@ -325,6 +325,46 @@ trait LeagueTrait
             // player_in_team may not exist in older DBs — skip silently
         }
 
+        // Migrate team_lineup
+        $migratedLineup = 0;
+        $skippedLineup  = 0;
+        try {
+            $lineupRows = $this->con_old->query(
+                "SELECT tl.team_lineup_id, tl.team_id, tl.player_id,
+                        tl.matchday, tl.nominated, tl.position_index,
+                        t.season_id
+                 FROM team_lineup tl
+                 JOIN team t ON t.team_id = tl.team_id"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtLineup = $conLeague->prepare(
+                "INSERT INTO team_lineup (id, team_id, player_id, matchday_id, nominated, position_index)
+                 VALUES (:id, :team_id, :player_id, :matchday_id, :nominated, :position_index)
+                 ON DUPLICATE KEY UPDATE id = id"
+            );
+
+            foreach ($lineupRows as $row) {
+                $key        = $row['season_id'] . '_' . $row['matchday'];
+                $matchdayId = $matchdayMap[$key] ?? null;
+                if (!$matchdayId) {
+                    $skippedLineup++;
+                    continue;
+                }
+
+                $stmtLineup->execute([
+                    ':id'             => $row['team_lineup_id'],
+                    ':team_id'        => $row['team_id'],
+                    ':player_id'      => $row['player_id'],
+                    ':matchday_id'    => $matchdayId,
+                    ':nominated'      => $row['nominated'],
+                    ':position_index' => $row['position_index'],
+                ]);
+                $migratedLineup++;
+            }
+        } catch (PDOException) {
+            // team_lineup may not exist in older DBs — skip silently
+        }
+
         return [
             'status'            => true,
             'teams'             => ['migrated' => $migrated,             'skipped' => $skipped],
@@ -333,6 +373,7 @@ trait LeagueTrait
             'offers'            => ['migrated' => $migratedOffers],
             'sells'             => ['migrated' => $migratedSells],
             'player_in_team'    => ['migrated' => $migratedPlayerInTeam, 'skipped' => $skippedPlayerInTeam],
+            'team_lineup'       => ['migrated' => $migratedLineup,       'skipped' => $skippedLineup],
             'matchdays_created' => array_values($createdMatchdays),
         ];
     }

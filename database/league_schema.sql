@@ -67,7 +67,17 @@ CREATE TABLE IF NOT EXISTS team_rating (
     UNIQUE KEY uk_team_rating (team_id, matchday_id)
 );
 
--- CREATE TABLE IF NOT EXISTS team_lineup (...);
+-- Tabelle: team_lineup (Aufstellung pro Team pro Spieltag — alle Kader-Spieler, nominated = eingesetzt)
+CREATE TABLE IF NOT EXISTS team_lineup (
+    id             CHAR(36)   NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    team_id        CHAR(36)   NOT NULL,
+    player_id      CHAR(36)   NOT NULL,             -- Referenz auf global_schema.player.id (kein FK, cross-DB)
+    matchday_id    CHAR(36)   NOT NULL,             -- Referenz auf global_schema.matchday.id (kein FK, cross-DB)
+    nominated      TINYINT(1) NOT NULL DEFAULT 0,
+    position_index INT        NULL DEFAULT NULL,    -- visuell: Reihenfolge pro Position (links/mitte/rechts)
+    FOREIGN KEY (team_id) REFERENCES team(id),
+    UNIQUE KEY uk_team_lineup (team_id, player_id, matchday_id)
+);
 
 -- Tabelle: offer (Gebote auf Spieler in einer Transferphase)
 CREATE TABLE IF NOT EXISTS offer (

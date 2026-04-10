@@ -131,4 +131,4 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 
 **player_in_team**: id PK, team_id FK, player_id (cross-DB), from_matchday_id (cross-DB, Kauf), to_matchday_id (cross-DB, Verkauf; NULL = aktiv), offer_id FK?, sell_id FK? — UNIQUE(player_id, from_matchday_id) — max. 1 aktives Team pro Spieler wird auf Applikationsebene geprüft
 
-Ausstehend: team_lineup
+**team_lineup**: id PK, team_id FK, player_id (cross-DB), matchday_id (cross-DB), nominated BOOL, position_index INT? — UNIQUE(team_id, player_id, matchday_id) — alle Kader-Spieler des Spieltags; nominated=1 = aufgestellt
