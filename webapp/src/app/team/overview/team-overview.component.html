@@ -45,7 +45,7 @@
     <table class="data-table data-table--compact">
       <thead>
         <tr>
-          <th class="col-st">ST</th>
+          <th class="col-st">Sp.</th>
           <th class="col-rank">#</th>
           <th class="col-icons">SdS</th>
           <th class="col-icons">Tore</th>
@@ -93,10 +93,10 @@
         <tr>
           <td class="col-st foot-label">Gesamt</td>
           <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
+          <td class="col-icons">{{ totalSds() || '' }}</td>
+          <td class="col-icons">{{ totalGoals() || '' }}</td>
+          <td class="col-icons">{{ totalAssists() || '' }}</td>
+          <td class="col-cs">{{ totalCleanSheet() || '' }}</td>
           <td class="col-points">{{ totalPoints() }}</td>
           <td class="col-fine col-fine--active">
             @if (totalFine() > 0) { {{ totalFine() | number:'1.2-2' }} € }

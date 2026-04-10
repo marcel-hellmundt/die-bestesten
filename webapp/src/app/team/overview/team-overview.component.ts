@@ -35,8 +35,12 @@ export class TeamOverviewComponent {
   loading   = computed(() => this.state().loading);
   error     = computed(() => this.state().error);
 
-  totalPoints = computed(() => this.ratings().filter((r: any) => !r.invalid).reduce((s: number, r: any) => s + Number(r.points), 0));
-  totalFine   = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.fine ?? 0), 0));
+  totalPoints    = computed(() => this.ratings().filter((r: any) => !r.invalid).reduce((s: number, r: any) => s + Number(r.points), 0));
+  totalFine      = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.fine ?? 0), 0));
+  totalSds       = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.sds ?? 0), 0));
+  totalGoals     = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.goals ?? 0), 0));
+  totalAssists   = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.assists ?? 0), 0));
+  totalCleanSheet = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.clean_sheet ?? 0), 0));
 
   range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
 
