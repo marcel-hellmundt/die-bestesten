@@ -6,9 +6,9 @@
   <p class="state-msg">Keine Aufstellungsdaten vorhanden.</p>
 } @else {
   <div class="lineup-nav">
-    <select class="matchday-select" [value]="matchday().id" (change)="selectedMatchdayId.set($any($event.target).value)">
+    <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
       @for (md of matchdays(); track md.id) {
-        <option [value]="md.id">Sp. {{ md.number }}</option>
+        <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
       }
     </select>
   </div>
