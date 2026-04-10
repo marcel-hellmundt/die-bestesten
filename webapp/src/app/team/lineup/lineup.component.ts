@@ -1,9 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith, switchMap } from 'rxjs';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { combineLatest, filter } from 'rxjs';
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
+import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 
 @Component({
@@ -18,7 +16,9 @@ export class LineupComponent {
 
   private teamId$ = this.route.parent!.paramMap.pipe(map(p => p.get('id')!));
 
-  selectedMatchdayId = signal<string | null>(null);
+  selectedMatchdayId = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('matchday_id')
+  );
 
   private state = toSignal(
     combineLatest([

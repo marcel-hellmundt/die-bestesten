@@ -39,7 +39,7 @@
             </thead>
             <tbody>
               @for (r of ratings(); track r.team_id; let i = $index) {
-                <tr class="row-link" [routerLink]="['/team', r.team_id]">
+                <tr class="row-link" [routerLink]="['/team', r.team_id, 'aufstellung']" [queryParams]="{ matchday_id: matchday().id }">
                   <td class="col-rank">{{ i + 1 }}</td>
                   <td>
                     <span class="team-cell">
