@@ -184,6 +184,21 @@ trait ManagerTrait
         return $q->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function getMyTeamForActiveSeason(string $managerId): array|false
+    {
+        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $activeSeasonId = $seasonQ->fetchColumn();
+        if (!$activeSeasonId) return false;
+
+        $q = $this->con_league->prepare(
+            "SELECT id, team_name, season_id, color FROM team
+             WHERE manager_id = :manager_id AND season_id = :season_id
+             LIMIT 1"
+        );
+        $q->execute([':manager_id' => $managerId, ':season_id' => $activeSeasonId]);
+        return $q->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function getTeamRatings(string $teamId): array
     {
         // Use window functions to compute placement and fine across all teams per matchday

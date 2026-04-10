@@ -48,6 +48,7 @@ export class TableComponent {
   );
 
   rows           = computed(() => (this.state().data?.standings           ?? []) as any[]);
+  totalFines     = computed(() => this.rows().reduce((sum, r) => sum + Number(r.fine ?? 0), 0));
   lucky          = computed(() => (this.state().data?.luck?.lucky           ?? []) as any[]);
   unlucky        = computed(() => (this.state().data?.luck?.unlucky          ?? []) as any[]);
   goldeneBuerste = computed(() => (this.state().data?.luck?.goldene_buerste  ?? []) as any[]);
@@ -95,7 +96,7 @@ export class TableComponent {
     ];
 
     const xLabels = [
-      { x: toX(1),           label: 'ST 1' },
+      { x: toX(1),           label: 'Sp. 1' },
       { x: toX(maxMatchday), label: `ST ${maxMatchday}` },
     ];
 

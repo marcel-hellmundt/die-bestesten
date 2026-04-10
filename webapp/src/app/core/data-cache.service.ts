@@ -12,9 +12,11 @@ export class DataCacheService {
 
   private seasonsState   = signal<{ data: Season[];   loaded: boolean }>({ data: [], loaded: false });
   private divisionsState = signal<{ data: Division[]; loaded: boolean }>({ data: [], loaded: false });
+  private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string } | null; loaded: boolean }>({ data: null, loaded: false });
 
   seasons   = computed(() => this.seasonsState().data);
   divisions = computed(() => this.divisionsState().data);
+  myTeamId  = computed(() => this.myTeamState().data?.id ?? null);
 
   ensureSeasons(): void {
     if (this.seasonsState().loaded) return;
@@ -22,6 +24,14 @@ export class DataCacheService {
       map(data => data.map(Season.from))
     ).subscribe(data => {
       this.seasonsState.set({ data, loaded: true });
+    });
+  }
+
+  ensureMyTeam(): void {
+    if (this.myTeamState().loaded) return;
+    this.api.get<any>('team/mine').subscribe({
+      next: data => this.myTeamState.set({ data, loaded: true }),
+      error: ()   => this.myTeamState.set({ data: null, loaded: true }),
     });
   }
 

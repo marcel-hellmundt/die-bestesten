@@ -10,7 +10,7 @@
   <hr class="nav-divider" />
 
   <ul class="nav-mobile">
-    @for (item of mobileNavItems; track item.route) {
+    @for (item of mobileNavItems(); track item.label) {
       <li>
         <a class="nav-item" [routerLink]="item.route" routerLinkActive="nav-item--active">
           <app-icon [name]="item.icon" class="nav-icon"></app-icon>
@@ -21,7 +21,7 @@
   </ul>
 
   <div class="nav-groups-top">
-    @for (group of topGroups; track group.label) {
+    @for (group of topGroups(); track group.label) {
       <div class="nav-group">
         @if (group.label) {
           <span class="nav-group-label">{{ group.label }}</span>

@@ -311,6 +311,11 @@ class Routing
                 'description' => 'Fantasy-Teams pro Manager und Saison',
                 'endpoints'   => [
                     [
+                        'method'      => 'GET',
+                        'path'        => '/team/mine',
+                        'description' => 'Eigenes Team der aktiven Saison — gibt { id, team_name, season_id, color } zurück; 404 wenn kein Team vorhanden — Auth',
+                    ],
+                    [
                         'method'       => 'GET',
                         'path'         => '/team/:id',
                         'description'  => 'Ein Team per ID — enthält manager_name, alias, total_points, matchdays_played. Mit ?include_ratings=1 zusätzlich alle team_ratings sortiert nach matchday_number',

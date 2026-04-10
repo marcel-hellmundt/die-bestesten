@@ -6,9 +6,23 @@
   <p class="state-msg">Noch keine abgeschlossenen Spieltage vorhanden.</p>
 } @else {
   <div class="season-nav">
-    <button class="nav-arrow" (click)="decrement()" [disabled]="!canDecrement()" aria-label="Ältere Saison">‹</button>
+    <button
+      class="nav-arrow"
+      (click)="decrement()"
+      [disabled]="!canDecrement()"
+      aria-label="Ältere Saison"
+    >
+      ‹
+    </button>
     <h1 class="page-title">{{ selectedSeason()!.longDisplayName }}</h1>
-    <button class="nav-arrow" (click)="increment()" [disabled]="!canIncrement()" aria-label="Neuere Saison">›</button>
+    <button
+      class="nav-arrow"
+      (click)="increment()"
+      [disabled]="!canIncrement()"
+      aria-label="Neuere Saison"
+    >
+      ›
+    </button>
   </div>
 
   <div class="table-layout">
@@ -40,7 +54,13 @@
                       @if (!logoErrors.has(r.team_id)) {
                         <img
                           class="team-logo"
-                          [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                          [src]="
+                            'https://img.die-bestesten.de/img/team/' +
+                            r.season_id +
+                            '/' +
+                            r.team_id +
+                            '.png'
+                          "
                           [alt]="r.team_name"
                           (error)="onLogoError(r.team_id)"
                         />
@@ -55,7 +75,9 @@
                 <td class="col-num">{{ r.total_clean_sheet }}</td>
                 <td class="col-num col-points">{{ r.total_points }}</td>
                 <td class="col-fine" [class.col-fine--active]="r.fine > 0">
-                  @if (r.fine > 0) { {{ r.fine | number:'1.2-2' }} € }
+                  @if (r.fine > 0) {
+                    {{ r.fine | number: '1.2-2' }} €
+                  }
                 </td>
               </tr>
             }
@@ -85,21 +107,54 @@
           <div class="card chart-card">
             <span class="chart-card__label">Saisonverlauf</span>
             <div class="chart-container">
-              <svg class="season-chart" [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH" aria-hidden="true">
+              <svg
+                class="season-chart"
+                [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+                aria-hidden="true"
+              >
                 @for (tick of chart.yTicks; track tick.label) {
-                  <line [attr.x1]="padL" [attr.y1]="tick.y" [attr.x2]="chartW - padR" [attr.y2]="tick.y" class="chart-grid" />
-                  <text [attr.x]="padL - 4" [attr.y]="tick.y + 4" class="chart-label chart-label--y">{{ tick.label }}</text>
+                  <line
+                    [attr.x1]="padL"
+                    [attr.y1]="tick.y"
+                    [attr.x2]="chartW - padR"
+                    [attr.y2]="tick.y"
+                    class="chart-grid"
+                  />
+                  <text
+                    [attr.x]="padL - 4"
+                    [attr.y]="tick.y + 4"
+                    class="chart-label chart-label--y"
+                  >
+                    {{ tick.label }}
+                  </text>
                 }
                 @for (t of chart.teams; track t.team_id) {
                   <g class="chart-team">
-                    <path [attr.d]="t.pathD" [style.stroke]="t.color" class="chart-line" fill="none" />
+                    <path
+                      [attr.d]="t.pathD"
+                      [style.stroke]="t.color"
+                      class="chart-line"
+                      fill="none"
+                    />
                     <path [attr.d]="t.pathD" class="chart-line-hit" fill="none">
                       <title>{{ t.team_name }}</title>
                     </path>
                   </g>
                 }
-                <text [attr.x]="chart.xLabels[0].x" [attr.y]="chartH - 4" class="chart-label chart-label--x-start">{{ chart.xLabels[0].label }}</text>
-                <text [attr.x]="chart.xLabels[1].x" [attr.y]="chartH - 4" class="chart-label chart-label--x-end">{{ chart.xLabels[1].label }}</text>
+                <text
+                  [attr.x]="chart.xLabels[0].x"
+                  [attr.y]="chartH - 4"
+                  class="chart-label chart-label--x-start"
+                >
+                  {{ chart.xLabels[0].label }}
+                </text>
+                <text
+                  [attr.x]="chart.xLabels[1].x"
+                  [attr.y]="chartH - 4"
+                  class="chart-label chart-label--x-end"
+                >
+                  {{ chart.xLabels[1].label }}
+                </text>
               </svg>
             </div>
           </div>
@@ -108,20 +163,10 @@
     </div>
 
     <div class="sidebar">
-      @if (goldeneBuerste().length > 0) {
-        <div class="luck-card-wrap">
-          <img class="luck-card__icon" src="/img/icons/brush.png" alt="" aria-hidden="true" />
-          <span class="luck-card__label luck-card__label--gold">Goldene Bürste</span>
-          <div class="card luck-card">
-            <div class="luck-list">
-              @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
-                <div class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
-                  <span class="luck-item__meta">ST {{ r.matchday_number }} · {{ r.points }} Pkt</span>
-                </div>
-              }
-            </div>
-          </div>
+      @if (totalFines() > 0) {
+        <div class="stat-card">
+          <span class="stat-label stat-label--alizarin">Kegelstrafen</span>
+          <div class="stat-value">{{ totalFines() | number: '1.2-2' }} €</div>
         </div>
       }
 
@@ -142,6 +187,25 @@
         </div>
       }
 
+      @if (goldeneBuerste().length > 0) {
+        <div class="luck-card-wrap">
+          <img class="luck-card__icon" src="/img/icons/brush.png" alt="" aria-hidden="true" />
+          <span class="luck-card__label luck-card__label--gold">Goldene Bürste</span>
+          <div class="card luck-card">
+            <div class="luck-list">
+              @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
+                <div class="luck-item" [routerLink]="['/team', r.team_id]">
+                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="luck-item__meta"
+                    >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
+                  >
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
       @if (lucky().length > 0) {
         <div class="luck-card-wrap">
           <img class="luck-card__icon" src="/img/icons/clover.png" alt="" aria-hidden="true" />
@@ -151,7 +215,9 @@
               @for (r of lucky(); track r.team_id + r.matchday_id) {
                 <div class="luck-item" [routerLink]="['/team', r.team_id]">
                   <span class="luck-item__team">{{ r.manager_name }}</span>
-                  <span class="luck-item__meta">ST {{ r.matchday_number }} · {{ r.points }} Pkt</span>
+                  <span class="luck-item__meta"
+                    >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
+                  >
                 </div>
               }
             </div>
@@ -168,7 +234,9 @@
               @for (r of unlucky(); track r.team_id + r.matchday_id) {
                 <div class="luck-item" [routerLink]="['/team', r.team_id]">
                   <span class="luck-item__team">{{ r.manager_name }}</span>
-                  <span class="luck-item__meta">ST {{ r.matchday_number }} · {{ r.points }} Pkt</span>
+                  <span class="luck-item__meta"
+                    >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
+                  >
                 </div>
               }
             </div>

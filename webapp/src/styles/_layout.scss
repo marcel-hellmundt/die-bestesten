@@ -334,6 +334,16 @@
     padding: 4px 10px;
     border-radius: 8px;
     background: color-mix(in srgb, currentColor 12%, transparent);
+
+    &--turquoise  { color: var(--flat-turquoise); }
+    &--emerald    { color: var(--flat-emerald); }
+    &--river      { color: var(--flat-river); }
+    &--amethyst   { color: var(--flat-amethyst); }
+    &--asphalt    { color: var(--flat-asphalt); }
+    &--sunflower  { color: var(--flat-sunflower); }
+    &--carrot     { color: var(--flat-carrot); }
+    &--alizarin   { color: var(--flat-alizarin); }
+    &--concrete   { color: var(--flat-concrete); }
   }
 
   .stat-value {

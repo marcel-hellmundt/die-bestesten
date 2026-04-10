@@ -8,6 +8,15 @@ class TeamController extends _BaseController
     {
         if (!$this->id) return $this->methodNotAllowed();
 
+        if ($this->id === 'mine') {
+            $team = $this->db->getMyTeamForActiveSeason($GLOBALS['auth_manager_id']);
+            if (!$team) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'No team found for active season'];
+            }
+            return $team;
+        }
+
         $team = $this->db->getTeamById($this->id);
         if (!$team) {
             http_response_code(404);
