@@ -59,6 +59,33 @@
 
   input { text-align: center; }
 
+  .input-wrap {
+    position: relative;
+
+    input { width: 100%; }
+
+    .pw-toggle {
+      position: absolute;
+      right: $space-3;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: $color-text-muted;
+      display: flex;
+      align-items: center;
+
+      &:hover { color: $color-text; }
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
   form {
     display: flex;
     flex-direction: column;

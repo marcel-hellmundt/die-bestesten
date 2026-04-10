@@ -18,6 +18,7 @@ export class LoginComponent {
   loading = false;
   error: string | null = null;
   mode = signal<Mode>('login');
+  showPassword = false;
   requestLoading = false;
   requestError: string | null = null;
 
