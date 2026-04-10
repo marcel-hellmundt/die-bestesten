@@ -10,23 +10,27 @@ trait TeamLineupTrait
         $seasonId = $teamQ->fetchColumn();
         if (!$seasonId) return false;
 
-        // Get all matchdays of this season that have lineup entries for this team, sorted by number
-        $mdListQ = $this->con->prepare(
-            "SELECT m.id, m.number, m.kickoff_date
-             FROM matchday m
-             WHERE m.season_id = :season_id
-               AND EXISTS (
-                   SELECT 1 FROM {$_ENV['DB_NAME_LEAGUE']}.team_lineup tl
-                   WHERE tl.team_id = :team_id AND tl.matchday_id = m.id
-               )
-             ORDER BY m.number ASC"
+        // Get matchday_ids that have lineup entries for this team (league DB)
+        $mdIdsQ = $this->con_league->prepare(
+            "SELECT DISTINCT matchday_id FROM team_lineup WHERE team_id = :team_id"
         );
-        $mdListQ->execute([':season_id' => $seasonId, ':team_id' => $teamId]);
-        $matchdays = $mdListQ->fetchAll(PDO::FETCH_ASSOC);
+        $mdIdsQ->execute([':team_id' => $teamId]);
+        $matchdayIds = $mdIdsQ->fetchAll(PDO::FETCH_COLUMN);
 
-        if (empty($matchdays)) {
+        if (empty($matchdayIds)) {
             return ['matchday' => null, 'matchdays' => [], 'nominated' => [], 'bench' => []];
         }
+
+        // Resolve matchday_ids to number + date (global DB), filter by season
+        $ph = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $mdListQ = $this->con->prepare(
+            "SELECT id, number, kickoff_date
+             FROM matchday
+             WHERE season_id = ? AND id IN ($ph)
+             ORDER BY number ASC"
+        );
+        $mdListQ->execute(array_merge([$seasonId], $matchdayIds));
+        $matchdays = $mdListQ->fetchAll(PDO::FETCH_ASSOC);
 
         // Resolve target matchday (given or latest)
         if ($matchdayId) {
