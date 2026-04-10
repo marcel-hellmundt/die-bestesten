@@ -16,12 +16,14 @@ require_once 'team_rating.database.php';
 require_once 'password_reset.database.php';
 require_once 'award.database.php';
 require_once 'player_in_team.database.php';
+require_once 'team_lineup.database.php';
 
 class Database
 {
     use CountryTrait;
     use LeagueTrait;
     use PlayerInTeamTrait;
+    use TeamLineupTrait;
     use AllTimeStandingsTrait;
     use AwardTrait;
     use SeasonTrait;

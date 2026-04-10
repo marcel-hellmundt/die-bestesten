@@ -366,6 +366,22 @@ class Routing
                 ],
             ]),
 
+            new Route('team_lineup', 'TeamLineup', [
+                'title'       => 'TeamLineup',
+                'description' => 'Aufstellung eines Teams für einen Spieltag — Auth',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/team_lineup',
+                        'description'  => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: letzter mit Einträgen)',
+                        'query_params' => [
+                            'team_id'     => 'UUID des Teams (erforderlich)',
+                            'matchday_id' => 'UUID des Spieltags (optional)',
+                        ],
+                    ],
+                ],
+            ]),
+
             new Route('player_in_team', 'PlayerInTeam', [
                 'title'       => 'PlayerInTeam',
                 'description' => 'Aktueller Kader eines Fantasy-Teams — Auth',

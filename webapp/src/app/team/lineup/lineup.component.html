@@ -1,0 +1,55 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (!matchday()) {
+  <p class="state-msg">Keine Aufstellungsdaten vorhanden.</p>
+} @else {
+  <div class="lineup-nav">
+    <select class="matchday-select" [value]="matchday().id" (change)="selectedMatchdayId.set($any($event.target).value)">
+      @for (md of matchdays(); track md.id) {
+        <option [value]="md.id">Sp. {{ md.number }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="lineup-columns">
+    <section class="lineup-section">
+      <h2 class="section-label">Aufgestellt <span class="section-count">{{ nominated().length }}</span></h2>
+      <div class="player-list">
+        @for (p of nominated(); track p.id) {
+          <a class="player-row row-link" [routerLink]="['/daten/player', p.id]">
+            <span class="position-badge" [style.background-color]="positionColor(p.position)">{{ positionLabel(p.position) }}</span>
+            <div class="player-photo-wrap">
+              @if (photoUrl(p) && !photoErrors.has(p.id)) {
+                <img class="player-photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
+              } @else {
+                <div class="player-photo player-photo--placeholder"></div>
+              }
+            </div>
+            <span class="player-name">{{ p.displayname }}</span>
+          </a>
+        }
+      </div>
+    </section>
+
+    <section class="lineup-section">
+      <h2 class="section-label">Ersatzbank <span class="section-count">{{ bench().length }}</span></h2>
+      <div class="player-list">
+        @for (p of bench(); track p.id) {
+          <a class="player-row player-row--bench row-link" [routerLink]="['/daten/player', p.id]">
+            <span class="position-badge" [style.background-color]="positionColor(p.position)">{{ positionLabel(p.position) }}</span>
+            <div class="player-photo-wrap">
+              @if (photoUrl(p) && !photoErrors.has(p.id)) {
+                <img class="player-photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
+              } @else {
+                <div class="player-photo player-photo--placeholder"></div>
+              }
+            </div>
+            <span class="player-name">{{ p.displayname }}</span>
+          </a>
+        }
+      </div>
+    </section>
+  </div>
+}

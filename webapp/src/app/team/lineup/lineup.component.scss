@@ -1,0 +1,115 @@
+@use '../../../styles/variables' as *;
+
+.lineup-nav {
+  padding: $space-4;
+  padding-bottom: 0;
+}
+
+.matchday-select {
+  font-size: $font-sm;
+  padding: $space-1 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  color: $color-text;
+  cursor: pointer;
+}
+
+.lineup-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-4;
+  padding: $space-4;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section-label {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: $space-3;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.section-count {
+  font-size: $font-xs;
+  background: $color-surface-alt;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  padding: 1px 6px;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  text-decoration: none;
+  color: $color-text;
+  transition: background $transition-fast;
+
+  &:hover { background: $color-surface-alt; }
+
+  &--bench {
+    opacity: 0.65;
+  }
+}
+
+.position-badge {
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  padding: 2px 4px;
+  border-radius: $radius-sm;
+  letter-spacing: 0.03em;
+}
+
+.player-photo-wrap {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.player-photo {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: $radius-sm;
+
+  &--placeholder {
+    background: $color-surface-alt;
+    border: 1px solid $color-border;
+  }
+}
+
+.player-name {
+  flex: 1;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
