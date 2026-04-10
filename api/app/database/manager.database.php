@@ -172,7 +172,8 @@ trait ManagerTrait
             "SELECT t.id, t.season_id, t.team_name, t.color,
                     t.manager_id, m.manager_name, m.alias,
                     COALESCE(SUM(tr.points), 0) AS total_points,
-                    COUNT(CASE WHEN tr.id IS NOT NULL AND tr.invalid = 0 THEN 1 END) AS matchdays_played
+                    COUNT(CASE WHEN tr.id IS NOT NULL AND tr.invalid = 0 THEN 1 END) AS matchdays_played,
+                    (SELECT COUNT(*) FROM team t2 WHERE t2.season_id = t.season_id) AS team_count
              FROM team t
              JOIN manager m ON m.id = t.manager_id
              LEFT JOIN team_rating tr ON tr.team_id = t.id

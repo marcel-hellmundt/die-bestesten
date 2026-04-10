@@ -29,8 +29,9 @@ export class TeamOverviewComponent {
     { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
 
-  ratings   = computed(() => (this.state().data?.ratings ?? []) as any[]);
-  teamColor = computed(() => (this.state().data?.color as string | null) ?? null);
+  ratings    = computed(() => (this.state().data?.ratings ?? []) as any[]);
+  teamColor  = computed(() => (this.state().data?.color as string | null) ?? null);
+  teamCount  = computed(() => Number(this.state().data?.team_count ?? 12));
   loading   = computed(() => this.state().loading);
   error     = computed(() => this.state().error);
 
@@ -88,12 +89,12 @@ export class TeamOverviewComponent {
     const valid = rs.filter(r => r.running_rank != null);
     if (valid.length < 2) return null;
 
-    const color  = this.teamColor() ?? '#bf1d00';
-    const maxPos = Math.max(...valid.map(r => +r.running_rank));
-    const posR   = Math.max(maxPos - 1, 1);
-    const plotW  = this.cW - this.padL - this.padR;
-    const plotH  = this.cH - this.padT - this.padB;
-    const slotW  = plotW / rs.length;
+    const color    = this.teamColor() ?? '#bf1d00';
+    const teamCount = this.teamCount();
+    const posR     = Math.max(teamCount - 1, 1);
+    const plotW    = this.cW - this.padL - this.padR;
+    const plotH    = this.cH - this.padT - this.padB;
+    const slotW    = plotW / rs.length;
 
     const posY = (pos: number) =>
       this.padT + ((pos - 1) / posR) * plotH;
@@ -114,12 +115,10 @@ export class TeamOverviewComponent {
       label: r.matchday_number,
     }));
 
-    const yTicks: { y: number; label: string }[] = [{ y: posY(1), label: '1' }];
-    if (maxPos <= 6) {
-      for (let p = 2; p <= maxPos; p++) yTicks.push({ y: posY(p), label: String(p) });
-    } else {
-      yTicks.push({ y: posY(maxPos), label: String(maxPos) });
-    }
+    const yTicks: { y: number; label: string }[] = [
+      { y: posY(1),         label: '1' },
+      { y: posY(teamCount), label: String(teamCount) },
+    ];
 
     return { dots, line, color, xLabels, yTicks };
   });
