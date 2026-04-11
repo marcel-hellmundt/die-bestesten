@@ -94,13 +94,8 @@
 }
 
 .field-player__photo-wrap--sds {
-  border-color: #c9911e;
-  box-shadow:
-    0 0 0 1px #7a5710,       // dunkle Basis — untere Ringkante
-    0 0 0 3px #f5d060,       // helle Glanzlinie oben
-    0 0 0 4px #a97020,       // dunklere äußere Ringkante
-    0 0 10px 4px rgba(218, 165, 32, 0.55),   // warmer Nahglow
-    0 0 22px 6px rgba(190, 130, 15, 0.22);   // weicher Distanzglow
+  border-color: #f9c843;
+  box-shadow: 0 0 0 2px #f9c843, 0 0 10px 2px rgba(249, 200, 67, 0.55);
 }
 
 .field-player__sds-pip {
