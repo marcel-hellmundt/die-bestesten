@@ -23,11 +23,14 @@
           <div class="field-section">
             @for (p of getPlayersByPosition(pos); track p.id) {
               <a class="field-player" [routerLink]="['/daten/player', p.id]">
-                <div class="field-player__photo-wrap">
+                <div class="field-player__photo-wrap" [class.field-player__photo-wrap--sds]="p.sds">
                   @if (photoUrl(p) && !photoErrors.has(p.id)) {
                     <img class="field-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
                   } @else {
                     <div class="field-player__photo field-player__photo--placeholder"></div>
+                  }
+                  @if (p.sds) {
+                    <span class="field-player__sds-pip">★</span>
                   }
                 </div>
                 <div class="field-player__badge">
@@ -115,7 +118,9 @@
                 }
               </div>
               <div class="bench-player__info">
-                <span class="bench-player__name">{{ p.displayname }}</span>
+                <span class="bench-player__name">
+                  @if (p.sds) { <span class="bench-player__sds-star">★</span> }{{ p.displayname }}
+                </span>
                 <span class="bench-player__status" [ngClass]="participationClass(p.participation)">
                   {{ participationLabel(p.participation) }}
                 </span>
