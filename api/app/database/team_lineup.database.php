@@ -71,15 +71,35 @@ trait TeamLineupTrait
             $playerMap[$p['id']] = $p;
         }
 
-        // Merge lineup meta into player data
+        // Get player ratings for this matchday from global DB
+        $ratingQ = $this->con->prepare(
+            "SELECT player_id, grade, participation, points, goals, assists, clean_sheet, sds
+             FROM player_rating
+             WHERE matchday_id = ? AND player_id IN ($ph)"
+        );
+        $ratingQ->execute(array_merge([$matchday['id']], $playerIds));
+        $ratingMap = [];
+        foreach ($ratingQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $ratingMap[$r['player_id']] = $r;
+        }
+
+        // Merge lineup meta + ratings into player data
         $posOrder = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
         $nominated = [];
         $bench     = [];
 
         foreach ($entries as $e) {
-            $player = $playerMap[$e['player_id']] ?? ['id' => $e['player_id'], 'displayname' => '?', 'position' => null];
+            $player  = $playerMap[$e['player_id']] ?? ['id' => $e['player_id'], 'displayname' => '?', 'position' => null];
+            $rating  = $ratingMap[$e['player_id']] ?? [];
             $player['position_index'] = $e['position_index'];
             $player['season_id']      = $seasonId;
+            $player['grade']          = $rating['grade'] ?? null;
+            $player['points']         = isset($rating['points']) ? (int)$rating['points'] : null;
+            $player['goals']          = (int)($rating['goals'] ?? 0);
+            $player['assists']        = (int)($rating['assists'] ?? 0);
+            $player['clean_sheet']    = (int)($rating['clean_sheet'] ?? 0);
+            $player['sds']            = (int)($rating['sds'] ?? 0);
+            $player['participation']  = $rating['participation'] ?? null;
 
             if ($e['nominated']) {
                 $nominated[] = $player;
@@ -95,11 +115,16 @@ trait TeamLineupTrait
         usort($nominated, $sort);
         usort($bench, $sort);
 
+        $nominatedPoints = array_sum(array_map(fn($p) => $p['points'] ?? 0, $nominated));
+        $maxPoints       = array_sum(array_map(fn($p) => $p['points'] ?? 0, array_merge($nominated, $bench)));
+
         return [
-            'matchday'  => $matchday,
-            'matchdays' => $matchdays,
-            'nominated' => $nominated,
-            'bench'     => $bench,
+            'matchday'   => $matchday,
+            'matchdays'  => $matchdays,
+            'nominated'  => $nominated,
+            'bench'      => $bench,
+            'points'     => $nominatedPoints,
+            'max_points' => $maxPoints,
         ];
     }
 }

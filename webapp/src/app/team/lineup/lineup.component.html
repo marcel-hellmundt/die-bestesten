@@ -13,43 +13,124 @@
     </select>
   </div>
 
-  <div class="lineup-columns">
-    <section class="lineup-section">
-      <h2 class="section-label">Aufgestellt <span class="section-count">{{ nominated().length }}</span></h2>
-      <div class="player-list">
-        @for (p of nominated(); track p.id) {
-          <a class="player-row row-link" [routerLink]="['/daten/player', p.id]">
-            <span class="position-badge" [style.background-color]="positionColor(p.position)">{{ positionLabel(p.position) }}</span>
-            <div class="player-photo-wrap">
-              @if (photoUrl(p) && !photoErrors.has(p.id)) {
-                <img class="player-photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
-              } @else {
-                <div class="player-photo player-photo--placeholder"></div>
-              }
-            </div>
-            <span class="player-name">{{ p.displayname }}</span>
-          </a>
-        }
-      </div>
-    </section>
+  <div class="lineup-layout">
 
-    <section class="lineup-section">
-      <h2 class="section-label">Ersatzbank <span class="section-count">{{ bench().length }}</span></h2>
-      <div class="player-list">
-        @for (p of bench(); track p.id) {
-          <a class="player-row player-row--bench row-link" [routerLink]="['/daten/player', p.id]">
-            <span class="position-badge" [style.background-color]="positionColor(p.position)">{{ positionLabel(p.position) }}</span>
-            <div class="player-photo-wrap">
-              @if (photoUrl(p) && !photoErrors.has(p.id)) {
-                <img class="player-photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
-              } @else {
-                <div class="player-photo player-photo--placeholder"></div>
-              }
-            </div>
-            <span class="player-name">{{ p.displayname }}</span>
-          </a>
+    <!-- PITCH -->
+    <div class="field-wrap">
+      <div class="field">
+
+        @for (pos of pitchPositions; track pos) {
+          <div class="field-section">
+            @for (p of getPlayersByPosition(pos); track p.id) {
+              <a class="field-player" [routerLink]="['/daten/player', p.id]">
+                <div class="field-player__photo-wrap">
+                  @if (photoUrl(p) && !photoErrors.has(p.id)) {
+                    <img class="field-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
+                  } @else {
+                    <div class="field-player__photo field-player__photo--placeholder"></div>
+                  }
+                </div>
+                <div class="field-player__badge">
+                  @if (p.grade) {
+                    <span class="field-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
+                  }
+                  <span class="field-player__name">{{ p.displayname }}</span>
+                  @if (p.points != null) {
+                    <span class="field-player__points" [class.field-player__points--neg]="p.points < 0">{{ p.points }}</span>
+                  }
+                </div>
+              </a>
+            }
+          </div>
         }
+
+        <!-- Field markings -->
+        <div class="field-lines">
+          <div class="field-boundary">
+            <div class="field-halfway"></div>
+            <div class="field-circle"></div>
+            <div class="field-penalty field-penalty--top"></div>
+            <div class="field-penalty field-penalty--bottom"></div>
+            <div class="field-flag field-flag--tl"></div>
+            <div class="field-flag field-flag--tr"></div>
+            <div class="field-flag field-flag--bl"></div>
+            <div class="field-flag field-flag--br"></div>
+          </div>
+        </div>
       </div>
-    </section>
+
+      <!-- Mobile bench (horizontal strip below pitch) -->
+      <div class="mobile-bench">
+        <span class="mobile-bench__label">Ersatzbank</span>
+        <div class="mobile-bench__list">
+          @for (p of bench(); track p.id) {
+            <a class="mobile-bench__player" [routerLink]="['/daten/player', p.id]"
+               [style.border-color]="positionColor(p.position)">
+              @if (photoUrl(p) && !photoErrors.has(p.id)) {
+                <img [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
+              } @else {
+                <div class="mobile-bench__photo--placeholder"></div>
+              }
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="lineup-sidebar">
+
+      @if (points() != null) {
+        <div class="sidebar-block">
+          <h3 class="sidebar-title">Punkte</h3>
+          <div class="points-bar">
+            <div class="points-bar__fill" [style.width.%]="pointsPercent()"></div>
+            <span class="points-bar__label">{{ points() }} Punkte</span>
+          </div>
+        </div>
+      }
+
+      <div class="sidebar-block">
+        <h3 class="sidebar-title">Formation</h3>
+        <div class="formations">
+          @for (f of validFormations; track formationLabel(f)) {
+            <div class="formation-chip" [class.formation-chip--active]="isFormationActive(f)">
+              {{ formationLabel(f) }}
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="sidebar-block desktop-bench">
+        <h3 class="sidebar-title">Ersatzbank</h3>
+        <div class="bench-list">
+          @for (p of bench(); track p.id) {
+            <a class="bench-player" [routerLink]="['/daten/player', p.id]">
+              <div class="bench-player__pos" [style.background-color]="positionColor(p.position)"></div>
+              <div class="bench-player__photo-wrap">
+                @if (photoUrl(p) && !photoErrors.has(p.id)) {
+                  <img class="bench-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
+                } @else {
+                  <div class="bench-player__photo bench-player__photo--placeholder"></div>
+                }
+              </div>
+              <div class="bench-player__info">
+                <span class="bench-player__name">{{ p.displayname }}</span>
+                <span class="bench-player__status" [ngClass]="participationClass(p.participation)">
+                  {{ participationLabel(p.participation) }}
+                </span>
+              </div>
+              @if (p.grade) {
+                <span class="bench-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
+              }
+              @if (p.points != null) {
+                <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
+              }
+            </a>
+          }
+        </div>
+      </div>
+
+    </div>
   </div>
 }

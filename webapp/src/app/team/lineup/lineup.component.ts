@@ -43,14 +43,44 @@ export class LineupComponent {
   matchdays = computed(() => (this.state().data?.matchdays ?? []) as any[]);
   nominated = computed(() => (this.state().data?.nominated ?? []) as any[]);
   bench     = computed(() => (this.state().data?.bench     ?? []) as any[]);
+  points    = computed(() => this.state().data?.points    ?? null);
+  maxPoints = computed(() => this.state().data?.max_points ?? null);
   loading   = computed(() => this.state().loading);
   error     = computed(() => this.state().error);
 
-  positionLabel(pos: string): string {
-    const map: Record<string, string> = {
-      GOALKEEPER: 'TW', DEFENDER: 'ABW', MIDFIELDER: 'MF', FORWARD: 'ST',
-    };
-    return map[pos] ?? pos;
+  formation = computed(() => {
+    const n = this.nominated();
+    return [
+      n.filter(p => p.position === 'GOALKEEPER').length,
+      n.filter(p => p.position === 'DEFENDER').length,
+      n.filter(p => p.position === 'MIDFIELDER').length,
+      n.filter(p => p.position === 'FORWARD').length,
+    ];
+  });
+
+  readonly validFormations = [
+    [1,3,4,3],[1,3,5,2],[1,4,3,3],[1,4,4,2],[1,4,5,1],[1,5,3,2],[1,5,4,1],
+  ];
+
+  readonly pitchPositions = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER'];
+
+  getPlayersByPosition(pos: string): any[] {
+    return this.nominated().filter(p => p.position === pos);
+  }
+
+  formationLabel(f: number[]): string {
+    return `${f[1]}${f[2]}${f[3]}`;
+  }
+
+  isFormationActive(f: number[]): boolean {
+    const cur = this.formation();
+    return f[0] === cur[0] && f[1] === cur[1] && f[2] === cur[2] && f[3] === cur[3];
+  }
+
+  pointsPercent(): number {
+    const p = this.points(), max = this.maxPoints();
+    if (!max || max <= 0) return 0;
+    return Math.min(100, Math.round((p / max) * 100));
   }
 
   positionColor(pos: string): string {
@@ -61,6 +91,22 @@ export class LineupComponent {
       FORWARD:    'var(--position-forward)',
     };
     return map[pos] ?? 'transparent';
+  }
+
+  gradeInt(grade: any): number {
+    return Math.round(+grade * 10);
+  }
+
+  participationLabel(p: string | null): string {
+    if (p === 'starting')   return 'Startelf';
+    if (p === 'substitute') return 'Eingewechselt';
+    return 'Kein Einsatz';
+  }
+
+  participationClass(p: string | null): string {
+    if (p === 'starting')   return 'bench-player__status--starting';
+    if (p === 'substitute') return 'bench-player__status--sub';
+    return 'bench-player__status--none';
   }
 
   photoUrl(p: any): string | null {
