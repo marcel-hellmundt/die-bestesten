@@ -82,7 +82,7 @@ trait LeagueTrait
              JOIN team t ON t.team_id = tr.team_id"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        // Build matchday lookup: (season_id, number) → id
+        // Build matchday lookup: (season_id, number) → id (new DB)
         $matchdayRows = $this->con->query(
             "SELECT id, season_id, number FROM matchday"
         )->fetchAll(PDO::FETCH_ASSOC);
@@ -91,13 +91,41 @@ trait LeagueTrait
             $matchdayMap[$md['season_id'] . '_' . $md['number']] = $md['id'];
         }
 
-        // Build season start_date lookup for auto-creating missing matchdays
+        // Build season start_date lookup for fallback when old DB has no matchday data
         $seasonRows = $this->con->query(
             "SELECT id, start_date FROM season"
         )->fetchAll(PDO::FETCH_ASSOC);
         $seasonStartDates = [];
         foreach ($seasonRows as $s) {
             $seasonStartDates[$s['id']] = $s['start_date'];
+        }
+
+        // Fetch real matchday dates from old DB (separate query to avoid collation issues)
+        $oldMdDates = [];
+        try {
+            $oldMdRows = $this->con_old->query(
+                "SELECT season_id, number, start_date, kickoff_date FROM matchday"
+            )->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($oldMdRows as $md) {
+                $oldMdDates[$md['season_id'] . '_' . $md['number']] = $md;
+            }
+        } catch (\Exception $e) {
+            // old DB may not have matchday table — proceed with fallback dates
+        }
+
+        // Update existing matchdays in new DB with real data from old DB
+        $stmtUpdateMatchday = $this->con->prepare(
+            "UPDATE matchday SET start_date = :start_date, kickoff_date = :kickoff_date
+             WHERE id = :id"
+        );
+        foreach ($oldMdDates as $key => $md) {
+            if (isset($matchdayMap[$key])) {
+                $stmtUpdateMatchday->execute([
+                    ':id'           => $matchdayMap[$key],
+                    ':start_date'   => $md['start_date'],
+                    ':kickoff_date' => $md['kickoff_date'],
+                ]);
+            }
         }
 
         $stmtCreateMatchday = $this->con->prepare(
@@ -138,14 +166,16 @@ trait LeagueTrait
             $key = $row['season_id'] . '_' . $row['matchday_number'];
             $matchdayId = $matchdayMap[$key] ?? null;
             if (!$matchdayId) {
-                $newId     = $this->con->query("SELECT UUID()")->fetchColumn();
-                $startDate = $seasonStartDates[$row['season_id']] ?? date('Y-m-d');
+                $newId      = $this->con->query("SELECT UUID()")->fetchColumn();
+                $realMd     = $oldMdDates[$key] ?? null;
+                $startDate  = $realMd['start_date']  ?? ($seasonStartDates[$row['season_id']] ?? date('Y-m-d'));
+                $kickoff    = $realMd['kickoff_date'] ?? ($startDate . ' 00:00:00');
                 $stmtCreateMatchday->execute([
                     ':id'           => $newId,
                     ':season_id'    => $row['season_id'],
                     ':number'       => $row['matchday_number'],
                     ':start_date'   => $startDate,
-                    ':kickoff_date' => $startDate . ' 00:00:00',
+                    ':kickoff_date' => $kickoff,
                 ]);
                 $matchdayMap[$key] = $newId;
                 $matchdayId        = $newId;
