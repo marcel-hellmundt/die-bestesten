@@ -1,7 +1,5 @@
 @use '../../../styles/variables' as *;
 
-// ── Nav ──────────────────────────────────────────────────────────────────────
-
 .lineup-nav {
   padding: $space-4;
   padding-bottom: 0;
@@ -17,8 +15,6 @@
   cursor: pointer;
 }
 
-// ── Layout ───────────────────────────────────────────────────────────────────
-
 .lineup-layout {
   display: flex;
   gap: $space-6;
@@ -30,8 +26,6 @@
     gap: $space-4;
   }
 }
-
-// ── Pitch ─────────────────────────────────────────────────────────────────────
 
 .field-wrap {
   flex: 1 1 0;
@@ -50,280 +44,228 @@
   @media (max-width: $mobile-breakpoint) {
     aspect-ratio: 4 / 5;
   }
-}
 
-.field-section {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  z-index: 2;
+  &-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 2;
 
-  &:last-child {
-    transform: translateY(-4%);
+    &:last-child { transform: translateY(-4%); }
+  }
+
+  &-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    text-decoration: none;
+    color: $color-text;
+    position: relative;
+    cursor: pointer;
+
+    &__photo-wrap {
+      width: clamp(36px, 7vw, 72px);
+      height: clamp(36px, 7vw, 72px);
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      background-color: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+
+      @media (max-width: $mobile-breakpoint) {
+        width: clamp(28px, 11vw, 48px);
+        height: clamp(28px, 11vw, 48px);
+      }
+
+      &--sds {
+        border-color: #f9c843;
+        box-shadow: 0 0 0 2px #f9c843, 0 0 10px 2px rgba(249, 200, 67, 0.55);
+      }
+    }
+
+    &__sds-pip {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #f9c843;
+      color: #fff;
+      font-size: 9px;
+      line-height: 16px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+
+      @media (max-width: $mobile-breakpoint) {
+        width: 13px;
+        height: 13px;
+        font-size: 7px;
+        line-height: 13px;
+      }
+    }
+
+    &__photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+
+      &--placeholder {
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.25);
+      }
+    }
+
+    &__badge {
+      display: flex;
+      align-items: center;
+      border-radius: $radius-sm;
+      background: rgba(0, 0, 0, 0.72);
+      overflow: hidden;
+      margin-top: -2px;
+      height: 22px;
+      max-width: 120px;
+      white-space: nowrap;
+
+      @media (max-width: $mobile-breakpoint) {
+        height: 18px;
+        max-width: 80px;
+      }
+    }
+
+    &__grade {
+      flex-shrink: 0;
+      width: 24px;
+      height: 22px;
+      line-height: 22px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: $font-weight-bold;
+      color: #fff;
+
+      @media (max-width: $mobile-breakpoint) {
+        width: 18px;
+        height: 18px;
+        line-height: 18px;
+        font-size: 9px;
+      }
+    }
+
+    &__name {
+      padding: 0 6px;
+      font-size: 11px;
+      font-weight: $font-weight-medium;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      @media (max-width: $mobile-breakpoint) {
+        padding: 0 4px;
+        font-size: 9px;
+      }
+    }
+
+    &__points {
+      flex-shrink: 0;
+      width: 24px;
+      height: 22px;
+      line-height: 22px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: $font-weight-bold;
+      color: #fff;
+
+      &--neg { color: #ff6b6b; }
+
+      @media (max-width: $mobile-breakpoint) {
+        width: 18px;
+        height: 18px;
+        line-height: 18px;
+        font-size: 9px;
+      }
+    }
+  }
+
+  &-lines {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.55;
+  }
+
+  &-boundary {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border: 3px solid #fff;
+    overflow: hidden;
+  }
+
+  &-halfway {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 3px;
+    transform: translateY(-1px);
+    background: #fff;
+  }
+
+  &-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 3px solid #fff;
+  }
+
+  &-penalty {
+    position: absolute;
+    left: 50%;
+    height: 12%;
+    aspect-ratio: 2.5 / 1;
+    border: 3px solid #fff;
+
+    &--top { top: 0; transform: translate(-50%, -3px); }
+    &--bottom { bottom: 0; transform: translate(-50%, 3px); }
+  }
+
+  &-flag {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+
+    &--tl { top: -14px; left: -14px; }
+    &--tr { top: -14px; right: -14px; }
+    &--bl { bottom: -14px; left: -14px; }
+    &--br { bottom: -14px; right: -14px; }
   }
 }
 
-// ── Field Player ──────────────────────────────────────────────────────────────
-
-.field-player {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  text-decoration: none;
-  color: $color-text;
-  position: relative;
-  cursor: pointer;
-}
-
-.field-player__photo-wrap {
-  width: clamp(36px, 7vw, 72px);
-  height: clamp(36px, 7vw, 72px);
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  background-color: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  flex-shrink: 0;
-
-  @media (max-width: $mobile-breakpoint) {
-    width: clamp(28px, 11vw, 48px);
-    height: clamp(28px, 11vw, 48px);
-  }
-}
-
-.field-player__photo-wrap--sds {
-  border-color: #f9c843;
-  box-shadow: 0 0 0 2px #f9c843, 0 0 10px 2px rgba(249, 200, 67, 0.55);
-}
-
-.field-player__sds-pip {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #f9c843;
-  color: #fff;
-  font-size: 9px;
-  line-height: 16px;
-  text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-
-  @media (max-width: $mobile-breakpoint) {
-    width: 13px;
-    height: 13px;
-    font-size: 7px;
-    line-height: 13px;
-  }
-}
-
-.field-player__photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-
-  &--placeholder {
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.25);
-  }
-}
-
-.field-player__badge {
-  display: flex;
-  align-items: center;
-  border-radius: $radius-sm;
-  background: rgba(0, 0, 0, 0.72);
-  overflow: hidden;
-  margin-top: -2px;
-  height: 22px;
-  max-width: 120px;
-  white-space: nowrap;
-
-  @media (max-width: $mobile-breakpoint) {
-    height: 18px;
-    max-width: 80px;
-  }
-}
-
-.field-player__grade {
-  flex-shrink: 0;
-  width: 24px;
-  height: 22px;
-  line-height: 22px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: $font-weight-bold;
-  color: #fff;
-
-  @media (max-width: $mobile-breakpoint) {
-    width: 18px;
-    height: 18px;
-    line-height: 18px;
-    font-size: 9px;
-  }
-}
-
-.field-player__name {
-  padding: 0 6px;
-  font-size: 11px;
-  font-weight: $font-weight-medium;
-  color: #fff;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  @media (max-width: $mobile-breakpoint) {
-    padding: 0 4px;
-    font-size: 9px;
-  }
-}
-
-.field-player__points {
-  flex-shrink: 0;
-  width: 24px;
-  height: 22px;
-  line-height: 22px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: $font-weight-bold;
-  color: #fff;
-
-  &--neg {
-    color: #ff6b6b;
-  }
-
-  @media (max-width: $mobile-breakpoint) {
-    width: 18px;
-    height: 18px;
-    line-height: 18px;
-    font-size: 9px;
-  }
-}
-
-// ── Grade colors ──────────────────────────────────────────────────────────────
-
-.grade-10 {
-  background-color: var(--grade-10);
-}
-.grade-15 {
-  background-color: var(--grade-15);
-}
-.grade-20 {
-  background-color: var(--grade-20);
-}
-.grade-25 {
-  background-color: var(--grade-25);
-}
-.grade-30 {
-  background-color: var(--grade-30);
-}
-.grade-35 {
-  background-color: var(--grade-35);
-}
-.grade-40 {
-  background-color: var(--grade-40);
-}
-.grade-45 {
-  background-color: var(--grade-45);
-}
-.grade-50 {
-  background-color: var(--grade-50);
-}
-.grade-55 {
-  background-color: var(--grade-55);
-}
-.grade-60 {
-  background-color: var(--grade-60);
-}
-
-// ── Field lines ───────────────────────────────────────────────────────────────
-
-.field-lines {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.55;
-}
-
-.field-boundary {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
-  border: 3px solid #fff;
-  overflow: hidden;
-}
-
-.field-halfway {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 3px;
-  transform: translateY(-1px);
-  background: #fff;
-}
-
-.field-circle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 10%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 3px solid #fff;
-}
-
-.field-penalty {
-  position: absolute;
-  left: 50%;
-  height: 12%;
-  aspect-ratio: 2.5 / 1;
-  border: 3px solid #fff;
-
-  &--top {
-    top: 0;
-    transform: translate(-50%, -3px);
-  }
-  &--bottom {
-    bottom: 0;
-    transform: translate(-50%, 3px);
-  }
-}
-
-.field-flag {
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-
-  &--tl {
-    top: -14px;
-    left: -14px;
-  }
-  &--tr {
-    top: -14px;
-    right: -14px;
-  }
-  &--bl {
-    bottom: -14px;
-    left: -14px;
-  }
-  &--br {
-    bottom: -14px;
-    right: -14px;
-  }
-}
-
-// ── Mobile bench ──────────────────────────────────────────────────────────────
+.grade-10 { background-color: var(--grade-10); }
+.grade-15 { background-color: var(--grade-15); }
+.grade-20 { background-color: var(--grade-20); }
+.grade-25 { background-color: var(--grade-25); }
+.grade-30 { background-color: var(--grade-30); }
+.grade-35 { background-color: var(--grade-35); }
+.grade-40 { background-color: var(--grade-40); }
+.grade-45 { background-color: var(--grade-45); }
+.grade-50 { background-color: var(--grade-50); }
+.grade-55 { background-color: var(--grade-55); }
+.grade-60 { background-color: var(--grade-60); }
 
 .mobile-bench {
   display: none;
@@ -331,47 +273,40 @@
   gap: $space-2;
   margin-top: $space-3;
 
-  @media (max-width: $mobile-breakpoint) {
+  @media (max-width: $mobile-breakpoint) { display: flex; }
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__list {
     display: flex;
+    gap: $space-2;
+    overflow-x: auto;
+    padding-bottom: $space-1;
+  }
+
+  &__player {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid $color-border;
+    display: block;
+
+    img, &__photo--placeholder {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    &__photo--placeholder { background: $color-surface-alt; }
   }
 }
-
-.mobile-bench__label {
-  font-size: $font-xs;
-  font-weight: $font-weight-semibold;
-  color: $color-text-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.mobile-bench__list {
-  display: flex;
-  gap: $space-2;
-  overflow-x: auto;
-  padding-bottom: $space-1;
-}
-
-.mobile-bench__player {
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid $color-border;
-  display: block;
-
-  img,
-  .mobile-bench__photo--placeholder {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .mobile-bench__photo--placeholder {
-    background: $color-surface-alt;
-  }
-}
-
-// ── Sidebar ───────────────────────────────────────────────────────────────────
 
 .lineup-sidebar {
   width: 260px;
@@ -380,9 +315,7 @@
   flex-direction: column;
   gap: $space-4;
 
-  @media (max-width: $mobile-breakpoint) {
-    width: 100%;
-  }
+  @media (max-width: $mobile-breakpoint) { width: 100%; }
 }
 
 .sidebar-block {
@@ -400,8 +333,6 @@
   margin: 0;
 }
 
-// ── Points bar ────────────────────────────────────────────────────────────────
-
 .points-bar {
   height: 34px;
   border-radius: $radius-md;
@@ -411,28 +342,26 @@
   overflow: hidden;
   display: flex;
   align-items: center;
-}
 
-.points-bar__fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: $color-accent;
-  transition: width $transition-slow;
-}
+  &__fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: $color-accent;
+    transition: width $transition-slow;
+  }
 
-.points-bar__label {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  text-align: center;
-  font-size: $font-sm;
-  font-weight: $font-weight-semibold;
-  color: #fff;
+  &__label {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    text-align: center;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: #fff;
+  }
 }
-
-// ── Formation chips ───────────────────────────────────────────────────────────
 
 .formations {
   display: flex;
@@ -458,12 +387,8 @@
   }
 }
 
-// ── Bench (desktop sidebar) ───────────────────────────────────────────────────
-
 .desktop-bench {
-  @media (max-width: $mobile-breakpoint) {
-    display: none;
-  }
+  @media (max-width: $mobile-breakpoint) { display: none; }
 }
 
 .bench-list {
@@ -486,109 +411,99 @@
   overflow: hidden;
   transition: background $transition-fast;
 
-  &:hover {
-    background: $color-surface-alt;
+  &:hover { background: $color-surface-alt; }
+
+  &__pos {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    top: -30px;
+    left: -20px;
+    transform: rotate(-45deg);
+    opacity: 0.9;
   }
-}
 
-.bench-player__pos {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  top: -30px;
-  left: -20px;
-  transform: rotate(-45deg);
-  opacity: 0.9;
-}
-
-.bench-player__photo-wrap {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-}
-
-.bench-player__photo {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-
-  &--placeholder {
+  &__photo-wrap {
+    flex-shrink: 0;
     width: 40px;
     height: 40px;
-    background: $color-surface-alt;
-    border: 1px solid $color-border;
     border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
   }
-}
 
-.bench-player__info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  position: relative;
-  z-index: 1;
-}
+  &__photo {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
 
-.bench-player__name {
-  font-size: $font-sm;
-  font-weight: $font-weight-medium;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.bench-player__sds-star {
-  color: #f9c843;
-  font-size: $font-xs;
-  margin-right: 3px;
-}
-
-.bench-player__status {
-  font-size: $font-xs;
-  font-weight: $font-weight-medium;
-
-  &--starting {
-    color: $color-success;
+    &--placeholder {
+      width: 40px;
+      height: 40px;
+      background: $color-surface-alt;
+      border: 1px solid $color-border;
+      border-radius: 50%;
+    }
   }
-  &--sub {
-    color: var(--flat-carrot);
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+    z-index: 1;
   }
-  &--none {
-    color: $color-text-muted;
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-}
 
-.bench-player__grade {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  line-height: 28px;
-  text-align: center;
-  font-size: $font-xs;
-  font-weight: $font-weight-bold;
-  color: #fff;
-  border-radius: $radius-sm;
-  position: relative;
-  z-index: 1;
-}
+  &__sds-star {
+    color: #f9c843;
+    font-size: $font-xs;
+    margin-right: 3px;
+  }
 
-.bench-player__points {
-  flex-shrink: 0;
-  width: 28px;
-  text-align: center;
-  font-size: $font-md;
-  font-weight: $font-weight-semibold;
-  color: $color-text;
-  position: relative;
-  z-index: 1;
+  &__status {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
 
-  &--neg {
-    color: $color-danger;
+    &--starting { color: $color-success; }
+    &--sub { color: var(--flat-carrot); }
+    &--none { color: $color-text-muted; }
+  }
+
+  &__grade {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    font-size: $font-xs;
+    font-weight: $font-weight-bold;
+    color: #fff;
+    border-radius: $radius-sm;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__points {
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    position: relative;
+    z-index: 1;
+
+    &--neg { color: $color-danger; }
   }
 }
