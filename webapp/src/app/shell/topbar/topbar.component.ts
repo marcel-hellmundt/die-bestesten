@@ -15,8 +15,9 @@ export class TopbarComponent {
   isDropdownOpen  = signal(false);
   avatarImgFailed = signal(false);
 
-  managerName = computed(() => this.auth.getManagerName() ?? '');
-  role        = computed(() => this.auth.getRole() ?? '');
+  managerName        = computed(() => this.auth.getManagerName() ?? '');
+  role               = computed(() => this.auth.getRole() ?? '');
+  isMaintainer        = computed(() => this.auth.isMaintainer());
   avatarUrl   = computed(() => {
     const id = this.auth.getManagerId();
     return id ? `https://img.die-bestesten.de/img/manager/${id}.jpg` : null;

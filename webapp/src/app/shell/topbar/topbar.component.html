@@ -28,6 +28,13 @@
             <span class="dropdown-role">{{ role() }}</span>
           </div>
           <hr class="dropdown-divider" />
+          @if (isMaintainer()) {
+            <button class="dropdown-item" (click)="navigateTo('/daten')">
+              <app-icon name="data"></app-icon>
+              Datenbank
+            </button>
+            <hr class="dropdown-divider" />
+          }
           <button class="dropdown-item" (click)="navigateTo('/einstellungen')">
             <app-icon name="settings"></app-icon>
             Einstellungen

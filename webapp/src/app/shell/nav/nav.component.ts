@@ -69,15 +69,15 @@ export class NavComponent {
     this.marktGroup,
   ]);
 
-  readonly bottomGroups: NavGroup[] = [
+  bottomGroups = computed<NavGroup[]>(() => [
     {
       label: '',
       items: [
-        { label: 'Data Management', icon: 'data',     route: '/daten' },
-        { label: 'Einstellungen',   icon: 'settings', route: '/einstellungen' },
+        ...(this.auth.isMaintainer() ? [{ label: 'Datenbank', icon: 'data', route: '/daten' } as NavItem] : []),
+        { label: 'Einstellungen', icon: 'settings', route: '/einstellungen' },
       ]
     }
-  ];
+  ]);
 
   mobileNavItems = computed<NavItem[]>(() =>
     this.topGroups().map(g => ({

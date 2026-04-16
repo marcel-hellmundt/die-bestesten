@@ -41,7 +41,7 @@
   </div>
 
   <div class="nav-groups-bottom">
-    @for (group of bottomGroups; track group.label) {
+    @for (group of bottomGroups(); track group.label) {
       <div class="nav-group">
         @if (group.label) {
           <span class="nav-group-label">{{ group.label }}</span>

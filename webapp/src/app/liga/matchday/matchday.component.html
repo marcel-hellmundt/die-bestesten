@@ -6,11 +6,29 @@
   <p class="state-msg">Noch kein abgeschlossener Spieltag vorhanden.</p>
 } @else {
   <div class="matchday-nav">
-    <button class="nav-arrow" (click)="decrement()" [disabled]="!canDecrement()" aria-label="Vorheriger Spieltag">‹</button>
-    <h1 class="page-title">Spieltag {{ matchday().number }}</h1>
-    <button class="nav-arrow" (click)="increment()" [disabled]="!canIncrement()" aria-label="Nächster Spieltag">›</button>
+    <button
+      class="nav-arrow"
+      (click)="decrement()"
+      [disabled]="!canDecrement()"
+      aria-label="Vorheriger Spieltag"
+    >
+      ‹
+    </button>
+    <h1 class="page-title nowrap">{{ matchday().number }}. Spieltag</h1>
+    <button
+      class="nav-arrow"
+      (click)="increment()"
+      [disabled]="!canIncrement()"
+      aria-label="Nächster Spieltag"
+    >
+      ›
+    </button>
     @if (seasons().length > 1) {
-      <select class="season-select" [value]="seasonId()" (change)="onSeasonChange($any($event.target).value)">
+      <select
+        class="season-select"
+        [value]="seasonId()"
+        (change)="onSeasonChange($any($event.target).value)"
+      >
         @for (s of seasons(); track s.id) {
           <option [value]="s.id">{{ s.displayName }}</option>
         }
@@ -39,7 +57,11 @@
             </thead>
             <tbody>
               @for (r of ratings(); track r.team_id; let i = $index) {
-                <tr class="row-link" [routerLink]="['/team', r.team_id, 'aufstellung']" [queryParams]="{ matchday_id: matchday().id }">
+                <tr
+                  class="row-link"
+                  [routerLink]="['/team', r.team_id, 'aufstellung']"
+                  [queryParams]="{ matchday_id: matchday().id }"
+                >
                   <td class="col-rank">{{ i + 1 }}</td>
                   <td>
                     <span class="team-cell">
@@ -50,7 +72,13 @@
                         @if (!logoErrors.has(r.team_id)) {
                           <img
                             class="team-logo"
-                            [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                            [src]="
+                              'https://img.die-bestesten.de/img/team/' +
+                              r.season_id +
+                              '/' +
+                              r.team_id +
+                              '.png'
+                            "
                             [alt]="r.team_name"
                             (error)="onLogoError(r.team_id)"
                           />
@@ -81,11 +109,15 @@
                     </span>
                   </td>
                   <td class="col-icons col-cs">
-                    @if (+r.clean_sheet) { ✓ }
+                    @if (+r.clean_sheet) {
+                      ✓
+                    }
                   </td>
                   <td class="col-points">{{ r.points }}</td>
                   <td class="col-fine" [class.col-fine--active]="r.fine > 0">
-                    @if (r.fine > 0) { {{ r.fine | number:'1.2-2' }} € }
+                    @if (r.fine > 0) {
+                      {{ r.fine | number: '1.2-2' }} €
+                    }
                   </td>
                 </tr>
               }
@@ -101,9 +133,11 @@
             <div class="sds-avatar">
               @if (p.photo_uploaded && seasonId()) {
                 <img
-                  [src]="'https://img.die-bestesten.de/img/player/' + seasonId() + '/' + p.id + '.png'"
+                  [src]="
+                    'https://img.die-bestesten.de/img/player/' + seasonId() + '/' + p.id + '.png'
+                  "
                   [alt]="p.displayname"
-                  (error)="$any($event.target).style.display='none'"
+                  (error)="$any($event.target).style.display = 'none'"
                 />
               }
             </div>
@@ -112,7 +146,9 @@
               <div class="sds-stats">
                 <span class="sds-points">{{ p.points }}</span>
                 @if (p.grade) {
-                  <span class="sds-grade" [style.background-color]="gradeVar(p.grade)">{{ p.grade }}</span>
+                  <span class="sds-grade" [style.background-color]="gradeVar(p.grade)">{{
+                    p.grade
+                  }}</span>
                 }
                 @if (+p.goals) {
                   <span class="sds-stat-item">
@@ -121,7 +157,9 @@
                 }
                 @if (+p.assists) {
                   <span class="sds-stat-item">
-                    <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />{{ p.assists }}
+                    <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />{{
+                      p.assists
+                    }}
                   </span>
                 }
                 @if (+p.clean_sheet) {
@@ -142,7 +180,7 @@
 
       <div class="stat-card">
         <span class="stat-label stat-label--alizarin">Kegelstrafen</span>
-        <div class="stat-value">{{ totalFine() | number:'1.2-2' }} €</div>
+        <div class="stat-value">{{ totalFine() | number: '1.2-2' }} €</div>
       </div>
     </div>
   </div>

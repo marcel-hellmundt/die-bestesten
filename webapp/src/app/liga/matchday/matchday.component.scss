@@ -23,8 +23,13 @@
   cursor: pointer;
   transition: border-color $transition-fast;
 
-  &:hover { border-color: $color-text-muted; }
-  &:focus { outline: none; border-color: $color-text-muted; }
+  &:hover {
+    border-color: $color-text-muted;
+  }
+  &:focus {
+    outline: none;
+    border-color: $color-text-muted;
+  }
 }
 
 .nav-arrow {
@@ -247,9 +252,12 @@
   align-items: center;
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
 .rating-icon {
   width: 20px;
   height: 20px;
   max-width: unset;
 }
-

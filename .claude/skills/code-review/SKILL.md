@@ -1,3 +1,9 @@
+---
+name: review
+description: Führe ein umfassendes Code-Review des gesamten Projekts durch (webapp/ + api/). Use when the user says "code review", "review", "überprüf den code", or similar.
+allowed-tools: Read, Glob, Grep, Bash
+---
+
 # Code Review
 
 Führe ein umfassendes Code-Review des gesamten Projekts durch. Analysiere beide Teilprojekte (`webapp/` und `api/`) und schreibe einen strukturierten Bericht mit folgenden Abschnitten:
