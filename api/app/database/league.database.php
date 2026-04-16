@@ -144,6 +144,7 @@ trait LeagueTrait
                 :clean_sheet, :sds, :sds_defender, :missed_goals,
                 :points_goalkeeper, :points_defender, :points_midfielder, :points_forward, :invalid
              ) ON DUPLICATE KEY UPDATE
+                matchday_id        = VALUES(matchday_id),
                 points             = VALUES(points),
                 max_points         = VALUES(max_points),
                 goals              = VALUES(goals),
