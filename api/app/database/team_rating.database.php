@@ -194,15 +194,17 @@ trait TeamRatingTrait
     {
         if ($matchdayNumber !== null) {
             $mq = $this->con->prepare(
-                "SELECT id, number, kickoff_date FROM matchday
-                 WHERE season_id = :season_id AND number = :number AND completed = 1
+                "SELECT id, number, kickoff_date, completed FROM matchday
+                 WHERE season_id = :season_id AND number = :number
+                   AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()
                  LIMIT 1"
             );
             $mq->execute([':season_id' => $seasonId, ':number' => $matchdayNumber]);
         } else {
             $mq = $this->con->prepare(
-                "SELECT id, number, kickoff_date FROM matchday
-                 WHERE season_id = :season_id AND completed = 1
+                "SELECT id, number, kickoff_date, completed FROM matchday
+                 WHERE season_id = :season_id
+                   AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()
                  ORDER BY number DESC LIMIT 1"
             );
             $mq->execute([':season_id' => $seasonId]);
@@ -239,7 +241,8 @@ trait TeamRatingTrait
 
         $maxQ = $this->con->prepare(
             "SELECT MAX(number) AS max_number FROM matchday
-             WHERE season_id = :season_id AND completed = 1"
+             WHERE season_id = :season_id
+               AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()"
         );
         $maxQ->execute([':season_id' => $seasonId]);
         $maxNumber = (int) $maxQ->fetchColumn();
