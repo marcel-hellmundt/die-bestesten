@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
 import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api.service';
@@ -487,6 +487,41 @@ export class RatingsDataComponent {
     if (!grade) return 'var(--grade-unset)';
     const key = Math.round(grade * 2) * 5; // 1.0→10, 1.5→15, …, 6.0→60
     return `var(--grade-${key})`;
+  }
+
+  // ── Grade picker ────────────────────────────────────────────────
+  readonly GRADES = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0];
+  gradePickerRatingId = signal<string | null>(null);
+
+  @HostListener('document:click')
+  onDocumentClick(): void { this.gradePickerRatingId.set(null); }
+
+  openGradePicker(ratingId: string): void {
+    this.gradePickerRatingId.set(
+      this.gradePickerRatingId() === ratingId ? null : ratingId
+    );
+  }
+
+  closeGradePicker(): void {
+    this.gradePickerRatingId.set(null);
+  }
+
+  selectGrade(ratingId: string, grade: number): void {
+    this.gradePickerRatingId.set(null);
+    this.api.patch<any>(`player_rating/${ratingId}`, { grade }).subscribe({
+      next: (res) => this.ratings.update(list =>
+        list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
+      ),
+    });
+  }
+
+  clearGrade(ratingId: string): void {
+    this.gradePickerRatingId.set(null);
+    this.api.patch<any>(`player_rating/${ratingId}`, { grade: null }).subscribe({
+      next: (res) => this.ratings.update(list =>
+        list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
+      ),
+    });
   }
 
   range(n: number | null): number[] {

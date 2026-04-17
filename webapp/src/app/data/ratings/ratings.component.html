@@ -96,12 +96,31 @@
               </span>
             </td>
             <td class="col-points">{{ r.points ?? '—' }}</td>
-            <td>
-              <span
-                class="grade-badge"
-                [style.background]="gradeVar(r.grade)"
-                [class.grade-badge--unset]="!r.grade"
-              >{{ r.grade !== null ? r.grade.toFixed(1) : '—' }}</span>
+            <td class="col-grade">
+              <div class="grade-wrap">
+                <span
+                  class="grade-badge"
+                  [style.background]="gradeVar(r.grade)"
+                  [class.grade-badge--unset]="!r.grade"
+                  [class.grade-badge--clickable]="editable"
+                  (click)="editable && openGradePicker(r.id); $event.stopPropagation()"
+                >{{ r.grade !== null ? r.grade.toFixed(1) : '—' }}</span>
+                @if (editable && gradePickerRatingId() === r.id) {
+                  <div class="grade-picker" (click)="$event.stopPropagation()">
+                    @for (g of GRADES; track g) {
+                      <button
+                        class="grade-option"
+                        [style.background]="gradeVar(g)"
+                        [class.grade-option--active]="r.grade === g"
+                        (click)="selectGrade(r.id, g)"
+                      >{{ g.toFixed(1) }}</button>
+                    }
+                    @if (r.grade !== null) {
+                      <button class="grade-option grade-option--clear" (click)="clearGrade(r.id)">×</button>
+                    }
+                  </div>
+                }
+              </div>
             </td>
             <td class="col-sds" [class.col-sds--active]="editable" (click)="editable && toggleSds(r.id, r.sds)">
               <img src="img/icons/sds.png" class="rating-icon sds-toggle" [class.sds-toggle--on]="r.sds" alt="SdS" />

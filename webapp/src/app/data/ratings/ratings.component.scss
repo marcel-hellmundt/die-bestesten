@@ -215,6 +215,15 @@
   font-weight: $font-weight-medium;
 }
 
+.col-grade {
+  position: relative;
+}
+
+.grade-wrap {
+  position: relative;
+  display: inline-block;
+}
+
 .grade-badge {
   display: inline-block;
   padding: 2px $space-2;
@@ -227,6 +236,53 @@
 
   &--unset {
     color: $color-text-muted;
+  }
+
+  &--clickable {
+    cursor: pointer;
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+}
+
+.grade-picker {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: $z-dropdown;
+  display: flex;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  width: max-content;
+  overflow: hidden;
+  .grade-option {
+    width: 64px;
+    height: 48px;
+    border: none;
+    font-size: $font-md;
+    font-weight: $font-weight-bold;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity $transition-fast;
+
+    &:hover {
+      opacity: 0.85;
+    }
+
+    &--active {
+      outline: 2px solid $color-text;
+      outline-offset: 1px;
+    }
+
+    &--clear {
+      background: $color-surface-alt;
+      color: $color-text-muted;
+      border: 1px solid $color-border;
+    }
   }
 }
 
@@ -502,33 +558,34 @@
 
 .bulk-lineup {
   display: flex;
+  flex-direction: column;
   gap: $space-3;
   align-items: flex-start;
-}
+  .bulk-textarea {
+    flex: 1;
+    padding: $space-2 $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    background: $color-surface;
+    color: $color-text;
+    font-size: $font-sm;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color $transition-fast;
 
-.bulk-textarea {
-  flex: 1;
-  padding: $space-2 $space-3;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
-  background: $color-surface;
-  color: $color-text;
-  font-size: $font-sm;
-  font-family: inherit;
-  resize: vertical;
-  transition: border-color $transition-fast;
-
-  &:focus {
-    outline: none;
-    border-color: $color-text-muted;
+    &:focus {
+      outline: none;
+      border-color: $color-text-muted;
+    }
   }
-}
 
-.btn-sm {
-  padding: $space-1 $space-3;
-  font-size: $font-sm;
-  height: auto;
-  white-space: nowrap;
+  .btn-sm {
+    padding: $space-2 $space-3;
+    font-size: $font-sm;
+    height: auto;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
 }
 
 @media (max-width: $mobile-breakpoint) {
@@ -536,6 +593,15 @@
     grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
     .club-tile__name {
       display: none;
+    }
+  }
+
+  .grade-picker {
+    flex-direction: column;
+    .grade-option {
+      height: 48px;
+      width: 48px;
+      font-size: $font-sm;
     }
   }
 }
