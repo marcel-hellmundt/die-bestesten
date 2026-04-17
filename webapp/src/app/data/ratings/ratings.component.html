@@ -106,7 +106,9 @@
               <img src="img/icons/sds.png" class="rating-icon sds-toggle" [class.sds-toggle--on]="r.sds" alt="SdS" />
             </td>
             <td class="col-toggle" [class.col-toggle--active]="editable && r.position === 'GOALKEEPER'" (click)="editable && r.position === 'GOALKEEPER' && toggleCleanSheet(r.id, r.clean_sheet)">
-              <span class="cs-badge" [class.cs-badge--on]="r.clean_sheet">CS</span>
+              @if (r.position === 'GOALKEEPER') {
+                <span class="cs-badge" [class.cs-badge--on]="r.clean_sheet">CS</span>
+              }
             </td>
             <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementGoals(r.id, r.goals)">
               <div class="stat-add-inner">

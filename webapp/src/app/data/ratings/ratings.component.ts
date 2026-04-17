@@ -289,8 +289,26 @@ export class RatingsDataComponent {
   }
 
   toggleCleanSheet(ratingId: string, current: boolean): void { this.toggleBool(ratingId, 'clean_sheet', current); }
-  toggleRedCard(ratingId: string, current: boolean): void    { this.toggleBool(ratingId, 'red_card', current); }
-  toggleYellowRedCard(ratingId: string, current: boolean): void { this.toggleBool(ratingId, 'yellow_red_card', current); }
+
+  toggleRedCard(ratingId: string, current: boolean): void {
+    const body: any = { red_card: current ? 0 : 1 };
+    if (!current) body['yellow_red_card'] = 0;
+    this.api.patch<any>(`player_rating/${ratingId}`, body).subscribe({
+      next: (res) => this.ratings.update(list =>
+        list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
+      ),
+    });
+  }
+
+  toggleYellowRedCard(ratingId: string, current: boolean): void {
+    const body: any = { yellow_red_card: current ? 0 : 1 };
+    if (!current) body['red_card'] = 0;
+    this.api.patch<any>(`player_rating/${ratingId}`, body).subscribe({
+      next: (res) => this.ratings.update(list =>
+        list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
+      ),
+    });
+  }
 
   toggleSds(ratingId: string, current: boolean): void {
     const newVal = !current;
