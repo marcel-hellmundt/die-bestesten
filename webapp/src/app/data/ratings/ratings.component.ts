@@ -250,24 +250,6 @@ export class RatingsDataComponent {
     });
   }
 
-  // ── Mark completed ─────────────────────────────────────────────
-  completeState = signal<'idle' | 'loading' | 'done'>('idle');
-
-  markCompleted(): void {
-    const md = this.selectedMatchday();
-    if (!md) return;
-    this.completeState.set('loading');
-    this.api.patch<any>(`matchday/${md.id}`, { completed: true }).subscribe({
-      next: () => {
-        // Update local matchday object
-        const updated = new Matchday(md.id, md.season_id, md.number, md.start_date, md.kickoff_date, true);
-        this.selectedMatchday.set(updated);
-        this.completeState.set('done');
-      },
-      error: () => this.completeState.set('idle'),
-    });
-  }
-
   // ── Helpers ────────────────────────────────────────────────────
   matchdayById(id: string): Matchday | null {
     return this.matchdays().find(m => m.id === id) ?? null;

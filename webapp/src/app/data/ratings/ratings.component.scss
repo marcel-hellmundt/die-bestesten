@@ -85,12 +85,12 @@
 // Club grid
 .club-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
   gap: $space-3;
   margin-bottom: $space-6;
 
   @media (max-width: $mobile-breakpoint) {
-    gap: $space-2;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
   }
 }
 
@@ -101,11 +101,6 @@
   gap: $space-2;
   padding: $space-3 $space-2;
   border: 1px solid $color-border;
-
-  @media (max-width: $mobile-breakpoint) {
-    padding: $space-2 $space-1;
-    gap: $space-1;
-  }
   border-radius: $radius-lg;
   background: $color-surface;
   cursor: pointer;
@@ -144,11 +139,6 @@
     width: 48px;
     height: 48px;
     object-fit: contain;
-
-    @media (max-width: $mobile-breakpoint) {
-      width: 32px;
-      height: 32px;
-    }
   }
 
   &__name {
@@ -157,14 +147,6 @@
     color: $color-text;
     text-align: center;
     line-height: 1.2;
-
-    @media (max-width: $mobile-breakpoint) {
-      font-size: 9px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      width: 100%;
-    }
   }
 }
 
@@ -549,14 +531,11 @@
   white-space: nowrap;
 }
 
-.complete-bar {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: $space-2;
-}
-
 @media (max-width: $mobile-breakpoint) {
   .club-grid {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    .club-tile__name {
+      display: none;
+    }
   }
 }

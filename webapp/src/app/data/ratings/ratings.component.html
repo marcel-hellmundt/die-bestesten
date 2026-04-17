@@ -293,18 +293,6 @@
             </div>
           }
 
-          <!-- Als abgeschlossen markieren -->
-          @if (isAdmin() && !selectedMatchday()?.completed) {
-            <div class="complete-bar">
-              <button
-                class="btn btn-primary"
-                [disabled]="completeState() === 'loading'"
-                (click)="markCompleted()"
-              >
-                {{ completeState() === 'loading' ? 'Wird gespeichert…' : 'Spieltag abschließen' }}
-              </button>
-            </div>
-          }
         }
       }
     </section>
