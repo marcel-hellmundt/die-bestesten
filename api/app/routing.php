@@ -124,7 +124,7 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/matchday',
-                        'description'  => 'Alle Spieltage, optional gefiltert nach Saison',
+                        'description'  => 'Alle Spieltage, optional gefiltert nach Saison; mit season_id: enthält has_ratings (bool)',
                         'query_params' => ['season_id' => 'UUID der Saison (optional)'],
                     ],
                     [

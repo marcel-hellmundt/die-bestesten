@@ -46,10 +46,35 @@
       color: $color-surface;
     }
   }
+
+  &--pending {
+    border-color: $color-warning;
+    color: $color-warning;
+
+    &.matchday-pill--active {
+      background: $color-warning;
+      color: $color-surface;
+    }
+  }
 }
 
 .pill-check {
   font-size: $font-xs;
+}
+
+.pill-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: $radius-full;
+  background: currentColor;
+  flex-shrink: 0;
+  animation: pill-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pill-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
 }
 
 // Club grid
@@ -260,6 +285,17 @@
   color: $color-text-muted;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.col-goals--editable {
+  cursor: pointer;
+  border-radius: $radius-sm;
+  transition: background $transition-fast;
+  min-width: 32px;
+
+  &:hover {
+    background: color-mix(in srgb, $color-success 15%, transparent);
+  }
 }
 
 .col-actions {

@@ -6,6 +6,7 @@ export class Matchday {
     public start_date: string,
     public kickoff_date: string,
     public completed: boolean,
+    public has_ratings: boolean = false,
   ) {}
 
   static from(data: any): Matchday {
@@ -16,6 +17,7 @@ export class Matchday {
       data.start_date,
       data.kickoff_date,
       !!data.completed,
+      !!data.has_ratings,
     );
   }
 }

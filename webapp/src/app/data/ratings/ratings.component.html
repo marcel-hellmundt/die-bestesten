@@ -10,11 +10,14 @@
         class="matchday-pill"
         [class.matchday-pill--active]="selectedMatchday()?.id === md.id"
         [class.matchday-pill--done]="md.completed"
+        [class.matchday-pill--pending]="!md.completed && md.has_ratings"
         (click)="selectMatchday(md)"
       >
         {{ md.number }}
         @if (md.completed) {
           <span class="pill-check">✓</span>
+        } @else if (md.has_ratings) {
+          <span class="pill-dot"></span>
         }
       </button>
     }
@@ -82,7 +85,7 @@
           <p class="state-msg">Noch keine Ratings für diesen Spieltag angelegt</p>
         } @else {
           <!-- Reusable columns template -->
-          <ng-template #ratingCols let-r="r">
+          <ng-template #ratingCols let-r="r" let-editable="editable">
             <td class="col-player">
               <span class="player-cell">
                 @if (r.position) {
@@ -99,7 +102,11 @@
                 [class.grade-badge--unset]="!r.grade"
               >{{ r.grade !== null ? r.grade.toFixed(1) : '—' }}</span>
             </td>
-            <td>
+            <td
+              class="col-goals"
+              [class.col-goals--editable]="editable && !selectedMatchday()?.completed"
+              (click)="editable && !selectedMatchday()?.completed && incrementGoals(r.id, r.goals)"
+            >
               <span class="icons-wrap">
                 @for (i of range(r.goals); track i) {
                   <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
@@ -128,7 +135,7 @@
                   </thead>
                   <tbody>
                     @for (r of startingRatings(); track r.id) {
-                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r }"></ng-container></tr>
+                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r, editable: true }"></ng-container></tr>
                     }
                   </tbody>
                 </table>
@@ -149,7 +156,7 @@
                   </thead>
                   <tbody>
                     @for (r of substituteRatings(); track r.id) {
-                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r }"></ng-container></tr>
+                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r, editable: false }"></ng-container></tr>
                     }
                   </tbody>
                 </table>

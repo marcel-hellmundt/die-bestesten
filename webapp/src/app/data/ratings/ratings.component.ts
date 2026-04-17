@@ -264,6 +264,17 @@ export class RatingsDataComponent {
 
   participationError = signal<string | null>(null);
 
+  incrementGoals(ratingId: string, current: number): void {
+    const next = current + 1;
+    this.api.patch<any>(`player_rating/${ratingId}`, { goals: next }).subscribe({
+      next: () => {
+        this.ratings.update(list =>
+          list.map(r => r.id === ratingId ? PlayerRating.from({ ...r, goals: next }) : r)
+        );
+      },
+    });
+  }
+
   setParticipation(ratingId: string, value: 'starting' | 'substitute'): void {
     const limit = value === 'starting' ? 11 : 5;
     const current = this.ratings().filter(r => r.participation === value && r.id !== ratingId).length;
