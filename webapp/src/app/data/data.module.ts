@@ -24,7 +24,7 @@ const routes: Routes = [
     path: '',
     component: DataComponent,
     children: [
-      { path: '', redirectTo: 'player', pathMatch: 'full' },
+      { path: '', redirectTo: 'ratings', pathMatch: 'full' },
       { path: 'country',      component: CountryDataComponent,    canActivate: M },
       { path: 'country/:id',  component: CountryDetailComponent,  canActivate: M },
       { path: 'division',     component: DivisionDataComponent,   canActivate: M },
