@@ -147,6 +147,8 @@ export class RatingsDataComponent {
     this.initWarnings.set([]);
     this.beforeKickoff.set(false);
     this.ratingsState.set('idle');
+    this.bulkInput.set('');
+    this.bulkResult.set(null);
   }
 
   // ── Ratings state ──────────────────────────────────────────────
@@ -162,6 +164,8 @@ export class RatingsDataComponent {
     this.initWarnings.set([]);
     this.initCreatedNames.set([]);
     this.beforeKickoff.set(false);
+    this.bulkInput.set('');
+    this.bulkResult.set(null);
 
     const md = this.selectedMatchday();
     if (!md) return;
@@ -250,7 +254,13 @@ export class RatingsDataComponent {
     return pos ? (RatingsDataComponent.POSITION_LABEL[pos] ?? pos) : '';
   }
 
-  private byPosition = (a: PlayerRating, b: PlayerRating) => {
+  private byPositionOnly = (a: PlayerRating, b: PlayerRating) => {
+    const qa = RatingsDataComponent.POSITION_ORDER[a.position ?? ''] ?? 9;
+    const qb = RatingsDataComponent.POSITION_ORDER[b.position ?? ''] ?? 9;
+    return qa - qb;
+  };
+
+  private byBench = (a: PlayerRating, b: PlayerRating) => {
     if (b.starting_count !== a.starting_count) return b.starting_count - a.starting_count;
     const qa = RatingsDataComponent.POSITION_ORDER[a.position ?? ''] ?? 9;
     const qb = RatingsDataComponent.POSITION_ORDER[b.position ?? ''] ?? 9;
@@ -258,18 +268,44 @@ export class RatingsDataComponent {
     return (b.price ?? 0) - (a.price ?? 0);
   };
 
-  startingRatings   = computed(() => [...this.ratings()].filter(r => r.participation === 'starting').sort(this.byPosition));
-  substituteRatings = computed(() => [...this.ratings()].filter(r => r.participation === 'substitute').sort(this.byPosition));
-  benchRatings      = computed(() => [...this.ratings()].filter(r => !r.participation).sort(this.byPosition));
+  startingRatings   = computed(() => [...this.ratings()].filter(r => r.participation === 'starting').sort(this.byPositionOnly));
+  substituteRatings = computed(() => [...this.ratings()].filter(r => r.participation === 'substitute').sort(this.byPositionOnly));
+  benchRatings      = computed(() => [...this.ratings()].filter(r => !r.participation).sort(this.byBench));
 
   participationError = signal<string | null>(null);
 
   incrementGoals(ratingId: string, current: number): void {
-    const next = current + 1;
-    this.api.patch<any>(`player_rating/${ratingId}`, { goals: next }).subscribe({
+    this.patchStat(ratingId, 'goals', current + 1);
+  }
+
+  decrementGoals(ratingId: string, current: number): void {
+    if (current <= 0) return;
+    this.patchStat(ratingId, 'goals', current - 1);
+  }
+
+  incrementAssists(ratingId: string, current: number): void {
+    this.patchStat(ratingId, 'assists', current + 1);
+  }
+
+  decrementAssists(ratingId: string, current: number): void {
+    if (current <= 0) return;
+    this.patchStat(ratingId, 'assists', current - 1);
+  }
+
+  resetRating(ratingId: string): void {
+    const reset = { participation: null, grade: null, points: null, goals: 0, assists: 0, clean_sheet: 0, sds: 0, red_card: 0, yellow_red_card: 0 };
+    this.api.patch<any>(`player_rating/${ratingId}`, reset).subscribe({
+      next: () => this.ratings.update(list =>
+        list.map(r => r.id === ratingId ? PlayerRating.from({ ...r, ...reset }) : r)
+      ),
+    });
+  }
+
+  private patchStat(ratingId: string, field: 'goals' | 'assists', value: number): void {
+    this.api.patch<any>(`player_rating/${ratingId}`, { [field]: value }).subscribe({
       next: () => {
         this.ratings.update(list =>
-          list.map(r => r.id === ratingId ? PlayerRating.from({ ...r, goals: next }) : r)
+          list.map(r => r.id === ratingId ? PlayerRating.from({ ...r, [field]: value }) : r)
         );
       },
     });
@@ -294,6 +330,70 @@ export class RatingsDataComponent {
         );
       },
     });
+  }
+
+  // ── Bulk lineup import ────────────────────────────────────────────
+  bulkInput  = signal('');
+  bulkResult = signal<{ matched: string[], unmatched: string[] } | null>(null);
+
+  parseBulkLineup(): void {
+    const tokens = this.extractNames(this.bulkInput());
+    if (!tokens.length) return;
+
+    const matched:   string[] = [];
+    const unmatched: string[] = [];
+
+    for (const token of tokens) {
+      const player = this.findBestMatch(token);
+      if (!player) {
+        unmatched.push(token);
+        continue;
+      }
+      // Already starting — silently skip
+      if (player.participation === 'starting') continue;
+      matched.push(player.displayname);
+      this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting' }).subscribe({
+        next: () => this.ratings.update(list =>
+          list.map(r => r.id === player.id ? PlayerRating.from({ ...r, participation: 'starting' }) : r)
+        ),
+      });
+    }
+
+    this.bulkResult.set({ matched, unmatched });
+    this.bulkInput.set('');
+  }
+
+  private extractNames(text: string): string[] {
+    const cleaned = text.replace(/^[^:]*:\s*/, '').trim();
+    return cleaned
+      .split(/\s*[–—,]\s*/)
+      .map(s => s.trim())
+      .filter(s => s.length > 1);
+  }
+
+  private findBestMatch(token: string): PlayerRating | null {
+    const norm = this.normalize(token);
+    const pool = this.ratings();
+
+    const exact = pool.find(r => this.normalize(r.last_name ?? '') === norm
+                               || this.normalize(r.displayname) === norm);
+    if (exact) return exact;
+
+    const partial = pool.find(r => {
+      const ln = this.normalize(r.last_name ?? '');
+      return ln && (ln.includes(norm) || norm.includes(ln));
+    });
+    if (partial) return partial;
+
+    const words = norm.split(/\s+/).filter(w => w.length > 2);
+    return pool.find(r => {
+      const dn = this.normalize(r.displayname).split(/\s+/);
+      return words.some(w => dn.some(dw => dw === w || dw.includes(w) || w.includes(dw)));
+    }) ?? null;
+  }
+
+  private normalize(s: string): string {
+    return (s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   }
 
   gradeVar(grade: number | null): string {

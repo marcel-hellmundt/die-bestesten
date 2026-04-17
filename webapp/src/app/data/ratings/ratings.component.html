@@ -102,25 +102,70 @@
                 [class.grade-badge--unset]="!r.grade"
               >{{ r.grade !== null ? r.grade.toFixed(1) : '—' }}</span>
             </td>
-            <td
-              class="col-goals"
-              [class.col-goals--editable]="editable && !selectedMatchday()?.completed"
-              (click)="editable && !selectedMatchday()?.completed && incrementGoals(r.id, r.goals)"
-            >
-              <span class="icons-wrap">
-                @for (i of range(r.goals); track i) {
-                  <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
+            <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementGoals(r.id, r.goals)">
+              <div class="stat-add-inner">
+                <span class="icons-wrap">
+                  @for (i of range(r.goals); track i) {
+                    <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
+                  }
+                </span>
+                @if (editable) {
+                  <span class="stat-add-label">Tore hinzufügen</span>
                 }
-              </span>
+              </div>
             </td>
-            <td>
-              <span class="icons-wrap">
-                @for (i of range(r.assists); track i) {
-                  <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
+            @if (editable) {
+              <td class="col-stat-remove" (click)="decrementGoals(r.id, r.goals)">−</td>
+            }
+            <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementAssists(r.id, r.assists)">
+              <div class="stat-add-inner">
+                <span class="icons-wrap">
+                  @for (i of range(r.assists); track i) {
+                    <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
+                  }
+                </span>
+                @if (editable) {
+                  <span class="stat-add-label">Assists hinzufügen</span>
                 }
-              </span>
+              </div>
             </td>
+            @if (editable) {
+              <td class="col-stat-remove" (click)="decrementAssists(r.id, r.assists)">−</td>
+            }
+            @if (editable) {
+              <td class="col-reset">
+                <button class="reset-btn" (click)="resetRating(r.id)" title="Zurücksetzen">✕</button>
+              </td>
+            }
           </ng-template>
+
+          <!-- Bulk lineup import -->
+          @if (!selectedMatchday()?.completed) {
+            <div class="bulk-lineup">
+              <textarea
+                class="bulk-textarea"
+                [value]="bulkInput()"
+                (input)="bulkInput.set($any($event.target).value)"
+                placeholder="Startaufstellung einfügen, z. B.: Startelf: Neuer – Müller, Kimmich – Kane"
+                rows="2"
+              ></textarea>
+              <button class="btn btn-primary btn-sm" [disabled]="!bulkInput().trim()" (click)="parseBulkLineup()">
+                Übernehmen
+              </button>
+            </div>
+            @if (bulkResult(); as res) {
+              @if (res.matched.length) {
+                <div class="init-success">
+                  <strong>{{ res.matched.length }} zugeordnet:</strong> {{ res.matched.join(', ') }}
+                </div>
+              }
+              @if (res.unmatched.length) {
+                <div class="warning-panel">
+                  <strong>Nicht gefunden:</strong> {{ res.unmatched.join(', ') }}
+                </div>
+              }
+            }
+          }
 
           <!-- Table 1: Startelf -->
           @if (startingRatings().length > 0) {
@@ -130,12 +175,16 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>Tore</th><th>Vorlagen</th>
+                      <th>Spieler</th><th>Punkte</th><th>Note</th>
+                      <th>Tore</th>
+                      @if (!selectedMatchday()?.completed) { <th></th> }
+                      <th>Vorlagen</th>
+                      @if (!selectedMatchday()?.completed) { <th></th><th></th> }
                     </tr>
                   </thead>
                   <tbody>
                     @for (r of startingRatings(); track r.id) {
-                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r, editable: true }"></ng-container></tr>
+                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r, editable: !selectedMatchday()?.completed }"></ng-container></tr>
                     }
                   </tbody>
                 </table>

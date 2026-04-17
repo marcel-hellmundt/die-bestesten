@@ -287,14 +287,95 @@
   letter-spacing: 0.08em;
 }
 
-.col-goals--editable {
-  cursor: pointer;
+.col-stat-add {
+  min-width: 72px;
+
+  &--active {
+    cursor: pointer;
+    border-radius: $radius-sm;
+    transition: background $transition-fast;
+
+    &:hover {
+      background: color-mix(in srgb, $color-success 15%, transparent);
+    }
+  }
+}
+
+.stat-add-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .icons-wrap {
+    position: relative;
+    z-index: 1;
+    justify-content: center;
+  }
+}
+
+.stat-add-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: $color-text-muted;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity $transition-fast;
+  z-index: 0;
+
+  .col-stat-add--active:hover & {
+    opacity: 1;
+  }
+}
+
+.col-reset {
+  width: 32px;
+  text-align: center;
+}
+
+.reset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid $color-border;
   border-radius: $radius-sm;
-  transition: background $transition-fast;
-  min-width: 32px;
+  background: $color-surface;
+  color: $color-text-muted;
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    border-color $transition-fast,
+    color $transition-fast,
+    background $transition-fast;
 
   &:hover {
-    background: color-mix(in srgb, $color-success 15%, transparent);
+    border-color: $color-danger;
+    color: $color-danger;
+    background: color-mix(in srgb, $color-danger 8%, transparent);
+  }
+}
+
+.col-stat-remove {
+  width: 28px;
+  text-align: center;
+  cursor: pointer;
+  font-size: $font-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-muted;
+  border-radius: $radius-sm;
+  transition:
+    background $transition-fast,
+    color $transition-fast;
+
+  &:hover {
+    background: color-mix(in srgb, $color-danger 15%, transparent);
+    color: $color-danger;
   }
 }
 
@@ -323,6 +404,37 @@
   &:hover {
     border-color: $color-text-muted;
   }
+}
+
+.bulk-lineup {
+  display: flex;
+  gap: $space-3;
+  align-items: flex-start;
+}
+
+.bulk-textarea {
+  flex: 1;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $color-text-muted;
+  }
+}
+
+.btn-sm {
+  padding: $space-1 $space-3;
+  font-size: $font-sm;
+  height: auto;
+  white-space: nowrap;
 }
 
 .complete-bar {
