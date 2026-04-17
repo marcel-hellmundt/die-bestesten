@@ -186,8 +186,9 @@ trait PlayerRatingTrait
                 $oldParams[':start_lineup'] = ($value === 'starting')  ? 1 : 0;
                 $oldParams[':substitution'] = ($value === 'substitute') ? 1 : 0;
             } elseif (in_array($field, ['grade', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card', 'points'])) {
-                $oldSets[]          = "$field = :$field";
-                $oldParams[":$field"] = $value;
+                $oldSets[]            = "$field = :$field";
+                // Old DB uses 0 for "not set"; new DB uses null
+                $oldParams[":$field"] = $value ?? 0;
             }
         }
         if (!empty($oldSets)) {
