@@ -269,7 +269,7 @@ class Routing
                     [
                         'method'      => 'PATCH',
                         'path'        => '/player_rating/:id',
-                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card, points; Änderungen werden in alte DB gespiegelt',
+                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; points wird immer automatisch serverseitig berechnet und darf nicht im Body übergeben werden; Änderungen werden in alte DB gespiegelt',
                         'path_params' => [':id' => 'UUID der player_rating-Zeile'],
                     ],
                 ],

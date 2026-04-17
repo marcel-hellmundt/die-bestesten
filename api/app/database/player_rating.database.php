@@ -157,7 +157,7 @@ trait PlayerRatingTrait
      */
     public function updatePlayerRating(string $id, array $data): bool
     {
-        $allowed = ['grade', 'participation', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card', 'points'];
+        $allowed = ['grade', 'participation', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'];
         $sets    = [];
         $params  = [':id' => $id];
 
@@ -198,6 +198,56 @@ trait PlayerRatingTrait
             $oldQuery->execute($oldParams);
         }
 
+        // Always recalculate and persist points
+        $newPoints = $this->calculatePoints($id);
+        $this->con->prepare('UPDATE player_rating SET points = :p WHERE id = :id')
+            ->execute([':p' => $newPoints, ':id' => $id]);
+        $this->con_old->prepare('UPDATE player_rating SET points = :p WHERE player_rating_id = :id')
+            ->execute([':p' => $newPoints, ':id' => $id]);
+
         return $updated;
+    }
+
+    private function calculatePoints(string $id): int
+    {
+        $query = $this->con->prepare("
+            SELECT pr.grade, pr.participation, pr.goals, pr.assists,
+                   pr.clean_sheet, pr.sds, pr.red_card, pr.yellow_red_card,
+                   pis.position
+            FROM player_rating pr
+            JOIN matchday md ON md.id = pr.matchday_id
+            LEFT JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+            WHERE pr.id = :id
+            LIMIT 1
+        ");
+        $query->execute([':id' => $id]);
+        $r = $query->fetch(PDO::FETCH_ASSOC);
+        if (!$r) return 0;
+
+        $pos    = $r['position'] ?? null;
+        $points = 0;
+
+        if ($r['participation'] === 'starting')      $points += 2;
+        elseif ($r['participation'] === 'substitute') $points += 1;
+
+        $goalPts = ['GOALKEEPER' => 6, 'DEFENDER' => 5, 'MIDFIELDER' => 4, 'FORWARD' => 3];
+        $points += (int)$r['goals'] * ($goalPts[$pos] ?? 3);
+
+        $points += (int)$r['assists'];
+
+        $points += (int)$r['sds'] * 3;
+
+        if ($pos === 'GOALKEEPER') {
+            $points += (int)$r['clean_sheet'] * 2;
+        }
+
+        $points -= (int)$r['red_card'] * 6;
+        $points -= (int)$r['yellow_red_card'] * 3;
+
+        if ($r['grade'] !== null) {
+            $points += (int)round((3.5 - (float)$r['grade']) * 4);
+        }
+
+        return $points;
     }
 }
