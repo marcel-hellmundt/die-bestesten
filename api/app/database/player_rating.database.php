@@ -58,7 +58,10 @@ trait PlayerRatingTrait
      */
     public function initPlayerRatingsForClub(string $matchdayId, string $clubId): array
     {
-        // Fetch all current players of the club
+        $matchday     = $this->getMatchdayById($matchdayId);
+        $seasonId     = $matchday['season_id'];
+        $matchdayNum  = (int) $matchday['number'];
+
         $players = $this->con->prepare(
             "SELECT p.id AS player_id, p.displayname
              FROM player_in_club pic
@@ -71,7 +74,17 @@ trait PlayerRatingTrait
 
         $insert = $this->con->prepare(
             "INSERT IGNORE INTO player_rating (id, player_id, matchday_id, club_id)
-             VALUES (UUID(), :player_id, :matchday_id, :club_id)"
+             VALUES (:id, :player_id, :matchday_id, :club_id)"
+        );
+
+        $insertOld = $this->con_old->prepare(
+            "INSERT IGNORE INTO player_rating
+                (player_rating_id, player_id, club_id, season_id, matchday,
+                 grade, start_lineup, substitution,
+                 goals, assists, clean_sheet, sds, red_card, yellow_red_card, points)
+             VALUES
+                (:id, :player_id, :club_id, :season_id, :matchday,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL)"
         );
 
         $checkExisting = $this->con->prepare(
@@ -84,7 +97,6 @@ trait PlayerRatingTrait
         $existing = [];
 
         foreach ($playerRows as $row) {
-            // Check if rating already exists
             $checkExisting->execute([
                 ':player_id'   => $row['player_id'],
                 ':matchday_id' => $matchdayId,
@@ -94,10 +106,19 @@ trait PlayerRatingTrait
             if ($existingRating) {
                 $existing[] = ['player_id' => $row['player_id'], 'displayname' => $row['displayname']];
             } else {
+                $newId = $this->generateUUID();
                 $insert->execute([
+                    ':id'          => $newId,
                     ':player_id'   => $row['player_id'],
                     ':matchday_id' => $matchdayId,
                     ':club_id'     => $clubId,
+                ]);
+                $insertOld->execute([
+                    ':id'        => $newId,
+                    ':player_id' => $row['player_id'],
+                    ':club_id'   => $clubId,
+                    ':season_id' => $seasonId,
+                    ':matchday'  => $matchdayNum,
                 ]);
                 $created[] = ['player_id' => $row['player_id'], 'displayname' => $row['displayname']];
             }
@@ -108,6 +129,14 @@ trait PlayerRatingTrait
             'created'  => $created,
             'existing' => $existing,
         ];
+    }
+
+    private function generateUUID(): string
+    {
+        $data = random_bytes(16);
+        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
     /**
@@ -145,6 +174,29 @@ trait PlayerRatingTrait
             'UPDATE player_rating SET ' . implode(', ', $sets) . ' WHERE id = :id'
         );
         $query->execute($params);
-        return $query->rowCount() > 0;
+        $updated = $query->rowCount() > 0;
+
+        // Mirror to old DB
+        $oldSets   = [];
+        $oldParams = [':id' => $id];
+        foreach ($data as $field => $value) {
+            if ($field === 'participation') {
+                $oldSets[]                  = 'start_lineup = :start_lineup';
+                $oldSets[]                  = 'substitution = :substitution';
+                $oldParams[':start_lineup'] = ($value === 'starting')  ? 1 : 0;
+                $oldParams[':substitution'] = ($value === 'substitute') ? 1 : 0;
+            } elseif (in_array($field, ['grade', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card', 'points'])) {
+                $oldSets[]          = "$field = :$field";
+                $oldParams[":$field"] = $value;
+            }
+        }
+        if (!empty($oldSets)) {
+            $oldQuery = $this->con_old->prepare(
+                'UPDATE player_rating SET ' . implode(', ', $oldSets) . ' WHERE player_rating_id = :id'
+            );
+            $oldQuery->execute($oldParams);
+        }
+
+        return $updated;
     }
 }

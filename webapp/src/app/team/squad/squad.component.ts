@@ -35,10 +35,10 @@ export class SquadComponent {
 
   positionLabel(pos: string): string {
     const map: Record<string, string> = {
-      GOALKEEPER: 'TW',
+      GOALKEEPER: 'TOR',
       DEFENDER:   'ABW',
-      MIDFIELDER: 'MF',
-      FORWARD:    'ST',
+      MIDFIELDER: 'MIT',
+      FORWARD:    'STU',
     };
     return map[pos] ?? pos;
   }

@@ -255,7 +255,7 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/player_rating',
-                        'description'  => 'Alle Ratings eines Clubs an einem Spieltag (mit Spieler-Infos inkl. price, starting_count); sortiert nach starting_count DESC, position, price DESC',
+                        'description'  => 'Alle Ratings eines Clubs an einem Spieltag (mit Spieler-Infos inkl. price, starting_count); sortiert nach starting_count DESC, position, price DESC — Auth',
                         'query_params' => [
                             'matchday_id' => 'UUID des Spieltags (erforderlich)',
                             'club_id'     => 'UUID des Clubs (erforderlich)',
@@ -264,12 +264,12 @@ class Routing
                     [
                         'method'      => 'POST',
                         'path'        => '/player_rating/init',
-                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück',
+                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück; neue Ratings werden mit gleicher ID in alte DB gespiegelt',
                     ],
                     [
                         'method'      => 'PATCH',
                         'path'        => '/player_rating/:id',
-                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card, points',
+                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card, points; Änderungen werden in alte DB gespiegelt',
                         'path_params' => [':id' => 'UUID der player_rating-Zeile'],
                     ],
                 ],

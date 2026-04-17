@@ -213,6 +213,12 @@
   font-weight: $font-weight-medium;
 }
 
+.player-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+}
+
 .col-points {
   font-weight: $font-weight-bold;
   color: $color-text;
@@ -220,13 +226,26 @@
 
 .position-badge {
   display: inline-block;
-  padding: 1px $space-2;
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+  padding: 2px 4px;
   border-radius: $radius-sm;
   font-size: $font-xs;
   font-weight: $font-weight-bold;
   color: #fff;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.participation-error {
+  padding: $space-2 $space-4;
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, $color-danger 8%, transparent);
+  border: 1px solid $color-danger;
+  font-size: $font-sm;
+  color: $color-danger;
+  font-weight: $font-weight-medium;
 }
 
 .group-section {

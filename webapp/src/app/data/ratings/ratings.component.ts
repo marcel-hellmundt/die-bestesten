@@ -242,6 +242,13 @@ export class RatingsDataComponent {
   private static readonly POSITION_ORDER: Record<string, number> = {
     GOALKEEPER: 0, DEFENDER: 1, MIDFIELDER: 2, FORWARD: 3
   };
+  private static readonly POSITION_LABEL: Record<string, string> = {
+    GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU'
+  };
+
+  posLabel(pos: string | null): string {
+    return pos ? (RatingsDataComponent.POSITION_LABEL[pos] ?? pos) : '';
+  }
 
   private byPosition = (a: PlayerRating, b: PlayerRating) => {
     if (b.starting_count !== a.starting_count) return b.starting_count - a.starting_count;
@@ -255,7 +262,20 @@ export class RatingsDataComponent {
   substituteRatings = computed(() => [...this.ratings()].filter(r => r.participation === 'substitute').sort(this.byPosition));
   benchRatings      = computed(() => [...this.ratings()].filter(r => !r.participation).sort(this.byPosition));
 
+  participationError = signal<string | null>(null);
+
   setParticipation(ratingId: string, value: 'starting' | 'substitute'): void {
+    const limit = value === 'starting' ? 11 : 5;
+    const current = this.ratings().filter(r => r.participation === value && r.id !== ratingId).length;
+    if (current >= limit) {
+      this.participationError.set(
+        value === 'starting'
+          ? `Maximal 11 Startspieler erlaubt`
+          : `Maximal 5 Einwechslungen erlaubt`
+      );
+      return;
+    }
+    this.participationError.set(null);
     this.api.patch<any>(`player_rating/${ratingId}`, { participation: value }).subscribe({
       next: () => {
         this.ratings.update(list =>

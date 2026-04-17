@@ -105,10 +105,10 @@ export class PlayerDetailComponent {
   };
 
   private readonly positionLabels: Record<string, string> = {
-    FORWARD: 'Sturm',
-    MIDFIELDER: 'Mittelfeld',
-    DEFENDER: 'Abwehr',
-    GOALKEEPER: 'Tor',
+    FORWARD: 'STU',
+    MIDFIELDER: 'MIT',
+    DEFENDER: 'ABW',
+    GOALKEEPER: 'TOR',
   };
 
   positionColor(position: string): string {
