@@ -290,7 +290,7 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/team_rating',
-                        'description'  => 'Ratings aller Teams für den letzten abgeschlossenen Spieltag — gibt { matchday, ratings[] } zurück',
+                        'description'  => 'Ratings aller Teams für den letzten gestarteten Spieltag — gibt { matchday, ratings[], sds_player, max_matchday_number } zurück; bei nicht-abgeschlossenem Spieltag werden Live-Punkte aus player_rating + team_lineup berechnet (fine = 0)',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                     [

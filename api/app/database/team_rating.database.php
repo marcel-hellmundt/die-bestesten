@@ -213,23 +213,22 @@ trait TeamRatingTrait
 
         if (!$matchday) return false;
 
-        $rq = $this->con_league->prepare(
-            "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
-                    m.manager_name,
-                    tr.points, tr.goals, tr.assists, tr.sds, tr.clean_sheet
-             FROM team_rating tr
-             JOIN team t ON t.id = tr.team_id
-             JOIN manager m ON m.id = t.manager_id
-             WHERE tr.matchday_id = :matchday_id AND tr.invalid = 0
-             ORDER BY tr.points DESC"
-        );
-        $rq->execute([':matchday_id' => $matchday['id']]);
-        $ratings = $rq->fetchAll(PDO::FETCH_ASSOC);
         if ($matchday['completed']) {
+            $rq = $this->con_league->prepare(
+                "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
+                        m.manager_name,
+                        tr.points, tr.goals, tr.assists, tr.sds, tr.clean_sheet
+                 FROM team_rating tr
+                 JOIN team t ON t.id = tr.team_id
+                 JOIN manager m ON m.id = t.manager_id
+                 WHERE tr.matchday_id = :matchday_id AND tr.invalid = 0
+                 ORDER BY tr.points DESC"
+            );
+            $rq->execute([':matchday_id' => $matchday['id']]);
+            $ratings = $rq->fetchAll(PDO::FETCH_ASSOC);
             $ratings = $this->assignFines($ratings, 'points');
         } else {
-            foreach ($ratings as &$row) { $row['fine'] = 0.0; }
-            unset($row);
+            $ratings = $this->getLiveTeamRatings($matchday['id']);
         }
 
         $sq = $this->con->prepare(
@@ -253,10 +252,74 @@ trait TeamRatingTrait
         $maxNumber = (int) $maxQ->fetchColumn();
 
         return [
-            'matchday'           => $matchday,
-            'ratings'            => $ratings,
-            'sds_player'         => $sdsPlayer,
+            'matchday'            => $matchday,
+            'ratings'             => $ratings,
+            'sds_player'          => $sdsPlayer,
             'max_matchday_number' => $maxNumber,
         ];
+    }
+
+    private function getLiveTeamRatings(string $matchdayId): array
+    {
+        $lq = $this->con_league->prepare(
+            "SELECT tl.team_id, tl.player_id,
+                    t.team_name, t.color, t.season_id, m.manager_name
+             FROM team_lineup tl
+             JOIN team t ON t.id = tl.team_id
+             JOIN manager m ON m.id = t.manager_id
+             WHERE tl.matchday_id = :matchday_id AND tl.nominated = 1"
+        );
+        $lq->execute([':matchday_id' => $matchdayId]);
+        $lineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($lineupRows)) return [];
+
+        $playerIds    = array_unique(array_column($lineupRows, 'player_id'));
+        $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+
+        $prq = $this->con->prepare(
+            "SELECT player_id,
+                    COALESCE(points, 0)      AS points,
+                    COALESCE(goals, 0)       AS goals,
+                    COALESCE(assists, 0)     AS assists,
+                    COALESCE(clean_sheet, 0) AS clean_sheet,
+                    COALESCE(sds, 0)         AS sds
+             FROM player_rating
+             WHERE matchday_id = ? AND player_id IN ($placeholders)"
+        );
+        $prq->execute(array_merge([$matchdayId], $playerIds));
+        $ratingByPlayer = array_column($prq->fetchAll(PDO::FETCH_ASSOC), null, 'player_id');
+
+        $teamMap = [];
+        foreach ($lineupRows as $row) {
+            $tid = $row['team_id'];
+            if (!isset($teamMap[$tid])) {
+                $teamMap[$tid] = [
+                    'team_id'      => $tid,
+                    'team_name'    => $row['team_name'],
+                    'color'        => $row['color'],
+                    'season_id'    => $row['season_id'],
+                    'manager_name' => $row['manager_name'],
+                    'points'       => 0,
+                    'goals'        => 0,
+                    'assists'      => 0,
+                    'clean_sheet'  => 0,
+                    'sds'          => 0,
+                    'fine'         => 0.0,
+                ];
+            }
+            $pr = $ratingByPlayer[$row['player_id']] ?? null;
+            if ($pr) {
+                $teamMap[$tid]['points']      += (int)$pr['points'];
+                $teamMap[$tid]['goals']       += (int)$pr['goals'];
+                $teamMap[$tid]['assists']     += (int)$pr['assists'];
+                $teamMap[$tid]['clean_sheet'] += (int)$pr['clean_sheet'];
+                $teamMap[$tid]['sds']         += (int)$pr['sds'];
+            }
+        }
+
+        $ratings = array_values($teamMap);
+        usort($ratings, fn($a, $b) => $b['points'] <=> $a['points']);
+        return $ratings;
     }
 }

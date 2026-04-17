@@ -8,7 +8,27 @@
 
   .page-title {
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: $space-2;
   }
+}
+
+.live-badge {
+  display: inline-block;
+  padding: 2px $space-2;
+  border-radius: $radius-full;
+  background: $color-danger;
+  color: #fff;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0.06em;
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .season-select {

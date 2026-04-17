@@ -14,7 +14,12 @@
     >
       ‹
     </button>
-    <h1 class="page-title nowrap">{{ matchday().number }}. Spieltag</h1>
+    <h1 class="page-title nowrap">
+      {{ matchday().number }}. Spieltag
+      @if (isLive()) {
+        <span class="live-badge">Live</span>
+      }
+    </h1>
     <button
       class="nav-arrow"
       (click)="increment()"
@@ -53,7 +58,7 @@
                 <th class="col-icons col-cs col-desktop">CS</th>
                 <th class="col-stats col-mobile"></th>
                 <th class="col-points">Punkte</th>
-                <th class="col-fine col-desktop">Strafe</th>
+                @if (!isLive()) { <th class="col-fine col-desktop">Strafe</th> }
               </tr>
             </thead>
             <tbody>
@@ -141,11 +146,13 @@
                     </span>
                   </td>
                   <td class="col-points">{{ r.points }}</td>
-                  <td class="col-fine col-desktop" [class.col-fine--active]="r.fine > 0">
-                    @if (r.fine > 0) {
-                      {{ r.fine | number: '1.2-2' }} €
-                    }
-                  </td>
+                  @if (!isLive()) {
+                    <td class="col-fine col-desktop" [class.col-fine--active]="r.fine > 0">
+                      @if (r.fine > 0) {
+                        {{ r.fine | number: '1.2-2' }} €
+                      }
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
@@ -205,10 +212,12 @@
         <div class="stat-value">{{ totalPoints() }}</div>
       </div>
 
-      <div class="stat-card">
-        <span class="stat-label stat-label--alizarin">Kegelstrafen</span>
-        <div class="stat-value">{{ totalFine() | number: '1.2-2' }} €</div>
-      </div>
+      @if (!isLive()) {
+        <div class="stat-card">
+          <span class="stat-label stat-label--alizarin">Kegelstrafen</span>
+          <div class="stat-value">{{ totalFine() | number: '1.2-2' }} €</div>
+        </div>
+      }
     </div>
   </div>
 }
