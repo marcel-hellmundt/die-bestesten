@@ -123,7 +123,7 @@
               </div>
             </td>
             @if (editable) {
-              <td class="col-stat-remove" (click)="decrementGoals(r.id, r.goals)">−</td>
+              <td class="col-stat-remove" (click)="decrementGoals(r.id, r.goals)">×</td>
             }
             <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementAssists(r.id, r.assists)">
               <div class="stat-add-inner">
@@ -138,7 +138,7 @@
               </div>
             </td>
             @if (editable) {
-              <td class="col-stat-remove" (click)="decrementAssists(r.id, r.assists)">−</td>
+              <td class="col-stat-remove" (click)="decrementAssists(r.id, r.assists)">×</td>
             }
             <td class="col-toggle" [class.col-toggle--active]="editable" (click)="editable && toggleYellowRedCard(r.id, r.yellow_red_card)">
               <span class="card-icon card-icon--yr" [class.card-icon--on]="r.yellow_red_card"></span>

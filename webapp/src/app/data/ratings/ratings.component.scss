@@ -73,8 +73,13 @@
 }
 
 @keyframes pill-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 // Club grid
@@ -293,27 +298,11 @@
 
   &--active {
     cursor: pointer;
-    border-radius: $radius-sm;
-    transition: background $transition-fast;
 
-    &:hover {
-      background: color-mix(in srgb, $color-accent 10%, transparent);
+    &:hover .sds-toggle:not(.sds-toggle--on),
+    &:hover .card-icon:not(.card-icon--on) {
+      opacity: 0.9;
     }
-  }
-}
-
-.cs-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: $font-weight-bold;
-  color: $color-text-muted;
-  opacity: 0.35;
-  letter-spacing: 0.03em;
-  transition: color $transition-fast, opacity $transition-fast;
-
-  &--on {
-    color: $color-success;
-    opacity: 1;
   }
 }
 
@@ -325,7 +314,9 @@
   opacity: 0.25;
   transition: opacity $transition-fast;
 
-  &--on { opacity: 1; }
+  &--on {
+    opacity: 1;
+  }
 
   &--yr {
     background: linear-gradient(to right, $color-warning 50%, $color-danger 50%);
@@ -342,17 +333,15 @@
 
   &--active {
     cursor: pointer;
-    border-radius: $radius-sm;
-    transition: background $transition-fast;
 
-    &:hover {
-      background: color-mix(in srgb, $color-accent 10%, transparent);
+    &:hover .sds-toggle:not(.sds-toggle--on) {
+      opacity: 0.9;
     }
   }
 }
 
 .sds-toggle {
-  opacity: 0.2;
+  opacity: 0.5;
   filter: grayscale(1);
   transition:
     opacity $transition-fast,
@@ -446,14 +435,19 @@
   font-weight: $font-weight-bold;
   color: $color-text-muted;
   border-radius: $radius-sm;
+  opacity: 0;
   transition:
-    background $transition-fast,
+    opacity $transition-fast,
     color $transition-fast;
 
   &:hover {
-    background: color-mix(in srgb, $color-danger 15%, transparent);
+    opacity: 1;
     color: $color-danger;
   }
+}
+
+.col-stat-add--active:hover + .col-stat-remove {
+  opacity: 1;
 }
 
 .col-actions {
