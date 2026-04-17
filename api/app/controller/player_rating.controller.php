@@ -9,6 +9,14 @@ class PlayerRatingController extends _BaseController
         $matchdayId = $this->params['matchday_id'] ?? null;
         $clubId     = $this->params['club_id']     ?? null;
 
+        if ($this->id === 'status') {
+            if (!$matchdayId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'matchday_id ist erforderlich'];
+            }
+            return $this->db->getClubStatusByMatchday($matchdayId);
+        }
+
         if (!$matchdayId || !$clubId) {
             http_response_code(400);
             return ['status' => false, 'message' => 'matchday_id und club_id sind erforderlich'];

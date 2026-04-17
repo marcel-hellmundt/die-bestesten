@@ -262,6 +262,14 @@ class Routing
                         ],
                     ],
                     [
+                        'method'       => 'GET',
+                        'path'         => '/player_rating/status',
+                        'description'  => 'Aggregierter Bewertungsstatus aller Clubs für einen Spieltag — gibt [{club_id, rating_count, starter_count, grade_count}] zurück',
+                        'query_params' => [
+                            'matchday_id' => 'UUID des Spieltags (erforderlich)',
+                        ],
+                    ],
+                    [
                         'method'      => 'POST',
                         'path'        => '/player_rating/init',
                         'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück; neue Ratings werden mit gleicher ID in alte DB gespiegelt',

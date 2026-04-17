@@ -131,12 +131,47 @@ export class RatingsDataComponent {
   selectedMatchday = signal<Matchday | null>(null);
   selectedClubId   = signal<string | null>(null);
 
+  // ── Club status per matchday ────────────────────────────────────
+  clubStatuses = signal<{ club_id: string; rating_count: number; starter_count: number; grade_count: number }[]>([]);
+
+  private clubStatusMap = computed(() => {
+    const m = new Map<string, { rating_count: number; starter_count: number; grade_count: number }>();
+    for (const s of this.clubStatuses()) m.set(s.club_id, s);
+    return m;
+  });
+
+  private refreshClubStatuses(): void {
+    const md = this.selectedMatchday();
+    if (!md) return;
+    this.api.get<any[]>(`player_rating/status?matchday_id=${md.id}`).pipe(
+      catchError(() => of([] as any[]))
+    ).subscribe(list =>
+      this.clubStatuses.set(list.map(s => ({
+        club_id:       s.club_id,
+        rating_count:  Number(s.rating_count),
+        starter_count: Number(s.starter_count),
+        grade_count:   Number(s.grade_count),
+      })))
+    );
+  }
+
+  clubStatusClass(clubId: string): string {
+    const s = this.clubStatusMap().get(clubId);
+    if (!s || s.rating_count === 0) return '';
+    if (s.grade_count > 0) return 'club-tile--done';
+    if (s.starter_count < 11) return 'club-tile--pending-dashed';
+    return 'club-tile--pending';
+  }
+
   // Apply auto-selection once data is available
   constructor() {
     this.cache.ensureSeasons();
     effect(() => {
       const md = this.autoSelected();
-      if (md && !this.selectedMatchday()) this.selectedMatchday.set(md);
+      if (md && !this.selectedMatchday()) {
+        this.selectedMatchday.set(md);
+        this.refreshClubStatuses();
+      }
     });
   }
 
@@ -151,6 +186,7 @@ export class RatingsDataComponent {
     this.bulkResult.set(null);
     this.participationError.set(null);
     this.sdsError.set(null);
+    this.refreshClubStatuses();
   }
 
   // ── Ratings state ──────────────────────────────────────────────
@@ -208,6 +244,7 @@ export class RatingsDataComponent {
       next: (data) => {
         this.ratings.set(data.map(PlayerRating.from));
         this.ratingsState.set('ready');
+        this.refreshClubStatuses();
       },
       error: () => this.ratingsState.set('error'),
     });

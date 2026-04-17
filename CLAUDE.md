@@ -100,6 +100,7 @@ GET      /player_in_season/bundesliga_count — ?season_id (optional, default ak
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück
 GET      /player_rating        — ?matchday_id&club_id → Spielerinfos + price, starting_count (Starts in der Saison); sortiert nach starting_count DESC, position, price DESC
+GET      /player_rating/status — ?matchday_id → [{club_id, rating_count, starter_count, grade_count}] — aggregierter Status aller Clubs für einen Spieltag
 POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen (gleiche ID in alte DB gespiegelt); 409 wenn completed oder (vor kickoff_date und nicht Admin) — Maintainer+
 PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed; Body: grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card (points wird immer serverseitig berechnet); Änderungen + berechnete points werden in alte DB gespiegelt
 POST     /auth                 — JWT-Login

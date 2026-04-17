@@ -30,6 +30,7 @@
         <button
           class="club-tile"
           [class.club-tile--active]="selectedClubId() === club.id"
+          [ngClass]="clubStatusClass(club.id)"
           (click)="selectClub(club.id)"
         >
           <img [src]="logoUrl(club)" class="club-tile__logo" [alt]="club.name" />
@@ -221,7 +222,7 @@
                   </thead>
                   <tbody>
                     @for (r of substituteRatings(); track r.id) {
-                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r, editable: false }"></ng-container></tr>
+                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r, editable: !selectedMatchday()?.completed }"></ng-container></tr>
                     }
                   </tbody>
                 </table>
@@ -259,6 +260,9 @@
                               <span class="position-badge" [style.background-color]="'var(--position-' + r.position.toLowerCase() + ')'">{{ posLabel(r.position) }}</span>
                             }
                             {{ r.displayname }}
+                            @if (r.starting_count) {
+                              <span class="starting-count">({{ r.starting_count }})</span>
+                            }
                           </span>
                         </td>
                         @if (!selectedMatchday()?.completed) {

@@ -48,11 +48,11 @@
   }
 
   &--pending {
-    border-color: $color-warning;
-    color: $color-warning;
+    border-color: $color-accent;
+    color: $color-accent;
 
     &.matchday-pill--active {
-      background: $color-warning;
+      background: $color-accent;
       color: $color-surface;
     }
   }
@@ -116,6 +116,19 @@
   &--active {
     border-color: $color-accent;
     background: color-mix(in srgb, $color-accent 8%, transparent);
+  }
+
+  &--done {
+    border-color: $color-success;
+  }
+
+  &--pending {
+    border-color: $color-danger;
+  }
+
+  &--pending-dashed {
+    border-color: $color-danger;
+    border-style: dashed;
   }
 
   &__logo {
@@ -252,6 +265,12 @@
 .col-points {
   font-weight: $font-weight-bold;
   color: $color-text;
+}
+
+.starting-count {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  margin-left: 2px;
 }
 
 .position-badge {

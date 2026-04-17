@@ -131,6 +131,25 @@ trait PlayerRatingTrait
         ];
     }
 
+    /**
+     * Returns per-club rating status for a matchday.
+     * [{club_id, rating_count, starter_count, grade_count}]
+     */
+    public function getClubStatusByMatchday(string $matchdayId): array
+    {
+        $query = $this->con->prepare("
+            SELECT club_id,
+                   COUNT(*)                                    AS rating_count,
+                   SUM(participation = 'starting')             AS starter_count,
+                   SUM(grade IS NOT NULL)                      AS grade_count
+            FROM player_rating
+            WHERE matchday_id = :matchday_id
+            GROUP BY club_id
+        ");
+        $query->execute([':matchday_id' => $matchdayId]);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     private function generateUUID(): string
     {
         $data = random_bytes(16);
