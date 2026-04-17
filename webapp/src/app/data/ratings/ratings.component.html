@@ -102,6 +102,9 @@
                 [class.grade-badge--unset]="!r.grade"
               >{{ r.grade !== null ? r.grade.toFixed(1) : '—' }}</span>
             </td>
+            <td class="col-sds" [class.col-sds--active]="editable" (click)="editable && toggleSds(r.id, r.sds)">
+              <img src="img/icons/sds.png" class="rating-icon sds-toggle" [class.sds-toggle--on]="r.sds" alt="SdS" />
+            </td>
             <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementGoals(r.id, r.goals)">
               <div class="stat-add-inner">
                 <span class="icons-wrap">
@@ -175,7 +178,7 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th>
+                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th>
                       <th>Tore</th>
                       @if (!selectedMatchday()?.completed) { <th></th> }
                       <th>Vorlagen</th>
@@ -200,7 +203,7 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>Tore</th><th>Vorlagen</th>
+                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>Tore</th><th>Vorlagen</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -216,6 +219,9 @@
           <!-- Table 3: Nicht eingesetzt -->
           @if (participationError()) {
             <div class="participation-error">{{ participationError() }}</div>
+          }
+          @if (sdsError()) {
+            <div class="participation-error">{{ sdsError() }}</div>
           }
 
           @if (benchRatings().length > 0) {

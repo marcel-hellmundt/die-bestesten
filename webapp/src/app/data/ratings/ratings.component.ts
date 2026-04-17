@@ -149,6 +149,8 @@ export class RatingsDataComponent {
     this.ratingsState.set('idle');
     this.bulkInput.set('');
     this.bulkResult.set(null);
+    this.participationError.set(null);
+    this.sdsError.set(null);
   }
 
   // ── Ratings state ──────────────────────────────────────────────
@@ -166,6 +168,8 @@ export class RatingsDataComponent {
     this.beforeKickoff.set(false);
     this.bulkInput.set('');
     this.bulkResult.set(null);
+    this.participationError.set(null);
+    this.sdsError.set(null);
 
     const md = this.selectedMatchday();
     if (!md) return;
@@ -274,6 +278,21 @@ export class RatingsDataComponent {
   benchRatings      = computed(() => [...this.ratings()].filter(r => !r.participation).sort(this.byBench));
 
   participationError = signal<string | null>(null);
+  sdsError           = signal<string | null>(null);
+
+  toggleSds(ratingId: string, current: boolean): void {
+    const newVal = !current;
+    if (newVal && this.ratings().some(r => r.sds && r.id !== ratingId)) {
+      this.sdsError.set('Pro Spieltag kann nur ein Spieler SdS sein');
+      return;
+    }
+    this.sdsError.set(null);
+    this.api.patch<any>(`player_rating/${ratingId}`, { sds: newVal ? 1 : 0 }).subscribe({
+      next: (res) => this.ratings.update(list =>
+        list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
+      ),
+    });
+  }
 
   incrementGoals(ratingId: string, current: number): void {
     this.patchStat(ratingId, 'goals', current + 1);

@@ -287,6 +287,34 @@
   letter-spacing: 0.08em;
 }
 
+.col-sds {
+  width: 24px;
+  text-align: center;
+
+  &--active {
+    cursor: pointer;
+    border-radius: $radius-sm;
+    transition: background $transition-fast;
+
+    &:hover {
+      background: color-mix(in srgb, $color-accent 10%, transparent);
+    }
+  }
+}
+
+.sds-toggle {
+  opacity: 0.2;
+  filter: grayscale(1);
+  transition:
+    opacity $transition-fast,
+    filter $transition-fast;
+
+  &--on {
+    opacity: 1;
+    filter: none;
+  }
+}
+
 .col-stat-add {
   min-width: 72px;
 
