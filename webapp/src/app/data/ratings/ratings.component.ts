@@ -364,7 +364,17 @@ export class RatingsDataComponent {
   }
 
   private extractNames(text: string): string[] {
-    const cleaned = text.replace(/^[^:]*:\s*/, '').trim();
+    const lines = text.split(/\n+/).map(l => l.trim()).filter(l => l.length > 0);
+
+    // Find the Startelf line; fall back to first non-Bank line
+    const startelfLine =
+      lines.find(l => /^startelf/i.test(l)) ??
+      lines.find(l => !/^bank/i.test(l)) ??
+      '';
+
+    // Strip label prefix ("Startelf: ") if present
+    const cleaned = startelfLine.replace(/^[^:]*:\s*/, '').trim();
+
     return cleaned
       .split(/\s*[–—,]\s*/)
       .map(s => s.trim())
