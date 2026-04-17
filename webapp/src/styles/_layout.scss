@@ -218,6 +218,7 @@
     font-size: $font-xs;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    white-space: nowrap;
   }
 
   td {
@@ -335,15 +336,33 @@
     border-radius: 8px;
     background: color-mix(in srgb, currentColor 12%, transparent);
 
-    &--turquoise  { color: var(--flat-turquoise); }
-    &--emerald    { color: var(--flat-emerald); }
-    &--river      { color: var(--flat-river); }
-    &--amethyst   { color: var(--flat-amethyst); }
-    &--asphalt    { color: var(--flat-asphalt); }
-    &--sunflower  { color: var(--flat-sunflower); }
-    &--carrot     { color: var(--flat-carrot); }
-    &--alizarin   { color: var(--flat-alizarin); }
-    &--concrete   { color: var(--flat-concrete); }
+    &--turquoise {
+      color: var(--flat-turquoise);
+    }
+    &--emerald {
+      color: var(--flat-emerald);
+    }
+    &--river {
+      color: var(--flat-river);
+    }
+    &--amethyst {
+      color: var(--flat-amethyst);
+    }
+    &--asphalt {
+      color: var(--flat-asphalt);
+    }
+    &--sunflower {
+      color: var(--flat-sunflower);
+    }
+    &--carrot {
+      color: var(--flat-carrot);
+    }
+    &--alizarin {
+      color: var(--flat-alizarin);
+    }
+    &--concrete {
+      color: var(--flat-concrete);
+    }
   }
 
   .stat-value {
@@ -455,4 +474,20 @@
     color: $color-text;
     border-color: $color-text-muted;
   }
+}
+
+// Generic group container — flex column with tight gap
+.group-section {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+// Group label above a table or list block
+.group-header {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }

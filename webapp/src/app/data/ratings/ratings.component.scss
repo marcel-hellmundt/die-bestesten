@@ -6,7 +6,7 @@
   flex-wrap: wrap;
   gap: $space-2;
   margin-bottom: $space-6;
-  max-width: 978px; // ~17 pills × 50px + 16 gaps × 8px
+  max-width: 978px;
 }
 
 .matchday-pill {
@@ -18,9 +18,7 @@
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   cursor: pointer;
-  transition:
-    background 0.1s,
-    border-color 0.1s;
+  transition: background 0.1s, border-color 0.1s;
   display: flex;
   align-items: center;
   gap: $space-1;
@@ -73,13 +71,8 @@
 }
 
 @keyframes pill-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 // Club grid
@@ -90,7 +83,11 @@
   margin-bottom: $space-6;
 
   @media (max-width: $mobile-breakpoint) {
-    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+
+    .club-tile__name {
+      display: none;
+    }
   }
 }
 
@@ -104,9 +101,7 @@
   border-radius: $radius-lg;
   background: $color-surface;
   cursor: pointer;
-  transition:
-    background 0.1s,
-    border-color 0.1s;
+  transition: background 0.1s, border-color 0.1s;
 
   &:hover {
     background: $color-surface-alt;
@@ -157,7 +152,8 @@
   gap: $space-4;
 }
 
-.completed-banner {
+.completed-banner,
+.init-success {
   padding: $space-3 $space-4;
   border-radius: $radius-lg;
   background: color-mix(in srgb, $color-success 10%, transparent);
@@ -196,32 +192,32 @@
   }
 }
 
-.warning-panel {
-  padding: $space-3 $space-4;
+.warning-panel,
+.participation-error {
   border-radius: $radius-lg;
   background: color-mix(in srgb, $color-danger 8%, transparent);
   border: 1px solid $color-danger;
   font-size: $font-sm;
+}
+
+.warning-panel {
+  padding: $space-3 $space-4;
   color: $color-text;
 }
 
-.init-success {
-  padding: $space-3 $space-4;
-  border-radius: $radius-lg;
-  background: color-mix(in srgb, $color-success 10%, transparent);
-  border: 1px solid $color-success;
-  font-size: $font-sm;
-  color: $color-success;
+.participation-error {
+  padding: $space-2 $space-4;
+  color: $color-danger;
   font-weight: $font-weight-medium;
 }
 
 .col-grade {
   position: relative;
-}
 
-.grade-wrap {
-  position: relative;
-  display: inline-block;
+  .grade-wrap {
+    position: relative;
+    display: inline-block;
+  }
 }
 
 .grade-badge {
@@ -240,6 +236,7 @@
 
   &--clickable {
     cursor: pointer;
+
     &:hover {
       opacity: 0.85;
     }
@@ -259,6 +256,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   width: max-content;
   overflow: hidden;
+
   .grade-option {
     width: 64px;
     height: 48px;
@@ -284,20 +282,16 @@
       border: 1px solid $color-border;
     }
   }
-}
 
-.col-part {
-  width: 28px;
-  text-align: center;
-}
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
 
-.part-icon {
-  width: 18px;
-  height: 18px;
-  max-width: unset;
-  display: block;
-  margin: 0 auto;
-  flex-shrink: 0;
+    .grade-option {
+      height: 48px;
+      width: 48px;
+      font-size: $font-sm;
+    }
+  }
 }
 
 .icons-wrap {
@@ -347,40 +341,21 @@
   letter-spacing: 0.04em;
 }
 
-.participation-error {
-  padding: $space-2 $space-4;
-  border-radius: $radius-lg;
-  background: color-mix(in srgb, $color-danger 8%, transparent);
-  border: 1px solid $color-danger;
-  font-size: $font-sm;
-  color: $color-danger;
-  font-weight: $font-weight-medium;
-}
-
-.group-section {
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-}
-
-.group-header {
-  font-size: $font-xs;
-  font-weight: $font-weight-semibold;
-  color: $color-text-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.col-toggle,
+.col-sds {
+  width: 24px;
+  text-align: center;
 }
 
 .col-toggle {
-  width: 24px;
-  text-align: center;
-
   &--active {
     cursor: pointer;
 
-    &:hover .sds-toggle:not(.sds-toggle--on),
-    &:hover .card-icon:not(.card-icon--on) {
-      opacity: 0.9;
+    &:hover {
+      .sds-toggle:not(.sds-toggle--on),
+      .card-icon:not(.card-icon--on) {
+        opacity: 0.9;
+      }
     }
   }
 }
@@ -393,23 +368,12 @@
   opacity: 0.25;
   transition: opacity $transition-fast;
 
-  &--on {
-    opacity: 1;
-  }
-
-  &--yr {
-    background: linear-gradient(to right, $color-warning 50%, $color-danger 50%);
-  }
-
-  &--red {
-    background: $color-danger;
-  }
+  &--on { opacity: 1; }
+  &--yr { background: linear-gradient(to right, $color-warning 50%, $color-danger 50%); }
+  &--red { background: $color-danger; }
 }
 
 .col-sds {
-  width: 24px;
-  text-align: center;
-
   &--active {
     cursor: pointer;
 
@@ -422,9 +386,7 @@
 .sds-toggle {
   opacity: 0.5;
   filter: grayscale(1);
-  transition:
-    opacity $transition-fast,
-    filter $transition-fast;
+  transition: opacity $transition-fast, filter $transition-fast;
 
   &--on {
     opacity: 1;
@@ -442,6 +404,10 @@
 
     &:hover {
       background: color-mix(in srgb, $color-success 15%, transparent);
+
+      + .col-stat-remove { opacity: 1; }
+
+      .stat-add-label { opacity: 1; }
     }
   }
 }
@@ -471,9 +437,22 @@
   opacity: 0;
   transition: opacity $transition-fast;
   z-index: 0;
+}
 
-  .col-stat-add--active:hover & {
+.col-stat-remove {
+  width: 28px;
+  text-align: center;
+  cursor: pointer;
+  font-size: $font-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-muted;
+  border-radius: $radius-sm;
+  opacity: 0;
+  transition: opacity $transition-fast, color $transition-fast;
+
+  &:hover {
     opacity: 1;
+    color: $color-danger;
   }
 }
 
@@ -494,39 +473,13 @@
   color: $color-text-muted;
   font-size: 11px;
   cursor: pointer;
-  transition:
-    border-color $transition-fast,
-    color $transition-fast,
-    background $transition-fast;
+  transition: border-color $transition-fast, color $transition-fast, background $transition-fast;
 
   &:hover {
     border-color: $color-danger;
     color: $color-danger;
     background: color-mix(in srgb, $color-danger 8%, transparent);
   }
-}
-
-.col-stat-remove {
-  width: 28px;
-  text-align: center;
-  cursor: pointer;
-  font-size: $font-lg;
-  font-weight: $font-weight-bold;
-  color: $color-text-muted;
-  border-radius: $radius-sm;
-  opacity: 0;
-  transition:
-    opacity $transition-fast,
-    color $transition-fast;
-
-  &:hover {
-    opacity: 1;
-    color: $color-danger;
-  }
-}
-
-.col-stat-add--active:hover + .col-stat-remove {
-  opacity: 1;
 }
 
 .col-actions {
@@ -561,6 +514,7 @@
   flex-direction: column;
   gap: $space-3;
   align-items: flex-start;
+
   .bulk-textarea {
     flex: 1;
     padding: $space-2 $space-3;
@@ -583,25 +537,6 @@
     padding: $space-2 $space-3;
     font-size: $font-sm;
     height: auto;
-    white-space: nowrap;
     align-self: flex-end;
-  }
-}
-
-@media (max-width: $mobile-breakpoint) {
-  .club-grid {
-    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
-    .club-tile__name {
-      display: none;
-    }
-  }
-
-  .grade-picker {
-    flex-direction: column;
-    .grade-option {
-      height: 48px;
-      width: 48px;
-      font-size: $font-sm;
-    }
   }
 }
