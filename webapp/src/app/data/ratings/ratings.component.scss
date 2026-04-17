@@ -85,12 +85,11 @@
 // Club grid
 .club-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: $space-3;
   margin-bottom: $space-6;
 
   @media (max-width: $mobile-breakpoint) {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: $space-2;
   }
 }
