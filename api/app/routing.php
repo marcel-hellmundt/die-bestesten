@@ -255,7 +255,7 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/player_rating',
-                        'description'  => 'Alle Ratings eines Clubs an einem Spieltag (mit Spieler-Infos)',
+                        'description'  => 'Alle Ratings eines Clubs an einem Spieltag (mit Spieler-Infos inkl. price, starting_count); sortiert nach starting_count DESC, position, price DESC',
                         'query_params' => [
                             'matchday_id' => 'UUID des Spieltags (erforderlich)',
                             'club_id'     => 'UUID des Clubs (erforderlich)',

@@ -20,6 +20,8 @@ export class PlayerRating {
     public country_id: string | null,
     public position: string | null,
     public photo_uploaded: boolean,
+    public price: number | null,
+    public starting_count: number,
   ) {}
 
   static from(data: any): PlayerRating {
@@ -43,6 +45,8 @@ export class PlayerRating {
       data.country_id ?? null,
       data.position ?? null,
       !!data.photo_uploaded,
+      data.price !== null && data.price !== undefined ? Number(data.price) : null,
+      Number(data.starting_count ?? 0),
     );
   }
 }

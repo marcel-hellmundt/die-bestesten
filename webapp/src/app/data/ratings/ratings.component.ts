@@ -244,9 +244,11 @@ export class RatingsDataComponent {
   };
 
   private byPosition = (a: PlayerRating, b: PlayerRating) => {
+    if (b.starting_count !== a.starting_count) return b.starting_count - a.starting_count;
     const qa = RatingsDataComponent.POSITION_ORDER[a.position ?? ''] ?? 9;
     const qb = RatingsDataComponent.POSITION_ORDER[b.position ?? ''] ?? 9;
-    return qa - qb;
+    if (qa !== qb) return qa - qb;
+    return (b.price ?? 0) - (a.price ?? 0);
   };
 
   startingRatings   = computed(() => [...this.ratings()].filter(r => r.participation === 'starting').sort(this.byPosition));

@@ -19,6 +19,12 @@ trait PlayerRatingTrait
                    p.country_id,
                    pis.position,
                    pis.photo_uploaded,
+                   pis.price,
+                   (SELECT COUNT(*) FROM player_rating pr2
+                    JOIN matchday md2 ON md2.id = pr2.matchday_id
+                    WHERE pr2.player_id = p.id
+                      AND pr2.participation = 'starting'
+                      AND md2.season_id = :season_id) AS starting_count,
                    pr.id,
                    pr.club_id,
                    pr.grade,
@@ -35,7 +41,7 @@ trait PlayerRatingTrait
             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
             WHERE pr.matchday_id = :matchday_id
               AND pr.club_id = :club_id
-            ORDER BY pis.position ASC, p.last_name ASC, p.first_name ASC
+            ORDER BY starting_count DESC, pis.position ASC, pis.price DESC
         ");
         $query->execute([
             ':matchday_id' => $matchdayId,
