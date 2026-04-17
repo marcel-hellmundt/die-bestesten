@@ -256,8 +256,44 @@
   white-space: nowrap;
 }
 
+.col-desktop {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.col-mobile {
+  display: none;
+  @media (max-width: $mobile-breakpoint) {
+    display: table-cell;
+  }
+}
+
+.col-stats {
+  width: 48px;
+}
+
+.stats-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &__row {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    white-space: nowrap;
+  }
+}
+
 .rating-icon {
   width: 20px;
   height: 20px;
+  max-width: unset;
+}
+
+.rating-icon--sm {
+  width: 16px;
+  height: 16px;
   max-width: unset;
 }

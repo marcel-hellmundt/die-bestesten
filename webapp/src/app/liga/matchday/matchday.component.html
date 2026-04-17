@@ -47,12 +47,13 @@
               <tr>
                 <th class="col-rank">#</th>
                 <th>Team</th>
-                <th class="col-icons">SdS</th>
-                <th class="col-icons">Tore</th>
-                <th class="col-icons">Assists</th>
-                <th class="col-icons col-cs">CS</th>
+                <th class="col-icons col-desktop">SdS</th>
+                <th class="col-icons col-desktop">Tore</th>
+                <th class="col-icons col-desktop">Assists</th>
+                <th class="col-icons col-cs col-desktop">CS</th>
+                <th class="col-stats col-mobile"></th>
                 <th class="col-points">Punkte</th>
-                <th class="col-fine">Strafe</th>
+                <th class="col-fine col-desktop">Strafe</th>
               </tr>
             </thead>
             <tbody>
@@ -87,34 +88,60 @@
                       <span class="team-name">{{ r.team_name }}</span>
                     </span>
                   </td>
-                  <td class="col-icons">
+                  <td class="col-icons col-desktop">
                     <span class="icons-wrap">
                       @if (+r.sds) {
                         <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
                       }
                     </span>
                   </td>
-                  <td class="col-icons">
+                  <td class="col-icons col-desktop">
                     <span class="icons-wrap">
                       @for (g of range(+r.goals); track g) {
                         <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
                       }
                     </span>
                   </td>
-                  <td class="col-icons">
+                  <td class="col-icons col-desktop">
                     <span class="icons-wrap">
                       @for (a of range(+r.assists); track a) {
                         <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
                       }
                     </span>
                   </td>
-                  <td class="col-icons col-cs">
+                  <td class="col-icons col-cs col-desktop">
                     @if (+r.clean_sheet) {
                       ✓
                     }
                   </td>
+                  <td class="col-stats col-mobile">
+                    <span class="stats-compact">
+                      @if (+r.sds) {
+                        <span class="stats-compact__row">
+                          <img src="img/icons/sds.png" class="rating-icon--sm" alt="SdS" />
+                        </span>
+                      }
+                      @if (+r.goals) {
+                        <span class="stats-compact__row">
+                          @for (g of range(+r.goals); track g) {
+                            <img src="img/icons/goal.png" class="rating-icon--sm" alt="Tor" />
+                          }
+                        </span>
+                      }
+                      @if (+r.assists) {
+                        <span class="stats-compact__row">
+                          @for (a of range(+r.assists); track a) {
+                            <img src="img/icons/assist.png" class="rating-icon--sm" alt="Assist" />
+                          }
+                        </span>
+                      }
+                      @if (+r.clean_sheet) {
+                        <span class="stats-compact__row col-cs">✓</span>
+                      }
+                    </span>
+                  </td>
                   <td class="col-points">{{ r.points }}</td>
-                  <td class="col-fine" [class.col-fine--active]="r.fine > 0">
+                  <td class="col-fine col-desktop" [class.col-fine--active]="r.fine > 0">
                     @if (r.fine > 0) {
                       {{ r.fine | number: '1.2-2' }} €
                     }
