@@ -293,7 +293,7 @@ export class RatingsDataComponent {
   }
 
   resetRating(ratingId: string): void {
-    const reset = { participation: null, grade: null, points: null, goals: 0, assists: 0, clean_sheet: 0, sds: 0, red_card: 0, yellow_red_card: 0 };
+    const reset = { participation: null, grade: null, points: 0, goals: 0, assists: 0, clean_sheet: 0, sds: 0, red_card: 0, yellow_red_card: 0 };
     this.api.patch<any>(`player_rating/${ratingId}`, reset).subscribe({
       next: () => this.ratings.update(list =>
         list.map(r => r.id === ratingId ? PlayerRating.from({ ...r, ...reset }) : r)
