@@ -100,7 +100,7 @@ GET      /player_in_season/bundesliga_count — ?season_id (optional, default ak
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück
 GET      /player_rating        — ?matchday_id&club_id (mit Spielerinfos)
-POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen — Maintainer+
+POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen; 409 wenn completed oder vor kickoff_date — Maintainer+
 PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed
 POST     /auth                 — JWT-Login
 POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)
