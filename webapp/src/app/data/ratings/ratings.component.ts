@@ -280,6 +280,18 @@ export class RatingsDataComponent {
   participationError = signal<string | null>(null);
   sdsError           = signal<string | null>(null);
 
+  private toggleBool(ratingId: string, field: 'clean_sheet' | 'red_card' | 'yellow_red_card', current: boolean): void {
+    this.api.patch<any>(`player_rating/${ratingId}`, { [field]: current ? 0 : 1 }).subscribe({
+      next: (res) => this.ratings.update(list =>
+        list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
+      ),
+    });
+  }
+
+  toggleCleanSheet(ratingId: string, current: boolean): void { this.toggleBool(ratingId, 'clean_sheet', current); }
+  toggleRedCard(ratingId: string, current: boolean): void    { this.toggleBool(ratingId, 'red_card', current); }
+  toggleYellowRedCard(ratingId: string, current: boolean): void { this.toggleBool(ratingId, 'yellow_red_card', current); }
+
   toggleSds(ratingId: string, current: boolean): void {
     const newVal = !current;
     if (newVal && this.ratings().some(r => r.sds && r.id !== ratingId)) {

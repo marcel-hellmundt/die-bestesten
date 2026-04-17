@@ -105,6 +105,9 @@
             <td class="col-sds" [class.col-sds--active]="editable" (click)="editable && toggleSds(r.id, r.sds)">
               <img src="img/icons/sds.png" class="rating-icon sds-toggle" [class.sds-toggle--on]="r.sds" alt="SdS" />
             </td>
+            <td class="col-toggle" [class.col-toggle--active]="editable && r.position === 'GOALKEEPER'" (click)="editable && r.position === 'GOALKEEPER' && toggleCleanSheet(r.id, r.clean_sheet)">
+              <span class="cs-badge" [class.cs-badge--on]="r.clean_sheet">CS</span>
+            </td>
             <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementGoals(r.id, r.goals)">
               <div class="stat-add-inner">
                 <span class="icons-wrap">
@@ -135,6 +138,12 @@
             @if (editable) {
               <td class="col-stat-remove" (click)="decrementAssists(r.id, r.assists)">−</td>
             }
+            <td class="col-toggle" [class.col-toggle--active]="editable" (click)="editable && toggleYellowRedCard(r.id, r.yellow_red_card)">
+              <span class="card-icon card-icon--yr" [class.card-icon--on]="r.yellow_red_card"></span>
+            </td>
+            <td class="col-toggle" [class.col-toggle--active]="editable" (click)="editable && toggleRedCard(r.id, r.red_card)">
+              <span class="card-icon card-icon--red" [class.card-icon--on]="r.red_card"></span>
+            </td>
             @if (editable) {
               <td class="col-reset">
                 <button class="reset-btn" (click)="resetRating(r.id)" title="Zurücksetzen">✕</button>
@@ -178,11 +187,13 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th>
+                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>CS</th>
                       <th>Tore</th>
                       @if (!selectedMatchday()?.completed) { <th></th> }
                       <th>Vorlagen</th>
-                      @if (!selectedMatchday()?.completed) { <th></th><th></th> }
+                      @if (!selectedMatchday()?.completed) { <th></th> }
+                      <th></th><th></th>
+                      @if (!selectedMatchday()?.completed) { <th></th> }
                     </tr>
                   </thead>
                   <tbody>
@@ -203,7 +214,7 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>Tore</th><th>Vorlagen</th>
+                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>CS</th><th>Tore</th><th>Vorlagen</th><th></th><th></th>
                     </tr>
                   </thead>
                   <tbody>
