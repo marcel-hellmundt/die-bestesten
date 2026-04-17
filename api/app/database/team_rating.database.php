@@ -225,7 +225,12 @@ trait TeamRatingTrait
         );
         $rq->execute([':matchday_id' => $matchday['id']]);
         $ratings = $rq->fetchAll(PDO::FETCH_ASSOC);
-        $ratings = $this->assignFines($ratings, 'points');
+        if ($matchday['completed']) {
+            $ratings = $this->assignFines($ratings, 'points');
+        } else {
+            foreach ($ratings as &$row) { $row['fine'] = 0.0; }
+            unset($row);
+        }
 
         $sq = $this->con->prepare(
             "SELECT p.id, p.displayname, pis.photo_uploaded, pis.position,
