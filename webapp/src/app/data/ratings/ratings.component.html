@@ -107,7 +107,7 @@
             </td>
             <td class="col-toggle" [class.col-toggle--active]="editable && r.position === 'GOALKEEPER'" (click)="editable && r.position === 'GOALKEEPER' && toggleCleanSheet(r.id, r.clean_sheet)">
               @if (r.position === 'GOALKEEPER') {
-                <span class="cs-badge" [class.cs-badge--on]="r.clean_sheet">CS</span>
+                <img src="img/icons/clean_sheet.png" class="rating-icon sds-toggle" [class.sds-toggle--on]="r.clean_sheet" alt="Clean Sheet" />
               }
             </td>
             <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementGoals(r.id, r.goals)">
@@ -189,7 +189,7 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>CS</th>
+                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>Zu Null</th>
                       <th>Tore</th>
                       @if (!selectedMatchday()?.completed) { <th></th> }
                       <th>Vorlagen</th>
@@ -216,7 +216,7 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>CS</th><th>Tore</th><th>Vorlagen</th><th></th><th></th>
+                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>Zu Null</th><th>Tore</th><th>Vorlagen</th><th></th><th></th>
                     </tr>
                   </thead>
                   <tbody>
