@@ -264,7 +264,7 @@ class Routing
                     [
                         'method'      => 'POST',
                         'path'        => '/player_rating/init',
-                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; 409 wenn completed oder vor kickoff_date; gibt created-Count + existing-Liste zurück',
+                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück',
                     ],
                     [
                         'method'      => 'PATCH',
