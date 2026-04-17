@@ -343,6 +343,9 @@ export class RatingsDataComponent {
     const matched:   string[] = [];
     const unmatched: string[] = [];
 
+    const alreadyStarting = this.ratings().filter(r => r.participation === 'starting').length;
+    let newlyAssigned = 0;
+
     for (const token of tokens) {
       const player = this.findBestMatch(token);
       if (!player) {
@@ -351,6 +354,11 @@ export class RatingsDataComponent {
       }
       // Already starting — silently skip
       if (player.participation === 'starting') continue;
+      if (alreadyStarting + newlyAssigned >= 11) {
+        unmatched.push(token);
+        continue;
+      }
+      newlyAssigned++;
       matched.push(player.displayname);
       this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting' }).subscribe({
         next: () => this.ratings.update(list =>
