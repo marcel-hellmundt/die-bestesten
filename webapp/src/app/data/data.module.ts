@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { IconComponent } from '../shared/icon/icon.component';
+import { MaintainerGuard } from '../auth/maintainer.guard';
 
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
@@ -16,23 +17,26 @@ import { PlayerDetailComponent } from './player/player-detail.component';
 import { RatingsDataComponent } from './ratings/ratings.component';
 import { LeagueDataComponent } from './league/league.component';
 
+const M = [MaintainerGuard];
+
 const routes: Routes = [
   {
     path: '',
     component: DataComponent,
     children: [
       { path: '', redirectTo: 'player', pathMatch: 'full' },
-      { path: 'country',       component: CountryDataComponent },
-      { path: 'country/:id',  component: CountryDetailComponent },
-      { path: 'division',      component: DivisionDataComponent },
-      { path: 'division/:id',  component: DivisionDetailComponent },
-      { path: 'league',        component: LeagueDataComponent },
-      { path: 'club',     component: ClubDataComponent },
-      { path: 'club/:id', component: ClubDetailComponent },
-      { path: 'season',   component: SeasonDataComponent },
+      { path: 'country',      component: CountryDataComponent,    canActivate: M },
+      { path: 'country/:id',  component: CountryDetailComponent,  canActivate: M },
+      { path: 'division',     component: DivisionDataComponent,   canActivate: M },
+      { path: 'division/:id', component: DivisionDetailComponent, canActivate: M },
+      { path: 'league',       component: LeagueDataComponent,     canActivate: M },
+      { path: 'club',         component: ClubDataComponent,       canActivate: M },
+      { path: 'club/:id',     component: ClubDetailComponent,     canActivate: M },
+      { path: 'season',       component: SeasonDataComponent,     canActivate: M },
+      { path: 'ratings',      component: RatingsDataComponent,    canActivate: M },
+      // player routes: no MaintainerGuard — managers may get read access here later
       { path: 'player',      component: PlayerDataComponent },
-      { path: 'player/:id', component: PlayerDetailComponent },
-      { path: 'ratings',    component: RatingsDataComponent },
+      { path: 'player/:id',  component: PlayerDetailComponent },
     ]
   }
 ];
