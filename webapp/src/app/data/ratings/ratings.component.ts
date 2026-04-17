@@ -257,7 +257,8 @@ export class RatingsDataComponent {
   private byPositionOnly = (a: PlayerRating, b: PlayerRating) => {
     const qa = RatingsDataComponent.POSITION_ORDER[a.position ?? ''] ?? 9;
     const qb = RatingsDataComponent.POSITION_ORDER[b.position ?? ''] ?? 9;
-    return qa - qb;
+    if (qa !== qb) return qa - qb;
+    return (b.price ?? 0) - (a.price ?? 0);
   };
 
   private byBench = (a: PlayerRating, b: PlayerRating) => {
