@@ -42,10 +42,18 @@
       <!-- Completed-Banner -->
       @if (selectedMatchday()?.completed) {
         <div class="completed-banner">
-          <span
-            >Spieltag {{ selectedMatchday()!.number }} ist abgeschlossen — Bewertungen sind
-            gesperrt</span
-          >
+          <span>Spieltag {{ selectedMatchday()!.number }} ist abgeschlossen — Bewertungen sind gesperrt</span>
+        </div>
+      }
+
+      <!-- Before-Kickoff-Banner -->
+      @if (beforeKickoff()) {
+        <div class="kickoff-banner">
+          <span class="kickoff-banner__icon">⏱</span>
+          <div>
+            <strong>Noch nicht gestartet</strong>
+            <p>Noten & Spielerwerte können erst nach dem Anpfiff eingetragen werden.</p>
+          </div>
         </div>
       }
 

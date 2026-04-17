@@ -120,6 +120,35 @@
   font-weight: $font-weight-medium;
 }
 
+.kickoff-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, $color-accent 8%, transparent);
+  border: 1px solid color-mix(in srgb, $color-accent 40%, transparent);
+
+  &__icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+
+  strong {
+    display: block;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+}
+
 .warning-panel {
   padding: $space-3 $space-4;
   border-radius: $radius-lg;

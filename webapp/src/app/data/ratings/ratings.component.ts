@@ -145,11 +145,13 @@ export class RatingsDataComponent {
     this.selectedClubId.set(null);
     this.ratings.set([]);
     this.initWarnings.set([]);
+    this.beforeKickoff.set(false);
     this.ratingsState.set('idle');
   }
 
   // ── Ratings state ──────────────────────────────────────────────
   ratingsState      = signal<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  beforeKickoff     = signal(false);
   ratings           = signal<PlayerRating[]>([]);
   initWarnings      = signal<string[]>([]);
   initCreatedNames  = signal<string[]>([]);
@@ -159,6 +161,7 @@ export class RatingsDataComponent {
     this.selectedClubId.set(clubId);
     this.initWarnings.set([]);
     this.initCreatedNames.set([]);
+    this.beforeKickoff.set(false);
 
     const md = this.selectedMatchday();
     if (!md) return;
@@ -179,8 +182,13 @@ export class RatingsDataComponent {
           }
           this.loadRatings(md.id, clubId);
         },
-        error: () => {
-          this.ratingsState.set('error');
+        error: (err) => {
+          if (err?.error?.message === 'Spieltag hat noch nicht begonnen') {
+            this.beforeKickoff.set(true);
+            this.ratingsState.set('idle');
+          } else {
+            this.ratingsState.set('error');
+          }
         },
       });
     }
