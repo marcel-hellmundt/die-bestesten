@@ -294,19 +294,19 @@ export class RatingsDataComponent {
   }
 
   resetRating(ratingId: string): void {
-    const reset = { participation: null, grade: null, points: 0, goals: 0, assists: 0, clean_sheet: 0, sds: 0, red_card: 0, yellow_red_card: 0 };
+    const reset = { participation: null, grade: null, goals: 0, assists: 0, clean_sheet: 0, sds: 0, red_card: 0, yellow_red_card: 0 };
     this.api.patch<any>(`player_rating/${ratingId}`, reset).subscribe({
-      next: () => this.ratings.update(list =>
-        list.map(r => r.id === ratingId ? PlayerRating.from({ ...r, ...reset }) : r)
+      next: (res) => this.ratings.update(list =>
+        list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
       ),
     });
   }
 
   private patchStat(ratingId: string, field: 'goals' | 'assists', value: number): void {
     this.api.patch<any>(`player_rating/${ratingId}`, { [field]: value }).subscribe({
-      next: () => {
+      next: (res) => {
         this.ratings.update(list =>
-          list.map(r => r.id === ratingId ? PlayerRating.from({ ...r, [field]: value }) : r)
+          list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
         );
       },
     });
@@ -325,9 +325,9 @@ export class RatingsDataComponent {
     }
     this.participationError.set(null);
     this.api.patch<any>(`player_rating/${ratingId}`, { participation: value }).subscribe({
-      next: () => {
+      next: (res) => {
         this.ratings.update(list =>
-          list.map(r => r.id === ratingId ? PlayerRating.from({ ...r, participation: value }) : r)
+          list.map(r => r.id === ratingId ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
         );
       },
     });
@@ -362,8 +362,8 @@ export class RatingsDataComponent {
       newlyAssigned++;
       matched.push(player.displayname);
       this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting' }).subscribe({
-        next: () => this.ratings.update(list =>
-          list.map(r => r.id === player.id ? PlayerRating.from({ ...r, participation: 'starting' }) : r)
+        next: (res) => this.ratings.update(list =>
+          list.map(r => r.id === player.id ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count }) : r)
         ),
       });
     }

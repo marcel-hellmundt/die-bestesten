@@ -140,6 +140,42 @@ trait PlayerRatingTrait
     }
 
     /**
+     * Returns a single player_rating row with player info and position (no starting_count).
+     */
+    public function getPlayerRatingById(string $id): array|false
+    {
+        $query = $this->con->prepare("
+            SELECT p.id            AS player_id,
+                   p.first_name,
+                   p.last_name,
+                   p.displayname,
+                   p.country_id,
+                   pis.position,
+                   pis.photo_uploaded,
+                   pis.price,
+                   pr.id,
+                   pr.club_id,
+                   pr.grade,
+                   pr.participation,
+                   pr.goals,
+                   pr.assists,
+                   pr.clean_sheet,
+                   pr.sds,
+                   pr.red_card,
+                   pr.yellow_red_card,
+                   pr.points
+            FROM player_rating pr
+            JOIN player p                  ON p.id = pr.player_id
+            JOIN matchday md               ON md.id = pr.matchday_id
+            LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = md.season_id
+            WHERE pr.id = :id
+            LIMIT 1
+        ");
+        $query->execute([':id' => $id]);
+        return $query->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Returns the matchday_id of a player_rating (or null if not found).
      */
     public function getMatchdayIdForRating(string $id): ?string

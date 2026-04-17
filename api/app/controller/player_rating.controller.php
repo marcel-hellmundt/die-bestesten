@@ -74,7 +74,8 @@ class PlayerRatingController extends _BaseController
             return ['status' => false, 'message' => 'Rating nicht gefunden oder keine Änderung'];
         }
 
-        return ['status' => true];
+        $row = $this->db->getPlayerRatingById($this->id);
+        return ['status' => true, 'rating' => $row ?: null];
     }
 
     protected function delete(): mixed { return $this->methodNotAllowed(); }
