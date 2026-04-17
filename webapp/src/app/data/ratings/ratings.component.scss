@@ -229,6 +229,47 @@
   letter-spacing: 0.04em;
 }
 
+.group-section {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.group-header {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.col-actions {
+  width: 64px;
+  text-align: right;
+}
+
+.part-actions {
+  display: inline-flex;
+  gap: $space-2;
+  align-items: center;
+}
+
+.part-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: $color-surface;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &:hover {
+    border-color: $color-text-muted;
+  }
+}
+
 .complete-bar {
   display: flex;
   justify-content: flex-end;

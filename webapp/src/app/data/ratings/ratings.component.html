@@ -81,90 +81,137 @@
         @if (ratings().length === 0) {
           <p class="state-msg">Noch keine Ratings für diesen Spieltag angelegt</p>
         } @else {
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Spieler</th>
-                  <th>Position</th>
-                  <th>Punkte</th>
-                  <th>Note</th>
-                  <th>Einsatz</th>
-                  <th>Tore</th>
-                  <th>Vorlagen</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (r of sortedRatings(); track r.id) {
-                  <tr>
-                    <td class="col-player">
-                      <span class="player-name">{{ r.displayname }}</span>
-                    </td>
-                    <td>
-                      @if (r.position) {
-                        <span
-                          class="position-badge"
-                          [style.background-color]="
-                            'var(--position-' + r.position.toLowerCase() + ')'
-                          "
-                        >
-                          {{ r.position | slice: 0 : 3 }}
-                        </span>
-                      }
-                    </td>
-                    <td class="col-points">{{ r.points ?? '—' }}</td>
-                    <td>
-                      <span
-                        class="grade-badge"
-                        [style.background]="gradeVar(r.grade)"
-                        [class.grade-badge--unset]="!r.grade"
-                      >
-                        {{ r.grade !== null ? r.grade.toFixed(1) : '—' }}
-                      </span>
-                    </td>
-                    <td class="col-part">
-                      @if (r.participation === 'starting') {
-                        <img
-                          src="img/icons/part-starting.svg"
-                          class="part-icon"
-                          alt="Startelf"
-                          title="Startelf"
-                        />
-                      } @else if (r.participation === 'substitute') {
-                        <img
-                          src="img/icons/part-substitute.svg"
-                          class="part-icon"
-                          alt="Eingewechselt"
-                          title="Eingewechselt"
-                        />
-                      } @else {
-                        <img
-                          src="img/icons/part-none.svg"
-                          class="part-icon"
-                          alt="Nicht eingesetzt"
-                          title="Nicht eingesetzt"
-                        />
-                      }
-                    </td>
-                    <td>
-                      <span class="icons-wrap">
-                        @for (i of range(r.goals); track i) {
-                          <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
-                        }
-                      </span>
-                    </td>
-                    <td>
-                      <span class="icons-wrap">
-                        @for (i of range(r.assists); track i) {
-                          <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
-                        }
-                      </span>
-                    </td>
-                  </tr>
+          <!-- Reusable columns template -->
+          <ng-template #ratingCols let-r="r">
+            <td class="col-player">{{ r.displayname }}</td>
+            <td>
+              @if (r.position) {
+                <span
+                  class="position-badge"
+                  [style.background-color]="'var(--position-' + r.position.toLowerCase() + ')'"
+                >{{ r.position | slice: 0 : 3 }}</span>
+              }
+            </td>
+            <td class="col-points">{{ r.points ?? '—' }}</td>
+            <td>
+              <span
+                class="grade-badge"
+                [style.background]="gradeVar(r.grade)"
+                [class.grade-badge--unset]="!r.grade"
+              >{{ r.grade !== null ? r.grade.toFixed(1) : '—' }}</span>
+            </td>
+            <td>
+              <span class="icons-wrap">
+                @for (i of range(r.goals); track i) {
+                  <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
                 }
-              </tbody>
-            </table>
-          </div>
+              </span>
+            </td>
+            <td>
+              <span class="icons-wrap">
+                @for (i of range(r.assists); track i) {
+                  <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
+                }
+              </span>
+            </td>
+          </ng-template>
+
+          <!-- Table 1: Startelf -->
+          @if (startingRatings().length > 0) {
+            <div class="group-section">
+              <div class="group-header">Startelf ({{ startingRatings().length }})</div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Spieler</th><th>Position</th><th>Punkte</th><th>Note</th><th>Tore</th><th>Vorlagen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of startingRatings(); track r.id) {
+                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r }"></ng-container></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+
+          <!-- Table 2: Eingewechselt -->
+          @if (substituteRatings().length > 0) {
+            <div class="group-section">
+              <div class="group-header">Eingewechselt ({{ substituteRatings().length }})</div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Spieler</th><th>Position</th><th>Punkte</th><th>Note</th><th>Tore</th><th>Vorlagen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of substituteRatings(); track r.id) {
+                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r }"></ng-container></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
+
+          <!-- Table 3: Nicht eingesetzt -->
+          @if (benchRatings().length > 0) {
+            <div class="group-section">
+              <div class="group-header">Nicht eingesetzt ({{ benchRatings().length }})</div>
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Spieler</th>
+                      <th>Position</th>
+                      @if (!selectedMatchday()?.completed) {
+                        <th class="col-actions"></th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of benchRatings(); track r.id) {
+                      <tr>
+                        <td class="col-player">{{ r.displayname }}</td>
+                        <td>
+                          @if (r.position) {
+                            <span
+                              class="position-badge"
+                              [style.background-color]="'var(--position-' + r.position.toLowerCase() + ')'"
+                            >{{ r.position | slice: 0 : 3 }}</span>
+                          }
+                        </td>
+                        @if (!selectedMatchday()?.completed) {
+                          <td class="col-actions">
+                            <span class="part-actions">
+                              <button
+                                class="part-btn"
+                                (click)="setParticipation(r.id, 'starting')"
+                                title="Als Startelf markieren"
+                              >
+                                <img src="img/icons/part-starting.svg" class="part-icon" alt="Startelf" />
+                              </button>
+                              <button
+                                class="part-btn"
+                                (click)="setParticipation(r.id, 'substitute')"
+                                title="Als Einwechslung markieren"
+                              >
+                                <img src="img/icons/part-substitute.svg" class="part-icon" alt="Eingewechselt" />
+                              </button>
+                            </span>
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
 
           <!-- Als abgeschlossen markieren -->
           @if (isAdmin() && !selectedMatchday()?.completed) {
