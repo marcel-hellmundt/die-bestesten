@@ -55,7 +55,7 @@
                 <th class="col-icons col-desktop">SdS</th>
                 <th class="col-icons col-desktop">Tore</th>
                 <th class="col-icons col-desktop">Assists</th>
-                <th class="col-icons col-cs col-desktop">CS</th>
+                <th class="col-icons col-cs col-desktop">Zu Null</th>
                 <th class="col-stats col-mobile"></th>
                 <th class="col-points">Punkte</th>
                 @if (!isLive()) { <th class="col-fine col-desktop">Strafe</th> }
@@ -116,7 +116,7 @@
                   </td>
                   <td class="col-icons col-cs col-desktop">
                     @if (+r.clean_sheet) {
-                      ✓
+                      <img src="img/icons/clean_sheet.png" class="rating-icon" alt="Zu Null" />
                     }
                   </td>
                   <td class="col-stats col-mobile">
@@ -141,7 +141,9 @@
                         </span>
                       }
                       @if (+r.clean_sheet) {
-                        <span class="stats-compact__row col-cs">✓</span>
+                        <span class="stats-compact__row">
+                          <img src="img/icons/clean_sheet.png" class="rating-icon--sm" alt="Zu Null" />
+                        </span>
                       }
                     </span>
                   </td>
