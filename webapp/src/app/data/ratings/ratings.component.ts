@@ -190,7 +190,7 @@ export class RatingsDataComponent {
   }
 
   // ── Ratings state ──────────────────────────────────────────────
-  ratingsState      = signal<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  ratingsState      = signal<'idle' | 'loading' | 'ready' | 'error' | 'no-ratings'>('idle');
   beforeKickoff     = signal(false);
   ratings           = signal<PlayerRating[]>([]);
   initWarnings      = signal<string[]>([]);
@@ -211,31 +211,70 @@ export class RatingsDataComponent {
     if (!md) return;
 
     if (md.completed || !this.isMaintainer()) {
-      // Read-only: just load existing ratings
       this.loadRatings(md.id, clubId);
     } else {
-      // Maintainer+: init empty ratings if needed, then load
       this.ratingsState.set('loading');
-      this.api.post<any>('player_rating/init', { matchday_id: md.id, club_id: clubId }).subscribe({
-        next: (res) => {
-          if (res.existing?.length > 0) {
-            this.initWarnings.set(res.existing.map((e: any) => e.displayname));
-          }
-          if (res.created?.length > 0) {
-            this.initCreatedNames.set(res.created.map((c: any) => c.displayname));
-          }
-          this.loadRatings(md.id, clubId);
-        },
-        error: (err) => {
-          if (err?.error?.message === 'Spieltag hat noch nicht begonnen') {
-            this.beforeKickoff.set(true);
-            this.ratingsState.set('idle');
+      this.api.get<any[]>(`player_rating?matchday_id=${md.id}&club_id=${clubId}`).subscribe({
+        next: (data) => {
+          if (data.length > 0) {
+            this.ratings.set(data.map(PlayerRating.from));
+            this.ratingsState.set('ready');
+            this.refreshClubStatuses();
           } else {
-            this.ratingsState.set('error');
+            this.ratingsState.set('no-ratings');
           }
         },
+        error: () => this.ratingsState.set('error'),
       });
     }
+  }
+
+  initBlank(): void {
+    const md = this.selectedMatchday();
+    const clubId = this.selectedClubId();
+    if (!md || !clubId) return;
+
+    this.ratingsState.set('loading');
+    this.api.post<any>('player_rating/init', { matchday_id: md.id, club_id: clubId }).subscribe({
+      next: () => this.loadRatings(md.id, clubId),
+      error: (err) => {
+        if (err?.error?.message === 'Spieltag hat noch nicht begonnen') {
+          this.beforeKickoff.set(true);
+          this.ratingsState.set('idle');
+        } else {
+          this.ratingsState.set('error');
+        }
+      },
+    });
+  }
+
+  initWithBulk(): void {
+    const md = this.selectedMatchday();
+    const clubId = this.selectedClubId();
+    if (!md || !clubId || !this.bulkInput().trim()) return;
+
+    this.ratingsState.set('loading');
+    this.api.post<any>('player_rating/init', { matchday_id: md.id, club_id: clubId }).subscribe({
+      next: () => {
+        this.api.get<any[]>(`player_rating?matchday_id=${md.id}&club_id=${clubId}`).subscribe({
+          next: (data) => {
+            this.ratings.set(data.map(PlayerRating.from));
+            this.ratingsState.set('ready');
+            this.refreshClubStatuses();
+            this.parseBulkLineup();
+          },
+          error: () => this.ratingsState.set('error'),
+        });
+      },
+      error: (err) => {
+        if (err?.error?.message === 'Spieltag hat noch nicht begonnen') {
+          this.beforeKickoff.set(true);
+          this.ratingsState.set('idle');
+        } else {
+          this.ratingsState.set('error');
+        }
+      },
+    });
   }
 
   private loadRatings(matchdayId: string, clubId: string): void {

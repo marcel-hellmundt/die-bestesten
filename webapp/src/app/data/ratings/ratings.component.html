@@ -46,7 +46,10 @@
       <!-- Completed-Banner -->
       @if (selectedMatchday()?.completed) {
         <div class="completed-banner">
-          <span>Spieltag {{ selectedMatchday()!.number }} ist abgeschlossen — Bewertungen sind gesperrt</span>
+          <span
+            >Spieltag {{ selectedMatchday()!.number }} ist abgeschlossen — Bewertungen sind
+            gesperrt</span
+          >
         </div>
       }
 
@@ -81,6 +84,33 @@
         <p class="state-msg">Lade Bewertungen…</p>
       } @else if (ratingsState() === 'error') {
         <p class="state-msg state-msg--error">Fehler beim Laden der Bewertungen</p>
+      } @else if (ratingsState() === 'no-ratings') {
+        <div class="card no-ratings-panel">
+          <p class="no-ratings-panel__msg">
+            Für <strong>{{ clubById(selectedClubId())?.name }}</strong> wurden am Spieltag
+            {{ selectedMatchday()?.number }} noch keine Spielerbewertungen angelegt.
+          </p>
+          <div class="no-ratings-panel__actions">
+            <button class="btn btn-primary" (click)="initBlank()">Leer anlegen</button>
+            <span class="no-ratings-panel__or">oder</span>
+            <div class="bulk-lineup no-ratings-panel__bulk">
+              <textarea
+                class="bulk-textarea"
+                [value]="bulkInput()"
+                (input)="bulkInput.set($any($event.target).value)"
+                placeholder="Startaufstellung einfügen, z. B.: Startelf: Neuer – Müller, Kimmich – Kane"
+                rows="2"
+              ></textarea>
+              <button
+                class="btn btn-primary btn-sm"
+                [disabled]="!bulkInput().trim()"
+                (click)="initWithBulk()"
+              >
+                Anlegen &amp; Startaufstellung übernehmen
+              </button>
+            </div>
+          </div>
+        </div>
       } @else if (ratingsState() === 'ready') {
         @if (ratings().length === 0) {
           <p class="state-msg">Noch keine Ratings für diesen Spieltag angelegt</p>
@@ -90,7 +120,11 @@
             <td class="col-player">
               <span class="player-cell">
                 @if (r.position) {
-                  <span class="position-badge" [style.background-color]="'var(--position-' + r.position.toLowerCase() + ')'">{{ posLabel(r.position) }}</span>
+                  <span
+                    class="position-badge"
+                    [style.background-color]="'var(--position-' + r.position.toLowerCase() + ')'"
+                    >{{ posLabel(r.position) }}</span
+                  >
                 }
                 {{ r.displayname }}
               </span>
@@ -104,7 +138,8 @@
                   [class.grade-badge--unset]="!r.grade"
                   [class.grade-badge--clickable]="editable"
                   (click)="editable && openGradePicker(r.id); $event.stopPropagation()"
-                >{{ r.grade !== null ? r.grade.toFixed(1) : '—' }}</span>
+                  >{{ r.grade !== null ? r.grade.toFixed(1) : '—' }}</span
+                >
                 @if (editable && gradePickerRatingId() === r.id) {
                   <div class="grade-picker" (click)="$event.stopPropagation()">
                     @for (g of GRADES; track g) {
@@ -113,24 +148,52 @@
                         [style.background]="gradeVar(g)"
                         [class.grade-option--active]="r.grade === g"
                         (click)="selectGrade(r.id, g)"
-                      >{{ g.toFixed(1) }}</button>
+                      >
+                        {{ g.toFixed(1) }}
+                      </button>
                     }
                     @if (r.grade !== null) {
-                      <button class="grade-option grade-option--clear" (click)="clearGrade(r.id)">×</button>
+                      <button class="grade-option grade-option--clear" (click)="clearGrade(r.id)">
+                        ×
+                      </button>
                     }
                   </div>
                 }
               </div>
             </td>
-            <td class="col-sds" [class.col-sds--active]="editable" (click)="editable && toggleSds(r.id, r.sds)">
-              <img src="img/icons/sds.png" class="rating-icon sds-toggle" [class.sds-toggle--on]="r.sds" alt="SdS" />
+            <td
+              class="col-sds"
+              [class.col-sds--active]="editable"
+              (click)="editable && toggleSds(r.id, r.sds)"
+            >
+              <img
+                src="img/icons/sds.png"
+                class="rating-icon sds-toggle"
+                [class.sds-toggle--on]="r.sds"
+                alt="SdS"
+              />
             </td>
-            <td class="col-toggle" [class.col-toggle--active]="editable && r.position === 'GOALKEEPER'" (click)="editable && r.position === 'GOALKEEPER' && toggleCleanSheet(r.id, r.clean_sheet)">
+            <td
+              class="col-toggle"
+              [class.col-toggle--active]="editable && r.position === 'GOALKEEPER'"
+              (click)="
+                editable && r.position === 'GOALKEEPER' && toggleCleanSheet(r.id, r.clean_sheet)
+              "
+            >
               @if (r.position === 'GOALKEEPER') {
-                <img src="img/icons/clean_sheet.png" class="rating-icon sds-toggle" [class.sds-toggle--on]="r.clean_sheet" alt="Clean Sheet" />
+                <img
+                  src="img/icons/clean_sheet.png"
+                  class="rating-icon sds-toggle"
+                  [class.sds-toggle--on]="r.clean_sheet"
+                  alt="Clean Sheet"
+                />
               }
             </td>
-            <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementGoals(r.id, r.goals)">
+            <td
+              class="col-stat-add"
+              [class.col-stat-add--active]="editable"
+              (click)="editable && incrementGoals(r.id, r.goals)"
+            >
               <div class="stat-add-inner">
                 <span class="icons-wrap">
                   @for (i of range(r.goals); track i) {
@@ -145,7 +208,11 @@
             @if (editable) {
               <td class="col-stat-remove" (click)="decrementGoals(r.id, r.goals)">×</td>
             }
-            <td class="col-stat-add" [class.col-stat-add--active]="editable" (click)="editable && incrementAssists(r.id, r.assists)">
+            <td
+              class="col-stat-add"
+              [class.col-stat-add--active]="editable"
+              (click)="editable && incrementAssists(r.id, r.assists)"
+            >
               <div class="stat-add-inner">
                 <span class="icons-wrap">
                   @for (i of range(r.assists); track i) {
@@ -160,15 +227,28 @@
             @if (editable) {
               <td class="col-stat-remove" (click)="decrementAssists(r.id, r.assists)">×</td>
             }
-            <td class="col-toggle" [class.col-toggle--active]="editable" (click)="editable && toggleYellowRedCard(r.id, r.yellow_red_card)">
-              <span class="card-icon card-icon--yr" [class.card-icon--on]="r.yellow_red_card"></span>
+            <td
+              class="col-toggle"
+              [class.col-toggle--active]="editable"
+              (click)="editable && toggleYellowRedCard(r.id, r.yellow_red_card)"
+            >
+              <span
+                class="card-icon card-icon--yr"
+                [class.card-icon--on]="r.yellow_red_card"
+              ></span>
             </td>
-            <td class="col-toggle" [class.col-toggle--active]="editable" (click)="editable && toggleRedCard(r.id, r.red_card)">
+            <td
+              class="col-toggle"
+              [class.col-toggle--active]="editable"
+              (click)="editable && toggleRedCard(r.id, r.red_card)"
+            >
               <span class="card-icon card-icon--red" [class.card-icon--on]="r.red_card"></span>
             </td>
             @if (editable) {
               <td class="col-reset">
-                <button class="reset-btn" (click)="resetRating(r.id)" title="Zurücksetzen">✕</button>
+                <button class="reset-btn" (click)="resetRating(r.id)" title="Zurücksetzen">
+                  ✕
+                </button>
               </td>
             }
           </ng-template>
@@ -180,10 +260,14 @@
                 class="bulk-textarea"
                 [value]="bulkInput()"
                 (input)="bulkInput.set($any($event.target).value)"
-                placeholder="Startaufstellung einfügen, z. B.: Startelf: Neuer – Müller, Kimmich – Kane"
+                placeholder="Ligainsider-Beitrag einfügen, z. B.: Startelf: Neuer – Müller, Kimmich – Kane"
                 rows="2"
               ></textarea>
-              <button class="btn btn-primary btn-sm" [disabled]="!bulkInput().trim()" (click)="parseBulkLineup()">
+              <button
+                class="btn btn-primary btn-sm"
+                [disabled]="!bulkInput().trim()"
+                (click)="parseBulkLineup()"
+              >
                 Übernehmen
               </button>
             </div>
@@ -209,18 +293,36 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>Zu Null</th>
+                      <th>Spieler</th>
+                      <th>Punkte</th>
+                      <th>Note</th>
+                      <th>SdS</th>
+                      <th>Zu Null</th>
                       <th>Tore</th>
-                      @if (!selectedMatchday()?.completed) { <th></th> }
+                      @if (!selectedMatchday()?.completed) {
+                        <th></th>
+                      }
                       <th>Vorlagen</th>
-                      @if (!selectedMatchday()?.completed) { <th></th> }
-                      <th></th><th></th>
-                      @if (!selectedMatchday()?.completed) { <th></th> }
+                      @if (!selectedMatchday()?.completed) {
+                        <th></th>
+                      }
+                      <th></th>
+                      <th></th>
+                      @if (!selectedMatchday()?.completed) {
+                        <th></th>
+                      }
                     </tr>
                   </thead>
                   <tbody>
                     @for (r of startingRatings(); track r.id) {
-                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r, editable: !selectedMatchday()?.completed }"></ng-container></tr>
+                      <tr>
+                        <ng-container
+                          *ngTemplateOutlet="
+                            ratingCols;
+                            context: { r: r, editable: !selectedMatchday()?.completed }
+                          "
+                        ></ng-container>
+                      </tr>
                     }
                   </tbody>
                 </table>
@@ -236,12 +338,27 @@
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Spieler</th><th>Punkte</th><th>Note</th><th>SdS</th><th>Zu Null</th><th>Tore</th><th>Vorlagen</th><th></th><th></th>
+                      <th>Spieler</th>
+                      <th>Punkte</th>
+                      <th>Note</th>
+                      <th>SdS</th>
+                      <th>Zu Null</th>
+                      <th>Tore</th>
+                      <th>Vorlagen</th>
+                      <th></th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     @for (r of substituteRatings(); track r.id) {
-                      <tr><ng-container *ngTemplateOutlet="ratingCols; context: { r: r, editable: !selectedMatchday()?.completed }"></ng-container></tr>
+                      <tr>
+                        <ng-container
+                          *ngTemplateOutlet="
+                            ratingCols;
+                            context: { r: r, editable: !selectedMatchday()?.completed }
+                          "
+                        ></ng-container>
+                      </tr>
                     }
                   </tbody>
                 </table>
@@ -276,7 +393,13 @@
                         <td class="col-player">
                           <span class="player-cell">
                             @if (r.position) {
-                              <span class="position-badge" [style.background-color]="'var(--position-' + r.position.toLowerCase() + ')'">{{ posLabel(r.position) }}</span>
+                              <span
+                                class="position-badge"
+                                [style.background-color]="
+                                  'var(--position-' + r.position.toLowerCase() + ')'
+                                "
+                                >{{ posLabel(r.position) }}</span
+                              >
                             }
                             {{ r.displayname }}
                             @if (r.starting_count) {
@@ -292,14 +415,22 @@
                                 (click)="setParticipation(r.id, 'starting')"
                                 title="Als Startelf markieren"
                               >
-                                <img src="img/icons/part-starting.svg" class="part-icon" alt="Startelf" />
+                                <img
+                                  src="img/icons/part-starting.svg"
+                                  class="part-icon"
+                                  alt="Startelf"
+                                />
                               </button>
                               <button
                                 class="part-btn"
                                 (click)="setParticipation(r.id, 'substitute')"
                                 title="Als Einwechslung markieren"
                               >
-                                <img src="img/icons/part-substitute.svg" class="part-icon" alt="Eingewechselt" />
+                                <img
+                                  src="img/icons/part-substitute.svg"
+                                  class="part-icon"
+                                  alt="Eingewechselt"
+                                />
                               </button>
                             </span>
                           </td>
@@ -311,7 +442,6 @@
               </div>
             </div>
           }
-
         }
       }
     </section>
