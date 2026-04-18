@@ -73,7 +73,7 @@
                 <td class="col-num">{{ r.total_goals }}</td>
                 <td class="col-num">{{ r.total_assists }}</td>
                 <td class="col-num">{{ r.total_clean_sheet }}</td>
-                <td class="col-num col-points">{{ r.total_points }}</td>
+                <td class="col-num col-points">{{ r.total_points | number }}</td>
                 <td class="col-fine" [class.col-fine--active]="r.fine > 0">
                   @if (r.fine > 0) {
                     {{ r.fine | number: '1.2-2' }} €

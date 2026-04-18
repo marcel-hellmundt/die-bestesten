@@ -78,7 +78,7 @@
                     </span>
                   </td>
                   <td class="col-num">{{ team.season_placement }}</td>
-                  <td class="col-num col-points">{{ team.total_points }}</td>
+                  <td class="col-num col-points">{{ team.total_points | number }}</td>
                 </tr>
               }
             </tbody>
@@ -164,7 +164,7 @@
                       <span class="hl-name">{{ r.team_name }}</span>
                       <span class="hl-meta">{{ cache.seasonName(r.season_id) }}@if (r.matchday_number) { · Sp. {{ r.matchday_number }}}</span>
                     </td>
-                    <td class="col-points-hl">{{ r.points }}</td>
+                    <td class="col-points-hl">{{ r.points | number }}</td>
                   </tr>
                 }
               </tbody>
@@ -191,7 +191,7 @@
                       <span class="hl-name">{{ r.team_name }}</span>
                       <span class="hl-meta">{{ cache.seasonName(r.season_id) }}@if (r.matchday_number) { · Sp. {{ r.matchday_number }}}</span>
                     </td>
-                    <td class="col-points-hl">{{ r.points }}</td>
+                    <td class="col-points-hl">{{ r.points | number }}</td>
                   </tr>
                 }
               </tbody>

@@ -255,6 +255,7 @@
   font-weight: $font-weight-semibold;
   font-size: $font-sm;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .chart-container {
@@ -325,6 +326,7 @@
 
 .col-points {
   font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
 }
 
 .row--first {
