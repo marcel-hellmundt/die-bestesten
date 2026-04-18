@@ -18,7 +18,9 @@
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
   display: flex;
   align-items: center;
   gap: $space-1;
@@ -71,8 +73,13 @@
 }
 
 @keyframes pill-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 // Club grid
@@ -101,7 +108,9 @@
   border-radius: $radius-lg;
   background: $color-surface;
   cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
 
   &:hover {
     background: $color-surface-alt;
@@ -271,11 +280,6 @@
       opacity: 0.85;
     }
 
-    &--active {
-      outline: 2px solid $color-text;
-      outline-offset: 1px;
-    }
-
     &--clear {
       background: $color-surface-alt;
       color: $color-text-muted;
@@ -368,9 +372,15 @@
   opacity: 0.25;
   transition: opacity $transition-fast;
 
-  &--on { opacity: 1; }
-  &--yr { background: linear-gradient(to right, $color-warning 50%, $color-danger 50%); }
-  &--red { background: $color-danger; }
+  &--on {
+    opacity: 1;
+  }
+  &--yr {
+    background: linear-gradient(to right, $color-warning 50%, $color-danger 50%);
+  }
+  &--red {
+    background: $color-danger;
+  }
 }
 
 .col-sds {
@@ -386,7 +396,9 @@
 .sds-toggle {
   opacity: 0.5;
   filter: grayscale(1);
-  transition: opacity $transition-fast, filter $transition-fast;
+  transition:
+    opacity $transition-fast,
+    filter $transition-fast;
 
   &--on {
     opacity: 1;
@@ -405,9 +417,13 @@
     &:hover {
       background: color-mix(in srgb, $color-success 15%, transparent);
 
-      + .col-stat-remove { opacity: 1; }
+      + .col-stat-remove {
+        opacity: 1;
+      }
 
-      .stat-add-label { opacity: 1; }
+      .stat-add-label {
+        opacity: 1;
+      }
     }
   }
 }
@@ -448,7 +464,9 @@
   color: $color-text-muted;
   border-radius: $radius-sm;
   opacity: 0;
-  transition: opacity $transition-fast, color $transition-fast;
+  transition:
+    opacity $transition-fast,
+    color $transition-fast;
 
   &:hover {
     opacity: 1;
@@ -473,7 +491,10 @@
   color: $color-text-muted;
   font-size: 11px;
   cursor: pointer;
-  transition: border-color $transition-fast, color $transition-fast, background $transition-fast;
+  transition:
+    border-color $transition-fast,
+    color $transition-fast,
+    background $transition-fast;
 
   &:hover {
     border-color: $color-danger;
@@ -509,6 +530,12 @@
   }
 }
 
+.part-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 .bulk-textarea {
   flex: 1;
   width: 100%;
@@ -540,7 +567,31 @@
   flex-direction: column;
   gap: $space-5;
 
-  &__actions { display: flex; gap: $space-4; flex-wrap: wrap; }
+  &__msg {
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
 
-  &__bulk { flex: 1; }
+  &__actions {
+    display: flex;
+    align-items: flex-start;
+    gap: $space-4;
+    flex-wrap: wrap;
+  }
+
+  &__or {
+    font-size: $font-sm;
+    color: $color-text-muted;
+    align-self: center;
+    flex-shrink: 0;
+  }
+
+  &__bulk {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    flex: 1;
+    min-width: 260px;
+  }
 }
