@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
+import { DataCacheService } from '../../core/data-cache.service';
 
 @Component({
   selector: 'app-topbar',
@@ -11,6 +12,7 @@ import { AuthService } from '../../auth/auth.service';
 export class TopbarComponent {
   private auth   = inject(AuthService);
   private router = inject(Router);
+  private cache  = inject(DataCacheService);
 
   isDropdownOpen  = signal(false);
   avatarImgFailed = signal(false);
@@ -18,10 +20,7 @@ export class TopbarComponent {
   managerName        = computed(() => this.auth.getManagerName() ?? '');
   role               = computed(() => this.auth.getRole() ?? '');
   isMaintainer        = computed(() => this.auth.isMaintainer());
-  avatarUrl   = computed(() => {
-    const id = this.auth.getManagerId();
-    return id ? `https://img.die-bestesten.de/img/manager/${id}.jpg` : null;
-  });
+  avatarUrl   = computed(() => this.cache.managerPhotoUrl(this.auth.getManagerId()));
   initials    = computed(() => {
     const name = this.managerName();
     return name

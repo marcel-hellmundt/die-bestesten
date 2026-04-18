@@ -68,7 +68,7 @@
                         <div class="manager-chip">
                           <div class="manager-chip__avatar">
                             <img
-                              [src]="'https://img.die-bestesten.de/img/manager/' + m.id + '.jpg'"
+                              [src]="cache.managerPhotoUrl(m.id)"
                               [alt]="m.manager_name"
                               (error)="$any($event.target).style.display='none'"
                             />

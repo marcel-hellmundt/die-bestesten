@@ -4,6 +4,7 @@ import { catchError, map, of, startWith } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../auth/auth.service';
+import { DataCacheService } from '../core/data-cache.service';
 
 interface ManagerProfile {
   id: string;
@@ -23,6 +24,7 @@ export class SettingsComponent {
   private api    = inject(ApiService);
   private auth   = inject(AuthService);
   private router = inject(Router);
+  private cache  = inject(DataCacheService);
 
   // Profile
   private profileState = toSignal(
@@ -38,10 +40,7 @@ export class SettingsComponent {
   profileError   = computed(() => this.profileState()?.error ?? null);
 
   managerId    = computed(() => this.auth.getManagerId());
-  avatarUrl    = computed(() => {
-    const id = this.managerId();
-    return id ? `https://img.die-bestesten.de/img/manager/${id}.jpg` : null;
-  });
+  avatarUrl    = computed(() => this.cache.managerPhotoUrl(this.managerId()));
   avatarFailed = signal(false);
   initials     = computed(() => {
     const name = this.auth.getManagerName() ?? '';

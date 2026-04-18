@@ -53,4 +53,11 @@ export class DataCacheService {
     const division = this.divisionsState().data.find(d => d.id === divisionId);
     return division ? division.name : divisionId;
   }
+
+  // Daily cache-buster so updated profile photos are visible within 24 h
+  private static readonly _photoBust = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+  managerPhotoUrl(id: string | null | undefined): string | null {
+    return id ? `https://img.die-bestesten.de/img/manager/${id}.jpg?v=${DataCacheService._photoBust}` : null;
+  }
 }

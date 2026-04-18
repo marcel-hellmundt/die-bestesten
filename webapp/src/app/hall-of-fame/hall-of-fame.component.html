@@ -32,7 +32,7 @@
               <div class="avatar">
                 @if (!avatarFailed.has(entry.id)) {
                   <img
-                    [src]="'https://img.die-bestesten.de/img/manager/' + entry.id + '.jpg'"
+                    [src]="cache.managerPhotoUrl(entry.id)"
                     [alt]="entry.manager_name"
                     (error)="onAvatarError(entry.id)"
                   />
@@ -82,11 +82,7 @@
                       <div class="avatar avatar--sm">
                         @if (!avatarFailed.has(row.winner.manager_id)) {
                           <img
-                            [src]="
-                              'https://img.die-bestesten.de/img/manager/' +
-                              row.winner.manager_id +
-                              '.jpg'
-                            "
+                            [src]="cache.managerPhotoUrl(row.winner.manager_id)"
                             [alt]="row.winner.manager_name"
                             (error)="onAvatarError(row.winner.manager_id)"
                           />
@@ -144,7 +140,7 @@
                     <div class="avatar avatar--sm">
                       @if (!avatarFailed.has(r.manager_id)) {
                         <img
-                          [src]="'https://img.die-bestesten.de/img/manager/' + r.manager_id + '.jpg'"
+                          [src]="cache.managerPhotoUrl(r.manager_id)"
                           [alt]="r.manager_name"
                           (error)="onAvatarError(r.manager_id)"
                         />
