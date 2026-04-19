@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-team-detail',
@@ -12,8 +13,9 @@ import { DataCacheService } from '../../core/data-cache.service';
   styleUrl: './team-detail.component.scss'
 })
 export class TeamDetailComponent {
-  private api = inject(ApiService);
-  cache       = inject(DataCacheService);
+  private api  = inject(ApiService);
+  private auth = inject(AuthService);
+  cache        = inject(DataCacheService);
 
   private id$ = inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id')!));
 
@@ -29,9 +31,10 @@ export class TeamDetailComponent {
     )
   );
 
-  team    = computed(() => this.state()?.data ?? null);
-  loading = computed(() => this.state()?.loading ?? true);
-  error   = computed(() => this.state()?.error ?? null);
+  team      = computed(() => this.state()?.data ?? null);
+  loading   = computed(() => this.state()?.loading ?? true);
+  error     = computed(() => this.state()?.error ?? null);
+  isOwnTeam = computed(() => this.team()?.manager_id === this.auth.getManagerId());
 
   logoFailed = false;
 

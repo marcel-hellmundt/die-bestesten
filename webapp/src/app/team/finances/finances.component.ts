@@ -49,7 +49,7 @@ export class FinancesComponent {
   transactions = computed(() => this.state().data?.transactions ?? []);
 
   readonly cW   = 700;
-  readonly cH   = 120;
+  readonly cH   = Math.round(700 / 3);
   readonly padL = 56;
   readonly padR = 8;
   readonly padT = 8;

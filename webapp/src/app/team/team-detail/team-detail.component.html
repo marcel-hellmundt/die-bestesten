@@ -36,6 +36,9 @@
       <a class="pill" routerLink="uebersicht" routerLinkActive="pill--active">Übersicht</a>
       <a class="pill" routerLink="kader" routerLinkActive="pill--active">Kader</a>
       <a class="pill" routerLink="aufstellung" routerLinkActive="pill--active">Aufstellung</a>
+      @if (isOwnTeam()) {
+        <a class="pill" routerLink="finanzen" routerLinkActive="pill--active">Finanzen</a>
+      }
     </nav>
   </div>
 

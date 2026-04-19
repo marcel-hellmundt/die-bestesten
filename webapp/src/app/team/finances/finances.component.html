@@ -4,51 +4,55 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   <div class="finances-wrap">
-    <div class="budget-card card">
-      <span class="budget-label">Aktuelles Budget</span>
-      <span class="budget-amount" [class.budget-amount--negative]="budget() < 0">
-        {{ formatMoney(budget()) }}
-      </span>
+    <div class="finances-left">
+      <div class="budget-card card">
+        <span class="budget-label">Aktuelles Budget</span>
+        <span class="budget-amount" [class.budget-amount--negative]="budget() < 0">
+          {{ formatMoney(budget()) }}
+        </span>
+      </div>
+
+      @if (balanceChart(); as chart) {
+        <div class="card chart-card">
+          <span class="chart-title">Guthaben über Zeit</span>
+          <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" aria-hidden="true">
+            @for (t of chart.yTicks; track t.label) {
+              <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
+              <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
+            }
+            @for (t of chart.xTicks; track t.label) {
+              <text [attr.x]="t.x" [attr.y]="cH - padB + 14" class="chart-label chart-label--x">{{ t.label }}</text>
+            }
+            <path [attr.d]="chart.line" fill="none" class="chart-line" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+            @for (d of chart.dots; track d.day) {
+              <circle [attr.cx]="d.x" [attr.cy]="d.y" r="2.5" class="chart-dot" />
+            }
+          </svg>
+        </div>
+      }
     </div>
 
-    @if (balanceChart(); as chart) {
-      <div class="card chart-card">
-        <span class="chart-title">Guthaben über Zeit</span>
-        <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" [attr.height]="cH" aria-hidden="true">
-          @for (t of chart.yTicks; track t.label) {
-            <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
-            <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
-          }
-          @for (t of chart.xTicks; track t.label) {
-            <text [attr.x]="t.x" [attr.y]="cH - padB + 14" class="chart-label chart-label--x">{{ t.label }}</text>
-          }
-          <path [attr.d]="chart.line" fill="none" class="chart-line" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-          @for (d of chart.dots; track d.day) {
-            <circle [attr.cx]="d.x" [attr.cy]="d.y" r="2.5" class="chart-dot" />
-          }
-        </svg>
-      </div>
-    }
-
-    <div class="transactions">
-      @if (transactions().length === 0) {
-        <p class="state-msg">Keine Transaktionen vorhanden.</p>
-      } @else {
-        @for (tx of transactions(); track tx.id) {
-          <div class="tx-row">
-            <div class="tx-meta">
-              <span class="tx-reason">{{ tx.reason }}</span>
-              @if (tx.matchday_number) {
-                <span class="tx-matchday">Spieltag {{ tx.matchday_number }}</span>
-              }
-              <span class="tx-date">{{ formatDate(tx.created_at) }}</span>
+    <div class="finances-right">
+      <div class="transactions">
+        @if (transactions().length === 0) {
+          <p class="state-msg">Keine Transaktionen vorhanden.</p>
+        } @else {
+          @for (tx of transactions(); track tx.id) {
+            <div class="tx-row">
+              <div class="tx-meta">
+                <span class="tx-reason">{{ tx.reason }}</span>
+                @if (tx.matchday_number) {
+                  <span class="tx-matchday">Spieltag {{ tx.matchday_number }}</span>
+                }
+                <span class="tx-date">{{ formatDate(tx.created_at) }}</span>
+              </div>
+              <span class="tx-amount" [class.tx-amount--pos]="tx.amount > 0" [class.tx-amount--neg]="tx.amount < 0">
+                {{ tx.amount > 0 ? '+' : '' }}{{ formatMoney(tx.amount) }}
+              </span>
             </div>
-            <span class="tx-amount" [class.tx-amount--pos]="tx.amount > 0" [class.tx-amount--neg]="tx.amount < 0">
-              {{ tx.amount > 0 ? '+' : '' }}{{ formatMoney(tx.amount) }}
-            </span>
-          </div>
+          }
         }
-      }
+      </div>
     </div>
   </div>
 }

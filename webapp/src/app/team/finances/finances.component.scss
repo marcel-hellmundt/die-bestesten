@@ -2,9 +2,24 @@
 
 .finances-wrap {
   padding: $space-4;
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: $space-4;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.finances-left {
   display: flex;
   flex-direction: column;
   gap: $space-4;
+}
+
+.finances-right {
+  min-width: 0;
 }
 
 .budget-card {
@@ -49,6 +64,7 @@
 .chart-svg {
   display: block;
   overflow: visible;
+  aspect-ratio: 3 / 1;
 }
 
 .chart-grid {
