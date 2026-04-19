@@ -318,6 +318,69 @@ trait LeagueTrait
                 ]);
                 $migratedOffers++;
             }
+
+            // Create purchase transactions for successful offers
+            $successOffers = array_values(array_filter(
+                $offerRows,
+                fn($r) => ($statusMap[$r['status']] ?? 'cancelled') === 'success'
+            ));
+
+            if (!empty($successOffers)) {
+                // Bulk-fetch transferwindow data (matchday_id + end_date) from global DB
+                $twIds        = array_values(array_unique(array_column($successOffers, 'transferwindow_id')));
+                $twMap        = [];
+                $placeholders = implode(',', array_fill(0, count($twIds), '?'));
+                $twStmt       = $this->con->prepare(
+                    "SELECT id, matchday_id, end_date FROM transferwindow WHERE id IN ($placeholders)"
+                );
+                $twStmt->execute($twIds);
+                foreach ($twStmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $twMap[$r['id']] = $r;
+                }
+
+                // Bulk-fetch player displaynames from global DB
+                $playerIds    = array_values(array_unique(array_column($successOffers, 'player_id')));
+                $playerMap    = [];
+                $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+                $pStmt        = $this->con->prepare(
+                    "SELECT id, displayname FROM player WHERE id IN ($placeholders)"
+                );
+                $pStmt->execute($playerIds);
+                foreach ($pStmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $playerMap[$r['id']] = $r['displayname'];
+                }
+
+                $checkOfferTx = $conLeague->prepare(
+                    "SELECT COUNT(*) FROM transaction
+                     WHERE team_id = :team_id AND reason = :reason AND matchday_id = :matchday_id"
+                );
+                $stmtOfferTx = $conLeague->prepare(
+                    "INSERT INTO transaction (id, team_id, amount, reason, matchday_id, created_at)
+                     VALUES (UUID(), :team_id, :amount, :reason, :matchday_id, :created_at)"
+                );
+
+                foreach ($successOffers as $row) {
+                    $tw = $twMap[$row['transferwindow_id']] ?? null;
+                    if (!$tw || !$tw['matchday_id']) continue;
+                    $displayname = $playerMap[$row['player_id']] ?? 'Unbekannt';
+                    $reason      = 'Spielerkauf: ' . $displayname;
+                    $checkOfferTx->execute([
+                        ':team_id'    => $row['team_id'],
+                        ':reason'     => $reason,
+                        ':matchday_id' => $tw['matchday_id'],
+                    ]);
+                    if ((int) $checkOfferTx->fetchColumn() === 0) {
+                        $stmtOfferTx->execute([
+                            ':team_id'     => $row['team_id'],
+                            ':amount'      => -(int) $row['offer_value'],
+                            ':reason'      => $reason,
+                            ':matchday_id' => $tw['matchday_id'],
+                            ':created_at'  => $tw['end_date'],
+                        ]);
+                        $migratedTransactions++;
+                    }
+                }
+            }
         } catch (PDOException) {
             // offer may not exist in older DBs — skip silently
         }
