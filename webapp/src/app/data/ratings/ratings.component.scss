@@ -169,8 +169,9 @@
 
   &__stats {
     position: absolute;
-    bottom: 4px;
-    left: 4px;
+    bottom: 6px;
+    left: 6px;
+    right: 6px;
     display: flex;
     align-items: center;
     gap: 2px;
@@ -185,6 +186,10 @@
     height: 10px;
     object-fit: contain;
   }
+}
+
+.spacer {
+  flex-grow: 1;
 }
 
 // Ratings section

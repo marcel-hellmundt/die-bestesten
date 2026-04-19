@@ -183,7 +183,7 @@ export class RatingsDataComponent {
     if (!s || s.rating_count === 0) return '';
     if (s.starter_count < 11) return 'club-tile--pending-dashed';
     if (s.grade_count === 0) return 'club-tile--pending';
-    if (s.grade_count <= 11) return 'club-tile--done-partial';
+    if (s.grade_count < 11) return 'club-tile--done-partial';
     return 'club-tile--done';
   }
 

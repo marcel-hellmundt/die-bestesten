@@ -40,10 +40,15 @@
             @if (stats.goals > 0 || stats.assists > 0) {
               <span class="club-tile__stats">
                 @if (stats.goals > 0) {
-                  <img src="img/icons/goal.png" class="club-tile__stat-icon" alt="" />{{ stats.goals }}
+                  <img src="img/icons/goal.png" class="club-tile__stat-icon" alt="" />{{
+                    stats.goals
+                  }}
                 }
+                <div class="spacer"></div>
                 @if (stats.assists > 0) {
-                  <img src="img/icons/assist.png" class="club-tile__stat-icon" alt="" />{{ stats.assists }}
+                  <img src="img/icons/assist.png" class="club-tile__stat-icon" alt="" />{{
+                    stats.assists
+                  }}
                 }
               </span>
             }
