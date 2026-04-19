@@ -5,6 +5,7 @@ import { TeamDetailComponent } from './team-detail/team-detail.component';
 import { TeamOverviewComponent } from './overview/team-overview.component';
 import { SquadComponent } from './squad/squad.component';
 import { LineupComponent } from './lineup/lineup.component';
+import { FinancesComponent } from './finances/finances.component';
 
 const routes: Routes = [
   {
@@ -15,12 +16,13 @@ const routes: Routes = [
       { path: 'uebersicht', component: TeamOverviewComponent },
       { path: 'kader',      component: SquadComponent },
       { path: 'aufstellung', component: LineupComponent },
+      { path: 'finanzen',   component: FinancesComponent },
     ]
   }
 ];
 
 @NgModule({
-  declarations: [TeamDetailComponent, TeamOverviewComponent, SquadComponent, LineupComponent],
+  declarations: [TeamDetailComponent, TeamOverviewComponent, SquadComponent, LineupComponent, FinancesComponent],
   imports: [CommonModule, RouterModule.forChild(routes)]
 })
 export class TeamModule {}

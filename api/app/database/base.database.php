@@ -17,6 +17,7 @@ require_once 'password_reset.database.php';
 require_once 'award.database.php';
 require_once 'player_in_team.database.php';
 require_once 'team_lineup.database.php';
+require_once 'transaction.database.php';
 
 class Database
 {
@@ -24,6 +25,7 @@ class Database
     use LeagueTrait;
     use PlayerInTeamTrait;
     use TeamLineupTrait;
+    use TransactionTrait;
     use AllTimeStandingsTrait;
     use AwardTrait;
     use SeasonTrait;

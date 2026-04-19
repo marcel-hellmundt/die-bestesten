@@ -1,0 +1,35 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <div class="finances-wrap">
+    <div class="budget-card card">
+      <span class="budget-label">Aktuelles Budget</span>
+      <span class="budget-amount" [class.budget-amount--negative]="budget() < 0">
+        {{ formatMoney(budget()) }}
+      </span>
+    </div>
+
+    <div class="transactions">
+      @if (transactions().length === 0) {
+        <p class="state-msg">Keine Transaktionen vorhanden.</p>
+      } @else {
+        @for (tx of transactions(); track tx.id) {
+          <div class="tx-row">
+            <div class="tx-meta">
+              <span class="tx-reason">{{ tx.reason }}</span>
+              @if (tx.matchday_number) {
+                <span class="tx-matchday">Spieltag {{ tx.matchday_number }}</span>
+              }
+              <span class="tx-date">{{ formatDate(tx.created_at) }}</span>
+            </div>
+            <span class="tx-amount" [class.tx-amount--pos]="tx.amount > 0" [class.tx-amount--neg]="tx.amount < 0">
+              {{ tx.amount > 0 ? '+' : '' }}{{ formatMoney(tx.amount) }}
+            </span>
+          </div>
+        }
+      }
+    </div>
+  </div>
+}

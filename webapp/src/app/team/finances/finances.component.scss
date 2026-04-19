@@ -1,0 +1,101 @@
+@use '../../../styles/variables' as *;
+
+.finances-wrap {
+  padding: $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.budget-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  padding: $space-4 $space-5;
+}
+
+.budget-label {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $color-text-muted;
+}
+
+.budget-amount {
+  font-size: $font-2xl;
+  font-weight: $font-weight-bold;
+  color: $color-success;
+
+  &--negative {
+    color: $color-danger;
+  }
+}
+
+.transactions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.tx-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $color-border;
+  background: $color-surface;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:nth-child(even) {
+    background: $color-bg;
+  }
+}
+
+.tx-meta {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.tx-reason {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.tx-matchday {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  background: $color-surface-alt;
+  border-radius: $radius-sm;
+  padding: 2px $space-2;
+}
+
+.tx-date {
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.tx-amount {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &--pos { color: $color-success; }
+  &--neg { color: $color-danger; }
+}

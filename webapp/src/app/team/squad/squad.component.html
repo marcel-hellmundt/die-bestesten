@@ -7,7 +7,7 @@
 } @else {
   <div class="squad-list">
     @for (p of players(); track p.id) {
-      <a class="squad-row row-link" [routerLink]="['/data/player', p.id]">
+      <a class="squad-row row-link" [routerLink]="['/daten/player', p.id]">
         <span class="position-badge" [style.background-color]="positionColor(p.position)">
           {{ positionLabel(p.position) }}
         </span>

@@ -118,6 +118,7 @@ GET      /team/:id             — Team per ID (manager_name, alias, total_point
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} allein für E-Mail — Auth
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
+GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 ```
 
 ## Liga-DB (`database/league_schema.sql`)

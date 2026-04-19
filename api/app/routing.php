@@ -319,6 +319,19 @@ class Routing
                 ],
             ]),
 
+            new Route('transaction', 'Transaction', [
+                'title'       => 'Transaction',
+                'description' => 'Kontoauszug und Budget eines Teams — nur eigenes Team abrufbar (Datenschutz)',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/transaction',
+                        'description'  => 'Budget und alle Transaktionen des eigenen Teams — gibt { budget, transactions[] } zurück; 403 bei fremdem Team — Auth',
+                        'query_params' => ['team_id' => 'UUID des Teams (erforderlich)'],
+                    ],
+                ],
+            ]),
+
             new Route('team', 'Team', [
                 'title'       => 'Team',
                 'description' => 'Fantasy-Teams pro Manager und Saison',
