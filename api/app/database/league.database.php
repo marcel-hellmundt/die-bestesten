@@ -215,8 +215,8 @@ trait LeagueTrait
              WHERE team_id = :team_id AND matchday_id IS NULL AND reason = 'Startguthaben'"
         );
         $stmtStartBudget = $conLeague->prepare(
-            "INSERT INTO transaction (id, team_id, amount, reason, matchday_id)
-             VALUES (UUID(), :team_id, 50000000, 'Startguthaben', NULL)"
+            "INSERT INTO transaction (id, team_id, amount, reason, matchday_id, created_at)
+             VALUES (UUID(), :team_id, 50000000, 'Startguthaben', NULL, :created_at)"
         );
 
         $checkMatchdayIncome = $conLeague->prepare(
@@ -232,7 +232,10 @@ trait LeagueTrait
         foreach ($rows as $row) {
             $checkStartBudget->execute([':team_id' => $row['team_id']]);
             if ((int) $checkStartBudget->fetchColumn() === 0) {
-                $stmtStartBudget->execute([':team_id' => $row['team_id']]);
+                $stmtStartBudget->execute([
+                    ':team_id'    => $row['team_id'],
+                    ':created_at' => $seasonStartDates[$row['season_id']] ?? date('Y-m-d'),
+                ]);
                 $migratedTransactions++;
             }
         }
