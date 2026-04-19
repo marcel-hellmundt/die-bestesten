@@ -61,7 +61,6 @@ class PlayerRatingController extends _BaseController
             // Parse CSV: skip header, col 0 = id (pl-kXXXX → kicker_id), col 4 = displayname, col 8 = points
             $handle     = fopen($file, 'r');
             $mismatches = [];
-            $missing    = [];
             $checked    = 0;
             $firstLine  = true;
             while (($line = fgets($handle)) !== false) {
@@ -74,25 +73,34 @@ class PlayerRatingController extends _BaseController
                 $csvPoints   = isset($cols[8]) ? (int) $cols[8] : null;
                 if ($kickerId === null || $displayname === null || $csvPoints === null) continue;
                 if (!array_key_exists($kickerId, $dbMap)) {
-                    if ($csvPoints > 0) $missing[] = $displayname;
+                    if ($csvPoints > 0) {
+                        $mismatches[] = [
+                            'kicker_id'   => $kickerId,
+                            'displayname' => $displayname,
+                            'csv_points'  => $csvPoints,
+                            'db_points'   => null,
+                            'error'       => 'player not found in db',
+                        ];
+                    }
                     continue;
                 }
                 $checked++;
                 if ($dbMap[$kickerId]['points'] !== $csvPoints) {
                     $mismatches[] = [
+                        'kicker_id'   => $kickerId,
                         'displayname' => $displayname,
                         'csv_points'  => $csvPoints,
                         'db_points'   => $dbMap[$kickerId]['points'],
+                        'error'       => 'points mismatch',
                     ];
                 }
             }
             fclose($handle);
 
-            $ok = empty($mismatches) && empty($missing);
-            if ($ok) {
+            if (empty($mismatches)) {
                 return ['ok' => true, 'checked' => $checked];
             }
-            return ['ok' => false, 'mismatches' => $mismatches, 'missing' => $missing];
+            return ['ok' => false, 'mismatches' => $mismatches];
         }
 
         if ($this->id !== 'init') return $this->methodNotAllowed();

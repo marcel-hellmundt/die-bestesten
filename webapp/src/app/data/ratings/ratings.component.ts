@@ -542,8 +542,7 @@ export class RatingsDataComponent {
   csvResult = signal<{
     ok: boolean;
     checked?: number;
-    mismatches?: { displayname: string; csv_points: number; db_points: number }[];
-    missing?: string[];
+    mismatches?: { kicker_id: number; displayname: string; csv_points: number; db_points: number | null; error: string }[];
   } | null>(null);
 
   onCsvFileSelected(event: Event): void {

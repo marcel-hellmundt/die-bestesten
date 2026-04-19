@@ -90,10 +90,9 @@
   margin-bottom: $space-4;
 }
 
-.missing-list {
-  margin: $space-2 0 0;
-  font-size: $font-sm;
-  color: $color-text;
+.mismatch-error {
+  font-size: $font-xs;
+  color: $color-text-muted;
 }
 
 .mismatch-diff--pos {
