@@ -119,14 +119,39 @@
   font-weight: $font-weight-medium;
 }
 
+.role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .role-badge {
   display: inline-block;
   padding: 2px $space-2;
   border-radius: $radius-full;
   font-size: $font-xs;
   font-weight: $font-weight-medium;
+  border: none;
+  background: none;
+  cursor: default;
 
-  &--admin      { background: var(--flat-river);    color: #fff; }
-  &--maintainer { background: var(--flat-emerald);  color: #fff; }
-  &--manager    { background: var(--flat-alizarin); color: #fff; }
+  &--admin      { background: color-mix(in srgb, var(--flat-river)    18%, transparent); color: var(--flat-river); }
+  &--maintainer { background: color-mix(in srgb, var(--flat-emerald)  18%, transparent); color: var(--flat-emerald); }
+  &--manager    { background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent); color: var(--flat-alizarin); }
+
+  &--inactive {
+    background: $color-surface;
+    color: $color-text-muted;
+    border: 1px dashed $color-border;
+  }
+
+}
+
+button.role-badge {
+  cursor: pointer;
+  transition: opacity $transition-fast, filter $transition-fast;
+
+  &:not(.role-badge--inactive):hover { filter: brightness(1.1); }
+  &.role-badge--inactive:hover { background: $color-surface-alt; color: $color-text; }
+  &:disabled { opacity: 0.5; cursor: wait; }
 }

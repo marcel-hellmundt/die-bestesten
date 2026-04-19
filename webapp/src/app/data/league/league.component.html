@@ -76,9 +76,21 @@
                           </div>
                           <div class="manager-chip__info">
                             <span class="manager-chip__name">{{ m.manager_name }}</span>
-                            @for (role of sortedRoles(m.roles); track role) {
-                              <span class="role-badge role-badge--{{ role }}">{{ roleLabel[role] }}</span>
-                            }
+                            <div class="role-badges">
+                              <span class="role-badge role-badge--manager">{{ roleLabel['manager'] }}</span>
+                              @for (role of assignableRoles; track role) {
+                                @if (isAdmin()) {
+                                  <button
+                                    class="role-badge role-badge--{{ role }}"
+                                    [class.role-badge--inactive]="!(m.roles ?? []).includes(role)"
+                                    [disabled]="isRoleToggling(m.id, role)"
+                                    (click)="toggleRole(item.id, m, role)"
+                                  >{{ roleLabel[role] }}</button>
+                                } @else if ((m.roles ?? []).includes(role)) {
+                                  <span class="role-badge role-badge--{{ role }}">{{ roleLabel[role] }}</span>
+                                }
+                              }
+                            </div>
                           </div>
                         </div>
                       }

@@ -77,11 +77,52 @@ export class LeagueDataComponent {
   }
 
   readonly roleOrder = ['admin', 'maintainer', 'manager'];
-  readonly roleLabel: Record<string, string> = { admin: 'IT-Gott', maintainer: 'Daten-Fee', manager: 'Manager' };
+  readonly roleLabel: Record<string, string> = {
+    admin: 'Kernel-Kapitän',
+    maintainer: 'Daten-Fee',
+    manager: 'Manager',
+  };
 
   sortedRoles(roles: string[]): string[] {
     const r = roles?.length ? roles : ['manager'];
     return [...r].sort((a, b) => this.roleOrder.indexOf(a) - this.roleOrder.indexOf(b));
+  }
+
+  readonly assignableRoles = ['admin', 'maintainer'];
+  roleTogglingState = signal<Record<string, boolean>>({});
+
+  isRoleToggling(managerId: string, role: string): boolean {
+    return this.roleTogglingState()[`${managerId}:${role}`] ?? false;
+  }
+
+  toggleRole(leagueId: string, manager: any, role: string): void {
+    const key = `${manager.id}:${role}`;
+    if (this.roleTogglingState()[key]) return;
+
+    const hasRole = (manager.roles ?? []).includes(role);
+    this.roleTogglingState.update(s => ({ ...s, [key]: true }));
+
+    const req = hasRole
+      ? this.api.delete<any>(`manager/${manager.id}/roles/${role}`)
+      : this.api.post<any>(`manager/${manager.id}/roles`, { role });
+
+    req.subscribe({
+      next: () => {
+        const newRoles = hasRole
+          ? (manager.roles ?? []).filter((r: string) => r !== role)
+          : [...(manager.roles ?? []), role];
+        this.managersCache.update(cache => {
+          const list = (cache[leagueId] ?? []).map((m: any) =>
+            m.id === manager.id ? { ...m, roles: newRoles } : m
+          );
+          return { ...cache, [leagueId]: list };
+        });
+        this.roleTogglingState.update(s => { const n = { ...s }; delete n[key]; return n; });
+      },
+      error: () => {
+        this.roleTogglingState.update(s => { const n = { ...s }; delete n[key]; return n; });
+      },
+    });
   }
 
   migrateStates = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
