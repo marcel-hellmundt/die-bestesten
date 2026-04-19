@@ -224,8 +224,8 @@ trait LeagueTrait
              WHERE team_id = :team_id AND matchday_id = :matchday_id AND reason = 'Spieltagseinnahmen'"
         );
         $stmtMatchdayIncome = $conLeague->prepare(
-            "INSERT INTO transaction (id, team_id, amount, reason, matchday_id)
-             VALUES (UUID(), :team_id, :amount, 'Spieltagseinnahmen', :matchday_id)"
+            "INSERT INTO transaction (id, team_id, amount, reason, matchday_id, created_at)
+             VALUES (UUID(), :team_id, :amount, 'Spieltagseinnahmen', :matchday_id, :created_at)"
         );
 
         // One start-budget per team
@@ -246,10 +246,15 @@ trait LeagueTrait
             if (!$matchdayId) continue;
             $checkMatchdayIncome->execute([':team_id' => $row['team_id'], ':matchday_id' => $matchdayId]);
             if ((int) $checkMatchdayIncome->fetchColumn() === 0) {
+                $kickoff   = $oldMdDates[$key]['kickoff_date'] ?? null;
+                $createdAt = $kickoff
+                    ? date('Y-m-d H:i:s', strtotime($kickoff . ' +3 days'))
+                    : date('Y-m-d H:i:s');
                 $stmtMatchdayIncome->execute([
-                    ':team_id'    => $row['team_id'],
+                    ':team_id'     => $row['team_id'],
                     ':matchday_id' => $matchdayId,
-                    ':amount'     => $points * 20000,
+                    ':amount'      => $points * 20000,
+                    ':created_at'  => $createdAt,
                 ]);
                 $migratedTransactions++;
             }
@@ -409,6 +414,60 @@ trait LeagueTrait
                     ':created_at'        => $row['sell_date'],
                 ]);
                 $migratedSells++;
+            }
+
+            // Create sell transactions
+            $twIds        = array_values(array_unique(array_column($sellRows, 'transferwindow_id')));
+            $twMapSell    = [];
+            $placeholders = implode(',', array_fill(0, count($twIds), '?'));
+            $twStmt       = $this->con->prepare(
+                "SELECT id, matchday_id FROM transferwindow WHERE id IN ($placeholders)"
+            );
+            $twStmt->execute($twIds);
+            foreach ($twStmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $twMapSell[$r['id']] = $r;
+            }
+
+            $sellPlayerIds = array_values(array_unique(array_column($sellRows, 'player_id')));
+            $sellPlayerMap = [];
+            $placeholders  = implode(',', array_fill(0, count($sellPlayerIds), '?'));
+            $pStmt         = $this->con->prepare(
+                "SELECT id, displayname FROM player WHERE id IN ($placeholders)"
+            );
+            $pStmt->execute($sellPlayerIds);
+            foreach ($pStmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $sellPlayerMap[$r['id']] = $r['displayname'];
+            }
+
+            $checkSellTx = $conLeague->prepare(
+                "SELECT COUNT(*) FROM transaction
+                 WHERE team_id = :team_id AND reason = :reason AND matchday_id = :matchday_id"
+            );
+            $stmtSellTx = $conLeague->prepare(
+                "INSERT INTO transaction (id, team_id, amount, reason, matchday_id, created_at)
+                 VALUES (UUID(), :team_id, :amount, :reason, :matchday_id, :created_at)"
+            );
+
+            foreach ($sellRows as $row) {
+                $tw = $twMapSell[$row['transferwindow_id']] ?? null;
+                if (!$tw || !$tw['matchday_id']) continue;
+                $displayname = $sellPlayerMap[$row['player_id']] ?? 'Unbekannt';
+                $reason      = 'Spielerverkauf: ' . $displayname;
+                $checkSellTx->execute([
+                    ':team_id'     => $row['team_id'],
+                    ':reason'      => $reason,
+                    ':matchday_id' => $tw['matchday_id'],
+                ]);
+                if ((int) $checkSellTx->fetchColumn() === 0) {
+                    $stmtSellTx->execute([
+                        ':team_id'     => $row['team_id'],
+                        ':amount'      => (int) $row['price'],
+                        ':reason'      => $reason,
+                        ':matchday_id' => $tw['matchday_id'],
+                        ':created_at'  => $row['sell_date'],
+                    ]);
+                    $migratedTransactions++;
+                }
             }
         } catch (PDOException) {
             // sell may not exist in older DBs — skip silently
