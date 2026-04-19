@@ -3,6 +3,7 @@ import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-liga-table',
@@ -11,8 +12,11 @@ import { DataCacheService } from '../../core/data-cache.service';
   styleUrl: './table.component.scss'
 })
 export class TableComponent {
-  private api = inject(ApiService);
-  cache       = inject(DataCacheService);
+  private api  = inject(ApiService);
+  private auth = inject(AuthService);
+  cache        = inject(DataCacheService);
+
+  isLoggedIn = computed(() => this.auth.isLoggedIn());
 
   // Seasons sorted newest first
   private seasons = computed(() =>
@@ -47,7 +51,39 @@ export class TableComponent {
     { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
 
-  rows           = computed(() => (this.state().data?.standings           ?? []) as any[]);
+  isCurrentSeason = computed(() => this.selectedIndex() === 0);
+
+  liveMode = signal(false);
+
+  // Live data for current (not-completed) matchday
+  private liveState = toSignal(
+    combineLatest([
+      toObservable(this.selectedSeason),
+      toObservable(this.liveMode),
+    ]).pipe(
+      switchMap(([season, live]) => {
+        if (!live || !season) return of(null);
+        return this.api.get<any>(`team_rating?season_id=${season.id}`).pipe(
+          catchError(() => of(null))
+        );
+      })
+    ),
+    { initialValue: null as any }
+  );
+
+  private baseRows = computed(() => (this.state().data?.standings ?? []) as any[]);
+
+  rows = computed(() => {
+    const base = this.baseRows();
+    if (!this.liveMode()) return base;
+    const live = this.liveState();
+    if (!live?.ratings?.length) return base;
+    const liveMap = new Map<string, number>();
+    for (const r of live.ratings as any[]) liveMap.set(r.team_id, Number(r.points ?? 0));
+    return [...base]
+      .map(r => ({ ...r, total_points: Number(r.total_points) + (liveMap.get(r.team_id) ?? 0) }))
+      .sort((a, b) => b.total_points - a.total_points);
+  });
   totalFines     = computed(() => this.rows().reduce((sum, r) => sum + Number(r.fine ?? 0), 0));
   lucky          = computed(() => (this.state().data?.luck?.lucky           ?? []) as any[]);
   unlucky        = computed(() => (this.state().data?.luck?.unlucky          ?? []) as any[]);

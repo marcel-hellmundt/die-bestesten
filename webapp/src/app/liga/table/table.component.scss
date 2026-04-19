@@ -29,6 +29,47 @@
   &:disabled { color: $color-border; cursor: default; }
 }
 
+.live-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 4px $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-surface;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: all $transition-fast;
+  margin-left: auto;
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: $color-border;
+    transition: background $transition-fast;
+  }
+
+  &--active {
+    border-color: var(--flat-emerald);
+    color: var(--flat-emerald);
+    background: color-mix(in srgb, var(--flat-emerald) 10%, transparent);
+
+    .live-dot {
+      background: var(--flat-emerald);
+      box-shadow: 0 0 4px var(--flat-emerald);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
 .table-layout {
   display: grid;
   grid-template-columns: 1fr 220px;

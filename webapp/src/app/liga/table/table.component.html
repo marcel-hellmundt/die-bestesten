@@ -23,6 +23,17 @@
     >
       ›
     </button>
+    @if (isCurrentSeason() && isLoggedIn()) {
+      <button
+        class="live-toggle"
+        [class.live-toggle--active]="liveMode()"
+        (click)="liveMode.set(!liveMode())"
+        title="Live-Punkte des laufenden Spieltags einrechnen"
+      >
+        <span class="live-dot"></span>
+        Live
+      </button>
+    }
   </div>
 
   <div class="table-layout">
