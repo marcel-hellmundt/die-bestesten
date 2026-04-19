@@ -48,11 +48,11 @@
   }
 
   &--pending {
-    border-color: $color-accent;
-    color: $color-accent;
+    border-color: $color-progress;
+    color: $color-progress;
 
     &.matchday-pill--active {
-      background: $color-accent;
+      background: $color-progress;
       color: $color-surface;
     }
   }
@@ -118,8 +118,6 @@
   }
 
   &--active {
-    border-width: 2px;
-    border-color: $color-accent;
     background: color-mix(in srgb, $color-accent 8%, transparent);
   }
 
@@ -128,14 +126,20 @@
     border-color: $color-success;
   }
 
+  &--done-partial {
+    border-width: 2px;
+    border-color: $color-success;
+    border-style: dashed;
+  }
+
   &--pending {
     border-width: 2px;
-    border-color: $color-accent;
+    border-color: $color-progress;
   }
 
   &--pending-dashed {
     border-width: 2px;
-    border-color: $color-accent;
+    border-color: $color-progress;
     border-style: dashed;
   }
 

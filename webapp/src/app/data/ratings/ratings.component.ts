@@ -158,9 +158,10 @@ export class RatingsDataComponent {
   clubStatusClass(clubId: string): string {
     const s = this.clubStatusMap().get(clubId);
     if (!s || s.rating_count === 0) return '';
-    if (s.grade_count > 0) return 'club-tile--done';
     if (s.starter_count < 11) return 'club-tile--pending-dashed';
-    return 'club-tile--pending';
+    if (s.grade_count === 0) return 'club-tile--pending';
+    if (s.grade_count < 11) return 'club-tile--done-partial';
+    return 'club-tile--done';
   }
 
   // Apply auto-selection once data is available
