@@ -199,9 +199,9 @@
               <thead>
                 <tr>
                   <th>Saison</th>
-                  <th>Position</th>
-                  <th>Marktwert</th>
-                  <th>Punkte</th>
+                  <th><span class="hidden-mobile">Position</span><span class="visible-mobile">Pos</span></th>
+                  <th><span class="hidden-mobile">Marktwert</span><span class="visible-mobile">MW</span></th>
+                  <th><span class="hidden-mobile">Punkte</span><span class="visible-mobile">Pkt</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -215,15 +215,9 @@
                   >
                     <td>{{ cache.seasonName(s.season_id) }}</td>
                     <td>
-                      <span class="position-badge">
-                        <span
-                          class="badge-dot"
-                          [style.background-color]="positionColor(s.position)"
-                        ></span>
-                        {{ positionLabel(s.position) }}
-                      </span>
+                      <span class="position-badge position-badge--text" [style.background-color]="positionColor(s.position)">{{ positionLabel(s.position) }}</span>
                     </td>
-                    <td class="col-price">{{ formatPrice(s.price) }}</td>
+                    <td class="col-price">{{ formatPriceShort(s.price) }}</td>
                     <td class="col-points-season">{{ s.total_points }}</td>
                   </tr>
                 }

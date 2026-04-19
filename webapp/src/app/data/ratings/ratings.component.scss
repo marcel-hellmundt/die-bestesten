@@ -327,6 +327,7 @@
   display: inline-flex;
   align-items: center;
   gap: $space-2;
+  white-space: nowrap;
 }
 
 .col-points {
@@ -338,26 +339,6 @@
   font-size: $font-xs;
   color: $color-text-muted;
   margin-left: 2px;
-}
-
-.position-badge {
-  display: inline-block;
-  width: 36px;
-  text-align: center;
-  flex-shrink: 0;
-  padding: 2px 4px;
-  border-radius: $radius-sm;
-  font-size: $font-xs;
-  font-weight: $font-weight-bold;
-  color: #fff;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-
-  @media (max-width: $mobile-breakpoint) {
-    font-size: 9px;
-    width: 28px;
-    padding: 1px 3px;
-  }
 }
 
 .col-toggle,

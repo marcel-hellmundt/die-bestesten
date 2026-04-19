@@ -12,15 +12,17 @@
   line-height: 1;
   border-radius: $radius-full;
   border: 1px solid transparent;
-  transition: background-color $transition-fast,
-              border-color $transition-fast,
-              color $transition-fast,
-              opacity $transition-fast;
+  transition:
+    background-color $transition-fast,
+    border-color $transition-fast,
+    color $transition-fast,
+    opacity $transition-fast;
   white-space: nowrap;
   user-select: none;
 
   &:disabled {
-    opacity: 0.5;
+    background-color: $color-text-muted;
+    border: transparent;
     cursor: not-allowed;
     pointer-events: none;
   }

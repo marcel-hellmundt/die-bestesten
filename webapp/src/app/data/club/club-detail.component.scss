@@ -388,26 +388,13 @@
   }
 }
 
-.col-pos-label {
-  color: $color-text-muted;
-  font-size: $font-sm;
+.col-squad-name {
+  font-weight: $font-weight-medium;
 }
 
-.col-squad-pos {
-  width: 140px;
-}
-
-.position-badge {
+.squad-name-cell {
   display: inline-flex;
   align-items: center;
   gap: $space-2;
-
-  .badge-dot {
-    display: inline-block;
-    width: 12px;
-    height: 24px;
-    border-radius: 2px;
-    transform: skewX(-20deg);
-    flex-shrink: 0;
-  }
 }
+

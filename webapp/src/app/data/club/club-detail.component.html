@@ -327,27 +327,20 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Position</th>
               <th>Name</th>
             </tr>
           </thead>
           <tbody>
             @for (p of squad(); track p.id) {
               <tr class="row-link" [routerLink]="['/daten/player', p.id]">
-                <td class="col-squad-pos">
-                  @if (p.season_position) {
-                    <span class="position-badge">
-                      <span
-                        class="badge-dot"
-                        [style.background-color]="positionColor(p.season_position)"
-                      ></span>
-                      {{ positionLabel(p.season_position) }}
-                    </span>
-                  } @else {
-                    <span class="col-pos-label">—</span>
-                  }
+                <td class="col-squad-name">
+                  <span class="squad-name-cell">
+                    @if (p.season_position) {
+                      <span class="position-badge" [style.background-color]="positionColor(p.season_position)">{{ positionLabel(p.season_position) }}</span>
+                    }
+                    {{ p.displayname }}
+                  </span>
                 </td>
-                <td>{{ p.displayname }}</td>
               </tr>
             }
           </tbody>

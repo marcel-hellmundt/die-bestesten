@@ -92,20 +92,6 @@
   }
 }
 
-.position-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-
-  .badge-dot {
-    display: inline-block;
-    width: 12px;
-    height: 24px;
-    border-radius: 2px;
-    transform: skewX(-20deg);
-    flex-shrink: 0;
-  }
-}
 
 .rating-stats-grid {
   display: grid;
