@@ -335,18 +335,36 @@ class Routing
 
             new Route('manager', 'Manager', [
                 'title'       => 'Manager',
-                'description' => 'Eigenes Manager-Konto verwalten (Profil, Passwort, Account löschen)',
+                'description' => 'Eigenes Manager-Konto verwalten (Profil, Passwort, Account löschen) — Rollenvergabe nur Admin',
                 'endpoints'   => [
                     [
                         'method'      => 'GET',
                         'path'        => '/manager/me',
-                        'description' => 'Eigenes Profil abrufen (id, manager_name, alias, role, status)',
+                        'description' => 'Eigenes Profil abrufen (id, manager_name, alias, roles[], status)',
                     ],
                     [
                         'method'      => 'GET',
                         'path'        => '/manager/:id',
                         'description' => 'Manager per ID — enthält teams[] mit season_id, team_name, total_points, matchdays_played',
                         'path_params' => [':id' => 'UUID des Managers'],
+                    ],
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/manager/:id/roles',
+                        'description' => 'Rollen eines Managers abrufen — gibt roles[] zurück — Admin',
+                        'path_params' => [':id' => 'UUID des Managers'],
+                    ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/manager/:id/roles',
+                        'description' => 'Rolle hinzufügen — Body: { role: "maintainer"|"admin" } — gibt aktualisierte roles[] zurück — Admin',
+                        'path_params' => [':id' => 'UUID des Managers'],
+                    ],
+                    [
+                        'method'      => 'DELETE',
+                        'path'        => '/manager/:id/roles/:role',
+                        'description' => 'Rolle entziehen — gibt aktualisierte roles[] zurück — Admin',
+                        'path_params' => [':id' => 'UUID des Managers', ':role' => 'Rollenname (maintainer|admin)'],
                     ],
                     [
                         'method'      => 'PATCH',

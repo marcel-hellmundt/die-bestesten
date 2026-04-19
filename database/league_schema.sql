@@ -6,11 +6,25 @@ CREATE TABLE IF NOT EXISTS manager (
     manager_name  VARCHAR(64)  NOT NULL UNIQUE,
     alias         VARCHAR(64)  NULL DEFAULT NULL UNIQUE,
     password      VARCHAR(255) NOT NULL,
-    role          ENUM('admin', 'maintainer', 'manager') NOT NULL DEFAULT 'manager',
     status        ENUM('active', 'blocked', 'deleted') NOT NULL DEFAULT 'active',
     email         VARCHAR(255) NULL UNIQUE,
-    date_of_birth DATE         NULL
+    date_of_birth DATE         NULL,
+    last_activity DATETIME     NULL DEFAULT NULL
 );
+
+-- Zusätzliche Rollen pro Manager (additiv; jeder Manager hat implizit die Basisrolle 'manager')
+CREATE TABLE IF NOT EXISTS manager_role (
+    id         CHAR(36)                        NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    manager_id CHAR(36)                        NOT NULL,
+    role       ENUM('maintainer', 'admin')     NOT NULL,
+    UNIQUE KEY uk_manager_role (manager_id, role),
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
+);
+
+-- Migration bestehender Rollen (einmalig ausführen, wenn role-Spalte noch existiert):
+-- INSERT INTO manager_role (manager_id, role) SELECT id, 'maintainer' FROM manager WHERE role IN ('maintainer', 'admin');
+-- INSERT INTO manager_role (manager_id, role) SELECT id, 'admin'      FROM manager WHERE role = 'admin';
+-- ALTER TABLE manager DROP COLUMN role;
 
 CREATE TABLE IF NOT EXISTS password_reset_token (
     id         CHAR(36)    NOT NULL DEFAULT (UUID()) PRIMARY KEY,

@@ -17,7 +17,7 @@ die-bestesten/
 ├── api/app/
 │   ├── controller/     — Ein Controller pro Ressource (erbt _BaseController)
 │   ├── database/       — Ein Trait pro Ressource; composited in base.database.php
-│   ├── guard.php       — JWT + RBAC; setzt $GLOBALS['auth_role'/'auth_manager_id']
+│   ├── guard.php       — JWT + RBAC; setzt $GLOBALS['auth_roles'(array)/'auth_manager_id']
 │   └── routing.php     — Routen + eingebettete API-Doku
 ├── api/index.php       — Einstiegspunkt; parst URL → Routing → Controller
 ├── api/schema.php      — Web-UI für API-Doku (Mermaid-ER + Endpunkte aus routing.php)
@@ -51,7 +51,11 @@ styles/
 
 ## API-Autorisierung (RBAC)
 
-`$methodRoles` pro Controller: HTTP-Methode → Mindestrolle. Hierarchie: `guest(0) < manager(1) < maintainer(2) < admin(3)`. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle zu niedrig. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_role']`.
+**Additives Rollenmodell**: Jeder Manager hat die Basisrolle `manager` (implizit). Zusätzliche Rollen (`maintainer`, `admin`) werden in der `manager_role`-Tabelle gespeichert und sind frei kombinierbar.
+
+`$methodRoles` pro Controller: HTTP-Methode → erforderliche Rolle. Prüfung: `guest` = kein Token nötig; `manager` = jeder eingeloggte Manager; `maintainer`/`admin` = Manager muss diese Rolle in seiner Rollenliste haben. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle fehlt. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_roles']` (Array).
+
+Rollenvergabe: `POST /manager/:id/roles` mit `{role}`, Entzug: `DELETE /manager/:id/roles/:role` — jeweils Admin.
 
 ## Datenbankschema
 
@@ -117,7 +121,9 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 
 ## Liga-DB (`database/league_schema.sql`)
 
-**manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, role ENUM(admin/maintainer/manager) DEFAULT manager, status ENUM(active/blocked/deleted) DEFAULT active, email UNIQUE?, date_of_birth?
+**manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, status ENUM(active/blocked/deleted) DEFAULT active, email UNIQUE?, date_of_birth?
+
+**manager_role**: id PK, manager_id FK, role ENUM(maintainer/admin) — UNIQUE(manager_id, role) — additiv; jeder Manager hat implizit 'manager'
 
 **password_reset_token**: id PK, manager_id FK, token_hash VARCHAR(64) UNIQUE, expires_at DATETIME, used BOOL DEFAULT 0, created_at DATETIME
 

@@ -93,7 +93,9 @@ class Database
     {
         $query = $this->con_league->prepare("SELECT * FROM manager WHERE id = :id LIMIT 1");
         $query->execute([':id' => $id]);
-        return $query->fetch(PDO::FETCH_ASSOC);
+        $manager = $query->fetch(PDO::FETCH_ASSOC);
+        if ($manager) $manager['roles'] = $this->fetchManagerRoles($manager['id']);
+        return $manager;
     }
 
     public function getAuthManagerByNameOrEmail(string $identifier): array|false
@@ -102,6 +104,15 @@ class Database
             "SELECT * FROM manager WHERE manager_name = :identifier OR email = :identifier LIMIT 1"
         );
         $query->execute([':identifier' => $identifier]);
-        return $query->fetch(PDO::FETCH_ASSOC);
+        $manager = $query->fetch(PDO::FETCH_ASSOC);
+        if ($manager) $manager['roles'] = $this->fetchManagerRoles($manager['id']);
+        return $manager;
+    }
+
+    private function fetchManagerRoles(string $managerId): array
+    {
+        $q = $this->con_league->prepare("SELECT role FROM manager_role WHERE manager_id = :id");
+        $q->execute([':id' => $managerId]);
+        return $q->fetchAll(PDO::FETCH_COLUMN);
     }
 }

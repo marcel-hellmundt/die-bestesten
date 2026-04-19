@@ -56,12 +56,12 @@ class AuthController extends _BaseController
 
         $now = time();
         $payload = [
-            'sub' => $manager['id'],
+            'sub'          => $manager['id'],
             'manager_name' => $manager['manager_name'],
-            'role' => $manager['role'],
-            'status' => $manager['status'],
-            'iat' => $now,
-            'exp' => $now + (60 * 60 * 24 * 7),
+            'roles'        => $manager['roles'], // array, e.g. ['maintainer', 'admin']
+            'status'       => $manager['status'],
+            'iat'          => $now,
+            'exp'          => $now + (60 * 60 * 24 * 7),
         ];
 
         $token = JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');

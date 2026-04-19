@@ -52,17 +52,20 @@ export class AuthService {
     return (this.getPayload()?.['manager_name'] as string) ?? null;
   }
 
-  getRole(): string | null {
-    return (this.getPayload()?.['role'] as string) ?? null;
+  getRoles(): string[] {
+    return (this.getPayload()?.['roles'] as string[]) ?? [];
+  }
+
+  hasRole(role: string): boolean {
+    return this.getRoles().includes(role);
   }
 
   isAdmin(): boolean {
-    return this.getRole() === 'admin';
+    return this.hasRole('admin');
   }
 
   isMaintainer(): boolean {
-    const role = this.getRole();
-    return role === 'maintainer' || role === 'admin';
+    return this.hasRole('maintainer') || this.hasRole('admin');
   }
 
   getPayload(): Record<string, unknown> | null {

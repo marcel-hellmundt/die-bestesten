@@ -43,6 +43,8 @@ $segments = array_values(array_filter(explode('/', $path)));
 $request = [
     'endpoint' => $segments[0] ?? '',
     'id'       => $segments[1] ?? null,
+    'sub'      => $segments[2] ?? null, // sub-resource, e.g. /manager/:id/roles
+    'sub_id'   => $segments[3] ?? null, // sub-resource id, e.g. /manager/:id/roles/:role
 ];
 
 // Load controllers and resolve route

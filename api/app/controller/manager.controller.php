@@ -2,7 +2,17 @@
 
 class ManagerController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'manager', 'PATCH' => 'manager', 'DELETE' => 'manager'];
+    public static array $methodRoles = [
+        'GET'    => 'manager',
+        'PATCH'  => 'manager',
+        'DELETE' => 'manager',
+        'POST'   => 'manager', // further restricted to admin inside role sub-routes
+    ];
+
+    private function isAdmin(): bool
+    {
+        return in_array('admin', $GLOBALS['auth_roles'] ?? []);
+    }
 
     protected function get(): mixed
     {
@@ -13,6 +23,11 @@ class ManagerController extends _BaseController
                 return ['status' => false, 'message' => 'Manager not found'];
             }
             return $manager;
+        }
+
+        if ($this->id && $this->sub === 'roles') {
+            if (!$this->isAdmin()) { http_response_code(403); return ['status' => false, 'message' => 'Forbidden']; }
+            return ['roles' => $this->db->getManagerRoles($this->id)];
         }
 
         if ($this->id) {
@@ -64,6 +79,12 @@ class ManagerController extends _BaseController
 
     protected function delete(): mixed
     {
+        if ($this->id && $this->sub === 'roles' && $this->sub_id) {
+            if (!$this->isAdmin()) { http_response_code(403); return ['status' => false, 'message' => 'Forbidden']; }
+            $this->db->removeManagerRole($this->id, $this->sub_id);
+            return ['roles' => $this->db->getManagerRoles($this->id)];
+        }
+
         if ($this->id !== 'me') return $this->methodNotAllowed();
 
         $body     = $this->body();
@@ -97,5 +118,23 @@ class ManagerController extends _BaseController
         return ['status' => true];
     }
 
-    protected function post(): mixed { return $this->methodNotAllowed(); }
+    protected function post(): mixed
+    {
+        if ($this->id && $this->sub === 'roles') {
+            if (!$this->isAdmin()) { http_response_code(403); return ['status' => false, 'message' => 'Forbidden']; }
+            $role = $this->body()['role'] ?? null;
+            $allowed = ['maintainer', 'admin'];
+            if (!$role || !in_array($role, $allowed)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Ungültige Rolle. Erlaubt: ' . implode(', ', $allowed)];
+            }
+            if (!$this->db->getManagerById($this->id)) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Manager not found'];
+            }
+            $this->db->addManagerRole($this->id, $role);
+            return ['roles' => $this->db->getManagerRoles($this->id)];
+        }
+        return $this->methodNotAllowed();
+    }
 }

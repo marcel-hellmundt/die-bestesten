@@ -9,14 +9,6 @@ class Guard
 {
     private Database $db;
 
-    // Role hierarchy — higher index = more permissions
-    private static array $ROLE_LEVELS = [
-        'guest'      => 0,
-        'manager'    => 1,
-        'maintainer' => 2,
-        'admin'      => 3,
-    ];
-
     public function __construct()
     {
         $this->db = Database::getInstance();
@@ -52,12 +44,10 @@ class Guard
             }
 
             $GLOBALS['auth_manager_id'] = $manager['id'];
-            $GLOBALS['auth_role']       = $manager['role'];
+            $GLOBALS['auth_roles']      = $manager['roles']; // array, e.g. ['maintainer', 'admin']
 
-            $userLevel     = self::$ROLE_LEVELS[$manager['role']]  ?? 0;
-            $requiredLevel = self::$ROLE_LEVELS[$requiredRole]      ?? 1;
-
-            if ($userLevel < $requiredLevel) {
+            // 'manager' = any authenticated active manager; additional roles require explicit assignment
+            if ($requiredRole !== 'manager' && !in_array($requiredRole, $manager['roles'])) {
                 return ['status' => false, 'code' => 403, 'message' => 'Forbidden'];
             }
 

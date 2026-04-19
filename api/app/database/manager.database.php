@@ -5,20 +5,55 @@ trait ManagerTrait
     public function getManagerById(string $id): array|false
     {
         $q = $this->con_league->prepare(
-            "SELECT id, manager_name, alias, role, status, email FROM manager WHERE id = :id LIMIT 1"
+            "SELECT id, manager_name, alias, status, email FROM manager WHERE id = :id LIMIT 1"
         );
         $q->execute([':id' => $id]);
-        return $q->fetch(PDO::FETCH_ASSOC);
+        $manager = $q->fetch(PDO::FETCH_ASSOC);
+        if ($manager) $manager['roles'] = $this->getManagerRoles($id);
+        return $manager;
+    }
+
+    public function getManagerRoles(string $managerId): array
+    {
+        $q = $this->con_league->prepare("SELECT role FROM manager_role WHERE manager_id = :id");
+        $q->execute([':id' => $managerId]);
+        return $q->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    public function addManagerRole(string $managerId, string $role): void
+    {
+        $q = $this->con_league->prepare(
+            "INSERT IGNORE INTO manager_role (manager_id, role) VALUES (:manager_id, :role)"
+        );
+        $q->execute([':manager_id' => $managerId, ':role' => $role]);
+    }
+
+    public function removeManagerRole(string $managerId, string $role): void
+    {
+        $q = $this->con_league->prepare(
+            "DELETE FROM manager_role WHERE manager_id = :manager_id AND role = :role"
+        );
+        $q->execute([':manager_id' => $managerId, ':role' => $role]);
+    }
+
+    public function setManagerRoles(string $managerId, array $roles): void
+    {
+        $this->con_league->prepare("DELETE FROM manager_role WHERE manager_id = :id")
+            ->execute([':id' => $managerId]);
+        foreach ($roles as $role) {
+            $this->addManagerRole($managerId, $role);
+        }
     }
 
     public function getManagerWithTeams(string $id): array|false
     {
         $q = $this->con_league->prepare(
-            "SELECT id, manager_name, alias, role, status FROM manager WHERE id = :id LIMIT 1"
+            "SELECT id, manager_name, alias, status FROM manager WHERE id = :id LIMIT 1"
         );
         $q->execute([':id' => $id]);
         $manager = $q->fetch(PDO::FETCH_ASSOC);
         if (!$manager) return false;
+        $manager['roles'] = $this->getManagerRoles($id);
 
         $q = $this->con_league->prepare("
             WITH season_totals AS (

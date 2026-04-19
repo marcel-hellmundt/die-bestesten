@@ -8,9 +8,11 @@ abstract class _BaseController
     public static array $methodRoles = [];
 
     public Database $db;
-    public string $endpoint = '';
-    public ?string $id      = null;
-    public array $params    = [];
+    public string $endpoint  = '';
+    public ?string $id       = null;
+    public ?string $sub      = null;
+    public ?string $sub_id   = null;
+    public array $params     = [];
 
     abstract protected function get(): mixed;
     abstract protected function post(): mixed;
@@ -25,7 +27,9 @@ abstract class _BaseController
     public function setRequest(array $request): void
     {
         $this->endpoint = $request['endpoint'];
-        $this->id       = $request['id'] ?? null;
+        $this->id       = $request['id']     ?? null;
+        $this->sub      = $request['sub']    ?? null;
+        $this->sub_id   = $request['sub_id'] ?? null;
         $this->params   = $_GET;
     }
 

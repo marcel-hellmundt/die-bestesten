@@ -4,8 +4,6 @@ class TransferwindowController extends _BaseController
 {
     public static array $methodRoles = ['GET' => 'guest', 'POST' => 'maintainer'];
 
-    private static array $roleLevels = ['guest' => 0, 'manager' => 1, 'maintainer' => 2, 'admin' => 3];
-
     protected function get(): mixed
     {
         if ($this->id) {
@@ -26,7 +24,7 @@ class TransferwindowController extends _BaseController
     protected function post(): mixed
     {
         if ($this->id === 'migrate') {
-            if ((self::$roleLevels[$GLOBALS['auth_role']] ?? 0) < self::$roleLevels['admin']) {
+            if (!in_array('admin', $GLOBALS['auth_roles'] ?? [])) {
                 http_response_code(403);
                 return ['status' => false, 'message' => 'Forbidden'];
             }
