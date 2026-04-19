@@ -543,6 +543,7 @@ export class RatingsDataComponent {
     ok: boolean;
     checked?: number;
     mismatches?: { displayname: string; csv_points: number; db_points: number }[];
+    missing?: string[];
   } | null>(null);
 
   onCsvFileSelected(event: Event): void {

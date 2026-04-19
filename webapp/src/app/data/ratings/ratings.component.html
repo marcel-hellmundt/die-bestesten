@@ -34,33 +34,41 @@
         @if (res.ok) {
           <div class="completed-banner">Alle {{ res.checked }} Punkte stimmen überein ✓</div>
         } @else {
-          <div class="warning-panel">
-            <strong>{{ res.mismatches!.length }} Abweichung(en) gefunden:</strong>
-            <div class="table-container">
-              <table class="data-table data-table--compact">
-                <thead>
-                  <tr>
-                    <th>Spieler</th>
-                    <th>CSV</th>
-                    <th>DB</th>
-                    <th>Diff</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (m of res.mismatches!; track m.displayname) {
+          @if (res.mismatches!.length > 0) {
+            <div class="warning-panel">
+              <strong>{{ res.mismatches!.length }} Abweichung(en):</strong>
+              <div class="table-container">
+                <table class="data-table data-table--compact">
+                  <thead>
                     <tr>
-                      <td>{{ m.displayname }}</td>
-                      <td>{{ m.csv_points }}</td>
-                      <td>{{ m.db_points }}</td>
-                      <td [class.mismatch-diff--pos]="m.csv_points > m.db_points" [class.mismatch-diff--neg]="m.csv_points < m.db_points">
-                        {{ m.csv_points - m.db_points > 0 ? '+' : '' }}{{ m.csv_points - m.db_points }}
-                      </td>
+                      <th>Spieler</th>
+                      <th>CSV</th>
+                      <th>DB</th>
+                      <th>Diff</th>
                     </tr>
-                  }
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    @for (m of res.mismatches!; track m.displayname) {
+                      <tr>
+                        <td>{{ m.displayname }}</td>
+                        <td>{{ m.csv_points }}</td>
+                        <td>{{ m.db_points }}</td>
+                        <td [class.mismatch-diff--pos]="m.csv_points > m.db_points" [class.mismatch-diff--neg]="m.csv_points < m.db_points">
+                          {{ m.csv_points - m.db_points > 0 ? '+' : '' }}{{ m.csv_points - m.db_points }}
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          }
+          @if (res.missing!.length > 0) {
+            <div class="warning-panel">
+              <strong>{{ res.missing!.length }} Spieler in CSV, nicht in DB:</strong>
+              <p class="missing-list">{{ res.missing!.join(', ') }}</p>
+            </div>
+          }
         }
       }
     </div>

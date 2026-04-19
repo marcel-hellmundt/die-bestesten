@@ -57,6 +57,7 @@ class PlayerRatingController extends _BaseController
             // Parse CSV: skip header, col 4 = displayname, col 8 = points
             $handle     = fopen($file, 'r');
             $mismatches = [];
+            $missing    = [];
             $checked    = 0;
             $firstLine  = true;
             while (($line = fgets($handle)) !== false) {
@@ -67,7 +68,10 @@ class PlayerRatingController extends _BaseController
                 $displayname = $cols[4] ?? null;
                 $csvPoints   = isset($cols[8]) ? (int) $cols[8] : null;
                 if ($displayname === null || $csvPoints === null) continue;
-                if (!array_key_exists($displayname, $dbMap)) continue;
+                if (!array_key_exists($displayname, $dbMap)) {
+                    if ($csvPoints > 0) $missing[] = $displayname;
+                    continue;
+                }
                 $checked++;
                 if ($dbMap[$displayname] !== $csvPoints) {
                     $mismatches[] = [
@@ -79,10 +83,11 @@ class PlayerRatingController extends _BaseController
             }
             fclose($handle);
 
-            if (empty($mismatches)) {
+            $ok = empty($mismatches) && empty($missing);
+            if ($ok) {
                 return ['ok' => true, 'checked' => $checked];
             }
-            return ['ok' => false, 'mismatches' => $mismatches];
+            return ['ok' => false, 'mismatches' => $mismatches, 'missing' => $missing];
         }
 
         if ($this->id !== 'init') return $this->methodNotAllowed();
