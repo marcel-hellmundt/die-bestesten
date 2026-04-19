@@ -40,11 +40,18 @@ class PlayerRatingController extends _BaseController
                 return ['status' => false, 'message' => 'CSV-Datei fehlt'];
             }
 
-            // Build DB map: displayname → points
+            // Build DB map: displayname → CSV-equivalent points
+            // CSV scoring differs: starting=4 (ours=2, +2), substitute=2 (ours=1, +1), assist=2 (ours=1, +1 each)
             $dbRows = $this->db->getPlayerRatingsForMatchday($matchdayId);
             $dbMap  = [];
             foreach ($dbRows as $row) {
-                $dbMap[$row['displayname']] = (int) $row['points'];
+                $participationBonus = match($row['participation']) {
+                    'starting'   => 2,
+                    'substitute' => 1,
+                    default      => 0,
+                };
+                $adjusted = (int) $row['points'] + $participationBonus + (int) $row['assists'];
+                $dbMap[$row['displayname']] = $adjusted;
             }
 
             // Parse CSV: skip header, col 4 = displayname, col 8 = points
