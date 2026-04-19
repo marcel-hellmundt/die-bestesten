@@ -46,6 +46,8 @@ class Guard
             $GLOBALS['auth_manager_id'] = $manager['id'];
             $GLOBALS['auth_roles']      = $manager['roles']; // array, e.g. ['maintainer', 'admin']
 
+            $this->db->touchLastActivity($manager['id']);
+
             // 'manager' = any authenticated active manager; additional roles require explicit assignment
             if ($requiredRole !== 'manager' && !in_array($requiredRole, $manager['roles'])) {
                 return ['status' => false, 'code' => 403, 'message' => 'Forbidden'];

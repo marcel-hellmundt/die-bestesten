@@ -98,6 +98,13 @@ class Database
         return $manager;
     }
 
+    public function touchLastActivity(string $id): void
+    {
+        $this->con_league->prepare(
+            "UPDATE manager SET last_activity = NOW() WHERE id = :id"
+        )->execute([':id' => $id]);
+    }
+
     public function getAuthManagerByNameOrEmail(string $identifier): array|false
     {
         $query = $this->con_league->prepare(
