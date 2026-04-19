@@ -18,7 +18,7 @@ export class TopbarComponent {
   avatarImgFailed = signal(false);
 
   managerName        = computed(() => this.auth.getManagerName() ?? '');
-  role               = computed(() => this.auth.getRole() ?? '');
+  roles              = computed(() => this.auth.getRoles());
   isMaintainer        = computed(() => this.auth.isMaintainer());
   avatarUrl   = computed(() => this.cache.managerPhotoUrl(this.auth.getManagerId()));
   initials    = computed(() => {
