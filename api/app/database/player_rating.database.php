@@ -154,16 +154,22 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Returns all player_ratings for a matchday with kicker_id and displayname.
-     * Includes participation and assists so the caller can compute CSV-equivalent points.
+     * Returns season-aggregated player ratings (all matchdays of the season that contains the given matchday).
+     * CSV-equivalent points = SUM(points) + participation bonus (starting=+2, substitute=+1) + SUM(assists).
      */
-    public function getPlayerRatingsForMatchday(string $matchdayId): array
+    public function getPlayerRatingsSummaryBySeason(string $matchdayId): array
     {
         $query = $this->con->prepare("
-            SELECT p.kicker_id, p.displayname, pr.points, pr.participation, pr.assists
+            SELECT p.kicker_id,
+                   p.displayname,
+                   SUM(pr.points)   AS db_points,
+                   SUM(CASE pr.participation WHEN 'starting' THEN 2 WHEN 'substitute' THEN 1 ELSE 0 END) AS participation_bonus,
+                   SUM(pr.assists)  AS total_assists
             FROM player_rating pr
-            JOIN player p ON p.id = pr.player_id
-            WHERE pr.matchday_id = :matchday_id
+            JOIN player p   ON p.id = pr.player_id
+            JOIN matchday md ON md.id = pr.matchday_id
+            WHERE md.season_id = (SELECT season_id FROM matchday WHERE id = :matchday_id LIMIT 1)
+            GROUP BY p.id, p.kicker_id, p.displayname
         ");
         $query->execute([':matchday_id' => $matchdayId]);
         return $query->fetchAll(PDO::FETCH_ASSOC);

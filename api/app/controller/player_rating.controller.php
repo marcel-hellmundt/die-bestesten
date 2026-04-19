@@ -41,17 +41,12 @@ class PlayerRatingController extends _BaseController
             }
 
             // Build DB map: kicker_id (int) → {adjusted_points, displayname}
-            // CSV scoring differs: starting=4 (ours=2, +2), substitute=2 (ours=1, +1), assist=2 (ours=1, +1 each)
-            $dbRows = $this->db->getPlayerRatingsForMatchday($matchdayId);
+            // Season totals; CSV scoring differs: starting=4 (ours=2, +2), substitute=2 (ours=1, +1), assist=2 (ours=1, +1 each)
+            $dbRows = $this->db->getPlayerRatingsSummaryBySeason($matchdayId);
             $dbMap  = [];
             foreach ($dbRows as $row) {
                 if ($row['kicker_id'] === null) continue;
-                $participationBonus = match($row['participation']) {
-                    'starting'   => 2,
-                    'substitute' => 1,
-                    default      => 0,
-                };
-                $adjusted = (int) $row['points'] + $participationBonus + (int) $row['assists'];
+                $adjusted = (int) $row['db_points'] + (int) $row['participation_bonus'] + (int) $row['total_assists'];
                 $dbMap[(int) $row['kicker_id']] = [
                     'points'      => $adjusted,
                     'displayname' => $row['displayname'],
