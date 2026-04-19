@@ -155,10 +155,24 @@
           line-height: 1.2;
         }
 
-        .dropdown-role {
+        .dropdown-roles {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          margin-top: 2px;
+        }
+
+        .role-badge {
+          display: inline-block;
+          padding: 2px $space-2;
+          border-radius: $radius-full;
           font-size: $font-xs;
-          color: $color-text-muted;
-          text-transform: capitalize;
+          font-weight: $font-weight-medium;
+          color: #fff;
+
+          &--admin      { background: var(--flat-river); }
+          &--maintainer { background: var(--flat-emerald); }
+          &--manager    { background: var(--flat-alizarin); }
         }
       }
 

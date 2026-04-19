@@ -18,7 +18,14 @@ export class TopbarComponent {
   avatarImgFailed = signal(false);
 
   managerName        = computed(() => this.auth.getManagerName() ?? '');
-  roles              = computed(() => this.auth.getRoles());
+  readonly roleOrder = ['admin', 'maintainer', 'manager'];
+  readonly roleLabel: Record<string, string> = { admin: 'Kernel-Kapitän', maintainer: 'Daten-Fee', manager: 'Manager' };
+
+  sortedRoles = computed(() => {
+    const r = this.auth.getRoles();
+    const roles = r.length ? r : ['manager'];
+    return [...roles].sort((a, b) => this.roleOrder.indexOf(a) - this.roleOrder.indexOf(b));
+  });
   isMaintainer        = computed(() => this.auth.isMaintainer());
   avatarUrl   = computed(() => this.cache.managerPhotoUrl(this.auth.getManagerId()));
   initials    = computed(() => {

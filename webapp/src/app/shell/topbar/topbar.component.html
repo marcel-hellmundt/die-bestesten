@@ -25,7 +25,11 @@
         <div class="user-dropdown">
           <div class="dropdown-header">
             <span class="dropdown-name">{{ managerName() }}</span>
-            <span class="dropdown-role">{{ roles().join(', ') || 'manager' }}</span>
+            <div class="dropdown-roles">
+              @for (role of sortedRoles(); track role) {
+                <span class="role-badge role-badge--{{ role }}">{{ roleLabel[role] }}</span>
+              }
+            </div>
           </div>
           <hr class="dropdown-divider" />
           @if (isMaintainer()) {
