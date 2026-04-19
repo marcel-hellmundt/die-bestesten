@@ -22,8 +22,7 @@ export class TopbarComponent {
   readonly roleLabel: Record<string, string> = { admin: 'Kernel-Kapitän', maintainer: 'Daten-Fee', manager: 'Manager' };
 
   sortedRoles = computed(() => {
-    const r = this.auth.getRoles();
-    const roles = r.length ? r : ['manager'];
+    const roles = ['manager', ...this.auth.getRoles()];
     return [...roles].sort((a, b) => this.roleOrder.indexOf(a) - this.roleOrder.indexOf(b));
   });
   isMaintainer        = computed(() => this.auth.isMaintainer());
