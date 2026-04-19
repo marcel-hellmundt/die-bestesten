@@ -162,34 +162,6 @@
               </div>
             </td>
             <td
-              class="col-sds"
-              [class.col-sds--active]="editable"
-              (click)="editable && toggleSds(r.id, r.sds)"
-            >
-              <img
-                src="img/icons/sds.png"
-                class="rating-icon sds-toggle"
-                [class.sds-toggle--on]="r.sds"
-                alt="SdS"
-              />
-            </td>
-            <td
-              class="col-toggle"
-              [class.col-toggle--active]="editable && r.position === 'GOALKEEPER'"
-              (click)="
-                editable && r.position === 'GOALKEEPER' && toggleCleanSheet(r.id, r.clean_sheet)
-              "
-            >
-              @if (r.position === 'GOALKEEPER') {
-                <img
-                  src="img/icons/clean_sheet.png"
-                  class="rating-icon sds-toggle"
-                  [class.sds-toggle--on]="r.clean_sheet"
-                  alt="Clean Sheet"
-                />
-              }
-            </td>
-            <td
               class="col-stat-add"
               [class.col-stat-add--active]="editable"
               (click)="editable && incrementGoals(r.id, r.goals)"
@@ -227,6 +199,34 @@
             @if (editable) {
               <td class="col-stat-remove" (click)="decrementAssists(r.id, r.assists)">×</td>
             }
+            <td
+              class="col-sds"
+              [class.col-sds--active]="editable"
+              (click)="editable && toggleSds(r.id, r.sds)"
+            >
+              <img
+                src="img/icons/sds.png"
+                class="rating-icon sds-toggle"
+                [class.sds-toggle--on]="r.sds"
+                alt="SdS"
+              />
+            </td>
+            <td
+              class="col-toggle"
+              [class.col-toggle--active]="editable && r.position === 'GOALKEEPER'"
+              (click)="
+                editable && r.position === 'GOALKEEPER' && toggleCleanSheet(r.id, r.clean_sheet)
+              "
+            >
+              @if (r.position === 'GOALKEEPER') {
+                <img
+                  src="img/icons/clean_sheet.png"
+                  class="rating-icon sds-toggle"
+                  [class.sds-toggle--on]="r.clean_sheet"
+                  alt="Clean Sheet"
+                />
+              }
+            </td>
             <td
               class="col-toggle"
               [class.col-toggle--active]="editable"
@@ -294,10 +294,8 @@
                   <thead>
                     <tr>
                       <th>Spieler</th>
-                      <th>Punkte</th>
+                      <th>Pkt</th>
                       <th>Note</th>
-                      <th>SdS</th>
-                      <th>Zu Null</th>
                       <th>Tore</th>
                       @if (!selectedMatchday()?.completed) {
                         <th></th>
@@ -306,6 +304,8 @@
                       @if (!selectedMatchday()?.completed) {
                         <th></th>
                       }
+                      <th>SdS</th>
+                      <th>Zu Null</th>
                       <th></th>
                       <th></th>
                       @if (!selectedMatchday()?.completed) {
@@ -339,12 +339,12 @@
                   <thead>
                     <tr>
                       <th>Spieler</th>
-                      <th>Punkte</th>
+                      <th>Pkt</th>
                       <th>Note</th>
-                      <th>SdS</th>
-                      <th>Zu Null</th>
                       <th>Tore</th>
                       <th>Vorlagen</th>
+                      <th>SdS</th>
+                      <th>Zu Null</th>
                       <th></th>
                       <th></th>
                     </tr>

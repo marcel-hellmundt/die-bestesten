@@ -308,6 +308,11 @@
 .rating-icon {
   width: 24px;
   height: 24px;
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .col-player {
@@ -343,6 +348,12 @@
   color: #fff;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+
+  @media (max-width: $mobile-breakpoint) {
+    font-size: 9px;
+    width: 28px;
+    padding: 1px 3px;
+  }
 }
 
 .col-toggle,

@@ -188,6 +188,7 @@
   background-color: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-xl;
+  overflow-x: auto;
   padding: $space-3;
 
   @media (max-width: $mobile-breakpoint) {
