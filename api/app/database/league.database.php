@@ -207,6 +207,54 @@ trait LeagueTrait
             $migratedRatings++;
         }
 
+        // Create transactions (start budget + matchday income)
+        $migratedTransactions = 0;
+
+        $checkStartBudget = $conLeague->prepare(
+            "SELECT COUNT(*) FROM transaction
+             WHERE team_id = :team_id AND matchday_id IS NULL AND reason = 'Startguthaben'"
+        );
+        $stmtStartBudget = $conLeague->prepare(
+            "INSERT INTO transaction (id, team_id, amount, reason, matchday_id)
+             VALUES (UUID(), :team_id, 50000000, 'Startguthaben', NULL)"
+        );
+
+        $checkMatchdayIncome = $conLeague->prepare(
+            "SELECT COUNT(*) FROM transaction
+             WHERE team_id = :team_id AND matchday_id = :matchday_id AND reason = 'Spieltagseinnahmen'"
+        );
+        $stmtMatchdayIncome = $conLeague->prepare(
+            "INSERT INTO transaction (id, team_id, amount, reason, matchday_id)
+             VALUES (UUID(), :team_id, :amount, 'Spieltagseinnahmen', :matchday_id)"
+        );
+
+        // One start-budget per team
+        foreach ($rows as $row) {
+            $checkStartBudget->execute([':team_id' => $row['team_id']]);
+            if ((int) $checkStartBudget->fetchColumn() === 0) {
+                $stmtStartBudget->execute([':team_id' => $row['team_id']]);
+                $migratedTransactions++;
+            }
+        }
+
+        // One income transaction per team_rating with points > 0
+        foreach ($ratingRows as $row) {
+            $points = (int) $row['points'];
+            if ($points <= 0) continue;
+            $key        = $row['season_id'] . '_' . $row['matchday_number'];
+            $matchdayId = $matchdayMap[$key] ?? null;
+            if (!$matchdayId) continue;
+            $checkMatchdayIncome->execute([':team_id' => $row['team_id'], ':matchday_id' => $matchdayId]);
+            if ((int) $checkMatchdayIncome->fetchColumn() === 0) {
+                $stmtMatchdayIncome->execute([
+                    ':team_id'    => $row['team_id'],
+                    ':matchday_id' => $matchdayId,
+                    ':amount'     => $points * 20000,
+                ]);
+                $migratedTransactions++;
+            }
+        }
+
         // Migrate award_in_season → team_award
         $migratedAwards = 0;
         try {
@@ -400,6 +448,7 @@ trait LeagueTrait
             'status'            => true,
             'teams'             => ['migrated' => $migrated,             'skipped' => $skipped],
             'team_ratings'      => ['migrated' => $migratedRatings],
+            'transactions'      => ['migrated' => $migratedTransactions],
             'team_awards'       => ['migrated' => $migratedAwards],
             'offers'            => ['migrated' => $migratedOffers],
             'sells'             => ['migrated' => $migratedSells],
