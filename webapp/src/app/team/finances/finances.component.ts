@@ -74,7 +74,7 @@ export class FinancesComponent {
     const plotW = this.cW - this.padL - this.padR;
     const plotH = this.cH - this.padT - this.padB;
     const balances = points.map(p => p.balance);
-    const minB = Math.min(...balances);
+    const minB = 0;
     const maxB = Math.max(...balances);
     const range = maxB - minB || 1;
 
