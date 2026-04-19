@@ -76,7 +76,9 @@
                           </div>
                           <div class="manager-chip__info">
                             <span class="manager-chip__name">{{ m.manager_name }}</span>
-                            <span class="role-badge role-badge--{{ m.role }}">{{ m.role }}</span>
+                            @for (role of (m.roles?.length ? m.roles : ['manager']); track role) {
+                              <span class="role-badge role-badge--{{ role }}">{{ role }}</span>
+                            }
                           </div>
                         </div>
                       }

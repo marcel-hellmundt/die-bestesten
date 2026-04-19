@@ -425,11 +425,24 @@ trait LeagueTrait
         try {
             $pdo = $this->openLeagueConnection($dbName);
             if (!$pdo) return [];
-            return $pdo->query(
-                "SELECT id, manager_name, alias, role, status
-                 FROM manager
-                 ORDER BY FIELD(role, 'admin', 'maintainer', 'manager'), manager_name ASC"
+            $rows = $pdo->query(
+                "SELECT m.id, m.manager_name, m.alias, m.status,
+                        GROUP_CONCAT(mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv
+                 FROM manager m
+                 LEFT JOIN manager_role mr ON mr.manager_id = m.id
+                 GROUP BY m.id
+                 ORDER BY
+                     CASE WHEN MAX(mr.role = 'admin')      = 1 THEN 0
+                          WHEN MAX(mr.role = 'maintainer') = 1 THEN 1
+                          ELSE 2 END ASC,
+                     m.manager_name ASC"
             )->fetchAll(\PDO::FETCH_ASSOC);
+
+            foreach ($rows as &$row) {
+                $row['roles'] = $row['roles_csv'] ? explode(',', $row['roles_csv']) : [];
+                unset($row['roles_csv']);
+            }
+            return $rows;
         } catch (\PDOException) {
             return [];
         }
