@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
   selector: 'app-data',
@@ -6,4 +7,7 @@ import { Component } from '@angular/core';
   templateUrl: './data.component.html',
   styleUrl: './data.component.scss'
 })
-export class DataComponent {}
+export class DataComponent {
+  private auth = inject(AuthService);
+  isMaintainer = computed(() => this.auth.isMaintainer());
+}

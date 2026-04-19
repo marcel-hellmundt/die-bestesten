@@ -1,18 +1,20 @@
-<h1 class="page-title">Data Management</h1>
-<p class="page-subtitle">Spieler, Clubs, Spielklassen und Saisons verwalten</p>
+@if (isMaintainer()) {
+  <h1 class="page-title">Data Management</h1>
+  <p class="page-subtitle">Spieler, Clubs, Spielklassen und Saisons verwalten</p>
 
-<nav class="sub-nav">
-  <a class="sub-nav-item" routerLink="ratings" routerLinkActive="sub-nav-item--active"
-    >Punkte eintragen</a
-  >
-  <div class="seperator"></div>
-  <a class="sub-nav-item" routerLink="player" routerLinkActive="sub-nav-item--active">Spieler</a>
-  <a class="sub-nav-item" routerLink="club" routerLinkActive="sub-nav-item--active">Clubs</a>
-  <a class="sub-nav-item" routerLink="season" routerLinkActive="sub-nav-item--active">Saisons</a>
-  <a class="sub-nav-item" routerLink="division" routerLinkActive="sub-nav-item--active">Spielklassen</a>
-  <a class="sub-nav-item" routerLink="country" routerLinkActive="sub-nav-item--active">Länder</a>
-  <div class="sub-nav-spacer"></div>
-  <a class="sub-nav-item" routerLink="league" routerLinkActive="sub-nav-item--active">Ligen</a>
-</nav>
+  <nav class="sub-nav">
+    <a class="sub-nav-item" routerLink="ratings" routerLinkActive="sub-nav-item--active"
+      >Punkte eintragen</a
+    >
+    <div class="seperator"></div>
+    <a class="sub-nav-item" routerLink="player" routerLinkActive="sub-nav-item--active">Spieler</a>
+    <a class="sub-nav-item" routerLink="club" routerLinkActive="sub-nav-item--active">Clubs</a>
+    <a class="sub-nav-item" routerLink="season" routerLinkActive="sub-nav-item--active">Saisons</a>
+    <a class="sub-nav-item" routerLink="division" routerLinkActive="sub-nav-item--active">Spielklassen</a>
+    <a class="sub-nav-item" routerLink="country" routerLinkActive="sub-nav-item--active">Länder</a>
+    <div class="sub-nav-spacer"></div>
+    <a class="sub-nav-item" routerLink="league" routerLinkActive="sub-nav-item--active">Ligen</a>
+  </nav>
+}
 
 <router-outlet></router-outlet>
