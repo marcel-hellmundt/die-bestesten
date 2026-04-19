@@ -76,8 +76,8 @@
                           </div>
                           <div class="manager-chip__info">
                             <span class="manager-chip__name">{{ m.manager_name }}</span>
-                            @for (role of (m.roles?.length ? m.roles : ['manager']); track role) {
-                              <span class="role-badge role-badge--{{ role }}">{{ role }}</span>
+                            @for (role of sortedRoles(m.roles); track role) {
+                              <span class="role-badge role-badge--{{ role }}">{{ roleLabel[role] }}</span>
                             }
                           </div>
                         </div>

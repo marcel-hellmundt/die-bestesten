@@ -126,7 +126,7 @@
   font-size: $font-xs;
   font-weight: $font-weight-medium;
 
-  &--admin      { background: #fef3c7; color: #92400e; }
-  &--maintainer { background: #dbeafe; color: #1e40af; }
-  &--manager    { background: $color-surface-alt; color: $color-text-muted; }
+  &--admin      { background: var(--flat-river);    color: #fff; }
+  &--maintainer { background: var(--flat-emerald);  color: #fff; }
+  &--manager    { background: var(--flat-alizarin); color: #fff; }
 }

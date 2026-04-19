@@ -76,6 +76,14 @@ export class LeagueDataComponent {
     return this.managersCache()[leagueId] ?? [];
   }
 
+  readonly roleOrder = ['admin', 'maintainer', 'manager'];
+  readonly roleLabel: Record<string, string> = { admin: 'IT-Gott', maintainer: 'Daten-Fee', manager: 'Manager' };
+
+  sortedRoles(roles: string[]): string[] {
+    const r = roles?.length ? roles : ['manager'];
+    return [...r].sort((a, b) => this.roleOrder.indexOf(a) - this.roleOrder.indexOf(b));
+  }
+
   migrateStates = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
   migrateResults = signal<Record<string, any>>({});
 
