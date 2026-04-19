@@ -28,6 +28,12 @@ export class ApiService {
     return this.http.patch<T>(`${this.base}/${path}`, body, { headers });
   }
 
+  postForm<T>(path: string, formData: FormData): Observable<T> {
+    const token = this.auth.getToken();
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.post<T>(`${this.base}/${path}`, formData, { headers });
+  }
+
   uploadClubLogo(clubId: string, photo: File): Observable<any> {
     const token = this.auth.getToken();
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;

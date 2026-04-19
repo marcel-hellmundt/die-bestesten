@@ -208,6 +208,7 @@ export class RatingsDataComponent {
     this.ratingsState.set('idle');
     this.bulkInput.set('');
     this.bulkResult.set(null);
+    this.csvResult.set(null);
     this.participationError.set(null);
     this.sdsError.set(null);
     this.refreshClubStatuses();
@@ -524,6 +525,47 @@ export class RatingsDataComponent {
         );
       },
     });
+  }
+
+  // ── CSV validation ────────────────────────────────────────────────
+  allClubsDone = computed(() => {
+    const clubs = this.bundesligaClubs();
+    if (clubs.length === 0) return false;
+    const map = this.clubStatusMap();
+    return clubs.every((c) => {
+      const s = map.get(c.id);
+      return s && s.grade_count >= 11;
+    });
+  });
+
+  csvValidating = signal(false);
+  csvResult = signal<{
+    ok: boolean;
+    checked?: number;
+    mismatches?: { displayname: string; csv_points: number; db_points: number }[];
+  } | null>(null);
+
+  onCsvFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const md = this.selectedMatchday();
+    if (!md) return;
+    const formData = new FormData();
+    formData.append('matchday_id', md.id);
+    formData.append('csv', file);
+    this.csvValidating.set(true);
+    this.csvResult.set(null);
+    this.api.postForm<any>('player_rating/validate-csv', formData).subscribe({
+      next: (res) => {
+        this.csvValidating.set(false);
+        this.csvResult.set(res);
+      },
+      error: () => {
+        this.csvValidating.set(false);
+        this.csvResult.set(null);
+      },
+    });
+    (event.target as HTMLInputElement).value = '';
   }
 
   // ── Bulk lineup import ────────────────────────────────────────────

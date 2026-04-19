@@ -27,6 +27,57 @@ class PlayerRatingController extends _BaseController
 
     protected function post(): mixed
     {
+        if ($this->id === 'validate-csv') {
+            $matchdayId = $_POST['matchday_id'] ?? null;
+            if (!$matchdayId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'matchday_id ist erforderlich'];
+            }
+
+            $file = $_FILES['csv']['tmp_name'] ?? null;
+            if (!$file || !is_readable($file)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'CSV-Datei fehlt'];
+            }
+
+            // Build DB map: displayname → points
+            $dbRows = $this->db->getPlayerRatingsForMatchday($matchdayId);
+            $dbMap  = [];
+            foreach ($dbRows as $row) {
+                $dbMap[$row['displayname']] = (int) $row['points'];
+            }
+
+            // Parse CSV: skip header, col 4 = displayname, col 8 = points
+            $handle     = fopen($file, 'r');
+            $mismatches = [];
+            $checked    = 0;
+            $firstLine  = true;
+            while (($line = fgets($handle)) !== false) {
+                $line = rtrim($line, "\r\n");
+                if ($firstLine) { $firstLine = false; continue; }
+                if (trim($line) === '') continue;
+                $cols        = str_getcsv($line, ';');
+                $displayname = $cols[4] ?? null;
+                $csvPoints   = isset($cols[8]) ? (int) $cols[8] : null;
+                if ($displayname === null || $csvPoints === null) continue;
+                if (!array_key_exists($displayname, $dbMap)) continue;
+                $checked++;
+                if ($dbMap[$displayname] !== $csvPoints) {
+                    $mismatches[] = [
+                        'displayname' => $displayname,
+                        'csv_points'  => $csvPoints,
+                        'db_points'   => $dbMap[$displayname],
+                    ];
+                }
+            }
+            fclose($handle);
+
+            if (empty($mismatches)) {
+                return ['ok' => true, 'checked' => $checked];
+            }
+            return ['ok' => false, 'mismatches' => $mismatches];
+        }
+
         if ($this->id !== 'init') return $this->methodNotAllowed();
 
         $body       = $this->body();

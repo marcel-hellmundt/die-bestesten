@@ -82,6 +82,24 @@
   }
 }
 
+// Close matchday bar
+.close-matchday-bar {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  margin-bottom: $space-4;
+}
+
+.mismatch-diff--pos {
+  color: $color-danger;
+  font-weight: $font-weight-semibold;
+}
+
+.mismatch-diff--neg {
+  color: $color-success;
+  font-weight: $font-weight-semibold;
+}
+
 // Club grid
 .club-grid {
   display: grid;

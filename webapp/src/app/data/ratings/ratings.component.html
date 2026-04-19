@@ -23,6 +23,49 @@
     }
   </div>
 
+  <!-- Spieltag abschließen (CSV-Validierung) -->
+  @if (selectedMatchday() && !selectedMatchday()!.completed && allClubsDone()) {
+    <div class="close-matchday-bar">
+      <input #csvInput type="file" accept=".csv" hidden (change)="onCsvFileSelected($event)" />
+      <button class="btn btn-primary" (click)="csvInput.click()" [disabled]="csvValidating()">
+        {{ csvValidating() ? 'Wird geprüft…' : 'Spieltag abschließen' }}
+      </button>
+      @if (csvResult(); as res) {
+        @if (res.ok) {
+          <div class="completed-banner">Alle {{ res.checked }} Punkte stimmen überein ✓</div>
+        } @else {
+          <div class="warning-panel">
+            <strong>{{ res.mismatches!.length }} Abweichung(en) gefunden:</strong>
+            <div class="table-container">
+              <table class="data-table data-table--compact">
+                <thead>
+                  <tr>
+                    <th>Spieler</th>
+                    <th>CSV</th>
+                    <th>DB</th>
+                    <th>Diff</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (m of res.mismatches!; track m.displayname) {
+                    <tr>
+                      <td>{{ m.displayname }}</td>
+                      <td>{{ m.csv_points }}</td>
+                      <td>{{ m.db_points }}</td>
+                      <td [class.mismatch-diff--pos]="m.csv_points > m.db_points" [class.mismatch-diff--neg]="m.csv_points < m.db_points">
+                        {{ m.csv_points - m.db_points > 0 ? '+' : '' }}{{ m.csv_points - m.db_points }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+
   <!-- Bundesliga-Club-Auswahl -->
   @if (bundesligaClubs().length > 0) {
     <div class="club-grid">

@@ -275,6 +275,11 @@ class Routing
                         'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück; neue Ratings werden mit gleicher ID in alte DB gespiegelt',
                     ],
                     [
+                        'method'      => 'POST',
+                        'path'        => '/player_rating/validate-csv',
+                        'description' => 'CSV-Punkte mit DB-Punkten vergleichen — multipart/form-data: matchday_id + csv-Datei (Semikolon-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte); gibt {ok: true, checked: N} oder {ok: false, mismatches: [{displayname, csv_points, db_points}]} zurück — Maintainer+',
+                    ],
+                    [
                         'method'      => 'PATCH',
                         'path'        => '/player_rating/:id',
                         'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; points wird immer automatisch serverseitig berechnet und darf nicht im Body übergeben werden; Änderungen werden in alte DB gespiegelt',

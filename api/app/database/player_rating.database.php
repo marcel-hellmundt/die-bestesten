@@ -153,6 +153,21 @@ trait PlayerRatingTrait
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Returns all player_ratings for a matchday with player displayname.
+     */
+    public function getPlayerRatingsForMatchday(string $matchdayId): array
+    {
+        $query = $this->con->prepare("
+            SELECT p.displayname, pr.points
+            FROM player_rating pr
+            JOIN player p ON p.id = pr.player_id
+            WHERE pr.matchday_id = :matchday_id
+        ");
+        $query->execute([':matchday_id' => $matchdayId]);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     private function generateUUID(): string
     {
         $data = random_bytes(16);
