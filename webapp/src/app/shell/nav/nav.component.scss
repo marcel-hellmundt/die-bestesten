@@ -131,10 +131,16 @@
     &-mobile {
       display: flex;
       flex: 1;
-      justify-content: space-around;
+
+      li {
+        flex: 1;
+        display: flex;
+      }
     }
 
     &-item {
+      flex: 1;
+      justify-content: center;
       flex-direction: column;
       gap: $space-1;
       padding: $space-2 $space-3;

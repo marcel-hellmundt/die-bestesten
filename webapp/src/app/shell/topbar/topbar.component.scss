@@ -168,11 +168,10 @@
           border-radius: $radius-full;
           font-size: $font-xs;
           font-weight: $font-weight-medium;
-          color: #fff;
 
-          &--admin      { background: var(--flat-river); }
-          &--maintainer { background: var(--flat-emerald); }
-          &--manager    { background: var(--flat-alizarin); }
+          &--admin      { background: color-mix(in srgb, var(--flat-river)    18%, transparent); color: var(--flat-river); }
+          &--maintainer { background: color-mix(in srgb, var(--flat-emerald)  18%, transparent); color: var(--flat-emerald); }
+          &--manager    { background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent); color: var(--flat-alizarin); }
         }
       }
 
