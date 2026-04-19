@@ -154,13 +154,13 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Returns all player_ratings for a matchday with player displayname.
+     * Returns all player_ratings for a matchday with kicker_id and displayname.
      * Includes participation and assists so the caller can compute CSV-equivalent points.
      */
     public function getPlayerRatingsForMatchday(string $matchdayId): array
     {
         $query = $this->con->prepare("
-            SELECT p.displayname, pr.points, pr.participation, pr.assists
+            SELECT p.kicker_id, p.displayname, pr.points, pr.participation, pr.assists
             FROM player_rating pr
             JOIN player p ON p.id = pr.player_id
             WHERE pr.matchday_id = :matchday_id

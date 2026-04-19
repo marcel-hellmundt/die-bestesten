@@ -140,17 +140,18 @@ trait PlayerTrait
     {
         // 1. Migrate players
         $playerRows = $this->con_old->query("
-            SELECT player_id, country_code, firstname, lastname, displayname,
+            SELECT player_id, kicker_id, country_code, firstname, lastname, displayname,
                    city, date_of_birth, height, weight
             FROM player
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         $stmtPlayer = $this->con->prepare(
             "INSERT INTO player
-                (id, country_id, first_name, last_name, displayname, birth_city, date_of_birth, height_cm, weight_kg)
+                (id, kicker_id, country_id, first_name, last_name, displayname, birth_city, date_of_birth, height_cm, weight_kg)
              VALUES
-                (:id, :country_id, :first_name, :last_name, :displayname, :birth_city, :date_of_birth, :height_cm, :weight_kg)
+                (:id, :kicker_id, :country_id, :first_name, :last_name, :displayname, :birth_city, :date_of_birth, :height_cm, :weight_kg)
              ON DUPLICATE KEY UPDATE
+               kicker_id      = VALUES(kicker_id),
                country_id     = VALUES(country_id),
                first_name     = VALUES(first_name),
                last_name      = VALUES(last_name),
@@ -164,6 +165,7 @@ trait PlayerTrait
         foreach ($playerRows as $row) {
             $stmtPlayer->execute([
                 ':id'           => $row['player_id'],
+                ':kicker_id'    => $row['kicker_id'] ?: null,
                 ':country_id'   => $row['country_code'],
                 ':first_name'   => $row['firstname'],
                 ':last_name'    => $row['lastname'],

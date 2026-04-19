@@ -40,21 +40,25 @@ class PlayerRatingController extends _BaseController
                 return ['status' => false, 'message' => 'CSV-Datei fehlt'];
             }
 
-            // Build DB map: displayname → CSV-equivalent points
+            // Build DB map: kicker_id (int) → {adjusted_points, displayname}
             // CSV scoring differs: starting=4 (ours=2, +2), substitute=2 (ours=1, +1), assist=2 (ours=1, +1 each)
             $dbRows = $this->db->getPlayerRatingsForMatchday($matchdayId);
             $dbMap  = [];
             foreach ($dbRows as $row) {
+                if ($row['kicker_id'] === null) continue;
                 $participationBonus = match($row['participation']) {
                     'starting'   => 2,
                     'substitute' => 1,
                     default      => 0,
                 };
                 $adjusted = (int) $row['points'] + $participationBonus + (int) $row['assists'];
-                $dbMap[$row['displayname']] = $adjusted;
+                $dbMap[(int) $row['kicker_id']] = [
+                    'points'      => $adjusted,
+                    'displayname' => $row['displayname'],
+                ];
             }
 
-            // Parse CSV: skip header, col 4 = displayname, col 8 = points
+            // Parse CSV: skip header, col 0 = id (pl-kXXXX → kicker_id), col 4 = displayname, col 8 = points
             $handle     = fopen($file, 'r');
             $mismatches = [];
             $missing    = [];
@@ -65,19 +69,20 @@ class PlayerRatingController extends _BaseController
                 if ($firstLine) { $firstLine = false; continue; }
                 if (trim($line) === '') continue;
                 $cols        = str_getcsv($line, ';');
+                $kickerId    = isset($cols[0]) ? (int) substr($cols[0], 4) : null;
                 $displayname = $cols[4] ?? null;
                 $csvPoints   = isset($cols[8]) ? (int) $cols[8] : null;
-                if ($displayname === null || $csvPoints === null) continue;
-                if (!array_key_exists($displayname, $dbMap)) {
+                if ($kickerId === null || $displayname === null || $csvPoints === null) continue;
+                if (!array_key_exists($kickerId, $dbMap)) {
                     if ($csvPoints > 0) $missing[] = $displayname;
                     continue;
                 }
                 $checked++;
-                if ($dbMap[$displayname] !== $csvPoints) {
+                if ($dbMap[$kickerId]['points'] !== $csvPoints) {
                     $mismatches[] = [
                         'displayname' => $displayname,
                         'csv_points'  => $csvPoints,
-                        'db_points'   => $dbMap[$displayname],
+                        'db_points'   => $dbMap[$kickerId]['points'],
                     ];
                 }
             }

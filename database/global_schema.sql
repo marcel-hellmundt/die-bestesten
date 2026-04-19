@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS transferwindow (
 -- Tabelle: player
 CREATE TABLE IF NOT EXISTS player (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
+    kicker_id INT DEFAULT NULL UNIQUE,          -- Kicker-ID (aus CSV-Export, z.B. pl-k00030669 → 30669)
     country_id CHAR(2) DEFAULT NULL,            -- ISO Alpha-2 Code, FK zu country.id
     first_name VARCHAR(32) DEFAULT NULL,        -- Vorname
     last_name VARCHAR(32) DEFAULT NULL,         -- Nachname
