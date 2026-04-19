@@ -33,6 +33,21 @@
           [ngClass]="clubStatusClass(club.id)"
           (click)="selectClub(club.id)"
         >
+          @if (clubStats(club.id); as stats) {
+            @if (stats.has_sds) {
+              <img src="img/icons/sds.png" class="club-tile__sds" alt="SdS" />
+            }
+            @if (stats.goals > 0 || stats.assists > 0) {
+              <span class="club-tile__stats">
+                @if (stats.goals > 0) {
+                  <img src="img/icons/goal.png" class="club-tile__stat-icon" alt="" />{{ stats.goals }}
+                }
+                @if (stats.assists > 0) {
+                  <img src="img/icons/assist.png" class="club-tile__stat-icon" alt="" />{{ stats.assists }}
+                }
+              </span>
+            }
+          }
           <img [src]="logoUrl(club)" class="club-tile__logo" [alt]="club.name" />
           <span class="club-tile__name">{{ club.short_name || club.name }}</span>
         </button>

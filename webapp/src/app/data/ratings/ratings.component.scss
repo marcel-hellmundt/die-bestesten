@@ -99,6 +99,7 @@
 }
 
 .club-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -155,6 +156,34 @@
     color: $color-text;
     text-align: center;
     line-height: 1.2;
+  }
+
+  &__sds {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+  }
+
+  &__stats {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 9px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    line-height: 1;
+  }
+
+  &__stat-icon {
+    width: 10px;
+    height: 10px;
+    object-fit: contain;
   }
 }
 

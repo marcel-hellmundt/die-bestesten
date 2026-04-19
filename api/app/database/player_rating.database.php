@@ -133,7 +133,7 @@ trait PlayerRatingTrait
 
     /**
      * Returns per-club rating status for a matchday.
-     * [{club_id, rating_count, starter_count, grade_count}]
+     * [{club_id, rating_count, starter_count, grade_count, goals, assists, has_sds}]
      */
     public function getClubStatusByMatchday(string $matchdayId): array
     {
@@ -141,7 +141,10 @@ trait PlayerRatingTrait
             SELECT club_id,
                    COUNT(*)                                    AS rating_count,
                    SUM(participation = 'starting')             AS starter_count,
-                   SUM(grade IS NOT NULL)                      AS grade_count
+                   SUM(grade IS NOT NULL)                      AS grade_count,
+                   SUM(goals)                                  AS goals,
+                   SUM(assists)                                AS assists,
+                   MAX(sds)                                    AS has_sds
             FROM player_rating
             WHERE matchday_id = :matchday_id
             GROUP BY club_id
