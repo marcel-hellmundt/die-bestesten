@@ -342,11 +342,20 @@
                       <th>Pkt</th>
                       <th>Note</th>
                       <th>Tore</th>
+                      @if (!selectedMatchday()?.completed) {
+                        <th></th>
+                      }
                       <th>Vorlagen</th>
+                      @if (!selectedMatchday()?.completed) {
+                        <th></th>
+                      }
                       <th>SdS</th>
                       <th>Zu Null</th>
                       <th></th>
                       <th></th>
+                      @if (!selectedMatchday()?.completed) {
+                        <th></th>
+                      }
                     </tr>
                   </thead>
                   <tbody>
