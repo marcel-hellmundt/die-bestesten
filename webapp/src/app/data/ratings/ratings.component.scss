@@ -615,6 +615,28 @@
   align-items: flex-start;
 }
 
+.missing-panel {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  margin-bottom: $space-4;
+  flex-wrap: wrap;
+
+  &__label {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+  }
+
+  &__names {
+    font-size: $font-sm;
+    color: $color-text-muted;
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .no-ratings-panel {
   display: flex;
   flex-direction: column;

@@ -451,6 +451,16 @@
             <div class="participation-error">{{ sdsError() }}</div>
           }
 
+          @if (!selectedMatchday()?.completed && missingPlayers().length > 0) {
+            <div class="missing-panel card">
+              <span class="missing-panel__label">{{ missingPlayers().length }} Spieler ohne Rating:</span>
+              <span class="missing-panel__names">{{ missingPlayers().map(p => p.displayname).join(', ') }}</span>
+              <button class="btn btn-primary btn-sm" (click)="addMissing()" [disabled]="addingMissing()">
+                {{ addingMissing() ? 'Wird angelegt…' : 'Ratings anlegen' }}
+              </button>
+            </div>
+          }
+
           @if (benchRatings().length > 0) {
             <div class="group-section">
               <div class="group-header">Nicht eingesetzt ({{ benchRatings().length }})</div>

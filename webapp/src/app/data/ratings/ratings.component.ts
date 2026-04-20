@@ -203,6 +203,7 @@ export class RatingsDataComponent {
     this.selectedMatchday.set(md);
     this.selectedClubId.set(null);
     this.ratings.set([]);
+    this.clubPlayers.set([]);
     this.initWarnings.set([]);
     this.beforeKickoff.set(false);
     this.ratingsState.set('idle');
@@ -224,6 +225,7 @@ export class RatingsDataComponent {
   selectClub(clubId: string): void {
     if (this.selectedClubId() === clubId) return;
     this.selectedClubId.set(clubId);
+    this.clubPlayers.set([]);
     this.initWarnings.set([]);
     this.initCreatedNames.set([]);
     this.beforeKickoff.set(false);
@@ -245,6 +247,7 @@ export class RatingsDataComponent {
             this.ratings.set(data.map(PlayerRating.from));
             this.ratingsState.set('ready');
             this.refreshClubStatuses();
+            this.loadClubPlayers(clubId);
           } else {
             this.ratingsState.set('no-ratings');
           }
@@ -309,8 +312,41 @@ export class RatingsDataComponent {
         this.ratings.set(data.map(PlayerRating.from));
         this.ratingsState.set('ready');
         this.refreshClubStatuses();
+        if (!this.selectedMatchday()?.completed) {
+          this.loadClubPlayers(clubId);
+        }
       },
       error: () => this.ratingsState.set('error'),
+    });
+  }
+
+  clubPlayers = signal<{ id: string; displayname: string; position: string | null }[]>([]);
+
+  private loadClubPlayers(clubId: string): void {
+    this.api.get<any[]>(`player?club_id=${clubId}`).pipe(
+      catchError(() => of([]))
+    ).subscribe(players => this.clubPlayers.set(players));
+  }
+
+  missingPlayers = computed(() => {
+    if (this.selectedMatchday()?.completed) return [];
+    const existingIds = new Set(this.ratings().map(r => r.player_id));
+    return this.clubPlayers().filter(p => !existingIds.has(p.id));
+  });
+
+  addingMissing = signal(false);
+
+  addMissing(): void {
+    const md = this.selectedMatchday();
+    const clubId = this.selectedClubId();
+    if (!md || !clubId) return;
+    this.addingMissing.set(true);
+    this.api.post<any>('player_rating/init', { matchday_id: md.id, club_id: clubId }).subscribe({
+      next: () => {
+        this.addingMissing.set(false);
+        this.loadRatings(md.id, clubId);
+      },
+      error: () => this.addingMissing.set(false),
     });
   }
 
