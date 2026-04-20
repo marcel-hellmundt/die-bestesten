@@ -18,10 +18,45 @@ trait PlayerInTeamTrait
 
         $seasonId  = $rows[0]['season_id'];
         $playerIds = array_column($rows, 'player_id');
-        $ph        = implode(',', array_fill(0, count($playerIds), '?'));
 
-        // Step 2: get player details + season data + season points from global DB
-        $q2 = $this->con->prepare(
+        return $this->fetchPlayerDetails($playerIds, $seasonId);
+    }
+
+    public function getFormerSquadByTeamId(string $teamId): array
+    {
+        // Get season_id from team
+        $tq = $this->con_league->prepare("SELECT season_id FROM team WHERE id = :id LIMIT 1");
+        $tq->execute([':id' => $teamId]);
+        $team = $tq->fetch(PDO::FETCH_ASSOC);
+        if (!$team) return [];
+        $seasonId = $team['season_id'];
+
+        // Active player_ids for exclusion
+        $aq = $this->con_league->prepare(
+            "SELECT player_id FROM player_in_team WHERE team_id = :team_id AND to_matchday_id IS NULL"
+        );
+        $aq->execute([':team_id' => $teamId]);
+        $activeIds = array_column($aq->fetchAll(PDO::FETCH_ASSOC), 'player_id');
+
+        // Former: sold players not currently active
+        $fq = $this->con_league->prepare(
+            "SELECT DISTINCT player_id FROM player_in_team
+             WHERE team_id = :team_id AND to_matchday_id IS NOT NULL"
+        );
+        $fq->execute([':team_id' => $teamId]);
+        $formerIds = array_column($fq->fetchAll(PDO::FETCH_ASSOC), 'player_id');
+
+        // Exclude re-bought players
+        $formerIds = array_values(array_diff($formerIds, $activeIds));
+        if (empty($formerIds)) return [];
+
+        return $this->fetchPlayerDetails($formerIds, $seasonId);
+    }
+
+    private function fetchPlayerDetails(array $playerIds, string $seasonId): array
+    {
+        $ph = implode(',', array_fill(0, count($playerIds), '?'));
+        $q  = $this->con->prepare(
             "SELECT p.id, p.displayname, p.country_id,
                     pis.position, pis.price, pis.photo_uploaded,
                     ? AS season_id,
@@ -38,7 +73,7 @@ trait PlayerInTeamTrait
                       points DESC,
                       pis.price DESC"
         );
-        $q2->execute(array_merge([$seasonId, $seasonId, $seasonId], $playerIds));
-        return $q2->fetchAll(PDO::FETCH_ASSOC);
+        $q->execute(array_merge([$seasonId, $seasonId, $seasonId], $playerIds));
+        return $q->fetchAll(PDO::FETCH_ASSOC);
     }
 }

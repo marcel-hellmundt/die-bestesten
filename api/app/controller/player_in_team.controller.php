@@ -11,6 +11,12 @@ class PlayerInTeamController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'team_id required'];
         }
+        if (!empty($this->params['include_former'])) {
+            return [
+                'current' => $this->db->getSquadByTeamId($teamId),
+                'former'  => $this->db->getFormerSquadByTeamId($teamId),
+            ];
+        }
         return $this->db->getSquadByTeamId($teamId);
     }
 

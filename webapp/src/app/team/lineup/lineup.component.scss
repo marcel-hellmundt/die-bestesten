@@ -1,16 +1,12 @@
 @use '../../../styles/variables' as *;
 
-.lineup-nav {
-  padding: $space-4;
-  padding-bottom: 0;
-}
-
 .matchday-select {
+  width: 100%;
   font-size: $font-sm;
-  padding: $space-1 $space-3;
+  padding: $space-1 $space-8 $space-1 $space-3;
   border: 1px solid $color-border;
   border-radius: $radius-md;
-  background: $color-surface;
+  background-color: $color-surface;
   color: $color-text;
   cursor: pointer;
 }
@@ -30,6 +26,7 @@
 .field-wrap {
   flex: 1 1 0;
   min-width: 0;
+  max-width: 800px;
 }
 
 .field {
@@ -52,7 +49,9 @@
     justify-content: space-around;
     z-index: 2;
 
-    &:last-child { transform: translateY(-4%); }
+    &:last-child {
+      transform: translateY(-4%);
+    }
   }
 
   &-player {
@@ -69,43 +68,28 @@
       width: clamp(36px, 7vw, 72px);
       height: clamp(36px, 7vw, 72px);
       border-radius: 50%;
-      overflow: hidden;
-      border: 2px solid rgba(255, 255, 255, 0.6);
-      background-color: white;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       flex-shrink: 0;
 
       @media (max-width: $mobile-breakpoint) {
         width: clamp(28px, 11vw, 48px);
         height: clamp(28px, 11vw, 48px);
       }
-
-      &--sds {
-        border-color: #f9c843;
-        box-shadow: 0 0 0 2px #f9c843, 0 0 10px 2px rgba(249, 200, 67, 0.55);
-      }
     }
 
-    &__sds-pip {
+    &__sds-icon {
       position: absolute;
-      top: -4px;
-      right: -4px;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
       width: 16px;
       height: 16px;
-      border-radius: 50%;
-      background: #f9c843;
-      color: #fff;
-      font-size: 9px;
-      line-height: 16px;
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+      object-fit: contain;
       pointer-events: none;
 
       @media (max-width: $mobile-breakpoint) {
+        bottom: 18px;
         width: 13px;
         height: 13px;
-        font-size: 7px;
-        line-height: 13px;
       }
     }
 
@@ -125,11 +109,12 @@
       display: flex;
       align-items: center;
       border-radius: $radius-sm;
-      background: rgba(0, 0, 0, 0.72);
+      background: rgba(255, 255, 255, 0.88);
       overflow: hidden;
       margin-top: -2px;
-      height: 22px;
+      height: 32px;
       max-width: 120px;
+      min-width: 100px;
       white-space: nowrap;
 
       @media (max-width: $mobile-breakpoint) {
@@ -140,13 +125,13 @@
 
     &__grade {
       flex-shrink: 0;
-      width: 24px;
-      height: 22px;
-      line-height: 22px;
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
       text-align: center;
       font-size: 11px;
       font-weight: $font-weight-bold;
-      color: #fff;
+      color: #fff; // colored grade background keeps white text
 
       @media (max-width: $mobile-breakpoint) {
         width: 18px;
@@ -160,9 +145,12 @@
       padding: 0 6px;
       font-size: 11px;
       font-weight: $font-weight-medium;
-      color: #fff;
+      color: #1a1a1a;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-overflow: ellipsis;
+      flex-grow: 1;
+      text-align: center;
 
       @media (max-width: $mobile-breakpoint) {
         padding: 0 4px;
@@ -172,15 +160,17 @@
 
     &__points {
       flex-shrink: 0;
-      width: 24px;
+      width: 32px;
       height: 22px;
       line-height: 22px;
       text-align: center;
-      font-size: 11px;
+      font-size: 16px;
       font-weight: $font-weight-bold;
-      color: #fff;
+      color: #1a1a1a;
 
-      &--neg { color: #ff6b6b; }
+      &--neg {
+        color: $color-danger;
+      }
 
       @media (max-width: $mobile-breakpoint) {
         width: 18px;
@@ -237,8 +227,14 @@
     aspect-ratio: 2.5 / 1;
     border: 3px solid #fff;
 
-    &--top { top: 0; transform: translate(-50%, -3px); }
-    &--bottom { bottom: 0; transform: translate(-50%, 3px); }
+    &--top {
+      top: 0;
+      transform: translate(-50%, -3px);
+    }
+    &--bottom {
+      bottom: 0;
+      transform: translate(-50%, 3px);
+    }
   }
 
   &-flag {
@@ -248,24 +244,58 @@
     border-radius: 50%;
     border: 3px solid #fff;
 
-    &--tl { top: -14px; left: -14px; }
-    &--tr { top: -14px; right: -14px; }
-    &--bl { bottom: -14px; left: -14px; }
-    &--br { bottom: -14px; right: -14px; }
+    &--tl {
+      top: -14px;
+      left: -14px;
+    }
+    &--tr {
+      top: -14px;
+      right: -14px;
+    }
+    &--bl {
+      bottom: -14px;
+      left: -14px;
+    }
+    &--br {
+      bottom: -14px;
+      right: -14px;
+    }
   }
 }
 
-.grade-10 { background-color: var(--grade-10); }
-.grade-15 { background-color: var(--grade-15); }
-.grade-20 { background-color: var(--grade-20); }
-.grade-25 { background-color: var(--grade-25); }
-.grade-30 { background-color: var(--grade-30); }
-.grade-35 { background-color: var(--grade-35); }
-.grade-40 { background-color: var(--grade-40); }
-.grade-45 { background-color: var(--grade-45); }
-.grade-50 { background-color: var(--grade-50); }
-.grade-55 { background-color: var(--grade-55); }
-.grade-60 { background-color: var(--grade-60); }
+.grade-10 {
+  background-color: var(--grade-10);
+}
+.grade-15 {
+  background-color: var(--grade-15);
+}
+.grade-20 {
+  background-color: var(--grade-20);
+}
+.grade-25 {
+  background-color: var(--grade-25);
+}
+.grade-30 {
+  background-color: var(--grade-30);
+}
+.grade-35 {
+  background-color: var(--grade-35);
+}
+.grade-40 {
+  background-color: var(--grade-40);
+}
+.grade-45 {
+  background-color: var(--grade-45);
+}
+.grade-50 {
+  background-color: var(--grade-50);
+}
+.grade-55 {
+  background-color: var(--grade-55);
+}
+.grade-60 {
+  background-color: var(--grade-60);
+}
 
 .mobile-bench {
   display: none;
@@ -273,7 +303,9 @@
   gap: $space-2;
   margin-top: $space-3;
 
-  @media (max-width: $mobile-breakpoint) { display: flex; }
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+  }
 
   &__label {
     font-size: $font-xs;
@@ -299,12 +331,15 @@
     border: 2px solid $color-border;
     display: block;
 
-    img, &__photo--placeholder {
+    img,
+    &__photo--placeholder {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    &__photo--placeholder { background: $color-surface-alt; }
+    &__photo--placeholder {
+      background: $color-surface-alt;
+    }
   }
 }
 
@@ -315,7 +350,9 @@
   flex-direction: column;
   gap: $space-4;
 
-  @media (max-width: $mobile-breakpoint) { width: 100%; }
+  @media (max-width: $mobile-breakpoint) {
+    width: 100%;
+  }
 }
 
 .sidebar-block {
@@ -388,7 +425,9 @@
 }
 
 .desktop-bench {
-  @media (max-width: $mobile-breakpoint) { display: none; }
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
 }
 
 .bench-list {
@@ -411,16 +450,17 @@
   overflow: hidden;
   transition: background $transition-fast;
 
-  &:hover { background: $color-surface-alt; }
+  &:hover {
+    background: $color-surface-alt;
+  }
 
   &__pos {
     position: absolute;
-    width: 60px;
-    height: 60px;
+    width: 100px;
+    height: 50px;
     top: -30px;
-    left: -20px;
+    left: -50px;
     transform: rotate(-45deg);
-    opacity: 0.9;
   }
 
   &__photo-wrap {
@@ -475,9 +515,15 @@
     font-size: $font-xs;
     font-weight: $font-weight-medium;
 
-    &--starting { color: $color-success; }
-    &--sub { color: var(--flat-carrot); }
-    &--none { color: $color-text-muted; }
+    &--starting {
+      color: $color-success;
+    }
+    &--sub {
+      color: var(--flat-carrot);
+    }
+    &--none {
+      color: $color-text-muted;
+    }
   }
 
   &__grade {
@@ -504,6 +550,8 @@
     position: relative;
     z-index: 1;
 
-    &--neg { color: $color-danger; }
+    &--neg {
+      color: $color-danger;
+    }
   }
 }

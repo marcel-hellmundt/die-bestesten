@@ -19,17 +19,18 @@ export class SquadComponent {
   private state = toSignal(
     this.id$.pipe(
       switchMap(id =>
-        this.api.get<any[]>(`player_in_team?team_id=${id}`).pipe(
-          map(data => ({ data, loading: false, error: null as string | null })),
-          startWith({ data: [] as any[], loading: true, error: null as string | null }),
-          catchError(() => of({ data: [] as any[], loading: false, error: 'Fehler beim Laden' }))
+        this.api.get<any>(`player_in_team?team_id=${id}&include_former=1`).pipe(
+          map(data => ({ current: data.current as any[], former: data.former as any[], loading: false, error: null as string | null })),
+          startWith({ current: [] as any[], former: [] as any[], loading: true, error: null as string | null }),
+          catchError(() => of({ current: [] as any[], former: [] as any[], loading: false, error: 'Fehler beim Laden' }))
         )
       )
     ),
-    { initialValue: { data: [] as any[], loading: true, error: null as string | null } }
+    { initialValue: { current: [] as any[], former: [] as any[], loading: true, error: null as string | null } }
   );
 
-  players = computed(() => this.state().data);
+  players = computed(() => this.state().current);
+  former  = computed(() => this.state().former);
   loading = computed(() => this.state().loading);
   error   = computed(() => this.state().error);
 

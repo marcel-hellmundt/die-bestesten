@@ -5,14 +5,6 @@
 } @else if (!matchday()) {
   <p class="state-msg">Keine Aufstellungsdaten vorhanden.</p>
 } @else {
-  <div class="lineup-nav">
-    <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
-      @for (md of matchdays(); track md.id) {
-        <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
-      }
-    </select>
-  </div>
-
   <div class="lineup-layout">
 
     <!-- PITCH -->
@@ -23,16 +15,16 @@
           <div class="field-section">
             @for (p of getPlayersByPosition(pos); track p.id) {
               <a class="field-player" [routerLink]="['/daten/player', p.id]">
-                <div class="field-player__photo-wrap" [class.field-player__photo-wrap--sds]="p.sds">
+                <div class="field-player__photo-wrap">
                   @if (photoUrl(p) && !photoErrors.has(p.id)) {
                     <img class="field-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
                   } @else {
                     <div class="field-player__photo field-player__photo--placeholder"></div>
                   }
-                  @if (p.sds) {
-                    <span class="field-player__sds-pip">★</span>
-                  }
                 </div>
+                @if (p.sds) {
+                  <img class="field-player__sds-icon" src="img/icons/sds.png" alt="SdS" />
+                }
                 <div class="field-player__badge">
                   @if (p.grade) {
                     <span class="field-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
@@ -82,6 +74,12 @@
 
     <!-- SIDEBAR -->
     <div class="lineup-sidebar">
+
+      <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
+        @for (md of matchdays(); track md.id) {
+          <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
+        }
+      </select>
 
       @if (points() != null) {
         <div class="sidebar-block">

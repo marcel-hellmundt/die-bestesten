@@ -145,22 +145,32 @@ export class SeasonDataComponent {
         const seasonMap = new Map(this.items().map(s => [s.id, s.displayName]));
         const matchdayMap = new Map(mds.map(m => [m.id, m]));
 
-        // Seasons: start must be July 1st
+        // Seasons: start must be July 1st or September 1st
         for (const s of this.items()) {
           const [, mm, dd] = s.start_date.split('-');
-          if (mm !== '07' || dd !== '01') {
-            warnings.push(`Saison ${s.displayName}: Start ${this.formatDate(s.start_date)} ist nicht der 1. Juli`);
+          if (!((mm === '07' && dd === '01') || (mm === '09' && dd === '01'))) {
+            warnings.push(`Saison ${s.displayName}: Start ${this.formatDate(s.start_date)} ist nicht der 1. Juli oder 1. September`);
           }
         }
 
         // Matchdays: kickoff must be Fri 20:00, Fri 20:30, Sat 15:30 or Tue 18:30
+        // Exception: seasons up to and including 2019/2020 — kickoff on July 1st at 00:00 is allowed
+        const earlySeasonIds = new Set(
+          this.items()
+            .filter(s => parseInt(s.start_date.substring(0, 4), 10) <= 2019)
+            .map(s => s.id)
+        );
         for (const md of mds) {
           if (!md.kickoff_date) continue;
           const dt = new Date(md.kickoff_date.replace(' ', 'T'));
           const day = dt.getDay();
           const h = dt.getHours();
           const min = dt.getMinutes();
+          const isEarlyJuly1Exception = earlySeasonIds.has(md.season_id)
+            && md.kickoff_date.substring(5, 10) === '07-01'
+            && h === 0 && min === 0;
           const valid =
+            isEarlyJuly1Exception ||
             (day === 5 && h === 20 && min === 0)  ||
             (day === 5 && h === 20 && min === 30) ||
             (day === 6 && h === 15 && min === 30) ||
@@ -177,11 +187,14 @@ export class SeasonDataComponent {
           const day = dt.getDay();
           const h = dt.getHours();
           const min = dt.getMinutes();
+          const md = matchdayMap.get(tw.matchday_id);
+          const isMatchday1 = md?.number === 1;
           const valid =
             (h === 20 && min === 0) ||
-            (day === 5 && h === 15 && min === 0);
+            (day === 5 && h === 15 && min === 0) ||
+            (day === 5 && h === 12 && min === 0) ||
+            (isMatchday1 && h === 18 && min === 0);
           if (!valid) {
-            const md = matchdayMap.get(tw.matchday_id);
             const sName = md ? (seasonMap.get(md.season_id) ?? '') : '';
             const label = md ? `Spieltag ${md.number} (${sName})` : tw.matchday_id;
             warnings.push(`TF ${label}: Ende ${this.formatDatetime(tw.end_date)} ist ungewöhnlich`);
