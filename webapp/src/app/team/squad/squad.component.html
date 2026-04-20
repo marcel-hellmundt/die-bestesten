@@ -5,25 +5,27 @@
 } @else if (players().length === 0) {
   <p class="state-msg">Kein Kader vorhanden.</p>
 } @else {
-  <div class="squad-section">
-    <h3 class="squad-section-title">Aktueller Kader</h3>
-    <div class="squad-list">
-      @for (p of players(); track p.id) {
-        <ng-container *ngTemplateOutlet="playerRow; context: { $implicit: p }"></ng-container>
-      }
-    </div>
-  </div>
-
-  @if (former().length > 0) {
-    <div class="squad-section">
-      <h3 class="squad-section-title">Ehemalige Spieler</h3>
+  <div class="squad-columns">
+    <div class="squad-section squad-section--current">
+      <h3 class="squad-section-title">Aktueller Kader</h3>
       <div class="squad-list">
-        @for (p of former(); track p.id) {
+        @for (p of players(); track p.id) {
           <ng-container *ngTemplateOutlet="playerRow; context: { $implicit: p }"></ng-container>
         }
       </div>
     </div>
-  }
+
+    @if (former().length > 0) {
+      <div class="squad-section squad-section--former">
+        <h3 class="squad-section-title">Ehemalige Spieler</h3>
+        <div class="squad-list">
+          @for (p of former(); track p.id) {
+            <ng-container *ngTemplateOutlet="playerRow; context: { $implicit: p }"></ng-container>
+          }
+        </div>
+      </div>
+    }
+  </div>
 }
 
 <ng-template #playerRow let-p>
@@ -31,6 +33,8 @@
     <span class="position-badge" [style.background-color]="positionColor(p.position)">
       {{ positionLabel(p.position) }}
     </span>
+
+    <img class="club-logo" [src]="clubLogoUrl(p)" alt="" />
 
     <div class="player-photo-wrap">
       @if (photoUrl(p); as url) {

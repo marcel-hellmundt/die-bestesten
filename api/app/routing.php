@@ -433,8 +433,8 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/player_in_team',
-                        'description'  => 'Alle aktiven Spieler eines Teams (to_matchday_id IS NULL) mit Position, Preis und Saison-Punkten',
-                        'query_params' => ['team_id' => 'UUID des Teams (erforderlich)'],
+                        'description'  => 'Alle aktiven Spieler eines Teams (to_matchday_id IS NULL) mit Position, Preis, Saison-Punkten, aktuellem Club (current_club_id, club_logo_uploaded); ?include_former=1 → {current, former}',
+                        'query_params' => ['team_id' => 'UUID des Teams (erforderlich)', 'include_former' => '1 → gibt {current, former} zurück'],
                     ],
                 ],
             ]),

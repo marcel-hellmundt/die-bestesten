@@ -60,15 +60,22 @@ trait PlayerInTeamTrait
             "SELECT p.id, p.displayname, p.country_id,
                     pis.position, pis.price, pis.photo_uploaded,
                     ? AS season_id,
-                    COALESCE(SUM(pr.points), 0) AS points
+                    COALESCE(SUM(pr.points), 0) AS points,
+                    pic.club_id AS current_club_id,
+                    c.logo_uploaded AS club_logo_uploaded
              FROM player p
              LEFT JOIN player_in_season pis
                    ON pis.player_id = p.id AND pis.season_id = ?
              LEFT JOIN player_rating pr
                    ON pr.player_id = p.id
                    AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
+             LEFT JOIN player_in_club pic
+                   ON pic.player_id = p.id AND pic.to_date IS NULL
+             LEFT JOIN club c
+                   ON c.id = pic.club_id
              WHERE p.id IN ($ph)
-             GROUP BY p.id, p.displayname, p.country_id, pis.position, pis.price, pis.photo_uploaded
+             GROUP BY p.id, p.displayname, p.country_id, pis.position, pis.price, pis.photo_uploaded,
+                      pic.club_id, c.logo_uploaded
              ORDER BY FIELD(pis.position, 'GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'),
                       points DESC,
                       pis.price DESC"

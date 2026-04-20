@@ -59,6 +59,11 @@ export class SquadComponent {
     return `https://img.die-bestesten.de/img/player/${p.season_id}/${p.id}.png`;
   }
 
+  clubLogoUrl(p: any): string {
+    if (!p.current_club_id || !p.club_logo_uploaded) return 'img/placeholders/club.png';
+    return `https://img.die-bestesten.de/img/club/${p.current_club_id}.png`;
+  }
+
   formatPrice(price: number | null): string {
     if (price == null) return '—';
     if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + ' Mio.';

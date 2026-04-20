@@ -1,11 +1,22 @@
 @use '../../../styles/variables' as *;
 
+.squad-columns {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
 .squad-section {
   padding: $space-4;
-  padding-bottom: 0;
+  padding-bottom: $space-4;
 
-  &:last-child {
-    padding-bottom: $space-4;
+  &--current {
+    flex: 3;
+  }
+
+  &--former {
+    flex: 2;
+    border-left: 1px solid $color-border;
   }
 }
 
@@ -39,6 +50,13 @@
   &:hover {
     background: $color-surface-alt;
   }
+}
+
+.club-logo {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .player-photo-wrap {
@@ -85,6 +103,15 @@
 }
 
 @media (max-width: $mobile-breakpoint) {
+  .squad-columns {
+    flex-direction: column;
+  }
+
+  .squad-section--former {
+    border-left: none;
+    border-top: 1px solid $color-border;
+  }
+
   .player-price {
     display: none;
   }
