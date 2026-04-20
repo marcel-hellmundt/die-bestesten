@@ -34,7 +34,7 @@
       {{ positionLabel(p.position) }}
     </span>
 
-    <img class="club-logo" [src]="clubLogoUrl(p)" alt="" />
+    <img class="club-logo" [class.logo--placeholder]="!p.current_club_id || !p.club_logo_uploaded" [src]="clubLogoUrl(p)" alt="" />
 
     <div class="player-photo-wrap">
       @if (photoUrl(p); as url) {
