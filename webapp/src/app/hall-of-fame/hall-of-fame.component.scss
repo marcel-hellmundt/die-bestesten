@@ -70,9 +70,21 @@
   }
 }
 
+.manager-name-row {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+}
+
 .manager-name {
   font-weight: $font-weight-medium;
-  display: block;
+}
+
+.title-trophy {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  opacity: 0.85;
 }
 
 .manager-alias {

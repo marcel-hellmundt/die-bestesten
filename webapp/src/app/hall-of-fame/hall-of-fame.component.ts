@@ -55,6 +55,23 @@ export class HallOfFameComponent {
   awards        = computed(() => this.awardsState()?.data ?? []);
   awardsLoading = computed(() => this.awardsState()?.loading ?? true);
 
+  championsMap = computed(() => {
+    const map = new Map<string, number>();
+    for (const award of this.awards()) {
+      if (!award.name?.toLowerCase().includes('meisterschaft')) continue;
+      for (const row of (award.seasons ?? [])) {
+        if (row.winner?.manager_id) {
+          map.set(row.winner.manager_id, (map.get(row.winner.manager_id) ?? 0) + 1);
+        }
+      }
+    }
+    return map;
+  });
+
+  trophies(managerId: string): number[] {
+    return Array.from({ length: this.championsMap().get(managerId) ?? 0 });
+  }
+
   avatarFailed  = new Set<string>();
   logoFailed    = new Set<string>();
 

@@ -43,7 +43,12 @@
               </div>
             </td>
             <td>
-              <span class="manager-name">{{ entry.manager_name }}</span>
+              <div class="manager-name-row">
+                <span class="manager-name">{{ entry.manager_name }}</span>
+                @for (t of trophies(entry.id); track $index) {
+                  <img src="/img/icons/trophy.png" class="title-trophy" alt="Meistertitel" />
+                }
+              </div>
               @if (entry.alias) {
                 <span class="manager-alias">{{ entry.alias }}</span>
               }
