@@ -77,7 +77,7 @@ export class TableComponent {
     const base = this.baseRows();
     if (!this.liveMode()) return base;
     const live = this.liveState();
-    if (!live?.ratings?.length) return base;
+    if (!live?.ratings?.length || live.matchday?.completed) return base;
     const liveMap = new Map<string, number>();
     for (const r of live.ratings as any[]) liveMap.set(r.team_id, Number(r.points ?? 0));
     return [...base]
