@@ -282,7 +282,7 @@ class Routing
                     [
                         'method'      => 'PATCH',
                         'path'        => '/player_rating/:id',
-                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; points wird immer automatisch serverseitig berechnet und darf nicht im Body übergeben werden; Änderungen werden in alte DB gespiegelt',
+                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; optionales _contribution_type (bulk_create|manual_create, default manual_create) bei participation-Änderungen; points wird immer serverseitig berechnet; Änderungen gespiegelt — Maintainer+',
                         'path_params' => [':id' => 'UUID der player_rating-Zeile'],
                     ],
                 ],

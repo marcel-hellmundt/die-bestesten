@@ -235,7 +235,7 @@ trait PlayerRatingTrait
     /**
      * Updates a player_rating row (all editable fields).
      */
-    public function updatePlayerRating(string $id, array $data): bool
+    public function updatePlayerRating(string $id, array $data, string $managerId): bool
     {
         $allowed = ['grade', 'participation', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'];
         $sets    = [];
@@ -284,6 +284,38 @@ trait PlayerRatingTrait
             ->execute([':p' => $newPoints, ':id' => $id]);
         $this->con_old->prepare('UPDATE player_rating SET points = :p WHERE player_rating_id = :id')
             ->execute([':p' => $newPoints, ':id' => $id]);
+
+        // Track maintainer contributions
+        if (array_key_exists('participation', $data) && $data['participation'] !== null) {
+            $this->con_league->prepare(
+                "DELETE FROM maintainer_contribution
+                 WHERE player_rating_id = :id
+                   AND contribution_type IN ('bulk_create', 'manual_create')"
+            )->execute([':id' => $id]);
+            $type = in_array($data['_contribution_type'] ?? '', ['bulk_create', 'manual_create'])
+                ? $data['_contribution_type']
+                : 'manual_create';
+            $this->con_league->prepare(
+                "INSERT INTO maintainer_contribution (id, manager_id, player_rating_id, contribution_type)
+                 VALUES (UUID(), :manager_id, :rating_id, :type)"
+            )->execute([':manager_id' => $managerId, ':rating_id' => $id, ':type' => $type]);
+        }
+
+        if (array_key_exists('grade', $data)) {
+            if ($data['grade'] !== null) {
+                $this->con_league->prepare(
+                    "INSERT INTO maintainer_contribution
+                     (id, manager_id, player_rating_id, contribution_type)
+                     VALUES (UUID(), :m, :r, 'grade')
+                     ON DUPLICATE KEY UPDATE manager_id = :m2, created_at = NOW()"
+                )->execute([':m' => $managerId, ':r' => $id, ':m2' => $managerId]);
+            } else {
+                $this->con_league->prepare(
+                    "DELETE FROM maintainer_contribution
+                     WHERE player_rating_id = :id AND contribution_type = 'grade'"
+                )->execute([':id' => $id]);
+            }
+        }
 
         return $updated;
     }

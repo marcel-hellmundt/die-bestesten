@@ -146,7 +146,7 @@ class PlayerRatingController extends _BaseController
         }
 
         $body = $this->body();
-        $updated = $this->db->updatePlayerRating($this->id, $body);
+        $updated = $this->db->updatePlayerRating($this->id, $body, $GLOBALS['auth_manager_id']);
 
         if (!$updated) {
             http_response_code(404);

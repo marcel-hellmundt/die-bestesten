@@ -133,6 +133,18 @@ CREATE TABLE IF NOT EXISTS player_in_team (
     UNIQUE KEY uk_player_from (player_id, from_matchday_id)  -- kein Doppelkauf in derselben Transferphase
 );
 
+-- Tabelle: maintainer_contribution (Tracking welcher Maintainer Aufstellung/Noten eingetragen hat)
+-- player_rating_id ist Cross-DB-Referenz auf global_schema.player_rating.id (kein FK)
+CREATE TABLE IF NOT EXISTS maintainer_contribution (
+    id                CHAR(36)                                       NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id        CHAR(36)                                       NOT NULL,
+    player_rating_id  CHAR(36)                                       NOT NULL,
+    contribution_type ENUM('bulk_create', 'manual_create', 'grade') NOT NULL,
+    created_at        DATETIME                                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_contribution (player_rating_id, contribution_type)
+);
+
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
 -- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)
 CREATE TABLE IF NOT EXISTS team_award (

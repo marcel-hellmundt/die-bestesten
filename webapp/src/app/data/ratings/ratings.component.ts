@@ -632,7 +632,7 @@ export class RatingsDataComponent {
       }
       newlyAssigned++;
       matched.push(player.displayname);
-      this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting' }).subscribe({
+      this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting', _contribution_type: 'bulk_create' }).subscribe({
         next: (res) =>
           this.ratings.update((list) =>
             list.map((r) =>
