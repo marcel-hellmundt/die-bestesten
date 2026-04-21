@@ -121,9 +121,7 @@ export class TopbarComponent implements OnDestroy {
   }
 
   clubLogoUrl(club: any): string {
-    return club.logo_uploaded
-      ? `https://img.die-bestesten.de/img/club/${club.id}.png`
-      : 'img/placeholders/club.png';
+    return `https://img.die-bestesten.de/img/club/${club.id}.png`;
   }
 
   teamPhotoUrl(t: any): string {

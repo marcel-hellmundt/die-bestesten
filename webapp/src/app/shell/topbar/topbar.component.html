@@ -54,8 +54,12 @@
                 <div class="search-group-label">Vereine</div>
                 @for (c of searchResults()!.clubs; track c.id) {
                   <button class="search-item" (click)="navigateToResult(['/daten/club', c.id])">
-                    <div class="search-item-avatar">
-                      <img [src]="clubLogoUrl(c)" [class.logo--placeholder]="!c.logo_uploaded" alt="" />
+                    <div class="search-item-avatar search-item-avatar--player">
+                      @if (c.logo_uploaded && !failedImageIds().has(c.id)) {
+                        <img [src]="clubLogoUrl(c)" (error)="onImageError(c.id)" alt="" />
+                      } @else {
+                        <app-icon name="shield"></app-icon>
+                      }
                     </div>
                     <div class="search-item-info">
                       <span class="search-item-name">{{ c.name }}</span>
