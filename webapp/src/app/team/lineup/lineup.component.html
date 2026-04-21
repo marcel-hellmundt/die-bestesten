@@ -9,7 +9,7 @@
 
     <!-- PITCH -->
     <div class="field-wrap">
-      <div class="matchday-select-wrap">
+      <div class="matchday-select-wrap matchday-select-wrap--mobile">
         <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
           @for (md of matchdays(); track md.id) {
             <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
@@ -105,6 +105,17 @@
 
     <!-- SIDEBAR -->
     <div class="lineup-sidebar">
+
+      <div class="matchday-select-wrap matchday-select-wrap--desktop">
+        <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
+          @for (md of matchdays(); track md.id) {
+            <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
+          }
+        </select>
+        @if (saving()) {
+          <span class="saving-indicator">Speichern…</span>
+        }
+      </div>
 
       @if (points() != null) {
         <div class="sidebar-block">

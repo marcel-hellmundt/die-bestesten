@@ -569,7 +569,20 @@
   display: flex;
   align-items: center;
   gap: $space-3;
-  margin-bottom: $space-3;
+
+  &--mobile {
+    margin-bottom: $space-3;
+
+    @media (min-width: #{$mobile-breakpoint + 1px}) {
+      display: none;
+    }
+  }
+
+  &--desktop {
+    @media (max-width: $mobile-breakpoint) {
+      display: none;
+    }
+  }
 }
 
 .saving-indicator {
