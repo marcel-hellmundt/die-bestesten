@@ -1,8 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, map, of, switchMap, startWith } from 'rxjs';
+import { catchError, combineLatest, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
 interface PlayerInSeason {
@@ -62,8 +63,9 @@ interface PlayerDetail {
   styleUrl: './player-detail.component.scss',
 })
 export class PlayerDetailComponent {
-  private api = inject(ApiService);
-  private route = inject(ActivatedRoute);
+  private api   = inject(ApiService);
+  private route  = inject(ActivatedRoute);
+  private auth   = inject(AuthService);
   cache = inject(DataCacheService);
 
   private id$ = this.route.paramMap.pipe(map((p) => p.get('id')!));
@@ -89,10 +91,12 @@ export class PlayerDetailComponent {
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error ?? null);
 
+  private refreshTeam$ = new Subject<void>();
+
   currentTeam = toSignal(
-    this.id$.pipe(
+    merge(this.id$, this.refreshTeam$.pipe(switchMap(() => this.id$))).pipe(
       switchMap(id =>
-        this.api.get<{ id: string; season_id: string; team_name: string; color: string | null; manager_name: string; alias: string | null } | null>(
+        this.api.get<{ id: string; season_id: string; team_name: string; color: string | null; manager_id: string; manager_name: string; alias: string | null } | null>(
           `player_in_team?player_id=${id}`
         ).pipe(
           catchError(() => of(null)),
@@ -103,10 +107,59 @@ export class PlayerDetailComponent {
     { initialValue: undefined as any }
   );
 
+  isOwnTeam = computed(() => !!this.currentTeam() && this.currentTeam()!.manager_id === this.auth.getManagerId());
+
+  openWindow = toSignal(
+    toObservable(this.currentTeam).pipe(
+      switchMap(team => {
+        if (!team) return of(null);
+        return this.api.get<any[]>(`transferwindow?season_id=${team.season_id}`).pipe(
+          map(windows => {
+            const now = new Date();
+            return windows.find(w => new Date(w.start_date) <= now && new Date(w.end_date) > now) ?? null;
+          }),
+          catchError(() => of(null))
+        );
+      })
+    ),
+    { initialValue: null }
+  );
+
+  selling   = signal(false);
+  sellError = signal<string | null>(null);
+
   teamLogoError = signal(false);
 
   teamLogoUrl(team: { id: string; season_id: string }): string {
     return `https://img.die-bestesten.de/img/team/${team.season_id}/${team.id}.png`;
+  }
+
+  sellPlayer(): void {
+    const team = this.currentTeam();
+    const win  = this.openWindow();
+    const p    = this.player();
+    if (!team || !win || !p) return;
+
+    const currentSeason = p.seasons.find(s => s.season_id === team.season_id) ?? p.seasons[0];
+    const basePrice = currentSeason?.price ?? 0;
+    const pts = this.totalPoints();
+    const sellPrice = Math.round(+basePrice + pts * 20000);
+    const formatted = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(sellPrice);
+
+    if (!confirm(`${p.displayname} für ${formatted} verkaufen?`)) return;
+
+    this.selling.set(true);
+    this.sellError.set(null);
+    this.api.post<any>('sell', { team_id: team.id, player_id: p.id, transferwindow_id: win.id }).subscribe({
+      next: () => {
+        this.selling.set(false);
+        this.refreshTeam$.next();
+      },
+      error: (err: any) => {
+        this.selling.set(false);
+        this.sellError.set(err?.error?.message ?? 'Fehler beim Verkauf');
+      },
+    });
   }
 
   latestPhotoUrl = computed(() => {

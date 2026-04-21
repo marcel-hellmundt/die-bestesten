@@ -332,6 +332,19 @@ class Routing
                 ],
             ]),
 
+            new Route('sell', 'Sell', [
+                'title'       => 'Sell',
+                'description' => 'Spieler aus eigenem Team verkaufen — nur während offenem Transferfenster',
+                'endpoints'   => [
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/sell',
+                        'description' => 'Spieler verkaufen: erstellt sell + transaction, schließt player_in_team, bereinigt team_lineup — Auth',
+                        'body'        => ['team_id' => 'UUID des Teams', 'player_id' => 'UUID des Spielers', 'transferwindow_id' => 'UUID des offenen Transferfensters'],
+                    ],
+                ],
+            ]),
+
             new Route('team', 'Team', [
                 'title'       => 'Team',
                 'description' => 'Fantasy-Teams pro Manager und Saison',

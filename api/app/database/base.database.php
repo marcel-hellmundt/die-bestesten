@@ -18,6 +18,7 @@ require_once 'award.database.php';
 require_once 'player_in_team.database.php';
 require_once 'team_lineup.database.php';
 require_once 'transaction.database.php';
+require_once 'sell.database.php';
 require_once 'search.database.php';
 
 class Database
@@ -27,6 +28,7 @@ class Database
     use PlayerInTeamTrait;
     use TeamLineupTrait;
     use TransactionTrait;
+    use SellTrait;
     use AllTimeStandingsTrait;
     use AwardTrait;
     use SeasonTrait;

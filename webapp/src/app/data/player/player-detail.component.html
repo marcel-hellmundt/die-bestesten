@@ -55,6 +55,14 @@
             <div class="team-badge__placeholder" [style.background-color]="team.color ?? '#ccc'"></div>
           }
           <span class="team-badge__name">{{ team.team_name }}</span>
+          @if (isOwnTeam() && openWindow()) {
+            <button class="sell-btn" (click)="sellPlayer()" [disabled]="selling()">
+              {{ selling() ? '…' : 'Verkaufen' }}
+            </button>
+          }
+          @if (sellError()) {
+            <span class="sell-error">{{ sellError() }}</span>
+          }
         </a>
       }
     </div>

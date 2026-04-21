@@ -100,7 +100,8 @@ POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintai
 POST     /transferwindow/migrate — Admin
 GET      /team_lineup          — ?team_id (erforderlich), ?matchday_id (optional) → {matchday, matchdays[], nominated[], bench[], points, max_points} — jeder Spieler enthält grade, points, goals, assists, clean_sheet, sds, participation; Auto-Init für aktuellen Spieltag wenn noch keine Einträge — Auth
 PATCH    /team_lineup          — {team_id, matchday_id, players:[{player_id, nominated, position_index}]} — nur eigenes Team, nur Editierfenster (start_date ≤ now < kickoff_date) — Auth
-GET      /player_in_team             — ?team_id (erforderlich) → aktive Spieler mit position, price, points, current_club_id, club_logo_uploaded; ?include_former=1 → {current, former}; ?player_id → {id, season_id, team_name, color, manager_name, alias} oder null (welches Team besitzt diesen Spieler) — Auth
+GET      /player_in_team             — ?team_id (erforderlich) → aktive Spieler mit position, price, points, current_club_id, club_logo_uploaded; ?include_former=1 → {current, former}; ?player_id → {id, season_id, team_name, color, manager_name, alias, manager_id} oder null (welches Team besitzt diesen Spieler) — Auth
+POST     /sell                       — {team_id, player_id, transferwindow_id} — nur eigenes Team, nur offenes Fenster; erstellt sell + transaction, setzt player_in_team.to_matchday_id, bereinigt team_lineup (nominated → alles löschen, bench → nur Spieler) — Auth
 GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück

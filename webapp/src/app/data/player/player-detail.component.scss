@@ -53,6 +53,29 @@
         width: auto;
         white-space: nowrap;
       }
+
+      .sell-btn {
+        margin-top: $space-1;
+        padding: 4px $space-3;
+        font-size: $font-xs;
+        font-weight: $font-weight-semibold;
+        color: $color-danger;
+        border: 1px solid $color-danger;
+        border-radius: $radius-sm;
+        background: transparent;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover:not(:disabled) { background: rgba(191, 29, 0, 0.08); }
+        &:disabled { opacity: 0.5; cursor: not-allowed; }
+      }
+
+      .sell-error {
+        font-size: $font-xs;
+        color: $color-danger;
+        text-align: center;
+        margin-top: $space-1;
+      }
     }
 
     .player-photo {

@@ -56,7 +56,7 @@ trait PlayerInTeamTrait
     public function getTeamByPlayerId(string $playerId): ?array
     {
         $q = $this->con_league->prepare(
-            "SELECT t.id, t.season_id, t.team_name, t.color, m.manager_name, m.alias
+            "SELECT t.id, t.season_id, t.team_name, t.color, t.manager_id, m.manager_name, m.alias
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
              JOIN manager m ON m.id = t.manager_id
