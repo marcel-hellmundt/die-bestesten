@@ -96,16 +96,17 @@ trait SellTrait
         $lineupEntry = $lq->fetch(PDO::FETCH_ASSOC);
 
         if ($lineupEntry) {
+            // Always remove the sold player's entry
+            $dq = $this->con_league->prepare("DELETE FROM team_lineup WHERE id = :id");
+            $dq->execute([':id' => $lineupEntry['id']]);
+
             if ($lineupEntry['nominated']) {
-                $dq = $this->con_league->prepare(
-                    "DELETE FROM team_lineup WHERE team_id = :tid AND matchday_id = :mid"
+                // Nominated → move remaining nominated players to bench
+                $bq = $this->con_league->prepare(
+                    "UPDATE team_lineup SET nominated = 0, position_index = NULL
+                     WHERE team_id = :tid AND matchday_id = :mid AND nominated = 1"
                 );
-                $dq->execute([':tid' => $teamId, ':mid' => $matchdayId]);
-            } else {
-                $dq = $this->con_league->prepare(
-                    "DELETE FROM team_lineup WHERE id = :id"
-                );
-                $dq->execute([':id' => $lineupEntry['id']]);
+                $bq->execute([':tid' => $teamId, ':mid' => $matchdayId]);
             }
         }
 
