@@ -159,6 +159,41 @@ trait TeamLineupTrait
         ];
     }
 
+    public function updateTeamLineup(string $teamId, string $matchdayId, array $players): bool
+    {
+        $stmt = $this->con_league->prepare(
+            "UPDATE team_lineup SET nominated = :nom, position_index = :pidx
+             WHERE team_id = :tid AND matchday_id = :mid AND player_id = :pid"
+        );
+        foreach ($players as $p) {
+            $stmt->execute([
+                ':nom'  => empty($p['nominated']) ? 0 : 1,
+                ':pidx' => $p['position_index'] ?? null,
+                ':tid'  => $teamId,
+                ':mid'  => $matchdayId,
+                ':pid'  => $p['player_id'],
+            ]);
+        }
+        return true;
+    }
+
+    public function getTeamOwner(string $teamId): ?string
+    {
+        $q = $this->con_league->prepare("SELECT manager_id FROM team WHERE id = :id LIMIT 1");
+        $q->execute([':id' => $teamId]);
+        return $q->fetchColumn() ?: null;
+    }
+
+    public function isMatchdayOpen(string $matchdayId): bool
+    {
+        $q = $this->con->prepare(
+            "SELECT id FROM matchday
+             WHERE id = :id AND start_date <= CURDATE() AND kickoff_date > NOW() LIMIT 1"
+        );
+        $q->execute([':id' => $matchdayId]);
+        return (bool) $q->fetchColumn();
+    }
+
     private function initLineupForMatchday(string $matchdayId, int $matchdayNumber, string $seasonId): void
     {
         // Find previous matchday in global DB

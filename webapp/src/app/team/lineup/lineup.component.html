@@ -9,12 +9,25 @@
 
     <!-- PITCH -->
     <div class="field-wrap">
-      <div class="field">
+      <div class="field" [class.field--editable]="isEditable()">
+
+        @if (formationError()) {
+          <div class="formation-error">{{ formationError() }}</div>
+        }
 
         @for (pos of pitchPositions; track pos) {
           <div class="field-section">
             @for (p of getPlayersByPosition(pos); track p.id) {
-              <a class="field-player" [routerLink]="['/daten/player', p.id]">
+              <a class="field-player"
+                 [id]="p.id"
+                 [class.field-player--hovered]="hoveredPlayer()?.id === p.id"
+                 [class.field-player--dim]="hoveredPlayer() !== null && hoveredPlayer()?.id !== p.id"
+                 [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
+                 cdkDrag
+                 [cdkDragDisabled]="!isEditable()"
+                 (cdkDragMoved)="onDragMove($event, p)"
+                 (cdkDragReleased)="onDragReleased($event, 'nominated')"
+                 (cdkDragEnded)="onDragEnd()">
                 <div class="field-player__photo-wrap">
                   @if (photoUrl(p) && !photoErrors.has(p.id)) {
                     <img class="field-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
@@ -59,8 +72,14 @@
         <span class="mobile-bench__label">Ersatzbank</span>
         <div class="mobile-bench__list">
           @for (p of bench(); track p.id) {
-            <a class="mobile-bench__player" [routerLink]="['/daten/player', p.id]"
-               [style.border-color]="positionColor(p.position)">
+            <a class="mobile-bench__player"
+               [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
+               [style.border-color]="positionColor(p.position)"
+               cdkDrag
+               [cdkDragDisabled]="!isEditable()"
+               (cdkDragMoved)="onDragMove($event, p)"
+               (cdkDragReleased)="onDragReleased($event, 'bench')"
+               (cdkDragEnded)="onDragEnd()">
               @if (photoUrl(p) && !photoErrors.has(p.id)) {
                 <img [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
               } @else {
@@ -75,11 +94,16 @@
     <!-- SIDEBAR -->
     <div class="lineup-sidebar">
 
-      <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
-        @for (md of matchdays(); track md.id) {
-          <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
+      <div class="matchday-select-wrap">
+        <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
+          @for (md of matchdays(); track md.id) {
+            <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
+          }
+        </select>
+        @if (saving()) {
+          <span class="saving-indicator">Speichern…</span>
         }
-      </select>
+      </div>
 
       @if (points() != null) {
         <div class="sidebar-block">
@@ -106,7 +130,14 @@
         <h3 class="sidebar-title">Ersatzbank</h3>
         <div class="bench-list">
           @for (p of bench(); track p.id) {
-            <a class="bench-player" [routerLink]="['/daten/player', p.id]">
+            <a class="bench-player"
+               [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
+               [class.bench-player--draggable]="isEditable()"
+               cdkDrag
+               [cdkDragDisabled]="!isEditable()"
+               (cdkDragMoved)="onDragMove($event, p)"
+               (cdkDragReleased)="onDragReleased($event, 'bench')"
+               (cdkDragEnded)="onDragEnd()">
               <div class="bench-player__pos" [style.background-color]="positionColor(p.position)"></div>
               <div class="bench-player__photo-wrap">
                 @if (photoUrl(p) && !photoErrors.has(p.id)) {

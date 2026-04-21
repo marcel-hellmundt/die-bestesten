@@ -417,10 +417,20 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/team_lineup',
-                        'description'  => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: letzter mit Einträgen)',
+                        'description'  => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: aktueller Spieltag nach start_date; Auto-Init wenn noch keine Einträge)',
                         'query_params' => [
                             'team_id'     => 'UUID des Teams (erforderlich)',
                             'matchday_id' => 'UUID des Spieltags (optional)',
+                        ],
+                    ],
+                    [
+                        'method'      => 'PATCH',
+                        'path'        => '/team_lineup',
+                        'description' => 'Aufstellung speichern — nur eigenes Team, nur während Editierfenster (start_date ≤ now < kickoff_date)',
+                        'body'        => [
+                            'team_id'     => 'UUID des Teams',
+                            'matchday_id' => 'UUID des Spieltags',
+                            'players'     => '[{ player_id, nominated: bool, position_index: int|null }]',
                         ],
                     ],
                 ],
