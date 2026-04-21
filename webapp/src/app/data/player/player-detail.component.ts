@@ -109,11 +109,19 @@ export class PlayerDetailComponent {
 
   isOwnTeam = computed(() => !!this.currentTeam() && this.currentTeam()!.manager_id === this.auth.getManagerId());
 
+  myTeam = toSignal(
+    this.api.get<{ id: string; team_name: string; season_id: string; color: string | null } | null>('team/mine').pipe(
+      catchError(() => of(null))
+    ),
+    { initialValue: null as { id: string; team_name: string; season_id: string; color: string | null } | null }
+  );
+
   openWindow = toSignal(
-    toObservable(this.currentTeam).pipe(
-      switchMap(team => {
-        if (!team) return of(null);
-        return this.api.get<any[]>(`transferwindow?season_id=${team.season_id}`).pipe(
+    combineLatest([toObservable(this.currentTeam), toObservable(this.myTeam)]).pipe(
+      switchMap(([team, myTeam]) => {
+        const seasonId = team?.season_id ?? myTeam?.season_id;
+        if (!seasonId) return of(null);
+        return this.api.get<any[]>(`transferwindow?season_id=${seasonId}`).pipe(
           map(windows => {
             const now = new Date();
             return windows.find(w => new Date(w.start_date) <= now && new Date(w.end_date) > now) ?? null;
@@ -127,6 +135,13 @@ export class PlayerDetailComponent {
 
   selling   = signal(false);
   sellError = signal<string | null>(null);
+
+  buying   = signal(false);
+  buyError = signal<string | null>(null);
+
+  buyPlayer(): void {
+    // TODO: implement buy flow
+  }
 
   teamLogoError = signal(false);
 

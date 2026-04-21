@@ -28,10 +28,17 @@
       flex-direction: column;
       align-items: center;
       gap: $space-2;
-      text-decoration: none;
-      color: $color-text;
       flex-shrink: 0;
       margin-left: auto;
+
+      &__link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: $space-2;
+        text-decoration: none;
+        color: $color-text;
+      }
 
       &__logo,
       &__placeholder {
@@ -73,6 +80,29 @@
       .sell-error {
         font-size: $font-xs;
         color: $color-danger;
+        text-align: center;
+        margin-top: $space-1;
+      }
+
+      .buy-btn {
+        margin-top: $space-1;
+        padding: 4px $space-3;
+        font-size: $font-xs;
+        font-weight: $font-weight-semibold;
+        color: var(--flat-emerald);
+        border: 1px solid var(--flat-emerald);
+        border-radius: $radius-sm;
+        background: transparent;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover:not(:disabled) { background: rgba(39, 174, 96, 0.08); }
+        &:disabled { opacity: 0.5; cursor: not-allowed; }
+      }
+
+      .buy-error {
+        font-size: $font-xs;
+        color: var(--flat-emerald);
         text-align: center;
         margin-top: $space-1;
       }

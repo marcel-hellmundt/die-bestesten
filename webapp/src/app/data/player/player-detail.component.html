@@ -45,16 +45,18 @@
       </div>
 
       @if (currentTeam(); as team) {
-        <a class="team-badge" [routerLink]="['/team', team.id]" [title]="team.team_name">
-          @if (!teamLogoError()) {
-            <img class="team-badge__logo"
-                 [src]="teamLogoUrl(team)"
-                 [alt]="team.team_name"
-                 (error)="teamLogoError.set(true)" />
-          } @else {
-            <div class="team-badge__placeholder" [style.background-color]="team.color ?? '#ccc'"></div>
-          }
-          <span class="team-badge__name">{{ team.team_name }}</span>
+        <div class="team-badge">
+          <a class="team-badge__link" [routerLink]="['/team', team.id]" [title]="team.team_name">
+            @if (!teamLogoError()) {
+              <img class="team-badge__logo"
+                   [src]="teamLogoUrl(team)"
+                   [alt]="team.team_name"
+                   (error)="teamLogoError.set(true)" />
+            } @else {
+              <div class="team-badge__placeholder" [style.background-color]="team.color ?? '#ccc'"></div>
+            }
+            <span class="team-badge__name">{{ team.team_name }}</span>
+          </a>
           @if (isOwnTeam() && openWindow()) {
             <button class="sell-btn" (click)="sellPlayer()" [disabled]="selling()">
               {{ selling() ? '…' : 'Verkaufen' }}
@@ -63,7 +65,18 @@
           @if (sellError()) {
             <span class="sell-error">{{ sellError() }}</span>
           }
-        </a>
+        </div>
+      } @else if (currentTeam() === null && openWindow() && myTeam()) {
+        <div class="team-badge">
+          <img class="team-badge__placeholder logo--placeholder" src="img/placeholders/club.png" alt="" />
+          <span class="team-badge__name">Vereinslos</span>
+          <button class="buy-btn" (click)="buyPlayer()" [disabled]="buying()">
+            {{ buying() ? '…' : 'Kaufen' }}
+          </button>
+          @if (buyError()) {
+            <span class="buy-error">{{ buyError() }}</span>
+          }
+        </div>
       }
     </div>
   </div>
