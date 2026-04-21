@@ -1,8 +1,9 @@
 <div class="topbar">
   <div class="topbar-left">
-    <div class="topbar-search" [class.topbar-search--active]="isSearchOpen()">
+    <div class="topbar-search" [class.topbar-search--active]="isSearchOpen()" (click)="onSearchContainerClick()">
       <app-icon name="search" class="search-icon"></app-icon>
       <input
+        #searchInput
         type="search"
         placeholder="Suchen…"
         [value]="searchQuery()"

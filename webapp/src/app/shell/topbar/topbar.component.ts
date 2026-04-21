@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'rxjs';
@@ -50,6 +50,8 @@ export class TopbarComponent implements OnDestroy {
       : '?';
   });
 
+  @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
+
   failedImageIds = signal<Set<string>>(new Set());
 
   onImageError(id: string): void {
@@ -100,6 +102,13 @@ export class TopbarComponent implements OnDestroy {
       this.searchLoading.set(false);
     }
     this.searchSubject.next(q);
+  }
+
+  onSearchContainerClick(): void {
+    if (!this.isSearchOpen()) {
+      this.isSearchOpen.set(true);
+      setTimeout(() => this.searchInputRef?.nativeElement.focus(), 50);
+    }
   }
 
   onSearchFocus(): void {
