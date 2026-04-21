@@ -10,13 +10,21 @@ trait SearchTrait
         $pq = $this->con->prepare(
             "SELECT p.id, p.displayname, p.first_name, p.last_name,
                     pis.position, pis.photo_uploaded,
-                    (SELECT season_id FROM player_in_season WHERE player_id = p.id ORDER BY (SELECT start_date FROM season WHERE id = season_id) DESC LIMIT 1) AS season_id
+                    (SELECT id FROM season ORDER BY start_date DESC LIMIT 1) AS season_id,
+                    COALESCE(SUM(pr.points), 0) AS points
              FROM player p
              LEFT JOIN player_in_season pis
                    ON pis.player_id = p.id
                    AND pis.season_id = (SELECT id FROM season ORDER BY start_date DESC LIMIT 1)
+             LEFT JOIN player_rating pr
+                   ON pr.player_id = p.id
+                   AND pr.matchday_id IN (
+                       SELECT id FROM matchday
+                       WHERE season_id = (SELECT id FROM season ORDER BY start_date DESC LIMIT 1)
+                   )
              WHERE p.displayname LIKE :q OR p.first_name LIKE :q2 OR p.last_name LIKE :q3
-             ORDER BY p.displayname
+             GROUP BY p.id, p.displayname, p.first_name, p.last_name, pis.position, pis.photo_uploaded
+             ORDER BY points DESC, p.displayname
              LIMIT 8"
         );
         $pq->execute([':q' => $like, ':q2' => $like, ':q3' => $like]);
