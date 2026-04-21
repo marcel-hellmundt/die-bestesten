@@ -25,7 +25,7 @@ class TeamLineupController extends _BaseController
 
     protected function patch(): mixed
     {
-        $body       = $this->getBody();
+        $body       = $this->body();
         $teamId     = $body['team_id']     ?? null;
         $matchdayId = $body['matchday_id'] ?? null;
         $players    = $body['players']     ?? null;

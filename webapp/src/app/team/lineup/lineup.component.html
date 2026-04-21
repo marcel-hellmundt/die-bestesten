@@ -73,6 +73,7 @@
         <div class="mobile-bench__list">
           @for (p of bench(); track p.id) {
             <a class="mobile-bench__player"
+               [id]="p.id"
                [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
                [style.border-color]="positionColor(p.position)"
                cdkDrag
@@ -131,6 +132,7 @@
         <div class="bench-list">
           @for (p of bench(); track p.id) {
             <a class="bench-player"
+               [id]="p.id"
                [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
                [class.bench-player--draggable]="isEditable()"
                cdkDrag
