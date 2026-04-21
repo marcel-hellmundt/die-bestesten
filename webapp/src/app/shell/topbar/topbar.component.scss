@@ -36,6 +36,9 @@
 
     &--active {
       border-color: $color-accent;
+    }
+
+    &--panel-open {
       border-radius: $radius-lg $radius-lg 0 0;
       border-bottom-color: transparent;
     }

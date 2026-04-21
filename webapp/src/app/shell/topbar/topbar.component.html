@@ -1,6 +1,6 @@
 <div class="topbar">
   <div class="topbar-left">
-    <div class="topbar-search" [class.topbar-search--active]="isSearchOpen()" (click)="onSearchContainerClick()">
+    <div class="topbar-search" [class.topbar-search--active]="isSearchOpen()" [class.topbar-search--panel-open]="isSearchOpen() && searchQuery().length >= 3" (click)="onSearchContainerClick()">
       <app-icon name="search" class="search-icon"></app-icon>
       <input
         #searchInput
