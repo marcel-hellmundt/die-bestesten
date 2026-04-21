@@ -467,6 +467,19 @@ class Routing
                     ],
                 ],
             ]),
+
+            new Route('search', 'Search', [
+                'title'       => 'Search',
+                'description' => 'Globale Live-Suche über Player, Club, Team und Manager — Auth',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/search',
+                        'description'  => 'Sucht in displayname/first_name/last_name (player), name (club), team_name (team), manager_name/alias (manager) — min. 3 Zeichen, max. 8 Treffer pro Typ',
+                        'query_params' => ['q' => 'Suchbegriff (min. 3 Zeichen)'],
+                    ],
+                ],
+            ]),
         ];
     }
 

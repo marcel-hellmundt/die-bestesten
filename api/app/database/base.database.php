@@ -18,6 +18,7 @@ require_once 'award.database.php';
 require_once 'player_in_team.database.php';
 require_once 'team_lineup.database.php';
 require_once 'transaction.database.php';
+require_once 'search.database.php';
 
 class Database
 {
@@ -40,6 +41,7 @@ class Database
     use ManagerTrait;
     use TeamRatingTrait;
     use PasswordResetTrait;
+    use SearchTrait;
 
     private $con;
     private $con_league;

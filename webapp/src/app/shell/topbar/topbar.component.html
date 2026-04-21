@@ -1,9 +1,105 @@
 <div class="topbar">
   <div class="topbar-left">
-    <div class="topbar-search">
+    <div class="topbar-search" [class.topbar-search--active]="isSearchOpen()">
       <app-icon name="search" class="search-icon"></app-icon>
-      <input type="search" placeholder="Suchen…" disabled />
-      <span class="search-hint">⌘K</span>
+      <input
+        type="search"
+        placeholder="Suchen…"
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+        (focus)="onSearchFocus()"
+        autocomplete="off"
+      />
+      @if (!isSearchOpen()) {
+        <span class="search-hint">⌘K</span>
+      }
+
+      @if (isSearchOpen() && searchQuery().length >= 3) {
+        <div class="search-overlay" (click)="$event.stopPropagation()">
+          @if (searchLoading()) {
+            <div class="search-empty">Suche…</div>
+          } @else if (!hasResults()) {
+            <div class="search-empty">Keine Ergebnisse für „{{ searchQuery() }}"</div>
+          } @else {
+            @if (searchResults()!.players.length > 0) {
+              <div class="search-group">
+                <div class="search-group-label">Spieler</div>
+                @for (p of searchResults()!.players; track p.id) {
+                  <button class="search-item" (click)="navigateToResult(['/daten/player', p.id])">
+                    <div class="search-item-avatar search-item-avatar--player">
+                      @if (playerPhotoUrl(p); as url) {
+                        <img [src]="url" alt="" />
+                      } @else {
+                        <app-icon name="user"></app-icon>
+                      }
+                    </div>
+                    <div class="search-item-info">
+                      <span class="search-item-name">{{ p.displayname }}</span>
+                      @if (p.position) {
+                        <span class="search-item-meta">{{ p.position | lowercase }}</span>
+                      }
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (searchResults()!.clubs.length > 0) {
+              <div class="search-group">
+                <div class="search-group-label">Vereine</div>
+                @for (c of searchResults()!.clubs; track c.id) {
+                  <button class="search-item" (click)="navigateToResult(['/daten/club', c.id])">
+                    <div class="search-item-avatar">
+                      <img [src]="clubLogoUrl(c)" [class.logo--placeholder]="!c.logo_uploaded" alt="" />
+                    </div>
+                    <div class="search-item-info">
+                      <span class="search-item-name">{{ c.name }}</span>
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (searchResults()!.teams.length > 0) {
+              <div class="search-group">
+                <div class="search-group-label">Teams</div>
+                @for (t of searchResults()!.teams; track t.id) {
+                  <button class="search-item" (click)="navigateToResult(['/team', t.id])">
+                    <div class="search-item-avatar search-item-avatar--icon">
+                      <app-icon name="shield"></app-icon>
+                    </div>
+                    <div class="search-item-info">
+                      <span class="search-item-name">{{ t.team_name }}</span>
+                      @if (t.season_label) {
+                        <span class="search-item-meta">Saison {{ t.season_label }}</span>
+                      }
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (searchResults()!.managers.length > 0) {
+              <div class="search-group">
+                <div class="search-group-label">Manager</div>
+                @for (m of searchResults()!.managers; track m.id) {
+                  <button class="search-item" (click)="navigateToResult(['/manager', m.id])">
+                    <div class="search-item-avatar search-item-avatar--icon">
+                      <app-icon name="user"></app-icon>
+                    </div>
+                    <div class="search-item-info">
+                      <span class="search-item-name">{{ m.manager_name }}</span>
+                      @if (m.alias) {
+                        <span class="search-item-meta">{{ m.alias }}</span>
+                      }
+                    </div>
+                  </button>
+                }
+              </div>
+            }
+          }
+        </div>
+      }
     </div>
   </div>
 
@@ -56,4 +152,8 @@
 
 @if (isDropdownOpen()) {
   <div class="dropdown-backdrop" (click)="closeDropdown()"></div>
+}
+
+@if (isSearchOpen()) {
+  <div class="dropdown-backdrop" (click)="closeSearch()"></div>
 }
