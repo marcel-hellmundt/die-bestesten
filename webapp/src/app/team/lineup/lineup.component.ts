@@ -234,7 +234,7 @@ export class LineupComponent {
 
         if (this.validFormations.some(f => f.every((v, i) => v === newFormation[i]))) {
           this.lineupPlayers.update(ps => ps.map(p => {
-            if (p.id === dragged.id) return { ...p, nominated: true, position_index: 100 };
+            if (p.id === dragged.id) return { ...p, nominated: true, position_index: hovered.position_index };
             if (p.id === hovered.id) return { ...p, nominated: false, position_index: null };
             return p;
           }));
