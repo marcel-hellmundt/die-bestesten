@@ -58,7 +58,7 @@
                       @if (c.logo_uploaded && !failedImageIds().has(c.id)) {
                         <img [src]="clubLogoUrl(c)" (error)="onImageError(c.id)" alt="" />
                       } @else {
-                        <app-icon name="shield"></app-icon>
+                        <img src="img/placeholders/club.png" class="logo--placeholder" alt="" />
                       }
                     </div>
                     <div class="search-item-info">
@@ -78,7 +78,7 @@
                       @if (!failedImageIds().has(t.id)) {
                         <img [src]="teamPhotoUrl(t)" (error)="onImageError(t.id)" alt="" />
                       } @else {
-                        <app-icon name="shield"></app-icon>
+                        <img src="img/placeholders/club.png" class="logo--placeholder" alt="" />
                       }
                     </div>
                     <div class="search-item-info">
