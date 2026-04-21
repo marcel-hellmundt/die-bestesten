@@ -29,9 +29,9 @@
   max-width: 800px;
 
   @media (max-width: $mobile-breakpoint) {
+    flex: none;
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
   }
 }
 
