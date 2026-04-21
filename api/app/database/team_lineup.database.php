@@ -24,7 +24,7 @@ trait TeamLineupTrait
         // Resolve matchday_ids to number + date (global DB), filter by season
         $ph = implode(',', array_fill(0, count($matchdayIds), '?'));
         $mdListQ = $this->con->prepare(
-            "SELECT id, number, kickoff_date
+            "SELECT id, number, start_date, kickoff_date
              FROM matchday
              WHERE season_id = ? AND id IN ($ph)
              ORDER BY number ASC"
@@ -32,11 +32,16 @@ trait TeamLineupTrait
         $mdListQ->execute(array_merge([$seasonId], $matchdayIds));
         $matchdays = $mdListQ->fetchAll(PDO::FETCH_ASSOC);
 
-        // Resolve target matchday (given or latest)
+        // Resolve target matchday (given or current by start_date)
         if ($matchdayId) {
             $matchday = current(array_filter($matchdays, fn($m) => $m['id'] === $matchdayId)) ?: null;
         } else {
-            $matchday = end($matchdays);
+            $today    = date('Y-m-d');
+            $matchday = null;
+            foreach ($matchdays as $m) {
+                if ($m['start_date'] <= $today) $matchday = $m;
+            }
+            if (!$matchday) $matchday = $matchdays[0];
         }
 
         if (!$matchday) return false;
