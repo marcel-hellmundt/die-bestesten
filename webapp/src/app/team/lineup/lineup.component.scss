@@ -36,6 +36,7 @@
 }
 
 .field {
+  container-type: inline-size;
   background-color: #05c46b;
   border-radius: $radius-lg;
   aspect-ratio: 5 / 4;
@@ -69,17 +70,14 @@
     color: $color-text;
     position: relative;
     cursor: pointer;
+    max-width: 20%;
+    min-width: 0;
 
     &__photo-wrap {
-      width: clamp(36px, 7vw, 72px);
-      height: clamp(36px, 7vw, 72px);
+      width: clamp(24px, 15cqi, 64px);
+      height: clamp(24px, 15cqi, 64px);
       border-radius: 50%;
       flex-shrink: 0;
-
-      @media (max-width: $mobile-breakpoint) {
-        width: clamp(28px, 11vw, 48px);
-        height: clamp(28px, 11vw, 48px);
-      }
     }
 
     &__sds-icon {
@@ -119,13 +117,12 @@
       overflow: hidden;
       margin-top: -2px;
       height: 32px;
-      max-width: 120px;
-      min-width: 100px;
+      width: 100%;
+      min-width: 0;
       white-space: nowrap;
 
       @media (max-width: $mobile-breakpoint) {
         height: 18px;
-        max-width: 80px;
       }
     }
 
@@ -323,9 +320,8 @@
 
   &__list {
     display: flex;
+    flex-wrap: wrap;
     gap: $space-2;
-    overflow-x: auto;
-    padding-bottom: $space-1;
   }
 
   &__player {
@@ -573,6 +569,7 @@
   display: flex;
   align-items: center;
   gap: $space-3;
+  margin-bottom: $space-3;
 }
 
 .saving-indicator {
