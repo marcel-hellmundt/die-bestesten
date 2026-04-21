@@ -50,6 +50,12 @@ export class TopbarComponent implements OnDestroy {
       : '?';
   });
 
+  failedImageIds = signal<Set<string>>(new Set());
+
+  onImageError(id: string): void {
+    this.failedImageIds.update(s => new Set([...s, id]));
+  }
+
   hasResults = computed(() => {
     const r = this.searchResults();
     if (!r) return false;
@@ -118,6 +124,14 @@ export class TopbarComponent implements OnDestroy {
     return club.logo_uploaded
       ? `https://img.die-bestesten.de/img/club/${club.id}.png`
       : 'img/placeholders/club.png';
+  }
+
+  teamPhotoUrl(t: any): string {
+    return `https://img.die-bestesten.de/img/team/${t.season_id}/${t.id}.png`;
+  }
+
+  managerPhotoUrl(m: any): string {
+    return `https://img.die-bestesten.de/img/manager/${m.id}.jpg`;
   }
 
   onAvatarError(): void {

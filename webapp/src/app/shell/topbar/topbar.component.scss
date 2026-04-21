@@ -316,6 +316,11 @@
   text-overflow: ellipsis;
 }
 
+.search-item-firstname {
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
+}
+
 .search-item-meta {
   font-size: $font-xs;
   color: $color-text-muted;

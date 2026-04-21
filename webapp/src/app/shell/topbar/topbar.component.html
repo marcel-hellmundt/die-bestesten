@@ -27,14 +27,19 @@
                 @for (p of searchResults()!.players; track p.id) {
                   <button class="search-item" (click)="navigateToResult(['/daten/player', p.id])">
                     <div class="search-item-avatar search-item-avatar--player">
-                      @if (playerPhotoUrl(p); as url) {
-                        <img [src]="url" alt="" />
+                      @if (!failedImageIds().has(p.id) && playerPhotoUrl(p); as url) {
+                        <img [src]="url" (error)="onImageError(p.id)" alt="" />
                       } @else {
                         <app-icon name="user"></app-icon>
                       }
                     </div>
                     <div class="search-item-info">
-                      <span class="search-item-name">{{ p.displayname }}</span>
+                      <span class="search-item-name">
+                        {{ p.displayname }}
+                        @if (p.first_name) {
+                          <span class="search-item-firstname">&nbsp;{{ p.first_name }}</span>
+                        }
+                      </span>
                       @if (p.position) {
                         <span class="search-item-meta">{{ p.position | lowercase }}</span>
                       }
@@ -65,8 +70,12 @@
                 <div class="search-group-label">Teams</div>
                 @for (t of searchResults()!.teams; track t.id) {
                   <button class="search-item" (click)="navigateToResult(['/team', t.id])">
-                    <div class="search-item-avatar search-item-avatar--icon">
-                      <app-icon name="shield"></app-icon>
+                    <div class="search-item-avatar search-item-avatar--player">
+                      @if (!failedImageIds().has(t.id)) {
+                        <img [src]="teamPhotoUrl(t)" (error)="onImageError(t.id)" alt="" />
+                      } @else {
+                        <app-icon name="shield"></app-icon>
+                      }
                     </div>
                     <div class="search-item-info">
                       <span class="search-item-name">{{ t.team_name }}</span>
@@ -84,8 +93,12 @@
                 <div class="search-group-label">Manager</div>
                 @for (m of searchResults()!.managers; track m.id) {
                   <button class="search-item" (click)="navigateToResult(['/manager', m.id])">
-                    <div class="search-item-avatar search-item-avatar--icon">
-                      <app-icon name="user"></app-icon>
+                    <div class="search-item-avatar search-item-avatar--player">
+                      @if (!failedImageIds().has(m.id)) {
+                        <img [src]="managerPhotoUrl(m)" (error)="onImageError(m.id)" alt="" />
+                      } @else {
+                        <app-icon name="user"></app-icon>
+                      }
                     </div>
                     <div class="search-item-info">
                       <span class="search-item-name">{{ m.manager_name }}</span>
