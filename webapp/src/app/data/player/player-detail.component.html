@@ -10,19 +10,6 @@
       @if (latestPhotoUrl(); as photoUrl) {
         <img [src]="photoUrl" class="player-photo" [alt]="p.displayname" />
       }
-      @if (currentTeam(); as team) {
-        <a class="team-badge" [routerLink]="['/team', team.id]" [title]="team.team_name">
-          @if (!teamLogoError()) {
-            <img class="team-badge__logo"
-                 [src]="teamLogoUrl(team)"
-                 [alt]="team.team_name"
-                 (error)="teamLogoError.set(true)" />
-          } @else {
-            <div class="team-badge__placeholder" [style.background-color]="team.color ?? '#ccc'"></div>
-          }
-          <span class="team-badge__name">{{ team.alias ?? team.manager_name }}</span>
-        </a>
-      }
       <div class="player-info">
         <h1 class="player-name">{{ p.displayname }}</h1>
         @if (p.first_name || p.last_name) {
@@ -56,6 +43,20 @@
           {{ idCopied() ? 'Kopiert!' : p.id }}
         </button>
       </div>
+
+      @if (currentTeam(); as team) {
+        <a class="team-badge" [routerLink]="['/team', team.id]" [title]="team.team_name">
+          @if (!teamLogoError()) {
+            <img class="team-badge__logo"
+                 [src]="teamLogoUrl(team)"
+                 [alt]="team.team_name"
+                 (error)="teamLogoError.set(true)" />
+          } @else {
+            <div class="team-badge__placeholder" [style.background-color]="team.color ?? '#ccc'"></div>
+          }
+          <span class="team-badge__name">{{ team.alias ?? team.manager_name }}</span>
+        </a>
+      }
     </div>
   </div>
 
