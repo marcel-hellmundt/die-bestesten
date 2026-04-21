@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { catchError, combineLatest, map, of, switchMap, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
@@ -85,9 +85,29 @@ export class PlayerDetailComponent {
     ),
   );
 
-  player = computed(() => this.state()?.data ?? null);
+  player  = computed(() => this.state()?.data ?? null);
   loading = computed(() => this.state()?.loading ?? true);
-  error = computed(() => this.state()?.error ?? null);
+  error   = computed(() => this.state()?.error ?? null);
+
+  currentTeam = toSignal(
+    this.id$.pipe(
+      switchMap(id =>
+        this.api.get<{ id: string; season_id: string; team_name: string; color: string | null; manager_name: string; alias: string | null } | null>(
+          `player_in_team?player_id=${id}`
+        ).pipe(
+          catchError(() => of(null)),
+          startWith(undefined)
+        )
+      )
+    ),
+    { initialValue: undefined as any }
+  );
+
+  teamLogoError = signal(false);
+
+  teamLogoUrl(team: { id: string; season_id: string }): string {
+    return `https://img.die-bestesten.de/img/team/${team.season_id}/${team.id}.png`;
+  }
 
   latestPhotoUrl = computed(() => {
     const p = this.player();

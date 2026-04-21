@@ -6,10 +6,15 @@ class PlayerInTeamController extends _BaseController
 
     protected function get(): mixed
     {
+        $playerId = $this->params['player_id'] ?? null;
+        if ($playerId) {
+            return $this->db->getTeamByPlayerId($playerId);
+        }
+
         $teamId = $this->params['team_id'] ?? null;
         if (!$teamId) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'team_id required'];
+            return ['status' => false, 'message' => 'team_id or player_id required'];
         }
         if (!empty($this->params['include_former'])) {
             return [

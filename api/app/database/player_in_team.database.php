@@ -53,6 +53,21 @@ trait PlayerInTeamTrait
         return $this->fetchPlayerDetails($formerIds, $seasonId);
     }
 
+    public function getTeamByPlayerId(string $playerId): ?array
+    {
+        $q = $this->con_league->prepare(
+            "SELECT t.id, t.season_id, t.team_name, t.color, m.manager_name, m.alias
+             FROM player_in_team pit
+             JOIN team t ON t.id = pit.team_id
+             JOIN manager m ON m.id = t.manager_id
+             WHERE pit.player_id = :player_id AND pit.to_matchday_id IS NULL
+             LIMIT 1"
+        );
+        $q->execute([':player_id' => $playerId]);
+        $row = $q->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
     private function fetchPlayerDetails(array $playerIds, string $seasonId): array
     {
         $ph = implode(',', array_fill(0, count($playerIds), '?'));
