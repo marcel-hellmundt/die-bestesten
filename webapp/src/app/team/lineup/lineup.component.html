@@ -117,7 +117,7 @@
         }
       </div>
 
-      @if (points() != null) {
+      @if (points() != null && matchday()?.completed) {
         <div class="sidebar-block">
           <h3 class="sidebar-title">Punkte</h3>
           <div class="points-bar">
