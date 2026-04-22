@@ -11,10 +11,19 @@ trait BuyTrait
 
     public function isPlayerAlreadyInAnyTeam(string $playerId): bool
     {
+        $sQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $activeSeasonId = $sQ->fetchColumn();
+        if (!$activeSeasonId) return false;
+
         $q = $this->con_league->prepare(
-            "SELECT id FROM player_in_team WHERE player_id = :pid AND to_matchday_id IS NULL LIMIT 1"
+            "SELECT pit.id FROM player_in_team pit
+             JOIN team t ON t.id = pit.team_id
+             WHERE pit.player_id = :pid
+               AND pit.to_matchday_id IS NULL
+               AND t.season_id = :season_id
+             LIMIT 1"
         );
-        $q->execute([':pid' => $playerId]);
+        $q->execute([':pid' => $playerId, ':season_id' => $activeSeasonId]);
         return (bool) $q->fetchColumn();
     }
 

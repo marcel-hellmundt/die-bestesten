@@ -55,15 +55,21 @@ trait PlayerInTeamTrait
 
     public function getTeamByPlayerId(string $playerId): ?array
     {
+        $sQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $activeSeasonId = $sQ->fetchColumn();
+        if (!$activeSeasonId) return null;
+
         $q = $this->con_league->prepare(
             "SELECT t.id, t.season_id, t.team_name, t.color, t.manager_id, m.manager_name, m.alias
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
              JOIN manager m ON m.id = t.manager_id
-             WHERE pit.player_id = :player_id AND pit.to_matchday_id IS NULL
+             WHERE pit.player_id = :player_id
+               AND pit.to_matchday_id IS NULL
+               AND t.season_id = :season_id
              LIMIT 1"
         );
-        $q->execute([':player_id' => $playerId]);
+        $q->execute([':player_id' => $playerId, ':season_id' => $activeSeasonId]);
         $row = $q->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
