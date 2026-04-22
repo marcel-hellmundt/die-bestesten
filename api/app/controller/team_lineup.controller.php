@@ -8,6 +8,12 @@ class TeamLineupController extends _BaseController
     {
         $teamId     = $this->params['team_id']     ?? null;
         $matchdayId = $this->params['matchday_id'] ?? null;
+        $playerId   = $this->params['player_id']   ?? null;
+        $seasonId   = $this->params['season_id']   ?? null;
+
+        if ($playerId && $seasonId) {
+            return $this->db->getPlayerLineup($playerId, $seasonId);
+        }
 
         if (!$teamId) {
             http_response_code(400);

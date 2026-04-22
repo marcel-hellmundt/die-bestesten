@@ -443,10 +443,12 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/team_lineup',
-                        'description'  => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: aktueller Spieltag nach start_date; Auto-Init wenn noch keine Einträge)',
+                        'description'  => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: aktueller Spieltag nach start_date; Auto-Init wenn noch keine Einträge). Alternativ: player_id + season_id → [{matchday_number, nominated}] für alle Spieltage eines Spielers',
                         'query_params' => [
-                            'team_id'     => 'UUID des Teams (erforderlich)',
+                            'team_id'     => 'UUID des Teams (erforderlich, außer bei player_id + season_id)',
                             'matchday_id' => 'UUID des Spieltags (optional)',
+                            'player_id'   => 'UUID des Spielers (kombiniert mit season_id)',
+                            'season_id'   => 'UUID der Saison (kombiniert mit player_id)',
                         ],
                     ],
                     [

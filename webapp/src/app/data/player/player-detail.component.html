@@ -401,6 +401,7 @@
               <tr>
                 <th class="col-matchday">#</th>
                 <th class="col-club-logo"></th>
+                <th class="col-team-logo"></th>
                 <th class="col-part"></th>
                 <th class="col-grade">Note</th>
                 <th class="col-sds"></th>
@@ -421,6 +422,21 @@
                       [class.logo--placeholder]="!+r.club_logo_uploaded"
                       alt=""
                     />
+                  </td>
+                  <td class="col-team-logo">
+                    @let ratingTeam = teamForMatchday(r.matchday_number);
+                    @if (ratingTeam) {
+                      @let nominated = lineupNominations().get(+r.matchday_number) ?? true;
+                      <img
+                        class="rating-team-logo"
+                        [class.rating-team-logo--bench]="!nominated"
+                        [src]="teamLogoUrl({ id: ratingTeam.team_id, season_id: ratingTeam.season_id })"
+                        alt=""
+                        (error)="$any($event.target).style.display = 'none'"
+                      />
+                    } @else {
+                      <img class="rating-team-logo logo--placeholder rating-team-logo--bench" src="img/placeholders/club.png" alt="" />
+                    }
                   </td>
                   <td class="col-part">
                     @if (r.participation === 'starting') {

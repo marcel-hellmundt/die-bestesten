@@ -159,6 +159,35 @@ trait TeamLineupTrait
         ];
     }
 
+    public function getPlayerLineup(string $playerId, string $seasonId): array
+    {
+        $mq = $this->con->prepare("SELECT id, number FROM matchday WHERE season_id = ?");
+        $mq->execute([$seasonId]);
+        $matchdays = $mq->fetchAll(PDO::FETCH_ASSOC);
+        $mdMap = [];
+        foreach ($matchdays as $m) $mdMap[$m['id']] = (int) $m['number'];
+        $matchdayIds = array_keys($mdMap);
+        if (empty($matchdayIds)) return [];
+
+        $ph = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $lq = $this->con_league->prepare(
+            "SELECT matchday_id, nominated FROM team_lineup
+             WHERE player_id = ? AND matchday_id IN ($ph)"
+        );
+        $lq->execute(array_merge([$playerId], $matchdayIds));
+        $rows = $lq->fetchAll(PDO::FETCH_ASSOC);
+
+        $result = [];
+        foreach ($rows as $r) {
+            if (!isset($mdMap[$r['matchday_id']])) continue;
+            $result[] = [
+                'matchday_number' => $mdMap[$r['matchday_id']],
+                'nominated'       => (bool) $r['nominated'],
+            ];
+        }
+        return $result;
+    }
+
     public function updateTeamLineup(string $teamId, string $matchdayId, array $players): bool
     {
         $stmt = $this->con_league->prepare(

@@ -163,6 +163,21 @@ export class PlayerDetailComponent {
     { initialValue: [] as TeamHistoryEntry[] }
   );
 
+  lineupNominations = toSignal(
+    combineLatest([this.id$, this.effectiveSeasonId$]).pipe(
+      switchMap(([id, seasonId]) => {
+        if (!seasonId) return of(new Map<number, boolean>());
+        return this.api.get<{ matchday_number: number; nominated: boolean }[]>(
+          `team_lineup?player_id=${id}&season_id=${seasonId}`
+        ).pipe(
+          map(entries => new Map(entries.map(e => [e.matchday_number, e.nominated]))),
+          catchError(() => of(new Map<number, boolean>()))
+        );
+      })
+    ),
+    { initialValue: new Map<number, boolean>() }
+  );
+
   canBuy = computed(() => {
     const pos = this.player()?.seasons[0]?.position;
     if (!pos) return false;
@@ -317,6 +332,14 @@ export class PlayerDetailComponent {
   gradeVar(grade: string | null): string {
     if (!grade) return 'var(--grade-unset)';
     return `var(--grade-${grade.replace('.', '')})`;
+  }
+
+  teamForMatchday(matchdayNumber: string): TeamHistoryEntry | null {
+    const n = +matchdayNumber;
+    return this.teamHistory().find(t =>
+      (t.from_matchday_number == null || t.from_matchday_number <= n) &&
+      (t.to_matchday_number   == null || t.to_matchday_number   >  n)
+    ) ?? null;
   }
 
   totalPoints  = computed(() => this.player()?.ratings.reduce((s, r) => s + +(r.points ?? 0), 0) ?? 0);
