@@ -113,8 +113,8 @@
         </thead>
         <tbody>
           @for (item of otherClubs(); track item.id) {
-            <tr class="row-link" [routerLink]="[item.id]">
-              <td class="col-id">{{ item.id }}</td>
+            <tr class="row-link">
+              <td class="col-id"><a class="row-link__anchor" [routerLink]="[item.id]"></a>{{ item.id }}</td>
               <td class="col-flag"><img [src]="item.flagUrl" class="flag" /></td>
               <td>
                 <span class="flex items-center gap-2">

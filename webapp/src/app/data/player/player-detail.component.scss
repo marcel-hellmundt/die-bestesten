@@ -102,7 +102,14 @@
 
       .buy-error {
         font-size: $font-xs;
-        color: var(--flat-emerald);
+        color: $color-danger;
+        text-align: center;
+        margin-top: $space-1;
+      }
+
+      .buy-limit-msg {
+        font-size: $font-xs;
+        color: $color-text-muted;
         text-align: center;
         margin-top: $space-1;
       }

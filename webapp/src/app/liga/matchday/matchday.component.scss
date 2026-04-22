@@ -109,6 +109,8 @@
   flex-direction: column;
   gap: $space-3;
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
   transition: border-color $transition-fast;
 
   &:hover {

@@ -70,9 +70,13 @@
         <div class="team-badge">
           <img class="team-badge__placeholder logo--placeholder" src="img/placeholders/club.png" alt="" />
           <span class="team-badge__name">Vereinslos</span>
-          <button class="buy-btn" (click)="buyPlayer()" [disabled]="buying()">
-            {{ buying() ? '…' : 'Kaufen' }}
-          </button>
+          @if (canBuy()) {
+            <button class="buy-btn" (click)="buyPlayer()" [disabled]="buying()">
+              {{ buying() ? '…' : 'Kaufen' }}
+            </button>
+          } @else {
+            <span class="buy-limit-msg">Positionslimit erreicht</span>
+          }
           @if (buyError()) {
             <span class="buy-error">{{ buyError() }}</span>
           }
@@ -195,8 +199,8 @@
             </thead>
             <tbody>
               @for (c of p.clubs; track c.club_id + c.from_date) {
-                <tr class="row-link" [routerLink]="['../../club', c.club_id]">
-                  <td class="col-logo">
+                <tr class="row-link">
+                  <td class="col-logo"><a class="row-link__anchor" [routerLink]="['../../club', c.club_id]"></a>
                     <img
                       [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
                       class="club-logo"

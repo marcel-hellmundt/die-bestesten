@@ -63,12 +63,8 @@
             </thead>
             <tbody>
               @for (r of ratings(); track r.team_id; let i = $index) {
-                <tr
-                  class="row-link"
-                  [routerLink]="['/team', r.team_id, 'aufstellung']"
-                  [queryParams]="{ matchday_id: matchday().id }"
-                >
-                  <td class="col-rank">{{ r.points !== ratings()[i - 1]?.points ? i + 1 : '' }}</td>
+                <tr class="row-link">
+                  <td class="col-rank"><a class="row-link__anchor" [routerLink]="['/team', r.team_id, 'aufstellung']" [queryParams]="{ matchday_id: matchday().id }"></a>{{ r.points !== ratings()[i - 1]?.points ? i + 1 : '' }}</td>
                   <td>
                     <span class="team-cell">
                       <span class="team-logo-wrap">
@@ -163,7 +159,7 @@
       </div>
 
       @if (sdsPlayer(); as p) {
-        <div class="card sds-card" [routerLink]="['/daten/player', p.id]">
+        <a class="card sds-card" [routerLink]="['/daten/player', p.id]">
           <span class="sds-card__label">Spieler des Spieltags</span>
           <div class="sds-card__player">
             <div class="sds-avatar">
@@ -204,7 +200,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </a>
       }
     </div>
 

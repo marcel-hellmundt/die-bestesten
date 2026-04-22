@@ -250,6 +250,11 @@
   }
   tbody tr.row-link {
     cursor: pointer;
+    position: relative;
+  }
+  tbody tr.row-link .row-link__anchor {
+    position: absolute;
+    inset: 0;
   }
   tbody tr:last-child td {
     border-bottom: none;

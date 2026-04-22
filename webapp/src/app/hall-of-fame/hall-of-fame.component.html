@@ -16,8 +16,8 @@
       </thead>
       <tbody>
         @for (entry of items(); track entry.id; let i = $index) {
-          <tr class="row-link" [routerLink]="['/manager', entry.id]" [class.row--podium]="i < 3">
-            <td class="col-rank">
+          <tr class="row-link" [class.row--podium]="i < 3">
+            <td class="col-rank"><a class="row-link__anchor" [routerLink]="['/manager', entry.id]"></a>
               @if (i === 0) {
                 <span class="rank rank--gold">1</span>
               } @else if (i === 1) {
@@ -77,11 +77,13 @@
           <table class="data-table data-table--compact">
             <tbody>
               @for (row of award.seasons; track row.season_id) {
-                <tr
-                  [class.row-link]="row.winner"
-                  [routerLink]="row.winner ? ['/team', row.winner.team_id] : null"
-                >
-                  <td class="col-season">{{ cache.seasonName(row.season_id) }}</td>
+                <tr [class.row-link]="row.winner">
+                  <td class="col-season">
+                    @if (row.winner) {
+                      <a class="row-link__anchor" [routerLink]="['/team', row.winner.team_id]"></a>
+                    }
+                    {{ cache.seasonName(row.season_id) }}
+                  </td>
                   @if (row.winner) {
                     <td class="col-avatar">
                       <div class="avatar avatar--sm">

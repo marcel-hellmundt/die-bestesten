@@ -55,12 +55,8 @@
             </thead>
             <tbody>
               @for (team of teams(); track team.id) {
-                <tr
-                  class="row-link"
-                  [routerLink]="['/team', team.id]"
-                  [class.row--first]="team.season_placement === 1"
-                >
-                  <td>{{ cache.seasonName(team.season_id) }}</td>
+                <tr class="row-link" [class.row--first]="team.season_placement === 1">
+                  <td><a class="row-link__anchor" [routerLink]="['/team', team.id]"></a>{{ cache.seasonName(team.season_id) }}</td>
                   <td>
                     <span class="team-name">
                       <span class="team-logo-wrap">
@@ -153,8 +149,8 @@
             <table class="data-table data-table--compact">
               <tbody>
                 @for (r of highlights(); track r.matchday_id + r.team_id; let i = $index) {
-                  <tr class="row-link" [routerLink]="['/team', r.team_id]">
-                    <td class="col-rank-hl">{{ i + 1 }}</td>
+                  <tr class="row-link">
+                    <td class="col-rank-hl"><a class="row-link__anchor" [routerLink]="['/team', r.team_id]"></a>{{ i + 1 }}</td>
                     <td class="col-logo-hl">
                       @if (!logoErrors.has(r.team_id)) {
                         <img class="hl-logo" [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'" [alt]="r.team_name" (error)="onLogoError(r.team_id)" />
@@ -180,8 +176,8 @@
             <table class="data-table data-table--compact">
               <tbody>
                 @for (r of lowlights(); track r.matchday_id + r.team_id; let i = $index) {
-                  <tr class="row-link" [routerLink]="['/team', r.team_id]">
-                    <td class="col-rank-hl">{{ i + 1 }}</td>
+                  <tr class="row-link">
+                    <td class="col-rank-hl"><a class="row-link__anchor" [routerLink]="['/team', r.team_id]"></a>{{ i + 1 }}</td>
                     <td class="col-logo-hl">
                       @if (!logoErrors.has(r.team_id)) {
                         <img class="hl-logo" [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'" [alt]="r.team_name" (error)="onLogoError(r.team_id)" />

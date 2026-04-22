@@ -56,8 +56,8 @@
           </thead>
           <tbody>
             @for (entry of clubs(); track entry.club.id) {
-              <tr class="row-link" [routerLink]="['/daten/club', entry.club.id]">
-                <td class="col-pos">{{ entry.position ?? '—' }}</td>
+              <tr class="row-link">
+                <td class="col-pos"><a class="row-link__anchor" [routerLink]="['/daten/club', entry.club.id]"></a>{{ entry.position ?? '—' }}</td>
                 <td class="col-logo">
                   <img
                     [src]="entry.club.logoUrl"

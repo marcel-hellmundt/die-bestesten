@@ -345,6 +345,19 @@ class Routing
                 ],
             ]),
 
+            new Route('buy', 'Buy', [
+                'title'       => 'Buy',
+                'description' => 'Spieler für eigenes Team kaufen — nur während offenem Transferfenster',
+                'endpoints'   => [
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/buy',
+                        'description' => 'Spieler kaufen: erstellt player_in_team + transaction (negativ) — 409 wenn Spieler bereits in einem Team oder Positionslimit erreicht — Auth',
+                        'body'        => ['team_id' => 'UUID des Teams', 'player_id' => 'UUID des Spielers', 'transferwindow_id' => 'UUID des offenen Transferfensters'],
+                    ],
+                ],
+            ]),
+
             new Route('team', 'Team', [
                 'title'       => 'Team',
                 'description' => 'Fantasy-Teams pro Manager und Saison',

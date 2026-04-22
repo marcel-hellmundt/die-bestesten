@@ -116,6 +116,30 @@ export class PlayerDetailComponent {
     { initialValue: null as { id: string; team_name: string; season_id: string; color: string | null } | null }
   );
 
+  private readonly SQUAD_MAX: Record<string, number> = {
+    GOALKEEPER: 2, DEFENDER: 6, MIDFIELDER: 6, FORWARD: 4,
+  };
+
+  mySquad = toSignal(
+    toObservable(this.myTeam).pipe(
+      switchMap(t => {
+        if (!t) return of([] as { id: string; position: string }[]);
+        return this.api.get<{ id: string; position: string }[]>(`player_in_team?team_id=${t.id}`).pipe(
+          catchError(() => of([] as { id: string; position: string }[]))
+        );
+      })
+    ),
+    { initialValue: [] as { id: string; position: string }[] }
+  );
+
+  canBuy = computed(() => {
+    const pos = this.player()?.seasons[0]?.position;
+    if (!pos) return false;
+    const max = this.SQUAD_MAX[pos];
+    if (max === undefined) return false;
+    return this.mySquad().filter(s => s.position === pos).length < max;
+  });
+
   openWindow = toSignal(
     combineLatest([toObservable(this.currentTeam), toObservable(this.myTeam)]).pipe(
       switchMap(([team, myTeam]) => {
@@ -140,7 +164,29 @@ export class PlayerDetailComponent {
   buyError = signal<string | null>(null);
 
   buyPlayer(): void {
-    // TODO: implement buy flow
+    const team = this.myTeam();
+    const win  = this.openWindow();
+    const p    = this.player();
+    if (!team || !win || !p) return;
+
+    const currentSeason = p.seasons[0];
+    const price = +(currentSeason?.price ?? 0);
+    const formatted = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price);
+
+    if (!confirm(`${p.displayname} für ${formatted} kaufen?`)) return;
+
+    this.buying.set(true);
+    this.buyError.set(null);
+    this.api.post<any>('buy', { team_id: team.id, player_id: p.id, transferwindow_id: win.id }).subscribe({
+      next: () => {
+        this.buying.set(false);
+        this.refreshTeam$.next();
+      },
+      error: (err: any) => {
+        this.buying.set(false);
+        this.buyError.set(err?.error?.message ?? 'Fehler beim Kauf');
+      },
+    });
   }
 
   teamLogoError = signal(false);

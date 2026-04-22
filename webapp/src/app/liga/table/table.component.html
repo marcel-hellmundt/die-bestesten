@@ -54,8 +54,8 @@
           </thead>
           <tbody>
             @for (r of rows(); track r.team_id; let i = $index) {
-              <tr class="row-link" [routerLink]="['/team', r.team_id]">
-                <td class="col-rank">{{ r.total_points !== rows()[i - 1]?.total_points ? i + 1 : '' }}</td>
+              <tr class="row-link">
+                <td class="col-rank"><a class="row-link__anchor" [routerLink]="['/team', r.team_id]"></a>{{ r.total_points !== rows()[i - 1]?.total_points ? i + 1 : '' }}</td>
                 <td>
                   <span class="team-cell">
                     <span class="team-logo-wrap">
@@ -104,10 +104,10 @@
             <div class="card luck-card">
               <div class="luck-list">
                 @for (r of matchdayWins(); track r.team_id) {
-                  <div class="luck-item" [routerLink]="['/team', r.team_id]">
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
                     <span class="luck-item__team">{{ r.manager_name }}</span>
                     <span class="luck-item__meta">{{ r.wins }}×</span>
-                  </div>
+                  </a>
                 }
               </div>
             </div>
@@ -188,10 +188,10 @@
           <div class="card luck-card">
             <div class="luck-list">
               @for (r of hoelzerneBand(); track r.team_id) {
-                <div class="luck-item" [routerLink]="['/team', r.team_id]">
+                <a class="luck-item" [routerLink]="['/team', r.team_id]">
                   <span class="luck-item__team">{{ r.manager_name }}</span>
                   <span class="luck-item__meta">−{{ r.gap }} Pkt</span>
-                </div>
+                </a>
               }
             </div>
           </div>
@@ -205,12 +205,12 @@
           <div class="card luck-card">
             <div class="luck-list">
               @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
-                <div class="luck-item" [routerLink]="['/team', r.team_id]">
+                <a class="luck-item" [routerLink]="['/team', r.team_id]">
                   <span class="luck-item__team">{{ r.manager_name }}</span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
-                </div>
+                </a>
               }
             </div>
           </div>
@@ -224,12 +224,12 @@
           <div class="card luck-card">
             <div class="luck-list">
               @for (r of lucky(); track r.team_id + r.matchday_id) {
-                <div class="luck-item" [routerLink]="['/team', r.team_id]">
+                <a class="luck-item" [routerLink]="['/team', r.team_id]">
                   <span class="luck-item__team">{{ r.manager_name }}</span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
-                </div>
+                </a>
               }
             </div>
           </div>
@@ -243,12 +243,12 @@
           <div class="card luck-card">
             <div class="luck-list">
               @for (r of unlucky(); track r.team_id + r.matchday_id) {
-                <div class="luck-item" [routerLink]="['/team', r.team_id]">
+                <a class="luck-item" [routerLink]="['/team', r.team_id]">
                   <span class="luck-item__team">{{ r.manager_name }}</span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
-                </div>
+                </a>
               }
             </div>
           </div>

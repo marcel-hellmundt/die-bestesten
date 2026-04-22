@@ -69,8 +69,8 @@
       </thead>
       <tbody>
         @for (item of sortedItems(); track item.id) {
-          <tr class="row-link" [routerLink]="[item.id]">
-            <td class="col-id">{{ item.id }}</td>
+          <tr class="row-link">
+            <td class="col-id"><a class="row-link__anchor" [routerLink]="[item.id]"></a>{{ item.id }}</td>
             <td><img [src]="item.flagUrl" class="flag" alt="" /></td>
             <td>{{ item.first_name }}</td>
             <td>{{ item.last_name }}</td>

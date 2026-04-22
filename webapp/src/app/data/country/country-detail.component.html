@@ -33,8 +33,9 @@
           </thead>
           <tbody>
             @for (club of clubs(); track club.id) {
-              <tr class="row-link" [routerLink]="['/data/club', club.id]">
+              <tr class="row-link">
                 <td class="col-logo">
+                  <a class="row-link__anchor" [routerLink]="['/daten/club', club.id]"></a>
                   <img [src]="club.logoUrl" [class]="club.logoClass" class="club-logo" alt="" />
                 </td>
                 <td>{{ club.name }}</td>
