@@ -469,8 +469,8 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/player_in_team',
-                        'description'  => 'Alle aktiven Spieler eines Teams (to_matchday_id IS NULL) mit Position, Preis, Saison-Punkten, aktuellem Club (current_club_id, club_logo_uploaded); ?include_former=1 → {current, former}; ?player_id → {id, season_id, team_name, color, manager_name, alias} oder null',
-                        'query_params' => ['team_id' => 'UUID des Teams (erforderlich)', 'include_former' => '1 → gibt {current, former} zurück', 'player_id' => 'UUID → welches Team besitzt diesen Spieler ({id,season_id,team_name,color,manager_name,alias} oder null)'],
+                        'description'  => 'Alle aktiven Spieler eines Teams (to_matchday_id IS NULL) mit Position, Preis, Saison-Punkten, aktuellem Club; ?include_former=1 → {current, former}; ?player_id → aktuelles Team oder null; ?player_id + ?season_id → Teamhistorie des Spielers in dieser Saison [{team_id,team_name,color,manager_name,alias,from_matchday_number,to_matchday_number}]',
+                        'query_params' => ['team_id' => 'UUID des Teams (erforderlich)', 'include_former' => '1 → gibt {current, former} zurück', 'player_id' => 'UUID des Spielers', 'season_id' => 'UUID der Saison — kombiniert mit player_id: gibt Teamhistorie zurück'],
                     ],
                 ],
             ]),

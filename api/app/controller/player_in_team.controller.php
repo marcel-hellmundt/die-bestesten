@@ -8,6 +8,10 @@ class PlayerInTeamController extends _BaseController
     {
         $playerId = $this->params['player_id'] ?? null;
         if ($playerId) {
+            $seasonId = $this->params['season_id'] ?? null;
+            if ($seasonId) {
+                return $this->db->getTeamHistoryByPlayerId($playerId, $seasonId);
+            }
             return $this->db->getTeamByPlayerId($playerId);
         }
 

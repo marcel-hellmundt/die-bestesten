@@ -74,6 +74,52 @@ trait PlayerInTeamTrait
         return $row ?: null;
     }
 
+    public function getTeamHistoryByPlayerId(string $playerId, string $seasonId): array
+    {
+        $q = $this->con_league->prepare(
+            "SELECT pit.from_matchday_id, pit.to_matchday_id,
+                    t.id AS team_id, t.team_name, t.color,
+                    m.manager_name, m.alias
+             FROM player_in_team pit
+             JOIN team t ON t.id = pit.team_id
+             JOIN manager m ON m.id = t.manager_id
+             WHERE pit.player_id = :player_id AND t.season_id = :season_id
+             ORDER BY pit.from_matchday_id"
+        );
+        $q->execute([':player_id' => $playerId, ':season_id' => $seasonId]);
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($rows)) return [];
+
+        // Collect all matchday IDs to resolve numbers in one query
+        $matchdayIds = [];
+        foreach ($rows as $row) {
+            if ($row['from_matchday_id']) $matchdayIds[] = $row['from_matchday_id'];
+            if ($row['to_matchday_id'])   $matchdayIds[] = $row['to_matchday_id'];
+        }
+        $matchdayIds = array_values(array_unique($matchdayIds));
+
+        $numbers = [];
+        if (!empty($matchdayIds)) {
+            $ph = implode(',', array_fill(0, count($matchdayIds), '?'));
+            $mq = $this->con->prepare("SELECT id, number FROM matchday WHERE id IN ($ph)");
+            $mq->execute($matchdayIds);
+            foreach ($mq->fetchAll(PDO::FETCH_ASSOC) as $m) {
+                $numbers[$m['id']] = (int) $m['number'];
+            }
+        }
+
+        return array_map(fn($row) => [
+            'team_id'              => $row['team_id'],
+            'team_name'            => $row['team_name'],
+            'color'                => $row['color'],
+            'manager_name'         => $row['manager_name'],
+            'alias'                => $row['alias'],
+            'from_matchday_number' => $row['from_matchday_id'] ? ($numbers[$row['from_matchday_id']] ?? null) : null,
+            'to_matchday_number'   => $row['to_matchday_id']   ? ($numbers[$row['to_matchday_id']]   ?? null) : null,
+        ], $rows);
+    }
+
     private function fetchPlayerDetails(array $playerIds, string $seasonId): array
     {
         $ph = implode(',', array_fill(0, count($playerIds), '?'));

@@ -180,7 +180,49 @@
 
   <!-- 3-column grid -->
   <div class="detail-grid">
-    <!-- Left: Vereinshistorie -->
+    <!-- Left column -->
+    <div class="detail-grid__col">
+
+    <!-- Liga-Teamhistorie -->
+    @if (teamHistory().length > 0) {
+      <section class="detail-section">
+        <div class="section-header-row">
+          <h2 class="section-header">Liga-Teams</h2>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th class="col-md">Von</th>
+                <th class="col-md">Bis</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of teamHistory(); track t.team_id + t.from_matchday_number) {
+                <tr class="row-link">
+                  <td><a class="row-link__anchor" [routerLink]="['/team', t.team_id]"></a>
+                    <span class="team-history-cell">
+                      @if (t.color) {
+                        <span class="team-color-dot" [style.background-color]="t.color"></span>
+                      }
+                      <span>
+                        <span class="team-history__name">{{ t.team_name }}</span>
+                        <span class="team-history__manager">{{ t.alias ?? t.manager_name }}</span>
+                      </span>
+                    </span>
+                  </td>
+                  <td class="col-md">{{ t.from_matchday_number != null ? 'Sp. ' + t.from_matchday_number : '—' }}</td>
+                  <td class="col-md">{{ t.to_matchday_number != null ? 'Sp. ' + t.to_matchday_number : 'heute' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    <!-- Vereinshistorie -->
     <section class="detail-section">
       <div class="section-header-row">
         <h2 class="section-header">Vereinshistorie</h2>
@@ -223,6 +265,7 @@
         </div>
       }
     </section>
+    </div><!-- /detail-grid__col left -->
 
     <!-- Middle: Saisons table + price chart below -->
     <div class="detail-grid__col">

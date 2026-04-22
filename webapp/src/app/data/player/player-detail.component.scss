@@ -216,6 +216,37 @@
   white-space: nowrap;
 }
 
+.col-md {
+  color: $color-text-muted;
+  white-space: nowrap;
+  font-size: $font-sm;
+}
+
+.team-history-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.team-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.team-history__name {
+  display: block;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+}
+
+.team-history__manager {
+  display: block;
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
 .col-logo {
   width: 36px;
   padding-inline: $space-2;

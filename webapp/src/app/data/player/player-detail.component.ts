@@ -1,10 +1,20 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
+import { catchError, combineLatest, distinctUntilChanged, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
+
+interface TeamHistoryEntry {
+  team_id: string;
+  team_name: string;
+  color: string | null;
+  manager_name: string;
+  alias: string | null;
+  from_matchday_number: number | null;
+  to_matchday_number: number | null;
+}
 
 interface PlayerInSeason {
   season_id: string;
@@ -130,6 +140,26 @@ export class PlayerDetailComponent {
       })
     ),
     { initialValue: [] as { id: string; position: string }[] }
+  );
+
+  private effectiveSeasonId$ = combineLatest([
+    this.selectedSeason$,
+    toObservable(this.player),
+  ]).pipe(
+    map(([selected, p]) => selected ?? p?.seasons[0]?.season_id ?? null),
+    distinctUntilChanged(),
+  );
+
+  teamHistory = toSignal(
+    combineLatest([this.id$, this.effectiveSeasonId$]).pipe(
+      switchMap(([id, seasonId]) => {
+        if (!seasonId) return of([] as TeamHistoryEntry[]);
+        return this.api.get<TeamHistoryEntry[]>(`player_in_team?player_id=${id}&season_id=${seasonId}`).pipe(
+          catchError(() => of([] as TeamHistoryEntry[]))
+        );
+      })
+    ),
+    { initialValue: [] as TeamHistoryEntry[] }
   );
 
   canBuy = computed(() => {
