@@ -203,9 +203,12 @@
                 <tr class="row-link">
                   <td><a class="row-link__anchor" [routerLink]="['/team', t.team_id]"></a>
                     <span class="team-history-cell">
-                      @if (t.color) {
-                        <span class="team-color-dot" [style.background-color]="t.color"></span>
-                      }
+                      <img
+                        class="team-history__logo"
+                        [src]="teamLogoUrl({ id: t.team_id, season_id: t.season_id })"
+                        [alt]="t.team_name"
+                        (error)="$any($event.target).style.display = 'none'"
+                      />
                       <span>
                         <span class="team-history__name">{{ t.team_name }}</span>
                         <span class="team-history__manager">{{ t.alias ?? t.manager_name }}</span>

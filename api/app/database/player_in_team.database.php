@@ -78,7 +78,7 @@ trait PlayerInTeamTrait
     {
         $q = $this->con_league->prepare(
             "SELECT pit.from_matchday_id, pit.to_matchday_id,
-                    t.id AS team_id, t.team_name, t.color,
+                    t.id AS team_id, t.season_id, t.team_name, t.color,
                     m.manager_name, m.alias
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
@@ -111,6 +111,7 @@ trait PlayerInTeamTrait
 
         return array_map(fn($row) => [
             'team_id'              => $row['team_id'],
+            'season_id'            => $row['season_id'],
             'team_name'            => $row['team_name'],
             'color'                => $row['color'],
             'manager_name'         => $row['manager_name'],

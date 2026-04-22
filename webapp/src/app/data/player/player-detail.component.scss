@@ -228,10 +228,10 @@
   gap: $space-2;
 }
 
-.team-color-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.team-history__logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 

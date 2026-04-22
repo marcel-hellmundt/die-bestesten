@@ -8,6 +8,7 @@ import { DataCacheService } from '../../core/data-cache.service';
 
 interface TeamHistoryEntry {
   team_id: string;
+  season_id: string;
   team_name: string;
   color: string | null;
   manager_name: string;
