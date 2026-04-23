@@ -1,0 +1,73 @@
+<h1 class="page-title">Transferphasen</h1>
+
+@if (!windows().length) {
+  <p class="state-msg">Keine Transferphasen gefunden.</p>
+} @else {
+  <div class="window-list">
+    @for (w of windows(); track w.id; let i = $index) {
+      <div
+        class="window-row"
+        [class.window-row--closed]="isClosed(w)"
+        [class.window-row--open]="!isClosed(w)"
+        [class.window-row--selected]="selectedWindowId() === w.id"
+        (click)="selectWindow(w)"
+      >
+        <span class="window-row__index">#{{ i + 1 }}</span>
+        <span class="window-row__dates">
+          {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
+        </span>
+        <span class="window-row__badge" [class.window-row__badge--open]="!isClosed(w)">
+          {{ isClosed(w) ? 'Geschlossen' : 'Offen' }}
+        </span>
+      </div>
+    }
+  </div>
+}
+
+@if (selectedWindowId()) {
+  <div class="offers-section">
+    @if (offersLoading()) {
+      <p class="state-msg">Auswertung läuft…</p>
+    } @else if (offersError()) {
+      <p class="state-msg state-msg--error">{{ offersError() }}</p>
+    } @else if (windowOffers()) {
+      @if (!windowOffers()!.offers.length) {
+        <p class="state-msg">Keine Gebote für diese Transferphase.</p>
+      } @else {
+        <div class="player-offers-list">
+          @for (entry of windowOffers()!.offers; track entry.player_id) {
+            <div class="player-card">
+              <div class="player-card__header">
+                <span class="player-card__name">{{ entry.displayname }}</span>
+                @if (entry.position) {
+                  <span class="player-card__pos pos-badge pos-badge--{{ entry.position | lowercase }}">
+                    {{ positionLabel[entry.position] }}
+                  </span>
+                }
+              </div>
+              <div class="player-card__bids">
+                @for (bid of entry.bids; track bid.id) {
+                  <div
+                    class="bid-row"
+                    [class.bid-row--won]="bid.status === 'success'"
+                    [class.bid-row--lost]="bid.status === 'lost'"
+                    [class.bid-row--cancelled]="bid.status === 'cancelled'"
+                  >
+                    <span class="bid-row__team">{{ bid.team_name }}</span>
+                    <span class="bid-row__value">{{ formatPrice(bid.offer_value) }}</span>
+                    <span class="bid-row__status">
+                      @if (bid.status === 'success') { Gewonnen }
+                      @else if (bid.status === 'lost') { Verloren }
+                      @else if (bid.status === 'cancelled') { Storniert }
+                      @else { Ausstehend }
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+}

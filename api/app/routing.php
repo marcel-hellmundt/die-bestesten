@@ -365,8 +365,11 @@ class Routing
                     [
                         'method'       => 'GET',
                         'path'         => '/offer',
-                        'description'  => 'Eigene Gebote abrufen + pending_sum — nur eigenes Team — Auth',
-                        'query_params' => ['team_id' => 'UUID des Teams (erforderlich)'],
+                        'description'  => 'Eigene Gebote abrufen + pending_sum (?team_id) — oder alle Gebote einer geschlossenen Transferphase (?transferwindow_id); triggert Lazy Settlement falls noch pending-Gebote vorhanden — Auth',
+                        'query_params' => [
+                            'team_id'           => 'UUID des Teams → eigene Gebote + pending_sum',
+                            'transferwindow_id' => 'UUID der Transferphase → alle Gebote gruppiert nach Spieler; 422 wenn Fenster noch offen',
+                        ],
                     ],
                     [
                         'method'      => 'POST',

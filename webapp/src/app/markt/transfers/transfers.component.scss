@@ -1,0 +1,163 @@
+@use '../../../styles/variables' as *;
+
+.window-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin-bottom: $space-6;
+}
+
+.window-row {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &--closed {
+    cursor: pointer;
+
+    &:hover {
+      background: $color-surface-alt;
+      border-color: darken($color-border, 8%);
+    }
+  }
+
+  &--open {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  &--selected {
+    border-color: var(--flat-river);
+    background: $color-surface-alt;
+  }
+
+  &__index {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    min-width: 24px;
+  }
+
+  &__dates {
+    flex: 1;
+    font-size: $font-sm;
+  }
+
+  &__badge {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    padding: 2px $space-2;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    color: $color-text-muted;
+
+    &--open {
+      background: rgba(46, 204, 113, 0.12);
+      color: var(--flat-emerald);
+    }
+  }
+}
+
+.offers-section {
+  margin-top: $space-4;
+}
+
+.player-offers-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.player-card {
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-3 $space-4;
+    border-bottom: 1px solid $color-border;
+    background: $color-surface-alt;
+  }
+
+  &__name {
+    font-weight: $font-weight-semibold;
+    font-size: $font-sm;
+  }
+
+  &__pos {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    padding: 2px 6px;
+    border-radius: $radius-full;
+  }
+
+  &__bids {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.pos-badge {
+  &--goalkeeper { background: rgba(5, 196, 107, 0.15);  color: var(--position-goalkeeper); }
+  &--defender   { background: rgba(255, 211, 42, 0.15); color: var(--position-defender); }
+  &--midfielder { background: rgba(0, 151, 230, 0.15);  color: var(--position-midfielder); }
+  &--forward    { background: rgba(255, 63, 52, 0.15);  color: var(--position-forward); }
+}
+
+.bid-row {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $color-border;
+  font-size: $font-sm;
+  transition: background $transition-fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &--won {
+    background: rgba(46, 204, 113, 0.06);
+
+    .bid-row__status { color: var(--flat-emerald); font-weight: $font-weight-medium; }
+    .bid-row__value  { font-weight: $font-weight-semibold; }
+  }
+
+  &--lost {
+    .bid-row__team,
+    .bid-row__value { color: $color-text-muted; }
+    .bid-row__status { color: $color-text-muted; font-size: $font-xs; }
+  }
+
+  &--cancelled {
+    .bid-row__team,
+    .bid-row__value { text-decoration: line-through; color: $color-text-muted; }
+    .bid-row__status { color: $color-text-muted; font-size: $font-xs; }
+  }
+
+  &__team  { flex: 1; }
+  &__value { font-variant-numeric: tabular-nums; }
+  &__status { min-width: 80px; text-align: right; font-size: $font-xs; }
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .window-row {
+    flex-wrap: wrap;
+    gap: $space-2;
+
+    &__dates { font-size: $font-xs; }
+  }
+
+  .bid-row {
+    &__status { min-width: unset; }
+  }
+}

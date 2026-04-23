@@ -6,16 +6,33 @@ class OfferController extends _BaseController
 
     protected function get(): mixed
     {
-        $teamId = $this->params['team_id'] ?? null;
-        if (!$teamId) {
-            http_response_code(400);
-            return ['status' => false, 'message' => 'team_id required'];
+        $teamId   = $this->params['team_id']           ?? null;
+        $windowId = $this->params['transferwindow_id'] ?? null;
+
+        if ($teamId) {
+            if ($this->db->getTeamOwner($teamId) !== $GLOBALS['auth_manager_id']) {
+                http_response_code(403);
+                return ['status' => false, 'message' => 'Not your team'];
+            }
+            return $this->db->getMyOffers($teamId);
         }
-        if ($this->db->getTeamOwner($teamId) !== $GLOBALS['auth_manager_id']) {
-            http_response_code(403);
-            return ['status' => false, 'message' => 'Not your team'];
+
+        if ($windowId) {
+            $window = $this->db->getTransferwindowById($windowId);
+            if (!$window) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Transferwindow not found'];
+            }
+            if (strtotime($window['end_date']) >= time()) {
+                http_response_code(422);
+                return ['status' => false, 'message' => 'Transferphase noch offen'];
+            }
+            $this->db->settleWindow($windowId);
+            return $this->db->getWindowOffers($windowId);
         }
-        return $this->db->getMyOffers($teamId);
+
+        http_response_code(400);
+        return ['status' => false, 'message' => 'team_id or transferwindow_id required'];
     }
 
     protected function post(): mixed
