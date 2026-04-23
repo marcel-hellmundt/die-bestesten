@@ -383,6 +383,15 @@ class Routing
                         ],
                     ],
                     [
+                        'method'      => 'PATCH',
+                        'path'        => '/offer/:id',
+                        'description' => 'Gebotswert eines pending-Gebots ändern — 422 wenn < Marktwert oder Budget überschritten — nur eigenes Team — Auth',
+                        'body'        => [
+                            'team_id'     => 'UUID des Teams',
+                            'offer_value' => 'Neuer Gebotswert (INT, min. Marktwert)',
+                        ],
+                    ],
+                    [
                         'method'      => 'DELETE',
                         'path'        => '/offer/:id',
                         'description' => 'Offenes Gebot stornieren (status → cancelled) — nur eigenes Team — Auth',

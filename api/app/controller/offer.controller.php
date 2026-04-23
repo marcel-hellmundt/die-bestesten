@@ -2,7 +2,7 @@
 
 class OfferController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'manager', 'DELETE' => 'manager'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'manager', 'PATCH' => 'manager', 'DELETE' => 'manager'];
 
     protected function get(): mixed
     {
@@ -77,5 +77,28 @@ class OfferController extends _BaseController
         return ['status' => true];
     }
 
-    protected function patch(): mixed { return $this->methodNotAllowed(); }
+    protected function patch(): mixed
+    {
+        $offerId  = $this->urlSegments[1] ?? null;
+        $body     = $this->body();
+        $teamId   = $body['team_id']    ?? null;
+        $newValue = isset($body['offer_value']) ? (int) $body['offer_value'] : null;
+
+        if (!$offerId || !$teamId || $newValue === null) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'offer id, team_id and offer_value required'];
+        }
+        if ($this->db->getTeamOwner($teamId) !== $GLOBALS['auth_manager_id']) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Not your team'];
+        }
+
+        $result = $this->db->updateOfferValue($offerId, $teamId, $newValue);
+        if (isset($result['error'])) {
+            $code = $result['error'] === 'not_found' ? 404 : 422;
+            http_response_code($code);
+            return ['status' => false, 'message' => $result['error']];
+        }
+        return ['status' => true];
+    }
 }

@@ -1,0 +1,142 @@
+@use '../../../styles/variables' as *;
+
+.pending-sum {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  margin-bottom: $space-4;
+
+  strong { color: $color-text; }
+}
+
+.bids-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.bid-row {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  transition: border-color $transition-fast;
+
+  &--editing {
+    border-color: $color-accent;
+  }
+
+  &__main {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: $space-2 $space-3;
+    flex-wrap: wrap;
+
+    @media (max-width: $mobile-breakpoint) {
+      gap: $space-2;
+    }
+  }
+
+  &__player {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    text-decoration: none;
+    color: $color-text;
+    flex: 1;
+    min-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:hover { text-decoration: underline; }
+  }
+
+  &__values {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    flex-shrink: 0;
+  }
+
+  &__price {
+    font-size: $font-sm;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &__pct {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    white-space: nowrap;
+  }
+
+  &__date {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    flex-shrink: 0;
+    white-space: nowrap;
+
+    @media (max-width: $mobile-breakpoint) {
+      display: none;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: $space-2;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+}
+
+.bid-status {
+  flex-shrink: 0;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+
+  &--pending   { background: rgba(217, 119, 6, 0.12);  color: $color-warning; }
+  &--success   { background: rgba(22, 163, 74, 0.12);  color: $color-success; }
+  &--lost      { background: $color-surface-alt;        color: $color-text-muted; }
+  &--cancelled { background: rgba(239, 68, 68, 0.1);   color: $color-danger; }
+}
+
+.bid-edit {
+  padding: $space-3 $space-3 $space-3;
+  border-top: 1px solid $color-border;
+  background: $color-surface-alt;
+
+  &__slider-wrap {
+    input[type='range'] {
+      width: 100%;
+      accent-color: var(--flat-river);
+      cursor: pointer;
+    }
+  }
+
+  &__labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    margin-top: 2px;
+    margin-bottom: $space-3;
+  }
+
+  &__pct {
+    font-weight: $font-weight-medium;
+    color: var(--flat-river);
+  }
+
+  &__error {
+    font-size: $font-xs;
+    color: $color-danger;
+    margin-bottom: $space-2;
+  }
+
+  &__buttons {
+    display: flex;
+    gap: $space-2;
+  }
+}

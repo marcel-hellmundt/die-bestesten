@@ -154,6 +154,39 @@ trait OfferTrait
         return $q->rowCount() > 0;
     }
 
+    public function updateOfferValue(string $offerId, string $teamId, int $newValue): array
+    {
+        $oq = $this->con_league->prepare(
+            "SELECT price_snapshot FROM offer WHERE id = :id AND team_id = :tid AND status = 'pending' LIMIT 1"
+        );
+        $oq->execute([':id' => $offerId, ':tid' => $teamId]);
+        $offer = $oq->fetch(PDO::FETCH_ASSOC);
+        if (!$offer) return ['error' => 'not_found'];
+
+        if ($newValue < (int) $offer['price_snapshot']) return ['error' => 'below_market'];
+
+        $bq = $this->con_league->prepare(
+            "SELECT COALESCE(SUM(amount), 0) FROM transaction WHERE team_id = :tid"
+        );
+        $bq->execute([':tid' => $teamId]);
+        $budget = (int) $bq->fetchColumn();
+
+        $psq = $this->con_league->prepare(
+            "SELECT COALESCE(SUM(offer_value), 0) FROM offer
+             WHERE team_id = :tid AND status = 'pending' AND id != :oid"
+        );
+        $psq->execute([':tid' => $teamId, ':oid' => $offerId]);
+        $otherPending = (int) $psq->fetchColumn();
+
+        if ($newValue > ($budget - $otherPending)) return ['error' => 'budget_exceeded'];
+
+        $uq = $this->con_league->prepare(
+            "UPDATE offer SET offer_value = :val WHERE id = :id AND team_id = :tid AND status = 'pending'"
+        );
+        $uq->execute([':val' => $newValue, ':id' => $offerId, ':tid' => $teamId]);
+        return ['success' => true];
+    }
+
     public function settleWindow(string $windowId): void
     {
         $wq = $this->con->prepare(
