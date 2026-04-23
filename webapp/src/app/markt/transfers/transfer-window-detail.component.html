@@ -24,30 +24,32 @@
               </span>
             }
 
-            <div class="player-photo-wrap">
+            <a class="player-photo-wrap" [routerLink]="['/daten/player', entry.player_id]">
               @if (photoUrl(entry); as url) {
                 <img class="player-photo" [src]="url" [alt]="entry.displayname ?? ''" />
               } @else {
                 <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
               }
-            </div>
+            </a>
 
             <div class="player-card__info">
-              <span class="player-card__name">{{ entry.displayname }}</span>
+              <a class="player-card__name" [routerLink]="['/daten/player', entry.player_id]">{{ entry.displayname }}</a>
               <span class="player-card__club">
-                <img
-                  class="club-logo"
-                  [src]="clubLogoUrl(entry.club_id, entry.club_logo_uploaded)"
-                  [class.logo--placeholder]="!entry.club_logo_uploaded"
-                  alt=""
-                />
+                <a [routerLink]="entry.club_id ? ['/daten/club', entry.club_id] : null">
+                  <img
+                    class="club-logo"
+                    [src]="clubLogoUrl(entry.club_id, entry.club_logo_uploaded)"
+                    [class.logo--placeholder]="!entry.club_logo_uploaded"
+                    alt=""
+                  />
+                </a>
               </span>
             </div>
           </div>
 
           @if (winner(entry); as w) {
             <div class="winner-bid">
-              <div class="team-logo-wrap">
+              <a class="team-logo-wrap" [routerLink]="['/team', w.team_id]">
                 @if (!logoErrors.has(w.team_id)) {
                   <img
                     class="team-logo"
@@ -56,9 +58,9 @@
                     (error)="onLogoError(w.team_id)"
                   />
                 }
-              </div>
+              </a>
               <div class="winner-bid__info">
-                <span class="winner-bid__team">{{ w.team_name }}</span>
+                <a class="winner-bid__team" [routerLink]="['/team', w.team_id]">{{ w.team_name }}</a>
                 <span class="winner-bid__price">
                   {{ formatPrice(w.offer_value) }}
                   @if (bidPct(w.offer_value, w.price_snapshot); as pct) {

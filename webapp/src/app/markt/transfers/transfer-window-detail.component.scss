@@ -67,6 +67,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-decoration: none;
+    color: $color-text;
+
+    &:hover { text-decoration: underline; }
   }
 
   &__club {
@@ -79,6 +83,7 @@
   flex-shrink: 0;
   width: 36px;
   height: 36px;
+  display: block;
 }
 
 .player-photo {
@@ -122,6 +127,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-decoration: none;
+    color: $color-text;
+
+    &:hover { text-decoration: underline; }
   }
 
   &__price {
@@ -147,6 +156,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
 }
 
 .team-logo {

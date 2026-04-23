@@ -270,7 +270,7 @@ trait OfferTrait
         $oq = $this->con_league->prepare(
             "SELECT o.id, o.player_id, o.team_id, o.offer_value, o.price_snapshot, o.status, o.created_at
              FROM offer o
-             WHERE o.transferwindow_id = :wid
+             WHERE o.transferwindow_id = :wid AND o.status != 'cancelled'
              ORDER BY o.player_id, o.offer_value DESC, o.created_at ASC"
         );
         $oq->execute([':wid' => $windowId]);
