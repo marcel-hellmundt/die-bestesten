@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap, of, Subject, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -27,7 +27,8 @@ export class BidsComponent {
 
   private refresh$ = new Subject<void>();
 
-  loading = signal(true);
+  private loadingSignal = signal(true);
+  loading = computed(() => this.loadingSignal());
   error   = signal<string | null>(null);
 
   private team = toSignal(
@@ -42,7 +43,7 @@ export class BidsComponent {
   private offersData = toSignal(
     toObservable(this.team).pipe(
       switchMap(t => {
-        if (!t) { this.loading.set(false); return of({ offers: [] as Offer[], pending_sum: 0 }); }
+        if (!t) return of({ offers: [] as Offer[], pending_sum: 0 });
         return this.refresh$.pipe(
           startWith(null),
           switchMap(() =>
@@ -51,10 +52,10 @@ export class BidsComponent {
         );
       })
     ),
-    { initialValue: { offers: [] as Offer[], pending_sum: 0 } }
+    { initialValue: undefined as { offers: Offer[]; pending_sum: number } | undefined }
   );
 
-  offers     = computed(() => { this.loading.set(false); return this.offersData()?.offers ?? []; });
+  offers     = computed(() => this.offersData()?.offers ?? []);
   pendingSum = computed(() => this.offersData()?.pending_sum ?? 0);
   teamId     = computed(() => this.team()?.id ?? null);
 
@@ -72,6 +73,9 @@ export class BidsComponent {
 
   constructor() {
     this.cache.ensureMyTeam();
+    effect(() => {
+      if (this.offersData() !== undefined) this.loadingSignal.set(false);
+    });
   }
 
   startEdit(offer: Offer): void {
