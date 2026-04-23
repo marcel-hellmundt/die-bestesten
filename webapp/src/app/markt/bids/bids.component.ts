@@ -51,8 +51,6 @@ export class BidsComponent {
           )
         );
       })
-    ),
-    { initialValue: undefined as { offers: Offer[]; pending_sum: number } | undefined }
   );
 
   offers     = computed(() => this.offersData()?.offers ?? []);
