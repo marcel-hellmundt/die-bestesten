@@ -84,34 +84,19 @@
         margin-top: $space-1;
       }
 
-      .buy-btn {
+      .offer-btn {
         margin-top: $space-1;
         padding: 4px $space-3;
         font-size: $font-xs;
         font-weight: $font-weight-semibold;
-        color: var(--flat-emerald);
-        border: 1px solid var(--flat-emerald);
+        color: var(--flat-river);
+        border: 1px solid var(--flat-river);
         border-radius: $radius-sm;
         background: transparent;
         cursor: pointer;
         white-space: nowrap;
 
-        &:hover:not(:disabled) { background: rgba(39, 174, 96, 0.08); }
-        &:disabled { opacity: 0.5; cursor: not-allowed; }
-      }
-
-      .buy-error {
-        font-size: $font-xs;
-        color: $color-danger;
-        text-align: center;
-        margin-top: $space-1;
-      }
-
-      .buy-limit-msg {
-        font-size: $font-xs;
-        color: $color-text-muted;
-        text-align: center;
-        margin-top: $space-1;
+        &:hover { background: rgba(52, 152, 219, 0.08); }
       }
     }
 
@@ -520,5 +505,153 @@
         dominant-baseline: auto;
       }
     }
+  }
+}
+
+.offer-panel {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  padding: $space-4 $space-6;
+  margin-bottom: $space-6;
+
+  &__info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-4;
+    font-size: $font-sm;
+    margin-bottom: $space-3;
+    align-items: center;
+  }
+
+  &__pct {
+    color: $color-text-muted;
+    margin-left: auto;
+  }
+
+  .offer-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    margin: $space-3 0;
+
+    .digit-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      &--fixed {
+        opacity: 0.35;
+        pointer-events: none;
+      }
+
+      input[type='number'] {
+        width: 36px;
+        height: 36px;
+        text-align: center;
+        font-size: $font-sm;
+        font-variant-numeric: tabular-nums;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        background: $color-bg;
+        color: $color-text;
+        padding: 0;
+        appearance: textfield;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        &:focus { outline: none; border-color: var(--flat-river); }
+      }
+    }
+
+    .digit-arrow {
+      height: 22px;
+      width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: $color-text-muted;
+      font-size: 10px;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+
+      &:hover { color: $color-text; }
+
+      &--disabled {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    .digit-sep {
+      font-size: $font-lg;
+      color: $color-text-muted;
+      padding: 0 2px;
+      line-height: 80px;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: $space-2;
+    margin-top: $space-3;
+    flex-wrap: wrap;
+  }
+
+  &__submit {
+    padding: $space-1 $space-4;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    background: var(--flat-river);
+    color: #fff;
+    border: none;
+    border-radius: $radius-sm;
+    cursor: pointer;
+
+    &:hover:not(:disabled) { opacity: 0.9; }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+
+  &__allin {
+    padding: $space-1 $space-4;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    background: transparent;
+    cursor: pointer;
+
+    &:hover { border-color: $color-text; }
+  }
+
+  &__cancel {
+    padding: $space-1 $space-3;
+    font-size: $font-sm;
+    color: $color-text-muted;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &:hover { color: $color-text; }
+  }
+
+  &__error {
+    font-size: $font-xs;
+    color: $color-danger;
+    margin: $space-1 0 0;
+  }
+
+  &__success {
+    text-align: center;
+    font-weight: $font-weight-medium;
+    color: var(--flat-emerald);
+    margin-bottom: $space-3;
   }
 }

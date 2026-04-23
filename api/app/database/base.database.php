@@ -20,6 +20,7 @@ require_once 'team_lineup.database.php';
 require_once 'transaction.database.php';
 require_once 'sell.database.php';
 require_once 'buy.database.php';
+require_once 'offer.database.php';
 require_once 'search.database.php';
 
 class Database
@@ -31,6 +32,7 @@ class Database
     use TransactionTrait;
     use SellTrait;
     use BuyTrait;
+    use OfferTrait;
     use AllTimeStandingsTrait;
     use AwardTrait;
     use SeasonTrait;

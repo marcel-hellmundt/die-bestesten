@@ -127,21 +127,34 @@ export class PlayerDetailComponent {
     { initialValue: null as { id: string; team_name: string; season_id: string; color: string | null } | null }
   );
 
-  private readonly SQUAD_MAX: Record<string, number> = {
-    GOALKEEPER: 2, DEFENDER: 6, MIDFIELDER: 6, FORWARD: 4,
-  };
+  private refreshOffers$ = new Subject<void>();
 
-  mySquad = toSignal(
-    toObservable(this.myTeam).pipe(
-      switchMap(t => {
-        if (!t) return of([] as { id: string; position: string }[]);
-        return this.api.get<{ id: string; position: string }[]>(`player_in_team?team_id=${t.id}`).pipe(
-          catchError(() => of([] as { id: string; position: string }[]))
+  myBudget = toSignal(
+    combineLatest([toObservable(this.myTeam), this.refreshOffers$.pipe(startWith(null))]).pipe(
+      switchMap(([t]) => {
+        if (!t) return of(0);
+        return this.api.get<{ budget: number }>(`transaction?team_id=${t.id}`).pipe(
+          map(r => +r.budget),
+          catchError(() => of(0))
         );
       })
     ),
-    { initialValue: [] as { id: string; position: string }[] }
+    { initialValue: 0 }
   );
+
+  myOfferData = toSignal(
+    combineLatest([toObservable(this.myTeam), this.refreshOffers$.pipe(startWith(null))]).pipe(
+      switchMap(([t]) => {
+        if (!t) return of({ offers: [] as any[], pending_sum: 0 });
+        return this.api.get<{ offers: any[]; pending_sum: number }>(`offer?team_id=${t.id}`).pipe(
+          catchError(() => of({ offers: [] as any[], pending_sum: 0 }))
+        );
+      })
+    ),
+    { initialValue: { offers: [] as any[], pending_sum: 0 } }
+  );
+
+  availableBudget = computed(() => this.myBudget() - (this.myOfferData().pending_sum ?? 0));
 
   private effectiveSeasonId$ = combineLatest([
     this.selectedSeason$,
@@ -178,13 +191,99 @@ export class PlayerDetailComponent {
     { initialValue: new Map<number, boolean>() }
   );
 
-  canBuy = computed(() => {
-    const pos = this.player()?.seasons[0]?.position;
-    if (!pos) return false;
-    const max = this.SQUAD_MAX[pos];
-    if (max === undefined) return false;
-    return this.mySquad().filter(s => s.position === pos).length < max;
+  // Offer panel
+  offerExpanded   = signal(false);
+  offerSubmitting = signal(false);
+  offerError      = signal<string | null>(null);
+  offerSuccess    = signal(false);
+
+  // Digit spinner — 4 controllable digits (10M / 1M / 100K / 10K), granularity 10.000
+  digitE10000000 = signal(0);
+  digitE1000000  = signal(0);
+  digitE100000   = signal(0);
+  digitE10000    = signal(0);
+
+  offerValue = computed(() =>
+    this.digitE10000000() * 10_000_000 +
+    this.digitE1000000()  *  1_000_000 +
+    this.digitE100000()   *    100_000 +
+    this.digitE10000()    *     10_000
+  );
+
+  offerPercentage = computed(() => {
+    const price = +(this.player()?.seasons[0]?.price ?? 0);
+    if (!price) return 0;
+    return Math.round(this.offerValue() / price * 100);
   });
+
+  isValidOffer = computed(() => {
+    const price = +(this.player()?.seasons[0]?.price ?? 0);
+    return price > 0
+      && this.offerValue() >= price
+      && this.offerValue() <= this.availableBudget();
+  });
+
+  private setDigitsFromValue(v: number): void {
+    const s = String(Math.max(0, Math.floor(v / 10_000) * 10_000)).padStart(8, '0');
+    this.digitE10000000.set(+s[s.length - 8] || 0);
+    this.digitE1000000.set( +s[s.length - 7] || 0);
+    this.digitE100000.set(  +s[s.length - 6] || 0);
+    this.digitE10000.set(   +s[s.length - 5] || 0);
+  }
+
+  openOffer(): void {
+    this.offerSuccess.set(false);
+    this.offerError.set(null);
+    this.setDigitsFromValue(+(this.player()?.seasons[0]?.price ?? 0));
+    this.offerExpanded.set(true);
+  }
+
+  updateDigit(prop: 'digitE10000000' | 'digitE1000000' | 'digitE100000' | 'digitE10000', delta: number): void {
+    const sigs: Record<string, ReturnType<typeof signal<number>>> = {
+      digitE10000000: this.digitE10000000,
+      digitE1000000:  this.digitE1000000,
+      digitE100000:   this.digitE100000,
+      digitE10000:    this.digitE10000,
+    };
+    sigs[prop].update(v => v + delta);
+
+    // Carry-over logic
+    if (this.digitE10000() > 9)  { this.digitE100000.update(v => v + 1);   this.digitE10000.set(0); }
+    if (this.digitE10000() < 0)  { this.digitE10000.set(0); }
+    if (this.digitE100000() > 9) { this.digitE1000000.update(v => v + 1);  this.digitE100000.set(0); }
+    if (this.digitE100000() < 0) { this.digitE100000.set(0); }
+    if (this.digitE1000000() > 9){ this.digitE10000000.update(v => v + 1); this.digitE1000000.set(0); }
+    if (this.digitE1000000() < 0){ this.digitE1000000.set(0); }
+    if (this.digitE10000000() > 9) { this.digitE10000000.set(9); }
+    if (this.digitE10000000() < 0) { this.digitE10000000.set(0); }
+  }
+
+  onAllIn(): void {
+    this.setDigitsFromValue(this.availableBudget());
+  }
+
+  submitOffer(): void {
+    const team = this.myTeam();
+    const win  = this.openWindow();
+    const p    = this.player();
+    if (!team || !win || !p || !this.isValidOffer()) return;
+    this.offerSubmitting.set(true);
+    this.offerError.set(null);
+    this.api.post<any>('offer', {
+      team_id: team.id, player_id: p.id,
+      transferwindow_id: win.id, offer_value: this.offerValue(),
+    }).subscribe({
+      next: () => {
+        this.offerSubmitting.set(false);
+        this.offerSuccess.set(true);
+        this.refreshOffers$.next();
+      },
+      error: (err: any) => {
+        this.offerSubmitting.set(false);
+        this.offerError.set(err?.error?.message ?? 'Fehler beim Abschicken');
+      },
+    });
+  }
 
   openWindow = toSignal(
     combineLatest([toObservable(this.currentTeam), toObservable(this.myTeam)]).pipe(
@@ -205,35 +304,6 @@ export class PlayerDetailComponent {
 
   selling   = signal(false);
   sellError = signal<string | null>(null);
-
-  buying   = signal(false);
-  buyError = signal<string | null>(null);
-
-  buyPlayer(): void {
-    const team = this.myTeam();
-    const win  = this.openWindow();
-    const p    = this.player();
-    if (!team || !win || !p) return;
-
-    const currentSeason = p.seasons[0];
-    const price = +(currentSeason?.price ?? 0);
-    const formatted = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price);
-
-    if (!confirm(`${p.displayname} für ${formatted} kaufen?`)) return;
-
-    this.buying.set(true);
-    this.buyError.set(null);
-    this.api.post<any>('buy', { team_id: team.id, player_id: p.id, transferwindow_id: win.id }).subscribe({
-      next: () => {
-        this.buying.set(false);
-        this.refreshTeam$.next();
-      },
-      error: (err: any) => {
-        this.buying.set(false);
-        this.buyError.set(err?.error?.message ?? 'Fehler beim Kauf');
-      },
-    });
-  }
 
   teamLogoError = signal(false);
 

@@ -70,20 +70,90 @@
         <div class="team-badge">
           <img class="team-badge__placeholder logo--placeholder" src="img/placeholders/club.png" alt="" />
           <span class="team-badge__name">Vereinslos</span>
-          @if (canBuy()) {
-            <button class="buy-btn" (click)="buyPlayer()" [disabled]="buying()">
-              {{ buying() ? '…' : 'Kaufen' }}
-            </button>
-          } @else {
-            <span class="buy-limit-msg">Positionslimit erreicht</span>
-          }
-          @if (buyError()) {
-            <span class="buy-error">{{ buyError() }}</span>
+          @if (!offerExpanded()) {
+            <button class="offer-btn" (click)="openOffer()">Gebot abgeben</button>
           }
         </div>
       }
     </div>
   </div>
+
+  <!-- Offer panel (vereinsloser Spieler, offenes Fenster) -->
+  @if (offerExpanded()) {
+    <div class="offer-panel">
+      @if (!offerSuccess()) {
+        <div class="offer-panel__info">
+          <span>Verfügbares Budget: <strong>{{ formatPrice(availableBudget()) }}</strong></span>
+          <span>Marktwert: <strong>{{ formatPrice(+(player()?.seasons?.[0]?.price ?? 0)) }}</strong></span>
+          <span class="offer-panel__pct">{{ offerPercentage() }}% des Marktwerts</span>
+        </div>
+        <div class="offer-spinner">
+          <div class="digit-bar">
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000000', 1)">▲</button>
+            <input type="number" min="0" max="9" [value]="digitE10000000()"
+                   (input)="digitE10000000.set(+$any($event.target).value); updateDigit('digitE10000000', 0)" />
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000000', -1)">▼</button>
+          </div>
+          <div class="digit-bar">
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE1000000', 1)">▲</button>
+            <input type="number" min="0" max="9" [value]="digitE1000000()"
+                   (input)="digitE1000000.set(+$any($event.target).value); updateDigit('digitE1000000', 0)" />
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE1000000', -1)">▼</button>
+          </div>
+          <span class="digit-sep">.</span>
+          <div class="digit-bar">
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE100000', 1)">▲</button>
+            <input type="number" min="0" max="9" [value]="digitE100000()"
+                   (input)="digitE100000.set(+$any($event.target).value); updateDigit('digitE100000', 0)" />
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE100000', -1)">▼</button>
+          </div>
+          <div class="digit-bar">
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000', 1)">▲</button>
+            <input type="number" min="0" max="9" [value]="digitE10000()"
+                   (input)="digitE10000.set(+$any($event.target).value); updateDigit('digitE10000', 0)" />
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000', -1)">▼</button>
+          </div>
+          <span class="digit-sep">.</span>
+          <div class="digit-bar digit-bar--fixed">
+            <span class="digit-arrow digit-arrow--disabled">▲</span>
+            <input type="number" value="0" disabled />
+            <span class="digit-arrow digit-arrow--disabled">▼</span>
+          </div>
+          <div class="digit-bar digit-bar--fixed">
+            <span class="digit-arrow digit-arrow--disabled">▲</span>
+            <input type="number" value="0" disabled />
+            <span class="digit-arrow digit-arrow--disabled">▼</span>
+          </div>
+          <div class="digit-bar digit-bar--fixed">
+            <span class="digit-arrow digit-arrow--disabled">▲</span>
+            <input type="number" value="0" disabled />
+            <span class="digit-arrow digit-arrow--disabled">▼</span>
+          </div>
+          <div class="digit-bar digit-bar--fixed">
+            <span class="digit-arrow digit-arrow--disabled">▲</span>
+            <input type="number" value="0" disabled />
+            <span class="digit-arrow digit-arrow--disabled">▼</span>
+          </div>
+        </div>
+        @if (offerError()) {
+          <p class="offer-panel__error">{{ offerError() }}</p>
+        }
+        <div class="offer-panel__actions">
+          <button class="offer-panel__allin" type="button" (click)="onAllIn()">Alles setzen</button>
+          <button class="offer-panel__submit" type="button"
+                  [disabled]="!isValidOffer() || offerSubmitting()"
+                  (click)="submitOffer()">
+            {{ offerSubmitting() ? '…' : 'Abschicken' }}
+          </button>
+          <button class="offer-panel__cancel" type="button" (click)="offerExpanded.set(false)">Abbrechen</button>
+        </div>
+      } @else {
+        <p class="offer-panel__success">Gebot erfolgreich abgeschickt!</p>
+        <button class="offer-panel__cancel" type="button"
+                (click)="offerExpanded.set(false); offerSuccess.set(false)">Schließen</button>
+      }
+    </div>
+  }
 
   <!-- Full-width: Bewertungen chart -->
   <section class="detail-section">

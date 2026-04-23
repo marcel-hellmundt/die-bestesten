@@ -358,6 +358,36 @@ class Routing
                 ],
             ]),
 
+            new Route('offer', 'Offer', [
+                'title'       => 'Offer',
+                'description' => 'Gebote auf vereinslose Spieler abgeben — nur während offenem Transferfenster',
+                'endpoints'   => [
+                    [
+                        'method'       => 'GET',
+                        'path'         => '/offer',
+                        'description'  => 'Eigene Gebote abrufen + pending_sum — nur eigenes Team — Auth',
+                        'query_params' => ['team_id' => 'UUID des Teams (erforderlich)'],
+                    ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/offer',
+                        'description' => 'Gebot abgeben — 409 wenn Spieler in Team, 422 wenn Fenster zu / Gebot < Marktwert / Budget überschritten — Auth',
+                        'body'        => [
+                            'team_id'           => 'UUID des Teams',
+                            'player_id'         => 'UUID des Spielers',
+                            'transferwindow_id' => 'UUID des offenen Transferfensters',
+                            'offer_value'       => 'Gebotswert (INT, min. Marktwert)',
+                        ],
+                    ],
+                    [
+                        'method'      => 'DELETE',
+                        'path'        => '/offer/:id',
+                        'description' => 'Offenes Gebot stornieren (status → cancelled) — nur eigenes Team — Auth',
+                        'body'        => ['team_id' => 'UUID des Teams'],
+                    ],
+                ],
+            ]),
+
             new Route('team', 'Team', [
                 'title'       => 'Team',
                 'description' => 'Fantasy-Teams pro Manager und Saison',

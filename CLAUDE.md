@@ -103,6 +103,9 @@ PATCH    /team_lineup          — {team_id, matchday_id, players:[{player_id, n
 GET      /player_in_team             — ?team_id (erforderlich) → aktive Spieler mit position, price, points, current_club_id, club_logo_uploaded; ?include_former=1 → {current, former}; ?player_id → aktuelles Team oder null; ?player_id + ?season_id → Teamhistorie [{team_id, team_name, color, manager_name, alias, from_matchday_number, to_matchday_number}] — Auth
 POST     /sell                       — {team_id, player_id, transferwindow_id} — nur eigenes Team, nur offenes Fenster; erstellt sell + transaction, setzt player_in_team.to_matchday_id, bereinigt team_lineup (nominated → alles löschen, bench → nur Spieler) — Auth
 POST     /buy                        — {team_id, player_id, transferwindow_id} — nur eigenes Team, nur offenes Fenster; 409 wenn Spieler bereits in einem Team oder Positionslimit erreicht (GK≤2, DEF≤6, MID≤6, FWD≤4); erstellt player_in_team + transaction (negativ) — Auth
+GET      /offer                      — ?team_id → {offers[], pending_sum} — nur eigenes Team — Auth
+POST     /offer                      — {team_id, player_id, transferwindow_id, offer_value} — Gebot auf vereinslosen Spieler; 409 wenn Spieler in Team; 422 wenn Fenster zu / Gebot < Marktwert / Budget überschritten; INSERT offer (status=pending) — Auth
+DELETE   /offer/:id                  — Body:{team_id} — offenes Gebot stornieren (status=cancelled) — Auth
 GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück
