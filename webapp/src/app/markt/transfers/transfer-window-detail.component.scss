@@ -18,23 +18,24 @@
   display: flex;
   align-items: center;
   gap: $space-4;
-  padding: $space-4;
+  padding: $space-3 $space-4;
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-lg;
 
   &--no-winner {
-    opacity: 0.6;
+    opacity: 0.55;
   }
 
   &__player {
     display: flex;
     align-items: center;
-    gap: $space-3;
-    min-width: 180px;
+    gap: $space-2;
+    min-width: 200px;
+    flex-shrink: 0;
 
     @media (max-width: $mobile-breakpoint) {
-      min-width: 120px;
+      min-width: 140px;
     }
   }
 
@@ -42,37 +43,49 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
   }
 
   &__name {
     font-weight: $font-weight-semibold;
     font-size: $font-sm;
-    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__club {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.player-photo-wrap {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.player-photo {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: $radius-sm;
+
+  &--placeholder {
+    background: $color-surface-alt;
+    border: 1px solid $color-border;
   }
 }
 
 .club-logo {
-  width: 32px;
-  height: 32px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
-  flex-shrink: 0;
 
   &.logo--placeholder {
-    opacity: 0.35;
+    opacity: 0.3;
   }
-}
-
-.pos-badge {
-  font-size: $font-xs;
-  font-weight: $font-weight-medium;
-  padding: 1px 6px;
-  border-radius: $radius-full;
-  width: fit-content;
-
-  &--goalkeeper { background: rgba(5, 196, 107, 0.15);  color: var(--position-goalkeeper); }
-  &--defender   { background: rgba(255, 211, 42, 0.15); color: darken(#ffd32a, 25%); }
-  &--midfielder { background: rgba(0, 151, 230, 0.15);  color: var(--position-midfielder); }
-  &--forward    { background: rgba(255, 63, 52, 0.15);  color: var(--position-forward); }
 }
 
 .winner-bid {
@@ -80,48 +93,46 @@
   align-items: center;
   gap: $space-3;
   flex: 1;
+  min-width: 0;
 
   &__info {
     display: flex;
     flex-direction: column;
     gap: 1px;
+    min-width: 0;
   }
 
   &__team {
     font-size: $font-sm;
     font-weight: $font-weight-medium;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__price {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
     font-size: $font-xs;
     color: $color-text-muted;
     font-variant-numeric: tabular-nums;
   }
-}
 
-.loser-logos {
-  display: flex;
-  gap: $space-1;
-  margin-left: auto;
-  flex-wrap: wrap;
+  &__pct {
+    font-size: $font-xs;
+    color: var(--flat-river);
+    font-weight: $font-weight-medium;
+  }
 }
 
 .team-logo-wrap {
-  position: relative;
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-}
-
-.team-color-dot {
-  position: absolute;
-  inset: 0;
-  border-radius: $radius-full;
-  opacity: 0.25;
-
-  &--sm {
-    border-radius: $radius-full;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .team-logo {
@@ -132,15 +143,24 @@
   &--sm {
     width: 24px;
     height: 24px;
-    opacity: 0.75;
   }
 }
 
+.loser-logos {
+  display: flex;
+  gap: $space-1;
+  margin-left: auto;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .loser-logo-wrap {
-  position: relative;
   width: 24px;
   height: 24px;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
 }
 
 .no-winner {

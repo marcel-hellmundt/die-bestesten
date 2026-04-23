@@ -172,7 +172,6 @@ trait OfferTrait
         if ((int) $chk->fetchColumn() === 0) return;
 
         $matchdayId = $window['matchday_id'];
-        $seasonId   = $window['season_id'];
 
         $pq = $this->con_league->prepare(
             "SELECT DISTINCT player_id FROM offer WHERE transferwindow_id = :wid AND status = 'pending'"
@@ -297,7 +296,7 @@ trait OfferTrait
         )->fetchColumn();
 
         $pq = $this->con->prepare(
-            "SELECT p.id, p.displayname, pis.position,
+            "SELECT p.id, p.displayname, pis.position, pis.photo_uploaded,
                     pic.club_id, c.logo_uploaded AS club_logo_uploaded
              FROM player p
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
@@ -309,9 +308,10 @@ trait OfferTrait
         $playerMap = [];
         foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) {
             $playerMap[$p['id']] = [
-                'displayname'       => $p['displayname'],
-                'position'          => $p['position'],
-                'club_id'           => $p['club_id'],
+                'displayname'        => $p['displayname'],
+                'position'           => $p['position'],
+                'photo_uploaded'     => (bool) $p['photo_uploaded'],
+                'club_id'            => $p['club_id'],
                 'club_logo_uploaded' => (bool) $p['club_logo_uploaded'],
             ];
         }
@@ -323,8 +323,10 @@ trait OfferTrait
                 $pm = $playerMap[$pid] ?? [];
                 $grouped[$pid] = [
                     'player_id'          => $pid,
+                    'season_id'          => $activeSeasonId,
                     'displayname'        => $pm['displayname']        ?? null,
                     'position'           => $pm['position']           ?? null,
+                    'photo_uploaded'     => $pm['photo_uploaded']     ?? false,
                     'club_id'            => $pm['club_id']            ?? null,
                     'club_logo_uploaded' => $pm['club_logo_uploaded'] ?? false,
                     'bids'               => [],

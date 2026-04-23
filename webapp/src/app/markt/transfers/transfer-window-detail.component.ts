@@ -25,8 +25,10 @@ interface Bid {
 
 interface PlayerOffers {
   player_id: string;
+  season_id: string | null;
   displayname: string | null;
   position: 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD' | null;
+  photo_uploaded: boolean;
   club_id: string | null;
   club_logo_uploaded: boolean;
   bids: Bid[];
@@ -61,8 +63,22 @@ export class TransferWindowDetailComponent {
   );
 
   window  = computed(() => this.response()?.window ?? null);
-  offers  = computed(() => this.response()?.offers ?? []);
   loading = computed(() => this.response() === null);
+
+  offers = computed(() =>
+    [...(this.response()?.offers ?? [])].sort((a, b) => {
+      const maxA = Math.max(...a.bids.map(bid => bid.offer_value), 0);
+      const maxB = Math.max(...b.bids.map(bid => bid.offer_value), 0);
+      return maxB - maxA;
+    })
+  );
+
+  readonly positionColors: Record<string, string> = {
+    GOALKEEPER: 'var(--position-goalkeeper)',
+    DEFENDER:   'var(--position-defender)',
+    MIDFIELDER: 'var(--position-midfielder)',
+    FORWARD:    'var(--position-forward)',
+  };
 
   readonly positionLabel: Record<string, string> = {
     GOALKEEPER: 'TOR',
@@ -78,6 +94,11 @@ export class TransferWindowDetailComponent {
     return `https://img.die-bestesten.de/img/team/${bid.team_season_id}/${bid.team_id}.png`;
   }
 
+  photoUrl(entry: PlayerOffers): string | null {
+    if (!entry.photo_uploaded || !entry.season_id) return null;
+    return `https://img.die-bestesten.de/img/player/${entry.season_id}/${entry.player_id}.png`;
+  }
+
   clubLogoUrl(clubId: string | null, uploaded: boolean): string {
     if (!clubId || !uploaded) return 'img/placeholders/club.png';
     return `https://img.die-bestesten.de/img/club/${clubId}.png`;
@@ -88,7 +109,14 @@ export class TransferWindowDetailComponent {
   }
 
   losers(entry: PlayerOffers): Bid[] {
-    return entry.bids.filter(b => b.status === 'lost' || b.status === 'cancelled');
+    return entry.bids
+      .filter(b => b.status === 'lost' || b.status === 'cancelled')
+      .sort((a, b) => b.offer_value - a.offer_value);
+  }
+
+  bidPct(offerValue: number, priceSnapshot: number | null): string | null {
+    if (!priceSnapshot) return null;
+    return Math.round(offerValue / priceSnapshot * 100) + '%';
   }
 
   formatPrice(value: number): string {

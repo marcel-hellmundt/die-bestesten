@@ -16,28 +16,36 @@
         <div class="player-card" [class.player-card--no-winner]="!winner(entry)">
 
           <div class="player-card__player">
-            <img
-              class="club-logo"
-              [src]="clubLogoUrl(entry.club_id, entry.club_logo_uploaded)"
-              [class.logo--placeholder]="!entry.club_logo_uploaded"
-              alt=""
-            />
+            @if (entry.position) {
+              <span class="position-badge" [style.background-color]="positionColors[entry.position]">
+                {{ positionLabel[entry.position] }}
+              </span>
+            }
+
+            <div class="player-photo-wrap">
+              @if (photoUrl(entry); as url) {
+                <img class="player-photo" [src]="url" [alt]="entry.displayname ?? ''" />
+              } @else {
+                <div class="player-photo player-photo--placeholder"></div>
+              }
+            </div>
+
             <div class="player-card__info">
               <span class="player-card__name">{{ entry.displayname }}</span>
-              @if (entry.position) {
-                <span class="pos-badge pos-badge--{{ entry.position | lowercase }}">
-                  {{ positionLabel[entry.position] }}
-                </span>
-              }
+              <span class="player-card__club">
+                <img
+                  class="club-logo"
+                  [src]="clubLogoUrl(entry.club_id, entry.club_logo_uploaded)"
+                  [class.logo--placeholder]="!entry.club_logo_uploaded"
+                  alt=""
+                />
+              </span>
             </div>
           </div>
 
           @if (winner(entry); as w) {
             <div class="winner-bid">
               <div class="team-logo-wrap">
-                @if (w.team_color) {
-                  <span class="team-color-dot" [style.background-color]="w.team_color"></span>
-                }
                 @if (!logoErrors.has(w.team_id)) {
                   <img
                     class="team-logo"
@@ -49,15 +57,17 @@
               </div>
               <div class="winner-bid__info">
                 <span class="winner-bid__team">{{ w.team_name }}</span>
-                <span class="winner-bid__price">{{ formatPrice(w.offer_value) }}</span>
+                <span class="winner-bid__price">
+                  {{ formatPrice(w.offer_value) }}
+                  @if (bidPct(w.offer_value, w.price_snapshot); as pct) {
+                    <span class="winner-bid__pct">{{ pct }}</span>
+                  }
+                </span>
               </div>
               @if (losers(entry).length) {
                 <div class="loser-logos">
                   @for (l of losers(entry); track l.id) {
-                    <div class="loser-logo-wrap" [title]="l.team_name ?? ''">
-                      @if (l.team_color) {
-                        <span class="team-color-dot team-color-dot--sm" [style.background-color]="l.team_color"></span>
-                      }
+                    <div class="loser-logo-wrap" [title]="(l.team_name ?? '') + (bidPct(l.offer_value, l.price_snapshot) ? ' · ' + bidPct(l.offer_value, l.price_snapshot) : '')">
                       @if (!logoErrors.has(l.team_id)) {
                         <img
                           class="team-logo team-logo--sm"
