@@ -283,11 +283,11 @@ trait OfferTrait
 
         $teamIds = array_unique(array_column($rows, 'team_id'));
         $tph     = implode(',', array_fill(0, count($teamIds), '?'));
-        $tq      = $this->con_league->prepare("SELECT id, team_name FROM team WHERE id IN ($tph)");
+        $tq      = $this->con_league->prepare("SELECT id, team_name, color, season_id FROM team WHERE id IN ($tph)");
         $tq->execute(array_values($teamIds));
         $teamMap = [];
         foreach ($tq->fetchAll(PDO::FETCH_ASSOC) as $t) {
-            $teamMap[$t['id']] = $t['team_name'];
+            $teamMap[$t['id']] = ['team_name' => $t['team_name'], 'color' => $t['color'], 'season_id' => $t['season_id']];
         }
 
         $playerIds      = array_unique(array_column($rows, 'player_id'));
@@ -297,32 +297,46 @@ trait OfferTrait
         )->fetchColumn();
 
         $pq = $this->con->prepare(
-            "SELECT p.id, p.displayname, pis.position
+            "SELECT p.id, p.displayname, pis.position,
+                    pic.club_id, c.logo_uploaded AS club_logo_uploaded
              FROM player p
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
+             LEFT JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
+             LEFT JOIN club c ON c.id = pic.club_id
              WHERE p.id IN ($pph)"
         );
         $pq->execute(array_merge([$activeSeasonId], array_values($playerIds)));
         $playerMap = [];
         foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) {
-            $playerMap[$p['id']] = ['displayname' => $p['displayname'], 'position' => $p['position']];
+            $playerMap[$p['id']] = [
+                'displayname'       => $p['displayname'],
+                'position'          => $p['position'],
+                'club_id'           => $p['club_id'],
+                'club_logo_uploaded' => (bool) $p['club_logo_uploaded'],
+            ];
         }
 
         $grouped = [];
         foreach ($rows as $r) {
             $pid = $r['player_id'];
             if (!isset($grouped[$pid])) {
+                $pm = $playerMap[$pid] ?? [];
                 $grouped[$pid] = [
-                    'player_id'   => $pid,
-                    'displayname' => $playerMap[$pid]['displayname'] ?? null,
-                    'position'    => $playerMap[$pid]['position']   ?? null,
-                    'bids'        => [],
+                    'player_id'          => $pid,
+                    'displayname'        => $pm['displayname']        ?? null,
+                    'position'           => $pm['position']           ?? null,
+                    'club_id'            => $pm['club_id']            ?? null,
+                    'club_logo_uploaded' => $pm['club_logo_uploaded'] ?? false,
+                    'bids'               => [],
                 ];
             }
+            $tm = $teamMap[$r['team_id']] ?? [];
             $grouped[$pid]['bids'][] = [
                 'id'             => $r['id'],
                 'team_id'        => $r['team_id'],
-                'team_name'      => $teamMap[$r['team_id']] ?? null,
+                'team_name'      => $tm['team_name']  ?? null,
+                'team_color'     => $tm['color']      ?? null,
+                'team_season_id' => $tm['season_id']  ?? null,
                 'offer_value'    => (int) $r['offer_value'],
                 'price_snapshot' => $r['price_snapshot'] !== null ? (int) $r['price_snapshot'] : null,
                 'status'         => $r['status'],

@@ -1,0 +1,84 @@
+@if (loading()) {
+  <p class="state-msg">Auswertung läuft…</p>
+} @else if (window()) {
+  <h1 class="page-title">
+    Transferphase
+    <span class="page-title__sub">
+      {{ window()!.start_date | date:'dd.MM. HH:mm' }} – {{ window()!.end_date | date:'dd.MM. HH:mm' }}
+    </span>
+  </h1>
+
+  @if (!offers().length) {
+    <p class="state-msg">Keine Gebote für diese Transferphase.</p>
+  } @else {
+    <div class="player-list">
+      @for (entry of offers(); track entry.player_id) {
+        <div class="player-card" [class.player-card--no-winner]="!winner(entry)">
+
+          <div class="player-card__player">
+            <img
+              class="club-logo"
+              [src]="clubLogoUrl(entry.club_id, entry.club_logo_uploaded)"
+              [class.logo--placeholder]="!entry.club_logo_uploaded"
+              alt=""
+            />
+            <div class="player-card__info">
+              <span class="player-card__name">{{ entry.displayname }}</span>
+              @if (entry.position) {
+                <span class="pos-badge pos-badge--{{ entry.position | lowercase }}">
+                  {{ positionLabel[entry.position] }}
+                </span>
+              }
+            </div>
+          </div>
+
+          @if (winner(entry); as w) {
+            <div class="winner-bid">
+              <div class="team-logo-wrap">
+                @if (w.team_color) {
+                  <span class="team-color-dot" [style.background-color]="w.team_color"></span>
+                }
+                @if (!logoErrors.has(w.team_id)) {
+                  <img
+                    class="team-logo"
+                    [src]="teamLogoUrl(w)"
+                    [alt]="w.team_name ?? ''"
+                    (error)="onLogoError(w.team_id)"
+                  />
+                }
+              </div>
+              <div class="winner-bid__info">
+                <span class="winner-bid__team">{{ w.team_name }}</span>
+                <span class="winner-bid__price">{{ formatPrice(w.offer_value) }}</span>
+              </div>
+              @if (losers(entry).length) {
+                <div class="loser-logos">
+                  @for (l of losers(entry); track l.id) {
+                    <div class="loser-logo-wrap" [title]="l.team_name ?? ''">
+                      @if (l.team_color) {
+                        <span class="team-color-dot team-color-dot--sm" [style.background-color]="l.team_color"></span>
+                      }
+                      @if (!logoErrors.has(l.team_id)) {
+                        <img
+                          class="team-logo team-logo--sm"
+                          [src]="teamLogoUrl(l)"
+                          [alt]="l.team_name ?? ''"
+                          (error)="onLogoError(l.team_id)"
+                        />
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="no-winner">Kein Sieger</div>
+          }
+
+        </div>
+      }
+    </div>
+  }
+} @else {
+  <p class="state-msg">Transferphase nicht gefunden.</p>
+}
