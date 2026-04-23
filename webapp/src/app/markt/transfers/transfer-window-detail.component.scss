@@ -1,5 +1,20 @@
 @use '../../../styles/variables' as *;
 
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  text-decoration: none;
+  margin-bottom: $space-6;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
 .page-title__sub {
   display: block;
   font-size: $font-sm;

@@ -1,6 +1,8 @@
 @if (loading()) {
   <p class="state-msg">Auswertung läuft…</p>
 } @else if (window()) {
+  <a class="back-link" routerLink="../">← Alle Transferphasen</a>
+
   <h1 class="page-title">
     Transferphase
     <span class="page-title__sub">
