@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -54,6 +54,8 @@ export class TransfersComponent {
     ),
     { initialValue: [] as Transferwindow[] }
   );
+
+  sortedWindows = computed(() => [...this.windows()].reverse());
 
   selectedWindowId = signal<string | null>(null);
   offersLoading    = signal(false);

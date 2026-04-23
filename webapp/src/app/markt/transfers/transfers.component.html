@@ -4,7 +4,7 @@
   <p class="state-msg">Keine Transferphasen gefunden.</p>
 } @else {
   <div class="window-list">
-    @for (w of windows(); track w.id; let i = $index) {
+    @for (w of sortedWindows(); track w.id; let i = $index) {
       <div
         class="window-row"
         [class.window-row--closed]="isClosed(w)"
