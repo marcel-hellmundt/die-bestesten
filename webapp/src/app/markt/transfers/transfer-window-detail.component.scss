@@ -73,8 +73,7 @@
   border-radius: $radius-sm;
 
   &--placeholder {
-    background: $color-surface-alt;
-    border: 1px solid $color-border;
+    opacity: 0.3;
   }
 }
 

@@ -43,7 +43,7 @@
                   @if (photoUrl(p) && !photoErrors.has(p.id)) {
                     <img class="field-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
                   } @else {
-                    <div class="field-player__photo field-player__photo--placeholder"></div>
+                    <img class="field-player__photo field-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
                   }
                 </div>
                 @if (p.sds) {
@@ -156,7 +156,7 @@
                 @if (photoUrl(p) && !photoErrors.has(p.id)) {
                   <img class="bench-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
                 } @else {
-                  <div class="bench-player__photo bench-player__photo--placeholder"></div>
+                  <img class="bench-player__photo bench-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
                 }
               </div>
               <div class="bench-player__info">

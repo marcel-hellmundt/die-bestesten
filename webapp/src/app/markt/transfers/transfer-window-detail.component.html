@@ -26,7 +26,7 @@
               @if (photoUrl(entry); as url) {
                 <img class="player-photo" [src]="url" [alt]="entry.displayname ?? ''" />
               } @else {
-                <div class="player-photo player-photo--placeholder"></div>
+                <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
               }
             </div>
 
