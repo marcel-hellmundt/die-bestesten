@@ -51,6 +51,7 @@ export class BidsComponent {
           )
         );
       })
+    )
   );
 
   offers     = computed(() => this.offersData()?.offers ?? []);
