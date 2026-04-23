@@ -19,7 +19,7 @@
 
           <div class="player-card__player">
             @if (entry.position) {
-              <span class="position-badge" [style.background-color]="positionColors[entry.position]">
+              <span class="position-badge position-badge--text" [style.background-color]="positionColors[entry.position]">
                 {{ positionLabel[entry.position] }}
               </span>
             }
@@ -61,30 +61,30 @@
               </a>
               <div class="winner-bid__info">
                 <a class="winner-bid__team" [routerLink]="['/team', w.team_id]">{{ w.team_name }}</a>
-                <span class="winner-bid__price">
-                  {{ formatPrice(w.offer_value) }}
+                <div class="winner-bid__price">
+                  <span class="winner-bid__amount">{{ formatPrice(w.offer_value) }}</span>
                   @if (bidPct(w.offer_value, w.price_snapshot); as pct) {
                     <span class="winner-bid__pct" [ngClass]="bidPctClass(w.offer_value, w.price_snapshot)">{{ pct }}</span>
                   }
-                </span>
-              </div>
-              @if (losers(entry).length) {
-                <div class="loser-logos">
-                  @for (l of losers(entry); track l.id) {
-                    <div class="loser-logo-wrap" [title]="(l.team_name ?? '') + (bidPct(l.offer_value, l.price_snapshot) ? ' · ' + bidPct(l.offer_value, l.price_snapshot) : '')">
-                      @if (!logoErrors.has(l.team_id)) {
-                        <img
-                          class="team-logo team-logo--sm"
-                          [src]="teamLogoUrl(l)"
-                          [alt]="l.team_name ?? ''"
-                          (error)="onLogoError(l.team_id)"
-                        />
-                      }
-                    </div>
-                  }
                 </div>
-              }
+              </div>
             </div>
+            @if (losers(entry).length) {
+              <div class="loser-logos">
+                @for (l of losers(entry); track l.id) {
+                  <div class="loser-logo-wrap" [title]="(l.team_name ?? '') + (bidPct(l.offer_value, l.price_snapshot) ? ' · ' + bidPct(l.offer_value, l.price_snapshot) : '')">
+                    @if (!logoErrors.has(l.team_id)) {
+                      <img
+                        class="team-logo team-logo--sm"
+                        [src]="teamLogoUrl(l)"
+                        [alt]="l.team_name ?? ''"
+                        (error)="onLogoError(l.team_id)"
+                      />
+                    }
+                  </div>
+                }
+              </div>
+            }
           } @else {
             <div class="no-winner">Kein Sieger</div>
           }
