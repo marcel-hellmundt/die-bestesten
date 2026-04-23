@@ -73,13 +73,23 @@ trait OfferTrait
             exit;
         }
 
-        // 3. Price snapshot
+        // 3. Price snapshot = base price + points_in_season * 20000
         $pq = $this->con->prepare(
             "SELECT COALESCE(price, 0) FROM player_in_season
              WHERE player_id = :pid AND season_id = :sid LIMIT 1"
         );
         $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
-        $priceSnapshot = (int) $pq->fetchColumn();
+        $basePrice = (int) $pq->fetchColumn();
+
+        $ptq = $this->con->prepare(
+            "SELECT COALESCE(SUM(pr.points), 0) FROM player_rating pr
+             JOIN matchday m ON m.id = pr.matchday_id
+             WHERE pr.player_id = :pid AND m.season_id = :sid"
+        );
+        $ptq->execute([':pid' => $playerId, ':sid' => $seasonId]);
+        $pointsInSeason = (int) $ptq->fetchColumn();
+
+        $priceSnapshot = $basePrice + $pointsInSeason * 20000;
 
         // 4. Validate offer >= price
         if ($offerValue < $priceSnapshot) {

@@ -210,16 +210,23 @@ export class PlayerDetailComponent {
     this.digitE10000()    *     10_000
   );
 
-  offerPercentage = computed(() => {
-    const price = +(this.player()?.seasons[0]?.price ?? 0);
-    if (!price) return 0;
-    return Math.round(this.offerValue() / price * 100);
+  marketValue = computed(() => {
+    const price = +(this.player()?.seasons?.[0]?.price ?? 0);
+    return Math.round(price + this.totalPoints() * 20_000);
   });
 
+  offerPercentage = computed(() => {
+    const mv = this.marketValue();
+    if (!mv) return 0;
+    return Math.round(this.offerValue() / mv * 100);
+  });
+
+  sliderPct = computed(() => Math.min(200, Math.max(100, this.offerPercentage())));
+
   isValidOffer = computed(() => {
-    const price = +(this.player()?.seasons[0]?.price ?? 0);
-    return price > 0
-      && this.offerValue() >= price
+    const mv = this.marketValue();
+    return mv > 0
+      && this.offerValue() >= mv
       && this.offerValue() <= this.availableBudget();
   });
 
@@ -234,7 +241,7 @@ export class PlayerDetailComponent {
   openOffer(): void {
     this.offerSuccess.set(false);
     this.offerError.set(null);
-    this.setDigitsFromValue(+(this.player()?.seasons[0]?.price ?? 0));
+    this.setDigitsFromValue(this.marketValue());
     this.offerExpanded.set(true);
   }
 
@@ -256,6 +263,11 @@ export class PlayerDetailComponent {
     if (this.digitE1000000() < 0){ this.digitE1000000.set(0); }
     if (this.digitE10000000() > 9) { this.digitE10000000.set(9); }
     if (this.digitE10000000() < 0) { this.digitE10000000.set(0); }
+  }
+
+  onSliderChange(pct: number): void {
+    const raw = Math.round(pct / 100 * this.marketValue() / 10_000) * 10_000;
+    this.setDigitsFromValue(Math.min(raw, this.availableBudget()));
   }
 
   onAllIn(): void {

@@ -83,9 +83,18 @@
     <div class="offer-panel">
       @if (!offerSuccess()) {
         <div class="offer-panel__info">
-          <span>Verfügbares Budget: <strong>{{ formatPrice(availableBudget()) }}</strong></span>
-          <span>Marktwert: <strong>{{ formatPrice(+(player()?.seasons?.[0]?.price ?? 0)) }}</strong></span>
-          <span class="offer-panel__pct">{{ offerPercentage() }}% des Marktwerts</span>
+          <span>Budget: <strong>{{ formatPrice(availableBudget()) }}</strong></span>
+          <span>Marktwert: <strong>{{ formatPrice(marketValue()) }}</strong></span>
+        </div>
+        <div class="offer-slider">
+          <input type="range" min="100" max="200" step="1"
+                 [value]="sliderPct()"
+                 (input)="onSliderChange(+$any($event.target).value)" />
+          <div class="offer-slider__labels">
+            <span>100%</span>
+            <span class="offer-slider__pct">{{ offerPercentage() }}% des MW</span>
+            <span>200%</span>
+          </div>
         </div>
         <div class="offer-spinner">
           <div class="digit-bar">

@@ -524,9 +524,27 @@
     align-items: center;
   }
 
-  &__pct {
-    color: $color-text-muted;
-    margin-left: auto;
+  .offer-slider {
+    margin: $space-3 0 $space-1;
+
+    input[type='range'] {
+      width: 100%;
+      accent-color: var(--flat-river);
+      cursor: pointer;
+    }
+
+    &__labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: $font-xs;
+      color: $color-text-muted;
+      margin-top: 2px;
+    }
+
+    &__pct {
+      font-weight: $font-weight-medium;
+      color: var(--flat-river);
+    }
   }
 
   .offer-spinner {
