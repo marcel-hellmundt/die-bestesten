@@ -144,8 +144,11 @@
 
   &__pct {
     font-size: $font-xs;
-    color: var(--flat-river);
     font-weight: $font-weight-medium;
+
+    &--success { color: $color-success; }
+    &--warning { color: $color-warning; }
+    &--danger  { color: $color-danger; }
   }
 }
 

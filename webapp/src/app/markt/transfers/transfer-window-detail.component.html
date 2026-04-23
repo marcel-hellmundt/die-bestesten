@@ -64,7 +64,7 @@
                 <span class="winner-bid__price">
                   {{ formatPrice(w.offer_value) }}
                   @if (bidPct(w.offer_value, w.price_snapshot); as pct) {
-                    <span class="winner-bid__pct">{{ pct }}</span>
+                    <span class="winner-bid__pct" [ngClass]="bidPctClass(w.offer_value, w.price_snapshot)">{{ pct }}</span>
                   }
                 </span>
               </div>

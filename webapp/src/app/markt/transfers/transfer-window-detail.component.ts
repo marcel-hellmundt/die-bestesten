@@ -119,6 +119,14 @@ export class TransferWindowDetailComponent {
     return Math.round(offerValue / priceSnapshot * 100) + '%';
   }
 
+  bidPctClass(offerValue: number, priceSnapshot: number | null): string {
+    if (!priceSnapshot) return '';
+    const pct = offerValue / priceSnapshot * 100;
+    if (pct >= 200) return 'winner-bid__pct--danger';
+    if (pct > 100)  return 'winner-bid__pct--warning';
+    return 'winner-bid__pct--success';
+  }
+
   formatPrice(value: number): string {
     return value.toLocaleString('de-DE') + ' €';
   }
