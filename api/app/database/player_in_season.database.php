@@ -53,6 +53,8 @@ trait PlayerInSeasonTrait
              WHERE pis.season_id = ?
                AND d.level = 1
                AND LOWER(d.country_id) = 'de'
+               AND pis.position IS NOT NULL
+               AND pis.price IS NOT NULL AND pis.price > 0
                $exclusionClause
              GROUP BY p.id, p.displayname, pis.position, pis.price, pis.photo_uploaded,
                       pic.club_id, c.name, c.short_name, c.logo_uploaded
