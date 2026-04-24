@@ -292,6 +292,8 @@ trait LeagueTrait
 
         // Migrate offers
         $migratedOffers = 0;
+        $patchedOffers  = 0;
+        $skippedOffers  = 0;
         $statusMap = [
             'pending'   => 'pending',
             'success'   => 'success',
@@ -310,7 +312,11 @@ trait LeagueTrait
             $stmtOffer = $conLeague->prepare(
                 "INSERT INTO offer (id, player_id, team_id, transferwindow_id, offer_value, price_snapshot, status, created_at)
                  VALUES (:id, :player_id, :team_id, :transferwindow_id, :offer_value, :price_snapshot, :status, :created_at)
-                 ON DUPLICATE KEY UPDATE id = id"
+                 ON DUPLICATE KEY UPDATE
+                     offer_value    = VALUES(offer_value),
+                     price_snapshot = VALUES(price_snapshot),
+                     status         = VALUES(status),
+                     created_at     = VALUES(created_at)"
             );
 
             foreach ($offerRows as $row) {
@@ -324,7 +330,11 @@ trait LeagueTrait
                     ':status'            => $statusMap[$row['status']] ?? 'cancelled',
                     ':created_at'        => $row['offer_date'],
                 ]);
-                $migratedOffers++;
+                // MySQL rowCount: 1 = inserted, 2 = updated (values changed), 0 = duplicate but unchanged
+                $affected = $stmtOffer->rowCount();
+                if ($affected === 1)      { $migratedOffers++; }
+                elseif ($affected === 2)  { $patchedOffers++; }
+                else                      { $skippedOffers++; }
             }
 
             // Create purchase transactions for successful offers
@@ -575,7 +585,7 @@ trait LeagueTrait
             'team_ratings'      => ['migrated' => $migratedRatings],
             'transactions'      => ['migrated' => $migratedTransactions],
             'team_awards'       => ['migrated' => $migratedAwards],
-            'offers'            => ['migrated' => $migratedOffers],
+            'offers'            => ['migrated' => $migratedOffers, 'patched' => $patchedOffers, 'skipped' => $skippedOffers],
             'sells'             => ['migrated' => $migratedSells],
             'player_in_team'    => ['migrated' => $migratedPlayerInTeam, 'skipped' => $skippedPlayerInTeam],
             'team_lineup'       => ['migrated' => $migratedLineup,       'skipped' => $skippedLineup],
