@@ -26,7 +26,7 @@ export class MarktPlayerComponent {
   private api = inject(ApiService);
 
   private data = toSignal(
-    this.api.get<{ players: FreeAgent[] }>('player_in_season/free_agents')
+    this.api.get<{ players: FreeAgent[] }>('player_in_season/available_players')
   );
 
   players = computed(() => this.data()?.players ?? []);

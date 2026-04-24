@@ -477,7 +477,7 @@ class Routing
                     ],
                     [
                         'method'       => 'GET',
-                        'path'         => '/player_in_season/free_agents',
+                        'path'         => '/player_in_season/available_players',
                         'description'  => 'Alle Bundesliga-Spieler der aktiven Saison ohne Fantasy-Team — {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]}',
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
                     ],

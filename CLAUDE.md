@@ -108,7 +108,7 @@ POST     /offer                      — {team_id, player_id, transferwindow_id,
 PATCH    /offer/:id                  — Body:{team_id, offer_value} — Gebotswert eines pending-Gebots ändern; 422 wenn < Marktwert oder Budget überschritten — Auth
 DELETE   /offer/:id                  — Body:{team_id} — offenes Gebot stornieren (status=cancelled) — Auth
 GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
-GET      /player_in_season/free_agents     — ?season_id (optional, default aktiv) → {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]} — Bundesliga-Spieler ohne Fantasy-Team
+GET      /player_in_season/available_players — ?season_id (optional, default aktiv) → {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]} — Bundesliga-Spieler ohne Fantasy-Team
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück
 GET      /player_rating        — ?matchday_id&club_id → Spielerinfos + price, starting_count (Starts in der Saison); sortiert nach starting_count DESC, position, price DESC

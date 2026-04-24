@@ -6,7 +6,7 @@ trait PlayerInSeasonTrait
      * All bundesliga players not currently in any fantasy team — usable as a "free agent market".
      * Returns player info, position, price, cumulative season points, and club data.
      */
-    public function getFreeAgents(?string $seasonId): array
+    public function getAvailablePlayers(?string $seasonId): array
     {
         if (!$seasonId) {
             $row = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
