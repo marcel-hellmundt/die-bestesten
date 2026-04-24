@@ -1,5 +1,59 @@
 @use '../../../styles/variables' as *;
 
+.bids-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-bottom: $space-4;
+
+  .page-title {
+    margin-bottom: 0;
+  }
+}
+
+.bids-filters {
+  display: flex;
+  gap: $space-2;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.filter-btn {
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+  padding: 4px 10px;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background $transition-fast, color $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    border-color: $color-text-muted;
+    color: $color-text;
+  }
+
+  &--pending.filter-btn--active {
+    background: $color-surface-alt;
+    border-color: $color-text-muted;
+    color: $color-text;
+  }
+
+  &--success.filter-btn--active {
+    background: $color-success;
+    border-color: $color-success;
+    color: #fff;
+  }
+
+  &--lost.filter-btn--active {
+    background: $color-danger;
+    border-color: $color-danger;
+    color: #fff;
+  }
+}
+
 .pending-sum {
   font-size: $font-sm;
   color: $color-text-muted;
@@ -8,85 +62,83 @@
   strong { color: $color-text; }
 }
 
-.bids-list {
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
+// Table overrides
+.bids-table {
+  .bids-th--num {
+    text-align: right;
+  }
+
+  .bid-cell--media {
+    width: 1px;
+    white-space: nowrap;
+    padding-right: $space-1;
+  }
+
+  .bid-cell--num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .bid-cell--date {
+    white-space: nowrap;
+    color: $color-text-muted;
+    font-size: $font-xs;
+  }
+
+  .bid-cell--actions {
+    width: 1px;
+    white-space: nowrap;
+  }
+
+  .bid-row--editing td {
+    border-bottom: none;
+  }
+
+  .bid-edit-row td {
+    padding: 0;
+    border-bottom: 1px solid $color-border;
+  }
 }
 
-.bid-row {
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
-  overflow: hidden;
-  transition: border-color $transition-fast;
+.bid-media {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-  &--editing {
-    border-color: $color-accent;
-  }
+.bid-club-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 
-  &__main {
-    display: flex;
-    align-items: center;
-    gap: $space-3;
-    padding: $space-2 $space-3;
-    flex-wrap: wrap;
+.bid-player-photo {
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-sm;
+  object-fit: cover;
+  flex-shrink: 0;
 
-    @media (max-width: $mobile-breakpoint) {
-      gap: $space-2;
-    }
-  }
+  &--placeholder { opacity: 0.35; }
+}
 
-  &__player {
-    font-size: $font-sm;
-    font-weight: $font-weight-medium;
-    text-decoration: none;
-    color: $color-text;
-    flex: 1;
-    min-width: 120px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.bid-player-link {
+  font-weight: $font-weight-medium;
+  text-decoration: none;
+  color: $color-text;
+  white-space: nowrap;
 
-    &:hover { text-decoration: underline; }
-  }
+  &:hover { text-decoration: underline; }
+}
 
-  &__values {
-    display: flex;
-    align-items: center;
-    gap: $space-2;
-    flex-shrink: 0;
-  }
+.bid-pct {
+  font-weight: $font-weight-semibold;
+  font-size: $font-xs;
 
-  &__price {
-    font-size: $font-sm;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  &__pct {
-    font-size: $font-xs;
-    color: $color-text-muted;
-    white-space: nowrap;
-  }
-
-  &__date {
-    font-size: $font-xs;
-    color: $color-text-muted;
-    flex-shrink: 0;
-    white-space: nowrap;
-
-    @media (max-width: $mobile-breakpoint) {
-      display: none;
-    }
-  }
-
-  &__actions {
-    display: flex;
-    gap: $space-2;
-    flex-shrink: 0;
-    margin-left: auto;
-  }
+  &--success { color: $color-success; }
+  &--warning  { color: $color-warning; }
+  &--danger   { color: $color-danger; }
 }
 
 .bid-status {
@@ -95,15 +147,32 @@
   font-weight: $font-weight-semibold;
   padding: 2px 8px;
   border-radius: $radius-full;
+  white-space: nowrap;
 
-  &--pending   { background: rgba(217, 119, 6, 0.12);  color: $color-warning; }
+  &--pending   { background: $color-surface-alt;       color: $color-text-muted; }
   &--success   { background: rgba(22, 163, 74, 0.12);  color: $color-success; }
-  &--lost      { background: $color-surface-alt;        color: $color-text-muted; }
-  &--cancelled { background: rgba(239, 68, 68, 0.1);   color: $color-danger; }
+  &--lost      { background: rgba(239, 68, 68, 0.1);   color: $color-danger; }
+  &--cancelled { background: rgba(239, 68, 68, 0.1);   color: $color-danger; opacity: 0.6; }
+}
+
+.bid-actions {
+  display: flex;
+  gap: $space-2;
+}
+
+.bid-empty {
+  color: $color-text-muted;
+  font-size: $font-sm;
+  padding: $space-4 $space-3;
+  text-align: center;
+}
+
+.bid-edit-cell {
+  padding: 0 !important;
 }
 
 .bid-edit {
-  padding: $space-3 $space-3 $space-3;
+  padding: $space-3;
   border-top: 1px solid $color-border;
   background: $color-surface-alt;
 

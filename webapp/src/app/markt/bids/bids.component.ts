@@ -13,6 +13,10 @@ interface Offer {
   status: 'pending' | 'success' | 'lost' | 'cancelled';
   created_at: string;
   displayname: string | null;
+  season_id: string | null;
+  photo_uploaded: boolean;
+  club_id: string | null;
+  club_logo_uploaded: boolean;
 }
 
 @Component({
@@ -54,9 +58,21 @@ export class BidsComponent {
     )
   );
 
-  offers     = computed(() => this.offersData()?.offers ?? []);
-  pendingSum = computed(() => this.offersData()?.pending_sum ?? 0);
-  teamId     = computed(() => this.team()?.id ?? null);
+  allOffers = computed(() => this.offersData()?.offers ?? []);
+  pendingSum        = computed(() => this.offersData()?.pending_sum ?? 0);
+  teamId            = computed(() => this.team()?.id ?? null);
+
+  activeFilter = signal<'pending' | 'success' | 'lost' | null>(null);
+
+  offers = computed(() => {
+    const f = this.activeFilter();
+    const all = this.allOffers();
+    return f ? all.filter(o => o.status === f) : all;
+  });
+
+  toggleFilter(status: 'pending' | 'success' | 'lost'): void {
+    this.activeFilter.set(this.activeFilter() === status ? null : status);
+  }
 
   // Edit state
   editingId = signal<string | null>(null);
@@ -115,6 +131,26 @@ export class BidsComponent {
       next: () => this.refresh$.next(),
       error: () => {},
     });
+  }
+
+  photoErrors = new Set<string>();
+  onPhotoError(playerId: string): void { this.photoErrors.add(playerId); }
+
+  photoUrl(offer: Offer): string | null {
+    if (!offer.photo_uploaded || !offer.season_id) return null;
+    return `https://img.die-bestesten.de/img/player/${offer.season_id}/${offer.player_id}.png`;
+  }
+
+  clubLogoUrl(offer: Offer): string | null {
+    if (!offer.club_id || !offer.club_logo_uploaded) return null;
+    return `https://img.die-bestesten.de/img/club/${offer.club_id}.png`;
+  }
+
+  bidPctClass(offer: Offer): string {
+    const pct = offer.offer_value / offer.price_snapshot * 100;
+    if (pct >= 200) return 'bid-pct--danger';
+    if (pct > 100)  return 'bid-pct--warning';
+    return 'bid-pct--success';
   }
 
   statusLabel(status: string): string {

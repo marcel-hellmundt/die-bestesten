@@ -20,18 +20,40 @@ trait OfferTrait
             }
         }
 
-        $nameMap = [];
+        $playerMap = [];
         if (!empty($playerIds)) {
+            $activeSeasonId = $this->con->query(
+                "SELECT id FROM season ORDER BY start_date DESC LIMIT 1"
+            )->fetchColumn();
+
             $ph  = implode(',', array_fill(0, count($playerIds), '?'));
-            $pq  = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($ph)");
-            $pq->execute($playerIds);
+            $pq  = $this->con->prepare(
+                "SELECT p.id, p.displayname, pis.photo_uploaded,
+                        pic.club_id, c.logo_uploaded AS club_logo_uploaded
+                 FROM player p
+                 LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
+                 LEFT JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
+                 LEFT JOIN club c ON c.id = pic.club_id
+                 WHERE p.id IN ($ph)"
+            );
+            $pq->execute(array_merge([$activeSeasonId], array_values($playerIds)));
             foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) {
-                $nameMap[$p['id']] = $p['displayname'];
+                $playerMap[$p['id']] = [
+                    'displayname'        => $p['displayname'],
+                    'photo_uploaded'     => (bool) $p['photo_uploaded'],
+                    'club_id'            => $p['club_id'],
+                    'club_logo_uploaded' => (bool) $p['club_logo_uploaded'],
+                    'season_id'          => $activeSeasonId,
+                ];
             }
         }
 
         $offers = array_map(fn($r) => array_merge($r, [
-            'displayname' => $nameMap[$r['player_id']] ?? null,
+            'displayname'        => $playerMap[$r['player_id']]['displayname']        ?? null,
+            'photo_uploaded'     => $playerMap[$r['player_id']]['photo_uploaded']     ?? false,
+            'club_id'            => $playerMap[$r['player_id']]['club_id']            ?? null,
+            'club_logo_uploaded' => $playerMap[$r['player_id']]['club_logo_uploaded'] ?? false,
+            'season_id'          => $playerMap[$r['player_id']]['season_id']          ?? null,
         ]), $rows);
 
         return ['offers' => $offers, 'pending_sum' => $pendingSum];

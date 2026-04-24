@@ -1,63 +1,104 @@
-<h1 class="page-title">Gebote</h1>
+<div class="bids-header">
+  <h1 class="page-title">Gebote</h1>
+  <div class="bids-filters">
+    <button class="filter-btn filter-btn--pending" [class.filter-btn--active]="activeFilter() === 'pending'"
+            (click)="toggleFilter('pending')">Ausstehend</button>
+    <button class="filter-btn filter-btn--success" [class.filter-btn--active]="activeFilter() === 'success'"
+            (click)="toggleFilter('success')">Gewonnen</button>
+    <button class="filter-btn filter-btn--lost" [class.filter-btn--active]="activeFilter() === 'lost'"
+            (click)="toggleFilter('lost')">Verloren</button>
+  </div>
+</div>
 
 @if (loading()) {
   <p class="state-msg">Laden…</p>
-} @else if (offers().length === 0) {
+} @else if (!allOffers().length) {
   <p class="state-msg">Noch keine Gebote abgegeben.</p>
 } @else {
   @if (pendingSum() > 0) {
     <p class="pending-sum">Reserviert: <strong>{{ formatPrice(pendingSum()) }}</strong></p>
   }
 
-  <div class="bids-list">
-    @for (offer of offers(); track offer.id) {
-      <div class="bid-row" [class.bid-row--editing]="editingId() === offer.id">
-
-        <div class="bid-row__main">
-          <a class="bid-row__player" [routerLink]="['/daten/player', offer.player_id]">
-            {{ offer.displayname ?? '–' }}
-          </a>
-
-          <div class="bid-row__values">
-            <span class="bid-row__price">{{ formatPrice(offer.offer_value) }}</span>
-            <span class="bid-row__pct">{{ bidPct(offer) }}</span>
-          </div>
-
-          <span class="bid-row__date">{{ offer.created_at | date:'dd.MM.yy HH:mm' }}</span>
-
-          <span class="bid-status bid-status--{{ offer.status }}">{{ statusLabel(offer.status) }}</span>
-
-          @if (offer.status === 'pending' && editingId() !== offer.id) {
-            <div class="bid-row__actions">
-              <button class="btn btn-sm btn-ghost" (click)="startEdit(offer)">Bearbeiten</button>
-              <button class="btn btn-sm btn-danger" (click)="cancelOffer(offer)">Stornieren</button>
-            </div>
-          }
-        </div>
-
-        @if (editingId() === offer.id) {
-          <div class="bid-edit">
-            <div class="bid-edit__slider-wrap">
-              <input type="range" min="100" max="200" step="1"
-                     [value]="editPct()"
-                     (input)="editPct.set(+$any($event.target).value)" />
-              <div class="bid-edit__labels">
-                <span>100%</span>
-                <span class="bid-edit__pct">{{ editPct() }}% · {{ formatPrice(editValue()) }}</span>
-                <span>200%</span>
-              </div>
-            </div>
-            @if (editError()) {
-              <p class="bid-edit__error">{{ editError() }}</p>
-            }
-            <div class="bid-edit__buttons">
-              <button class="btn btn-sm btn-primary" [disabled]="editBusy()" (click)="submitEdit()">Speichern</button>
-              <button class="btn btn-sm btn-ghost" (click)="cancelEdit()">Abbrechen</button>
-            </div>
-          </div>
+  <div class="table-container">
+    <table class="data-table bids-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Spieler</th>
+          <th class="bids-th--num">Gebot</th>
+          <th class="bids-th--num">%</th>
+          <th class="hide-mobile">Datum</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!offers().length) {
+          <tr><td colspan="7" class="bid-empty">Keine Gebote mit diesem Status.</td></tr>
         }
-
-      </div>
-    }
+        @for (offer of offers(); track offer.id) {
+          <tr [class.bid-row--editing]="editingId() === offer.id">
+            <td class="bid-cell--media">
+              <div class="bid-media">
+                @if (clubLogoUrl(offer); as url) {
+                  <img class="bid-club-logo" [src]="url" alt="" />
+                }
+                <img class="bid-player-photo"
+                     [class.bid-player-photo--placeholder]="!photoUrl(offer) || photoErrors.has(offer.player_id)"
+                     [src]="photoUrl(offer) ?? 'img/placeholders/player.png'"
+                     (error)="onPhotoError(offer.player_id)"
+                     alt="" />
+              </div>
+            </td>
+            <td>
+              <a class="bid-player-link" [routerLink]="['/daten/player', offer.player_id]">
+                {{ offer.displayname ?? '–' }}
+              </a>
+            </td>
+            <td class="bid-cell--num">{{ formatPrice(offer.offer_value) }}</td>
+            <td class="bid-cell--num">
+              <span class="bid-pct" [ngClass]="bidPctClass(offer)">{{ bidPct(offer) }}</span>
+            </td>
+            <td class="hide-mobile bid-cell--date">{{ offer.created_at | date:'dd.MM.yy HH:mm' }}</td>
+            <td>
+              <span class="bid-status bid-status--{{ offer.status }}">{{ statusLabel(offer.status) }}</span>
+            </td>
+            <td class="bid-cell--actions">
+              @if (offer.status === 'pending' && editingId() !== offer.id) {
+                <div class="bid-actions">
+                  <button class="btn btn-sm btn-ghost" (click)="startEdit(offer)">Bearbeiten</button>
+                  <button class="btn btn-sm btn-danger" (click)="cancelOffer(offer)">Stornieren</button>
+                </div>
+              }
+            </td>
+          </tr>
+          @if (editingId() === offer.id) {
+            <tr class="bid-edit-row">
+              <td colspan="7" class="bid-edit-cell">
+                <div class="bid-edit">
+                  <div class="bid-edit__slider-wrap">
+                    <input type="range" min="100" max="200" step="1"
+                           [value]="editPct()"
+                           (input)="editPct.set(+$any($event.target).value)" />
+                    <div class="bid-edit__labels">
+                      <span>100%</span>
+                      <span class="bid-edit__pct">{{ editPct() }}% · {{ formatPrice(editValue()) }}</span>
+                      <span>200%</span>
+                    </div>
+                  </div>
+                  @if (editError()) {
+                    <p class="bid-edit__error">{{ editError() }}</p>
+                  }
+                  <div class="bid-edit__buttons">
+                    <button class="btn btn-sm btn-primary" [disabled]="editBusy()" (click)="submitEdit()">Speichern</button>
+                    <button class="btn btn-sm btn-ghost" (click)="cancelEdit()">Abbrechen</button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
   </div>
 }
