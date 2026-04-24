@@ -15,7 +15,7 @@
 
 .players-filters {
   position: sticky;
-  top: $space-4;
+  top: calc(60px + #{$space-4});
   display: flex;
   flex-direction: column;
   gap: $space-5;
@@ -70,13 +70,13 @@
 }
 
 .filter-slider {
-  // override global input styles for range
+  appearance: auto;
   height: auto !important;
   border: none !important;
   border-radius: 0 !important;
   background: transparent !important;
   padding: 0 !important;
-  accent-color: var(--flat-river);
+  accent-color: $color-accent;
   cursor: pointer;
 }
 
@@ -88,14 +88,14 @@
 }
 
 .filter-clubs {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
   gap: 6px;
 }
 
 .filter-club-btn {
-  width: 30px;
-  height: 30px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: $radius-sm;
   border: 1px solid $color-border;
   background: $color-surface;

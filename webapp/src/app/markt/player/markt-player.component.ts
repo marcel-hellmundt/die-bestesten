@@ -13,6 +13,7 @@ interface FreeAgent {
   club_name: string;
   club_short_name: string;
   club_logo_uploaded: boolean;
+  prev_club_position: number | null;
   season_id: string;
 }
 
@@ -43,8 +44,8 @@ export class MarktPlayerComponent {
     const seen = new Set<string>();
     return this.players()
       .filter(p => { if (seen.has(p.club_id)) return false; seen.add(p.club_id); return true; })
-      .map(p => ({ id: p.club_id, name: p.club_name, short_name: p.club_short_name, logo_uploaded: p.club_logo_uploaded }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .map(p => ({ id: p.club_id, name: p.club_name, short_name: p.club_short_name, logo_uploaded: p.club_logo_uploaded, prev_pos: p.prev_club_position }))
+      .sort((a, b) => (a.prev_pos ?? 999) - (b.prev_pos ?? 999));
   });
 
   filteredPlayers = computed(() => {

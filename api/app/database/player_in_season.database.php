@@ -35,13 +35,22 @@ trait PlayerInSeasonTrait
             $exclusionParams = $excludedIds;
         }
 
+        // Previous season ID for club position sorting
+        $prevStmt = $this->con->prepare(
+            "SELECT id FROM season WHERE start_date < (SELECT start_date FROM season WHERE id = ?)
+             ORDER BY start_date DESC LIMIT 1"
+        );
+        $prevStmt->execute([$seasonId]);
+        $prevSeasonId = $prevStmt->fetchColumn() ?: null;
+
         $stmt = $this->con->prepare(
             "SELECT p.id, p.displayname,
                     pis.position, pis.price, pis.photo_uploaded,
                     pic.club_id,
                     c.name AS club_name, c.short_name AS club_short_name,
                     c.logo_uploaded AS club_logo_uploaded,
-                    COALESCE(SUM(pr.points), 0) AS season_points
+                    COALESCE(SUM(pr.points), 0) AS season_points,
+                    cis_prev.position AS prev_club_position
              FROM player_in_season pis
              JOIN player p          ON p.id = pis.player_id
              JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
@@ -50,6 +59,10 @@ trait PlayerInSeasonTrait
              JOIN division d        ON d.id = cis.division_id
              LEFT JOIN player_rating pr ON pr.player_id = p.id
                  AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
+             LEFT JOIN club_in_season cis_prev
+                 ON cis_prev.club_id = pic.club_id
+                 AND cis_prev.season_id = ?
+                 AND cis_prev.division_id = cis.division_id
              WHERE pis.season_id = ?
                AND d.level = 1
                AND LOWER(d.country_id) = 'de'
@@ -57,11 +70,10 @@ trait PlayerInSeasonTrait
                AND pis.price IS NOT NULL AND pis.price > 0
                $exclusionClause
              GROUP BY p.id, p.displayname, pis.position, pis.price, pis.photo_uploaded,
-                      pic.club_id, c.name, c.short_name, c.logo_uploaded
-             ORDER BY FIELD(pis.position, 'GOALKEEPER','DEFENDER','MIDFIELDER','FORWARD'),
-                      pis.price DESC"
+                      pic.club_id, c.name, c.short_name, c.logo_uploaded, cis_prev.position
+             ORDER BY season_points DESC, pis.price DESC"
         );
-        $stmt->execute(array_merge([$seasonId, $seasonId], $exclusionParams));
+        $stmt->execute(array_merge([$seasonId, $prevSeasonId, $seasonId], $exclusionParams));
 
         return ['players' => array_map(fn($r) => [
             'id'                 => $r['id'],
@@ -73,8 +85,9 @@ trait PlayerInSeasonTrait
             'club_id'            => $r['club_id'],
             'club_name'          => $r['club_name'],
             'club_short_name'    => $r['club_short_name'],
-            'club_logo_uploaded' => (bool) $r['club_logo_uploaded'],
-            'season_id'          => $seasonId,
+            'club_logo_uploaded'  => (bool) $r['club_logo_uploaded'],
+            'prev_club_position'  => $r['prev_club_position'] !== null ? (int) $r['prev_club_position'] : null,
+            'season_id'           => $seasonId,
         ], $stmt->fetchAll(PDO::FETCH_ASSOC))];
     }
 
