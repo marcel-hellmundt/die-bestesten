@@ -17,6 +17,7 @@ interface Offer {
   photo_uploaded: boolean;
   club_id: string | null;
   club_logo_uploaded: boolean;
+  losers: { team_id: string; team_color: string | null; team_season_id: string | null }[];
 }
 
 @Component({
@@ -135,6 +136,13 @@ export class BidsComponent {
 
   photoErrors = new Set<string>();
   onPhotoError(playerId: string): void { this.photoErrors.add(playerId); }
+
+  loserErrors = new Set<string>();
+  onLoserError(teamId: string): void { this.loserErrors.add(teamId); }
+
+  loserLogoUrl(loser: { team_id: string; team_season_id: string | null }): string {
+    return `https://img.die-bestesten.de/img/team/${loser.team_season_id}/${loser.team_id}.png`;
+  }
 
   photoUrl(offer: Offer): string | null {
     if (!offer.photo_uploaded || !offer.season_id) return null;

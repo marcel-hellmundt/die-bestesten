@@ -48,12 +48,62 @@ trait OfferTrait
             }
         }
 
+        // Fetch losing bidder team info for settled offers (one batch query)
+        $settledPairs  = [];
+        foreach ($rows as $r) {
+            if (in_array($r['status'], ['success', 'lost'])) {
+                $key = $r['player_id'] . '|' . $r['transferwindow_id'];
+                $settledPairs[$key] = ['player_id' => $r['player_id'], 'transferwindow_id' => $r['transferwindow_id']];
+            }
+        }
+
+        $losersMap = [];
+        if (!empty($settledPairs)) {
+            $conditions = [];
+            $params     = [];
+            foreach (array_values($settledPairs) as $pair) {
+                $conditions[] = "(o.player_id = ? AND o.transferwindow_id = ?)";
+                $params[]     = $pair['player_id'];
+                $params[]     = $pair['transferwindow_id'];
+            }
+            $lq = $this->con_league->prepare(
+                "SELECT o.id AS offer_id, o.player_id, o.transferwindow_id,
+                        o.team_id, t.color AS team_color, t.season_id AS team_season_id
+                 FROM offer o JOIN team t ON t.id = o.team_id
+                 WHERE o.status = 'lost' AND (" . implode(' OR ', $conditions) . ")"
+            );
+            $lq->execute($params);
+
+            $pairLoserMap = [];
+            foreach ($lq->fetchAll(PDO::FETCH_ASSOC) as $l) {
+                $key = $l['player_id'] . '|' . $l['transferwindow_id'];
+                $pairLoserMap[$key][$l['offer_id']] = [
+                    'offer_id'       => $l['offer_id'],
+                    'team_id'        => $l['team_id'],
+                    'team_color'     => $l['team_color'],
+                    'team_season_id' => $l['team_season_id'],
+                ];
+            }
+
+            foreach ($rows as $r) {
+                if (in_array($r['status'], ['success', 'lost'])) {
+                    $key        = $r['player_id'] . '|' . $r['transferwindow_id'];
+                    $allLosers  = array_values($pairLoserMap[$key] ?? []);
+                    $losersMap[$r['id']] = array_values(array_map(
+                        fn($l) => ['team_id' => $l['team_id'], 'team_color' => $l['team_color'], 'team_season_id' => $l['team_season_id']],
+                        array_filter($allLosers, fn($l) => $l['offer_id'] !== $r['id'])
+                    ));
+                }
+            }
+        }
+
         $offers = array_map(fn($r) => array_merge($r, [
             'displayname'        => $playerMap[$r['player_id']]['displayname']        ?? null,
             'photo_uploaded'     => $playerMap[$r['player_id']]['photo_uploaded']     ?? false,
             'club_id'            => $playerMap[$r['player_id']]['club_id']            ?? null,
             'club_logo_uploaded' => $playerMap[$r['player_id']]['club_logo_uploaded'] ?? false,
             'season_id'          => $playerMap[$r['player_id']]['season_id']          ?? null,
+            'losers'             => $losersMap[$r['id']]                              ?? [],
         ]), $rows);
 
         return ['offers' => $offers, 'pending_sum' => $pendingSum];
