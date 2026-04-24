@@ -68,9 +68,9 @@ trait OfferTrait
             }
             $lq = $this->con_league->prepare(
                 "SELECT o.id AS offer_id, o.player_id, o.transferwindow_id,
-                        o.team_id, t.color AS team_color, t.season_id AS team_season_id
+                        o.team_id, o.status, t.color AS team_color, t.season_id AS team_season_id
                  FROM offer o JOIN team t ON t.id = o.team_id
-                 WHERE o.status = 'lost' AND (" . implode(' OR ', $conditions) . ")"
+                 WHERE o.status IN ('lost', 'success') AND (" . implode(' OR ', $conditions) . ")"
             );
             $lq->execute($params);
 
@@ -82,6 +82,7 @@ trait OfferTrait
                     'team_id'        => $l['team_id'],
                     'team_color'     => $l['team_color'],
                     'team_season_id' => $l['team_season_id'],
+                    'is_winner'      => $l['status'] === 'success',
                 ];
             }
 
@@ -90,7 +91,7 @@ trait OfferTrait
                     $key        = $r['player_id'] . '|' . $r['transferwindow_id'];
                     $allLosers  = array_values($pairLoserMap[$key] ?? []);
                     $losersMap[$r['id']] = array_values(array_map(
-                        fn($l) => ['team_id' => $l['team_id'], 'team_color' => $l['team_color'], 'team_season_id' => $l['team_season_id']],
+                        fn($l) => ['team_id' => $l['team_id'], 'team_color' => $l['team_color'], 'team_season_id' => $l['team_season_id'], 'is_winner' => $l['is_winner']],
                         array_filter($allLosers, fn($l) => $l['offer_id'] !== $r['id'])
                     ));
                 }

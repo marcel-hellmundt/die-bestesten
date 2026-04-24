@@ -17,7 +17,7 @@ interface Offer {
   photo_uploaded: boolean;
   club_id: string | null;
   club_logo_uploaded: boolean;
-  losers: { team_id: string; team_color: string | null; team_season_id: string | null }[];
+  losers: { team_id: string; team_color: string | null; team_season_id: string | null; is_winner: boolean }[];
 }
 
 @Component({

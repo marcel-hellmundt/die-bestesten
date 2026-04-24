@@ -70,6 +70,7 @@
                   @for (loser of offer.losers; track loser.team_id) {
                     @if (!loserErrors.has(loser.team_id)) {
                       <img class="bid-loser-logo"
+                           [class.bid-loser-logo--winner]="loser.is_winner"
                            [src]="loserLogoUrl(loser)"
                            (error)="onLoserError(loser.team_id)"
                            alt="" />
