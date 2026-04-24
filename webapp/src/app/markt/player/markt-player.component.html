@@ -1,0 +1,109 @@
+<div class="players-page">
+  <aside class="players-filters">
+    <div class="filter-section">
+      <input type="text" placeholder="Spieler suchen…"
+             [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
+    </div>
+
+    <div class="filter-section">
+      <p class="filter-label">Position</p>
+      <div class="filter-pos-group">
+        @for (pos of POSITIONS; track pos) {
+          <button class="filter-pos-btn"
+                  [class.filter-pos-btn--active]="positionFilter() === pos"
+                  [style.--pos-color]="'var(--position-' + pos.toLowerCase() + ')'"
+                  (click)="togglePosition(pos)">{{ POS_LABEL[pos] }}</button>
+        }
+      </div>
+    </div>
+
+    @if (maxDataPrice() > 0) {
+      <div class="filter-section">
+        <p class="filter-label">Max. Preis</p>
+        <input type="range" class="filter-slider"
+               [min]="0" [max]="maxDataPrice()" [step]="100000"
+               [value]="maxPrice() ?? maxDataPrice()"
+               (input)="onPriceInput($event)" />
+        <p class="filter-price-val">
+          @if (maxPrice() !== null) { bis {{ formatPrice(maxPrice()!) }} } @else { Alle Preise }
+        </p>
+      </div>
+    }
+
+    <div class="filter-section">
+      <p class="filter-label">Verein</p>
+      <div class="filter-clubs">
+        @for (club of clubs(); track club.id) {
+          <button class="filter-club-btn" [class.filter-club-btn--active]="clubFilter() === club.id"
+                  [title]="club.name" (click)="toggleClub(club.id)">
+            @if (club.logo_uploaded && !clubErrors.has(club.id)) {
+              <img [src]="'https://img.die-bestesten.de/img/club/' + club.id + '.png'"
+                   (error)="onClubError(club.id)" alt="" />
+            } @else {
+              <span class="filter-club-abbr">{{ (club.short_name ?? club.name).slice(0, 3) }}</span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (hasFilters()) {
+      <button class="filter-reset" (click)="resetFilters()">Filter zurücksetzen</button>
+    }
+  </aside>
+
+  <div class="players-list">
+    @if (loading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (!players().length) {
+      <p class="state-msg">Keine freien Spieler gefunden.</p>
+    } @else {
+      <p class="players-count">{{ filteredPlayers().length }} von {{ players().length }} Spielern</p>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th></th>
+              <th>Spieler</th>
+              <th class="col-num">Preis</th>
+              <th class="col-num">Punkte</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!filteredPlayers().length) {
+              <tr><td colspan="5" class="players-empty">Keine Spieler mit diesen Filtern.</td></tr>
+            }
+            @for (p of filteredPlayers(); track p.id) {
+              <tr>
+                <td class="col-pos">
+                  <span class="position-badge"
+                        [style.background-color]="'var(--position-' + p.position.toLowerCase() + ')'">
+                    {{ POS_LABEL[p.position] }}
+                  </span>
+                </td>
+                <td class="col-media">
+                  <div class="player-media">
+                    @if (clubLogoUrl(p); as url) {
+                      <img class="player-club-logo" [src]="url"
+                           (error)="onClubError(p.club_id)" alt="" />
+                    }
+                    <img class="player-photo"
+                         [class.player-photo--placeholder]="!photoUrl(p) || photoErrors.has(p.id)"
+                         [src]="photoUrl(p) ?? 'img/placeholders/player.png'"
+                         (error)="onPhotoError(p.id)" alt="" />
+                  </div>
+                </td>
+                <td>
+                  <a class="player-link" [routerLink]="['/daten/player', p.id]">{{ p.displayname }}</a>
+                </td>
+                <td class="col-num">{{ formatPrice(p.price) }}</td>
+                <td class="col-num">{{ p.season_points }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

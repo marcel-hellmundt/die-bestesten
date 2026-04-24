@@ -11,6 +11,11 @@ class PlayerInSeasonController extends _BaseController
             return ['count' => $this->db->getBundesligaPlayerCount($seasonId)];
         }
 
+        if ($this->id === 'free_agents') {
+            $seasonId = $this->params['season_id'] ?? null;
+            return $this->db->getFreeAgents($seasonId);
+        }
+
         http_response_code(400);
         return ['status' => false, 'message' => 'Unknown sub-resource'];
     }
