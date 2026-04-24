@@ -13,6 +13,7 @@ interface Offer {
   status: 'pending' | 'success' | 'lost' | 'cancelled';
   created_at: string;
   displayname: string | null;
+  position: string | null;
   season_id: string | null;
   photo_uploaded: boolean;
   club_id: string | null;
@@ -144,6 +145,10 @@ export class BidsComponent {
     return `https://img.die-bestesten.de/img/team/${loser.team_season_id}/${loser.team_id}.png`;
   }
 
+  sortedLosers(offer: Offer): Offer['losers'] {
+    return [...offer.losers].sort((a, b) => (b.is_winner ? 1 : 0) - (a.is_winner ? 1 : 0));
+  }
+
   photoUrl(offer: Offer): string | null {
     if (!offer.photo_uploaded || !offer.season_id) return null;
     return `https://img.die-bestesten.de/img/player/${offer.season_id}/${offer.player_id}.png`;
@@ -171,5 +176,13 @@ export class BidsComponent {
 
   bidPct(offer: Offer): string {
     return Math.round(offer.offer_value / offer.price_snapshot * 100) + '%';
+  }
+
+  private static readonly POS_LABEL: Record<string, string> = {
+    GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU',
+  };
+
+  posLabel(pos: string | null): string {
+    return pos ? (BidsComponent.POS_LABEL[pos] ?? pos) : '';
   }
 }

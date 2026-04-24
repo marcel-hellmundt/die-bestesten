@@ -28,7 +28,7 @@ trait OfferTrait
 
             $ph  = implode(',', array_fill(0, count($playerIds), '?'));
             $pq  = $this->con->prepare(
-                "SELECT p.id, p.displayname, pis.photo_uploaded,
+                "SELECT p.id, p.displayname, pis.photo_uploaded, pis.position,
                         pic.club_id, c.logo_uploaded AS club_logo_uploaded
                  FROM player p
                  LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
@@ -41,6 +41,7 @@ trait OfferTrait
                 $playerMap[$p['id']] = [
                     'displayname'        => $p['displayname'],
                     'photo_uploaded'     => (bool) $p['photo_uploaded'],
+                    'position'           => $p['position'],
                     'club_id'            => $p['club_id'],
                     'club_logo_uploaded' => (bool) $p['club_logo_uploaded'],
                     'season_id'          => $activeSeasonId,
@@ -101,6 +102,7 @@ trait OfferTrait
         $offers = array_map(fn($r) => array_merge($r, [
             'displayname'        => $playerMap[$r['player_id']]['displayname']        ?? null,
             'photo_uploaded'     => $playerMap[$r['player_id']]['photo_uploaded']     ?? false,
+            'position'           => $playerMap[$r['player_id']]['position']           ?? null,
             'club_id'            => $playerMap[$r['player_id']]['club_id']            ?? null,
             'club_logo_uploaded' => $playerMap[$r['player_id']]['club_logo_uploaded'] ?? false,
             'season_id'          => $playerMap[$r['player_id']]['season_id']          ?? null,

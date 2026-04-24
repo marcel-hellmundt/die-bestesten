@@ -367,7 +367,7 @@ class Routing
                         'path'         => '/offer',
                         'description'  => 'Eigene Gebote abrufen + pending_sum (?team_id) — oder alle Gebote einer geschlossenen Transferphase (?transferwindow_id); triggert Lazy Settlement falls noch pending-Gebote vorhanden — Auth',
                         'query_params' => [
-                            'team_id'           => 'UUID des Teams → eigene Gebote + pending_sum; jedes Gebot enthält displayname, photo_uploaded, club_id, club_logo_uploaded, season_id, losers (für success/lost: [{team_id,team_color,team_season_id}])',
+                            'team_id'           => 'UUID des Teams → eigene Gebote + pending_sum; jedes Gebot enthält displayname, position, photo_uploaded, club_id, club_logo_uploaded, season_id, losers (für success/lost: [{team_id,team_color,team_season_id,is_winner}])',
                             'transferwindow_id' => 'UUID der Transferphase → alle Gebote gruppiert nach Spieler; 422 wenn Fenster noch offen',
                         ],
                     ],

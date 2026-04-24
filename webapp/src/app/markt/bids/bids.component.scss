@@ -68,6 +68,12 @@
     text-align: right;
   }
 
+  .bid-cell--pos {
+    width: 1px;
+    white-space: nowrap;
+    padding-right: $space-1;
+  }
+
   .bid-cell--media {
     width: 1px;
     white-space: nowrap;
@@ -107,15 +113,15 @@
 }
 
 .bid-club-logo {
-  width: 18px;
-  height: 18px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .bid-player-photo {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: $radius-sm;
   object-fit: cover;
   flex-shrink: 0;
@@ -166,8 +172,8 @@
 }
 
 .bid-loser-logo {
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
   opacity: 0.65;
   border-radius: $radius-sm;

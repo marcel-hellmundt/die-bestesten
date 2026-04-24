@@ -24,6 +24,7 @@
       <thead>
         <tr>
           <th></th>
+          <th></th>
           <th>Spieler</th>
           <th class="bids-th--num">Gebot</th>
           <th class="bids-th--num">%</th>
@@ -35,10 +36,15 @@
       </thead>
       <tbody>
         @if (!offers().length) {
-          <tr><td colspan="8" class="bid-empty">Keine Gebote mit diesem Status.</td></tr>
+          <tr><td colspan="9" class="bid-empty">Keine Gebote mit diesem Status.</td></tr>
         }
         @for (offer of offers(); track offer.id) {
           <tr [class.bid-row--editing]="editingId() === offer.id">
+            <td class="bid-cell--pos">
+              @if (offer.position) {
+                <span class="position-badge" [style.background-color]="'var(--position-' + offer.position.toLowerCase() + ')'">{{ posLabel(offer.position) }}</span>
+              }
+            </td>
             <td class="bid-cell--media">
               <div class="bid-media">
                 @if (clubLogoUrl(offer); as url) {
@@ -67,7 +73,7 @@
             <td class="bid-cell--losers hide-mobile">
               @if (offer.losers.length) {
                 <div class="bid-losers">
-                  @for (loser of offer.losers; track loser.team_id) {
+                  @for (loser of sortedLosers(offer); track loser.team_id) {
                     @if (!loserErrors.has(loser.team_id)) {
                       <img class="bid-loser-logo"
                            [class.bid-loser-logo--winner]="loser.is_winner"
@@ -90,7 +96,7 @@
           </tr>
           @if (editingId() === offer.id) {
             <tr class="bid-edit-row">
-              <td colspan="8" class="bid-edit-cell">
+              <td colspan="9" class="bid-edit-cell">
                 <div class="bid-edit">
                   <div class="bid-edit__slider-wrap">
                     <input type="range" min="100" max="200" step="1"
