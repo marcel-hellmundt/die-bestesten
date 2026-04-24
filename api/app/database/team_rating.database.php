@@ -201,11 +201,13 @@ trait TeamRatingTrait
             );
             $mq->execute([':season_id' => $seasonId, ':number' => $matchdayNumber]);
         } else {
+            // Smallest uncompleted matchday first (= current round);
+            // fall back to latest completed if all are done.
             $mq = $this->con->prepare(
                 "SELECT id, number, kickoff_date, completed FROM matchday
                  WHERE season_id = :season_id
-                   AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()
-                 ORDER BY number DESC LIMIT 1"
+                 ORDER BY completed ASC, IF(completed = 0, number, -number) ASC
+                 LIMIT 1"
             );
             $mq->execute([':season_id' => $seasonId]);
         }
