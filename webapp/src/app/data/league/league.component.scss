@@ -147,6 +147,20 @@
 
 }
 
+.manager-contributions {
+  display: flex;
+  gap: $space-2;
+}
+
+.contrib-item {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  padding: 1px $space-2;
+}
+
 button.role-badge {
   cursor: pointer;
   transition: opacity $transition-fast, filter $transition-fast;

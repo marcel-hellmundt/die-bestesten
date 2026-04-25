@@ -611,9 +611,12 @@ trait LeagueTrait
             if (!$pdo) return [];
             $rows = $pdo->query(
                 "SELECT m.id, m.manager_name, m.alias, m.status,
-                        GROUP_CONCAT(mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv
+                        GROUP_CONCAT(mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv,
+                        SUM(mc.contribution_type IN ('bulk_create','manual_create')) AS contributions_lineup,
+                        SUM(mc.contribution_type = 'grade')                          AS contributions_grade
                  FROM manager m
-                 LEFT JOIN manager_role mr ON mr.manager_id = m.id
+                 LEFT JOIN manager_role mr         ON mr.manager_id = m.id
+                 LEFT JOIN maintainer_contribution mc ON mc.manager_id = m.id
                  GROUP BY m.id
                  ORDER BY
                      CASE WHEN MAX(mr.role = 'admin')      = 1 THEN 0
@@ -623,7 +626,9 @@ trait LeagueTrait
             )->fetchAll(\PDO::FETCH_ASSOC);
 
             foreach ($rows as &$row) {
-                $row['roles'] = $row['roles_csv'] ? explode(',', $row['roles_csv']) : [];
+                $row['roles']                  = $row['roles_csv'] ? explode(',', $row['roles_csv']) : [];
+                $row['contributions_lineup']   = (int) $row['contributions_lineup'];
+                $row['contributions_grade']    = (int) $row['contributions_grade'];
                 unset($row['roles_csv']);
             }
             return $rows;

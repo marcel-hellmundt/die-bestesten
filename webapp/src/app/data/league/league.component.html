@@ -91,6 +91,16 @@
                                 }
                               }
                             </div>
+                            @if (m.contributions_lineup || m.contributions_grade) {
+                              <div class="manager-contributions">
+                                @if (m.contributions_lineup) {
+                                  <span class="contrib-item" title="Aufstellungen eingetragen">{{ m.contributions_lineup }} Aufst.</span>
+                                }
+                                @if (m.contributions_grade) {
+                                  <span class="contrib-item" title="Noten eingetragen">{{ m.contributions_grade }} Noten</span>
+                                }
+                              </div>
+                            }
                           </div>
                         </div>
                       }
