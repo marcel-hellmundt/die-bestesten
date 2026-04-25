@@ -11,7 +11,7 @@ interface FreeAgent {
   photo_uploaded: boolean;
   club_id: string;
   club_name: string;
-  club_short_name: string;
+  club_short_name: string | null;
   club_logo_uploaded: boolean;
   prev_club_position: number | null;
   season_id: string;

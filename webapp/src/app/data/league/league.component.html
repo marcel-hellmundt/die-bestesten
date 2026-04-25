@@ -77,7 +77,6 @@
                           <div class="manager-chip__info">
                             <span class="manager-chip__name">{{ m.manager_name }}</span>
                             <div class="role-badges">
-                              <span class="role-badge role-badge--manager">{{ roleLabel['manager'] }}</span>
                               @for (role of assignableRoles; track role) {
                                 @if (isAdmin()) {
                                   <button
@@ -90,6 +89,7 @@
                                   <span class="role-badge role-badge--{{ role }}">{{ roleLabel[role] }}</span>
                                 }
                               }
+                              <span class="role-badge role-badge--manager">{{ roleLabel['manager'] }}</span>
                             </div>
                             @if (m.contributions_lineup || m.contributions_grade) {
                               <div class="manager-contributions">
