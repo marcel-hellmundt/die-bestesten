@@ -32,6 +32,55 @@ trait AchievementTrait
         }
     }
 
+    public function getAllAchievementsAdmin(): array
+    {
+        $achievements = $this->con->query(
+            "SELECT id, condition_key, name, description, icon, sort_index
+             FROM achievement ORDER BY sort_index ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($achievements)) return [];
+
+        $managers = $this->con_league->query(
+            "SELECT id, manager_name FROM manager WHERE status = 'active' ORDER BY manager_name ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalManagers = count($managers);
+
+        $earned = $this->con_league->query(
+            "SELECT manager_id, achievement_id, earned_at FROM manager_achievement"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $earnedMap = [];
+        foreach ($earned as $row) {
+            $earnedMap[$row['achievement_id']][$row['manager_id']] = $row['earned_at'];
+        }
+
+        return array_map(function ($a) use ($managers, $earnedMap, $totalManagers) {
+            $achievementEarned = $earnedMap[$a['id']] ?? [];
+
+            $managerList = array_map(function ($m) use ($achievementEarned) {
+                return [
+                    'id'           => $m['id'],
+                    'manager_name' => $m['manager_name'],
+                    'earned_at'    => $achievementEarned[$m['id']] ?? null,
+                ];
+            }, $managers);
+
+            return [
+                'id'             => $a['id'],
+                'condition_key'  => $a['condition_key'],
+                'name'           => $a['name'],
+                'description'    => $a['description'],
+                'icon'           => $a['icon'],
+                'sort_index'     => (int) $a['sort_index'],
+                'earned_count'   => count($achievementEarned),
+                'total_managers' => $totalManagers,
+                'managers'       => $managerList,
+            ];
+        }, $achievements);
+    }
+
     public function getManagerAchievements(string $managerId): array
     {
         $rows = $this->con->query(

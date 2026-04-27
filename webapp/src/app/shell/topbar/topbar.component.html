@@ -1,6 +1,11 @@
 <div class="topbar">
   <div class="topbar-left">
-    <div class="topbar-search" [class.topbar-search--active]="isSearchOpen()" [class.topbar-search--panel-open]="isSearchOpen() && searchQuery().length >= 3" (click)="onSearchContainerClick()">
+    <div
+      class="topbar-search"
+      [class.topbar-search--active]="isSearchOpen()"
+      [class.topbar-search--panel-open]="isSearchOpen() && searchQuery().length >= 3"
+      (click)="onSearchContainerClick()"
+    >
       <app-icon name="search" class="search-icon"></app-icon>
       <input
         #searchInput
@@ -148,7 +153,7 @@
           <hr class="dropdown-divider" />
           <button class="dropdown-item" (click)="navigateTo('/achievements')">
             <app-icon name="award"></app-icon>
-            Errungenschaften
+            Achievements
           </button>
           <hr class="dropdown-divider" />
           @if (isMaintainer()) {

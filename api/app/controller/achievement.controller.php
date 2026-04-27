@@ -6,6 +6,13 @@ class AchievementController extends _BaseController
 
     protected function get(): mixed
     {
+        if (isset($this->params['all'])) {
+            if (!in_array('admin', $GLOBALS['auth_roles'] ?? [])) {
+                http_response_code(403);
+                return ['error' => 'Forbidden'];
+            }
+            return $this->db->getAllAchievementsAdmin();
+        }
         return $this->db->getManagerAchievements($GLOBALS['auth_manager_id']);
     }
 

@@ -14,6 +14,9 @@
     <a class="sub-nav-item" routerLink="country" routerLinkActive="sub-nav-item--active">Länder</a>
     <div class="sub-nav-spacer"></div>
     <a class="sub-nav-item" routerLink="league" routerLinkActive="sub-nav-item--active">Ligen</a>
+    @if (isAdmin()) {
+      <a class="sub-nav-item" routerLink="achievements" routerLinkActive="sub-nav-item--active">Achievements</a>
+    }
   </nav>
 }
 

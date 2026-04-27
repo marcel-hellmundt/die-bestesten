@@ -1,4 +1,4 @@
-<h1 class="page-title">Errungenschaften</h1>
+<h1 class="page-title">Achievements</h1>
 
 @if (achievements().length) {
   <p class="achievements-score">{{ earnedCount() }} von {{ achievements().length }} erreicht</p>
@@ -11,7 +11,7 @@
       <div class="achievement-card__name">{{ a.earned_at ? a.name : '???' }}</div>
       @if (a.earned_at) {
         <div class="achievement-card__desc">{{ a.description }}</div>
-        <div class="achievement-card__date">{{ a.earned_at | date:'dd.MM.yyyy' }}</div>
+        <div class="achievement-card__date">{{ a.earned_at | date: 'dd.MM.yyyy' }}</div>
       }
     </div>
   }

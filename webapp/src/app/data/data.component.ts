@@ -10,4 +10,5 @@ import { AuthService } from '../auth/auth.service';
 export class DataComponent {
   private auth = inject(AuthService);
   isMaintainer = computed(() => this.auth.isMaintainer());
+  isAdmin      = computed(() => this.auth.isAdmin());
 }

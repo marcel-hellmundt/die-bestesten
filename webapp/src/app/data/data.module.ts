@@ -16,6 +16,7 @@ import { PlayerDataComponent } from './player/player.component';
 import { PlayerDetailComponent } from './player/player-detail.component';
 import { RatingsDataComponent } from './ratings/ratings.component';
 import { LeagueDataComponent } from './league/league.component';
+import { AchievementsDataComponent } from './achievements/achievements-data.component';
 
 const M = [MaintainerGuard];
 
@@ -35,8 +36,9 @@ const routes: Routes = [
       { path: 'season',       component: SeasonDataComponent,     canActivate: M },
       { path: 'ratings',      component: RatingsDataComponent,    canActivate: M },
       // player routes: no MaintainerGuard — managers may get read access here later
-      { path: 'player',      component: PlayerDataComponent },
-      { path: 'player/:id',  component: PlayerDetailComponent },
+      { path: 'player',        component: PlayerDataComponent },
+      { path: 'player/:id',    component: PlayerDetailComponent },
+      { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
     ]
   }
 ];
@@ -56,6 +58,7 @@ const routes: Routes = [
     PlayerDetailComponent,
     RatingsDataComponent,
     LeagueDataComponent,
+    AchievementsDataComponent,
   ],
   imports: [
     CommonModule,
