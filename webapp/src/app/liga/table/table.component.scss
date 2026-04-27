@@ -141,7 +141,7 @@
 
 .data-table--compact {
   th, td {
-    padding: 6px $space-3;
+    padding: 2px $space-3;
   }
 }
 
@@ -293,29 +293,5 @@
         text-anchor: end;
       }
     }
-  }
-}
-
-.team-logo-wrap {
-  position: relative;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-
-  .team-color {
-    display: block;
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
-    margin: auto;
-    margin-top: 8px;
-  }
-
-  .team-logo {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
   }
 }

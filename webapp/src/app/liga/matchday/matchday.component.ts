@@ -3,6 +3,7 @@ import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { Matchday } from '../../core/models/matchday.model';
 
 @Component({
   selector: 'app-matchday',
@@ -34,14 +35,39 @@ export class MatchdayComponent {
 
   selectedNumber = signal<number | null>(null);
 
+  private matchdays = toSignal(
+    toObservable(this.effectiveSeasonId).pipe(
+      filter(id => !!id),
+      switchMap(id =>
+        this.api.get<any[]>(`matchday?season_id=${id}`).pipe(
+          map(data => data.map(Matchday.from) as Matchday[]),
+          catchError(() => of([] as Matchday[]))
+        )
+      )
+    ),
+    { initialValue: null as Matchday[] | null }
+  );
+
+  private computeDefaultNumber(matchdays: Matchday[]): number | null {
+    if (!matchdays.length) return null;
+    const now = new Date();
+    const sorted = [...matchdays].sort((a, b) => a.number - b.number);
+    const uncompleted = sorted.find(m => !m.completed);
+    if (!uncompleted) return sorted[sorted.length - 1].number;
+    if (new Date(uncompleted.kickoff_date) <= now) return uncompleted.number;
+    return uncompleted.number > 1 ? uncompleted.number - 1 : 1;
+  }
+
   private ratingsState = toSignal(
     combineLatest([
       toObservable(this.activeSeason).pipe(filter(s => s !== null)),
       toObservable(this.selectedNumber),
+      toObservable(this.matchdays).pipe(filter((m): m is Matchday[] => m !== null)),
     ]).pipe(
-      switchMap(([season, number]) => {
-        const url = number !== null
-          ? `team_rating?season_id=${season!.id}&matchday_number=${number}`
+      switchMap(([season, number, matchdays]) => {
+        const effectiveNumber = number ?? this.computeDefaultNumber(matchdays);
+        const url = effectiveNumber !== null
+          ? `team_rating?season_id=${season!.id}&matchday_number=${effectiveNumber}`
           : `team_rating?season_id=${season!.id}`;
         return this.api.get<any>(url).pipe(
           map(data => ({ data, loading: false, error: null as string | null })),

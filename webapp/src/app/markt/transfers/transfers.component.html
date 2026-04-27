@@ -15,8 +15,10 @@
         <span class="window-row__dates">
           {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
         </span>
-        <span class="window-row__badge" [class.window-row__badge--open]="!isClosed(w)">
-          {{ isClosed(w) ? 'Geschlossen' : 'Offen' }}
+        <span class="window-row__badge"
+              [class.window-row__badge--open]="isOpen(w)"
+              [class.window-row__badge--soon]="!isClosed(w) && !isOpen(w)">
+          {{ windowLabel(w) }}
         </span>
       </div>
     }

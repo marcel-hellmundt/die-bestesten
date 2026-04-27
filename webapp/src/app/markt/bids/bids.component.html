@@ -48,10 +48,10 @@
             <td class="bid-cell--media">
               <div class="bid-media">
                 @if (clubLogoUrl(offer); as url) {
-                  <img class="bid-club-logo" [src]="url" alt="" />
+                  <img class="tbl-logo" [src]="url" alt="" />
                 }
-                <img class="bid-player-photo"
-                     [class.bid-player-photo--placeholder]="!photoUrl(offer) || photoErrors.has(offer.player_id)"
+                <img class="tbl-photo"
+                     [class.logo--placeholder]="!photoUrl(offer) || photoErrors.has(offer.player_id)"
                      [src]="photoUrl(offer) ?? 'img/placeholders/player.png'"
                      (error)="onPhotoError(offer.player_id)"
                      alt="" />
@@ -75,7 +75,7 @@
                 <div class="bid-losers">
                   @for (loser of sortedLosers(offer); track loser.team_id) {
                     @if (!loserErrors.has(loser.team_id)) {
-                      <img class="bid-loser-logo"
+                      <img class="tbl-logo bid-loser-logo"
                            [class.bid-loser-logo--winner]="loser.is_winner"
                            [src]="loserLogoUrl(loser)"
                            (error)="onLoserError(loser.team_id)"

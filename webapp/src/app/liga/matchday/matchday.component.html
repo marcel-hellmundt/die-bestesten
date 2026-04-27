@@ -67,25 +67,13 @@
                   <td class="col-rank"><a class="row-link__anchor" [routerLink]="['/team', r.team_id, 'aufstellung']" [queryParams]="{ matchday_id: matchday().id }"></a>{{ r.points !== ratings()[i - 1]?.points ? i + 1 : '' }}</td>
                   <td>
                     <span class="team-cell">
-                      <span class="team-logo-wrap">
-                        @if (r.color) {
-                          <span class="team-color" [style.background-color]="r.color"></span>
-                        }
-                        @if (!logoErrors.has(r.team_id)) {
-                          <img
-                            class="team-logo"
-                            [src]="
-                              'https://img.die-bestesten.de/img/team/' +
-                              r.season_id +
-                              '/' +
-                              r.team_id +
-                              '.png'
-                            "
-                            [alt]="r.team_name"
-                            (error)="onLogoError(r.team_id)"
-                          />
-                        }
-                      </span>
+                      <img
+                        class="tbl-logo"
+                        [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                        [class.logo--placeholder]="logoErrors.has(r.team_id)"
+                        [alt]="r.team_name"
+                        (error)="onLogoError(r.team_id)"
+                      />
                       <span class="team-name">{{ r.team_name }}</span>
                     </span>
                   </td>

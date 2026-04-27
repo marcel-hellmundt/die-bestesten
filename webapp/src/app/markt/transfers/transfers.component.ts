@@ -41,6 +41,17 @@ export class TransfersComponent {
     return new Date(w.end_date) < new Date();
   }
 
+  isOpen(w: Transferwindow): boolean {
+    const now = new Date();
+    return new Date(w.start_date) <= now && now < new Date(w.end_date);
+  }
+
+  windowLabel(w: Transferwindow): string {
+    if (this.isClosed(w)) return 'Geschlossen';
+    if (this.isOpen(w))   return 'Offen';
+    return 'Öffnet bald';
+  }
+
   selectWindow(w: Transferwindow): void {
     if (!this.isClosed(w)) return;
     this.router.navigate(['/markt/transferphasen', w.id]);

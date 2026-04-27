@@ -85,11 +85,11 @@
                 <td class="col-media">
                   <div class="player-media">
                     @if (clubLogoUrl(p); as url) {
-                      <img class="player-club-logo" [src]="url"
+                      <img class="tbl-logo" [src]="url"
                            (error)="onClubError(p.club_id)" alt="" />
                     }
-                    <img class="player-photo"
-                         [class.player-photo--placeholder]="!photoUrl(p) || photoErrors.has(p.id)"
+                    <img class="tbl-photo"
+                         [class.logo--placeholder]="!photoUrl(p) || photoErrors.has(p.id)"
                          [src]="photoUrl(p) ?? 'img/placeholders/player.png'"
                          (error)="onPhotoError(p.id)" alt="" />
                   </div>

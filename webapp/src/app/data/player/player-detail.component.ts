@@ -425,6 +425,33 @@ export class PlayerDetailComponent {
   }
 
   totalPoints  = computed(() => this.player()?.ratings.reduce((s, r) => s + +(r.points ?? 0), 0) ?? 0);
+
+  // Points per team entry (key = team_id + '_' + from_matchday_number), counting only nominated matchdays
+  teamPoints = computed(() => {
+    const history     = this.teamHistory();
+    const ratings     = this.player()?.ratings ?? [];
+    const nominations = this.lineupNominations();
+    const map = new Map<string, number>();
+    for (const rating of ratings) {
+      const n         = +rating.matchday_number;
+      const nominated = nominations.get(n) ?? true;
+      if (!nominated) continue;
+      const team = history.find(t =>
+        (t.from_matchday_number == null || t.from_matchday_number <= n) &&
+        (t.to_matchday_number   == null || t.to_matchday_number   >  n)
+      );
+      if (!team) continue;
+      const key = team.team_id + '_' + team.from_matchday_number;
+      map.set(key, (map.get(key) ?? 0) + +(rating.points ?? 0));
+    }
+    return map;
+  });
+
+  displayToMatchday(t: TeamHistoryEntry): string {
+    if (t.to_matchday_number == null) return 'heute';
+    if (t.from_matchday_number === t.to_matchday_number) return 'Sp. ' + t.to_matchday_number;
+    return 'Sp. ' + (t.to_matchday_number - 1);
+  }
   avgGrade     = computed(() => {
     const graded = (this.player()?.ratings ?? []).filter(r => r.grade !== null);
     if (!graded.length) return null;
@@ -509,45 +536,58 @@ export class PlayerDetailComponent {
     const p = this.player();
     if (!p || p.seasons.length === 0) return null;
 
-    const sorted = [...p.seasons]
-      .filter((s) => s.price > 0)
-      .sort((a, b) => a.season_start.localeCompare(b.season_start));
+    const dataMap = new Map(p.seasons.map(s => [s.season_id, s]));
 
-    if (sorted.length === 0) return null;
+    // Use all seasons from cache to build a complete timeline with gaps
+    const allSeasons = [...this.cache.seasons()]
+      .sort((a, b) => a.start_date.localeCompare(b.start_date));
+    if (allSeasons.length === 0) return null;
 
-    const maxPrice = Math.max(...sorted.map((s) => s.price));
+    const playerStarts = p.seasons.map(s => s.season_start).sort();
+    const minStart = playerStarts[0];
+    const maxStart = playerStarts[playerStarts.length - 1];
+    const slots = allSeasons.filter(s => s.start_date >= minStart && s.start_date <= maxStart);
+    if (slots.length === 0) return null;
+
+    const maxPrice = Math.max(...p.seasons.map(s => s.price), 1);
     const plotW = this.chartW - this.padL - this.padR;
     const plotH = this.chartH - this.padT - this.padB;
-    const n     = sorted.length;
+    const n     = slots.length;
     const slotW = plotW / n;
     const barW  = Math.min(slotW * 0.65, 40);
 
-    const bars = sorted.map((s, i) => {
-      const barH   = (s.price / maxPrice) * plotH;
+    const bars = slots.map((season, i) => {
+      const data   = dataMap.get(season.id);
+      const price  = data?.price ?? 0;
+      const barH   = price > 0 ? (price / maxPrice) * plotH : 0;
       const x      = this.padL + i * slotW + (slotW - barW) / 2;
       const y      = this.padT + plotH - barH;
       const labelX = this.padL + i * slotW + slotW / 2;
       return {
         x, y, width: barW, height: barH,
-        color:   this.positionColors[s.position] ?? '#999',
-        label:   this.cache.seasonName(s.season_id),
+        color:   data ? (this.positionColors[data.position] ?? '#999') : 'transparent',
+        label:   this.cache.seasonName(season.id),
         labelX,
-        tooltip: this.formatPrice(s.price),
+        tooltip: data ? this.formatPrice(data.price) : '',
       };
     });
 
     const yTicks = [
-      { y: this.padT,            label: this.formatPriceShort(maxPrice) },
-      { y: this.padT + plotH,    label: '0' },
+      { y: this.padT,         label: this.formatPriceShort(maxPrice) },
+      { y: this.padT + plotH, label: '0' },
     ];
 
-    // Points-per-season overlay line (secondary scale)
-    const maxPts = Math.max(...sorted.map(s => +s.total_points), 1);
-    const ptsLinePts = sorted.map((s, i) => {
-      const x = this.padL + i * slotW + slotW / 2;
-      const y = this.padT + plotH - (+s.total_points / maxPts) * plotH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
+    // Points overlay line — only connect seasons that have data (skip gaps)
+    const maxPts = Math.max(...p.seasons.map(s => +s.total_points), 1);
+    const ptsLinePts = slots
+      .map((season, i) => {
+        const data = dataMap.get(season.id);
+        if (!data) return null;
+        const x = this.padL + i * slotW + slotW / 2;
+        const y = this.padT + plotH - (+data.total_points / maxPts) * plotH;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .filter((pt): pt is string => pt !== null);
     const pointsLine = ptsLinePts.length >= 2 ? ptsLinePts.join(' ') : null;
 
     return { bars, yTicks, pointsLine };

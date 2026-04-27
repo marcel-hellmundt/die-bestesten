@@ -213,13 +213,6 @@
   gap: $space-2;
 }
 
-.team-history__logo {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
 .team-history__name {
   display: block;
   font-size: $font-sm;
@@ -235,13 +228,6 @@
 .col-logo {
   width: 36px;
   padding-inline: $space-2;
-
-  .club-logo {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    display: block;
-  }
 }
 
 .loan-badge {
@@ -303,34 +289,18 @@
   }
 
   .col-club-logo {
-    width: 24px;
+    width: 28px;
     padding-inline: $space-1;
-
-    .rating-club-logo {
-      width: 20px;
-      height: 20px;
-      max-width: unset;
-      object-fit: contain;
-      display: block;
-    }
   }
 
   .col-team-logo {
-    width: 24px;
+    width: 28px;
     padding-inline: $space-1;
+  }
 
-    .rating-team-logo {
-      width: 20px;
-      height: 20px;
-      max-width: unset;
-      object-fit: contain;
-      display: block;
-
-      &--bench {
-        filter: grayscale(1);
-        opacity: 0.5;
-      }
-    }
+  .rating-team-logo--bench {
+    filter: grayscale(1);
+    opacity: 0.5;
   }
 
   .col-part {

@@ -54,6 +54,11 @@
       background: rgba(46, 204, 113, 0.12);
       color: var(--flat-emerald);
     }
+
+    &--soon {
+      background: rgba(243, 156, 18, 0.12);
+      color: var(--flat-sunflower);
+    }
   }
 
   @media (max-width: $mobile-breakpoint) {

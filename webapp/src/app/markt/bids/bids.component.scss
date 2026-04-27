@@ -112,22 +112,6 @@
   gap: 4px;
 }
 
-.bid-club-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.bid-player-photo {
-  width: 32px;
-  height: 32px;
-  border-radius: $radius-sm;
-  object-fit: cover;
-  flex-shrink: 0;
-
-  &--placeholder { opacity: 0.35; }
-}
 
 .bid-player-link {
   font-weight: $font-weight-medium;
@@ -172,12 +156,7 @@
 }
 
 .bid-loser-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
   opacity: 0.65;
-  border-radius: $radius-sm;
-
   &--winner { opacity: 1; }
 }
 

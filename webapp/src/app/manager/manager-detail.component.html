@@ -153,7 +153,7 @@
                     <td class="col-rank-hl"><a class="row-link__anchor" [routerLink]="['/team', r.team_id]"></a>{{ i + 1 }}</td>
                     <td class="col-logo-hl">
                       @if (!logoErrors.has(r.team_id)) {
-                        <img class="hl-logo" [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'" [alt]="r.team_name" (error)="onLogoError(r.team_id)" />
+                        <img class="tbl-logo" [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'" [alt]="r.team_name" (error)="onLogoError(r.team_id)" />
                       }
                     </td>
                     <td>
@@ -180,7 +180,7 @@
                     <td class="col-rank-hl"><a class="row-link__anchor" [routerLink]="['/team', r.team_id]"></a>{{ i + 1 }}</td>
                     <td class="col-logo-hl">
                       @if (!logoErrors.has(r.team_id)) {
-                        <img class="hl-logo" [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'" [alt]="r.team_name" (error)="onLogoError(r.team_id)" />
+                        <img class="tbl-logo" [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'" [alt]="r.team_name" (error)="onLogoError(r.team_id)" />
                       }
                     </td>
                     <td>

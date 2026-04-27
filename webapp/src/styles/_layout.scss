@@ -177,7 +177,30 @@
 }
 
 .logo--placeholder {
-  opacity: 0.25;
+  opacity: 0.35;
+}
+
+// Table logo (club/team) — 32×32 default, 24×24 with --sm
+.tbl-logo {
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+  width: 32px;
+  height: 32px;
+  max-width: unset;
+  &--sm { width: 24px; height: 24px; }
+}
+
+// Table player/manager photo — 32×32 cover, rounded corner
+.tbl-photo {
+  flex-shrink: 0;
+  display: block;
+  object-fit: cover;
+  border-radius: $radius-sm;
+  width: 32px;
+  height: 32px;
+  max-width: unset;
+  &--sm { width: 24px; height: 24px; }
 }
 
 .search-input {

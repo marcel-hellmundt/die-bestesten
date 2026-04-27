@@ -275,6 +275,7 @@
                 <th>Team</th>
                 <th class="col-md">Von</th>
                 <th class="col-md">Bis</th>
+                <th class="col-points-season">Punkte</th>
               </tr>
             </thead>
             <tbody>
@@ -283,7 +284,7 @@
                   <td><a class="row-link__anchor" [routerLink]="['/team', t.team_id]"></a>
                     <span class="team-history-cell">
                       <img
-                        class="team-history__logo"
+                        class="tbl-logo"
                         [src]="teamLogoUrl({ id: t.team_id, season_id: t.season_id })"
                         [alt]="t.team_name"
                         (error)="$any($event.target).style.display = 'none'"
@@ -295,7 +296,8 @@
                     </span>
                   </td>
                   <td class="col-md">{{ t.from_matchday_number != null ? 'Sp. ' + t.from_matchday_number : '—' }}</td>
-                  <td class="col-md">{{ t.to_matchday_number != null ? 'Sp. ' + t.to_matchday_number : 'heute' }}</td>
+                  <td class="col-md">{{ displayToMatchday(t) }}</td>
+                  <td class="col-points-season">{{ teamPoints().get(t.team_id + '_' + t.from_matchday_number) ?? 0 }}</td>
                 </tr>
               }
             </tbody>
@@ -327,7 +329,7 @@
                   <td class="col-logo"><a class="row-link__anchor" [routerLink]="['../../club', c.club_id]"></a>
                     <img
                       [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
-                      class="club-logo"
+                      class="tbl-logo"
                       [class.logo--placeholder]="!c.logo_uploaded"
                       alt=""
                     />
@@ -497,7 +499,7 @@
                   <td class="col-club-logo">
                     <img
                       [src]="clubLogoUrl(r.club_id, +r.club_logo_uploaded)"
-                      class="rating-club-logo"
+                      class="tbl-logo tbl-logo--sm"
                       [class.logo--placeholder]="!+r.club_logo_uploaded"
                       alt=""
                     />
@@ -507,14 +509,14 @@
                     @if (ratingTeam) {
                       @let nominated = lineupNominations().get(+r.matchday_number) ?? true;
                       <img
-                        class="rating-team-logo"
+                        class="tbl-logo tbl-logo--sm"
                         [class.rating-team-logo--bench]="!nominated"
                         [src]="teamLogoUrl({ id: ratingTeam.team_id, season_id: ratingTeam.season_id })"
                         alt=""
                         (error)="$any($event.target).style.display = 'none'"
                       />
                     } @else {
-                      <img class="rating-team-logo logo--placeholder rating-team-logo--bench" src="img/placeholders/club.png" alt="" />
+                      <img class="tbl-logo tbl-logo--sm logo--placeholder rating-team-logo--bench" src="img/placeholders/club.png" alt="" />
                     }
                   </td>
                   <td class="col-part">
