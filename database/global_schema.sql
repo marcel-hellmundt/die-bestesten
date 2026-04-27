@@ -170,3 +170,23 @@ CREATE TABLE IF NOT EXISTS award (
     icon       VARCHAR(100) NULL DEFAULT NULL,  -- Pfad zum Icon, z.B. "img/icons/trophy.png"
     sort_index INT          NOT NULL DEFAULT 0
 );
+
+-- Tabelle: achievement (Errungenschafts-Definitionen; liganeutral)
+CREATE TABLE IF NOT EXISTS achievement (
+    id            CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    condition_key VARCHAR(100) NOT NULL UNIQUE,  -- entspricht check_{condition_key}() in AchievementConditionsTrait
+    name          VARCHAR(100) NOT NULL,
+    description   TEXT         NOT NULL,
+    icon          VARCHAR(10)  NULL DEFAULT NULL, -- Emoji, z.B. '🏆'
+    sort_index    INT          NOT NULL DEFAULT 0
+);
+
+INSERT IGNORE INTO achievement (condition_key, name, description, icon, sort_index) VALUES
+    ('first_matchday', 'Anstoß',          'Habe am ersten Fantasy-Spieltag teilgenommen.',           '🎯', 1),
+    ('first_win',      'Erster Sieg',      'Habe einen Spieltag gewonnen (meiste Punkte).',           '🏆', 2),
+    ('century',        'Jahrhundert-Elf',  '100 oder mehr Punkte in einem einzelnen Spieltag erzielt.', '💯', 3),
+    ('hat_trick',      'Hattrick',         '3 Spieltage in einer Saison gewonnen.',                   '🎩', 4),
+    ('season_champion','Saisonmeister',    'Eine Saison auf dem ersten Platz beendet.',               '👑', 5),
+    ('full_squad',     'Volles Haus',      '18 Spieler gleichzeitig im Kader gehabt.',                '🏟️', 6),
+    ('first_bid_win',  'Transferprofi',    'Erstes Gebot erfolgreich gewonnen.',                      '🤝', 7),
+    ('sds_hero',       'Sternstunde',      '2 oder mehr SDS-Spieler in der Startelf eines Spieltags.','⭐', 8);

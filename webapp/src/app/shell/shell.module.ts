@@ -19,7 +19,8 @@ const routes: Routes = [
       { path: 'markt',         loadChildren: () => import('../markt/markt.module').then(m => m.MarktModule) },
       { path: 'manager',       loadChildren: () => import('../manager/manager.module').then(m => m.ManagerModule) },
       { path: 'daten',         loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
-      { path: 'einstellungen', loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
+      { path: 'einstellungen',  loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
+      { path: 'achievements',   loadChildren: () => import('../achievements/achievements.module').then(m => m.AchievementsModule) },
     ]
   }
 ];

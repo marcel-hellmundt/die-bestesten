@@ -1,0 +1,58 @@
+@use '../../../styles/variables' as *;
+
+.achievements-score {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  margin-bottom: $space-6;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: $space-4;
+}
+
+.achievement-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-5 $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  background: $color-surface;
+  text-align: center;
+  opacity: 0.35;
+  filter: grayscale(1);
+  transition: opacity $transition-fast, filter $transition-fast, border-color $transition-fast;
+
+  &--earned {
+    opacity: 1;
+    filter: none;
+    border-color: var(--flat-emerald);
+    background: rgba(46, 204, 113, 0.05);
+  }
+
+  &__icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
+
+  &__desc {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    line-height: 1.4;
+  }
+
+  &__date {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    margin-top: $space-1;
+  }
+}

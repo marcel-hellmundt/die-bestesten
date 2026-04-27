@@ -307,6 +307,23 @@ class Routing
                 ],
             ]),
 
+            new Route('achievement', 'Achievement', [
+                'title'       => 'Achievement',
+                'description' => 'Errungenschaften — alle Definitionen mit earned-Status für den aktuellen Manager',
+                'endpoints'   => [
+                    [
+                        'method'      => 'GET',
+                        'path'        => '/achievement',
+                        'description' => 'Alle Achievements mit earned_at (null = nicht verdient) für den eingeloggten Manager — Auth',
+                    ],
+                    [
+                        'method'      => 'POST',
+                        'path'        => '/achievement/evaluate',
+                        'description' => 'Achievement-Auswertung für alle Manager manuell anstoßen (Backfill) — Admin',
+                    ],
+                ],
+            ]),
+
             new Route('award', 'Award', [
                 'title'       => 'Award',
                 'description' => 'Award-Typen und Gewinner pro Saison',

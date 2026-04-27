@@ -44,8 +44,7 @@ export class MatchdayComponent {
           catchError(() => of([] as Matchday[]))
         )
       )
-    ),
-    { initialValue: null as Matchday[] | null }
+    )
   );
 
   private computeDefaultNumber(matchdays: Matchday[]): number | null {
@@ -62,7 +61,7 @@ export class MatchdayComponent {
     combineLatest([
       toObservable(this.activeSeason).pipe(filter(s => s !== null)),
       toObservable(this.selectedNumber),
-      toObservable(this.matchdays).pipe(filter((m): m is Matchday[] => m !== null)),
+      toObservable(this.matchdays).pipe(filter((m): m is Matchday[] => m !== undefined)),
     ]).pipe(
       switchMap(([season, number, matchdays]) => {
         const effectiveNumber = number ?? this.computeDefaultNumber(matchdays);

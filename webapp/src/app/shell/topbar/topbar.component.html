@@ -146,6 +146,11 @@
             </div>
           </div>
           <hr class="dropdown-divider" />
+          <button class="dropdown-item" (click)="navigateTo('/achievements')">
+            <app-icon name="award"></app-icon>
+            Errungenschaften
+          </button>
+          <hr class="dropdown-divider" />
           @if (isMaintainer()) {
             <button class="dropdown-item" (click)="navigateTo('/daten')">
               <app-icon name="data"></app-icon>

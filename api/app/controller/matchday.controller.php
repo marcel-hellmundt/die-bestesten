@@ -40,7 +40,11 @@ class MatchdayController extends _BaseController
             return ['status' => false, 'message' => 'Matchday not found'];
         }
 
-        $this->db->updateMatchdayCompleted($this->id, (bool) $body['completed']);
+        $completed = (bool) $body['completed'];
+        $this->db->updateMatchdayCompleted($this->id, $completed);
+        if ($completed) {
+            $this->db->evaluateAchievements();
+        }
         return ['status' => true];
     }
     protected function delete(): mixed { return $this->methodNotAllowed(); }

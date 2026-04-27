@@ -128,6 +128,8 @@ PATCH    /manager/me           — {current_password,new_password} für Passwort
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth
+GET      /achievement          — [{id,name,description,icon,sort_index,earned_at}] — earned_at=null wenn nicht verdient; Fog-of-War im Frontend — Auth
+POST     /achievement/evaluate — Achievement-Auswertung für alle Manager anstoßen (Backfill); idempotent — Admin
 ```
 
 ## Liga-DB (`database/league_schema.sql`)
@@ -145,6 +147,8 @@ GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], 
 **team_rating**: id PK, team_id FK, matchday_id (cross-DB), points, max_points, goals, assists, clean_sheet, sds, sds_defender, missed_goals, points_goalkeeper/defender/midfielder/forward (denorm.), invalid BOOL — UNIQUE(team_id, matchday_id)
 
 **team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK) — UNIQUE(award_id, team_id) — season ergibt sich aus team.season_id
+
+**manager_achievement**: id PK, manager_id FK, achievement_id (cross-DB auf global_schema.achievement, kein FK), earned_at DATETIME — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE
 
 **sell**: id PK, player_id (cross-DB), team_id FK (Verkäufer), transferwindow_id (cross-DB), price INT, created_at
 
