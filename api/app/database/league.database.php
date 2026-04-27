@@ -612,11 +612,12 @@ trait LeagueTrait
             $rows = $pdo->query(
                 "SELECT m.id, m.manager_name, m.alias, m.status,
                         GROUP_CONCAT(mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv,
-                        SUM(mc.contribution_type IN ('bulk_create','manual_create')) AS contributions_lineup,
-                        SUM(mc.contribution_type = 'grade')                          AS contributions_grade
+                        (SELECT SUM(mc.contribution_type IN ('bulk_create','manual_create'))
+                         FROM maintainer_contribution mc WHERE mc.manager_id = m.id) AS contributions_lineup,
+                        (SELECT SUM(mc.contribution_type = 'grade')
+                         FROM maintainer_contribution mc WHERE mc.manager_id = m.id) AS contributions_grade
                  FROM manager m
-                 LEFT JOIN manager_role mr         ON mr.manager_id = m.id
-                 LEFT JOIN maintainer_contribution mc ON mc.manager_id = m.id
+                 LEFT JOIN manager_role mr ON mr.manager_id = m.id
                  GROUP BY m.id
                  ORDER BY
                      CASE WHEN MAX(mr.role = 'admin')      = 1 THEN 0
