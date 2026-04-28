@@ -8,7 +8,8 @@ trait AchievementConditionsTrait
 
     public function check_season_champion(array $managerIds): array
     {
-        if (empty($managerIds)) return [];
+        if (empty($managerIds))
+            return [];
 
         // Nur Saisons berücksichtigen, in denen ALLE Spieltage abgeschlossen sind
         $completedSeasons = $this->con->query(
@@ -17,7 +18,8 @@ trait AchievementConditionsTrait
              HAVING COUNT(*) = SUM(completed) AND COUNT(*) > 0"
         )->fetchAll(PDO::FETCH_COLUMN);
 
-        if (empty($completedSeasons)) return [];
+        if (empty($completedSeasons))
+            return [];
 
         $sPlh = implode(',', array_fill(0, count($completedSeasons), '?'));
         $stmt = $this->con->prepare(
@@ -32,7 +34,7 @@ trait AchievementConditionsTrait
         }
 
         $mdIds = array_keys($matchdayToSeason);
-        $mPlh  = implode(',', array_fill(0, count($mdIds), '?'));
+        $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
 
         $stmt = $this->con_league->prepare(
             "SELECT t.manager_id, tr.matchday_id, tr.points
@@ -46,7 +48,8 @@ trait AchievementConditionsTrait
         $seasonTotals = [];
         foreach ($ratings as $row) {
             $sid = $matchdayToSeason[$row['matchday_id']] ?? null;
-            if (!$sid) continue;
+            if (!$sid)
+                continue;
             $key = $row['manager_id'] . '|' . $sid;
             $seasonTotals[$key] = ($seasonTotals[$key] ?? 0) + (int) $row['points'];
         }
@@ -72,7 +75,8 @@ trait AchievementConditionsTrait
 
     public function check_ten_matchday_wins(array $managerIds): array
     {
-        if (empty($managerIds)) return [];
+        if (empty($managerIds))
+            return [];
 
         // Nur Saisons ab 2017/2018 (start_date >= 2017-07-01)
         $matchdays = $this->con->query(
@@ -81,7 +85,8 @@ trait AchievementConditionsTrait
              WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($matchdays)) return [];
+        if (empty($matchdays))
+            return [];
 
         $matchdayToSeason = [];
         foreach ($matchdays as $row) {
@@ -89,7 +94,7 @@ trait AchievementConditionsTrait
         }
 
         $mdIds = array_keys($matchdayToSeason);
-        $mPlh  = implode(',', array_fill(0, count($mdIds), '?'));
+        $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
 
         $stmt = $this->con_league->prepare(
             "SELECT tr.matchday_id, t.manager_id, tr.points
@@ -100,7 +105,7 @@ trait AchievementConditionsTrait
         $stmt->execute($mdIds);
         $ratings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $matchdayMax     = [];
+        $matchdayMax = [];
         $matchdayRatings = [];
         foreach ($ratings as $row) {
             $mid = $row['matchday_id'];
@@ -124,7 +129,7 @@ trait AchievementConditionsTrait
 
         $winners = [];
         foreach ($winCounts as $key => $count) {
-            if ($count >= 15) {
+            if ($count >= 10) {
                 $winners[] = explode('|', $key, 2)[0];
             }
         }
@@ -134,7 +139,8 @@ trait AchievementConditionsTrait
 
     public function check_century(array $managerIds): array
     {
-        if (empty($managerIds)) return [];
+        if (empty($managerIds))
+            return [];
 
         // Nur Saisons ab 2017/2018 (start_date >= 2017-07-01)
         $validMatchdayIds = $this->con->query(
@@ -143,9 +149,10 @@ trait AchievementConditionsTrait
              WHERE s.start_date >= '2017-07-01'"
         )->fetchAll(PDO::FETCH_COLUMN);
 
-        if (empty($validMatchdayIds)) return [];
+        if (empty($validMatchdayIds))
+            return [];
 
-        $plh  = implode(',', array_fill(0, count($managerIds), '?'));
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
         $mPlh = implode(',', array_fill(0, count($validMatchdayIds), '?'));
         $stmt = $this->con_league->prepare(
             "SELECT DISTINCT m.id
@@ -160,7 +167,8 @@ trait AchievementConditionsTrait
 
     public function check_win_streak_5(array $managerIds): array
     {
-        if (empty($managerIds)) return [];
+        if (empty($managerIds))
+            return [];
 
         // Nur Saisons ab 2017/2018 (start_date >= 2017-07-01)
         $matchdays = $this->con->query(
@@ -171,10 +179,11 @@ trait AchievementConditionsTrait
              ORDER BY md.season_id, md.number ASC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($matchdays)) return [];
+        if (empty($matchdays))
+            return [];
 
         $mdIds = array_column($matchdays, 'id');
-        $mPlh  = implode(',', array_fill(0, count($mdIds), '?'));
+        $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
 
         $stmt = $this->con_league->prepare(
             "SELECT tr.matchday_id, t.manager_id, tr.points
@@ -185,7 +194,7 @@ trait AchievementConditionsTrait
         $stmt->execute($mdIds);
         $ratings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $matchdayMax     = [];
+        $matchdayMax = [];
         $matchdayRatings = [];
         foreach ($ratings as $row) {
             $mid = $row['matchday_id'];
@@ -205,9 +214,9 @@ trait AchievementConditionsTrait
             }
         }
 
-        $maxStreaks     = [];
+        $maxStreaks = [];
         $currentStreaks = [];
-        $prevSeason     = null;
+        $prevSeason = null;
 
         foreach ($matchdays as $md) {
             $mid = $md['id'];
@@ -215,7 +224,7 @@ trait AchievementConditionsTrait
 
             if ($sid !== $prevSeason) {
                 $currentStreaks = [];
-                $prevSeason     = $sid;
+                $prevSeason = $sid;
             }
 
             $winners = $matchdayWinners[$mid] ?? [];
@@ -224,7 +233,7 @@ trait AchievementConditionsTrait
             foreach ($allMgrs as $mgr) {
                 if (in_array($mgr, $winners)) {
                     $currentStreaks[$mgr] = ($currentStreaks[$mgr] ?? 0) + 1;
-                    $maxStreaks[$mgr]     = max($maxStreaks[$mgr] ?? 0, $currentStreaks[$mgr]);
+                    $maxStreaks[$mgr] = max($maxStreaks[$mgr] ?? 0, $currentStreaks[$mgr]);
                 } else {
                     $currentStreaks[$mgr] = 0;
                 }
@@ -233,7 +242,7 @@ trait AchievementConditionsTrait
 
         $achievers = [];
         foreach ($maxStreaks as $mgr => $max) {
-            if ($max >= 5) {
+            if ($max >= 3) {
                 $achievers[] = $mgr;
             }
         }
@@ -243,20 +252,22 @@ trait AchievementConditionsTrait
 
     public function check_sds_5(array $managerIds): array
     {
-        if (empty($managerIds)) return [];
+        if (empty($managerIds))
+            return [];
 
         $sdsRows = $this->con->query(
             "SELECT player_id, matchday_id FROM player_rating WHERE sds = 1"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($sdsRows)) return [];
+        if (empty($sdsRows))
+            return [];
 
         $sdsKeySet = [];
         foreach ($sdsRows as $row) {
             $sdsKeySet[$row['player_id'] . '|' . $row['matchday_id']] = true;
         }
 
-        $plh  = implode(',', array_fill(0, count($managerIds), '?'));
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
         $stmt = $this->con_league->prepare(
             "SELECT m.id AS manager_id, tl.player_id, tl.matchday_id
              FROM manager m
@@ -307,16 +318,17 @@ trait AchievementConditionsTrait
             "SELECT id, season_id FROM matchday"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($matchdays)) return [];
+        if (empty($matchdays))
+            return [];
 
         $matchdayToSeason = [];
         foreach ($matchdays as $row) {
             $matchdayToSeason[$row['id']] = $row['season_id'];
         }
 
-        $mdIds  = array_keys($matchdayToSeason);
-        $plh    = implode(',', array_fill(0, count($managerIds), '?'));
-        $mPlh   = implode(',', array_fill(0, count($mdIds), '?'));
+        $mdIds = array_keys($matchdayToSeason);
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
 
         $stmt = $this->con_league->prepare(
             "SELECT t.manager_id, tr.matchday_id, tr.`$column` AS val
@@ -330,7 +342,8 @@ trait AchievementConditionsTrait
         $seasonTotals = [];
         foreach ($rows as $row) {
             $sid = $matchdayToSeason[$row['matchday_id']] ?? null;
-            if (!$sid) continue;
+            if (!$sid)
+                continue;
             $key = $row['manager_id'] . '|' . $sid;
             $seasonTotals[$key] = ($seasonTotals[$key] ?? 0) + (int) $row['val'];
         }
@@ -347,7 +360,8 @@ trait AchievementConditionsTrait
 
     public function check_datenkrake(array $managerIds): array
     {
-        if (empty($managerIds)) return [];
+        if (empty($managerIds))
+            return [];
 
         // Alle player_rating IDs für completed Spieltage aus globaler DB
         $rows = $this->con->query(
@@ -356,7 +370,8 @@ trait AchievementConditionsTrait
              JOIN matchday md ON md.id = pr.matchday_id AND md.completed = 1"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($rows)) return [];
+        if (empty($rows))
+            return [];
 
         $ratingToMatchday = [];
         foreach ($rows as $row) {
@@ -364,15 +379,16 @@ trait AchievementConditionsTrait
         }
 
         $ratingIds = array_keys($ratingToMatchday);
-        $rPlh      = implode(',', array_fill(0, count($ratingIds), '?'));
-        $stmt      = $this->con_league->prepare(
+        $rPlh = implode(',', array_fill(0, count($ratingIds), '?'));
+        $stmt = $this->con_league->prepare(
             "SELECT player_rating_id, manager_id FROM maintainer_contribution
              WHERE player_rating_id IN ($rPlh)"
         );
         $stmt->execute($ratingIds);
         $contributions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($contributions)) return [];
+        if (empty($contributions))
+            return [];
 
         // Pro Spieltag: welche Manager haben beigetragen?
         $matchdayContributors = [];
@@ -394,14 +410,16 @@ trait AchievementConditionsTrait
 
     public function check_kleine_grosse(array $managerIds): array
     {
-        if (empty($managerIds)) return [];
+        if (empty($managerIds))
+            return [];
 
         // Spieler mit genau 500.000 € Marktwert pro Saison aus globaler DB
         $cheapPlayers = $this->con->query(
             "SELECT player_id, season_id FROM player_in_season WHERE price = 500000"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($cheapPlayers)) return [];
+        if (empty($cheapPlayers))
+            return [];
 
         $cheapSet = [];
         foreach ($cheapPlayers as $row) {
@@ -409,8 +427,8 @@ trait AchievementConditionsTrait
         }
 
         $playerIds = array_keys($cheapSet);
-        $pPlh      = implode(',', array_fill(0, count($playerIds), '?'));
-        $manPlh    = implode(',', array_fill(0, count($managerIds), '?'));
+        $pPlh = implode(',', array_fill(0, count($playerIds), '?'));
+        $manPlh = implode(',', array_fill(0, count($managerIds), '?'));
 
         $stmt = $this->con_league->prepare(
             "SELECT pit.player_id, t.manager_id, t.season_id AS team_season_id
@@ -421,7 +439,8 @@ trait AchievementConditionsTrait
         $stmt->execute([...$playerIds, ...$managerIds]);
         $purchases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($purchases)) return [];
+        if (empty($purchases))
+            return [];
 
         // Nur Käufe in der gleichen Saison, in der der Spieler diesen Preis hat
         $candidates = [];
@@ -433,12 +452,13 @@ trait AchievementConditionsTrait
             }
         }
 
-        if (empty($candidates)) return [];
+        if (empty($candidates))
+            return [];
 
         // Alle Spieltage der relevanten Saisons aus globaler DB
         $seasons = array_unique(array_values($cheapSet));
-        $sPlh    = implode(',', array_fill(0, count($seasons), '?'));
-        $stmt    = $this->con->prepare(
+        $sPlh = implode(',', array_fill(0, count($seasons), '?'));
+        $stmt = $this->con->prepare(
             "SELECT id, season_id FROM matchday WHERE season_id IN ($sPlh)"
         );
         $stmt->execute($seasons);
@@ -449,8 +469,8 @@ trait AchievementConditionsTrait
 
         // Kumulierte Punkte der Kandidaten-Spieler pro Saison aus globaler DB
         $candPlayerIds = array_unique(array_map(fn($k) => explode('|', $k, 2)[0], array_keys($candidates)));
-        $cpPlh         = implode(',', array_fill(0, count($candPlayerIds), '?'));
-        $stmt          = $this->con->prepare(
+        $cpPlh = implode(',', array_fill(0, count($candPlayerIds), '?'));
+        $stmt = $this->con->prepare(
             "SELECT player_id, matchday_id, points FROM player_rating
              WHERE player_id IN ($cpPlh) AND points IS NOT NULL"
         );
@@ -459,7 +479,8 @@ trait AchievementConditionsTrait
         $playerSeasonPoints = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $rating) {
             $sid = $matchdayToSeason[$rating['matchday_id']] ?? null;
-            if (!$sid) continue;
+            if (!$sid)
+                continue;
             $key = $rating['player_id'] . '|' . $sid;
             $playerSeasonPoints[$key] = ($playerSeasonPoints[$key] ?? 0) + (int) $rating['points'];
         }
@@ -478,10 +499,11 @@ trait AchievementConditionsTrait
 
     public function check_der_pate(array $managerIds): array
     {
-        if (empty($managerIds)) return [];
+        if (empty($managerIds))
+            return [];
 
         // Gewonnenes Gebot, bei dem mindestens 4 weitere Manager (success + lost) mitgeboten haben
-        $plh  = implode(',', array_fill(0, count($managerIds), '?'));
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
         $stmt = $this->con_league->prepare(
             "SELECT DISTINCT m.id
              FROM manager m
