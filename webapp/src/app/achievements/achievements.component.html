@@ -13,7 +13,7 @@
         } @else {
           <img src="img/achievements/locked.png" alt="Gesperrt" />
         }
-        @if (a.earned_at && a.level) {
+        @if (a.earned_at && (a.level === 'bronze' || a.level === 'silver')) {
           <span class="achievement-card__level achievement-card__level--{{ a.level }}">{{ a.level }}</span>
         }
       </div>
