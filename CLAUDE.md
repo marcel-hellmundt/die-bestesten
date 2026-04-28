@@ -128,9 +128,10 @@ PATCH    /manager/me           — {current_password,new_password} für Passwort
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth
-GET      /achievement          — [{id,name,description,icon,earned_at,reason,earned_count,total_managers}] — earned_at+reason=null wenn nicht verdient; reason = menschenlesbarer Kontext (z.B. "SV Spielabbruch (2024/25)"); sortiert nach earned_count DESC; Fog-of-War im Frontend — Auth; ?all=true → [{id,condition_key,name,description,icon,earned_count,total_managers,managers[{id,manager_name,earned_at}]}] — Admin
+GET      /achievement          — [{id,name,description,icon,earned_at,reason,seen_at,earned_count,total_managers}] — earned_at+reason+seen_at=null wenn nicht verdient; seen_at=null wenn verdient aber noch nicht gesehen; sortiert nach earned_count DESC — Auth; ?all=true → [{id,condition_key,name,description,icon,earned_count,total_managers,managers[{id,manager_name,earned_at}]}] — Admin
 POST     /achievement/evaluate — Achievement-Auswertung für alle Manager anstoßen (Backfill); idempotent — Admin
 POST     /achievement/evaluate/:id — Einzelnes Achievement neu auswerten: vergibt an neue Gewinner und entzieht Managern, die Anforderungen nicht mehr erfüllen — Admin
+PATCH    /achievement/seen     — Alle noch nicht gesehenen Achievements (seen_at IS NULL) des eingeloggten Managers als gesehen markieren — Auth
 ```
 
 ## Liga-DB (`database/league_schema.sql`)
@@ -149,7 +150,7 @@ POST     /achievement/evaluate/:id — Einzelnes Achievement neu auswerten: verg
 
 **team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK) — UNIQUE(award_id, team_id) — season ergibt sich aus team.season_id
 
-**manager_achievement**: id PK, manager_id FK, achievement_id (cross-DB auf global_schema.achievement, kein FK), earned_at DATETIME — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE
+**manager_achievement**: id PK, manager_id FK, achievement_id (cross-DB auf global_schema.achievement, kein FK), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME? — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen
 
 **sell**: id PK, player_id (cross-DB), team_id FK (Verkäufer), transferwindow_id (cross-DB), price INT, created_at
 

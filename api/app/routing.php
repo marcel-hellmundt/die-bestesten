@@ -328,6 +328,11 @@ class Routing
                         'path' => '/achievement/evaluate',
                         'description' => 'Achievement-Auswertung für alle Manager anstoßen (Backfill) — Admin; /:id → Einzelnes Achievement neu auswerten inkl. Entzug bei nicht mehr erfüllten Anforderungen — Admin',
                     ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/achievement/seen',
+                        'description' => 'Alle noch nicht gesehenen Achievements (seen_at IS NULL) des eingeloggten Managers als gesehen markieren — Auth',
+                    ],
                 ],
             ]),
 

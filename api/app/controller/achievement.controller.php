@@ -2,7 +2,7 @@
 
 class AchievementController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'admin'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'admin', 'PATCH' => 'manager'];
 
     protected function get(): mixed
     {
@@ -27,6 +27,11 @@ class AchievementController extends _BaseController
         return ['status' => true];
     }
 
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
+    protected function patch(): mixed
+    {
+        if ($this->id !== 'seen') return $this->methodNotAllowed();
+        $this->db->markAchievementsSeen($GLOBALS['auth_manager_id']);
+        return null;
+    }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

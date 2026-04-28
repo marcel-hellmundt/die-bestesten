@@ -11,3 +11,8 @@
     </main>
   </div>
 </div>
+
+<app-achievement-notification
+  [achievements]="unseenAchievements()"
+  (dismissed)="unseenAchievements.set([])"
+/>

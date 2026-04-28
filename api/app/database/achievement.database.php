@@ -139,13 +139,13 @@ trait AchievementTrait
         $plh = implode(',', array_fill(0, count($achievementIds), '?'));
 
         $earned = $this->con_league->prepare(
-            "SELECT achievement_id, earned_at, reason FROM manager_achievement
+            "SELECT achievement_id, earned_at, reason, seen_at FROM manager_achievement
              WHERE manager_id = ? AND achievement_id IN ($plh)"
         );
         $earned->execute([$managerId, ...$achievementIds]);
         $earnedMap = [];
         foreach ($earned->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $earnedMap[$row['achievement_id']] = ['earned_at' => $row['earned_at'], 'reason' => $row['reason']];
+            $earnedMap[$row['achievement_id']] = ['earned_at' => $row['earned_at'], 'reason' => $row['reason'], 'seen_at' => $row['seen_at']];
         }
 
         $counts = $this->con_league->query(
@@ -166,6 +166,7 @@ trait AchievementTrait
                 'icon'           => $a['icon'],
                 'earned_at'      => $earned['earned_at'] ?? null,
                 'reason'         => $earned['reason'] ?? null,
+                'seen_at'        => $earned['seen_at'] ?? null,
                 'earned_count'   => $count,
                 'total_managers' => $totalManagers,
                 '_count'         => $count,
@@ -178,5 +179,13 @@ trait AchievementTrait
             unset($a['_count']);
             return $a;
         }, $result);
+    }
+
+    public function markAchievementsSeen(string $managerId): void
+    {
+        $this->con_league->prepare(
+            "UPDATE manager_achievement SET seen_at = NOW()
+             WHERE manager_id = ? AND seen_at IS NULL AND earned_at IS NOT NULL"
+        )->execute([$managerId]);
     }
 }

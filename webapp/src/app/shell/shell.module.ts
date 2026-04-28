@@ -6,6 +6,7 @@ import { NavComponent } from './nav/nav.component';
 import { TopbarComponent } from './topbar/topbar.component';
 import { AuthGuard } from '../auth/auth.guard';
 import { IconComponent } from '../core/icon/icon.component';
+import { AchievementNotificationComponent } from './achievement-notification/achievement-notification.component';
 
 const routes: Routes = [
   {
@@ -26,7 +27,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent],
+  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes)

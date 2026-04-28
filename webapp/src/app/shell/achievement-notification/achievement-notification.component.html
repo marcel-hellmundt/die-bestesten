@@ -1,0 +1,22 @@
+@if (visible) {
+  <div class="achievement-overlay" (click)="onSkip()">
+    <div class="achievement-card" (click)="$event.stopPropagation()">
+      <div class="achievement-card__icons">
+        @for (a of iconStack; track a.id; let i = $index) {
+          <img
+            class="achievement-card__icon achievement-card__icon--{{ i }}"
+            [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'"
+            [alt]="a.name"
+          />
+        }
+      </div>
+      <p class="achievement-card__title">
+        Du hast {{ count }}&nbsp;{{ count === 1 ? 'Achievement' : 'Achievements' }} erreicht!
+      </p>
+      <div class="achievement-card__actions">
+        <button class="btn btn-primary" (click)="onView()">Ansehen</button>
+        <button class="btn btn-secondary" (click)="onSkip()">Überspringen</button>
+      </div>
+    </div>
+  </div>
+}

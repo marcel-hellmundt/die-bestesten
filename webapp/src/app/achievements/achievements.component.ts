@@ -3,13 +3,14 @@ import { catchError, of } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../core/api.service';
 
-interface Achievement {
+export interface Achievement {
   id:              string;
   name:            string;
   description:     string;
   icon:            string | null;
   earned_at:       string | null;
   reason:          string | null;
+  seen_at:         string | null;
   earned_count:    number;
   total_managers:  number;
 }
