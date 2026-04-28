@@ -933,6 +933,106 @@ trait AchievementConditionsTrait
         return $result;
     }
 
+    public function check_geburtstagskind(array $managerIds): array
+    {
+        if (empty($managerIds))
+            return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start,
+                    DATE_FORMAT(DATE_ADD(md.kickoff_date, INTERVAL 2 DAY), '%m-%d') AS stichtag_mmdd
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1
+             ORDER BY md.kickoff_date ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays))
+            return [];
+
+        $mdIds = array_column($matchdays, 'id');
+        $plh   = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh  = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, tl.player_id, tl.matchday_id
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_lineup tl ON tl.team_id = t.id AND tl.nominated = 1
+             WHERE m.id IN ($plh) AND tl.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $lineups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($lineups))
+            return [];
+
+        $playerIds = array_values(array_unique(array_column($lineups, 'player_id')));
+        $pPlh = implode(',', array_fill(0, count($playerIds), '?'));
+
+        $stmt = $this->con->prepare(
+            "SELECT id, displayname, date_of_birth FROM player WHERE id IN ($pPlh)"
+        );
+        $stmt->execute($playerIds);
+        $playerInfo = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), null, 'id');
+
+        $stmt = $this->con->prepare(
+            "SELECT player_id, matchday_id, COALESCE(points, 0) AS points
+             FROM player_rating
+             WHERE matchday_id IN ($mPlh) AND player_id IN ($pPlh)"
+        );
+        $stmt->execute([...$mdIds, ...$playerIds]);
+        $ratingMap = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $ratingMap[$row['player_id'] . '|' . $row['matchday_id']] = (int)$row['points'];
+        }
+
+        $matchdayLineups = [];
+        foreach ($lineups as $row) {
+            $matchdayLineups[$row['manager_id']][$row['matchday_id']][] = $row;
+        }
+
+        $achievers = [];
+        foreach ($matchdays as $md) {
+            foreach ($managerIds as $mgr) {
+                if (isset($achievers[$mgr]))
+                    continue;
+
+                $players = $matchdayLineups[$mgr][$md['id']] ?? [];
+                foreach ($players as $p) {
+                    $info = $playerInfo[$p['player_id']] ?? null;
+                    if (!$info || !$info['date_of_birth']) continue;
+
+                    $dobMmdd = substr($info['date_of_birth'], 5, 5); // 'MM-DD' from 'YYYY-MM-DD'
+                    if ($dobMmdd !== $md['stichtag_mmdd']) continue;
+
+                    $points = $ratingMap[$p['player_id'] . '|' . $md['id']] ?? 0;
+                    if ($points < 10) continue;
+
+                    $achievers[$mgr] = [
+                        'displayname'  => $info['displayname'],
+                        'team_name'    => $p['team_name'],
+                        'md_number'    => $md['number'],
+                        'kickoff_date' => $md['kickoff_date'],
+                        'season_start' => $md['season_start'],
+                        'points'       => $points,
+                    ];
+                    break;
+                }
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label = $this->seasonLabel($data['season_start']);
+            $result[$mgr] = [
+                'reason'    => "{$data['displayname']} hatte Geburtstag und erzielte {$data['points']} Punkte für {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+            ];
+        }
+        return $result;
+    }
+
     public function check_veteran_squad(array $managerIds): array
     {
         if (empty($managerIds))

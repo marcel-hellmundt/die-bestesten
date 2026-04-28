@@ -201,4 +201,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'season_transfers',    'Auf Einkaufstour',              'Kaufe 80 Spieler in einer Saison',                                                   'transfer'),
 (UUID(), 'youth_squad',         'U23-Elf',                       'Stelle eine Startelf auf, in der alle Spieler zum Spieltag (kickoff + 2 Tage) ≤23 Jahre alt sind', 'youth'),
 (UUID(), 'veteran_squad',       'Die alten Hasen',               'Stelle eine Startelf mit einem Altersschnitt von ≥30 Jahren auf (kickoff + 2 Tage)',               'veteran'),
-(UUID(), 'tall_squad',          'Lange Kerle',                   'Stelle mindestens 7 Spieler mit ≥190 cm Körpergröße auf',                                        'tall');
+(UUID(), 'tall_squad',          'Lange Kerle',                   'Stelle mindestens 7 Spieler mit ≥190 cm Körpergröße auf',                                        'tall'),
+(UUID(), 'geburtstagskind',    'Geburtstagskind',               'Habe einen nominierten Spieler, der am Spieltag (kickoff + 2 Tage) Geburtstag hat und ≥10 Punkte erzielt', 'birthday');

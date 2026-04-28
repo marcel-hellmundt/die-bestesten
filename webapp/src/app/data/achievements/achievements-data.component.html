@@ -26,7 +26,7 @@
         <div class="achievement-row__meta">
           <div class="achievement-row__icon">
             @if (a.icon) {
-              <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" />
+              <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" (error)="$any($event.target).src='img/achievements/locked.png'" />
             }
           </div>
           <div class="achievement-row__info">

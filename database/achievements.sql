@@ -482,3 +482,34 @@ JOIN usr_ud16_151_4.manager m ON m.id = CONVERT(b.manager_id USING utf8mb3)
 JOIN usr_ud16_151_1.season s ON s.id = b.season_id
 WHERE b.rn = 1
 ORDER BY b.max_letzte_serie DESC;
+
+
+-- =============================================================================
+-- geburtstagskind — Nominierter Spieler hat Geburtstag (kickoff+2 Tage) und ≥10 Punkte
+-- =============================================================================
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'geburtstagskind') AS achievement_id,
+    CONVERT(m.id USING utf8mb3) AS manager_id,
+    CONVERT(m.manager_name USING utf8mb3) AS manager,
+    p.id AS player_id,
+    p.displayname,
+    p.date_of_birth,
+    md.id AS matchday_id,
+    DATE_FORMAT(DATE_ADD(md.kickoff_date, INTERVAL 2 DAY), '%d.%m.%Y') AS geburtstag_stichtag,
+    pr.points AS spieler_punkte,
+    md.number AS spieltag,
+    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison
+FROM usr_ud16_151_4.team_lineup tl
+JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+JOIN usr_ud16_151_1.season s ON s.id = md.season_id
+JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+JOIN usr_ud16_151_1.player_rating pr
+    ON pr.player_id = p.id AND pr.matchday_id = md.id
+WHERE tl.nominated = 1
+  AND p.date_of_birth IS NOT NULL
+  AND MONTH(p.date_of_birth) = MONTH(DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))
+  AND DAY(p.date_of_birth) = DAY(DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))
+  AND pr.points >= 10
+ORDER BY manager, spieltag;
