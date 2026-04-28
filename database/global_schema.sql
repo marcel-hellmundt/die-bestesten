@@ -191,7 +191,7 @@ UPDATE achievement SET condition_key = 'win_streak_3',
 UPDATE achievement SET condition_key = 'sds_4',
     description = 'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt'
     WHERE condition_key = 'sds_5';
-UPDATE achievement SET description = 'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 20 Punkte gesammelt'
+UPDATE achievement SET description = 'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 10 Punkte gesammelt'
     WHERE condition_key = 'kleine_grosse';
 
 -- Achievements (v2)
@@ -205,5 +205,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'season_goals_70',     'Tore',                          'Habe 70 Tore in einer Saison',                                                       'goals'),
 (UUID(), 'season_assists_60',   'Vorlagen',                      'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
 (UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
-(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 20 Punkte gesammelt',            'ants'),
+(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 10 Punkte gesammelt',            'ants'),
 (UUID(), 'der_pate',            'Der Pate',                      'Ich mache ihm ein Angebot, das er nicht ablehnen kann',                              'godfather');

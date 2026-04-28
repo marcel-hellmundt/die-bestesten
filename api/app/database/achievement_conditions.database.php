@@ -487,7 +487,7 @@ trait AchievementConditionsTrait
 
         $achievers = [];
         foreach ($candidates as $key => $mgrIds) {
-            if (($playerSeasonPoints[$key] ?? 0) >= 20) {
+            if (($playerSeasonPoints[$key] ?? 0) >= 10) {
                 foreach ($mgrIds as $mid) {
                     $achievers[] = $mid;
                 }
