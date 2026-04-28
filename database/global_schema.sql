@@ -193,4 +193,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'season_assists_60',   'Ohne mich läuft nix',           'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
 (UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
 (UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 30 Punkte gesammelt',            'ants'),
-(UUID(), 'zuschlag',             'Zuschlag!',                     'Ich mache ihm ein Angebot, das er nicht ablehnen kann',                              'money');
+(UUID(), 'zuschlag',             'Zuschlag!',                     'Ich mache ihm ein Angebot, das er nicht ablehnen kann',                              'money'),
+(UUID(), 'kegelkasse',          'Ich zahl das',                  'Zahle an 3 aufeinanderfolgenden Spieltagen den vollen Betrag in die Kegelkasse',      'pay');

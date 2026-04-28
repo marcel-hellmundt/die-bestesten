@@ -759,4 +759,92 @@ trait AchievementConditionsTrait
         }
         return $result;
     }
+
+    public function check_kegelkasse(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        // All completed matchdays sorted chronologically
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.season_id, md.number, md.kickoff_date, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1
+             ORDER BY s.start_date ASC, md.number ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays)) return [];
+
+        $mdIds = array_column($matchdays, 'id');
+        $ph    = implode(',', array_fill(0, count($mdIds), '?'));
+
+        // All team_ratings for those matchdays (all teams, to determine last place per matchday)
+        $stmt = $this->con_league->prepare(
+            "SELECT t.manager_id, tr.matchday_id, COALESCE(tr.points, 0) AS points, t.team_name
+             FROM team_rating tr
+             JOIN team t ON t.id = tr.team_id
+             WHERE tr.matchday_id IN ($ph)"
+        );
+        $stmt->execute(array_values($mdIds));
+        $allRatings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Per-matchday: min points + per-manager entry
+        $mdMinPoints = [];
+        $mgrData     = [];
+        foreach ($allRatings as $r) {
+            $mid = $r['matchday_id'];
+            $pts = (int) $r['points'];
+            if (!isset($mdMinPoints[$mid]) || $pts < $mdMinPoints[$mid]) {
+                $mdMinPoints[$mid] = $pts;
+            }
+            $mgrData[$r['manager_id']][$mid] = ['points' => $pts, 'team_name' => $r['team_name']];
+        }
+
+        $result      = [];
+        $prevSeasonId = null;
+
+        foreach ($managerIds as $managerId) {
+            $streak    = 0;
+            $streakMds = [];
+            $prevSeasonId = null;
+
+            foreach ($matchdays as $md) {
+                $mid = $md['id'];
+
+                // Reset streak at season boundary
+                if ($md['season_id'] !== $prevSeasonId) {
+                    $streak       = 0;
+                    $streakMds    = [];
+                    $prevSeasonId = $md['season_id'];
+                }
+
+                $entry  = $mgrData[$managerId][$mid] ?? null;
+                $minPts = $mdMinPoints[$mid] ?? null;
+
+                if ($entry === null || $minPts === null) {
+                    $streak    = 0;
+                    $streakMds = [];
+                    continue;
+                }
+
+                if ($entry['points'] <= $minPts) {
+                    $streak++;
+                    $streakMds[] = $md;
+
+                    if ($streak === 3 && !isset($result[$managerId])) {
+                        $label = $this->seasonLabel($md['season_start']);
+                        $result[$managerId] = [
+                            'reason'    => 'Spieltage ' . $streakMds[0]['number'] . '–' . $md['number'] . ' mit ' . $entry['team_name'] . ' (' . $label . ')',
+                            'earned_at' => $md['kickoff_date'],
+                        ];
+                    }
+                } else {
+                    $streak    = 0;
+                    $streakMds = [];
+                }
+            }
+        }
+
+        return $result;
+    }
 }
