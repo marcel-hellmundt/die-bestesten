@@ -326,7 +326,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/achievement/evaluate',
-                        'description' => 'Achievement-Auswertung für alle Manager manuell anstoßen (Backfill) — Admin',
+                        'description' => 'Achievement-Auswertung für alle Manager anstoßen (Backfill) — Admin; /:id → Einzelnes Achievement neu auswerten inkl. Entzug bei nicht mehr erfüllten Anforderungen — Admin',
                     ],
                 ],
             ]),

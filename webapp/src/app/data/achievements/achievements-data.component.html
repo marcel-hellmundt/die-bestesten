@@ -2,18 +2,17 @@
   <h2 class="achievements-title">Achievements</h2>
   <button
     class="btn btn-secondary"
-    [class.btn--loading]="analyseState() === 'loading'"
-    [disabled]="analyseState() === 'loading'"
-    (click)="analyse()"
+    [disabled]="analyseAllState() === 'loading'"
+    (click)="analyseAll()"
   >
-    @if (analyseState() === 'loading') {
+    @if (analyseAllState() === 'loading') {
       Wird ausgewertet…
-    } @else if (analyseState() === 'success') {
-      Auswertung abgeschlossen
-    } @else if (analyseState() === 'error') {
+    } @else if (analyseAllState() === 'success') {
+      Alle neu ausgewertet
+    } @else if (analyseAllState() === 'error') {
       Fehler — nochmal versuchen
     } @else {
-      Analyse
+      Alle evaluieren
     }
   </button>
 </div>
@@ -25,14 +24,29 @@
     @for (a of achievements(); track a.id) {
       <div class="achievement-row">
         <div class="achievement-row__meta">
-          <span class="achievement-row__icon">{{ a.icon ?? '🏅' }}</span>
+          <div class="achievement-row__icon">
+            @if (a.icon) {
+              <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" />
+            }
+          </div>
           <div class="achievement-row__info">
             <span class="achievement-row__name">{{ a.name }}</span>
             <span class="achievement-row__desc">{{ a.description }}</span>
           </div>
-          <div class="achievement-row__stat">
-            <span class="achievement-row__percent">{{ earnedPercent(a) }}%</span>
-            <span class="achievement-row__count">{{ a.earned_count }}&thinsp;/&thinsp;{{ a.total_managers }}</span>
+          <div class="achievement-row__right">
+            <div class="achievement-row__stat">
+              <span class="achievement-row__percent">{{ earnedPercent(a) }}%</span>
+              <span class="achievement-row__count"
+                >{{ a.earned_count }}&thinsp;/&thinsp;{{ a.total_managers }}</span
+              >
+            </div>
+            <button
+              class="btn btn-secondary btn--sm"
+              [disabled]="loadingIds().has(a.id)"
+              (click)="analyseOne(a.id)"
+            >
+              {{ loadingIds().has(a.id) ? '…' : 'Evaluieren' }}
+            </button>
           </div>
         </div>
 

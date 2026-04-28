@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
+import { BehaviorSubject, switchMap, catchError, of } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 
 interface AchievementManager {
@@ -15,7 +15,6 @@ interface AchievementAdmin {
   name: string;
   description: string;
   icon: string | null;
-  sort_index: number;
   earned_count: number;
   total_managers: number;
   managers: AchievementManager[];
@@ -30,14 +29,23 @@ interface AchievementAdmin {
 export class AchievementsDataComponent {
   private api = inject(ApiService);
 
+  private reload$ = new BehaviorSubject<void>(undefined);
+
   achievements = toSignal(
-    this.api.get<AchievementAdmin[]>('achievement?all=true').pipe(
-      catchError(() => of([] as AchievementAdmin[]))
+    this.reload$.pipe(
+      switchMap(() =>
+        this.api.get<AchievementAdmin[]>('achievement?all=true').pipe(
+          catchError(() => of([] as AchievementAdmin[]))
+        )
+      )
     ),
     { initialValue: [] as AchievementAdmin[] }
   );
 
-  analyseState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
+  analyseAllState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
+  loadingIds      = signal<Set<string>>(new Set());
+
+  failedImageIds = signal<Set<string>>(new Set());
 
   earnedPercent(a: AchievementAdmin): number {
     if (!a.total_managers) return 0;
@@ -48,18 +56,33 @@ export class AchievementsDataComponent {
     return `https://img.die-bestesten.de/img/manager/${id}.jpg`;
   }
 
-  failedImageIds = signal<Set<string>>(new Set());
-
   onImageError(id: string): void {
     this.failedImageIds.update(s => new Set([...s, id]));
   }
 
-  analyse(): void {
-    if (this.analyseState() === 'loading') return;
-    this.analyseState.set('loading');
+  analyseAll(): void {
+    if (this.analyseAllState() === 'loading') return;
+    this.analyseAllState.set('loading');
     this.api.post<{ status: boolean }>('achievement/evaluate').subscribe({
-      next: () => this.analyseState.set('success'),
-      error: () => this.analyseState.set('error'),
+      next: () => {
+        this.analyseAllState.set('success');
+        this.reload$.next();
+      },
+      error: () => this.analyseAllState.set('error'),
+    });
+  }
+
+  analyseOne(id: string): void {
+    if (this.loadingIds().has(id)) return;
+    this.loadingIds.update(s => new Set([...s, id]));
+    this.api.post<{ status: boolean }>(`achievement/evaluate/${id}`).subscribe({
+      next: () => {
+        this.loadingIds.update(s => { const n = new Set(s); n.delete(id); return n; });
+        this.reload$.next();
+      },
+      error: () => {
+        this.loadingIds.update(s => { const n = new Set(s); n.delete(id); return n; });
+      },
     });
   }
 }

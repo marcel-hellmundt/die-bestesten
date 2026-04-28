@@ -19,7 +19,11 @@ class AchievementController extends _BaseController
     protected function post(): mixed
     {
         if ($this->id !== 'evaluate') return $this->methodNotAllowed();
-        $this->db->evaluateAchievements();
+        if ($this->sub) {
+            $this->db->evaluateAchievementById($this->sub);
+        } else {
+            $this->db->evaluateAchievements();
+        }
         return ['status' => true];
     }
 

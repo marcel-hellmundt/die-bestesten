@@ -8,7 +8,6 @@ interface Achievement {
   name:        string;
   description: string;
   icon:        string | null;
-  sort_index:  number;
   earned_at:   string | null;
 }
 
