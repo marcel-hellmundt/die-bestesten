@@ -769,7 +769,7 @@ trait AchievementConditionsTrait
             "SELECT md.id, md.season_id, md.number, md.kickoff_date, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1
+             WHERE md.completed = 1 AND s.start_date >= '2017-01-01'
              ORDER BY s.start_date ASC, md.number ASC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
