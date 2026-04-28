@@ -485,16 +485,20 @@ trait AchievementConditionsTrait
             $playerSeasonPoints[$key] = ($playerSeasonPoints[$key] ?? 0) + (int) $rating['points'];
         }
 
-        $achievers = [];
+        // Pro Manager: besten 0,5-Mio-Spieler finden
+        $bestPerManager = [];
         foreach ($candidates as $key => $mgrIds) {
-            if (($playerSeasonPoints[$key] ?? 0) >= 10) {
-                foreach ($mgrIds as $mid) {
-                    $achievers[] = $mid;
+            $pts = $playerSeasonPoints[$key] ?? 0;
+            foreach ($mgrIds as $mid) {
+                if ($pts > ($bestPerManager[$mid] ?? 0)) {
+                    $bestPerManager[$mid] = $pts;
                 }
             }
         }
 
-        return array_values(array_intersect($managerIds, array_unique($achievers)));
+        $achievers = array_keys(array_filter($bestPerManager, fn($pts) => $pts >= 30));
+
+        return array_values(array_intersect($managerIds, $achievers));
     }
 
     public function check_der_pate(array $managerIds): array

@@ -190,6 +190,10 @@ UPDATE achievement SET condition_key = 'season_goals_75',
     description = 'Habe 75 Tore in einer Saison'
     WHERE condition_key = 'season_goals_70';
 
+-- Migrate: kleine_grosse description auf 30 Punkte aktualisieren
+UPDATE achievement SET description = 'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 30 Punkte gesammelt'
+    WHERE condition_key = 'kleine_grosse';
+
 -- Achievements (v2)
 INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALUES
 (UUID(), 'season_champion',     'Der Besteste',                  'Werde Meister in einer Saison',                                                      'cup'),
@@ -201,5 +205,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'season_goals_75',     'Tore',                          'Habe 75 Tore in einer Saison',                                                       'goals'),
 (UUID(), 'season_assists_60',   'Vorlagen',                      'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
 (UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
-(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 10 Punkte gesammelt',            'ants'),
+(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 30 Punkte gesammelt',            'ants'),
 (UUID(), 'der_pate',            'Der Pate',                      'Ich mache ihm ein Angebot, das er nicht ablehnen kann',                              'godfather');
