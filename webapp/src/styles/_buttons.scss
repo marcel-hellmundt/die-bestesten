@@ -43,6 +43,27 @@
   }
 }
 
+.btn-secondary {
+  background-color: transparent;
+  color: $color-text;
+  border-color: $color-border;
+
+  &:hover {
+    color: $color-accent;
+    border-color: $color-accent;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+
+  &.btn:disabled {
+    background-color: $color-border;
+    color: $color-text-muted;
+    border-color: transparent;
+  }
+}
+
 .btn-ghost {
   background-color: transparent;
   color: $color-text-muted;
