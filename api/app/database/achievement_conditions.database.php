@@ -307,9 +307,9 @@ trait AchievementConditionsTrait
         return $this->checkSeasonAggregate($managerIds, 'goals', 70);
     }
 
-    public function check_season_assists_60(array $managerIds): array
+    public function check_season_assists_50(array $managerIds): array
     {
-        return $this->checkSeasonAggregate($managerIds, 'assists', 60);
+        return $this->checkSeasonAggregate($managerIds, 'assists', 50);
     }
 
     private function checkSeasonAggregate(array $managerIds, string $column, int $threshold): array
