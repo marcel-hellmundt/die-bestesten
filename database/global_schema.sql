@@ -188,9 +188,9 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'century',             'Jahrhundertelf',                'Lehre den anderen das Fürchten mit mindestens 100 Punkten an einem Spieltag',         'rocket'),
 (UUID(), 'win_streak_3',        'Never change a winning team',   'Dein Team bekommt einfach nicht genug und hat mindestens 3 in Folge einen Spieltag gewonnen', 'streak'),
 (UUID(), 'sds_4',               'Ein Käfig voller Helden',       'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                 'sds'),
-(UUID(), 'season_points_1400',  'Punkte',                        'Sammle 1400 Punkte in einer Saison',                                                 'points'),
-(UUID(), 'season_goals_75',     'Tore',                          'Habe 75 Tore in einer Saison',                                                       'goals'),
-(UUID(), 'season_assists_60',   'Vorlagen',                      'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
+(UUID(), 'season_points_1400',  'Punkteflut',                    'Sammle 1400 Punkte in einer Saison',                                                 'points'),
+(UUID(), 'season_goals_75',     'Bomber der Nation',             'Habe 75 Tore in einer Saison',                                                       'goals'),
+(UUID(), 'season_assists_60',   'Ohne mich läuft nix',           'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
 (UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
 (UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 30 Punkte gesammelt',            'ants'),
-(UUID(), 'der_pate',            'Der Pate',                      'Ich mache ihm ein Angebot, das er nicht ablehnen kann',                              'godfather');
+(UUID(), 'zuschlag',             'Zuschlag!',                     'Ich mache ihm ein Angebot, das er nicht ablehnen kann',                              'money');

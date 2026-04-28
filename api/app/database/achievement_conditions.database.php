@@ -692,7 +692,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_der_pate(array $managerIds): array
+    public function check_zuschlag(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
