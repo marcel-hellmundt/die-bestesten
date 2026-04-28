@@ -64,4 +64,14 @@
     color: $color-text-muted;
     margin-top: $space-1;
   }
+
+  &__rarity {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    margin-top: auto;
+    padding-top: $space-2;
+    border-top: 1px solid $color-border;
+    width: 100%;
+    text-align: center;
+  }
 }

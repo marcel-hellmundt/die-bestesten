@@ -19,6 +19,11 @@
         <div class="achievement-card__desc">{{ a.description }}</div>
         <div class="achievement-card__date">{{ a.earned_at | date: 'dd.MM.yyyy' }}</div>
       }
+      @if (a.total_managers > 0) {
+        <div class="achievement-card__rarity">
+          {{ a.earned_count }}/{{ a.total_managers }} ({{ (a.earned_count / a.total_managers * 100) | number: '1.0-0' }}%)
+        </div>
+      }
     </div>
   }
 </div>

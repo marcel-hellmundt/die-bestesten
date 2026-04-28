@@ -128,7 +128,7 @@ PATCH    /manager/me           — {current_password,new_password} für Passwort
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth
-GET      /achievement          — [{id,name,description,icon,earned_at}] — earned_at=null wenn nicht verdient; sortiert nach earned_count DESC; Fog-of-War im Frontend — Auth; ?all=true → [{id,condition_key,name,description,icon,earned_count,total_managers,managers[{id,manager_name,earned_at}]}] — Admin
+GET      /achievement          — [{id,name,description,icon,earned_at,earned_count,total_managers}] — earned_at=null wenn nicht verdient; sortiert nach earned_count DESC; Fog-of-War im Frontend — Auth; ?all=true → [{id,condition_key,name,description,icon,earned_count,total_managers,managers[{id,manager_name,earned_at}]}] — Admin
 POST     /achievement/evaluate — Achievement-Auswertung für alle Manager anstoßen (Backfill); idempotent — Admin
 POST     /achievement/evaluate/:id — Einzelnes Achievement neu auswerten: vergibt an neue Gewinner und entzieht Managern, die Anforderungen nicht mehr erfüllen — Admin
 ```

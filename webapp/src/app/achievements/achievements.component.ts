@@ -4,11 +4,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../core/api.service';
 
 interface Achievement {
-  id:          string;
-  name:        string;
-  description: string;
-  icon:        string | null;
-  earned_at:   string | null;
+  id:              string;
+  name:            string;
+  description:     string;
+  icon:            string | null;
+  earned_at:       string | null;
+  earned_count:    number;
+  total_managers:  number;
 }
 
 @Component({

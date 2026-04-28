@@ -144,14 +144,21 @@ trait AchievementTrait
             "SELECT achievement_id, COUNT(*) AS cnt FROM manager_achievement GROUP BY achievement_id"
         )->fetchAll(PDO::FETCH_KEY_PAIR);
 
-        $result = array_map(function ($a) use ($earnedMap, $counts) {
+        $totalManagers = (int) $this->con_league->query(
+            "SELECT COUNT(*) FROM manager WHERE status = 'active'"
+        )->fetchColumn();
+
+        $result = array_map(function ($a) use ($earnedMap, $counts, $totalManagers) {
+            $count = (int) ($counts[$a['id']] ?? 0);
             return [
-                'id'          => $a['id'],
-                'name'        => $a['name'],
-                'description' => $a['description'],
-                'icon'        => $a['icon'],
-                'earned_at'   => $earnedMap[$a['id']] ?? null,
-                '_count'      => (int) ($counts[$a['id']] ?? 0),
+                'id'             => $a['id'],
+                'name'           => $a['name'],
+                'description'    => $a['description'],
+                'icon'           => $a['icon'],
+                'earned_at'      => $earnedMap[$a['id']] ?? null,
+                'earned_count'   => $count,
+                'total_managers' => $totalManagers,
+                '_count'         => $count,
             ];
         }, $rows);
 
