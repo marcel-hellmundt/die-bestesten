@@ -199,4 +199,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'matchday_assists',    'Vorlagenkönig',                 'Sammle Vorlagen an einem Spieltag (Bronze ≥6, Silber ≥7, Gold ≥8)',                 'assists'),
 (UUID(), 'season_red_cards',    'Wilde Kerle',                   'Sammle Platzverweise (Rote + Gelb-Rote Karten) in einer Saison (Bronze ≥4, Silber ≥6, Gold ≥8)', 'redcard'),
 (UUID(), 'season_transfers',    'Auf Einkaufstour',              'Kaufe 80 Spieler in einer Saison',                                                   'transfer'),
-(UUID(), 'youth_squad',         'U23-Elf',                       'Stelle eine Startelf auf, in der alle Spieler zum Spieltag (kickoff + 2 Tage) ≤23 Jahre alt sind', 'youth');
+(UUID(), 'youth_squad',         'U23-Elf',                       'Stelle eine Startelf auf, in der alle Spieler zum Spieltag (kickoff + 2 Tage) ≤23 Jahre alt sind', 'youth'),
+(UUID(), 'veteran_squad',       'Die alten Hasen',               'Stelle eine Startelf mit einem Altersschnitt von ≥30 Jahren auf (kickoff + 2 Tage)',               'veteran');
