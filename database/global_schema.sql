@@ -184,16 +184,26 @@ CREATE TABLE IF NOT EXISTS achievement (
 ALTER TABLE achievement MODIFY COLUMN icon VARCHAR(100) NULL DEFAULT NULL;
 ALTER TABLE achievement DROP COLUMN IF EXISTS sort_index;
 
+-- Migrate: condition_key + description auf aktuelle Schwellenwerte anpassen
+UPDATE achievement SET condition_key = 'win_streak_3',
+    description = 'Dein Team bekommt einfach nicht genug und hat mindestens 3 in Folge einen Spieltag gewonnen'
+    WHERE condition_key = 'win_streak_5';
+UPDATE achievement SET condition_key = 'sds_4',
+    description = 'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt'
+    WHERE condition_key = 'sds_5';
+UPDATE achievement SET description = 'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 20 Punkte gesammelt'
+    WHERE condition_key = 'kleine_grosse';
+
 -- Achievements (v2)
 INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALUES
 (UUID(), 'season_champion',     'Der Besteste',                  'Werde Meister in einer Saison',                                                      'cup'),
 (UUID(), 'ten_matchday_wins',   'Platz an der Sonne',            'Gewinne 10 Spieltage in einer Saison',                                               'medal'),
 (UUID(), 'century',             'Jahrhundertelf',                'Lehre den anderen das Fürchten mit mindestens 100 Punkten an einem Spieltag',         'rocket'),
-(UUID(), 'win_streak_5',        'Never change a winning team',   'Dein Team bekommt einfach nicht genug und hat mindestens 5 in Folge einen Spieltag gewonnen', 'streak'),
-(UUID(), 'sds_5',               'Ein Käfig voller Helden',       'Einer besser als der andere. Habe 5 Spieler des Spiels aufgestellt',                 'sds'),
+(UUID(), 'win_streak_3',        'Never change a winning team',   'Dein Team bekommt einfach nicht genug und hat mindestens 3 in Folge einen Spieltag gewonnen', 'streak'),
+(UUID(), 'sds_4',               'Ein Käfig voller Helden',       'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                 'sds'),
 (UUID(), 'season_points_1400',  'Punkte',                        'Sammle 1400 Punkte in einer Saison',                                                 'points'),
 (UUID(), 'season_goals_70',     'Tore',                          'Habe 70 Tore in einer Saison',                                                       'goals'),
 (UUID(), 'season_assists_60',   'Vorlagen',                      'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
 (UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
-(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 30 Punkte gesammelt',            'ants'),
+(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 20 Punkte gesammelt',            'ants'),
 (UUID(), 'der_pate',            'Der Pate',                      'Ich mache ihm ein Angebot, das er nicht ablehnen kann',                              'godfather');

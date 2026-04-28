@@ -165,7 +165,7 @@ trait AchievementConditionsTrait
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    public function check_win_streak_5(array $managerIds): array
+    public function check_win_streak_3(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -250,7 +250,7 @@ trait AchievementConditionsTrait
         return array_values(array_intersect($managerIds, array_unique($achievers)));
     }
 
-    public function check_sds_5(array $managerIds): array
+    public function check_sds_4(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
