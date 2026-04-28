@@ -310,6 +310,59 @@ FROM (
 ORDER BY junge_feldspieler DESC;
 
 -- =============================================================================
+-- tall_squad — Max. Anzahl nominierter Spieler mit ≥190 cm an einem Spieltag pro Manager (Threshold: 7)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, grosse_spieler, nominated_count
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'tall_squad') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(CASE WHEN p.height_cm >= 190 THEN 1 ELSE 0 END) AS grosse_spieler,
+        COUNT(*) AS nominated_count,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
+            SUM(CASE WHEN p.height_cm >= 190 THEN 1 ELSE 0 END) DESC
+        ) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+) sub WHERE rn = 1
+ORDER BY grosse_spieler DESC;
+
+-- =============================================================================
+-- [ANALYSE] Höchster Altersschnitt der nominierten Startelf pro Manager
+-- (nur Spieler mit bekanntem Geburtsdatum; Alter an kickoff_date + 2 Tage)
+-- =============================================================================
+SELECT manager_name, spieltag, saison, ROUND(avg_alter, 1) AS avg_alter, mit_geburtsdatum
+FROM (
+    SELECT
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        AVG(TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))) AS avg_alter,
+        COUNT(*) AS mit_geburtsdatum,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
+            AVG(TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))) DESC
+        ) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+        AND p.date_of_birth IS NOT NULL
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+) sub WHERE rn = 1
+ORDER BY avg_alter DESC;
+
+-- =============================================================================
 -- season_transfers — Erfolgreiche Transfers (offer.status = 'success') pro Manager pro Saison (Threshold: 80)
 -- =============================================================================
 SELECT achievement_id, manager_name, saison, transfers
