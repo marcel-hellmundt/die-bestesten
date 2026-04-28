@@ -177,16 +177,23 @@ CREATE TABLE IF NOT EXISTS achievement (
     condition_key VARCHAR(100) NOT NULL UNIQUE,  -- entspricht check_{condition_key}() in AchievementConditionsTrait
     name          VARCHAR(100) NOT NULL,
     description   TEXT         NOT NULL,
-    icon          VARCHAR(10)  NULL DEFAULT NULL, -- Emoji, z.B. '🏆'
-    sort_index    INT          NOT NULL DEFAULT 0
+    icon          VARCHAR(100) NULL DEFAULT NULL  -- Dateiname ohne Extension, z.B. 'trophy' → /img/achievements/trophy.png
 );
 
-INSERT IGNORE INTO achievement (condition_key, name, description, icon, sort_index) VALUES
-    ('first_matchday', 'Anstoß',          'Habe am ersten Fantasy-Spieltag teilgenommen.',           '🎯', 1),
-    ('first_win',      'Erster Sieg',      'Habe einen Spieltag gewonnen (meiste Punkte).',           '🏆', 2),
-    ('century',        'Jahrhundert-Elf',  '100 oder mehr Punkte in einem einzelnen Spieltag erzielt.', '💯', 3),
-    ('hat_trick',      'Hattrick',         '3 Spieltage in einer Saison gewonnen.',                   '🎩', 4),
-    ('season_champion','Saisonmeister',    'Eine Saison auf dem ersten Platz beendet.',               '👑', 5),
-    ('full_squad',     'Volles Haus',      '18 Spieler gleichzeitig im Kader gehabt.',                '🏟️', 6),
-    ('first_bid_win',  'Transferprofi',    'Erstes Gebot erfolgreich gewonnen.',                      '🤝', 7),
-    ('sds_hero',       'Sternstunde',      '2 oder mehr SDS-Spieler in der Startelf eines Spieltags.','⭐', 8);
+-- Migrate: icon auf VARCHAR(100) erweitern, sort_index entfernen
+ALTER TABLE achievement MODIFY COLUMN icon VARCHAR(100) NULL DEFAULT NULL;
+ALTER TABLE achievement DROP COLUMN IF EXISTS sort_index;
+
+-- Achievements (v2)
+INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALUES
+(UUID(), 'season_champion',     'Der Besteste',                  'Werde Meister in einer Saison',                                                      'cup'),
+(UUID(), 'ten_matchday_wins',   'Platz an der Sonne',            'Gewinne 10 Spieltage in einer Saison',                                               'medal'),
+(UUID(), 'century',             'Jahrhundertelf',                'Lehre den anderen das Fürchten mit mindestens 100 Punkten an einem Spieltag',         'rocket'),
+(UUID(), 'win_streak_5',        'Never change a winning team',   'Dein Team bekommt einfach nicht genug und hat mindestens 5 in Folge einen Spieltag gewonnen', 'streak'),
+(UUID(), 'sds_5',               'Ein Käfig voller Helden',       'Einer besser als der andere. Habe 5 Spieler des Spiels aufgestellt',                 'sds'),
+(UUID(), 'season_points_1400',  'Punkte',                        'Sammle 1400 Punkte in einer Saison',                                                 'points'),
+(UUID(), 'season_goals_70',     'Tore',                          'Habe 70 Tore in einer Saison',                                                       'goals'),
+(UUID(), 'season_assists_60',   'Vorlagen',                      'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
+(UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
+(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 30 Punkte gesammelt',            'ants'),
+(UUID(), 'der_pate',            'Der Pate',                      'Ich mache ihm ein Angebot, das er nicht ablehnen kann',                              'godfather');
