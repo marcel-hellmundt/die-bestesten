@@ -636,17 +636,19 @@ trait AchievementConditionsTrait
         if (empty($cheapPlayers))
             return [];
 
-        $cheapSet = [];
+        $cheapSet = []; // player_id => season_id
         foreach ($cheapPlayers as $row) {
             $cheapSet[$row['player_id']] = $row['season_id'];
         }
 
         $playerIds = array_keys($cheapSet);
-        $pPlh = implode(',', array_fill(0, count($playerIds), '?'));
+        $pPlh  = implode(',', array_fill(0, count($playerIds),  '?'));
         $manPlh = implode(',', array_fill(0, count($managerIds), '?'));
 
+        // Include from/to matchday to restrict point counting to ownership window
         $stmt = $this->con_league->prepare(
-            "SELECT pit.player_id, t.manager_id, t.season_id AS team_season_id
+            "SELECT pit.player_id, pit.from_matchday_id, pit.to_matchday_id,
+                    t.manager_id, t.season_id AS team_season_id
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
              WHERE pit.player_id IN ($pPlh) AND t.manager_id IN ($manPlh)"
@@ -657,29 +659,26 @@ trait AchievementConditionsTrait
         if (empty($purchases))
             return [];
 
-        $candidates = [];
-        foreach ($purchases as $row) {
-            $globalSeason = $cheapSet[$row['player_id']] ?? null;
-            if ($globalSeason && $globalSeason === $row['team_season_id']) {
-                $key = $row['player_id'] . '|' . $globalSeason;
-                $candidates[$key][] = $row['manager_id'];
-            }
-        }
+        // Keep only purchases where player's global season matches team's season
+        $validPurchases = array_values(array_filter($purchases, function ($row) use ($cheapSet) {
+            return ($cheapSet[$row['player_id']] ?? null) === $row['team_season_id'];
+        }));
 
-        if (empty($candidates))
+        if (empty($validPurchases))
             return [];
 
-        $seasons = array_values(array_unique(array_values($cheapSet)));
+        $seasons = array_values(array_unique(array_column($validPurchases, 'team_season_id')));
         $sPlh = implode(',', array_fill(0, count($seasons), '?'));
 
+        // Load matchday metadata (number needed to compare ownership window)
         $stmt = $this->con->prepare(
-            "SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh)"
+            "SELECT id, season_id, number, kickoff_date FROM matchday WHERE season_id IN ($sPlh)"
         );
         $stmt->execute($seasons);
-        $matchdayToSeason = [];
+        $mdMeta   = [];
         $lastKickoff = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $md) {
-            $matchdayToSeason[$md['id']] = $md['season_id'];
+            $mdMeta[$md['id']] = $md;
             $sid = $md['season_id'];
             if (!isset($lastKickoff[$sid]) || $md['kickoff_date'] > $lastKickoff[$sid]) {
                 $lastKickoff[$sid] = $md['kickoff_date'];
@@ -692,9 +691,8 @@ trait AchievementConditionsTrait
         $stmt->execute($seasons);
         $seasonStartMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'start_date', 'id');
 
-        $candPlayerIds = array_values(array_unique(
-            array_map(fn($k) => explode('|', $k, 2)[0], array_keys($candidates))
-        ));
+        // Load all ratings for candidate players
+        $candPlayerIds = array_values(array_unique(array_column($validPurchases, 'player_id')));
         $cpPlh = implode(',', array_fill(0, count($candPlayerIds), '?'));
         $stmt = $this->con->prepare(
             "SELECT player_id, matchday_id, points FROM player_rating
@@ -702,24 +700,35 @@ trait AchievementConditionsTrait
         );
         $stmt->execute($candPlayerIds);
 
-        $playerSeasonPoints = [];
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $rating) {
-            $sid = $matchdayToSeason[$rating['matchday_id']] ?? null;
-            if (!$sid)
-                continue;
-            $key = $rating['player_id'] . '|' . $sid;
-            $playerSeasonPoints[$key] = ($playerSeasonPoints[$key] ?? 0) + (int) $rating['points'];
+        $ratingsByPlayer = []; // player_id => matchday_id => points
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $ratingsByPlayer[$r['player_id']][$r['matchday_id']] = (int) $r['points'];
         }
 
-        // Pro Manager: bester 0,5-Mio-Spieler
+        // Per manager: sum points only for matchdays the player was in their team
         $bestPerManager = [];
-        foreach ($candidates as $key => $mgrIds) {
-            [$playerId, $sid] = explode('|', $key, 2);
-            $pts = $playerSeasonPoints[$key] ?? 0;
-            foreach ($mgrIds as $mid) {
-                if ($pts > ($bestPerManager[$mid]['pts'] ?? 0)) {
-                    $bestPerManager[$mid] = ['pts' => $pts, 'player_id' => $playerId, 'season_id' => $sid];
-                }
+        foreach ($validPurchases as $row) {
+            $playerId  = $row['player_id'];
+            $managerId = $row['manager_id'];
+            $sid       = $row['team_season_id'];
+
+            $fromNum = $mdMeta[$row['from_matchday_id']]['number'] ?? null;
+            $toNum   = $row['to_matchday_id'] ? ($mdMeta[$row['to_matchday_id']]['number'] ?? PHP_INT_MAX) : PHP_INT_MAX;
+
+            if ($fromNum === null)
+                continue;
+
+            $pts = 0;
+            foreach ($ratingsByPlayer[$playerId] ?? [] as $mdId => $points) {
+                $md = $mdMeta[$mdId] ?? null;
+                if (!$md || $md['season_id'] !== $sid)
+                    continue;
+                if ($md['number'] >= $fromNum && $md['number'] < $toNum)
+                    $pts += $points;
+            }
+
+            if ($pts > ($bestPerManager[$managerId]['pts'] ?? 0)) {
+                $bestPerManager[$managerId] = ['pts' => $pts, 'player_id' => $playerId, 'season_id' => $sid];
             }
         }
 
@@ -737,11 +746,11 @@ trait AchievementConditionsTrait
 
         $result = [];
         foreach ($qualifying as $mgr => $data) {
-            $sid = $data['season_id'];
+            $sid   = $data['season_id'];
             $label = $this->seasonLabel($seasonStartMap[$sid] ?? '');
-            $name = $playerNames[$data['player_id']] ?? '?';
+            $name  = $playerNames[$data['player_id']] ?? '?';
             $result[$mgr] = [
-                'reason' => "$name, {$data['pts']} Pkt ($label)",
+                'reason'    => "$name, {$data['pts']} Pkt ($label)",
                 'earned_at' => $lastKickoff[$sid] ?? date('Y-m-d H:i:s'),
             ];
         }
