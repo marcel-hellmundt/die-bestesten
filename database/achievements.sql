@@ -513,3 +513,26 @@ WHERE tl.nominated = 1
   AND DAY(p.date_of_birth) = DAY(DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))
   AND pr.points >= 10
 ORDER BY manager, spieltag;
+
+-- =============================================================================
+-- phantome — ≥2 nominierte Starter ohne Note an einem Spieltag
+-- =============================================================================
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'phantome') AS achievement_id,
+    CONVERT(m.manager_name USING utf8mb3) AS manager,
+    md.number AS spieltag,
+    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+    COUNT(*) AS starter_ohne_note
+FROM usr_ud16_151_4.team_lineup tl
+JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+JOIN usr_ud16_151_1.season s ON s.id = md.season_id
+JOIN usr_ud16_151_1.player_rating pr
+    ON pr.player_id = CONVERT(tl.player_id USING utf8mb3) AND pr.matchday_id = md.id
+WHERE tl.nominated = 1
+  AND pr.participation = 'starting'
+  AND pr.grade IS NULL
+GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, s.start_date
+HAVING COUNT(*) >= 2
+ORDER BY starter_ohne_note DESC, manager, spieltag;
