@@ -27,8 +27,11 @@
   &__icons {
     position: relative;
     height: 160px;
-    width: 280px;
     margin-bottom: $space-2;
+
+    &--1 { width: 160px; }
+    &--2 { width: 240px; }
+    &--3 { width: 280px; }
   }
 
   &__icon {
@@ -38,11 +41,19 @@
     border-radius: $radius-lg;
     top: 50%;
     left: 50%;
-
-    &--0 { transform: translate(-128px, -40%) rotate(-16deg) scale(0.8); z-index: 1; }
-    &--1 { transform: translate(-50%, -50%);                             z-index: 3; }
-    &--2 { transform: translate(0px, -40%) rotate(16deg) scale(0.8);    z-index: 2; }
   }
+
+  // 1 icon: centered
+  &__icons--1 &__icon--0 { transform: translate(-50%, -50%); z-index: 1; }
+
+  // 2 icons: left + right fan, no center
+  &__icons--2 &__icon--0 { transform: translate(-110px, -50%) rotate(-12deg); z-index: 1; }
+  &__icons--2 &__icon--1 { transform: translate(-18px,  -50%) rotate( 12deg); z-index: 2; }
+
+  // 3 icons: full fan
+  &__icons--3 &__icon--0 { transform: translate(-128px, -40%) rotate(-16deg) scale(0.8); z-index: 1; }
+  &__icons--3 &__icon--1 { transform: translate(-50%,   -50%);                           z-index: 3; }
+  &__icons--3 &__icon--2 { transform: translate(0px,    -40%) rotate( 16deg) scale(0.8); z-index: 2; }
 
   &__title {
     font-size: $font-md;

@@ -1,7 +1,7 @@
 @if (visible) {
   <div class="achievement-overlay" (click)="onSkip()">
     <div class="achievement-card" (click)="$event.stopPropagation()">
-      <div class="achievement-card__icons">
+      <div class="achievement-card__icons achievement-card__icons--{{ iconCount }}">
         @for (a of iconStack; track i; let i = $index) {
           <img
             class="achievement-card__icon achievement-card__icon--{{ i }}"
@@ -11,7 +11,11 @@
         }
       </div>
       <p class="achievement-card__title">
-        Du hast {{ count }}&nbsp;{{ count === 1 ? 'Achievement' : 'Achievements' }} erreicht!
+        @if (count === 1) {
+          Du hast <strong>{{ achievements[0].name }}</strong> erreicht!
+        } @else {
+          Du hast {{ count }}&nbsp;Achievements erreicht!
+        }
       </p>
       <div class="achievement-card__actions">
         <button class="btn btn-primary" (click)="onView()">Ansehen</button>

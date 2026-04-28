@@ -16,13 +16,10 @@ export class AchievementNotificationComponent {
   private api    = inject(ApiService);
   private router = inject(Router);
 
-  get visible()   { return this.achievements.length > 0; }
-  get iconStack() {
-    const a = this.achievements.slice(0, 3);
-    while (a.length < 3) a.push(a[a.length - 1]);
-    return a;
-  }
-  get count()     { return this.achievements.length; }
+  get visible()    { return this.achievements.length > 0; }
+  get iconStack()  { return this.achievements.slice(0, 3); }
+  get iconCount()  { return Math.min(this.achievements.length, 3); }
+  get count()      { return this.achievements.length; }
 
   onView(): void {
     this.markSeen();
