@@ -748,7 +748,7 @@ trait AchievementConditionsTrait
             }
         }
 
-        $qualifying = array_filter($bestPerManager, fn($d) => $d['pts'] >= 30);
+        $qualifying = array_filter($bestPerManager, fn($d) => $d['pts'] >= 20);
         if (empty($qualifying))
             return [];
 
