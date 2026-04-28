@@ -645,10 +645,10 @@ trait AchievementConditionsTrait
         $pPlh  = implode(',', array_fill(0, count($playerIds),  '?'));
         $manPlh = implode(',', array_fill(0, count($managerIds), '?'));
 
-        // Include from/to matchday to restrict point counting to ownership window
+        // Include team_id + from/to matchday to restrict point counting to ownership window
         $stmt = $this->con_league->prepare(
             "SELECT pit.player_id, pit.from_matchday_id, pit.to_matchday_id,
-                    t.manager_id, t.season_id AS team_season_id
+                    pit.team_id, t.manager_id, t.season_id AS team_season_id
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
              WHERE pit.player_id IN ($pPlh) AND t.manager_id IN ($manPlh)"
@@ -705,11 +705,26 @@ trait AchievementConditionsTrait
             $ratingsByPlayer[$r['player_id']][$r['matchday_id']] = (int) $r['points'];
         }
 
-        // Per manager: sum points only for matchdays the player was in their team
+        // Load nominated matchdays per team per player (league DB)
+        $teamIds = array_values(array_unique(array_column($validPurchases, 'team_id')));
+        $tPlh = implode(',', array_fill(0, count($teamIds), '?'));
+        $stmt = $this->con_league->prepare(
+            "SELECT team_id, player_id, matchday_id FROM team_lineup
+             WHERE team_id IN ($tPlh) AND player_id IN ($cpPlh) AND nominated = 1"
+        );
+        $stmt->execute([...$teamIds, ...$candPlayerIds]);
+
+        $nominatedSet = []; // team_id => player_id => matchday_id => true
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $tl) {
+            $nominatedSet[$tl['team_id']][$tl['player_id']][$tl['matchday_id']] = true;
+        }
+
+        // Per manager: sum points only for matchdays the player was nominated in their team
         $bestPerManager = [];
         foreach ($validPurchases as $row) {
             $playerId  = $row['player_id'];
             $managerId = $row['manager_id'];
+            $teamId    = $row['team_id'];
             $sid       = $row['team_season_id'];
 
             $fromNum = $mdMeta[$row['from_matchday_id']]['number'] ?? null;
@@ -723,7 +738,8 @@ trait AchievementConditionsTrait
                 $md = $mdMeta[$mdId] ?? null;
                 if (!$md || $md['season_id'] !== $sid)
                     continue;
-                if ($md['number'] >= $fromNum && $md['number'] < $toNum)
+                if ($md['number'] >= $fromNum && $md['number'] < $toNum
+                    && isset($nominatedSet[$teamId][$playerId][$mdId]))
                     $pts += $points;
             }
 
