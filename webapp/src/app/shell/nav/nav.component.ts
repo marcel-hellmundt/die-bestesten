@@ -5,7 +5,7 @@ import { DataCacheService } from '../../core/data-cache.service';
 interface NavItem {
   label: string;
   icon: string;
-  route: string | any[];
+  route: string | any[] | null;
 }
 
 interface NavGroup {
@@ -33,10 +33,10 @@ export class NavComponent {
         label: 'Team',
         icon: 'kader',
         items: [
-          { label: 'Kader',       icon: 'kader',       route: id ? ['/team', id, 'kader']       : [] },
-          { label: 'Aufstellung', icon: 'aufstellung', route: id ? ['/team', id, 'aufstellung']  : [] },
-          { label: 'Finanzen',    icon: 'finanzen',    route: id ? ['/team', id, 'finanzen']     : [] },
-          { label: 'Statistiken', icon: 'statistiken', route: id ? ['/team', id, 'statistiken']  : [] },
+          { label: 'Kader',       icon: 'kader',       route: id ? ['/team', id, 'kader']      : null },
+          { label: 'Aufstellung', icon: 'aufstellung', route: id ? ['/team', id, 'aufstellung'] : null },
+          { label: 'Finanzen',    icon: 'finanzen',    route: id ? ['/team', id, 'finanzen']    : null },
+          { label: 'Statistiken', icon: 'statistiken', route: id ? ['/team', id, 'statistiken'] : null },
         ]
       }
     ];
