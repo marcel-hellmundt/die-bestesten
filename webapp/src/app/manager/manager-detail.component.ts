@@ -47,6 +47,7 @@ export class ManagerDetailComponent {
   highlights       = computed(() => (this.manager()?.highlights       ?? []) as any[]);
   lowlights        = computed(() => (this.manager()?.lowlights        ?? []) as any[]);
   favoritePlayers  = computed(() => (this.manager()?.favorite_players ?? []) as any[]);
+  achievements     = computed(() => (this.manager()?.achievements     ?? []) as any[]);
 
   // Bar chart
   readonly chartW = 360;

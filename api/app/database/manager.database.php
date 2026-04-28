@@ -198,6 +198,37 @@ trait ManagerTrait
             }
         }
 
+        // Achievements: earned by this manager
+        $earnedQ = $this->con_league->prepare(
+            "SELECT achievement_id, earned_at FROM manager_achievement WHERE manager_id = ?"
+        );
+        $earnedQ->execute([$id]);
+        $earnedMap = [];
+        foreach ($earnedQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $earnedMap[$row['achievement_id']] = $row['earned_at'];
+        }
+
+        $manager['achievements'] = [];
+        if (!empty($earnedMap)) {
+            $achIds = array_keys($earnedMap);
+            $ph = implode(',', array_fill(0, count($achIds), '?'));
+            $achQ = $this->con->prepare(
+                "SELECT id, name, description, icon FROM achievement WHERE id IN ($ph)"
+            );
+            $achQ->execute($achIds);
+            $achievements = $achQ->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($achievements as $a) {
+                $manager['achievements'][] = [
+                    'id'          => $a['id'],
+                    'name'        => $a['name'],
+                    'description' => $a['description'],
+                    'icon'        => $a['icon'],
+                    'earned_at'   => $earnedMap[$a['id']],
+                ];
+            }
+            usort($manager['achievements'], fn($a, $b) => strcmp($a['earned_at'], $b['earned_at']));
+        }
+
         return $manager;
     }
 

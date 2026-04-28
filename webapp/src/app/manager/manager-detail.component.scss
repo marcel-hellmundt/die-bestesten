@@ -1,5 +1,41 @@
 @use '../../styles/variables' as *;
 
+.achievement-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+}
+
+.achievement-chip {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-surface;
+  cursor: default;
+
+  &__icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+
+  &__name {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    white-space: nowrap;
+  }
+}
+
 .detail-header {
   margin-bottom: $space-8;
 
