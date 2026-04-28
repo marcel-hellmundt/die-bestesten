@@ -121,7 +121,7 @@ trait AchievementConditionsTrait
 
         $winners = [];
         foreach ($winCounts as $key => $count) {
-            if ($count >= 10) {
+            if ($count >= 15) {
                 $winners[] = explode('|', $key, 2)[0];
             }
         }
@@ -132,15 +132,26 @@ trait AchievementConditionsTrait
     public function check_century(array $managerIds): array
     {
         if (empty($managerIds)) return [];
+
+        // Nur Saisons ab 2017/2018 (start_date >= 2017-07-01)
+        $validMatchdayIds = $this->con->query(
+            "SELECT md.id FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE s.start_date >= '2017-07-01'"
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($validMatchdayIds)) return [];
+
         $plh  = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh = implode(',', array_fill(0, count($validMatchdayIds), '?'));
         $stmt = $this->con_league->prepare(
             "SELECT DISTINCT m.id
              FROM manager m
              JOIN team t ON t.manager_id = m.id
              JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
-             WHERE m.id IN ($plh) AND tr.points >= 100"
+             WHERE m.id IN ($plh) AND tr.matchday_id IN ($mPlh) AND tr.points >= 100"
         );
-        $stmt->execute($managerIds);
+        $stmt->execute([...$managerIds, ...$validMatchdayIds]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
@@ -148,8 +159,13 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
+        // Nur Saisons ab 2017/2018 (start_date >= 2017-07-01)
         $matchdays = $this->con->query(
-            "SELECT id, season_id, number FROM matchday WHERE completed = 1 ORDER BY season_id, number ASC"
+            "SELECT md.id, md.season_id, md.number
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             ORDER BY md.season_id, md.number ASC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
@@ -259,7 +275,7 @@ trait AchievementConditionsTrait
 
         $achievers = [];
         foreach ($counts as $mk => $cnt) {
-            if ($cnt >= 5) {
+            if ($cnt >= 4) {
                 $achievers[] = explode('|', $mk, 2)[0];
             }
         }
@@ -447,7 +463,7 @@ trait AchievementConditionsTrait
 
         $achievers = [];
         foreach ($candidates as $key => $mgrIds) {
-            if (($playerSeasonPoints[$key] ?? 0) >= 30) {
+            if (($playerSeasonPoints[$key] ?? 0) >= 20) {
                 foreach ($mgrIds as $mid) {
                     $achievers[] = $mid;
                 }
