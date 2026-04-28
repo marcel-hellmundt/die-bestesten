@@ -180,19 +180,6 @@ CREATE TABLE IF NOT EXISTS achievement (
     icon          VARCHAR(100) NULL DEFAULT NULL  -- Dateiname ohne Extension, z.B. 'trophy' → /img/achievements/trophy.png
 );
 
--- Migrate: season_assists_50 → season_assists_60
-UPDATE achievement SET condition_key = 'season_assists_60',
-    description = 'Habe 60 Vorlagen in einer Saison'
-    WHERE condition_key = 'season_assists_50';
-
--- Migrate: season_goals_70 → season_goals_75
-UPDATE achievement SET condition_key = 'season_goals_75',
-    description = 'Habe 75 Tore in einer Saison'
-    WHERE condition_key = 'season_goals_70';
-
--- Migrate: kleine_grosse description auf 30 Punkte aktualisieren
-UPDATE achievement SET description = 'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 30 Punkte gesammelt'
-    WHERE condition_key = 'kleine_grosse';
 
 -- Achievements (v2)
 INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALUES

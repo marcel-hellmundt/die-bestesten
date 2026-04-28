@@ -87,22 +87,27 @@ trait AchievementTrait
         $totalManagers = count($managers);
 
         $earned = $this->con_league->query(
-            "SELECT manager_id, achievement_id, earned_at FROM manager_achievement"
+            "SELECT manager_id, achievement_id, earned_at, reason FROM manager_achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $earnedMap = [];
         foreach ($earned as $row) {
-            $earnedMap[$row['achievement_id']][$row['manager_id']] = $row['earned_at'];
+            $earnedMap[$row['achievement_id']][$row['manager_id']] = [
+                'earned_at' => $row['earned_at'],
+                'reason'    => $row['reason'],
+            ];
         }
 
         $result = array_map(function ($a) use ($managers, $earnedMap, $totalManagers) {
             $achievementEarned = $earnedMap[$a['id']] ?? [];
 
             $managerList = array_map(function ($m) use ($achievementEarned) {
+                $entry = $achievementEarned[$m['id']] ?? null;
                 return [
                     'id'           => $m['id'],
                     'manager_name' => $m['manager_name'],
-                    'earned_at'    => $achievementEarned[$m['id']] ?? null,
+                    'earned_at'    => $entry['earned_at'] ?? null,
+                    'reason'       => $entry['reason']    ?? null,
                 ];
             }, $managers);
 

@@ -55,7 +55,7 @@
             <div
               class="manager-avatar"
               [class.manager-avatar--earned]="!!m.earned_at"
-              [title]="m.manager_name + (m.earned_at ? ' ✓' : '')"
+              [title]="m.manager_name + (m.reason ? ' · ' + m.reason : '') + (m.earned_at ? ' ✓' : '')"
             >
               @if (!failedImageIds().has(m.id)) {
                 <img

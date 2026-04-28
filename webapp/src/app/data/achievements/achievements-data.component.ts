@@ -7,6 +7,7 @@ interface AchievementManager {
   id: string;
   manager_name: string;
   earned_at: string | null;
+  reason: string | null;
 }
 
 interface AchievementAdmin {
