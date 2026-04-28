@@ -20,33 +20,32 @@
   flex-direction: column;
   align-items: center;
   gap: $space-4;
-  min-width: 280px;
-  max-width: 360px;
+  min-width: 340px;
+  max-width: 400px;
   animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   &__icons {
     position: relative;
-    height: 96px;
-    width: 120px;
+    height: 160px;
+    width: 280px;
     margin-bottom: $space-2;
   }
 
   &__icon {
     position: absolute;
-    width: 64px;
-    height: 64px;
+    width: 128px;
+    height: 128px;
     border-radius: $radius-lg;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     top: 50%;
     left: 50%;
 
-    &--0 { transform: translate(calc(-50% - 16px), -50%) rotate(-8deg); z-index: 1; }
-    &--1 { transform: translate(-50%, calc(-50% - 4px)) rotate(0deg);   z-index: 3; }
-    &--2 { transform: translate(calc(-50% + 16px), -50%) rotate(8deg);  z-index: 2; }
+    &--0 { transform: translate(-128px, -40%) rotate(-16deg) scale(0.8); z-index: 1; }
+    &--1 { transform: translate(-50%, -50%);                             z-index: 3; }
+    &--2 { transform: translate(0px, -40%) rotate(16deg) scale(0.8);    z-index: 2; }
   }
 
   &__title {
-    font-size: $font-base;
+    font-size: $font-md;
     font-weight: $font-weight-semibold;
     text-align: center;
     color: $color-text;
