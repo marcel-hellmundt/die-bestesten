@@ -147,13 +147,16 @@ CREATE TABLE IF NOT EXISTS maintainer_contribution (
 
 -- Tabelle: manager_achievement (welcher Manager hat welche Errungenschaft verdient)
 CREATE TABLE IF NOT EXISTS manager_achievement (
-    id             CHAR(36)  NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    manager_id     CHAR(36)  NOT NULL,
-    achievement_id CHAR(36)  NOT NULL,  -- Referenz auf global_schema.achievement.id (kein FK, cross-DB)
-    earned_at      DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id             CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id     CHAR(36)     NOT NULL,
+    achievement_id CHAR(36)     NOT NULL,  -- Referenz auf global_schema.achievement.id (kein FK, cross-DB)
+    earned_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reason         VARCHAR(255) NULL DEFAULT NULL,
     FOREIGN KEY (manager_id) REFERENCES manager(id),
     UNIQUE KEY uk_manager_achievement (manager_id, achievement_id)
 );
+
+ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS reason VARCHAR(255) NULL DEFAULT NULL;
 
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
 -- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)

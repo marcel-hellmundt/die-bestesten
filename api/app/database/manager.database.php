@@ -200,12 +200,12 @@ trait ManagerTrait
 
         // Achievements: earned by this manager
         $earnedQ = $this->con_league->prepare(
-            "SELECT achievement_id, earned_at FROM manager_achievement WHERE manager_id = ?"
+            "SELECT achievement_id, earned_at, reason FROM manager_achievement WHERE manager_id = ?"
         );
         $earnedQ->execute([$id]);
         $earnedMap = [];
         foreach ($earnedQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $earnedMap[$row['achievement_id']] = $row['earned_at'];
+            $earnedMap[$row['achievement_id']] = ['earned_at' => $row['earned_at'], 'reason' => $row['reason']];
         }
 
         $manager['achievements'] = [];
@@ -223,7 +223,8 @@ trait ManagerTrait
                     'name'        => $a['name'],
                     'description' => $a['description'],
                     'icon'        => $a['icon'],
-                    'earned_at'   => $earnedMap[$a['id']],
+                    'earned_at'   => $earnedMap[$a['id']]['earned_at'],
+                    'reason'      => $earnedMap[$a['id']]['reason'],
                 ];
             }
             usort($manager['achievements'], fn($a, $b) => strcmp($a['earned_at'], $b['earned_at']));

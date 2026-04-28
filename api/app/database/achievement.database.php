@@ -17,8 +17,8 @@ trait AchievementTrait
         if (empty($managerIds)) return;
 
         $stmt = $this->con_league->prepare(
-            "INSERT IGNORE INTO manager_achievement (id, manager_id, achievement_id)
-             VALUES (UUID(), ?, ?)"
+            "INSERT IGNORE INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at)
+             VALUES (UUID(), ?, ?, ?, ?)"
         );
 
         foreach ($achievements as $achievement) {
@@ -26,8 +26,8 @@ trait AchievementTrait
             if (!method_exists($this, $method)) continue;
 
             $earners = $this->$method($managerIds);
-            foreach ($earners as $managerId) {
-                $stmt->execute([$managerId, $achievement['id']]);
+            foreach ($earners as $managerId => $meta) {
+                $stmt->execute([$managerId, $achievement['id'], $meta['reason'], $meta['earned_at']]);
             }
         }
     }
@@ -56,16 +56,19 @@ trait AchievementTrait
             return;
         }
 
-        $plh = implode(',', array_fill(0, count($earners), '?'));
+        $earnerIds = array_keys($earners);
+        $plh       = implode(',', array_fill(0, count($earnerIds), '?'));
         $this->con_league->prepare(
             "DELETE FROM manager_achievement WHERE achievement_id = ? AND manager_id NOT IN ($plh)"
-        )->execute([$achievementId, ...$earners]);
+        )->execute([$achievementId, ...$earnerIds]);
 
         $stmt = $this->con_league->prepare(
-            "INSERT IGNORE INTO manager_achievement (id, manager_id, achievement_id) VALUES (UUID(), ?, ?)"
+            "INSERT INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at)
+             VALUES (UUID(), ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE reason = VALUES(reason), earned_at = VALUES(earned_at)"
         );
-        foreach ($earners as $managerId) {
-            $stmt->execute([$managerId, $achievementId]);
+        foreach ($earners as $managerId => $meta) {
+            $stmt->execute([$managerId, $achievementId, $meta['reason'], $meta['earned_at']]);
         }
     }
 
@@ -131,13 +134,13 @@ trait AchievementTrait
         $plh = implode(',', array_fill(0, count($achievementIds), '?'));
 
         $earned = $this->con_league->prepare(
-            "SELECT achievement_id, earned_at FROM manager_achievement
+            "SELECT achievement_id, earned_at, reason FROM manager_achievement
              WHERE manager_id = ? AND achievement_id IN ($plh)"
         );
         $earned->execute([$managerId, ...$achievementIds]);
         $earnedMap = [];
         foreach ($earned->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $earnedMap[$row['achievement_id']] = $row['earned_at'];
+            $earnedMap[$row['achievement_id']] = ['earned_at' => $row['earned_at'], 'reason' => $row['reason']];
         }
 
         $counts = $this->con_league->query(
@@ -149,13 +152,15 @@ trait AchievementTrait
         )->fetchColumn();
 
         $result = array_map(function ($a) use ($earnedMap, $counts, $totalManagers) {
-            $count = (int) ($counts[$a['id']] ?? 0);
+            $count    = (int) ($counts[$a['id']] ?? 0);
+            $earned   = $earnedMap[$a['id']] ?? null;
             return [
                 'id'             => $a['id'],
                 'name'           => $a['name'],
                 'description'    => $a['description'],
                 'icon'           => $a['icon'],
-                'earned_at'      => $earnedMap[$a['id']] ?? null,
+                'earned_at'      => $earned['earned_at'] ?? null,
+                'reason'         => $earned['reason'] ?? null,
                 'earned_count'   => $count,
                 'total_managers' => $totalManagers,
                 '_count'         => $count,

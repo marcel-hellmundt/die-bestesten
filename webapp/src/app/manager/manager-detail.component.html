@@ -204,7 +204,7 @@
       <div class="section-header-row"><h2 class="section-header">Achievements</h2></div>
       <div class="achievement-chips">
         @for (a of achievements(); track a.id) {
-          <div class="achievement-chip" [title]="a.description + ' · ' + (a.earned_at | date:'dd.MM.yyyy')">
+          <div class="achievement-chip" [title]="(a.reason ? a.reason + ' · ' : '') + a.description + ' · ' + (a.earned_at | date:'dd.MM.yyyy')">
             <div class="achievement-chip__icon">
               <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" />
             </div>

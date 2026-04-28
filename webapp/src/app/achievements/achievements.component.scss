@@ -59,6 +59,13 @@
     line-height: 1.4;
   }
 
+  &__reason {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+    text-align: center;
+  }
+
   &__date {
     font-size: $font-xs;
     color: $color-text-muted;

@@ -17,6 +17,9 @@
       <div class="achievement-card__name">{{ a.earned_at ? a.name : '???' }}</div>
       @if (a.earned_at) {
         <div class="achievement-card__desc">{{ a.description }}</div>
+        @if (a.reason) {
+          <div class="achievement-card__reason">{{ a.reason }}</div>
+        }
         <div class="achievement-card__date">{{ a.earned_at | date: 'dd.MM.yyyy' }}</div>
       }
       @if (a.total_managers > 0) {

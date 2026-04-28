@@ -9,6 +9,7 @@ interface Achievement {
   description:     string;
   icon:            string | null;
   earned_at:       string | null;
+  reason:          string | null;
   earned_count:    number;
   total_managers:  number;
 }
