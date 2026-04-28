@@ -847,6 +847,107 @@ trait AchievementConditionsTrait
         return $result;
     }
 
+    public function check_season_red_cards(array $managerIds): array
+    {
+        if (empty($managerIds))
+            return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE s.start_date >= '2017-07-01'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays))
+            return [];
+
+        $matchdayToSeason = [];
+        $lastKickoff      = [];
+        $seasonStartMap   = [];
+        foreach ($matchdays as $row) {
+            $matchdayToSeason[$row['id']] = $row['season_id'];
+            $sid = $row['season_id'];
+            $seasonStartMap[$sid] = $row['season_start'];
+            if (!isset($lastKickoff[$sid]) || $row['kickoff_date'] > $lastKickoff[$sid]) {
+                $lastKickoff[$sid] = $row['kickoff_date'];
+            }
+        }
+
+        $dismissalRows = $this->con->query(
+            "SELECT player_id, matchday_id,
+                    (red_card + yellow_red_card) AS dismissals
+             FROM player_rating WHERE red_card = 1 OR yellow_red_card = 1"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($dismissalRows))
+            return [];
+
+        $dismissalSet = [];
+        foreach ($dismissalRows as $row) {
+            $dismissalSet[$row['player_id'] . '|' . $row['matchday_id']] = (int) $row['dismissals'];
+        }
+
+        $mdIds = array_keys($matchdayToSeason);
+        $plh   = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh  = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, t.season_id, tl.player_id, tl.matchday_id
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_lineup tl ON tl.team_id = t.id AND tl.nominated = 1
+             WHERE m.id IN ($plh) AND tl.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $lineups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $seasonTotals = [];
+        $teamNameMap  = [];
+        foreach ($lineups as $row) {
+            $dismissals = $dismissalSet[$row['player_id'] . '|' . $row['matchday_id']] ?? 0;
+            if ($dismissals === 0)
+                continue;
+            $key = $row['manager_id'] . '|' . $row['season_id'];
+            $seasonTotals[$key] = ($seasonTotals[$key] ?? 0) + $dismissals;
+            $teamNameMap[$key]  = $row['team_name'];
+        }
+
+        // Pro Manager: früheste qualifizierende Saison
+        $achievers = [];
+        foreach ($seasonTotals as $key => $total) {
+            if ($total < 4)
+                continue;
+            [$mgr, $sid] = explode('|', $key, 2);
+            if (!in_array($mgr, $managerIds))
+                continue;
+            $sStart = $seasonStartMap[$sid] ?? '9999-01-01';
+            if (
+                !isset($achievers[$mgr]) ||
+                $sStart < ($seasonStartMap[$achievers[$mgr]['season_id']] ?? '9999-01-01')
+            ) {
+                $achievers[$mgr] = [
+                    'season_id' => $sid,
+                    'total'     => $total,
+                    'team_name' => $teamNameMap[$key] ?? '?',
+                ];
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $sid   = $data['season_id'];
+            $label = $this->seasonLabel($seasonStartMap[$sid] ?? '');
+            $total = $data['total'];
+            $result[$mgr] = [
+                'reason'    => "{$total} Platzverweise mit {$data['team_name']} ($label)",
+                'earned_at' => $lastKickoff[$sid] ?? date('Y-m-d H:i:s'),
+                'level'     => $total >= 8 ? 'gold' : ($total >= 6 ? 'silver' : 'bronze'),
+            ];
+        }
+        return $result;
+    }
+
     public function check_matchday_assists(array $managerIds): array
     {
         if (empty($managerIds))

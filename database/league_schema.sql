@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS team_rating (
     max_points          INT         DEFAULT NULL,        -- maximal erreichbare Punkte dieses Spieltags
     goals               INT         DEFAULT NULL,
     assists             INT         DEFAULT NULL,
+    red_cards           INT         DEFAULT NULL,        -- Platzverweise (red_card + yellow_red_card) der aufgestellten Spieler
     clean_sheet         TINYINT(1)  DEFAULT NULL,
     sds                 INT         DEFAULT NULL,
     sds_defender        INT         DEFAULT NULL,
@@ -161,6 +162,24 @@ CREATE TABLE IF NOT EXISTS manager_achievement (
 ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS reason VARCHAR(255) NULL DEFAULT NULL;
 ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS seen_at DATETIME NULL DEFAULT NULL;
 ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS level ENUM('bronze', 'silver', 'gold') NOT NULL DEFAULT 'gold';
+
+ALTER TABLE team_rating ADD COLUMN IF NOT EXISTS red_cards INT DEFAULT NULL;
+
+-- Backfill red_cards aus player_rating × team_lineup (nach dem ALTER ausführen)
+-- UPDATE team_rating tr
+-- JOIN (
+--     SELECT t.id AS team_id, CONVERT(tl.matchday_id USING utf8mb3) AS matchday_id,
+--            SUM(pr.red_card + pr.yellow_red_card) AS rc
+--     FROM usr_ud16_151_4.team_lineup tl
+--     JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+--     JOIN usr_ud16_151_1.player_rating pr
+--         ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+--         AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+--         AND (pr.red_card = 1 OR pr.yellow_red_card = 1)
+--     WHERE tl.nominated = 1
+--     GROUP BY t.id, tl.matchday_id
+-- ) agg ON agg.team_id = tr.team_id AND agg.matchday_id = tr.matchday_id
+-- SET tr.red_cards = agg.rc;
 
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
 -- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)

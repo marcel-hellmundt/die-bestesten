@@ -41,6 +41,7 @@ trait TeamRatingTrait
                     SUM(tr.points)      AS total_points,
                     SUM(tr.goals)       AS total_goals,
                     SUM(tr.assists)     AS total_assists,
+                    SUM(tr.red_cards)   AS total_red_cards,
                     SUM(tr.sds)         AS total_sds,
                     SUM(tr.sds_defender) AS total_sds_defender,
                     SUM(tr.clean_sheet) AS total_clean_sheet,
@@ -219,7 +220,7 @@ trait TeamRatingTrait
             $rq = $this->con_league->prepare(
                 "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
                         m.manager_name,
-                        tr.points, tr.goals, tr.assists, tr.sds, tr.clean_sheet
+                        tr.points, tr.goals, tr.assists, tr.red_cards, tr.sds, tr.clean_sheet
                  FROM team_rating tr
                  JOIN team t ON t.id = tr.team_id
                  JOIN manager m ON m.id = t.manager_id
@@ -281,11 +282,12 @@ trait TeamRatingTrait
 
         $prq = $this->con->prepare(
             "SELECT player_id,
-                    COALESCE(points, 0)      AS points,
-                    COALESCE(goals, 0)       AS goals,
-                    COALESCE(assists, 0)     AS assists,
-                    COALESCE(clean_sheet, 0) AS clean_sheet,
-                    COALESCE(sds, 0)         AS sds
+                    COALESCE(points, 0)                                      AS points,
+                    COALESCE(goals, 0)                                       AS goals,
+                    COALESCE(assists, 0)                                     AS assists,
+                    COALESCE(red_card, 0) + COALESCE(yellow_red_card, 0)    AS red_cards,
+                    COALESCE(clean_sheet, 0)                                 AS clean_sheet,
+                    COALESCE(sds, 0)                                         AS sds
              FROM player_rating
              WHERE matchday_id = ? AND player_id IN ($placeholders)"
         );
@@ -305,6 +307,7 @@ trait TeamRatingTrait
                     'points'       => 0,
                     'goals'        => 0,
                     'assists'      => 0,
+                    'red_cards'    => 0,
                     'clean_sheet'  => 0,
                     'sds'          => 0,
                     'fine'         => 0.0,
@@ -315,6 +318,7 @@ trait TeamRatingTrait
                 $teamMap[$tid]['points']      += (int)$pr['points'];
                 $teamMap[$tid]['goals']       += (int)$pr['goals'];
                 $teamMap[$tid]['assists']     += (int)$pr['assists'];
+                $teamMap[$tid]['red_cards']   += (int)$pr['red_cards'];
                 $teamMap[$tid]['clean_sheet'] += (int)$pr['clean_sheet'];
                 $teamMap[$tid]['sds']         += (int)$pr['sds'];
             }

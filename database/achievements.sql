@@ -276,6 +276,31 @@ FROM (
 ORDER BY n_bieter DESC;
 
 -- =============================================================================
+-- season_red_cards — Platzverweise (red_card + yellow_red_card) pro Manager pro Saison (Bronze ≥4, Silber ≥6, Gold ≥8)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, platzverweise
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_red_cards') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(pr.red_card + pr.yellow_red_card) AS platzverweise,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY SUM(pr.red_card + pr.yellow_red_card) DESC) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player_rating pr
+        ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+        AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+        AND (pr.red_card = 1 OR pr.yellow_red_card = 1)
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY platzverweise DESC;
+
+-- =============================================================================
 -- matchday_assists — Meiste Vorlagen an einem Spieltag pro Manager (Bronze ≥6, Silber ≥7, Gold ≥8)
 -- =============================================================================
 SELECT achievement_id, manager_name, spieltag, saison, vorlagen

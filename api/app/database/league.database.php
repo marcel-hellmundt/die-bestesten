@@ -136,11 +136,11 @@ trait LeagueTrait
 
         $stmtRating = $conLeague->prepare(
             "INSERT INTO team_rating (
-                id, team_id, matchday_id, points, max_points, goals, assists,
+                id, team_id, matchday_id, points, max_points, goals, assists, red_cards,
                 clean_sheet, sds, sds_defender, missed_goals,
                 points_goalkeeper, points_defender, points_midfielder, points_forward, invalid
              ) VALUES (
-                :id, :team_id, :matchday_id, :points, :max_points, :goals, :assists,
+                :id, :team_id, :matchday_id, :points, :max_points, :goals, :assists, :red_cards,
                 :clean_sheet, :sds, :sds_defender, :missed_goals,
                 :points_goalkeeper, :points_defender, :points_midfielder, :points_forward, :invalid
              ) ON DUPLICATE KEY UPDATE
@@ -149,6 +149,7 @@ trait LeagueTrait
                 max_points         = VALUES(max_points),
                 goals              = VALUES(goals),
                 assists            = VALUES(assists),
+                red_cards          = VALUES(red_cards),
                 clean_sheet        = VALUES(clean_sheet),
                 sds                = VALUES(sds),
                 sds_defender       = VALUES(sds_defender),
@@ -197,6 +198,7 @@ trait LeagueTrait
                 ':clean_sheet'      => $row['clean_sheet'],
                 ':sds'              => $row['sds'],
                 ':sds_defender'     => $row['sds_defender'],
+                ':red_cards'        => 0,
                 ':missed_goals'     => $row['missed_goals'],
                 ':points_goalkeeper'=> $row['points_goalkeeper'],
                 ':points_defender'  => $row['points_defender'],
