@@ -302,9 +302,9 @@ trait AchievementConditionsTrait
         return $this->checkSeasonAggregate($managerIds, 'points', 1400);
     }
 
-    public function check_season_goals_70(array $managerIds): array
+    public function check_season_goals_75(array $managerIds): array
     {
-        return $this->checkSeasonAggregate($managerIds, 'goals', 70);
+        return $this->checkSeasonAggregate($managerIds, 'goals', 75);
     }
 
     public function check_season_assists_60(array $managerIds): array

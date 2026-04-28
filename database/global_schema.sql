@@ -185,6 +185,11 @@ UPDATE achievement SET condition_key = 'season_assists_60',
     description = 'Habe 60 Vorlagen in einer Saison'
     WHERE condition_key = 'season_assists_50';
 
+-- Migrate: season_goals_70 → season_goals_75
+UPDATE achievement SET condition_key = 'season_goals_75',
+    description = 'Habe 75 Tore in einer Saison'
+    WHERE condition_key = 'season_goals_70';
+
 -- Achievements (v2)
 INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALUES
 (UUID(), 'season_champion',     'Der Besteste',                  'Werde Meister in einer Saison',                                                      'cup'),
@@ -193,7 +198,7 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'win_streak_3',        'Never change a winning team',   'Dein Team bekommt einfach nicht genug und hat mindestens 3 in Folge einen Spieltag gewonnen', 'streak'),
 (UUID(), 'sds_4',               'Ein Käfig voller Helden',       'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                 'sds'),
 (UUID(), 'season_points_1400',  'Punkte',                        'Sammle 1400 Punkte in einer Saison',                                                 'points'),
-(UUID(), 'season_goals_70',     'Tore',                          'Habe 70 Tore in einer Saison',                                                       'goals'),
+(UUID(), 'season_goals_75',     'Tore',                          'Habe 75 Tore in einer Saison',                                                       'goals'),
 (UUID(), 'season_assists_60',   'Vorlagen',                      'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
 (UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
 (UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 10 Punkte gesammelt',            'ants'),
