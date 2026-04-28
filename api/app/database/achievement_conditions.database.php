@@ -461,7 +461,7 @@ trait AchievementConditionsTrait
         $stmt = $this->con->prepare(
             "SELECT id, season_id FROM matchday WHERE season_id IN ($sPlh)"
         );
-        $stmt->execute($seasons);
+        $stmt->execute(array_values($seasons));
         $matchdayToSeason = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $md) {
             $matchdayToSeason[$md['id']] = $md['season_id'];
