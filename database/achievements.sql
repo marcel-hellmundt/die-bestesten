@@ -276,6 +276,26 @@ FROM (
 ORDER BY n_bieter DESC;
 
 -- =============================================================================
+-- season_transfers — Erfolgreiche Transfers (offer.status = 'success') pro Manager pro Saison (Threshold: 80)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, transfers
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_transfers') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        COUNT(*) AS transfers,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC) AS rn
+    FROM usr_ud16_151_4.offer o
+    JOIN usr_ud16_151_4.team t ON t.id = o.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.season s ON s.id = CONVERT(t.season_id USING utf8mb3)
+    WHERE o.status = 'success'
+    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY transfers DESC;
+
+-- =============================================================================
 -- season_red_cards — Platzverweise (red_card + yellow_red_card) pro Manager pro Saison (Bronze ≥4, Silber ≥6, Gold ≥8)
 -- =============================================================================
 SELECT achievement_id, manager_name, saison, platzverweise

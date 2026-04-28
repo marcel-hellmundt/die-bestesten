@@ -847,6 +847,77 @@ trait AchievementConditionsTrait
         return $result;
     }
 
+    public function check_season_transfers(array $managerIds): array
+    {
+        if (empty($managerIds))
+            return [];
+
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, t.season_id, COUNT(*) AS transfers
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN offer o ON o.team_id = t.id AND o.status = 'success'
+             WHERE m.id IN ($plh)
+             GROUP BY m.id, t.id"
+        );
+        $stmt->execute($managerIds);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($rows))
+            return [];
+
+        $seasonIds = array_values(array_unique(array_column($rows, 'season_id')));
+        $sPlh = implode(',', array_fill(0, count($seasonIds), '?'));
+        $stmt = $this->con->prepare(
+            "SELECT id, start_date FROM season WHERE id IN ($sPlh)"
+        );
+        $stmt->execute($seasonIds);
+        $seasonStartMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'start_date', 'id');
+
+        $lastKickoff = [];
+        $stmt = $this->con->prepare(
+            "SELECT season_id, MAX(kickoff_date) AS last_kickoff FROM matchday WHERE season_id IN ($sPlh) GROUP BY season_id"
+        );
+        $stmt->execute($seasonIds);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $lastKickoff[$row['season_id']] = $row['last_kickoff'];
+        }
+
+        // Pro Manager: früheste qualifizierende Saison
+        $achievers = [];
+        foreach ($rows as $row) {
+            $transfers = (int) $row['transfers'];
+            if ($transfers < 80)
+                continue;
+            $mgr   = $row['manager_id'];
+            $sid   = $row['season_id'];
+            $sStart = $seasonStartMap[$sid] ?? '9999-01-01';
+            if (
+                !isset($achievers[$mgr]) ||
+                $sStart < ($seasonStartMap[$achievers[$mgr]['season_id']] ?? '9999-01-01')
+            ) {
+                $achievers[$mgr] = [
+                    'season_id' => $sid,
+                    'transfers' => $transfers,
+                    'team_name' => $row['team_name'],
+                ];
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $sid   = $data['season_id'];
+            $label = $this->seasonLabel($seasonStartMap[$sid] ?? '');
+            $result[$mgr] = [
+                'reason'    => "{$data['transfers']} Transfers mit {$data['team_name']} ($label)",
+                'earned_at' => $lastKickoff[$sid] ?? date('Y-m-d H:i:s'),
+                // 'level' => TBD
+            ];
+        }
+        return $result;
+    }
+
     public function check_season_red_cards(array $managerIds): array
     {
         if (empty($managerIds))
