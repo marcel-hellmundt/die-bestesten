@@ -984,7 +984,7 @@ trait AchievementConditionsTrait
             $teamNameMap[$key]  = $row['team_name'];
         }
 
-        // Pro Manager: früheste qualifizierende Saison
+        // Pro Manager: Saison mit den meisten Platzverweisen
         $achievers = [];
         foreach ($seasonTotals as $key => $total) {
             if ($total < 4)
@@ -992,10 +992,9 @@ trait AchievementConditionsTrait
             [$mgr, $sid] = explode('|', $key, 2);
             if (!in_array($mgr, $managerIds))
                 continue;
-            $sStart = $seasonStartMap[$sid] ?? '9999-01-01';
             if (
                 !isset($achievers[$mgr]) ||
-                $sStart < ($seasonStartMap[$achievers[$mgr]['season_id']] ?? '9999-01-01')
+                $total > $achievers[$mgr]['total']
             ) {
                 $achievers[$mgr] = [
                     'season_id' => $sid,
