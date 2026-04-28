@@ -74,8 +74,11 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
+        // Nur Saisons ab 2017/2018 (start_date >= 2017-07-01)
         $matchdays = $this->con->query(
-            "SELECT id, season_id FROM matchday WHERE completed = 1"
+            "SELECT md.id, md.season_id FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
