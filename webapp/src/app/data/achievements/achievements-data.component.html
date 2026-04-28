@@ -51,22 +51,29 @@
         </div>
 
         <div class="achievement-row__managers">
-          @for (m of a.managers; track m.id) {
-            <div
-              class="manager-avatar"
-              [class.manager-avatar--earned]="!!m.earned_at"
-              [title]="m.manager_name + (m.reason ? ' · ' + m.reason : '') + (m.earned_at ? ' ✓' : '')"
-            >
-              @if (!failedImageIds().has(m.id)) {
-                <img
-                  [src]="managerPhotoUrl(m.id)"
-                  [alt]="m.manager_name"
-                  (error)="onImageError(m.id)"
-                />
-              } @else {
-                <span class="manager-avatar__initials">{{ m.manager_name[0] }}</span>
-              }
-            </div>
+          @for (group of groupManagers(a.managers); track group.level; let first = $first) {
+            @if (!first) {
+              <div class="manager-level-gap"></div>
+            }
+            @for (m of group.items; track m.id) {
+              <div
+                class="manager-avatar"
+                [class.manager-avatar--bronze]="m.level === 'bronze'"
+                [class.manager-avatar--silver]="m.level === 'silver'"
+                [class.manager-avatar--gold]="m.level === 'gold'"
+                [title]="m.manager_name + (m.level ? ' · ' + m.level : '') + (m.reason ? ' · ' + m.reason : '')"
+              >
+                @if (!failedImageIds().has(m.id)) {
+                  <img
+                    [src]="managerPhotoUrl(m.id)"
+                    [alt]="m.manager_name"
+                    (error)="onImageError(m.id)"
+                  />
+                } @else {
+                  <span class="manager-avatar__initials">{{ m.manager_name[0] }}</span>
+                }
+              </div>
+            }
           }
         </div>
       </div>

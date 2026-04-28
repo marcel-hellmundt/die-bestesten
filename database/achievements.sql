@@ -276,6 +276,26 @@ FROM (
 ORDER BY n_bieter DESC;
 
 -- =============================================================================
+-- matchday_goals — Meiste Tore an einem Spieltag pro Manager (Bronze ≥8, Silber ≥9, Gold ≥10)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, tore
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'matchday_goals') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        tr.goals AS tore,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY tr.goals DESC) AS rn
+    FROM usr_ud16_151_4.team_rating tr
+    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+) sub WHERE rn = 1
+ORDER BY tore DESC;
+
+-- =============================================================================
 -- kegelkasse — Längste Serie auf dem letzten Platz (Threshold: 3)
 -- =============================================================================
 WITH kk_last AS (

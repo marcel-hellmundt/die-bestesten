@@ -156,8 +156,8 @@ trait AchievementConditionsTrait
             }
         }
 
-        // Siege chronologisch tracken; 10. Sieg pro Manager+Saison festhalten
-        $winData = []; // manager_id|season_id => ['count','tenth_kickoff','team_name','season_start']
+        // Siege chronologisch tracken; 8. Sieg (Bronze-Threshold) pro Manager+Saison festhalten
+        $winData = []; // manager_id|season_id => ['count','threshold_kickoff','team_name','season_start']
         foreach ($matchdays as $md) {
             $mid = $md['id'];
             $max = $matchdayMax[$mid] ?? null;
@@ -173,22 +173,22 @@ trait AchievementConditionsTrait
                 if (!isset($winData[$key])) {
                     $winData[$key] = [
                         'count' => 0,
-                        'tenth_kickoff' => null,
+                        'threshold_kickoff' => null,
                         'team_name' => $row['team_name'],
                         'season_start' => $md['season_start'],
                     ];
                 }
                 $winData[$key]['count']++;
-                if ($winData[$key]['count'] === 10) {
-                    $winData[$key]['tenth_kickoff'] = $md['kickoff_date'];
+                if ($winData[$key]['count'] === 8) {
+                    $winData[$key]['threshold_kickoff'] = $md['kickoff_date'];
                 }
             }
         }
 
-        // Pro Manager: früheste qualifizierende Saison
+        // Pro Manager: früheste qualifizierende Saison (>= 8 Siege)
         $achievers = [];
         foreach ($winData as $key => $data) {
-            if ($data['count'] < 10)
+            if ($data['count'] < 8)
                 continue;
             [$mgr] = explode('|', $key, 2);
             if (
@@ -202,9 +202,11 @@ trait AchievementConditionsTrait
         $result = [];
         foreach ($achievers as $mgr => $data) {
             $label = $this->seasonLabel($data['season_start']);
+            $count = $data['count'];
             $result[$mgr] = [
-                'reason' => "{$data['count']} Siege mit {$data['team_name']} ($label)",
-                'earned_at' => $data['tenth_kickoff'] ?? date('Y-m-d H:i:s'),
+                'reason'    => "{$count} Siege mit {$data['team_name']} ($label)",
+                'earned_at' => $data['threshold_kickoff'] ?? date('Y-m-d H:i:s'),
+                'level'     => $count >= 16 ? 'gold' : ($count >= 12 ? 'silver' : 'bronze'),
             ];
         }
         return $result;
@@ -840,6 +842,67 @@ trait AchievementConditionsTrait
             $result[$mgr] = [
                 'reason' => "$name, $mio ($label)",
                 'earned_at' => $meta['kickoff_date'] ?? date('Y-m-d H:i:s'),
+            ];
+        }
+        return $result;
+    }
+
+    public function check_matchday_goals(array $managerIds): array
+    {
+        if (empty($managerIds))
+            return [];
+
+        $validMatchdays = $this->con->query(
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($validMatchdays))
+            return [];
+
+        $mdMeta = array_column($validMatchdays, null, 'id');
+        $mdIds  = array_column($validMatchdays, 'id');
+        $plh    = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh   = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, tr.matchday_id, tr.goals
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+             WHERE m.id IN ($plh) AND tr.matchday_id IN ($mPlh) AND tr.goals >= 8
+             ORDER BY tr.goals DESC"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Pro Manager: Spieltag mit den meisten Toren
+        $achievers = [];
+        foreach ($rows as $row) {
+            $mgr = $row['manager_id'];
+            $md  = $mdMeta[$row['matchday_id']] ?? null;
+            if (!$md) continue;
+            if (!isset($achievers[$mgr]) || $row['goals'] > $achievers[$mgr]['goals']) {
+                $achievers[$mgr] = [
+                    'goals'        => (int) $row['goals'],
+                    'team_name'    => $row['team_name'],
+                    'md_number'    => $md['number'],
+                    'kickoff_date' => $md['kickoff_date'],
+                    'season_start' => $md['season_start'],
+                ];
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label = $this->seasonLabel($data['season_start']);
+            $goals = $data['goals'];
+            $result[$mgr] = [
+                'reason'    => "{$goals} Tore mit {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+                'level'     => $goals >= 10 ? 'gold' : ($goals >= 9 ? 'silver' : 'bronze'),
             ];
         }
         return $result;

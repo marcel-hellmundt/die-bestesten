@@ -96,7 +96,16 @@
     display: flex;
     flex-wrap: wrap;
     gap: $space-2;
+    align-items: center;
   }
+}
+
+.manager-level-gap {
+  width: 1px;
+  height: 28px;
+  background: $color-border;
+  flex-shrink: 0;
+  margin: 0 $space-1;
 }
 
 .manager-avatar {
@@ -113,10 +122,22 @@
   filter: grayscale(1);
   transition: opacity $transition-fast, filter $transition-fast, border-color $transition-fast;
 
-  &--earned {
+  &--bronze {
     opacity: 1;
     filter: none;
-    border-color: var(--flat-emerald);
+    border-color: var(--flat-carrot);
+  }
+
+  &--silver {
+    opacity: 1;
+    filter: none;
+    border-color: var(--flat-concrete);
+  }
+
+  &--gold {
+    opacity: 1;
+    filter: none;
+    border-color: var(--flat-sunflower);
   }
 
   img {

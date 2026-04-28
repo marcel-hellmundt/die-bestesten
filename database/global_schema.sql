@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS achievement (
 -- Achievements (v2)
 INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALUES
 (UUID(), 'season_champion',     'Der Besteste',                  'Werde Meister in einer Saison',                                                      'cup'),
-(UUID(), 'ten_matchday_wins',   'Platz an der Sonne',            'Gewinne 10 Spieltage in einer Saison',                                               'medal'),
+(UUID(), 'ten_matchday_wins',   'Platz an der Sonne',            'Gewinne Spieltage in einer Saison (Bronze ≥8, Silber ≥12, Gold ≥16)',               'medal'),
 (UUID(), 'century',             'Jahrhundertelf',                'Lehre den anderen das Fürchten mit mindestens 100 Punkten an einem Spieltag',         'rocket'),
 (UUID(), 'win_streak_3',        'Never change a winning team',   '3 Mal in Folge den Spieltag gewinnen? Nichts leichter als das', 'streak'),
 (UUID(), 'sds_4',               'Ein Käfig voller Helden',       'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                 'sds'),
@@ -194,4 +194,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
 (UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 20 Punkte gesammelt',            'ants'),
 (UUID(), 'zuschlag',             'Zuschlag!',                     'Überbiete 5 unambitionierte Manager und hol dir deinen Wunschspieler ins Team',                              'money'),
-(UUID(), 'kegelkasse',          'Ich zahl das',                  'Zahle an 3 aufeinanderfolgenden Spieltagen den vollen Betrag in die Kegelkasse',      'pay');
+(UUID(), 'kegelkasse',          'Ich zahl das',                  'Zahle an 3 aufeinanderfolgenden Spieltagen den vollen Betrag in die Kegelkasse',      'pay'),
+(UUID(), 'matchday_goals',      'Schützenfest',                  'Erziele Tore an einem Spieltag (Bronze ≥8, Silber ≥9, Gold ≥10)',                   'goals');

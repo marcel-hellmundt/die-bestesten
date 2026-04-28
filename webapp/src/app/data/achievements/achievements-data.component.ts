@@ -8,6 +8,7 @@ interface AchievementManager {
   manager_name: string;
   earned_at: string | null;
   reason: string | null;
+  level: 'bronze' | 'silver' | 'gold' | null;
 }
 
 interface AchievementAdmin {
@@ -59,6 +60,26 @@ export class AchievementsDataComponent {
 
   onImageError(id: string): void {
     this.failedImageIds.update(s => new Set([...s, id]));
+  }
+
+  private readonly levelOrder: Record<string, number> = { gold: 0, silver: 1, bronze: 2 };
+
+  groupManagers(managers: AchievementManager[]): { level: 'bronze' | 'silver' | 'gold' | null; items: AchievementManager[] }[] {
+    const sorted = [...managers].sort((a, b) => {
+      const la = a.level != null ? (this.levelOrder[a.level] ?? 3) : 3;
+      const lb = b.level != null ? (this.levelOrder[b.level] ?? 3) : 3;
+      return la - lb;
+    });
+    const groups: { level: 'bronze' | 'silver' | 'gold' | null; items: AchievementManager[] }[] = [];
+    for (const m of sorted) {
+      const last = groups.at(-1);
+      if (last && last.level === m.level) {
+        last.items.push(m);
+      } else {
+        groups.push({ level: m.level, items: [m] });
+      }
+    }
+    return groups;
   }
 
   analyseAll(): void {
