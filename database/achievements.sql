@@ -276,6 +276,40 @@ FROM (
 ORDER BY n_bieter DESC;
 
 -- =============================================================================
+-- youth_squad — Max. Feldspieler (kein GK) ≤23 Jahre (kickoff + 2 Tage) an einem Spieltag pro Manager
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, junge_feldspieler, feldspieler_gesamt
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'youth_squad') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(CASE WHEN p.date_of_birth IS NOT NULL
+                 AND TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY)) <= 23
+                 THEN 1 ELSE 0 END) AS junge_feldspieler,
+        COUNT(*) AS feldspieler_gesamt,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
+            SUM(CASE WHEN p.date_of_birth IS NOT NULL
+                     AND TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY)) <= 23
+                     THEN 1 ELSE 0 END) DESC
+        ) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+    JOIN usr_ud16_151_1.player_in_season pis
+        ON pis.player_id = p.id
+        AND pis.season_id = CONVERT(t.season_id USING utf8mb3)
+        AND pis.position != 'GOALKEEPER'
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+) sub WHERE rn = 1
+ORDER BY junge_feldspieler DESC;
+
+-- =============================================================================
 -- season_transfers — Erfolgreiche Transfers (offer.status = 'success') pro Manager pro Saison (Threshold: 80)
 -- =============================================================================
 SELECT achievement_id, manager_name, saison, transfers

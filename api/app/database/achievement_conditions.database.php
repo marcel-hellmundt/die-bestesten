@@ -847,6 +847,115 @@ trait AchievementConditionsTrait
         return $result;
     }
 
+    public function check_youth_squad(array $managerIds): array
+    {
+        if (empty($managerIds))
+            return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             ORDER BY md.kickoff_date ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays))
+            return [];
+
+        $mdIds = array_column($matchdays, 'id');
+        $plh   = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh  = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, t.season_id AS team_season_id, tl.player_id, tl.matchday_id
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_lineup tl ON tl.team_id = t.id AND tl.nominated = 1
+             WHERE m.id IN ($plh) AND tl.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $lineups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($lineups))
+            return [];
+
+        $playerIds = array_values(array_unique(array_column($lineups, 'player_id')));
+        $seasonIds = array_values(array_unique(array_column($lineups, 'team_season_id')));
+        $pPlh = implode(',', array_fill(0, count($playerIds), '?'));
+        $sPlh = implode(',', array_fill(0, count($seasonIds), '?'));
+
+        $stmt = $this->con->prepare(
+            "SELECT id, date_of_birth FROM player WHERE id IN ($pPlh)"
+        );
+        $stmt->execute($playerIds);
+        $birthDates = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'date_of_birth', 'id');
+
+        // player_id|season_id => position
+        $stmt = $this->con->prepare(
+            "SELECT player_id, season_id, position FROM player_in_season
+             WHERE player_id IN ($pPlh) AND season_id IN ($sPlh)"
+        );
+        $stmt->execute([...$playerIds, ...$seasonIds]);
+        $positions = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $positions[$row['player_id'] . '|' . $row['season_id']] = $row['position'];
+        }
+
+        // manager_id => matchday_id => rows
+        $matchdayLineups = [];
+        foreach ($lineups as $row) {
+            $matchdayLineups[$row['manager_id']][$row['matchday_id']][] = $row;
+        }
+
+        $achievers = [];
+        foreach ($matchdays as $md) {
+            $stichtag = date('Y-m-d', strtotime($md['kickoff_date'] . ' +2 days'));
+
+            foreach ($managerIds as $mgr) {
+                if (isset($achievers[$mgr]))
+                    continue;
+
+                $players = $matchdayLineups[$mgr][$md['id']] ?? [];
+                if (empty($players))
+                    continue;
+
+                $allYoung     = true;
+                $hasFieldPlayer = false;
+                foreach ($players as $p) {
+                    $pos = $positions[$p['player_id'] . '|' . $p['team_season_id']] ?? null;
+                    if ($pos === 'GOALKEEPER')
+                        continue;
+
+                    $hasFieldPlayer = true;
+                    $dob = $birthDates[$p['player_id']] ?? null;
+                    if ($dob === null) { $allYoung = false; break; }
+                    $age = (int) date_diff(new \DateTime($dob), new \DateTime($stichtag))->y;
+                    if ($age > 23) { $allYoung = false; break; }
+                }
+
+                if ($allYoung && $hasFieldPlayer) {
+                    $achievers[$mgr] = [
+                        'team_name'    => $players[0]['team_name'],
+                        'md_number'    => $md['number'],
+                        'kickoff_date' => $md['kickoff_date'],
+                        'season_start' => $md['season_start'],
+                    ];
+                }
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label = $this->seasonLabel($data['season_start']);
+            $result[$mgr] = [
+                'reason'    => "Spieltag {$data['md_number']} mit {$data['team_name']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+            ];
+        }
+        return $result;
+    }
+
     public function check_season_transfers(array $managerIds): array
     {
         if (empty($managerIds))
