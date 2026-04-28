@@ -11,6 +11,7 @@ export interface Achievement {
   earned_at:       string | null;
   reason:          string | null;
   seen_at:         string | null;
+  level:           'bronze' | 'silver' | 'gold' | null;
   earned_count:    number;
   total_managers:  number;
 }

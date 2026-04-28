@@ -6,12 +6,15 @@
 
 <div class="achievement-grid">
   @for (a of achievements(); track a.id) {
-    <div class="achievement-card" [class.achievement-card--earned]="a.earned_at">
+    <div class="achievement-card" [class.achievement-card--earned]="a.earned_at" [class.achievement-card--bronze]="a.level === 'bronze'" [class.achievement-card--silver]="a.level === 'silver'" [class.achievement-card--gold]="a.level === 'gold'">
       <div class="achievement-card__icon">
         @if (a.earned_at && a.icon) {
           <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" />
         } @else {
           <img src="img/achievements/locked.png" alt="Gesperrt" />
+        }
+        @if (a.earned_at && a.level) {
+          <span class="achievement-card__level achievement-card__level--{{ a.level }}">{{ a.level }}</span>
         }
       </div>
       <div class="achievement-card__name">{{ a.earned_at ? a.name : '???' }}</div>

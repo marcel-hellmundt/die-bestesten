@@ -1,0 +1,312 @@
+-- Achievement Analysis Queries
+-- Pro Manager nur das beste Ergebnis (eine Zeile).
+-- CONVERT(... USING utf8mb3) auf alle League-DB-Spalten in Cross-DB-Vergleichen.
+
+-- =============================================================================
+-- season_champion — Beste Platzierung pro Manager (Threshold: Platz 1)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, punkte, platz
+FROM (
+    SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY manager_id ORDER BY platz ASC, punkte DESC) AS rn
+    FROM (
+        SELECT
+            (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_champion') AS achievement_id,
+            m.id AS manager_id, m.manager_name,
+            CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+            SUM(tr.points) AS punkte,
+            RANK() OVER (PARTITION BY t.season_id ORDER BY SUM(tr.points) DESC) AS platz
+        FROM usr_ud16_151_4.team t
+        JOIN usr_ud16_151_4.team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+        JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+        JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
+        JOIN usr_ud16_151_1.season s ON s.id = md.season_id
+        WHERE CONVERT(t.season_id USING utf8mb3) IN (
+            SELECT season_id FROM usr_ud16_151_1.matchday
+            GROUP BY season_id HAVING COUNT(*) = SUM(completed) AND COUNT(*) > 0
+        )
+        GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+    ) ranked
+) sub WHERE rn = 1
+ORDER BY platz ASC, punkte DESC;
+
+-- =============================================================================
+-- ten_matchday_wins — Meiste Spieltag-Siege in einer Saison (Threshold: 10)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, siege
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'ten_matchday_wins') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        COUNT(*) AS siege,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC) AS rn
+    FROM usr_ud16_151_4.team_rating tr
+    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tr.points = (
+        SELECT MAX(tr2.points) FROM usr_ud16_151_4.team_rating tr2
+        WHERE tr2.matchday_id = tr.matchday_id AND tr2.invalid = 0
+    )
+    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY siege DESC;
+
+-- =============================================================================
+-- century — Höchste Einzelspieltag-Punkte pro Manager (Threshold: 100)
+-- =============================================================================
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'century') AS achievement_id,
+    m.manager_name,
+    MAX(tr.points) AS max_punkte
+FROM usr_ud16_151_4.team_rating tr
+JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
+JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
+JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+GROUP BY m.id, m.manager_name
+ORDER BY max_punkte DESC;
+
+-- =============================================================================
+-- win_streak_3 — Längste Siegesserie in einer Saison (Threshold: 3)
+-- =============================================================================
+WITH w3_winners AS (
+    SELECT t.manager_id, md.season_id, md.number,
+           (tr.points = MAX(tr.points) OVER (PARTITION BY tr.matchday_id)) AS is_winner
+    FROM usr_ud16_151_4.team_rating tr
+    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+),
+w3_islands AS (
+    SELECT manager_id, season_id, number,
+           number - ROW_NUMBER() OVER (PARTITION BY manager_id, season_id ORDER BY number) AS grp
+    FROM w3_winners WHERE is_winner = 1
+),
+w3_streaks AS (
+    SELECT manager_id, season_id, COUNT(*) AS streak_len
+    FROM w3_islands GROUP BY manager_id, season_id, grp
+),
+w3_best AS (
+    SELECT manager_id, season_id, MAX(streak_len) AS max_siegesserie,
+           ROW_NUMBER() OVER (PARTITION BY manager_id ORDER BY MAX(streak_len) DESC) AS rn
+    FROM w3_streaks GROUP BY manager_id, season_id
+)
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'win_streak_3') AS achievement_id,
+    m.manager_name,
+    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+    b.max_siegesserie
+FROM w3_best b
+JOIN usr_ud16_151_4.manager m ON m.id = CONVERT(b.manager_id USING utf8mb3)
+JOIN usr_ud16_151_1.season s ON s.id = b.season_id
+WHERE b.rn = 1
+ORDER BY b.max_siegesserie DESC;
+
+-- =============================================================================
+-- sds_4 — Meiste SDS-Nominierungen an einem Spieltag (Threshold: 4)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, sds_count
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'sds_4') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        COUNT(*) AS sds_count,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player_rating pr
+        ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+        AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+        AND pr.sds = 1
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, s.start_date
+) sub WHERE rn = 1
+ORDER BY sds_count DESC;
+
+-- =============================================================================
+-- season_points_1400 — Beste Saisonpunkte pro Manager (Threshold: 1400)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, punkte
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_points_1400') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(tr.points) AS punkte,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY SUM(tr.points) DESC) AS rn
+    FROM usr_ud16_151_4.team t
+    JOIN usr_ud16_151_4.team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id
+    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY punkte DESC;
+
+-- =============================================================================
+-- season_goals_75 — Meiste Tore in einer Saison (Threshold: 75)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, tore
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_goals_75') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(tr.goals) AS tore,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY SUM(tr.goals) DESC) AS rn
+    FROM usr_ud16_151_4.team t
+    JOIN usr_ud16_151_4.team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id
+    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY tore DESC;
+
+-- =============================================================================
+-- season_assists_60 — Meiste Vorlagen in einer Saison (Threshold: 60)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, vorlagen
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_assists_60') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(tr.assists) AS vorlagen,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY SUM(tr.assists) DESC) AS rn
+    FROM usr_ud16_151_4.team t
+    JOIN usr_ud16_151_4.team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id
+    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY vorlagen DESC;
+
+-- =============================================================================
+-- datenkrake — Spieltage als alleiniger Contributor (Threshold: 1)
+-- =============================================================================
+WITH dk_contributions AS (
+    SELECT pr.matchday_id, mc.manager_id
+    FROM usr_ud16_151_4.maintainer_contribution mc
+    JOIN usr_ud16_151_1.player_rating pr ON pr.id = CONVERT(mc.player_rating_id USING utf8mb3)
+    JOIN usr_ud16_151_1.matchday md ON md.id = pr.matchday_id AND md.completed = 1
+    GROUP BY pr.matchday_id, mc.manager_id
+),
+dk_solo AS (
+    SELECT matchday_id, MAX(manager_id) AS manager_id
+    FROM dk_contributions
+    GROUP BY matchday_id HAVING COUNT(*) = 1
+)
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'datenkrake') AS achievement_id,
+    m.manager_name,
+    COUNT(*) AS solo_spieltage
+FROM dk_solo sm
+JOIN usr_ud16_151_4.manager m ON m.id = CONVERT(sm.manager_id USING utf8mb3)
+GROUP BY m.id, m.manager_name
+ORDER BY solo_spieltage DESC;
+
+-- =============================================================================
+-- kleine_grosse — Bester 0,5-Mio-Spieler im Besitzfenster (Threshold: 20 Pkt)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieler, saison, punkte
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'kleine_grosse') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        p.displayname AS spieler,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(pr.points) AS punkte,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY SUM(pr.points) DESC) AS rn
+    FROM usr_ud16_151_1.player_in_season pis
+    JOIN usr_ud16_151_1.player p ON p.id = pis.player_id
+    JOIN usr_ud16_151_1.season s ON s.id = pis.season_id
+    JOIN usr_ud16_151_4.player_in_team pit ON CONVERT(pit.player_id USING utf8mb3) = pis.player_id
+    JOIN usr_ud16_151_4.team t ON t.id = pit.team_id AND CONVERT(t.season_id USING utf8mb3) = pis.season_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md_from ON md_from.id = CONVERT(pit.from_matchday_id USING utf8mb3)
+    LEFT JOIN usr_ud16_151_1.matchday md_to ON md_to.id = CONVERT(pit.to_matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.matchday md ON md.season_id = pis.season_id
+        AND md.number >= md_from.number
+        AND (pit.to_matchday_id IS NULL OR md.number < md_to.number)
+    JOIN usr_ud16_151_1.player_rating pr
+        ON pr.player_id = pis.player_id AND pr.matchday_id = md.id AND pr.points IS NOT NULL
+    JOIN usr_ud16_151_4.team_lineup tl
+        ON tl.team_id = t.id
+        AND CONVERT(tl.player_id USING utf8mb3) = pis.player_id
+        AND CONVERT(tl.matchday_id USING utf8mb3) = md.id
+        AND tl.nominated = 1
+    WHERE pis.price = 500000
+    GROUP BY m.id, m.manager_name, pis.player_id, p.displayname, pis.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY punkte DESC;
+
+-- =============================================================================
+-- zuschlag — Meiste Bieter bei gewonnener Auktion (Threshold: 6 Bieter)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieler, n_bieter
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'zuschlag') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        p.displayname AS spieler,
+        bids.n_bieter,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY bids.n_bieter DESC) AS rn
+    FROM usr_ud16_151_4.offer o_win
+    JOIN usr_ud16_151_4.team t ON t.id = o_win.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(o_win.player_id USING utf8mb3)
+    JOIN (
+        SELECT transferwindow_id, player_id, COUNT(*) AS n_bieter
+        FROM usr_ud16_151_4.offer
+        WHERE status IN ('success', 'lost')
+        GROUP BY transferwindow_id, player_id
+    ) bids ON bids.transferwindow_id = o_win.transferwindow_id AND bids.player_id = o_win.player_id
+    WHERE o_win.status = 'success'
+) sub WHERE rn = 1
+ORDER BY n_bieter DESC;
+
+-- =============================================================================
+-- kegelkasse — Längste Serie auf dem letzten Platz (Threshold: 3)
+-- =============================================================================
+WITH kk_last AS (
+    SELECT t.manager_id, md.season_id, md.number,
+           (tr.points <= MIN(tr.points) OVER (PARTITION BY tr.matchday_id)) AS is_last
+    FROM usr_ud16_151_4.team_rating tr
+    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-01-01'
+),
+kk_islands AS (
+    SELECT manager_id, season_id, number,
+           number - ROW_NUMBER() OVER (PARTITION BY manager_id, season_id ORDER BY number) AS grp
+    FROM kk_last WHERE is_last = 1
+),
+kk_streaks AS (
+    SELECT manager_id, season_id, COUNT(*) AS streak_len
+    FROM kk_islands GROUP BY manager_id, season_id, grp
+),
+kk_best AS (
+    SELECT manager_id, season_id, MAX(streak_len) AS max_letzte_serie,
+           ROW_NUMBER() OVER (PARTITION BY manager_id ORDER BY MAX(streak_len) DESC) AS rn
+    FROM kk_streaks GROUP BY manager_id, season_id
+)
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'kegelkasse') AS achievement_id,
+    m.manager_name,
+    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+    b.max_letzte_serie
+FROM kk_best b
+JOIN usr_ud16_151_4.manager m ON m.id = CONVERT(b.manager_id USING utf8mb3)
+JOIN usr_ud16_151_1.season s ON s.id = b.season_id
+WHERE b.rn = 1
+ORDER BY b.max_letzte_serie DESC;

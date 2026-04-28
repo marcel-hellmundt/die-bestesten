@@ -153,12 +153,14 @@ CREATE TABLE IF NOT EXISTS manager_achievement (
     earned_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     reason         VARCHAR(255) NULL DEFAULT NULL,
     seen_at        DATETIME     NULL DEFAULT NULL,
+    level          ENUM('bronze', 'silver', 'gold') NOT NULL DEFAULT 'gold',
     FOREIGN KEY (manager_id) REFERENCES manager(id),
     UNIQUE KEY uk_manager_achievement (manager_id, achievement_id)
 );
 
 ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS reason VARCHAR(255) NULL DEFAULT NULL;
 ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS seen_at DATETIME NULL DEFAULT NULL;
+ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS level ENUM('bronze', 'silver', 'gold') NOT NULL DEFAULT 'gold';
 
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
 -- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)

@@ -235,7 +235,7 @@ trait AchievementConditionsTrait
              FROM manager m
              JOIN team t ON t.manager_id = m.id
              JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
-             WHERE m.id IN ($plh) AND tr.matchday_id IN ($mPlh) AND tr.points >= 100
+             WHERE m.id IN ($plh) AND tr.matchday_id IN ($mPlh) AND tr.points >= 80
              ORDER BY tr.points DESC"
         );
         $stmt->execute([...$managerIds, ...$mdIds]);
@@ -262,9 +262,11 @@ trait AchievementConditionsTrait
         $result = [];
         foreach ($achievers as $mgr => $data) {
             $label = $this->seasonLabel($data['season_start']);
+            $pts = $data['points'];
             $result[$mgr] = [
-                'reason' => "{$data['points']} Punkte mit {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'reason'    => "{$pts} Punkte mit {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
                 'earned_at' => $data['kickoff_date'],
+                'level'     => $pts >= 100 ? 'gold' : ($pts >= 90 ? 'silver' : 'bronze'),
             ];
         }
         return $result;

@@ -17,8 +17,8 @@ trait AchievementTrait
         if (empty($managerIds)) return;
 
         $stmt = $this->con_league->prepare(
-            "INSERT IGNORE INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at)
-             VALUES (UUID(), ?, ?, ?, ?)"
+            "INSERT IGNORE INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at, level)
+             VALUES (UUID(), ?, ?, ?, ?, ?)"
         );
 
         foreach ($achievements as $achievement) {
@@ -27,7 +27,7 @@ trait AchievementTrait
 
             $earners = $this->$method($managerIds);
             foreach ($earners as $managerId => $meta) {
-                $stmt->execute([$managerId, $achievement['id'], $meta['reason'], $meta['earned_at']]);
+                $stmt->execute([$managerId, $achievement['id'], $meta['reason'], $meta['earned_at'], $meta['level'] ?? 'gold']);
             }
         }
     }
@@ -63,12 +63,12 @@ trait AchievementTrait
         )->execute([$achievementId, ...$earnerIds]);
 
         $stmt = $this->con_league->prepare(
-            "INSERT INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at)
-             VALUES (UUID(), ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE reason = VALUES(reason), earned_at = VALUES(earned_at)"
+            "INSERT INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at, level)
+             VALUES (UUID(), ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE reason = VALUES(reason), earned_at = VALUES(earned_at), level = VALUES(level)"
         );
         foreach ($earners as $managerId => $meta) {
-            $stmt->execute([$managerId, $achievementId, $meta['reason'], $meta['earned_at']]);
+            $stmt->execute([$managerId, $achievementId, $meta['reason'], $meta['earned_at'], $meta['level'] ?? 'gold']);
         }
     }
 
@@ -87,7 +87,7 @@ trait AchievementTrait
         $totalManagers = count($managers);
 
         $earned = $this->con_league->query(
-            "SELECT manager_id, achievement_id, earned_at, reason FROM manager_achievement"
+            "SELECT manager_id, achievement_id, earned_at, reason, level FROM manager_achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $earnedMap = [];
@@ -95,6 +95,7 @@ trait AchievementTrait
             $earnedMap[$row['achievement_id']][$row['manager_id']] = [
                 'earned_at' => $row['earned_at'],
                 'reason'    => $row['reason'],
+                'level'     => $row['level'],
             ];
         }
 
@@ -108,6 +109,7 @@ trait AchievementTrait
                     'manager_name' => $m['manager_name'],
                     'earned_at'    => $entry['earned_at'] ?? null,
                     'reason'       => $entry['reason']    ?? null,
+                    'level'        => $entry['level']     ?? null,
                 ];
             }, $managers);
 
@@ -139,13 +141,13 @@ trait AchievementTrait
         $plh = implode(',', array_fill(0, count($achievementIds), '?'));
 
         $earned = $this->con_league->prepare(
-            "SELECT achievement_id, earned_at, reason, seen_at FROM manager_achievement
+            "SELECT achievement_id, earned_at, reason, seen_at, level FROM manager_achievement
              WHERE manager_id = ? AND achievement_id IN ($plh)"
         );
         $earned->execute([$managerId, ...$achievementIds]);
         $earnedMap = [];
         foreach ($earned->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $earnedMap[$row['achievement_id']] = ['earned_at' => $row['earned_at'], 'reason' => $row['reason'], 'seen_at' => $row['seen_at']];
+            $earnedMap[$row['achievement_id']] = ['earned_at' => $row['earned_at'], 'reason' => $row['reason'], 'seen_at' => $row['seen_at'], 'level' => $row['level']];
         }
 
         $counts = $this->con_league->query(
@@ -167,6 +169,7 @@ trait AchievementTrait
                 'earned_at'      => $earned['earned_at'] ?? null,
                 'reason'         => $earned['reason'] ?? null,
                 'seen_at'        => $earned['seen_at'] ?? null,
+                'level'          => $earned['level'] ?? null,
                 'earned_count'   => $count,
                 'total_managers' => $totalManagers,
                 '_count'         => $count,
