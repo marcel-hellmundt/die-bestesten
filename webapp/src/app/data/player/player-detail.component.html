@@ -48,12 +48,17 @@
         <div class="team-badge">
           <a class="team-badge__link" [routerLink]="['/team', team.id]" [title]="team.team_name">
             @if (!teamLogoError()) {
-              <img class="team-badge__logo"
-                   [src]="teamLogoUrl(team)"
-                   [alt]="team.team_name"
-                   (error)="teamLogoError.set(true)" />
+              <img
+                class="team-badge__logo"
+                [src]="teamLogoUrl(team)"
+                [alt]="team.team_name"
+                (error)="teamLogoError.set(true)"
+              />
             } @else {
-              <div class="team-badge__placeholder" [style.background-color]="team.color ?? '#ccc'"></div>
+              <div
+                class="team-badge__placeholder"
+                [style.background-color]="team.color ?? '#ccc'"
+              ></div>
             }
             <span class="team-badge__name">{{ team.team_name }}</span>
           </a>
@@ -68,7 +73,11 @@
         </div>
       } @else if (currentTeam() === null && openWindow() && myTeam()) {
         <div class="team-badge">
-          <img class="team-badge__placeholder logo--placeholder" src="img/placeholders/club.png" alt="" />
+          <img
+            class="team-badge__placeholder logo--placeholder"
+            src="img/placeholders/club.png"
+            alt=""
+          />
           <span class="team-badge__name">Vereinslos</span>
           @if (!offerExpanded()) {
             <button class="offer-btn" (click)="openOffer()">Gebot abgeben</button>
@@ -83,13 +92,22 @@
     <div class="offer-panel">
       @if (!offerSuccess()) {
         <div class="offer-panel__info">
-          <span>Budget: <strong>{{ formatPrice(availableBudget()) }}</strong></span>
-          <span>Marktwert: <strong>{{ formatPrice(marketValue()) }}</strong></span>
+          <span
+            >Budget: <strong>{{ formatPrice(availableBudget()) }}</strong></span
+          >
+          <span
+            >Marktwert: <strong>{{ formatPrice(marketValue()) }}</strong></span
+          >
         </div>
         <div class="offer-slider">
-          <input type="range" min="100" max="200" step="1"
-                 [value]="sliderPct()"
-                 (input)="onSliderChange(+$any($event.target).value)" />
+          <input
+            type="range"
+            min="100"
+            max="200"
+            step="1"
+            [value]="sliderPct()"
+            (input)="onSliderChange(+$any($event.target).value)"
+          />
           <div class="offer-slider__labels">
             <span>100%</span>
             <span class="offer-slider__pct">{{ offerPercentage() }}% des MW</span>
@@ -98,29 +116,69 @@
         </div>
         <div class="offer-spinner">
           <div class="digit-bar">
-            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000000', 1)">▲</button>
-            <input type="number" min="0" max="9" [value]="digitE10000000()"
-                   (input)="digitE10000000.set(+$any($event.target).value); updateDigit('digitE10000000', 0)" />
-            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000000', -1)">▼</button>
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000000', 1)">
+              ▲
+            </button>
+            <input
+              type="number"
+              min="0"
+              max="9"
+              [value]="digitE10000000()"
+              (input)="
+                digitE10000000.set(+$any($event.target).value); updateDigit('digitE10000000', 0)
+              "
+            />
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000000', -1)">
+              ▼
+            </button>
           </div>
           <div class="digit-bar">
-            <button class="digit-arrow" type="button" (click)="updateDigit('digitE1000000', 1)">▲</button>
-            <input type="number" min="0" max="9" [value]="digitE1000000()"
-                   (input)="digitE1000000.set(+$any($event.target).value); updateDigit('digitE1000000', 0)" />
-            <button class="digit-arrow" type="button" (click)="updateDigit('digitE1000000', -1)">▼</button>
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE1000000', 1)">
+              ▲
+            </button>
+            <input
+              type="number"
+              min="0"
+              max="9"
+              [value]="digitE1000000()"
+              (input)="
+                digitE1000000.set(+$any($event.target).value); updateDigit('digitE1000000', 0)
+              "
+            />
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE1000000', -1)">
+              ▼
+            </button>
           </div>
           <span class="digit-sep">.</span>
           <div class="digit-bar">
-            <button class="digit-arrow" type="button" (click)="updateDigit('digitE100000', 1)">▲</button>
-            <input type="number" min="0" max="9" [value]="digitE100000()"
-                   (input)="digitE100000.set(+$any($event.target).value); updateDigit('digitE100000', 0)" />
-            <button class="digit-arrow" type="button" (click)="updateDigit('digitE100000', -1)">▼</button>
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE100000', 1)">
+              ▲
+            </button>
+            <input
+              type="number"
+              min="0"
+              max="9"
+              [value]="digitE100000()"
+              (input)="digitE100000.set(+$any($event.target).value); updateDigit('digitE100000', 0)"
+            />
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE100000', -1)">
+              ▼
+            </button>
           </div>
           <div class="digit-bar">
-            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000', 1)">▲</button>
-            <input type="number" min="0" max="9" [value]="digitE10000()"
-                   (input)="digitE10000.set(+$any($event.target).value); updateDigit('digitE10000', 0)" />
-            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000', -1)">▼</button>
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000', 1)">
+              ▲
+            </button>
+            <input
+              type="number"
+              min="0"
+              max="9"
+              [value]="digitE10000()"
+              (input)="digitE10000.set(+$any($event.target).value); updateDigit('digitE10000', 0)"
+            />
+            <button class="digit-arrow" type="button" (click)="updateDigit('digitE10000', -1)">
+              ▼
+            </button>
           </div>
           <span class="digit-sep">.</span>
           <div class="digit-bar digit-bar--fixed">
@@ -149,17 +207,27 @@
         }
         <div class="offer-panel__actions">
           <button class="offer-panel__allin" type="button" (click)="onAllIn()">Alles setzen</button>
-          <button class="offer-panel__submit" type="button"
-                  [disabled]="!isValidOffer() || offerSubmitting()"
-                  (click)="submitOffer()">
+          <button
+            class="offer-panel__submit"
+            type="button"
+            [disabled]="!isValidOffer() || offerSubmitting()"
+            (click)="submitOffer()"
+          >
             {{ offerSubmitting() ? '…' : 'Abschicken' }}
           </button>
-          <button class="offer-panel__cancel" type="button" (click)="offerExpanded.set(false)">Abbrechen</button>
+          <button class="offer-panel__cancel" type="button" (click)="offerExpanded.set(false)">
+            Abbrechen
+          </button>
         </div>
       } @else {
         <p class="offer-panel__success">Gebot erfolgreich abgeschickt!</p>
-        <button class="offer-panel__cancel" type="button"
-                (click)="offerExpanded.set(false); offerSuccess.set(false)">Schließen</button>
+        <button
+          class="offer-panel__cancel"
+          type="button"
+          (click)="offerExpanded.set(false); offerSuccess.set(false)"
+        >
+          Schließen
+        </button>
       }
     </div>
   }
@@ -219,7 +287,8 @@
             @let tipH = bar.grade ? 34 : 22;
             @let tipX = bar.labelX - tipW / 2;
             @let tipYAbove = (bar.pts >= 0 ? bar.y : bar.zeroY) - tipH - 6;
-            @let tipY = tipYAbove < padT ? (bar.pts >= 0 ? bar.y : bar.zeroY) + bar.height + 6 : tipYAbove;
+            @let tipY =
+              tipYAbove < padT ? (bar.pts >= 0 ? bar.y : bar.zeroY) + bar.height + 6 : tipYAbove;
             <g class="bar-tooltip" pointer-events="none">
               <rect
                 [attr.x]="tipX"
@@ -261,95 +330,101 @@
   <div class="detail-grid">
     <!-- Left column -->
     <div class="detail-grid__col">
+      <!-- Liga-Teamhistorie -->
+      @if (teamHistory().length > 0) {
+        <section class="detail-section">
+          <div class="section-header-row">
+            <h2 class="section-header">Liga-Teams</h2>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th class="col-md">Von</th>
+                  <th class="col-md">Bis</th>
+                  <th class="col-points-season">Punkte</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (t of teamHistory(); track t.team_id + t.from_matchday_number) {
+                  <tr class="row-link">
+                    <td>
+                      <a class="row-link__anchor" [routerLink]="['/team', t.team_id]"></a>
+                      <span class="team-history-cell">
+                        <img
+                          class="tbl-logo"
+                          [src]="teamLogoUrl({ id: t.team_id, season_id: t.season_id })"
+                          [alt]="t.team_name"
+                          (error)="$any($event.target).style.display = 'none'"
+                        />
+                        <span>
+                          <span class="team-history__name">{{ t.team_name }}</span>
+                          <span class="team-history__manager">{{ t.manager_name }}</span>
+                        </span>
+                      </span>
+                    </td>
+                    <td class="col-md">
+                      {{ t.from_matchday_number != null ? 'Sp. ' + t.from_matchday_number : '—' }}
+                    </td>
+                    <td class="col-md">{{ displayToMatchday(t) }}</td>
+                    <td class="col-points-season">
+                      {{ teamPoints().get(t.team_id + '_' + t.from_matchday_number) ?? 0 }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
 
-    <!-- Liga-Teamhistorie -->
-    @if (teamHistory().length > 0) {
+      <!-- Vereinshistorie -->
       <section class="detail-section">
         <div class="section-header-row">
-          <h2 class="section-header">Liga-Teams</h2>
+          <h2 class="section-header">Vereinshistorie</h2>
         </div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Team</th>
-                <th class="col-md">Von</th>
-                <th class="col-md">Bis</th>
-                <th class="col-points-season">Punkte</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (t of teamHistory(); track t.team_id + t.from_matchday_number) {
-                <tr class="row-link">
-                  <td><a class="row-link__anchor" [routerLink]="['/team', t.team_id]"></a>
-                    <span class="team-history-cell">
+        @if (p.clubs.length === 0) {
+          <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
+        } @else {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th colspan="2">Verein</th>
+                  <th>Von</th>
+                  <th>Bis</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of p.clubs; track c.club_id + c.from_date) {
+                  <tr class="row-link">
+                    <td class="col-logo">
+                      <a class="row-link__anchor" [routerLink]="['../../club', c.club_id]"></a>
                       <img
+                        [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
                         class="tbl-logo"
-                        [src]="teamLogoUrl({ id: t.team_id, season_id: t.season_id })"
-                        [alt]="t.team_name"
-                        (error)="$any($event.target).style.display = 'none'"
+                        [class.logo--placeholder]="!c.logo_uploaded"
+                        alt=""
                       />
-                      <span>
-                        <span class="team-history__name">{{ t.team_name }}</span>
-                        <span class="team-history__manager">{{ t.alias ?? t.manager_name }}</span>
-                      </span>
-                    </span>
-                  </td>
-                  <td class="col-md">{{ t.from_matchday_number != null ? 'Sp. ' + t.from_matchday_number : '—' }}</td>
-                  <td class="col-md">{{ displayToMatchday(t) }}</td>
-                  <td class="col-points-season">{{ teamPoints().get(t.team_id + '_' + t.from_matchday_number) ?? 0 }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                    <td>
+                      {{ c.club_name }}
+                      @if (c.on_loan) {
+                        <span class="loan-badge">Leihe</span>
+                      }
+                    </td>
+                    <td class="col-date">{{ formatDate(c.from_date) }}</td>
+                    <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
-    }
-
-    <!-- Vereinshistorie -->
-    <section class="detail-section">
-      <div class="section-header-row">
-        <h2 class="section-header">Vereinshistorie</h2>
-      </div>
-      @if (p.clubs.length === 0) {
-        <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
-      } @else {
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th colspan="2">Verein</th>
-                <th>Von</th>
-                <th>Bis</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (c of p.clubs; track c.club_id + c.from_date) {
-                <tr class="row-link">
-                  <td class="col-logo"><a class="row-link__anchor" [routerLink]="['../../club', c.club_id]"></a>
-                    <img
-                      [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
-                      class="tbl-logo"
-                      [class.logo--placeholder]="!c.logo_uploaded"
-                      alt=""
-                    />
-                  </td>
-                  <td>
-                    {{ c.club_name }}
-                    @if (c.on_loan) {
-                      <span class="loan-badge">Leihe</span>
-                    }
-                  </td>
-                  <td class="col-date">{{ formatDate(c.from_date) }}</td>
-                  <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </section>
-    </div><!-- /detail-grid__col left -->
+    </div>
+    <!-- /detail-grid__col left -->
 
     <!-- Middle: Saisons table + price chart below -->
     <div class="detail-grid__col">
@@ -365,9 +440,17 @@
               <thead>
                 <tr>
                   <th>Saison</th>
-                  <th><span class="hidden-mobile">Position</span><span class="visible-mobile">Pos</span></th>
-                  <th><span class="hidden-mobile">Marktwert</span><span class="visible-mobile">MW</span></th>
-                  <th><span class="hidden-mobile">Punkte</span><span class="visible-mobile">Pkt</span></th>
+                  <th>
+                    <span class="hidden-mobile">Position</span
+                    ><span class="visible-mobile">Pos</span>
+                  </th>
+                  <th>
+                    <span class="hidden-mobile">Marktwert</span
+                    ><span class="visible-mobile">MW</span>
+                  </th>
+                  <th>
+                    <span class="hidden-mobile">Punkte</span><span class="visible-mobile">Pkt</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -381,7 +464,11 @@
                   >
                     <td>{{ cache.seasonName(s.season_id) }}</td>
                     <td>
-                      <span class="position-badge position-badge--text" [style.background-color]="positionColor(s.position)">{{ positionLabel(s.position) }}</span>
+                      <span
+                        class="position-badge position-badge--text"
+                        [style.background-color]="positionColor(s.position)"
+                        >{{ positionLabel(s.position) }}</span
+                      >
                     </td>
                     <td class="col-price">{{ formatPriceShort(s.price) }}</td>
                     <td class="col-points-season">{{ s.total_points }}</td>
@@ -511,12 +598,18 @@
                       <img
                         class="tbl-logo tbl-logo--sm"
                         [class.rating-team-logo--bench]="!nominated"
-                        [src]="teamLogoUrl({ id: ratingTeam.team_id, season_id: ratingTeam.season_id })"
+                        [src]="
+                          teamLogoUrl({ id: ratingTeam.team_id, season_id: ratingTeam.season_id })
+                        "
                         alt=""
                         (error)="$any($event.target).style.display = 'none'"
                       />
                     } @else {
-                      <img class="tbl-logo tbl-logo--sm logo--placeholder rating-team-logo--bench" src="img/placeholders/club.png" alt="" />
+                      <img
+                        class="tbl-logo tbl-logo--sm logo--placeholder rating-team-logo--bench"
+                        src="img/placeholders/club.png"
+                        alt=""
+                      />
                     }
                   </td>
                   <td class="col-part">
