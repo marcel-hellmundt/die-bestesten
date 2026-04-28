@@ -847,6 +847,66 @@ trait AchievementConditionsTrait
         return $result;
     }
 
+    public function check_matchday_assists(array $managerIds): array
+    {
+        if (empty($managerIds))
+            return [];
+
+        $validMatchdays = $this->con->query(
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($validMatchdays))
+            return [];
+
+        $mdMeta = array_column($validMatchdays, null, 'id');
+        $mdIds  = array_column($validMatchdays, 'id');
+        $plh    = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh   = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, tr.matchday_id, tr.assists
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+             WHERE m.id IN ($plh) AND tr.matchday_id IN ($mPlh) AND tr.assists >= 6
+             ORDER BY tr.assists DESC"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $achievers = [];
+        foreach ($rows as $row) {
+            $mgr = $row['manager_id'];
+            $md  = $mdMeta[$row['matchday_id']] ?? null;
+            if (!$md) continue;
+            if (!isset($achievers[$mgr]) || $row['assists'] > $achievers[$mgr]['assists']) {
+                $achievers[$mgr] = [
+                    'assists'      => (int) $row['assists'],
+                    'team_name'    => $row['team_name'],
+                    'md_number'    => $md['number'],
+                    'kickoff_date' => $md['kickoff_date'],
+                    'season_start' => $md['season_start'],
+                ];
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label   = $this->seasonLabel($data['season_start']);
+            $assists = $data['assists'];
+            $result[$mgr] = [
+                'reason'    => "{$assists} Vorlagen mit {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+                'level'     => $assists >= 8 ? 'gold' : ($assists >= 7 ? 'silver' : 'bronze'),
+            ];
+        }
+        return $result;
+    }
+
     public function check_matchday_goals(array $managerIds): array
     {
         if (empty($managerIds))

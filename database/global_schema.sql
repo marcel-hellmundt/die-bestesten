@@ -195,4 +195,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALU
 (UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 20 Punkte gesammelt',            'ants'),
 (UUID(), 'zuschlag',             'Zuschlag!',                     'Überbiete 5 unambitionierte Manager und hol dir deinen Wunschspieler ins Team',                              'money'),
 (UUID(), 'kegelkasse',          'Ich zahl das',                  'Zahle an 3 aufeinanderfolgenden Spieltagen den vollen Betrag in die Kegelkasse',      'pay'),
-(UUID(), 'matchday_goals',      'Schützenfest',                  'Erziele Tore an einem Spieltag (Bronze ≥8, Silber ≥9, Gold ≥10)',                   'goals');
+(UUID(), 'matchday_goals',      'Schützenfest',                  'Erziele Tore an einem Spieltag (Bronze ≥8, Silber ≥9, Gold ≥10)',                   'goals'),
+(UUID(), 'matchday_assists',    'Vorlagenkönig',                 'Sammle Vorlagen an einem Spieltag (Bronze ≥6, Silber ≥7, Gold ≥8)',                 'assists');
