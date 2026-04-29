@@ -668,6 +668,7 @@ FROM (
     JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
     WHERE tl.nominated = 1
     GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+    HAVING COUNT(*) >= 2
 ) sub WHERE rn = 1
 ORDER BY anzahl_sechsen DESC, manager;
 
