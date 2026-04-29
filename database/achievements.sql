@@ -547,3 +547,161 @@ WHERE tl.nominated = 1
 GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, s.start_date
 HAVING COUNT(*) >= 2
 ORDER BY starter_ohne_note DESC, manager, spieltag;
+
+-- =============================================================================
+-- transfer_reue — Spieler verkauft, der am nächsten Spieltag SDS wird
+-- =============================================================================
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'transfer_reue') AS achievement_id,
+    CONVERT(m.manager_name USING utf8mb3) AS manager,
+    p.displayname AS verkaufter_spieler,
+    md_next.number AS spieltag,
+    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison
+FROM usr_ud16_151_4.sell sl
+JOIN usr_ud16_151_4.team t ON t.id = sl.team_id
+JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+JOIN usr_ud16_151_1.transferwindow tw ON tw.id = CONVERT(sl.transferwindow_id USING utf8mb3)
+JOIN usr_ud16_151_1.matchday md_tw ON md_tw.id = tw.matchday_id
+JOIN usr_ud16_151_1.matchday md_next ON md_next.id = (
+    SELECT id FROM usr_ud16_151_1.matchday
+    WHERE completed = 1 AND kickoff_date > md_tw.kickoff_date
+    ORDER BY kickoff_date ASC LIMIT 1
+)
+JOIN usr_ud16_151_1.player_rating pr
+    ON pr.player_id = CONVERT(sl.player_id USING utf8mb3)
+    AND pr.matchday_id = md_next.id
+    AND pr.sds = 1
+JOIN usr_ud16_151_1.player p ON p.id = CONVERT(sl.player_id USING utf8mb3)
+JOIN usr_ud16_151_1.season s ON s.id = md_next.season_id
+ORDER BY manager, spieltag;
+
+-- =============================================================================
+-- bankdruecker — Spieler auf der Bank wird SDS am selben Spieltag
+-- =============================================================================
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'bankdruecker') AS achievement_id,
+    CONVERT(m.manager_name USING utf8mb3) AS manager,
+    p.displayname AS bank_spieler,
+    md.number AS spieltag,
+    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison
+FROM usr_ud16_151_4.team_lineup tl
+JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+JOIN usr_ud16_151_1.player_rating pr
+    ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+    AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+    AND pr.sds = 1
+JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+WHERE tl.nominated = 0
+ORDER BY manager, spieltag;
+
+-- =============================================================================
+-- torwart_torschuetze — Nominierter Torwart erzielt ein Tor
+-- =============================================================================
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'torwart_torschuetze') AS achievement_id,
+    CONVERT(m.manager_name USING utf8mb3) AS manager,
+    p.displayname AS torwart,
+    pr.goals AS tore,
+    md.number AS spieltag,
+    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison
+FROM usr_ud16_151_4.team_lineup tl
+JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+JOIN usr_ud16_151_1.player_in_season pis
+    ON pis.player_id = CONVERT(tl.player_id USING utf8mb3)
+    AND pis.season_id = CONVERT(t.season_id USING utf8mb3)
+    AND pis.position = 'GOALKEEPER'
+JOIN usr_ud16_151_1.player_rating pr
+    ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+    AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+    AND pr.goals >= 1
+JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+WHERE tl.nominated = 1
+ORDER BY manager, spieltag;
+
+-- =============================================================================
+-- alles_perfekt — Ist-Punkte = Max-Punkte an einem Spieltag (≥60 Punkte)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, punkte
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'alles_perfekt') AS achievement_id,
+        m.id AS manager_id, CONVERT(m.manager_name USING utf8mb3) AS manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        tr.points AS punkte,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY md.kickoff_date ASC) AS rn
+    FROM usr_ud16_151_4.team_rating tr
+    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tr.points = tr.max_points AND tr.max_points > 0 AND tr.points >= 60
+) sub WHERE rn = 1
+ORDER BY manager_name, spieltag;
+
+-- =============================================================================
+-- pechvogel — Nominierter Spieler kassiert Note 6,0
+-- =============================================================================
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'pechvogel') AS achievement_id,
+    CONVERT(m.manager_name USING utf8mb3) AS manager,
+    p.displayname AS spieler,
+    pr.grade AS note,
+    md.number AS spieltag,
+    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison
+FROM usr_ud16_151_4.team_lineup tl
+JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+JOIN usr_ud16_151_1.player_rating pr
+    ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+    AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+    AND pr.grade = 6.0
+JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+WHERE tl.nominated = 1
+ORDER BY manager, spieltag;
+
+-- =============================================================================
+-- bankraeuber — Spieler öfter aufgestellt als geschont, aber mehr Bankpunkte
+-- =============================================================================
+SELECT achievement_id, manager_name, spieler, saison, nom_count, bank_count, nom_punkte, bank_punkte
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'bankraeuber') AS achievement_id,
+        m.id AS manager_id, CONVERT(m.manager_name USING utf8mb3) AS manager_name,
+        p.displayname AS spieler,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(CASE WHEN tl.nominated = 1 THEN 1 ELSE 0 END) AS nom_count,
+        SUM(CASE WHEN tl.nominated = 0 THEN 1 ELSE 0 END) AS bank_count,
+        SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END) AS nom_punkte,
+        SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) AS bank_punkte,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
+            SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) -
+            SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END) DESC
+        ) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+        AND CONVERT(t.season_id USING utf8mb3) = s.id
+    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+    LEFT JOIN usr_ud16_151_1.player_rating pr
+        ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+        AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+    GROUP BY m.id, m.manager_name, tl.player_id, t.season_id, s.start_date
+    HAVING SUM(1) >= 4
+       AND SUM(CASE WHEN tl.nominated = 1 THEN 1 ELSE 0 END) > SUM(1) / 2
+       AND SUM(CASE WHEN tl.nominated = 0 THEN 1 ELSE 0 END) > 0
+       AND SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END) > 0
+       AND SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) >
+           SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END)
+) sub WHERE rn = 1
+ORDER BY bank_punkte - nom_punkte DESC;
