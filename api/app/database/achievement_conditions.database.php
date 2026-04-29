@@ -980,7 +980,7 @@ trait AchievementConditionsTrait
             }
         }
 
-        $qualifying = array_filter($bestPerManager, fn($d) => $d['pts'] >= 20);
+        $qualifying = array_filter($bestPerManager, fn($d) => $d['pts'] >= 10);
         if (empty($qualifying))
             return [];
 
@@ -997,9 +997,11 @@ trait AchievementConditionsTrait
             $sid   = $data['season_id'];
             $label = $this->seasonLabel($seasonStartMap[$sid] ?? '');
             $name  = $playerNames[$data['player_id']] ?? '?';
+            $pts   = $data['pts'];
             $result[$mgr] = [
-                'reason'    => "$name, {$data['pts']} Pkt ($label)",
+                'reason'    => "$name, {$pts} Pkt ($label)",
                 'earned_at' => $lastKickoff[$sid] ?? date('Y-m-d H:i:s'),
+                'level'     => $pts >= 30 ? 'gold' : ($pts >= 20 ? 'silver' : 'bronze'),
             ];
         }
         return $result;

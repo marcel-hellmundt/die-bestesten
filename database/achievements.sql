@@ -226,9 +226,10 @@ GROUP BY m.id, m.manager_name
 ORDER BY solo_spieltage DESC;
 
 -- =============================================================================
--- kleine_grosse — Bester 0,5-Mio-Spieler im Besitzfenster (Threshold: 20 Pkt)
+-- kleine_grosse — Bester 0,5-Mio-Spieler im Besitzfenster (Bronze ≥10, Silber ≥20, Gold ≥30 Pkt)
 -- =============================================================================
-SELECT achievement_id, manager_name, spieler, saison, punkte
+SELECT achievement_id, manager_name, spieler, saison, punkte,
+       CASE WHEN punkte >= 30 THEN 'gold' WHEN punkte >= 20 THEN 'silver' ELSE 'bronze' END AS level
 FROM (
     SELECT
         (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'kleine_grosse') AS achievement_id,
@@ -257,7 +258,7 @@ FROM (
         AND tl.nominated = 1
     WHERE pis.price = 500000
     GROUP BY m.id, m.manager_name, pis.player_id, p.displayname, pis.season_id, s.start_date
-) sub WHERE rn = 1
+) sub WHERE rn = 1 AND punkte >= 10
 ORDER BY punkte DESC;
 
 -- =============================================================================
