@@ -132,7 +132,7 @@ trait AchievementTrait
     public function getManagerAchievements(string $managerId): array
     {
         $rows = $this->con->query(
-            "SELECT id, name, description, icon FROM achievement"
+            "SELECT id, name, description, icon, threshold_bronze, threshold_silver, threshold_gold FROM achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($rows)) return [];
@@ -162,17 +162,20 @@ trait AchievementTrait
             $count    = (int) ($counts[$a['id']] ?? 0);
             $earned   = $earnedMap[$a['id']] ?? null;
             return [
-                'id'             => $a['id'],
-                'name'           => $a['name'],
-                'description'    => $a['description'],
-                'icon'           => $a['icon'],
-                'earned_at'      => $earned['earned_at'] ?? null,
-                'reason'         => $earned['reason'] ?? null,
-                'seen_at'        => $earned['seen_at'] ?? null,
-                'level'          => $earned['level'] ?? null,
-                'earned_count'   => $count,
-                'total_managers' => $totalManagers,
-                '_count'         => $count,
+                'id'               => $a['id'],
+                'name'             => $a['name'],
+                'description'      => $a['description'],
+                'icon'             => $a['icon'],
+                'threshold_bronze' => $a['threshold_bronze'] !== null ? (int)$a['threshold_bronze'] : null,
+                'threshold_silver' => $a['threshold_silver'] !== null ? (int)$a['threshold_silver'] : null,
+                'threshold_gold'   => $a['threshold_gold']   !== null ? (int)$a['threshold_gold']   : null,
+                'earned_at'        => $earned['earned_at'] ?? null,
+                'reason'           => $earned['reason'] ?? null,
+                'seen_at'          => $earned['seen_at'] ?? null,
+                'level'            => $earned['level'] ?? null,
+                'earned_count'     => $count,
+                'total_managers'   => $totalManagers,
+                '_count'           => $count,
             ];
         }, $rows);
 

@@ -19,7 +19,7 @@
       </div>
       <div class="achievement-card__name">{{ a.earned_at ? a.name : '???' }}</div>
       @if (a.earned_at) {
-        <div class="achievement-card__desc">{{ a.description }}</div>
+        <div class="achievement-card__desc">{{ resolvedDescription(a) }}</div>
         @if (a.reason) {
           <div class="achievement-card__reason">{{ a.reason }}</div>
         }

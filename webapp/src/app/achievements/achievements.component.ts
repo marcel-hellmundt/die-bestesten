@@ -4,16 +4,19 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../core/api.service';
 
 export interface Achievement {
-  id:              string;
-  name:            string;
-  description:     string;
-  icon:            string | null;
-  earned_at:       string | null;
-  reason:          string | null;
-  seen_at:         string | null;
-  level:           'bronze' | 'silver' | 'gold' | null;
-  earned_count:    number;
-  total_managers:  number;
+  id:               string;
+  name:             string;
+  description:      string;
+  icon:             string | null;
+  threshold_bronze: number | null;
+  threshold_silver: number | null;
+  threshold_gold:   number | null;
+  earned_at:        string | null;
+  reason:           string | null;
+  seen_at:          string | null;
+  level:            'bronze' | 'silver' | 'gold' | null;
+  earned_count:     number;
+  total_managers:   number;
 }
 
 @Component({
@@ -31,4 +34,13 @@ export class AchievementsComponent {
   );
 
   earnedCount = computed(() => this.achievements().filter(a => a.earned_at).length);
+
+  resolvedDescription(a: Achievement): string {
+    const threshold = a.level === 'bronze' ? a.threshold_bronze
+                    : a.level === 'silver' ? a.threshold_silver
+                    : a.threshold_gold;
+    return threshold != null
+      ? a.description.replace('{threshold}', threshold.toString())
+      : a.description;
+  }
 }

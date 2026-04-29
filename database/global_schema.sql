@@ -173,34 +173,48 @@ CREATE TABLE IF NOT EXISTS award (
 
 -- Tabelle: achievement (Errungenschafts-Definitionen; liganeutral)
 CREATE TABLE IF NOT EXISTS achievement (
-    id            CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    condition_key VARCHAR(100) NOT NULL UNIQUE,  -- entspricht check_{condition_key}() in AchievementConditionsTrait
-    name          VARCHAR(100) NOT NULL,
-    description   TEXT         NOT NULL,
-    icon          VARCHAR(100) NULL DEFAULT NULL  -- Dateiname ohne Extension, z.B. 'trophy' → /img/achievements/trophy.png
+    id              CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    condition_key   VARCHAR(100) NOT NULL UNIQUE,  -- entspricht check_{condition_key}() in AchievementConditionsTrait
+    name            VARCHAR(100) NOT NULL,
+    description     TEXT         NOT NULL,         -- {threshold} als Platzhalter für gestufte Achievements
+    icon            VARCHAR(100) NULL DEFAULT NULL, -- Dateiname ohne Extension, z.B. 'trophy' → /img/achievements/trophy.png
+    threshold_bronze INT          NULL DEFAULT NULL, -- Schwellwert für Bronze (NULL = kein Level-System)
+    threshold_silver INT          NULL DEFAULT NULL, -- Schwellwert für Silber
+    threshold_gold   INT          NULL DEFAULT NULL  -- Schwellwert für Gold
 );
 
 
 -- Achievements (v2)
-INSERT IGNORE INTO achievement (id, condition_key, name, description, icon) VALUES
-(UUID(), 'season_champion',     'Der Besteste',                  'Werde Meister in einer Saison',                                                      'cup'),
-(UUID(), 'ten_matchday_wins',   'Platz an der Sonne',            'Gewinne Spieltage in einer Saison (Bronze ≥8, Silber ≥12, Gold ≥16)',               'medal'),
-(UUID(), 'century',             'Jahrhundertelf',                'Lehre den anderen das Fürchten mit mindestens 100 Punkten an einem Spieltag',         'rocket'),
-(UUID(), 'win_streak_3',        'Never change a winning team',   '3 Mal in Folge den Spieltag gewinnen? Nichts leichter als das', 'streak'),
-(UUID(), 'sds_4',               'Ein Käfig voller Helden',       'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                 'sds'),
-(UUID(), 'season_points_1400',  'Punkteflut',                    'Sammle 1400 Punkte in einer Saison',                                                 'points'),
-(UUID(), 'season_goals_75',     'Bomber der Nation',             'Habe 75 Tore in einer Saison',                                                       'goals'),
-(UUID(), 'season_assists_60',   'Ohne mich läuft nix',           'Habe 60 Vorlagen in einer Saison',                                                   'assists'),
-(UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                              'kraken'),
-(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 20 Punkte gesammelt',            'ants'),
-(UUID(), 'zuschlag',             'Zuschlag!',                     'Überbiete 5 unambitionierte Manager und hol dir deinen Wunschspieler ins Team',                              'money'),
-(UUID(), 'kegelkasse',          'Ich zahl das',                  'Zahle an 3 aufeinanderfolgenden Spieltagen den vollen Betrag in die Kegelkasse',      'pay'),
-(UUID(), 'matchday_goals',      'Schützenfest',                  'Erziele Tore an einem Spieltag (Bronze ≥8, Silber ≥9, Gold ≥10)',                   'goals'),
-(UUID(), 'matchday_assists',    'Vorlagenkönig',                 'Sammle Vorlagen an einem Spieltag (Bronze ≥6, Silber ≥7, Gold ≥8)',                 'assists'),
-(UUID(), 'season_red_cards',    'Wilde Kerle',                   'Sammle Platzverweise (Rote + Gelb-Rote Karten) in einer Saison (Bronze ≥4, Silber ≥6, Gold ≥8)', 'redcard'),
-(UUID(), 'season_transfers',    'Auf Einkaufstour',              'Kaufe 80 Spieler in einer Saison',                                                   'transfer'),
-(UUID(), 'youth_squad',         'U23-Elf',                       'Stelle eine Startelf auf, in der alle Spieler zum Spieltag (kickoff + 2 Tage) ≤23 Jahre alt sind', 'youth'),
-(UUID(), 'veteran_squad',       'Die alten Hasen',               'Stelle eine Startelf mit einem Altersschnitt von ≥30 Jahren auf (kickoff + 2 Tage)',               'veteran'),
-(UUID(), 'tall_squad',          'Lange Kerle',                   'Stelle mindestens 7 Spieler mit ≥190 cm Körpergröße auf',                                        'tall'),
-(UUID(), 'geburtstagskind',    'Geburtstagskind',               'Habe einen nominierten Spieler, der am Spieltag (kickoff + 2 Tage) Geburtstag hat und ≥10 Punkte erzielt', 'birthday'),
-(UUID(), 'phantome',           'Geister',                       'Habe mindestens 2 nominierte Starter, die gespielt haben aber keine Note erhalten haben', 'ghost');
+-- Spaltenreihenfolge: id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold
+INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold) VALUES
+(UUID(), 'season_champion',    'Der Besteste',             'Werde Meister in einer Saison',                                                                    'cup',      NULL, NULL, NULL),
+(UUID(), 'ten_matchday_wins',  'Platz an der Sonne',       'Gewinne mindestens {threshold} Spieltage in einer Saison',                                         'medal',    8,    12,   16  ),
+(UUID(), 'century',            'Jahrhundertelf',           'Lehre den anderen das Fürchten mit mindestens 100 Punkten an einem Spieltag',                       'rocket',   NULL, NULL, NULL),
+(UUID(), 'win_streak_3',       'Never change a winning team', '3 Mal in Folge den Spieltag gewinnen? Nichts leichter als das',                                 'streak',   NULL, NULL, NULL),
+(UUID(), 'sds_4',              'Ein Käfig voller Helden',  'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                                'sds',      NULL, NULL, NULL),
+(UUID(), 'season_points_1400', 'Punkteflut',               'Sammle 1400 Punkte in einer Saison',                                                               'points',   NULL, NULL, NULL),
+(UUID(), 'season_goals_75',    'Bomber der Nation',        'Habe 75 Tore in einer Saison',                                                                     'goals',    NULL, NULL, NULL),
+(UUID(), 'season_assists_60',  'Ohne mich läuft nix',      'Habe 60 Vorlagen in einer Saison',                                                                 'assists',  NULL, NULL, NULL),
+(UUID(), 'datenkrake',         'Datenkrake',               'Trage alle Aufstellungen und Noten eines Spieltags ein',                                            'kraken',   NULL, NULL, NULL),
+(UUID(), 'kleine_grosse',      'Kleine ganz Groß',         'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat 20 Punkte gesammelt',                          'ants',     NULL, NULL, NULL),
+(UUID(), 'zuschlag',           'Zuschlag!',                'Überbiete 5 unambitionierte Manager und hol dir deinen Wunschspieler ins Team',                     'money',    NULL, NULL, NULL),
+(UUID(), 'kegelkasse',         'Ich zahl das',             'Zahle an 3 aufeinanderfolgenden Spieltagen den vollen Betrag in die Kegelkasse',                    'pay',      NULL, NULL, NULL),
+(UUID(), 'matchday_goals',     'Schützenfest',             'Erziele mindestens {threshold} Tore an einem Spieltag',                                             'goals',    8,    9,    10  ),
+(UUID(), 'matchday_assists',   'Vorlagenkönig',            'Sammle mindestens {threshold} Vorlagen an einem Spieltag',                                          'assists',  6,    7,    8   ),
+(UUID(), 'season_red_cards',   'Wilde Kerle',              'Sammle mindestens {threshold} Platzverweise (Rote + Gelb-Rote Karten) in einer Saison',             'redcard',  4,    6,    8   ),
+(UUID(), 'season_transfers',   'Auf Einkaufstour',         'Kaufe 80 Spieler in einer Saison',                                                                 'transfer', NULL, NULL, NULL),
+(UUID(), 'youth_squad',        'U23-Elf',                  'Stelle eine Startelf auf, in der alle Feldspieler zum Spieltag (kickoff + 2 Tage) ≤23 Jahre alt sind', 'youth', NULL, NULL, NULL),
+(UUID(), 'veteran_squad',      'Die alten Hasen',          'Stelle eine Startelf mit einem Altersschnitt von ≥30 Jahren auf (kickoff + 2 Tage)',                'veteran',  NULL, NULL, NULL),
+(UUID(), 'tall_squad',         'Lange Kerle',              'Stelle mindestens 7 Spieler mit ≥190 cm Körpergröße auf',                                           'tall',     NULL, NULL, NULL),
+(UUID(), 'geburtstagskind',    'Geburtstagskind',          'Habe einen nominierten Spieler, der am Spieltag (kickoff + 2 Tage) Geburtstag hat und ≥10 Punkte erzielt', 'birthday', NULL, NULL, NULL),
+(UUID(), 'phantome',           'Geister',                  'Habe mindestens 2 nominierte Starter, die gespielt haben aber keine Note erhalten haben',           'ghost',    NULL, NULL, NULL);
+
+-- Live-Server Migration:
+-- ALTER TABLE achievement
+--   ADD COLUMN threshold_bronze INT NULL DEFAULT NULL,
+--   ADD COLUMN threshold_silver INT NULL DEFAULT NULL,
+--   ADD COLUMN threshold_gold   INT NULL DEFAULT NULL;
+-- UPDATE achievement SET description='Gewinne mindestens {threshold} Spieltage in einer Saison',          threshold_bronze=8,  threshold_silver=12, threshold_gold=16 WHERE condition_key='ten_matchday_wins';
+-- UPDATE achievement SET description='Erziele mindestens {threshold} Tore an einem Spieltag',             threshold_bronze=8,  threshold_silver=9,  threshold_gold=10 WHERE condition_key='matchday_goals';
+-- UPDATE achievement SET description='Sammle mindestens {threshold} Vorlagen an einem Spieltag',          threshold_bronze=6,  threshold_silver=7,  threshold_gold=8  WHERE condition_key='matchday_assists';
+-- UPDATE achievement SET description='Sammle mindestens {threshold} Platzverweise (Rote + Gelb-Rote Karten) in einer Saison', threshold_bronze=4, threshold_silver=6, threshold_gold=8 WHERE condition_key='season_red_cards';
