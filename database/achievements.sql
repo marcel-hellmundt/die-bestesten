@@ -707,7 +707,7 @@ FROM (
     LEFT JOIN usr_ud16_151_1.player_rating pr
         ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
         AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
-    GROUP BY m.id, m.manager_name, tl.player_id, t.season_id, s.start_date
+    GROUP BY m.id, m.manager_name, tl.player_id, p.displayname, t.season_id, s.start_date
     HAVING SUM(CASE WHEN tl.nominated = 0 THEN 1 ELSE 0 END) > 0
        AND SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) >
            SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END)
