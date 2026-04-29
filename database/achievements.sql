@@ -576,26 +576,31 @@ JOIN usr_ud16_151_1.season s ON s.id = md_next.season_id
 ORDER BY manager, spieltag;
 
 -- =============================================================================
--- bankdruecker — Spieler auf der Bank wird SDS am selben Spieltag
+-- bankdruecker — Spieltag mit den meisten Bank-SDS pro Manager
 -- =============================================================================
-SELECT
-    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'bankdruecker') AS achievement_id,
-    CONVERT(m.manager_name USING utf8mb3) AS manager,
-    p.displayname AS bank_spieler,
-    md.number AS spieltag,
-    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison
-FROM usr_ud16_151_4.team_lineup tl
-JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
-JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-JOIN usr_ud16_151_1.player_rating pr
-    ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
-    AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
-    AND pr.sds = 1
-JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
-JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
-JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
-WHERE tl.nominated = 0
-ORDER BY manager, spieltag;
+SELECT achievement_id, manager, spieltag, saison, anzahl_bank_sds
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'bankdruecker') AS achievement_id,
+        m.id AS manager_id, CONVERT(m.manager_name USING utf8mb3) AS manager,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        COUNT(*) AS anzahl_bank_sds,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player_rating pr
+        ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+        AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+        AND pr.sds = 1
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 0
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+    HAVING COUNT(*) >= 2
+) sub WHERE rn = 1
+ORDER BY anzahl_bank_sds DESC, manager;
 
 -- =============================================================================
 -- torwart_torschuetze — Nominierter Torwart erzielt ein Tor

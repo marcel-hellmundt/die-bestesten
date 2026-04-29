@@ -2082,36 +2082,42 @@ trait AchievementConditionsTrait
         $stmt->execute([...$managerIds, ...$mdIds]);
         $benchRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $achievers = [];
+        // Count bench-SDS per manager per matchday
+        $counts = [];
         foreach ($benchRows as $row) {
             if (!isset($sdsSet[$row['player_id'] . '|' . $row['matchday_id']])) continue;
-            $mgr = $row['manager_id'];
-            if (isset($achievers[$mgr])) continue;
-            $md = $mdMeta[$row['matchday_id']] ?? null;
-            if (!$md) continue;
-            $achievers[$mgr] = [
-                'player_id'    => $row['player_id'],
-                'team_name'    => $row['team_name'],
-                'md_number'    => $md['number'],
-                'kickoff_date' => $md['kickoff_date'],
-                'season_start' => $md['season_start'],
-            ];
+            $key = $row['manager_id'] . '|' . $row['matchday_id'];
+            $counts[$key]['count']      = ($counts[$key]['count'] ?? 0) + 1;
+            $counts[$key]['manager_id'] = $row['manager_id'];
+            $counts[$key]['matchday_id']= $row['matchday_id'];
+            $counts[$key]['team_name']  = $row['team_name'];
         }
 
-        if (empty($achievers)) return [];
-
-        $aPlayerIds = array_values(array_unique(array_column($achievers, 'player_id')));
-        $apPlh = implode(',', array_fill(0, count($aPlayerIds), '?'));
-        $stmt = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($apPlh)");
-        $stmt->execute($aPlayerIds);
-        $playerNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'displayname', 'id');
+        $achievers = [];
+        foreach ($counts as $data) {
+            if ($data['count'] < 2) continue;
+            $mgr = $data['manager_id'];
+            $md  = $mdMeta[$data['matchday_id']] ?? null;
+            if (!$md) continue;
+            if (
+                !isset($achievers[$mgr]) ||
+                $md['kickoff_date'] < $achievers[$mgr]['kickoff_date']
+            ) {
+                $achievers[$mgr] = [
+                    'count'        => $data['count'],
+                    'team_name'    => $data['team_name'],
+                    'md_number'    => $md['number'],
+                    'kickoff_date' => $md['kickoff_date'],
+                    'season_start' => $md['season_start'],
+                ];
+            }
+        }
 
         $result = [];
         foreach ($achievers as $mgr => $data) {
             $label = $this->seasonLabel($data['season_start']);
-            $name  = $playerNames[$data['player_id']] ?? '?';
             $result[$mgr] = [
-                'reason'    => "$name auf der Bank wurde SDS, Spieltag {$data['md_number']} mit {$data['team_name']} ($label)",
+                'reason'    => "{$data['count']} Bank-SDS mit {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
                 'earned_at' => $data['kickoff_date'],
             ];
         }

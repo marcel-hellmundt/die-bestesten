@@ -209,7 +209,7 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'geburtstagskind',    'Geburtstagskind',          'Habe einen nominierten Spieler, der am Spieltag (kickoff + 2 Tage) Geburtstag hat und ≥10 Punkte erzielt', 'birthday', NULL, NULL, NULL),
 (UUID(), 'phantome',           'Geister',                  'Habe mindestens 2 nominierte Starter, die gespielt haben aber keine Note erhalten haben',           'ghost',       NULL, NULL, NULL),
 (UUID(), 'transfer_reue',      'Transfer-Reue',            'Verkaufe einen Spieler, der am direkt folgenden Spieltag Spieler des Spiels wird',                    'sad',        NULL, NULL, NULL),
-(UUID(), 'bankdruecker',       'Bankdrücker',              'Habe einen Spieler auf der Bank, der am selben Spieltag Spieler des Spiels wird',                      'bench',       NULL, NULL, NULL),
+(UUID(), 'bankdruecker',       'Bankdrücker',              'Habe mindestens 2 Spieler auf der Bank, die am selben Spieltag Spieler des Spiels werden',            'bench',       NULL, NULL, NULL),
 (UUID(), 'torwart_torschuetze','Torwart-Torschütze',       'Habe einen nominierten Torwart, der ein Tor erzielt',                                                  'keeper',      NULL, NULL, NULL),
 (UUID(), 'alles_perfekt',      'Alles perfekt',            'Hole alle erreichbaren Punkte an einem Spieltag (Ist = Max, mindestens 60 Punkte)',                     'perfect',     NULL, NULL, NULL),
 (UUID(), 'pechvogel',          'Pechvogel',                'Habe mindestens 2 nominierte Spieler, die an einem Spieltag eine 6 kassieren',                      'pechvogel',        NULL, NULL, NULL),
