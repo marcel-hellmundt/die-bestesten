@@ -160,9 +160,10 @@ FROM (
 ORDER BY punkte DESC;
 
 -- =============================================================================
--- season_goals_75 — Meiste Tore in einer Saison (Threshold: 75)
+-- season_goals_75 — Meiste Tore in einer Saison (Bronze ≥70, Silber ≥80, Gold ≥90)
 -- =============================================================================
-SELECT achievement_id, manager_name, saison, tore
+SELECT achievement_id, manager_name, saison, tore,
+       CASE WHEN tore >= 90 THEN 'gold' WHEN tore >= 80 THEN 'silver' ELSE 'bronze' END AS level
 FROM (
     SELECT
         (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_goals_75') AS achievement_id,
@@ -176,7 +177,7 @@ FROM (
     JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
     JOIN usr_ud16_151_1.season s ON s.id = md.season_id
     GROUP BY m.id, m.manager_name, t.season_id, s.start_date
-) sub WHERE rn = 1
+) sub WHERE rn = 1 AND tore >= 70
 ORDER BY tore DESC;
 
 -- =============================================================================
