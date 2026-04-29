@@ -213,4 +213,4 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'torwart_torschuetze','Torwart-Torschütze',       'Habe einen nominierten Torwart, der ein Tor erzielt',                                                  'keeper',      NULL, NULL, NULL),
 (UUID(), 'alles_perfekt',      'Alles perfekt',            'Hole alle erreichbaren Punkte an einem Spieltag (Ist = Max, mindestens 60 Punkte)',                     'perfect',     NULL, NULL, NULL),
 (UUID(), 'pechvogel',          'Pechvogel',                'Habe mindestens 2 nominierte Spieler, die an einem Spieltag eine 6 kassieren',                      'pechvogel',        NULL, NULL, NULL),
-(UUID(), 'bankraeuber',        'Bankräuber',               'Stelle einen Spieler in mehr als 50% der Spieltage auf, der auf der Bank mehr Punkte gesammelt hätte', 'thief',        NULL, NULL, NULL);
+(UUID(), 'bankraeuber',        'Bankräuber',               'Habe einen Spieler, der auf der Bank mindestens 50 Punkte mehr gesammelt hat als wenn er aufgestellt war', 'thief',        NULL, NULL, NULL);

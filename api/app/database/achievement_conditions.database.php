@@ -2443,17 +2443,13 @@ trait AchievementConditionsTrait
 
         $achievers = [];
         foreach ($stats as $data) {
-            $total = $data['nom_count'] + $data['bench_count'];
-            if ($total < 4) continue;
-            if ($data['nom_count'] <= $total / 2) continue;
-            if ($data['bench_count'] === 0 || $data['nom_pts'] === 0) continue;
-            if ($data['bench_pts'] <= $data['nom_pts']) continue;
-            $mgr    = $data['manager_id'];
-            $sid    = $data['season_id'];
-            $sStart = $seasonStartMap[$sid] ?? '9999-01-01';
+            if ($data['bench_count'] === 0 || $data['nom_count'] === 0) continue;
+            $diff = $data['bench_pts'] - $data['nom_pts'];
+            if ($diff < 50) continue;
+            $mgr = $data['manager_id'];
             if (
                 !isset($achievers[$mgr]) ||
-                $sStart < ($seasonStartMap[$achievers[$mgr]['season_id']] ?? '9999-01-01')
+                $diff > ($achievers[$mgr]['bench_pts'] - $achievers[$mgr]['nom_pts'])
             ) {
                 $achievers[$mgr] = $data;
             }

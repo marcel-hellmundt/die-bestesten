@@ -711,5 +711,5 @@ FROM (
     HAVING SUM(CASE WHEN tl.nominated = 0 THEN 1 ELSE 0 END) > 0
        AND SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) >
            SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END)
-) sub WHERE rn = 1
+) sub WHERE rn = 1 AND differenz >= 50
 ORDER BY differenz DESC;
