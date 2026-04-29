@@ -118,7 +118,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_ten_matchday_wins(array $managerIds): array
+    public function check_matchday_wins(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -462,7 +462,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_season_points_1400(array $managerIds): array
+    public function check_season_points(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -543,7 +543,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_season_goals_75(array $managerIds): array
+    public function check_season_goals(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -624,7 +624,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_season_assists_60(array $managerIds): array
+    public function check_season_assists(array $managerIds): array
     {
         if (empty($managerIds))
             return [];

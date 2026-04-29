@@ -31,12 +31,12 @@ FROM (
 ORDER BY platz ASC, punkte DESC;
 
 -- =============================================================================
--- ten_matchday_wins — Meiste Spieltag-Siege in einer Saison (Threshold: 10)
+-- matchday_wins — Meiste Spieltag-Siege in einer Saison (Bronze ≥8, Silber ≥12, Gold ≥16)
 -- =============================================================================
 SELECT achievement_id, manager_name, saison, siege
 FROM (
     SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'ten_matchday_wins') AS achievement_id,
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'matchday_wins') AS achievement_id,
         m.id AS manager_id, m.manager_name,
         CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
         COUNT(*) AS siege,
@@ -139,13 +139,13 @@ FROM (
 ORDER BY sds_count DESC;
 
 -- =============================================================================
--- season_points_1400 — Beste Saisonpunkte pro Manager (Bronze ≥1400, Silber ≥1500, Gold ≥1600)
+-- season_points — Beste Saisonpunkte pro Manager (Bronze ≥1400, Silber ≥1500, Gold ≥1600)
 -- =============================================================================
 SELECT achievement_id, manager_name, saison, punkte,
        CASE WHEN punkte >= 1600 THEN 'gold' WHEN punkte >= 1500 THEN 'silver' ELSE 'bronze' END AS level
 FROM (
     SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_points_1400') AS achievement_id,
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_points') AS achievement_id,
         m.id AS manager_id, m.manager_name,
         CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
         SUM(tr.points) AS punkte,
@@ -160,13 +160,13 @@ FROM (
 ORDER BY punkte DESC;
 
 -- =============================================================================
--- season_goals_75 — Meiste Tore in einer Saison (Bronze ≥70, Silber ≥80, Gold ≥90)
+-- season_goals — Meiste Tore in einer Saison (Bronze ≥70, Silber ≥80, Gold ≥90)
 -- =============================================================================
 SELECT achievement_id, manager_name, saison, tore,
        CASE WHEN tore >= 90 THEN 'gold' WHEN tore >= 80 THEN 'silver' ELSE 'bronze' END AS level
 FROM (
     SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_goals_75') AS achievement_id,
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_goals') AS achievement_id,
         m.id AS manager_id, m.manager_name,
         CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
         SUM(tr.goals) AS tore,
@@ -181,13 +181,13 @@ FROM (
 ORDER BY tore DESC;
 
 -- =============================================================================
--- season_assists_60 — Meiste Vorlagen in einer Saison (Bronze ≥60, Silber ≥65, Gold ≥70)
+-- season_assists — Meiste Vorlagen in einer Saison (Bronze ≥60, Silber ≥65, Gold ≥70)
 -- =============================================================================
 SELECT achievement_id, manager_name, saison, vorlagen,
        CASE WHEN vorlagen >= 70 THEN 'gold' WHEN vorlagen >= 65 THEN 'silver' ELSE 'bronze' END AS level
 FROM (
     SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_assists_60') AS achievement_id,
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_assists') AS achievement_id,
         m.id AS manager_id, m.manager_name,
         CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
         SUM(tr.assists) AS vorlagen,

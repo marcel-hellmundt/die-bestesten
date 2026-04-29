@@ -188,13 +188,13 @@ CREATE TABLE IF NOT EXISTS achievement (
 -- Spaltenreihenfolge: id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold
 INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold) VALUES
 (UUID(), 'season_champion',    'Der Besteste',             'Werde Meister in einer Saison',                                                                    'cup',      NULL, NULL, NULL),
-(UUID(), 'ten_matchday_wins',  'Platz an der Sonne',       'Gewinne mindestens {threshold} Spieltage in einer Saison',                                         'medal',    8,    12,   16  ),
+(UUID(), 'matchday_wins',      'Platz an der Sonne',       'Gewinne mindestens {threshold} Spieltage in einer Saison',                                         'medal',    8,    12,   16  ),
 (UUID(), 'century',            'Jahrhundertelf',           'Lehre den anderen das Fürchten mit mindestens {threshold} Punkten an einem Spieltag',              'rocket',   80,   90,   100 ),
 (UUID(), 'win_streak_3',       'Never change a winning team', '3 Mal in Folge den Spieltag gewinnen? Nichts leichter als das',                                 'streak',   NULL, NULL, NULL),
 (UUID(), 'sds_4',              'Ein Käfig voller Helden',  'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                                'sds',      NULL, NULL, NULL),
-(UUID(), 'season_points_1400', 'Punkteflut',               'Sammle mindestens {threshold} Punkte in einer Saison',                                         'points',   1400, 1500, 1600),
-(UUID(), 'season_goals_75',    'Bomber der Nation',        'Habe mindestens {threshold} Tore in einer Saison',                                             'goals',    70,   80,   90  ),
-(UUID(), 'season_assists_60',  'Ohne mich läuft nix',      'Habe mindestens {threshold} Vorlagen in einer Saison',                                         'assists',  60,   65,   70  ),
+(UUID(), 'season_points',      'Punkteflut',               'Sammle mindestens {threshold} Punkte in einer Saison',                                         'points',   1400, 1500, 1600),
+(UUID(), 'season_goals',       'Bomber der Nation',        'Habe mindestens {threshold} Tore in einer Saison',                                             'goals',    70,   80,   90  ),
+(UUID(), 'season_assists',     'Ohne mich läuft nix',      'Habe mindestens {threshold} Vorlagen in einer Saison',                                         'assists',  60,   65,   70  ),
 (UUID(), 'datenkrake',         'Datenkrake',               'Trage alle Aufstellungen und Noten eines Spieltags ein',                                            'kraken',   NULL, NULL, NULL),
 (UUID(), 'kleine_grosse',      'Kleine ganz Groß',         'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat {threshold} Punkte gesammelt',               'ants',     10,   20,   30  ),
 (UUID(), 'zuschlag',           'Zuschlag!',                'Überbiete 5 unambitionierte Manager und hol dir deinen Wunschspieler ins Team',                     'money',    NULL, NULL, NULL),
@@ -208,18 +208,3 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'tall_squad',         'Lange Kerle',              'Stelle mindestens 7 Spieler mit ≥190 cm Körpergröße auf',                                           'tall',     NULL, NULL, NULL),
 (UUID(), 'geburtstagskind',    'Geburtstagskind',          'Habe einen nominierten Spieler, der am Spieltag (kickoff + 2 Tage) Geburtstag hat und ≥10 Punkte erzielt', 'birthday', NULL, NULL, NULL),
 (UUID(), 'phantome',           'Geister',                  'Habe mindestens 2 nominierte Starter, die gespielt haben aber keine Note erhalten haben',           'ghost',    NULL, NULL, NULL);
-
--- Live-Server Migration:
--- ALTER TABLE achievement
---   ADD COLUMN threshold_bronze INT NULL DEFAULT NULL,
---   ADD COLUMN threshold_silver INT NULL DEFAULT NULL,
---   ADD COLUMN threshold_gold   INT NULL DEFAULT NULL;
--- UPDATE achievement SET description='Gewinne mindestens {threshold} Spieltage in einer Saison',          threshold_bronze=8,  threshold_silver=12, threshold_gold=16 WHERE condition_key='ten_matchday_wins';
--- UPDATE achievement SET description='Erziele mindestens {threshold} Tore an einem Spieltag',             threshold_bronze=8,  threshold_silver=9,  threshold_gold=10 WHERE condition_key='matchday_goals';
--- UPDATE achievement SET description='Sammle mindestens {threshold} Vorlagen an einem Spieltag',          threshold_bronze=6,  threshold_silver=7,  threshold_gold=8  WHERE condition_key='matchday_assists';
--- UPDATE achievement SET description='Sammle mindestens {threshold} Platzverweise (Rote + Gelb-Rote Karten) in einer Saison', threshold_bronze=4, threshold_silver=6, threshold_gold=8 WHERE condition_key='season_red_cards';
--- UPDATE achievement SET description='Sammle mindestens {threshold} Punkte in einer Saison',                                    threshold_bronze=1400, threshold_silver=1500, threshold_gold=1600 WHERE condition_key='season_points_1400';
--- UPDATE achievement SET description='Habe mindestens {threshold} Tore in einer Saison',                                        threshold_bronze=70,   threshold_silver=80,   threshold_gold=90   WHERE condition_key='season_goals_75';
--- UPDATE achievement SET description='Habe mindestens {threshold} Vorlagen in einer Saison',                                    threshold_bronze=60,   threshold_silver=65,   threshold_gold=70   WHERE condition_key='season_assists_60';
--- UPDATE achievement SET description='Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat {threshold} Punkte gesammelt',       threshold_bronze=10,   threshold_silver=20,   threshold_gold=30   WHERE condition_key='kleine_grosse';
--- UPDATE achievement SET description='Lehre den anderen das Fürchten mit mindestens {threshold} Punkten an einem Spieltag',     threshold_bronze=80, threshold_silver=90, threshold_gold=100 WHERE condition_key='century';
