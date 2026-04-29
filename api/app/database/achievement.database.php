@@ -75,7 +75,7 @@ trait AchievementTrait
     public function getAllAchievementsAdmin(): array
     {
         $achievements = $this->con->query(
-            "SELECT id, condition_key, name, description, icon FROM achievement"
+            "SELECT id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold FROM achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($achievements)) return [];
@@ -114,14 +114,17 @@ trait AchievementTrait
             }, $managers);
 
             return [
-                'id'             => $a['id'],
-                'condition_key'  => $a['condition_key'],
-                'name'           => $a['name'],
-                'description'    => $a['description'],
-                'icon'           => $a['icon'],
-                'earned_count'   => count($achievementEarned),
-                'total_managers' => $totalManagers,
-                'managers'       => $managerList,
+                'id'              => $a['id'],
+                'condition_key'   => $a['condition_key'],
+                'name'            => $a['name'],
+                'description'     => $a['description'],
+                'icon'            => $a['icon'],
+                'threshold_bronze' => $a['threshold_bronze'] !== null ? (int)$a['threshold_bronze'] : null,
+                'threshold_silver' => $a['threshold_silver'] !== null ? (int)$a['threshold_silver'] : null,
+                'threshold_gold'   => $a['threshold_gold']   !== null ? (int)$a['threshold_gold']   : null,
+                'earned_count'    => count($achievementEarned),
+                'total_managers'  => $totalManagers,
+                'managers'        => $managerList,
             ];
         }, $achievements);
 

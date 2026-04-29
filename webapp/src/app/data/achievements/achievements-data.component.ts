@@ -17,6 +17,9 @@ interface AchievementAdmin {
   name: string;
   description: string;
   icon: string | null;
+  threshold_bronze: number | null;
+  threshold_silver: number | null;
+  threshold_gold:   number | null;
   earned_count: number;
   total_managers: number;
   managers: AchievementManager[];
@@ -48,6 +51,14 @@ export class AchievementsDataComponent {
   loadingIds      = signal<Set<string>>(new Set());
 
   failedImageIds = signal<Set<string>>(new Set());
+
+  resolvedDescription(a: AchievementAdmin): string {
+    if (a.threshold_bronze == null) return a.description;
+    const parts = [a.threshold_bronze, a.threshold_silver, a.threshold_gold]
+      .filter((v): v is number => v != null)
+      .join(' | ');
+    return a.description.replace('{threshold}', `[${parts}]`);
+  }
 
   earnedPercent(a: AchievementAdmin): number {
     if (!a.total_managers) return 0;
