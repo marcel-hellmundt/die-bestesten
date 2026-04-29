@@ -321,7 +321,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/achievement',
-                        'description' => 'Alle Achievements mit earned_at (null = nicht verdient) für den eingeloggten Manager — Auth; ?all=true → Alle Achievements inkl. Manager-Liste mit earned-Status — Admin',
+                        'description' => 'Alle Achievements mit earned_at (null = nicht verdient) für den eingeloggten Manager — Auth; ?all=true → Alle Achievements inkl. threshold_bronze/silver/gold und Manager-Liste mit earned-Status — Admin',
                     ],
                     [
                         'method' => 'POST',
