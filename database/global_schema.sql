@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS achievement (
 INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold) VALUES
 (UUID(), 'season_champion',    'Der Besteste',             'Werde Meister in einer Saison',                                                                    'cup',      NULL, NULL, NULL),
 (UUID(), 'ten_matchday_wins',  'Platz an der Sonne',       'Gewinne mindestens {threshold} Spieltage in einer Saison',                                         'medal',    8,    12,   16  ),
-(UUID(), 'century',            'Jahrhundertelf',           'Lehre den anderen das Fürchten mit mindestens 100 Punkten an einem Spieltag',                       'rocket',   NULL, NULL, NULL),
+(UUID(), 'century',            'Jahrhundertelf',           'Lehre den anderen das Fürchten mit mindestens {threshold} Punkten an einem Spieltag',              'rocket',   80,   90,   100 ),
 (UUID(), 'win_streak_3',       'Never change a winning team', '3 Mal in Folge den Spieltag gewinnen? Nichts leichter als das',                                 'streak',   NULL, NULL, NULL),
 (UUID(), 'sds_4',              'Ein Käfig voller Helden',  'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                                'sds',      NULL, NULL, NULL),
 (UUID(), 'season_points_1400', 'Punkteflut',               'Sammle 1400 Punkte in einer Saison',                                                               'points',   NULL, NULL, NULL),

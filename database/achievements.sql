@@ -59,14 +59,21 @@ ORDER BY siege DESC;
 -- =============================================================================
 SELECT
     (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'century') AS achievement_id,
-    m.manager_name,
-    MAX(tr.points) AS max_punkte
+    CONVERT(m.manager_name USING utf8mb3) AS manager_name,
+    MAX(tr.points) AS max_punkte,
+    CASE
+        WHEN MAX(tr.points) >= 100 THEN 'gold'
+        WHEN MAX(tr.points) >= 90  THEN 'silver'
+        WHEN MAX(tr.points) >= 80  THEN 'bronze'
+        ELSE NULL
+    END AS level
 FROM usr_ud16_151_4.team_rating tr
 JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
 JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
 JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
 JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
 GROUP BY m.id, m.manager_name
+HAVING MAX(tr.points) >= 80
 ORDER BY max_punkte DESC;
 
 -- =============================================================================
