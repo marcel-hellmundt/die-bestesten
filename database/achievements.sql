@@ -181,9 +181,10 @@ FROM (
 ORDER BY tore DESC;
 
 -- =============================================================================
--- season_assists_60 — Meiste Vorlagen in einer Saison (Threshold: 60)
+-- season_assists_60 — Meiste Vorlagen in einer Saison (Bronze ≥60, Silber ≥65, Gold ≥70)
 -- =============================================================================
-SELECT achievement_id, manager_name, saison, vorlagen
+SELECT achievement_id, manager_name, saison, vorlagen,
+       CASE WHEN vorlagen >= 70 THEN 'gold' WHEN vorlagen >= 65 THEN 'silver' ELSE 'bronze' END AS level
 FROM (
     SELECT
         (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_assists_60') AS achievement_id,
@@ -197,7 +198,7 @@ FROM (
     JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
     JOIN usr_ud16_151_1.season s ON s.id = md.season_id
     GROUP BY m.id, m.manager_name, t.season_id, s.start_date
-) sub WHERE rn = 1
+) sub WHERE rn = 1 AND vorlagen >= 60
 ORDER BY vorlagen DESC;
 
 -- =============================================================================
