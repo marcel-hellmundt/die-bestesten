@@ -646,27 +646,30 @@ FROM (
 ORDER BY manager_name, spieltag;
 
 -- =============================================================================
--- pechvogel — Nominierter Spieler kassiert Note 6,0
+-- pechvogel — Spieltag mit den meisten nominierten 6,0-Spielern pro Manager
 -- =============================================================================
-SELECT
-    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'pechvogel') AS achievement_id,
-    CONVERT(m.manager_name USING utf8mb3) AS manager,
-    p.displayname AS spieler,
-    pr.grade AS note,
-    md.number AS spieltag,
-    CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison
-FROM usr_ud16_151_4.team_lineup tl
-JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
-JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-JOIN usr_ud16_151_1.player_rating pr
-    ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
-    AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
-    AND pr.grade = 6.0
-JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
-JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
-JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
-WHERE tl.nominated = 1
-ORDER BY manager, spieltag;
+SELECT achievement_id, manager, spieltag, saison, anzahl_sechsen
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'pechvogel') AS achievement_id,
+        m.id AS manager_id, CONVERT(m.manager_name USING utf8mb3) AS manager,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        COUNT(*) AS anzahl_sechsen,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player_rating pr
+        ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+        AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+        AND pr.grade = 6.0
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+) sub WHERE rn = 1
+ORDER BY anzahl_sechsen DESC, manager;
 
 -- =============================================================================
 -- bankraeuber — Spieler öfter aufgestellt als geschont, aber mehr Bankpunkte
