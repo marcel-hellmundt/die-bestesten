@@ -139,9 +139,10 @@ FROM (
 ORDER BY sds_count DESC;
 
 -- =============================================================================
--- season_points_1400 — Beste Saisonpunkte pro Manager (Threshold: 1400)
+-- season_points_1400 — Beste Saisonpunkte pro Manager (Bronze ≥1400, Silber ≥1500, Gold ≥1600)
 -- =============================================================================
-SELECT achievement_id, manager_name, saison, punkte
+SELECT achievement_id, manager_name, saison, punkte,
+       CASE WHEN punkte >= 1600 THEN 'gold' WHEN punkte >= 1500 THEN 'silver' ELSE 'bronze' END AS level
 FROM (
     SELECT
         (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_points_1400') AS achievement_id,
@@ -155,7 +156,7 @@ FROM (
     JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3)
     JOIN usr_ud16_151_1.season s ON s.id = md.season_id
     GROUP BY m.id, m.manager_name, t.season_id, s.start_date
-) sub WHERE rn = 1
+) sub WHERE rn = 1 AND punkte >= 1400
 ORDER BY punkte DESC;
 
 -- =============================================================================

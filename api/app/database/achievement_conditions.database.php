@@ -464,7 +464,83 @@ trait AchievementConditionsTrait
 
     public function check_season_points_1400(array $managerIds): array
     {
-        return $this->checkSeasonAggregate($managerIds, 'points', 1400, 'Punkte');
+        if (empty($managerIds))
+            return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
+             FROM matchday md JOIN season s ON s.id = md.season_id"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays))
+            return [];
+
+        $matchdayToSeason = [];
+        $lastKickoff = [];
+        $seasonStartMap = [];
+        foreach ($matchdays as $row) {
+            $matchdayToSeason[$row['id']] = $row['season_id'];
+            $sid = $row['season_id'];
+            $seasonStartMap[$sid] = $row['season_start'];
+            if (!isset($lastKickoff[$sid]) || $row['kickoff_date'] > $lastKickoff[$sid]) {
+                $lastKickoff[$sid] = $row['kickoff_date'];
+            }
+        }
+
+        $mdIds = array_keys($matchdayToSeason);
+        $plh  = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT t.manager_id, t.team_name, t.season_id AS team_season_id, tr.matchday_id, tr.points AS val
+             FROM team t
+             JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+             WHERE t.manager_id IN ($plh) AND tr.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $seasonTotals = [];
+        $teamNameMap  = [];
+        foreach ($rows as $row) {
+            $sid = $row['team_season_id'];
+            $key = $row['manager_id'] . '|' . $sid;
+            $seasonTotals[$key] = ($seasonTotals[$key] ?? 0) + (int) $row['val'];
+            $teamNameMap[$key]  = $row['team_name'];
+        }
+
+        $achievers = [];
+        foreach ($seasonTotals as $key => $total) {
+            if ($total < 1400)
+                continue;
+            [$mgr, $sid] = explode('|', $key, 2);
+            if (!in_array($mgr, $managerIds))
+                continue;
+            $sStart = $seasonStartMap[$sid] ?? '9999-01-01';
+            if (
+                !isset($achievers[$mgr]) ||
+                $sStart < ($seasonStartMap[$achievers[$mgr]['season_id']] ?? '9999-01-01')
+            ) {
+                $achievers[$mgr] = [
+                    'season_id' => $sid,
+                    'total'     => $total,
+                    'team_name' => $teamNameMap[$key] ?? '?',
+                ];
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $sid   = $data['season_id'];
+            $label = $this->seasonLabel($seasonStartMap[$sid] ?? '');
+            $total = $data['total'];
+            $result[$mgr] = [
+                'reason'    => "{$total} Punkte mit {$data['team_name']} ($label)",
+                'earned_at' => $lastKickoff[$sid] ?? date('Y-m-d H:i:s'),
+                'level'     => $total >= 1600 ? 'gold' : ($total >= 1500 ? 'silver' : 'bronze'),
+            ];
+        }
+        return $result;
     }
 
     public function check_season_goals_75(array $managerIds): array
