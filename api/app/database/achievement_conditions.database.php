@@ -1938,4 +1938,533 @@ trait AchievementConditionsTrait
 
         return $result;
     }
+
+    public function check_transfer_reue(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
+        $stmt = $this->con_league->prepare(
+            "SELECT s.player_id, s.transferwindow_id, t.manager_id
+             FROM sell s
+             JOIN team t ON t.id = s.team_id
+             WHERE t.manager_id IN ($plh)"
+        );
+        $stmt->execute($managerIds);
+        $sells = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($sells)) return [];
+
+        $twIds = array_values(array_unique(array_column($sells, 'transferwindow_id')));
+        $twPlh = implode(',', array_fill(0, count($twIds), '?'));
+        $stmt = $this->con->prepare(
+            "SELECT tw.id AS tw_id, md.kickoff_date AS tw_kickoff
+             FROM transferwindow tw
+             JOIN matchday md ON md.id = tw.matchday_id
+             WHERE tw.id IN ($twPlh)"
+        );
+        $stmt->execute($twIds);
+        $twMeta = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), null, 'tw_id');
+
+        $allMatchdays = $this->con->query(
+            "SELECT id, number, kickoff_date, season_id FROM matchday WHERE completed = 1 ORDER BY kickoff_date ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $sellsWithNextMd = [];
+        foreach ($sells as $sell) {
+            $tw = $twMeta[$sell['transferwindow_id']] ?? null;
+            if (!$tw) continue;
+            $nextMd = null;
+            foreach ($allMatchdays as $md) {
+                if ($md['kickoff_date'] > $tw['tw_kickoff']) {
+                    $nextMd = $md;
+                    break;
+                }
+            }
+            if (!$nextMd) continue;
+            $sellsWithNextMd[] = [
+                'manager_id' => $sell['manager_id'],
+                'player_id'  => $sell['player_id'],
+                'next_md'    => $nextMd,
+            ];
+        }
+
+        if (empty($sellsWithNextMd)) return [];
+
+        $pairPlayerIds = array_values(array_unique(array_column($sellsWithNextMd, 'player_id')));
+        $pairMdIds     = array_values(array_unique(array_map(fn($r) => $r['next_md']['id'], $sellsWithNextMd)));
+        $ppPlh = implode(',', array_fill(0, count($pairPlayerIds), '?'));
+        $pmPlh = implode(',', array_fill(0, count($pairMdIds), '?'));
+
+        $stmt = $this->con->prepare(
+            "SELECT player_id, matchday_id FROM player_rating
+             WHERE player_id IN ($ppPlh) AND matchday_id IN ($pmPlh) AND sds = 1"
+        );
+        $stmt->execute([...$pairPlayerIds, ...$pairMdIds]);
+        $sdsSet = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sdsSet[$row['player_id'] . '|' . $row['matchday_id']] = true;
+        }
+
+        $achievers = [];
+        foreach ($sellsWithNextMd as $row) {
+            $mgr = $row['manager_id'];
+            if (!in_array($mgr, $managerIds) || isset($achievers[$mgr])) continue;
+            if (!isset($sdsSet[$row['player_id'] . '|' . $row['next_md']['id']])) continue;
+            $achievers[$mgr] = ['player_id' => $row['player_id'], 'next_md' => $row['next_md']];
+        }
+
+        if (empty($achievers)) return [];
+
+        $aPlayerIds = array_values(array_unique(array_column($achievers, 'player_id')));
+        $apPlh = implode(',', array_fill(0, count($aPlayerIds), '?'));
+        $stmt = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($apPlh)");
+        $stmt->execute($aPlayerIds);
+        $playerNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'displayname', 'id');
+
+        $seasonIds = array_values(array_unique(array_map(fn($d) => $d['next_md']['season_id'], $achievers)));
+        $ssPlh = implode(',', array_fill(0, count($seasonIds), '?'));
+        $stmt = $this->con->prepare("SELECT id, start_date FROM season WHERE id IN ($ssPlh)");
+        $stmt->execute($seasonIds);
+        $seasonStartMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'start_date', 'id');
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $md    = $data['next_md'];
+            $name  = $playerNames[$data['player_id']] ?? '?';
+            $label = $this->seasonLabel($seasonStartMap[$md['season_id']] ?? '');
+            $result[$mgr] = [
+                'reason'    => "$name, Spieltag {$md['number']} ($label)",
+                'earned_at' => $md['kickoff_date'],
+            ];
+        }
+        return $result;
+    }
+
+    public function check_bankdruecker(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             ORDER BY md.kickoff_date ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays)) return [];
+
+        $mdMeta = array_column($matchdays, null, 'id');
+        $mdIds  = array_column($matchdays, 'id');
+        $mPlh   = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con->prepare(
+            "SELECT player_id, matchday_id FROM player_rating
+             WHERE matchday_id IN ($mPlh) AND sds = 1"
+        );
+        $stmt->execute($mdIds);
+        $sdsSet = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sdsSet[$row['player_id'] . '|' . $row['matchday_id']] = true;
+        }
+
+        if (empty($sdsSet)) return [];
+
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, tl.player_id, tl.matchday_id
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_lineup tl ON tl.team_id = t.id AND tl.nominated = 0
+             WHERE m.id IN ($plh) AND tl.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $benchRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $achievers = [];
+        foreach ($benchRows as $row) {
+            if (!isset($sdsSet[$row['player_id'] . '|' . $row['matchday_id']])) continue;
+            $mgr = $row['manager_id'];
+            if (isset($achievers[$mgr])) continue;
+            $md = $mdMeta[$row['matchday_id']] ?? null;
+            if (!$md) continue;
+            $achievers[$mgr] = [
+                'player_id'    => $row['player_id'],
+                'team_name'    => $row['team_name'],
+                'md_number'    => $md['number'],
+                'kickoff_date' => $md['kickoff_date'],
+                'season_start' => $md['season_start'],
+            ];
+        }
+
+        if (empty($achievers)) return [];
+
+        $aPlayerIds = array_values(array_unique(array_column($achievers, 'player_id')));
+        $apPlh = implode(',', array_fill(0, count($aPlayerIds), '?'));
+        $stmt = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($apPlh)");
+        $stmt->execute($aPlayerIds);
+        $playerNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'displayname', 'id');
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label = $this->seasonLabel($data['season_start']);
+            $name  = $playerNames[$data['player_id']] ?? '?';
+            $result[$mgr] = [
+                'reason'    => "$name auf der Bank wurde SDS, Spieltag {$data['md_number']} mit {$data['team_name']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+            ];
+        }
+        return $result;
+    }
+
+    public function check_torwart_torschuetze(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             ORDER BY md.kickoff_date ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays)) return [];
+
+        $mdMeta    = array_column($matchdays, null, 'id');
+        $mdIds     = array_column($matchdays, 'id');
+        $seasonIds = array_values(array_unique(array_column($matchdays, 'season_id')));
+        $mPlh      = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con->prepare(
+            "SELECT player_id, matchday_id FROM player_rating
+             WHERE matchday_id IN ($mPlh) AND goals >= 1"
+        );
+        $stmt->execute($mdIds);
+        $scorers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($scorers)) return [];
+
+        $scorerPlayerIds = array_values(array_unique(array_column($scorers, 'player_id')));
+        $ssPlh = implode(',', array_fill(0, count($seasonIds), '?'));
+        $ppPlh = implode(',', array_fill(0, count($scorerPlayerIds), '?'));
+        $stmt = $this->con->prepare(
+            "SELECT player_id, season_id FROM player_in_season
+             WHERE player_id IN ($ppPlh) AND season_id IN ($ssPlh) AND position = 'GOALKEEPER'"
+        );
+        $stmt->execute([...$scorerPlayerIds, ...$seasonIds]);
+        $gkSet = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $gkSet[$row['player_id'] . '|' . $row['season_id']] = true;
+        }
+
+        $gkScorerSet = [];
+        foreach ($scorers as $row) {
+            $md = $mdMeta[$row['matchday_id']] ?? null;
+            if ($md && isset($gkSet[$row['player_id'] . '|' . $md['season_id']])) {
+                $gkScorerSet[$row['player_id'] . '|' . $row['matchday_id']] = true;
+            }
+        }
+
+        if (empty($gkScorerSet)) return [];
+
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, tl.player_id, tl.matchday_id
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_lineup tl ON tl.team_id = t.id AND tl.nominated = 1
+             WHERE m.id IN ($plh) AND tl.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $lineups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $achievers = [];
+        foreach ($lineups as $row) {
+            if (!isset($gkScorerSet[$row['player_id'] . '|' . $row['matchday_id']])) continue;
+            $mgr = $row['manager_id'];
+            if (isset($achievers[$mgr])) continue;
+            $md = $mdMeta[$row['matchday_id']] ?? null;
+            if (!$md) continue;
+            $achievers[$mgr] = [
+                'player_id'    => $row['player_id'],
+                'team_name'    => $row['team_name'],
+                'md_number'    => $md['number'],
+                'kickoff_date' => $md['kickoff_date'],
+                'season_start' => $md['season_start'],
+            ];
+        }
+
+        if (empty($achievers)) return [];
+
+        $aPlayerIds = array_values(array_unique(array_column($achievers, 'player_id')));
+        $apPlh = implode(',', array_fill(0, count($aPlayerIds), '?'));
+        $stmt = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($apPlh)");
+        $stmt->execute($aPlayerIds);
+        $playerNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'displayname', 'id');
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label = $this->seasonLabel($data['season_start']);
+            $name  = $playerNames[$data['player_id']] ?? '?';
+            $result[$mgr] = [
+                'reason'    => "$name (TW) traf für {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+            ];
+        }
+        return $result;
+    }
+
+    public function check_alles_perfekt(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays)) return [];
+
+        $mdMeta = array_column($matchdays, null, 'id');
+        $mdIds  = array_column($matchdays, 'id');
+        $plh    = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh   = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT t.manager_id, t.team_name, tr.matchday_id, tr.points
+             FROM team_rating tr
+             JOIN team t ON t.id = tr.team_id
+             WHERE t.manager_id IN ($plh) AND tr.matchday_id IN ($mPlh)
+               AND tr.invalid = 0 AND tr.max_points > 0
+               AND tr.points = tr.max_points AND tr.points >= 60"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $achievers = [];
+        foreach ($rows as $row) {
+            $mgr = $row['manager_id'];
+            $md  = $mdMeta[$row['matchday_id']] ?? null;
+            if (!$md) continue;
+            if (!isset($achievers[$mgr]) || $md['kickoff_date'] < $achievers[$mgr]['kickoff_date']) {
+                $achievers[$mgr] = [
+                    'team_name'    => $row['team_name'],
+                    'md_number'    => $md['number'],
+                    'kickoff_date' => $md['kickoff_date'],
+                    'season_start' => $md['season_start'],
+                    'points'       => (int) $row['points'],
+                ];
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label = $this->seasonLabel($data['season_start']);
+            $result[$mgr] = [
+                'reason'    => "{$data['points']} Punkte mit {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+            ];
+        }
+        return $result;
+    }
+
+    public function check_pechvogel(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             ORDER BY md.kickoff_date ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays)) return [];
+
+        $mdMeta = array_column($matchdays, null, 'id');
+        $mdIds  = array_column($matchdays, 'id');
+        $mPlh   = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con->prepare(
+            "SELECT player_id, matchday_id FROM player_rating
+             WHERE matchday_id IN ($mPlh) AND grade = 6.0"
+        );
+        $stmt->execute($mdIds);
+        $sixSet = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $sixSet[$row['player_id'] . '|' . $row['matchday_id']] = true;
+        }
+
+        if (empty($sixSet)) return [];
+
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, tl.player_id, tl.matchday_id
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_lineup tl ON tl.team_id = t.id AND tl.nominated = 1
+             WHERE m.id IN ($plh) AND tl.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $lineups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $achievers = [];
+        foreach ($lineups as $row) {
+            if (!isset($sixSet[$row['player_id'] . '|' . $row['matchday_id']])) continue;
+            $mgr = $row['manager_id'];
+            if (isset($achievers[$mgr])) continue;
+            $md = $mdMeta[$row['matchday_id']] ?? null;
+            if (!$md) continue;
+            $achievers[$mgr] = [
+                'player_id'    => $row['player_id'],
+                'team_name'    => $row['team_name'],
+                'md_number'    => $md['number'],
+                'kickoff_date' => $md['kickoff_date'],
+                'season_start' => $md['season_start'],
+            ];
+        }
+
+        if (empty($achievers)) return [];
+
+        $aPlayerIds = array_values(array_unique(array_column($achievers, 'player_id')));
+        $apPlh = implode(',', array_fill(0, count($aPlayerIds), '?'));
+        $stmt = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($apPlh)");
+        $stmt->execute($aPlayerIds);
+        $playerNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'displayname', 'id');
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label = $this->seasonLabel($data['season_start']);
+            $name  = $playerNames[$data['player_id']] ?? '?';
+            $result[$mgr] = [
+                'reason'    => "$name (6,0) mit {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+            ];
+        }
+        return $result;
+    }
+
+    public function check_bankraeuber(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays)) return [];
+
+        $mdMeta         = array_column($matchdays, null, 'id');
+        $lastKickoff    = [];
+        $seasonStartMap = [];
+        foreach ($matchdays as $md) {
+            $sid = $md['season_id'];
+            $seasonStartMap[$sid] = $md['season_start'];
+            if (!isset($lastKickoff[$sid]) || $md['kickoff_date'] > $lastKickoff[$sid]) {
+                $lastKickoff[$sid] = $md['kickoff_date'];
+            }
+        }
+
+        $mdIds = array_column($matchdays, 'id');
+        $plh   = implode(',', array_fill(0, count($managerIds), '?'));
+        $mPlh  = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT m.id AS manager_id, t.team_name, t.season_id AS team_season_id,
+                    tl.player_id, tl.matchday_id, tl.nominated
+             FROM manager m
+             JOIN team t ON t.manager_id = m.id
+             JOIN team_lineup tl ON tl.team_id = t.id
+             WHERE m.id IN ($plh) AND tl.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+        $lineups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($lineups)) return [];
+
+        $playerIds = array_values(array_unique(array_column($lineups, 'player_id')));
+        $pPlh = implode(',', array_fill(0, count($playerIds), '?'));
+        $stmt = $this->con->prepare(
+            "SELECT player_id, matchday_id, COALESCE(points, 0) AS points
+             FROM player_rating WHERE player_id IN ($pPlh) AND matchday_id IN ($mPlh)"
+        );
+        $stmt->execute([...$playerIds, ...$mdIds]);
+        $pointsMap = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $pointsMap[$row['player_id'] . '|' . $row['matchday_id']] = (int) $row['points'];
+        }
+
+        $stats = [];
+        foreach ($lineups as $row) {
+            $md = $mdMeta[$row['matchday_id']] ?? null;
+            if (!$md || $row['team_season_id'] !== $md['season_id']) continue;
+            $key = $row['manager_id'] . '|' . $row['player_id'] . '|' . $md['season_id'];
+            if (!isset($stats[$key])) {
+                $stats[$key] = [
+                    'manager_id'  => $row['manager_id'],
+                    'player_id'   => $row['player_id'],
+                    'season_id'   => $md['season_id'],
+                    'team_name'   => $row['team_name'],
+                    'nom_count'   => 0,
+                    'bench_count' => 0,
+                    'nom_pts'     => 0,
+                    'bench_pts'   => 0,
+                ];
+            }
+            $pts = $pointsMap[$row['player_id'] . '|' . $row['matchday_id']] ?? 0;
+            if ($row['nominated']) {
+                $stats[$key]['nom_count']++;
+                $stats[$key]['nom_pts'] += $pts;
+            } else {
+                $stats[$key]['bench_count']++;
+                $stats[$key]['bench_pts'] += $pts;
+            }
+        }
+
+        $achievers = [];
+        foreach ($stats as $data) {
+            $total = $data['nom_count'] + $data['bench_count'];
+            if ($total < 4) continue;
+            if ($data['nom_count'] <= $total / 2) continue;
+            if ($data['bench_count'] === 0 || $data['nom_pts'] === 0) continue;
+            if ($data['bench_pts'] <= $data['nom_pts']) continue;
+            $mgr    = $data['manager_id'];
+            $sid    = $data['season_id'];
+            $sStart = $seasonStartMap[$sid] ?? '9999-01-01';
+            if (
+                !isset($achievers[$mgr]) ||
+                $sStart < ($seasonStartMap[$achievers[$mgr]['season_id']] ?? '9999-01-01')
+            ) {
+                $achievers[$mgr] = $data;
+            }
+        }
+
+        if (empty($achievers)) return [];
+
+        $aPlayerIds = array_values(array_unique(array_column($achievers, 'player_id')));
+        $apPlh = implode(',', array_fill(0, count($aPlayerIds), '?'));
+        $stmt = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($apPlh)");
+        $stmt->execute($aPlayerIds);
+        $playerNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'displayname', 'id');
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $sid   = $data['season_id'];
+            $label = $this->seasonLabel($seasonStartMap[$sid] ?? '');
+            $name  = $playerNames[$data['player_id']] ?? '?';
+            $result[$mgr] = [
+                'reason'    => "$name: {$data['nom_count']}× aufgestellt ({$data['nom_pts']} Pkt), {$data['bench_count']}× geschont ({$data['bench_pts']} Pkt) ($label)",
+                'earned_at' => $lastKickoff[$sid] ?? date('Y-m-d H:i:s'),
+            ];
+        }
+        return $result;
+    }
 }
