@@ -678,9 +678,9 @@ FROM (
 ORDER BY anzahl_sechsen DESC, manager;
 
 -- =============================================================================
--- bankraeuber — Spieler öfter aufgestellt als geschont, aber mehr Bankpunkte
+-- bankraeuber — Spieler mit größter Punktedifferenz (Bank > Aufgestellt) pro Manager
 -- =============================================================================
-SELECT achievement_id, manager_name, spieler, saison, nom_count, bank_count, nom_punkte, bank_punkte
+SELECT achievement_id, manager_name, spieler, saison, nom_count, bank_count, nom_punkte, bank_punkte, differenz
 FROM (
     SELECT
         (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'bankraeuber') AS achievement_id,
@@ -691,6 +691,8 @@ FROM (
         SUM(CASE WHEN tl.nominated = 0 THEN 1 ELSE 0 END) AS bank_count,
         SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END) AS nom_punkte,
         SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) AS bank_punkte,
+        SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) -
+        SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END) AS differenz,
         ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
             SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) -
             SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END) DESC
@@ -706,11 +708,8 @@ FROM (
         ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
         AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
     GROUP BY m.id, m.manager_name, tl.player_id, t.season_id, s.start_date
-    HAVING SUM(1) >= 4
-       AND SUM(CASE WHEN tl.nominated = 1 THEN 1 ELSE 0 END) > SUM(1) / 2
-       AND SUM(CASE WHEN tl.nominated = 0 THEN 1 ELSE 0 END) > 0
-       AND SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END) > 0
+    HAVING SUM(CASE WHEN tl.nominated = 0 THEN 1 ELSE 0 END) > 0
        AND SUM(CASE WHEN tl.nominated = 0 THEN COALESCE(pr.points, 0) ELSE 0 END) >
            SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END)
 ) sub WHERE rn = 1
-ORDER BY bank_punkte - nom_punkte DESC;
+ORDER BY differenz DESC;
