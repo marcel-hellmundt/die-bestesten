@@ -82,7 +82,7 @@ trait TeamRatingTrait
             ];
         }
         foreach ($rows as &$row) {
-            $row['fine'] = $fineByTeam[$row['team_id']] ?? 0.0;
+            $row['fine'] = ($fineByTeam[$row['team_id']] ?? 0.0) + 5.0;
         }
         unset($row);
 
