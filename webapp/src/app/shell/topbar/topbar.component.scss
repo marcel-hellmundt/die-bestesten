@@ -79,14 +79,28 @@
       justify-content: center;
       cursor: pointer;
 
-      input, .search-hint { display: none; }
+      .search-hint { display: none; }
+
+      input {
+        flex: 0 0 0;
+        width: 0;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+      }
 
       &--active {
         width: 100%;
         padding: 0 $space-3;
         cursor: text;
 
-        input { display: block; }
+        input {
+          flex: 1;
+          width: auto;
+          overflow: visible;
+          opacity: 1;
+          pointer-events: auto;
+        }
       }
     }
   }

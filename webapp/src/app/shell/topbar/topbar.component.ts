@@ -107,7 +107,7 @@ export class TopbarComponent implements OnDestroy {
   onSearchContainerClick(): void {
     if (!this.isSearchOpen()) {
       this.isSearchOpen.set(true);
-      setTimeout(() => this.searchInputRef?.nativeElement.focus(), 50);
+      this.searchInputRef?.nativeElement.focus();
     }
   }
 
