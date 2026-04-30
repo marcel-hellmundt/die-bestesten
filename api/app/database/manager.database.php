@@ -284,23 +284,30 @@ trait ManagerTrait
                 FROM team_rating
                 WHERE invalid = 0
                   AND matchday_id IN (SELECT matchday_id FROM team_rating WHERE team_id = :team_id_sub)
+            ),
+            md_invalid AS (
+                SELECT matchday_id, SUM(invalid) AS invalid_cnt
+                FROM team_rating
+                WHERE matchday_id IN (SELECT matchday_id FROM team_rating WHERE team_id = :team_id_sub2)
+                GROUP BY matchday_id
             )
             SELECT tr.id, tr.matchday_id, tr.points, tr.max_points,
                    tr.goals, tr.assists, tr.clean_sheet, tr.sds,
                    tr.sds_defender, tr.missed_goals, tr.invalid,
                    vr.placement,
                    CASE
-                       WHEN tr.invalid = 1  THEN 3.00
-                       WHEN vr.rank_asc = 1 THEN 2.00
-                       WHEN vr.rank_asc = 2 THEN 1.50
-                       WHEN vr.rank_asc = 3 THEN 1.00
-                       ELSE 0
+                       WHEN tr.invalid = 1              THEN 3.00
+                       WHEN COALESCE(mi.invalid_cnt, 0) > 0 THEN
+                           CASE WHEN vr.rank_asc = 1 THEN 2.00 WHEN vr.rank_asc = 2 THEN 1.50 WHEN vr.rank_asc = 3 THEN 1.00 ELSE 0 END
+                       ELSE
+                           CASE WHEN vr.rank_asc = 1 THEN 3.00 WHEN vr.rank_asc = 2 THEN 2.00 WHEN vr.rank_asc = 3 THEN 1.50 WHEN vr.rank_asc = 4 THEN 1.00 ELSE 0 END
                    END AS fine
             FROM team_rating tr
             LEFT JOIN valid_ranked vr ON vr.team_id = tr.team_id AND vr.matchday_id = tr.matchday_id
+            LEFT JOIN md_invalid    mi ON mi.matchday_id = tr.matchday_id
             WHERE tr.team_id = :team_id
         ");
-        $q->execute([':team_id' => $teamId, ':team_id_sub' => $teamId]);
+        $q->execute([':team_id' => $teamId, ':team_id_sub' => $teamId, ':team_id_sub2' => $teamId]);
         $ratings = $q->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($ratings)) return [];

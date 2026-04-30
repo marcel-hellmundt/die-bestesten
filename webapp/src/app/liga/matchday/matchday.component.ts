@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
@@ -118,5 +119,7 @@ export class MatchdayComponent {
 
   constructor() {
     this.cache.ensureSeasons();
+    const n = inject(ActivatedRoute).snapshot.queryParamMap.get('number');
+    if (n) this.selectedNumber.set(parseInt(n, 10));
   }
 }

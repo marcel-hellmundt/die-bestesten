@@ -56,6 +56,16 @@
   color: $color-text-muted;
 }
 
+.matchday-link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-accent;
+    text-decoration: underline;
+  }
+}
+
 .col-rank {
   width: 36px;
   text-align: right;

@@ -4,8 +4,10 @@ trait TeamRatingTrait
 {
     private function assignFines(array $rows, string $pointsKey): array
     {
-        // Invalid teams always pay 3€; valid teams ranked among themselves (rank 1→2€, 2→1.50€, 3→1€)
-        $fineByRank = [1 => 2.0, 2 => 1.5, 3 => 1.0];
+        $hasInvalid  = !empty(array_filter($rows, fn($r) => $r['invalid']));
+        // If any invalid on this matchday: invalid=3€, valid rank 1→2€/2→1.50€/3→1€
+        // Otherwise normal ranking: rank 1→3€/2→2€/3→1.50€/4→1€
+        $fineByRank  = $hasInvalid ? [1 => 2.0, 2 => 1.5, 3 => 1.0] : [1 => 3.0, 2 => 2.0, 3 => 1.5, 4 => 1.0];
 
         $validPoints  = array_column(array_filter($rows, fn($r) => !$r['invalid']), $pointsKey);
         $uniquePoints = array_unique($validPoints);
@@ -114,7 +116,8 @@ trait TeamRatingTrait
             WITH ranked AS (
                 SELECT tr.team_id, tr.matchday_id, tr.points, tr.max_points,
                        t.team_name, t.season_id, t.color, m.manager_name, tr.invalid,
-                       RANK() OVER (PARTITION BY tr.matchday_id, tr.invalid ORDER BY tr.points ASC) AS rank_asc
+                       RANK() OVER (PARTITION BY tr.matchday_id, tr.invalid ORDER BY tr.points ASC) AS rank_asc,
+                       SUM(tr.invalid)  OVER (PARTITION BY tr.matchday_id)                         AS invalid_cnt
                 FROM team_rating tr
                 JOIN team t ON t.id = tr.team_id
                 JOIN manager m ON m.id = t.manager_id
@@ -123,11 +126,11 @@ trait TeamRatingTrait
             with_fines AS (
                 SELECT *,
                        CASE
-                           WHEN invalid = 1  THEN 3.00
-                           WHEN rank_asc = 1 THEN 2.00
-                           WHEN rank_asc = 2 THEN 1.50
-                           WHEN rank_asc = 3 THEN 1.00
-                           ELSE 0
+                           WHEN invalid = 1     THEN 3.00
+                           WHEN invalid_cnt > 0 THEN
+                               CASE WHEN rank_asc = 1 THEN 2.00 WHEN rank_asc = 2 THEN 1.50 WHEN rank_asc = 3 THEN 1.00 ELSE 0 END
+                           ELSE
+                               CASE WHEN rank_asc = 1 THEN 3.00 WHEN rank_asc = 2 THEN 2.00 WHEN rank_asc = 3 THEN 1.50 WHEN rank_asc = 4 THEN 1.00 ELSE 0 END
                        END AS fine
                 FROM ranked
             )
