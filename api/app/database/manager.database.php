@@ -277,8 +277,8 @@ trait ManagerTrait
     {
         // Use window functions to compute placement and fine across all teams per matchday
         $q = $this->con_league->prepare("
-            WITH ranked AS (
-                SELECT team_id, matchday_id, points, invalid,
+            WITH valid_ranked AS (
+                SELECT team_id, matchday_id,
                        RANK() OVER (PARTITION BY matchday_id ORDER BY points DESC) AS placement,
                        RANK() OVER (PARTITION BY matchday_id ORDER BY points ASC)  AS rank_asc
                 FROM team_rating
@@ -288,14 +288,16 @@ trait ManagerTrait
             SELECT tr.id, tr.matchday_id, tr.points, tr.max_points,
                    tr.goals, tr.assists, tr.clean_sheet, tr.sds,
                    tr.sds_defender, tr.missed_goals, tr.invalid,
-                   r.placement,
-                   CASE r.rank_asc
-                       WHEN 1 THEN 3.00 WHEN 2 THEN 2.00
-                       WHEN 3 THEN 1.50 WHEN 4 THEN 1.00
+                   vr.placement,
+                   CASE
+                       WHEN tr.invalid = 1  THEN 3.00
+                       WHEN vr.rank_asc = 1 THEN 2.00
+                       WHEN vr.rank_asc = 2 THEN 1.50
+                       WHEN vr.rank_asc = 3 THEN 1.00
                        ELSE 0
                    END AS fine
             FROM team_rating tr
-            LEFT JOIN ranked r ON r.team_id = tr.team_id AND r.matchday_id = tr.matchday_id
+            LEFT JOIN valid_ranked vr ON vr.team_id = tr.team_id AND vr.matchday_id = tr.matchday_id
             WHERE tr.team_id = :team_id
         ");
         $q->execute([':team_id' => $teamId, ':team_id_sub' => $teamId]);

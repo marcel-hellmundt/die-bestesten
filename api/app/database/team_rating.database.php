@@ -4,10 +4,11 @@ trait TeamRatingTrait
 {
     private function assignFines(array $rows, string $pointsKey): array
     {
-        $fineByRank = [1 => 3.0, 2 => 2.0, 3 => 1.5, 4 => 1.0];
+        // Invalid teams always pay 3€; valid teams ranked among themselves (rank 1→2€, 2→1.50€, 3→1€)
+        $fineByRank = [1 => 2.0, 2 => 1.5, 3 => 1.0];
 
-        // Unique point values sorted ASC → lowest = rank 1
-        $uniquePoints = array_unique(array_column($rows, $pointsKey));
+        $validPoints  = array_column(array_filter($rows, fn($r) => !$r['invalid']), $pointsKey);
+        $uniquePoints = array_unique($validPoints);
         sort($uniquePoints);
         $pointsToFine = [];
         foreach ($uniquePoints as $rank0 => $pts) {
@@ -15,7 +16,7 @@ trait TeamRatingTrait
         }
 
         foreach ($rows as &$row) {
-            $row['fine'] = $pointsToFine[$row[$pointsKey]] ?? 0.0;
+            $row['fine'] = $row['invalid'] ? 3.0 : ($pointsToFine[$row[$pointsKey]] ?? 0.0);
         }
         unset($row);
         return $rows;
@@ -112,18 +113,20 @@ trait TeamRatingTrait
         $rq = $this->con_league->prepare("
             WITH ranked AS (
                 SELECT tr.team_id, tr.matchday_id, tr.points, tr.max_points,
-                       t.team_name, t.season_id, t.color, m.manager_name,
-                       RANK() OVER (PARTITION BY tr.matchday_id ORDER BY tr.points ASC) AS rank_asc
+                       t.team_name, t.season_id, t.color, m.manager_name, tr.invalid,
+                       RANK() OVER (PARTITION BY tr.matchday_id, tr.invalid ORDER BY tr.points ASC) AS rank_asc
                 FROM team_rating tr
                 JOIN team t ON t.id = tr.team_id
                 JOIN manager m ON m.id = t.manager_id
-                WHERE tr.matchday_id IN ($placeholders) AND tr.invalid = 0
+                WHERE tr.matchday_id IN ($placeholders)
             ),
             with_fines AS (
                 SELECT *,
-                       CASE rank_asc
-                           WHEN 1 THEN 3.00 WHEN 2 THEN 2.00
-                           WHEN 3 THEN 1.50 WHEN 4 THEN 1.00
+                       CASE
+                           WHEN invalid = 1  THEN 3.00
+                           WHEN rank_asc = 1 THEN 2.00
+                           WHEN rank_asc = 2 THEN 1.50
+                           WHEN rank_asc = 3 THEN 1.00
                            ELSE 0
                        END AS fine
                 FROM ranked
@@ -138,20 +141,22 @@ trait TeamRatingTrait
         }
         unset($row);
 
-        // Glückspilze / Pechvögel (per matchday)
-        $lucky   = array_filter($rows, fn($r) => (float)$r['fine'] === 0.0);
-        $unlucky = array_filter($rows, fn($r) => (float)$r['fine'] > 0.0);
+        $validRows = array_values(array_filter($rows, fn($r) => !(bool)$r['invalid']));
+
+        // Glückspilze / Pechvögel (per matchday) — valid teams only
+        $lucky   = array_filter($validRows, fn($r) => (float)$r['fine'] === 0.0);
+        $unlucky = array_filter($validRows, fn($r) => (float)$r['fine'] > 0.0);
         usort($lucky,   fn($a, $b) => $a['points'] <=> $b['points']);
         usort($unlucky, fn($a, $b) => $b['points'] <=> $a['points']);
 
-        // Goldene Bürste: 3 team_ratings with fewest points in the season
-        $sorted = $rows;
+        // Goldene Bürste: 3 team_ratings with fewest points in the season — valid teams only
+        $sorted = $validRows;
         usort($sorted, fn($a, $b) => $a['points'] <=> $b['points']);
-        $goldene_buerste = array_slice(array_values($sorted), 0, 3);
+        $goldene_buerste = array_slice($sorted, 0, 3);
 
-        // Hölzerne Bank: 3 teams with largest SUM(max_points - points)
+        // Hölzerne Bank: 3 teams with largest SUM(max_points - points) — valid teams only
         $gaps = [];
-        foreach ($rows as $r) {
+        foreach ($validRows as $r) {
             $tid = $r['team_id'];
             if (!isset($gaps[$tid])) {
                 $gaps[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_name' => $r['manager_name'], 'color' => $r['color'], 'season_id' => $r['season_id'], 'gap' => 0];
@@ -161,9 +166,9 @@ trait TeamRatingTrait
         usort($gaps, fn($a, $b) => $b['gap'] <=> $a['gap']);
         $hoelzerne_bank = array_slice(array_values($gaps), 0, 3);
 
-        // Spieltagssiege: per matchday, team with highest points wins
+        // Spieltagssiege: per matchday, team with highest points wins — valid teams only
         $byMatchday = [];
-        foreach ($rows as $r) {
+        foreach ($validRows as $r) {
             $byMatchday[$r['matchday_id']][] = $r;
         }
         $winsByTeam = [];
@@ -219,13 +224,13 @@ trait TeamRatingTrait
         if ($matchday['completed']) {
             $rq = $this->con_league->prepare(
                 "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
-                        m.manager_name,
+                        m.manager_name, tr.invalid,
                         tr.points, tr.goals, tr.assists, tr.red_cards, tr.sds, tr.clean_sheet
                  FROM team_rating tr
                  JOIN team t ON t.id = tr.team_id
                  JOIN manager m ON m.id = t.manager_id
-                 WHERE tr.matchday_id = :matchday_id AND tr.invalid = 0
-                 ORDER BY tr.points DESC"
+                 WHERE tr.matchday_id = :matchday_id
+                 ORDER BY tr.invalid ASC, tr.points DESC"
             );
             $rq->execute([':matchday_id' => $matchday['id']]);
             $ratings = $rq->fetchAll(PDO::FETCH_ASSOC);
