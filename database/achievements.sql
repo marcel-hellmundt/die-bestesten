@@ -725,7 +725,7 @@ FROM (
         md.number AS spieltag,
         CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
         COUNT(*) AS anzahl,
-        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY md.kickoff_date ASC) AS rn
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC, md.kickoff_date ASC) AS rn
     FROM usr_ud16_151_4.player_in_team pit
     JOIN usr_ud16_151_4.team t ON t.id = pit.team_id
     JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
