@@ -279,8 +279,8 @@ trait ManagerTrait
         $q = $this->con_league->prepare("
             WITH valid_ranked AS (
                 SELECT team_id, matchday_id,
-                       RANK() OVER (PARTITION BY matchday_id ORDER BY points DESC) AS placement,
-                       RANK() OVER (PARTITION BY matchday_id ORDER BY points ASC)  AS rank_asc
+                       RANK()       OVER (PARTITION BY matchday_id ORDER BY points DESC) AS placement,
+                       DENSE_RANK() OVER (PARTITION BY matchday_id ORDER BY points ASC)  AS rank_asc
                 FROM team_rating
                 WHERE invalid = 0
                   AND matchday_id IN (SELECT matchday_id FROM team_rating WHERE team_id = :team_id_sub)

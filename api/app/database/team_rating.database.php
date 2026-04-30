@@ -116,7 +116,7 @@ trait TeamRatingTrait
             WITH ranked AS (
                 SELECT tr.team_id, tr.matchday_id, tr.points, tr.max_points,
                        t.team_name, t.season_id, t.color, m.manager_name, tr.invalid,
-                       RANK() OVER (PARTITION BY tr.matchday_id, tr.invalid ORDER BY tr.points ASC) AS rank_asc,
+                       DENSE_RANK() OVER (PARTITION BY tr.matchday_id, tr.invalid ORDER BY tr.points ASC) AS rank_asc,
                        SUM(tr.invalid)  OVER (PARTITION BY tr.matchday_id)                         AS invalid_cnt
                 FROM team_rating tr
                 JOIN team t ON t.id = tr.team_id
