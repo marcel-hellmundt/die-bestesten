@@ -55,7 +55,7 @@ FROM (
 ORDER BY siege DESC;
 
 -- =============================================================================
--- century — Höchste Einzelspieltag-Punkte pro Manager (Threshold: 100)
+-- century — Höchste Einzelspieltag-Punkte pro Manager (Bronze ≥80, Silber ≥90, Gold ≥100)
 -- =============================================================================
 SELECT
     (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'century') AS achievement_id,
@@ -287,178 +287,6 @@ FROM (
 ORDER BY n_bieter DESC;
 
 -- =============================================================================
--- youth_squad — Max. Feldspieler (kein GK) ≤23 Jahre (kickoff + 2 Tage) an einem Spieltag pro Manager
--- =============================================================================
-SELECT achievement_id, manager_name, spieltag, saison, junge_feldspieler, feldspieler_gesamt
-FROM (
-    SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'youth_squad') AS achievement_id,
-        m.id AS manager_id, m.manager_name,
-        md.number AS spieltag,
-        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
-        SUM(CASE WHEN p.date_of_birth IS NOT NULL
-                 AND TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY)) <= 23
-                 THEN 1 ELSE 0 END) AS junge_feldspieler,
-        COUNT(*) AS feldspieler_gesamt,
-        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
-            SUM(CASE WHEN p.date_of_birth IS NOT NULL
-                     AND TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY)) <= 23
-                     THEN 1 ELSE 0 END) DESC
-        ) AS rn
-    FROM usr_ud16_151_4.team_lineup tl
-    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
-    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
-    JOIN usr_ud16_151_1.player_in_season pis
-        ON pis.player_id = p.id
-        AND pis.season_id = CONVERT(t.season_id USING utf8mb3)
-        AND pis.position != 'GOALKEEPER'
-    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
-    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
-    WHERE tl.nominated = 1
-    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
-) sub WHERE rn = 1
-ORDER BY junge_feldspieler DESC;
-
--- =============================================================================
--- tall_squad — Max. Anzahl nominierter Spieler mit ≥190 cm an einem Spieltag pro Manager (Threshold: 7)
--- =============================================================================
-SELECT achievement_id, manager_name, spieltag, saison, grosse_spieler, nominated_count
-FROM (
-    SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'tall_squad') AS achievement_id,
-        m.id AS manager_id, m.manager_name,
-        md.number AS spieltag,
-        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
-        SUM(CASE WHEN p.height_cm >= 190 THEN 1 ELSE 0 END) AS grosse_spieler,
-        COUNT(*) AS nominated_count,
-        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
-            SUM(CASE WHEN p.height_cm >= 190 THEN 1 ELSE 0 END) DESC
-        ) AS rn
-    FROM usr_ud16_151_4.team_lineup tl
-    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
-    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
-    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
-    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
-    WHERE tl.nominated = 1
-    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
-) sub WHERE rn = 1
-ORDER BY grosse_spieler DESC;
-
--- =============================================================================
--- [ANALYSE] Höchster Altersschnitt der nominierten Startelf pro Manager
--- (nur Spieler mit bekanntem Geburtsdatum; Alter an kickoff_date + 2 Tage)
--- =============================================================================
-SELECT manager_name, spieltag, saison, ROUND(avg_alter, 1) AS avg_alter, mit_geburtsdatum
-FROM (
-    SELECT
-        m.id AS manager_id, m.manager_name,
-        md.number AS spieltag,
-        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
-        AVG(TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))) AS avg_alter,
-        COUNT(*) AS mit_geburtsdatum,
-        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
-            AVG(TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))) DESC
-        ) AS rn
-    FROM usr_ud16_151_4.team_lineup tl
-    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
-    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
-        AND p.date_of_birth IS NOT NULL
-    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
-    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
-    WHERE tl.nominated = 1
-    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
-) sub WHERE rn = 1
-ORDER BY avg_alter DESC;
-
--- =============================================================================
--- season_transfers — Erfolgreiche Transfers (offer.status = 'success') pro Manager pro Saison (Threshold: 80)
--- =============================================================================
-SELECT achievement_id, manager_name, saison, transfers
-FROM (
-    SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_transfers') AS achievement_id,
-        m.id AS manager_id, m.manager_name,
-        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
-        COUNT(*) AS transfers,
-        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC) AS rn
-    FROM usr_ud16_151_4.offer o
-    JOIN usr_ud16_151_4.team t ON t.id = o.team_id
-    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-    JOIN usr_ud16_151_1.season s ON s.id = CONVERT(t.season_id USING utf8mb3)
-    WHERE o.status = 'success'
-    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
-) sub WHERE rn = 1
-ORDER BY transfers DESC;
-
--- =============================================================================
--- season_red_cards — Platzverweise (red_card + yellow_red_card) pro Manager pro Saison (Bronze ≥4, Silber ≥6, Gold ≥8)
--- =============================================================================
-SELECT achievement_id, manager_name, saison, platzverweise
-FROM (
-    SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_red_cards') AS achievement_id,
-        m.id AS manager_id, m.manager_name,
-        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
-        SUM(pr.red_card + pr.yellow_red_card) AS platzverweise,
-        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY SUM(pr.red_card + pr.yellow_red_card) DESC) AS rn
-    FROM usr_ud16_151_4.team_lineup tl
-    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
-    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-    JOIN usr_ud16_151_1.player_rating pr
-        ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
-        AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
-        AND (pr.red_card = 1 OR pr.yellow_red_card = 1)
-    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3)
-    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
-    WHERE tl.nominated = 1
-    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
-) sub WHERE rn = 1
-ORDER BY platzverweise DESC;
-
--- =============================================================================
--- matchday_assists — Meiste Vorlagen an einem Spieltag pro Manager (Bronze ≥6, Silber ≥7, Gold ≥8)
--- =============================================================================
-SELECT achievement_id, manager_name, spieltag, saison, vorlagen
-FROM (
-    SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'matchday_assists') AS achievement_id,
-        m.id AS manager_id, m.manager_name,
-        md.number AS spieltag,
-        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
-        tr.assists AS vorlagen,
-        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY tr.assists DESC) AS rn
-    FROM usr_ud16_151_4.team_rating tr
-    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
-    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
-    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
-) sub WHERE rn = 1
-ORDER BY vorlagen DESC;
-
--- =============================================================================
--- matchday_goals — Meiste Tore an einem Spieltag pro Manager (Bronze ≥8, Silber ≥9, Gold ≥10)
--- =============================================================================
-SELECT achievement_id, manager_name, spieltag, saison, tore
-FROM (
-    SELECT
-        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'matchday_goals') AS achievement_id,
-        m.id AS manager_id, m.manager_name,
-        md.number AS spieltag,
-        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
-        tr.goals AS tore,
-        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY tr.goals DESC) AS rn
-    FROM usr_ud16_151_4.team_rating tr
-    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
-    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
-    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
-    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
-) sub WHERE rn = 1
-ORDER BY tore DESC;
-
--- =============================================================================
 -- kegelkasse — Längste Serie auf dem letzten Platz (Threshold: 3)
 -- =============================================================================
 WITH kk_last AS (
@@ -494,6 +322,175 @@ JOIN usr_ud16_151_1.season s ON s.id = b.season_id
 WHERE b.rn = 1
 ORDER BY b.max_letzte_serie DESC;
 
+-- =============================================================================
+-- matchday_goals — Meiste Tore an einem Spieltag pro Manager (Bronze ≥8, Silber ≥9, Gold ≥10)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, tore
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'matchday_goals') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        tr.goals AS tore,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY tr.goals DESC) AS rn
+    FROM usr_ud16_151_4.team_rating tr
+    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+) sub WHERE rn = 1
+ORDER BY tore DESC;
+
+-- =============================================================================
+-- matchday_assists — Meiste Vorlagen an einem Spieltag pro Manager (Bronze ≥6, Silber ≥7, Gold ≥8)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, vorlagen
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'matchday_assists') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        tr.assists AS vorlagen,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY tr.assists DESC) AS rn
+    FROM usr_ud16_151_4.team_rating tr
+    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+) sub WHERE rn = 1
+ORDER BY vorlagen DESC;
+
+-- =============================================================================
+-- season_red_cards — Platzverweise (red_card + yellow_red_card) pro Manager pro Saison (Bronze ≥4, Silber ≥6, Gold ≥8)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, platzverweise
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_red_cards') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(pr.red_card + pr.yellow_red_card) AS platzverweise,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY SUM(pr.red_card + pr.yellow_red_card) DESC) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player_rating pr
+        ON pr.player_id = CONVERT(tl.player_id USING utf8mb3)
+        AND pr.matchday_id = CONVERT(tl.matchday_id USING utf8mb3)
+        AND (pr.red_card = 1 OR pr.yellow_red_card = 1)
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY platzverweise DESC;
+
+-- =============================================================================
+-- season_transfers — Erfolgreiche Transfers (offer.status = 'success') pro Manager pro Saison (Threshold: 80)
+-- =============================================================================
+SELECT achievement_id, manager_name, saison, transfers
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'season_transfers') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        COUNT(*) AS transfers,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC) AS rn
+    FROM usr_ud16_151_4.offer o
+    JOIN usr_ud16_151_4.team t ON t.id = o.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.season s ON s.id = CONVERT(t.season_id USING utf8mb3)
+    WHERE o.status = 'success'
+    GROUP BY m.id, m.manager_name, t.season_id, s.start_date
+) sub WHERE rn = 1
+ORDER BY transfers DESC;
+
+-- =============================================================================
+-- youth_squad — Max. Feldspieler (kein GK) ≤23 Jahre (kickoff + 2 Tage) an einem Spieltag pro Manager
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, junge_feldspieler, feldspieler_gesamt
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'youth_squad') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(CASE WHEN p.date_of_birth IS NOT NULL
+                 AND TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY)) <= 23
+                 THEN 1 ELSE 0 END) AS junge_feldspieler,
+        COUNT(*) AS feldspieler_gesamt,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
+            SUM(CASE WHEN p.date_of_birth IS NOT NULL
+                     AND TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY)) <= 23
+                     THEN 1 ELSE 0 END) DESC
+        ) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+    JOIN usr_ud16_151_1.player_in_season pis
+        ON pis.player_id = p.id
+        AND pis.season_id = CONVERT(t.season_id USING utf8mb3)
+        AND pis.position != 'GOALKEEPER'
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+) sub WHERE rn = 1
+ORDER BY junge_feldspieler DESC;
+
+-- =============================================================================
+-- veteran_squad — Nominierte Startelf mit Altersschnitt ≥30 Jahre (kickoff + 2 Tage)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, ROUND(avg_alter, 1) AS avg_alter
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'veteran_squad') AS achievement_id,
+        m.id AS manager_id, CONVERT(m.manager_name USING utf8mb3) AS manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        AVG(TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))) AS avg_alter,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY md.kickoff_date ASC) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+        AND p.date_of_birth IS NOT NULL
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+    HAVING AVG(TIMESTAMPDIFF(YEAR, p.date_of_birth, DATE_ADD(md.kickoff_date, INTERVAL 2 DAY))) >= 30
+) sub WHERE rn = 1
+ORDER BY avg_alter DESC;
+
+-- =============================================================================
+-- tall_squad — Max. Anzahl nominierter Spieler mit ≥190 cm an einem Spieltag pro Manager (Threshold: 7)
+-- =============================================================================
+SELECT achievement_id, manager_name, spieltag, saison, grosse_spieler, nominated_count
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'tall_squad') AS achievement_id,
+        m.id AS manager_id, m.manager_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        SUM(CASE WHEN p.height_cm >= 190 THEN 1 ELSE 0 END) AS grosse_spieler,
+        COUNT(*) AS nominated_count,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY
+            SUM(CASE WHEN p.height_cm >= 190 THEN 1 ELSE 0 END) DESC
+        ) AS rn
+    FROM usr_ud16_151_4.team_lineup tl
+    JOIN usr_ud16_151_4.team t ON t.id = tl.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player p ON p.id = CONVERT(tl.player_id USING utf8mb3)
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tl.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    WHERE tl.nominated = 1
+    GROUP BY m.id, m.manager_name, tl.matchday_id, md.number, md.kickoff_date, s.start_date
+) sub WHERE rn = 1
+ORDER BY grosse_spieler DESC;
 
 -- =============================================================================
 -- geburtstagskind — Nominierter Spieler hat Geburtstag (kickoff+2 Tage) und ≥10 Punkte
@@ -713,3 +710,37 @@ FROM (
            SUM(CASE WHEN tl.nominated = 1 THEN COALESCE(pr.points, 0) ELSE 0 END)
 ) sub WHERE rn = 1 AND differenz >= 50
 ORDER BY differenz DESC;
+
+-- =============================================================================
+-- narzisst — ≥3 Kaderspieler gleichzeitig mit dem Vornamen des Managers
+-- =============================================================================
+SELECT achievement_id, manager_name, spieler_vorname, team_name, spieltag, saison, anzahl
+FROM (
+    SELECT
+        (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'narzisst') AS achievement_id,
+        m.id AS manager_id,
+        CONVERT(m.manager_name USING utf8mb3) AS manager_name,
+        p.first_name AS spieler_vorname,
+        t.team_name,
+        md.number AS spieltag,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        COUNT(*) AS anzahl,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY md.kickoff_date ASC) AS rn
+    FROM usr_ud16_151_4.player_in_team pit
+    JOIN usr_ud16_151_4.team t ON t.id = pit.team_id
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN usr_ud16_151_1.player p
+        ON p.id = CONVERT(pit.player_id USING utf8mb3)
+        AND LOWER(p.first_name) = LOWER(CONVERT(m.manager_name USING utf8mb3))
+    JOIN usr_ud16_151_1.matchday md_from ON md_from.id = CONVERT(pit.from_matchday_id USING utf8mb3)
+    LEFT JOIN usr_ud16_151_1.matchday md_to ON md_to.id = CONVERT(pit.to_matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.matchday md
+        ON md.season_id = CONVERT(t.season_id USING utf8mb3)
+        AND md.number >= md_from.number
+        AND (pit.to_matchday_id IS NULL OR md.number < md_to.number)
+        AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id AND s.start_date >= '2017-07-01'
+    GROUP BY m.id, m.manager_name, t.id, t.team_name, t.season_id, md.id, md.number, md.kickoff_date, s.start_date, p.first_name
+    HAVING COUNT(*) >= 3
+) sub WHERE rn = 1
+ORDER BY anzahl DESC, manager_name;
