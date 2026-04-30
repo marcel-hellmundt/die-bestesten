@@ -8,11 +8,7 @@
   @for (a of achievements(); track a.id) {
     <div class="achievement-card" [class.achievement-card--earned]="a.earned_at" [class.achievement-card--bronze]="a.level === 'bronze'" [class.achievement-card--silver]="a.level === 'silver'" [class.achievement-card--gold]="a.level === 'gold'">
       <div class="achievement-card__icon">
-        @if (a.earned_at && a.icon) {
-          <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" />
-        } @else {
-          <img src="img/achievements/locked.png" alt="Gesperrt" />
-        }
+        <img [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'" [alt]="a.name" />
         @if (a.earned_at && (a.level === 'bronze' || a.level === 'silver')) {
           <span class="achievement-card__level achievement-card__level--{{ a.level }}">{{ a.level }}</span>
         }
