@@ -54,8 +54,8 @@
           </thead>
           <tbody>
             @for (r of rows(); track r.team_id; let i = $index) {
-              <tr class="row-link">
-                <td class="col-rank"><a class="row-link__anchor" [routerLink]="['/team', r.team_id]"></a>{{ r.total_points !== rows()[i - 1]?.total_points ? i + 1 : '' }}</td>
+              <tr class="row-link" (click)="navigateToTeam(r.team_id)">
+                <td class="col-rank">{{ r.total_points !== rows()[i - 1]?.total_points ? i + 1 : '' }}</td>
                 <td>
                   <span class="team-cell">
                     <img

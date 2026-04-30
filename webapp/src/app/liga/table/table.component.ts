@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
@@ -12,8 +13,9 @@ import { AuthService } from '../../auth/auth.service';
   styleUrl: './table.component.scss'
 })
 export class TableComponent {
-  private api  = inject(ApiService);
-  private auth = inject(AuthService);
+  private api    = inject(ApiService);
+  private auth   = inject(AuthService);
+  private router = inject(Router);
   cache        = inject(DataCacheService);
 
   isLoggedIn = computed(() => this.auth.isLoggedIn());
@@ -138,6 +140,10 @@ export class TableComponent {
 
     return { teams, yTicks, xLabels };
   });
+
+  navigateToTeam(teamId: string): void {
+    this.router.navigate(['/team', teamId]);
+  }
 
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
