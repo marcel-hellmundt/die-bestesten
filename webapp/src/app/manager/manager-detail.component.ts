@@ -49,6 +49,14 @@ export class ManagerDetailComponent {
   favoritePlayers  = computed(() => (this.manager()?.favorite_players ?? []) as any[]);
   achievements     = computed(() => (this.manager()?.achievements     ?? []) as any[]);
 
+  myAchievements = toSignal(
+    this.api.get<any[]>('achievement').pipe(catchError(() => of([] as any[]))),
+    { initialValue: [] as any[] }
+  );
+  myEarnedIds = computed(() => new Set(
+    this.myAchievements().filter((a: any) => a.earned_at != null).map((a: any) => a.id as string)
+  ));
+
   // Bar chart
   readonly chartW = 360;
   readonly chartH = 160;

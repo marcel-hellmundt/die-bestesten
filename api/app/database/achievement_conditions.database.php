@@ -2475,4 +2475,114 @@ trait AchievementConditionsTrait
         }
         return $result;
     }
+
+    public function check_narzisst(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $plh = implode(',', array_fill(0, count($managerIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT id, manager_name FROM manager WHERE id IN ($plh)"
+        );
+        $stmt->execute($managerIds);
+        $managerNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'manager_name', 'id');
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.number, md.season_id, md.kickoff_date, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             ORDER BY md.kickoff_date ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays)) return [];
+
+        $mdMeta = array_column($matchdays, null, 'id');
+
+        $stmt = $this->con_league->prepare(
+            "SELECT pit.player_id, pit.from_matchday_id, pit.to_matchday_id,
+                    t.manager_id, t.team_name, t.season_id AS team_season_id
+             FROM player_in_team pit
+             JOIN team t ON t.id = pit.team_id
+             WHERE t.manager_id IN ($plh)"
+        );
+        $stmt->execute($managerIds);
+        $allPit = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($allPit)) return [];
+
+        $playerIds = array_values(array_unique(array_column($allPit, 'player_id')));
+        $pPlh = implode(',', array_fill(0, count($playerIds), '?'));
+        $stmt = $this->con->prepare(
+            "SELECT id, first_name FROM player WHERE id IN ($pPlh) AND first_name IS NOT NULL"
+        );
+        $stmt->execute($playerIds);
+        $playerFirstNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'first_name', 'id');
+
+        // Pre-index: manager_id => season_id => [{from_num, to_num, first_name, team_name}]
+        $mgrPitBySeason = [];
+        foreach ($allPit as $pit) {
+            $fromMd = $mdMeta[$pit['from_matchday_id']] ?? null;
+            if (!$fromMd) continue;
+            $toNum = PHP_INT_MAX;
+            if ($pit['to_matchday_id']) {
+                $toMd = $mdMeta[$pit['to_matchday_id']] ?? null;
+                if ($toMd) $toNum = (int) $toMd['number'];
+            }
+            $firstName = $playerFirstNames[$pit['player_id']] ?? null;
+            if ($firstName === null) continue;
+            $mgrPitBySeason[$pit['manager_id']][$pit['team_season_id']][] = [
+                'from_num'   => (int) $fromMd['number'],
+                'to_num'     => $toNum,
+                'first_name' => strtolower($firstName),
+                'team_name'  => $pit['team_name'],
+            ];
+        }
+
+        $achievers = [];
+        foreach ($matchdays as $md) {
+            $mdNum = (int) $md['number'];
+            $mdSid = $md['season_id'];
+
+            foreach ($managerIds as $mgr) {
+                if (isset($achievers[$mgr])) continue;
+
+                $manName = strtolower($managerNames[$mgr] ?? '');
+                if ($manName === '') continue;
+
+                $pitList = $mgrPitBySeason[$mgr][$mdSid] ?? [];
+                $count = 0;
+                $teamName = null;
+                foreach ($pitList as $entry) {
+                    if ($entry['from_num'] > $mdNum) continue;
+                    if ($entry['to_num'] <= $mdNum) continue;
+                    if ($entry['first_name'] !== $manName) continue;
+                    $count++;
+                    $teamName ??= $entry['team_name'];
+                }
+
+                if ($count >= 3) {
+                    $achievers[$mgr] = [
+                        'count'        => $count,
+                        'team_name'    => $teamName,
+                        'md_number'    => $md['number'],
+                        'kickoff_date' => $md['kickoff_date'],
+                        'season_start' => $md['season_start'],
+                        'first_name'   => $managerNames[$mgr],
+                    ];
+                }
+            }
+        }
+
+        $result = [];
+        foreach ($achievers as $mgr => $data) {
+            $label = $this->seasonLabel($data['season_start']);
+            $result[$mgr] = [
+                'reason'    => "{$data['count']}× {$data['first_name']} im Kader mit {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'earned_at' => $data['kickoff_date'],
+            ];
+        }
+        return $result;
+    }
 }

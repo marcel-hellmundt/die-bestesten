@@ -26,6 +26,22 @@
           <span class="manager-alias">&ldquo;{{ m.alias }}&rdquo;</span>
         }
         <span class="manager-role">{{ m.role }}</span>
+        @if (achievements().length > 0) {
+          <div class="manager-achievements">
+            @for (a of achievements(); track a.id) {
+              <div
+                class="achievement-icon-tile"
+                [class.achievement-icon-tile--owned]="myEarnedIds().has(a.id)"
+                [class.achievement-icon-tile--bronze]="a.level === 'bronze'"
+                [class.achievement-icon-tile--silver]="a.level === 'silver'"
+                [class.achievement-icon-tile--gold]="a.level === 'gold' && a.threshold_bronze != null"
+                [title]="a.name + (a.reason ? ' · ' + a.reason : '')"
+              >
+                <img [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'" [alt]="a.name" />
+              </div>
+            }
+          </div>
+        }
       </div>
 
       <div class="manager-stat">
@@ -198,20 +214,4 @@
     </div>
   }
 
-  <!-- Row 4: Achievements -->
-  @if (achievements().length > 0) {
-    <section class="detail-section">
-      <div class="section-header-row"><h2 class="section-header">Achievements</h2></div>
-      <div class="achievement-chips">
-        @for (a of achievements(); track a.id) {
-          <div class="achievement-chip" [title]="(a.reason ? a.reason + ' · ' : '') + a.description + ' · ' + (a.earned_at | date:'dd.MM.yyyy')">
-            <div class="achievement-chip__icon">
-              <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" />
-            </div>
-            <span class="achievement-chip__name">{{ a.name }}</span>
-          </div>
-        }
-      </div>
-    </section>
-  }
 }
