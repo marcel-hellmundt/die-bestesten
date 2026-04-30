@@ -233,6 +233,7 @@
         border: none;
         cursor: pointer;
         text-align: left;
+        text-decoration: none;
         transition: background-color $transition-fast;
 
         &:hover { background-color: $color-surface-alt; }

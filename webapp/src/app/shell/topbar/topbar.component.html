@@ -151,22 +151,22 @@
             </div>
           </div>
           <hr class="dropdown-divider" />
-          <button class="dropdown-item" (click)="navigateTo('/achievements')">
+          <a class="dropdown-item" routerLink="/achievements" (click)="closeDropdown()">
             <app-icon name="award"></app-icon>
             Achievements
-          </button>
+          </a>
           <hr class="dropdown-divider" />
           @if (isMaintainer()) {
-            <button class="dropdown-item" (click)="navigateTo('/daten')">
+            <a class="dropdown-item" routerLink="/daten" (click)="closeDropdown()">
               <app-icon name="data"></app-icon>
               Datenbank
-            </button>
+            </a>
             <hr class="dropdown-divider" />
           }
-          <button class="dropdown-item" (click)="navigateTo('/einstellungen')">
+          <a class="dropdown-item" routerLink="/einstellungen" (click)="closeDropdown()">
             <app-icon name="settings"></app-icon>
             Einstellungen
-          </button>
+          </a>
           <hr class="dropdown-divider" />
           <button class="dropdown-item dropdown-item--danger" (click)="logout()">
             <app-icon name="logout"></app-icon>

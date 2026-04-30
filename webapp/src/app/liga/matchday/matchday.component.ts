@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
@@ -13,8 +13,9 @@ import { Matchday } from '../../core/models/matchday.model';
   styleUrl: './matchday.component.scss'
 })
 export class MatchdayComponent {
-  private api = inject(ApiService);
-  cache       = inject(DataCacheService);
+  private api    = inject(ApiService);
+  private router = inject(Router);
+  cache          = inject(DataCacheService);
 
   // Seasons sorted newest first for dropdown
   seasons = computed(() =>
@@ -107,6 +108,10 @@ export class MatchdayComponent {
   onSeasonChange(seasonId: string): void {
     this.selectedSeasonId.set(seasonId);
     this.selectedNumber.set(null); // reset to latest matchday of new season
+  }
+
+  navigateToTeam(teamId: string): void {
+    this.router.navigate(['/team', teamId, 'aufstellung'], { queryParams: { matchday_id: this.matchday()?.id } });
   }
 
   logoErrors = new Set<string>();
