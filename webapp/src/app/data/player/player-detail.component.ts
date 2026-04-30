@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, distinctUntilChanged, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -74,10 +74,14 @@ interface PlayerDetail {
   styleUrl: './player-detail.component.scss',
 })
 export class PlayerDetailComponent {
-  private api   = inject(ApiService);
+  private api    = inject(ApiService);
   private route  = inject(ActivatedRoute);
   private auth   = inject(AuthService);
+  private router = inject(Router);
   cache = inject(DataCacheService);
+
+  navigateToTeam(teamId: string): void { this.router.navigate(['/team', teamId]); }
+  navigateToClub(clubId: string): void { this.router.navigate(['../../club', clubId], { relativeTo: this.route }); }
 
   private id$ = this.route.paramMap.pipe(map((p) => p.get('id')!));
 

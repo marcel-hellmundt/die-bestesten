@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -11,7 +12,11 @@ import { Division } from '../../core/models/division.model';
   styleUrl: './division.component.scss'
 })
 export class DivisionDataComponent {
-  private api = inject(ApiService);
+  private api    = inject(ApiService);
+  private router = inject(Router);
+  private route  = inject(ActivatedRoute);
+
+  navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
 
   private reload$ = new BehaviorSubject<void>(undefined);
 

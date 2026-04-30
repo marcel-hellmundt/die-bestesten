@@ -1,5 +1,5 @@
 import { Component, computed, ElementRef, inject, signal, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -14,9 +14,12 @@ import { Club } from '../../core/models/club.model';
   styleUrl: './club-detail.component.scss',
 })
 export class ClubDetailComponent {
-  private api = inject(ApiService);
-  private auth = inject(AuthService);
-  private route = inject(ActivatedRoute);
+  private api    = inject(ApiService);
+  private auth   = inject(AuthService);
+  private route  = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  navigate(path: any[]): void { this.router.navigate(path); }
   cache = inject(DataCacheService);
 
   isAdmin = computed(() => this.auth.isAdmin());

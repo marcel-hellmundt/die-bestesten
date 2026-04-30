@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
 import { ApiService } from '../core/api.service';
@@ -29,7 +30,10 @@ interface TopMatchdayEntry {
   styleUrl: './hall-of-fame.component.scss'
 })
 export class HallOfFameComponent {
-  private api   = inject(ApiService);
+  private api    = inject(ApiService);
+  private router = inject(Router);
+
+  navigate(path: any[]): void { this.router.navigate(path); }
   cache         = inject(DataCacheService);
 
   private state = toSignal(

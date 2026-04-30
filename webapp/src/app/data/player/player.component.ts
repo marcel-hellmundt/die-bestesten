@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -13,7 +14,11 @@ import { DataCacheService } from '../../core/data-cache.service';
   styleUrl: './player.component.scss'
 })
 export class PlayerDataComponent {
-  private api   = inject(ApiService);
+  private api    = inject(ApiService);
+  private router = inject(Router);
+  private route  = inject(ActivatedRoute);
+
+  navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
   private auth  = inject(AuthService);
   cache = inject(DataCacheService);
 

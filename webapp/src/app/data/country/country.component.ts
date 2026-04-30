@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -12,8 +13,12 @@ import { Country } from '../../core/models/country.model';
   styleUrl: './country.component.scss'
 })
 export class CountryDataComponent {
-  private api  = inject(ApiService);
-  private auth = inject(AuthService);
+  private api    = inject(ApiService);
+  private auth   = inject(AuthService);
+  private router = inject(Router);
+  private route  = inject(ActivatedRoute);
+
+  navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
 
   private reload$ = new BehaviorSubject<void>(undefined);
 

@@ -348,9 +348,8 @@
               </thead>
               <tbody>
                 @for (t of teamHistory(); track t.team_id + t.from_matchday_number) {
-                  <tr class="row-link">
+                  <tr class="row-link" (click)="navigateToTeam(t.team_id)">
                     <td>
-                      <a class="row-link__anchor" [routerLink]="['/team', t.team_id]"></a>
                       <span class="team-history-cell">
                         <img
                           class="tbl-logo"
@@ -398,9 +397,8 @@
               </thead>
               <tbody>
                 @for (c of p.clubs; track c.club_id + c.from_date) {
-                  <tr class="row-link">
+                  <tr class="row-link" (click)="navigateToClub(c.club_id)">
                     <td class="col-logo">
-                      <a class="row-link__anchor" [routerLink]="['../../club', c.club_id]"></a>
                       <img
                         [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
                         class="tbl-logo"

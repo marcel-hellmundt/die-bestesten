@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../core/api.service';
@@ -13,8 +13,11 @@ import { Team } from '../core/models/team.model';
   styleUrl: './manager-detail.component.scss'
 })
 export class ManagerDetailComponent {
-  private api   = inject(ApiService);
-  cache         = inject(DataCacheService);
+  private api    = inject(ApiService);
+  private router = inject(Router);
+  cache          = inject(DataCacheService);
+
+  navigateToTeam(teamId: string): void { this.router.navigate(['/team', teamId]); }
 
   private id$ = inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id')!));
 

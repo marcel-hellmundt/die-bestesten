@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -14,8 +14,11 @@ import { Club } from '../../core/models/club.model';
   styleUrl: './division-detail.component.scss',
 })
 export class DivisionDetailComponent {
-  private api = inject(ApiService);
-  private route = inject(ActivatedRoute);
+  private api    = inject(ApiService);
+  private route  = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  navigate(path: any[]): void { this.router.navigate(path); }
   cache = inject(DataCacheService);
 
   private id$ = this.route.paramMap.pipe(map((p) => p.get('id')!));
