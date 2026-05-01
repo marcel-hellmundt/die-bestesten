@@ -47,8 +47,8 @@
               <th class="col-num">SdS</th>
               <th class="col-num">Tore</th>
               <th class="col-num">Assists</th>
-              <th class="col-num col-rc--red">RC</th>
               <th class="col-num col-rc--yr">GR</th>
+              <th class="col-num col-rc--red">RC</th>
               <th class="col-num">CS</th>
               <th class="col-num col-points">Punkte</th>
               <th class="col-fine">Strafe</th>
@@ -73,8 +73,8 @@
                 <td class="col-num">{{ r.total_sds }}</td>
                 <td class="col-num">{{ r.total_goals }}</td>
                 <td class="col-num">{{ r.total_assists }}</td>
-                <td class="col-num col-rc--red">{{ r.total_red_cards || '' }}</td>
                 <td class="col-num col-rc--yr">{{ r.total_yellow_red_cards || '' }}</td>
+                <td class="col-num col-rc--red">{{ r.total_red_cards || '' }}</td>
                 <td class="col-num">{{ r.total_clean_sheet }}</td>
                 <td class="col-num col-points">{{ r.total_points | number }}</td>
                 <td class="col-fine" [class.col-fine--active]="r.fine > 0">
