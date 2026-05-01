@@ -292,7 +292,7 @@ trait ManagerTrait
                 GROUP BY matchday_id
             )
             SELECT tr.id, tr.matchday_id, tr.points, tr.max_points,
-                   tr.goals, tr.assists, tr.clean_sheet, tr.sds,
+                   tr.goals, tr.assists, tr.red_cards, tr.yellow_red_cards, tr.clean_sheet, tr.sds,
                    tr.sds_defender, tr.missed_goals, tr.invalid,
                    vr.placement,
                    CASE

@@ -134,13 +134,42 @@ trait LeagueTrait
              ON DUPLICATE KEY UPDATE id = id"
         );
 
+        // Build red-card map: [team_id][matchday_uuid] => [rc, yrc]
+        // Old team_lineup.matchday_id is already a UUID matching global player_rating.matchday_id
+        $lineupRows = $this->con_old->query(
+            "SELECT team_id, matchday_id, player_id FROM team_lineup WHERE nominated = 1"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $rcMap = [];
+        if (!empty($lineupRows)) {
+            $lineupPlayerIds = array_values(array_unique(array_column($lineupRows, 'player_id')));
+            $plh = implode(',', array_fill(0, count($lineupPlayerIds), '?'));
+            $prq = $this->con->prepare(
+                "SELECT player_id, matchday_id, red_card, yellow_red_card
+                 FROM player_rating WHERE player_id IN ($plh)
+                   AND (red_card = 1 OR yellow_red_card = 1)"
+            );
+            $prq->execute($lineupPlayerIds);
+            $rcByPlayer = [];
+            foreach ($prq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $rcByPlayer[$r['player_id']][$r['matchday_id']] = [(int)$r['red_card'], (int)$r['yellow_red_card']];
+            }
+            foreach ($lineupRows as $l) {
+                [$rc, $yrc] = $rcByPlayer[$l['player_id']][$l['matchday_id']] ?? [0, 0];
+                $rcMap[$l['team_id']][$l['matchday_id']][0] = ($rcMap[$l['team_id']][$l['matchday_id']][0] ?? 0) + $rc;
+                $rcMap[$l['team_id']][$l['matchday_id']][1] = ($rcMap[$l['team_id']][$l['matchday_id']][1] ?? 0) + $yrc;
+            }
+        }
+
         $stmtRating = $conLeague->prepare(
             "INSERT INTO team_rating (
-                id, team_id, matchday_id, points, max_points, goals, assists, red_cards,
+                id, team_id, matchday_id, points, max_points, goals, assists,
+                red_cards, yellow_red_cards,
                 clean_sheet, sds, sds_defender, missed_goals,
                 points_goalkeeper, points_defender, points_midfielder, points_forward, invalid
              ) VALUES (
-                :id, :team_id, :matchday_id, :points, :max_points, :goals, :assists, :red_cards,
+                :id, :team_id, :matchday_id, :points, :max_points, :goals, :assists,
+                :red_cards, :yellow_red_cards,
                 :clean_sheet, :sds, :sds_defender, :missed_goals,
                 :points_goalkeeper, :points_defender, :points_midfielder, :points_forward, :invalid
              ) ON DUPLICATE KEY UPDATE
@@ -150,6 +179,7 @@ trait LeagueTrait
                 goals              = VALUES(goals),
                 assists            = VALUES(assists),
                 red_cards          = VALUES(red_cards),
+                yellow_red_cards   = VALUES(yellow_red_cards),
                 clean_sheet        = VALUES(clean_sheet),
                 sds                = VALUES(sds),
                 sds_defender       = VALUES(sds_defender),
@@ -198,7 +228,8 @@ trait LeagueTrait
                 ':clean_sheet'      => $row['clean_sheet'],
                 ':sds'              => $row['sds'],
                 ':sds_defender'     => $row['sds_defender'],
-                ':red_cards'        => 0,
+                ':red_cards'        => $rcMap[$row['team_id']][$matchdayId][0] ?? 0,
+                ':yellow_red_cards' => $rcMap[$row['team_id']][$matchdayId][1] ?? 0,
                 ':missed_goals'     => $row['missed_goals'],
                 ':points_goalkeeper'=> $row['points_goalkeeper'],
                 ':points_defender'  => $row['points_defender'],

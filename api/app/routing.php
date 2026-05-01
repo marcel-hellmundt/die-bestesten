@@ -302,13 +302,13 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team_rating',
-                        'description' => 'Ratings aller Teams für den letzten gestarteten Spieltag — gibt { matchday, ratings[], sds_player, max_matchday_number } zurück; bei nicht-abgeschlossenem Spieltag werden Live-Punkte aus player_rating + team_lineup berechnet (fine = 0)',
+                        'description' => 'Ratings aller Teams für den letzten gestarteten Spieltag — gibt { matchday, ratings[], sds_player, max_matchday_number } zurück; ratings[] enthält red_cards (echte Platzverweise) und yellow_red_cards (Gelb-Rote Karten) als separate Felder; bei nicht-abgeschlossenem Spieltag werden Live-Punkte aus player_rating + team_lineup berechnet (fine = 0)',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                     [
                         'method' => 'GET',
                         'path' => '/team_rating/season',
-                        'description' => 'Saisontabelle — aggregierte Summen (Punkte, Tore, Assists, SdS, …) aller Teams, sortiert nach Punkten',
+                        'description' => 'Saisontabelle — aggregierte Summen (Punkte, Tore, Assists, SdS, total_red_cards, total_yellow_red_cards, …) aller Teams, sortiert nach Punkten',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                 ],

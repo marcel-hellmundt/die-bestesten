@@ -232,6 +232,15 @@
   color: $color-success;
 }
 
+.col-rc {
+  width: 36px;
+  text-align: center;
+  font-weight: $font-weight-semibold;
+
+  &--red { color: $color-danger; }
+  &--yr  { color: color-mix(in srgb, $color-danger 55%, $color-text-muted); }
+}
+
 .col-fine {
   width: 72px;
   text-align: right;

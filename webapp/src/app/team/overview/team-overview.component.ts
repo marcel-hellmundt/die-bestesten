@@ -40,7 +40,9 @@ export class TeamOverviewComponent {
   totalSds       = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.sds ?? 0), 0));
   totalGoals     = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.goals ?? 0), 0));
   totalAssists   = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.assists ?? 0), 0));
-  totalCleanSheet = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.clean_sheet ?? 0), 0));
+  totalCleanSheet     = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.clean_sheet ?? 0), 0));
+  totalRedCards       = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.red_cards ?? 0), 0));
+  totalYellowRedCards = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.yellow_red_cards ?? 0), 0));
 
   range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
 

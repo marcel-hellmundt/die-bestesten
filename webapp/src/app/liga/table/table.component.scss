@@ -185,6 +185,9 @@
   }
 }
 
+.col-rc--red { color: $color-danger; font-weight: $font-weight-semibold; }
+.col-rc--yr  { color: color-mix(in srgb, $color-danger 55%, $color-text-muted); font-weight: $font-weight-semibold; }
+
 .team-cell {
   display: inline-flex;
   align-items: center;

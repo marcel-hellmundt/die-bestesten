@@ -146,7 +146,7 @@ PATCH    /achievement/seen     — Alle noch nicht gesehenen Achievements (seen_
 
 **transaction**: id PK, team_id FK, amount DECIMAL(10,2), reason VARCHAR(255), matchday_id (cross-DB, kein FK)?, created_at — Budget = SUM(amount) pro team_id
 
-**team_rating**: id PK, team_id FK, matchday_id (cross-DB), points, max_points, goals, assists, red_cards (Platzverweise = red_card + yellow_red_card der nominierten Spieler), clean_sheet, sds, sds_defender, missed_goals, points_goalkeeper/defender/midfielder/forward (denorm.), invalid BOOL — UNIQUE(team_id, matchday_id)
+**team_rating**: id PK, team_id FK, matchday_id (cross-DB), points, max_points, goals, assists, red_cards (echte Platzverweise), yellow_red_cards (Gelb-Rote Karten), clean_sheet, sds, sds_defender, missed_goals, points_goalkeeper/defender/midfielder/forward (denorm.), invalid BOOL — UNIQUE(team_id, matchday_id)
 
 **team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK) — UNIQUE(award_id, team_id) — season ergibt sich aus team.season_id
 
