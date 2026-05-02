@@ -158,15 +158,16 @@
 }
 
 .pos-arrow {
-  width: 20px;
+  width: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .pos-chevron {
-  width: 14px;
+  width: 10px;
   height: 10px;
   display: block;
 
