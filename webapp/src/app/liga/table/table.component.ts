@@ -86,6 +86,20 @@ export class TableComponent {
       .map(r => ({ ...r, total_points: Number(r.total_points) + (liveMap.get(r.team_id) ?? 0) }))
       .sort((a, b) => b.total_points - a.total_points);
   });
+
+  positionDiff = computed(() => {
+    const diff = new Map<string, number>();
+    if (!this.liveMode()) return diff;
+    const base = this.baseRows();
+    const live = this.rows();
+    if (base === live) return diff;
+    const basePos = new Map<string, number>(base.map((r, i) => [r.team_id, i]));
+    for (const [i, r] of live.entries()) {
+      const d = (basePos.get(r.team_id) ?? i) - i;
+      if (d !== 0) diff.set(r.team_id, d);
+    }
+    return diff;
+  });
   totalFines     = computed(() => this.rows().reduce((sum, r) => sum + Number(r.fine ?? 0), 0));
   lucky          = computed(() => (this.state().data?.luck?.lucky           ?? []) as any[]);
   unlucky        = computed(() => (this.state().data?.luck?.unlucky          ?? []) as any[]);

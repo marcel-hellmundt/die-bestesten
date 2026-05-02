@@ -146,9 +146,33 @@
 }
 
 .col-rank {
-  width: 36px;
+  width: 60px;
   color: $color-text-muted;
   font-weight: $font-weight-medium;
+}
+
+.rank-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+}
+
+.pos-arrow {
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pos-chevron {
+  width: 14px;
+  height: 10px;
+  display: block;
+
+  &--up   { color: $color-success; }
+  &--down { color: $color-danger; }
+}
 }
 
 .col-num {

@@ -57,7 +57,22 @@
           <tbody>
             @for (r of rows(); track r.team_id; let i = $index) {
               <tr class="row-link" (click)="navigateToTeam(r.team_id)">
-                <td class="col-rank">{{ r.total_points !== rows()[i - 1]?.total_points ? i + 1 : '' }}</td>
+                <td class="col-rank">
+                  <span class="rank-cell">
+                    <span class="pos-arrow">
+                      @if ((positionDiff().get(r.team_id) ?? 0) > 0) {
+                        <svg class="pos-chevron pos-chevron--up" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <polyline points="1,7 6,1 11,7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      } @else if ((positionDiff().get(r.team_id) ?? 0) < 0) {
+                        <svg class="pos-chevron pos-chevron--down" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <polyline points="1,1 6,7 11,1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      }
+                    </span>
+                    {{ r.total_points !== rows()[i - 1]?.total_points ? i + 1 : '' }}
+                  </span>
+                </td>
                 <td>
                   <span class="team-cell">
                     <img
