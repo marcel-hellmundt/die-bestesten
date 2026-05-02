@@ -80,20 +80,22 @@
       flex-shrink: 0;
     }
 
-    &__sds-icon {
+    &__stats {
       position: absolute;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 16px;
-      height: 16px;
-      object-fit: contain;
+      bottom: 30px;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex-wrap: nowrap;
       pointer-events: none;
+      z-index: 3;
 
       @media (max-width: $mobile-breakpoint) {
-        bottom: 18px;
-        width: 13px;
-        height: 13px;
+        bottom: 16px;
+        gap: 1px;
       }
     }
 
@@ -633,4 +635,74 @@
   opacity: 0.9;
   border-radius: $radius-md;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.fp-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter:
+    drop-shadow(1px 0 0 #fff)
+    drop-shadow(-1px 0 0 #fff)
+    drop-shadow(0 1px 0 #fff)
+    drop-shadow(0 -1px 0 #fff);
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.fp-card {
+  display: inline-block;
+  border-radius: 1px;
+  flex-shrink: 0;
+
+  &--red {
+    width: 11px;
+    height: 16px;
+    background: $color-danger;
+
+    @media (max-width: $mobile-breakpoint) {
+      width: 8px;
+      height: 11px;
+    }
+  }
+
+  &--yr {
+    position: relative;
+    width: calc(11px + 4px);
+    height: calc(16px + 4px);
+    background: transparent;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 4px;
+      width: 11px;
+      height: 16px;
+      background: $color-danger;
+      border-radius: 1px;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 11px;
+      height: 16px;
+      background: #f59e0b;
+      border-radius: 1px;
+    }
+
+    @media (max-width: $mobile-breakpoint) {
+      width: calc(8px + 3px);
+      height: calc(11px + 3px);
+
+      &::before { left: 3px; width: 8px; height: 11px; }
+      &::after  { width: 8px; height: 11px; }
+    }
+  }
 }

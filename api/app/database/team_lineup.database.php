@@ -104,7 +104,7 @@ trait TeamLineupTrait
 
         // Get player ratings for this matchday from global DB
         $ratingQ = $this->con->prepare(
-            "SELECT player_id, grade, participation, points, goals, assists, clean_sheet, sds
+            "SELECT player_id, grade, participation, points, goals, assists, clean_sheet, sds, red_card, yellow_red_card
              FROM player_rating
              WHERE matchday_id = ? AND player_id IN ($ph)"
         );
@@ -129,8 +129,10 @@ trait TeamLineupTrait
             $player['goals']          = (int)($rating['goals'] ?? 0);
             $player['assists']        = (int)($rating['assists'] ?? 0);
             $player['clean_sheet']    = (int)($rating['clean_sheet'] ?? 0);
-            $player['sds']            = (int)($rating['sds'] ?? 0);
-            $player['participation']  = $rating['participation'] ?? null;
+            $player['sds']             = (int)($rating['sds'] ?? 0);
+            $player['red_card']        = (int)($rating['red_card'] ?? 0);
+            $player['yellow_red_card'] = (int)($rating['yellow_red_card'] ?? 0);
+            $player['participation']   = $rating['participation'] ?? null;
 
             if ($e['nominated']) {
                 $nominated[] = $player;

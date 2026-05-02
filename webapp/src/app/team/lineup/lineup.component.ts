@@ -18,6 +18,8 @@ interface LineupPlayer {
   assists: number;
   clean_sheet: number;
   sds: number;
+  red_card: number;
+  yellow_red_card: number;
   participation: string | null;
   photo_uploaded: boolean;
 }
@@ -162,6 +164,8 @@ export class LineupComponent {
     };
     return map[pos] ?? 'transparent';
   }
+
+  range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
 
   gradeInt(grade: any): number {
     return Math.round(+grade * 10);

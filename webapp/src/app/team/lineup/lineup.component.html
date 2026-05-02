@@ -46,8 +46,27 @@
                     <img class="field-player__photo field-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
                   }
                 </div>
-                @if (p.sds) {
-                  <img class="field-player__sds-icon" src="img/icons/sds.png" alt="SdS" />
+                @if (p.sds || p.goals || p.assists || p.clean_sheet || p.yellow_red_card || p.red_card) {
+                  <div class="field-player__stats">
+                    @if (p.sds) {
+                      <img src="img/icons/sds.png" class="fp-icon" alt="SdS" />
+                    }
+                    @for (g of range(p.goals); track g) {
+                      <img src="img/icons/goal.png" class="fp-icon" alt="Tor" />
+                    }
+                    @for (a of range(p.assists); track a) {
+                      <img src="img/icons/assist.png" class="fp-icon" alt="Vorlage" />
+                    }
+                    @if (p.clean_sheet) {
+                      <img src="img/icons/clean_sheet.png" class="fp-icon" alt="CS" />
+                    }
+                    @if (p.yellow_red_card) {
+                      <span class="fp-card fp-card--yr"></span>
+                    }
+                    @if (p.red_card) {
+                      <span class="fp-card fp-card--red"></span>
+                    }
+                  </div>
                 }
                 <div class="field-player__badge">
                   @if (p.grade) {
