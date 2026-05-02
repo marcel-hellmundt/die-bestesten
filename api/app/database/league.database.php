@@ -134,15 +134,19 @@ trait LeagueTrait
              ON DUPLICATE KEY UPDATE id = id"
         );
 
-        // Build red-card map: [team_id][matchday_uuid] => [rc, yrc]
-        // Old team_lineup.matchday_id is already a UUID matching global player_rating.matchday_id
-        $lineupRows = $this->con_old->query(
-            "SELECT team_id, matchday_id, player_id FROM team_lineup WHERE nominated = 1"
+        // Build red-card map: [team_id][global_matchday_uuid] => [rc, yrc]
+        // Use matchday number + season_id to resolve the global UUID via $matchdayMap,
+        // so the key matches exactly what the team_rating insert loop uses.
+        $rcLineupRows = $this->con_old->query(
+            "SELECT tl.team_id, tl.player_id, tl.matchday AS matchday_number, t.season_id
+             FROM team_lineup tl
+             JOIN team t ON t.team_id = tl.team_id
+             WHERE tl.nominated = 1"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $rcMap = [];
-        if (!empty($lineupRows)) {
-            $lineupPlayerIds = array_values(array_unique(array_column($lineupRows, 'player_id')));
+        if (!empty($rcLineupRows)) {
+            $lineupPlayerIds = array_values(array_unique(array_column($rcLineupRows, 'player_id')));
             $plh = implode(',', array_fill(0, count($lineupPlayerIds), '?'));
             $prq = $this->con->prepare(
                 "SELECT player_id, matchday_id, red_card, yellow_red_card
@@ -154,10 +158,12 @@ trait LeagueTrait
             foreach ($prq->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $rcByPlayer[$r['player_id']][$r['matchday_id']] = [(int)$r['red_card'], (int)$r['yellow_red_card']];
             }
-            foreach ($lineupRows as $l) {
-                [$rc, $yrc] = $rcByPlayer[$l['player_id']][$l['matchday_id']] ?? [0, 0];
-                $rcMap[$l['team_id']][$l['matchday_id']][0] = ($rcMap[$l['team_id']][$l['matchday_id']][0] ?? 0) + $rc;
-                $rcMap[$l['team_id']][$l['matchday_id']][1] = ($rcMap[$l['team_id']][$l['matchday_id']][1] ?? 0) + $yrc;
+            foreach ($rcLineupRows as $l) {
+                $globalMatchdayId = $matchdayMap[$l['season_id'] . '_' . $l['matchday_number']] ?? null;
+                if (!$globalMatchdayId) continue;
+                [$rc, $yrc] = $rcByPlayer[$l['player_id']][$globalMatchdayId] ?? [0, 0];
+                $rcMap[$l['team_id']][$globalMatchdayId][0] = ($rcMap[$l['team_id']][$globalMatchdayId][0] ?? 0) + $rc;
+                $rcMap[$l['team_id']][$globalMatchdayId][1] = ($rcMap[$l['team_id']][$globalMatchdayId][1] ?? 0) + $yrc;
             }
         }
 
