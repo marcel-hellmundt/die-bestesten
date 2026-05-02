@@ -50,7 +50,7 @@ trait TeamLineupTrait
         // Resolve matchday_ids to number + date (global DB), filter by season
         $ph = implode(',', array_fill(0, count($matchdayIds), '?'));
         $mdListQ = $this->con->prepare(
-            "SELECT id, number, start_date, kickoff_date
+            "SELECT id, number, start_date, kickoff_date, completed
              FROM matchday
              WHERE season_id = ? AND id IN ($ph)
              ORDER BY number ASC"
