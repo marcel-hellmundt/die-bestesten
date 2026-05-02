@@ -55,8 +55,7 @@
                 <th class="col-icons col-desktop">SdS</th>
                 <th class="col-icons col-desktop">Tore</th>
                 <th class="col-icons col-desktop">Assists</th>
-                <th class="col-rc col-desktop">Gelb-Rot</th>
-                <th class="col-rc col-desktop">Rot</th>
+                <th class="col-cards col-desktop">Karten</th>
                 <th class="col-icons col-cs col-desktop">Zu Null</th>
                 <th class="col-stats col-mobile"></th>
                 <th class="col-points">Punkte</th>
@@ -100,8 +99,18 @@
                       }
                     </span>
                   </td>
-                  <td class="col-rc col-rc--yr col-desktop">@if (+r.yellow_red_cards) { {{ r.yellow_red_cards }} }</td>
-                  <td class="col-rc col-rc--red col-desktop">@if (+r.red_cards) { {{ r.red_cards }} }</td>
+                  <td class="col-cards col-desktop">
+                    @if (+r.yellow_red_cards || +r.red_cards) {
+                      <span class="cards-wrap">
+                        @for (c of range(+r.yellow_red_cards); track c) {
+                          <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
+                        }
+                        @for (c of range(+r.red_cards); track c) {
+                          <span class="card-chip card-chip--red" title="Rot"></span>
+                        }
+                      </span>
+                    }
+                  </td>
                   <td class="col-icons col-cs col-desktop">
                     @if (+r.clean_sheet) {
                       <img src="img/icons/clean_sheet.png" class="rating-icon" alt="Zu Null" />
@@ -128,14 +137,16 @@
                           }
                         </span>
                       }
-                      @if (+r.red_cards || +r.yellow_red_cards) {
+                      @if (+r.yellow_red_cards || +r.red_cards) {
                         <span class="stats-compact__row">
-                          @if (+r.red_cards) {
-                            <span class="col-rc--red">{{ r.red_cards }}RC</span>
-                          }
-                          @if (+r.yellow_red_cards) {
-                            <span class="col-rc--yr">{{ r.yellow_red_cards }}GR</span>
-                          }
+                          <span class="cards-wrap">
+                            @for (c of range(+r.yellow_red_cards); track c) {
+                              <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
+                            }
+                            @for (c of range(+r.red_cards); track c) {
+                              <span class="card-chip card-chip--red" title="Rot"></span>
+                            }
+                          </span>
                         </span>
                       }
                       @if (+r.clean_sheet) {

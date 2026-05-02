@@ -232,13 +232,57 @@
   color: $color-success;
 }
 
-.col-rc {
+.col-cards {
   width: 60px;
-  text-align: center;
-  font-weight: $font-weight-semibold;
+  text-align: left;
+}
 
-  &--red { color: $color-danger; }
-  &--yr  { color: color-mix(in srgb, $color-danger 55%, $color-text-muted); }
+.cards-wrap {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.card-chip {
+  display: inline-block;
+  border-radius: 2px;
+  flex-shrink: 0;
+
+  &--red {
+    width: 14px;
+    height: 20px;
+    background: $color-danger;
+  }
+
+  // Two overlapping cards: red behind (shifted 20% right + up), yellow in front
+  &--yr {
+    position: relative;
+    width: calc(14px + 3px);  // base + 20% of 14px
+    height: calc(20px + 4px); // base + 20% of 20px
+    background: transparent;
+
+    &::before {  // red card behind, shifted right + up
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 5px;
+      width: 14px;
+      height: 20px;
+      background: $color-danger;
+      border-radius: 2px;
+    }
+
+    &::after {   // yellow card in front, bottom-left
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 14px;
+      height: 20px;
+      background: #f59e0b;
+      border-radius: 2px;
+    }
+  }
 }
 
 .col-fine {
