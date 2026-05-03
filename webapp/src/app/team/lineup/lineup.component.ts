@@ -130,6 +130,15 @@ export class LineupComponent {
   formationError = signal<string | null>(null);
   saving         = signal(false);
 
+  tooltipPlayer = signal<LineupPlayer | null>(null);
+  tooltipPos    = signal<{ top: number; left: number } | null>(null);
+
+  showBreakdown = computed(() => {
+    const md = this.matchday();
+    if (!md) return false;
+    return new Date() >= new Date(md.kickoff_date);
+  });
+
   readonly validFormations = [
     [1,3,4,3],[1,3,5,2],[1,4,3,3],[1,4,4,2],[1,4,5,1],[1,5,3,2],[1,5,4,1],
   ];
@@ -190,6 +199,64 @@ export class LineupComponent {
 
   photoErrors = new Set<string>();
   onPhotoError(id: string) { this.photoErrors.add(id); }
+
+  // Tooltip
+
+  onBadgeEnter(event: MouseEvent, p: LineupPlayer): void {
+    if (!this.showBreakdown()) return;
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.tooltipPlayer.set(p);
+    this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+  }
+
+  onBadgeLeave(): void {
+    this.tooltipPlayer.set(null);
+    this.tooltipPos.set(null);
+  }
+
+  breakdownRows(p: LineupPlayer): Array<{ label: string; pts: number }> {
+    const rows: Array<{ label: string; pts: number }> = [];
+
+    if (p.participation === 'starting') {
+      rows.push({ label: 'Startelf', pts: 2 });
+    } else if (p.participation === 'substitute') {
+      rows.push({ label: 'Eingewechselt', pts: 1 });
+    } else if (this.matchday()?.completed) {
+      rows.push({ label: 'Kein Einsatz', pts: 0 });
+    }
+
+    if (p.grade != null) {
+      const gradePts = Math.round((3.5 - Number(p.grade)) * 4);
+      rows.push({ label: `Note ${Number(p.grade).toFixed(1).replace('.', ',')}`, pts: gradePts });
+    }
+
+    if (p.sds) {
+      rows.push({ label: 'Spieler des Spiels', pts: 3 });
+    }
+
+    if (p.goals > 0) {
+      const perGoal: Record<string, number> = { GOALKEEPER: 6, DEFENDER: 5, MIDFIELDER: 4, FORWARD: 3 };
+      rows.push({ label: `Tore (${p.goals}×)`, pts: p.goals * (perGoal[p.position] ?? 3) });
+    }
+
+    if (p.assists > 0) {
+      rows.push({ label: `Vorlagen (${p.assists}×)`, pts: p.assists });
+    }
+
+    if (p.clean_sheet && p.position === 'GOALKEEPER') {
+      rows.push({ label: 'Zu Null', pts: 2 });
+    }
+
+    if (p.red_card) {
+      rows.push({ label: 'Rote Karte', pts: -6 });
+    }
+
+    if (p.yellow_red_card) {
+      rows.push({ label: 'Gelb-Rote Karte', pts: -3 });
+    }
+
+    return rows;
+  }
 
   // Drag & drop
 

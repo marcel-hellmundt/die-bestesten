@@ -68,7 +68,9 @@
                     }
                   </div>
                 }
-                <div class="field-player__badge">
+                <div class="field-player__badge"
+                     (mouseenter)="onBadgeEnter($event, p)"
+                     (mouseleave)="onBadgeLeave()">
                   @if (p.grade) {
                     <span class="field-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
                   }
@@ -199,4 +201,21 @@
 
     </div>
   </div>
+
+  @if (tooltipPlayer(); as tp) {
+    <div class="player-breakdown"
+         [style.top.px]="tooltipPos()!.top"
+         [style.left.px]="tooltipPos()!.left">
+      @for (row of breakdownRows(tp); track row.label) {
+        <div class="player-breakdown__row" [class.player-breakdown__row--neg]="row.pts < 0">
+          <span class="player-breakdown__label">{{ row.label }}</span>
+          <span class="player-breakdown__val">{{ row.pts > 0 ? '+' + row.pts : row.pts }}</span>
+        </div>
+      }
+      <div class="player-breakdown__total">
+        <span>Punkte</span>
+        <span [class.player-breakdown__val--neg]="(tp.points ?? 0) < 0">{{ tp.points }}</span>
+      </div>
+    </div>
+  }
 }

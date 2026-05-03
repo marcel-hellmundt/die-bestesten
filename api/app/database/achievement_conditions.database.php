@@ -2585,4 +2585,174 @@ trait AchievementConditionsTrait
         }
         return $result;
     }
+
+    public function check_champion_no_cards(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $completedSeasons = $this->con->query(
+            "SELECT season_id FROM matchday
+             GROUP BY season_id
+             HAVING COUNT(*) = SUM(completed) AND COUNT(*) > 0"
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($completedSeasons)) return [];
+
+        $sPlh = implode(',', array_fill(0, count($completedSeasons), '?'));
+
+        $stmt = $this->con->prepare("SELECT id, start_date FROM season WHERE id IN ($sPlh)");
+        $stmt->execute(array_values($completedSeasons));
+        $seasonStartMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'start_date', 'id');
+
+        $stmt = $this->con->prepare("SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh)");
+        $stmt->execute(array_values($completedSeasons));
+        $matchdayRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $matchdayToSeason = [];
+        $lastKickoff = [];
+        foreach ($matchdayRows as $row) {
+            $matchdayToSeason[$row['id']] = $row['season_id'];
+            $sid = $row['season_id'];
+            if (!isset($lastKickoff[$sid]) || $row['kickoff_date'] > $lastKickoff[$sid])
+                $lastKickoff[$sid] = $row['kickoff_date'];
+        }
+
+        $mdIds = array_keys($matchdayToSeason);
+        if (empty($mdIds)) return [];
+        $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT t.manager_id, t.team_name, tr.matchday_id, tr.points,
+                    COALESCE(tr.red_cards, 0) AS red_cards,
+                    COALESCE(tr.yellow_red_cards, 0) AS yellow_red_cards
+             FROM team t
+             JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+             WHERE tr.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute(array_values($mdIds));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totals = [];
+        foreach ($rows as $row) {
+            $sid = $matchdayToSeason[$row['matchday_id']] ?? null;
+            if (!$sid) continue;
+            $key = $row['manager_id'] . '|' . $sid;
+            if (!isset($totals[$key])) $totals[$key] = ['points' => 0, 'cards' => 0, 'team_name' => $row['team_name']];
+            $totals[$key]['points'] += (int) $row['points'];
+            $totals[$key]['cards']  += (int) $row['red_cards'] + (int) $row['yellow_red_cards'];
+        }
+
+        $seasonMax = [];
+        foreach ($totals as $key => $data) {
+            [, $sid] = explode('|', $key, 2);
+            if (!isset($seasonMax[$sid]) || $data['points'] > $seasonMax[$sid])
+                $seasonMax[$sid] = $data['points'];
+        }
+
+        $achievers = [];
+        foreach ($totals as $key => $data) {
+            [$mid, $sid] = explode('|', $key, 2);
+            if (!in_array($mid, $managerIds)) continue;
+            if ($data['points'] !== ($seasonMax[$sid] ?? PHP_INT_MIN)) continue;
+            if ($data['cards'] > 0) continue;
+            $startDate = $seasonStartMap[$sid] ?? '9999-01-01';
+            if (!isset($achievers[$mid]) || $startDate < ($seasonStartMap[$achievers[$mid]['sid']] ?? '9999-01-01'))
+                $achievers[$mid] = ['sid' => $sid, 'team_name' => $data['team_name']];
+        }
+
+        $result = [];
+        foreach ($achievers as $mid => $data) {
+            $label = $this->seasonLabel($seasonStartMap[$data['sid']] ?? '');
+            $result[$mid] = [
+                'reason'    => "{$data['team_name']} ($label)",
+                'earned_at' => $lastKickoff[$data['sid']] ?? date('Y-m-d H:i:s'),
+            ];
+        }
+        return $result;
+    }
+
+    public function check_last_no_cards(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $completedSeasons = $this->con->query(
+            "SELECT season_id FROM matchday
+             GROUP BY season_id
+             HAVING COUNT(*) = SUM(completed) AND COUNT(*) > 0"
+        )->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($completedSeasons)) return [];
+
+        $sPlh = implode(',', array_fill(0, count($completedSeasons), '?'));
+
+        $stmt = $this->con->prepare("SELECT id, start_date FROM season WHERE id IN ($sPlh)");
+        $stmt->execute(array_values($completedSeasons));
+        $seasonStartMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'start_date', 'id');
+
+        $stmt = $this->con->prepare("SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh)");
+        $stmt->execute(array_values($completedSeasons));
+        $matchdayRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $matchdayToSeason = [];
+        $lastKickoff = [];
+        foreach ($matchdayRows as $row) {
+            $matchdayToSeason[$row['id']] = $row['season_id'];
+            $sid = $row['season_id'];
+            if (!isset($lastKickoff[$sid]) || $row['kickoff_date'] > $lastKickoff[$sid])
+                $lastKickoff[$sid] = $row['kickoff_date'];
+        }
+
+        $mdIds = array_keys($matchdayToSeason);
+        if (empty($mdIds)) return [];
+        $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
+
+        $stmt = $this->con_league->prepare(
+            "SELECT t.manager_id, t.team_name, tr.matchday_id, tr.points,
+                    COALESCE(tr.red_cards, 0) AS red_cards,
+                    COALESCE(tr.yellow_red_cards, 0) AS yellow_red_cards
+             FROM team t
+             JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+             WHERE tr.matchday_id IN ($mPlh)"
+        );
+        $stmt->execute(array_values($mdIds));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totals = [];
+        foreach ($rows as $row) {
+            $sid = $matchdayToSeason[$row['matchday_id']] ?? null;
+            if (!$sid) continue;
+            $key = $row['manager_id'] . '|' . $sid;
+            if (!isset($totals[$key])) $totals[$key] = ['points' => 0, 'cards' => 0, 'team_name' => $row['team_name']];
+            $totals[$key]['points'] += (int) $row['points'];
+            $totals[$key]['cards']  += (int) $row['red_cards'] + (int) $row['yellow_red_cards'];
+        }
+
+        $seasonMin = [];
+        foreach ($totals as $key => $data) {
+            [, $sid] = explode('|', $key, 2);
+            if (!isset($seasonMin[$sid]) || $data['points'] < $seasonMin[$sid])
+                $seasonMin[$sid] = $data['points'];
+        }
+
+        $achievers = [];
+        foreach ($totals as $key => $data) {
+            [$mid, $sid] = explode('|', $key, 2);
+            if (!in_array($mid, $managerIds)) continue;
+            if ($data['points'] !== ($seasonMin[$sid] ?? PHP_INT_MAX)) continue;
+            if ($data['cards'] > 0) continue;
+            $startDate = $seasonStartMap[$sid] ?? '9999-01-01';
+            if (!isset($achievers[$mid]) || $startDate < ($seasonStartMap[$achievers[$mid]['sid']] ?? '9999-01-01'))
+                $achievers[$mid] = ['sid' => $sid, 'team_name' => $data['team_name']];
+        }
+
+        $result = [];
+        foreach ($achievers as $mid => $data) {
+            $label = $this->seasonLabel($seasonStartMap[$data['sid']] ?? '');
+            $result[$mid] = [
+                'reason'    => "{$data['team_name']} ($label)",
+                'earned_at' => $lastKickoff[$data['sid']] ?? date('Y-m-d H:i:s'),
+            ];
+        }
+        return $result;
+    }
 }

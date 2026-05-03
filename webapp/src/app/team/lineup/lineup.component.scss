@@ -637,6 +637,70 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
+.player-breakdown {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 9999;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+  min-width: 170px;
+  animation: breakdown-in 0.15s ease both;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $space-4;
+    font-size: $font-xs;
+    padding: 1px 0;
+
+    &--neg {
+      color: $color-danger;
+    }
+  }
+
+  &__label {
+    color: $color-text-muted;
+  }
+
+  &__val {
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $space-4;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    padding-top: $space-1;
+    margin-top: $space-1;
+    border-top: 1px solid $color-border;
+
+    &--neg { color: $color-danger; }
+  }
+
+  &__val--neg {
+    color: $color-danger;
+  }
+}
+
+@keyframes breakdown-in {
+  from { opacity: 0; transform: translate(-50%, calc(-100% - 4px)); }
+  to   { opacity: 1; transform: translate(-50%, calc(-100% - 8px)); }
+}
+
 .fp-icon {
   width: 18px;
   height: 18px;
