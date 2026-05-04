@@ -1256,7 +1256,7 @@ trait AchievementConditionsTrait
         foreach ($achievers as $mgr => $data) {
             $label = $this->seasonLabel($data['season_start']);
             $result[$mgr] = [
-                'reason'    => "{$data['displayname']} hatte Geburtstag und erzielte {$data['points']} Punkte für {$data['team_name']}, Spieltag {$data['md_number']} ($label)",
+                'reason'    => "{$data['displayname']} holte {$data['points']} Punkte an seinem Geburtstag, Spieltag {$data['md_number']} ($label)",
                 'earned_at' => $data['kickoff_date'],
             ];
         }
