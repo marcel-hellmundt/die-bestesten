@@ -8,6 +8,7 @@ export interface Achievement {
   name:             string;
   description:      string;
   icon:             string | null;
+  type:             string | null;
   threshold_bronze: number | null;
   threshold_silver: number | null;
   threshold_gold:   number | null;

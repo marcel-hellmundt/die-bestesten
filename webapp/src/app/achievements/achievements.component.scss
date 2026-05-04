@@ -12,7 +12,7 @@ $card-border: #eee;
 .achievement-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: $space-5;
+  gap: $space-8;
 
   .achievement-card {
     background-color: $card-color;
@@ -25,15 +25,31 @@ $card-border: #eee;
     box-shadow:
       rgba(17, 17, 26, 0.05) 0px 1px 0px,
       rgba(17, 17, 26, 0.1) 0px 0px 8px;
+    overflow: hidden;
+    &.achievement-card--hidden {
+      filter: grayscale(1) opacity(0.5);
+    }
+    .achievement-icon-background {
+      position: absolute;
+      left: 0;
+      top: 0;
+      filter: blur(64px) opacity(0.5) hue-rotate(-25deg);
+      transform: scale(4);
+      border-radius: 8px;
+      z-index: 0;
+    }
     .achievement-header {
       display: flex;
       align-items: center;
+      z-index: 1;
+      height: 32px;
       .achievement-title {
-        padding-left: 8px;
+        padding: 0 8px;
         font-size: 16px;
         flex: 1;
         min-width: 0;
         overflow: hidden;
+        line-height: 32px;
       }
       .achievement-level {
         flex-shrink: 0;
@@ -41,26 +57,30 @@ $card-border: #eee;
         width: 32px;
       }
     }
-    .achievement-icon-container {
-      height: 50%;
-      object-fit: contain;
-      background-color: #fff;
-      border: 1px solid #ddd;
-      padding: 12px 0;
+
+    .achievement-logo-container {
       position: relative;
       overflow: hidden;
-      .achievement-icon-background {
-        position: absolute;
-        left: 0;
-        top: 0;
-        filter: blur(94px);
+      height: 50%;
+      background: white;
+      .achievement-logo-background {
+        filter: blur(32px) opacity(0.5);
+        transform: scale(4);
         z-index: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
       }
-      .achievement-icon {
+      .achievement-logo {
         height: 100%;
+        width: 100%;
+        object-fit: contain;
         margin: 0 auto 0;
+        padding: 24px 0;
         z-index: 1;
         position: relative;
+        transform: translateY(-4px);
+        -webkit-filter: drop-shadow(0px 0px 2px rgba(99, 99, 99, 0.4));
       }
     }
 
@@ -71,9 +91,42 @@ $card-border: #eee;
       border-radius: 3px;
       text-align: center;
       padding: 2px;
-      margin: 0 8px;
       transform: translateY(-50%);
+      position: absolute;
+      top: calc(50% + 32px);
+      left: 8px;
+      width: calc(100% - 16px);
       z-index: 2;
+    }
+    .achievement-reason {
+      text-align: center;
+      font-size: 12px;
+      font-family: monospace;
+      flex-grow: 1;
+      padding: 0 16px;
+      align-items: center;
+      justify-content: center;
+      display: flex;
+    }
+
+    .achievement-type {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      font-size: 9px;
+      font-weight: $font-weight-semibold;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 6px;
+      border-radius: $radius-sm;
+      background: $color-surface-alt;
+      color: $color-text-muted;
+
+      &--season   { background: color-mix(in srgb, var(--flat-river)     15%, transparent); color: var(--flat-river);     }
+      &--rating   { background: color-mix(in srgb, var(--flat-sunflower) 15%, transparent); color: var(--flat-sunflower); }
+      &--lineup   { background: color-mix(in srgb, var(--flat-emerald)   15%, transparent); color: var(--flat-emerald);   }
+      &--transfer { background: color-mix(in srgb, var(--flat-alizarin)  15%, transparent); color: var(--flat-alizarin);  }
+      &--data     { background: color-mix(in srgb, var(--flat-amethyst)  15%, transparent); color: var(--flat-amethyst);  }
     }
   }
 }

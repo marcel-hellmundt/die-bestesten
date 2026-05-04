@@ -6,9 +6,17 @@
 
 <div class="achievement-grid">
   @for (a of achievements(); track a.id) {
-    <div class="achievement-card">
+    <div class="achievement-card" [class.achievement-card--hidden]="a.earned_at == '1'">
+      <img
+        class="achievement-card-background"
+        [src]="'img/achievements/type-' + a.type + '.png'"
+        [alt]="a.name"
+      />
       <div class="achievement-header">
-        <div class="achievement-title" fitText [fitTextMax]="16" [fitTextMin]="10">{{ a.name }}</div>
+        <div class="achievement-title" fitText [fitTextMax]="16" [fitTextMin]="10">
+          <!--{{ a.earned_at ? a.name : '???' }}-->
+          {{ a.name }}
+        </div>
         <img
           class="achievement-level"
           [src]="'img/achievements/level-' + a.level + '.png'"
@@ -16,20 +24,27 @@
           *ngIf="a.level"
         />
       </div>
-      <div class="achievement-icon-container">
+      <div class="achievement-logo-container">
         <img
-          class="achievement-icon-background"
+          class="achievement-logo-background"
           [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'"
-          [alt]="a.name"
         />
         <img
-          class="achievement-icon"
+          class="achievement-logo"
           [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'"
           [alt]="a.name"
         />
       </div>
 
-      <div class="achievement-condition">{{ resolvedDescription(a) }}</div>
+      <div class="achievement-condition">
+        <!--{{ a.earned_at ? resolvedDescription(a) : '???' }}-->{{ resolvedDescription(a) }}
+      </div>
+      <div class="achievement-reason">
+        <span>{{ a.reason }}</span>
+      </div>
+      @if (a.type) {
+        <span class="achievement-type achievement-type--{{ a.type }}">{{ a.type }}</span>
+      }
     </div>
     <!--
     <div class="achievement-card" [class.achievement-card--earned]="a.earned_at" [class.achievement-card--bronze]="a.level === 'bronze'" [class.achievement-card--silver]="a.level === 'silver'" [class.achievement-card--gold]="a.level === 'gold'">
