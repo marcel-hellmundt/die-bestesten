@@ -237,6 +237,15 @@ trait PlayerRatingTrait
      */
     public function updatePlayerRating(string $id, array $data, string $managerId): bool
     {
+        $oldSds = null;
+        if (array_key_exists('sds', $data) && $data['sds']) {
+            $oldRow = $this->con->prepare("SELECT sds, player_id FROM player_rating WHERE id = ? LIMIT 1");
+            $oldRow->execute([$id]);
+            $oldRow = $oldRow->fetch(PDO::FETCH_ASSOC);
+            $oldSds = $oldRow ? (bool) $oldRow['sds'] : null;
+            $sdsPlayerId = $oldRow['player_id'] ?? null;
+        }
+
         $allowed = ['grade', 'participation', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'];
         $sets    = [];
         $params  = [':id' => $id];
@@ -315,6 +324,13 @@ trait PlayerRatingTrait
                      WHERE player_rating_id = :id AND contribution_type = 'grade'"
                 )->execute([':id' => $id]);
             }
+        }
+
+        if (isset($oldSds) && $oldSds === false && !empty($sdsPlayerId)) {
+            $dnq = $this->con->prepare("SELECT displayname FROM player WHERE id = ? LIMIT 1");
+            $dnq->execute([$sdsPlayerId]);
+            $displayname = $dnq->fetchColumn() ?: 'Spieler';
+            $this->notifyWatchersPlayerSds($sdsPlayerId, $displayname);
         }
 
         return $updated;

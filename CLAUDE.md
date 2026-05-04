@@ -128,6 +128,9 @@ PATCH    /manager/me           — {current_password,new_password} für Passwort
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth
+GET      /watchlist            — ?team_id (erforderlich, nur eigenes Team) → [{id,player_id,displayname,photo_uploaded,position,price,season_id,club_id,club_name,club_short_name,club_logo_uploaded,current_team{team_id,team_name,color,team_season_id,manager_name,alias}|null,created_at}] — Auth
+POST     /watchlist            — {team_id, player_id} → {id} — Spieler zur Beobachtungsliste hinzufügen; idempotent (INSERT IGNORE) — nur eigenes Team — Auth
+DELETE   /watchlist/:id        — {team_id} — Spieler von der Beobachtungsliste entfernen — nur eigenes Team — Auth
 GET      /achievement          — [{id,name,description,icon,threshold_bronze,threshold_silver,threshold_gold,earned_at,reason,seen_at,level,earned_count,total_managers}] — earned_at+reason+seen_at+level=null wenn nicht verdient; threshold_*=null bei Achievements ohne Stufen; description enthält '{threshold}' als Platzhalter bei gestuften Achievements; level='bronze'|'silver'|'gold' (Achievements ohne Stufen immer 'gold'); sortiert nach earned_count DESC — Auth; ?all=true → [{id,condition_key,name,description,icon,threshold_bronze,threshold_silver,threshold_gold,earned_count,total_managers,managers[{id,manager_name,earned_at,level}]}] — Admin
 POST     /achievement/evaluate — Achievement-Auswertung für alle Manager anstoßen (Backfill); idempotent — Admin
 POST     /achievement/evaluate/:id — Einzelnes Achievement neu auswerten: vergibt an neue Gewinner und entzieht Managern, die Anforderungen nicht mehr erfüllen — Admin
@@ -136,8 +139,8 @@ GET      /notification         — [{id,sender_id,sender_name,receiver_id,title,
 PATCH    /notification/:id     — Einzelne Notification als gelesen markieren (read_at = NOW()); 403 wenn nicht eigene — Auth
 PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen markieren — Auth
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
-GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool}; fehlende DB-Einträge = true (default ON) — Auth
-PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned, enabled: bool} — Auth
+GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool, scouted_player_update: bool}; fehlende DB-Einträge = true (default ON) — Auth
+PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|scouted_player_update, enabled: bool} — Auth
 ```
 
 ## Liga-DB (`database/league_schema.sql`)
@@ -158,7 +161,7 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 
 **notification**: id PK, sender_id CHAR(36)? (NULL = Systemnachricht; kein FK), receiver_id FK → manager, title VARCHAR(255), message TEXT?, created_at DATETIME, read_at DATETIME? (NULL = ungelesen)
 
-**notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned
+**notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned, scouted_player_update
 
 **manager_achievement**: id PK, manager_id FK, achievement_id (cross-DB auf global_schema.achievement, kein FK), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen; Achievements ohne Stufen speichern immer 'gold'
 
@@ -169,3 +172,5 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 **team_lineup**: id PK, team_id FK, player_id (cross-DB), matchday_id (cross-DB), nominated BOOL, position_index INT? — UNIQUE(team_id, player_id, matchday_id) — alle Kader-Spieler des Spieltags; nominated=1 = aufgestellt
 
 **maintainer_contribution**: id PK, manager_id FK, player_rating_id (cross-DB auf global_schema.player_rating, kein FK), contribution_type ENUM(bulk_create/manual_create/grade), created_at — UNIQUE(player_rating_id, contribution_type) — trackt welcher Maintainer Aufstellung/Noten eingetragen hat; grade-Einträge werden per UPSERT ersetzt (letzter Setzer behält Credit)
+
+**team_watchlist**: id PK, team_id FK, player_id CHAR(36) (cross-DB auf global_schema.player, kein FK), created_at — UNIQUE(team_id, player_id) — private Beobachtungsliste; Benachrichtigung bei Kauf/Verkauf/SdS des Spielers (event_type: scouted_player_update)

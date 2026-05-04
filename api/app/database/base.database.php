@@ -25,6 +25,7 @@ require_once 'buy.database.php';
 require_once 'offer.database.php';
 require_once 'search.database.php';
 require_once 'notification.database.php';
+require_once 'watchlist.database.php';
 
 class Database
 {
@@ -54,6 +55,7 @@ class Database
     use PasswordResetTrait;
     use SearchTrait;
     use NotificationTrait;
+    use WatchlistTrait;
 
     private $con;
     private $con_league;

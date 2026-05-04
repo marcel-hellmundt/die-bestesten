@@ -100,6 +100,12 @@ trait BuyTrait
             ':mid'    => $matchdayId,
         ]);
 
+        $tnq = $this->con_league->prepare("SELECT team_name FROM team WHERE id = ? LIMIT 1");
+        $tnq->execute([$teamId]);
+        $buyerTeamName = $tnq->fetchColumn() ?: 'Unbekanntes Team';
+
+        $this->notifyWatchersPlayerBought($playerId, $teamId, $displayname, $buyerTeamName);
+
         return ['price' => $price];
     }
 }

@@ -198,3 +198,12 @@ CREATE TABLE IF NOT EXISTS notification_preference (
     PRIMARY KEY (manager_id, event_type),
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS team_watchlist (
+    id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    team_id    CHAR(36) NOT NULL,
+    player_id  CHAR(36) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_team_player (team_id, player_id)
+);

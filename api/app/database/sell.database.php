@@ -110,6 +110,8 @@ trait SellTrait
             }
         }
 
+        $this->notifyWatchersPlayerSold($playerId, $teamId, $displayname);
+
         return ['sell_id' => $sellId, 'price' => $sellPrice];
     }
 }

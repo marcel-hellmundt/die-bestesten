@@ -347,6 +347,11 @@ trait OfferTrait
                         ':mid'    => $matchdayId,
                     ]);
 
+                    $tnq = $this->con_league->prepare("SELECT team_name FROM team WHERE id = ? LIMIT 1");
+                    $tnq->execute([$winnerTeamId]);
+                    $winnerTeamName = $tnq->fetchColumn() ?: 'Unbekanntes Team';
+                    $this->notifyWatchersPlayerBought($playerId, $winnerTeamId, $displayname, $winnerTeamName);
+
                     $loserIds = array_values(array_filter($allBidIds, fn($id) => $id !== $winnerId));
                 } else {
                     $loserIds = $allBidIds;

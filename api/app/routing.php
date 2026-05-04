@@ -620,6 +620,32 @@ class Routing
                 ],
             ]),
 
+            new Route('watchlist', 'Watchlist', [
+                'title' => 'Watchlist',
+                'description' => 'Spieler-Beobachtungsliste eines Teams — privat, nur eigenes Team sichtbar',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/watchlist',
+                        'description' => 'Beobachtete Spieler des eigenen Teams mit Spieler- und Clubdaten sowie aktuellem Fantasy-Team — Auth',
+                        'query_params' => ['team_id' => 'UUID des eigenen Teams (erforderlich)'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/watchlist',
+                        'description' => 'Spieler zur Beobachtungsliste hinzufügen — gibt {id} zurück — Auth',
+                        'body' => ['team_id' => 'UUID des eigenen Teams', 'player_id' => 'UUID des Spielers'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/watchlist/:id',
+                        'description' => 'Spieler von der Beobachtungsliste entfernen — Auth',
+                        'path_params' => [':id' => 'UUID des Watchlist-Eintrags'],
+                        'body' => ['team_id' => 'UUID des eigenen Teams'],
+                    ],
+                ],
+            ]),
+
             new Route('search', 'Search', [
                 'title' => 'Search',
                 'description' => 'Globale Live-Suche über Player, Club, Team und Manager — Auth',
