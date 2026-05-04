@@ -43,7 +43,8 @@ class MatchdayController extends _BaseController
         $completed = (bool) $body['completed'];
         $this->db->updateMatchdayCompleted($this->id, $completed);
         if ($completed) {
-            $this->db->evaluateAchievements();
+            $this->db->evaluateAchievements(true);
+            $this->db->createMatchdayCompletedNotifications((int) $matchday['number']);
         }
         return ['status' => true];
     }

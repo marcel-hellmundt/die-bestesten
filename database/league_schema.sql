@@ -188,3 +188,12 @@ CREATE TABLE IF NOT EXISTS notification (
     read_at     DATETIME     NULL DEFAULT NULL,
     FOREIGN KEY (receiver_id) REFERENCES manager(id) ON DELETE CASCADE
 );
+
+-- Tabelle: notification_preference (Manager-Einstellungen welche Events Notifications auslösen)
+CREATE TABLE IF NOT EXISTS notification_preference (
+    manager_id  CHAR(36)     NOT NULL,
+    event_type  VARCHAR(50)  NOT NULL,
+    enabled     BOOL         NOT NULL DEFAULT 1,
+    PRIMARY KEY (manager_id, event_type),
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
+);

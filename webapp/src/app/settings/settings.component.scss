@@ -130,6 +130,50 @@
   color: $color-success;
 }
 
+// Notification preferences
+.pref-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pref-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  padding: $space-3 0;
+  border-bottom: 1px solid $color-border;
+  cursor: pointer;
+
+  &:last-child { border-bottom: none; }
+}
+
+.pref-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pref-name {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.pref-desc {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+.pref-checkbox {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: $color-accent;
+  cursor: pointer;
+}
+
 // Delete confirm
 .danger-description {
   font-size: $font-sm;

@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../auth/auth.service';
 import { DataCacheService } from '../core/data-cache.service';
+import { NotificationService } from '../core/notification.service';
 
 interface ManagerProfile {
   id: string;
@@ -21,10 +22,26 @@ interface ManagerProfile {
   styleUrl: './settings.component.scss'
 })
 export class SettingsComponent {
-  private api    = inject(ApiService);
-  private auth   = inject(AuthService);
-  private router = inject(Router);
-  private cache  = inject(DataCacheService);
+  private api       = inject(ApiService);
+  private auth      = inject(AuthService);
+  private router    = inject(Router);
+  private cache     = inject(DataCacheService);
+  private notifSvc  = inject(NotificationService);
+
+  preferences    = this.notifSvc.preferences;
+
+  constructor() {
+    this.notifSvc.loadPreferences();
+  }
+
+  pref(key: string): boolean {
+    const val = this.preferences()[key];
+    return val === undefined ? true : val;
+  }
+
+  setPreference(eventType: string, enabled: boolean): void {
+    this.notifSvc.setPreference(eventType, enabled);
+  }
 
   // Profile
   private profileState = toSignal(

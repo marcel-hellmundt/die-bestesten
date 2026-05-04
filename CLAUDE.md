@@ -136,6 +136,8 @@ GET      /notification         — [{id,sender_id,sender_name,receiver_id,title,
 PATCH    /notification/:id     — Einzelne Notification als gelesen markieren (read_at = NOW()); 403 wenn nicht eigene — Auth
 PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen markieren — Auth
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
+GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool}; fehlende DB-Einträge = true (default ON) — Auth
+PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned, enabled: bool} — Auth
 ```
 
 ## Liga-DB (`database/league_schema.sql`)
@@ -155,6 +157,8 @@ POST     /notification         — {receiver_id, title, message?, sender_id?} er
 **team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK) — UNIQUE(award_id, team_id) — season ergibt sich aus team.season_id
 
 **notification**: id PK, sender_id CHAR(36)? (NULL = Systemnachricht; kein FK), receiver_id FK → manager, title VARCHAR(255), message TEXT?, created_at DATETIME, read_at DATETIME? (NULL = ungelesen)
+
+**notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned
 
 **manager_achievement**: id PK, manager_id FK, achievement_id (cross-DB auf global_schema.achievement, kein FK), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen; Achievements ohne Stufen speichern immer 'gold'
 

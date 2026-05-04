@@ -6,6 +6,9 @@ class NotificationController extends _BaseController
 
     protected function get(): mixed
     {
+        if ($this->id === 'preferences') {
+            return $this->db->getNotificationPreferences($GLOBALS['auth_manager_id']);
+        }
         return $this->db->getNotifications($GLOBALS['auth_manager_id']);
     }
 
@@ -30,6 +33,20 @@ class NotificationController extends _BaseController
     protected function patch(): mixed
     {
         $managerId = $GLOBALS['auth_manager_id'];
+
+        if ($this->id === 'preferences') {
+            $body      = $this->body();
+            $eventType = $body['event_type'] ?? null;
+            $enabled   = $body['enabled']    ?? null;
+            $allowed   = ['matchday_completed', 'achievement_earned'];
+            if (!$eventType || !in_array($eventType, $allowed) || $enabled === null) {
+                http_response_code(422);
+                return ['message' => 'event_type (matchday_completed|achievement_earned) und enabled (bool) erforderlich'];
+            }
+            $this->db->setNotificationPreference($managerId, $eventType, (bool) $enabled);
+            return ['ok' => true];
+        }
+
         if ($this->id === 'read_all') {
             $this->db->markAllNotificationsRead($managerId);
             return ['ok' => true];

@@ -86,6 +86,35 @@
   </div>
 </section>
 
+<!-- Benachrichtigungen -->
+<section class="settings-section">
+  <div class="section-header-row"><h2 class="section-header">Benachrichtigungen</h2></div>
+
+  <div class="pref-list">
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Spieltag abgeschlossen</span>
+        <span class="pref-desc">Wenn ein Spieltag ausgewertet wurde</span>
+      </div>
+      <input type="checkbox"
+             class="pref-checkbox"
+             [checked]="pref('matchday_completed')"
+             (change)="setPreference('matchday_completed', $any($event.target).checked)" />
+    </label>
+
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Achievement erhalten</span>
+        <span class="pref-desc">Wenn du ein neues Achievement freischaltest</span>
+      </div>
+      <input type="checkbox"
+             class="pref-checkbox"
+             [checked]="pref('achievement_earned')"
+             (change)="setPreference('achievement_earned', $any($event.target).checked)" />
+    </label>
+  </div>
+</section>
+
 <!-- Konto löschen -->
 <section class="settings-section settings-section--danger">
   <div class="section-header-row"><h2 class="section-header">Konto löschen</h2></div>

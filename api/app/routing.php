@@ -360,6 +360,16 @@ class Routing
                         'path' => '/notification',
                         'description' => 'Neue Notification erstellen {receiver_id, title, message?, sender_id?}; sender_id=null → Systemnachricht — Admin',
                     ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/notification/preferences',
+                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed: bool, achievement_earned: bool}; fehlende Einträge = true (default ON) — Auth',
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/notification/preferences',
+                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned, enabled: bool} — Auth',
+                    ],
                 ],
             ]),
 
