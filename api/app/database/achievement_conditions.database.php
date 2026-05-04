@@ -782,7 +782,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_datenkrake(array $managerIds): array
+    public function check_kraken(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -856,7 +856,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_kleine_grosse(array $managerIds): array
+    public function check_ants(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -1007,7 +1007,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_zuschlag(array $managerIds): array
+    public function check_outbid(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -1163,7 +1163,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_geburtstagskind(array $managerIds): array
+    public function check_birthday(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -1263,7 +1263,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_phantome(array $managerIds): array
+    public function check_phantoms(array $managerIds): array
     {
         if (empty($managerIds))
             return [];
@@ -1939,7 +1939,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_transfer_reue(array $managerIds): array
+    public function check_sad(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
@@ -2041,7 +2041,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_bankdruecker(array $managerIds): array
+    public function check_bench(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
@@ -2124,7 +2124,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_torwart_torschuetze(array $managerIds): array
+    public function check_goalkeeper_scorer(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
@@ -2222,7 +2222,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_alles_perfekt(array $managerIds): array
+    public function check_perfect(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
@@ -2278,7 +2278,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_pechvogel(array $managerIds): array
+    public function check_bird(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
@@ -2361,7 +2361,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_bankraeuber(array $managerIds): array
+    public function check_thief(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
@@ -2476,7 +2476,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_narzisst(array $managerIds): array
+    public function check_mirror(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
@@ -2765,7 +2765,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_eine_nation(array $managerIds): array
+    public function check_heart(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
@@ -2877,7 +2877,7 @@ trait AchievementConditionsTrait
         return $result;
     }
 
-    public function check_heimatstadt(array $managerIds): array
+    public function check_map(array $managerIds): array
     {
         if (empty($managerIds)) return [];
 
