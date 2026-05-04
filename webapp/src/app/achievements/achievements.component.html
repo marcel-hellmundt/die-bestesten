@@ -24,7 +24,7 @@
           <!--{{ a.earned_at ? a.name : '???' }}-->
           {{ a.name }}
         </div>
-        @if (a.level) {
+        @if (a.level && a.threshold_bronze !== null) {
           <img
             class="achievement-level"
             [src]="'img/achievements/level-' + a.level + '.png'"
