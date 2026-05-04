@@ -13,7 +13,10 @@ class AchievementController extends _BaseController
             }
             return $this->db->getAllAchievementsAdmin();
         }
-        return $this->db->getManagerAchievements($GLOBALS['auth_manager_id']);
+        $managerId    = $GLOBALS['auth_manager_id'];
+        $achievements = $this->db->getManagerAchievements($managerId);
+        $this->db->setAchievementsSeen($managerId);
+        return $achievements;
     }
 
     protected function post(): mixed

@@ -196,12 +196,17 @@ trait AchievementTrait
         }, $result);
     }
 
-    public function markAchievementsSeen(string $managerId): void
+    public function setAchievementsSeen(string $managerId): void
     {
         $this->con_league->prepare(
             "UPDATE manager_achievement SET seen_at = NOW()
              WHERE manager_id = ? AND seen_at IS NULL AND earned_at IS NOT NULL"
         )->execute([$managerId]);
+    }
+
+    public function markAchievementsSeen(string $managerId): void
+    {
+        $this->setAchievementsSeen($managerId);
 
         $this->con_league->prepare(
             "UPDATE notification SET read_at = NOW()
