@@ -4,20 +4,20 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../core/api.service';
 
 export interface Achievement {
-  id:               string;
-  name:             string;
-  description:      string;
-  icon:             string | null;
-  type:             string | null;
+  id: string;
+  name: string;
+  description: string;
+  icon: string | null;
+  type: string | null;
   threshold_bronze: number | null;
   threshold_silver: number | null;
-  threshold_gold:   number | null;
-  earned_at:        string | null;
-  reason:           string | null;
-  seen_at:          string | null;
-  level:            'bronze' | 'silver' | 'gold' | null;
-  earned_count:     number;
-  total_managers:   number;
+  threshold_gold: number | null;
+  earned_at: string | null;
+  reason: string | null;
+  seen_at: string | null;
+  level: 'bronze' | 'silver' | 'gold' | null;
+  earned_count: number;
+  total_managers: number;
 }
 
 @Component({
@@ -31,10 +31,10 @@ export class AchievementsComponent {
 
   achievements = toSignal(
     this.api.get<Achievement[]>('achievement').pipe(catchError(() => of([] as Achievement[]))),
-    { initialValue: [] as Achievement[] }
+    { initialValue: [] as Achievement[] },
   );
 
-  earnedCount = computed(() => this.achievements().filter(a => a.earned_at).length);
+  earnedCount = computed(() => this.achievements().filter((a) => a.earned_at).length);
 
   rarity(a: Achievement): 'häufig' | 'ungewöhnlich' | 'selten' {
     if (!a.total_managers) return 'selten';
@@ -44,14 +44,29 @@ export class AchievementsComponent {
     return 'selten';
   }
 
+  private static readonly TYPE_LABELS: Record<string, string> = {
+    season:   'Saisonergebnis',
+    rating:   'Spieltagsleistung',
+    lineup:   'Aufstellung',
+    transfer: 'Transfermarkt',
+    data:     'Datenpflege',
+  };
+
+  typeLabel(a: Achievement): string {
+    return a.type ? (AchievementsComponent.TYPE_LABELS[a.type] ?? a.type) : '';
+  }
+
   rarityKey(a: Achievement): string {
     return this.rarity(a).replace('ä', 'a').replace('ö', 'o').replace('ü', 'u');
   }
 
   resolvedDescription(a: Achievement): string {
-    const threshold = a.level === 'bronze' ? a.threshold_bronze
-                    : a.level === 'silver' ? a.threshold_silver
-                    : a.threshold_gold;
+    const threshold =
+      a.level === 'bronze'
+        ? a.threshold_bronze
+        : a.level === 'silver'
+          ? a.threshold_silver
+          : a.threshold_gold;
     return threshold != null
       ? a.description.replace('{threshold}', threshold.toString())
       : a.description;

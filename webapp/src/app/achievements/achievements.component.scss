@@ -43,9 +43,43 @@ $card-border: #eee;
       align-items: center;
       z-index: 1;
       height: 32px;
+      .achievement-type-wrap {
+        position: relative;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+
+        &::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          left: 50%;
+          bottom: calc(100% + 6px);
+          transform: translateX(-50%);
+          white-space: nowrap;
+          background: $color-surface;
+          border: 1px solid $color-border;
+          border-radius: $radius-sm;
+          padding: 3px 8px;
+          font-size: $font-xs;
+          color: $color-text;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0s;
+          z-index: 10;
+        }
+
+        &:hover::after {
+          opacity: 1;
+        }
+      }
+
+      .achievement-type {
+        height: 24px;
+        width: 24px;
+        cursor: default;
+      }
       .achievement-title {
-        padding: 0 8px;
-        font-size: 16px;
+        font-size: 14px;
         flex: 1;
         min-width: 0;
         overflow: hidden;
@@ -100,10 +134,10 @@ $card-border: #eee;
     }
     .achievement-reason {
       text-align: center;
-      font-size: 12px;
+      font-size: 11px;
       font-family: monospace;
       flex-grow: 1;
-      padding: 0 16px;
+      padding: 0 8px;
       align-items: center;
       justify-content: center;
       display: flex;
@@ -111,7 +145,7 @@ $card-border: #eee;
 
     .achievement-rarity {
       position: absolute;
-      bottom: 8px;
+      bottom: 4px;
       right: 8px;
       font-size: 9px;
       font-weight: $font-weight-semibold;
@@ -119,15 +153,16 @@ $card-border: #eee;
       letter-spacing: 0.06em;
       padding: 2px 6px;
       border-radius: $radius-sm;
-      background: color-mix(in srgb, var(--flat-emerald) 15%, transparent);
-      color: var(--flat-emerald);
-
+      &--haufig {
+        background: color-mix(in srgb, var(--flat-emerald) 10%, transparent);
+        color: var(--flat-emerald);
+      }
       &--ungewohnlich {
-        background: color-mix(in srgb, var(--flat-sunflower) 15%, transparent);
+        background: color-mix(in srgb, var(--flat-sunflower) 5%, transparent);
         color: var(--flat-sunflower);
       }
       &--selten {
-        background: color-mix(in srgb, var(--flat-alizarin) 15%, transparent);
+        background: color-mix(in srgb, var(--flat-alizarin) 10%, transparent);
         color: var(--flat-alizarin);
       }
     }

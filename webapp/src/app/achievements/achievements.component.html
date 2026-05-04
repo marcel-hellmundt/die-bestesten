@@ -9,20 +9,28 @@
     <div class="achievement-card" [class.achievement-card--hidden]="a.earned_at == '1'">
       <img
         class="achievement-card-background"
-        [src]="'img/achievements/type-' + a.type + '.png'"
+        [src]="'img/achievements/' + a.icon + '.png'"
         [alt]="a.name"
       />
       <div class="achievement-header">
+        <span class="achievement-type-wrap" [attr.data-tooltip]="'Typ: ' + typeLabel(a)">
+          <img
+            class="achievement-type"
+            [src]="'img/achievements/type-' + a.type + '.png'"
+            [alt]="typeLabel(a)"
+          />
+        </span>
         <div class="achievement-title" fitText [fitTextMax]="16" [fitTextMin]="10">
           <!--{{ a.earned_at ? a.name : '???' }}-->
           {{ a.name }}
         </div>
-        <img
-          class="achievement-level"
-          [src]="'img/achievements/level-' + a.level + '.png'"
-          [alt]="a.level"
-          *ngIf="a.level"
-        />
+        @if (a.level) {
+          <img
+            class="achievement-level"
+            [src]="'img/achievements/level-' + a.level + '.png'"
+            [alt]="a.level"
+          />
+        }
       </div>
       <div class="achievement-logo-container">
         <img
@@ -42,7 +50,9 @@
       <div class="achievement-reason">
         <span>{{ a.reason }}</span>
       </div>
-      <span class="achievement-rarity achievement-rarity--{{ rarityKey(a) }}">{{ rarity(a) }}</span>
+      <span class="achievement-rarity achievement-rarity--{{ rarityKey(a) }}"
+        >{{ rarity(a) }} {{ (a.earned_count / a.total_managers) * 100 | number: '1.0-0' }}%</span
+      >
     </div>
     <!--
     <div class="achievement-card" [class.achievement-card--earned]="a.earned_at" [class.achievement-card--bronze]="a.level === 'bronze'" [class.achievement-card--silver]="a.level === 'silver'" [class.achievement-card--gold]="a.level === 'gold'">
