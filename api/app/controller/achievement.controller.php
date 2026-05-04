@@ -13,10 +13,7 @@ class AchievementController extends _BaseController
             }
             return $this->db->getAllAchievementsAdmin();
         }
-        $managerId    = $GLOBALS['auth_manager_id'];
-        $achievements = $this->db->getManagerAchievements($managerId);
-        $this->db->setAchievementsSeen($managerId);
-        return $achievements;
+        return $this->db->getManagerAchievements($GLOBALS['auth_manager_id']);
     }
 
     protected function post(): mixed
@@ -33,7 +30,7 @@ class AchievementController extends _BaseController
     protected function patch(): mixed
     {
         if ($this->id !== 'seen') return $this->methodNotAllowed();
-        $this->db->markAchievementsSeen($GLOBALS['auth_manager_id']);
+        $this->db->setAchievementsSeen($GLOBALS['auth_manager_id']);
         return null;
     }
     protected function delete(): mixed { return $this->methodNotAllowed(); }

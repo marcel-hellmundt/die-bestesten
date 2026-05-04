@@ -34,6 +34,10 @@ export class AchievementsComponent {
     { initialValue: [] as Achievement[] },
   );
 
+  constructor() {
+    this.api.patch('achievement/seen', {}).subscribe();
+  }
+
   earnedCount = computed(() => this.achievements().filter((a) => a.earned_at).length);
 
   rarity(a: Achievement): 'häufig' | 'ungewöhnlich' | 'selten' | 'super selten' {
