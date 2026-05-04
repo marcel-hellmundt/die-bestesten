@@ -205,7 +205,7 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'season_red_cards',    'Hardkohr',                      'Sammle {threshold} Platzverweise in einer Saison',                                             'attack',       4,    6,    8,    'rating'  ),
 (UUID(), 'season_transfers',    'Auf Einkaufstour',              'Kaufe 80 Spieler in einer Saison',                                                             'shopping',     NULL, NULL, NULL, 'transfer'),
 (UUID(), 'youth_squad',         'Jugend forscht',                'Deine Startelf besteht nur aus U23 Spielern',                                                  'dragon',       NULL, NULL, NULL, 'lineup'  ),
-(UUID(), 'veteran_squad',       'The Expendables',               'Der Altersschnitt deiner Startelf ist Ü30',                                                    'expendables',  NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'veteran_squad',       'Rentnerelf',                    'Der Altersschnitt deiner Startelf ist Ü30',                                                    'expendables',  NULL, NULL, NULL, 'lineup'  ),
 (UUID(), 'tall_squad',          'Lange Kerle',                   'Stelle min. 7 Spieler auf, die 1.90m oder größer sind',                                        'tall',         NULL, NULL, NULL, 'lineup'  ),
 (UUID(), 'birthday',            'Geburtstagskind',               'Stelle einen Spieler auf, der am Wochehende Geburtstag hat und 10 oder mehr Punkte bekommt',   'birthday',     NULL, NULL, NULL, 'lineup'  ),
 (UUID(), 'phantoms',            'Geister',                       'Stelle 2 Spieler auf, die auch in echt in der Startelf waren aber keine Note bekommen haben',  'ghost',        NULL, NULL, NULL, 'lineup'  ),
@@ -219,4 +219,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'champion_no_cards',   'Meister ohne Tadel',            'Werde Meister in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'goddess',      NULL, NULL, NULL, 'season'  ),
 (UUID(), 'last_no_cards',       'Zu weich',                      'Werde Letzter in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'soft',         NULL, NULL, NULL, 'season'  ),
 (UUID(), 'heart',               'Nationalelf',                   'Alle Spieler deines Kaders haben die gleiche Nationalität (gültiger Kader)',                   'flag',         NULL, NULL, NULL, 'lineup'  ),
-(UUID(), 'map',                 'Lokalmatadoren',                '3 deiner Spieler kommen aus der gleichen Stadt',                                               'city',         NULL, NULL, NULL, 'lineup'  );
+(UUID(), 'map',                 'Lokalmatadoren',                '3 deiner Spieler kommen aus der gleichen Stadt',                                               'city',         NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'defense',             'Die Mauer',                     'Deine Abwehrspieler holen an einem Spieltag mehr Punkte als alle anderen Positionen zusammen',   'shield',       NULL, NULL, NULL, 'rating'  );
