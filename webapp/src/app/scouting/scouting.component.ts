@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, of, switchMap } from 'rxjs';
+import { catchError, combineLatest, of, switchMap } from 'rxjs';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { ApiService } from '../core/api.service';
 import { DataCacheService } from '../core/data-cache.service';
@@ -44,15 +44,11 @@ export class ScoutingComponent {
   private refresh = signal(0);
 
   entries = toSignal(
-    toObservable(this.myTeam).pipe(
-      switchMap(team => {
+    combineLatest([toObservable(this.myTeam), toObservable(this.refresh)]).pipe(
+      switchMap(([team]) => {
         if (!team) return of([] as WatchlistEntry[]);
-        return toObservable(this.refresh).pipe(
-          switchMap(() =>
-            this.api.get<WatchlistEntry[]>(`watchlist?team_id=${team.id}`).pipe(
-              catchError(() => of([] as WatchlistEntry[]))
-            )
-          )
+        return this.api.get<WatchlistEntry[]>(`watchlist?team_id=${team.id}`).pipe(
+          catchError(() => of([] as WatchlistEntry[]))
         );
       })
     ),
