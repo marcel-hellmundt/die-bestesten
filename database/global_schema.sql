@@ -180,40 +180,41 @@ CREATE TABLE IF NOT EXISTS achievement (
     icon            VARCHAR(100) NULL DEFAULT NULL, -- Dateiname ohne Extension, z.B. 'trophy' → /img/achievements/trophy.png
     threshold_bronze INT          NULL DEFAULT NULL, -- Schwellwert für Bronze (NULL = kein Level-System)
     threshold_silver INT          NULL DEFAULT NULL, -- Schwellwert für Silber
-    threshold_gold   INT          NULL DEFAULT NULL  -- Schwellwert für Gold
+    threshold_gold   INT          NULL DEFAULT NULL, -- Schwellwert für Gold
+    type            VARCHAR(50)  NULL DEFAULT NULL   -- Gruppierung: season, rating, lineup, transfer, data
 );
 
 
 -- Achievements (v2)
--- Spaltenreihenfolge: id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold
-INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold) VALUES
-(UUID(), 'season_champion',    'Der Besteste',             'Werde Meister in einer Saison',                                                                    'cup',      NULL, NULL, NULL),
-(UUID(), 'matchday_wins',      'Platz an der Sonne',       'Gewinne mindestens {threshold} Spieltage in einer Saison',                                         'medal',    8,    12,   16  ),
-(UUID(), 'century',            'Jahrhundertelf',           'Lehre den anderen das Fürchten mit mindestens {threshold} Punkten an einem Spieltag',              'rocket',   80,   90,   100 ),
-(UUID(), 'win_streak_3',       'Never change a winning team', '3 Mal in Folge den Spieltag gewinnen? Nichts leichter als das',                                 'streak',   NULL, NULL, NULL),
-(UUID(), 'sds_4',              'Ein Käfig voller Helden',  'Einer besser als der andere. Habe 4 Spieler des Spiels aufgestellt',                                'sds',      NULL, NULL, NULL),
-(UUID(), 'season_points',      'Punkteflut',               'Sammle mindestens {threshold} Punkte in einer Saison',                                         'points',   1400, 1500, 1600),
-(UUID(), 'season_goals',       'Bomber der Nation',        'Habe mindestens {threshold} Tore in einer Saison',                                             'kanone',    70,   80,   90  ),
-(UUID(), 'season_assists',     'Ohne mich läuft nix',      'Habe mindestens {threshold} Vorlagen in einer Saison',                                         'assists',  60,   65,   70  ),
-(UUID(), 'datenkrake',         'Datenkrake',               'Trage alle Aufstellungen und Noten eines Spieltags ein',                                            'kraken',   NULL, NULL, NULL),
-(UUID(), 'kleine_grosse',      'Kleine ganz Groß',         'Du hast ein gutes Auge und dein 0,5-Mio-Spieler hat {threshold} Punkte gesammelt',               'ants',     10,   20,   30  ),
-(UUID(), 'zuschlag',           'Zuschlag!',                'Überbiete 5 unambitionierte Manager und hol dir deinen Wunschspieler ins Team',                     'offer',    NULL, NULL, NULL),
-(UUID(), 'kegelkasse',         'Ich zahl das',             'Zahle an 3 aufeinanderfolgenden Spieltagen den vollen Betrag in die Kegelkasse',                    'pay',      NULL, NULL, NULL),
-(UUID(), 'matchday_goals',     'Schützenfest',             'Erziele mindestens {threshold} Tore an einem Spieltag',                                             'goals',    8,    9,    10  ),
-(UUID(), 'matchday_assists',   'Vorlagenkönig',            'Sammle mindestens {threshold} Vorlagen an einem Spieltag',                                          'assists',  6,    7,    8   ),
-(UUID(), 'season_red_cards',   'Hardkohr',                 'Sammle mindestens {threshold} Platzverweise (Rote + Gelb-Rote Karten) in einer Saison',             'redcard',  4,    6,    8   ),
-(UUID(), 'season_transfers',   'Auf Einkaufstour',         'Kaufe 80 Spieler in einer Saison',                                                                 'shopping', NULL, NULL, NULL),
-(UUID(), 'youth_squad',        'Jugend forscht',            'Stelle eine Startelf auf, in der alle Feldspieler zum Spieltag (kickoff + 2 Tage) ≤23 Jahre alt sind', 'u23', NULL, NULL, NULL),
-(UUID(), 'veteran_squad',      'The Expendables',          'Stelle eine Startelf mit einem Altersschnitt von ≥30 Jahren auf (kickoff + 2 Tage)',                'expendables',  NULL, NULL, NULL),
-(UUID(), 'tall_squad',         'Lange Kerle',              'Stelle mindestens 7 Spieler mit ≥190 cm Körpergröße auf',                                           'tall',     NULL, NULL, NULL),
-(UUID(), 'geburtstagskind',    'Geburtstagskind',          'Habe einen nominierten Spieler, der am Spieltag (kickoff + 2 Tage) Geburtstag hat und ≥10 Punkte erzielt', 'birthday', NULL, NULL, NULL),
-(UUID(), 'phantome',           'Geister',                  'Habe mindestens 2 nominierte Starter, die gespielt haben aber keine Note erhalten haben',           'ghost',       NULL, NULL, NULL),
-(UUID(), 'transfer_reue',      'Transfer-Reue',            'Verkaufe einen Spieler, der am direkt folgenden Spieltag Spieler des Spiels wird',                    'sad',        NULL, NULL, NULL),
-(UUID(), 'bankdruecker',       'Bankdrücker',              'Habe mindestens 2 Spieler auf der Bank, die am selben Spieltag Spieler des Spiels werden',            'bench',       NULL, NULL, NULL),
-(UUID(), 'torwart_torschuetze','Torwart-Torschütze',       'Habe einen nominierten Torwart, der ein Tor erzielt',                                                  'keeper',      NULL, NULL, NULL),
-(UUID(), 'alles_perfekt',      'Alles perfekt',            'Hole alle erreichbaren Punkte an einem Spieltag (Ist = Max, mindestens 60 Punkte)',                     'perfect',     NULL, NULL, NULL),
-(UUID(), 'pechvogel',          'Pechvogel',                'Habe mindestens 2 nominierte Spieler, die an einem Spieltag eine 6 kassieren',                      'pechvogel',        NULL, NULL, NULL),
-(UUID(), 'bankraeuber',        'Bankräuber',               'Habe einen Spieler, der auf der Bank mindestens 50 Punkte mehr gesammelt hat als wenn er aufgestellt war', 'thief',        NULL, NULL, NULL),
-(UUID(), 'narzisst',           'Narzisst',                 'Habe mindestens 3 Spieler gleichzeitig im Kader, deren Vorname deinem Namen entspricht',                   'mirror',       NULL, NULL, NULL),
-(UUID(), 'champion_no_cards', 'Meister ohne Tadel',       'Werde Meister in einer Saison, ohne eine einzige Karte gesammelt zu haben',                               'goddess',          NULL, NULL, NULL),
-(UUID(), 'last_no_cards',     'Anständig gescheitert',    'Werde Letzter in einer Saison, ohne eine einzige Karte gesammelt zu haben',                               'cards',        NULL, NULL, NULL);
+-- Spaltenreihenfolge: id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold, type
+INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold, type) VALUES
+(UUID(), 'season_champion',     'Der Besteste',                  'Werde Meister in einer Saison',                                                                'cup',          NULL, NULL, NULL, 'season'  ),
+(UUID(), 'matchday_wins',       'Platz an der Sonne',            'Gewinne {threshold} Spieltage in einer Saison',                                                'medal',        8,    12,   16,   'season'  ),
+(UUID(), 'century',             'Jahrhundertelf',                'Hole {threshold} Punkten an einem Spieltag',                                                   'rocket',       80,   90,   100,  'rating'  ),
+(UUID(), 'win_streak_3',        'Never change a winning team',   'Gewinne 3 Spieltage in Folge',                                                                 'streak',       NULL, NULL, NULL, 'season'  ),
+(UUID(), 'sds_4',               'Ein Käfig voller Helden',       'Stelle 4 Spieler des Spiels auf',                                                              'sds',          NULL, NULL, NULL, 'rating'  ),
+(UUID(), 'season_points',       'Punkteflut',                    'Sammle {threshold} Punkte in einer Saison',                                                    'points',       1400, 1500, 1600, 'rating'  ),
+(UUID(), 'season_goals',        'Bomber der Nation',             'Schieße {threshold} Tore in einer Saison',                                                     'kanone',       70,   80,   90,   'rating'  ),
+(UUID(), 'season_assists',      'Vorlagenkönig',                 'Sammle {threshold} Vorlagen in einer Saison',                                                  'assists',      60,   65,   70,   'rating'  ),
+(UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                                        'kraken',       NULL, NULL, NULL, 'data'    ),
+(UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Dein 0,5-Mio-Spieler hat {threshold} Punkte gesammelt',                                        'ants',         10,   20,   30,   'rating'  ),
+(UUID(), 'zuschlag',            'Zuschlag!',                     'Überbiete 5 unambitionierte Manager auf dem Transfermarkt',                                    'offer',        NULL, NULL, NULL, 'transfer'),
+(UUID(), 'kegelkasse',          'Ich zahl das',                  'Zahle 3 Spieltage in Folge den vollen Betrag in die Kegelkasse',                               'pay',          NULL, NULL, NULL, 'rating'  ),
+(UUID(), 'matchday_goals',      'Schützenfest',                  'Erziele {threshold} Tore an einem Spieltag',                                                   'goals',        8,    9,    10,   'rating'  ),
+(UUID(), 'matchday_assists',    'Ohne mich läuft nix',           'Sammle {threshold} Vorlagen an einem Spieltag',                                                'assists',      6,    7,    8,    'rating'  ),
+(UUID(), 'season_red_cards',    'Hardkohr',                      'Sammle {threshold} Platzverweise in einer Saison',                                             'dish',         4,    6,    8,    'rating'  ),
+(UUID(), 'season_transfers',    'Auf Einkaufstour',              'Kaufe 80 Spieler in einer Saison',                                                             'shopping',     NULL, NULL, NULL, 'transfer'),
+(UUID(), 'youth_squad',         'Jugend forscht',                'Deine Startelf besteht nur aus U23 Spielern',                                                  'u23',          NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'veteran_squad',       'The Expendables',               'Der Altersschnitt deiner Startelf ist Ü30',                                                    'expendables',  NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'tall_squad',          'Lange Kerle',                   'Stelle min. 7 Spieler auf, die 1.90m oder größer sind',                                        'tall',         NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'geburtstagskind',     'Geburtstagskind',               'Stelle einen Spieler auf, der am Wochehende Geburtstag hat und 10 oder mehr Punkte bekommt',   'birthday',     NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'phantome',            'Geister',                       'Stelle 2 Spieler auf, die auch in echt in der Startelf waren aber keine Note bekommen haben',  'ghost',        NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'transfer_reue',       'Transfer-Reue',                 'Verkaufe einen Spieler, der am nächsten Spieltag SDS wird',                                    'sad',          NULL, NULL, NULL, 'transfer'),
+(UUID(), 'bankdruecker',        'Bankdrücker',                   'Habe 2 Spieler auf der Bank, die SDS werden',                                                  'bench',        NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'torwart_torschuetze', 'Torwart-Torschütze',            'Habe einen Torwart in deiner Startelf, der ein Tor erzielt',                                   'keeper',       NULL, NULL, NULL, 'rating'  ),
+(UUID(), 'alles_perfekt',       'Alles perfekt',                 'Habe die perfekte Startelf an einem guten Spieltag',                                           'perfect',      NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'pechvogel',           'Pechvogel',                     'Stelle 2 Spieler auf, die an einem Spieltag eine 6 kassieren',                                 'pechvogel',    NULL, NULL, NULL, 'rating'  ),
+(UUID(), 'bankraeuber',         'Bankräuber',                    'Dein Spieler sammelt von der Bank aus mehr Punkte als in deiner Startelf',                     'thief',        NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'narzisst',            'Narzisst',                      'Habe 3 Spieler im Kader mit deinem wundervollen Vornamen',                                     'mirror',       NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'champion_no_cards',   'Meister ohne Tadel',            'Werde Meister in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'goddess',      NULL, NULL, NULL, 'season'  ),
+(UUID(), 'last_no_cards',       'Anständig gescheitert',         'Werde Letzter in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'cards',        NULL, NULL, NULL, 'season'  );
