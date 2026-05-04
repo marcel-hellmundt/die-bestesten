@@ -214,7 +214,7 @@
 .col-rc--red { color: $color-danger; font-weight: $font-weight-semibold; }
 .col-rc--yr  { color: color-mix(in srgb, $color-danger 55%, $color-text-muted); font-weight: $font-weight-semibold; }
 
-.col-muted { color: $color-text-muted; }
+.col-muted { color: $color-border; font-weight: $font-weight-normal; }
 
 .team-cell {
   display: inline-flex;

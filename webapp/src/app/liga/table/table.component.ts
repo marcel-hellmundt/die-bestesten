@@ -73,7 +73,18 @@ export class TableComponent {
     { initialValue: null as any }
   );
 
-  private baseRows = computed(() => (this.state().data?.standings ?? []) as any[]);
+  private baseRows = computed(() =>
+    (this.state().data?.standings ?? []).map((r: any) => ({
+      ...r,
+      total_points:           Number(r.total_points)           || 0,
+      total_goals:            Number(r.total_goals)            || 0,
+      total_assists:          Number(r.total_assists)          || 0,
+      total_sds:              Number(r.total_sds)              || 0,
+      total_clean_sheet:      Number(r.total_clean_sheet)      || 0,
+      total_red_cards:        Number(r.total_red_cards)        || 0,
+      total_yellow_red_cards: Number(r.total_yellow_red_cards) || 0,
+    })) as any[]
+  );
 
   rows = computed(() => {
     const base = this.baseRows();
@@ -82,19 +93,20 @@ export class TableComponent {
     if (!live?.ratings?.length || live.matchday?.completed) return base;
     const liveMap = new Map<string, any>();
     for (const r of live.ratings as any[]) liveMap.set(r.team_id, r);
+    const n = (v: any) => Number(v) || 0;
     return [...base]
       .map(r => {
         const lr = liveMap.get(r.team_id);
         if (!lr) return r;
         return {
           ...r,
-          total_points:           Number(r.total_points)           + Number(lr.points           ?? 0),
-          total_goals:            Number(r.total_goals)            + Number(lr.goals            ?? 0),
-          total_assists:          Number(r.total_assists)          + Number(lr.assists          ?? 0),
-          total_sds:              Number(r.total_sds)              + Number(lr.sds              ?? 0),
-          total_clean_sheet:      Number(r.total_clean_sheet)      + Number(lr.clean_sheet      ?? 0),
-          total_red_cards:        Number(r.total_red_cards)        + Number(lr.red_cards        ?? 0),
-          total_yellow_red_cards: Number(r.total_yellow_red_cards) + Number(lr.yellow_red_cards ?? 0),
+          total_points:           n(r.total_points)           + n(lr.points),
+          total_goals:            n(r.total_goals)            + n(lr.goals),
+          total_assists:          n(r.total_assists)          + n(lr.assists),
+          total_sds:              n(r.total_sds)              + n(lr.sds),
+          total_clean_sheet:      n(r.total_clean_sheet)      + n(lr.clean_sheet),
+          total_red_cards:        n(r.total_red_cards)        + n(lr.red_cards),
+          total_yellow_red_cards: n(r.total_yellow_red_cards) + n(lr.yellow_red_cards),
         };
       })
       .sort((a, b) => b.total_points - a.total_points);
