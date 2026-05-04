@@ -71,7 +71,7 @@
             <span class="sell-error">{{ sellError() }}</span>
           }
         </div>
-      } @else if (currentTeam() === null && openWindow() && myTeam()) {
+      } @else if (currentTeam() === null && openWindow() && myTeam() && isCurrentBundesligaPlayer()) {
         <div class="team-badge">
           <img
             class="team-badge__placeholder logo--placeholder"

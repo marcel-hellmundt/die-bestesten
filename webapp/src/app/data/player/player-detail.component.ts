@@ -428,6 +428,14 @@ export class PlayerDetailComponent {
     ) ?? null;
   }
 
+  isCurrentBundesligaPlayer = computed(() => {
+    const player = this.player();
+    const seasons = this.cache.seasons();
+    if (!player || !seasons.length) return false;
+    const activeSeason = [...seasons].sort((a, b) => b.start_date.localeCompare(a.start_date))[0];
+    return player.clubs.some(c => c.to_date === null) && player.seasons.some(s => s.season_id === activeSeason.id);
+  });
+
   totalPoints  = computed(() => this.player()?.ratings.reduce((s, r) => s + +(r.points ?? 0), 0) ?? 0);
 
   // Points per team entry (key = team_id + '_' + from_matchday_number), counting only nominated matchdays
