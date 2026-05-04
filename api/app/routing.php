@@ -336,6 +336,33 @@ class Routing
                 ],
             ]),
 
+            new Route('notification', 'Notification', [
+                'title' => 'Notification',
+                'description' => 'In-App-Benachrichtigungen — Manager-to-Manager oder Systemnachrichten',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/notification',
+                        'description' => 'Alle Benachrichtigungen des eingeloggten Managers, neueste zuerst — Auth',
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/notification/:id',
+                        'description' => 'Einzelne Notification als gelesen markieren (read_at = NOW()); 403 wenn nicht eigene — Auth',
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/notification/read_all',
+                        'description' => 'Alle ungelesenen Notifications des eingeloggten Managers als gelesen markieren — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/notification',
+                        'description' => 'Neue Notification erstellen {receiver_id, title, message?, sender_id?}; sender_id=null → Systemnachricht — Admin',
+                    ],
+                ],
+            ]),
+
             new Route('award', 'Award', [
                 'title' => 'Award',
                 'description' => 'Award-Typen und Gewinner pro Saison',

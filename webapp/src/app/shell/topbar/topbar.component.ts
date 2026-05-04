@@ -5,6 +5,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'r
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { ApiService } from '../../core/api.service';
+import { NotificationService } from '../../core/notification.service';
 
 interface SearchResults {
   players:  any[];
@@ -24,6 +25,7 @@ export class TopbarComponent implements OnDestroy {
   private router = inject(Router);
   private cache  = inject(DataCacheService);
   private api    = inject(ApiService);
+  notifService   = inject(NotificationService);
 
   isDropdownOpen  = signal(false);
   avatarImgFailed = signal(false);

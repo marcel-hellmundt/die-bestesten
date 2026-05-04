@@ -1,0 +1,43 @@
+<div class="notif-layout">
+  <div class="notif-list">
+    <div class="notif-list__header">
+      <h1 class="page-title">Benachrichtigungen</h1>
+      @if (service.unreadCount() > 0) {
+        <button class="btn btn--ghost btn--sm" (click)="service.markAllAsRead()">Alle gelesen</button>
+      }
+    </div>
+
+    @for (n of service.notifications(); track n.id) {
+      <div
+        class="notif-item"
+        [class.notif-item--unread]="!n.read_at"
+        [class.notif-item--active]="selected()?.id === n.id"
+        (click)="select(n)"
+      >
+        @if (!n.read_at) {
+          <span class="notif-item__dot"></span>
+        }
+        <div class="notif-item__content">
+          <div class="notif-item__title">{{ n.title }}</div>
+          <div class="notif-item__meta">{{ n.sender_name ?? 'System' }} · {{ formatDate(n.created_at) }}</div>
+        </div>
+      </div>
+    } @empty {
+      <p class="state-msg">Keine Benachrichtigungen.</p>
+    }
+  </div>
+
+  <div class="notif-detail card" [class.notif-detail--visible]="!!selected()">
+    @if (selected(); as n) {
+      <div class="notif-detail__header">
+        <h2 class="notif-detail__title">{{ n.title }}</h2>
+        <p class="notif-detail__meta">{{ n.sender_name ?? 'System' }} · {{ formatDate(n.created_at, true) }}</p>
+      </div>
+      @if (n.message) {
+        <div class="notif-detail__body">{{ n.message }}</div>
+      }
+    } @else {
+      <p class="state-msg">Benachrichtigung auswählen.</p>
+    }
+  </div>
+</div>

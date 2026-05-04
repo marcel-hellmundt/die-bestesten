@@ -24,6 +24,7 @@ require_once 'sell.database.php';
 require_once 'buy.database.php';
 require_once 'offer.database.php';
 require_once 'search.database.php';
+require_once 'notification.database.php';
 
 class Database
 {
@@ -52,6 +53,7 @@ class Database
     use TeamRatingTrait;
     use PasswordResetTrait;
     use SearchTrait;
+    use NotificationTrait;
 
     private $con;
     private $con_league;

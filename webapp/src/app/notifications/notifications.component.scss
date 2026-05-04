@@ -1,0 +1,114 @@
+@use '../../../styles/variables' as *;
+
+.notif-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: $space-6;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.notif-list {
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  overflow: hidden;
+  background: $color-surface;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: $space-3 $space-4;
+    border-bottom: 1px solid $color-border;
+
+    .page-title {
+      margin: 0;
+      font-size: $font-base;
+    }
+  }
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $color-border;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:last-child { border-bottom: none; }
+  &:hover      { background: $color-surface-alt; }
+  &--active    { background: $color-surface-alt; }
+
+  &__dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: $radius-full;
+    background: $color-danger;
+    margin-top: 5px;
+  }
+
+  &__content {
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: $font-sm;
+    color: $color-text;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &--unread &__title {
+    font-weight: $font-weight-semibold;
+  }
+
+  &__meta {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.notif-detail {
+  padding: $space-6;
+  min-height: 200px;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+
+    &--visible {
+      display: block;
+    }
+  }
+
+  &__header {
+    margin-bottom: $space-4;
+  }
+
+  &__title {
+    margin: 0 0 $space-1;
+    font-size: $font-lg;
+  }
+
+  &__meta {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__body {
+    font-size: $font-sm;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    color: $color-text;
+  }
+}

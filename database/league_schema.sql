@@ -176,3 +176,15 @@ CREATE TABLE IF NOT EXISTS team_award (
     FOREIGN KEY (team_id) REFERENCES team(id),
     UNIQUE KEY uk_team_award (award_id, team_id)  -- ein Team kann denselben Award nicht zweimal gewinnen
 );
+
+-- Tabelle: notification (In-App-Benachrichtigungen zwischen Managern oder Systemmeldungen)
+CREATE TABLE IF NOT EXISTS notification (
+    id          CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    sender_id   CHAR(36)     NULL DEFAULT NULL,          -- NULL = Systemnachricht
+    receiver_id CHAR(36)     NOT NULL,
+    title       VARCHAR(255) NOT NULL,
+    message     TEXT         NULL,
+    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at     DATETIME     NULL DEFAULT NULL,
+    FOREIGN KEY (receiver_id) REFERENCES manager(id) ON DELETE CASCADE
+);

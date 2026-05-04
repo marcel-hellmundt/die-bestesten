@@ -132,6 +132,10 @@ GET      /achievement          — [{id,name,description,icon,threshold_bronze,t
 POST     /achievement/evaluate — Achievement-Auswertung für alle Manager anstoßen (Backfill); idempotent — Admin
 POST     /achievement/evaluate/:id — Einzelnes Achievement neu auswerten: vergibt an neue Gewinner und entzieht Managern, die Anforderungen nicht mehr erfüllen — Admin
 PATCH    /achievement/seen     — Alle noch nicht gesehenen Achievements (seen_at IS NULL) des eingeloggten Managers als gesehen markieren — Auth
+GET      /notification         — [{id,sender_id,sender_name,receiver_id,title,message,created_at,read_at}] neueste zuerst — Auth
+PATCH    /notification/:id     — Einzelne Notification als gelesen markieren (read_at = NOW()); 403 wenn nicht eigene — Auth
+PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen markieren — Auth
+POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
 ```
 
 ## Liga-DB (`database/league_schema.sql`)
@@ -149,6 +153,8 @@ PATCH    /achievement/seen     — Alle noch nicht gesehenen Achievements (seen_
 **team_rating**: id PK, team_id FK, matchday_id (cross-DB), points, max_points, goals, assists, red_cards (echte Platzverweise), yellow_red_cards (Gelb-Rote Karten), clean_sheet, sds, sds_defender, missed_goals, points_goalkeeper/defender/midfielder/forward (denorm.), invalid BOOL — UNIQUE(team_id, matchday_id)
 
 **team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK) — UNIQUE(award_id, team_id) — season ergibt sich aus team.season_id
+
+**notification**: id PK, sender_id CHAR(36)? (NULL = Systemnachricht; kein FK), receiver_id FK → manager, title VARCHAR(255), message TEXT?, created_at DATETIME, read_at DATETIME? (NULL = ungelesen)
 
 **manager_achievement**: id PK, manager_id FK, achievement_id (cross-DB auf global_schema.achievement, kein FK), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen; Achievements ohne Stufen speichern immer 'gold'
 

@@ -137,6 +137,10 @@
     }
   }
 
+  &-bell {
+    position: relative;
+  }
+
   &-user {
     position: relative;
 
@@ -364,4 +368,21 @@
   position: fixed;
   inset: 0;
   z-index: $z-dropdown - 1;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: $radius-full;
+  background: $color-danger;
+  color: #fff;
+  font-size: 10px;
+  font-weight: $font-weight-bold;
+  line-height: 16px;
+  text-align: center;
+  padding: 0 3px;
+  pointer-events: none;
 }

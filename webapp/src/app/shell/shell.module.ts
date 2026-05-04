@@ -21,7 +21,8 @@ const routes: Routes = [
       { path: 'manager',       loadChildren: () => import('../manager/manager.module').then(m => m.ManagerModule) },
       { path: 'daten',         loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
       { path: 'einstellungen',  loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
-      { path: 'achievements',   loadChildren: () => import('../achievements/achievements.module').then(m => m.AchievementsModule) },
+      { path: 'achievements',    loadChildren: () => import('../achievements/achievements.module').then(m => m.AchievementsModule) },
+      { path: 'notifications',   loadChildren: () => import('../notifications/notifications.module').then(m => m.NotificationsModule) },
     ]
   }
 ];
