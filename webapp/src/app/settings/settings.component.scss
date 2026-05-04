@@ -166,12 +166,51 @@
   color: $color-text-muted;
 }
 
-.pref-checkbox {
+.toggle {
+  position: relative;
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  accent-color: $color-accent;
-  cursor: pointer;
+  width: 44px;
+  height: 24px;
+  display: inline-block;
+
+  &__input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+
+    &:checked + .toggle__track {
+      background: $color-accent;
+
+      &::after {
+        transform: translateX(20px);
+      }
+    }
+  }
+
+  &__track {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: $radius-full;
+    background: $color-border;
+    transition: background $transition-fast;
+    cursor: pointer;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.25);
+      transition: transform $transition-fast;
+    }
+  }
 }
 
 // Delete confirm

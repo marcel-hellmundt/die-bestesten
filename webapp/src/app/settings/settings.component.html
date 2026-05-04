@@ -96,11 +96,14 @@
         <span class="pref-name">Spieltag abgeschlossen</span>
         <span class="pref-desc">Wenn ein Spieltag ausgewertet wurde</span>
       </div>
-      <input type="checkbox"
-             class="pref-checkbox"
-             [checked]="pref('matchday_completed')"
-             (click)="$event.stopPropagation()"
-             (change)="setPreference('matchday_completed', $any($event.target).checked)" />
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('matchday_completed')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('matchday_completed', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
     </label>
 
     <label class="pref-item">
@@ -108,11 +111,14 @@
         <span class="pref-name">Achievement erhalten</span>
         <span class="pref-desc">Wenn du ein neues Achievement freischaltest</span>
       </div>
-      <input type="checkbox"
-             class="pref-checkbox"
-             [checked]="pref('achievement_earned')"
-             (click)="$event.stopPropagation()"
-             (change)="setPreference('achievement_earned', $any($event.target).checked)" />
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('achievement_earned')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('achievement_earned', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
     </label>
   </div>
 </section>
