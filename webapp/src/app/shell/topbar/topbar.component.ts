@@ -1,5 +1,6 @@
 import { Component, inject, signal, computed, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
@@ -29,6 +30,7 @@ export class TopbarComponent implements OnDestroy {
 
   isDropdownOpen  = signal(false);
   avatarImgFailed = signal(false);
+  currentUrl      = signal(this.router.url);
 
   searchQuery   = signal('');
   searchResults = signal<SearchResults | null>(null);
@@ -70,6 +72,10 @@ export class TopbarComponent implements OnDestroy {
   private searchSub: Subscription;
 
   constructor() {
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
+      this.currentUrl.set(e.urlAfterRedirects);
+    });
+
     this.searchSub = this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
