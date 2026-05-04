@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS achievement (
     threshold_bronze INT          NULL DEFAULT NULL, -- Schwellwert für Bronze (NULL = kein Level-System)
     threshold_silver INT          NULL DEFAULT NULL, -- Schwellwert für Silber
     threshold_gold   INT          NULL DEFAULT NULL, -- Schwellwert für Gold
-    type            VARCHAR(50)  NULL DEFAULT NULL   -- Gruppierung: season, rating, lineup, transfer, data
+    type            ENUM('season','rating','lineup','transfer','data') NULL DEFAULT NULL
 );
 
 
@@ -196,13 +196,13 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'season_points',       'Punkteflut',                    'Sammle {threshold} Punkte in einer Saison',                                                    'points',       1400, 1500, 1600, 'rating'  ),
 (UUID(), 'season_goals',        'Bomber der Nation',             'Schieße {threshold} Tore in einer Saison',                                                     'kanone',       70,   80,   90,   'rating'  ),
 (UUID(), 'season_assists',      'Vorlagenkönig',                 'Sammle {threshold} Vorlagen in einer Saison',                                                  'assists',      60,   65,   70,   'rating'  ),
-(UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                                        'kraken',       NULL, NULL, NULL, 'data'    ),
+(UUID(), 'datenkrake',          'Datenkrake',                    'Trage alle Aufstellungen und Noten eines Spieltags ein',                                       'kraken',       NULL, NULL, NULL, 'data'    ),
 (UUID(), 'kleine_grosse',       'Kleine ganz Groß',              'Dein 0,5-Mio-Spieler hat {threshold} Punkte gesammelt',                                        'ants',         10,   20,   30,   'rating'  ),
 (UUID(), 'zuschlag',            'Zuschlag!',                     'Überbiete 5 unambitionierte Manager auf dem Transfermarkt',                                    'offer',        NULL, NULL, NULL, 'transfer'),
 (UUID(), 'kegelkasse',          'Ich zahl das',                  'Zahle 3 Spieltage in Folge den vollen Betrag in die Kegelkasse',                               'pay',          NULL, NULL, NULL, 'rating'  ),
 (UUID(), 'matchday_goals',      'Schützenfest',                  'Erziele {threshold} Tore an einem Spieltag',                                                   'goals',        8,    9,    10,   'rating'  ),
-(UUID(), 'matchday_assists',    'Ohne mich läuft nix',           'Sammle {threshold} Vorlagen an einem Spieltag',                                                'assists',      6,    7,    8,    'rating'  ),
-(UUID(), 'season_red_cards',    'Hardkohr',                      'Sammle {threshold} Platzverweise in einer Saison',                                             'dish',         4,    6,    8,    'rating'  ),
+(UUID(), 'matchday_assists',    'Ohne mich läuft nix',           'Sammle {threshold} Vorlagen an einem Spieltag',                                                'dish',      6,    7,    8,    'rating'  ),
+(UUID(), 'season_red_cards',    'Hardkohr',                      'Sammle {threshold} Platzverweise in einer Saison',                                             'attack',         4,    6,    8,    'rating'  ),
 (UUID(), 'season_transfers',    'Auf Einkaufstour',              'Kaufe 80 Spieler in einer Saison',                                                             'shopping',     NULL, NULL, NULL, 'transfer'),
 (UUID(), 'youth_squad',         'Jugend forscht',                'Deine Startelf besteht nur aus U23 Spielern',                                                  'u23',          NULL, NULL, NULL, 'lineup'  ),
 (UUID(), 'veteran_squad',       'The Expendables',               'Der Altersschnitt deiner Startelf ist Ü30',                                                    'expendables',  NULL, NULL, NULL, 'lineup'  ),
