@@ -124,7 +124,7 @@ GET      /team_rating/season   — ?season_id → aggregierte Saisontabelle alle
 GET      /team/mine            — Eigenes Team der aktiven Saison {id, team_name, season_id, color}; 404 wenn kein Team — Auth
 GET      /team/:id             — Team per ID (manager_name, alias, total_points, matchdays_played) — Auth
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
-PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} allein für E-Mail — Auth
+PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} oder {first_name} allein ohne Passwort — Auth
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth
@@ -142,7 +142,7 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 
 ## Liga-DB (`database/league_schema.sql`)
 
-**manager**: id PK, manager_name UNIQUE, alias UNIQUE?, password, status ENUM(active/blocked/deleted) DEFAULT active, email UNIQUE?, date_of_birth?
+**manager**: id PK, manager_name UNIQUE (Anzeigename/Username), first_name VARCHAR(100)? (echter Vorname — für Achievement-Vergleiche), alias UNIQUE?, password, status ENUM(active/blocked/deleted) DEFAULT active, email UNIQUE?, date_of_birth?
 
 **manager_role**: id PK, manager_id FK, role ENUM(maintainer/admin) — UNIQUE(manager_id, role) — additiv; jeder Manager hat implizit 'manager'
 

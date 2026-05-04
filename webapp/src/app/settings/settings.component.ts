@@ -10,6 +10,7 @@ import { NotificationService } from '../core/notification.service';
 interface ManagerProfile {
   id: string;
   manager_name: string;
+  first_name: string | null;
   alias: string | null;
   role: string;
   status: string;
@@ -63,6 +64,22 @@ export class SettingsComponent {
     const name = this.auth.getManagerName() ?? '';
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
   });
+
+  // First name
+  firstNameInput = signal('');
+  firstNameState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  initFirstName(p: ManagerProfile): void {
+    if (this.firstNameState() === 'idle') this.firstNameInput.set(p.first_name ?? '');
+  }
+
+  saveFirstName(): void {
+    this.firstNameState.set('loading');
+    this.api.patch<any>('manager/me', { first_name: this.firstNameInput() || null }).subscribe({
+      next: () => this.firstNameState.set('success'),
+      error: () => this.firstNameState.set('error'),
+    });
+  }
 
   // Password change
   currentPw = signal('');

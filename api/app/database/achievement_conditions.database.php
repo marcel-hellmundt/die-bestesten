@@ -2483,10 +2483,19 @@ trait AchievementConditionsTrait
         $plh = implode(',', array_fill(0, count($managerIds), '?'));
 
         $stmt = $this->con_league->prepare(
-            "SELECT id, manager_name FROM manager WHERE id IN ($plh)"
+            "SELECT id, manager_name, first_name FROM manager WHERE id IN ($plh)"
         );
         $stmt->execute($managerIds);
-        $managerNames = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'manager_name', 'id');
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // first_name = echter Vorname; fallback auf manager_name nur wenn first_name nicht gesetzt
+        $managerFirstNames = [];
+        $managerDisplayNames = [];
+        foreach ($rows as $row) {
+            $managerFirstNames[$row['id']]   = $row['first_name'] ?? null;
+            $managerDisplayNames[$row['id']] = $row['manager_name'];
+        }
+        // Nur Manager mit gesetztem Vornamen können das Achievement erreichen
+        $managerIds = array_values(array_filter($managerIds, fn($id) => !empty($managerFirstNames[$id])));
 
         $matchdays = $this->con->query(
             "SELECT md.id, md.number, md.season_id, md.kickoff_date, s.start_date AS season_start
@@ -2548,7 +2557,7 @@ trait AchievementConditionsTrait
             foreach ($managerIds as $mgr) {
                 if (isset($achievers[$mgr])) continue;
 
-                $manName = strtolower($managerNames[$mgr] ?? '');
+                $manName = strtolower($managerFirstNames[$mgr] ?? '');
                 if ($manName === '') continue;
 
                 $pitList = $mgrPitBySeason[$mgr][$mdSid] ?? [];
@@ -2569,7 +2578,7 @@ trait AchievementConditionsTrait
                         'md_number'    => $md['number'],
                         'kickoff_date' => $md['kickoff_date'],
                         'season_start' => $md['season_start'],
-                        'first_name'   => $managerNames[$mgr],
+                        'first_name'   => $managerFirstNames[$mgr],
                     ];
                 }
             }

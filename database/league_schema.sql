@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS manager (
     id            CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
     manager_name  VARCHAR(64)  NOT NULL UNIQUE,
+    first_name    VARCHAR(100) NULL DEFAULT NULL,
     alias         VARCHAR(64)  NULL DEFAULT NULL UNIQUE,
     password      VARCHAR(255) NOT NULL,
     status        ENUM('active', 'blocked', 'deleted') NOT NULL DEFAULT 'active',

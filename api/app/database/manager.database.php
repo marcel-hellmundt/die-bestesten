@@ -5,12 +5,19 @@ trait ManagerTrait
     public function getManagerById(string $id): array|false
     {
         $q = $this->con_league->prepare(
-            "SELECT id, manager_name, alias, status, email FROM manager WHERE id = :id LIMIT 1"
+            "SELECT id, manager_name, first_name, alias, status, email FROM manager WHERE id = :id LIMIT 1"
         );
         $q->execute([':id' => $id]);
         $manager = $q->fetch(PDO::FETCH_ASSOC);
         if ($manager) $manager['roles'] = $this->getManagerRoles($id);
         return $manager;
+    }
+
+    public function updateManagerFirstName(string $id, ?string $firstName): void
+    {
+        $this->con_league->prepare(
+            "UPDATE manager SET first_name = :first_name WHERE id = :id"
+        )->execute([':first_name' => $firstName, ':id' => $id]);
     }
 
     public function getManagerRoles(string $managerId): array
