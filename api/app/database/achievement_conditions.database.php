@@ -2770,7 +2770,7 @@ trait AchievementConditionsTrait
         if (empty($managerIds)) return [];
 
         $matchdays = $this->con->query(
-            "SELECT md.id, md.kickoff_date, s.start_date AS season_start
+            "SELECT md.id, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
              WHERE md.completed = 1
@@ -2779,18 +2779,20 @@ trait AchievementConditionsTrait
 
         if (empty($matchdays)) return [];
 
-        $mdIds         = array_column($matchdays, 'id');
-        $kickoffMap    = array_column($matchdays, 'kickoff_date', 'id');
+        $mdIds          = array_column($matchdays, 'id');
+        $kickoffMap     = array_column($matchdays, 'kickoff_date', 'id');
         $seasonStartMap = array_column($matchdays, 'season_start', 'id');
+        $mdToSeason     = array_column($matchdays, 'season_id', 'id');
 
         $plh  = implode(',', array_fill(0, count($managerIds), '?'));
         $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
 
+        // All squad players (nominated + bench)
         $stmt = $this->con_league->prepare(
             "SELECT t.manager_id, t.team_name, tl.matchday_id, tl.player_id
              FROM team_lineup tl
              JOIN team t ON t.id = tl.team_id
-             WHERE tl.nominated = 1 AND t.manager_id IN ($plh) AND tl.matchday_id IN ($mPlh)"
+             WHERE t.manager_id IN ($plh) AND tl.matchday_id IN ($mPlh)"
         );
         $stmt->execute([...$managerIds, ...$mdIds]);
         $lineups = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -2799,30 +2801,60 @@ trait AchievementConditionsTrait
 
         $playerIds = array_values(array_unique(array_column($lineups, 'player_id')));
         $pPlh = implode(',', array_fill(0, count($playerIds), '?'));
+
         $stmt = $this->con->prepare("SELECT id, country_id FROM player WHERE id IN ($pPlh)");
         $stmt->execute($playerIds);
         $countryMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'country_id', 'id');
+
+        $seasonIds = array_values(array_unique(array_column($matchdays, 'season_id')));
+        $sPlh = implode(',', array_fill(0, count($seasonIds), '?'));
+        $stmt = $this->con->prepare(
+            "SELECT player_id, season_id, position FROM player_in_season WHERE player_id IN ($pPlh) AND season_id IN ($sPlh)"
+        );
+        $stmt->execute([...$playerIds, ...$seasonIds]);
+        $positionMap = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row)
+            $positionMap[$row['player_id']][$row['season_id']] = $row['position'];
 
         $groups = [];
         foreach ($lineups as $row) {
             $key = $row['manager_id'] . '|' . $row['matchday_id'];
             if (!isset($groups[$key]))
-                $groups[$key] = ['manager_id' => $row['manager_id'], 'team_name' => $row['team_name'], 'matchday_id' => $row['matchday_id'], 'countries' => []];
-            $groups[$key]['countries'][] = $countryMap[$row['player_id']] ?? null;
+                $groups[$key] = ['manager_id' => $row['manager_id'], 'team_name' => $row['team_name'], 'matchday_id' => $row['matchday_id'], 'players' => []];
+            $groups[$key]['players'][] = $row['player_id'];
         }
+
+        $posMin = ['GOALKEEPER' => 1, 'DEFENDER' => 5, 'MIDFIELDER' => 5, 'FORWARD' => 3];
 
         $achievers = [];
         foreach ($groups as $data) {
             $mid = $data['manager_id'];
             if (isset($achievers[$mid])) continue;
 
-            $countries    = $data['countries'];
-            $withCountry  = array_filter($countries, fn($c) => $c !== null);
-            $uniqueNations = array_unique($withCountry);
+            $seasonId  = $mdToSeason[$data['matchday_id']] ?? null;
+            if (!$seasonId) continue;
 
-            if (count($countries) !== 11 || count($withCountry) !== 11 || count($uniqueNations) !== 1) continue;
+            $countries = [];
+            $posCounts = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
+            $valid     = true;
 
-            $achievers[$mid] = ['team_name' => $data['team_name'], 'matchday_id' => $data['matchday_id'], 'nation' => reset($uniqueNations)];
+            foreach ($data['players'] as $pid) {
+                $country = $countryMap[$pid] ?? null;
+                if ($country === null) { $valid = false; break; }
+                $countries[] = $country;
+                $pos = $positionMap[$pid][$seasonId] ?? null;
+                if ($pos !== null && isset($posCounts[$pos])) $posCounts[$pos]++;
+            }
+
+            if (!$valid) continue;
+            if (count(array_unique($countries)) !== 1) continue;
+
+            foreach ($posMin as $pos => $min) {
+                if ($posCounts[$pos] < $min) { $valid = false; break; }
+            }
+            if (!$valid) continue;
+
+            $achievers[$mid] = ['team_name' => $data['team_name'], 'matchday_id' => $data['matchday_id'], 'nation' => $countries[0]];
         }
 
         if (empty($achievers)) return [];

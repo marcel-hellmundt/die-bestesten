@@ -218,5 +218,5 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'narzisst',            'Narzisst',                      'Habe 3 Spieler im Kader mit deinem wundervollen Vornamen',                                     'mirror',       NULL, NULL, NULL, 'lineup'  ),
 (UUID(), 'champion_no_cards',   'Meister ohne Tadel',            'Werde Meister in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'goddess',      NULL, NULL, NULL, 'season'  ),
 (UUID(), 'last_no_cards',       'Zu weich',                      'Werde Letzter in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'soft',        NULL, NULL, NULL, 'season'  ),
-(UUID(), 'eine_nation',         'Nationalelf',                   'Deine Startelf besteht ausschließlich aus Spielern einer Nationalität',                        'flag',         NULL, NULL, NULL, 'lineup'  ),
-(UUID(), 'heimatstadt',         'Lokalmatadoren',                'Habe 3 Spieler mit dem gleichen Geburtsort in deinem Kader',                                   'city',         NULL, NULL, NULL, 'lineup'  );
+(UUID(), 'eine_nation',         'Nationalelf',                   'Alle Spieler deines Kaders haben die gleiche Nationalität (gültiger Kader)',                        'flag',         NULL, NULL, NULL, 'lineup'  ),
+(UUID(), 'heimatstadt',         'Lokalmatadoren',                '3 deiner Spieler kommen aus der gleichen Stadt',                                   'city',         NULL, NULL, NULL, 'lineup'  );
