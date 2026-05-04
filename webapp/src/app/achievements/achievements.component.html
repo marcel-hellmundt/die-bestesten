@@ -6,6 +6,32 @@
 
 <div class="achievement-grid">
   @for (a of achievements(); track a.id) {
+    <div class="achievement-card">
+      <div class="achievement-header">
+        <div class="achievement-title" fitText [fitTextMax]="16" [fitTextMin]="10">{{ a.name }}</div>
+        <img
+          class="achievement-level"
+          [src]="'img/achievements/level-' + a.level + '.png'"
+          [alt]="a.level"
+          *ngIf="a.level"
+        />
+      </div>
+      <div class="achievement-icon-container">
+        <img
+          class="achievement-icon-background"
+          [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'"
+          [alt]="a.name"
+        />
+        <img
+          class="achievement-icon"
+          [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'"
+          [alt]="a.name"
+        />
+      </div>
+
+      <div class="achievement-condition">{{ resolvedDescription(a) }}</div>
+    </div>
+    <!--
     <div class="achievement-card" [class.achievement-card--earned]="a.earned_at" [class.achievement-card--bronze]="a.level === 'bronze'" [class.achievement-card--silver]="a.level === 'silver'" [class.achievement-card--gold]="a.level === 'gold'">
       <div class="achievement-card__icon">
         <img [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'" [alt]="a.name" />
@@ -26,6 +52,6 @@
           {{ a.earned_count }}/{{ a.total_managers }} ({{ (a.earned_count / a.total_managers * 100) | number: '1.0-0' }}%)
         </div>
       }
-    </div>
+    </div>-->
   }
 </div>
