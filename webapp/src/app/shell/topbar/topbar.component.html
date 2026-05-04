@@ -129,15 +129,17 @@
   <div class="topbar-right">
     <button
       class="topbar-icon-btn topbar-bell"
+      [class.active]="currentUrl().startsWith('/achievements')"
       (click)="navigateTo('/achievements')"
-      aria-label="Benachrichtigungen"
+      aria-label="Achievements"
     >
       <app-icon name="award"></app-icon>
     </button>
 
     <button
       class="topbar-icon-btn topbar-bell"
-      (click)="navigateTo('/notifications')"
+      [class.active]="currentUrl().startsWith('/benachrichtigungen')"
+      (click)="navigateTo('/benachrichtigungen')"
       aria-label="Benachrichtigungen"
     >
       <app-icon name="bell"></app-icon>

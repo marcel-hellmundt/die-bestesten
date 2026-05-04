@@ -60,6 +60,7 @@ export class NavComponent {
       { label: 'Spieler',        icon: 'spieler',        route: '/markt/spieler' },
       { label: 'Transferphasen', icon: 'transferphasen', route: '/markt/transferphasen' },
       { label: 'Gebote',         icon: 'gebote',         route: '/markt/gebote' },
+      { label: 'Scouting',       icon: 'eye',            route: '/scouting' },
     ]
   };
 

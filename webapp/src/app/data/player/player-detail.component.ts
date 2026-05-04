@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, distinctUntilChanged, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
@@ -130,6 +130,43 @@ export class PlayerDetailComponent {
     ),
     { initialValue: null as { id: string; team_name: string; season_id: string; color: string | null } | null }
   );
+
+  watchlistEntryId = signal<string | null>(null);
+  isWatched        = computed(() => this.watchlistEntryId() !== null);
+  watchToggling    = signal(false);
+
+  private watchlistEntries = toSignal(
+    toObservable(this.myTeam).pipe(
+      switchMap(team => {
+        if (!team) return of([] as { id: string; player_id: string }[]);
+        return this.api.get<{ id: string; player_id: string }[]>(`watchlist?team_id=${team.id}`).pipe(
+          catchError(() => of([] as { id: string; player_id: string }[]))
+        );
+      })
+    ),
+    { initialValue: [] as { id: string; player_id: string }[] }
+  );
+
+  private playerId = toSignal(this.id$, { initialValue: '' });
+
+  toggleWatch(): void {
+    const team = this.myTeam();
+    const p    = this.player();
+    if (!team || !p || this.watchToggling()) return;
+
+    this.watchToggling.set(true);
+    if (this.isWatched()) {
+      this.api.delete<null>(`watchlist/${this.watchlistEntryId()}`, { team_id: team.id }).subscribe({
+        next: () => { this.watchlistEntryId.set(null); this.watchToggling.set(false); },
+        error: () => this.watchToggling.set(false),
+      });
+    } else {
+      this.api.post<{ id: string }>('watchlist', { team_id: team.id, player_id: p.id }).subscribe({
+        next: (res) => { this.watchlistEntryId.set(res.id); this.watchToggling.set(false); },
+        error: () => this.watchToggling.set(false),
+      });
+    }
+  }
 
   private refreshOffers$ = new Subject<void>();
 
@@ -616,5 +653,10 @@ export class PlayerDetailComponent {
 
   constructor() {
     this.cache.ensureSeasons();
+    effect(() => {
+      const entries  = this.watchlistEntries();
+      const playerId = this.playerId();
+      this.watchlistEntryId.set(entries.find(e => e.player_id === playerId)?.id ?? null);
+    });
   }
 }

@@ -22,7 +22,8 @@ const routes: Routes = [
       { path: 'daten',         loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
       { path: 'einstellungen',  loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
       { path: 'achievements',    loadChildren: () => import('../achievements/achievements.module').then(m => m.AchievementsModule) },
-      { path: 'notifications',   loadChildren: () => import('../notifications/notifications.module').then(m => m.NotificationsModule) },
+      { path: 'scouting',       loadChildren: () => import('../scouting/scouting.module').then(m => m.ScoutingModule) },
+      { path: 'benachrichtigungen', loadChildren: () => import('../notifications/notifications.module').then(m => m.NotificationsModule) },
     ]
   }
 ];

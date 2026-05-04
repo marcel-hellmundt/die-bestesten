@@ -1,0 +1,92 @@
+@use '../../styles/variables' as *;
+
+.empty-state {
+  color: $color-text-muted;
+  font-size: $font-sm;
+  margin-top: $space-4;
+}
+
+.col-photo {
+  width: 36px;
+  padding-right: 0;
+}
+
+.player-photo {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: $radius-full;
+
+  &--placeholder {
+    opacity: 0.4;
+  }
+}
+
+.col-name {
+  font-weight: $font-weight-medium;
+}
+
+.col-club {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.club-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.position-badge {
+  display: inline-block;
+  padding: 2px 5px;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.team-chip {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+
+  &__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: $radius-full;
+    flex-shrink: 0;
+  }
+}
+
+.muted {
+  color: $color-text-muted;
+}
+
+.col-action {
+  width: 36px;
+  text-align: right;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: $color-text-muted;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover:not(:disabled) {
+    color: $color-danger;
+    background: color-mix(in srgb, $color-danger 10%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}

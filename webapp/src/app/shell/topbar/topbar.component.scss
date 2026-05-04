@@ -145,6 +145,10 @@
     border: none;
     background: none;
 
+    &.active {
+      color: $color-accent;
+    }
+
     &:hover {
       background-color: $color-surface-alt;
       color: $color-text;

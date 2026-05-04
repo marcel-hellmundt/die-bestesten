@@ -98,6 +98,31 @@
 
         &:hover { background: rgba(52, 152, 219, 0.08); }
       }
+
+      .watch-btn {
+        margin-top: $space-2;
+        padding: 4px $space-3;
+        font-size: $font-xs;
+        font-weight: $font-weight-semibold;
+        color: $color-text-muted;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        background: transparent;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+
+        &:hover:not(:disabled) {
+          color: $color-accent;
+          border-color: $color-accent;
+        }
+        &--active {
+          color: $color-accent;
+          border-color: $color-accent;
+          background: color-mix(in srgb, $color-accent 8%, transparent);
+        }
+        &:disabled { opacity: 0.5; cursor: not-allowed; }
+      }
     }
 
     .player-photo {

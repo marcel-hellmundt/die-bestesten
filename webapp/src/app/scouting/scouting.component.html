@@ -1,0 +1,76 @@
+<h1 class="page-title">Scouting</h1>
+
+@if (!hasTeam()) {
+  <p class="empty-state">Du hast noch kein Team in dieser Saison.</p>
+} @else if (entries().length === 0) {
+  <p class="empty-state">Noch keine Spieler beobachtet. Öffne eine Spielerseite und klicke auf "Beobachten".</p>
+} @else {
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Spieler</th>
+        <th class="hide-mobile">Verein</th>
+        <th>Pos</th>
+        <th class="hide-mobile">MW</th>
+        <th>Team</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (entry of entries(); track entry.id) {
+        <tr class="row-link" (click)="navigateToPlayer(entry.player_id)">
+          <td class="col-photo">
+            @if (playerPhotoUrl(entry); as url) {
+              <img class="player-photo" [src]="url" [alt]="entry.displayname" />
+            } @else {
+              <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
+            }
+          </td>
+          <td class="col-name">{{ entry.displayname }}</td>
+          <td class="hide-mobile col-club">
+            @if (entry.club_id) {
+              @if (entry.club_logo_uploaded) {
+                <img class="club-logo" [src]="clubLogoUrl(entry)" [alt]="entry.club_short_name ?? ''" />
+              }
+              <span>{{ entry.club_short_name ?? entry.club_name }}</span>
+            } @else {
+              <span class="muted">–</span>
+            }
+          </td>
+          <td>
+            @if (entry.position) {
+              <span class="position-badge" [style.background-color]="positionColors[entry.position]">
+                {{ positionLabels[entry.position] }}
+              </span>
+            }
+          </td>
+          <td class="hide-mobile">
+            @if (entry.price !== null) {
+              {{ entry.price | number: '1.0-0' }} €
+            } @else {
+              <span class="muted">–</span>
+            }
+          </td>
+          <td class="col-team">
+            @if (entry.current_team) {
+              <div class="team-chip">
+                <div class="team-chip__dot" [style.background-color]="entry.current_team.color ?? '#ccc'"></div>
+                <span>{{ entry.current_team.alias ?? entry.current_team.manager_name }}</span>
+              </div>
+            } @else {
+              <span class="muted">Vereinslos</span>
+            }
+          </td>
+          <td class="col-action" (click)="$event.stopPropagation()">
+            <button
+              class="remove-btn"
+              (click)="remove(entry)"
+              [disabled]="removing() === entry.id"
+            >✕</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

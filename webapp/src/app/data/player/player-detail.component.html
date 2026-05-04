@@ -84,6 +84,14 @@
           }
         </div>
       }
+      @if (myTeam()) {
+        <button
+          class="watch-btn"
+          [class.watch-btn--active]="isWatched()"
+          (click)="toggleWatch()"
+          [disabled]="watchToggling()"
+        >{{ isWatched() ? 'Beobachtet' : 'Beobachten' }}</button>
+      }
     </div>
   </div>
 
