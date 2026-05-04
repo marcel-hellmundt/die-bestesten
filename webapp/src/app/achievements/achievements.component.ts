@@ -36,6 +36,18 @@ export class AchievementsComponent {
 
   earnedCount = computed(() => this.achievements().filter(a => a.earned_at).length);
 
+  rarity(a: Achievement): 'häufig' | 'ungewöhnlich' | 'selten' {
+    if (!a.total_managers) return 'selten';
+    const ratio = a.earned_count / a.total_managers;
+    if (ratio >= 0.5) return 'häufig';
+    if (ratio >= 0.2) return 'ungewöhnlich';
+    return 'selten';
+  }
+
+  rarityKey(a: Achievement): string {
+    return this.rarity(a).replace('ä', 'a').replace('ö', 'o').replace('ü', 'u');
+  }
+
   resolvedDescription(a: Achievement): string {
     const threshold = a.level === 'bronze' ? a.threshold_bronze
                     : a.level === 'silver' ? a.threshold_silver

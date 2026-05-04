@@ -29,11 +29,11 @@ $card-border: #eee;
     &.achievement-card--hidden {
       filter: grayscale(1) opacity(0.5);
     }
-    .achievement-icon-background {
+    .achievement-card-background {
       position: absolute;
       left: 0;
       top: 0;
-      filter: blur(64px) opacity(0.5) hue-rotate(-25deg);
+      filter: blur(64px) opacity(0.35) hue-rotate(0deg);
       transform: scale(4);
       border-radius: 8px;
       z-index: 0;
@@ -109,7 +109,7 @@ $card-border: #eee;
       display: flex;
     }
 
-    .achievement-type {
+    .achievement-rarity {
       position: absolute;
       bottom: 8px;
       right: 8px;
@@ -119,14 +119,17 @@ $card-border: #eee;
       letter-spacing: 0.06em;
       padding: 2px 6px;
       border-radius: $radius-sm;
-      background: $color-surface-alt;
-      color: $color-text-muted;
+      background: color-mix(in srgb, var(--flat-emerald) 15%, transparent);
+      color: var(--flat-emerald);
 
-      &--season   { background: color-mix(in srgb, var(--flat-river)     15%, transparent); color: var(--flat-river);     }
-      &--rating   { background: color-mix(in srgb, var(--flat-sunflower) 15%, transparent); color: var(--flat-sunflower); }
-      &--lineup   { background: color-mix(in srgb, var(--flat-emerald)   15%, transparent); color: var(--flat-emerald);   }
-      &--transfer { background: color-mix(in srgb, var(--flat-alizarin)  15%, transparent); color: var(--flat-alizarin);  }
-      &--data     { background: color-mix(in srgb, var(--flat-amethyst)  15%, transparent); color: var(--flat-amethyst);  }
+      &--ungewohnlich {
+        background: color-mix(in srgb, var(--flat-sunflower) 15%, transparent);
+        color: var(--flat-sunflower);
+      }
+      &--selten {
+        background: color-mix(in srgb, var(--flat-alizarin) 15%, transparent);
+        color: var(--flat-alizarin);
+      }
     }
   }
 }

@@ -42,9 +42,7 @@
       <div class="achievement-reason">
         <span>{{ a.reason }}</span>
       </div>
-      @if (a.type) {
-        <span class="achievement-type achievement-type--{{ a.type }}">{{ a.type }}</span>
-      }
+      <span class="achievement-rarity achievement-rarity--{{ rarityKey(a) }}">{{ rarity(a) }}</span>
     </div>
     <!--
     <div class="achievement-card" [class.achievement-card--earned]="a.earned_at" [class.achievement-card--bronze]="a.level === 'bronze'" [class.achievement-card--silver]="a.level === 'silver'" [class.achievement-card--gold]="a.level === 'gold'">
