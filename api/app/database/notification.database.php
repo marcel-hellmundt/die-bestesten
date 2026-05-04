@@ -102,7 +102,7 @@ trait NotificationTrait
         }
     }
 
-    public function createAchievementNotification(string $managerId, string $achievementName, string $level, ?string $reason): void
+    public function createAchievementNotification(string $managerId, string $achievementName, string $level, ?string $reason, ?string $earnedAt = null): void
     {
         $pref = $this->con_league->prepare(
             "SELECT enabled FROM notification_preference
@@ -114,9 +114,10 @@ trait NotificationTrait
 
         $levelLabel = match ($level) { 'bronze' => ' (Bronze)', 'silver' => ' (Silber)', default => '' };
         $title = "Achievement: $achievementName$levelLabel";
+        $createdAt = $earnedAt ?? date('Y-m-d H:i:s');
         $this->con_league->prepare(
             "INSERT INTO notification (id, receiver_id, title, message, created_at)
-             VALUES (UUID(), ?, ?, ?, NOW())"
-        )->execute([$managerId, $title, $reason]);
+             VALUES (UUID(), ?, ?, ?, ?)"
+        )->execute([$managerId, $title, $reason, $createdAt]);
     }
 }
