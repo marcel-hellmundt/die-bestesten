@@ -130,36 +130,6 @@
   color: $color-success;
 }
 
-// First name edit
-.first-name-edit {
-  margin-top: $space-5;
-  padding-top: $space-4;
-  border-top: 1px solid $color-border;
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-}
-
-.first-name-label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.first-name-hint {
-  font-size: $font-xs;
-  color: $color-text-muted;
-  font-weight: $font-weight-normal;
-}
-
-.first-name-row {
-  display: flex;
-  gap: $space-3;
-  align-items: center;
-
-  .input { flex: 1; }
-}
-
 // Notification preferences
 .pref-list {
   display: flex;

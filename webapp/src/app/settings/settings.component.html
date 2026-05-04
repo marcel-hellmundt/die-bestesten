@@ -9,7 +9,6 @@
   } @else if (profileError()) {
     <p class="state-msg state-msg--error">{{ profileError() }}</p>
   } @else if (profile(); as p) {
-    {{ initFirstName(p) }}
     <div class="profile-card">
       <div class="profile-avatar">
         @if (avatarUrl() && !avatarFailed()) {
@@ -31,35 +30,13 @@
         }
         <div class="info-row">
           <span class="info-label">Rolle</span>
-          <span class="info-value role-badge role-badge--{{ p.role }}">{{ p.role }}</span>
+          <span class="info-value role-badge role-badge--{{ primaryRole(p) }}">{{ primaryRole(p) }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Status</span>
           <span class="info-value">{{ p.status }}</span>
         </div>
       </div>
-    </div>
-
-    <div class="first-name-edit">
-      <label class="form-label first-name-label">
-        Vorname
-        <span class="first-name-hint">Wird für Achievements verwendet (z.&nbsp;B. „Narzisst")</span>
-      </label>
-      <div class="first-name-row">
-        <input class="input"
-               type="text"
-               placeholder="z. B. Marcel"
-               [value]="firstNameInput()"
-               (input)="firstNameInput.set($any($event.target).value); firstNameState.set('idle')" />
-        <button class="btn btn-primary"
-                [disabled]="firstNameState() === 'loading'"
-                (click)="saveFirstName()">
-          {{ firstNameState() === 'loading' ? '…' : 'Speichern' }}
-        </button>
-      </div>
-      @if (firstNameState() === 'success') {
-        <p class="state-msg state-msg--success">Gespeichert</p>
-      }
     </div>
   }
 </section>
