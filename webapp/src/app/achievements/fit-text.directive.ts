@@ -3,27 +3,37 @@ import { AfterViewInit, Directive, ElementRef, Input, OnChanges } from '@angular
 @Directive({ selector: '[fitText]', standalone: false })
 export class FitTextDirective implements AfterViewInit, OnChanges {
   @Input() fitTextMin = 10;
-  @Input() fitTextMax = 16;
+  @Input() fitTextMax = 14;
 
   constructor(private el: ElementRef<HTMLElement>) {}
 
-  ngAfterViewInit(): void { requestAnimationFrame(() => this.fit()); }
-  ngOnChanges(): void     { requestAnimationFrame(() => this.fit()); }
+  ngAfterViewInit(): void {
+    requestAnimationFrame(() => this.fit());
+  }
+  ngOnChanges(): void {
+    requestAnimationFrame(() => this.fit());
+  }
 
   private fit(): void {
-    const el     = this.el.nativeElement;
+    const el = this.el.nativeElement;
     const parent = el.parentElement;
     if (!parent) return;
 
     el.style.whiteSpace = 'nowrap';
 
-    // Available width = parent width minus all siblings' widths
+    const parentStyle = getComputedStyle(parent);
+    const parentPadding =
+      parseFloat(parentStyle.paddingLeft) + parseFloat(parentStyle.paddingRight);
+
     let siblingsWidth = 0;
     for (let i = 0; i < parent.children.length; i++) {
       const child = parent.children[i] as HTMLElement;
-      if (child !== el) siblingsWidth += child.offsetWidth;
+      if (child !== el) {
+        const s = getComputedStyle(child);
+        siblingsWidth += child.offsetWidth + parseFloat(s.marginLeft) + parseFloat(s.marginRight);
+      }
     }
-    const available = parent.offsetWidth - siblingsWidth;
+    const available = parent.offsetWidth - parentPadding - siblingsWidth;
 
     let size = this.fitTextMax;
     el.style.fontSize = size + 'px';

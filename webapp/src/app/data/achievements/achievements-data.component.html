@@ -26,7 +26,7 @@
         <div class="achievement-row__meta">
           <div class="achievement-row__icon">
             @if (a.icon) {
-              <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" (error)="$any($event.target).src='img/achievements/locked.png'" />
+              <img [src]="'img/achievements/' + a.icon + '.png'" [alt]="a.name" />
             }
           </div>
           <div class="achievement-row__info">
@@ -61,7 +61,11 @@
                 [class.manager-avatar--bronze]="m.level === 'bronze'"
                 [class.manager-avatar--silver]="m.level === 'silver'"
                 [class.manager-avatar--gold]="m.level === 'gold'"
-                [title]="m.manager_name + (m.level ? ' · ' + m.level : '') + (m.reason ? ' · ' + m.reason : '')"
+                [title]="
+                  m.manager_name +
+                  (m.level ? ' · ' + m.level : '') +
+                  (m.reason ? ' · ' + m.reason : '')
+                "
               >
                 @if (!failedImageIds().has(m.id)) {
                   <img

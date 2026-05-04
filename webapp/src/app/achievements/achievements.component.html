@@ -6,23 +6,20 @@
 
 <div class="achievement-grid">
   @for (a of achievements(); track a.id) {
-    <div class="achievement-card" [class.achievement-card--hidden]="a.earned_at == '1'">
+    <div
+      class="achievement-card noselect"
+      [class.achievement-card--hidden]="!a.earned_at"
+      (mousemove)="onCardMouseMove($event)"
+      (mouseleave)="onCardMouseLeave($event)"
+    >
       <img
         class="achievement-card-background"
         [src]="'img/achievements/' + a.icon + '.png'"
         [alt]="a.name"
       />
       <div class="achievement-header">
-        <span class="achievement-type-wrap" [attr.data-tooltip]="'Typ: ' + typeLabel(a)">
-          <img
-            class="achievement-type"
-            [src]="'img/achievements/type-' + a.type + '.png'"
-            [alt]="typeLabel(a)"
-          />
-        </span>
         <div class="achievement-title" fitText [fitTextMax]="16" [fitTextMin]="10">
-          <!--{{ a.earned_at ? a.name : '???' }}-->
-          {{ a.name }}
+          {{ a.earned_at ? a.name : '???' }}
         </div>
         @if (a.level && a.threshold_bronze !== null) {
           <img
@@ -39,13 +36,14 @@
         />
         <img
           class="achievement-logo"
+          [class.achievement-logo-shadow]="a.earned_at"
           [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'"
           [alt]="a.name"
         />
       </div>
 
       <div class="achievement-condition">
-        <!--{{ a.earned_at ? resolvedDescription(a) : '???' }}-->{{ resolvedDescription(a) }}
+        {{ a.earned_at ? resolvedDescription(a) : '???' }}
       </div>
       <div class="achievement-reason">
         <span>{{ a.reason }}</span>

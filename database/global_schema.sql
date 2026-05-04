@@ -217,4 +217,4 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'bankraeuber',         'Bankräuber',                    'Dein Spieler sammelt von der Bank aus mehr Punkte als in deiner Startelf',                     'thief',        NULL, NULL, NULL, 'lineup'  ),
 (UUID(), 'narzisst',            'Narzisst',                      'Habe 3 Spieler im Kader mit deinem wundervollen Vornamen',                                     'mirror',       NULL, NULL, NULL, 'lineup'  ),
 (UUID(), 'champion_no_cards',   'Meister ohne Tadel',            'Werde Meister in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'goddess',      NULL, NULL, NULL, 'season'  ),
-(UUID(), 'last_no_cards',       'Anständig gescheitert',         'Werde Letzter in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'cards',        NULL, NULL, NULL, 'season'  );
+(UUID(), 'last_no_cards',       'Zu weich',                      'Werde Letzter in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'soft',        NULL, NULL, NULL, 'season'  );
