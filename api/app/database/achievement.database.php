@@ -79,7 +79,7 @@ trait AchievementTrait
     public function getAllAchievementsAdmin(): array
     {
         $achievements = $this->con->query(
-            "SELECT id, condition_key, name, description, icon, type, threshold_bronze, threshold_silver, threshold_gold FROM achievement"
+            "SELECT id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold FROM achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($achievements)) return [];
@@ -123,7 +123,6 @@ trait AchievementTrait
                 'name'            => $a['name'],
                 'description'     => $a['description'],
                 'icon'            => $a['icon'],
-                'type'            => $a['type'],
                 'threshold_bronze' => $a['threshold_bronze'] !== null ? (int)$a['threshold_bronze'] : null,
                 'threshold_silver' => $a['threshold_silver'] !== null ? (int)$a['threshold_silver'] : null,
                 'threshold_gold'   => $a['threshold_gold']   !== null ? (int)$a['threshold_gold']   : null,
@@ -140,7 +139,7 @@ trait AchievementTrait
     public function getManagerAchievements(string $managerId): array
     {
         $rows = $this->con->query(
-            "SELECT id, name, description, icon, type, threshold_bronze, threshold_silver, threshold_gold FROM achievement"
+            "SELECT id, name, description, icon, threshold_bronze, threshold_silver, threshold_gold FROM achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($rows)) return [];
@@ -174,7 +173,6 @@ trait AchievementTrait
                 'name'             => $a['name'],
                 'description'      => $a['description'],
                 'icon'             => $a['icon'],
-                'type'             => $a['type'],
                 'threshold_bronze' => $a['threshold_bronze'] !== null ? (int)$a['threshold_bronze'] : null,
                 'threshold_silver' => $a['threshold_silver'] !== null ? (int)$a['threshold_silver'] : null,
                 'threshold_gold'   => $a['threshold_gold']   !== null ? (int)$a['threshold_gold']   : null,

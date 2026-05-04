@@ -8,7 +8,6 @@ export interface Achievement {
   name: string;
   description: string;
   icon: string | null;
-  type: string | null;
   threshold_bronze: number | null;
   threshold_silver: number | null;
   threshold_gold: number | null;
@@ -46,18 +45,6 @@ export class AchievementsComponent {
     if (ratio >= 0.5) return 'häufig';
     if (ratio >= 0.2) return 'ungewöhnlich';
     return 'selten';
-  }
-
-  private static readonly TYPE_LABELS: Record<string, string> = {
-    season:   'Saisonergebnis',
-    rating:   'Spieltagsleistung',
-    lineup:   'Aufstellung',
-    transfer: 'Transfermarkt',
-    data:     'Datenpflege',
-  };
-
-  typeLabel(a: Achievement): string {
-    return a.type ? (AchievementsComponent.TYPE_LABELS[a.type] ?? a.type) : '';
   }
 
   rarityKey(a: Achievement): string {
