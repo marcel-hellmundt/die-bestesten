@@ -35,6 +35,11 @@ export class NotificationService {
     ).subscribe(ns => this._notifications.set(ns));
   }
 
+  reload(): void {
+    this.loaded = false;
+    this.load();
+  }
+
   loadPreferences(): void {
     this.api.get<NotificationPreferences>('notification/preferences').pipe(
       catchError(() => of({} as NotificationPreferences))

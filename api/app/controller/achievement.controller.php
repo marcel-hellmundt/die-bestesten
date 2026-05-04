@@ -22,7 +22,7 @@ class AchievementController extends _BaseController
         if ($this->sub) {
             $this->db->evaluateAchievementById($this->sub);
         } else {
-            $this->db->evaluateAchievements();
+            $this->db->evaluateAchievements(true);
         }
         return ['status' => true];
     }

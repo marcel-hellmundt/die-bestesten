@@ -1,6 +1,7 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { NotificationService } from '../../core/notification.service';
 import { Achievement } from '../../achievements/achievements.component';
 
 @Component({
@@ -15,6 +16,7 @@ export class AchievementNotificationComponent {
 
   private api    = inject(ApiService);
   private router = inject(Router);
+  private notifService = inject(NotificationService);
 
   get visible()    { return this.achievements.length > 0; }
   get iconStack()  { return this.achievements.slice(0, 3); }
@@ -22,17 +24,12 @@ export class AchievementNotificationComponent {
   get count()      { return this.achievements.length; }
 
   onView(): void {
-    this.markSeen();
+    this.api.patch('achievement/seen', {}).subscribe(() => this.notifService.reload());
     this.router.navigate(['/achievements']);
     this.dismissed.emit();
   }
 
   onSkip(): void {
-    this.markSeen();
     this.dismissed.emit();
-  }
-
-  private markSeen(): void {
-    this.api.patch('achievement/seen', {}).subscribe();
   }
 }

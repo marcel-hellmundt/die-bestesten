@@ -30,7 +30,7 @@ trait AchievementTrait
                 $level = $meta['level'] ?? 'gold';
                 $stmt->execute([$managerId, $achievement['id'], $meta['reason'], $meta['earned_at'], $level]);
                 if ($notify && $stmt->rowCount() > 0) {
-                    $this->createAchievementNotification($managerId, $achievement['name'], $level, $meta['reason']);
+                    $this->createAchievementNotification($managerId, $achievement['name'], $meta['reason'], $meta['earned_at']);
                 }
             }
         }
@@ -202,5 +202,25 @@ trait AchievementTrait
             "UPDATE manager_achievement SET seen_at = NOW()
              WHERE manager_id = ? AND seen_at IS NULL AND earned_at IS NOT NULL"
         )->execute([$managerId]);
+
+        $this->con_league->prepare(
+            "UPDATE notification SET read_at = NOW()
+             WHERE receiver_id = ? AND read_at IS NULL AND sender_id IS NULL AND title LIKE 'Achievement:%'"
+        )->execute([$managerId]);
+    }
+
+    private function createAchievementNotification(string $managerId, string $achievementName, ?string $reason, string $earnedAt): void
+    {
+        $pref = $this->con_league->prepare(
+            "SELECT enabled FROM notification_preference WHERE manager_id = ? AND event_type = 'achievement_earned'"
+        );
+        $pref->execute([$managerId]);
+        $row = $pref->fetch(PDO::FETCH_ASSOC);
+        if ($row !== false && !(bool) $row['enabled']) return;
+
+        $this->con_league->prepare(
+            "INSERT INTO notification (id, sender_id, receiver_id, title, message, created_at)
+             VALUES (UUID(), NULL, ?, ?, ?, ?)"
+        )->execute([$managerId, "Achievement: $achievementName", $reason, $earnedAt]);
     }
 }
