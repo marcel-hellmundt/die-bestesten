@@ -32,7 +32,12 @@
     border: 1px solid $color-border;
     border-radius: $radius-full;
     background-color: $color-surface-alt;
-    transition: width 0.25s ease, border-color $transition-fast, box-shadow $transition-fast, border-radius 0.2s ease, padding 0.25s ease;
+    transition:
+      width 0.25s ease,
+      border-color $transition-fast,
+      box-shadow $transition-fast,
+      border-radius 0.2s ease,
+      padding 0.25s ease;
 
     &--active {
       border-color: $color-accent;
@@ -54,8 +59,13 @@
       color: $color-text;
       width: 100%;
 
-      &::placeholder { color: $color-text-muted; }
-      &:focus { border: none; outline: none; }
+      &::placeholder {
+        color: $color-text-muted;
+      }
+      &:focus {
+        border: none;
+        outline: none;
+      }
     }
 
     .search-icon {
@@ -79,7 +89,9 @@
       justify-content: center;
       cursor: pointer;
 
-      .search-hint { display: none; }
+      .search-hint {
+        display: none;
+      }
 
       input {
         flex: 0 0 0;
@@ -115,7 +127,7 @@
   &-right {
     display: flex;
     align-items: center;
-    gap: $space-2;
+    gap: $space-1;
   }
 
   &-icon-btn {
@@ -126,7 +138,9 @@
     height: 36px;
     border-radius: $radius-full;
     color: $color-text-muted;
-    transition: background-color $transition-fast, color $transition-fast;
+    transition:
+      background-color $transition-fast,
+      color $transition-fast;
     cursor: pointer;
     border: none;
     background: none;
@@ -143,6 +157,7 @@
 
   &-user {
     position: relative;
+    margin-left: 24px;
 
     .user-avatar {
       width: 36px;
@@ -161,7 +176,9 @@
       border: none;
       transition: background-color $transition-fast;
 
-      &:hover { background-color: $color-accent; }
+      &:hover {
+        background-color: $color-accent;
+      }
 
       .avatar-img {
         width: 100%;
@@ -212,9 +229,18 @@
           font-size: $font-xs;
           font-weight: $font-weight-medium;
 
-          &--admin      { background: color-mix(in srgb, var(--flat-river)    18%, transparent); color: var(--flat-river); }
-          &--maintainer { background: color-mix(in srgb, var(--flat-emerald)  18%, transparent); color: var(--flat-emerald); }
-          &--manager    { background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent); color: var(--flat-alizarin); }
+          &--admin {
+            background: color-mix(in srgb, var(--flat-river) 18%, transparent);
+            color: var(--flat-river);
+          }
+          &--maintainer {
+            background: color-mix(in srgb, var(--flat-emerald) 18%, transparent);
+            color: var(--flat-emerald);
+          }
+          &--manager {
+            background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent);
+            color: var(--flat-alizarin);
+          }
         }
       }
 
@@ -240,12 +266,16 @@
         text-decoration: none;
         transition: background-color $transition-fast;
 
-        &:hover { background-color: $color-surface-alt; }
+        &:hover {
+          background-color: $color-surface-alt;
+        }
 
         &--danger {
           color: $color-danger;
 
-          &:hover { background-color: #fef2f2; }
+          &:hover {
+            background-color: #fef2f2;
+          }
         }
       }
     }

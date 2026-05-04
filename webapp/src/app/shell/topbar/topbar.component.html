@@ -127,7 +127,19 @@
   </div>
 
   <div class="topbar-right">
-    <button class="topbar-icon-btn topbar-bell" (click)="navigateTo('/notifications')" aria-label="Benachrichtigungen">
+    <button
+      class="topbar-icon-btn topbar-bell"
+      (click)="navigateTo('/achievements')"
+      aria-label="Benachrichtigungen"
+    >
+      <app-icon name="award"></app-icon>
+    </button>
+
+    <button
+      class="topbar-icon-btn topbar-bell"
+      (click)="navigateTo('/notifications')"
+      aria-label="Benachrichtigungen"
+    >
       <app-icon name="bell"></app-icon>
       @if (notifService.unreadCount() > 0) {
         <span class="notif-badge">{{ notifService.unreadCount() }}</span>

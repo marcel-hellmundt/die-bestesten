@@ -9,8 +9,8 @@
     <div
       class="achievement-card noselect"
       [class.achievement-card--hidden]="!a.earned_at"
-      (mousemove)="onCardMouseMove($event)"
-      (mouseleave)="onCardMouseLeave($event)"
+      (mousemove)="a.earned_at && onCardMouseMove($event)"
+      (mouseleave)="a.earned_at && onCardMouseLeave($event)"
     >
       <img
         class="achievement-card-background"
