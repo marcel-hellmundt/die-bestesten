@@ -20,8 +20,8 @@ trait WatchlistTrait
         $ph        = implode(',', array_fill(0, count($playerIds), '?'));
 
         $pq = $this->con->prepare(
-            "SELECT p.id, p.displayname, p.photo_uploaded,
-                    pis.position, pis.price, pis.season_id,
+            "SELECT p.id, p.displayname,
+                    pis.position, pis.price, pis.season_id, pis.photo_uploaded,
                     pic.club_id,
                     c.name AS club_name, c.short_name AS club_short_name, c.logo_uploaded AS club_logo_uploaded
              FROM player p
