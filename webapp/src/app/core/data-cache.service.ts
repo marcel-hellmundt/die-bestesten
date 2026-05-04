@@ -16,7 +16,9 @@ export class DataCacheService {
 
   seasons   = computed(() => this.seasonsState().data);
   divisions = computed(() => this.divisionsState().data);
-  myTeamId  = computed(() => this.myTeamState().data?.id ?? null);
+  myTeamId     = computed(() => this.myTeamState().data?.id ?? null);
+  myTeam       = computed(() => this.myTeamState().data);
+  myTeamLoaded = computed(() => this.myTeamState().loaded);
 
   ensureSeasons(): void {
     if (this.seasonsState().loaded) return;

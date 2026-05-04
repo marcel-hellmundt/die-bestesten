@@ -39,10 +39,7 @@ export class ScoutingComponent {
   private cache  = inject(DataCacheService);
   private router = inject(Router);
 
-  private myTeam = toSignal(
-    this.api.get<{ id: string; season_id: string } | null>('team/mine').pipe(catchError(() => of(null))),
-    { initialValue: null as { id: string; season_id: string } | null }
-  );
+  private myTeam = this.cache.myTeam;
 
   private refresh = signal(0);
 
