@@ -80,10 +80,23 @@ export class TableComponent {
     if (!this.liveMode()) return base;
     const live = this.liveState();
     if (!live?.ratings?.length || live.matchday?.completed) return base;
-    const liveMap = new Map<string, number>();
-    for (const r of live.ratings as any[]) liveMap.set(r.team_id, Number(r.points ?? 0));
+    const liveMap = new Map<string, any>();
+    for (const r of live.ratings as any[]) liveMap.set(r.team_id, r);
     return [...base]
-      .map(r => ({ ...r, total_points: Number(r.total_points) + (liveMap.get(r.team_id) ?? 0) }))
+      .map(r => {
+        const lr = liveMap.get(r.team_id);
+        if (!lr) return r;
+        return {
+          ...r,
+          total_points:           Number(r.total_points)           + Number(lr.points           ?? 0),
+          total_goals:            Number(r.total_goals)            + Number(lr.goals            ?? 0),
+          total_assists:          Number(r.total_assists)          + Number(lr.assists          ?? 0),
+          total_sds:              Number(r.total_sds)              + Number(lr.sds              ?? 0),
+          total_clean_sheet:      Number(r.total_clean_sheet)      + Number(lr.clean_sheet      ?? 0),
+          total_red_cards:        Number(r.total_red_cards)        + Number(lr.red_cards        ?? 0),
+          total_yellow_red_cards: Number(r.total_yellow_red_cards) + Number(lr.yellow_red_cards ?? 0),
+        };
+      })
       .sort((a, b) => b.total_points - a.total_points);
   });
 

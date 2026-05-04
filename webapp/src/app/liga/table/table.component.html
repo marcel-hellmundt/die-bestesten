@@ -85,12 +85,12 @@
                     <span class="team-name">{{ r.team_name }}</span>
                   </span>
                 </td>
-                <td class="col-num">{{ r.total_sds }}</td>
-                <td class="col-num">{{ r.total_goals }}</td>
-                <td class="col-num">{{ r.total_assists }}</td>
+                <td class="col-num" [class.col-muted]="!(r.total_sds ?? 0)">{{ r.total_sds ?? 0 }}</td>
+                <td class="col-num" [class.col-muted]="!(r.total_goals ?? 0)">{{ r.total_goals ?? 0 }}</td>
+                <td class="col-num" [class.col-muted]="!(r.total_assists ?? 0)">{{ r.total_assists ?? 0 }}</td>
                 <td class="col-num col-rc--yr">{{ r.total_yellow_red_cards || '' }}</td>
                 <td class="col-num col-rc--red">{{ r.total_red_cards || '' }}</td>
-                <td class="col-num">{{ r.total_clean_sheet }}</td>
+                <td class="col-num col-cs" [class.col-muted]="!(r.total_clean_sheet ?? 0)">{{ r.total_clean_sheet ?? 0 }}</td>
                 <td class="col-num col-points">{{ r.total_points | number }}</td>
                 <td class="col-fine" [class.col-fine--active]="r.fine > 0">
                   @if (r.fine > 0) {

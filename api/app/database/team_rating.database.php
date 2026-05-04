@@ -41,15 +41,15 @@ trait TeamRatingTrait
         $rq = $this->con_league->prepare(
             "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
                     m.manager_name,
-                    SUM(tr.points)      AS total_points,
-                    SUM(tr.goals)       AS total_goals,
-                    SUM(tr.assists)     AS total_assists,
-                    SUM(tr.red_cards)          AS total_red_cards,
-                    SUM(tr.yellow_red_cards)   AS total_yellow_red_cards,
-                    SUM(tr.sds)         AS total_sds,
-                    SUM(tr.sds_defender) AS total_sds_defender,
-                    SUM(tr.clean_sheet) AS total_clean_sheet,
-                    SUM(tr.missed_goals) AS total_missed_goals,
+                    COALESCE(SUM(tr.points), 0)             AS total_points,
+                    COALESCE(SUM(tr.goals), 0)              AS total_goals,
+                    COALESCE(SUM(tr.assists), 0)            AS total_assists,
+                    COALESCE(SUM(tr.red_cards), 0)          AS total_red_cards,
+                    COALESCE(SUM(tr.yellow_red_cards), 0)   AS total_yellow_red_cards,
+                    COALESCE(SUM(tr.sds), 0)                AS total_sds,
+                    COALESCE(SUM(tr.sds_defender), 0)       AS total_sds_defender,
+                    COALESCE(SUM(tr.clean_sheet), 0)        AS total_clean_sheet,
+                    COALESCE(SUM(tr.missed_goals), 0)       AS total_missed_goals,
                     COUNT(CASE WHEN tr.invalid = 0 THEN 1 END) AS matchdays_played
              FROM team_rating tr
              JOIN team t ON t.id = tr.team_id
