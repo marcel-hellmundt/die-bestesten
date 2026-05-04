@@ -99,6 +99,7 @@
       <input type="checkbox"
              class="pref-checkbox"
              [checked]="pref('matchday_completed')"
+             (click)="$event.stopPropagation()"
              (change)="setPreference('matchday_completed', $any($event.target).checked)" />
     </label>
 
@@ -110,6 +111,7 @@
       <input type="checkbox"
              class="pref-checkbox"
              [checked]="pref('achievement_earned')"
+             (click)="$event.stopPropagation()"
              (change)="setPreference('achievement_earned', $any($event.target).checked)" />
     </label>
   </div>
