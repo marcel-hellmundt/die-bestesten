@@ -2449,7 +2449,7 @@ trait AchievementConditionsTrait
             $mgr = $data['manager_id'];
             if (
                 !isset($achievers[$mgr]) ||
-                $diff > ($achievers[$mgr]['bench_pts'] - $achievers[$mgr]['nom_pts'])
+                $diff > $achievers[$mgr]['bench_pts'] - $achievers[$mgr]['nom_pts']
             ) {
                 $achievers[$mgr] = $data;
             }
@@ -2489,10 +2489,8 @@ trait AchievementConditionsTrait
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // first_name = echter Vorname; fallback auf manager_name nur wenn first_name nicht gesetzt
         $managerFirstNames = [];
-        $managerDisplayNames = [];
         foreach ($rows as $row) {
-            $managerFirstNames[$row['id']]   = $row['first_name'] ?? null;
-            $managerDisplayNames[$row['id']] = $row['manager_name'];
+            $managerFirstNames[$row['id']] = $row['first_name'] ?? null;
         }
         // Nur Manager mit gesetztem Vornamen können das Achievement erreichen
         $managerIds = array_values(array_filter($managerIds, fn($id) => !empty($managerFirstNames[$id])));
@@ -3042,35 +3040,41 @@ trait AchievementConditionsTrait
         );
         $stmt->execute([...$managerIds, ...$mdIds]);
 
-        // Find the earliest matchday each manager beat the free-agent XI
-        $winners = [];
+        // Collect all wins per manager per season
+        $winsBySeason = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $mid         = $row['manager_id'];
             $mdId        = $row['matchday_id'];
             $points      = (int)$row['points'];
             $bestXiTotal = $bestXiByMd[$mdId] ?? -1;
 
-            if ($bestXiTotal < 0 || $points <= $bestXiTotal) continue;
+            if ($bestXiTotal <= 0 || $points <= $bestXiTotal) continue;
 
-            $kickoff = $kickoffMap[$mdId];
-            if (!isset($winners[$mid]) || $kickoff < $winners[$mid]['kickoff']) {
-                $winners[$mid] = [
-                    'kickoff'    => $kickoff,
-                    'team_name'  => $row['team_name'],
-                    'matchday_id'=> $mdId,
-                    'points'     => $points,
-                    'bestXi'     => $bestXiTotal,
-                ];
-            }
+            $winsBySeason[$mid][$mdSeasonMap[$mdId]][] = [
+                'kickoff'    => $kickoffMap[$mdId],
+                'matchday_id'=> $mdId,
+                'team_name'  => $row['team_name'],
+            ];
         }
 
+        // Award on the 3rd win in the earliest season with >= 3 wins
         $result = [];
-        foreach ($winners as $mid => $data) {
-            $label  = $this->seasonLabel($seasonStartMap[$data['matchday_id']]);
-            $number = $mdNumberMap[$data['matchday_id']];
+        foreach ($winsBySeason as $mid => $seasons) {
+            $best = null;
+            foreach ($seasons as $wins) {
+                if (count($wins) < 3) continue;
+                usort($wins, fn($a, $b) => $a['kickoff'] <=> $b['kickoff']);
+                $thirdWin = $wins[2];
+                if ($best === null || $thirdWin['kickoff'] < $best['kickoff']) {
+                    $best = [...$thirdWin, 'count' => count($wins)];
+                }
+            }
+            if ($best === null) continue;
+
+            $label   = $this->seasonLabel($seasonStartMap[$best['matchday_id']]);
             $result[$mid] = [
-                'reason'    => "{$data['team_name']}, Spieltag $number ($label), {$data['points']} Pkt vs. {$data['bestXi']} Pkt",
-                'earned_at' => $data['kickoff'],
+                'reason'    => "{$best['team_name']}, {$best['count']}× Markt geschlagen ($label)",
+                'earned_at' => $best['kickoff'],
             ];
         }
         return $result;

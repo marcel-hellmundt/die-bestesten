@@ -744,3 +744,86 @@ FROM (
     HAVING COUNT(*) >= 3
 ) sub WHERE rn = 1
 ORDER BY anzahl DESC, manager_name;
+
+-- =============================================================================
+-- transfermarkt_geschlagen — Pro Manager der Spieltag mit der größten positiven
+--   Punktedifferenz gegenüber der besten freien Elf (343/352/433/442/451)
+-- =============================================================================
+WITH taken AS (
+    -- Spieler, die aktuell in einem Team aktiv sind (pro Saison)
+    SELECT CONVERT(pit.player_id USING utf8mb3) AS player_id,
+           CONVERT(t.season_id  USING utf8mb3) AS season_id
+    FROM usr_ud16_151_4.player_in_team pit
+    JOIN usr_ud16_151_4.team t ON t.id = pit.team_id
+    WHERE pit.to_matchday_id IS NULL
+),
+ranked AS (
+    -- Freie Spieler: Rang nach Punkten je Position + Spieltag
+    SELECT pr.matchday_id, pis.position, pr.points,
+           ROW_NUMBER() OVER (PARTITION BY pr.matchday_id, pis.position ORDER BY pr.points DESC) AS rk
+    FROM usr_ud16_151_1.player_rating pr
+    JOIN usr_ud16_151_1.matchday md ON md.id = pr.matchday_id AND md.completed = 1
+    JOIN usr_ud16_151_1.player_in_season pis
+        ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+    WHERE NOT EXISTS (
+        SELECT 1 FROM taken tk
+        WHERE tk.player_id = pr.player_id AND tk.season_id = md.season_id
+    )
+      AND pis.position IS NOT NULL
+),
+pos_sums AS (
+    -- Kumulierte Top-N-Punkte je Position je Spieltag (für alle nötigen Formationsvarianten)
+    SELECT matchday_id,
+        SUM(CASE WHEN position = 'GOALKEEPER' AND rk <= 1 THEN points ELSE 0 END) AS gk1,
+        SUM(CASE WHEN position = 'DEFENDER'   AND rk <= 3 THEN points ELSE 0 END) AS def3,
+        SUM(CASE WHEN position = 'DEFENDER'   AND rk <= 4 THEN points ELSE 0 END) AS def4,
+        SUM(CASE WHEN position = 'MIDFIELDER' AND rk <= 3 THEN points ELSE 0 END) AS mid3,
+        SUM(CASE WHEN position = 'MIDFIELDER' AND rk <= 4 THEN points ELSE 0 END) AS mid4,
+        SUM(CASE WHEN position = 'MIDFIELDER' AND rk <= 5 THEN points ELSE 0 END) AS mid5,
+        SUM(CASE WHEN position = 'FORWARD'    AND rk <= 1 THEN points ELSE 0 END) AS fwd1,
+        SUM(CASE WHEN position = 'FORWARD'    AND rk <= 2 THEN points ELSE 0 END) AS fwd2,
+        SUM(CASE WHEN position = 'FORWARD'    AND rk <= 3 THEN points ELSE 0 END) AS fwd3,
+        COUNT(CASE WHEN position = 'GOALKEEPER' THEN 1 END) AS cnt_gk,
+        COUNT(CASE WHEN position = 'DEFENDER'   THEN 1 END) AS cnt_def,
+        COUNT(CASE WHEN position = 'MIDFIELDER' THEN 1 END) AS cnt_mid,
+        COUNT(CASE WHEN position = 'FORWARD'    THEN 1 END) AS cnt_fwd
+    FROM ranked
+    GROUP BY matchday_id
+),
+transfermarkt_xi AS (
+    -- Beste valide Formation: GREATEST über alle 5 Varianten
+    SELECT matchday_id,
+        GREATEST(
+            IF(cnt_gk>=1 AND cnt_def>=3 AND cnt_mid>=4 AND cnt_fwd>=3, gk1+def3+mid4+fwd3, 0), -- 343
+            IF(cnt_gk>=1 AND cnt_def>=3 AND cnt_mid>=5 AND cnt_fwd>=2, gk1+def3+mid5+fwd2, 0), -- 352
+            IF(cnt_gk>=1 AND cnt_def>=4 AND cnt_mid>=3 AND cnt_fwd>=3, gk1+def4+mid3+fwd3, 0), -- 433
+            IF(cnt_gk>=1 AND cnt_def>=4 AND cnt_mid>=4 AND cnt_fwd>=2, gk1+def4+mid4+fwd2, 0), -- 442
+            IF(cnt_gk>=1 AND cnt_def>=4 AND cnt_mid>=5 AND cnt_fwd>=1, gk1+def4+mid5+fwd1, 0)  -- 451
+        ) AS transfermarkt_punkte
+    FROM pos_sums
+),
+siege_pro_saison AS (
+    -- Anzahl Spieltage pro Manager+Saison, an denen das Team den Markt geschlagen hat
+    SELECT
+        m.id AS manager_id,
+        CONVERT(m.manager_name USING utf8mb3) AS manager_name,
+        CONVERT(t.team_name   USING utf8mb3) AS team_name,
+        CONCAT(YEAR(s.start_date), '/', RIGHT(YEAR(s.start_date)+1, 2)) AS saison,
+        COUNT(*) AS siege,
+        ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY COUNT(*) DESC) AS rn
+    FROM usr_ud16_151_4.team_rating tr
+    JOIN usr_ud16_151_4.team t ON t.id = tr.team_id AND tr.invalid = 0
+    JOIN usr_ud16_151_4.manager m ON m.id = t.manager_id
+    JOIN transfermarkt_xi txi ON txi.matchday_id = CONVERT(tr.matchday_id USING utf8mb3)
+    JOIN usr_ud16_151_1.matchday md ON md.id = CONVERT(tr.matchday_id USING utf8mb3) AND md.completed = 1
+    JOIN usr_ud16_151_1.season s ON s.id = md.season_id
+    WHERE tr.points > txi.transfermarkt_punkte AND txi.transfermarkt_punkte > 0
+    GROUP BY m.id, m.manager_name, t.id, t.team_name, t.season_id, s.start_date
+    HAVING COUNT(*) >= 3
+)
+SELECT
+    (SELECT id FROM usr_ud16_151_1.achievement WHERE condition_key = 'transfermarkt_geschlagen') AS achievement_id,
+    manager_name, team_name, saison, siege
+FROM siege_pro_saison
+WHERE rn = 1
+ORDER BY siege DESC;
