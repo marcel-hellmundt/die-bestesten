@@ -36,8 +36,9 @@ trait MatchdayTrait
         return $query->rowCount() > 0;
     }
 
-    public function finalizeMatchday(string $matchdayId): void
+    public function finalizeMatchday(string $matchdayId): int
     {
+        $updatedCount = 0;
         $matchday = $this->getMatchdayById($matchdayId);
         if (!$matchday) return;
         $seasonId    = $matchday['season_id'];
@@ -179,6 +180,7 @@ trait MatchdayTrait
                 $redCards, $yellowRedCards, $cleanSheet, $sds, $sdsDefender,
                 $ptsGk, $ptsDef, $ptsMid, $ptsFwd, $invalid,
             ]);
+            $updatedCount++;
 
             if ($points > 0) {
                 $checkTx->execute([$teamId, $matchdayId]);
@@ -219,6 +221,7 @@ trait MatchdayTrait
                 error_log('finalizeMatchday old-DB sync failed for team ' . $teamId . ': ' . $e->getMessage());
             }
         }
+        return $updatedCount;
     }
 
     public function migrateMatchday(): array

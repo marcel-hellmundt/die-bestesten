@@ -41,15 +41,15 @@ class MatchdayController extends _BaseController
         }
 
         $completed = (bool) $body['completed'];
+        $teamRatings  = 0;
+        $achievements = 0;
         if ($completed) {
-            $this->db->finalizeMatchday($this->id);
-        }
-        $this->db->updateMatchdayCompleted($this->id, $completed);
-        if ($completed) {
-            $this->db->evaluateAchievements(true);
+            $teamRatings  = $this->db->finalizeMatchday($this->id);
+            $achievements = $this->db->evaluateAchievements(true);
             $this->db->createMatchdayCompletedNotifications((int) $matchday['number']);
         }
-        return ['status' => true];
+        $this->db->updateMatchdayCompleted($this->id, $completed);
+        return ['status' => true, 'team_ratings' => $teamRatings, 'achievements' => $achievements];
     }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

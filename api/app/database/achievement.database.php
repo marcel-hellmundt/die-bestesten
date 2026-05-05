@@ -2,8 +2,9 @@
 
 trait AchievementTrait
 {
-    public function evaluateAchievements(bool $notify = false): void
+    public function evaluateAchievements(bool $notify = false): int
     {
+        $newCount = 0;
         $achievements = $this->con->query(
             "SELECT id, condition_key, name FROM achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
@@ -29,11 +30,15 @@ trait AchievementTrait
             foreach ($earners as $managerId => $meta) {
                 $level = $meta['level'] ?? 'gold';
                 $stmt->execute([$managerId, $achievement['id'], $meta['reason'], $meta['earned_at'], $level]);
-                if ($notify && $stmt->rowCount() > 0) {
-                    $this->createAchievementNotification($managerId, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
+                if ($stmt->rowCount() > 0) {
+                    $newCount++;
+                    if ($notify) {
+                        $this->createAchievementNotification($managerId, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
+                    }
                 }
             }
         }
+        return $newCount;
     }
 
     public function evaluateAchievementById(string $achievementId): void
