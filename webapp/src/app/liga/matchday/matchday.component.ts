@@ -33,23 +33,29 @@ export class MatchdayComponent {
     this.selectedSeasonId() ?? this.defaultSeasonId()
   );
 
-  private activeSeason = computed(() =>
-    this.cache.seasons().find(s => s.id === this.effectiveSeasonId()) ?? null
-  );
-
   selectedNumber = signal<number | null>(null);
 
-  matchdays = toSignal(
+  // Season + matchdays as a single atomic unit — only emits when HTTP completes,
+  // preventing combineLatest from firing with a stale matchday list mid-transition.
+  private seasonData = toSignal(
     toObservable(this.effectiveSeasonId).pipe(
-      filter(id => !!id),
+      filter((id): id is string => !!id),
       switchMap(id =>
         this.api.get<any[]>(`matchday?season_id=${id}`).pipe(
-          map(data => data.map(Matchday.from) as Matchday[]),
-          catchError(() => of([] as Matchday[]))
+          map(data => ({
+            season: this.cache.seasons().find(s => s.id === id) ?? null,
+            matchdays: data.map(Matchday.from) as Matchday[],
+          })),
+          catchError(() => of({
+            season: this.cache.seasons().find(s => s.id === id) ?? null,
+            matchdays: [] as Matchday[],
+          }))
         )
       )
     )
   );
+
+  matchdays = computed(() => this.seasonData()?.matchdays ?? []);
 
   private computeDefaultNumber(matchdays: Matchday[]): number | null {
     if (!matchdays.length) return null;
@@ -63,12 +69,13 @@ export class MatchdayComponent {
 
   private ratingsState = toSignal(
     combineLatest([
-      toObservable(this.activeSeason).pipe(filter(s => s !== null)),
+      toObservable(this.seasonData).pipe(filter((sd): sd is NonNullable<typeof sd> => sd !== undefined)),
       toObservable(this.selectedNumber),
-      toObservable(this.matchdays).pipe(filter((m): m is Matchday[] => m !== undefined)),
     ]).pipe(
-      switchMap(([season, number, matchdays]) => {
-        const effectiveNumber = number ?? this.computeDefaultNumber(matchdays);
+      switchMap(([{ season, matchdays }, number]) => {
+        // Validate number against the loaded matchdays; fall back to default if it doesn't exist.
+        const validNumber = number !== null && matchdays.some(m => m.number === number) ? number : null;
+        const effectiveNumber = validNumber ?? this.computeDefaultNumber(matchdays);
         const url = effectiveNumber !== null
           ? `team_rating?season_id=${season!.id}&matchday_number=${effectiveNumber}`
           : `team_rating?season_id=${season!.id}`;
@@ -82,7 +89,7 @@ export class MatchdayComponent {
     { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
 
-  seasonId       = computed(() => this.activeSeason()?.id ?? null);
+  seasonId       = computed(() => this.seasonData()?.season?.id ?? null);
   matchday       = computed(() => this.ratingsState().data?.matchday ?? null);
   maxNumber      = computed(() => this.ratingsState().data?.max_matchday_number ?? 1);
   ratings        = computed(() => (this.ratingsState().data?.ratings ?? []) as any[]);
@@ -113,7 +120,6 @@ export class MatchdayComponent {
 
   onSeasonChange(seasonId: string): void {
     this.selectedSeasonId.set(seasonId);
-    this.selectedNumber.set(null);
   }
 
   onMatchdayChange(number: number): void {
