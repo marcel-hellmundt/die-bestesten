@@ -2951,4 +2951,128 @@ trait AchievementConditionsTrait
         }
         return $result;
     }
+
+    public function check_transfermarkt_geschlagen(array $managerIds): array
+    {
+        if (empty($managerIds)) return [];
+
+        $matchdays = $this->con->query(
+            "SELECT md.id, md.season_id, md.kickoff_date, md.number, s.start_date AS season_start
+             FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.completed = 1
+             ORDER BY md.kickoff_date ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matchdays)) return [];
+
+        $mdIds          = array_column($matchdays, 'id');
+        $kickoffMap     = array_column($matchdays, 'kickoff_date', 'id');
+        $seasonStartMap = array_column($matchdays, 'season_start', 'id');
+        $mdNumberMap    = array_column($matchdays, 'number', 'id');
+        $mdSeasonMap    = array_column($matchdays, 'season_id', 'id');
+
+        // All player_ratings for completed matchdays with position
+        $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
+        $stmt = $this->con->prepare(
+            "SELECT pr.matchday_id, pr.player_id, pis.position, pr.points
+             FROM player_rating pr
+             JOIN matchday md ON md.id = pr.matchday_id
+             JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+             WHERE pr.matchday_id IN ($mPlh) AND pis.position IS NOT NULL"
+        );
+        $stmt->execute($mdIds);
+        $ratingsByMatchday = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $ratingsByMatchday[$r['matchday_id']][] = $r;
+        }
+
+        // Current free agents per season (to_matchday_id IS NULL = still active in a team)
+        $seasonIds = array_values(array_unique(array_column($matchdays, 'season_id')));
+        $sPlh      = implode(',', array_fill(0, count($seasonIds), '?'));
+        $stmt      = $this->con_league->prepare(
+            "SELECT pit.player_id, t.season_id FROM player_in_team pit
+             JOIN team t ON t.id = pit.team_id
+             WHERE t.season_id IN ($sPlh) AND pit.to_matchday_id IS NULL"
+        );
+        $stmt->execute($seasonIds);
+        $takenBySeason = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $takenBySeason[$row['season_id']][$row['player_id']] = true;
+        }
+
+        // Compute best free-agent XI total per matchday
+        $formations = [[1,3,4,3],[1,3,5,2],[1,4,3,3],[1,4,4,2],[1,4,5,1]];
+        $posKeys    = ['GOALKEEPER','DEFENDER','MIDFIELDER','FORWARD'];
+
+        $bestXiByMd = [];
+        foreach ($mdIds as $mdId) {
+            $taken   = $takenBySeason[$mdSeasonMap[$mdId]] ?? [];
+            $byPos   = ['GOALKEEPER'=>[],'DEFENDER'=>[],'MIDFIELDER'=>[],'FORWARD'=>[]];
+            foreach ($ratingsByMatchday[$mdId] ?? [] as $r) {
+                if (!isset($taken[$r['player_id']]) && isset($byPos[$r['position']])) {
+                    $byPos[$r['position']][] = (int)$r['points'];
+                }
+            }
+            foreach ($byPos as &$group) { rsort($group); }
+            unset($group);
+
+            $bestTotal = -1;
+            foreach ($formations as [$gk,$def,$mid,$fwd]) {
+                $needs    = [$gk,$def,$mid,$fwd];
+                $canFill  = true;
+                foreach ($posKeys as $i => $pos) {
+                    if (count($byPos[$pos]) < $needs[$i]) { $canFill = false; break; }
+                }
+                if (!$canFill) continue;
+                $total = 0;
+                foreach ($posKeys as $i => $pos) $total += array_sum(array_slice($byPos[$pos], 0, $needs[$i]));
+                if ($total > $bestTotal) $bestTotal = $total;
+            }
+            $bestXiByMd[$mdId] = $bestTotal;
+        }
+
+        // Team ratings for the given managers across all completed matchdays
+        $plh  = implode(',', array_fill(0, count($managerIds), '?'));
+        $stmt = $this->con_league->prepare(
+            "SELECT t.manager_id, t.team_name, tr.matchday_id, tr.points
+             FROM team_rating tr
+             JOIN team t ON t.id = tr.team_id
+             WHERE t.manager_id IN ($plh) AND tr.matchday_id IN ($mPlh) AND tr.invalid = 0"
+        );
+        $stmt->execute([...$managerIds, ...$mdIds]);
+
+        // Find the earliest matchday each manager beat the free-agent XI
+        $winners = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $mid         = $row['manager_id'];
+            $mdId        = $row['matchday_id'];
+            $points      = (int)$row['points'];
+            $bestXiTotal = $bestXiByMd[$mdId] ?? -1;
+
+            if ($bestXiTotal < 0 || $points <= $bestXiTotal) continue;
+
+            $kickoff = $kickoffMap[$mdId];
+            if (!isset($winners[$mid]) || $kickoff < $winners[$mid]['kickoff']) {
+                $winners[$mid] = [
+                    'kickoff'    => $kickoff,
+                    'team_name'  => $row['team_name'],
+                    'matchday_id'=> $mdId,
+                    'points'     => $points,
+                    'bestXi'     => $bestXiTotal,
+                ];
+            }
+        }
+
+        $result = [];
+        foreach ($winners as $mid => $data) {
+            $label  = $this->seasonLabel($seasonStartMap[$data['matchday_id']]);
+            $number = $mdNumberMap[$data['matchday_id']];
+            $result[$mid] = [
+                'reason'    => "{$data['team_name']}, Spieltag $number ($label), {$data['points']} Pkt vs. {$data['bestXi']} Pkt",
+                'earned_at' => $data['kickoff'],
+            ];
+        }
+        return $result;
+    }
 }
