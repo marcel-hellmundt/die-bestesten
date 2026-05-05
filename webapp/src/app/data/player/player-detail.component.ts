@@ -434,6 +434,17 @@ export class PlayerDetailComponent {
     return `${d}.${m}.${y}`;
   }
 
+  calcAge(dateStr: string): number {
+    const today = new Date();
+    const birth = new Date(dateStr);
+    let age = today.getFullYear() - birth.getFullYear();
+    const notYetHadBirthday =
+      today.getMonth() < birth.getMonth() ||
+      (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate());
+    if (notYetHadBirthday) age--;
+    return age;
+  }
+
   formatPrice(price: number): string {
     return new Intl.NumberFormat('de-DE', {
       style: 'currency',

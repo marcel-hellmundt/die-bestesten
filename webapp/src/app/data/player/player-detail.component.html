@@ -22,7 +22,7 @@
           }
           @if (p.date_of_birth) {
             <span class="meta-item"
-              >Geb.: <span>{{ formatDate(p.date_of_birth) }}</span></span
+              >Geb.: <span>{{ formatDate(p.date_of_birth) }} ({{ calcAge(p.date_of_birth) }})</span></span
             >
           }
           @if (p.birth_city) {
