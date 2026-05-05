@@ -70,6 +70,14 @@
           @if (sellError()) {
             <span class="sell-error">{{ sellError() }}</span>
           }
+          @if (myTeam()) {
+            <button
+              class="watch-btn"
+              [class.watch-btn--active]="isWatched()"
+              (click)="toggleWatch()"
+              [disabled]="watchToggling()"
+            >{{ isWatched() ? 'Beobachtet' : 'Beobachten' }}</button>
+          }
         </div>
       } @else if (currentTeam() === null && openWindow() && myTeam() && isCurrentBundesligaPlayer()) {
         <div class="team-badge">
@@ -82,15 +90,22 @@
           @if (!offerExpanded()) {
             <button class="offer-btn" (click)="openOffer()">Gebot abgeben</button>
           }
+          <button
+            class="watch-btn"
+            [class.watch-btn--active]="isWatched()"
+            (click)="toggleWatch()"
+            [disabled]="watchToggling()"
+          >{{ isWatched() ? 'Beobachtet' : 'Beobachten' }}</button>
         </div>
-      }
-      @if (myTeam()) {
-        <button
-          class="watch-btn"
-          [class.watch-btn--active]="isWatched()"
-          (click)="toggleWatch()"
-          [disabled]="watchToggling()"
-        >{{ isWatched() ? 'Beobachtet' : 'Beobachten' }}</button>
+      } @else if (myTeam()) {
+        <div class="team-badge">
+          <button
+            class="watch-btn"
+            [class.watch-btn--active]="isWatched()"
+            (click)="toggleWatch()"
+            [disabled]="watchToggling()"
+          >{{ isWatched() ? 'Beobachtet' : 'Beobachten' }}</button>
+        </div>
       }
     </div>
   </div>
