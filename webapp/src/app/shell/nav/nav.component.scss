@@ -19,12 +19,16 @@
       letter-spacing: 0.02em;
       line-height: 1.1;
       color: $color-text;
+      text-decoration: none;
+      &:hover { color: $color-accent; }
     }
 
     .team {
       font-size: $font-xs;
       color: $color-text-muted;
       margin-top: 1px;
+      text-decoration: none;
+      &:hover { color: $color-text; }
     }
   }
 

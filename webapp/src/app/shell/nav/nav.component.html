@@ -1,9 +1,11 @@
 <nav class="nav">
   <div class="nav-header">
-    <img src="img/logos/die-bestesten.png" class="nav-logo squircle" alt="Logo" />
+    <a routerLink="/">
+      <img src="img/logos/die-bestesten.png" class="nav-logo squircle" alt="Logo" />
+    </a>
     <div class="flex-col">
-      <span class="manager">Marcel</span>
-      <span class="team">SV Spielabbruch</span>
+      <a class="manager" [routerLink]="managerId ? ['/manager', managerId] : null">{{ managerName }}</a>
+      <a class="team" [routerLink]="teamId() ? ['/team', teamId(), 'uebersicht'] : null">{{ teamName() }}</a>
     </div>
   </div>
 

@@ -25,6 +25,9 @@ export class NavComponent {
   private cache = inject(DataCacheService);
 
   managerName = this.auth.getManagerName();
+  managerId   = this.auth.getManagerId();
+  teamName    = computed(() => this.cache.myTeam()?.team_name ?? '');
+  teamId      = computed(() => this.cache.myTeamId());
 
   teamGroups = computed<NavGroup[]>(() => {
     const id = this.cache.myTeamId();
