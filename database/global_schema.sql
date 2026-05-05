@@ -219,4 +219,4 @@ INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, thre
 (UUID(), 'last_no_cards',       'Zu weich',                      'Werde Letzter in einer Saison, ohne eine einzige Karte gesammelt zu haben',                    'rabbit',       NULL, NULL, NULL),
 (UUID(), 'heart',               'Nationalelf',                   'Alle Spieler deines Kaders haben die gleiche Nationalität (gültiger Kader)',                   'flag',         NULL, NULL, NULL),
 (UUID(), 'map',                 'Lokalmatadoren',                '3 deiner Spieler kommen aus der gleichen Stadt',                                               'city',         NULL, NULL, NULL),
-(UUID(), 'transfermarkt_geschlagen', 'Transfermarkt geschlagen',  'Dein Team war an einem Spieltag besser als die beste freie Elf auf dem Transfermarkt',          'shopping',     NULL, NULL, NULL);
+(UUID(), 'transfermarkt_geschlagen', 'Schlag den Markt',           'Schlage die beste freie Elf in einer Saison mindestens 3 Mal',                                   'competition',  NULL, NULL, NULL);
