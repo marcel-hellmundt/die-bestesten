@@ -194,7 +194,7 @@
             @for (row of bestXiRows(); track row.pos) {
               <div class="bxi-field-row">
                 @for (p of row.players; track p.player_id) {
-                  <div class="bxi-player" [class.bxi-player--own-team]="bestXiMode() === 'all' && p.team_id === cache.myTeamId()">
+                  <div class="bxi-player" [class.bxi-player--own-team]="bestXiMode() === 'all' && p.team_id === mySeasonTeamId()">
                     @if (p.club_logo_uploaded && p.club_id) {
                       <img
                         class="bxi-club-logo"

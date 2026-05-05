@@ -3,6 +3,7 @@ import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
 
@@ -14,6 +15,7 @@ import { Matchday } from '../../core/models/matchday.model';
 })
 export class MatchdayComponent {
   private api    = inject(ApiService);
+  private auth   = inject(AuthService);
   private router = inject(Router);
   cache          = inject(DataCacheService);
 
@@ -89,6 +91,10 @@ export class MatchdayComponent {
   error          = computed(() => this.ratingsState().error ?? null);
   totalPoints    = computed(() => this.ratings().reduce((sum: number, r: any) => sum + Number(r.points), 0));
   totalFine      = computed(() => this.ratings().reduce((sum: number, r: any) => sum + Number(r.fine ?? 0), 0));
+
+  mySeasonTeamId = computed(() =>
+    (this.ratings().find((r: any) => r.manager_name === this.auth.getManagerName()) as any)?.team_id ?? null
+  );
 
   isLive         = computed(() => this.matchday() && !this.matchday()?.completed);
   currentNumber  = computed(() => this.matchday()?.number ?? null);
