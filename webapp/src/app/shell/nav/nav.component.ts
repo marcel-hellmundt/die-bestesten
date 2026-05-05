@@ -33,10 +33,10 @@ export class NavComponent {
         label: 'Team',
         icon: 'kader',
         items: [
-          { label: 'Kader',       icon: 'kader',       route: id ? ['/team', id, 'kader']      : null },
-          { label: 'Aufstellung', icon: 'aufstellung', route: id ? ['/team', id, 'aufstellung'] : null },
+          { label: 'Übersicht',   icon: 'uebersicht',  route: id ? ['/team', id, 'uebersicht']  : null },
+          { label: 'Kader',       icon: 'kader',       route: id ? ['/team', id, 'kader']       : null },
+          { label: 'Aufstellung', icon: 'aufstellung', route: id ? ['/team', id, 'aufstellung']  : null },
           { label: 'Finanzen',    icon: 'finanzen',    route: id ? ['/team', id, 'finanzen']    : null },
-          { label: 'Statistiken', icon: 'statistiken', route: id ? ['/team', id, 'statistiken'] : null },
         ]
       }
     ];
