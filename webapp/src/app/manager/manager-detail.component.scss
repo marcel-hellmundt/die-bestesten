@@ -4,11 +4,30 @@
   display: flex;
   flex-wrap: wrap;
   gap: $space-2;
+  padding-bottom: $space-3;
 }
 
 .achievement-icon-tile {
   width: 48px;
   height: 48px;
+  position: relative;
+
+  &[data-tooltip]:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.3;
+    padding: 3px 7px;
+    border-radius: $radius-sm;
+    white-space: nowrap;
+    z-index: 20;
+    pointer-events: none;
+  }
 
   @media (max-width: $mobile-breakpoint) {
     width: 36px;
@@ -16,7 +35,7 @@
   }
   border-radius: $radius-full;
   border: 2px solid $color-border;
-  background: $color-surface-alt;
+  background: #fff;
   padding: 6px;
   display: flex;
   align-items: center;
@@ -28,14 +47,25 @@
     height: 100%;
     object-fit: contain;
   }
+}
 
-  &--owned {
-    background: $color-surface;
-  }
+.ach-level-label {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 4px;
+  border-radius: $radius-sm;
+  white-space: nowrap;
+  line-height: 1.4;
 
-  &--bronze { border-color: #cd7f32; }
-  &--silver { border-color: #a8a9ad; }
-  &--gold   { border-color: #ffd700; }
+  &--bronze { background: #cd7f32; color: #fff; }
+  &--silver { background: #9e9e9e; color: #fff; }
+  &--gold   { background: #f59e0b; color: #fff; }
 }
 
 .detail-header {

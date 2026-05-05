@@ -31,13 +31,12 @@
             @for (a of achievements(); track a.id) {
               <div
                 class="achievement-icon-tile"
-                [class.achievement-icon-tile--owned]="myEarnedIds().has(a.id)"
-                [class.achievement-icon-tile--bronze]="a.level === 'bronze'"
-                [class.achievement-icon-tile--silver]="a.level === 'silver'"
-                [class.achievement-icon-tile--gold]="a.level === 'gold' && a.threshold_bronze != null"
-                [title]="a.name + (a.reason ? ' · ' + a.reason : '')"
+                [attr.data-tooltip]="a.name"
               >
                 <img [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'" [alt]="a.name" />
+                @if (a.level === 'bronze' || a.level === 'silver' || (a.level === 'gold' && a.threshold_bronze != null)) {
+                  <span class="ach-level-label ach-level-label--{{ a.level }}">{{ a.level === 'bronze' ? 'Bronze' : a.level === 'silver' ? 'Silber' : 'Gold' }}</span>
+                }
               </div>
             }
           </div>

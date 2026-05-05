@@ -207,15 +207,14 @@ trait ManagerTrait
 
         // Achievements: earned by this manager
         $earnedQ = $this->con_league->prepare(
-            "SELECT achievement_id, earned_at, reason, level FROM manager_achievement WHERE manager_id = ?"
+            "SELECT achievement_id, reason, level FROM manager_achievement WHERE manager_id = ?"
         );
         $earnedQ->execute([$id]);
         $earnedMap = [];
         foreach ($earnedQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $earnedMap[$row['achievement_id']] = [
-                'earned_at' => $row['earned_at'],
-                'reason'    => $row['reason'],
-                'level'     => $row['level'],
+                'reason' => $row['reason'],
+                'level'  => $row['level'],
             ];
         }
 
@@ -224,7 +223,7 @@ trait ManagerTrait
             $achIds = array_keys($earnedMap);
             $ph = implode(',', array_fill(0, count($achIds), '?'));
             $achQ = $this->con->prepare(
-                "SELECT id, name, description, icon, threshold_bronze FROM achievement WHERE id IN ($ph)"
+                "SELECT id, name, icon, threshold_bronze FROM achievement WHERE id IN ($ph)"
             );
             $achQ->execute($achIds);
             $achievements = $achQ->fetchAll(PDO::FETCH_ASSOC);
@@ -232,15 +231,14 @@ trait ManagerTrait
                 $manager['achievements'][] = [
                     'id'              => $a['id'],
                     'name'            => $a['name'],
-                    'description'     => $a['description'],
                     'icon'            => $a['icon'],
                     'threshold_bronze' => $a['threshold_bronze'],
-                    'earned_at'       => $earnedMap[$a['id']]['earned_at'],
                     'reason'          => $earnedMap[$a['id']]['reason'],
                     'level'           => $earnedMap[$a['id']]['level'],
                 ];
             }
-            usort($manager['achievements'], fn($a, $b) => strcmp($a['earned_at'], $b['earned_at']));
+            $levelOrder = ['gold' => 0, 'silver' => 1, 'bronze' => 2];
+            usort($manager['achievements'], fn($a, $b) => ($levelOrder[$a['level']] ?? 3) <=> ($levelOrder[$b['level']] ?? 3));
         }
 
         return $manager;
