@@ -10,10 +10,9 @@ class PlayerRatingController extends _BaseController
         $clubId     = $this->params['club_id']     ?? null;
 
         if ($this->id === 'best_xi') {
-            $roles = $GLOBALS['auth_roles'] ?? [];
-            if (!in_array('maintainer', $roles) && !in_array('admin', $roles)) {
-                http_response_code(403);
-                return ['status' => false, 'message' => 'Zugriff verweigert'];
+            if (!($GLOBALS['auth_manager_id'] ?? null)) {
+                http_response_code(401);
+                return ['status' => false, 'message' => 'Anmeldung erforderlich'];
             }
             $matchdayId     = $this->params['matchday_id'] ?? null;
             $freeAgentsOnly = ($this->params['free_agents_only'] ?? '0') === '1';

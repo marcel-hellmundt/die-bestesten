@@ -112,7 +112,7 @@ GET      /player_in_season/available_players — ?season_id (optional, default a
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück
 GET      /player_rating        — ?matchday_id&club_id → Spielerinfos + price, starting_count (Starts in der Saison); sortiert nach starting_count DESC, position, price DESC
-GET      /player_rating/best_xi — ?matchday_id (required), ?free_agents_only=0|1 — beste valide 11 (343/352/433/442/451) für einen Spieltag; gibt {formation, players[], total_points} zurück; free_agents_only=1 nur Spieler ohne Fantasy-Team — Maintainer
+GET      /player_rating/best_xi — ?matchday_id (required), ?free_agents_only=0|1 — beste valide 11 (343/352/433/442/451) für einen Spieltag; gibt {formation, players[{player_id,displayname,position,points,grade,club_id,club_name,club_short_name}], total_points} zurück; free_agents_only=1 nur Spieler ohne Fantasy-Team — Auth
 GET      /player_rating/status — ?matchday_id → [{club_id, rating_count, starter_count, grade_count, goals, assists, has_sds}] — aggregierter Status aller Clubs für einen Spieltag
 POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen (gleiche ID in alte DB gespiegelt); 409 wenn completed oder (vor kickoff_date und nicht Admin) — Maintainer+
 POST     /player_rating/validate-csv — multipart: matchday_id + csv-Datei (;-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte) → {ok, checked?} oder {ok: false, mismatches: [{displayname, csv_points, db_points}]} — Maintainer+

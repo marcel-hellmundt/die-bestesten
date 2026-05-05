@@ -114,6 +114,31 @@ export class MatchdayComponent {
     this.router.navigate(['/team', teamId, 'aufstellung'], { queryParams: { matchday_id: this.matchday()?.id } });
   }
 
+  bestXiMode = signal<'all' | 'free'>('all');
+
+  private bestXiData = toSignal(
+    combineLatest([
+      toObservable(this.matchday).pipe(filter(m => !!m)),
+      toObservable(this.bestXiMode),
+    ]).pipe(
+      switchMap(([md, mode]) => {
+        const freeParam = mode === 'free' ? '&free_agents_only=1' : '';
+        return this.api.get<any>(`player_rating/best_xi?matchday_id=${md!.id}${freeParam}`).pipe(
+          catchError(() => of(null))
+        );
+      })
+    )
+  );
+
+  bestXi = computed(() => this.bestXiData());
+
+  formationLabel(f: string): string { return f.split('').join('-'); }
+
+  private static readonly POS_LABELS: Record<string, string> = {
+    GOALKEEPER: 'TW', DEFENDER: 'IV', MIDFIELDER: 'ZM', FORWARD: 'ST',
+  };
+  posLabel(pos: string): string { return MatchdayComponent.POS_LABELS[pos] ?? pos; }
+
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
   range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }

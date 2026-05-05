@@ -171,6 +171,43 @@
         }
       </div>
 
+      <div class="card best-xi-card">
+        <div class="best-xi-tabs">
+          <button class="best-xi-tab" [class.active]="bestXiMode() === 'all'" (click)="bestXiMode.set('all')">
+            Elf des Tages
+          </button>
+          <button class="best-xi-tab" [class.active]="bestXiMode() === 'free'" (click)="bestXiMode.set('free')">
+            Transfermarkt-Team
+          </button>
+        </div>
+
+        @if (!bestXi()) {
+          <p class="state-msg">Laden…</p>
+        } @else if (!bestXi().formation) {
+          <p class="state-msg">Nicht genug Spieler für eine valide Formation.</p>
+        } @else {
+          <div class="best-xi-meta">
+            <span class="best-xi-formation">{{ formationLabel(bestXi().formation) }}</span>
+            <span class="best-xi-total">{{ bestXi().total_points }} Pkt</span>
+          </div>
+          <div class="best-xi-list">
+            @for (p of bestXi().players; track p.player_id) {
+              <div class="bxi-row">
+                <span class="bxi-pos bxi-pos--{{ p.position | lowercase }}">{{ posLabel(p.position) }}</span>
+                <span class="bxi-name">{{ p.displayname }}</span>
+                <span class="bxi-points">{{ p.points }}</span>
+                @if (p.grade) {
+                  <span class="bxi-grade" [style.background-color]="gradeVar(p.grade)">{{ p.grade }}</span>
+                } @else {
+                  <span class="bxi-grade-empty"></span>
+                }
+                <span class="bxi-club">{{ p.club_short_name }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
     </div>
 
     <div class="sidebar">

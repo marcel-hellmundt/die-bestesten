@@ -191,10 +191,13 @@ trait PlayerRatingTrait
             SELECT pr.player_id, p.displayname, p.first_name, p.last_name,
                    pis.position, pis.photo_uploaded, pis.price,
                    pr.points, pr.goals, pr.assists, pr.clean_sheet,
-                   pr.sds, pr.grade, pr.red_card, pr.yellow_red_card, pr.participation
+                   pr.sds, pr.grade, pr.red_card, pr.yellow_red_card, pr.participation,
+                   pr.club_id, c.name AS club_name, c.short_name AS club_short_name,
+                   c.logo_uploaded AS club_logo_uploaded
             FROM player_rating pr
             JOIN player p ON p.id = pr.player_id
             LEFT JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = :season_id
+            LEFT JOIN club c ON c.id = pr.club_id
             WHERE pr.matchday_id = :matchday_id
               AND pis.position IS NOT NULL
         ");

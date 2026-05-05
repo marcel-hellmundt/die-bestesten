@@ -195,6 +195,125 @@
   color: $color-success;
 }
 
+.best-xi-card {
+  padding: $space-4;
+}
+
+.best-xi-tabs {
+  display: flex;
+  gap: $space-2;
+  margin-bottom: $space-4;
+}
+
+.best-xi-tab {
+  flex: 1;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-muted;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+
+  &.active {
+    background: $color-accent;
+    border-color: $color-accent;
+    color: #fff;
+  }
+
+  &:hover:not(.active) {
+    border-color: $color-text-muted;
+    color: $color-text;
+  }
+}
+
+.best-xi-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $space-3;
+  padding-bottom: $space-3;
+  border-bottom: 1px solid $color-border;
+}
+
+.best-xi-formation {
+  font-size: $font-lg;
+  font-weight: $font-weight-bold;
+}
+
+.best-xi-total {
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.best-xi-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.bxi-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto auto;
+  align-items: center;
+  gap: $space-2;
+  padding: 5px 0;
+  border-bottom: 1px solid $color-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.bxi-pos {
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  border-radius: $radius-sm;
+  padding: 2px 4px;
+  text-align: center;
+  line-height: 1.4;
+
+  &--goalkeeper { background: var(--position-goalkeeper); color: #fff; }
+  &--defender   { background: var(--position-defender);   color: #111; }
+  &--midfielder { background: var(--position-midfielder); color: #fff; }
+  &--forward    { background: var(--position-forward);    color: #fff; }
+}
+
+.bxi-name {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bxi-points {
+  font-size: $font-sm;
+  font-weight: $font-weight-bold;
+}
+
+.bxi-grade {
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  border-radius: $radius-sm;
+  padding: 2px 6px;
+  line-height: 1.4;
+}
+
+.bxi-grade-empty {
+  width: 28px;
+}
+
+.bxi-club {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  text-align: right;
+}
+
 // Compact row override
 .data-table--compact {
   th,
