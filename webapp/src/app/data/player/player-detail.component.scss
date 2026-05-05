@@ -396,39 +396,46 @@
   flex-shrink: 0;
 }
 
-.card-wrap {
-  position: relative;
+.card-chip {
   display: inline-block;
-  width: 14px;
-  height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
   vertical-align: middle;
 
-  .card {
-    position: absolute;
-    width: 8px;
-    height: 12px;
-    border-radius: 2px;
+  &--red {
+    width: 14px;
+    height: 20px;
+    background: $color-danger;
+  }
 
-    &--yellow {
-      background: #ffd32a;
+  &--yr {
+    position: relative;
+    width: calc(14px + 3px);
+    height: calc(20px + 4px);
+    background: transparent;
+
+    &::before {
+      content: '';
+      position: absolute;
       top: 0;
-      left: 0;
+      left: 5px;
+      width: 14px;
+      height: 20px;
+      background: $color-danger;
+      border-radius: 2px;
     }
-    &--red {
-      background: #ff3f34;
-      top: 2px;
-      left: 4px;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 14px;
+      height: 20px;
+      background: #f59e0b;
+      border-radius: 2px;
     }
   }
-}
-
-.card--red {
-  display: inline-block;
-  width: 8px;
-  height: 12px;
-  border-radius: 2px;
-  background: #ff3f34;
-  vertical-align: middle;
 }
 
 .chart-container {

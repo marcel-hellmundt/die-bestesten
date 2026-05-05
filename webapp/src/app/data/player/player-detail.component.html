@@ -688,12 +688,9 @@
                   </td>
                   <td class="col-card">
                     @if (+r.yellow_red_card) {
-                      <span class="card-wrap">
-                        <span class="card card--yellow"></span>
-                        <span class="card card--red"></span>
-                      </span>
+                      <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
                     } @else if (+r.red_card) {
-                      <span class="card card--red"></span>
+                      <span class="card-chip card-chip--red" title="Rot"></span>
                     }
                   </td>
                   <td class="col-points">{{ r.points ?? '—' }}</td>
