@@ -14,12 +14,18 @@
     >
       ‹
     </button>
-    <h1 class="page-title nowrap">
-      {{ matchday().number }}. Spieltag
-      @if (isLive()) {
-        <span class="live-badge">Live</span>
+    <select
+      class="matchday-select"
+      [value]="currentNumber()"
+      (change)="onMatchdayChange(+$any($event.target).value)"
+    >
+      @for (m of matchdays() ?? []; track m.number) {
+        <option [value]="m.number">{{ m.number }}. Spieltag</option>
       }
-    </h1>
+    </select>
+    @if (isLive()) {
+      <span class="live-badge">Live</span>
+    }
     <button
       class="nav-arrow"
       (click)="increment()"

@@ -39,7 +39,7 @@ export class MatchdayComponent {
 
   selectedNumber = signal<number | null>(null);
 
-  private matchdays = toSignal(
+  matchdays = toSignal(
     toObservable(this.effectiveSeasonId).pipe(
       filter(id => !!id),
       switchMap(id =>
@@ -113,7 +113,11 @@ export class MatchdayComponent {
 
   onSeasonChange(seasonId: string): void {
     this.selectedSeasonId.set(seasonId);
-    this.selectedNumber.set(null); // reset to latest matchday of new season
+    this.selectedNumber.set(null);
+  }
+
+  onMatchdayChange(number: number): void {
+    this.selectedNumber.set(number);
   }
 
   navigateToTeam(teamId: string): void {
