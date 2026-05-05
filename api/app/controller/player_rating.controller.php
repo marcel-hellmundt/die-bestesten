@@ -2,7 +2,7 @@
 
 class PlayerRatingController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'maintainer', 'PATCH' => 'maintainer'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'maintainer', 'PATCH' => 'maintainer'];
 
     protected function get(): mixed
     {
