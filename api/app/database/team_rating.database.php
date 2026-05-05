@@ -4,12 +4,12 @@ trait TeamRatingTrait
 {
     private function assignFines(array $rows, string $pointsKey): array
     {
-        $hasInvalid  = !empty(array_filter($rows, fn($r) => $r['invalid']));
+        $hasInvalid = !empty(array_filter($rows, fn($r) => $r['invalid']));
         // If any invalid on this matchday: invalid=3€, valid rank 1→2€/2→1.50€/3→1€
         // Otherwise normal ranking: rank 1→3€/2→2€/3→1.50€/4→1€
-        $fineByRank  = $hasInvalid ? [1 => 2.0, 2 => 1.5, 3 => 1.0] : [1 => 3.0, 2 => 2.0, 3 => 1.5, 4 => 1.0];
+        $fineByRank = $hasInvalid ? [1 => 2.0, 2 => 1.5, 3 => 1.0] : [1 => 3.0, 2 => 2.0, 3 => 1.5, 4 => 1.0];
 
-        $validPoints  = array_column(array_filter($rows, fn($r) => !$r['invalid']), $pointsKey);
+        $validPoints = array_column(array_filter($rows, fn($r) => !$r['invalid']), $pointsKey);
         $uniquePoints = array_unique($validPoints);
         sort($uniquePoints);
         $pointsToFine = [];
@@ -34,7 +34,8 @@ trait TeamRatingTrait
         $ids = array_column($matchdayRows, 'id');
         $numberById = array_column($matchdayRows, 'number', 'id');
 
-        if (empty($ids)) return ['standings' => [], 'luck' => ['lucky' => [], 'unlucky' => []]];
+        if (empty($ids))
+            return ['standings' => [], 'luck' => ['lucky' => [], 'unlucky' => []]];
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
@@ -64,22 +65,22 @@ trait TeamRatingTrait
         $luckData = $this->getSeasonLuckStats($ids, $numberById);
 
         // Build per-team season fine totals and chart series from per-matchday data
-        $fineByTeam  = [];
+        $fineByTeam = [];
         $chartByTeam = [];
         foreach ($luckData['_all'] as $r) {
             $tid = $r['team_id'];
-            $fineByTeam[$tid] = ($fineByTeam[$tid] ?? 0.0) + (float)$r['fine'];
+            $fineByTeam[$tid] = ($fineByTeam[$tid] ?? 0.0) + (float) $r['fine'];
             if (!isset($chartByTeam[$tid])) {
                 $chartByTeam[$tid] = [
-                    'team_id'   => $tid,
+                    'team_id' => $tid,
                     'team_name' => $r['team_name'],
-                    'color'     => $r['color'],
-                    'series'    => [],
+                    'color' => $r['color'],
+                    'series' => [],
                 ];
             }
             $chartByTeam[$tid]['series'][] = [
-                'matchday' => (int)$r['matchday_number'],
-                'points'   => (int)$r['points'],
+                'matchday' => (int) $r['matchday_number'],
+                'points' => (int) $r['points'],
             ];
         }
         foreach ($rows as &$row) {
@@ -102,14 +103,15 @@ trait TeamRatingTrait
 
         return [
             'standings' => $rows,
-            'luck'      => $luckData,
-            'chart'     => array_values($chartByTeam),
+            'luck' => $luckData,
+            'chart' => array_values($chartByTeam),
         ];
     }
 
     public function getSeasonLuckStats(array $matchdayIds, array $numberById): array
     {
-        if (empty($matchdayIds)) return ['lucky' => [], 'unlucky' => []];
+        if (empty($matchdayIds))
+            return ['lucky' => [], 'unlucky' => []];
 
         $placeholders = implode(',', array_fill(0, count($matchdayIds), '?'));
 
@@ -145,12 +147,12 @@ trait TeamRatingTrait
         }
         unset($row);
 
-        $validRows = array_values(array_filter($rows, fn($r) => !(bool)$r['invalid']));
+        $validRows = array_values(array_filter($rows, fn($r) => !(bool) $r['invalid']));
 
         // Glückspilze / Pechvögel (per matchday) — valid teams only
-        $lucky   = array_filter($validRows, fn($r) => (float)$r['fine'] === 0.0);
-        $unlucky = array_filter($validRows, fn($r) => (float)$r['fine'] > 0.0);
-        usort($lucky,   fn($a, $b) => $a['points'] <=> $b['points']);
+        $lucky = array_filter($validRows, fn($r) => (float) $r['fine'] === 0.0);
+        $unlucky = array_filter($validRows, fn($r) => (float) $r['fine'] > 0.0);
+        usort($lucky, fn($a, $b) => $a['points'] <=> $b['points']);
         usort($unlucky, fn($a, $b) => $b['points'] <=> $a['points']);
 
         // Goldene Bürste: 3 team_ratings with fewest points in the season — valid teams only
@@ -165,7 +167,7 @@ trait TeamRatingTrait
             if (!isset($gaps[$tid])) {
                 $gaps[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_name' => $r['manager_name'], 'color' => $r['color'], 'season_id' => $r['season_id'], 'gap' => 0];
             }
-            $gaps[$tid]['gap'] += (int)$r['max_points'] - (int)$r['points'];
+            $gaps[$tid]['gap'] += (int) $r['max_points'] - (int) $r['points'];
         }
         usort($gaps, fn($a, $b) => $b['gap'] <=> $a['gap']);
         $hoelzerne_bank = array_slice(array_values($gaps), 0, 3);
@@ -179,7 +181,7 @@ trait TeamRatingTrait
         foreach ($byMatchday as $mdRows) {
             $maxPts = max(array_column($mdRows, 'points'));
             foreach ($mdRows as $r) {
-                if ((int)$r['points'] === (int)$maxPts) {
+                if ((int) $r['points'] === (int) $maxPts) {
                     $tid = $r['team_id'];
                     if (!isset($winsByTeam[$tid])) {
                         $winsByTeam[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_name' => $r['manager_name'], 'wins' => 0];
@@ -191,12 +193,12 @@ trait TeamRatingTrait
         usort($winsByTeam, fn($a, $b) => $b['wins'] <=> $a['wins']);
 
         return [
-            '_all'             => $rows,
-            'lucky'            => array_slice(array_values($lucky),   0, 3),
-            'unlucky'          => array_slice(array_values($unlucky),  0, 3),
-            'goldene_buerste'  => $goldene_buerste,
-            'hoelzerne_bank'   => $hoelzerne_bank,
-            'matchday_wins'    => array_values($winsByTeam),
+            '_all' => $rows,
+            'lucky' => array_slice(array_values($lucky), 0, 3),
+            'unlucky' => array_slice(array_values($unlucky), 0, 3),
+            'goldene_buerste' => $goldene_buerste,
+            'hoelzerne_bank' => $hoelzerne_bank,
+            'matchday_wins' => array_values($winsByTeam),
         ];
     }
 
@@ -223,7 +225,8 @@ trait TeamRatingTrait
         }
         $matchday = $mq->fetch(PDO::FETCH_ASSOC);
 
-        if (!$matchday) return false;
+        if (!$matchday)
+            return false;
 
         if ($matchday['completed']) {
             $rq = $this->con_league->prepare(
@@ -249,7 +252,8 @@ trait TeamRatingTrait
              FROM player_rating pr
              JOIN player p ON p.id = pr.player_id
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
-             WHERE pr.matchday_id = :matchday_id AND pr.sds = 1
+             WHERE pr.matchday_id = :matchday_id
+             ORDER BY pr.points DESC
              LIMIT 1"
         );
         $sq->execute([':matchday_id' => $matchday['id'], ':season_id' => $seasonId]);
@@ -264,9 +268,9 @@ trait TeamRatingTrait
         $maxNumber = (int) $maxQ->fetchColumn();
 
         return [
-            'matchday'            => $matchday,
-            'ratings'             => $ratings,
-            'sds_player'          => $sdsPlayer,
+            'matchday' => $matchday,
+            'ratings' => $ratings,
+            'sds_player' => $sdsPlayer,
             'max_matchday_number' => $maxNumber,
         ];
     }
@@ -284,9 +288,10 @@ trait TeamRatingTrait
         $lq->execute([':matchday_id' => $matchdayId]);
         $lineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($lineupRows)) return [];
+        if (empty($lineupRows))
+            return [];
 
-        $playerIds    = array_unique(array_column($lineupRows, 'player_id'));
+        $playerIds = array_unique(array_column($lineupRows, 'player_id'));
         $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
 
         $prq = $this->con->prepare(
@@ -309,30 +314,30 @@ trait TeamRatingTrait
             $tid = $row['team_id'];
             if (!isset($teamMap[$tid])) {
                 $teamMap[$tid] = [
-                    'team_id'      => $tid,
-                    'team_name'    => $row['team_name'],
-                    'color'        => $row['color'],
-                    'season_id'    => $row['season_id'],
+                    'team_id' => $tid,
+                    'team_name' => $row['team_name'],
+                    'color' => $row['color'],
+                    'season_id' => $row['season_id'],
                     'manager_name' => $row['manager_name'],
-                    'points'           => 0,
-                    'goals'            => 0,
-                    'assists'          => 0,
-                    'red_cards'        => 0,
+                    'points' => 0,
+                    'goals' => 0,
+                    'assists' => 0,
+                    'red_cards' => 0,
                     'yellow_red_cards' => 0,
-                    'clean_sheet'      => 0,
-                    'sds'              => 0,
-                    'fine'             => 0.0,
+                    'clean_sheet' => 0,
+                    'sds' => 0,
+                    'fine' => 0.0,
                 ];
             }
             $pr = $ratingByPlayer[$row['player_id']] ?? null;
             if ($pr) {
-                $teamMap[$tid]['points']      += (int)$pr['points'];
-                $teamMap[$tid]['goals']       += (int)$pr['goals'];
-                $teamMap[$tid]['assists']     += (int)$pr['assists'];
-                $teamMap[$tid]['red_cards']        += (int)$pr['red_cards'];
-                $teamMap[$tid]['yellow_red_cards'] += (int)$pr['yellow_red_cards'];
-                $teamMap[$tid]['clean_sheet']      += (int)$pr['clean_sheet'];
-                $teamMap[$tid]['sds']         += (int)$pr['sds'];
+                $teamMap[$tid]['points'] += (int) $pr['points'];
+                $teamMap[$tid]['goals'] += (int) $pr['goals'];
+                $teamMap[$tid]['assists'] += (int) $pr['assists'];
+                $teamMap[$tid]['red_cards'] += (int) $pr['red_cards'];
+                $teamMap[$tid]['yellow_red_cards'] += (int) $pr['yellow_red_cards'];
+                $teamMap[$tid]['clean_sheet'] += (int) $pr['clean_sheet'];
+                $teamMap[$tid]['sds'] += (int) $pr['sds'];
             }
         }
 

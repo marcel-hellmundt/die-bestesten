@@ -15,12 +15,11 @@
       ‹
     </button>
     <select
-      class="matchday-select"
-      [value]="currentNumber()"
+      class="select"
       (change)="onMatchdayChange(+$any($event.target).value)"
     >
       @for (m of matchdays() ?? []; track m.number) {
-        <option [value]="m.number">{{ m.number }}. Spieltag</option>
+        <option [value]="m.number" [selected]="m.number === currentNumber()">{{ m.number }}. Spieltag</option>
       }
     </select>
     @if (isLive()) {
@@ -36,12 +35,11 @@
     </button>
     @if (seasons().length > 1) {
       <select
-        class="season-select"
-        [value]="seasonId()"
+        class="season-select select"
         (change)="onSeasonChange($any($event.target).value)"
       >
         @for (s of seasons(); track s.id) {
-          <option [value]="s.id">{{ s.displayName }}</option>
+          <option [value]="s.id" [selected]="s.id === seasonId()">{{ s.displayName }}</option>
         }
       </select>
     }
@@ -65,7 +63,9 @@
                 <th class="col-icons col-cs col-desktop">Zu Null</th>
                 <th class="col-stats col-mobile"></th>
                 <th class="col-points">Punkte</th>
-                @if (!isLive()) { <th class="col-fine col-desktop">Strafe</th> }
+                @if (!isLive()) {
+                  <th class="col-fine col-desktop">Strafe</th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -76,7 +76,15 @@
                     <span class="team-cell">
                       <img
                         class="tbl-logo"
-                        [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                        [src]="
+                          logoErrors.has(r.team_id)
+                            ? 'img/placeholders/club.png'
+                            : 'https://img.die-bestesten.de/img/team/' +
+                              r.season_id +
+                              '/' +
+                              r.team_id +
+                              '.png'
+                        "
                         [class.logo--placeholder]="logoErrors.has(r.team_id)"
                         [alt]="r.team_name"
                         (error)="onLogoError(r.team_id)"
@@ -157,7 +165,11 @@
                       }
                       @if (+r.clean_sheet) {
                         <span class="stats-compact__row">
-                          <img src="img/icons/clean_sheet.png" class="rating-icon--sm" alt="Zu Null" />
+                          <img
+                            src="img/icons/clean_sheet.png"
+                            class="rating-icon--sm"
+                            alt="Zu Null"
+                          />
                         </span>
                       }
                     </span>
@@ -179,10 +191,18 @@
 
       <div class="card best-xi-card">
         <div class="best-xi-tabs">
-          <button class="best-xi-tab" [class.active]="bestXiMode() === 'all'" (click)="bestXiMode.set('all')">
+          <button
+            class="best-xi-tab"
+            [class.active]="bestXiMode() === 'all'"
+            (click)="bestXiMode.set('all')"
+          >
             Elf des Tages
           </button>
-          <button class="best-xi-tab" [class.active]="bestXiMode() === 'free'" (click)="bestXiMode.set('free')">
+          <button
+            class="best-xi-tab"
+            [class.active]="bestXiMode() === 'free'"
+            (click)="bestXiMode.set('free')"
+          >
             Transfermarkt-Team
           </button>
         </div>
@@ -200,7 +220,12 @@
             @for (row of bestXiRows(); track row.pos) {
               <div class="bxi-field-row">
                 @for (p of row.players; track p.player_id) {
-                  <div class="bxi-player" [class.bxi-player--own-team]="bestXiMode() === 'all' && p.team_id === mySeasonTeamId()">
+                  <div
+                    class="bxi-player"
+                    [class.bxi-player--own-team]="
+                      bestXiMode() === 'all' && p.team_id === mySeasonTeamId()
+                    "
+                  >
                     @if (p.club_logo_uploaded && p.club_id) {
                       <img
                         class="bxi-club-logo"
@@ -213,15 +238,27 @@
                       <img
                         class="bxi-team-logo"
                         [class.bxi-team-logo--bench]="p.nominated === false"
-                        [src]="'https://img.die-bestesten.de/img/team/' + p.team_season_id + '/' + p.team_id + '.png'"
+                        [src]="
+                          'https://img.die-bestesten.de/img/team/' +
+                          p.team_season_id +
+                          '/' +
+                          p.team_id +
+                          '.png'
+                        "
                         (error)="$any($event.target).style.display = 'none'"
                       />
                     }
-                    <span class="bxi-player-name">{{ p.displayname }}</span>
+                    <a [routerLink]="['/daten/player', p.player_id]">
+                      <span class="bxi-player-name">{{ p.displayname }}</span>
+                    </a>
                     <div class="bxi-player-stats">
                       <span class="bxi-player-pts">{{ p.points }}</span>
                       @if (p.grade) {
-                        <span class="bxi-player-grade" [style.background-color]="gradeVar(p.grade)">{{ p.grade }}</span>
+                        <span
+                          class="bxi-player-grade"
+                          [style.background-color]="gradeVar(p.grade)"
+                          >{{ p.grade }}</span
+                        >
                       }
                     </div>
                   </div>
@@ -231,7 +268,6 @@
           </div>
         }
       </div>
-
     </div>
 
     <div class="sidebar">
@@ -254,7 +290,9 @@
             <div class="sds-avatar">
               @if (p.photo_uploaded && seasonId()) {
                 <img
-                  [src]="'https://img.die-bestesten.de/img/player/' + seasonId() + '/' + p.id + '.png'"
+                  [src]="
+                    'https://img.die-bestesten.de/img/player/' + seasonId() + '/' + p.id + '.png'
+                  "
                   [alt]="p.displayname"
                   (error)="$any($event.target).style.display = 'none'"
                 />
@@ -265,7 +303,9 @@
               <div class="sds-stats">
                 <span class="sds-points">{{ p.points }}</span>
                 @if (p.grade) {
-                  <span class="sds-grade" [style.background-color]="gradeVar(p.grade)">{{ p.grade }}</span>
+                  <span class="sds-grade" [style.background-color]="gradeVar(p.grade)">{{
+                    p.grade
+                  }}</span>
                 }
                 @if (+p.goals) {
                   <span class="sds-stat-item">
@@ -274,7 +314,9 @@
                 }
                 @if (+p.assists) {
                   <span class="sds-stat-item">
-                    <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />{{ p.assists }}
+                    <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />{{
+                      p.assists
+                    }}
                   </span>
                 }
                 @if (+p.clean_sheet) {

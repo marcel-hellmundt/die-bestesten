@@ -29,12 +29,11 @@
   }
 }
 
-.matchday-select {
-  height: 32px;
-  padding: 0 $space-3;
+.select {
+  width: auto;
+  height: 36px;
   border: 1px solid $color-border;
   border-radius: $radius-md;
-  background: $color-surface;
   color: $color-text;
   font-size: $font-sm;
   font-weight: $font-weight-semibold;
@@ -48,40 +47,22 @@
     outline: none;
     border-color: $color-text-muted;
   }
-}
-
-.season-select {
-  margin-left: auto;
-  height: 32px;
-  padding: 0 $space-3;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
-  background: $color-surface;
-  color: $color-text;
-  font-size: $font-sm;
-  cursor: pointer;
-  transition: border-color $transition-fast;
-
-  &:hover {
-    border-color: $color-text-muted;
-  }
-  &:focus {
-    outline: none;
-    border-color: $color-text-muted;
+  &.season-select {
+    margin-left: $space-8;
+    min-width: 120px;
+    text-align: center;
   }
 }
-
 .nav-arrow {
   display: flex;
-  align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: 1px solid $color-border;
   border-radius: $radius-md;
   background: $color-surface;
-  font-size: $font-xl;
-  line-height: 1;
+  font-size: $font-3xl;
+  line-height: 28px;
   color: $color-text;
   cursor: pointer;
   transition:
@@ -245,6 +226,11 @@
   &:hover:not(.active) {
     border-color: $color-text-muted;
     color: $color-text;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: $space-2 0;
+    flex-grow: 1;
   }
 }
 
