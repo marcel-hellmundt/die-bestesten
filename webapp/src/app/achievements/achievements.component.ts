@@ -39,6 +39,20 @@ export class AchievementsComponent {
 
   earnedCount = computed(() => this.achievements().filter((a) => a.earned_at).length);
 
+  earnedPercent = computed(() => {
+    const total = this.achievements().length;
+    return total ? Math.round((this.earnedCount() / total) * 100) : 0;
+  });
+
+  levelCounts = computed(() => {
+    const earned = this.achievements().filter((a) => a.earned_at);
+    return {
+      bronze: earned.filter((a) => a.level === 'bronze').length,
+      silver: earned.filter((a) => a.level === 'silver').length,
+      gold: earned.filter((a) => a.level === 'gold' || a.level === null).length,
+    };
+  });
+
   rarity(a: Achievement): 'häufig' | 'ungewöhnlich' | 'selten' | 'super selten' {
     if (!a.total_managers || a.earned_count === 0) return 'super selten';
     const ratio = a.earned_count / a.total_managers;

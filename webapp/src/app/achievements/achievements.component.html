@@ -1,7 +1,24 @@
 <h1 class="page-title">Achievements</h1>
 
 @if (achievements().length) {
-  <p class="achievements-score">{{ earnedCount() }} von {{ achievements().length }} erreicht</p>
+  <div class="achievements-header">
+    <p class="achievements-score">
+      {{ earnedCount() }} von {{ achievements().length }} erreicht
+      <span class="achievements-score__pct">({{ earnedPercent() }}%)</span>
+    </p>
+    <div class="achievements-progress">
+      @if (levelCounts().bronze > 0) {
+        <div class="ap-seg ap-seg--bronze" [style.flex]="levelCounts().bronze"></div>
+      }
+      @if (levelCounts().silver > 0) {
+        <div class="ap-seg ap-seg--silver" [style.flex]="levelCounts().silver"></div>
+      }
+      @if (levelCounts().gold > 0) {
+        <div class="ap-seg ap-seg--gold" [style.flex]="levelCounts().gold"></div>
+      }
+      <div class="ap-seg ap-seg--empty" [style.flex]="achievements().length - earnedCount()"></div>
+    </div>
+  </div>
 }
 
 <div class="achievement-grid">
