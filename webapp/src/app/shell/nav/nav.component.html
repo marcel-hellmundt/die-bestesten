@@ -27,7 +27,7 @@
           <span class="nav-group-label">{{ group.label }}</span>
         }
         <ul class="nav-items">
-          @for (item of group.items; track item.route) {
+          @for (item of group.items; track item.label) {
             <li>
               <a class="nav-item" [routerLink]="item.route" routerLinkActive="nav-item--active">
                 <app-icon [name]="item.icon" class="nav-icon"></app-icon>
@@ -47,7 +47,7 @@
           <span class="nav-group-label">{{ group.label }}</span>
         }
         <ul class="nav-items">
-          @for (item of group.items; track item.route) {
+          @for (item of group.items; track item.label) {
             <li>
               <a class="nav-item" [routerLink]="item.route" routerLinkActive="nav-item--active">
                 <app-icon [name]="item.icon" class="nav-icon"></app-icon>
