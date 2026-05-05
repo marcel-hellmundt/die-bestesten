@@ -143,7 +143,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/matchday/:id',
-                        'description' => 'completed-Status setzen — Body: { completed: bool } (nur Admin)',
+                        'description' => 'completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, Achievements auswerten, Notifications senden — Admin',
                         'path_params' => [':id' => 'UUID des Spieltags'],
                     ],
                 ],

@@ -41,6 +41,9 @@ class MatchdayController extends _BaseController
         }
 
         $completed = (bool) $body['completed'];
+        if ($completed) {
+            $this->db->finalizeMatchday($this->id);
+        }
         $this->db->updateMatchdayCompleted($this->id, $completed);
         if ($completed) {
             $this->db->evaluateAchievements(true);

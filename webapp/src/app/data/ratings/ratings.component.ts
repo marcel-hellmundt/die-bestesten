@@ -1,5 +1,5 @@
 import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
-import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
+import { catchError, combineLatest, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
@@ -52,9 +52,10 @@ export class RatingsDataComponent {
   activeSeasonId = computed(() => this.activeSeasonState()?.id ?? null);
 
   // ── Page data (matchdays + clubs) for active season ───────────
+  private pageRefresh = signal(0);
   private pageData = toSignal(
-    toObservable(this.activeSeasonId).pipe(
-      switchMap((seasonId) => {
+    combineLatest([toObservable(this.activeSeasonId), toObservable(this.pageRefresh)]).pipe(
+      switchMap(([seasonId]) => {
         if (!seasonId) return of(null);
         return forkJoin({
           matchdays: this.api.get<any[]>(`matchday?season_id=${seasonId}`),
@@ -602,6 +603,24 @@ export class RatingsDataComponent {
       },
     });
     (event.target as HTMLInputElement).value = '';
+  }
+
+  // ── Matchday close ────────────────────────────────────────────────
+  closingMatchday = signal(false);
+
+  closeMatchday(): void {
+    const md = this.selectedMatchday();
+    if (!md || this.closingMatchday()) return;
+    this.closingMatchday.set(true);
+    this.api.patch<any>(`matchday/${md.id}`, { completed: true }).subscribe({
+      next: () => {
+        this.closingMatchday.set(false);
+        this.csvResult.set(null);
+        this.selectedMatchday.set({ ...md, completed: true } as Matchday);
+        this.pageRefresh.update((v) => v + 1);
+      },
+      error: () => this.closingMatchday.set(false),
+    });
   }
 
   // ── Bulk lineup import ────────────────────────────────────────────

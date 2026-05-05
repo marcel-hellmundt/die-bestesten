@@ -23,16 +23,21 @@
     }
   </div>
 
-  <!-- Spieltag abschließen (CSV-Validierung) -->
+  <!-- Punkte validieren (CSV-Validierung) -->
   @if (selectedMatchday() && !selectedMatchday()!.completed && allClubsDone()) {
     <div class="close-matchday-bar">
       <input #csvInput type="file" accept=".csv" hidden (change)="onCsvFileSelected($event)" />
       <button class="btn btn-primary" (click)="csvInput.click()" [disabled]="csvValidating()">
-        {{ csvValidating() ? 'Wird geprüft…' : 'Spieltag abschließen' }}
+        {{ csvValidating() ? 'Wird geprüft…' : 'Punktecheck' }}
       </button>
       @if (csvResult(); as res) {
         @if (res.ok) {
           <div class="completed-banner">Alle {{ res.checked }} Punkte stimmen überein ✓</div>
+          @if (isAdmin()) {
+            <button class="btn btn-primary" (click)="closeMatchday()" [disabled]="closingMatchday()">
+              {{ closingMatchday() ? 'Wird abgeschlossen…' : 'Spieltag abschließen' }}
+            </button>
+          }
         } @else {
           <div class="warning-panel">
             <strong>{{ res.mismatches!.length }} Problem(e) gefunden:</strong>
@@ -55,9 +60,20 @@
                       <td>{{ m.displayname }}</td>
                       <td>{{ m.csv_points }}</td>
                       <td>{{ m.db_points ?? '—' }}</td>
-                      <td [class.mismatch-diff--pos]="m.db_points !== null && m.csv_points > m.db_points"
-                          [class.mismatch-diff--neg]="m.db_points !== null && m.csv_points < m.db_points">
-                        {{ m.db_points !== null ? (m.csv_points - m.db_points > 0 ? '+' : '') + (m.csv_points - m.db_points) : '—' }}
+                      <td
+                        [class.mismatch-diff--pos]="
+                          m.db_points !== null && m.csv_points > m.db_points
+                        "
+                        [class.mismatch-diff--neg]="
+                          m.db_points !== null && m.csv_points < m.db_points
+                        "
+                      >
+                        {{
+                          m.db_points !== null
+                            ? (m.csv_points - m.db_points > 0 ? '+' : '') +
+                              (m.csv_points - m.db_points)
+                            : '—'
+                        }}
                       </td>
                       <td class="mismatch-error">{{ m.error }}</td>
                     </tr>
@@ -453,9 +469,18 @@
 
           @if (!selectedMatchday()?.completed && missingPlayers().length > 0) {
             <div class="missing-panel card">
-              <span class="missing-panel__label">{{ missingPlayers().length }} Spieler ohne Rating:</span>
-              <span class="missing-panel__names">{{ missingPlayers().map(p => p.displayname).join(', ') }}</span>
-              <button class="btn btn-primary btn-sm" (click)="addMissing()" [disabled]="addingMissing()">
+              <span class="missing-panel__label"
+                >{{ missingPlayers().length }} Spieler ohne Rating:</span
+              >
+              <span
+                class="missing-panel__names"
+                >{{ missingPlayers().map(p => p.displayname).join(', ') }}</span
+              >
+              <button
+                class="btn btn-primary btn-sm"
+                (click)="addMissing()"
+                [disabled]="addingMissing()"
+              >
                 {{ addingMissing() ? 'Wird angelegt…' : 'Ratings anlegen' }}
               </button>
             </div>
