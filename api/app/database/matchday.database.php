@@ -195,18 +195,28 @@ trait MatchdayTrait
                 }
                 $this->con_old->prepare(
                     "INSERT INTO team_rating
-                         (team_id, matchday, points, max_points, goals, assists,
-                          clean_sheet, sds, red_card, yellow_red_card, invalid)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         (team_id, matchday_number, points, max_points, goals, assists,
+                          clean_sheet, sds, sds_defender, missed_goals,
+                          points_goalkeeper, points_defender, points_midfielder, points_forward, invalid)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON DUPLICATE KEY UPDATE
-                         points     = VALUES(points),
-                         max_points = VALUES(max_points),
-                         goals      = VALUES(goals),
-                         assists    = VALUES(assists)"
+                         points            = VALUES(points),
+                         max_points        = VALUES(max_points),
+                         goals             = VALUES(goals),
+                         assists           = VALUES(assists),
+                         clean_sheet       = VALUES(clean_sheet),
+                         sds               = VALUES(sds),
+                         sds_defender      = VALUES(sds_defender),
+                         points_goalkeeper = VALUES(points_goalkeeper),
+                         points_defender   = VALUES(points_defender),
+                         points_midfielder = VALUES(points_midfielder),
+                         points_forward    = VALUES(points_forward),
+                         invalid           = VALUES(invalid)"
                 )->execute([
                     $teamId, $matchdayNum,
                     $points, $maxPoints, $goals, $assists,
-                    $cleanSheet, $sds, $redCards, $yellowRedCards, $invalid,
+                    $cleanSheet, $sds, $sdsDefender, 0,
+                    $ptsGk, $ptsDef, $ptsMid, $ptsFwd, $invalid,
                 ]);
             } catch (\Throwable $e) {
                 error_log('finalizeMatchday old-DB sync failed for team ' . $teamId . ': ' . $e->getMessage());
