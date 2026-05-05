@@ -40,7 +40,7 @@ trait MatchdayTrait
     {
         $updatedCount = 0;
         $matchday = $this->getMatchdayById($matchdayId);
-        if (!$matchday) return;
+        if (!$matchday) return 0;
         $seasonId    = $matchday['season_id'];
         $matchdayNum = (int) $matchday['number'];
         $kickoffDate = $matchday['kickoff_date'];
@@ -50,7 +50,7 @@ trait MatchdayTrait
         );
         $teamsQ->execute([$seasonId]);
         $teams = $teamsQ->fetchAll(PDO::FETCH_ASSOC);
-        if (empty($teams)) return;
+        if (empty($teams)) return 0;
 
         $lineupQ = $this->con_league->prepare(
             "SELECT team_id, player_id, nominated FROM team_lineup WHERE matchday_id = ?"

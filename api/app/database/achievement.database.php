@@ -9,13 +9,13 @@ trait AchievementTrait
             "SELECT id, condition_key, name FROM achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($achievements)) return;
+        if (empty($achievements)) return 0;
 
         $managerIds = $this->con_league->query(
             "SELECT id FROM manager WHERE status = 'active'"
         )->fetchAll(PDO::FETCH_COLUMN);
 
-        if (empty($managerIds)) return;
+        if (empty($managerIds)) return 0;
 
         $stmt = $this->con_league->prepare(
             "INSERT IGNORE INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at, level)
