@@ -175,6 +175,95 @@ trait PlayerRatingTrait
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Returns the best valid XI for a matchday across all 5 formations (343/352/433/442/451).
+     * If $freeAgentsOnly is true, excludes players currently in a fantasy team.
+     */
+    public function getBestXi(string $matchdayId, bool $freeAgentsOnly = false): array
+    {
+        $mdQ = $this->con->prepare("SELECT id, season_id FROM matchday WHERE id = ? LIMIT 1");
+        $mdQ->execute([$matchdayId]);
+        $matchday = $mdQ->fetch(PDO::FETCH_ASSOC);
+        if (!$matchday) return ['formation' => null, 'players' => [], 'total_points' => 0];
+        $seasonId = $matchday['season_id'];
+
+        $q = $this->con->prepare("
+            SELECT pr.player_id, p.displayname, p.first_name, p.last_name,
+                   pis.position, pis.photo_uploaded, pis.price,
+                   pr.points, pr.goals, pr.assists, pr.clean_sheet,
+                   pr.sds, pr.grade, pr.red_card, pr.yellow_red_card, pr.participation
+            FROM player_rating pr
+            JOIN player p ON p.id = pr.player_id
+            LEFT JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = :season_id
+            WHERE pr.matchday_id = :matchday_id
+              AND pis.position IS NOT NULL
+        ");
+        $q->execute([':matchday_id' => $matchdayId, ':season_id' => $seasonId]);
+        $ratings = $q->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($freeAgentsOnly) {
+            $takenQ = $this->con_league->prepare(
+                "SELECT pit.player_id FROM player_in_team pit
+                 JOIN team t ON t.id = pit.team_id
+                 WHERE t.season_id = ? AND pit.to_matchday_id IS NULL"
+            );
+            $takenQ->execute([$seasonId]);
+            $taken   = array_flip($takenQ->fetchAll(PDO::FETCH_COLUMN));
+            $ratings = array_values(array_filter($ratings, fn($r) => !isset($taken[$r['player_id']])));
+        }
+
+        $byPos = ['GOALKEEPER' => [], 'DEFENDER' => [], 'MIDFIELDER' => [], 'FORWARD' => []];
+        foreach ($ratings as $r) {
+            $pos = $r['position'] ?? null;
+            if (isset($byPos[$pos])) $byPos[$pos][] = $r;
+        }
+        foreach ($byPos as &$group) {
+            usort($group, fn($a, $b) => (int)$b['points'] - (int)$a['points']);
+        }
+        unset($group);
+
+        $formations = [
+            '343' => [1, 3, 4, 3],
+            '352' => [1, 3, 5, 2],
+            '433' => [1, 4, 3, 3],
+            '442' => [1, 4, 4, 2],
+            '451' => [1, 4, 5, 1],
+        ];
+        $posKeys = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+
+        $bestTotal   = -1;
+        $bestKey     = null;
+        $bestPlayers = [];
+
+        foreach ($formations as $key => [$gk, $def, $mid, $fwd]) {
+            $needs   = [$gk, $def, $mid, $fwd];
+            $canFill = true;
+            foreach ($posKeys as $i => $pos) {
+                if (count($byPos[$pos]) < $needs[$i]) { $canFill = false; break; }
+            }
+            if (!$canFill) continue;
+
+            $total   = 0;
+            $players = [];
+            foreach ($posKeys as $i => $pos) {
+                $picked   = array_slice($byPos[$pos], 0, $needs[$i]);
+                $total   += array_sum(array_column($picked, 'points'));
+                $players  = [...$players, ...$picked];
+            }
+            if ($total > $bestTotal) {
+                $bestTotal   = $total;
+                $bestKey     = $key;
+                $bestPlayers = $players;
+            }
+        }
+
+        return [
+            'formation'    => $bestKey,
+            'players'      => $bestPlayers,
+            'total_points' => $bestTotal < 0 ? 0 : $bestTotal,
+        ];
+    }
+
     private function generateUUID(): string
     {
         $data = random_bytes(16);

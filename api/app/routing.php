@@ -270,6 +270,15 @@ class Routing
                     ],
                     [
                         'method' => 'GET',
+                        'path' => '/player_rating/best_xi',
+                        'description' => 'Beste valide 11 für einen Spieltag (Formationen 343/352/433/442/451, maximale Gesamtpunkte) — gibt {formation, players[], total_points} zurück; free_agents_only=1 schließt Spieler in Fantasy-Teams aus — Maintainer+',
+                        'query_params' => [
+                            'matchday_id'     => 'UUID des Spieltags (erforderlich)',
+                            'free_agents_only' => '1 = nur vereinslose Spieler (optional, default 0)',
+                        ],
+                    ],
+                    [
+                        'method' => 'GET',
                         'path' => '/player_rating/status',
                         'description' => 'Aggregierter Bewertungsstatus aller Clubs für einen Spieltag — gibt [{club_id, rating_count, starter_count, grade_count}] zurück',
                         'query_params' => [
