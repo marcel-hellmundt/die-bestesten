@@ -229,7 +229,7 @@ trait MatchdayTrait
                     . 'Mit einer optimalen Aufstellung hättest du <b>' . $maxPoints . ' Punkte</b> erzielt.<br><br>'
                     . '<a href="http://die-bestesten.de/liga/pro/' . $seasonLabel . '/' . $matchdayNum . '">Zur Spieltagstabelle</a>';
                 $this->con_old->prepare(
-                    "INSERT INTO notification (manager_id, title, message, created_at) VALUES (?, ?, ?, NOW())"
+                    "INSERT INTO notification (notification_id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
                 )->execute([
                     $team['manager_id'],
                     $matchdayNum . '. Spieltag abgeschlossen!',
