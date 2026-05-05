@@ -27,8 +27,13 @@
 }
 
 @keyframes live-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .season-select {
@@ -206,8 +211,7 @@
 }
 
 .best-xi-tab {
-  flex: 1;
-  padding: $space-2 $space-3;
+  padding: $space-2 $space-6;
   border: 1px solid $color-border;
   border-radius: $radius-md;
   background: transparent;
@@ -249,70 +253,96 @@
   color: $color-text-muted;
 }
 
-.best-xi-list {
+.best-xi-field {
   display: flex;
   flex-direction: column;
+  gap: $space-3;
+  background: rgba(5, 196, 107, 0.06);
+  border-radius: $radius-md;
+  padding: $space-4 $space-3;
 }
 
-.bxi-row {
-  display: grid;
-  grid-template-columns: 28px 1fr auto auto auto;
-  align-items: center;
-  gap: $space-2;
-  padding: 5px 0;
-  border-bottom: 1px solid $color-border;
+.bxi-field-row {
+  display: flex;
+  justify-content: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
 
-  &:last-child {
-    border-bottom: none;
+.bxi-player {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  min-width: 72px;
+  max-width: 96px;
+  flex: 1;
+  padding: $space-2;
+  background: $color-surface;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+}
+
+.bxi-club-logo {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
+  background: $color-surface;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.bxi-team-logo {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
+  background: $color-surface;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+
+  &--bench {
+    opacity: 0.5;
+    filter: grayscale(1);
   }
 }
 
-.bxi-pos {
+.bxi-player-name {
   font-size: $font-xs;
-  font-weight: $font-weight-bold;
-  border-radius: $radius-sm;
-  padding: 2px 4px;
-  text-align: center;
-  line-height: 1.4;
-
-  &--goalkeeper { background: var(--position-goalkeeper); color: #fff; }
-  &--defender   { background: var(--position-defender);   color: #111; }
-  &--midfielder { background: var(--position-midfielder); color: #fff; }
-  &--forward    { background: var(--position-forward);    color: #fff; }
-}
-
-.bxi-name {
-  font-size: $font-sm;
-  font-weight: $font-weight-medium;
-  min-width: 0;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  width: 100%;
 }
 
-.bxi-points {
+.bxi-player-stats {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+}
+
+.bxi-player-pts {
   font-size: $font-sm;
   font-weight: $font-weight-bold;
 }
 
-.bxi-grade {
+.bxi-player-grade {
   font-size: $font-xs;
   font-weight: $font-weight-bold;
   color: #fff;
   border-radius: $radius-sm;
-  padding: 2px 6px;
+  padding: 1px 5px;
   line-height: 1.4;
 }
 
-.bxi-grade-empty {
-  width: 28px;
-}
-
-.bxi-club {
-  font-size: $font-xs;
-  color: $color-text-muted;
-  text-align: right;
-}
 
 // Compact row override
 .data-table--compact {
@@ -381,11 +411,12 @@
   // Two overlapping cards: red behind (shifted 20% right + up), yellow in front
   &--yr {
     position: relative;
-    width: calc(14px + 3px);  // base + 20% of 14px
+    width: calc(14px + 3px); // base + 20% of 14px
     height: calc(20px + 4px); // base + 20% of 20px
     background: transparent;
 
-    &::before {  // red card behind, shifted right + up
+    &::before {
+      // red card behind, shifted right + up
       content: '';
       position: absolute;
       top: 0;
@@ -396,7 +427,8 @@
       border-radius: 2px;
     }
 
-    &::after {   // yellow card in front, bottom-left
+    &::after {
+      // yellow card in front, bottom-left
       content: '';
       position: absolute;
       bottom: 0;

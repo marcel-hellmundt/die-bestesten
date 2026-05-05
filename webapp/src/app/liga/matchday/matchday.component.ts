@@ -132,12 +132,16 @@ export class MatchdayComponent {
 
   bestXi = computed(() => this.bestXiData());
 
-  formationLabel(f: string): string { return f.split('').join('-'); }
+  formationLabel(f: string | number): string { return String(f).split('').join('-'); }
 
-  private static readonly POS_LABELS: Record<string, string> = {
-    GOALKEEPER: 'TW', DEFENDER: 'IV', MIDFIELDER: 'ZM', FORWARD: 'ST',
-  };
-  posLabel(pos: string): string { return MatchdayComponent.POS_LABELS[pos] ?? pos; }
+  bestXiRows = computed(() => {
+    const xi = this.bestXi();
+    if (!xi?.players) return [];
+    const order = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER'];
+    return order
+      .map(pos => ({ pos, players: (xi.players as any[]).filter((p: any) => p.position === pos) }))
+      .filter(row => row.players.length > 0);
+  });
 
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }

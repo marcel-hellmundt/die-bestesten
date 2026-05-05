@@ -190,18 +190,36 @@
             <span class="best-xi-formation">{{ formationLabel(bestXi().formation) }}</span>
             <span class="best-xi-total">{{ bestXi().total_points }} Pkt</span>
           </div>
-          <div class="best-xi-list">
-            @for (p of bestXi().players; track p.player_id) {
-              <div class="bxi-row">
-                <span class="bxi-pos bxi-pos--{{ p.position | lowercase }}">{{ posLabel(p.position) }}</span>
-                <span class="bxi-name">{{ p.displayname }}</span>
-                <span class="bxi-points">{{ p.points }}</span>
-                @if (p.grade) {
-                  <span class="bxi-grade" [style.background-color]="gradeVar(p.grade)">{{ p.grade }}</span>
-                } @else {
-                  <span class="bxi-grade-empty"></span>
+          <div class="best-xi-field">
+            @for (row of bestXiRows(); track row.pos) {
+              <div class="bxi-field-row">
+                @for (p of row.players; track p.player_id) {
+                  <div class="bxi-player">
+                    @if (bestXiMode() === 'all' && p.club_logo_uploaded && p.club_id) {
+                      <img
+                        class="bxi-club-logo"
+                        [src]="'https://img.die-bestesten.de/img/club/' + p.club_id + '.png'"
+                        [alt]="p.club_short_name"
+                        (error)="$any($event.target).style.display = 'none'"
+                      />
+                    }
+                    @if (p.team_id && p.team_season_id) {
+                      <img
+                        class="bxi-team-logo"
+                        [class.bxi-team-logo--bench]="p.nominated === false"
+                        [src]="'https://img.die-bestesten.de/img/team/' + p.team_season_id + '/' + p.team_id + '.png'"
+                        (error)="$any($event.target).style.display = 'none'"
+                      />
+                    }
+                    <span class="bxi-player-name">{{ p.displayname }}</span>
+                    <div class="bxi-player-stats">
+                      <span class="bxi-player-pts">{{ p.points }}</span>
+                      @if (p.grade) {
+                        <span class="bxi-player-grade" [style.background-color]="gradeVar(p.grade)">{{ p.grade }}</span>
+                      }
+                    </div>
+                  </div>
                 }
-                <span class="bxi-club">{{ p.club_short_name }}</span>
               </div>
             }
           </div>

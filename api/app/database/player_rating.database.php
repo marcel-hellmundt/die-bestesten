@@ -260,6 +260,30 @@ trait PlayerRatingTrait
             }
         }
 
+        // Enrich bestPlayers with team_lineup info (team_id, season_id, nominated)
+        if (!empty($bestPlayers)) {
+            $playerIds    = array_column($bestPlayers, 'player_id');
+            $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+            $lineupQ = $this->con_league->prepare(
+                "SELECT tl.player_id, tl.team_id, tl.nominated, t.season_id AS team_season_id
+                 FROM team_lineup tl
+                 JOIN team t ON t.id = tl.team_id
+                 WHERE tl.matchday_id = ? AND tl.player_id IN ($placeholders)"
+            );
+            $lineupQ->execute([$matchdayId, ...$playerIds]);
+            $lineupByPlayer = [];
+            foreach ($lineupQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $lineupByPlayer[$row['player_id']] = $row;
+            }
+            foreach ($bestPlayers as &$player) {
+                $entry = $lineupByPlayer[$player['player_id']] ?? null;
+                $player['team_id']        = $entry['team_id']        ?? null;
+                $player['team_season_id'] = $entry['team_season_id'] ?? null;
+                $player['nominated']      = $entry ? (bool) $entry['nominated'] : null;
+            }
+            unset($player);
+        }
+
         return [
             'formation'    => $bestKey,
             'players'      => $bestPlayers,
