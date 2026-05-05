@@ -209,6 +209,10 @@
         display: flex;
         flex-direction: column;
         gap: 2px;
+        text-decoration: none;
+        border-radius: $radius-md;
+        transition: background $transition-fast;
+        &:hover { background: $color-surface-alt; }
 
         .dropdown-name {
           font-family: $font-display;

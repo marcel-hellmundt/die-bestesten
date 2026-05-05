@@ -159,14 +159,18 @@
 
       @if (isDropdownOpen()) {
         <div class="user-dropdown">
-          <div class="dropdown-header">
+          <a
+            class="dropdown-header"
+            [routerLink]="['/manager', managerId()]"
+            (click)="closeDropdown()"
+          >
             <span class="dropdown-name">{{ managerName() }}</span>
             <div class="dropdown-roles">
               @for (role of sortedRoles(); track role) {
                 <span class="role-badge role-badge--{{ role }}">{{ roleLabel[role] }}</span>
               }
             </div>
-          </div>
+          </a>
           <hr class="dropdown-divider" />
           <a class="dropdown-item" routerLink="/achievements" (click)="closeDropdown()">
             <app-icon name="award"></app-icon>

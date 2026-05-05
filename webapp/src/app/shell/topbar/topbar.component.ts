@@ -38,6 +38,7 @@ export class TopbarComponent implements OnDestroy {
   isSearchOpen  = signal(false);
 
   managerName        = computed(() => this.auth.getManagerName() ?? '');
+  managerId          = computed(() => this.auth.getManagerId());
   readonly roleOrder = ['admin', 'maintainer', 'manager'];
   readonly roleLabel: Record<string, string> = { admin: 'Kernel-Kapitän', maintainer: 'Daten-Fee', manager: 'Manager' };
 
