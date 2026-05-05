@@ -45,8 +45,13 @@ trait MatchdayTrait
         $matchdayNum = (int) $matchday['number'];
         $kickoffDate = $matchday['kickoff_date'];
 
+        $sQ = $this->con->prepare("SELECT start_date FROM season WHERE id = ? LIMIT 1");
+        $sQ->execute([$seasonId]);
+        $startYear   = (int) substr((string) $sQ->fetchColumn(), 0, 4);
+        $seasonLabel = $startYear . '-' . ($startYear + 1);
+
         $teamsQ = $this->con_league->prepare(
-            "SELECT id FROM team WHERE season_id = ?"
+            "SELECT id, manager_id FROM team WHERE season_id = ?"
         );
         $teamsQ->execute([$seasonId]);
         $teams = $teamsQ->fetchAll(PDO::FETCH_ASSOC);
@@ -216,6 +221,19 @@ trait MatchdayTrait
                     $cleanSheet, $sds, $sdsDefender, 0,
                     $ptsGk, $ptsDef, $ptsMid, $ptsFwd, $invalid,
                     $teamId, $matchdayNum,
+                ]);
+
+                $reward  = number_format($points * 20000, 0, ',', '.');
+                $message = 'Dein Team hat <b>' . $points . ' Punkte</b> erzielt. Dafür bekommst du <b>' . $reward . '</b> <i class="fa-solid fa-peseta-sign"></i>.<br><br>'
+                    . 'Dein Team hat <b>' . $goals . ' Tore</b> erzielt und <b>' . $assists . ' Vorlagen</b> geliefert.<br>'
+                    . 'Mit einer optimalen Aufstellung hättest du <b>' . $maxPoints . ' Punkte</b> erzielt.<br><br>'
+                    . '<a href="http://die-bestesten.de/liga/pro/' . $seasonLabel . '/' . $matchdayNum . '">Zur Spieltagstabelle</a>';
+                $this->con_old->prepare(
+                    "INSERT INTO notification (manager_id, title, message, created_at) VALUES (?, ?, ?, NOW())"
+                )->execute([
+                    $team['manager_id'],
+                    $matchdayNum . '. Spieltag abgeschlossen!',
+                    $message,
                 ]);
             } catch (\Throwable $e) {
                 error_log('finalizeMatchday old-DB sync failed for team ' . $teamId . ': ' . $e->getMessage());
