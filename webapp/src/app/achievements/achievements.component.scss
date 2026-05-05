@@ -38,9 +38,9 @@ $card-border: #eee;
         border-radius: 4px;
         background: radial-gradient(
           circle at var(--shine-x, 50%) var(--shine-y, 50%),
-          rgba(255, 255, 255, 0.55) 0%,
-          rgba(255, 255, 255, 0.12) 35%,
-          transparent 65%
+          rgba(255, 255, 255, 0.5) 0%,
+          rgba(255, 255, 255, 0.04) 70%,
+          transparent 80%
         );
         opacity: 0;
         transition: opacity 0.25s ease;
@@ -103,7 +103,7 @@ $card-border: #eee;
         margin: 0 auto 0;
         padding: 24px 0;
         position: relative;
-        z-index: 11;
+        z-index: 1;
         transform: translateY(-4px);
         &.achievement-logo-shadow {
           -webkit-filter: drop-shadow(1px 2px 4px rgba(0, 0, 0, 0.3));
