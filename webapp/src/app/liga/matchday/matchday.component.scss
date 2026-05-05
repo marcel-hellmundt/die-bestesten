@@ -245,27 +245,27 @@
 
 .best-xi-formation {
   font-size: $font-lg;
-  font-weight: $font-weight-bold;
+  font-weight: $font-weight-semibold;
 }
 
 .best-xi-total {
-  font-size: $font-sm;
-  color: $color-text-muted;
+  font-size: $font-xl;
+  font-weight: $font-weight-bold;
 }
 
 .best-xi-field {
   display: flex;
   flex-direction: column;
-  gap: $space-3;
+  gap: $space-8;
   background: rgba(5, 196, 107, 0.06);
   border-radius: $radius-md;
-  padding: $space-4 $space-3;
+  padding: $space-8 $space-3;
 }
 
 .bxi-field-row {
   display: flex;
   justify-content: center;
-  gap: $space-3;
+  gap: $space-6;
   flex-wrap: wrap;
 }
 
@@ -275,9 +275,9 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 3px;
-  min-width: 72px;
-  max-width: 96px;
+  gap: 4px;
+  min-width: 96px;
+  max-width: 124px;
   flex: 1;
   padding: $space-2;
   background: $color-surface;
@@ -285,28 +285,29 @@
   border: 1px solid $color-border;
 }
 
+.bxi-player--own-team {
+  background: #ffffc1;
+  border-color: #e6e600;
+}
+
 .bxi-club-logo {
   position: absolute;
   top: -8px;
   left: -8px;
-  width: 16px;
-  height: 16px;
+  width: 28px;
+  height: 28px;
   border-radius: 3px;
   object-fit: contain;
-  background: $color-surface;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .bxi-team-logo {
   position: absolute;
   top: -8px;
   right: -8px;
-  width: 16px;
-  height: 16px;
+  width: 28px;
+  height: 28px;
   border-radius: 3px;
   object-fit: contain;
-  background: $color-surface;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 
   &--bench {
     opacity: 0.5;
@@ -342,7 +343,6 @@
   padding: 1px 5px;
   line-height: 1.4;
 }
-
 
 // Compact row override
 .data-table--compact {

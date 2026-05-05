@@ -194,8 +194,8 @@
             @for (row of bestXiRows(); track row.pos) {
               <div class="bxi-field-row">
                 @for (p of row.players; track p.player_id) {
-                  <div class="bxi-player">
-                    @if (bestXiMode() === 'all' && p.club_logo_uploaded && p.club_id) {
+                  <div class="bxi-player" [class.bxi-player--own-team]="bestXiMode() === 'all' && p.team_id === cache.myTeamId()">
+                    @if (p.club_logo_uploaded && p.club_id) {
                       <img
                         class="bxi-club-logo"
                         [src]="'https://img.die-bestesten.de/img/club/' + p.club_id + '.png'"
