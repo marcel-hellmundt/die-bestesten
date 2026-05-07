@@ -544,6 +544,14 @@ trait LeagueTrait
                  JOIN team t ON t.team_id = pit.team_id"
             )->fetchAll(PDO::FETCH_ASSOC);
 
+            // Build sell team_id lookup to guard against cross-team sell_id references
+            $sellTeamMap = [];
+            try {
+                foreach ($this->con_old->query("SELECT sell_id, team_id FROM sell")->fetchAll(PDO::FETCH_ASSOC) as $s) {
+                    $sellTeamMap[$s['sell_id']] = $s['team_id'];
+                }
+            } catch (PDOException) {}
+
             $stmtPit = $conLeague->prepare(
                 "INSERT INTO player_in_team (id, team_id, player_id, from_matchday_id, to_matchday_id, offer_id, sell_id)
                  VALUES (:id, :team_id, :player_id, :from_matchday_id, :to_matchday_id, :offer_id, :sell_id)
@@ -575,7 +583,8 @@ trait LeagueTrait
                     ':from_matchday_id' => $fromMatchdayId,
                     ':to_matchday_id'   => $toMatchdayId,
                     ':offer_id'         => $row['offer_id'] ?: null,
-                    ':sell_id'          => $row['sell_id'] ?: null,
+                    ':sell_id'          => ($row['sell_id'] && ($sellTeamMap[$row['sell_id']] ?? null) === $row['team_id'])
+                                            ? $row['sell_id'] : null,
                 ]);
                 $affected = $stmtPit->rowCount();
                 if ($affected === 1)     { $migratedPlayerInTeam++; }
