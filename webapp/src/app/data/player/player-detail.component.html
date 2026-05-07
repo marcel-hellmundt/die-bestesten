@@ -92,8 +92,7 @@
               class="offer-btn"
               (click)="openOffer()"
               [disabled]="positionLimitReached()"
-              [title]="positionLimitReached() ? 'Positionslimit erreicht' : ''"
-            >Gebot abgeben</button>
+            >{{ positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben' }}</button>
           }
           <button
             class="watch-btn"

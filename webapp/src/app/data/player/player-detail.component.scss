@@ -97,6 +97,14 @@
         white-space: nowrap;
 
         &:hover { background: rgba(52, 152, 219, 0.08); }
+
+        &:disabled {
+          color: $color-text-muted;
+          border-color: $color-border;
+          cursor: not-allowed;
+          opacity: 0.6;
+          &:hover { background: transparent; }
+        }
       }
 
       .watch-btn {
