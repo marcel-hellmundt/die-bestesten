@@ -531,6 +531,9 @@ trait LeagueTrait
         try { $conLeague->exec("ALTER TABLE player_in_team ADD COLUMN sell_id  CHAR(36) NULL DEFAULT NULL"); } catch (PDOException) {}
         try { $conLeague->exec("ALTER TABLE player_in_team ADD FOREIGN KEY (offer_id) REFERENCES offer(id)"); } catch (PDOException) {}
         try { $conLeague->exec("ALTER TABLE player_in_team ADD FOREIGN KEY (sell_id)  REFERENCES sell(id)");  } catch (PDOException) {}
+        // Ensure UNIQUE constraint includes team_id so two teams can hold the same player on the same matchday
+        try { $conLeague->exec("ALTER TABLE player_in_team DROP INDEX uk_player_from"); } catch (PDOException) {}
+        try { $conLeague->exec("ALTER TABLE player_in_team ADD UNIQUE KEY uk_player_from (player_id, team_id, from_matchday_id)"); } catch (PDOException) {}
 
         $migratedPlayerInTeam = 0;
         $patchedPlayerInTeam  = 0;

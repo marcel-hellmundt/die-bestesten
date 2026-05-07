@@ -207,3 +207,8 @@ CREATE TABLE IF NOT EXISTS team_watchlist (
     FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE CASCADE,
     UNIQUE KEY uk_team_player (team_id, player_id)
 );
+
+-- Fix UNIQUE constraint on player_in_team: team_id must be included so two teams can hold
+-- the same player on the same matchday (e.g. sold and re-bought within one matchday's transfer phases)
+ALTER TABLE player_in_team DROP INDEX IF EXISTS uk_player_from;
+ALTER TABLE player_in_team ADD UNIQUE KEY uk_player_from (player_id, team_id, from_matchday_id);
