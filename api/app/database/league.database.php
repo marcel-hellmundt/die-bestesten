@@ -533,6 +533,7 @@ trait LeagueTrait
         try { $conLeague->exec("ALTER TABLE player_in_team ADD FOREIGN KEY (sell_id)  REFERENCES sell(id)");  } catch (PDOException) {}
 
         $migratedPlayerInTeam = 0;
+        $patchedPlayerInTeam  = 0;
         $skippedPlayerInTeam  = 0;
         try {
             $pitRows = $this->con_old->query(
@@ -546,7 +547,11 @@ trait LeagueTrait
             $stmtPit = $conLeague->prepare(
                 "INSERT INTO player_in_team (id, team_id, player_id, from_matchday_id, to_matchday_id, offer_id, sell_id)
                  VALUES (:id, :team_id, :player_id, :from_matchday_id, :to_matchday_id, :offer_id, :sell_id)
-                 ON DUPLICATE KEY UPDATE id = id"
+                 ON DUPLICATE KEY UPDATE
+                     from_matchday_id = VALUES(from_matchday_id),
+                     to_matchday_id   = VALUES(to_matchday_id),
+                     offer_id         = VALUES(offer_id),
+                     sell_id          = VALUES(sell_id)"
             );
 
             foreach ($pitRows as $row) {
@@ -572,7 +577,10 @@ trait LeagueTrait
                     ':offer_id'         => $row['offer_id'] ?: null,
                     ':sell_id'          => $row['sell_id'] ?: null,
                 ]);
-                $migratedPlayerInTeam++;
+                $affected = $stmtPit->rowCount();
+                if ($affected === 1)     { $migratedPlayerInTeam++; }
+                elseif ($affected === 2) { $patchedPlayerInTeam++; }
+                else                     { $skippedPlayerInTeam++; }
             }
         } catch (PDOException) {
             // player_in_team may not exist in older DBs — skip silently
@@ -626,7 +634,7 @@ trait LeagueTrait
             'team_awards'       => ['migrated' => $migratedAwards],
             'offers'            => ['migrated' => $migratedOffers, 'patched' => $patchedOffers, 'skipped' => $skippedOffers],
             'sells'             => ['migrated' => $migratedSells],
-            'player_in_team'    => ['migrated' => $migratedPlayerInTeam, 'skipped' => $skippedPlayerInTeam],
+            'player_in_team'    => ['migrated' => $migratedPlayerInTeam, 'patched' => $patchedPlayerInTeam, 'skipped' => $skippedPlayerInTeam],
             'team_lineup'       => ['migrated' => $migratedLineup,       'skipped' => $skippedLineup],
             'matchdays_created' => array_values($createdMatchdays),
         ];
