@@ -48,6 +48,12 @@
           </div>
         }
         </div>
+        @if (pendingOffers().length > 0) {
+          <div class="pos-card__legend">
+            <span class="bubble bubble--pending">?</span>
+            <span>= Offenes Gebot</span>
+          </div>
+        }
       </div>
 
     </aside>
