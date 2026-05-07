@@ -148,6 +148,56 @@ trait OfferTrait
             exit;
         }
 
+        // 2b. Position limit: current squad + pending offers must not exceed max
+        $posQ = $this->con->prepare(
+            "SELECT position FROM player_in_season WHERE player_id = :pid AND season_id = :sid LIMIT 1"
+        );
+        $posQ->execute([':pid' => $playerId, ':sid' => $activeSeasonId]);
+        $position = $posQ->fetchColumn() ?: '';
+
+        $maxByPos = ['GOALKEEPER' => 2, 'DEFENDER' => 6, 'MIDFIELDER' => 6, 'FORWARD' => 4];
+        if (isset($maxByPos[$position])) {
+            $maxCount = $maxByPos[$position];
+
+            $squadIds = $this->con_league->prepare(
+                "SELECT player_id FROM player_in_team WHERE team_id = :tid AND to_matchday_id IS NULL"
+            );
+            $squadIds->execute([':tid' => $teamId]);
+            $activeIds = $squadIds->fetchAll(PDO::FETCH_COLUMN);
+
+            $currentCount = 0;
+            if (!empty($activeIds)) {
+                $ph = implode(',', array_fill(0, count($activeIds), '?'));
+                $cq = $this->con->prepare(
+                    "SELECT COUNT(*) FROM player_in_season WHERE player_id IN ($ph) AND season_id = ? AND position = ?"
+                );
+                $cq->execute(array_merge($activeIds, [$activeSeasonId, $position]));
+                $currentCount = (int) $cq->fetchColumn();
+            }
+
+            $pendingIdsQ = $this->con_league->prepare(
+                "SELECT player_id FROM offer WHERE team_id = :tid AND status = 'pending'"
+            );
+            $pendingIdsQ->execute([':tid' => $teamId]);
+            $pendingIds = $pendingIdsQ->fetchAll(PDO::FETCH_COLUMN);
+
+            $pendingCount = 0;
+            if (!empty($pendingIds)) {
+                $ph = implode(',', array_fill(0, count($pendingIds), '?'));
+                $piq = $this->con->prepare(
+                    "SELECT COUNT(*) FROM player_in_season WHERE player_id IN ($ph) AND season_id = ? AND position = ?"
+                );
+                $piq->execute(array_merge($pendingIds, [$activeSeasonId, $position]));
+                $pendingCount = (int) $piq->fetchColumn();
+            }
+
+            if ($currentCount + $pendingCount >= $maxCount) {
+                http_response_code(409);
+                echo json_encode(['status' => false, 'message' => 'Position limit reached']);
+                exit;
+            }
+        }
+
         // 3. Price snapshot = base price + points_in_season * 20000
         $pq = $this->con->prepare(
             "SELECT COALESCE(price, 0) FROM player_in_season

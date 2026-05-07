@@ -449,7 +449,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/offer',
-                        'description' => 'Gebot abgeben — 409 wenn Spieler in Team, 422 wenn Fenster zu / Gebot < Marktwert / Budget überschritten — Auth',
+                        'description' => 'Gebot abgeben — 409 wenn Spieler in Team oder Positionslimit erreicht (inkl. offene Gebote; GK≤2, DEF≤6, MID≤6, FWD≤4), 422 wenn Fenster zu / Gebot < Marktwert / Budget überschritten — Auth',
                         'body' => [
                             'team_id' => 'UUID des Teams',
                             'player_id' => 'UUID des Spielers',

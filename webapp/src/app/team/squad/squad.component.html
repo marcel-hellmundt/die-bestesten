@@ -39,9 +39,10 @@
                 <span
                   class="bubble"
                   [class.bubble--filled]="bubble.filled"
+                  [class.bubble--pending]="bubble.pending"
                   [class.bubble--required]="bubble.required"
                   [class.bubble--min]="bubble.isMin"
-                ></span>
+                >{{ bubble.pending ? '?' : '' }}</span>
               }
             </div>
           </div>
