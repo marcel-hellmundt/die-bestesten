@@ -88,7 +88,12 @@
           />
           <span class="team-badge__name">Vereinslos</span>
           @if (!offerExpanded()) {
-            <button class="offer-btn" (click)="openOffer()">Gebot abgeben</button>
+            <button
+              class="offer-btn"
+              (click)="openOffer()"
+              [disabled]="positionLimitReached()"
+              [title]="positionLimitReached() ? 'Positionslimit erreicht' : ''"
+            >Gebot abgeben</button>
           }
           <button
             class="watch-btn"

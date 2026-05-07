@@ -195,6 +195,31 @@ export class PlayerDetailComponent {
     { initialValue: { offers: [] as any[], pending_sum: 0 } }
   );
 
+  mySquad = toSignal(
+    combineLatest([toObservable(this.myTeam), this.refreshOffers$.pipe(startWith(null))]).pipe(
+      switchMap(([t]) => {
+        if (!t) return of([] as any[]);
+        return this.api.get<any[]>(`player_in_team?team_id=${t.id}`).pipe(
+          catchError(() => of([] as any[]))
+        );
+      })
+    ),
+    { initialValue: [] as any[] }
+  );
+
+  private readonly SQUAD_MAX: Record<string, number> = {
+    GOALKEEPER: 2, DEFENDER: 6, MIDFIELDER: 6, FORWARD: 4,
+  };
+
+  positionLimitReached = computed(() => {
+    const position = this.player()?.seasons?.[0]?.position;
+    if (!position || !this.SQUAD_MAX[position]) return false;
+    const max          = this.SQUAD_MAX[position];
+    const squadCount   = this.mySquad().filter((p: any) => p.position === position).length;
+    const pendingCount = this.myOfferData().offers.filter(o => o.status === 'pending' && o.position === position).length;
+    return squadCount + pendingCount >= max;
+  });
+
   availableBudget = computed(() => this.myBudget() - (this.myOfferData().pending_sum ?? 0));
 
   private effectiveSeasonId$ = combineLatest([
