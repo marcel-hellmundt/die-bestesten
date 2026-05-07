@@ -21,14 +21,14 @@
         <div class="stat-desc">Ø {{ formatPrice(avgMarketValue()) }} pro Spieler</div>
       </div>
 
-      @if (positionWarnings().length > 0) {
-        <div class="squad-warning">
-          <span class="squad-warning__icon">&#9888;</span>
-          <span>Zu wenige Spieler: {{ positionWarnings().map(s => positionLabel(s.position) + ' (' + s.count + '/' + s.min + ')').join(', ') }}</span>
-        </div>
-      }
-
-      <div class="card">
+      <div class="pos-card" [class.pos-card--warning]="positionWarnings().length > 0">
+        @if (positionWarnings().length > 0) {
+          <div class="squad-warning">
+            <img class="squad-warning__icon" src="img/icons/warning.png" alt="" />
+            <span>Zu wenige Spieler: {{ positionWarnings().map(s => positionLabel(s.position) + ' (' + s.count + '/' + s.min + ')').join(', ') }}</span>
+          </div>
+        }
+        <div class="pos-card__content">
         @for (stat of positionStats(); track stat.position) {
           <div class="pos-stat" [style.--pos-color]="positionColor(stat.position)">
             <div class="pos-stat__header">
@@ -46,6 +46,7 @@
             </div>
           </div>
         }
+        </div>
       </div>
 
     </aside>

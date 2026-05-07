@@ -21,20 +21,36 @@
   text-align: center;
 }
 
+.pos-card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+
+  &--warning {
+    border-color: color-mix(in srgb, #f59e0b 70%, transparent);
+  }
+
+  &__content {
+    padding: $space-6;
+  }
+}
+
 .squad-warning {
   display: flex;
-  align-items: flex-start;
-  gap: $space-2;
-  padding: $space-2 $space-3;
-  border-radius: $radius-sm;
-  background: color-mix(in srgb, #f59e0b 12%, transparent);
-  border: 1px solid color-mix(in srgb, #f59e0b 40%, transparent);
+  align-items: center;
+  gap: $space-3;
+  height: 48px;
+  padding: 0 $space-6;
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
   font-size: $font-xs;
-  color: #b45309;
+  color: #92400e;
 
   &__icon {
     flex-shrink: 0;
-    font-size: $font-sm;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
   }
 }
 
@@ -227,6 +243,30 @@
     flex-direction: row;
     flex-wrap: wrap;
     gap: $space-4 $space-6;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .pos-card {
+    flex: 0 0 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .squad-warning {
+    white-space: normal;
+    height: auto;
+    min-height: 48px;
+    padding-block: $space-3;
+    align-items: flex-start;
+  }
+
+  .squad-main,
+  .squad-former {
+    border-radius: 0;
+    width: 100%;
   }
 
   .player-price {
