@@ -168,7 +168,7 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 
 **sell**: id PK, player_id (cross-DB), team_id FK (Verkäufer), transferwindow_id (cross-DB), price INT, created_at
 
-**player_in_team**: id PK, team_id FK, player_id (cross-DB), from_matchday_id (cross-DB, Kauf), to_matchday_id (cross-DB, Verkauf; NULL = aktiv), offer_id FK?, sell_id FK? — UNIQUE(player_id, from_matchday_id) — max. 1 aktives Team pro Spieler wird auf Applikationsebene geprüft
+**player_in_team**: id PK, team_id FK, player_id (cross-DB), from_matchday_id (cross-DB, Kauf), to_matchday_id (cross-DB, Verkauf; NULL = aktiv), offer_id FK?, sell_id FK? — UNIQUE(player_id, team_id, from_matchday_id) — max. 1 aktives Team pro Spieler wird auf Applikationsebene geprüft
 
 **team_lineup**: id PK, team_id FK, player_id (cross-DB), matchday_id (cross-DB), nominated BOOL, position_index INT? — UNIQUE(team_id, player_id, matchday_id) — alle Kader-Spieler des Spieltags; nominated=1 = aufgestellt
 

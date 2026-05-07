@@ -4,6 +4,15 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 
+const CONSTRAINTS: Record<string, { min: number; max: number }> = {
+  GOALKEEPER: { min: 1, max: 2 },
+  DEFENDER:   { min: 5, max: 6 },
+  MIDFIELDER: { min: 5, max: 6 },
+  FORWARD:    { min: 3, max: 4 },
+};
+
+const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+
 @Component({
   selector: 'app-squad',
   standalone: false,
@@ -34,6 +43,28 @@ export class SquadComponent {
   loading = computed(() => this.state().loading);
   error   = computed(() => this.state().error);
 
+  positionStats = computed(() => {
+    const counts: Record<string, number> = {};
+    for (const pos of POSITIONS) counts[pos] = 0;
+    for (const p of this.players()) {
+      if (p.position && counts[p.position] !== undefined) counts[p.position]++;
+    }
+    return POSITIONS.map(pos => {
+      const { min, max } = CONSTRAINTS[pos];
+      const count = counts[pos];
+      return {
+        position: pos,
+        count,
+        min,
+        max,
+        bubbles: Array.from({ length: max }, (_, i) => ({
+          filled:   i < count,
+          required: i < min && i >= count,
+        })),
+      };
+    });
+  });
+
   positionLabel(pos: string): string {
     const map: Record<string, string> = {
       GOALKEEPER: 'TOR',
@@ -52,6 +83,10 @@ export class SquadComponent {
       FORWARD:    'var(--position-forward)',
     };
     return map[pos] ?? 'transparent';
+  }
+
+  marketValue(p: any): number {
+    return (p.price ?? 0) + (p.points ?? 0) * 20000;
   }
 
   photoUrl(p: any): string | null {

@@ -18,7 +18,7 @@
       class="select"
       (change)="onMatchdayChange(+$any($event.target).value)"
     >
-      @for (m of matchdays() ?? []; track m.number) {
+      @for (m of matchdays(); track m.number) {
         <option [value]="m.number" [selected]="m.number === currentNumber()">{{ m.number }}. Spieltag</option>
       }
     </select>

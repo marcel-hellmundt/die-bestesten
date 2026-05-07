@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS player_in_team (
     FOREIGN KEY (team_id) REFERENCES team(id),
     FOREIGN KEY (offer_id) REFERENCES offer(id),
     FOREIGN KEY (sell_id) REFERENCES sell(id),
-    UNIQUE KEY uk_player_from (player_id, from_matchday_id)  -- kein Doppelkauf in derselben Transferphase
+    UNIQUE KEY uk_player_from (player_id, team_id, from_matchday_id)  -- kein Doppelkauf desselben Teams in derselben Transferphase
 );
 
 -- Tabelle: maintainer_contribution (Tracking welcher Maintainer Aufstellung/Noten eingetragen hat)
