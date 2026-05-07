@@ -43,6 +43,12 @@ export class SquadComponent {
   loading = computed(() => this.state().loading);
   error   = computed(() => this.state().error);
 
+  playerCount      = computed(() => this.players().length);
+  totalMarketValue = computed(() => this.players().reduce((sum, p) => sum + this.marketValue(p), 0));
+  avgMarketValue   = computed(() => this.playerCount() > 0 ? this.totalMarketValue() / this.playerCount() : 0);
+
+  positionWarnings = computed(() => this.positionStats().filter(s => s.count < s.min));
+
   positionStats = computed(() => {
     const counts: Record<string, number> = {};
     for (const pos of POSITIONS) counts[pos] = 0;
@@ -60,6 +66,7 @@ export class SquadComponent {
         bubbles: Array.from({ length: max }, (_, i) => ({
           filled:   i < count,
           required: i < min && i >= count,
+          isMin:    i < min,
         })),
       };
     });
@@ -86,7 +93,7 @@ export class SquadComponent {
   }
 
   marketValue(p: any): number {
-    return (p.price ?? 0) + (p.points ?? 0) * 20000;
+    return Number(p.price ?? 0) + Number(p.points ?? 0) * 20000;
   }
 
   photoUrl(p: any): string | null {

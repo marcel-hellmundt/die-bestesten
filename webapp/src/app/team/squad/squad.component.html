@@ -8,25 +8,46 @@
   <div class="squad-layout">
 
     <!-- Stats -->
-    <aside class="squad-stats card">
-      @for (stat of positionStats(); track stat.position) {
-        <div class="pos-stat" [style.--pos-color]="positionColor(stat.position)">
-          <div class="pos-stat__header">
-            <span class="pos-stat__label">{{ positionLabel(stat.position) }}</span>
-            <span class="pos-stat__meta">Min. {{ stat.min }}</span>
-            <span class="pos-stat__meta">Max. {{ stat.max }}</span>
-          </div>
-          <div class="pos-stat__bubbles">
-            @for (bubble of stat.bubbles; track $index) {
-              <span
-                class="bubble"
-                [class.bubble--filled]="bubble.filled"
-                [class.bubble--required]="bubble.required"
-              ></span>
-            }
-          </div>
+    <aside class="squad-stats">
+
+      <div class="stat-card squad-stat-card">
+        <span class="stat-label stat-label--emerald">Spieleranzahl</span>
+        <div class="stat-value">{{ playerCount() }}</div>
+      </div>
+
+      <div class="stat-card squad-stat-card">
+        <span class="stat-label stat-label--turquoise">Marktwert</span>
+        <div class="stat-value">{{ formatPrice(totalMarketValue()) }}</div>
+        <div class="stat-desc">Ø {{ formatPrice(avgMarketValue()) }} pro Spieler</div>
+      </div>
+
+      @if (positionWarnings().length > 0) {
+        <div class="squad-warning">
+          <span class="squad-warning__icon">&#9888;</span>
+          <span>Zu wenige Spieler: {{ positionWarnings().map(s => positionLabel(s.position) + ' (' + s.count + '/' + s.min + ')').join(', ') }}</span>
         </div>
       }
+
+      <div class="card">
+        @for (stat of positionStats(); track stat.position) {
+          <div class="pos-stat" [style.--pos-color]="positionColor(stat.position)">
+            <div class="pos-stat__header">
+              <span class="pos-stat__label">{{ positionLabel(stat.position) }}</span>
+            </div>
+            <div class="pos-stat__bubbles">
+              @for (bubble of stat.bubbles; track $index) {
+                <span
+                  class="bubble"
+                  [class.bubble--filled]="bubble.filled"
+                  [class.bubble--required]="bubble.required"
+                  [class.bubble--min]="bubble.isMin"
+                ></span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
     </aside>
 
     <!-- Current players -->

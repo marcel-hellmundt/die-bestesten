@@ -14,13 +14,38 @@
 .squad-stats {
   display: flex;
   flex-direction: column;
-  gap: $space-5;
+  gap: $space-3;
+}
+
+.squad-stat-card {
+  text-align: center;
+}
+
+.squad-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  border: 1px solid color-mix(in srgb, #f59e0b 40%, transparent);
+  font-size: $font-xs;
+  color: #b45309;
+
+  &__icon {
+    flex-shrink: 0;
+    font-size: $font-sm;
+  }
 }
 
 .pos-stat {
   display: flex;
   flex-direction: column;
   gap: $space-2;
+
+  & + & {
+    margin-top: $space-4;
+  }
 
   &__header {
     display: flex;
@@ -50,8 +75,8 @@
 }
 
 .bubble {
-  width: 13px;
-  height: 13px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: $color-border;
   border: 2px solid transparent;
@@ -67,6 +92,14 @@
     border: 2.5px solid var(--pos-color);
     opacity: 0.5;
   }
+
+  &--min {
+    outline: 4px solid color-mix(in srgb, var(--pos-color) 40%, transparent);
+  }
+}
+
+.pos-stat__bubbles {
+  gap: 10px;
 }
 
 // ── Current players table ─────────────────────────────────────────────────────
