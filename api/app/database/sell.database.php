@@ -61,12 +61,12 @@ trait SellTrait
         $sellPrice = (int) round($basePrice + $seasonPoints * 20000);
 
         // 4. INSERT sell
+        $sellId = $this->con_league->query("SELECT UUID()")->fetchColumn();
         $sq = $this->con_league->prepare(
-            "INSERT INTO sell (player_id, team_id, transferwindow_id, price)
-             VALUES (:pid, :tid, :wid, :price)"
+            "INSERT INTO sell (id, player_id, team_id, transferwindow_id, price)
+             VALUES (:id, :pid, :tid, :wid, :price)"
         );
-        $sq->execute([':pid' => $playerId, ':tid' => $teamId, ':wid' => $windowId, ':price' => $sellPrice]);
-        $sellId = $this->con_league->lastInsertId();
+        $sq->execute([':id' => $sellId, ':pid' => $playerId, ':tid' => $teamId, ':wid' => $windowId, ':price' => $sellPrice]);
 
         // 5. INSERT transaction
         $tq = $this->con_league->prepare(
