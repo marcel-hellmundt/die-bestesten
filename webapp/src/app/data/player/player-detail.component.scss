@@ -138,20 +138,27 @@
         @media (max-width: #{$mobile-breakpoint}) { text-align: left; white-space: normal; }
       }
 
-      .sell-btn {
-        margin-top: $space-1;
+      .sell-btn,
+      .offer-btn,
+      .watch-btn {
         padding: 4px $space-3;
         font-size: $font-xs;
         font-weight: $font-weight-semibold;
-        color: $color-danger;
-        border: 1px solid $color-danger;
         border-radius: $radius-sm;
         background: transparent;
         cursor: pointer;
         white-space: nowrap;
+      }
 
+      .sell-btn,
+      .offer-btn {
+        margin-top: $space-1;
         @media (max-width: #{$mobile-breakpoint}) { margin-top: 0; }
+      }
 
+      .sell-btn {
+        color: $color-danger;
+        border: 1px solid $color-danger;
         &:hover:not(:disabled) { background: rgba(191, 29, 0, 0.08); }
         &:disabled { opacity: 0.5; cursor: not-allowed; }
       }
@@ -164,21 +171,9 @@
       }
 
       .offer-btn {
-        margin-top: $space-1;
-        padding: 4px $space-3;
-        font-size: $font-xs;
-        font-weight: $font-weight-semibold;
         color: var(--flat-river);
         border: 1px solid var(--flat-river);
-        border-radius: $radius-sm;
-        background: transparent;
-        cursor: pointer;
-        white-space: nowrap;
-
-        @media (max-width: #{$mobile-breakpoint}) { margin-top: 0; }
-
         &:hover { background: rgba(52, 152, 219, 0.08); }
-
         &:disabled {
           color: $color-text-muted;
           border-color: $color-border;
@@ -186,7 +181,6 @@
           opacity: 0.6;
           &:hover { background: transparent; }
         }
-
         &--exists {
           text-decoration: none;
           display: inline-block;
@@ -197,17 +191,9 @@
       }
 
       .watch-btn {
-        padding: 4px $space-3;
-        font-size: $font-xs;
-        font-weight: $font-weight-semibold;
         color: $color-text-muted;
         border: 1px solid $color-border;
-        border-radius: $radius-sm;
-        background: transparent;
-        cursor: pointer;
-        white-space: nowrap;
         transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
-
         &:hover:not(:disabled) { color: $color-accent; border-color: $color-accent; }
         &--active { color: $color-accent; border-color: $color-accent; background: color-mix(in srgb, $color-accent 8%, transparent); }
         &:disabled { opacity: 0.5; cursor: not-allowed; }
