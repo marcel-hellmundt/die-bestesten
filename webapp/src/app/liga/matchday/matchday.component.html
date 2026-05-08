@@ -72,7 +72,7 @@
               @for (r of ratings(); track r.team_id; let i = $index) {
                 <tr class="row-link" (click)="navigateToTeam(r.team_id)">
                   <td class="col-rank">{{ r.points !== ratings()[i - 1]?.points ? i + 1 : '' }}</td>
-                  <td>
+                  <td class="col-team">
                     <span class="team-cell">
                       <img
                         class="tbl-logo"

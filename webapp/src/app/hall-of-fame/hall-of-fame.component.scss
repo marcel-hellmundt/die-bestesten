@@ -13,9 +13,12 @@
 .col-points {
   width: 80px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+td.col-points {
   font-weight: $font-weight-semibold;
   font-size: $font-md;
-  font-variant-numeric: tabular-nums;
 }
 
 .rank {

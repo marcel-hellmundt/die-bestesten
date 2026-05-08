@@ -364,10 +364,23 @@
   font-weight: $font-weight-semibold;
 }
 
+.col-team {
+  @media (max-width: $mobile-breakpoint) {
+    width: 1px;
+    white-space: nowrap;
+  }
+}
+
 .team-cell {
   display: inline-flex;
   align-items: center;
   gap: $space-3;
+}
+
+.team-name {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
 }
 
 .col-icons {
