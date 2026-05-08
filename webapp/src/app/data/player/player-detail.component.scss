@@ -357,9 +357,8 @@
 
   &--yr {
     position: relative;
-    width: calc(14px + 3px);
-    height: calc(20px + 4px);
-    background: transparent;
+    width: 17px;
+    height: 24px;
 
     &::before {
       content: '';
@@ -409,7 +408,6 @@
   .price-chart {
     display: block;
     width: 100%;
-    height: auto;
 
     .chart-grid { stroke: $color-border; stroke-width: 1; stroke-dasharray: 4 3; }
 
