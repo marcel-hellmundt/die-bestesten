@@ -58,7 +58,7 @@ class OfferController extends _BaseController
 
     protected function delete(): mixed
     {
-        $offerId = $this->urlSegments[1] ?? null;
+        $offerId = $this->id;
         $body    = $this->body();
         $teamId  = $body['team_id'] ?? null;
 
@@ -79,7 +79,7 @@ class OfferController extends _BaseController
 
     protected function patch(): mixed
     {
-        $offerId  = $this->urlSegments[1] ?? null;
+        $offerId  = $this->id;
         $body     = $this->body();
         $teamId   = $body['team_id']    ?? null;
         $newValue = isset($body['offer_value']) ? (int) $body['offer_value'] : null;

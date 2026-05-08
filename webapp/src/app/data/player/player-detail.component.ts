@@ -226,6 +226,14 @@ export class PlayerDetailComponent {
 
   availableBudget = computed(() => this.myBudget() - (this.myOfferData().pending_sum ?? 0));
 
+  myPendingOffer = computed(() => {
+    const p = this.player();
+    if (!p) return null;
+    return this.myOfferData().offers.find(
+      (o: any) => o.player_id === p.id && o.status === 'pending'
+    ) ?? null;
+  });
+
   private effectiveSeasonId$ = combineLatest([
     this.selectedSeason$,
     toObservable(this.player),

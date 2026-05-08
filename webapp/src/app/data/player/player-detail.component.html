@@ -87,11 +87,15 @@
             alt=""
           />
           <span class="team-badge__name">Vereinslos</span>
-          <button
-            class="offer-btn"
-            (click)="openOffer()"
-            [disabled]="positionLimitReached()"
-          >{{ positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben' }}</button>
+          @if (myPendingOffer()) {
+            <a class="offer-btn offer-btn--exists" routerLink="/markt/gebote">Gebot bearbeiten →</a>
+          } @else {
+            <button
+              class="offer-btn"
+              (click)="openOffer()"
+              [disabled]="positionLimitReached()"
+            >{{ positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben' }}</button>
+          }
           <button
             class="watch-btn"
             [class.watch-btn--active]="isWatched()"

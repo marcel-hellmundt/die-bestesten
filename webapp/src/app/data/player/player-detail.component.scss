@@ -105,6 +105,14 @@
           opacity: 0.6;
           &:hover { background: transparent; }
         }
+
+        &--exists {
+          text-decoration: none;
+          display: inline-block;
+          color: $color-text-muted;
+          border-color: $color-border;
+          &:hover { background: $color-surface-alt; color: $color-text; }
+        }
       }
 
       .watch-btn {
