@@ -144,7 +144,8 @@
 
 // ── Current players table ─────────────────────────────────────────────────────
 
-.squad-main {}
+.squad-main {
+}
 
 .col-logo,
 .col-photo {
@@ -204,7 +205,8 @@
 
 // ── Former players ────────────────────────────────────────────────────────────
 
-.squad-former {}
+.squad-former {
+}
 
 .section-title {
   font-size: $font-xs;
@@ -284,7 +286,6 @@
     height: auto;
     min-height: 48px;
     padding-block: $space-3;
-    align-items: flex-start;
   }
 
   .squad-main,

@@ -1,0 +1,15 @@
+@if (service.current(); as sheet) {
+  <div class="bs-backdrop" (click)="service.close()"></div>
+  <div class="bs-sheet">
+    <div class="bs-handle"></div>
+    <div class="bs-header">
+      @if (sheet.config.title) {
+        <h3 class="bs-title">{{ sheet.config.title }}</h3>
+      }
+      <button class="bs-close" type="button" (click)="service.close()">✕</button>
+    </div>
+    <div class="bs-body">
+      <ng-container [ngTemplateOutlet]="sheet.template"></ng-container>
+    </div>
+  </div>
+}

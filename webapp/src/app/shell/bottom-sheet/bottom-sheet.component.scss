@@ -1,0 +1,96 @@
+@use '../../../styles/variables' as *;
+
+.bs-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: $z-modal;
+  background: rgba(0, 0, 0, 0.5);
+  animation: bsFadeIn $transition-normal;
+}
+
+.bs-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: $z-modal + 1;
+  height: 80dvh;
+  background: $color-surface;
+  border-radius: $radius-xl $radius-xl 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: bsSlideUp $transition-normal cubic-bezier(0.34, 1.1, 0.64, 1);
+}
+
+.bs-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: $color-border;
+  margin: $space-3 auto $space-1;
+  flex-shrink: 0;
+}
+
+.bs-header {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-6;
+  border-bottom: 1px solid $color-border;
+  flex-shrink: 0;
+}
+
+.bs-title {
+  flex: 1;
+  font-size: $font-lg;
+  font-weight: $font-weight-semibold;
+  margin: 0;
+}
+
+.bs-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: $font-xl;
+  color: $color-text-muted;
+  padding: 0 $space-1;
+  line-height: 1;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.bs-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: $space-6;
+}
+
+@media (min-width: $mobile-breakpoint) {
+  .bs-sheet {
+    top: 50%;
+    left: 50%;
+    bottom: auto;
+    right: auto;
+    transform: translate(-50%, -50%);
+    width: 480px;
+    height: auto;
+    max-height: 80dvh;
+    border-radius: $radius-xl;
+    animation: bsFadeIn $transition-normal;
+  }
+
+  .bs-handle {
+    display: none;
+  }
+}
+
+@keyframes bsFadeIn {
+  from { opacity: 0; }
+}
+
+@keyframes bsSlideUp {
+  from { transform: translateY(100%); }
+}

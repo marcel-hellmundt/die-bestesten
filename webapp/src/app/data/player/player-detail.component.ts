@@ -1,10 +1,11 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, distinctUntilChanged, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { BottomSheetService } from '../../core/bottom-sheet.service';
 
 interface TeamHistoryEntry {
   team_id: string;
@@ -78,7 +79,10 @@ export class PlayerDetailComponent {
   private route  = inject(ActivatedRoute);
   private auth   = inject(AuthService);
   private router = inject(Router);
-  cache = inject(DataCacheService);
+  cache          = inject(DataCacheService);
+  bottomSheet    = inject(BottomSheetService);
+
+  @ViewChild('offerSheet') offerSheet!: TemplateRef<any>;
 
   navigateToTeam(teamId: string): void { this.router.navigate(['/team', teamId]); }
   navigateToClub(clubId: string): void { this.router.navigate(['../../club', clubId], { relativeTo: this.route }); }
@@ -258,7 +262,6 @@ export class PlayerDetailComponent {
   );
 
   // Offer panel
-  offerExpanded   = signal(false);
   offerSubmitting = signal(false);
   offerError      = signal<string | null>(null);
   offerSuccess    = signal(false);
@@ -308,7 +311,12 @@ export class PlayerDetailComponent {
     this.offerSuccess.set(false);
     this.offerError.set(null);
     this.setDigitsFromValue(this.marketValue());
-    this.offerExpanded.set(true);
+    this.bottomSheet.open(this.offerSheet, { title: 'Gebot abgeben' });
+  }
+
+  closeOffer(): void {
+    this.bottomSheet.close();
+    this.offerSuccess.set(false);
   }
 
   updateDigit(prop: 'digitE10000000' | 'digitE1000000' | 'digitE100000' | 'digitE10000', delta: number): void {

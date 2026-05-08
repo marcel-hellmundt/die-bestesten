@@ -21,8 +21,58 @@
   gap: $space-5;
 
   @media (max-width: $mobile-breakpoint) {
-    position: static;
+    display: none;
   }
+}
+
+.mobile-bar {
+  display: none;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-4;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+  }
+
+  .input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.filter-toggle-btn {
+  flex-shrink: 0;
+  padding: 6px $space-4;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color $transition-fast,
+    border-color $transition-fast,
+    background $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-text-muted;
+  }
+
+  &--active {
+    background: $color-accent;
+    color: #fff;
+    border-color: $color-accent;
+  }
+}
+
+.filter-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
 }
 
 .filter-section {

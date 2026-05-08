@@ -53,6 +53,14 @@
   </aside>
 
   <div class="players-list">
+    <div class="mobile-bar">
+      <input type="search" class="input" placeholder="Spieler suchen…"
+             [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
+      <button class="filter-toggle-btn"
+              [class.filter-toggle-btn--active]="!!positionFilter() || !!clubFilter() || maxPrice() !== null"
+              (click)="openFilter()">Filter</button>
+    </div>
+
     @if (loading()) {
       <p class="state-msg">Laden…</p>
     } @else if (!players().length) {
@@ -107,3 +115,53 @@
     }
   </div>
 </div>
+
+<ng-template #filterSheet>
+  <div class="filter-sheet-body">
+    <div class="filter-section">
+      <p class="filter-label">Position</p>
+      <div class="filter-pos-group">
+        @for (pos of POSITIONS; track pos) {
+          <button class="filter-pos-btn"
+                  [class.filter-pos-btn--active]="positionFilter() === pos"
+                  [style.--pos-color]="'var(--position-' + pos.toLowerCase() + ')'"
+                  (click)="togglePosition(pos)">{{ POS_LABEL[pos] }}</button>
+        }
+      </div>
+    </div>
+
+    @if (maxDataPrice() > 0) {
+      <div class="filter-section">
+        <p class="filter-label">Max. Preis</p>
+        <input type="range" class="filter-slider"
+               [min]="0" [max]="maxDataPrice()" [step]="100000"
+               [value]="maxPrice() ?? maxDataPrice()"
+               (input)="onPriceInput($event)" />
+        <p class="filter-price-val">
+          @if (maxPrice() !== null) { bis {{ formatPrice(maxPrice()!) }} } @else { Alle Preise }
+        </p>
+      </div>
+    }
+
+    <div class="filter-section">
+      <p class="filter-label">Verein</p>
+      <div class="filter-clubs">
+        @for (club of clubs(); track club.id) {
+          <button class="filter-club-btn" [class.filter-club-btn--active]="clubFilter() === club.id"
+                  [title]="club.name" (click)="toggleClub(club.id)">
+            @if (club.logo_uploaded && !clubErrors.has(club.id)) {
+              <img [src]="'https://img.die-bestesten.de/img/club/' + club.id + '.png'"
+                   (error)="onClubError(club.id)" alt="" />
+            } @else {
+              <span class="filter-club-abbr">{{ (club.short_name ?? club.name).slice(0, 3) }}</span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (hasFilters()) {
+      <button class="filter-reset" (click)="resetFilters()">Filter zurücksetzen</button>
+    }
+  </div>
+</ng-template>

@@ -1,6 +1,7 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, TemplateRef, ViewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api.service';
+import { BottomSheetService } from '../../core/bottom-sheet.service';
 
 interface FreeAgent {
   id: string;
@@ -24,7 +25,10 @@ interface FreeAgent {
   styleUrl: './markt-player.component.scss',
 })
 export class MarktPlayerComponent {
-  private api = inject(ApiService);
+  private api         = inject(ApiService);
+  private bottomSheet = inject(BottomSheetService);
+
+  @ViewChild('filterSheet') filterSheet!: TemplateRef<any>;
 
   private data = toSignal(
     this.api.get<{ players: FreeAgent[] }>('player_in_season/available_players')
@@ -103,6 +107,10 @@ export class MarktPlayerComponent {
     this.positionFilter.set(null);
     this.clubFilter.set(null);
     this.maxPrice.set(null);
+  }
+
+  openFilter(): void {
+    this.bottomSheet.open(this.filterSheet, { title: 'Filtern' });
   }
 
   formatPrice(v: number): string {
