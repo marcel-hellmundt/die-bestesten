@@ -36,6 +36,29 @@ export class TeamDetailComponent {
   error     = computed(() => this.state()?.error ?? null);
   isOwnTeam = computed(() => this.team()?.manager_id === this.auth.getManagerId());
 
+  private readonly SQUAD_MIN: Record<string, number> = {
+    GOALKEEPER: 1, DEFENDER: 5, MIDFIELDER: 5, FORWARD: 3,
+  };
+
+  private squad = toSignal(
+    this.id$.pipe(
+      switchMap(id =>
+        this.api.get<any[]>(`player_in_team?team_id=${id}`).pipe(
+          catchError(() => of([] as any[]))
+        )
+      )
+    ),
+    { initialValue: [] as any[] }
+  );
+
+  squadInvalid = computed(() => {
+    const counts: Record<string, number> = {};
+    for (const p of this.squad()) {
+      if (p.position) counts[p.position] = (counts[p.position] ?? 0) + 1;
+    }
+    return Object.entries(this.SQUAD_MIN).some(([pos, min]) => (counts[pos] ?? 0) < min);
+  });
+
   logoFailed = false;
 
   constructor() {

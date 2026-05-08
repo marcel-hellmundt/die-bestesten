@@ -131,8 +131,22 @@
   }
 
   &--active {
-    background: $color-text;
-    color: $color-surface;
-    border-color: $color-text;
+    background: $color-accent;
+    color: #fff;
+    border-color: $color-accent;
+
+    &:hover {
+      color: #fff;
+      background: $color-accent;
+      border-color: $color-accent;
+    }
+  }
+
+  &__warn-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    margin-right: $space-1;
+    flex-shrink: 0;
   }
 }
