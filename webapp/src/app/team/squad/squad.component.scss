@@ -272,6 +272,9 @@
     width: 100%;
     min-width: 0;
     overflow: hidden;
+    .stat-value {
+      white-space: nowrap;
+    }
   }
 
   .pos-card {

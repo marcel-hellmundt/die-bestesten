@@ -17,6 +17,10 @@
   overflow: hidden;
   background: $color-surface;
 
+  .no-notification {
+    text-align: center;
+  }
+
   &__header {
     display: flex;
     justify-content: space-between;
@@ -40,9 +44,15 @@
   cursor: pointer;
   transition: background $transition-fast;
 
-  &:last-child { border-bottom: none; }
-  &:hover      { background: $color-surface-alt; }
-  &--active    { background: $color-surface-alt; }
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: $color-surface-alt;
+  }
+  &--active {
+    background: $color-surface-alt;
+  }
 
   &__dot {
     flex-shrink: 0;

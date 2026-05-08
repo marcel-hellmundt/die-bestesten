@@ -3,7 +3,9 @@
     <div class="notif-list__header">
       <h1 class="page-title">Benachrichtigungen</h1>
       @if (service.unreadCount() > 0) {
-        <button class="btn btn--ghost btn--sm" (click)="service.markAllAsRead()">Alle gelesen</button>
+        <button class="btn btn--ghost btn--sm" (click)="service.markAllAsRead()">
+          Alle gelesen
+        </button>
       }
     </div>
 
@@ -19,11 +21,13 @@
         }
         <div class="notif-item__content">
           <div class="notif-item__title">{{ n.title }}</div>
-          <div class="notif-item__meta">{{ n.sender_name ?? 'System' }} · {{ formatDate(n.created_at) }}</div>
+          <div class="notif-item__meta">
+            {{ n.sender_name ?? 'System' }} · {{ formatDate(n.created_at) }}
+          </div>
         </div>
       </div>
     } @empty {
-      <p class="state-msg">Keine Benachrichtigungen.</p>
+      <p class="state-msg no-notification">Keine Benachrichtigungen.</p>
     }
   </div>
 
@@ -31,7 +35,9 @@
     @if (selected(); as n) {
       <div class="notif-detail__header">
         <h2 class="notif-detail__title">{{ n.title }}</h2>
-        <p class="notif-detail__meta">{{ n.sender_name ?? 'System' }} · {{ formatDate(n.created_at, true) }}</p>
+        <p class="notif-detail__meta">
+          {{ n.sender_name ?? 'System' }} · {{ formatDate(n.created_at, true) }}
+        </p>
       </div>
       @if (n.message) {
         <div class="notif-detail__body">{{ n.message }}</div>
