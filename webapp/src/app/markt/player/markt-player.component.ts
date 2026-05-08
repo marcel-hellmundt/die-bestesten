@@ -31,10 +31,28 @@ export class MarktPlayerComponent {
   @ViewChild('filterSheet') filterSheet!: TemplateRef<any>;
   @ViewChild('tableContainer') tableContainer?: ElementRef<HTMLDivElement>;
 
+  private readonly STORAGE_KEY = 'markt-player-filters';
+
+  private loadFilters() {
+    try {
+      const raw = localStorage.getItem(this.STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+
   constructor() {
     effect(() => {
       this.filteredPlayers();
       setTimeout(() => { if (this.tableContainer) this.tableContainer.nativeElement.scrollLeft = 0; }, 0);
+    });
+
+    effect(() => {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+        search:   this.searchQuery(),
+        position: this.positionFilter(),
+        club:     this.clubFilter(),
+        maxPrice: this.maxPrice(),
+      }));
     });
   }
 
@@ -45,10 +63,11 @@ export class MarktPlayerComponent {
   players = computed(() => this.data()?.players ?? []);
   loading = computed(() => this.data() === undefined);
 
-  searchQuery    = signal('');
-  positionFilter = signal<string | null>(null);
-  clubFilter     = signal<string | null>(null);
-  maxPrice       = signal<number | null>(null);
+  private _saved = this.loadFilters();
+  searchQuery    = signal<string>(this._saved.search    ?? '');
+  positionFilter = signal<string | null>(this._saved.position ?? null);
+  clubFilter     = signal<string | null>(this._saved.club     ?? null);
+  maxPrice       = signal<number | null>(this._saved.maxPrice ?? null);
 
   maxDataPrice = computed(() => Math.max(0, ...this.players().map(p => p.price)));
 
