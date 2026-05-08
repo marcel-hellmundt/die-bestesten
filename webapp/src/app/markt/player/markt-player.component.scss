@@ -11,6 +11,14 @@
   }
 }
 
+.players-list {
+  min-width: 0;
+
+  @media (max-width: $mobile-breakpoint) {
+    overflow-x: auto;
+  }
+}
+
 // ── Filter panel ─────────────────────────────────────────────────────────────
 
 .players-filters {
@@ -238,6 +246,14 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .tbl-logo,
+  .tbl-photo {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 .player-link {

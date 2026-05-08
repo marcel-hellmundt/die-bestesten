@@ -105,7 +105,7 @@
                 <td>
                   <a class="player-link" [routerLink]="['/daten/player', p.id]">{{ p.displayname }}</a>
                 </td>
-                <td class="col-num">{{ formatPrice(p.price) }}</td>
+                <td class="col-num">{{ formatPriceShort(p.price) }}</td>
                 <td class="col-num">{{ p.season_points }}</td>
               </tr>
             }

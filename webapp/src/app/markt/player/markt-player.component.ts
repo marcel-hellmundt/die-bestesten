@@ -116,4 +116,10 @@ export class MarktPlayerComponent {
   formatPrice(v: number): string {
     return v.toLocaleString('de-DE') + ' €';
   }
+
+  formatPriceShort(v: number): string {
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.', ',') + ' Mio €';
+    if (v >= 1_000)     return (v / 1_000).toFixed(0) + ' T €';
+    return v + ' €';
+  }
 }
