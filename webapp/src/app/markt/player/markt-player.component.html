@@ -67,7 +67,7 @@
       <p class="state-msg">Keine freien Spieler gefunden.</p>
     } @else {
       <p class="players-count">{{ filteredPlayers().length }} von {{ players().length }} Spielern</p>
-      <div class="table-container">
+      <div class="table-container" #tableContainer>
         <table class="data-table">
           <thead>
             <tr>

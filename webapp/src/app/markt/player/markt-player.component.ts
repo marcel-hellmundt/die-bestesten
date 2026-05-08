@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, TemplateRef, ViewChild } from '@angular/core';
+import { Component, inject, signal, computed, TemplateRef, ViewChild, ElementRef, effect } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
@@ -29,6 +29,14 @@ export class MarktPlayerComponent {
   private bottomSheet = inject(BottomSheetService);
 
   @ViewChild('filterSheet') filterSheet!: TemplateRef<any>;
+  @ViewChild('tableContainer') tableContainer?: ElementRef<HTMLDivElement>;
+
+  constructor() {
+    effect(() => {
+      this.filteredPlayers();
+      setTimeout(() => { if (this.tableContainer) this.tableContainer.nativeElement.scrollLeft = 0; }, 0);
+    });
+  }
 
   private data = toSignal(
     this.api.get<{ players: FreeAgent[] }>('player_in_season/available_players')

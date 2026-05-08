@@ -1,7 +1,10 @@
 @if (service.current(); as sheet) {
   <div class="bs-backdrop" (click)="service.close()"></div>
   <div class="bs-sheet">
-    <div class="bs-handle"></div>
+    <div class="bs-handle"
+         (touchstart)="onHandleTouchStart($event)"
+         (touchmove)="onHandleTouchMove($event)"
+         (touchend)="onHandleTouchEnd()"></div>
     <div class="bs-header">
       @if (sheet.config.title) {
         <h3 class="bs-title">{{ sheet.config.title }}</h3>

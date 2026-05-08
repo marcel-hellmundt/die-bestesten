@@ -17,9 +17,11 @@ export class BottomSheetService {
 
   open(template: TemplateRef<any>, config: BottomSheetConfig = {}): void {
     this._state.set({ template, config });
+    document.body.style.overflow = 'hidden';
   }
 
   close(): void {
     this._state.set(null);
+    document.body.style.overflow = '';
   }
 }
