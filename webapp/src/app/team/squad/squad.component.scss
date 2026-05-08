@@ -290,6 +290,12 @@
   .squad-former {
     border-radius: 0;
     width: 100%;
+    overflow-x: auto;
+  }
+
+  .col-logo,
+  .col-photo {
+    display: none;
   }
 
   .player-price {
