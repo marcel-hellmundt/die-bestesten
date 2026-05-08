@@ -2,8 +2,6 @@
   <p class="state-msg">Laden…</p>
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
-} @else if (players().length === 0) {
-  <p class="state-msg">Kein Kader vorhanden.</p>
 } @else {
   <div class="squad-layout">
     <!-- Stats -->
@@ -61,6 +59,9 @@
 
     <!-- Current players -->
     <div class="squad-main card">
+      @if (players().length === 0) {
+        <p class="state-msg">Noch keine Spieler im Kader.</p>
+      } @else {
       <table class="data-table">
         <thead>
           <tr>
@@ -108,12 +109,15 @@
           }
         </tbody>
       </table>
+      }
     </div>
 
     <!-- Former players -->
     <aside class="squad-former card">
-      @if (former().length > 0) {
-        <h3 class="section-title">Ehemalige</h3>
+      <h3 class="section-title">Ehemalige</h3>
+      @if (former().length === 0) {
+        <p class="state-msg">Keine ehemaligen Spieler.</p>
+      } @else {
         <div class="former-list">
           @for (p of former(); track p.id) {
             <a class="former-row row-link" [routerLink]="['/daten/player', p.id]">

@@ -7,15 +7,17 @@
       <span class="achievements-score__pct">({{ earnedPercent() }}%)</span>
     </p>
     <div class="achievements-progress">
-      @if (levelCounts().bronze > 0) {
-        <div class="ap-seg ap-seg--bronze" [style.flex]="levelCounts().bronze"></div>
-      }
-      @if (levelCounts().silver > 0) {
-        <div class="ap-seg ap-seg--silver" [style.flex]="levelCounts().silver"></div>
-      }
-      @if (levelCounts().gold > 0) {
-        <div class="ap-seg ap-seg--gold" [style.flex]="levelCounts().gold"></div>
-      }
+      <div class="ap-filled" [style.flex]="earnedCount()">
+        @if (levelCounts().bronze > 0) {
+          <div class="ap-seg ap-seg--bronze" [style.flex]="levelCounts().bronze"></div>
+        }
+        @if (levelCounts().silver > 0) {
+          <div class="ap-seg ap-seg--silver" [style.flex]="levelCounts().silver"></div>
+        }
+        @if (levelCounts().gold > 0) {
+          <div class="ap-seg ap-seg--gold" [style.flex]="levelCounts().gold"></div>
+        }
+      </div>
       <div class="ap-seg ap-seg--empty" [style.flex]="achievements().length - earnedCount()"></div>
     </div>
   </div>
