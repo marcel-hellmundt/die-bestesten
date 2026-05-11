@@ -324,7 +324,7 @@
                 </select>
               </div>
               <div class="add-form-field add-form-field--sm">
-                <label class="add-form-label">Datum</label>
+                <label class="add-form-label">Von</label>
                 <input
                   class="input input--sm"
                   type="date"
@@ -332,13 +332,25 @@
                   (input)="newFromDate.set($any($event.target).value)"
                 />
               </div>
+              <div class="add-form-field add-form-field--sm">
+                <label class="add-form-label">Bis (leer = heute)</label>
+                <input
+                  class="input input--sm"
+                  type="date"
+                  [value]="newToDate()"
+                  (input)="newToDate.set($any($event.target).value)"
+                />
+              </div>
               <div class="add-form-field add-form-field--checkbox">
                 <label class="add-form-label">Leihe</label>
-                <input
-                  type="checkbox"
-                  [checked]="newOnLoan()"
-                  (change)="newOnLoan.set($any($event.target).checked)"
-                />
+                <label class="checkbox-wrap">
+                  <input
+                    type="checkbox"
+                    [checked]="newOnLoan()"
+                    (click)="newOnLoan.set(!newOnLoan())"
+                  />
+                  <span>Leihspieler</span>
+                </label>
               </div>
             </div>
             @if (addClubError()) {

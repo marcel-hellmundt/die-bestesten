@@ -670,3 +670,13 @@
     }
   }
 }
+
+.checkbox-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  cursor: pointer;
+  font-size: $font-sm;
+  color: $color-text;
+  user-select: none;
+}

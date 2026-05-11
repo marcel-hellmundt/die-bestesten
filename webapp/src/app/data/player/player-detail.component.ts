@@ -113,18 +113,50 @@ export class PlayerDetailComponent {
 
   isMaintainer = computed(() => this.auth.isMaintainer());
 
-  allClubs = toSignal(
+  private allClubsRaw = toSignal(
     this.api.get<{ id: string; name: string }[]>('club').pipe(
-      map(clubs => [...clubs].sort((a, b) => a.name.localeCompare(b.name))),
       catchError(() => of([] as { id: string; name: string }[]))
     ),
     { initialValue: [] as { id: string; name: string }[] }
   );
 
+  private activeSeasonId = computed(() =>
+    [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))[0]?.id ?? null
+  );
+
+  private activeSeasonClubIds = toSignal(
+    toObservable(this.activeSeasonId).pipe(
+      distinctUntilChanged(),
+      switchMap(seasonId => {
+        if (!seasonId) return of(new Set<string>());
+        return this.api.get<{ club_id: string; division_id: string }[]>(`club_in_season?season_id=${seasonId}`).pipe(
+          map(entries => {
+            const blDivId = this.cache.divisions().find(d => d.level === 1)?.id;
+            return new Set(entries.filter(e => e.division_id === blDivId).map(e => e.club_id));
+          }),
+          catchError(() => of(new Set<string>()))
+        );
+      })
+    ),
+    { initialValue: new Set<string>() }
+  );
+
+  allClubs = computed(() => {
+    const clubs  = this.allClubsRaw();
+    const blIds  = this.activeSeasonClubIds();
+    return [...clubs].sort((a, b) => {
+      const aIsBL = blIds.has(a.id);
+      const bIsBL = blIds.has(b.id);
+      if (aIsBL !== bIsBL) return aIsBL ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+  });
+
   // Add-club form state
   showAddClubForm = signal(false);
   newClubId       = signal('');
   newFromDate     = signal(new Date().toISOString().slice(0, 10));
+  newToDate       = signal('');
   newOnLoan       = signal(false);
   addingClub      = signal(false);
   addClubError    = signal<string | null>(null);
@@ -132,6 +164,7 @@ export class PlayerDetailComponent {
   openAddClubForm(): void {
     this.newClubId.set(this.allClubs()[0]?.id ?? '');
     this.newFromDate.set(new Date().toISOString().slice(0, 10));
+    this.newToDate.set('');
     this.newOnLoan.set(false);
     this.addClubError.set(null);
     this.showAddClubForm.set(true);
@@ -152,6 +185,7 @@ export class PlayerDetailComponent {
       player_id: p.id,
       club_id:   this.newClubId(),
       from_date: this.newFromDate(),
+      to_date:   this.newToDate() || null,
       on_loan:   this.newOnLoan(),
     }).subscribe({
       next: () => {
@@ -761,6 +795,7 @@ export class PlayerDetailComponent {
 
   constructor() {
     this.cache.ensureSeasons();
+    this.cache.ensureDivisions();
     effect(() => {
       const entries  = this.watchlistEntries();
       const playerId = this.playerId();
