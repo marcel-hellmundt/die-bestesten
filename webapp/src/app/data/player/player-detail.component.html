@@ -266,10 +266,18 @@
       <section class="detail-section">
         <div class="section-header-row">
           <h2 class="section-header">Vereinshistorie</h2>
+          <div class="section-header-actions">
+            @if (isMaintainer() && !showAddClubForm()) {
+              <button class="btn-edit" (click)="openAddClubForm()" title="Verein hinzufügen">
+                <app-icon name="plus" />
+              </button>
+            }
+          </div>
         </div>
-        @if (p.clubs.length === 0) {
+        @if (p.clubs.length === 0 && !showAddClubForm()) {
           <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
-        } @else {
+        }
+        @if (p.clubs.length > 0) {
           <div class="table-container">
             <table class="data-table">
               <thead>
@@ -302,6 +310,48 @@
                 }
               </tbody>
             </table>
+          </div>
+        }
+        @if (showAddClubForm()) {
+          <div class="add-form" (keydown.enter)="!addingClub() && submitAddClub()">
+            <div class="add-form-row">
+              <div class="add-form-field">
+                <label class="add-form-label">Verein</label>
+                <select class="input input--sm" (change)="newClubId.set($any($event.target).value)">
+                  @for (c of allClubs(); track c.id) {
+                    <option [value]="c.id" [selected]="c.id === newClubId()">{{ c.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="add-form-field add-form-field--sm">
+                <label class="add-form-label">Datum</label>
+                <input
+                  class="input input--sm"
+                  type="date"
+                  [value]="newFromDate()"
+                  (input)="newFromDate.set($any($event.target).value)"
+                />
+              </div>
+              <div class="add-form-field add-form-field--checkbox">
+                <label class="add-form-label">Leihe</label>
+                <input
+                  type="checkbox"
+                  [checked]="newOnLoan()"
+                  (change)="newOnLoan.set($any($event.target).checked)"
+                />
+              </div>
+            </div>
+            @if (addClubError()) {
+              <p class="add-form-error">{{ addClubError() }}</p>
+            }
+            <div class="add-form-actions">
+              <button class="btn-save" (click)="submitAddClub()" [disabled]="addingClub() || !newClubId()">
+                {{ addingClub() ? 'Speichern…' : 'Speichern' }}
+              </button>
+              <button class="btn-cancel" (click)="cancelAddClub()" [disabled]="addingClub()">
+                Abbrechen
+              </button>
+            </div>
           </div>
         }
       </section>

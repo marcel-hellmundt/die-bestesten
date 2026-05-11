@@ -645,6 +645,24 @@ class Routing
                 ],
             ]),
 
+            new Route('player_in_club', 'PlayerInClub', [
+                'title' => 'Vereinszuordnung',
+                'description' => 'Zuordnung eines Spielers zu einem Verein',
+                'endpoints' => [
+                    [
+                        'method' => 'POST',
+                        'path' => '/player_in_club',
+                        'description' => 'Fügt einem Spieler einen neuen Vereinseintrag hinzu — gibt {id} zurück — Maintainer+',
+                        'body' => [
+                            'player_id' => 'UUID des Spielers',
+                            'club_id'   => 'UUID des Vereins',
+                            'from_date' => 'DATE YYYY-MM-DD',
+                            'on_loan'   => 'bool (optional, default false)',
+                        ],
+                    ],
+                ],
+            ]),
+
             new Route('watchlist', 'Watchlist', [
                 'title' => 'Watchlist',
                 'description' => 'Spieler-Beobachtungsliste eines Teams — privat, nur eigenes Team sichtbar',

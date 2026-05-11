@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, distinctUntilChanged, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
+import { BehaviorSubject, catchError, combineLatest, distinctUntilChanged, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
@@ -91,9 +91,10 @@ export class PlayerDetailComponent {
 
   selectedSeasonId = signal<string | null>(null);
   private selectedSeason$ = toObservable(this.selectedSeasonId);
+  private reloadPlayer$ = new BehaviorSubject<void>(undefined);
 
   private state = toSignal(
-    combineLatest([this.id$, this.selectedSeason$]).pipe(
+    combineLatest([this.id$, this.selectedSeason$, this.reloadPlayer$]).pipe(
       switchMap(([id, seasonId]) => {
         const url = seasonId ? `player/${id}?season_id=${seasonId}` : `player/${id}`;
         return this.api.get<PlayerDetail>(url).pipe(
@@ -109,6 +110,61 @@ export class PlayerDetailComponent {
   player  = computed(() => this.state()?.data ?? null);
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error ?? null);
+
+  isMaintainer = computed(() => this.auth.isMaintainer());
+
+  allClubs = toSignal(
+    this.api.get<{ id: string; name: string }[]>('club').pipe(
+      map(clubs => [...clubs].sort((a, b) => a.name.localeCompare(b.name))),
+      catchError(() => of([] as { id: string; name: string }[]))
+    ),
+    { initialValue: [] as { id: string; name: string }[] }
+  );
+
+  // Add-club form state
+  showAddClubForm = signal(false);
+  newClubId       = signal('');
+  newFromDate     = signal(new Date().toISOString().slice(0, 10));
+  newOnLoan       = signal(false);
+  addingClub      = signal(false);
+  addClubError    = signal<string | null>(null);
+
+  openAddClubForm(): void {
+    this.newClubId.set(this.allClubs()[0]?.id ?? '');
+    this.newFromDate.set(new Date().toISOString().slice(0, 10));
+    this.newOnLoan.set(false);
+    this.addClubError.set(null);
+    this.showAddClubForm.set(true);
+  }
+
+  cancelAddClub(): void {
+    this.showAddClubForm.set(false);
+    this.addClubError.set(null);
+  }
+
+  submitAddClub(): void {
+    const p = this.player();
+    if (!p || !this.newClubId() || !this.newFromDate() || this.addingClub()) return;
+
+    this.addingClub.set(true);
+    this.addClubError.set(null);
+    this.api.post<{ id: string }>('player_in_club', {
+      player_id: p.id,
+      club_id:   this.newClubId(),
+      from_date: this.newFromDate(),
+      on_loan:   this.newOnLoan(),
+    }).subscribe({
+      next: () => {
+        this.addingClub.set(false);
+        this.showAddClubForm.set(false);
+        this.reloadPlayer$.next();
+      },
+      error: (err: any) => {
+        this.addingClub.set(false);
+        this.addClubError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
 
   private refreshTeam$ = new Subject<void>();
 
