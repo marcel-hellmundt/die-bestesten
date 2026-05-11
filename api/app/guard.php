@@ -53,6 +53,20 @@ class Guard
                 return ['status' => false, 'code' => 403, 'message' => 'Forbidden'];
             }
 
+            // Rolling window: refresh token if less than 3 days remaining
+            if (($decoded->exp - time()) < 60 * 60 * 24 * 3) {
+                $now      = time();
+                $newToken = JWT::encode([
+                    'sub'          => $manager['id'],
+                    'manager_name' => $manager['manager_name'],
+                    'roles'        => $manager['roles'],
+                    'status'       => $manager['status'],
+                    'iat'          => $now,
+                    'exp'          => $now + (60 * 60 * 24 * 7),
+                ], $_ENV['JWT_SECRET'], 'HS256');
+                header('X-New-Token: ' . $newToken);
+            }
+
             return ['status' => true];
         } catch (Exception $e) {
             return ['status' => false, 'code' => 401, 'message' => $e->getMessage()];
