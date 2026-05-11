@@ -309,7 +309,7 @@
     svg { margin: 0 auto; }
   }
 
-  .col-grade { width: 52px; }
+  .col-grade { width: 44px; }
 
   .col-icons {
     white-space: nowrap;
@@ -317,7 +317,7 @@
     .icons-wrap { display: inline-flex; gap: 2px; align-items: center; }
   }
 
-  .rating-icon { width: 24px; height: 24px; max-width: unset; object-fit: contain; vertical-align: middle; }
+  .rating-icon { width: 16px; height: 16px; max-width: unset; object-fit: contain; vertical-align: middle; }
 
   .col-card { width: 28px; text-align: center; }
 
@@ -328,10 +328,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  padding: 2px $space-2;
+  min-width: 30px;
+  padding: 1px $space-1;
   border-radius: $radius-sm;
-  font-size: $font-sm;
+  font-size: $font-xs;
   font-weight: $font-weight-medium;
   font-variant-numeric: tabular-nums;
   color: white;
@@ -385,6 +385,7 @@
 }
 
 .chart-container {
+  width: 100%;
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-xl;
@@ -399,7 +400,7 @@
 
   .bar-tooltip {
     &__pts,
-    &__grade { font-family: $font-body; text-anchor: middle; dominant-baseline: auto; }
+    &__grade { font-family: $font-body; text-anchor: middle; }
 
     &__pts { font-size: 9px; font-weight: 600; fill: #ffffff; }
     &__grade { font-size: 8px; fill: rgba(255, 255, 255, 0.7); }
@@ -408,6 +409,7 @@
   .price-chart {
     display: block;
     width: 100%;
+    height: auto;
 
     .chart-grid { stroke: $color-border; stroke-width: 1; stroke-dasharray: 4 3; }
 

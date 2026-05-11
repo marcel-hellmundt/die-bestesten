@@ -188,7 +188,10 @@
   width: 32px;
   height: 32px;
   max-width: unset;
-  &--sm { width: 24px; height: 24px; }
+  &--sm {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 // Table player/manager photo — 32×32 cover, rounded corner
@@ -200,7 +203,10 @@
   width: 32px;
   height: 32px;
   max-width: unset;
-  &--sm { width: 24px; height: 24px; }
+  &--sm {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 .search-input {
@@ -542,6 +548,7 @@
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-md;
+  align-self: flex-start;
   cursor: pointer;
   transition:
     color $transition-fast,

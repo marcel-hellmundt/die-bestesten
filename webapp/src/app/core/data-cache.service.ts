@@ -4,6 +4,8 @@ import { Season } from './models/season.model';
 import { Division } from './models/division.model';
 import { map } from 'rxjs';
 
+const SQUAD_MIN: Record<string, number> = { GOALKEEPER: 1, DEFENDER: 5, MIDFIELDER: 5, FORWARD: 3 };
+
 export { Division } from './models/division.model';
 
 @Injectable({ providedIn: 'root' })
@@ -13,12 +15,20 @@ export class DataCacheService {
   private seasonsState   = signal<{ data: Season[];   loaded: boolean }>({ data: [], loaded: false });
   private divisionsState = signal<{ data: Division[]; loaded: boolean }>({ data: [], loaded: false });
   private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string } | null; loaded: boolean }>({ data: null, loaded: false });
+  private squadState     = signal<{ players: any[]; loaded: boolean }>({ players: [], loaded: false });
 
   seasons   = computed(() => this.seasonsState().data);
   divisions = computed(() => this.divisionsState().data);
   myTeamId     = computed(() => this.myTeamState().data?.id ?? null);
   myTeam       = computed(() => this.myTeamState().data);
   myTeamLoaded = computed(() => this.myTeamState().loaded);
+
+  squadInvalid = computed(() => {
+    if (!this.squadState().loaded) return false;
+    const counts: Record<string, number> = { GOALKEEPER: 0, DEFENDER: 0, MIDFIELDER: 0, FORWARD: 0 };
+    for (const p of this.squadState().players) if (counts[p.position] !== undefined) counts[p.position]++;
+    return Object.entries(SQUAD_MIN).some(([pos, min]) => counts[pos] < min);
+  });
 
   ensureSeasons(): void {
     if (this.seasonsState().loaded) return;
@@ -35,6 +45,20 @@ export class DataCacheService {
       next: data => this.myTeamState.set({ data, loaded: true }),
       error: ()   => this.myTeamState.set({ data: null, loaded: true }),
     });
+  }
+
+  ensureSquad(): void {
+    if (this.squadState().loaded) return;
+    const teamId = this.myTeamId();
+    if (!teamId) return;
+    this.api.get<any>(`player_in_team?team_id=${teamId}`).subscribe({
+      next: data => this.squadState.set({ players: data.current ?? [], loaded: true }),
+      error: ()   => this.squadState.set({ players: [], loaded: true }),
+    });
+  }
+
+  invalidateSquad(): void {
+    this.squadState.set({ players: [], loaded: false });
   }
 
   ensureDivisions(): void {

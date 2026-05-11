@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
@@ -6,6 +6,7 @@ interface NavItem {
   label: string;
   icon: string;
   route: string | any[] | null;
+  warning?: boolean;
 }
 
 interface NavGroup {
@@ -37,7 +38,7 @@ export class NavComponent {
         icon: 'kader',
         items: [
           { label: 'Übersicht',   icon: 'uebersicht',  route: id ? ['/team', id, 'uebersicht']  : null },
-          { label: 'Kader',       icon: 'kader',       route: id ? ['/team', id, 'kader']       : null },
+          { label: 'Kader',       icon: 'kader',       route: id ? ['/team', id, 'kader']       : null, warning: this.cache.squadInvalid() },
           { label: 'Aufstellung', icon: 'aufstellung', route: id ? ['/team', id, 'aufstellung']  : null },
           { label: 'Finanzen',    icon: 'finanzen',    route: id ? ['/team', id, 'finanzen']    : null },
         ]
@@ -93,6 +94,9 @@ export class NavComponent {
 
   constructor() {
     this.cache.ensureMyTeam();
+    effect(() => {
+      if (this.cache.myTeamId()) this.cache.ensureSquad();
+    });
   }
 }
 

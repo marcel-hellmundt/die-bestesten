@@ -34,6 +34,9 @@
               <a class="nav-item" [routerLink]="item.route" routerLinkActive="nav-item--active">
                 <app-icon [name]="item.icon" class="nav-icon"></app-icon>
                 <span class="nav-label">{{ item.label }}</span>
+                @if (item.warning) {
+                  <img src="img/icons/warning.png" class="nav-warning-icon" alt="" />
+                }
               </a>
             </li>
           }
@@ -54,6 +57,9 @@
               <a class="nav-item" [routerLink]="item.route" routerLinkActive="nav-item--active">
                 <app-icon [name]="item.icon" class="nav-icon"></app-icon>
                 <span class="nav-label">{{ item.label }}</span>
+                @if (item.warning) {
+                  <img src="img/icons/warning.png" class="nav-warning-icon" alt="" />
+                }
               </a>
             </li>
           }

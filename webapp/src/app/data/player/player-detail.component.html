@@ -450,7 +450,7 @@
             <thead>
               <tr>
                 <th class="col-matchday">#</th>
-                <th class="col-club-logo"></th>
+                <th class="col-club-logo hidden-mobile"></th>
                 <th class="col-team-logo"></th>
                 <th class="col-part"></th>
                 <th class="col-grade">Note</th>
@@ -465,7 +465,7 @@
               @for (r of p.ratings; track r.id) {
                 <tr>
                   <td class="col-matchday">{{ r.matchday_number }}</td>
-                  <td class="col-club-logo">
+                  <td class="col-club-logo hidden-mobile">
                     <img
                       [src]="clubLogoUrl(r.club_id, +r.club_logo_uploaded)"
                       class="tbl-logo tbl-logo--sm"
