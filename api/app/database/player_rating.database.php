@@ -175,6 +175,15 @@ trait PlayerRatingTrait
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getExistingKickerIds(array $kickerIds): array
+    {
+        if (empty($kickerIds)) return [];
+        $placeholders = implode(',', array_fill(0, count($kickerIds), '?'));
+        $stmt = $this->con->prepare("SELECT kicker_id FROM player WHERE kicker_id IN ($placeholders)");
+        $stmt->execute($kickerIds);
+        return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'kicker_id');
+    }
+
     /**
      * Returns the best valid XI for a matchday across all 5 formations (343/352/433/442/451).
      * If $freeAgentsOnly is true, excludes players currently in a fantasy team.

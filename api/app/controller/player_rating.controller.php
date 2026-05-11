@@ -111,6 +111,22 @@ class PlayerRatingController extends _BaseController
             }
             fclose($handle);
 
+            // Reclassify: distinguish "player not in player table" vs "player exists but no ratings"
+            $notFoundKickerIds = array_column(
+                array_filter($mismatches, fn($m) => $m['error'] === 'player not found in db'),
+                'kicker_id'
+            );
+            if (!empty($notFoundKickerIds)) {
+                $existingSet = array_flip($this->db->getExistingKickerIds($notFoundKickerIds));
+                foreach ($mismatches as &$m) {
+                    if ($m['error'] === 'player not found in db' && isset($existingSet[$m['kicker_id']])) {
+                        $m['error'] = 'no ratings in season';
+                        unset($m['first_name'], $m['last_name'], $m['club_name'], $m['position'], $m['price']);
+                    }
+                }
+                unset($m);
+            }
+
             if (empty($mismatches)) {
                 return ['ok' => true, 'checked' => $checked];
             }
