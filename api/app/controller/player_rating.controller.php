@@ -86,6 +86,11 @@ class PlayerRatingController extends _BaseController
                         $mismatches[] = [
                             'kicker_id'   => $kickerId,
                             'displayname' => $displayname,
+                            'first_name'  => $cols[1] ?? null,
+                            'last_name'   => $cols[2] ?? null,
+                            'club_name'   => $cols[5] ?? null,
+                            'position'    => $cols[6] ?? null,
+                            'price'       => isset($cols[7]) ? (int) $cols[7] : null,
                             'csv_points'  => $csvPoints,
                             'db_points'   => null,
                             'error'       => 'player not found in db',

@@ -110,7 +110,8 @@ DELETE   /offer/:id                  — Body:{team_id} — offenes Gebot storni
 GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
 GET      /player_in_season/available_players — ?season_id (optional, default aktiv) → {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]} — Bundesliga-Spieler ohne Fantasy-Team
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
-POST     /player/migrate       — gibt migrated/skipped-Counts zurück
+POST     /player/migrate       — gibt migrated/skipped-Counts zurück — Admin
+POST     /player/create        — {kicker_id, first_name, last_name, displayname, season_id, position, price, club_id?, from_date?} → {id} — erstellt player + player_in_season + optional player_in_club — Maintainer+
 GET      /player_rating        — ?matchday_id&club_id → Spielerinfos + price, starting_count (Starts in der Saison); sortiert nach starting_count DESC, position, price DESC
 GET      /player_rating/best_xi — ?matchday_id (required), ?free_agents_only=0|1 — beste valide 11 (343/352/433/442/451) für einen Spieltag; gibt {formation, players[{player_id,displayname,position,points,grade,club_id,club_name,club_short_name}], total_points} zurück; free_agents_only=1 nur Spieler ohne Fantasy-Team — Auth
 GET      /player_rating/status — ?matchday_id → [{club_id, rating_count, starter_count, grade_count, goals, assists, has_sds}] — aggregierter Status aller Clubs für einen Spieltag

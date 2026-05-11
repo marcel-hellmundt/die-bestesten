@@ -2,7 +2,7 @@
 
 class PlayerController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'admin'];
+    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'maintainer'];
 
     protected function get(): mixed
     {
@@ -24,8 +24,26 @@ class PlayerController extends _BaseController
 
     protected function post(): mixed
     {
-        if ($this->id !== 'migrate') return $this->methodNotAllowed();
-        return $this->db->migratePlayer();
+        if ($this->id === 'migrate') {
+            if (!in_array('admin', $GLOBALS['auth_roles'])) {
+                http_response_code(403);
+                return ['message' => 'Forbidden'];
+            }
+            return $this->db->migratePlayer();
+        }
+
+        if ($this->id === 'create') {
+            $body = $this->body();
+            foreach (['kicker_id', 'first_name', 'last_name', 'displayname', 'season_id', 'position', 'price'] as $f) {
+                if (!isset($body[$f])) {
+                    http_response_code(400);
+                    return ['message' => "$f fehlt"];
+                }
+            }
+            return $this->db->createPlayer($body);
+        }
+
+        return $this->methodNotAllowed();
     }
     protected function patch(): mixed  { return $this->methodNotAllowed(); }
     protected function delete(): mixed { return $this->methodNotAllowed(); }

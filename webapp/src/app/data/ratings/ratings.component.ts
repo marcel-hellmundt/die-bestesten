@@ -579,8 +579,57 @@ export class RatingsDataComponent {
   csvResult = signal<{
     ok: boolean;
     checked?: number;
-    mismatches?: { kicker_id: number; displayname: string; csv_points: number; db_points: number | null; error: string }[];
+    mismatches?: {
+      kicker_id: number;
+      displayname: string;
+      csv_points: number;
+      db_points: number | null;
+      error: string;
+      first_name?: string;
+      last_name?: string;
+      club_name?: string;
+      position?: string;
+      price?: number;
+    }[];
   } | null>(null);
+
+  createdPlayerIds = signal<Map<number, string>>(new Map());
+  creatingPlayers  = signal<Set<number>>(new Set());
+
+  private findClubId(clubName: string): string | null {
+    const clubs = this.pageData()?.clubs ?? [];
+    const norm = (s: string) => s.toLowerCase().trim();
+    const n = norm(clubName);
+    return clubs.find(c =>
+      norm(c.name) === n || norm(c.name).includes(n) || n.includes(norm(c.name))
+    )?.id ?? null;
+  }
+
+  createPlayer(m: { kicker_id: number; displayname: string; first_name?: string; last_name?: string; club_name?: string; position?: string; price?: number }): void {
+    const md = this.selectedMatchday();
+    if (!md) return;
+    const clubId = m.club_name ? this.findClubId(m.club_name) : null;
+    this.creatingPlayers.update(s => new Set([...s, m.kicker_id]));
+    this.api.post<{ id: string }>('player/create', {
+      kicker_id:   m.kicker_id,
+      first_name:  m.first_name,
+      last_name:   m.last_name,
+      displayname: m.displayname,
+      season_id:   md.season_id,
+      position:    m.position,
+      price:       m.price,
+      club_id:     clubId,
+    }).subscribe({
+      next: ({ id }) => {
+        this.creatingPlayers.update(s => { const n = new Set(s); n.delete(m.kicker_id); return n; });
+        this.createdPlayerIds.update(map => new Map([...map, [m.kicker_id, id]]));
+        window.open(`/daten/player/${id}`, '_blank');
+      },
+      error: () => {
+        this.creatingPlayers.update(s => { const n = new Set(s); n.delete(m.kicker_id); return n; });
+      },
+    });
+  }
 
   onCsvFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];

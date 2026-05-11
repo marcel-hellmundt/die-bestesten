@@ -69,7 +69,9 @@ export class MarktPlayerComponent {
   clubFilter     = signal<string | null>(this._saved.club     ?? null);
   maxPrice       = signal<number | null>(this._saved.maxPrice ?? null);
 
-  maxDataPrice = computed(() => Math.max(0, ...this.players().map(p => p.price)));
+  dynamicPrice(p: FreeAgent): number { return p.price + 20_000 * p.season_points; }
+
+  maxDataPrice = computed(() => Math.max(0, ...this.players().map(p => this.dynamicPrice(p))));
 
   clubs = computed(() => {
     const seen = new Set<string>();
@@ -88,7 +90,7 @@ export class MarktPlayerComponent {
       (!q    || p.displayname.toLowerCase().includes(q)) &&
       (!pos  || p.position === pos) &&
       (!club || p.club_id === club) &&
-      (max === null || p.price <= max)
+      (max === null || this.dynamicPrice(p) <= max)
     );
   });
 

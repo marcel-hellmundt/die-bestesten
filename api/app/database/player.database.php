@@ -349,6 +349,51 @@ trait PlayerTrait
         ];
     }
 
+    public function createPlayer(array $body): array
+    {
+        $playerId = $this->con->query("SELECT UUID() AS id")->fetchColumn();
+
+        $stmt = $this->con->prepare("
+            INSERT INTO player (id, kicker_id, first_name, last_name, displayname)
+            VALUES (:id, :kicker_id, :first_name, :last_name, :displayname)
+        ");
+        $stmt->execute([
+            ':id'          => $playerId,
+            ':kicker_id'   => $body['kicker_id'],
+            ':first_name'  => $body['first_name'],
+            ':last_name'   => $body['last_name'],
+            ':displayname' => $body['displayname'],
+        ]);
+
+        $stmt = $this->con->prepare("
+            INSERT INTO player_in_season (id, player_id, season_id, price, position, photo_uploaded)
+            VALUES (:id, :player_id, :season_id, :price, :position, 0)
+        ");
+        $stmt->execute([
+            ':id'        => $this->con->query("SELECT UUID() AS id")->fetchColumn(),
+            ':player_id' => $playerId,
+            ':season_id' => $body['season_id'],
+            ':price'     => $body['price'],
+            ':position'  => $body['position'],
+        ]);
+
+        if (!empty($body['club_id'])) {
+            $fromDate = $body['from_date'] ?? date('Y-m-d');
+            $stmt = $this->con->prepare("
+                INSERT INTO player_in_club (id, player_id, club_id, from_date, to_date, on_loan)
+                VALUES (:id, :player_id, :club_id, :from_date, NULL, 0)
+            ");
+            $stmt->execute([
+                ':id'        => $this->con->query("SELECT UUID() AS id")->fetchColumn(),
+                ':player_id' => $playerId,
+                ':club_id'   => $body['club_id'],
+                ':from_date' => $fromDate,
+            ]);
+        }
+
+        return ['id' => $playerId];
+    }
+
     private function getActiveSeasonId(): ?string
     {
         $q = $this->con->prepare("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");

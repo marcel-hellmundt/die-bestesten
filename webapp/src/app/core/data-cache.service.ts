@@ -52,7 +52,7 @@ export class DataCacheService {
     const teamId = this.myTeamId();
     if (!teamId) return;
     this.api.get<any>(`player_in_team?team_id=${teamId}`).subscribe({
-      next: data => this.squadState.set({ players: data.current ?? [], loaded: true }),
+      next: data => this.squadState.set({ players: Array.isArray(data) ? data : (data.current ?? []), loaded: true }),
       error: ()   => this.squadState.set({ players: [], loaded: true }),
     });
   }

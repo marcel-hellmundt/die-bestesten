@@ -51,6 +51,7 @@
                     <th>DB</th>
                     <th>Diff</th>
                     <th>Fehler</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -76,6 +77,21 @@
                         }}
                       </td>
                       <td class="mismatch-error">{{ m.error }}</td>
+                      <td>
+                        @if (m.error === 'player not found in db') {
+                          @if (createdPlayerIds().has(m.kicker_id)) {
+                            <a class="btn btn-secondary btn-sm"
+                               [href]="'/daten/player/' + createdPlayerIds().get(m.kicker_id)"
+                               target="_blank">Geöffnet ↗</a>
+                          } @else {
+                            <button class="btn btn-primary btn-sm"
+                                    [disabled]="creatingPlayers().has(m.kicker_id)"
+                                    (click)="createPlayer(m)">
+                              {{ creatingPlayers().has(m.kicker_id) ? '…' : 'Erstellen' }}
+                            </button>
+                          }
+                        }
+                      </td>
                     </tr>
                   }
                 </tbody>
