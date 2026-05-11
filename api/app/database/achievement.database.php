@@ -2,20 +2,24 @@
 
 trait AchievementTrait
 {
-    public function evaluateAchievements(bool $notify = false): int
+    public function evaluateAchievements(bool $notify = false): array
     {
         $newCount = 0;
+        $newItems = [];
+
         $achievements = $this->con->query(
             "SELECT id, condition_key, name FROM achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($achievements)) return 0;
+        if (empty($achievements)) return ['count' => 0, 'new' => []];
 
-        $managerIds = $this->con_league->query(
-            "SELECT id FROM manager WHERE status = 'active'"
-        )->fetchAll(PDO::FETCH_COLUMN);
+        $managerRows  = $this->con_league->query(
+            "SELECT id, manager_name FROM manager WHERE status = 'active'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $managerIds   = array_column($managerRows, 'id');
+        $managerNames = array_column($managerRows, 'manager_name', 'id');
 
-        if (empty($managerIds)) return 0;
+        if (empty($managerIds)) return ['count' => 0, 'new' => []];
 
         $stmt = $this->con_league->prepare(
             "INSERT IGNORE INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at, level)
@@ -32,13 +36,19 @@ trait AchievementTrait
                 $stmt->execute([$managerId, $achievement['id'], $meta['reason'], $meta['earned_at'], $level]);
                 if ($stmt->rowCount() > 0) {
                     $newCount++;
+                    $newItems[] = [
+                        'manager_name'     => $managerNames[$managerId] ?? $managerId,
+                        'achievement_name' => $achievement['name'],
+                        'level'            => $level,
+                        'reason'           => $meta['reason'] ?? null,
+                    ];
                     if ($notify) {
                         $this->createAchievementNotification($managerId, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
                     }
                 }
             }
         }
-        return $newCount;
+        return ['count' => $newCount, 'new' => $newItems];
     }
 
     public function evaluateAchievementById(string $achievementId): void

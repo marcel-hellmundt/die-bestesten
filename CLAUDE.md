@@ -91,7 +91,7 @@ GET      /club[/:id]           — /:id enthält stadium-Objekt (aktuelles Stadi
 GET      /country[/:id]
 GET      /season[/:id|/active]
 GET      /matchday[/:id]       — ?season_id gibt has_ratings (bool) zurück ob mindestens ein player_rating für den Spieltag existiert
-PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team_rating + Transaktionen erstellen, Achievements auswerten, Notifications senden — Admin
+PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team_rating + Transaktionen erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an Admins (nur wenn email hinterlegt) — Admin
 GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_points}], top_matchdays: [{points,matchday_number,team_name,season_id,manager_name}] } — Auth
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
 POST     /league/migrate       — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin

@@ -242,6 +242,124 @@ trait MatchdayTrait
         return $updatedCount;
     }
 
+    public function sendMatchdayCompletedAdminEmail(string $matchdayId, int $teamRatingsCount, array $newAchievements, int $matchdayNumber): void
+    {
+        try {
+            $adminEmails = $this->con_league->query(
+                "SELECT m.email FROM manager m
+                 JOIN manager_role mr ON mr.manager_id = m.id
+                 WHERE mr.role = 'admin' AND m.email IS NOT NULL AND m.status = 'active'"
+            )->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($adminEmails)) return;
+
+            $ratingsQ = $this->con_league->prepare(
+                "SELECT t.team_name, tr.points, tr.goals, tr.assists,
+                        tr.red_cards, tr.yellow_red_cards, tr.sds, tr.invalid
+                 FROM team_rating tr
+                 JOIN team t ON t.id = tr.team_id
+                 WHERE tr.matchday_id = ?
+                 ORDER BY tr.points DESC"
+            );
+            $ratingsQ->execute([$matchdayId]);
+            $teamRatings = $ratingsQ->fetchAll(PDO::FETCH_ASSOC);
+
+            $subject = "$matchdayNumber. Spieltag abgeschlossen — die bestesten";
+            $body    = $this->buildMatchdaySummaryEmail($matchdayNumber, $teamRatingsCount, $teamRatings, $newAchievements);
+            $headers = "From: noreply@die-bestesten.de\r\nContent-Type: text/html; charset=UTF-8";
+
+            foreach ($adminEmails as $email) {
+                mail($email, $subject, $body, $headers);
+            }
+        } catch (\Throwable $e) {
+            error_log('sendMatchdayCompletedAdminEmail failed: ' . $e->getMessage());
+        }
+    }
+
+    private function buildMatchdaySummaryEmail(int $matchdayNumber, int $teamRatingsCount, array $teamRatings, array $newAchievements): string
+    {
+        $levelLabel        = ['bronze' => 'Bronze', 'silver' => 'Silber', 'gold' => 'Gold'];
+        $achievementsCount = count($newAchievements);
+
+        $teamRows = '';
+        foreach ($teamRatings as $i => $r) {
+            $invalid = (bool) ($r['invalid'] ?? false);
+            $pts     = $invalid ? '—' : (int) $r['points'];
+            $income  = (!$invalid && (int) $r['points'] > 0)
+                ? number_format((int) $r['points'] * 20000, 0, ',', '.') . ' €'
+                : '—';
+            $cards   = (int) $r['yellow_red_cards'] . 'YR / ' . (int) $r['red_cards'] . 'R';
+            $rank    = $i + 1;
+            $name    = htmlspecialchars($r['team_name']);
+            $style   = $invalid ? ' style="color:#94a3b8;"' : '';
+            $sds     = (int) $r['sds'] ? '✓' : '';
+            $teamRows .= "<tr$style>
+                <td style=\"padding:4px 8px;\">$rank</td>
+                <td style=\"padding:4px 8px;\">$name</td>
+                <td style=\"padding:4px 8px;text-align:center;\">$pts</td>
+                <td style=\"padding:4px 8px;text-align:center;\">{$r['goals']}</td>
+                <td style=\"padding:4px 8px;text-align:center;\">{$r['assists']}</td>
+                <td style=\"padding:4px 8px;text-align:center;\">$sds</td>
+                <td style=\"padding:4px 8px;text-align:center;\">$cards</td>
+                <td style=\"padding:4px 8px;text-align:right;\">$income</td>
+            </tr>\n";
+        }
+
+        $achRows = '';
+        foreach ($newAchievements as $a) {
+            $manager = htmlspecialchars($a['manager_name']);
+            $achName = htmlspecialchars($a['achievement_name']);
+            $level   = htmlspecialchars($levelLabel[$a['level']] ?? $a['level']);
+            $reason  = htmlspecialchars($a['reason'] ?? '—');
+            $achRows .= "<tr>
+                <td style=\"padding:4px 8px;\">$manager</td>
+                <td style=\"padding:4px 8px;\">$achName</td>
+                <td style=\"padding:4px 8px;\">$level</td>
+                <td style=\"padding:4px 8px;color:#64748b;\">$reason</td>
+            </tr>\n";
+        }
+
+        $achSection = $achievementsCount > 0
+            ? "<h3 style=\"margin:24px 0 8px;\">Neue Achievements ($achievementsCount)</h3>
+               <table style=\"border-collapse:collapse;width:100%;font-size:13px;\">
+                   <thead><tr style=\"background:#1e3a5f;color:#e2e8f0;\">
+                       <th style=\"padding:6px 8px;text-align:left;\">Manager</th>
+                       <th style=\"padding:6px 8px;text-align:left;\">Achievement</th>
+                       <th style=\"padding:6px 8px;text-align:left;\">Level</th>
+                       <th style=\"padding:6px 8px;text-align:left;\">Grund</th>
+                   </tr></thead>
+                   <tbody>$achRows</tbody>
+               </table>"
+            : "<p style=\"color:#64748b;margin-top:24px;\">Keine neuen Achievements.</p>";
+
+        return "<!DOCTYPE html>
+<html lang=\"de\">
+<head><meta charset=\"UTF-8\"></head>
+<body style=\"font-family:sans-serif;color:#1e293b;background:#f8fafc;padding:24px;max-width:700px;margin:0 auto;\">
+    <h2 style=\"margin:0 0 4px;\">$matchdayNumber. Spieltag abgeschlossen</h2>
+    <p style=\"color:#64748b;margin:0 0 24px;\">
+        <strong>$teamRatingsCount</strong> Team-Ratings erstellt &nbsp;·&nbsp;
+        <strong>$achievementsCount</strong> neue Achievements
+    </p>
+    <h3 style=\"margin:0 0 8px;\">Teams</h3>
+    <table style=\"border-collapse:collapse;width:100%;font-size:13px;\">
+        <thead><tr style=\"background:#1e3a5f;color:#e2e8f0;\">
+            <th style=\"padding:6px 8px;text-align:left;\">#</th>
+            <th style=\"padding:6px 8px;text-align:left;\">Team</th>
+            <th style=\"padding:6px 8px;text-align:center;\">Pkt</th>
+            <th style=\"padding:6px 8px;text-align:center;\">Tore</th>
+            <th style=\"padding:6px 8px;text-align:center;\">Vorlagen</th>
+            <th style=\"padding:6px 8px;text-align:center;\">SdS</th>
+            <th style=\"padding:6px 8px;text-align:center;\">Karten</th>
+            <th style=\"padding:6px 8px;text-align:right;\">Einnahmen</th>
+        </tr></thead>
+        <tbody>$teamRows</tbody>
+    </table>
+    $achSection
+</body>
+</html>";
+    }
+
     public function migrateMatchday(): array
     {
         $rows = $this->con_old->query(
