@@ -124,26 +124,27 @@ export class PlayerDetailComponent {
     [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))[0]?.id ?? null
   );
 
-  private activeSeasonClubIds = toSignal(
+  private activeSeasonClubMap = toSignal(
     toObservable(this.activeSeasonId).pipe(
       distinctUntilChanged(),
       switchMap(seasonId => {
-        if (!seasonId) return of(new Set<string>());
+        if (!seasonId) return of([] as { club_id: string; division_id: string }[]);
         return this.api.get<{ club_id: string; division_id: string }[]>(`club_in_season?season_id=${seasonId}`).pipe(
-          map(entries => {
-            const blDivId = this.cache.divisions().find(d => d.level === 1)?.id;
-            return new Set(entries.filter(e => e.division_id === blDivId).map(e => e.club_id));
-          }),
-          catchError(() => of(new Set<string>()))
+          catchError(() => of([] as { club_id: string; division_id: string }[]))
         );
       })
     ),
-    { initialValue: new Set<string>() }
+    { initialValue: [] as { club_id: string; division_id: string }[] }
   );
 
   allClubs = computed(() => {
-    const clubs  = this.allClubsRaw();
-    const blIds  = this.activeSeasonClubIds();
+    const clubs   = this.allClubsRaw();
+    const blDivId = this.cache.divisions().find(d => d.level === 1)?.id;
+    const blIds   = new Set(
+      this.activeSeasonClubMap()
+        .filter(e => e.division_id === blDivId)
+        .map(e => e.club_id)
+    );
     return [...clubs].sort((a, b) => {
       const aIsBL = blIds.has(a.id);
       const bIsBL = blIds.has(b.id);
