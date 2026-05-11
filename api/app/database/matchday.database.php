@@ -255,7 +255,7 @@ trait MatchdayTrait
 
             $ratingsQ = $this->con_league->prepare(
                 "SELECT t.team_name, tr.points, tr.goals, tr.assists,
-                        tr.red_cards, tr.yellow_red_cards, tr.sds, tr.invalid
+                        tr.clean_sheet, tr.sds, tr.red_cards, tr.yellow_red_cards, tr.invalid
                  FROM team_rating tr
                  JOIN team t ON t.id = tr.team_id
                  WHERE tr.matchday_id = ?
@@ -291,14 +291,16 @@ trait MatchdayTrait
             $cards   = (int) $r['yellow_red_cards'] . 'YR / ' . (int) $r['red_cards'] . 'R';
             $rank    = $i + 1;
             $name    = htmlspecialchars($r['team_name']);
-            $style   = $invalid ? ' style="color:#94a3b8;"' : '';
-            $sds     = (int) $r['sds'] ? '✓' : '';
+            $style      = $invalid ? ' style="color:#94a3b8;"' : '';
+            $sds        = (int) $r['sds'] ?: '';
+            $cleanSheet = (int) $r['clean_sheet'] ? '✓' : '';
             $teamRows .= "<tr$style>
                 <td style=\"padding:4px 8px;\">$rank</td>
                 <td style=\"padding:4px 8px;\">$name</td>
                 <td style=\"padding:4px 8px;text-align:center;\">$pts</td>
                 <td style=\"padding:4px 8px;text-align:center;\">{$r['goals']}</td>
                 <td style=\"padding:4px 8px;text-align:center;\">{$r['assists']}</td>
+                <td style=\"padding:4px 8px;text-align:center;\">$cleanSheet</td>
                 <td style=\"padding:4px 8px;text-align:center;\">$sds</td>
                 <td style=\"padding:4px 8px;text-align:center;\">$cards</td>
                 <td style=\"padding:4px 8px;text-align:right;\">$income</td>
@@ -349,6 +351,7 @@ trait MatchdayTrait
             <th style=\"padding:6px 8px;text-align:center;\">Pkt</th>
             <th style=\"padding:6px 8px;text-align:center;\">Tore</th>
             <th style=\"padding:6px 8px;text-align:center;\">Vorlagen</th>
+            <th style=\"padding:6px 8px;text-align:center;\">CS</th>
             <th style=\"padding:6px 8px;text-align:center;\">SdS</th>
             <th style=\"padding:6px 8px;text-align:center;\">Karten</th>
             <th style=\"padding:6px 8px;text-align:right;\">Einnahmen</th>
