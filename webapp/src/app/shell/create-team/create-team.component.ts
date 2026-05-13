@@ -1,7 +1,11 @@
-import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { DataCacheService } from '../../core/data-cache.service';
+
+const BASE_PALETTE = [
+  '#e84118', '#0652dd', '#05c46b', '#ffd32a', '#1e272e', '#d2dae2',
+];
 
 @Component({
   selector: 'app-create-team',
@@ -16,23 +20,33 @@ export class CreateTeamComponent implements OnInit {
 
   @ViewChild('logoInput') logoInput!: ElementRef<HTMLInputElement>;
 
-  teamName    = signal('');
-  color       = signal('#bf1d00');
-  logoFile    = signal<File | null>(null);
-  logoPreview = signal<string | null>(null);
-  submitState = signal<'idle' | 'loading' | 'error'>('idle');
-  errorMsg    = signal<string | null>(null);
+  teamName        = signal('');
+  color           = signal('#bf1d00');
+  logoFile        = signal<File | null>(null);
+  logoPreview     = signal<string | null>(null);
+  previousTeam    = signal<{ id: string; season_id: string; color: string | null } | null>(null);
+  submitState     = signal<'idle' | 'loading' | 'error'>('idle');
+  errorMsg        = signal<string | null>(null);
 
-  readonly palette = [
-    '#1abc9c', '#2ecc71', '#3498db', '#9b59b6', '#34495e',
-    '#f1c40f', '#e67e22', '#e74c3c', '#95a5a6', '#bf1d00',
-  ];
+  previousLogoUrl = computed(() => {
+    const prev = this.previousTeam();
+    return prev ? `https://img.die-bestesten.de/img/team/${prev.season_id}/${prev.id}.png` : null;
+  });
+
+  displayedLogo = computed(() => this.logoPreview() ?? this.previousLogoUrl());
+
+  palette = computed(() => {
+    const prevColor = this.previousTeam()?.color;
+    if (!prevColor) return BASE_PALETTE;
+    return [prevColor, ...BASE_PALETTE.filter(c => c !== prevColor)];
+  });
 
   ngOnInit(): void {
     this.api.get<any>('team/previous').subscribe({
       next: prev => {
         if (prev?.team_name) this.teamName.set(prev.team_name);
         if (prev?.color)     this.color.set(prev.color);
+        if (prev?.id && prev?.season_id) this.previousTeam.set(prev);
       },
       error: () => {},
     });
@@ -56,30 +70,55 @@ export class CreateTeamComponent implements OnInit {
     const name = this.teamName().trim();
     if (!name) return;
 
+    if (!this.logoFile() && !this.previousTeam()) {
+      this.errorMsg.set('Bitte lade ein Logo hoch');
+      return;
+    }
+
     this.submitState.set('loading');
     this.errorMsg.set(null);
 
     this.api.post<{ status: boolean; id: string }>('team', { team_name: name, color: this.color() })
       .subscribe({
         next: () => {
-          const logo = this.logoFile();
-          if (logo) {
-            this.api.get<any>('team/mine').subscribe({
-              next: team => this.api.uploadTeamLogo(team.season_id, team.id, logo).subscribe({
-                next:  () => this.finalize(),
-                error: () => this.finalize(),
-              }),
-              error: () => this.finalize(),
-            });
-          } else {
-            this.finalize();
-          }
+          this.api.get<any>('team/mine').subscribe({
+            next: team => this.uploadLogo(team),
+            error: () => this.finalize(),
+          });
         },
         error: (err: any) => {
           this.submitState.set('error');
           this.errorMsg.set(err?.error?.message ?? 'Fehler beim Erstellen des Teams');
         },
       });
+  }
+
+  private uploadLogo(team: { id: string; season_id: string }): void {
+    const newFile = this.logoFile();
+    if (newFile) {
+      this.api.uploadTeamLogo(team.season_id, team.id, newFile).subscribe({
+        next: () => this.finalize(),
+        error: () => this.finalize(),
+      });
+      return;
+    }
+
+    const oldUrl = this.previousLogoUrl();
+    if (oldUrl) {
+      fetch(oldUrl)
+        .then(r => r.blob())
+        .then(blob => {
+          const file = new File([blob], 'logo.png', { type: blob.type || 'image/png' });
+          this.api.uploadTeamLogo(team.season_id, team.id, file).subscribe({
+            next: () => this.finalize(),
+            error: () => this.finalize(),
+          });
+        })
+        .catch(() => this.finalize());
+      return;
+    }
+
+    this.finalize();
   }
 
   private finalize(): void {

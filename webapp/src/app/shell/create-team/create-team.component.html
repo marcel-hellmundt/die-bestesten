@@ -13,9 +13,22 @@
   </div>
 
   <div class="form-group">
+    <label class="form-label">Logo</label>
+    <input #logoInput type="file" accept="image/*" class="sr-only" (change)="onLogoFileSelected($event)" />
+    <div class="logo-upload" (click)="onLogoClick()">
+      @if (displayedLogo()) {
+        <img [src]="displayedLogo()" class="logo-preview" alt="Team-Logo" />
+        <span class="logo-upload__change">Ändern</span>
+      } @else {
+        <span class="logo-upload__placeholder">Logo auswählen</span>
+      }
+    </div>
+  </div>
+
+  <div class="form-group">
     <label class="form-label">Teamfarbe</label>
     <div class="color-palette">
-      @for (hex of palette; track hex) {
+      @for (hex of palette(); track hex) {
         <button type="button"
                 class="color-swatch"
                 [class.color-swatch--active]="color() === hex"
@@ -23,22 +36,9 @@
                 (click)="color.set(hex)">
         </button>
       }
-      <label class="color-swatch color-swatch--custom" [style.background-color]="color()" title="Eigene Farbe wählen">
+      <label class="color-swatch color-swatch--custom" title="Eigene Farbe wählen">
         <input type="color" [value]="color()" (input)="color.set($any($event.target).value)" />
       </label>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label class="form-label">Logo <span class="form-label-hint">(optional)</span></label>
-    <input #logoInput type="file" accept="image/*" class="sr-only" (change)="onLogoFileSelected($event)" />
-    <div class="logo-upload" (click)="onLogoClick()">
-      @if (logoPreview()) {
-        <img [src]="logoPreview()" class="logo-preview" alt="Logo-Vorschau" />
-        <span class="logo-upload__change">Ändern</span>
-      } @else {
-        <span class="logo-upload__placeholder">Bild auswählen</span>
-      }
     </div>
   </div>
 
