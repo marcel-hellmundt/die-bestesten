@@ -3,9 +3,27 @@ import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
-const BASE_PALETTE = [
-  '#e84118', '#0652dd', '#05c46b', '#62358f', '#ffd32a', '#1e272e', '#d2dae2',
+const PRIMARY_PALETTE = [
+  '#e74c3c',
+  '#3867d6',
+  '#2ecc71',
+  '#f1c40f',
+  '#9b59b6',
+  '#e67e22',
+  '#1e272e',
 ];
+
+const SECONDARY_PALETTE = ['#ffffff', '#1e272e', '#e74c3c', '#3867d6', '#f1c40f'];
+
+const COLOR_COMBOS: Record<string, string[]> = {
+  '#e74c3c': ['#ffffff', '#1e272e', '#f1c40f'],
+  '#3867d6': ['#ffffff', '#1e272e', '#f1c40f'],
+  '#2ecc71': ['#ffffff'],
+  '#f1c40f': ['#1e272e'],
+  '#9b59b6': ['#ffffff'],
+  '#e67e22': ['#ffffff', '#1e272e'],
+  '#1e272e': ['#ffffff'],
+};
 
 @Component({
   selector: 'app-create-team',
@@ -14,19 +32,20 @@ const BASE_PALETTE = [
   styleUrl: './create-team.component.scss',
 })
 export class CreateTeamComponent implements OnInit {
-  private api   = inject(ApiService);
+  private api = inject(ApiService);
   private cache = inject(DataCacheService);
-  private bs    = inject(BottomSheetService);
+  private bs = inject(BottomSheetService);
 
   @ViewChild('logoInput') logoInput!: ElementRef<HTMLInputElement>;
 
-  teamName        = signal('');
-  color           = signal('#bf1d00');
-  logoFile        = signal<File | null>(null);
-  logoPreview     = signal<string | null>(null);
-  previousTeam    = signal<{ id: string; season_id: string; color: string | null } | null>(null);
-  submitState     = signal<'idle' | 'loading' | 'error'>('idle');
-  errorMsg        = signal<string | null>(null);
+  teamName = signal('');
+  color = signal('#e74c3c');
+  secondaryColor = signal('#ffffff');
+  logoFile = signal<File | null>(null);
+  logoPreview = signal<string | null>(null);
+  previousTeam = signal<{ id: string; season_id: string; color: string | null } | null>(null);
+  submitState = signal<'idle' | 'loading' | 'error'>('idle');
+  errorMsg = signal<string | null>(null);
 
   previousLogoUrl = computed(() => {
     const prev = this.previousTeam();
@@ -35,17 +54,23 @@ export class CreateTeamComponent implements OnInit {
 
   displayedLogo = computed(() => this.logoPreview() ?? this.previousLogoUrl());
 
-  palette = computed(() => {
-    const prevColor = this.previousTeam()?.color;
-    if (!prevColor) return BASE_PALETTE;
-    return [prevColor, ...BASE_PALETTE.filter(c => c !== prevColor)];
+  readonly primaryPalette = PRIMARY_PALETTE;
+
+  secondaryOptions = computed(() =>
+    SECONDARY_PALETTE.filter((c) => (COLOR_COMBOS[this.color()] ?? SECONDARY_PALETTE).includes(c)),
+  );
+
+  effectiveSecondary = computed(() => {
+    const opts = this.secondaryOptions();
+    const cur = this.secondaryColor();
+    return opts.includes(cur) ? cur : opts[0];
   });
 
   ngOnInit(): void {
     this.api.get<any>('team/previous').subscribe({
-      next: prev => {
+      next: (prev) => {
         if (prev?.team_name) this.teamName.set(prev.team_name);
-        if (prev?.color)     this.color.set(prev.color);
+        if (prev?.color && PRIMARY_PALETTE.includes(prev.color)) this.color.set(prev.color);
         if (prev?.id && prev?.season_id) this.previousTeam.set(prev);
       },
       error: () => {},
@@ -61,7 +86,7 @@ export class CreateTeamComponent implements OnInit {
     if (!file) return;
     this.logoFile.set(file);
     const reader = new FileReader();
-    reader.onload = ev => this.logoPreview.set(ev.target?.result as string);
+    reader.onload = (ev) => this.logoPreview.set(ev.target?.result as string);
     reader.readAsDataURL(file);
     (e.target as HTMLInputElement).value = '';
   }
@@ -78,11 +103,12 @@ export class CreateTeamComponent implements OnInit {
     this.submitState.set('loading');
     this.errorMsg.set(null);
 
-    this.api.post<{ status: boolean; id: string }>('team', { team_name: name, color: this.color() })
+    this.api
+      .post<{ status: boolean; id: string }>('team', { team_name: name, color: this.color() })
       .subscribe({
         next: () => {
           this.api.get<any>('team/mine').subscribe({
-            next: team => this.uploadLogo(team),
+            next: (team) => this.uploadLogo(team),
             error: () => this.finalize(),
           });
         },
@@ -106,8 +132,8 @@ export class CreateTeamComponent implements OnInit {
     const oldUrl = this.previousLogoUrl();
     if (oldUrl) {
       fetch(oldUrl)
-        .then(r => r.blob())
-        .then(blob => {
+        .then((r) => r.blob())
+        .then((blob) => {
           const file = new File([blob], 'logo.png', { type: blob.type || 'image/png' });
           this.api.uploadTeamLogo(team.season_id, team.id, file).subscribe({
             next: () => this.finalize(),

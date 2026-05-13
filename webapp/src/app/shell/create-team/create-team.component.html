@@ -26,19 +26,35 @@
   </div>
 
   <div class="form-group">
-    <label class="form-label">Teamfarbe</label>
-    <div class="color-palette">
-      @for (hex of palette(); track hex) {
-        <button type="button"
-                class="color-swatch"
-                [class.color-swatch--active]="color() === hex"
-                [style.background-color]="hex"
-                (click)="color.set(hex)">
-        </button>
-      }
-      <label class="color-swatch color-swatch--custom" title="Eigene Farbe wählen">
-        <input type="color" [value]="color()" (input)="color.set($any($event.target).value)" />
-      </label>
+    <label class="form-label">Teamfarben</label>
+    <div class="color-picker">
+      <div class="color-list">
+        @for (hex of primaryPalette; track hex) {
+          <button type="button"
+                  class="color-swatch"
+                  [class.color-swatch--active]="color() === hex"
+                  [style.background-color]="hex"
+                  (click)="color.set(hex)">
+          </button>
+        }
+      </div>
+
+      <div class="color-preview">
+        <div class="color-bubble color-bubble--primary" [style.background-color]="color()"></div>
+        <div class="color-bubble color-bubble--secondary" [style.background-color]="effectiveSecondary()"></div>
+      </div>
+
+      <div class="color-list">
+        @for (hex of secondaryOptions(); track hex) {
+          <button type="button"
+                  class="color-swatch"
+                  [class.color-swatch--active]="effectiveSecondary() === hex"
+                  [class.color-swatch--light]="hex === '#ffffff'"
+                  [style.background-color]="hex"
+                  (click)="secondaryColor.set(hex)">
+          </button>
+        }
+      </div>
     </div>
   </div>
 
