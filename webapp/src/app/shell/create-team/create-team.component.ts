@@ -4,7 +4,7 @@ import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
 const BASE_PALETTE = [
-  '#e84118', '#0652dd', '#05c46b', '#ffd32a', '#1e272e', '#d2dae2',
+  '#e84118', '#0652dd', '#05c46b', '#62358f', '#ffd32a', '#1e272e', '#d2dae2',
 ];
 
 @Component({
