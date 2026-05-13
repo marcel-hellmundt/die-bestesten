@@ -20,6 +20,7 @@ export class BottomSheetComponent {
 
   onHandleTouchMove(e: TouchEvent): void {
     if (!this._dragging) return;
+    if (this.service.current()?.config.closeable === false) return;
     if (e.touches[0].clientY - this._dragStartY > 60) {
       this._dragging = false;
       this.service.close();

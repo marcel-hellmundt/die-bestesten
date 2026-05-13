@@ -8,6 +8,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { IconComponent } from '../core/icon/icon.component';
 import { AchievementNotificationComponent } from './achievement-notification/achievement-notification.component';
 import { BottomSheetComponent } from './bottom-sheet/bottom-sheet.component';
+import { CreateTeamComponent } from './create-team/create-team.component';
 
 const routes: Routes = [
   {
@@ -30,7 +31,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent],
+  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent, CreateTeamComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes)

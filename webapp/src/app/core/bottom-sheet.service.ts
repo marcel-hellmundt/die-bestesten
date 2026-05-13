@@ -2,6 +2,7 @@ import { Injectable, TemplateRef, computed, signal } from '@angular/core';
 
 export interface BottomSheetConfig {
   title?: string;
+  closeable?: boolean;
 }
 
 interface BottomSheetState {

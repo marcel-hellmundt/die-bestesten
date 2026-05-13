@@ -126,6 +126,8 @@ GET      /team_rating          — ?season_id → { matchday, ratings[], sds_pla
 GET      /team_rating/season   — ?season_id → aggregierte Saisontabelle aller Teams, sortiert nach Punkten — Auth
 GET      /team/mine            — Eigenes Team der aktiven Saison {id, team_name, season_id, color}; 404 wenn kein Team — Auth
 GET      /team/:id             — Team per ID (manager_name, alias, total_points, matchdays_played) — Auth
+POST     /team                 — {team_name, color?} → {id}; 409 wenn bereits Team vorhanden — Auth
+GET      /team/previous        — Letztes Team aus Vorsaison {id,team_name,color,season_id}; 404 wenn keines — Auth
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} oder {first_name} allein ohne Passwort — Auth
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin

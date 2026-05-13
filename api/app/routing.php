@@ -491,6 +491,17 @@ class Routing
                         'path_params' => [':id' => 'UUID des Teams'],
                         'query_params' => ['include_ratings' => '1 → ratings[] anhängen'],
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/team',
+                        'description' => 'Team für die aktive Saison anlegen — {team_name, color?} → {id}; 409 wenn Manager bereits ein Team hat — Auth',
+                        'body' => ['team_name' => 'string (required)', 'color' => '#rrggbb hex (optional)'],
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/team/previous',
+                        'description' => 'Letztes Team des eingeloggten Managers aus einer Vorsaison — {id,team_name,color,season_id}; 404 wenn kein Vorsaison-Team vorhanden — Auth',
+                    ],
                 ],
             ]),
 

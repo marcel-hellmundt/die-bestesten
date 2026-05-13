@@ -43,6 +43,16 @@ export class ApiService {
     return this.http.post(`${environment.imageApiUrl}/club/`, formData, { headers });
   }
 
+  uploadTeamLogo(seasonId: string, teamId: string, photo: File): Observable<any> {
+    const token = this.auth.getToken();
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    const formData = new FormData();
+    formData.append('season_id', seasonId);
+    formData.append('team_id', teamId);
+    formData.append('image', photo);
+    return this.http.post(`${environment.imageApiUrl}/team/`, formData, { headers });
+  }
+
   delete<T>(path: string, body: unknown = {}): Observable<T> {
     const token = this.auth.getToken();
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;

@@ -278,6 +278,41 @@ trait ManagerTrait
         return $q->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function teamExistsForManagerActiveSeason(string $managerId): bool
+    {
+        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $activeSeasonId = $seasonQ->fetchColumn();
+        if (!$activeSeasonId) return false;
+        $q = $this->con_league->prepare(
+            "SELECT COUNT(*) FROM team WHERE manager_id = :m AND season_id = :s"
+        );
+        $q->execute([':m' => $managerId, ':s' => $activeSeasonId]);
+        return (int) $q->fetchColumn() > 0;
+    }
+
+    public function createTeam(string $id, string $managerId, string $teamName, ?string $color): void
+    {
+        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $activeSeasonId = $seasonQ->fetchColumn();
+        $q = $this->con_league->prepare(
+            "INSERT INTO team (id, manager_id, season_id, team_name, color) VALUES (:id, :m, :s, :name, :color)"
+        );
+        $q->execute([':id' => $id, ':m' => $managerId, ':s' => $activeSeasonId, ':name' => $teamName, ':color' => $color]);
+    }
+
+    public function getPreviousTeam(string $managerId): array|false
+    {
+        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $activeSeasonId = $seasonQ->fetchColumn();
+        $q = $this->con_league->prepare(
+            "SELECT id, team_name, color, season_id FROM team
+             WHERE manager_id = :m AND season_id != :s
+             ORDER BY season_id DESC LIMIT 1"
+        );
+        $q->execute([':m' => $managerId, ':s' => $activeSeasonId ?: '']);
+        return $q->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function getTeamRatings(string $teamId): array
     {
         // Use window functions to compute placement and fine across all teams per matchday
