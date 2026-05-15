@@ -23,7 +23,7 @@ trait OfferTrait
         $playerMap = [];
         if (!empty($playerIds)) {
             $activeSeasonId = $this->con->query(
-                "SELECT id FROM season ORDER BY start_date DESC LIMIT 1"
+                "SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1"
             )->fetchColumn();
 
             $ph  = implode(',', array_fill(0, count($playerIds), '?'));
@@ -134,7 +134,7 @@ trait OfferTrait
         $seasonId = $window['season_id'];
 
         // 2. Validate player is free (not in any active team this season)
-        $sQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $sQ = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
         $activeSeasonId = $sQ->fetchColumn();
         $aq = $this->con_league->prepare(
             "SELECT pit.id FROM player_in_team pit
@@ -455,7 +455,7 @@ trait OfferTrait
         $playerIds      = array_unique(array_column($rows, 'player_id'));
         $pph            = implode(',', array_fill(0, count($playerIds), '?'));
         $activeSeasonId = $this->con->query(
-            "SELECT id FROM season ORDER BY start_date DESC LIMIT 1"
+            "SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1"
         )->fetchColumn();
 
         $pq = $this->con->prepare(

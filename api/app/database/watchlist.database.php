@@ -5,7 +5,7 @@ trait WatchlistTrait
     public function getWatchlist(string $teamId): array
     {
         $seasonId = $this->con->query(
-            "SELECT id FROM season ORDER BY start_date DESC LIMIT 1"
+            "SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1"
         )->fetchColumn();
 
         $q = $this->con_league->prepare(

@@ -9,7 +9,7 @@ trait PlayerInSeasonTrait
     public function getAvailablePlayers(?string $seasonId): array
     {
         if (!$seasonId) {
-            $row = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $row = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
             if (!$row) return ['players' => []];
             $seasonId = $row['id'];
         }
@@ -98,7 +98,7 @@ trait PlayerInSeasonTrait
     public function getBundesligaPlayerCount(?string $seasonId): int
     {
         if (!$seasonId) {
-            $stmt = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+            $stmt = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
             $row  = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$row) return 0;
             $seasonId = $row['id'];
