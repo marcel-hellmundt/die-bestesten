@@ -295,33 +295,38 @@ trait ManagerTrait
             $allPlayerIds[] = $row['player_id'];
         }
 
-        // Get positions from global DB
+        // Get positions + prices from global DB
         $positions = [];
+        $prices    = [];
         if (!empty($allPlayerIds)) {
             $allPlayerIds = array_unique($allPlayerIds);
             $pp = implode(',', array_fill(0, count($allPlayerIds), '?'));
             $pisQ = $this->con->prepare(
-                "SELECT player_id, position FROM player_in_season WHERE player_id IN ($pp) AND season_id = ?"
+                "SELECT player_id, position, price FROM player_in_season WHERE player_id IN ($pp) AND season_id = ?"
             );
             $pisQ->execute([...$allPlayerIds, $seasonId]);
             foreach ($pisQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $positions[$row['player_id']] = $row['position'];
+                $prices[$row['player_id']]    = (float) $row['price'];
             }
         }
 
-        // Validate each squad: minimums GK≥1 DEF≥5 MID≥5 FWD≥3
+        // Validate each squad: minimums GK≥1 DEF≥5 MID≥5 FWD≥3; sum total_value
         $sqMin = ['GOALKEEPER' => 1, 'DEFENDER' => 5, 'MIDFIELDER' => 5, 'FORWARD' => 3];
         foreach ($teams as &$team) {
-            $counts = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
+            $counts     = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
+            $totalValue = 0.0;
             foreach ($teamPlayerIds[$team['id']] as $pid) {
                 $pos = $positions[$pid] ?? null;
                 if ($pos && isset($counts[$pos])) $counts[$pos]++;
+                $totalValue += $prices[$pid] ?? 0.0;
             }
             $valid = true;
             foreach ($sqMin as $pos => $min) {
                 if ($counts[$pos] < $min) { $valid = false; break; }
             }
             $team['squad_valid'] = $valid;
+            $team['total_value'] = $totalValue;
         }
         unset($team);
 

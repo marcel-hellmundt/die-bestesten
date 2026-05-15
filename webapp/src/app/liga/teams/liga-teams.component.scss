@@ -125,3 +125,12 @@
   font-size: $font-xs;
   color: $color-text-muted;
 }
+
+.team-card__value {
+  position: absolute;
+  bottom: $space-2;
+  right: $space-2;
+  font-size: $font-xs;
+  color: $color-text-muted;
+  opacity: 0.6;
+}

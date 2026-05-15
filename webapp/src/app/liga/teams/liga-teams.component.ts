@@ -16,6 +16,7 @@ interface LigaTeam {
   manager_name: string;
   alias: string | null;
   squad_valid: boolean;
+  total_value: number;
 }
 
 @Component({
@@ -74,6 +75,12 @@ export class LigaTeamsComponent {
 
   managerPhotoUrl(t: LigaTeam): string {
     return `${environment.imageApiUrl}/img/manager/${t.manager_id}.jpg`;
+  }
+
+  formatValue(v: number): string {
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.', ',') + ' Mio. €';
+    if (v >= 1_000)     return (v / 1_000).toFixed(0) + ' Tsd. €';
+    return v.toLocaleString('de-DE') + ' €';
   }
 
   navigate(teamId: string): void {
