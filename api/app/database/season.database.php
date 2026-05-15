@@ -18,7 +18,7 @@ trait SeasonTrait
 
     public function getActiveSeason(): array|false
     {
-        $query = $this->con->prepare("SELECT * FROM season ORDER BY start_date DESC LIMIT 1");
+        $query = $this->con->prepare("SELECT * FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
         $query->execute();
         return $query->fetch(PDO::FETCH_ASSOC);
     }

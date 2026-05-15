@@ -335,7 +335,7 @@ trait ManagerTrait
 
     public function getMyTeamForActiveSeason(string $managerId): array|false
     {
-        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $seasonQ = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
         $activeSeasonId = $seasonQ->fetchColumn();
         if (!$activeSeasonId) return false;
 
@@ -350,7 +350,7 @@ trait ManagerTrait
 
     public function teamExistsForManagerActiveSeason(string $managerId): bool
     {
-        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $seasonQ = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
         $activeSeasonId = $seasonQ->fetchColumn();
         if (!$activeSeasonId) return false;
         $q = $this->con_league->prepare(
@@ -362,7 +362,7 @@ trait ManagerTrait
 
     public function createTeam(string $id, string $managerId, string $teamName, ?string $color, ?string $colorSecondary): void
     {
-        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $seasonQ = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
         $activeSeasonId = $seasonQ->fetchColumn();
         $q = $this->con_league->prepare(
             "INSERT INTO team (id, manager_id, season_id, team_name, color, color_secondary) VALUES (:id, :m, :s, :name, :color, :cs)"
@@ -372,7 +372,7 @@ trait ManagerTrait
 
     public function isTeamNameTaken(string $teamName): bool
     {
-        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $seasonQ = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
         $activeSeasonId = $seasonQ->fetchColumn();
         if (!$activeSeasonId) return false;
         $q = $this->con_league->prepare(
@@ -384,7 +384,7 @@ trait ManagerTrait
 
     public function getPreviousTeam(string $managerId): array|false
     {
-        $seasons = $this->con->query("SELECT id FROM season ORDER BY start_date DESC")->fetchAll(PDO::FETCH_COLUMN);
+        $seasons = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC")->fetchAll(PDO::FETCH_COLUMN);
         if (count($seasons) < 2) return false;
 
         $prevSeasons  = array_slice($seasons, 1);
