@@ -487,6 +487,12 @@ class Routing
                 'endpoints' => [
                     [
                         'method' => 'GET',
+                        'path' => '/team',
+                        'description' => 'Alle Teams einer Saison — gibt [{id,team_name,color,color_secondary,season_id,manager_id,manager_name,alias}] sortiert nach team_name zurück — Auth',
+                        'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
+                    ],
+                    [
+                        'method' => 'GET',
                         'path' => '/team/mine',
                         'description' => 'Eigenes Team der aktiven Saison — gibt { id, team_name, season_id, color } zurück; 404 wenn kein Team vorhanden — Auth',
                     ],

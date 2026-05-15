@@ -6,7 +6,14 @@ class TeamController extends _BaseController
 
     protected function get(): mixed
     {
-        if (!$this->id) return $this->methodNotAllowed();
+        if (!$this->id) {
+            $seasonId = $this->params['season_id'] ?? null;
+            if (!$seasonId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'season_id required'];
+            }
+            return $this->db->getTeamsBySeason($seasonId);
+        }
 
         if ($this->id === 'check-name') {
             $name = trim($this->params['name'] ?? '');

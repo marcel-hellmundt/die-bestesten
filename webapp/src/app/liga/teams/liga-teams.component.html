@@ -1,0 +1,56 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (teams().length === 0) {
+  <p class="state-msg">Noch keine Teams in dieser Saison.</p>
+} @else {
+  <div class="teams-grid">
+    @for (t of teams(); track t.id) {
+      <div class="team-card row-link" (click)="navigate(t.id)">
+        <div class="team-card__logo-wrap">
+          @if (!logoFailed(t.id)) {
+            <img
+              class="team-card__logo"
+              [src]="teamLogoUrl(t)"
+              (error)="onLogoError(t.id)"
+              alt=""
+            />
+          } @else {
+            <div class="team-card__logo-placeholder"
+                 [style.background-color]="t.color ?? '#888'"></div>
+          }
+        </div>
+
+        <div class="team-card__colors">
+          <span class="color-bubble"
+                [style.background-color]="t.color ?? '#888'"></span>
+          @if (t.color_secondary) {
+            <span class="color-bubble"
+                  [style.background-color]="t.color_secondary"></span>
+          }
+        </div>
+
+        <div class="team-card__name">{{ t.team_name }}</div>
+
+        <div class="team-card__manager">
+          <div class="manager-avatar">
+            @if (!managerFailed(t.manager_id)) {
+              <img
+                class="manager-avatar__img"
+                [src]="managerPhotoUrl(t)"
+                (error)="onManagerError(t.manager_id)"
+                alt=""
+              />
+            } @else {
+              <span class="manager-avatar__initials">
+                {{ t.manager_name.charAt(0).toUpperCase() }}
+              </span>
+            }
+          </div>
+          <span class="manager-name">{{ t.alias ?? t.manager_name }}</span>
+        </div>
+      </div>
+    }
+  </div>
+}

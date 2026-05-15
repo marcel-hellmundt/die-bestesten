@@ -1,0 +1,97 @@
+@use '../../../styles/variables' as *;
+
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: $space-4;
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-5 $space-4;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  cursor: pointer;
+  text-align: center;
+}
+
+.team-card__logo-wrap {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-card__logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.team-card__logo-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: $radius-md;
+}
+
+.team-card__colors {
+  display: flex;
+  gap: $space-2;
+  justify-content: center;
+}
+
+.color-bubble {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.team-card__name {
+  font-weight: $font-weight-semibold;
+  font-size: $font-sm;
+  color: $color-text;
+  line-height: 1.3;
+}
+
+.team-card__manager {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.manager-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: $color-surface-alt;
+  border: 1px solid $color-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.manager-avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.manager-avatar__initials {
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: $color-text-muted;
+}
+
+.manager-name {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}

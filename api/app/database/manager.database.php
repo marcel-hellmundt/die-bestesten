@@ -263,6 +263,20 @@ trait ManagerTrait
         return $q->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function getTeamsBySeason(string $seasonId): array
+    {
+        $q = $this->con_league->prepare(
+            "SELECT t.id, t.team_name, t.color, t.color_secondary, t.season_id,
+                    t.manager_id, m.manager_name, m.alias
+             FROM team t
+             JOIN manager m ON m.id = t.manager_id
+             WHERE t.season_id = :s
+             ORDER BY t.team_name"
+        );
+        $q->execute([':s' => $seasonId]);
+        return $q->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getMyTeamForActiveSeason(string $managerId): array|false
     {
         $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
