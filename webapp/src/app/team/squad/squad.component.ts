@@ -131,8 +131,8 @@ export class SquadComponent {
 
   formatPrice(price: number | null): string {
     if (price == null) return '—';
-    if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + ' Mio.';
-    if (price >= 1_000)     return (price / 1_000).toFixed(0) + ' Tsd.';
-    return price.toString();
+    if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + ' Mio. €';
+    if (price >= 1_000)     return (price / 1_000).toFixed(0) + ' Tsd. €';
+    return price.toLocaleString('de-DE') + ' €';
   }
 }
