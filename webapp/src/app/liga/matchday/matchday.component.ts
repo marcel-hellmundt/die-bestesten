@@ -19,9 +19,9 @@ export class MatchdayComponent {
   private router = inject(Router);
   cache          = inject(DataCacheService);
 
-  // Seasons sorted newest first for dropdown
+  // Seasons sorted newest first for dropdown (future seasons excluded)
   seasons = computed(() =>
-    [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
+    [...this.cache.startedSeasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
   );
 
   // Default: newest season

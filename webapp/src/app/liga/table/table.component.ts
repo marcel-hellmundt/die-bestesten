@@ -20,9 +20,9 @@ export class TableComponent {
 
   isLoggedIn = computed(() => this.auth.isLoggedIn());
 
-  // Seasons sorted newest first
+  // Seasons sorted newest first (future seasons excluded)
   private seasons = computed(() =>
-    [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
+    [...this.cache.startedSeasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
   );
 
   selectedIndex = signal(0);

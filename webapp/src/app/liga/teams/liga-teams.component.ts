@@ -30,12 +30,9 @@ export class LigaTeamsComponent {
   private cache  = inject(DataCacheService);
   private router = inject(Router);
 
-  seasons = computed(() => {
-    const today = new Date().toISOString().substring(0, 10);
-    return [...this.cache.seasons()]
-      .filter(s => s.start_date <= today)
-      .sort((a, b) => b.start_date.localeCompare(a.start_date));
-  });
+  seasons = computed(() =>
+    [...this.cache.startedSeasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
+  );
 
   selectedSeasonId = signal<string | null>(null);
 

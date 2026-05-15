@@ -17,7 +17,11 @@ export class DataCacheService {
   private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string; color: string | null; color_secondary: string | null } | null; loaded: boolean }>({ data: null, loaded: false });
   private squadState     = signal<{ players: any[]; loaded: boolean }>({ players: [], loaded: false });
 
-  seasons   = computed(() => this.seasonsState().data);
+  seasons        = computed(() => this.seasonsState().data);
+  startedSeasons = computed(() => {
+    const today = new Date().toISOString().substring(0, 10);
+    return this.seasonsState().data.filter(s => s.start_date <= today);
+  });
   divisions = computed(() => this.divisionsState().data);
   myTeamId     = computed(() => this.myTeamState().data?.id ?? null);
   myTeam       = computed(() => this.myTeamState().data);
