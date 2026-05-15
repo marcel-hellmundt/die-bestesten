@@ -175,18 +175,12 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const oldUrl = this.previousLogoUrl();
-    if (oldUrl) {
-      fetch(oldUrl)
-        .then((r) => r.blob())
-        .then((blob) => {
-          const file = new File([blob], 'logo.png', { type: blob.type || 'image/png' });
-          this.api.uploadTeamLogo(team.season_id, team.id, file).subscribe({
-            next: () => this.finalize(),
-            error: () => this.finalize(),
-          });
-        })
-        .catch(() => this.finalize());
+    const prev = this.previousTeam();
+    if (prev) {
+      this.api.takeoverTeamLogo(team.season_id, team.id, prev.season_id, prev.id).subscribe({
+        next: () => this.finalize(),
+        error: () => this.finalize(),
+      });
       return;
     }
 

@@ -53,6 +53,18 @@ export class ApiService {
     return this.http.post(`${environment.imageApiUrl}/team/`, formData, { headers });
   }
 
+  takeoverTeamLogo(seasonId: string, teamId: string, lastSeasonId: string, lastTeamId: string): Observable<any> {
+    const token = this.auth.getToken();
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    const formData = new FormData();
+    formData.append('season_id', seasonId);
+    formData.append('team_id', teamId);
+    formData.append('takeover', 'true');
+    formData.append('last_season_id', lastSeasonId);
+    formData.append('last_team_id', lastTeamId);
+    return this.http.post(`${environment.imageApiUrl}/team/`, formData, { headers });
+  }
+
   delete<T>(path: string, body: unknown = {}): Observable<T> {
     const token = this.auth.getToken();
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
