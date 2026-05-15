@@ -300,6 +300,18 @@ trait ManagerTrait
         $q->execute([':id' => $id, ':m' => $managerId, ':s' => $activeSeasonId, ':name' => $teamName, ':color' => $color]);
     }
 
+    public function isTeamNameTaken(string $teamName): bool
+    {
+        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
+        $activeSeasonId = $seasonQ->fetchColumn();
+        if (!$activeSeasonId) return false;
+        $q = $this->con_league->prepare(
+            "SELECT COUNT(*) FROM team WHERE team_name = :name AND season_id = :s"
+        );
+        $q->execute([':name' => $teamName, ':s' => $activeSeasonId]);
+        return (int) $q->fetchColumn() > 0;
+    }
+
     public function getPreviousTeam(string $managerId): array|false
     {
         $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");

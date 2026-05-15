@@ -502,6 +502,12 @@ class Routing
                         'path' => '/team/previous',
                         'description' => 'Letztes Team des eingeloggten Managers aus einer Vorsaison — {id,team_name,color,season_id}; 404 wenn kein Vorsaison-Team vorhanden — Auth',
                     ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/team/check-name',
+                        'description' => 'Prüft ob ein Teamname in der aktiven Saison verfügbar ist — { available: bool }; 400 wenn Name < 3 Zeichen — Auth',
+                        'query_params' => ['name' => 'Teamname (min. 3 Zeichen)'],
+                    ],
                 ],
             ]),
 

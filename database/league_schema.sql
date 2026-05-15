@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS team (
     color        VARCHAR(7)   DEFAULT NULL,         -- Hex-Farbe, z.B. "#3a86ff"
     created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id),
-    UNIQUE KEY uk_team_manager_season (manager_id, season_id)
+    UNIQUE KEY uk_team_manager_season (manager_id, season_id),
+    UNIQUE KEY uk_team_name_season (team_name, season_id)
 );
 
 -- Tabelle: transaction (Einnahmen/Ausgaben pro Team; aktuelles Budget = SUM(amount))

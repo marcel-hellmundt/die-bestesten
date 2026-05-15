@@ -2,14 +2,29 @@
 
   <div class="form-group">
     <label class="form-label" for="teamName">Teamname</label>
-    <input id="teamName"
-           class="input"
-           type="text"
-           [value]="teamName()"
-           (input)="teamName.set($any($event.target).value)"
-           placeholder="z.B. FC Tollhaus"
-           maxlength="100"
-           required />
+    <div class="input-with-status">
+      <input id="teamName"
+             class="input"
+             type="text"
+             [value]="teamName()"
+             (input)="onNameInput($any($event.target).value)"
+             placeholder="z.B. FC Tollhaus"
+             maxlength="100"
+             minlength="3"
+             required />
+      @if (nameStatus() === 'checking') {
+        <span class="name-status name-status--checking">↻</span>
+      }
+      @if (nameStatus() === 'valid') {
+        <span class="name-status name-status--valid">✓</span>
+      }
+      @if (nameStatus() === 'invalid') {
+        <span class="name-status name-status--invalid">✗</span>
+      }
+    </div>
+    @if (nameStatus() === 'invalid') {
+      <p class="field-error">Dieser Teamname ist bereits vergeben</p>
+    }
   </div>
 
   <div class="form-group">
@@ -64,7 +79,7 @@
 
   <button type="submit"
           class="btn btn-primary btn-full"
-          [disabled]="!teamName().trim() || submitState() === 'loading'">
+          [disabled]="nameStatus() !== 'valid' || submitState() === 'loading'">
     @if (submitState() === 'loading') {
       Team wird erstellt…
     } @else {

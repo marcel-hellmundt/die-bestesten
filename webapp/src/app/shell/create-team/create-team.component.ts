@@ -1,27 +1,28 @@
-import { Component, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, ViewChild, computed, inject, signal } from '@angular/core';
+import { Subject, Subscription, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
 const PRIMARY_PALETTE = [
-  '#e74c3c',
+  '#ff3f34',
   '#3867d6',
-  '#2ecc71',
-  '#f1c40f',
+  '#20bf6b',
+  '#fed330',
   '#9b59b6',
-  '#e67e22',
+  '#f79f1f',
   '#1e272e',
 ];
 
-const SECONDARY_PALETTE = ['#ffffff', '#1e272e', '#e74c3c', '#3867d6', '#f1c40f'];
+const SECONDARY_PALETTE = ['#ffffff', '#1e272e', '#ff3f34', '#3867d6', '#fed330'];
 
 const COLOR_COMBOS: Record<string, string[]> = {
-  '#e74c3c': ['#ffffff', '#1e272e', '#f1c40f'],
-  '#3867d6': ['#ffffff', '#1e272e', '#f1c40f'],
-  '#2ecc71': ['#ffffff'],
-  '#f1c40f': ['#1e272e'],
+  '#ff3f34': ['#ffffff', '#1e272e', '#fed330'],
+  '#3867d6': ['#ffffff', '#1e272e', '#fed330'],
+  '#20bf6b': ['#ffffff'],
+  '#fed330': ['#1e272e'],
   '#9b59b6': ['#ffffff'],
-  '#e67e22': ['#ffffff', '#1e272e'],
+  '#f79f1f': ['#ffffff', '#1e272e'],
   '#1e272e': ['#ffffff'],
 };
 
@@ -31,7 +32,7 @@ const COLOR_COMBOS: Record<string, string[]> = {
   templateUrl: './create-team.component.html',
   styleUrl: './create-team.component.scss',
 })
-export class CreateTeamComponent implements OnInit {
+export class CreateTeamComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private cache = inject(DataCacheService);
   private bs = inject(BottomSheetService);
@@ -39,13 +40,17 @@ export class CreateTeamComponent implements OnInit {
   @ViewChild('logoInput') logoInput!: ElementRef<HTMLInputElement>;
 
   teamName = signal('');
-  color = signal('#e74c3c');
+  nameStatus = signal<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
+  color = signal('#ff3f34');
   secondaryColor = signal('#ffffff');
   logoFile = signal<File | null>(null);
   logoPreview = signal<string | null>(null);
   previousTeam = signal<{ id: string; season_id: string; color: string | null } | null>(null);
   submitState = signal<'idle' | 'loading' | 'error'>('idle');
   errorMsg = signal<string | null>(null);
+
+  private nameCheck$ = new Subject<string>();
+  private nameSub!: Subscription;
 
   previousLogoUrl = computed(() => {
     const prev = this.previousTeam();
@@ -67,14 +72,49 @@ export class CreateTeamComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.nameSub = this.nameCheck$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap((name) => {
+          if (name.length < 3) {
+            this.nameStatus.set('idle');
+            return of(null);
+          }
+          this.nameStatus.set('checking');
+          return this.api.get<{ available: boolean }>(
+            `team/check-name?name=${encodeURIComponent(name)}`,
+          );
+        }),
+      )
+      .subscribe({
+        next: (result) => {
+          if (result === null) return;
+          this.nameStatus.set(result.available ? 'valid' : 'invalid');
+        },
+        error: () => this.nameStatus.set('idle'),
+      });
+
     this.api.get<any>('team/previous').subscribe({
       next: (prev) => {
-        if (prev?.team_name) this.teamName.set(prev.team_name);
+        if (prev?.team_name) {
+          this.teamName.set(prev.team_name);
+          this.nameCheck$.next(prev.team_name);
+        }
         if (prev?.color && PRIMARY_PALETTE.includes(prev.color)) this.color.set(prev.color);
         if (prev?.id && prev?.season_id) this.previousTeam.set(prev);
       },
       error: () => {},
     });
+  }
+
+  ngOnDestroy(): void {
+    this.nameSub?.unsubscribe();
+  }
+
+  onNameInput(value: string): void {
+    this.teamName.set(value);
+    this.nameCheck$.next(value.trim());
   }
 
   onLogoClick(): void {
@@ -93,7 +133,7 @@ export class CreateTeamComponent implements OnInit {
 
   submit(): void {
     const name = this.teamName().trim();
-    if (!name) return;
+    if (!name || this.nameStatus() !== 'valid') return;
 
     if (!this.logoFile() && !this.previousTeam()) {
       this.errorMsg.set('Bitte lade ein Logo hoch');

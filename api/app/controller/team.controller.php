@@ -8,6 +8,15 @@ class TeamController extends _BaseController
     {
         if (!$this->id) return $this->methodNotAllowed();
 
+        if ($this->id === 'check-name') {
+            $name = trim($this->params['name'] ?? '');
+            if (strlen($name) < 3) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'name must be at least 3 characters'];
+            }
+            return ['available' => !$this->db->isTeamNameTaken($name)];
+        }
+
         if ($this->id === 'previous') {
             $team = $this->db->getPreviousTeam($GLOBALS['auth_manager_id']);
             if (!$team) {
