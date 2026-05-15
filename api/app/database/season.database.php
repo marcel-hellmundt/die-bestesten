@@ -23,6 +23,12 @@ trait SeasonTrait
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function createSeason(string $id, string $startDate): void
+    {
+        $q = $this->con->prepare("INSERT INTO season (id, start_date) VALUES (:id, :start_date)");
+        $q->execute([':id' => $id, ':start_date' => $startDate]);
+    }
+
     public function migrateSeason(): array
     {
         $rows = $this->con_old->query("SELECT season_id, start_date FROM season")

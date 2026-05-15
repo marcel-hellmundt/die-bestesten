@@ -121,6 +121,12 @@ class Routing
                         'description' => 'Eine Saison per ID',
                         'path_params' => [':id' => 'UUID der Saison'],
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/season',
+                        'description' => 'Neue Saison anlegen — {start_date} → {id}; 500 bei doppeltem start_date (UNIQUE) — Admin',
+                        'body' => ['start_date' => 'YYYY-MM-DD (erforderlich)'],
+                    ],
                 ],
             ]),
 

@@ -11,6 +11,7 @@
     {{ sanityState() === 'loading' ? 'Prüft…' : 'Sanity Check' }}
   </button>
   @if (isAdmin()) {
+    <button class="btn" (click)="openCreateSeason()">+ Neue Saison</button>
     <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
       {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
     </button>
@@ -22,6 +23,27 @@
     }
   }
 </div>
+
+@if (createSeasonOpen()) {
+  <div class="create-season-bar">
+    <label class="create-season-label">Startdatum</label>
+    <input
+      class="input"
+      type="date"
+      [value]="createSeasonDate()"
+      (input)="createSeasonDate.set($any($event.target).value)"
+    />
+    <button class="btn" (click)="cancelCreateSeason()">Abbrechen</button>
+    <button
+      class="btn btn-primary"
+      [disabled]="!createSeasonDate() || createSeasonState() === 'loading'"
+      (click)="submitCreateSeason()"
+    >{{ createSeasonState() === 'loading' ? 'Erstellt…' : 'Saison erstellen' }}</button>
+    @if (createSeasonState() === 'error') {
+      <span class="state-msg state-msg--error">{{ createSeasonError() }}</span>
+    }
+  </div>
+}
 
 @if (sanityState() === 'done') {
   <div class="sanity-panel" [class.sanity-panel--ok]="sanityWarnings().length === 0">

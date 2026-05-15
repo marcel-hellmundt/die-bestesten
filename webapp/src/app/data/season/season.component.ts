@@ -268,6 +268,39 @@ export class SeasonDataComponent {
     });
   }
 
+  createSeasonOpen  = signal(false);
+  createSeasonDate  = signal('');
+  createSeasonState = signal<'idle' | 'loading' | 'error'>('idle');
+  createSeasonError = signal('');
+
+  openCreateSeason(): void {
+    this.createSeasonOpen.set(true);
+    this.createSeasonDate.set('');
+    this.createSeasonState.set('idle');
+    this.createSeasonError.set('');
+  }
+
+  cancelCreateSeason(): void {
+    this.createSeasonOpen.set(false);
+  }
+
+  submitCreateSeason(): void {
+    const date = this.createSeasonDate();
+    if (!date) return;
+    this.createSeasonState.set('loading');
+    this.api.post<any>('season', { start_date: date }).subscribe({
+      next: () => {
+        this.createSeasonOpen.set(false);
+        this.createSeasonState.set('idle');
+        this.reload$.next();
+      },
+      error: (err) => {
+        this.createSeasonState.set('error');
+        this.createSeasonError.set(err?.error?.message ?? 'Fehler beim Erstellen');
+      },
+    });
+  }
+
   migrate(): void {
     this.migrateState.set('loading');
     this.api.post<any>('season/migrate').pipe(

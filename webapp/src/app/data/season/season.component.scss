@@ -105,6 +105,25 @@
   flex-shrink: 0;
 }
 
+.create-season-bar {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+  padding: $space-3 $space-4;
+  background: $color-surface-alt;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  margin-bottom: $space-4;
+}
+
+.create-season-label {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
 .tw-form {
   display: flex;
   flex-direction: column;
