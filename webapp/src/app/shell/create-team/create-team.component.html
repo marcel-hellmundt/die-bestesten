@@ -28,12 +28,7 @@
   </div>
 
   <div class="form-group">
-    <label class="form-label">
-      Logo
-      @if (previousSeasonName() && !logoFile()) {
-        <span class="form-label-hint">aus Saison {{ previousSeasonName() }}</span>
-      }
-    </label>
+    <label class="form-label">Logo</label>
     <input #logoInput type="file" accept="image/*" class="sr-only" (change)="onLogoFileSelected($event)" />
     <div class="logo-upload" (click)="onLogoClick()">
       @if (displayedLogo()) {
@@ -46,12 +41,7 @@
   </div>
 
   <div class="form-group">
-    <label class="form-label">
-      Teamfarben
-      @if (previousSeasonName()) {
-        <span class="form-label-hint">aus Saison {{ previousSeasonName() }}</span>
-      }
-    </label>
+    <label class="form-label">Teamfarben</label>
     <div class="color-picker">
       <div class="color-list">
         @for (hex of primaryPalette; track hex) {

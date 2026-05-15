@@ -16,15 +16,6 @@
   font-size: $font-sm;
   font-weight: $font-weight-semibold;
   color: $color-text;
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-}
-
-.form-label-hint {
-  font-size: $font-xs;
-  font-weight: $font-weight-normal;
-  color: $color-text-muted;
 }
 
 .sr-only {
