@@ -379,15 +379,35 @@ trait ManagerTrait
 
     public function getPreviousTeam(string $managerId): array|false
     {
-        $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
-        $activeSeasonId = $seasonQ->fetchColumn();
+        $seasonsQ = $this->con->query("SELECT id, start_date FROM season ORDER BY start_date DESC");
+        $seasons  = $seasonsQ->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($seasons)) return false;
+
+        $activeSeasonId  = $seasons[0]['id'];
+        $prevSeasons     = array_slice($seasons, 1);
+        if (empty($prevSeasons)) return false;
+
+        $seasonIds        = array_column($prevSeasons, 'id');
+        $startDateById    = array_column($prevSeasons, 'start_date', 'id');
+        $placeholders     = implode(',', array_fill(0, count($seasonIds), '?'));
+
         $q = $this->con_league->prepare(
             "SELECT id, team_name, color, color_secondary, season_id FROM team
-             WHERE manager_id = :m AND season_id != :s
-             ORDER BY season_id DESC LIMIT 1"
+             WHERE manager_id = ? AND season_id IN ($placeholders)"
         );
-        $q->execute([':m' => $managerId, ':s' => $activeSeasonId ?: '']);
-        return $q->fetch(PDO::FETCH_ASSOC);
+        $q->execute(array_merge([$managerId], $seasonIds));
+        $teams = $q->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($teams)) return false;
+
+        $teamBySeason = array_column($teams, null, 'season_id');
+        foreach ($seasonIds as $sid) {
+            if (isset($teamBySeason[$sid])) {
+                $team = $teamBySeason[$sid];
+                $team['season_start_date'] = $startDateById[$sid];
+                return $team;
+            }
+        }
+        return false;
     }
 
     public function getTeamRatings(string $teamId): array

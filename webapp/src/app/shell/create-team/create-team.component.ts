@@ -1,4 +1,13 @@
-import { Component, ElementRef, OnInit, OnDestroy, ViewChild, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Subject, Subscription, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
@@ -17,8 +26,8 @@ const PRIMARY_PALETTE = [
 const SECONDARY_PALETTE = ['#ffffff', '#1e272e', '#ff3f34', '#3867d6', '#fed330'];
 
 const COLOR_COMBOS: Record<string, string[]> = {
-  '#ff3f34': ['#ffffff', '#1e272e', '#fed330'],
-  '#3867d6': ['#ffffff', '#1e272e', '#fed330'],
+  '#ff3f34': ['#ffffff', '#1e272e', '#3867d6', '#fed330'],
+  '#3867d6': ['#ffffff', '#1e272e', '#ff3f34', '#fed330'],
   '#20bf6b': ['#ffffff'],
   '#fed330': ['#1e272e'],
   '#9b59b6': ['#ffffff'],
@@ -45,7 +54,7 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
   secondaryColor = signal('#ffffff');
   logoFile = signal<File | null>(null);
   logoPreview = signal<string | null>(null);
-  previousTeam = signal<{ id: string; season_id: string; color: string | null } | null>(null);
+  previousTeam = signal<{ id: string; season_id: string; color: string | null; season_start_date?: string } | null>(null);
   submitState = signal<'idle' | 'loading' | 'error'>('idle');
   errorMsg = signal<string | null>(null);
 
@@ -55,6 +64,15 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
   previousLogoUrl = computed(() => {
     const prev = this.previousTeam();
     return prev ? `https://img.die-bestesten.de/img/team/${prev.season_id}/${prev.id}.png` : null;
+  });
+
+  previousSeasonName = computed(() => {
+    const prev = this.previousTeam();
+    if (!prev?.season_start_date) return null;
+    const year = parseInt(prev.season_start_date.substring(0, 4), 10);
+    const y1 = String(year % 100).padStart(2, '0');
+    const y2 = String((year + 1) % 100).padStart(2, '0');
+    return `${y1}/${y2}`;
   });
 
   displayedLogo = computed(() => this.logoPreview() ?? this.previousLogoUrl());
