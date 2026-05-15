@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, map, of, startWith } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -6,6 +6,7 @@ import { ApiService } from '../core/api.service';
 import { AuthService } from '../auth/auth.service';
 import { DataCacheService } from '../core/data-cache.service';
 import { NotificationService } from '../core/notification.service';
+import { environment } from '../../environments/environment';
 
 interface ManagerProfile {
   id: string;
@@ -27,6 +28,8 @@ export class SettingsComponent {
   private router    = inject(Router);
   private cache     = inject(DataCacheService);
   private notifSvc  = inject(NotificationService);
+
+  @ViewChild('photoInput') photoInput!: ElementRef<HTMLInputElement>;
 
   preferences    = this.notifSvc.preferences;
 
@@ -56,9 +59,14 @@ export class SettingsComponent {
   profileLoading = computed(() => this.profileState()?.loading ?? true);
   profileError   = computed(() => this.profileState()?.error ?? null);
 
-  managerId    = computed(() => this.auth.getManagerId());
-  avatarUrl    = computed(() => this.cache.managerPhotoUrl(this.managerId()));
-  avatarFailed = signal(false);
+  managerId      = computed(() => this.auth.getManagerId());
+  avatarFailed   = signal(false);
+  private avatarBust = signal(Date.now());
+  avatarUrl      = computed(() => {
+    const id = this.managerId();
+    return id ? `${environment.imageApiUrl}/img/manager/${id}.jpg?v=${this.avatarBust()}` : null;
+  });
+  photoState     = signal<'idle' | 'loading' | 'error'>('idle');
   initials     = computed(() => {
     const name = this.auth.getManagerName() ?? '';
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
@@ -133,6 +141,29 @@ export class SettingsComponent {
         this.deleteState.set('error');
         this.deleteError.set(err.error?.message ?? 'Fehler beim Löschen des Kontos');
       },
+    });
+  }
+
+  // Photo upload
+  triggerPhotoUpload(): void {
+    this.photoInput.nativeElement.click();
+  }
+
+  onPhotoSelected(e: Event): void {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    (e.target as HTMLInputElement).value = '';
+    const id = this.managerId();
+    if (!id) return;
+
+    this.photoState.set('loading');
+    this.api.uploadManagerPhoto(id, file).subscribe({
+      next: () => {
+        this.avatarFailed.set(false);
+        this.avatarBust.set(Date.now());
+        this.photoState.set('idle');
+      },
+      error: () => this.photoState.set('error'),
     });
   }
 }

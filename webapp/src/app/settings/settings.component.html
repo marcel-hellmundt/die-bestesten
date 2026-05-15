@@ -10,11 +10,30 @@
     <p class="state-msg state-msg--error">{{ profileError() }}</p>
   } @else if (profile(); as p) {
     <div class="profile-card">
-      <div class="profile-avatar">
+      <input #photoInput type="file" accept="image/*" class="hidden-input" (change)="onPhotoSelected($event)" />
+      <button
+        class="profile-avatar"
+        [class.profile-avatar--loading]="photoState() === 'loading'"
+        [disabled]="photoState() === 'loading'"
+        (click)="triggerPhotoUpload()"
+        title="Profilbild ändern"
+      >
         @if (avatarUrl() && !avatarFailed()) {
           <img [src]="avatarUrl()!" class="avatar-img" (error)="avatarFailed.set(true)" alt="" />
         } @else {
           <span class="avatar-initials">{{ initials() }}</span>
+        }
+        <div class="avatar-overlay">
+          @if (photoState() === 'loading') {
+            <span class="avatar-overlay__spinner"></span>
+          } @else {
+            <span class="avatar-overlay__icon">✎</span>
+          }
+        </div>
+      </button>
+      <div class="profile-photo-col">
+        @if (photoState() === 'error') {
+          <span class="photo-error">Upload fehlgeschlagen</span>
         }
       </div>
       <div class="profile-info">

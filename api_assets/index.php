@@ -96,7 +96,18 @@ if ($authorized['status']) {
 			} else {
 				move_uploaded_file($_FILES['image']['tmp_name'], $target);
 			}
-
+		} else if ($endpoint == 'manager') {
+			$manager_id = $_POST['manager_id'];
+			if ($manager_id !== $_SERVER['manager_id']) {
+				http_response_code(403);
+				echo json_encode(['status' => false, 'message' => 'Forbidden']);
+				exit;
+			}
+			$target = __DIR__ . '/img/manager/' . $manager_id . '.jpg';
+			if (!is_dir(dirname($target))) {
+				mkdir(dirname($target), 0755, true);
+			}
+			move_uploaded_file($_FILES['image']['tmp_name'], $target);
 		}
 
 
