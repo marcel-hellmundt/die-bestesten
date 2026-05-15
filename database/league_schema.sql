@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS team (
     manager_id   CHAR(36)     NOT NULL,
     season_id    CHAR(36)     NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
     team_name    VARCHAR(100) NOT NULL,
-    color        VARCHAR(7)   DEFAULT NULL,         -- Hex-Farbe, z.B. "#3a86ff"
+    color        VARCHAR(7)   DEFAULT NULL,         -- Primärfarbe, z.B. "#3a86ff"
+    color_secondary VARCHAR(7) DEFAULT NULL,       -- Sekundärfarbe; NULL = keine
     created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id),
     UNIQUE KEY uk_team_manager_season (manager_id, season_id),

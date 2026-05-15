@@ -102,6 +102,8 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
           this.nameCheck$.next(prev.team_name);
         }
         if (prev?.color && PRIMARY_PALETTE.includes(prev.color)) this.color.set(prev.color);
+        if (prev?.color_secondary && SECONDARY_PALETTE.includes(prev.color_secondary))
+          this.secondaryColor.set(prev.color_secondary);
         if (prev?.id && prev?.season_id) this.previousTeam.set(prev);
       },
       error: () => {},
@@ -144,7 +146,11 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
     this.errorMsg.set(null);
 
     this.api
-      .post<{ status: boolean; id: string }>('team', { team_name: name, color: this.color() })
+      .post<{ status: boolean; id: string }>('team', {
+        team_name: name,
+        color: this.color(),
+        color_secondary: this.effectiveSecondary(),
+      })
       .subscribe({
         next: () => {
           this.api.get<any>('team/mine').subscribe({

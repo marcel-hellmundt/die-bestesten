@@ -247,7 +247,7 @@ trait ManagerTrait
     public function getTeamById(string $id): array|false
     {
         $q = $this->con_league->prepare(
-            "SELECT t.id, t.season_id, t.team_name, t.color,
+            "SELECT t.id, t.season_id, t.team_name, t.color, t.color_secondary,
                     t.manager_id, m.manager_name, m.alias,
                     COALESCE(SUM(tr.points), 0) AS total_points,
                     COUNT(CASE WHEN tr.id IS NOT NULL AND tr.invalid = 0 THEN 1 END) AS matchdays_played,
@@ -256,7 +256,7 @@ trait ManagerTrait
              JOIN manager m ON m.id = t.manager_id
              LEFT JOIN team_rating tr ON tr.team_id = t.id
              WHERE t.id = :id
-             GROUP BY t.id, t.season_id, t.team_name, t.color, t.manager_id, m.manager_name, m.alias
+             GROUP BY t.id, t.season_id, t.team_name, t.color, t.color_secondary, t.manager_id, m.manager_name, m.alias
              LIMIT 1"
         );
         $q->execute([':id' => $id]);
@@ -270,7 +270,7 @@ trait ManagerTrait
         if (!$activeSeasonId) return false;
 
         $q = $this->con_league->prepare(
-            "SELECT id, team_name, season_id, color FROM team
+            "SELECT id, team_name, season_id, color, color_secondary FROM team
              WHERE manager_id = :manager_id AND season_id = :season_id
              LIMIT 1"
         );
@@ -290,14 +290,14 @@ trait ManagerTrait
         return (int) $q->fetchColumn() > 0;
     }
 
-    public function createTeam(string $id, string $managerId, string $teamName, ?string $color): void
+    public function createTeam(string $id, string $managerId, string $teamName, ?string $color, ?string $colorSecondary): void
     {
         $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
         $activeSeasonId = $seasonQ->fetchColumn();
         $q = $this->con_league->prepare(
-            "INSERT INTO team (id, manager_id, season_id, team_name, color) VALUES (:id, :m, :s, :name, :color)"
+            "INSERT INTO team (id, manager_id, season_id, team_name, color, color_secondary) VALUES (:id, :m, :s, :name, :color, :cs)"
         );
-        $q->execute([':id' => $id, ':m' => $managerId, ':s' => $activeSeasonId, ':name' => $teamName, ':color' => $color]);
+        $q->execute([':id' => $id, ':m' => $managerId, ':s' => $activeSeasonId, ':name' => $teamName, ':color' => $color, ':cs' => $colorSecondary]);
     }
 
     public function isTeamNameTaken(string $teamName): bool
@@ -317,7 +317,7 @@ trait ManagerTrait
         $seasonQ = $this->con->query("SELECT id FROM season ORDER BY start_date DESC LIMIT 1");
         $activeSeasonId = $seasonQ->fetchColumn();
         $q = $this->con_league->prepare(
-            "SELECT id, team_name, color, season_id FROM team
+            "SELECT id, team_name, color, color_secondary, season_id FROM team
              WHERE manager_id = :m AND season_id != :s
              ORDER BY season_id DESC LIMIT 1"
         );

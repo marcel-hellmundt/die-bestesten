@@ -50,9 +50,10 @@ class TeamController extends _BaseController
 
     protected function post(): mixed
     {
-        $body     = $this->body();
-        $teamName = trim($body['team_name'] ?? '');
-        $color    = $body['color'] ?? null;
+        $body           = $this->body();
+        $teamName       = trim($body['team_name'] ?? '');
+        $color          = $body['color'] ?? null;
+        $colorSecondary = $body['color_secondary'] ?? null;
 
         if (!$teamName) {
             http_response_code(400);
@@ -62,6 +63,10 @@ class TeamController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'color must be #rrggbb'];
         }
+        if ($colorSecondary !== null && !preg_match('/^#[0-9a-fA-F]{6}$/', $colorSecondary)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'color_secondary must be #rrggbb'];
+        }
 
         if ($this->db->teamExistsForManagerActiveSeason($GLOBALS['auth_manager_id'])) {
             http_response_code(409);
@@ -69,7 +74,7 @@ class TeamController extends _BaseController
         }
 
         $id = $this->generateGUID();
-        $this->db->createTeam($id, $GLOBALS['auth_manager_id'], $teamName, $color ?: null);
+        $this->db->createTeam($id, $GLOBALS['auth_manager_id'], $teamName, $color ?: null, $colorSecondary ?: null);
         http_response_code(201);
         return ['status' => true, 'id' => $id];
     }

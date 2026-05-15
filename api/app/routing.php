@@ -494,8 +494,8 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/team',
-                        'description' => 'Team für die aktive Saison anlegen — {team_name, color?} → {id}; 409 wenn Manager bereits ein Team hat — Auth',
-                        'body' => ['team_name' => 'string (required)', 'color' => '#rrggbb hex (optional)'],
+                        'description' => 'Team für die aktive Saison anlegen — {team_name, color?, color_secondary?} → {id}; 409 wenn Manager bereits ein Team hat — Auth',
+                        'body' => ['team_name' => 'string (required)', 'color' => '#rrggbb hex (optional)', 'color_secondary' => '#rrggbb hex (optional)'],
                     ],
                     [
                         'method' => 'GET',
