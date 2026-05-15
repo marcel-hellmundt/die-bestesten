@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal, toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragMove } from '@angular/cdk/drag-drop';
-import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
+import { catchError, combineLatest, filter, interval, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 
 interface LineupPlayer {
@@ -124,6 +124,22 @@ export class LineupComponent {
     if (!md) return false;
     const now = new Date();
     return now.toISOString().slice(0, 10) >= md.start_date && now < new Date(md.kickoff_date);
+  });
+
+  private tick = toSignal(interval(1000), { initialValue: 0 });
+
+  countdown = computed((): string | null => {
+    this.tick();
+    const md = this.matchday();
+    if (!md || !this.isEditable()) return null;
+    const diff = new Date(md.kickoff_date).getTime() - Date.now();
+    if (diff <= 0) return null;
+    const d = Math.floor(diff / 86_400_000);
+    const h = Math.floor((diff % 86_400_000) / 3_600_000);
+    const m = Math.floor((diff % 3_600_000) / 60_000);
+    const s = Math.floor((diff % 60_000) / 1_000);
+    return [d > 0 ? `${d}T` : null, `${h}H`, `${String(m).padStart(2,'0')}M`, `${String(s).padStart(2,'0')}S`]
+      .filter(Boolean).join(' ');
   });
 
   hoveredPlayer  = signal<LineupPlayer | null>(null);

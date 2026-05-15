@@ -565,6 +565,31 @@
 }
 
 // Matchday selector + saving indicator
+.kickoff-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-3 $space-4;
+  background: $color-surface-alt;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  text-align: center;
+}
+
+.countdown__time {
+  font-size: $font-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.countdown__label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
 .matchday-select-wrap {
   display: flex;
   align-items: center;
