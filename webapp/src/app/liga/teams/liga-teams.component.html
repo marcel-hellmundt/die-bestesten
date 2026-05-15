@@ -1,3 +1,17 @@
+@if (seasons().length > 1) {
+  <div class="season-bar">
+    <select
+      class="input season-select"
+      [value]="effectiveSeasonId()"
+      (change)="selectedSeasonId.set($any($event.target).value)"
+    >
+      @for (s of seasons(); track s.id) {
+        <option [value]="s.id">{{ s.displayName }}</option>
+      }
+    </select>
+  </div>
+}
+
 @if (loading()) {
   <p class="state-msg">Laden…</p>
 } @else if (error()) {
@@ -8,26 +22,32 @@
   <div class="teams-grid">
     @for (t of teams(); track t.id) {
       <div class="team-card row-link" (click)="navigate(t.id)">
+        @if (t.squad_valid) {
+          <span class="squad-badge squad-badge--valid">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 8.5L6.5 12L13 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        } @else {
+          <span class="squad-badge squad-badge--invalid">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4L12 12M12 4L4 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+        }
+
         <div class="team-card__logo-wrap">
           @if (!logoFailed(t.id)) {
-            <img
-              class="team-card__logo"
-              [src]="teamLogoUrl(t)"
-              (error)="onLogoError(t.id)"
-              alt=""
-            />
+            <img class="team-card__logo" [src]="teamLogoUrl(t)" (error)="onLogoError(t.id)" alt="" />
           } @else {
-            <div class="team-card__logo-placeholder"
-                 [style.background-color]="t.color ?? '#888'"></div>
+            <div class="team-card__logo-placeholder" [style.background-color]="t.color ?? '#888'"></div>
           }
         </div>
 
         <div class="team-card__colors">
-          <span class="color-bubble"
-                [style.background-color]="t.color ?? '#888'"></span>
+          <span class="color-bubble" [style.background-color]="t.color ?? '#888'"></span>
           @if (t.color_secondary) {
-            <span class="color-bubble"
-                  [style.background-color]="t.color_secondary"></span>
+            <span class="color-bubble" [style.background-color]="t.color_secondary"></span>
           }
         </div>
 
@@ -36,16 +56,9 @@
         <div class="team-card__manager">
           <div class="manager-avatar">
             @if (!managerFailed(t.manager_id)) {
-              <img
-                class="manager-avatar__img"
-                [src]="managerPhotoUrl(t)"
-                (error)="onManagerError(t.manager_id)"
-                alt=""
-              />
+              <img class="manager-avatar__img" [src]="managerPhotoUrl(t)" (error)="onManagerError(t.manager_id)" alt="" />
             } @else {
-              <span class="manager-avatar__initials">
-                {{ t.manager_name.charAt(0).toUpperCase() }}
-              </span>
+              <span class="manager-avatar__initials">{{ t.manager_name.charAt(0).toUpperCase() }}</span>
             }
           </div>
           <span class="manager-name">{{ t.alias ?? t.manager_name }}</span>

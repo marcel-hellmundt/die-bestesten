@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
@@ -15,6 +15,7 @@ interface LigaTeam {
   manager_id: string;
   manager_name: string;
   alias: string | null;
+  squad_valid: boolean;
 }
 
 @Component({
@@ -28,18 +29,24 @@ export class LigaTeamsComponent {
   private cache  = inject(DataCacheService);
   private router = inject(Router);
 
-  private activeSeason = computed(() => {
-    const seasons = this.cache.seasons();
-    return seasons.length > 0
-      ? [...seasons].sort((a, b) => b.start_date.localeCompare(a.start_date))[0]
-      : null;
+  seasons = computed(() =>
+    [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
+  );
+
+  selectedSeasonId = signal<string | null>(null);
+
+  effectiveSeasonId = computed(() => {
+    const sel = this.selectedSeasonId();
+    const seasons = this.seasons();
+    if (sel && seasons.some(s => s.id === sel)) return sel;
+    return seasons[0]?.id ?? null;
   });
 
   private state = toSignal(
-    toObservable(this.activeSeason).pipe(
-      switchMap(season => {
-        if (!season) return of({ data: [] as LigaTeam[], loading: false, error: null as string | null });
-        return this.api.get<LigaTeam[]>(`team?season_id=${season.id}`).pipe(
+    toObservable(this.effectiveSeasonId).pipe(
+      switchMap(id => {
+        if (!id) return of({ data: [] as LigaTeam[], loading: false, error: null as string | null });
+        return this.api.get<LigaTeam[]>(`team?season_id=${id}`).pipe(
           map(data => ({ data, loading: false, error: null as string | null })),
           startWith({ data: [] as LigaTeam[], loading: true, error: null as string | null }),
           catchError(() => of({ data: [] as LigaTeam[], loading: false, error: 'Fehler beim Laden' }))

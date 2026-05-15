@@ -274,7 +274,58 @@ trait ManagerTrait
              ORDER BY t.team_name"
         );
         $q->execute([':s' => $seasonId]);
-        return $q->fetchAll(PDO::FETCH_ASSOC);
+        $teams = $q->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($teams)) return [];
+
+        // Active players per team (league DB)
+        $teamIds = array_column($teams, 'id');
+        $ph = implode(',', array_fill(0, count($teamIds), '?'));
+        $pitQ = $this->con_league->prepare(
+            "SELECT team_id, player_id FROM player_in_team WHERE team_id IN ($ph) AND to_matchday_id IS NULL"
+        );
+        $pitQ->execute($teamIds);
+        $playerInTeam = $pitQ->fetchAll(PDO::FETCH_ASSOC);
+
+        // Group player IDs by team
+        $teamPlayerIds = array_fill_keys($teamIds, []);
+        $allPlayerIds  = [];
+        foreach ($playerInTeam as $row) {
+            $teamPlayerIds[$row['team_id']][] = $row['player_id'];
+            $allPlayerIds[] = $row['player_id'];
+        }
+
+        // Get positions from global DB
+        $positions = [];
+        if (!empty($allPlayerIds)) {
+            $allPlayerIds = array_unique($allPlayerIds);
+            $pp = implode(',', array_fill(0, count($allPlayerIds), '?'));
+            $pisQ = $this->con->prepare(
+                "SELECT player_id, position FROM player_in_season WHERE player_id IN ($pp) AND season_id = ?"
+            );
+            $pisQ->execute([...$allPlayerIds, $seasonId]);
+            foreach ($pisQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $positions[$row['player_id']] = $row['position'];
+            }
+        }
+
+        // Validate each squad: minimums GK≥1 DEF≥5 MID≥5 FWD≥3
+        $sqMin = ['GOALKEEPER' => 1, 'DEFENDER' => 5, 'MIDFIELDER' => 5, 'FORWARD' => 3];
+        foreach ($teams as &$team) {
+            $counts = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
+            foreach ($teamPlayerIds[$team['id']] as $pid) {
+                $pos = $positions[$pid] ?? null;
+                if ($pos && isset($counts[$pos])) $counts[$pos]++;
+            }
+            $valid = true;
+            foreach ($sqMin as $pos => $min) {
+                if ($counts[$pos] < $min) { $valid = false; break; }
+            }
+            $team['squad_valid'] = $valid;
+        }
+        unset($team);
+
+        return $teams;
     }
 
     public function getMyTeamForActiveSeason(string $managerId): array|false
