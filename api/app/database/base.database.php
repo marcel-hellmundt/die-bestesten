@@ -108,6 +108,22 @@ class Database
         $this->con_old = null;
     }
 
+    protected const SQUAD_MAX = [
+        'GOALKEEPER' => 2,
+        'DEFENDER'   => 6,
+        'MIDFIELDER' => 6,
+        'FORWARD'    => 4,
+    ];
+
+    protected const STATS_SEASON_START = '2017-07-01';
+
+    protected function getActiveSeasonId(): ?string
+    {
+        $q = $this->con->prepare("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
+        $q->execute();
+        return $q->fetchColumn() ?: null;
+    }
+
     // Auth — used by guard; requires manager table (league schema)
     public function getAuthManagerById(string $id): array|false
     {

@@ -4,30 +4,34 @@ trait SearchTrait
 {
     public function search(string $query): array
     {
-        $like = '%' . $query . '%';
+        $like           = '%' . $query . '%';
+        $activeSeasonId = $this->getActiveSeasonId();
 
         // Players
         $pq = $this->con->prepare(
             "SELECT p.id, p.displayname, p.first_name, p.last_name,
                     pis.position, pis.photo_uploaded,
-                    (SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1) AS season_id,
+                    :season_id AS season_id,
                     COALESCE(SUM(pr.points), 0) AS points
              FROM player p
              LEFT JOIN player_in_season pis
-                   ON pis.player_id = p.id
-                   AND pis.season_id = (SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1)
+                   ON pis.player_id = p.id AND pis.season_id = :season_id2
              LEFT JOIN player_rating pr
                    ON pr.player_id = p.id
-                   AND pr.matchday_id IN (
-                       SELECT id FROM matchday
-                       WHERE season_id = (SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1)
-                   )
+                   AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = :season_id3)
              WHERE p.displayname LIKE :q OR p.first_name LIKE :q2 OR p.last_name LIKE :q3
              GROUP BY p.id, p.displayname, p.first_name, p.last_name, pis.position, pis.photo_uploaded
              ORDER BY points DESC, p.displayname
              LIMIT 8"
         );
-        $pq->execute([':q' => $like, ':q2' => $like, ':q3' => $like]);
+        $pq->execute([
+            ':season_id'  => $activeSeasonId,
+            ':season_id2' => $activeSeasonId,
+            ':season_id3' => $activeSeasonId,
+            ':q'          => $like,
+            ':q2'         => $like,
+            ':q3'         => $like,
+        ]);
         $players = $pq->fetchAll(PDO::FETCH_ASSOC);
 
         // Clubs

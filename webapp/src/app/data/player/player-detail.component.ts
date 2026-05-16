@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
+import { POSITION_COLOR, POSITION_LABEL } from '../../core/constants';
 
 interface TeamHistoryEntry {
   team_id: string;
@@ -152,6 +153,58 @@ export class PlayerDetailComponent {
       return a.name.localeCompare(b.name);
     });
   });
+
+  // Add-season form state
+  showAddSeasonForm  = signal(false);
+  newSeasonId        = signal('');
+  newSeasonPosition  = signal<'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD'>('MIDFIELDER');
+  newSeasonPrice     = signal(0);
+  addingSeasonRecord = signal(false);
+  addSeasonError     = signal<string | null>(null);
+
+  availableSeasons = computed(() => {
+    const existing = new Set((this.player()?.seasons ?? []).map(s => s.season_id));
+    return this.cache.seasons().filter(s => !existing.has(s.id));
+  });
+
+  openAddSeasonForm(): void {
+    this.newSeasonId.set(this.availableSeasons()[0]?.id ?? '');
+    this.newSeasonPosition.set('MIDFIELDER');
+    this.newSeasonPrice.set(0);
+    this.addSeasonError.set(null);
+    this.showAddSeasonForm.set(true);
+  }
+
+  cancelAddSeason(): void {
+    this.showAddSeasonForm.set(false);
+    this.addSeasonError.set(null);
+  }
+
+  submitAddSeason(): void {
+    const p     = this.player();
+    const price = this.newSeasonPrice();
+    if (!p || !this.newSeasonId() || this.addingSeasonRecord()) return;
+    if (!price || price <= 0) { this.addSeasonError.set('Preis muss > 0 sein'); return; }
+
+    this.addingSeasonRecord.set(true);
+    this.addSeasonError.set(null);
+    this.api.post<{ id: string }>('player_in_season', {
+      player_id: p.id,
+      season_id: this.newSeasonId(),
+      position:  this.newSeasonPosition(),
+      price,
+    }).subscribe({
+      next: () => {
+        this.addingSeasonRecord.set(false);
+        this.showAddSeasonForm.set(false);
+        this.reloadPlayer$.next();
+      },
+      error: (err: any) => {
+        this.addingSeasonRecord.set(false);
+        this.addSeasonError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
 
   // Add-club form state
   showAddClubForm = signal(false);
@@ -532,26 +585,12 @@ export class PlayerDetailComponent {
     return `https://img.die-bestesten.de/img/player/${latest.season_id}/${p.id}.png`;
   });
 
-  private readonly positionColors: Record<string, string> = {
-    FORWARD:    'var(--position-forward)',
-    MIDFIELDER: 'var(--position-midfielder)',
-    DEFENDER:   'var(--position-defender)',
-    GOALKEEPER: 'var(--position-goalkeeper)',
-  };
-
-  private readonly positionLabels: Record<string, string> = {
-    FORWARD: 'STU',
-    MIDFIELDER: 'MIT',
-    DEFENDER: 'ABW',
-    GOALKEEPER: 'TOR',
-  };
-
   positionColor(position: string): string {
-    return this.positionColors[position] ?? '#999';
+    return POSITION_COLOR[position] ?? '#999';
   }
 
   positionLabel(position: string): string {
-    return this.positionLabels[position] ?? position;
+    return POSITION_LABEL[position] ?? position;
   }
 
   clubLogoUrl(clubId: string, logoUploaded: number): string {
@@ -757,7 +796,7 @@ export class PlayerDetailComponent {
       const labelX = this.padL + i * slotW + slotW / 2;
       return {
         x, y, width: barW, height: barH,
-        color:   data ? (this.positionColors[data.position] ?? '#999') : 'transparent',
+        color:   data ? (POSITION_COLOR[data.position] ?? '#999') : 'transparent',
         label:   this.cache.seasonName(season.id),
         labelX,
         tooltip: data ? this.formatPrice(data.price) : '',

@@ -375,10 +375,17 @@
       <section class="detail-section">
         <div class="section-header-row">
           <h2 class="section-header">Saisons</h2>
+          <div class="section-header-actions">
+            @if (isMaintainer() && !showAddSeasonForm() && availableSeasons().length > 0) {
+              <button class="btn-edit" (click)="openAddSeasonForm()" title="Saison hinzufügen">
+                <app-icon name="plus" />
+              </button>
+            }
+          </div>
         </div>
-        @if (p.seasons.length === 0) {
+        @if (p.seasons.length === 0 && !showAddSeasonForm()) {
           <p class="state-msg">Keine Saison-Daten vorhanden.</p>
-        } @else {
+        } @else if (p.seasons.length > 0) {
           <div class="table-container">
             <table class="data-table">
               <thead>
@@ -420,6 +427,51 @@
                 }
               </tbody>
             </table>
+          </div>
+        }
+        @if (showAddSeasonForm()) {
+          <div class="add-form" (keydown.enter)="!addingSeasonRecord() && submitAddSeason()">
+            <div class="add-form-row">
+              <div class="add-form-field">
+                <label class="add-form-label">Saison</label>
+                <select class="input input--sm" (change)="newSeasonId.set($any($event.target).value)">
+                  @for (s of availableSeasons(); track s.id) {
+                    <option [value]="s.id" [selected]="s.id === newSeasonId()">{{ cache.seasonName(s.id) }}</option>
+                  }
+                </select>
+              </div>
+              <div class="add-form-field">
+                <label class="add-form-label">Position</label>
+                <select class="input input--sm" (change)="newSeasonPosition.set($any($event.target).value)">
+                  <option value="GOALKEEPER">Torwart</option>
+                  <option value="DEFENDER">Abwehr</option>
+                  <option value="MIDFIELDER" selected>Mittelfeld</option>
+                  <option value="FORWARD">Sturm</option>
+                </select>
+              </div>
+              <div class="add-form-field add-form-field--sm">
+                <label class="add-form-label">Preis (€)</label>
+                <input
+                  class="input input--sm"
+                  type="number"
+                  min="1"
+                  step="100000"
+                  [value]="newSeasonPrice()"
+                  (input)="newSeasonPrice.set(+$any($event.target).value)"
+                />
+              </div>
+            </div>
+            @if (addSeasonError()) {
+              <p class="add-form-error">{{ addSeasonError() }}</p>
+            }
+            <div class="add-form-actions">
+              <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || newSeasonPrice() <= 0">
+                {{ addingSeasonRecord() ? 'Speichern…' : 'Speichern' }}
+              </button>
+              <button class="btn-cancel" (click)="cancelAddSeason()" [disabled]="addingSeasonRecord()">
+                Abbrechen
+              </button>
+            </div>
           </div>
         }
       </section>

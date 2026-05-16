@@ -7,6 +7,7 @@ import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { ApiService } from '../../core/api.service';
 import { NotificationService } from '../../core/notification.service';
+import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
 
 interface SearchResults {
   players:  any[];
@@ -39,8 +40,8 @@ export class TopbarComponent implements OnDestroy {
 
   managerName        = computed(() => this.auth.getManagerName() ?? '');
   managerId          = computed(() => this.auth.getManagerId());
-  readonly roleOrder = ['admin', 'maintainer', 'manager'];
-  readonly roleLabel: Record<string, string> = { admin: 'Kernel-Kapitän', maintainer: 'Daten-Fee', manager: 'Manager' };
+  readonly roleOrder = ROLE_ORDER;
+  readonly roleLabel = ROLE_LABEL;
 
   sortedRoles = computed(() => {
     const roles = ['manager', ...this.auth.getRoles()];

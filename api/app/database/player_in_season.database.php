@@ -9,9 +9,8 @@ trait PlayerInSeasonTrait
     public function getAvailablePlayers(?string $seasonId): array
     {
         if (!$seasonId) {
-            $row = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-            if (!$row) return ['players' => []];
-            $seasonId = $row['id'];
+            $seasonId = $this->getActiveSeasonId();
+            if (!$seasonId) return ['players' => []];
         }
 
         // Get player IDs already in a fantasy team this season (league DB)
@@ -91,6 +90,15 @@ trait PlayerInSeasonTrait
         ], $stmt->fetchAll(PDO::FETCH_ASSOC))];
     }
 
+    public function createPlayerInSeason(string $id, string $playerId, string $seasonId, string $position, int $price): void
+    {
+        $q = $this->con->prepare(
+            "INSERT INTO player_in_season (id, player_id, season_id, position, price)
+             VALUES (?, ?, ?, ?, ?)"
+        );
+        $q->execute([$id, $playerId, $seasonId, $position, $price]);
+    }
+
     /**
      * Count of players in the 1. Bundesliga (level 1, country_id 'de') for a season.
      * If no season_id is provided, the active season is used.
@@ -98,10 +106,8 @@ trait PlayerInSeasonTrait
     public function getBundesligaPlayerCount(?string $seasonId): int
     {
         if (!$seasonId) {
-            $stmt = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
-            $row  = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$row) return 0;
-            $seasonId = $row['id'];
+            $seasonId = $this->getActiveSeasonId();
+            if (!$seasonId) return 0;
         }
 
         $query = $this->con->prepare(

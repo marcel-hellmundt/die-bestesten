@@ -168,6 +168,13 @@
   text-align: right;
 }
 
+.migrate-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 // List bar (count + actions above table)
 .list-bar {
   display: flex;

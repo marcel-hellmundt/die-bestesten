@@ -55,8 +55,7 @@ trait PlayerInTeamTrait
 
     public function getTeamByPlayerId(string $playerId): ?array
     {
-        $sQ = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
-        $activeSeasonId = $sQ->fetchColumn();
+        $activeSeasonId = $this->getActiveSeasonId();
         if (!$activeSeasonId) return null;
 
         $q = $this->con_league->prepare(

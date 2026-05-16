@@ -15,7 +15,7 @@ class SellController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'team_id, player_id, transferwindow_id required'];
         }
-        if ($this->db->getTeamOwner($teamId) !== $GLOBALS['auth_manager_id']) {
+        if (!$this->ownsTeam($teamId)) {
             http_response_code(403);
             return ['status' => false, 'message' => 'Not your team'];
         }

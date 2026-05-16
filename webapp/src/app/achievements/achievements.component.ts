@@ -34,7 +34,7 @@ export class AchievementsComponent {
   );
 
   constructor() {
-    this.api.patch('achievement/seen', {}).subscribe();
+    this.api.patch('achievement/seen', {}).subscribe({ error: () => {} });
   }
 
   earnedCount = computed(() => this.achievements().filter((a) => a.earned_at).length);

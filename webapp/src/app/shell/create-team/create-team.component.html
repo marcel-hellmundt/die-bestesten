@@ -1,17 +1,18 @@
 <form class="create-team-form" (submit)="$event.preventDefault(); submit()">
-
   <div class="form-group">
     <label class="form-label" for="teamName">Teamname</label>
     <div class="input-with-status">
-      <input id="teamName"
-             class="input"
-             type="text"
-             [value]="teamName()"
-             (input)="onNameInput($any($event.target).value)"
-             placeholder="z.B. FC Tollhaus"
-             maxlength="100"
-             minlength="3"
-             required />
+      <input
+        id="teamName"
+        class="input"
+        type="text"
+        [value]="teamName()"
+        (input)="onNameInput($any($event.target).value)"
+        placeholder="Teamname"
+        maxlength="100"
+        minlength="3"
+        required
+      />
       @if (nameStatus() === 'checking') {
         <span class="name-status name-status--checking">↻</span>
       }
@@ -29,7 +30,13 @@
 
   <div class="form-group">
     <label class="form-label">Logo</label>
-    <input #logoInput type="file" accept="image/*" class="sr-only" (change)="onLogoFileSelected($event)" />
+    <input
+      #logoInput
+      type="file"
+      accept="image/*"
+      class="sr-only"
+      (change)="onLogoFileSelected($event)"
+    />
     <div class="logo-upload" (click)="onLogoClick()">
       @if (displayedLogo()) {
         <img [src]="displayedLogo()" class="logo-preview" alt="Team-Logo" />
@@ -38,6 +45,7 @@
         <span class="logo-upload__placeholder">Logo auswählen</span>
       }
     </div>
+    <p class="logo-hint">512 x 512 oder 256 × 256 px empfohlen · transparenter Hintergrund</p>
   </div>
 
   <div class="form-group">
@@ -45,29 +53,34 @@
     <div class="color-picker">
       <div class="color-list">
         @for (hex of primaryPalette; track hex) {
-          <button type="button"
-                  class="color-swatch"
-                  [class.color-swatch--active]="color() === hex"
-                  [style.background-color]="hex"
-                  (click)="color.set(hex)">
-          </button>
+          <button
+            type="button"
+            class="color-swatch"
+            [class.color-swatch--active]="color() === hex"
+            [style.background-color]="hex"
+            (click)="color.set(hex)"
+          ></button>
         }
       </div>
 
       <div class="color-preview">
         <div class="color-bubble color-bubble--primary" [style.background-color]="color()"></div>
-        <div class="color-bubble color-bubble--secondary" [style.background-color]="effectiveSecondary()"></div>
+        <div
+          class="color-bubble color-bubble--secondary"
+          [style.background-color]="effectiveSecondary()"
+        ></div>
       </div>
 
       <div class="color-list">
         @for (hex of secondaryOptions(); track hex) {
-          <button type="button"
-                  class="color-swatch"
-                  [class.color-swatch--active]="effectiveSecondary() === hex"
-                  [class.color-swatch--light]="hex === '#ffffff'"
-                  [style.background-color]="hex"
-                  (click)="secondaryColor.set(hex)">
-          </button>
+          <button
+            type="button"
+            class="color-swatch"
+            [class.color-swatch--active]="effectiveSecondary() === hex"
+            [class.color-swatch--light]="hex === '#ffffff'"
+            [style.background-color]="hex"
+            (click)="secondaryColor.set(hex)"
+          ></button>
         }
       </div>
     </div>
@@ -77,14 +90,15 @@
     <p class="field-error">{{ errorMsg() }}</p>
   }
 
-  <button type="submit"
-          class="btn btn-primary btn-full"
-          [disabled]="nameStatus() !== 'valid' || submitState() === 'loading'">
+  <button
+    type="submit"
+    class="btn btn-primary btn-full"
+    [disabled]="nameStatus() !== 'valid' || submitState() === 'loading'"
+  >
     @if (submitState() === 'loading') {
       Team wird erstellt…
     } @else {
       Team erstellen
     }
   </button>
-
 </form>

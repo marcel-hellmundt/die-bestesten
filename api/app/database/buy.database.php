@@ -2,17 +2,9 @@
 
 trait BuyTrait
 {
-    private const SQUAD_MAX = [
-        'GOALKEEPER' => 2,
-        'DEFENDER'   => 6,
-        'MIDFIELDER' => 6,
-        'FORWARD'    => 4,
-    ];
-
     public function isPlayerAlreadyInAnyTeam(string $playerId): bool
     {
-        $sQ = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
-        $activeSeasonId = $sQ->fetchColumn();
+        $activeSeasonId = $this->getActiveSeasonId();
         if (!$activeSeasonId) return false;
 
         $q = $this->con_league->prepare(

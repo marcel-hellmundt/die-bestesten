@@ -9,11 +9,6 @@ class ManagerController extends _BaseController
         'POST'   => 'manager', // further restricted to admin inside role sub-routes
     ];
 
-    private function isAdmin(): bool
-    {
-        return in_array('admin', $GLOBALS['auth_roles'] ?? []);
-    }
-
     protected function get(): mixed
     {
         if ($this->id === 'me') {

@@ -22,9 +22,7 @@ trait OfferTrait
 
         $playerMap = [];
         if (!empty($playerIds)) {
-            $activeSeasonId = $this->con->query(
-                "SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1"
-            )->fetchColumn();
+            $activeSeasonId = $this->getActiveSeasonId();
 
             $ph  = implode(',', array_fill(0, count($playerIds), '?'));
             $pq  = $this->con->prepare(
@@ -134,8 +132,7 @@ trait OfferTrait
         $seasonId = $window['season_id'];
 
         // 2. Validate player is free (not in any active team this season)
-        $sQ = $this->con->query("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
-        $activeSeasonId = $sQ->fetchColumn();
+        $activeSeasonId = $this->getActiveSeasonId();
         $aq = $this->con_league->prepare(
             "SELECT pit.id FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
@@ -155,7 +152,7 @@ trait OfferTrait
         $posQ->execute([':pid' => $playerId, ':sid' => $activeSeasonId]);
         $position = $posQ->fetchColumn() ?: '';
 
-        $maxByPos = ['GOALKEEPER' => 2, 'DEFENDER' => 6, 'MIDFIELDER' => 6, 'FORWARD' => 4];
+        $maxByPos = self::SQUAD_MAX;
         if (isset($maxByPos[$position])) {
             $maxCount = $maxByPos[$position];
 
@@ -454,9 +451,7 @@ trait OfferTrait
 
         $playerIds      = array_unique(array_column($rows, 'player_id'));
         $pph            = implode(',', array_fill(0, count($playerIds), '?'));
-        $activeSeasonId = $this->con->query(
-            "SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1"
-        )->fetchColumn();
+        $activeSeasonId = $this->getActiveSeasonId();
 
         $pq = $this->con->prepare(
             "SELECT p.id, p.displayname, pis.position, pis.photo_uploaded,

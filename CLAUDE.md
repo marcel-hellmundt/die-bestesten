@@ -110,6 +110,7 @@ PATCH    /offer/:id                  — Body:{team_id, offer_value} — Gebotsw
 DELETE   /offer/:id                  — Body:{team_id} — offenes Gebot stornieren (status=cancelled) — Auth
 GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
 GET      /player_in_season/available_players — ?season_id (optional, default aktiv) → {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]} — Bundesliga-Spieler ohne Fantasy-Team
+POST     /player_in_season — {player_id, season_id, position, price} → {id}; 409 bei Duplikat — Maintainer+
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück — Admin
 POST     /player/create        — {kicker_id, first_name, last_name, displayname, season_id, position, price, club_id?, from_date?} → {id} — erstellt player + player_in_season + optional player_in_club — Maintainer+

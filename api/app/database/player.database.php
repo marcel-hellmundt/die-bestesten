@@ -394,11 +394,4 @@ trait PlayerTrait
         return ['id' => $playerId];
     }
 
-    private function getActiveSeasonId(): ?string
-    {
-        $q = $this->con->prepare("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
-        $q->execute();
-        $row = $q->fetch(PDO::FETCH_ASSOC);
-        return $row['id'] ?? null;
-    }
 }

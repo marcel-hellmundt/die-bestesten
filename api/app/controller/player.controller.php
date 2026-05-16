@@ -25,9 +25,9 @@ class PlayerController extends _BaseController
     protected function post(): mixed
     {
         if ($this->id === 'migrate') {
-            if (!in_array('admin', $GLOBALS['auth_roles'])) {
+            if (!$this->isAdmin()) {
                 http_response_code(403);
-                return ['message' => 'Forbidden'];
+                return ['status' => false, 'message' => 'Forbidden'];
             }
             return $this->db->migratePlayer();
         }

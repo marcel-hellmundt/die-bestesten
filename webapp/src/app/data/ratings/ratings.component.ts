@@ -6,6 +6,7 @@ import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
 import { PlayerRating } from '../../core/models/player-rating.model';
+import { POSITION_LABEL } from '../../core/constants';
 
 interface Club {
   id: string;
@@ -373,15 +374,8 @@ export class RatingsDataComponent {
     MIDFIELDER: 2,
     FORWARD: 3,
   };
-  private static readonly POSITION_LABEL: Record<string, string> = {
-    GOALKEEPER: 'TOR',
-    DEFENDER: 'ABW',
-    MIDFIELDER: 'MIT',
-    FORWARD: 'STU',
-  };
-
   posLabel(pos: string | null): string {
-    return pos ? (RatingsDataComponent.POSITION_LABEL[pos] ?? pos) : '';
+    return pos ? (POSITION_LABEL[pos] ?? pos) : '';
   }
 
   private byPositionOnly = (a: PlayerRating, b: PlayerRating) => {

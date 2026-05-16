@@ -50,6 +50,21 @@ abstract class _BaseController
         return ['status' => false, 'message' => 'Method Not Allowed'];
     }
 
+    protected function isAdmin(): bool
+    {
+        return in_array('admin', $GLOBALS['auth_roles'] ?? []);
+    }
+
+    protected function isMaintainer(): bool
+    {
+        return in_array('maintainer', $GLOBALS['auth_roles'] ?? []);
+    }
+
+    protected function ownsTeam(string $teamId): bool
+    {
+        return $this->db->getTeamOwner($teamId) === ($GLOBALS['auth_manager_id'] ?? null);
+    }
+
     protected function body(): array
     {
         return json_decode(file_get_contents('php://input'), true) ?? [];

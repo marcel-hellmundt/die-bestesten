@@ -5,6 +5,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { League } from '../../core/models/league.model';
+import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
 
 @Component({
   selector: 'app-data-league',
@@ -76,12 +77,8 @@ export class LeagueDataComponent {
     return this.managersCache()[leagueId] ?? [];
   }
 
-  readonly roleOrder = ['admin', 'maintainer', 'manager'];
-  readonly roleLabel: Record<string, string> = {
-    admin: 'Kernel-Kapitän',
-    maintainer: 'Daten-Fee',
-    manager: 'Manager',
-  };
+  readonly roleOrder = ROLE_ORDER;
+  readonly roleLabel = ROLE_LABEL;
 
   sortedRoles(roles: string[]): string[] {
     const r = roles?.length ? roles : ['manager'];

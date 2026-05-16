@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Club } from '../../core/models/club.model';
+import { POSITION_COLOR, POSITION_LABEL } from '../../core/constants';
 
 @Component({
   selector: 'app-club-detail',
@@ -328,26 +329,12 @@ export class ClubDetailComponent {
   squad = computed(() => this.squadState()?.data ?? []);
   squadLoading = computed(() => this.squadState()?.loading ?? true);
 
-  private readonly positionLabels: Record<string, string> = {
-    GOALKEEPER: 'TOR',
-    DEFENDER: 'ABW',
-    MIDFIELDER: 'MIT',
-    FORWARD: 'STU',
-  };
-
-  private readonly positionColors: Record<string, string> = {
-    GOALKEEPER: 'var(--position-goalkeeper)',
-    DEFENDER: 'var(--position-defender)',
-    MIDFIELDER: 'var(--position-midfielder)',
-    FORWARD: 'var(--position-forward)',
-  };
-
   positionLabel(pos: string | null): string {
-    return pos ? (this.positionLabels[pos] ?? pos) : '—';
+    return pos ? (POSITION_LABEL[pos] ?? pos) : '—';
   }
 
   positionColor(pos: string): string {
-    return this.positionColors[pos] ?? '#999';
+    return POSITION_COLOR[pos] ?? '#999';
   }
 
   constructor() {

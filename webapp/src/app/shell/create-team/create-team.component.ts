@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { Subject, Subscription, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { DataCacheService } from '../../core/data-cache.service';
@@ -45,6 +46,7 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private cache = inject(DataCacheService);
   private bs = inject(BottomSheetService);
+  private router = inject(Router);
 
   @ViewChild('logoInput') logoInput!: ElementRef<HTMLInputElement>;
 
@@ -199,5 +201,6 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
   private finalize(): void {
     this.cache.refreshMyTeam();
     this.bs.close();
+    this.router.navigate(['/liga/teams']);
   }
 }

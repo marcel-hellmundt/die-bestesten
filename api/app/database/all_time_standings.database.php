@@ -22,7 +22,7 @@ trait AllTimeStandingsTrait
 
         // Top 5 best single matchday performances (seasons from 2017/18 onwards)
         $seasonQuery = $this->con->prepare(
-            "SELECT id FROM season WHERE start_date >= '2017-07-01'"
+            "SELECT id FROM season WHERE start_date >= '" . self::STATS_SEASON_START . "'"
         );
         $seasonQuery->execute();
         $validSeasonIds = array_column($seasonQuery->fetchAll(PDO::FETCH_ASSOC), 'id');

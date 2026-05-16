@@ -10,7 +10,7 @@ class OfferController extends _BaseController
         $windowId = $this->params['transferwindow_id'] ?? null;
 
         if ($teamId) {
-            if ($this->db->getTeamOwner($teamId) !== $GLOBALS['auth_manager_id']) {
+            if (!$this->ownsTeam($teamId)) {
                 http_response_code(403);
                 return ['status' => false, 'message' => 'Not your team'];
             }
@@ -47,7 +47,7 @@ class OfferController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'team_id, player_id, transferwindow_id, offer_value required'];
         }
-        if ($this->db->getTeamOwner($teamId) !== $GLOBALS['auth_manager_id']) {
+        if (!$this->ownsTeam($teamId)) {
             http_response_code(403);
             return ['status' => false, 'message' => 'Not your team'];
         }
@@ -66,7 +66,7 @@ class OfferController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'offer id and team_id required'];
         }
-        if ($this->db->getTeamOwner($teamId) !== $GLOBALS['auth_manager_id']) {
+        if (!$this->ownsTeam($teamId)) {
             http_response_code(403);
             return ['status' => false, 'message' => 'Not your team'];
         }
@@ -88,7 +88,7 @@ class OfferController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'offer id, team_id and offer_value required'];
         }
-        if ($this->db->getTeamOwner($teamId) !== $GLOBALS['auth_manager_id']) {
+        if (!$this->ownsTeam($teamId)) {
             http_response_code(403);
             return ['status' => false, 'message' => 'Not your team'];
         }
