@@ -109,23 +109,21 @@ export class RatingsDataComponent {
     const pd = this.pageData();
     if (!pd || pd.loading) return [];
 
-    const bundesligaDivIds = new Set(
-      pd.divisions
-        .filter((d) => Number(d.level) === 1 && d.country_id?.toLowerCase() === 'de')
-        .map((d) => d.id),
-    );
-    const bundesligaClubIds = new Set(
+    const leagueDivisionId = this.cache.leagueDivisionId();
+    if (!leagueDivisionId) return [];
+
+    const leagueClubIds = new Set(
       pd.clubsInSeason
-        .filter((cis: ClubInSeason) => bundesligaDivIds.has(cis.division_id))
+        .filter((cis: ClubInSeason) => cis.division_id === leagueDivisionId)
         .map((cis: ClubInSeason) => cis.club_id),
     );
     const positionMap = new Map<string, number>(
       this.prevSeasonEntries()
-        .filter((e: any) => bundesligaDivIds.has(e.division_id) && e.position != null)
+        .filter((e: any) => e.division_id === leagueDivisionId && e.position != null)
         .map((e: any) => [e.club_id as string, e.position as number]),
     );
     return pd.clubs
-      .filter((c) => bundesligaClubIds.has(c.id))
+      .filter((c) => leagueClubIds.has(c.id))
       .sort((a, b) => (positionMap.get(a.id) ?? 999) - (positionMap.get(b.id) ?? 999));
   });
 
@@ -192,6 +190,7 @@ export class RatingsDataComponent {
   // Apply auto-selection once data is available
   constructor() {
     this.cache.ensureSeasons();
+    this.cache.ensureLeague();
     effect(() => {
       const md = this.autoSelected();
       if (md && !this.selectedMatchday()) {

@@ -124,6 +124,13 @@ class Database
         return $q->fetchColumn() ?: null;
     }
 
+    protected function getLeagueDivisionId(): ?string
+    {
+        $q = $this->con->prepare("SELECT division_id FROM league WHERE db_name = :db_name LIMIT 1");
+        $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        return $q->fetchColumn() ?: null;
+    }
+
     // Auth — used by guard; requires manager table (league schema)
     public function getAuthManagerById(string $id): array|false
     {

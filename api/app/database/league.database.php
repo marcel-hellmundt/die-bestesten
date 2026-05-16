@@ -2,6 +2,23 @@
 
 trait LeagueTrait
 {
+    public function getMyLeague(): array|false
+    {
+        $q = $this->con->prepare(
+            "SELECT l.id, l.slug, l.name, l.db_name, l.division_id
+             FROM league l
+             WHERE l.db_name = :db_name LIMIT 1"
+        );
+        $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        return $q->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function updateLeagueDivision(string $id, ?string $divisionId): void
+    {
+        $q = $this->con->prepare("UPDATE league SET division_id = :division_id WHERE id = :id");
+        $q->execute([':division_id' => $divisionId, ':id' => $id]);
+    }
+
     public function getLeagueList(): array
     {
         $query = $this->con->prepare("SELECT * FROM league ORDER BY name ASC");

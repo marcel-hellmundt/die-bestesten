@@ -8,7 +8,7 @@ class PlayerInSeasonController extends _BaseController
     {
         if ($this->id === 'bundesliga_count') {
             $seasonId = $this->params['season_id'] ?? null;
-            return ['count' => $this->db->getBundesligaPlayerCount($seasonId)];
+            return ['count' => $this->db->getLeaguePlayerCount($seasonId)];
         }
 
         if ($this->id === 'available_players') {

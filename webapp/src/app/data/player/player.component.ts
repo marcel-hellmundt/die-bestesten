@@ -80,6 +80,11 @@ export class PlayerDataComponent {
   );
 
   isAdmin      = computed(() => this.auth.isAdmin());
+
+  constructor() {
+    this.cache.ensureLeague();
+    this.cache.ensureDivisions();
+  }
   migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   migrate(): void {

@@ -139,17 +139,17 @@ export class PlayerDetailComponent {
   );
 
   allClubs = computed(() => {
-    const clubs   = this.allClubsRaw();
-    const blDivId = this.cache.divisions().find(d => d.level === 1)?.id;
-    const blIds   = new Set(
+    const clubs        = this.allClubsRaw();
+    const leagueDivId  = this.cache.leagueDivisionId();
+    const leagueIds    = new Set(
       this.activeSeasonClubMap()
-        .filter(e => e.division_id === blDivId)
+        .filter(e => e.division_id === leagueDivId)
         .map(e => e.club_id)
     );
     return [...clubs].sort((a, b) => {
-      const aIsBL = blIds.has(a.id);
-      const bIsBL = blIds.has(b.id);
-      if (aIsBL !== bIsBL) return aIsBL ? -1 : 1;
+      const aIsLeague = leagueIds.has(a.id);
+      const bIsLeague = leagueIds.has(b.id);
+      if (aIsLeague !== bIsLeague) return aIsLeague ? -1 : 1;
       return a.name.localeCompare(b.name);
     });
   });
@@ -836,6 +836,7 @@ export class PlayerDetailComponent {
   constructor() {
     this.cache.ensureSeasons();
     this.cache.ensureDivisions();
+    this.cache.ensureLeague();
     effect(() => {
       const entries  = this.watchlistEntries();
       const playerId = this.playerId();

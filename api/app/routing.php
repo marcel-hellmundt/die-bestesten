@@ -59,9 +59,21 @@ class Routing
                     ],
                     [
                         'method' => 'GET',
+                        'path' => '/league/mine',
+                        'description' => 'Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}; 404 wenn nicht konfiguriert',
+                    ],
+                    [
+                        'method' => 'GET',
                         'path' => '/league/:id',
                         'description' => 'Eine Liga per ID',
                         'path_params' => [':id' => 'UUID der Liga'],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/league/:id',
+                        'description' => 'Spielerpool-Division der Liga setzen — Body: {division_id: UUID|null} — Admin',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                        'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)'],
                     ],
                     [
                         'method' => 'POST',

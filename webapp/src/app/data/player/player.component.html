@@ -7,7 +7,7 @@
     </div>
     @if (bundesligaCount() != null) {
       <div class="stat-card">
-        <span class="stat-label" style="color: var(--division-level-1)">Bundesliga</span>
+        <span class="stat-label" style="color: var(--division-level-1)">{{ cache.leagueDivision()?.name ?? 'Liga' }}</span>
         <div class="stat-value">{{ bundesligaCount() }}</div>
         <div class="stat-desc">Spieler aktive Saison</div>
       </div>

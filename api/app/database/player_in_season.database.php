@@ -3,7 +3,7 @@
 trait PlayerInSeasonTrait
 {
     /**
-     * All bundesliga players not currently in any fantasy team — usable as a "free agent market".
+     * All league players not currently in any fantasy team — usable as a "free agent market".
      * Returns player info, position, price, cumulative season points, and club data.
      */
     public function getAvailablePlayers(?string $seasonId): array
@@ -32,6 +32,16 @@ trait PlayerInSeasonTrait
             $ph              = implode(',', array_fill(0, count($excludedIds), '?'));
             $exclusionClause = "AND p.id NOT IN ($ph)";
             $exclusionParams = $excludedIds;
+        }
+
+        // Division filter: use configured league division or fall back to level 1 / DE
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $divisionWhere  = 'AND d.id = ?';
+            $divisionParams = [$divisionId];
+        } else {
+            $divisionWhere  = "AND d.level = 1 AND LOWER(d.country_id) = 'de'";
+            $divisionParams = [];
         }
 
         // Previous season ID for club position sorting
@@ -63,8 +73,7 @@ trait PlayerInSeasonTrait
                  AND cis_prev.season_id = ?
                  AND cis_prev.division_id = cis.division_id
              WHERE pis.season_id = ?
-               AND d.level = 1
-               AND LOWER(d.country_id) = 'de'
+               $divisionWhere
                AND pis.position IS NOT NULL
                AND pis.price IS NOT NULL AND pis.price > 0
                $exclusionClause
@@ -72,7 +81,7 @@ trait PlayerInSeasonTrait
                       pic.club_id, c.name, c.short_name, c.logo_uploaded, cis_prev.position
              ORDER BY season_points DESC, pis.price DESC"
         );
-        $stmt->execute(array_merge([$seasonId, $prevSeasonId, $seasonId], $exclusionParams));
+        $stmt->execute(array_merge([$seasonId, $prevSeasonId, $seasonId], $divisionParams, $exclusionParams));
 
         return ['players' => array_map(fn($r) => [
             'id'                 => $r['id'],
@@ -100,14 +109,23 @@ trait PlayerInSeasonTrait
     }
 
     /**
-     * Count of players in the 1. Bundesliga (level 1, country_id 'de') for a season.
-     * If no season_id is provided, the active season is used.
+     * Count of league-division players for a season.
+     * Falls back to level 1 / DE if no division is configured.
      */
-    public function getBundesligaPlayerCount(?string $seasonId): int
+    public function getLeaguePlayerCount(?string $seasonId): int
     {
         if (!$seasonId) {
             $seasonId = $this->getActiveSeasonId();
             if (!$seasonId) return 0;
+        }
+
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $divisionWhere = 'AND d.id = :division_id';
+            $params        = [':season_id' => $seasonId, ':division_id' => $divisionId];
+        } else {
+            $divisionWhere = "AND d.level = 1 AND LOWER(d.country_id) = 'de'";
+            $params        = [':season_id' => $seasonId];
         }
 
         $query = $this->con->prepare(
@@ -117,10 +135,9 @@ trait PlayerInSeasonTrait
              JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
              JOIN division d ON d.id = cis.division_id
              WHERE pis.season_id = :season_id
-               AND d.level = 1
-               AND LOWER(d.country_id) = 'de'"
+               $divisionWhere"
         );
-        $query->execute([':season_id' => $seasonId]);
+        $query->execute($params);
         return (int) $query->fetchColumn();
     }
 }

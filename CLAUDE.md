@@ -95,6 +95,8 @@ GET      /matchday[/:id]       — ?season_id gibt has_ratings (bool) zurück ob
 PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team_rating + Transaktionen erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an Admins (nur wenn email hinterlegt) — Admin
 GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_points}], top_matchdays: [{points,matchday_number,team_name,season_id,manager_name}] } — Auth
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
+GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}
+PATCH    /league/:id           — {division_id: UUID|null} — Spielerpool-Division setzen — Admin
 POST     /league/migrate       — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
@@ -108,8 +110,8 @@ GET      /offer                      — ?team_id → {offers[], pending_sum} �
 POST     /offer                      — {team_id, player_id, transferwindow_id, offer_value} — Gebot auf vereinslosen Spieler; 409 wenn Spieler in Team oder Positionslimit erreicht (inkl. offene Gebote; GK≤2, DEF≤6, MID≤6, FWD≤4); 422 wenn Fenster zu / Gebot < Marktwert / Budget überschritten; INSERT offer (status=pending) — Auth
 PATCH    /offer/:id                  — Body:{team_id, offer_value} — Gebotswert eines pending-Gebots ändern; 422 wenn < Marktwert oder Budget überschritten — Auth
 DELETE   /offer/:id                  — Body:{team_id} — offenes Gebot stornieren (status=cancelled) — Auth
-GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count}
-GET      /player_in_season/available_players — ?season_id (optional, default aktiv) → {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]} — Bundesliga-Spieler ohne Fantasy-Team
+GET      /player_in_season/bundesliga_count — ?season_id (optional, default aktiv) → {count} — Spieler der konfigurierten Liga-Division
+GET      /player_in_season/available_players — ?season_id (optional, default aktiv) → {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]} — Spieler der konfigurierten Liga-Division ohne Fantasy-Team
 POST     /player_in_season — {player_id, season_id, position, price} → {id}; 409 bei Duplikat — Maintainer+
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück — Admin

@@ -10,13 +10,13 @@
     }
   </div>
   <div class="stat-card">
-    <span class="stat-label" style="color: var(--division-level-1)">Bundesliga</span>
+    <span class="stat-label" style="color: var(--division-level-1)">{{ cache.leagueDivision()?.name ?? 'Liga' }}</span>
     @if (loading()) {
       <div class="skeleton skeleton--value"></div>
       <div class="skeleton skeleton--desc"></div>
     } @else {
       <div class="stat-value">{{ bundesligaClubs().length }}</div>
-      <div class="stat-desc">1. Bundesliga</div>
+      <div class="stat-desc">{{ cache.leagueDivision()?.name ?? 'Liga-Division' }}</div>
     }
   </div>
   <div class="stat-card">
@@ -79,7 +79,7 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   @if (bundesligaClubs().length > 0) {
-    <h3 class="table-section-title">1. Bundesliga</h3>
+    <h3 class="table-section-title">{{ cache.leagueDivision()?.name ?? 'Liga-Division' }}</h3>
     <div class="bundesliga-grid">
       @for (entry of bundesligaClubs(); track entry.club.id) {
         <a class="club-tile" [routerLink]="[entry.club.id]">

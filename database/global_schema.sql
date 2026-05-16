@@ -157,10 +157,12 @@ CREATE TABLE IF NOT EXISTS club_stadium (
 
 -- Tabelle: league (Spiel-Instanzen; jede Liga hat eine eigene Datenbank)
 CREATE TABLE IF NOT EXISTS league (
-    id      CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    slug    VARCHAR(32)  NOT NULL UNIQUE,       -- Login-Identifier, z.B. "bestesten-2025"
-    name    VARCHAR(100) NOT NULL,              -- Anzeigename
-    db_name VARCHAR(64)  NOT NULL               -- Datenbankname der Liga-Datenbank
+    id          CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    slug        VARCHAR(32)  NOT NULL UNIQUE,       -- Login-Identifier, z.B. "bestesten-2025"
+    name        VARCHAR(100) NOT NULL,              -- Anzeigename
+    db_name     VARCHAR(64)  NOT NULL,              -- Datenbankname der Liga-Datenbank
+    division_id CHAR(36)     DEFAULT NULL,          -- Spielerpool-Division (NULL = kein Filter aktiv)
+    FOREIGN KEY (division_id) REFERENCES division(id)
 );
 
 -- Tabelle: award (Award-Typen; liganeutral; sort_index = Wichtigkeit, 1 = wichtigster)

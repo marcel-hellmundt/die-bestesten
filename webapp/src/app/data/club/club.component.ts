@@ -82,17 +82,15 @@ export class ClubDataComponent {
   private prevSeasonEntries    = computed(() => this.prevSeasonState()?.data    ?? []);
 
   bundesligaClubs = computed(() => {
-    const division = this.cache.divisions().find(d => d.name === '1. Bundesliga');
+    const division = this.cache.leagueDivision();
     if (!division) return [] as { club: Club; position: number | null }[];
 
-    // Who is in Bundesliga *this* season
     const currentIds = new Set(
       this.currentSeasonEntries()
         .filter((e: any) => e.division_id === division.id)
         .map((e: any) => e.club_id as string)
     );
 
-    // Positions from *previous* season for sorting
     const positionMap = new Map(
       this.prevSeasonEntries()
         .filter((e: any) => e.division_id === division.id)
@@ -119,6 +117,7 @@ export class ClubDataComponent {
   constructor() {
     this.cache.ensureSeasons();
     this.cache.ensureDivisions();
+    this.cache.ensureLeague();
   }
 
   runSanityCheck(): void {
