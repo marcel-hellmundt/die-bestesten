@@ -102,6 +102,13 @@
   &--away { justify-content: flex-start; }
 }
 
+.team-logo-sm {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .team-dot {
   display: inline-block;
   width: 8px;

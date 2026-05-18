@@ -186,7 +186,7 @@ trait H2HTrait
             }
             unset($s);
             usort($standingList, fn($a, $b) =>
-                $b['pts'] <=> $a['pts'] ?: $b['goals_for'] <=> $a['goals_for']
+                $b['pts'] <=> $a['pts'] ?: $b['goals_for'] <=> $a['goals_for'] ?: strcmp($a['team_name'] ?? '', $b['team_name'] ?? '')
             );
 
             // Enrich group teams list

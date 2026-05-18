@@ -5,6 +5,7 @@ import { catchError, combineLatest, filter, map, of, startWith, switchMap } from
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-h2h',
@@ -104,6 +105,18 @@ export class H2HComponent {
   navigateToMatch(id: string): void {
     this.router.navigate(['/liga/h2h', id]);
   }
+
+  // ── Team logos ─────────────────────────────────────────────────────────────
+
+  private logoErrors = new Set<string>();
+
+  teamLogoUrl(teamId: string): string {
+    const sid = this.selectedSeason()?.id ?? '';
+    return `${environment.imageApiUrl}/img/team/${sid}/${teamId}.png`;
+  }
+
+  logoFailed(teamId: string): boolean { return this.logoErrors.has(teamId); }
+  onLogoError(teamId: string): void   { this.logoErrors.add(teamId); }
 
   // ── Admin: team + matchday lists ───────────────────────────────────────────
 
