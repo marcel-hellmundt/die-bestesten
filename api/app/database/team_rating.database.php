@@ -61,6 +61,8 @@ trait TeamRatingTrait
         );
         $rq->execute($ids);
         $rows = $rq->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) { $row['color'] = $this->resolveColor($row['color']); }
+        unset($row);
 
         $luckData = $this->getSeasonLuckStats($ids, $numberById);
 
@@ -144,6 +146,7 @@ trait TeamRatingTrait
 
         foreach ($rows as &$row) {
             $row['matchday_number'] = $numberById[$row['matchday_id']] ?? null;
+            $row['color'] = $this->resolveColor($row['color']);
         }
         unset($row);
 
@@ -241,6 +244,8 @@ trait TeamRatingTrait
             );
             $rq->execute([':matchday_id' => $matchday['id']]);
             $ratings = $rq->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($ratings as &$r) { $r['color'] = $this->resolveColor($r['color']); }
+            unset($r);
             $ratings = $this->assignFines($ratings, 'points');
         } else {
             $ratings = $this->getLiveTeamRatings($matchday['id']);
@@ -316,7 +321,7 @@ trait TeamRatingTrait
                 $teamMap[$tid] = [
                     'team_id' => $tid,
                     'team_name' => $row['team_name'],
-                    'color' => $row['color'],
+                    'color' => $this->resolveColor($row['color']),
                     'season_id' => $row['season_id'],
                     'manager_name' => $row['manager_name'],
                     'points' => 0,

@@ -69,7 +69,7 @@ trait WatchlistTrait
                 'current_team'      => $team ? [
                     'team_id'        => $team['team_id'],
                     'team_name'      => $team['team_name'],
-                    'color'          => $team['color'],
+                    'color'          => $this->resolveColor($team['color']),
                     'team_season_id' => $team['team_season_id'],
                     'manager_name'   => $team['manager_name'],
                     'alias'          => $team['alias'],

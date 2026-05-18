@@ -81,6 +81,8 @@ trait ManagerTrait
         ");
         $q->execute([':manager_id' => $id]);
         $manager['teams'] = $q->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($manager['teams'] as &$t) { $t['color'] = $this->resolveColor($t['color']); }
+        unset($t);
 
         // Highlights & Lowlights: top/bottom 5 individual matchday ratings (from 2017/18 onwards)
         $validSeasonIds = array_column(
@@ -113,6 +115,7 @@ trait ManagerTrait
             foreach ($allRatings as &$r) {
                 $r['matchday_number'] = $mdNumbers[$r['matchday_id']] ?? null;
                 $r['points'] = (int) $r['points'];
+                $r['color'] = $this->resolveColor($r['color']);
             }
             unset($r);
         }
@@ -260,7 +263,12 @@ trait ManagerTrait
              LIMIT 1"
         );
         $q->execute([':id' => $id]);
-        return $q->fetch(PDO::FETCH_ASSOC);
+        $team = $q->fetch(PDO::FETCH_ASSOC);
+        if ($team) {
+            $team['color']           = $this->resolveColor($team['color']);
+            $team['color_secondary'] = $this->resolveColor($team['color_secondary']);
+        }
+        return $team;
     }
 
     public function getTeamsBySeason(string $seasonId): array
@@ -277,6 +285,12 @@ trait ManagerTrait
         $teams = $q->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($teams)) return [];
+
+        foreach ($teams as &$t) {
+            $t['color']           = $this->resolveColor($t['color'] ?? null);
+            $t['color_secondary'] = $this->resolveColor($t['color_secondary'] ?? null);
+        }
+        unset($t);
 
         // Active players per team (league DB)
         $teamIds = array_column($teams, 'id');
@@ -344,7 +358,12 @@ trait ManagerTrait
              LIMIT 1"
         );
         $q->execute([':manager_id' => $managerId, ':season_id' => $activeSeasonId]);
-        return $q->fetch(PDO::FETCH_ASSOC);
+        $team = $q->fetch(PDO::FETCH_ASSOC);
+        if ($team) {
+            $team['color']           = $this->resolveColor($team['color']);
+            $team['color_secondary'] = $this->resolveColor($team['color_secondary']);
+        }
+        return $team;
     }
 
     public function teamExistsForManagerActiveSeason(string $managerId): bool
@@ -404,7 +423,12 @@ trait ManagerTrait
 
         $teamBySeason = array_column($teams, null, 'season_id');
         foreach ($prevSeasons as $sid) {
-            if (isset($teamBySeason[$sid])) return $teamBySeason[$sid];
+            if (isset($teamBySeason[$sid])) {
+                $t = $teamBySeason[$sid];
+                $t['color']           = $this->resolveColor($t['color']);
+                $t['color_secondary'] = $this->resolveColor($t['color_secondary']);
+                return $t;
+            }
         }
         return false;
     }

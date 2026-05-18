@@ -79,7 +79,7 @@ trait OfferTrait
                 $pairLoserMap[$key][$l['offer_id']] = [
                     'offer_id'       => $l['offer_id'],
                     'team_id'        => $l['team_id'],
-                    'team_color'     => $l['team_color'],
+                    'team_color'     => $this->resolveColor($l['team_color']),
                     'team_season_id' => $l['team_season_id'],
                     'is_winner'      => $l['status'] === 'success',
                 ];
@@ -446,7 +446,7 @@ trait OfferTrait
         $tq->execute(array_values($teamIds));
         $teamMap = [];
         foreach ($tq->fetchAll(PDO::FETCH_ASSOC) as $t) {
-            $teamMap[$t['id']] = ['team_name' => $t['team_name'], 'color' => $t['color'], 'season_id' => $t['season_id']];
+            $teamMap[$t['id']] = ['team_name' => $t['team_name'], 'color' => $this->resolveColor($t['color']), 'season_id' => $t['season_id']];
         }
 
         $playerIds      = array_unique(array_column($rows, 'player_id'));

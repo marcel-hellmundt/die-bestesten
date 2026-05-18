@@ -52,6 +52,7 @@ trait AwardTrait
         // Index winners by award_id + season_id, attach stats
         $winnerMap = [];
         foreach ($winners as $w) {
+            $w['color'] = $this->resolveColor($w['color']);
             $stats = $statsMap[$w['team_id']] ?? [];
             $winnerMap[$w['award_id'] . '_' . $w['season_id']] = array_merge($w, $stats);
         }

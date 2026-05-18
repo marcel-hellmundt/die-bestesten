@@ -70,6 +70,7 @@ trait PlayerInTeamTrait
         );
         $q->execute([':player_id' => $playerId, ':season_id' => $activeSeasonId]);
         $row = $q->fetch(PDO::FETCH_ASSOC);
+        if ($row) $row['color'] = $this->resolveColor($row['color']);
         return $row ?: null;
     }
 
@@ -112,7 +113,7 @@ trait PlayerInTeamTrait
             'team_id'              => $row['team_id'],
             'season_id'            => $row['season_id'],
             'team_name'            => $row['team_name'],
-            'color'                => $row['color'],
+            'color'                => $this->resolveColor($row['color']),
             'manager_name'         => $row['manager_name'],
             'alias'                => $row['alias'],
             'from_matchday_number' => $row['from_matchday_id'] ? ($numbers[$row['from_matchday_id']] ?? null) : null,

@@ -119,6 +119,18 @@ class Database
 
     protected const STATS_SEASON_START = '2017-07-01';
 
+    private static ?array $_colorMap = null;
+
+    protected function resolveColor(?string $name): ?string
+    {
+        if ($name === null) return null;
+        if (self::$_colorMap === null) {
+            $rows = $this->con->query("SELECT name, hex FROM color")->fetchAll(PDO::FETCH_ASSOC);
+            self::$_colorMap = array_column($rows, 'hex', 'name');
+        }
+        return self::$_colorMap[$name] ?? $name;
+    }
+
     protected function getActiveSeasonId(): ?string
     {
         $q = $this->con->prepare("SELECT id FROM season WHERE start_date <= CURDATE() ORDER BY start_date DESC LIMIT 1");
