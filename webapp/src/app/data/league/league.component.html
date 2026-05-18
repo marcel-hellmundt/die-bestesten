@@ -39,7 +39,7 @@
             <td class="col-slug">{{ item.db_name }}</td>
             <td class="col-num">{{ item.manager_count }}</td>
             @if (isAdmin()) {
-              <td class="col-action" (click)="$event.stopPropagation()">
+              <td class="col-action col-action--multi" (click)="$event.stopPropagation()">
                 @if (migrateState(item.id) === 'success') {
                   <span class="state-msg">Migriert</span>
                 } @else if (migrateState(item.id) === 'error') {
@@ -51,6 +51,11 @@
                     (click)="migrate(item)"
                   >{{ migrateState(item.id) === 'loading' ? 'Läuft…' : 'Migrieren' }}</button>
                 }
+                <button
+                  class="btn btn-sm btn-ghost"
+                  [disabled]="validateState(item.id) === 'loading'"
+                  (click)="validate(item)"
+                >{{ validateState(item.id) === 'loading' ? 'Prüft…' : 'Prüfen' }}</button>
               </td>
             }
           </tr>
@@ -105,6 +110,49 @@
                         </div>
                       }
                     </div>
+                  }
+
+                  @if (validateState(item.id) === 'done' && validateResult(item.id); as vr) {
+                    <div class="validate-result">
+                      <span class="validate-summary">
+                        {{ vr.checked }} Einträge geprüft —
+                        @if (vr.mismatches.length === 0) {
+                          <span class="validate-ok">Alles korrekt</span>
+                        } @else {
+                          <span class="validate-warn">{{ vr.mismatches.length }} Abweichungen</span>
+                        }
+                      </span>
+                      @if (vr.mismatches.length > 0) {
+                        <table class="data-table data-table--compact validate-table">
+                          <thead>
+                            <tr>
+                              <th>Spieltag</th>
+                              <th>Team</th>
+                              <th>Manager</th>
+                              <th>Abweichungen</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (mm of vr.mismatches; track mm.matchday_number + mm.team_name) {
+                              <tr>
+                                <td class="col-num">{{ mm.matchday_number ?? '?' }}</td>
+                                <td>{{ mm.team_name }}</td>
+                                <td>{{ mm.manager_name }}</td>
+                                <td class="validate-fields">
+                                  @for (entry of mm.fields | keyvalue; track entry.key) {
+                                    <span class="validate-field">
+                                      {{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}
+                                    </span>
+                                  }
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                    </div>
+                  } @else if (validateState(item.id) === 'error') {
+                    <p class="state-msg state-msg--error">Fehler beim Prüfen</p>
                   }
 
                   @if (migrateState(item.id) === 'success') {

@@ -14,6 +14,15 @@
 .col-action {
   width: 100px;
   text-align: right;
+
+  &--multi {
+    width: 180px;
+    display: flex;
+    justify-content: flex-end;
+    gap: $space-2;
+    align-items: center;
+    vertical-align: middle;
+  }
 }
 
 .expand-row td {
@@ -157,6 +166,41 @@
   color: $color-text-muted;
   background: $color-surface;
   border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  padding: 1px $space-2;
+}
+
+.validate-result {
+  margin-top: $space-4;
+  border-top: 1px solid $color-border;
+  padding-top: $space-4;
+}
+
+.validate-summary {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  display: block;
+  margin-bottom: $space-3;
+}
+
+.validate-ok   { color: $color-success; font-weight: $font-weight-medium; }
+.validate-warn { color: $color-danger;  font-weight: $font-weight-medium; }
+
+.validate-table {
+  margin-top: $space-2;
+}
+
+.validate-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.validate-field {
+  font-size: $font-xs;
+  font-family: monospace;
+  background: color-mix(in srgb, $color-danger 10%, transparent);
+  color: $color-danger;
   border-radius: $radius-sm;
   padding: 1px $space-2;
 }

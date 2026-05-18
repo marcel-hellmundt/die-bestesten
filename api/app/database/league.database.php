@@ -672,6 +672,172 @@ trait LeagueTrait
         ];
     }
 
+    public function validateLeagueRatings(string $leagueId): array
+    {
+        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq->execute([':id' => $leagueId]);
+        $league = $lq->fetch(PDO::FETCH_ASSOC);
+        if (!$league) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Liga nicht gefunden'];
+        }
+
+        $con = $this->openLeagueConnection($league['db_name']);
+        if (!$con) {
+            http_response_code(500);
+            return ['status' => false, 'message' => 'Verbindung zur Liga-DB fehlgeschlagen'];
+        }
+
+        $trRows = $con->query(
+            "SELECT tr.id, tr.team_id, tr.matchday_id,
+                    tr.points, tr.goals, tr.assists, tr.clean_sheet,
+                    tr.sds, tr.sds_defender, tr.red_cards, tr.yellow_red_cards,
+                    tr.points_goalkeeper, tr.points_defender, tr.points_midfielder, tr.points_forward,
+                    tr.invalid,
+                    t.team_name, t.season_id AS team_season_id,
+                    m.manager_name
+             FROM team_rating tr
+             JOIN team t ON t.id = tr.team_id
+             JOIN manager m ON m.id = t.manager_id"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($trRows)) {
+            return ['status' => true, 'checked' => 0, 'mismatches' => []];
+        }
+
+        $allMatchdayIds = array_values(array_unique(array_column($trRows, 'matchday_id')));
+        $allTeamIds     = array_values(array_unique(array_column($trRows, 'team_id')));
+
+        $ph  = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+        $mdQ = $this->con->prepare("SELECT id, number, season_id FROM matchday WHERE id IN ($ph)");
+        $mdQ->execute($allMatchdayIds);
+        $matchdayMap = [];
+        foreach ($mdQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $matchdayMap[$r['id']] = $r;
+        }
+
+        $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
+        $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+        $luQ = $con->prepare(
+            "SELECT team_id, matchday_id, player_id FROM team_lineup
+             WHERE nominated = 1 AND team_id IN ($phT) AND matchday_id IN ($phM)"
+        );
+        $luQ->execute(array_merge($allTeamIds, $allMatchdayIds));
+        $lineupMap = [];
+        foreach ($luQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $lineupMap[$r['team_id']][$r['matchday_id']][] = $r['player_id'];
+        }
+
+        $allPlayerIds = [];
+        foreach ($lineupMap as $byMd) {
+            foreach ($byMd as $pids) {
+                foreach ($pids as $pid) $allPlayerIds[] = $pid;
+            }
+        }
+        $allPlayerIds = array_values(array_unique($allPlayerIds));
+
+        $prMap  = [];
+        $posMap = [];
+        if (!empty($allPlayerIds)) {
+            $phP  = implode(',', array_fill(0, count($allPlayerIds), '?'));
+            $phM2 = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+            $prQ  = $this->con->prepare(
+                "SELECT player_id, matchday_id,
+                        COALESCE(points, 0) AS points, COALESCE(goals, 0) AS goals,
+                        COALESCE(assists, 0) AS assists, COALESCE(clean_sheet, 0) AS clean_sheet,
+                        COALESCE(sds, 0) AS sds,
+                        COALESCE(red_card, 0) AS red_card,
+                        COALESCE(yellow_red_card, 0) AS yellow_red_card
+                 FROM player_rating WHERE player_id IN ($phP) AND matchday_id IN ($phM2)"
+            );
+            $prQ->execute(array_merge($allPlayerIds, $allMatchdayIds));
+            foreach ($prQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $prMap[$r['player_id']][$r['matchday_id']] = $r;
+            }
+
+            $allSeasonIds = array_values(array_unique(array_column($matchdayMap, 'season_id')));
+            if (!empty($allSeasonIds)) {
+                $phS  = implode(',', array_fill(0, count($allSeasonIds), '?'));
+                $pisQ = $this->con->prepare(
+                    "SELECT player_id, season_id, position FROM player_in_season
+                     WHERE player_id IN ($phP) AND season_id IN ($phS)"
+                );
+                $pisQ->execute(array_merge($allPlayerIds, $allSeasonIds));
+                foreach ($pisQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $posMap[$r['player_id']][$r['season_id']] = $r['position'];
+                }
+            }
+        }
+
+        $mismatches = [];
+        foreach ($trRows as $tr) {
+            $md       = $matchdayMap[$tr['matchday_id']] ?? null;
+            $seasonId = $md['season_id'] ?? $tr['team_season_id'];
+            $players  = $lineupMap[$tr['team_id']][$tr['matchday_id']] ?? [];
+
+            $calcInvalid = empty($players) ? 1 : 0;
+            $calcPoints = $calcGoals = $calcAssists = $calcClean = 0;
+            $calcSds = $calcSdsDef = $calcRc = $calcYrc = 0;
+            $calcGk = $calcDef = $calcMid = $calcFwd = 0;
+
+            foreach ($players as $pid) {
+                $pr  = $prMap[$pid][$tr['matchday_id']] ?? null;
+                if (!$pr) continue;
+                $pos = $posMap[$pid][$seasonId] ?? null;
+                $calcPoints += (int) $pr['points'];
+                $calcGoals  += (int) $pr['goals'];
+                $calcAssists += (int) $pr['assists'];
+                $calcClean  += (int) $pr['clean_sheet'];
+                $calcSds    += (int) $pr['sds'];
+                $calcRc     += (int) $pr['red_card'];
+                $calcYrc    += (int) $pr['yellow_red_card'];
+                if ($pr['sds'] && in_array($pos, ['GOALKEEPER', 'DEFENDER'])) $calcSdsDef++;
+                match ($pos) {
+                    'GOALKEEPER' => $calcGk  += (int) $pr['points'],
+                    'DEFENDER'   => $calcDef += (int) $pr['points'],
+                    'MIDFIELDER' => $calcMid += (int) $pr['points'],
+                    'FORWARD'    => $calcFwd += (int) $pr['points'],
+                    default      => null,
+                };
+            }
+
+            $checks = [
+                'points'            => [(int) $tr['points'],            $calcPoints],
+                'goals'             => [(int) $tr['goals'],             $calcGoals],
+                'assists'           => [(int) $tr['assists'],           $calcAssists],
+                'clean_sheet'       => [(int) $tr['clean_sheet'],       $calcClean],
+                'sds'               => [(int) $tr['sds'],               $calcSds],
+                'sds_defender'      => [(int) $tr['sds_defender'],      $calcSdsDef],
+                'red_cards'         => [(int) $tr['red_cards'],         $calcRc],
+                'yellow_red_cards'  => [(int) $tr['yellow_red_cards'],  $calcYrc],
+                'points_goalkeeper' => [(int) $tr['points_goalkeeper'], $calcGk],
+                'points_defender'   => [(int) $tr['points_defender'],   $calcDef],
+                'points_midfielder' => [(int) $tr['points_midfielder'], $calcMid],
+                'points_forward'    => [(int) $tr['points_forward'],    $calcFwd],
+            ];
+
+            $diff = [];
+            foreach ($checks as $field => [$stored, $calculated]) {
+                if ($stored !== $calculated) {
+                    $diff[$field] = ['stored' => $stored, 'calculated' => $calculated];
+                }
+            }
+            if (!empty($diff)) {
+                $mismatches[] = [
+                    'team_name'       => $tr['team_name'],
+                    'manager_name'    => $tr['manager_name'],
+                    'matchday_number' => $md ? (int) $md['number'] : null,
+                    'season_id'       => $seasonId,
+                    'fields'          => $diff,
+                ];
+            }
+        }
+
+        usort($mismatches, fn($a, $b) => ($a['matchday_number'] ?? 0) <=> ($b['matchday_number'] ?? 0));
+
+        return ['status' => true, 'checked' => count($trRows), 'mismatches' => $mismatches];
+    }
+
     private function getLeagueManagerCount(string $dbName): int
     {
         try {

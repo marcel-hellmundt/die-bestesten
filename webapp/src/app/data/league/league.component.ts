@@ -125,8 +125,31 @@ export class LeagueDataComponent {
   migrateStates = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
   migrateResults = signal<Record<string, any>>({});
 
+  validateStates  = signal<Record<string, 'idle' | 'loading' | 'done' | 'error'>>({});
+  validateResults = signal<Record<string, any>>({});
+
   migrateState(leagueId: string): 'idle' | 'loading' | 'success' | 'error' {
     return this.migrateStates()[leagueId] ?? 'idle';
+  }
+
+  validateState(leagueId: string): 'idle' | 'loading' | 'done' | 'error' {
+    return this.validateStates()[leagueId] ?? 'idle';
+  }
+
+  validateResult(leagueId: string): any {
+    return this.validateResults()[leagueId] ?? null;
+  }
+
+  validate(league: League): void {
+    this.validateStates.update(s => ({ ...s, [league.id]: 'loading' }));
+    this.api.post<any>('league/validate_ratings', { league_id: league.id }).subscribe({
+      next: res => {
+        this.validateStates.update(s => ({ ...s, [league.id]: 'done' }));
+        this.validateResults.update(s => ({ ...s, [league.id]: res }));
+        if (!this.expandedId() || this.expandedId() !== league.id) this.toggleLeague(league);
+      },
+      error: () => this.validateStates.update(s => ({ ...s, [league.id]: 'error' })),
+    });
   }
 
   createdMatchdays(leagueId: string): { season_id: string; matchday_number: number }[] {

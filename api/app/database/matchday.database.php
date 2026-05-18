@@ -145,7 +145,7 @@ trait MatchdayTrait
                 $yellowRedCards += (int) $pr['yellow_red_card'];
                 $cleanSheet     += (int) $pr['clean_sheet'];
                 $sds            += (int) $pr['sds'];
-                if ($pr['sds'] && $pr['position'] === 'DEFENDER') $sdsDefender++;
+                if ($pr['sds'] && in_array($pr['position'], ['GOALKEEPER', 'DEFENDER'])) $sdsDefender++;
                 match ($pr['position']) {
                     'GOALKEEPER' => $ptsGk  += (int) $pr['points'],
                     'DEFENDER'   => $ptsDef += (int) $pr['points'],
