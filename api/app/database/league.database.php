@@ -829,9 +829,11 @@ trait LeagueTrait
             }
             if (!empty($diff)) {
                 $mismatches[] = [
+                    'team_id'         => $tr['team_id'],
+                    'matchday_id'     => $tr['matchday_id'],
                     'team_name'       => $tr['team_name'],
                     'manager_name'    => $tr['manager_name'],
-                    'matchday_number' => $md ? (int) $md['number'] : null,
+                    'matchday_number' => (int) $md['number'],
                     'season_id'       => $seasonId,
                     'fields'          => $diff,
                 ];
@@ -841,6 +843,56 @@ trait LeagueTrait
         usort($mismatches, fn($a, $b) => ($a['matchday_number'] ?? 0) <=> ($b['matchday_number'] ?? 0));
 
         return ['status' => true, 'checked' => count($trRows), 'mismatches' => $mismatches];
+    }
+
+    public function fixTeamRatingField(string $leagueId, string $teamId, string $matchdayId, string $field, int $value): array
+    {
+        $allowedNew = [
+            'points', 'goals', 'assists', 'clean_sheet', 'sds', 'sds_defender',
+            'red_cards', 'yellow_red_cards',
+            'points_goalkeeper', 'points_defender', 'points_midfielder', 'points_forward',
+        ];
+        $allowedOld = [
+            'points', 'goals', 'assists', 'clean_sheet', 'sds', 'sds_defender',
+            'points_goalkeeper', 'points_defender', 'points_midfielder', 'points_forward',
+        ];
+        if (!in_array($field, $allowedNew, true)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Ungültiges Feld'];
+        }
+
+        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq->execute([':id' => $leagueId]);
+        $league = $lq->fetch(\PDO::FETCH_ASSOC);
+        if (!$league) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Liga nicht gefunden'];
+        }
+
+        $con = $this->openLeagueConnection($league['db_name']);
+        if (!$con) {
+            http_response_code(500);
+            return ['status' => false, 'message' => 'Verbindung zur Liga-DB fehlgeschlagen'];
+        }
+
+        $con->prepare("UPDATE team_rating SET $field = ? WHERE team_id = ? AND matchday_id = ?")
+            ->execute([$value, $teamId, $matchdayId]);
+
+        if (in_array($field, $allowedOld, true)) {
+            $mdNum = $this->con->prepare("SELECT number FROM matchday WHERE id = ? LIMIT 1");
+            $mdNum->execute([$matchdayId]);
+            $num = $mdNum->fetchColumn();
+            if ($num !== false) {
+                try {
+                    $this->con_old->prepare("UPDATE team_rating SET $field = ? WHERE team_id = ? AND matchday_number = ?")
+                        ->execute([$value, $teamId, (int) $num]);
+                } catch (\Throwable $e) {
+                    error_log('fixTeamRatingField old-DB sync failed: ' . $e->getMessage());
+                }
+            }
+        }
+
+        return ['status' => true];
     }
 
     private function getLeagueManagerCount(string $dbName): int

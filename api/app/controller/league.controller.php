@@ -51,6 +51,21 @@ class LeagueController extends _BaseController
             return $this->db->validateLeagueRatings($leagueId);
         }
 
+        // POST /league/fix_rating  { league_id, team_id, matchday_id, field, value }
+        if ($this->id === 'fix_rating') {
+            $body       = $this->body();
+            $leagueId   = $body['league_id']   ?? null;
+            $teamId     = $body['team_id']      ?? null;
+            $matchdayId = $body['matchday_id']  ?? null;
+            $field      = $body['field']        ?? null;
+            $value      = $body['value']        ?? null;
+            if (!$leagueId || !$teamId || !$matchdayId || !$field || !isset($value)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Pflichtfelder fehlen'];
+            }
+            return $this->db->fixTeamRatingField($leagueId, $teamId, $matchdayId, $field, (int) $value);
+        }
+
         return $this->methodNotAllowed();
     }
 

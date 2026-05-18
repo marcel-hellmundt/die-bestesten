@@ -163,6 +163,37 @@ export class LeagueDataComponent {
       }));
   }
 
+  fixingState = signal<Record<string, boolean>>({});
+
+  isFixing(leagueId: string, mm: any, field: string): boolean {
+    return this.fixingState()[`${leagueId}:${mm.team_id}:${mm.matchday_id}:${field}`] ?? false;
+  }
+
+  fixField(leagueId: string, mm: any, field: string, value: number): void {
+    const key = `${leagueId}:${mm.team_id}:${mm.matchday_id}:${field}`;
+    if (this.fixingState()[key]) return;
+    this.fixingState.update(s => ({ ...s, [key]: true }));
+    this.api.post<any>('league/fix_rating', { league_id: leagueId, team_id: mm.team_id, matchday_id: mm.matchday_id, field, value }).subscribe({
+      next: () => {
+        this.validateResults.update(results => {
+          const vr = results[leagueId];
+          if (!vr) return results;
+          const newMismatches = vr.mismatches
+            .map((m: any) => {
+              if (m.team_id !== mm.team_id || m.matchday_id !== mm.matchday_id) return m;
+              const newFields = { ...m.fields };
+              delete newFields[field];
+              return { ...m, fields: newFields };
+            })
+            .filter((m: any) => Object.keys(m.fields).length > 0);
+          return { ...results, [leagueId]: { ...vr, mismatches: newMismatches } };
+        });
+        this.fixingState.update(s => { const n = { ...s }; delete n[key]; return n; });
+      },
+      error: () => this.fixingState.update(s => { const n = { ...s }; delete n[key]; return n; }),
+    });
+  }
+
   validate(league: League): void {
     this.validateStates.update(s => ({ ...s, [league.id]: 'loading' }));
     this.cache.ensureSeasons();

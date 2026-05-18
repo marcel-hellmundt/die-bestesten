@@ -97,7 +97,9 @@ GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_po
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
 GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}
 PATCH    /league/:id           — {division_id: UUID|null} — Spielerpool-Division setzen — Admin
-POST     /league/migrate       — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
+POST     /league/migrate           — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
+POST     /league/validate_ratings  — {league_id} — prüft team_ratings ab 2020/21 gegen team_lineup + player_rating — Admin
+POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB + alte DB) — Admin
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
 POST     /transferwindow/migrate — Admin

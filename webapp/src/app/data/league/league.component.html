@@ -144,9 +144,15 @@
                                         <td>{{ mm.manager_name }}</td>
                                         <td class="validate-fields">
                                           @for (entry of mm.fields | keyvalue; track entry.key) {
-                                            <span class="validate-field" [class.validate-field--critical]="entry.key === 'points'" [class.validate-field--minor]="entry.key !== 'points'">
-                                              {{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}
-                                            </span>
+                                            <button
+                                              class="validate-field"
+                                              [class.validate-field--critical]="entry.key === 'points'"
+                                              [class.validate-field--minor]="entry.key !== 'points'"
+                                              [class.validate-field--fixing]="isFixing(item.id, mm, $any(entry.key))"
+                                              [disabled]="isFixing(item.id, mm, $any(entry.key))"
+                                              (click)="fixField(item.id, mm, $any(entry.key), entry.value.calculated)"
+                                              title="Auf {{ entry.value.calculated }} korrigieren"
+                                            >{{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}</button>
                                           }
                                         </td>
                                       </tr>

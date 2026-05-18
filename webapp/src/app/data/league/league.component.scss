@@ -225,6 +225,12 @@
   font-family: monospace;
   border-radius: $radius-sm;
   padding: 1px $space-2;
+  border: none;
+  cursor: pointer;
+  transition: filter $transition-fast, opacity $transition-fast;
+
+  &:hover { filter: brightness(1.15); }
+  &:disabled, &--fixing { opacity: 0.5; cursor: wait; }
 
   &--critical {
     background: color-mix(in srgb, $color-danger 15%, transparent);
