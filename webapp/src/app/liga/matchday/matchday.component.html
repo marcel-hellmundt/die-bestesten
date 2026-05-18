@@ -94,7 +94,7 @@
                   </td>
                   <td class="col-icons col-desktop">
                     <span class="icons-wrap">
-                      @if (+r.sds) {
+                      @for (s of range(+r.sds); track s) {
                         <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
                       }
                     </span>
@@ -134,7 +134,9 @@
                     <span class="stats-compact">
                       @if (+r.sds) {
                         <span class="stats-compact__row">
-                          <img src="img/icons/sds.png" class="rating-icon--sm" alt="SdS" />
+                          @for (s of range(+r.sds); track s) {
+                            <img src="img/icons/sds.png" class="rating-icon--sm" alt="SdS" />
+                          }
                         </span>
                       }
                       @if (+r.goals) {
