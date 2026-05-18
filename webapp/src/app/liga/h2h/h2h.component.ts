@@ -26,6 +26,7 @@ export class H2HComponent {
 
   selectedIndex  = signal(0);
   selectedSeason = computed(() => this.seasons()[this.selectedIndex()] ?? null);
+  selectedSeasonYear = computed(() => this.selectedSeason()?.start_date?.slice(0, 4) ?? '');
   canDecrement   = computed(() => this.selectedIndex() < this.seasons().length - 1);
   canIncrement   = computed(() => this.selectedIndex() > 0);
   decrement()    { if (this.canDecrement()) this.selectedIndex.update(i => i + 1); }

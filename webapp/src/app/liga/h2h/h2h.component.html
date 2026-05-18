@@ -1,6 +1,6 @@
 <div class="season-nav">
   <button class="btn btn-ghost btn-sm" (click)="decrement()" [disabled]="!canDecrement()">‹</button>
-  <span class="season-label">{{ selectedSeason()?.start_date ?? '' | slice:0:4 }}</span>
+  <span class="season-label">{{ selectedSeasonYear() }}</span>
   <button class="btn btn-ghost btn-sm" (click)="increment()" [disabled]="!canIncrement()">›</button>
 </div>
 
