@@ -93,6 +93,36 @@ trait H2HTrait
             }
         }
 
+        // Build previous-season rank map (manager_id → rank) as tiebreaker for standings
+        // Teams are per-season, so summing team_rating for prev-season team IDs gives correct totals
+        $prevRankByManager = [];
+        $prevSeasonQ = $this->con->prepare(
+            "SELECT id FROM season
+             WHERE start_date < (SELECT start_date FROM season WHERE id = :s)
+             ORDER BY start_date DESC LIMIT 1"
+        );
+        $prevSeasonQ->execute([':s' => $seasonId]);
+        $prevSeasonId = $prevSeasonQ->fetchColumn();
+        if ($prevSeasonId) {
+            $ptQ = $this->con_league->prepare(
+                "SELECT t.id, t.manager_id, COALESCE(SUM(tr.points), 0) AS total_points
+                 FROM team t
+                 LEFT JOIN team_rating tr ON tr.team_id = t.id
+                 WHERE t.season_id = :s
+                 GROUP BY t.id, t.manager_id"
+            );
+            $ptQ->execute([':s' => $prevSeasonId]);
+            $managerPoints = [];
+            foreach ($ptQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $managerPoints[$row['manager_id']] = (int) $row['total_points'];
+            }
+            arsort($managerPoints);
+            $rank = 1;
+            foreach ($managerPoints as $managerId => $_) {
+                $prevRankByManager[$managerId] = $rank++;
+            }
+        }
+
         // Enrich matches with result data
         $enrichMatch = function (array $m) use ($teamMap, $matchdayMap, $ratingMap): array {
             $homeRating = $ratingMap[$m['home_team_id']][$m['matchday_id']] ?? null;
@@ -185,9 +215,14 @@ trait H2HTrait
                 $s['manager_name'] = $t['manager_name'] ?? null;
             }
             unset($s);
-            usort($standingList, fn($a, $b) =>
-                $b['pts'] <=> $a['pts'] ?: $b['goals_for'] <=> $a['goals_for'] ?: strcmp($a['team_name'] ?? '', $b['team_name'] ?? '')
-            );
+            usort($standingList, function ($a, $b) use ($teamMap, $prevRankByManager) {
+                if ($a['pts'] !== $b['pts'])         return $b['pts'] <=> $a['pts'];
+                if ($a['goals_for'] !== $b['goals_for']) return $b['goals_for'] <=> $a['goals_for'];
+                $aRank = $prevRankByManager[$teamMap[$a['team_id']]['manager_id'] ?? ''] ?? PHP_INT_MAX;
+                $bRank = $prevRankByManager[$teamMap[$b['team_id']]['manager_id'] ?? ''] ?? PHP_INT_MAX;
+                if ($aRank !== $bRank)               return $aRank <=> $bRank;
+                return strcmp($a['team_name'] ?? '', $b['team_name'] ?? '');
+            });
 
             // Enrich group teams list
             $groupTeams = array_values(array_filter(
