@@ -146,6 +146,7 @@ GET      /h2h/:id            → Match-Detail {match,matchday,home_team,away_tea
 POST     /h2h               {season_id,phase,leg,home_team_id,away_team_id,matchday_id,group_id?,sort_index?} → {id} — Admin
 PATCH    /h2h/:id           {home_team_id?,away_team_id?,matchday_id?,group_id?,sort_index?} — Admin
 DELETE   /h2h/:id           — Admin
+POST     /h2h/generate      {league_id, season_id} → {status,groups:4,matches:24} — Generiert H2H-Gruppenphase nach festem 12-Teams-Template (Snake-Seeding nach Vorjahresrang, 4 Gruppen à 3, 24 Gruppenmatches auf Spieltage 1–18) — Admin
 GET      /h2h_group         ?season_id= → [{id,name,sort_index,teams:[team_id,...]}] — Auth
 POST     /h2h_group         {season_id,name,sort_index?} → {id} — Admin
 PATCH    /h2h_group/:id     {name?,sort_index?,teams?:[team_id,...]} (teams ersetzt alle Zuordnungen) — Admin

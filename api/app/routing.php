@@ -787,6 +787,12 @@ class Routing
                         'path' => '/h2h/:id',
                         'description' => 'Match löschen — Admin',
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/h2h/generate',
+                        'description' => 'H2H-Gruppenphase nach festem Template generieren (Snake-Seeding nach Vorjahresrang, 4 Gruppen à 3, 24 Matches auf Spieltage 1–18) → {status,groups,matches} — Admin',
+                        'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
+                    ],
                 ],
             ]),
 

@@ -522,4 +522,144 @@ trait H2HTrait
         $q = $this->con_league->prepare("DELETE FROM h2h_match WHERE id = :id");
         $q->execute([':id' => $id]);
     }
+
+    public function generateH2HTournament(string $leagueId, string $seasonId): array
+    {
+        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq->execute([':id' => $leagueId]);
+        $league = $lq->fetch(PDO::FETCH_ASSOC);
+        if (!$league) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Liga nicht gefunden'];
+        }
+
+        try {
+            $con = new PDO(
+                "mysql:host={$_ENV['DB_HOST']};dbname={$league['db_name']};charset=utf8",
+                $_ENV['DB_USER'], $_ENV['DB_PASSWORD']
+            );
+            $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException) {
+            http_response_code(500);
+            return ['status' => false, 'message' => 'Verbindung zur Liga-DB fehlgeschlagen'];
+        }
+
+        $existQ = $con->prepare("SELECT COUNT(*) FROM h2h_group WHERE season_id = :s");
+        $existQ->execute([':s' => $seasonId]);
+        if ((int) $existQ->fetchColumn() > 0) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'H2H-Turnier für diese Saison bereits vorhanden'];
+        }
+
+        $teamsQ = $con->prepare(
+            "SELECT t.id, t.manager_id, t.team_name FROM team t WHERE t.season_id = :s ORDER BY t.team_name ASC"
+        );
+        $teamsQ->execute([':s' => $seasonId]);
+        $teams = $teamsQ->fetchAll(PDO::FETCH_ASSOC);
+
+        if (count($teams) !== 12) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Genau 12 Teams benötigt, gefunden: ' . count($teams)];
+        }
+
+        $prevSeasonQ = $this->con->prepare(
+            "SELECT id FROM season
+             WHERE start_date < (SELECT start_date FROM season WHERE id = :s)
+             ORDER BY start_date DESC LIMIT 1"
+        );
+        $prevSeasonQ->execute([':s' => $seasonId]);
+        $prevSeasonId = $prevSeasonQ->fetchColumn();
+
+        $prevPoints = [];
+        if ($prevSeasonId) {
+            $ptQ = $con->prepare(
+                "SELECT t.manager_id, COALESCE(SUM(tr.points), 0) AS total_points
+                 FROM team t LEFT JOIN team_rating tr ON tr.team_id = t.id
+                 WHERE t.season_id = :s GROUP BY t.manager_id"
+            );
+            $ptQ->execute([':s' => $prevSeasonId]);
+            foreach ($ptQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $prevPoints[$row['manager_id']] = (int) $row['total_points'];
+            }
+        }
+
+        usort($teams, function ($a, $b) use ($prevPoints) {
+            $aP = $prevPoints[$a['manager_id']] ?? -1;
+            $bP = $prevPoints[$b['manager_id']] ?? -1;
+            if ($aP !== $bP) return $bP <=> $aP;
+            return strcmp($a['team_name'], $b['team_name']);
+        });
+
+        // Snake-seed: rank 1-4 → A-D slot 0, rank 5-8 → D-A slot 1, rank 9-12 → A-D slot 2
+        $snakeMap = [
+            [0, 0], [1, 0], [2, 0], [3, 0],
+            [3, 1], [2, 1], [1, 1], [0, 1],
+            [0, 2], [1, 2], [2, 2], [3, 2],
+        ];
+        $groupSlots = [[], [], [], []];
+        foreach ($teams as $i => $team) {
+            [$gi, $si] = $snakeMap[$i];
+            $groupSlots[$gi][$si] = $team['id'];
+        }
+
+        $mdQ = $this->con->prepare(
+            "SELECT id, number FROM matchday WHERE season_id = :s ORDER BY number ASC"
+        );
+        $mdQ->execute([':s' => $seasonId]);
+        $matchdays = [];
+        foreach ($mdQ->fetchAll(PDO::FETCH_ASSOC) as $md) {
+            $matchdays[(int) $md['number']] = $md['id'];
+        }
+
+        if (count($matchdays) < 18) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Mindestens 18 Spieltage benötigt, gefunden: ' . count($matchdays)];
+        }
+
+        // [matchday_number, group_index, leg, home_slot_index, away_slot_index]
+        $template = [
+            [1,  0, 1, 0, 1], [2,  1, 1, 0, 1], [2,  2, 1, 0, 1], [3,  3, 1, 0, 1],
+            [4,  1, 1, 1, 2], [5,  2, 1, 1, 2], [5,  3, 1, 1, 2], [6,  0, 1, 1, 2],
+            [7,  2, 1, 2, 0], [8,  3, 1, 2, 0], [8,  0, 1, 2, 0], [9,  1, 1, 2, 0],
+            [10, 3, 2, 1, 0], [11, 0, 2, 1, 0], [11, 1, 2, 1, 0], [12, 2, 2, 1, 0],
+            [13, 0, 2, 2, 1], [14, 1, 2, 2, 1], [14, 2, 2, 2, 1], [15, 3, 2, 2, 1],
+            [16, 1, 2, 0, 2], [17, 2, 2, 0, 2], [17, 3, 2, 0, 2], [18, 0, 2, 0, 2],
+        ];
+
+        $groupNames = ['Gruppe A', 'Gruppe B', 'Gruppe C', 'Gruppe D'];
+        $groupIds   = [];
+        $stmtGroup  = $con->prepare(
+            "INSERT INTO h2h_group (id, season_id, name, sort_index) VALUES (?, ?, ?, ?)"
+        );
+        $stmtGT = $con->prepare(
+            "INSERT INTO h2h_group_team (id, group_id, team_id) VALUES (UUID(), ?, ?)"
+        );
+        for ($gi = 0; $gi < 4; $gi++) {
+            $gid = $con->query("SELECT UUID()")->fetchColumn();
+            $groupIds[$gi] = $gid;
+            $stmtGroup->execute([$gid, $seasonId, $groupNames[$gi], $gi]);
+            foreach ($groupSlots[$gi] as $teamId) {
+                $stmtGT->execute([$gid, $teamId]);
+            }
+        }
+
+        $stmtMatch = $con->prepare(
+            "INSERT INTO h2h_match (id, season_id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index)
+             VALUES (UUID(), ?, 'group', ?, ?, ?, ?, ?, ?)"
+        );
+        $created = 0;
+        foreach ($template as $si => [$mdNum, $gi, $leg, $homeSlot, $awaySlot]) {
+            $matchdayId = $matchdays[$mdNum] ?? null;
+            if (!$matchdayId) continue;
+            $stmtMatch->execute([
+                $seasonId, $leg,
+                $groupSlots[$gi][$homeSlot],
+                $groupSlots[$gi][$awaySlot],
+                $matchdayId, $groupIds[$gi], $si,
+            ]);
+            $created++;
+        }
+
+        return ['status' => true, 'groups' => 4, 'matches' => $created];
+    }
 }

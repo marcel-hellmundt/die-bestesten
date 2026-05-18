@@ -84,9 +84,6 @@
                     }
                     {{ m.away_team_name }}
                   </span>
-                  @if (isAdmin) {
-                    <button class="btn-delete" (click)="$event.stopPropagation(); deleteMatch(m.id)" title="Löschen">✕</button>
-                  }
                 </div>
               }
             </div>
@@ -131,9 +128,6 @@
                   }
                   {{ leg.away_team_name }}
                 </span>
-                @if (isAdmin) {
-                  <button class="btn-delete" (click)="$event.stopPropagation(); deleteMatch(leg.id)" title="Löschen">✕</button>
-                }
               </div>
             }
             @if (mu.hasResults && mu.legs.length > 1) {
@@ -148,113 +142,7 @@
     }
   }
 
-  @if (groups().length === 0 && knockoutMatches().length === 0 && !isAdmin) {
+  @if (groups().length === 0 && knockoutMatches().length === 0) {
     <p class="state-msg">Noch kein Turnier für diese Saison definiert.</p>
-  }
-
-  <!-- ── Admin-Panel ─────────────────────────────────────────────────────── -->
-  @if (isAdmin) {
-    <div class="admin-panel">
-      <div class="section-header-row"><h2 class="section-header">Admin: Turnier verwalten</h2></div>
-
-      <!-- Gruppe anlegen -->
-      <div class="admin-section">
-        <h3 class="admin-subtitle">Gruppe anlegen</h3>
-        <div class="admin-row">
-          <input class="input" type="text" placeholder="Gruppenname" [value]="newGroupName()"
-            (input)="newGroupName.set($any($event.target).value)" />
-          <button class="btn btn-primary btn-sm" (click)="submitGroup()"
-            [disabled]="groupSubmit() === 'loading' || !newGroupName().trim()">
-            Anlegen
-          </button>
-        </div>
-        @if (groupError()) { <p class="admin-error">{{ groupError() }}</p> }
-      </div>
-
-      <!-- Gruppen-Teams verwalten -->
-      @if (groups().length > 0) {
-        <div class="admin-section">
-          <h3 class="admin-subtitle">Gruppen-Teams</h3>
-          @for (group of groups(); track group.id) {
-            <div class="admin-group-block">
-              <div class="admin-group-header">
-                <span class="admin-group-label">{{ group.name }}</span>
-                <button class="btn btn-ghost btn-sm btn-danger-outline" (click)="deleteGroup(group.id)">Löschen</button>
-              </div>
-              <div class="team-checkbox-list">
-                @for (t of adminTeams(); track t.id) {
-                  <label class="team-checkbox-item">
-                    <input type="checkbox"
-                      [checked]="group.teams.includes(t.id)"
-                      (change)="toggleGroupTeam(group.id, t.id, $any($event.target).checked)" />
-                    @if (t.color) {
-                      <span class="team-dot" [style.background-color]="t.color"></span>
-                    }
-                    {{ t.team_name }}
-                  </label>
-                }
-              </div>
-            </div>
-          }
-        </div>
-      }
-
-      <!-- Match anlegen -->
-      <div class="admin-section">
-        <h3 class="admin-subtitle">Match anlegen</h3>
-        <div class="admin-form">
-          <div class="admin-row">
-            <label class="admin-label">Phase</label>
-            <select class="input input--select" [value]="newMatchPhase()" (change)="newMatchPhase.set($any($event.target).value)">
-              @for (p of phases; track p) { <option [value]="p">{{ phaseLabel(p) || p }}</option> }
-            </select>
-          </div>
-          <div class="admin-row">
-            <label class="admin-label">Spiel</label>
-            <select class="input input--select" [value]="newMatchLeg()" (change)="newMatchLeg.set(+$any($event.target).value)">
-              <option [value]="1">Hinspiel</option>
-              <option [value]="2">Rückspiel</option>
-            </select>
-          </div>
-          <div class="admin-row">
-            <label class="admin-label">Heim</label>
-            <select class="input input--select" [value]="newMatchHome()" (change)="newMatchHome.set($any($event.target).value)">
-              <option value="">— Team wählen —</option>
-              @for (t of adminTeams(); track t.id) { <option [value]="t.id">{{ t.team_name }}</option> }
-            </select>
-          </div>
-          <div class="admin-row">
-            <label class="admin-label">Gast</label>
-            <select class="input input--select" [value]="newMatchAway()" (change)="newMatchAway.set($any($event.target).value)">
-              <option value="">— Team wählen —</option>
-              @for (t of adminTeams(); track t.id) { <option [value]="t.id">{{ t.team_name }}</option> }
-            </select>
-          </div>
-          <div class="admin-row">
-            <label class="admin-label">Spieltag</label>
-            <select class="input input--select" [value]="newMatchMatchday()" (change)="newMatchMatchday.set($any($event.target).value)">
-              <option value="">— Spieltag wählen —</option>
-              @for (md of adminMatchdays(); track md.id) { <option [value]="md.id">Spieltag {{ md.number }}</option> }
-            </select>
-          </div>
-          @if (newMatchPhase() === 'group') {
-            <div class="admin-row">
-              <label class="admin-label">Gruppe</label>
-              <select class="input input--select" [value]="newMatchGroup()" (change)="newMatchGroup.set($any($event.target).value)">
-                <option value="">— Gruppe wählen —</option>
-                @for (g of groups(); track g.id) { <option [value]="g.id">{{ g.name }}</option> }
-              </select>
-            </div>
-          }
-          <div class="admin-row">
-            <button class="btn btn-primary btn-sm" (click)="submitMatch()"
-              [disabled]="matchSubmit() === 'loading' || !newMatchHome() || !newMatchAway() || !newMatchMatchday()">
-              Match anlegen
-            </button>
-          </div>
-          @if (matchError()) { <p class="admin-error">{{ matchError() }}</p> }
-        </div>
-      </div>
-    </div>
   }
 }

@@ -1,0 +1,31 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  @if (activeSeasonLabel()) {
+    <p class="season-hint">Aktive Saison: <strong>{{ activeSeasonLabel() }}</strong></p>
+  }
+  <div class="league-grid">
+    @for (league of leagues(); track league.id) {
+      <div class="card league-card">
+        <div class="league-card-name">{{ league.name }}</div>
+        <div class="league-card-meta">{{ league.slug }} · {{ league.manager_count }} Manager</div>
+        <div class="league-card-actions">
+          <button
+            class="btn btn-secondary btn-sm"
+            [disabled]="generateState(league.id) === 'loading' || !activeSeasonId()"
+            (click)="generate(league)"
+          >
+            @if (generateState(league.id) === 'loading') { Generiert… } @else { H2H generieren }
+          </button>
+          @if (generateState(league.id) === 'success') {
+            <span class="gen-msg gen-msg--success">{{ generateMessage(league.id) }}</span>
+          } @else if (generateState(league.id) === 'error') {
+            <span class="gen-msg gen-msg--error">{{ generateMessage(league.id) }}</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}

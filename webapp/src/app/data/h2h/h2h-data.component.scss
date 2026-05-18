@@ -1,0 +1,45 @@
+@use '../../../styles/variables' as *;
+
+.season-hint {
+  margin-bottom: $space-5;
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.league-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $space-4;
+}
+
+.league-card {
+  padding: $space-4;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.league-card-name {
+  font-weight: $font-weight-semibold;
+  font-size: $font-md;
+}
+
+.league-card-meta {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  margin-bottom: $space-2;
+}
+
+.league-card-actions {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+
+.gen-msg {
+  font-size: $font-xs;
+
+  &--success { color: $color-success; }
+  &--error   { color: $color-danger; }
+}
