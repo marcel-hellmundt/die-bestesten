@@ -144,7 +144,7 @@
                                         <td>{{ mm.manager_name }}</td>
                                         <td class="validate-fields">
                                           @for (entry of mm.fields | keyvalue; track entry.key) {
-                                            <span class="validate-field">
+                                            <span class="validate-field" [class.validate-field--critical]="entry.key === 'points'" [class.validate-field--minor]="entry.key !== 'points'">
                                               {{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}
                                             </span>
                                           }

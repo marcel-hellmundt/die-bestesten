@@ -709,7 +709,11 @@ trait LeagueTrait
         $allTeamIds     = array_values(array_unique(array_column($trRows, 'team_id')));
 
         $ph  = implode(',', array_fill(0, count($allMatchdayIds), '?'));
-        $mdQ = $this->con->prepare("SELECT id, number, season_id FROM matchday WHERE id IN ($ph)");
+        $mdQ = $this->con->prepare(
+            "SELECT md.id, md.number, md.season_id FROM matchday md
+             JOIN season s ON s.id = md.season_id
+             WHERE md.id IN ($ph) AND s.start_date >= '2020-07-01'"
+        );
         $mdQ->execute($allMatchdayIds);
         $matchdayMap = [];
         foreach ($mdQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
@@ -771,8 +775,9 @@ trait LeagueTrait
 
         $mismatches = [];
         foreach ($trRows as $tr) {
-            $md       = $matchdayMap[$tr['matchday_id']] ?? null;
-            $seasonId = $md['season_id'] ?? $tr['team_season_id'];
+            $md = $matchdayMap[$tr['matchday_id']] ?? null;
+            if (!$md) continue; // pre-2020/21 or unknown matchday
+            $seasonId = $md['season_id'];
             $players  = $lineupMap[$tr['team_id']][$tr['matchday_id']] ?? [];
 
             $calcInvalid = empty($players) ? 1 : 0;

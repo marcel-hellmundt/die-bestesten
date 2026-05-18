@@ -223,10 +223,19 @@
 .validate-field {
   font-size: $font-xs;
   font-family: monospace;
-  background: color-mix(in srgb, $color-danger 10%, transparent);
-  color: $color-danger;
   border-radius: $radius-sm;
   padding: 1px $space-2;
+
+  &--critical {
+    background: color-mix(in srgb, $color-danger 15%, transparent);
+    color: $color-danger;
+    font-weight: $font-weight-semibold;
+  }
+
+  &--minor {
+    background: color-mix(in srgb, #3b82f6 10%, transparent);
+    color: #3b82f6;
+  }
 }
 
 button.role-badge {
