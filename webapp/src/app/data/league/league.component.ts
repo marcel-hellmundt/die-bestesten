@@ -156,6 +156,7 @@ export class LeagueDataComponent {
 
   validate(league: League): void {
     this.validateStates.update(s => ({ ...s, [league.id]: 'loading' }));
+    this.cache.ensureSeasons();
     this.api.post<any>('league/validate_ratings', { league_id: league.id }).subscribe({
       next: res => {
         this.validateStates.update(s => ({ ...s, [league.id]: 'done' }));
