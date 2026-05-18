@@ -1,0 +1,274 @@
+@use '../../../styles/variables' as *;
+
+.season-nav {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-6;
+}
+
+.season-label {
+  font-weight: $font-weight-semibold;
+  font-size: $font-md;
+  min-width: 3ch;
+  text-align: center;
+}
+
+// ── Group grid ──────────────────────────────────────────────────────────────
+
+.group-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-6;
+  margin-bottom: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.h2h-group-card {
+  padding: $space-4;
+}
+
+.h2h-group-name {
+  font-family: $font-display;
+  font-size: $font-md;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $space-3;
+}
+
+// ── Standings table ──────────────────────────────────────────────────────────
+
+.h2h-standings {
+  margin-bottom: $space-4;
+}
+
+.col-rank-h2h {
+  width: 20px;
+  color: $color-text-muted;
+  font-size: $font-xs;
+}
+
+.col-num-h2h {
+  width: 28px;
+  text-align: right;
+  font-size: $font-xs;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-pts-h2h {
+  font-weight: $font-weight-semibold;
+}
+
+.row--second {
+  background: color-mix(in srgb, $color-border 30%, transparent);
+}
+
+// ── Match rows ───────────────────────────────────────────────────────────────
+
+.h2h-match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid $color-border;
+  padding-top: $space-3;
+}
+
+.h2h-match-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  cursor: pointer;
+  position: relative;
+
+  &:hover .btn-delete { opacity: 1; }
+}
+
+.h2h-team {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-sm;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--home { justify-content: flex-end; }
+  &--away { justify-content: flex-start; }
+}
+
+.team-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.team-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.h2h-score {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 60px;
+  justify-content: center;
+}
+
+.h2h-sep {
+  color: $color-text-muted;
+  margin: 0 2px;
+}
+
+.h2h-pending {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+// ── Knockout ──────────────────────────────────────────────────────────────────
+
+.knockout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $space-4;
+  margin-bottom: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.matchup-card {
+  padding: $space-4;
+
+  .h2h-match-list {
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
+.aggregate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-2 $space-2;
+  border-top: 1px solid $color-border;
+  margin-top: $space-2;
+}
+
+.agg-label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.agg-score {
+  font-weight: $font-weight-bold;
+  font-size: $font-md;
+  font-variant-numeric: tabular-nums;
+}
+
+// ── Delete button ────────────────────────────────────────────────────────────
+
+.btn-delete {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  opacity: 0;
+  transition: opacity $transition-fast, color $transition-fast;
+  padding: 2px 4px;
+
+  &:hover { color: $color-danger; }
+}
+
+// ── Admin panel ───────────────────────────────────────────────────────────────
+
+.admin-panel {
+  margin-top: $space-10;
+  padding-top: $space-6;
+  border-top: 1px solid $color-border;
+}
+
+.admin-section {
+  margin-bottom: $space-6;
+}
+
+.admin-subtitle {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: $space-3;
+}
+
+.admin-row {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  margin-bottom: $space-2;
+  flex-wrap: wrap;
+}
+
+.admin-label {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  min-width: 60px;
+  padding-top: 8px;
+}
+
+.admin-group-row {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  margin-bottom: $space-4;
+  flex-wrap: wrap;
+}
+
+.admin-group-label {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  min-width: 80px;
+  padding-top: 6px;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  max-width: 480px;
+}
+
+.admin-error {
+  font-size: $font-sm;
+  color: $color-danger;
+  margin-top: $space-1;
+}
+
+.input--select {
+  min-width: 180px;
+}
+
+.btn--danger {
+  color: $color-danger;
+  border-color: $color-danger;
+  &:hover { background-color: color-mix(in srgb, $color-danger 10%, transparent); }
+}

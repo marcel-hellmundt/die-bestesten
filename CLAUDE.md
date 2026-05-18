@@ -141,6 +141,15 @@ PATCH    /manager/me           — {current_password,new_password} für Passwort
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth
+GET      /h2h               ?season_id= (optional, default=aktiv) → {groups:[{id,name,sort_index,teams[],standings[],matches[]}], knockout_matches:[]} — Auth
+GET      /h2h/:id            → Match-Detail {match,matchday,home_team,away_team,home_rating,away_rating,home_lineup[],home_bench[],away_lineup[],away_bench[]} mit Spieler-Einzelpunkten — Auth
+POST     /h2h               {season_id,phase,leg,home_team_id,away_team_id,matchday_id,group_id?,sort_index?} → {id} — Admin
+PATCH    /h2h/:id           {home_team_id?,away_team_id?,matchday_id?,group_id?,sort_index?} — Admin
+DELETE   /h2h/:id           — Admin
+GET      /h2h_group         ?season_id= → [{id,name,sort_index,teams:[team_id,...]}] — Auth
+POST     /h2h_group         {season_id,name,sort_index?} → {id} — Admin
+PATCH    /h2h_group/:id     {name?,sort_index?,teams?:[team_id,...]} (teams ersetzt alle Zuordnungen) — Admin
+DELETE   /h2h_group/:id     kaskadiert auf h2h_group_team; h2h_match.group_id → NULL — Admin
 GET      /watchlist            — ?team_id (erforderlich, nur eigenes Team) → [{id,player_id,displayname,photo_uploaded,position,price,season_id,club_id,club_name,club_short_name,club_logo_uploaded,current_team{team_id,team_name,color,team_season_id,manager_name,alias}|null,created_at}] — Auth
 POST     /watchlist            — {team_id, player_id} → {id} — Spieler zur Beobachtungsliste hinzufügen; idempotent (INSERT IGNORE) — nur eigenes Team — Auth
 DELETE   /watchlist/:id        — {team_id} — Spieler von der Beobachtungsliste entfernen — nur eigenes Team — Auth

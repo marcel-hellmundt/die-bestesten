@@ -108,6 +108,11 @@
       border-radius: $radius-md;
 
       .nav-icon { color: var(--flat-river); }
+
+      &:hover {
+        color: var(--flat-river);
+        background-color: color-mix(in srgb, var(--flat-river) 12%, transparent);
+      }
     }
   }
 

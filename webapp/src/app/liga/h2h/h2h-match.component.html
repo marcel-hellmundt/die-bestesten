@@ -1,0 +1,178 @@
+<a class="back-link" routerLink="/liga/h2h">← H2H</a>
+
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (data()) {
+
+  <!-- Header -->
+  <div class="match-header card">
+    <div class="match-meta">
+      {{ phaseLabel() }}
+      @if (match()?.leg > 1) { · {{ match()?.leg }}. Leg }
+      @if (matchday()) { · Spieltag {{ matchday().number }} }
+    </div>
+
+    <div class="match-scoreboard">
+      <!-- Home team -->
+      <div class="match-team match-team--home">
+        @if (homeTeam()?.color) {
+          <span class="team-color-bar" [style.background-color]="homeTeam().color"></span>
+        }
+        <div class="match-team-name">{{ homeTeam()?.team_name }}</div>
+        <div class="match-team-manager">{{ homeTeam()?.manager_name }}</div>
+      </div>
+
+      <!-- Score -->
+      <div class="match-score">
+        @if (homeRating() && awayRating()) {
+          <span class="score-value">{{ homeRating().points }}</span>
+          <span class="score-sep">–</span>
+          <span class="score-value">{{ awayRating().points }}</span>
+        } @else {
+          <span class="score-tbd">–</span>
+        }
+      </div>
+
+      <!-- Away team -->
+      <div class="match-team match-team--away">
+        @if (awayTeam()?.color) {
+          <span class="team-color-bar" [style.background-color]="awayTeam().color"></span>
+        }
+        <div class="match-team-name">{{ awayTeam()?.team_name }}</div>
+        <div class="match-team-manager">{{ awayTeam()?.manager_name }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lineups -->
+  <div class="lineup-grid">
+
+    <!-- Home lineup -->
+    <section class="lineup-section">
+      <div class="section-header-row">
+        <h2 class="section-header">{{ homeTeam()?.team_name }}</h2>
+      </div>
+      @if (homeLineup().length > 0) {
+        <div class="table-container">
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th>Spieler</th>
+                <th class="col-pos">Pos</th>
+                <th class="col-grade">Note</th>
+                <th class="col-pts">Pkt</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of homeLineup(); track p.player_id) {
+                <tr>
+                  <td class="player-cell">
+                    @if (p.photo_uploaded && p.photo_season_id) {
+                      <img class="player-avatar-sm" [src]="homePhotoUrl(p)" [alt]="p.displayname"
+                        (error)="$any($event.target).style.display = 'none'" />
+                    }
+                    <span>{{ p.displayname }}</span>
+                  </td>
+                  <td class="col-pos">{{ p.position | slice:0:3 }}</td>
+                  <td class="col-grade">{{ p.grade ?? '—' }}</td>
+                  <td class="col-pts">{{ p.points ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="state-msg">Keine Aufstellung vorhanden.</p>
+      }
+    </section>
+
+    <!-- Away lineup -->
+    <section class="lineup-section">
+      <div class="section-header-row">
+        <h2 class="section-header">{{ awayTeam()?.team_name }}</h2>
+      </div>
+      @if (awayLineup().length > 0) {
+        <div class="table-container">
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th>Spieler</th>
+                <th class="col-pos">Pos</th>
+                <th class="col-grade">Note</th>
+                <th class="col-pts">Pkt</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of awayLineup(); track p.player_id) {
+                <tr>
+                  <td class="player-cell">
+                    @if (p.photo_uploaded && p.photo_season_id) {
+                      <img class="player-avatar-sm" [src]="homePhotoUrl(p)" [alt]="p.displayname"
+                        (error)="$any($event.target).style.display = 'none'" />
+                    }
+                    <span>{{ p.displayname }}</span>
+                  </td>
+                  <td class="col-pos">{{ p.position | slice:0:3 }}</td>
+                  <td class="col-grade">{{ p.grade ?? '—' }}</td>
+                  <td class="col-pts">{{ p.points ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="state-msg">Keine Aufstellung vorhanden.</p>
+      }
+    </section>
+  </div>
+
+  <!-- Bank (toggle) -->
+  @if (homeBench().length > 0 || awayBench().length > 0) {
+    <button class="btn btn--ghost btn--sm bench-toggle" (click)="showBench = !showBench">
+      {{ showBench ? 'Bank ausblenden' : 'Bank anzeigen' }}
+    </button>
+
+    @if (showBench) {
+      <div class="lineup-grid bench-grid">
+        <section class="lineup-section">
+          @if (homeBench().length > 0) {
+            <div class="table-container">
+              <table class="data-table data-table--compact">
+                <thead><tr><th>Bank</th><th class="col-pos">Pos</th><th class="col-pts">Pkt</th></tr></thead>
+                <tbody>
+                  @for (p of homeBench(); track p.player_id) {
+                    <tr class="bench-row">
+                      <td>{{ p.displayname }}</td>
+                      <td class="col-pos">{{ p.position | slice:0:3 }}</td>
+                      <td class="col-pts">{{ p.points ?? '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+        <section class="lineup-section">
+          @if (awayBench().length > 0) {
+            <div class="table-container">
+              <table class="data-table data-table--compact">
+                <thead><tr><th>Bank</th><th class="col-pos">Pos</th><th class="col-pts">Pkt</th></tr></thead>
+                <tbody>
+                  @for (p of awayBench(); track p.player_id) {
+                    <tr class="bench-row">
+                      <td>{{ p.displayname }}</td>
+                      <td class="col-pos">{{ p.position | slice:0:3 }}</td>
+                      <td class="col-pts">{{ p.points ?? '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      </div>
+    }
+  }
+}

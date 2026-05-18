@@ -755,6 +755,71 @@ class Routing
                 ],
             ]),
 
+            new Route('h2h', 'H2H', [
+                'title' => 'H2H',
+                'description' => 'Head-to-Head Turniermodus — Gruppenphase + K.o.-Runde — Auth',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/h2h',
+                        'description' => 'Turnier-Übersicht: Gruppen mit Standings + Matches, K.o.-Matches — Auth',
+                        'query_params' => ['season_id' => 'UUID (optional, default=aktiv)'],
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/h2h/:id',
+                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/h2h',
+                        'description' => 'Match anlegen → {id} — Admin',
+                        'body' => ['season_id' => 'UUID', 'phase' => 'group|quarterfinal|semifinal|final', 'leg' => '1|2', 'home_team_id' => 'UUID', 'away_team_id' => 'UUID', 'matchday_id' => 'UUID', 'group_id' => 'UUID (optional)', 'sort_index' => 'INT (optional)'],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/h2h/:id',
+                        'description' => 'Match aktualisieren — Admin',
+                        'body' => ['home_team_id' => 'UUID (optional)', 'away_team_id' => 'UUID (optional)', 'matchday_id' => 'UUID (optional)', 'group_id' => 'UUID (optional)', 'sort_index' => 'INT (optional)'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/h2h/:id',
+                        'description' => 'Match löschen — Admin',
+                    ],
+                ],
+            ]),
+
+            new Route('h2h_group', 'H2HGroup', [
+                'title' => 'H2H Group',
+                'description' => 'H2H-Gruppen verwalten — Admin',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/h2h_group',
+                        'description' => 'Alle Gruppen der Saison mit Team-IDs — Auth',
+                        'query_params' => ['season_id' => 'UUID (optional, default=aktiv)'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/h2h_group',
+                        'description' => 'Gruppe anlegen → {id} — Admin',
+                        'body' => ['season_id' => 'UUID', 'name' => 'string', 'sort_index' => 'INT (optional)'],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/h2h_group/:id',
+                        'description' => 'Gruppe aktualisieren; teams[] ersetzt alle Zuordnungen — Admin',
+                        'body' => ['name' => 'string (optional)', 'sort_index' => 'INT (optional)', 'teams' => '[team_id,...] (optional)'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/h2h_group/:id',
+                        'description' => 'Gruppe + Team-Zuordnungen löschen, Matches behalten (group_id → NULL) — Admin',
+                    ],
+                ],
+            ]),
+
             new Route('search', 'Search', [
                 'title' => 'Search',
                 'description' => 'Globale Live-Suche über Player, Club, Team und Manager — Auth',

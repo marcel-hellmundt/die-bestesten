@@ -52,6 +52,7 @@ export class NavComponent {
     items: [
       { label: 'Spieltag',    icon: 'spieltag',    route: '/liga/spieltag' },
       { label: 'Tabelle',     icon: 'tabelle',     route: '/liga/tabelle' },
+      { label: 'H2H',         icon: 'tabelle',     route: '/liga/h2h' },
       { label: 'Teams',       icon: 'kader',       route: '/liga/teams' },
       { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
     ]

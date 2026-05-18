@@ -218,3 +218,32 @@ ALTER TABLE player_in_team ADD UNIQUE KEY uk_player_from (player_id, team_id, fr
 -- Farbpaletten-Referenz (global_schema.color, cross-DB, kein FK-Constraint möglich)
 ALTER TABLE team ADD COLUMN color_primary   VARCHAR(50) DEFAULT NULL;
 ALTER TABLE team ADD COLUMN color_secondary VARCHAR(50) DEFAULT NULL;
+
+-- H2H-Turniermodus
+CREATE TABLE IF NOT EXISTS h2h_group (
+    id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    season_id  CHAR(36)     NOT NULL,
+    name       VARCHAR(50)  NOT NULL,
+    sort_index INT          NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS h2h_group_team (
+    id       CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    group_id CHAR(36) NOT NULL,
+    team_id  CHAR(36) NOT NULL,
+    UNIQUE KEY uk_h2h_group_team (group_id, team_id),
+    FOREIGN KEY (group_id) REFERENCES h2h_group(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS h2h_match (
+    id            CHAR(36)                                                NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    season_id     CHAR(36)                                                NOT NULL,
+    phase         ENUM('group','quarterfinal','semifinal','final')        NOT NULL,
+    leg           TINYINT                                                 NOT NULL DEFAULT 1,
+    home_team_id  CHAR(36)                                                NOT NULL,
+    away_team_id  CHAR(36)                                                NOT NULL,
+    matchday_id   CHAR(36)                                                NOT NULL,
+    group_id      CHAR(36)                                                NULL DEFAULT NULL,
+    sort_index    INT                                                     NOT NULL DEFAULT 0,
+    FOREIGN KEY (group_id) REFERENCES h2h_group(id) ON DELETE SET NULL
+);

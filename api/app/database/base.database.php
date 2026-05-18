@@ -28,6 +28,7 @@ require_once 'offer.database.php';
 require_once 'search.database.php';
 require_once 'notification.database.php';
 require_once 'watchlist.database.php';
+require_once 'h2h.database.php';
 
 class Database
 {
@@ -60,6 +61,7 @@ class Database
     use SearchTrait;
     use NotificationTrait;
     use WatchlistTrait;
+    use H2HTrait;
 
     private $con;
     private $con_league;

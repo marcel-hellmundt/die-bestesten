@@ -1,0 +1,490 @@
+<?php
+
+trait H2HTrait
+{
+    public function getH2HOverview(string $seasonId): array
+    {
+        // Load all groups for this season
+        $gq = $this->con_league->prepare(
+            "SELECT id, name, sort_index FROM h2h_group WHERE season_id = :s ORDER BY sort_index ASC, name ASC"
+        );
+        $gq->execute([':s' => $seasonId]);
+        $groups = $gq->fetchAll(PDO::FETCH_ASSOC);
+
+        // Load group-team assignments
+        $groupIds = array_column($groups, 'id');
+        $groupTeamMap = [];
+        if (!empty($groupIds)) {
+            $ph = implode(',', array_fill(0, count($groupIds), '?'));
+            $gtq = $this->con_league->prepare("SELECT group_id, team_id FROM h2h_group_team WHERE group_id IN ($ph)");
+            $gtq->execute($groupIds);
+            foreach ($gtq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $groupTeamMap[$row['group_id']][] = $row['team_id'];
+            }
+        }
+
+        // Load all h2h_matches for this season
+        $mq = $this->con_league->prepare(
+            "SELECT id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index
+             FROM h2h_match WHERE season_id = :s ORDER BY sort_index ASC"
+        );
+        $mq->execute([':s' => $seasonId]);
+        $allMatches = $mq->fetchAll(PDO::FETCH_ASSOC);
+
+        // Collect all team_ids and matchday_ids referenced
+        $allTeamIds     = [];
+        $allMatchdayIds = [];
+        foreach ($allMatches as $m) {
+            $allTeamIds[]     = $m['home_team_id'];
+            $allTeamIds[]     = $m['away_team_id'];
+            $allMatchdayIds[] = $m['matchday_id'];
+        }
+        foreach ($groupTeamMap as $teamIds) {
+            foreach ($teamIds as $tid) $allTeamIds[] = $tid;
+        }
+        $allTeamIds     = array_values(array_unique($allTeamIds));
+        $allMatchdayIds = array_values(array_unique($allMatchdayIds));
+
+        // Load team info (league DB)
+        $teamMap = [];
+        if (!empty($allTeamIds)) {
+            $ph = implode(',', array_fill(0, count($allTeamIds), '?'));
+            $tq = $this->con_league->prepare(
+                "SELECT t.id, t.team_name, t.color_primary AS color, t.color_secondary, t.season_id,
+                        m.id AS manager_id, m.manager_name
+                 FROM team t JOIN manager m ON m.id = t.manager_id WHERE t.id IN ($ph)"
+            );
+            $tq->execute($allTeamIds);
+            foreach ($tq->fetchAll(PDO::FETCH_ASSOC) as $t) {
+                $t['color']           = $this->resolveColor($t['color']);
+                $t['color_secondary'] = $this->resolveColor($t['color_secondary']);
+                $teamMap[$t['id']]    = $t;
+            }
+        }
+
+        // Load matchday info (global DB)
+        $matchdayMap = [];
+        if (!empty($allMatchdayIds)) {
+            $ph = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+            $mdq = $this->con->prepare(
+                "SELECT id, number, kickoff_date, completed FROM matchday WHERE id IN ($ph)"
+            );
+            $mdq->execute($allMatchdayIds);
+            foreach ($mdq->fetchAll(PDO::FETCH_ASSOC) as $md) {
+                $matchdayMap[$md['id']] = $md;
+            }
+        }
+
+        // Load team_rating for all team+matchday combinations (league DB)
+        $ratingMap = [];
+        if (!empty($allTeamIds) && !empty($allMatchdayIds)) {
+            $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
+            $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+            $rq  = $this->con_league->prepare(
+                "SELECT team_id, matchday_id, points, invalid
+                 FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
+            );
+            $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
+            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $ratingMap[$r['team_id']][$r['matchday_id']] = [
+                    'points'  => $r['points'] !== null ? (int) $r['points'] : null,
+                    'invalid' => (bool) $r['invalid'],
+                ];
+            }
+        }
+
+        // Enrich matches with result data
+        $enrichMatch = function (array $m) use ($teamMap, $matchdayMap, $ratingMap): array {
+            $homeRating = $ratingMap[$m['home_team_id']][$m['matchday_id']] ?? null;
+            $awayRating = $ratingMap[$m['away_team_id']][$m['matchday_id']] ?? null;
+            $md         = $matchdayMap[$m['matchday_id']] ?? null;
+            $homeTeam   = $teamMap[$m['home_team_id']] ?? null;
+            $awayTeam   = $teamMap[$m['away_team_id']] ?? null;
+            return [
+                'id'              => $m['id'],
+                'phase'           => $m['phase'],
+                'leg'             => (int) $m['leg'],
+                'sort_index'      => (int) $m['sort_index'],
+                'group_id'        => $m['group_id'],
+                'home_team_id'    => $m['home_team_id'],
+                'home_team_name'  => $homeTeam['team_name'] ?? null,
+                'home_color'      => $homeTeam['color'] ?? null,
+                'home_manager'    => $homeTeam['manager_name'] ?? null,
+                'away_team_id'    => $m['away_team_id'],
+                'away_team_name'  => $awayTeam['team_name'] ?? null,
+                'away_color'      => $awayTeam['color'] ?? null,
+                'away_manager'    => $awayTeam['manager_name'] ?? null,
+                'matchday_id'     => $m['matchday_id'],
+                'matchday_number' => $md ? (int) $md['number'] : null,
+                'kickoff_date'    => $md['kickoff_date'] ?? null,
+                'home_points'     => $homeRating['points'] ?? null,
+                'away_points'     => $awayRating['points'] ?? null,
+            ];
+        };
+
+        // Build group structures with standings
+        $groupMatchesByGroup = [];
+        $knockoutMatches     = [];
+        foreach ($allMatches as $m) {
+            if ($m['phase'] === 'group' && $m['group_id']) {
+                $groupMatchesByGroup[$m['group_id']][] = $enrichMatch($m);
+            } else {
+                $knockoutMatches[] = $enrichMatch($m);
+            }
+        }
+
+        $result = ['groups' => [], 'knockout_matches' => $knockoutMatches];
+
+        foreach ($groups as $g) {
+            $teamIds      = $groupTeamMap[$g['id']] ?? [];
+            $groupMatches = $groupMatchesByGroup[$g['id']] ?? [];
+
+            // Compute standings
+            $standing = [];
+            foreach ($teamIds as $tid) {
+                $standing[$tid] = ['team_id' => $tid, 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0];
+            }
+
+            foreach ($groupMatches as $m) {
+                $hp = $m['home_points'];
+                $ap = $m['away_points'];
+                if ($hp === null || $ap === null) continue;
+
+                if (!isset($standing[$m['home_team_id']])) {
+                    $standing[$m['home_team_id']] = ['team_id' => $m['home_team_id'], 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0];
+                }
+                if (!isset($standing[$m['away_team_id']])) {
+                    $standing[$m['away_team_id']] = ['team_id' => $m['away_team_id'], 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0];
+                }
+
+                $standing[$m['home_team_id']]['goals_for'] += $hp;
+                $standing[$m['away_team_id']]['goals_for'] += $ap;
+
+                if ($hp > $ap) {
+                    $standing[$m['home_team_id']]['w']++;
+                    $standing[$m['home_team_id']]['pts'] += 3;
+                    $standing[$m['away_team_id']]['l']++;
+                } elseif ($hp === $ap) {
+                    $standing[$m['home_team_id']]['d']++;
+                    $standing[$m['home_team_id']]['pts']++;
+                    $standing[$m['away_team_id']]['d']++;
+                    $standing[$m['away_team_id']]['pts']++;
+                } else {
+                    $standing[$m['away_team_id']]['w']++;
+                    $standing[$m['away_team_id']]['pts'] += 3;
+                    $standing[$m['home_team_id']]['l']++;
+                }
+            }
+
+            // Enrich standings with team info + sort
+            $standingList = array_values($standing);
+            foreach ($standingList as &$s) {
+                $t            = $teamMap[$s['team_id']] ?? null;
+                $s['team_name']    = $t['team_name'] ?? null;
+                $s['color']        = $t['color'] ?? null;
+                $s['manager_name'] = $t['manager_name'] ?? null;
+            }
+            unset($s);
+            usort($standingList, fn($a, $b) =>
+                $b['pts'] <=> $a['pts'] ?: $b['goals_for'] <=> $a['goals_for']
+            );
+
+            // Enrich group teams list
+            $groupTeams = array_values(array_filter(
+                array_map(fn($tid) => isset($teamMap[$tid]) ? [
+                    'id'           => $tid,
+                    'team_name'    => $teamMap[$tid]['team_name'],
+                    'color'        => $teamMap[$tid]['color'],
+                    'manager_name' => $teamMap[$tid]['manager_name'],
+                ] : null, $teamIds)
+            ));
+
+            $result['groups'][] = [
+                'id'         => $g['id'],
+                'name'       => $g['name'],
+                'sort_index' => (int) $g['sort_index'],
+                'teams'      => $groupTeams,
+                'standings'  => $standingList,
+                'matches'    => $groupMatches,
+            ];
+        }
+
+        return $result;
+    }
+
+    public function getH2HMatchDetail(string $matchId): array|false
+    {
+        // Load match
+        $mq = $this->con_league->prepare(
+            "SELECT id, season_id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index
+             FROM h2h_match WHERE id = :id LIMIT 1"
+        );
+        $mq->execute([':id' => $matchId]);
+        $match = $mq->fetch(PDO::FETCH_ASSOC);
+        if (!$match) return false;
+
+        // Load both teams
+        $tq = $this->con_league->prepare(
+            "SELECT t.id, t.team_name, t.color_primary AS color, t.color_secondary, t.season_id,
+                    m.id AS manager_id, m.manager_name, m.alias
+             FROM team t JOIN manager m ON m.id = t.manager_id WHERE t.id IN (?, ?)"
+        );
+        $tq->execute([$match['home_team_id'], $match['away_team_id']]);
+        $teamsRaw = $tq->fetchAll(PDO::FETCH_ASSOC);
+        $teamMap  = [];
+        foreach ($teamsRaw as $t) {
+            $t['color']           = $this->resolveColor($t['color']);
+            $t['color_secondary'] = $this->resolveColor($t['color_secondary']);
+            $teamMap[$t['id']]    = $t;
+        }
+
+        // Load matchday (global DB)
+        $mdq = $this->con->prepare(
+            "SELECT id, number, kickoff_date, start_date, completed FROM matchday WHERE id = :id LIMIT 1"
+        );
+        $mdq->execute([':id' => $match['matchday_id']]);
+        $matchday = $mdq->fetch(PDO::FETCH_ASSOC);
+
+        // Load team_rating for both teams on this matchday (league DB)
+        $rq = $this->con_league->prepare(
+            "SELECT team_id, points, max_points, goals, assists, invalid
+             FROM team_rating WHERE team_id IN (?, ?) AND matchday_id = ?"
+        );
+        $rq->execute([$match['home_team_id'], $match['away_team_id'], $match['matchday_id']]);
+        $ratingMap = [];
+        foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $ratingMap[$r['team_id']] = $r;
+        }
+
+        // Build lineup for each team
+        $seasonId = $match['season_id'];
+        $buildLineup = function (string $teamId) use ($match, $seasonId, $matchday): array {
+            if (!$matchday) return ['nominated' => [], 'bench' => []];
+
+            $lq = $this->con_league->prepare(
+                "SELECT player_id, nominated, position_index FROM team_lineup
+                 WHERE team_id = :tid AND matchday_id = :mid"
+            );
+            $lq->execute([':tid' => $teamId, ':mid' => $match['matchday_id']]);
+            $entries = $lq->fetchAll(PDO::FETCH_ASSOC);
+            if (empty($entries)) return ['nominated' => [], 'bench' => []];
+
+            $playerIds = array_column($entries, 'player_id');
+            $ph        = implode(',', array_fill(0, count($playerIds), '?'));
+
+            // Player info (global DB)
+            $pq = $this->con->prepare(
+                "SELECT p.id, p.displayname,
+                        pis.position, pis.price, pis.photo_uploaded,
+                        pis.season_id AS photo_season_id
+                 FROM player p
+                 LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
+                 WHERE p.id IN ($ph)"
+            );
+            $pq->execute(array_merge([$seasonId], $playerIds));
+            $playerMap = [];
+            foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) {
+                $playerMap[$p['id']] = $p;
+            }
+
+            // Player club for logo (global DB via player_in_club, latest active)
+            $clubQ = $this->con->prepare(
+                "SELECT pic.player_id, pic.club_id, c.logo_uploaded AS club_logo_uploaded
+                 FROM player_in_club pic
+                 JOIN club c ON c.id = pic.club_id
+                 WHERE pic.player_id IN ($ph) AND pic.to_date IS NULL"
+            );
+            $clubQ->execute($playerIds);
+            $clubMap = [];
+            foreach ($clubQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $clubMap[$row['player_id']] = $row;
+            }
+
+            // Player ratings (global DB)
+            $rq = $this->con->prepare(
+                "SELECT player_id, grade, participation, points, goals, assists, clean_sheet,
+                        sds, red_card, yellow_red_card
+                 FROM player_rating WHERE matchday_id = ? AND player_id IN ($ph)"
+            );
+            $rq->execute(array_merge([$match['matchday_id']], $playerIds));
+            $ratingMap = [];
+            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $ratingMap[$r['player_id']] = $r;
+            }
+
+            $posOrder  = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
+            $nominated = [];
+            $bench     = [];
+
+            foreach ($entries as $e) {
+                $p   = $playerMap[$e['player_id']] ?? ['id' => $e['player_id'], 'displayname' => '?', 'position' => null];
+                $r   = $ratingMap[$e['player_id']] ?? [];
+                $cl  = $clubMap[$e['player_id']] ?? null;
+                $row = [
+                    'player_id'          => $e['player_id'],
+                    'displayname'        => $p['displayname'],
+                    'position'           => $p['position'] ?? null,
+                    'photo_uploaded'     => (bool) ($p['photo_uploaded'] ?? false),
+                    'photo_season_id'    => $p['photo_season_id'] ?? null,
+                    'club_id'            => $cl['club_id'] ?? null,
+                    'club_logo_uploaded' => (bool) ($cl['club_logo_uploaded'] ?? false),
+                    'nominated'          => (bool) $e['nominated'],
+                    'position_index'     => $e['position_index'],
+                    'grade'              => $r['grade'] ?? null,
+                    'points'             => isset($r['points']) ? (int) $r['points'] : null,
+                    'goals'              => (int) ($r['goals'] ?? 0),
+                    'assists'            => (int) ($r['assists'] ?? 0),
+                    'clean_sheet'        => (int) ($r['clean_sheet'] ?? 0),
+                    'sds'                => (int) ($r['sds'] ?? 0),
+                    'red_card'           => (int) ($r['red_card'] ?? 0),
+                    'yellow_red_card'    => (int) ($r['yellow_red_card'] ?? 0),
+                    'participation'      => $r['participation'] ?? null,
+                ];
+                if ($e['nominated']) {
+                    $nominated[] = $row;
+                } else {
+                    $bench[] = $row;
+                }
+            }
+
+            $sort = fn($a, $b) =>
+                ($posOrder[$a['position'] ?? ''] ?? 9) <=> ($posOrder[$b['position'] ?? ''] ?? 9)
+                ?: ($a['position_index'] ?? 99) <=> ($b['position_index'] ?? 99);
+
+            usort($nominated, $sort);
+            usort($bench, $sort);
+            return ['nominated' => $nominated, 'bench' => $bench];
+        };
+
+        $homeLineup = $buildLineup($match['home_team_id']);
+        $awayLineup = $buildLineup($match['away_team_id']);
+        $homeTeam   = $teamMap[$match['home_team_id']] ?? null;
+        $awayTeam   = $teamMap[$match['away_team_id']] ?? null;
+        $homeRating = $ratingMap[$match['home_team_id']] ?? null;
+        $awayRating = $ratingMap[$match['away_team_id']] ?? null;
+
+        return [
+            'match'        => [
+                'id'             => $match['id'],
+                'phase'          => $match['phase'],
+                'leg'            => (int) $match['leg'],
+                'group_id'       => $match['group_id'],
+                'season_id'      => $match['season_id'],
+            ],
+            'matchday'     => $matchday ?: null,
+            'home_team'    => $homeTeam,
+            'away_team'    => $awayTeam,
+            'home_rating'  => $homeRating ? ['points' => (int) $homeRating['points'], 'goals' => (int) $homeRating['goals'], 'assists' => (int) $homeRating['assists']] : null,
+            'away_rating'  => $awayRating ? ['points' => (int) $awayRating['points'], 'goals' => (int) $awayRating['goals'], 'assists' => (int) $awayRating['assists']] : null,
+            'home_lineup'  => $homeLineup['nominated'],
+            'home_bench'   => $homeLineup['bench'],
+            'away_lineup'  => $awayLineup['nominated'],
+            'away_bench'   => $awayLineup['bench'],
+        ];
+    }
+
+    // --- Group CRUD ---
+
+    public function createH2HGroup(string $id, string $seasonId, string $name, int $sortIndex): void
+    {
+        $q = $this->con_league->prepare(
+            "INSERT INTO h2h_group (id, season_id, name, sort_index) VALUES (:id, :s, :name, :si)"
+        );
+        $q->execute([':id' => $id, ':s' => $seasonId, ':name' => $name, ':si' => $sortIndex]);
+    }
+
+    public function updateH2HGroup(string $id, array $fields): void
+    {
+        $sets = [];
+        $params = [':id' => $id];
+        if (isset($fields['name']))       { $sets[] = 'name = :name';         $params[':name'] = $fields['name']; }
+        if (isset($fields['sort_index'])) { $sets[] = 'sort_index = :si';     $params[':si']   = (int) $fields['sort_index']; }
+        if (empty($sets)) return;
+        $q = $this->con_league->prepare("UPDATE h2h_group SET " . implode(', ', $sets) . " WHERE id = :id");
+        $q->execute($params);
+    }
+
+    public function setGroupTeams(string $groupId, array $teamIds): void
+    {
+        $dq = $this->con_league->prepare("DELETE FROM h2h_group_team WHERE group_id = :gid");
+        $dq->execute([':gid' => $groupId]);
+        if (empty($teamIds)) return;
+        $iq = $this->con_league->prepare(
+            "INSERT INTO h2h_group_team (id, group_id, team_id) VALUES (UUID(), :gid, :tid)"
+        );
+        foreach ($teamIds as $tid) {
+            $iq->execute([':gid' => $groupId, ':tid' => $tid]);
+        }
+    }
+
+    public function deleteH2HGroup(string $id): void
+    {
+        $q = $this->con_league->prepare("DELETE FROM h2h_group WHERE id = :id");
+        $q->execute([':id' => $id]);
+    }
+
+    public function getH2HGroups(string $seasonId): array
+    {
+        $gq = $this->con_league->prepare(
+            "SELECT g.id, g.name, g.sort_index,
+                    gt.team_id
+             FROM h2h_group g
+             LEFT JOIN h2h_group_team gt ON gt.group_id = g.id
+             WHERE g.season_id = :s ORDER BY g.sort_index ASC, g.name ASC"
+        );
+        $gq->execute([':s' => $seasonId]);
+        $rows   = $gq->fetchAll(PDO::FETCH_ASSOC);
+        $groups = [];
+        foreach ($rows as $r) {
+            if (!isset($groups[$r['id']])) {
+                $groups[$r['id']] = ['id' => $r['id'], 'name' => $r['name'], 'sort_index' => (int) $r['sort_index'], 'teams' => []];
+            }
+            if ($r['team_id']) $groups[$r['id']]['teams'][] = $r['team_id'];
+        }
+        return array_values($groups);
+    }
+
+    // --- Match CRUD ---
+
+    public function createH2HMatch(
+        string $id, string $seasonId, string $phase, int $leg,
+        string $homeTeamId, string $awayTeamId, string $matchdayId,
+        ?string $groupId, int $sortIndex
+    ): void {
+        $q = $this->con_league->prepare(
+            "INSERT INTO h2h_match (id, season_id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index)
+             VALUES (:id, :s, :phase, :leg, :home, :away, :md, :gid, :si)"
+        );
+        $q->execute([
+            ':id'    => $id,
+            ':s'     => $seasonId,
+            ':phase' => $phase,
+            ':leg'   => $leg,
+            ':home'  => $homeTeamId,
+            ':away'  => $awayTeamId,
+            ':md'    => $matchdayId,
+            ':gid'   => $groupId,
+            ':si'    => $sortIndex,
+        ]);
+    }
+
+    public function updateH2HMatch(string $id, array $fields): void
+    {
+        $sets   = [];
+        $params = [':id' => $id];
+        if (isset($fields['home_team_id'])) { $sets[] = 'home_team_id = :home';  $params[':home']  = $fields['home_team_id']; }
+        if (isset($fields['away_team_id'])) { $sets[] = 'away_team_id = :away';  $params[':away']  = $fields['away_team_id']; }
+        if (isset($fields['matchday_id']))  { $sets[] = 'matchday_id = :md';     $params[':md']    = $fields['matchday_id']; }
+        if (isset($fields['group_id']))     { $sets[] = 'group_id = :gid';       $params[':gid']   = $fields['group_id']; }
+        if (isset($fields['sort_index']))   { $sets[] = 'sort_index = :si';      $params[':si']    = (int) $fields['sort_index']; }
+        if (empty($sets)) return;
+        $q = $this->con_league->prepare("UPDATE h2h_match SET " . implode(', ', $sets) . " WHERE id = :id");
+        $q->execute($params);
+    }
+
+    public function deleteH2HMatch(string $id): void
+    {
+        $q = $this->con_league->prepare("DELETE FROM h2h_match WHERE id = :id");
+        $q->execute([':id' => $id]);
+    }
+}

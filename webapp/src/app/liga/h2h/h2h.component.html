@@ -1,0 +1,230 @@
+<div class="season-nav">
+  <button class="btn btn--ghost btn--sm" (click)="decrement()" [disabled]="!canDecrement()">‹</button>
+  <span class="season-label">{{ selectedSeason()?.start_date | slice:0:4 }}</span>
+  <button class="btn btn--ghost btn--sm" (click)="increment()" [disabled]="!canIncrement()">›</button>
+</div>
+
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+
+  <!-- ── Gruppenphase ─────────────────────────────────────────────────────── -->
+  @if (groups().length > 0) {
+    <div class="section-header-row"><h2 class="section-header">Gruppenphase</h2></div>
+    <div class="group-grid">
+      @for (group of groups(); track group.id) {
+        <div class="h2h-group-card card">
+          <div class="h2h-group-name">{{ group.name }}</div>
+
+          <!-- Standings -->
+          <table class="data-table data-table--compact h2h-standings">
+            <thead>
+              <tr>
+                <th class="col-rank-h2h">#</th>
+                <th>Team</th>
+                <th class="col-num-h2h">S</th>
+                <th class="col-num-h2h">U</th>
+                <th class="col-num-h2h">N</th>
+                <th class="col-num-h2h">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of group.standings; track row.team_id; let i = $index) {
+                <tr [class.row--first]="i === 0" [class.row--second]="i === 1">
+                  <td class="col-rank-h2h">{{ i + 1 }}</td>
+                  <td>
+                    <span class="team-chip">
+                      @if (row.color) {
+                        <span class="team-dot" [style.background-color]="row.color"></span>
+                      }
+                      {{ row.team_name }}
+                    </span>
+                  </td>
+                  <td class="col-num-h2h">{{ row.w }}</td>
+                  <td class="col-num-h2h">{{ row.d }}</td>
+                  <td class="col-num-h2h">{{ row.l }}</td>
+                  <td class="col-num-h2h col-pts-h2h">{{ row.pts }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <!-- Matches -->
+          @if (group.matches.length > 0) {
+            <div class="h2h-match-list">
+              @for (m of group.matches; track m.id) {
+                <div class="h2h-match-row row-link" (click)="navigateToMatch(m.id)">
+                  <span class="h2h-team h2h-team--home">
+                    @if (m.home_color) { <span class="team-dot" [style.background-color]="m.home_color"></span> }
+                    {{ m.home_team_name }}
+                  </span>
+                  <span class="h2h-score">
+                    @if (m.home_points != null) {
+                      <strong>{{ m.home_points }}</strong>
+                      <span class="h2h-sep">–</span>
+                      <strong>{{ m.away_points }}</strong>
+                    } @else {
+                      <span class="h2h-pending">Sp. {{ m.matchday_number ?? '?' }}</span>
+                    }
+                  </span>
+                  <span class="h2h-team h2h-team--away">
+                    @if (m.away_color) { <span class="team-dot" [style.background-color]="m.away_color"></span> }
+                    {{ m.away_team_name }}
+                  </span>
+                  @if (isAdmin) {
+                    <button class="btn-delete" (click)="$event.stopPropagation(); deleteMatch(m.id)" title="Löschen">✕</button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── K.o.-Runde ──────────────────────────────────────────────────────── -->
+  @if (knockoutPhases().length > 0) {
+    @for (phase of knockoutPhases(); track phase.phase) {
+      <div class="section-header-row"><h2 class="section-header">{{ phase.label }}</h2></div>
+      <div class="knockout-grid">
+        @for (mu of phase.matchups; track mu.teamAId + mu.teamBId) {
+          <div class="matchup-card card">
+            @for (leg of mu.legs; track leg.id) {
+              <div class="h2h-match-row row-link" (click)="navigateToMatch(leg.id)">
+                <span class="h2h-team h2h-team--home">
+                  @if (leg.home_color) { <span class="team-dot" [style.background-color]="leg.home_color"></span> }
+                  {{ leg.home_team_name }}
+                </span>
+                <span class="h2h-score">
+                  @if (leg.home_points != null) {
+                    <strong>{{ leg.home_points }}</strong>
+                    <span class="h2h-sep">–</span>
+                    <strong>{{ leg.away_points }}</strong>
+                  } @else {
+                    <span class="h2h-pending">Sp. {{ leg.matchday_number ?? '?' }}</span>
+                  }
+                </span>
+                <span class="h2h-team h2h-team--away">
+                  @if (leg.away_color) { <span class="team-dot" [style.background-color]="leg.away_color"></span> }
+                  {{ leg.away_team_name }}
+                </span>
+                @if (isAdmin) {
+                  <button class="btn-delete" (click)="$event.stopPropagation(); deleteMatch(leg.id)" title="Löschen">✕</button>
+                }
+              </div>
+            }
+            @if (mu.hasResults && mu.legs.length > 1) {
+              <div class="aggregate-row">
+                <span class="agg-label">Gesamt</span>
+                <span class="agg-score">{{ mu.aggA }} – {{ mu.aggB }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+
+  @if (groups().length === 0 && knockoutMatches().length === 0 && !isAdmin) {
+    <p class="state-msg">Noch kein Turnier für diese Saison definiert.</p>
+  }
+
+  <!-- ── Admin-Panel ─────────────────────────────────────────────────────── -->
+  @if (isAdmin) {
+    <div class="admin-panel">
+      <div class="section-header-row"><h2 class="section-header">Admin: Turnier verwalten</h2></div>
+
+      <!-- Gruppe anlegen -->
+      <div class="admin-section">
+        <h3 class="admin-subtitle">Gruppe anlegen</h3>
+        <div class="admin-row">
+          <input class="input" type="text" placeholder="Gruppenname" [value]="newGroupName()"
+            (input)="newGroupName.set($any($event.target).value)" />
+          <button class="btn btn--primary btn--sm" (click)="submitGroup()"
+            [disabled]="groupSubmit() === 'loading' || !newGroupName().trim()">
+            Anlegen
+          </button>
+        </div>
+        @if (groupError()) { <p class="admin-error">{{ groupError() }}</p> }
+      </div>
+
+      <!-- Gruppen-Teams verwalten -->
+      @if (groups().length > 0) {
+        <div class="admin-section">
+          <h3 class="admin-subtitle">Gruppen-Teams</h3>
+          @for (group of groups(); track group.id) {
+            <div class="admin-group-row">
+              <span class="admin-group-label">{{ group.name }}</span>
+              <select class="input input--select" multiple size="4" (change)="setGroupTeams(group.id, $event)">
+                @for (t of adminTeams(); track t.id) {
+                  <option [value]="t.id" [selected]="group.teams.includes(t.id)">{{ t.team_name }}</option>
+                }
+              </select>
+              <button class="btn btn--ghost btn--sm btn--danger" (click)="deleteGroup(group.id)">Gruppe löschen</button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Match anlegen -->
+      <div class="admin-section">
+        <h3 class="admin-subtitle">Match anlegen</h3>
+        <div class="admin-form">
+          <div class="admin-row">
+            <label class="admin-label">Phase</label>
+            <select class="input input--select" [value]="newMatchPhase()" (change)="newMatchPhase.set($any($event.target).value)">
+              @for (p of phases; track p) { <option [value]="p">{{ phaseLabel(p) || p }}</option> }
+            </select>
+          </div>
+          <div class="admin-row">
+            <label class="admin-label">Leg</label>
+            <select class="input input--select" [value]="newMatchLeg()" (change)="newMatchLeg.set(+$any($event.target).value)">
+              <option [value]="1">Hinspiel</option>
+              <option [value]="2">Rückspiel</option>
+            </select>
+          </div>
+          <div class="admin-row">
+            <label class="admin-label">Heim</label>
+            <select class="input input--select" [value]="newMatchHome()" (change)="newMatchHome.set($any($event.target).value)">
+              <option value="">— Team wählen —</option>
+              @for (t of adminTeams(); track t.id) { <option [value]="t.id">{{ t.team_name }}</option> }
+            </select>
+          </div>
+          <div class="admin-row">
+            <label class="admin-label">Gast</label>
+            <select class="input input--select" [value]="newMatchAway()" (change)="newMatchAway.set($any($event.target).value)">
+              <option value="">— Team wählen —</option>
+              @for (t of adminTeams(); track t.id) { <option [value]="t.id">{{ t.team_name }}</option> }
+            </select>
+          </div>
+          <div class="admin-row">
+            <label class="admin-label">Spieltag</label>
+            <select class="input input--select" [value]="newMatchMatchday()" (change)="newMatchMatchday.set($any($event.target).value)">
+              <option value="">— Spieltag wählen —</option>
+              @for (md of adminMatchdays(); track md.id) { <option [value]="md.id">Spieltag {{ md.number }}</option> }
+            </select>
+          </div>
+          @if (newMatchPhase() === 'group') {
+            <div class="admin-row">
+              <label class="admin-label">Gruppe</label>
+              <select class="input input--select" [value]="newMatchGroup()" (change)="newMatchGroup.set($any($event.target).value)">
+                <option value="">— Gruppe wählen —</option>
+                @for (g of groups(); track g.id) { <option [value]="g.id">{{ g.name }}</option> }
+              </select>
+            </div>
+          }
+          <div class="admin-row">
+            <button class="btn btn--primary btn--sm" (click)="submitMatch()"
+              [disabled]="matchSubmit() === 'loading' || !newMatchHome() || !newMatchAway() || !newMatchMatchday()">
+              Match anlegen
+            </button>
+          </div>
+          @if (matchError()) { <p class="admin-error">{{ matchError() }}</p> }
+        </div>
+      </div>
+    </div>
+  }
+}
