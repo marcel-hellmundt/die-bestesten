@@ -165,6 +165,21 @@ CREATE TABLE IF NOT EXISTS league (
     FOREIGN KEY (division_id) REFERENCES division(id)
 );
 
+-- Tabelle: color (globale Farbpalette; name = PK; Änderung kaskadiert manuell auf league.team.color)
+CREATE TABLE IF NOT EXISTS color (
+    name VARCHAR(50) NOT NULL PRIMARY KEY,  -- lesbarer Bezeichner, z.B. 'red', 'blue'
+    hex  VARCHAR(7)  NOT NULL               -- '#rrggbb'
+);
+INSERT IGNORE INTO color (name, hex) VALUES
+    ('red',    '#e74c3c'),
+    ('blue',   '#3498db'),
+    ('green',  '#2ecc71'),
+    ('yellow', '#f1c40f'),
+    ('violet', '#9b59b6'),
+    ('orange', '#e67e22'),
+    ('white',  '#ffffff'),
+    ('black',  '#2c3e50');
+
 -- Tabelle: award (Award-Typen; liganeutral; sort_index = Wichtigkeit, 1 = wichtigster)
 CREATE TABLE IF NOT EXISTS award (
     id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),

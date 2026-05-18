@@ -43,9 +43,9 @@ CREATE TABLE IF NOT EXISTS team (
     manager_id   CHAR(36)     NOT NULL,
     season_id    CHAR(36)     NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
     team_name    VARCHAR(100) NOT NULL,
-    color        VARCHAR(7)   DEFAULT NULL,         -- Primärfarbe, z.B. "#3a86ff"
-    color_secondary VARCHAR(7) DEFAULT NULL,       -- Sekundärfarbe; NULL = keine
-    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    color_primary        VARCHAR(50)  DEFAULT NULL,         -- Logische Referenz auf global_schema.color.name (kein FK, cross-DB), z.B. 'red'
+    color_secondary      VARCHAR(50)  DEFAULT NULL,         -- Logische Referenz auf global_schema.color.name (kein FK, cross-DB)
+    created_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id),
     UNIQUE KEY uk_team_manager_season (manager_id, season_id),
     UNIQUE KEY uk_team_name_season (team_name, season_id)
@@ -214,3 +214,7 @@ CREATE TABLE IF NOT EXISTS team_watchlist (
 -- the same player on the same matchday (e.g. sold and re-bought within one matchday's transfer phases)
 ALTER TABLE player_in_team DROP INDEX uk_player_from;
 ALTER TABLE player_in_team ADD UNIQUE KEY uk_player_from (player_id, team_id, from_matchday_id);
+
+-- Farbpaletten-Referenz (global_schema.color, cross-DB, kein FK-Constraint möglich)
+ALTER TABLE team ADD COLUMN color_primary   VARCHAR(50) DEFAULT NULL;
+ALTER TABLE team ADD COLUMN color_secondary VARCHAR(50) DEFAULT NULL;

@@ -67,7 +67,7 @@ trait OfferTrait
             }
             $lq = $this->con_league->prepare(
                 "SELECT o.id AS offer_id, o.player_id, o.transferwindow_id,
-                        o.team_id, o.status, t.color AS team_color, t.season_id AS team_season_id
+                        o.team_id, o.status, t.color_primary AS team_color, t.season_id AS team_season_id
                  FROM offer o JOIN team t ON t.id = o.team_id
                  WHERE o.status IN ('lost', 'success') AND (" . implode(' OR ', $conditions) . ")"
             );
@@ -442,7 +442,7 @@ trait OfferTrait
 
         $teamIds = array_unique(array_column($rows, 'team_id'));
         $tph     = implode(',', array_fill(0, count($teamIds), '?'));
-        $tq      = $this->con_league->prepare("SELECT id, team_name, color, season_id FROM team WHERE id IN ($tph)");
+        $tq      = $this->con_league->prepare("SELECT id, team_name, color_primary AS color, season_id FROM team WHERE id IN ($tph)");
         $tq->execute(array_values($teamIds));
         $teamMap = [];
         foreach ($tq->fetchAll(PDO::FETCH_ASSOC) as $t) {

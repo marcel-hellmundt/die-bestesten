@@ -131,7 +131,9 @@ GET      /team_rating/season   — ?season_id → aggregierte Saisontabelle alle
 GET      /team                 — ?season_id → [{id,team_name,color,color_secondary,season_id,manager_id,manager_name,alias}] sortiert nach Name — Auth
 GET      /team/mine            — Eigenes Team der aktiven Saison {id, team_name, season_id, color}; 404 wenn kein Team — Auth
 GET      /team/:id             — Team per ID (manager_name, alias, total_points, matchdays_played) — Auth
-POST     /team                 — {team_name, color?, color_secondary?} → {id}; 409 wenn bereits Team vorhanden — Auth
+POST     /team                 — {team_name, color_name?, color_secondary_name?} → {id}; color_name referenziert global.color.name (z.B. "red"); 409 wenn bereits Team vorhanden — Auth
+GET      /color               — [{name, hex}] globale Farbpalette (name = PK, z.B. "red") — kein Auth erforderlich
+PATCH    /color/:name         — {hex: '#rrggbb'} Hex ändern, kaskadiert auf team.color aller Teams dieser Liga — Admin
 GET      /team/previous        — Letztes Team aus Vorsaison {id,team_name,color,season_id}; 404 wenn keines — Auth
 GET      /team/check-name      — ?name= (min. 3 Zeichen) → {available: bool}; 400 wenn zu kurz — Auth
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth

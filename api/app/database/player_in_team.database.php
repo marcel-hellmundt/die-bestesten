@@ -59,7 +59,7 @@ trait PlayerInTeamTrait
         if (!$activeSeasonId) return null;
 
         $q = $this->con_league->prepare(
-            "SELECT t.id, t.season_id, t.team_name, t.color, t.manager_id, m.manager_name, m.alias
+            "SELECT t.id, t.season_id, t.team_name, t.color_primary AS color, t.manager_id, m.manager_name, m.alias
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
              JOIN manager m ON m.id = t.manager_id
@@ -77,7 +77,7 @@ trait PlayerInTeamTrait
     {
         $q = $this->con_league->prepare(
             "SELECT pit.from_matchday_id, pit.to_matchday_id,
-                    t.id AS team_id, t.season_id, t.team_name, t.color,
+                    t.id AS team_id, t.season_id, t.team_name, t.color_primary AS color,
                     m.manager_name, m.alias
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id

@@ -59,20 +59,12 @@ class TeamController extends _BaseController
     {
         $body           = $this->body();
         $teamName       = trim($body['team_name'] ?? '');
-        $color          = $body['color'] ?? null;
+        $colorPrimary   = $body['color'] ?? null;
         $colorSecondary = $body['color_secondary'] ?? null;
 
         if (!$teamName) {
             http_response_code(400);
             return ['status' => false, 'message' => 'team_name required'];
-        }
-        if ($color !== null && !preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
-            http_response_code(400);
-            return ['status' => false, 'message' => 'color must be #rrggbb'];
-        }
-        if ($colorSecondary !== null && !preg_match('/^#[0-9a-fA-F]{6}$/', $colorSecondary)) {
-            http_response_code(400);
-            return ['status' => false, 'message' => 'color_secondary must be #rrggbb'];
         }
 
         if ($this->db->teamExistsForManagerActiveSeason($GLOBALS['auth_manager_id'])) {
@@ -81,7 +73,7 @@ class TeamController extends _BaseController
         }
 
         $id = $this->generateGUID();
-        $this->db->createTeam($id, $GLOBALS['auth_manager_id'], $teamName, $color ?: null, $colorSecondary ?: null);
+        $this->db->createTeam($id, $GLOBALS['auth_manager_id'], $teamName, $colorPrimary ?: null, $colorSecondary ?: null);
         http_response_code(201);
         return ['status' => true, 'id' => $id];
     }

@@ -400,6 +400,25 @@ class Routing
                 ],
             ]),
 
+            new Route('color', 'Color', [
+                'title' => 'Color',
+                'description' => 'Globale Farbpalette — lesbar ohne Auth, Hex-Änderung kaskadiert auf team.color aller Teams in dieser Liga',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/color',
+                        'description' => 'Alle Farben der Palette [{id, name, hex}] — kein Auth erforderlich',
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/color/:id',
+                        'description' => 'Hex-Wert einer Farbe ändern — kaskadiert automatisch auf team.color aller Teams, die diese Farbe nutzen — Admin',
+                        'path_params' => [':id' => 'Name der Farbe (PK), z.B. "red"'],
+                        'body' => ['hex' => '#rrggbb (erforderlich)'],
+                    ],
+                ],
+            ]),
+
             new Route('award', 'Award', [
                 'title' => 'Award',
                 'description' => 'Award-Typen und Gewinner pro Saison',
@@ -518,8 +537,8 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/team',
-                        'description' => 'Team für die aktive Saison anlegen — {team_name, color?, color_secondary?} → {id}; 409 wenn Manager bereits ein Team hat — Auth',
-                        'body' => ['team_name' => 'string (required)', 'color' => '#rrggbb hex (optional)', 'color_secondary' => '#rrggbb hex (optional)'],
+                        'description' => 'Team für die aktive Saison anlegen — {team_name, color_name?, color_secondary_name?} → {id}; color_name referenziert global.color.name; 409 wenn Manager bereits ein Team hat — Auth',
+                        'body' => ['team_name' => 'string (required)', 'color_name' => 'Name aus GET /color, z.B. "red" (optional)', 'color_secondary_name' => 'Name aus GET /color (optional)'],
                     ],
                     [
                         'method' => 'GET',

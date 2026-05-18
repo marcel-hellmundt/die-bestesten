@@ -18,7 +18,7 @@ trait AwardTrait
 
         // All winners from league DB
         $winners = $this->con_league->query(
-            "SELECT ta.award_id, t.season_id, t.id AS team_id, t.team_name, t.color,
+            "SELECT ta.award_id, t.season_id, t.id AS team_id, t.team_name, t.color_primary AS color,
                     m.id AS manager_id, m.manager_name, m.alias
              FROM team_award ta
              JOIN team t ON t.id = ta.team_id

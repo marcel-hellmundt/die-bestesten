@@ -66,10 +66,11 @@
                             class="tbl-logo"
                             [src]="'https://img.die-bestesten.de/img/club/' + m.club_id + '.png'"
                             [alt]="m.club_name ?? ''"
-                            (error)="$any($event.target).style.display = 'none'"
+                            (error)="$any($event.target).replaceWith(m.club_name ?? '—')"
                           />
+                        } @else {
+                          {{ m.club_name ?? '—' }}
                         }
-                        {{ m.club_name ?? '—' }}
                       </td>
                       <td>{{ m.csv_points }}</td>
                       <td>{{ m.db_points ?? '—' }}</td>

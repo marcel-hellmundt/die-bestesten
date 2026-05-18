@@ -40,7 +40,7 @@ trait TeamRatingTrait
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
         $rq = $this->con_league->prepare(
-            "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
+            "SELECT t.id AS team_id, t.team_name, t.color_primary AS color, t.season_id,
                     m.manager_name,
                     COALESCE(SUM(tr.points), 0)             AS total_points,
                     COALESCE(SUM(tr.goals), 0)              AS total_goals,
@@ -56,7 +56,7 @@ trait TeamRatingTrait
              JOIN team t ON t.id = tr.team_id
              JOIN manager m ON m.id = t.manager_id
              WHERE tr.matchday_id IN ($placeholders)
-             GROUP BY t.id, t.team_name, t.color, t.season_id, m.manager_name
+             GROUP BY t.id, t.team_name, t.color_primary, t.season_id, m.manager_name
              ORDER BY total_points DESC"
         );
         $rq->execute($ids);
@@ -118,7 +118,7 @@ trait TeamRatingTrait
         $rq = $this->con_league->prepare("
             WITH ranked AS (
                 SELECT tr.team_id, tr.matchday_id, tr.points, tr.max_points,
-                       t.team_name, t.season_id, t.color, m.manager_name, tr.invalid,
+                       t.team_name, t.season_id, t.color_primary AS color, m.manager_name, tr.invalid,
                        DENSE_RANK() OVER (PARTITION BY tr.matchday_id, tr.invalid ORDER BY tr.points ASC) AS rank_asc,
                        SUM(tr.invalid)  OVER (PARTITION BY tr.matchday_id)                         AS invalid_cnt
                 FROM team_rating tr
@@ -230,7 +230,7 @@ trait TeamRatingTrait
 
         if ($matchday['completed']) {
             $rq = $this->con_league->prepare(
-                "SELECT t.id AS team_id, t.team_name, t.color, t.season_id,
+                "SELECT t.id AS team_id, t.team_name, t.color_primary AS color, t.season_id,
                         m.manager_name, tr.invalid,
                         tr.points, tr.goals, tr.assists, tr.red_cards, tr.yellow_red_cards, tr.sds, tr.clean_sheet
                  FROM team_rating tr
@@ -279,7 +279,7 @@ trait TeamRatingTrait
     {
         $lq = $this->con_league->prepare(
             "SELECT tl.team_id, tl.player_id,
-                    t.team_name, t.color, t.season_id, m.manager_name
+                    t.team_name, t.color_primary AS color, t.season_id, m.manager_name
              FROM team_lineup tl
              JOIN team t ON t.id = tl.team_id
              JOIN manager m ON m.id = t.manager_id

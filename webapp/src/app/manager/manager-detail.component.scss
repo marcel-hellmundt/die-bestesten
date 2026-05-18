@@ -338,11 +338,10 @@
     }
 
     .bar {
-      opacity: 0.85;
-      transition: opacity 0.15s;
+      transition: filter 0.15s;
 
       &:hover {
-        opacity: 1;
+        filter: brightness(1.3);
       }
     }
 

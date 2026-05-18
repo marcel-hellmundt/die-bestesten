@@ -37,7 +37,7 @@ trait WatchlistTrait
         }
 
         $currentTeamQ = $this->con_league->prepare(
-            "SELECT pit.player_id, t.team_name, t.color, t.id AS team_id, t.season_id AS team_season_id,
+            "SELECT pit.player_id, t.team_name, t.color_primary AS color, t.id AS team_id, t.season_id AS team_season_id,
                     m.manager_name, m.alias
              FROM player_in_team pit
              JOIN team t    ON t.id = pit.team_id

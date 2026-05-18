@@ -1,4 +1,5 @@
 <?php
+require_once 'color.database.php';
 require_once 'country.database.php';
 require_once 'league.database.php';
 require_once 'all_time_standings.database.php';
@@ -30,6 +31,7 @@ require_once 'watchlist.database.php';
 
 class Database
 {
+    use ColorTrait;
     use CountryTrait;
     use LeagueTrait;
     use PlayerInTeamTrait;
