@@ -66,11 +66,12 @@ trait LeagueTrait
         }
 
         $stmt = $conLeague->prepare(
-            "INSERT INTO team (id, manager_id, season_id, team_name, color, created_at)
-             VALUES (:id, :manager_id, :season_id, :team_name, :color, :created_at)
+            "INSERT INTO team (id, manager_id, season_id, team_name, color_primary, created_at)
+             VALUES (:id, :manager_id, :season_id, :team_name, :color_primary, :created_at)
              ON DUPLICATE KEY UPDATE
-               team_name  = VALUES(team_name),
-               created_at = VALUES(created_at)"
+               team_name    = VALUES(team_name),
+               color_primary = VALUES(color_primary),
+               created_at   = VALUES(created_at)"
         );
 
         $migrated = 0;
@@ -87,12 +88,12 @@ trait LeagueTrait
             }
 
             $stmt->execute([
-                ':id'         => $row['team_id'],
-                ':manager_id' => $row['manager_id'],
-                ':season_id'  => $row['season_id'],
-                ':team_name'  => $row['team_name'],
-                ':color'      => $color,
-                ':created_at' => $seasonStartDates[$row['season_id']] ?? date('Y-m-d'),
+                ':id'            => $row['team_id'],
+                ':manager_id'    => $row['manager_id'],
+                ':season_id'     => $row['season_id'],
+                ':team_name'     => $row['team_name'],
+                ':color_primary' => $color,
+                ':created_at'    => $seasonStartDates[$row['season_id']] ?? date('Y-m-d'),
             ]);
             $migrated++;
         }
