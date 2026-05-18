@@ -123,33 +123,38 @@
                         }
                       </span>
                       @if (vr.mismatches.length > 0) {
-                        @for (group of groupedMismatches(vr.mismatches); track group.seasonId + group.matchdayNumber) {
-                          <div class="validate-group">
-                            <span class="validate-group-header">{{ cache.seasonName(group.seasonId) }} · Spieltag {{ group.matchdayNumber }}</span>
-                            <table class="data-table data-table--compact validate-table">
-                              <thead>
-                                <tr>
-                                  <th>Team</th>
-                                  <th>Manager</th>
-                                  <th>Abweichungen</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                @for (mm of group.items; track mm.team_name) {
-                                  <tr>
-                                    <td>{{ mm.team_name }}</td>
-                                    <td>{{ mm.manager_name }}</td>
-                                    <td class="validate-fields">
-                                      @for (entry of mm.fields | keyvalue; track entry.key) {
-                                        <span class="validate-field">
-                                          {{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}
-                                        </span>
-                                      }
-                                    </td>
-                                  </tr>
-                                }
-                              </tbody>
-                            </table>
+                        @for (season of groupedMismatches(vr.mismatches); track season.seasonId) {
+                          <div class="validate-season">
+                            <span class="validate-season-header">{{ cache.seasonName(season.seasonId) }}</span>
+                            @for (group of season.matchdays; track group.matchdayNumber) {
+                              <div class="validate-group">
+                                <span class="validate-group-header">Spieltag {{ group.matchdayNumber }}</span>
+                                <table class="data-table data-table--compact validate-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Team</th>
+                                      <th>Manager</th>
+                                      <th>Abweichungen</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    @for (mm of group.items; track mm.team_name) {
+                                      <tr>
+                                        <td>{{ mm.team_name }}</td>
+                                        <td>{{ mm.manager_name }}</td>
+                                        <td class="validate-fields">
+                                          @for (entry of mm.fields | keyvalue; track entry.key) {
+                                            <span class="validate-field">
+                                              {{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}
+                                            </span>
+                                          }
+                                        </td>
+                                      </tr>
+                                    }
+                                  </tbody>
+                                </table>
+                              </div>
+                            }
                           </div>
                         }
                       }

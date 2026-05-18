@@ -186,14 +186,26 @@
 .validate-ok   { color: $color-success; font-weight: $font-weight-medium; }
 .validate-warn { color: $color-danger;  font-weight: $font-weight-medium; }
 
+.validate-season {
+  margin-top: $space-5;
+}
+
+.validate-season-header {
+  display: block;
+  font-size: $font-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin-bottom: $space-3;
+}
+
 .validate-group {
-  margin-top: $space-4;
+  margin-top: $space-3;
 }
 
 .validate-group-header {
   display: block;
   font-size: $font-sm;
-  font-weight: $font-weight-semibold;
+  font-weight: $font-weight-medium;
   color: $color-text-muted;
   margin-bottom: $space-2;
 }

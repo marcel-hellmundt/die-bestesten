@@ -140,18 +140,27 @@ export class LeagueDataComponent {
     return this.validateResults()[leagueId] ?? null;
   }
 
-  groupedMismatches(mismatches: any[]): { seasonId: string; matchdayNumber: number; items: any[] }[] {
-    const groups: { seasonId: string; matchdayNumber: number; items: any[] }[] = [];
-    const seen = new Map<string, number>();
+  groupedMismatches(mismatches: any[]): { seasonId: string; matchdays: { matchdayNumber: number; items: any[] }[] }[] {
+    const seasonMap = new Map<string, Map<number, any[]>>();
     for (const mm of mismatches) {
-      const key = `${mm.season_id}:${mm.matchday_number}`;
-      if (!seen.has(key)) {
-        seen.set(key, groups.length);
-        groups.push({ seasonId: mm.season_id, matchdayNumber: mm.matchday_number, items: [] });
-      }
-      groups[seen.get(key)!].items.push(mm);
+      if (!seasonMap.has(mm.season_id)) seasonMap.set(mm.season_id, new Map());
+      const mdMap = seasonMap.get(mm.season_id)!;
+      if (!mdMap.has(mm.matchday_number)) mdMap.set(mm.matchday_number, []);
+      mdMap.get(mm.matchday_number)!.push(mm);
     }
-    return groups;
+    const seasons = this.cache.seasons();
+    return [...seasonMap.entries()]
+      .sort((a, b) => {
+        const aDate = seasons.find(s => s.id === a[0])?.start_date ?? '';
+        const bDate = seasons.find(s => s.id === b[0])?.start_date ?? '';
+        return bDate.localeCompare(aDate);
+      })
+      .map(([seasonId, mdMap]) => ({
+        seasonId,
+        matchdays: [...mdMap.entries()]
+          .sort((a, b) => b[0] - a[0])
+          .map(([matchdayNumber, items]) => ({ matchdayNumber, items })),
+      }));
   }
 
   validate(league: League): void {
