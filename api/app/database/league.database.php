@@ -56,11 +56,21 @@ trait LeagueTrait
             "SELECT team_id, manager_id, season_id, team_name, color FROM team"
         )->fetchAll(PDO::FETCH_ASSOC);
 
+        // Build season start_date lookup (used for team created_at + matchday fallback dates)
+        $seasonRows = $this->con->query(
+            "SELECT id, start_date FROM season"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $seasonStartDates = [];
+        foreach ($seasonRows as $s) {
+            $seasonStartDates[$s['id']] = $s['start_date'];
+        }
+
         $stmt = $conLeague->prepare(
-            "INSERT INTO team (id, manager_id, season_id, team_name, color)
-             VALUES (:id, :manager_id, :season_id, :team_name, :color)
+            "INSERT INTO team (id, manager_id, season_id, team_name, color, created_at)
+             VALUES (:id, :manager_id, :season_id, :team_name, :color, :created_at)
              ON DUPLICATE KEY UPDATE
-               team_name = VALUES(team_name)"
+               team_name  = VALUES(team_name),
+               created_at = VALUES(created_at)"
         );
 
         $migrated = 0;
@@ -82,6 +92,7 @@ trait LeagueTrait
                 ':season_id'  => $row['season_id'],
                 ':team_name'  => $row['team_name'],
                 ':color'      => $color,
+                ':created_at' => $seasonStartDates[$row['season_id']] ?? date('Y-m-d'),
             ]);
             $migrated++;
         }
@@ -106,15 +117,6 @@ trait LeagueTrait
         $matchdayMap = [];
         foreach ($matchdayRows as $md) {
             $matchdayMap[$md['season_id'] . '_' . $md['number']] = $md['id'];
-        }
-
-        // Build season start_date lookup for fallback when old DB has no matchday data
-        $seasonRows = $this->con->query(
-            "SELECT id, start_date FROM season"
-        )->fetchAll(PDO::FETCH_ASSOC);
-        $seasonStartDates = [];
-        foreach ($seasonRows as $s) {
-            $seasonStartDates[$s['id']] = $s['start_date'];
         }
 
         // Fetch real matchday dates from old DB (separate query to avoid collation issues)
