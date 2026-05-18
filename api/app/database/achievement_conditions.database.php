@@ -787,12 +787,31 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $rows = $this->con->query(
+        // Load contributions first (no IN clause) so we only query global DB for
+        // the rating IDs that actually have contributions — avoids max_allowed_packet.
+        $contributions = $this->con_league->query(
+            "SELECT player_rating_id, manager_id FROM maintainer_contribution"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($contributions))
+            return [];
+
+        $contribByRating = [];
+        foreach ($contributions as $c) {
+            $contribByRating[$c['player_rating_id']][$c['manager_id']] = true;
+        }
+
+        $ratingIds = array_keys($contribByRating);
+        $rPlh = implode(',', array_fill(0, count($ratingIds), '?'));
+        $stmt = $this->con->prepare(
             "SELECT pr.id AS rating_id, md.id AS matchday_id, md.number, md.kickoff_date, s.start_date AS season_start
              FROM player_rating pr
              JOIN matchday md ON md.id = pr.matchday_id AND md.completed = 1
-             JOIN season s ON s.id = md.season_id"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             JOIN season s ON s.id = md.season_id
+             WHERE pr.id IN ($rPlh)"
+        );
+        $stmt->execute($ratingIds);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($rows))
             return [];
@@ -808,22 +827,11 @@ trait AchievementConditionsTrait
             ];
         }
 
-        $ratingIds = array_keys($ratingToMatchday);
-        $rPlh = implode(',', array_fill(0, count($ratingIds), '?'));
-        $stmt = $this->con_league->prepare(
-            "SELECT player_rating_id, manager_id FROM maintainer_contribution
-             WHERE player_rating_id IN ($rPlh)"
-        );
-        $stmt->execute($ratingIds);
-        $contributions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($contributions))
-            return [];
-
         $matchdayContributors = [];
-        foreach ($contributions as $contrib) {
-            $matchdayId = $ratingToMatchday[$contrib['player_rating_id']];
-            $matchdayContributors[$matchdayId][$contrib['manager_id']] = true;
+        foreach ($contributions as $c) {
+            $matchdayId = $ratingToMatchday[$c['player_rating_id']] ?? null;
+            if (!$matchdayId) continue;
+            $matchdayContributors[$matchdayId][$c['manager_id']] = true;
         }
 
         // Pro Manager: frühester Spieltag, an dem er Alleinbeitragender war
