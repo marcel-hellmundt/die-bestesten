@@ -27,6 +27,9 @@
                 <th class="col-num-h2h">S</th>
                 <th class="col-num-h2h">U</th>
                 <th class="col-num-h2h">N</th>
+                <th class="col-num-h2h">+</th>
+                <th class="col-num-h2h">-</th>
+                <th class="col-num-h2h col-diff-h2h">+/-</th>
                 <th class="col-num-h2h">Pts</th>
               </tr>
             </thead>
@@ -47,6 +50,9 @@
                   <td class="col-num-h2h">{{ row.w }}</td>
                   <td class="col-num-h2h">{{ row.d }}</td>
                   <td class="col-num-h2h">{{ row.l }}</td>
+                  <td class="col-num-h2h">{{ row.goals_for }}</td>
+                  <td class="col-num-h2h">{{ row.goals_against }}</td>
+                  <td class="col-num-h2h col-diff-h2h" [class.col-diff--pos]="row.goals_for > row.goals_against" [class.col-diff--neg]="row.goals_for < row.goals_against">{{ row.goals_for - row.goals_against }}</td>
                   <td class="col-num-h2h col-pts-h2h">{{ row.pts }}</td>
                 </tr>
               }

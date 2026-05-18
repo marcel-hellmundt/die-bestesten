@@ -61,6 +61,13 @@
   font-weight: $font-weight-semibold;
 }
 
+.col-diff-h2h {
+  font-weight: $font-weight-semibold;
+}
+
+.col-diff--pos { color: $color-success; }
+.col-diff--neg { color: $color-danger; }
+
 .row--second {
   background: color-mix(in srgb, $color-border 30%, transparent);
 }

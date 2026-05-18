@@ -172,7 +172,7 @@ trait H2HTrait
             // Compute standings
             $standing = [];
             foreach ($teamIds as $tid) {
-                $standing[$tid] = ['team_id' => $tid, 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0];
+                $standing[$tid] = ['team_id' => $tid, 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
             }
 
             foreach ($groupMatches as $m) {
@@ -181,14 +181,16 @@ trait H2HTrait
                 if ($hp === null || $ap === null) continue;
 
                 if (!isset($standing[$m['home_team_id']])) {
-                    $standing[$m['home_team_id']] = ['team_id' => $m['home_team_id'], 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0];
+                    $standing[$m['home_team_id']] = ['team_id' => $m['home_team_id'], 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
                 }
                 if (!isset($standing[$m['away_team_id']])) {
-                    $standing[$m['away_team_id']] = ['team_id' => $m['away_team_id'], 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0];
+                    $standing[$m['away_team_id']] = ['team_id' => $m['away_team_id'], 'w' => 0, 'd' => 0, 'l' => 0, 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
                 }
 
-                $standing[$m['home_team_id']]['goals_for'] += $hp;
-                $standing[$m['away_team_id']]['goals_for'] += $ap;
+                $standing[$m['home_team_id']]['goals_for']     += $hp;
+                $standing[$m['home_team_id']]['goals_against']  += $ap;
+                $standing[$m['away_team_id']]['goals_for']     += $ap;
+                $standing[$m['away_team_id']]['goals_against']  += $hp;
 
                 if ($hp > $ap) {
                     $standing[$m['home_team_id']]['w']++;
