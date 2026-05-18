@@ -63,11 +63,17 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
 
   nameToHex = computed(() => Object.fromEntries(this.colors().map((c) => [c.name, c.hex])));
 
-  primaryPalette = computed(() => this.colors().filter((c) => c.name !== 'white'));
+  primaryPalette = computed(() => {
+    const order = Object.keys(COLOR_COMBOS);
+    return this.colors()
+      .filter((c) => order.includes(c.name))
+      .sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+  });
 
   secondaryOptions = computed(() => {
     const allowed = COLOR_COMBOS[this.color()] ?? this.colors().map((c) => c.name);
-    return this.colors().filter((c) => allowed.includes(c.name));
+    const colorMap = Object.fromEntries(this.colors().map((c) => [c.name, c]));
+    return allowed.filter((name) => colorMap[name]).map((name) => colorMap[name]);
   });
 
   effectiveSecondary = computed((): string => {
