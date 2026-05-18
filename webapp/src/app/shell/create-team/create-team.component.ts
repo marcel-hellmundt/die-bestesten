@@ -8,32 +8,29 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Subject, Subscription, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import {
+  Subject,
+  Subscription,
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+  of,
+  forkJoin,
+} from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
-const PRIMARY_PALETTE = [
-  '#ff3f34',
-  '#3867d6',
-  '#20bf6b',
-  '#fed330',
-  '#9b59b6',
-  '#f79f1f',
-  '#1e272e',
-];
-
-const SECONDARY_PALETTE = ['#ffffff', '#1e272e', '#ff3f34', '#3867d6', '#fed330'];
-
 const COLOR_COMBOS: Record<string, string[]> = {
-  '#ff3f34': ['#ffffff', '#1e272e', '#3867d6', '#fed330'],
-  '#3867d6': ['#ffffff', '#1e272e', '#ff3f34', '#fed330'],
-  '#20bf6b': ['#ffffff'],
-  '#fed330': ['#1e272e'],
-  '#9b59b6': ['#ffffff'],
-  '#f79f1f': ['#ffffff', '#1e272e'],
-  '#1e272e': ['#ffffff'],
+  red: ['white', 'black', 'blue', 'yellow'],
+  blue: ['white', 'black', 'yellow', 'red'],
+  green: ['white', 'black', 'yellow'],
+  yellow: ['black', 'blue'],
+  violet: ['white'],
+  orange: ['white', 'black'],
+  black: ['white'],
 };
 
 @Component({
@@ -50,10 +47,11 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
 
   @ViewChild('logoInput') logoInput!: ElementRef<HTMLInputElement>;
 
+  colors = signal<{ name: string; hex: string }[]>([]);
   teamName = signal('');
   nameStatus = signal<'idle' | 'checking' | 'valid' | 'invalid'>('idle');
-  color = signal('#ff3f34');
-  secondaryColor = signal('#ffffff');
+  color = signal('red');
+  secondaryColor = signal('white');
   logoFile = signal<File | null>(null);
   logoPreview = signal<string | null>(null);
   previousTeam = signal<{ id: string; season_id: string; color: string | null } | null>(null);
@@ -63,24 +61,27 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
   private nameCheck$ = new Subject<string>();
   private nameSub!: Subscription;
 
+  nameToHex = computed(() => Object.fromEntries(this.colors().map((c) => [c.name, c.hex])));
+
+  primaryPalette = computed(() => this.colors().filter((c) => c.name !== 'white'));
+
+  secondaryOptions = computed(() => {
+    const allowed = COLOR_COMBOS[this.color()] ?? this.colors().map((c) => c.name);
+    return this.colors().filter((c) => allowed.includes(c.name));
+  });
+
+  effectiveSecondary = computed((): string => {
+    const opts = this.secondaryOptions();
+    const cur = this.secondaryColor();
+    return opts.some((c) => c.name === cur) ? cur : (opts[0]?.name ?? cur);
+  });
+
   previousLogoUrl = computed(() => {
     const prev = this.previousTeam();
     return prev ? `https://img.die-bestesten.de/img/team/${prev.season_id}/${prev.id}.png` : null;
   });
 
   displayedLogo = computed(() => this.logoPreview() ?? this.previousLogoUrl());
-
-  readonly primaryPalette = PRIMARY_PALETTE;
-
-  secondaryOptions = computed(() =>
-    SECONDARY_PALETTE.filter((c) => (COLOR_COMBOS[this.color()] ?? SECONDARY_PALETTE).includes(c)),
-  );
-
-  effectiveSecondary = computed(() => {
-    const opts = this.secondaryOptions();
-    const cur = this.secondaryColor();
-    return opts.includes(cur) ? cur : opts[0];
-  });
 
   ngOnInit(): void {
     this.nameSub = this.nameCheck$
@@ -106,15 +107,26 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
         error: () => this.nameStatus.set('idle'),
       });
 
-    this.api.get<any>('team/previous').subscribe({
-      next: (prev) => {
+    forkJoin({
+      colors: this.api.get<{ name: string; hex: string }[]>('color'),
+      prev: this.api.get<any>('team/previous').pipe(catchError(() => of(null))),
+    }).subscribe({
+      next: ({ colors, prev }) => {
+        this.colors.set(colors);
+        const hexToName = Object.fromEntries(colors.map((c) => [c.hex, c.name]));
+
         if (prev?.team_name) {
           this.teamName.set(prev.team_name);
           this.nameCheck$.next(prev.team_name);
         }
-        if (prev?.color && PRIMARY_PALETTE.includes(prev.color)) this.color.set(prev.color);
-        if (prev?.color_secondary && SECONDARY_PALETTE.includes(prev.color_secondary))
-          this.secondaryColor.set(prev.color_secondary);
+        if (prev?.color) {
+          const name = hexToName[prev.color];
+          if (name && name in COLOR_COMBOS) this.color.set(name);
+        }
+        if (prev?.color_secondary) {
+          const name = hexToName[prev.color_secondary];
+          if (name) this.secondaryColor.set(name);
+        }
         if (prev?.id && prev?.season_id) this.previousTeam.set(prev);
       },
       error: () => {},

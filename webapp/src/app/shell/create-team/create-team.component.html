@@ -52,34 +52,34 @@
     <label class="form-label">Teamfarben</label>
     <div class="color-picker">
       <div class="color-list">
-        @for (hex of primaryPalette; track hex) {
+        @for (c of primaryPalette(); track c.name) {
           <button
             type="button"
             class="color-swatch"
-            [class.color-swatch--active]="color() === hex"
-            [style.background-color]="hex"
-            (click)="color.set(hex)"
+            [class.color-swatch--active]="color() === c.name"
+            [style.background-color]="c.hex"
+            (click)="color.set(c.name)"
           ></button>
         }
       </div>
 
       <div class="color-preview">
-        <div class="color-bubble color-bubble--primary" [style.background-color]="color()"></div>
+        <div class="color-bubble color-bubble--primary" [style.background-color]="nameToHex()[color()]"></div>
         <div
           class="color-bubble color-bubble--secondary"
-          [style.background-color]="effectiveSecondary()"
+          [style.background-color]="nameToHex()[effectiveSecondary()]"
         ></div>
       </div>
 
       <div class="color-list">
-        @for (hex of secondaryOptions(); track hex) {
+        @for (c of secondaryOptions(); track c.name) {
           <button
             type="button"
             class="color-swatch"
-            [class.color-swatch--active]="effectiveSecondary() === hex"
-            [class.color-swatch--light]="hex === '#ffffff'"
-            [style.background-color]="hex"
-            (click)="secondaryColor.set(hex)"
+            [class.color-swatch--active]="effectiveSecondary() === c.name"
+            [class.color-swatch--light]="c.name === 'white'"
+            [style.background-color]="c.hex"
+            (click)="secondaryColor.set(c.name)"
           ></button>
         }
       </div>
