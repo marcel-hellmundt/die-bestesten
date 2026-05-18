@@ -77,10 +77,10 @@ export class H2HComponent {
           let aggA = 0, aggB = 0;
           let hasResults = false;
           for (const leg of sorted) {
-            if (leg.home_points != null) {
+            if (leg.home_goals != null) {
               hasResults = true;
-              aggA += leg.home_team_id === teamAId ? leg.home_points : leg.away_points;
-              aggB += leg.home_team_id === teamBId ? leg.home_points : leg.away_points;
+              aggA += leg.home_team_id === teamAId ? leg.home_goals : leg.away_goals;
+              aggB += leg.home_team_id === teamBId ? leg.home_goals : leg.away_goals;
             }
           }
           return { legs: sorted, teamAId, teamBId, aggA, aggB, hasResults };

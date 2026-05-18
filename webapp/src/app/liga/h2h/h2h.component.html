@@ -74,10 +74,10 @@
                     {{ m.home_team_name }}
                   </span>
                   <span class="h2h-score">
-                    @if (m.home_points != null) {
-                      <strong>{{ m.home_points }}</strong>
+                    @if (m.home_goals != null) {
+                      <strong>{{ m.home_goals }}</strong>
                       <span class="h2h-sep">–</span>
-                      <strong>{{ m.away_points }}</strong>
+                      <strong>{{ m.away_goals }}</strong>
                     } @else {
                       <span class="h2h-pending">–</span>
                     }
@@ -118,10 +118,10 @@
                   {{ leg.home_team_name }}
                 </span>
                 <span class="h2h-score">
-                  @if (leg.home_points != null) {
-                    <strong>{{ leg.home_points }}</strong>
+                  @if (leg.home_goals != null) {
+                    <strong>{{ leg.home_goals }}</strong>
                     <span class="h2h-sep">–</span>
-                    <strong>{{ leg.away_points }}</strong>
+                    <strong>{{ leg.away_goals }}</strong>
                   } @else {
                     <span class="h2h-pending">–</span>
                   }

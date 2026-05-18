@@ -81,13 +81,13 @@ trait H2HTrait
             $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
             $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
             $rq  = $this->con_league->prepare(
-                "SELECT team_id, matchday_id, points, invalid
+                "SELECT team_id, matchday_id, goals, invalid
                  FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
             );
             $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
             foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $ratingMap[$r['team_id']][$r['matchday_id']] = [
-                    'points'  => $r['points'] !== null ? (int) $r['points'] : null,
+                    'goals'   => $r['goals'] !== null ? (int) $r['goals'] : null,
                     'invalid' => (bool) $r['invalid'],
                 ];
             }
@@ -147,8 +147,8 @@ trait H2HTrait
                 'matchday_id'     => $m['matchday_id'],
                 'matchday_number' => $md ? (int) $md['number'] : null,
                 'kickoff_date'    => $md['kickoff_date'] ?? null,
-                'home_points'     => $homeRating['points'] ?? null,
-                'away_points'     => $awayRating['points'] ?? null,
+                'home_goals'      => $homeRating['goals'] ?? null,
+                'away_goals'      => $awayRating['goals'] ?? null,
             ];
         };
 
@@ -176,8 +176,8 @@ trait H2HTrait
             }
 
             foreach ($groupMatches as $m) {
-                $hp = $m['home_points'];
-                $ap = $m['away_points'];
+                $hp = $m['home_goals'];
+                $ap = $m['away_goals'];
                 if ($hp === null || $ap === null) continue;
 
                 if (!isset($standing[$m['home_team_id']])) {
