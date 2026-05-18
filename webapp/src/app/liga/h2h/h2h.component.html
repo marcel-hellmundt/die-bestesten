@@ -58,6 +58,7 @@
             <div class="h2h-match-list">
               @for (m of group.matches; track m.id) {
                 <div class="h2h-match-row row-link" (click)="navigateToMatch(m.id)">
+                  <span class="h2h-matchday">{{ m.matchday_number ?? '?' }}</span>
                   <span class="h2h-team h2h-team--home">
                     @if (!logoFailed(m.home_team_id)) {
                       <img class="team-logo-sm" [src]="teamLogoUrl(m.home_team_id)" (error)="onLogoError(m.home_team_id)" alt="" />
@@ -72,7 +73,7 @@
                       <span class="h2h-sep">–</span>
                       <strong>{{ m.away_points }}</strong>
                     } @else {
-                      <span class="h2h-pending">Sp. {{ m.matchday_number ?? '?' }}</span>
+                      <span class="h2h-pending">–</span>
                     }
                   </span>
                   <span class="h2h-team h2h-team--away">
@@ -104,6 +105,7 @@
           <div class="matchup-card card">
             @for (leg of mu.legs; track leg.id) {
               <div class="h2h-match-row row-link" (click)="navigateToMatch(leg.id)">
+                <span class="h2h-matchday">{{ leg.matchday_number ?? '?' }}</span>
                 <span class="h2h-team h2h-team--home">
                   @if (!logoFailed(leg.home_team_id)) {
                     <img class="team-logo-sm" [src]="teamLogoUrl(leg.home_team_id)" (error)="onLogoError(leg.home_team_id)" alt="" />
@@ -118,7 +120,7 @@
                     <span class="h2h-sep">–</span>
                     <strong>{{ leg.away_points }}</strong>
                   } @else {
-                    <span class="h2h-pending">Sp. {{ leg.matchday_number ?? '?' }}</span>
+                    <span class="h2h-pending">–</span>
                   }
                 </span>
                 <span class="h2h-team h2h-team--away">
