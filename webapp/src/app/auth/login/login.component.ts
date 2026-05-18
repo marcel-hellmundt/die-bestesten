@@ -23,10 +23,10 @@ export class LoginComponent {
   requestError: string | null = null;
 
   constructor(
-    private fb: FormBuilder,
-    private auth: AuthService,
+    private fb:     FormBuilder,
+    private auth:   AuthService,
     private router: Router,
-    private api: ApiService
+    private api:    ApiService
   ) {
     this.form = this.fb.group({
       name:     ['', Validators.required],

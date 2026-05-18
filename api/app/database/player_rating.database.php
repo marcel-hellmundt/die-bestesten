@@ -164,14 +164,15 @@ trait PlayerRatingTrait
                    p.displayname,
                    SUM(pr.points)   AS db_points,
                    SUM(CASE pr.participation WHEN 'starting' THEN 2 WHEN 'substitute' THEN 1 ELSE 0 END) AS participation_bonus,
-                   SUM(pr.assists)  AS total_assists
+                   SUM(pr.assists)  AS total_assists,
+                   MAX(CASE WHEN pr.matchday_id = :current_matchday_id THEN pr.club_id END) AS club_id
             FROM player_rating pr
             JOIN player p   ON p.id = pr.player_id
             JOIN matchday md ON md.id = pr.matchday_id
             WHERE md.season_id = (SELECT season_id FROM matchday WHERE id = :matchday_id LIMIT 1)
             GROUP BY p.id, p.kicker_id, p.displayname
         ");
-        $query->execute([':matchday_id' => $matchdayId]);
+        $query->execute([':matchday_id' => $matchdayId, ':current_matchday_id' => $matchdayId]);
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 

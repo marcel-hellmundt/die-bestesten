@@ -581,6 +581,7 @@ export class RatingsDataComponent {
       first_name?: string;
       last_name?: string;
       club_name?: string;
+      club_id?: string;
       position?: string;
       price?: number;
     }[];

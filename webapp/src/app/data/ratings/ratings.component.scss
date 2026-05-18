@@ -90,6 +90,12 @@
   margin-bottom: $space-4;
 }
 
+.mismatch-club {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
 .mismatch-error {
   font-size: $font-xs;
   color: $color-text-muted;

@@ -54,7 +54,7 @@ class PlayerRatingController extends _BaseController
                 return ['status' => false, 'message' => 'CSV-Datei fehlt'];
             }
 
-            // Build DB map: kicker_id (int) → {adjusted_points, displayname}
+            // Build DB map: kicker_id (int) → {adjusted_points, displayname, club_id}
             // Season totals; CSV scoring differs: starting=4 (ours=2, +2), substitute=2 (ours=1, +1), assist=2 (ours=1, +1 each)
             $dbRows = $this->db->getPlayerRatingsSummaryBySeason($matchdayId);
             $dbMap  = [];
@@ -64,6 +64,7 @@ class PlayerRatingController extends _BaseController
                 $dbMap[(int) $row['kicker_id']] = [
                     'points'      => $adjusted,
                     'displayname' => $row['displayname'],
+                    'club_id'     => $row['club_id'] ?: null,
                 ];
             }
 
@@ -103,6 +104,8 @@ class PlayerRatingController extends _BaseController
                     $mismatches[] = [
                         'kicker_id'   => $kickerId,
                         'displayname' => $displayname,
+                        'club_name'   => $cols[5] ?? null,
+                        'club_id'     => $dbMap[$kickerId]['club_id'],
                         'csv_points'  => $csvPoints,
                         'db_points'   => $dbMap[$kickerId]['points'],
                         'error'       => 'points mismatch',
