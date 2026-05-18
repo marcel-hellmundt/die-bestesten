@@ -111,7 +111,7 @@
               <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="b.h" [style.fill]="b.color" class="bar" rx="3">
                 <title>{{ b.label }}: {{ b.points }} Pkt</title>
               </rect>
-              <text [attr.x]="b.cx" [attr.y]="chartH - 4" class="chart-label chart-label--x">{{ b.label }}</text>
+              <text [attr.x]="b.cx" [attr.y]="chartH - padB + 10" [attr.transform]="'rotate(-45 ' + b.cx + ' ' + (chartH - padB + 10) + ')'" class="chart-label chart-label--x">{{ b.label }}</text>
             }
             @if (chart.pathD) {
               <path [attr.d]="chart.pathD" class="placement-line" fill="none" />

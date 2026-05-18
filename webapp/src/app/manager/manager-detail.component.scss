@@ -63,9 +63,18 @@
   white-space: nowrap;
   line-height: 1.4;
 
-  &--bronze { background: #cd7f32; color: #fff; }
-  &--silver { background: #9e9e9e; color: #fff; }
-  &--gold   { background: #f59e0b; color: #fff; }
+  &--bronze {
+    background: #cd7f32;
+    color: #fff;
+  }
+  &--silver {
+    background: #9e9e9e;
+    color: #fff;
+  }
+  &--gold {
+    background: #f59e0b;
+    color: #fff;
+  }
 }
 
 .detail-header {
@@ -324,12 +333,12 @@
   border: 1px solid $color-border;
   border-radius: $radius-xl;
   padding: $space-4;
-  overflow: hidden;
 
   .bar-chart {
     display: block;
     width: 100%;
     height: auto;
+    overflow: visible;
 
     .chart-grid {
       stroke: $color-border;
@@ -347,20 +356,21 @@
 
     .placement-line {
       stroke: $color-text;
-      stroke-width: 2;
+      stroke-width: 1.5;
       stroke-linejoin: round;
       stroke-linecap: round;
-      stroke-dasharray: 4 3;
-      opacity: 0.6;
+      stroke-dasharray: 4 6;
     }
 
     .placement-dot {
       fill: $color-text;
+      stroke: $color-text;
+      stroke-width: 1;
     }
 
     .chart-label {
       font-family: $font-body;
-      font-size: 10px;
+      font-size: 8px;
       fill: $color-text-muted;
 
       &--y {
@@ -369,7 +379,7 @@
       }
 
       &--x {
-        text-anchor: middle;
+        text-anchor: end;
         dominant-baseline: auto;
       }
     }
