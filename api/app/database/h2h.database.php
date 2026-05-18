@@ -203,7 +203,7 @@ trait H2HTrait
                 'id'         => $g['id'],
                 'name'       => $g['name'],
                 'sort_index' => (int) $g['sort_index'],
-                'teams'      => $groupTeams,
+                'teams'      => $teamIds,
                 'standings'  => $standingList,
                 'matches'    => $groupMatches,
             ];

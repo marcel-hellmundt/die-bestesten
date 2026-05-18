@@ -21,8 +21,7 @@
   user-select: none;
 
   &:disabled {
-    background-color: $color-text-muted;
-    border: transparent;
+    opacity: 0.35;
     cursor: not-allowed;
     pointer-events: none;
   }

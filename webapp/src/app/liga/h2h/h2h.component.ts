@@ -153,10 +153,13 @@ export class H2HComponent {
     this.api.delete(`h2h_group/${id}`).subscribe({ next: () => this.reload(), error: () => {} });
   }
 
-  setGroupTeams(groupId: string, event: Event): void {
-    const select  = event.target as HTMLSelectElement;
-    const teamIds = Array.from(select.selectedOptions).map(o => o.value);
-    this.api.patch(`h2h_group/${groupId}`, { teams: teamIds }).subscribe({ next: () => this.reload(), error: () => {} });
+  toggleGroupTeam(groupId: string, teamId: string, checked: boolean): void {
+    const group   = this.groups().find((g: any) => g.id === groupId);
+    if (!group) return;
+    const teams   = checked
+      ? [...group.teams, teamId]
+      : group.teams.filter((id: string) => id !== teamId);
+    this.api.patch(`h2h_group/${groupId}`, { teams }).subscribe({ next: () => this.reload(), error: () => {} });
   }
 
   // ── Admin: match creation ──────────────────────────────────────────────────

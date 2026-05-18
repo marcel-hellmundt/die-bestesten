@@ -235,19 +235,52 @@
   padding-top: 8px;
 }
 
-.admin-group-row {
+.admin-group-block {
+  margin-bottom: $space-5;
+}
+
+.admin-group-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: $space-3;
-  margin-bottom: $space-4;
-  flex-wrap: wrap;
+  margin-bottom: $space-2;
 }
 
 .admin-group-label {
   font-size: $font-sm;
-  font-weight: $font-weight-medium;
-  min-width: 80px;
-  padding-top: 6px;
+  font-weight: $font-weight-semibold;
+}
+
+.team-checkbox-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.team-checkbox-item {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  font-size: $font-sm;
+  cursor: pointer;
+  transition: border-color $transition-fast, background-color $transition-fast;
+
+  input[type="checkbox"] {
+    accent-color: $color-accent;
+    cursor: pointer;
+  }
+
+  &:has(input:checked) {
+    border-color: $color-accent;
+    background-color: color-mix(in srgb, $color-accent 8%, transparent);
+  }
+
+  &:hover {
+    border-color: $color-text-muted;
+  }
 }
 
 .admin-form {
@@ -267,7 +300,7 @@
   min-width: 180px;
 }
 
-.btn--danger {
+.btn-danger-outline {
   color: $color-danger;
   border-color: $color-danger;
   &:hover { background-color: color-mix(in srgb, $color-danger 10%, transparent); }

@@ -1,7 +1,7 @@
 <div class="season-nav">
-  <button class="btn btn--ghost btn--sm" (click)="decrement()" [disabled]="!canDecrement()">‹</button>
-  <span class="season-label">{{ selectedSeason()?.start_date | slice:0:4 }}</span>
-  <button class="btn btn--ghost btn--sm" (click)="increment()" [disabled]="!canIncrement()">›</button>
+  <button class="btn btn-ghost btn-sm" (click)="decrement()" [disabled]="!canDecrement()">‹</button>
+  <span class="season-label">{{ selectedSeason()?.start_date ?? '' | slice:0:4 }}</span>
+  <button class="btn btn-ghost btn-sm" (click)="increment()" [disabled]="!canIncrement()">›</button>
 </div>
 
 @if (loading()) {
@@ -143,7 +143,7 @@
         <div class="admin-row">
           <input class="input" type="text" placeholder="Gruppenname" [value]="newGroupName()"
             (input)="newGroupName.set($any($event.target).value)" />
-          <button class="btn btn--primary btn--sm" (click)="submitGroup()"
+          <button class="btn btn-primary btn-sm" (click)="submitGroup()"
             [disabled]="groupSubmit() === 'loading' || !newGroupName().trim()">
             Anlegen
           </button>
@@ -156,14 +156,24 @@
         <div class="admin-section">
           <h3 class="admin-subtitle">Gruppen-Teams</h3>
           @for (group of groups(); track group.id) {
-            <div class="admin-group-row">
-              <span class="admin-group-label">{{ group.name }}</span>
-              <select class="input input--select" multiple size="4" (change)="setGroupTeams(group.id, $event)">
+            <div class="admin-group-block">
+              <div class="admin-group-header">
+                <span class="admin-group-label">{{ group.name }}</span>
+                <button class="btn btn-ghost btn-sm btn-danger-outline" (click)="deleteGroup(group.id)">Löschen</button>
+              </div>
+              <div class="team-checkbox-list">
                 @for (t of adminTeams(); track t.id) {
-                  <option [value]="t.id" [selected]="group.teams.includes(t.id)">{{ t.team_name }}</option>
+                  <label class="team-checkbox-item">
+                    <input type="checkbox"
+                      [checked]="group.teams.includes(t.id)"
+                      (change)="toggleGroupTeam(group.id, t.id, $any($event.target).checked)" />
+                    @if (t.color) {
+                      <span class="team-dot" [style.background-color]="t.color"></span>
+                    }
+                    {{ t.team_name }}
+                  </label>
                 }
-              </select>
-              <button class="btn btn--ghost btn--sm btn--danger" (click)="deleteGroup(group.id)">Gruppe löschen</button>
+              </div>
             </div>
           }
         </div>
@@ -180,7 +190,7 @@
             </select>
           </div>
           <div class="admin-row">
-            <label class="admin-label">Leg</label>
+            <label class="admin-label">Spiel</label>
             <select class="input input--select" [value]="newMatchLeg()" (change)="newMatchLeg.set(+$any($event.target).value)">
               <option [value]="1">Hinspiel</option>
               <option [value]="2">Rückspiel</option>
@@ -217,7 +227,7 @@
             </div>
           }
           <div class="admin-row">
-            <button class="btn btn--primary btn--sm" (click)="submitMatch()"
+            <button class="btn btn-primary btn-sm" (click)="submitMatch()"
               [disabled]="matchSubmit() === 'loading' || !newMatchHome() || !newMatchAway() || !newMatchMatchday()">
               Match anlegen
             </button>
