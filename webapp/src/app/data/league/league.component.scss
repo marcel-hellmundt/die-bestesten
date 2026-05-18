@@ -186,8 +186,20 @@
 .validate-ok   { color: $color-success; font-weight: $font-weight-medium; }
 .validate-warn { color: $color-danger;  font-weight: $font-weight-medium; }
 
+.validate-group {
+  margin-top: $space-4;
+}
+
+.validate-group-header {
+  display: block;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  margin-bottom: $space-2;
+}
+
 .validate-table {
-  margin-top: $space-2;
+  margin-top: 0;
 }
 
 .validate-fields {

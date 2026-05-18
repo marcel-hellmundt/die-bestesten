@@ -123,32 +123,35 @@
                         }
                       </span>
                       @if (vr.mismatches.length > 0) {
-                        <table class="data-table data-table--compact validate-table">
-                          <thead>
-                            <tr>
-                              <th>Spieltag</th>
-                              <th>Team</th>
-                              <th>Manager</th>
-                              <th>Abweichungen</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            @for (mm of vr.mismatches; track mm.matchday_number + mm.team_name) {
-                              <tr>
-                                <td class="col-num">{{ mm.matchday_number ?? '?' }}</td>
-                                <td>{{ mm.team_name }}</td>
-                                <td>{{ mm.manager_name }}</td>
-                                <td class="validate-fields">
-                                  @for (entry of mm.fields | keyvalue; track entry.key) {
-                                    <span class="validate-field">
-                                      {{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}
-                                    </span>
-                                  }
-                                </td>
-                              </tr>
-                            }
-                          </tbody>
-                        </table>
+                        @for (group of groupedMismatches(vr.mismatches); track group.seasonId + group.matchdayNumber) {
+                          <div class="validate-group">
+                            <span class="validate-group-header">{{ cache.seasonName(group.seasonId) }} · Spieltag {{ group.matchdayNumber }}</span>
+                            <table class="data-table data-table--compact validate-table">
+                              <thead>
+                                <tr>
+                                  <th>Team</th>
+                                  <th>Manager</th>
+                                  <th>Abweichungen</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (mm of group.items; track mm.team_name) {
+                                  <tr>
+                                    <td>{{ mm.team_name }}</td>
+                                    <td>{{ mm.manager_name }}</td>
+                                    <td class="validate-fields">
+                                      @for (entry of mm.fields | keyvalue; track entry.key) {
+                                        <span class="validate-field">
+                                          {{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}
+                                        </span>
+                                      }
+                                    </td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        }
                       }
                     </div>
                   } @else if (validateState(item.id) === 'error') {

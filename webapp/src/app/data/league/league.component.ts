@@ -140,6 +140,20 @@ export class LeagueDataComponent {
     return this.validateResults()[leagueId] ?? null;
   }
 
+  groupedMismatches(mismatches: any[]): { seasonId: string; matchdayNumber: number; items: any[] }[] {
+    const groups: { seasonId: string; matchdayNumber: number; items: any[] }[] = [];
+    const seen = new Map<string, number>();
+    for (const mm of mismatches) {
+      const key = `${mm.season_id}:${mm.matchday_number}`;
+      if (!seen.has(key)) {
+        seen.set(key, groups.length);
+        groups.push({ seasonId: mm.season_id, matchdayNumber: mm.matchday_number, items: [] });
+      }
+      groups[seen.get(key)!].items.push(mm);
+    }
+    return groups;
+  }
+
   validate(league: League): void {
     this.validateStates.update(s => ({ ...s, [league.id]: 'loading' }));
     this.api.post<any>('league/validate_ratings', { league_id: league.id }).subscribe({
