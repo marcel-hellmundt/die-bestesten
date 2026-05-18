@@ -64,16 +64,16 @@ trait ManagerTrait
 
         $q = $this->con_league->prepare("
             WITH season_totals AS (
-                SELECT t.id, t.season_id, t.manager_id, t.team_name, t.color_primary AS color,
+                SELECT t.id, t.season_id, t.manager_id, t.team_name, t.color_primary AS color, t.color_secondary,
                        COALESCE(SUM(tr.points), 0) AS total_points,
                        COUNT(CASE WHEN tr.id IS NOT NULL AND tr.invalid = 0 THEN 1 END) AS matchdays_played,
                        RANK() OVER (PARTITION BY t.season_id ORDER BY COALESCE(SUM(tr.points), 0) DESC) AS season_placement,
                        COUNT(*) OVER (PARTITION BY t.season_id) AS season_team_count
                 FROM team t
                 LEFT JOIN team_rating tr ON tr.team_id = t.id
-                GROUP BY t.id, t.season_id, t.manager_id, t.team_name, t.color_primary
+                GROUP BY t.id, t.season_id, t.manager_id, t.team_name, t.color_primary, t.color_secondary
             )
-            SELECT id, season_id, team_name, color, total_points, matchdays_played,
+            SELECT id, season_id, team_name, color, color_secondary, total_points, matchdays_played,
                    season_placement, season_team_count
             FROM season_totals
             WHERE manager_id = :manager_id
@@ -81,7 +81,10 @@ trait ManagerTrait
         ");
         $q->execute([':manager_id' => $id]);
         $manager['teams'] = $q->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($manager['teams'] as &$t) { $t['color'] = $this->resolveColor($t['color']); }
+        foreach ($manager['teams'] as &$t) {
+            $t['color']           = $this->resolveColor($t['color']);
+            $t['color_secondary'] = $this->resolveColor($t['color_secondary']);
+        }
         unset($t);
 
         // Highlights & Lowlights: top/bottom 5 individual matchday ratings (from 2017/18 onwards)

@@ -96,7 +96,7 @@ export class ManagerDetailComponent {
         if (t.season_placement == null || t.season_team_count == null || t.season_team_count <= 1) return null;
         const norm = (t.season_placement - 1) / (t.season_team_count - 1); // 0 = 1st, 1 = last
         const y    = this.padT + norm * plotH;
-        return { x: toX(i), y, placement: t.season_placement, teamCount: t.season_team_count };
+        return { x: toX(i), y, placement: t.season_placement, teamCount: t.season_team_count, color: t.color_secondary ?? t.color };
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
