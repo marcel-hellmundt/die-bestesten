@@ -333,23 +333,9 @@ trait ManagerTrait
         return $teams;
     }
 
-    // Active season for team creation: must have ≥1 matchday so we don't force
-    // managers to create teams for seasons that haven't started yet.
-    private function getTeamSeasonId(): ?string
-    {
-        $q = $this->con->prepare(
-            "SELECT s.id FROM season s
-             WHERE s.start_date <= CURDATE()
-               AND EXISTS(SELECT 1 FROM matchday m WHERE m.season_id = s.id)
-             ORDER BY s.start_date DESC LIMIT 1"
-        );
-        $q->execute();
-        return $q->fetchColumn() ?: null;
-    }
-
     public function getMyTeamForActiveSeason(string $managerId): array|false
     {
-        $activeSeasonId = $this->getTeamSeasonId();
+        $activeSeasonId = $this->getActiveSeasonId();
         if (!$activeSeasonId) return false;
 
         $q = $this->con_league->prepare(
@@ -363,7 +349,7 @@ trait ManagerTrait
 
     public function teamExistsForManagerActiveSeason(string $managerId): bool
     {
-        $activeSeasonId = $this->getTeamSeasonId();
+        $activeSeasonId = $this->getActiveSeasonId();
         if (!$activeSeasonId) return false;
         $q = $this->con_league->prepare(
             "SELECT COUNT(*) FROM team WHERE manager_id = :m AND season_id = :s"
@@ -374,7 +360,7 @@ trait ManagerTrait
 
     public function createTeam(string $id, string $managerId, string $teamName, ?string $colorPrimary, ?string $colorSecondary): void
     {
-        $activeSeasonId = $this->getTeamSeasonId();
+        $activeSeasonId = $this->getActiveSeasonId();
         $q = $this->con_league->prepare(
             "INSERT INTO team (id, manager_id, season_id, team_name, color_primary, color_secondary)
              VALUES (:id, :m, :s, :team_name, :color_primary, :color_secondary)"
