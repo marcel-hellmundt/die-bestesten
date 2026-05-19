@@ -149,6 +149,7 @@ POST     /h2h               {season_id,phase,leg,home_team_id,away_team_id,match
 PATCH    /h2h/:id           {home_team_id?,away_team_id?,matchday_id?,group_id?,sort_index?} — Admin
 DELETE   /h2h/:id           — Admin
 POST     /h2h/generate      {league_id, season_id} → {status,groups:4,matches:24} — Generiert H2H-Gruppenphase nach festem 12-Teams-Template (Snake-Seeding nach Vorjahresrang, 4 Gruppen à 3, 24 Gruppenmatches auf Spieltage 1–18) — Admin
+POST     /h2h/draw_quarterfinals {league_id, season_id} → {matches:8} — Legt 8 Viertelfinale (Hin+Rück) nach festem Bracket aus Gruppenständen an (Bed.: Spieltag 18 abgeschlossen, noch keine QFs vorhanden); Bracket: A1:B2@MD20, B1:A2@MD21, C1:D2@MD22, D1:C2@MD23 (Hin), B2:A1@MD24, A2:B1@MD25, D2:C1@MD26, C2:D1@MD27 (Rück) — Admin
 GET      /h2h_group         ?season_id= → [{id,name,sort_index,teams:[team_id,...]}] — Auth
 POST     /h2h_group         {season_id,name,sort_index?} → {id} — Admin
 PATCH    /h2h_group/:id     {name?,sort_index?,teams?:[team_id,...]} (teams ersetzt alle Zuordnungen) — Admin

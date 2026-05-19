@@ -45,6 +45,17 @@ class H2HController extends _BaseController
             return $this->db->generateH2HTournament($leagueId, $seasonId);
         }
 
+        if ($this->id === 'draw_quarterfinals') {
+            $body     = $this->body();
+            $leagueId = $body['league_id'] ?? null;
+            $seasonId = $body['season_id'] ?? null;
+            if (!$leagueId || !$seasonId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'league_id and season_id required'];
+            }
+            return $this->db->drawH2HQuarterfinals($leagueId, $seasonId);
+        }
+
         $body       = $this->body();
         $seasonId   = $body['season_id']     ?? null;
         $phase      = $body['phase']         ?? null;

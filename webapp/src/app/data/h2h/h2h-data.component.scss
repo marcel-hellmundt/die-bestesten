@@ -43,3 +43,54 @@
   &--success { color: $color-success; }
   &--error   { color: $color-danger; }
 }
+
+.ko-section {
+  margin-top: $space-8;
+  border-top: 1px solid $color-border;
+  padding-top: $space-6;
+}
+
+.ko-section-title {
+  font-size: $font-md;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $space-5;
+}
+
+.ko-form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  max-width: 480px;
+}
+
+.ko-form-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: $space-3;
+}
+
+.ko-label {
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.input-narrow {
+  max-width: 80px;
+}
+
+.ko-form-actions {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-top: $space-2;
+}
+
+.ko-list {
+  margin-top: $space-5;
+}
+
+.btn-danger {
+  color: $color-danger;
+  &:hover:not(:disabled) { background: color-mix(in srgb, $color-danger 10%, transparent); }
+}
