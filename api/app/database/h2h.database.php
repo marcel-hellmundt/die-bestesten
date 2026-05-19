@@ -81,13 +81,14 @@ trait H2HTrait
             $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
             $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
             $rq  = $this->con_league->prepare(
-                "SELECT team_id, matchday_id, goals, sds_defender, invalid
+                "SELECT team_id, matchday_id, goals, assists, sds_defender, invalid
                  FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
             );
             $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
             foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $ratingMap[$r['team_id']][$r['matchday_id']] = [
                     'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
+                    'assists'      => (int) ($r['assists'] ?? 0),
                     'sds_defender' => (int) ($r['sds_defender'] ?? 0),
                     'invalid'      => (bool) $r['invalid'],
                 ];
@@ -149,9 +150,11 @@ trait H2HTrait
                 'matchday_number' => $md ? (int) $md['number'] : null,
                 'kickoff_date'    => $md['kickoff_date'] ?? null,
                 'home_goals'        => $homeRating !== null && $homeRating['goals'] !== null
-                                        ? max(0, $homeRating['goals'] - ($awayRating['sds_defender'] ?? 0)) : null,
+                                        ? max(0, $homeRating['goals'] + intdiv((int)($homeRating['assists'] ?? 0), 3) - ($awayRating['sds_defender'] ?? 0)) : null,
                 'away_goals'        => $awayRating !== null && $awayRating['goals'] !== null
-                                        ? max(0, $awayRating['goals'] - ($homeRating['sds_defender'] ?? 0)) : null,
+                                        ? max(0, $awayRating['goals'] + intdiv((int)($awayRating['assists'] ?? 0), 3) - ($homeRating['sds_defender'] ?? 0)) : null,
+                'home_assists'      => (int) ($homeRating['assists'] ?? 0),
+                'away_assists'      => (int) ($awayRating['assists'] ?? 0),
                 'home_sds_defender' => (int) ($homeRating['sds_defender'] ?? 0),
                 'away_sds_defender' => (int) ($awayRating['sds_defender'] ?? 0),
             ];
@@ -417,16 +420,16 @@ trait H2HTrait
             'home_team'    => $homeTeam,
             'away_team'    => $awayTeam,
             'home_rating'  => $homeRating ? [
-                'points'       => (int) $homeRating['points'],
-                'goals'        => max(0, (int) $homeRating['goals'] - (int) ($awayRating['sds_defender'] ?? 0)),
-                'sds_defender' => (int) ($homeRating['sds_defender'] ?? 0),
-                'assists'      => (int) $homeRating['assists'],
+                'points'        => (int) $homeRating['points'],
+                'goals'         => max(0, (int) $homeRating['goals'] + intdiv((int) $homeRating['assists'], 3) - (int) ($awayRating['sds_defender'] ?? 0)),
+                'assists'       => (int) $homeRating['assists'],
+                'sds_defender'  => (int) ($homeRating['sds_defender'] ?? 0),
             ] : null,
             'away_rating'  => $awayRating ? [
-                'points'       => (int) $awayRating['points'],
-                'goals'        => max(0, (int) $awayRating['goals'] - (int) ($homeRating['sds_defender'] ?? 0)),
-                'sds_defender' => (int) ($awayRating['sds_defender'] ?? 0),
-                'assists'      => (int) $awayRating['assists'],
+                'points'        => (int) $awayRating['points'],
+                'goals'         => max(0, (int) $awayRating['goals'] + intdiv((int) $awayRating['assists'], 3) - (int) ($homeRating['sds_defender'] ?? 0)),
+                'assists'       => (int) $awayRating['assists'],
+                'sds_defender'  => (int) ($awayRating['sds_defender'] ?? 0),
             ] : null,
             'home_lineup'  => $homeLineup['nominated'],
             'home_bench'   => $homeLineup['bench'],

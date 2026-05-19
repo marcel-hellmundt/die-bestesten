@@ -49,12 +49,37 @@ export class H2HMatchComponent {
     this.awayLineup().filter(p => p.goals > 0).flatMap(p => Array(p.goals).fill(p))
   );
 
-  homeSdsDefenders = computed(() =>
-    this.homeLineup().filter(p => p.position === 'DEFENDER' && p.sds > 0)
-  );
-  awaySdsDefenders = computed(() =>
-    this.awayLineup().filter(p => p.position === 'DEFENDER' && p.sds > 0)
-  );
+  homeSdsDefenders = computed(() => {
+    const count = this.homeRating()?.sds_defender ?? 0;
+    const named = this.homeLineup().filter(p => p.position === 'DEFENDER' && p.sds > 0);
+    return named.length >= count
+      ? named.slice(0, count)
+      : [...named, ...Array(count - named.length).fill(null)];
+  });
+  awaySdsDefenders = computed(() => {
+    const count = this.awayRating()?.sds_defender ?? 0;
+    const named = this.awayLineup().filter(p => p.position === 'DEFENDER' && p.sds > 0);
+    return named.length >= count
+      ? named.slice(0, count)
+      : [...named, ...Array(count - named.length).fill(null)];
+  });
+
+  homeAssistBlocks = computed(() => {
+    const flat = this.homeLineup()
+      .filter(p => p.assists > 0)
+      .flatMap((p: any) => Array(p.assists).fill(p.displayname));
+    const blocks: string[][] = [];
+    for (let i = 0; i + 2 < flat.length; i += 3) blocks.push(flat.slice(i, i + 3));
+    return blocks;
+  });
+  awayAssistBlocks = computed(() => {
+    const flat = this.awayLineup()
+      .filter(p => p.assists > 0)
+      .flatMap((p: any) => Array(p.assists).fill(p.displayname));
+    const blocks: string[][] = [];
+    for (let i = 0; i + 2 < flat.length; i += 3) blocks.push(flat.slice(i, i + 3));
+    return blocks;
+  });
 
   phaseLabel = computed(() => {
     const map: Record<string, string> = {

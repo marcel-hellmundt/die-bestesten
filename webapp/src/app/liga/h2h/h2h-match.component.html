@@ -45,22 +45,28 @@
       </div>
     </div>
 
-    @if (homeGoalscorers().length > 0 || awayGoalscorers().length > 0 || homeSdsDefenders().length > 0 || awaySdsDefenders().length > 0) {
+    @if (homeGoalscorers().length > 0 || awayGoalscorers().length > 0 || homeSdsDefenders().length > 0 || awaySdsDefenders().length > 0 || homeAssistBlocks().length > 0 || awayAssistBlocks().length > 0) {
       <div class="goalscorers">
         <div class="goalscorers__side goalscorers__side--home">
           @for (p of homeGoalscorers(); track $index) {
             <span class="goalscorer">{{ p.displayname }} <img class="goal-icon" src="img/icons/goal.png" alt="" /></span>
           }
-          @for (p of homeSdsDefenders(); track p.player_id) {
-            <span class="goalscorer">{{ p.displayname }} <img class="goal-icon" src="img/icons/shield.png" alt="" /></span>
+          @for (p of homeSdsDefenders(); track $index) {
+            <span class="goalscorer">{{ p?.displayname ?? 'SdS Abwehr' }} <img class="goal-icon" src="img/icons/shield.png" alt="" /></span>
+          }
+          @for (block of homeAssistBlocks(); track $index) {
+            <span class="goalscorer">{{ block.join(', ') }} <img class="goal-icon" src="img/icons/assist.png" alt="" /></span>
           }
         </div>
         <div class="goalscorers__side goalscorers__side--away">
           @for (p of awayGoalscorers(); track $index) {
             <span class="goalscorer"><img class="goal-icon" src="img/icons/goal.png" alt="" /> {{ p.displayname }}</span>
           }
-          @for (p of awaySdsDefenders(); track p.player_id) {
-            <span class="goalscorer"><img class="goal-icon" src="img/icons/shield.png" alt="" /> {{ p.displayname }}</span>
+          @for (p of awaySdsDefenders(); track $index) {
+            <span class="goalscorer"><img class="goal-icon" src="img/icons/shield.png" alt="" /> {{ p?.displayname ?? 'SdS Abwehr' }}</span>
+          }
+          @for (block of awayAssistBlocks(); track $index) {
+            <span class="goalscorer"><img class="goal-icon" src="img/icons/assist.png" alt="" /> {{ block.join(', ') }}</span>
           }
         </div>
       </div>
