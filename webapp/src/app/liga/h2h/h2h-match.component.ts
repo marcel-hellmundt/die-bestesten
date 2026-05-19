@@ -90,6 +90,16 @@ export class H2HMatchComponent {
 
   showBench = false;
 
+  homeLogoUrl = computed(() => {
+    const t = this.homeTeam();
+    return t?.id && t?.season_id ? `https://img.die-bestesten.de/img/team/${t.season_id}/${t.id}.png` : null;
+  });
+
+  awayLogoUrl = computed(() => {
+    const t = this.awayTeam();
+    return t?.id && t?.season_id ? `https://img.die-bestesten.de/img/team/${t.season_id}/${t.id}.png` : null;
+  });
+
   homePhotoUrl(p: any): string {
     return `https://img.die-bestesten.de/img/player/${p.photo_season_id}/${p.player_id}.png`;
   }

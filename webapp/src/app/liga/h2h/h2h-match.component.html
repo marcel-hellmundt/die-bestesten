@@ -26,12 +26,22 @@
 
       <!-- Score -->
       <div class="match-score">
-        @if (homeRating() && awayRating()) {
-          <span class="score-value">{{ homeRating().goals }}</span>
-          <span class="score-sep">–</span>
-          <span class="score-value">{{ awayRating().goals }}</span>
-        } @else {
-          <span class="score-tbd">–</span>
+        @if (homeLogoUrl()) {
+          <img class="score-logo" [src]="homeLogoUrl()!"
+               (error)="$any($event.target).style.display='none'" alt="" />
+        }
+        <div class="score-values">
+          @if (homeRating() && awayRating()) {
+            <span class="score-value">{{ homeRating().goals }}</span>
+            <span class="score-sep">–</span>
+            <span class="score-value">{{ awayRating().goals }}</span>
+          } @else {
+            <span class="score-tbd">–</span>
+          }
+        </div>
+        @if (awayLogoUrl()) {
+          <img class="score-logo" [src]="awayLogoUrl()!"
+               (error)="$any($event.target).style.display='none'" alt="" />
         }
       </div>
 

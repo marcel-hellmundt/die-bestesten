@@ -11,15 +11,14 @@
 
 .nav-arrow {
   display: flex;
-  align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: 1px solid $color-border;
   border-radius: $radius-md;
   background: $color-surface;
-  font-size: $font-xl;
-  line-height: 1;
+  font-size: $font-3xl;
+  line-height: 28px;
   color: $color-text;
   cursor: pointer;
   transition: border-color $transition-fast, color $transition-fast;
@@ -27,6 +26,21 @@
 
   &:hover:not(:disabled) { border-color: $color-text-muted; }
   &:disabled { color: $color-border; cursor: default; }
+}
+
+.select {
+  width: auto;
+  height: 36px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  color: $color-text;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &:hover { border-color: $color-text-muted; }
+  &:focus { outline: none; border-color: $color-text-muted; }
 }
 
 .live-toggle {

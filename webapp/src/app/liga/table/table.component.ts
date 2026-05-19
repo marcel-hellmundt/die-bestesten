@@ -21,7 +21,7 @@ export class TableComponent {
   isLoggedIn = computed(() => this.auth.isLoggedIn());
 
   // Seasons sorted newest first (future seasons excluded)
-  private seasons = computed(() =>
+  seasons = computed(() =>
     [...this.cache.startedSeasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
   );
 
@@ -34,6 +34,11 @@ export class TableComponent {
 
   decrement() { if (this.canDecrement()) this.selectedIndex.update(i => i + 1); }
   increment() { if (this.canIncrement()) this.selectedIndex.update(i => i - 1); }
+
+  onSeasonChange(id: string): void {
+    const idx = this.seasons().findIndex(s => s.id === id);
+    if (idx >= 0) this.selectedIndex.set(idx);
+  }
 
   private state = toSignal(
     combineLatest([

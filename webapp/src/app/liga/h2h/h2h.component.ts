@@ -17,7 +17,7 @@ export class H2HComponent {
   private router = inject(Router);
   cache          = inject(DataCacheService);
 
-  private seasons = computed(() =>
+  seasons = computed(() =>
     [...this.cache.startedSeasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
   );
 
@@ -32,6 +32,11 @@ export class H2HComponent {
   canIncrement       = computed(() => this.selectedIndex() > 0);
   decrement()        { if (this.canDecrement()) this.selectedIndex.update(i => i + 1); }
   increment()        { if (this.canIncrement()) this.selectedIndex.update(i => i - 1); }
+
+  onSeasonChange(id: string): void {
+    const idx = this.seasons().findIndex(s => s.id === id);
+    if (idx >= 0) this.selectedIndex.set(idx);
+  }
 
   private state = toSignal(
     toObservable(this.selectedSeason).pipe(
@@ -91,6 +96,10 @@ export class H2HComponent {
 
   phaseLabel(phase: string): string {
     return ({ quarterfinal: 'Viertelfinale', semifinal: 'Halbfinale', final: 'Finale' } as any)[phase] ?? phase;
+  }
+
+  isLive(m: any): boolean {
+    return !!m.kickoff_date && new Date(m.kickoff_date) <= new Date() && m.completed === false;
   }
 
   navigateToMatch(id: string): void {

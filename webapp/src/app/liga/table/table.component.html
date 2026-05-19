@@ -14,7 +14,11 @@
     >
       ‹
     </button>
-    <h1 class="page-title">{{ selectedSeason()!.longDisplayName }}</h1>
+    <select class="select" (change)="onSeasonChange($any($event.target).value)">
+      @for (s of seasons(); track s.id) {
+        <option [value]="s.id" [selected]="s.id === selectedSeason()!.id">{{ s.longDisplayName }}</option>
+      }
+    </select>
     <button
       class="nav-arrow"
       (click)="increment()"

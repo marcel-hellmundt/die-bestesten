@@ -149,6 +149,7 @@ trait H2HTrait
                 'matchday_id'     => $m['matchday_id'],
                 'matchday_number' => $md ? (int) $md['number'] : null,
                 'kickoff_date'    => $md['kickoff_date'] ?? null,
+                'completed'       => isset($md['completed']) ? (bool) $md['completed'] : false,
                 'home_goals'        => $homeRating !== null && $homeRating['goals'] !== null
                                         ? max(0, $homeRating['goals'] + intdiv((int)($homeRating['assists'] ?? 0), 3) - ($awayRating['sds_defender'] ?? 0)) : null,
                 'away_goals'        => $awayRating !== null && $awayRating['goals'] !== null

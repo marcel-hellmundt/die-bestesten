@@ -76,6 +76,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: $space-3;
+}
+
+.score-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.score-values {
+  display: flex;
+  align-items: center;
   gap: $space-2;
 }
 
