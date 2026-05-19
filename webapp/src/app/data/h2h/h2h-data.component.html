@@ -40,6 +40,36 @@
             <span class="gen-msg gen-msg--error">{{ drawQFMessage(league.id) }}</span>
           }
         </div>
+        <div class="league-card-actions">
+          <button
+            class="btn btn-secondary btn-sm"
+            [disabled]="drawSFState(league.id) === 'loading' || !activeSeasonId() || !matchday27Completed()"
+            [title]="!matchday27Completed() ? 'Spieltag 27 muss abgeschlossen sein' : ''"
+            (click)="drawSemifinals(league)"
+          >
+            @if (drawSFState(league.id) === 'loading') { Auslosung… } @else { Halbfinale zulosen }
+          </button>
+          @if (drawSFState(league.id) === 'success') {
+            <span class="gen-msg gen-msg--success">{{ drawSFMessage(league.id) }}</span>
+          } @else if (drawSFState(league.id) === 'error') {
+            <span class="gen-msg gen-msg--error">{{ drawSFMessage(league.id) }}</span>
+          }
+        </div>
+        <div class="league-card-actions">
+          <button
+            class="btn btn-secondary btn-sm"
+            [disabled]="drawFinalState(league.id) === 'loading' || !activeSeasonId() || !matchday32Completed()"
+            [title]="!matchday32Completed() ? 'Spieltag 32 muss abgeschlossen sein' : ''"
+            (click)="drawFinal(league)"
+          >
+            @if (drawFinalState(league.id) === 'loading') { Auslosung… } @else { Finale zulosen }
+          </button>
+          @if (drawFinalState(league.id) === 'success') {
+            <span class="gen-msg gen-msg--success">{{ drawFinalMessage(league.id) }}</span>
+          } @else if (drawFinalState(league.id) === 'error') {
+            <span class="gen-msg gen-msg--error">{{ drawFinalMessage(league.id) }}</span>
+          }
+        </div>
       </div>
     }
   </div>

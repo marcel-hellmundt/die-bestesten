@@ -852,4 +852,274 @@ trait H2HTrait
 
         return ['status' => true, 'matches' => 8];
     }
+
+    public function drawH2HSemifinals(string $leagueId, string $seasonId): array
+    {
+        $md27q = $this->con->prepare(
+            "SELECT completed FROM matchday WHERE season_id = :s AND number = 27 LIMIT 1"
+        );
+        $md27q->execute([':s' => $seasonId]);
+        $md27 = $md27q->fetch(PDO::FETCH_ASSOC);
+        if (!$md27 || !$md27['completed']) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Spieltag 27 ist noch nicht abgeschlossen'];
+        }
+
+        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq->execute([':id' => $leagueId]);
+        $league = $lq->fetch(PDO::FETCH_ASSOC);
+        if (!$league) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Liga nicht gefunden'];
+        }
+        try {
+            $con = new PDO(
+                "mysql:host={$_ENV['DB_HOST']};dbname={$league['db_name']};charset=utf8",
+                $_ENV['DB_USER'], $_ENV['DB_PASSWORD']
+            );
+            $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException) {
+            http_response_code(500);
+            return ['status' => false, 'message' => 'Verbindung zur Liga-DB fehlgeschlagen'];
+        }
+
+        $existQ = $con->prepare("SELECT COUNT(*) FROM h2h_match WHERE season_id = :s AND phase = 'semifinal'");
+        $existQ->execute([':s' => $seasonId]);
+        if ((int) $existQ->fetchColumn() > 0) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Halbfinale bereits vorhanden'];
+        }
+
+        $qfQ = $con->prepare(
+            "SELECT leg, home_team_id, away_team_id, matchday_id, sort_index
+             FROM h2h_match WHERE season_id = :s AND phase = 'quarterfinal'
+             ORDER BY sort_index ASC, leg ASC"
+        );
+        $qfQ->execute([':s' => $seasonId]);
+        $qfMatches = $qfQ->fetchAll(PDO::FETCH_ASSOC);
+
+        $qfPairs = [];
+        foreach ($qfMatches as $m) {
+            $si = (int) $m['sort_index'];
+            $qfPairs[$si][(int)$m['leg'] === 1 ? 'leg1' : 'leg2'] = $m;
+        }
+
+        $allTeamIds     = array_values(array_unique(array_merge(
+            array_column($qfMatches, 'home_team_id'),
+            array_column($qfMatches, 'away_team_id')
+        )));
+        $allMatchdayIds = array_values(array_unique(array_column($qfMatches, 'matchday_id')));
+
+        $ratingMap = [];
+        if (!empty($allTeamIds) && !empty($allMatchdayIds)) {
+            $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
+            $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+            $rq  = $con->prepare(
+                "SELECT team_id, matchday_id, goals, assists, sds_defender
+                 FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
+            );
+            $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
+            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $ratingMap[$r['team_id']][$r['matchday_id']] = [
+                    'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
+                    'assists'      => (int) ($r['assists'] ?? 0),
+                    'sds_defender' => (int) ($r['sds_defender'] ?? 0),
+                ];
+            }
+        }
+
+        $effectiveGoals = function (string $tid, string $oppId, string $mdId) use ($ratingMap): ?int {
+            $r   = $ratingMap[$tid][$mdId]   ?? null;
+            $opp = $ratingMap[$oppId][$mdId] ?? null;
+            if (!$r || $r['goals'] === null) return null;
+            return max(0, $r['goals'] + intdiv($r['assists'], 3) - ($opp['sds_defender'] ?? 0));
+        };
+
+        $vfWinners = [];
+        for ($si = 0; $si <= 3; $si++) {
+            if (!isset($qfPairs[$si]['leg1']) || !isset($qfPairs[$si]['leg2'])) {
+                http_response_code(400);
+                return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . " unvollständig"];
+            }
+            $leg1  = $qfPairs[$si]['leg1'];
+            $leg2  = $qfPairs[$si]['leg2'];
+            $teamA = $leg1['home_team_id'];
+            $teamB = $leg1['away_team_id'];
+            $a1 = $effectiveGoals($teamA, $teamB, $leg1['matchday_id']);
+            $b1 = $effectiveGoals($teamB, $teamA, $leg1['matchday_id']);
+            $a2 = $effectiveGoals($teamA, $teamB, $leg2['matchday_id']);
+            $b2 = $effectiveGoals($teamB, $teamA, $leg2['matchday_id']);
+            if ($a1 === null || $b1 === null || $a2 === null || $b2 === null) {
+                http_response_code(400);
+                return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": fehlende Bewertungen"];
+            }
+            $aTotal = $a1 + $a2;
+            $bTotal = $b1 + $b2;
+            if ($aTotal === $bTotal) {
+                http_response_code(400);
+                return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": Unentschieden — Sieger kann nicht automatisch ermittelt werden"];
+            }
+            $vfWinners[$si] = $aTotal > $bTotal ? $teamA : $teamB;
+        }
+
+        $mdQ = $this->con->prepare(
+            "SELECT id, number FROM matchday WHERE season_id = :s AND number IN (29,30,31,32)"
+        );
+        $mdQ->execute([':s' => $seasonId]);
+        $matchdays = [];
+        foreach ($mdQ->fetchAll(PDO::FETCH_ASSOC) as $md) {
+            $matchdays[(int) $md['number']] = $md['id'];
+        }
+        $missing = array_diff([29, 30, 31, 32], array_keys($matchdays));
+        if (!empty($missing)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Fehlende Spieltage: ' . implode(', ', $missing)];
+        }
+
+        [$vf1, $vf2, $vf3, $vf4] = [$vfWinners[0], $vfWinners[1], $vfWinners[2], $vfWinners[3]];
+        $bracket = [
+            [1, $vf1, $vf2, 29, 0],
+            [1, $vf3, $vf4, 30, 1],
+            [2, $vf2, $vf1, 31, 0],
+            [2, $vf4, $vf3, 32, 1],
+        ];
+
+        $stmt = $con->prepare(
+            "INSERT INTO h2h_match (id, season_id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index)
+             VALUES (UUID(), ?, 'semifinal', ?, ?, ?, ?, NULL, ?)"
+        );
+        foreach ($bracket as [$leg, $home, $away, $mdNum, $si]) {
+            $stmt->execute([$seasonId, $leg, $home, $away, $matchdays[$mdNum], $si]);
+        }
+
+        return ['status' => true, 'matches' => 4];
+    }
+
+    public function drawH2HFinal(string $leagueId, string $seasonId): array
+    {
+        $md32q = $this->con->prepare(
+            "SELECT completed FROM matchday WHERE season_id = :s AND number = 32 LIMIT 1"
+        );
+        $md32q->execute([':s' => $seasonId]);
+        $md32 = $md32q->fetch(PDO::FETCH_ASSOC);
+        if (!$md32 || !$md32['completed']) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Spieltag 32 ist noch nicht abgeschlossen'];
+        }
+
+        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq->execute([':id' => $leagueId]);
+        $league = $lq->fetch(PDO::FETCH_ASSOC);
+        if (!$league) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Liga nicht gefunden'];
+        }
+        try {
+            $con = new PDO(
+                "mysql:host={$_ENV['DB_HOST']};dbname={$league['db_name']};charset=utf8",
+                $_ENV['DB_USER'], $_ENV['DB_PASSWORD']
+            );
+            $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException) {
+            http_response_code(500);
+            return ['status' => false, 'message' => 'Verbindung zur Liga-DB fehlgeschlagen'];
+        }
+
+        $existQ = $con->prepare("SELECT COUNT(*) FROM h2h_match WHERE season_id = :s AND phase = 'final'");
+        $existQ->execute([':s' => $seasonId]);
+        if ((int) $existQ->fetchColumn() > 0) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Finale bereits vorhanden'];
+        }
+
+        $sfQ = $con->prepare(
+            "SELECT leg, home_team_id, away_team_id, matchday_id, sort_index
+             FROM h2h_match WHERE season_id = :s AND phase = 'semifinal'
+             ORDER BY sort_index ASC, leg ASC"
+        );
+        $sfQ->execute([':s' => $seasonId]);
+        $sfMatches = $sfQ->fetchAll(PDO::FETCH_ASSOC);
+
+        $sfPairs = [];
+        foreach ($sfMatches as $m) {
+            $si = (int) $m['sort_index'];
+            $sfPairs[$si][(int)$m['leg'] === 1 ? 'leg1' : 'leg2'] = $m;
+        }
+
+        $allTeamIds     = array_values(array_unique(array_merge(
+            array_column($sfMatches, 'home_team_id'),
+            array_column($sfMatches, 'away_team_id')
+        )));
+        $allMatchdayIds = array_values(array_unique(array_column($sfMatches, 'matchday_id')));
+
+        $ratingMap = [];
+        if (!empty($allTeamIds) && !empty($allMatchdayIds)) {
+            $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
+            $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+            $rq  = $con->prepare(
+                "SELECT team_id, matchday_id, goals, assists, sds_defender
+                 FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
+            );
+            $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
+            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $ratingMap[$r['team_id']][$r['matchday_id']] = [
+                    'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
+                    'assists'      => (int) ($r['assists'] ?? 0),
+                    'sds_defender' => (int) ($r['sds_defender'] ?? 0),
+                ];
+            }
+        }
+
+        $effectiveGoals = function (string $tid, string $oppId, string $mdId) use ($ratingMap): ?int {
+            $r   = $ratingMap[$tid][$mdId]   ?? null;
+            $opp = $ratingMap[$oppId][$mdId] ?? null;
+            if (!$r || $r['goals'] === null) return null;
+            return max(0, $r['goals'] + intdiv($r['assists'], 3) - ($opp['sds_defender'] ?? 0));
+        };
+
+        $sfWinners = [];
+        for ($si = 0; $si <= 1; $si++) {
+            if (!isset($sfPairs[$si]['leg1']) || !isset($sfPairs[$si]['leg2'])) {
+                http_response_code(400);
+                return ['status' => false, 'message' => "Halbfinale " . ($si + 1) . " unvollständig"];
+            }
+            $leg1  = $sfPairs[$si]['leg1'];
+            $leg2  = $sfPairs[$si]['leg2'];
+            $teamA = $leg1['home_team_id'];
+            $teamB = $leg1['away_team_id'];
+            $a1 = $effectiveGoals($teamA, $teamB, $leg1['matchday_id']);
+            $b1 = $effectiveGoals($teamB, $teamA, $leg1['matchday_id']);
+            $a2 = $effectiveGoals($teamA, $teamB, $leg2['matchday_id']);
+            $b2 = $effectiveGoals($teamB, $teamA, $leg2['matchday_id']);
+            if ($a1 === null || $b1 === null || $a2 === null || $b2 === null) {
+                http_response_code(400);
+                return ['status' => false, 'message' => "Halbfinale " . ($si + 1) . ": fehlende Bewertungen"];
+            }
+            $aTotal = $a1 + $a2;
+            $bTotal = $b1 + $b2;
+            if ($aTotal === $bTotal) {
+                http_response_code(400);
+                return ['status' => false, 'message' => "Halbfinale " . ($si + 1) . ": Unentschieden — Sieger kann nicht automatisch ermittelt werden"];
+            }
+            $sfWinners[$si] = $aTotal > $bTotal ? $teamA : $teamB;
+        }
+
+        $mdQ = $this->con->prepare(
+            "SELECT id FROM matchday WHERE season_id = :s AND number = 34 LIMIT 1"
+        );
+        $mdQ->execute([':s' => $seasonId]);
+        $md34 = $mdQ->fetchColumn();
+        if (!$md34) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Spieltag 34 nicht gefunden'];
+        }
+
+        $stmt = $con->prepare(
+            "INSERT INTO h2h_match (id, season_id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index)
+             VALUES (UUID(), ?, 'final', 1, ?, ?, ?, NULL, 0)"
+        );
+        $stmt->execute([$seasonId, $sfWinners[0], $sfWinners[1], $md34]);
+
+        return ['status' => true, 'matches' => 1];
+    }
 }

@@ -52,6 +52,12 @@ export class H2HDataComponent {
   drawQFStates   = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
   drawQFMessages = signal<Record<string, string>>({});
 
+  drawSFStates    = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
+  drawSFMessages  = signal<Record<string, string>>({});
+
+  drawFinalStates   = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
+  drawFinalMessages = signal<Record<string, string>>({});
+
   generateState(leagueId: string): 'idle' | 'loading' | 'success' | 'error' {
     return this.generateStates()[leagueId] ?? 'idle';
   }
@@ -95,6 +101,14 @@ export class H2HDataComponent {
     this.matchdays().find((md: any) => md.number === 18)?.completed ?? false
   );
 
+  matchday27Completed = computed(() =>
+    this.matchdays().find((md: any) => md.number === 27)?.completed ?? false
+  );
+
+  matchday32Completed = computed(() =>
+    this.matchdays().find((md: any) => md.number === 32)?.completed ?? false
+  );
+
   drawQuarterfinals(league: any): void {
     const seasonId = this.activeSeasonId();
     if (!seasonId) return;
@@ -109,6 +123,58 @@ export class H2HDataComponent {
       error: err => {
         this.drawQFStates.update(s => ({ ...s, [league.id]: 'error' }));
         this.drawQFMessages.update(s => ({ ...s, [league.id]: err?.error?.message ?? 'Fehler' }));
+      },
+    });
+  }
+
+  drawSFState(leagueId: string): 'idle' | 'loading' | 'success' | 'error' {
+    return this.drawSFStates()[leagueId] ?? 'idle';
+  }
+
+  drawSFMessage(leagueId: string): string {
+    return this.drawSFMessages()[leagueId] ?? '';
+  }
+
+  drawSemifinals(league: any): void {
+    const seasonId = this.activeSeasonId();
+    if (!seasonId) return;
+    this.drawSFStates.update(s => ({ ...s, [league.id]: 'loading' }));
+    this.drawSFMessages.update(s => ({ ...s, [league.id]: '' }));
+    this.api.post<any>('h2h/draw_semifinals', { league_id: league.id, season_id: seasonId }).subscribe({
+      next: res => {
+        this.drawSFStates.update(s => ({ ...s, [league.id]: 'success' }));
+        this.drawSFMessages.update(s => ({ ...s, [league.id]: `${res.matches} Matches angelegt` }));
+        this.koReload$.next();
+      },
+      error: err => {
+        this.drawSFStates.update(s => ({ ...s, [league.id]: 'error' }));
+        this.drawSFMessages.update(s => ({ ...s, [league.id]: err?.error?.message ?? 'Fehler' }));
+      },
+    });
+  }
+
+  drawFinalState(leagueId: string): 'idle' | 'loading' | 'success' | 'error' {
+    return this.drawFinalStates()[leagueId] ?? 'idle';
+  }
+
+  drawFinalMessage(leagueId: string): string {
+    return this.drawFinalMessages()[leagueId] ?? '';
+  }
+
+  drawFinal(league: any): void {
+    const seasonId = this.activeSeasonId();
+    if (!seasonId) return;
+    this.drawFinalStates.update(s => ({ ...s, [league.id]: 'loading' }));
+    this.drawFinalMessages.update(s => ({ ...s, [league.id]: '' }));
+    this.api.post<any>('h2h/draw_final', { league_id: league.id, season_id: seasonId }).subscribe({
+      next: res => {
+        this.drawFinalStates.update(s => ({ ...s, [league.id]: 'success' }));
+        this.drawFinalMessages.update(s => ({ ...s, [league.id]: `${res.matches} Match angelegt` }));
+        this.koReload$.next();
+      },
+      error: err => {
+        this.drawFinalStates.update(s => ({ ...s, [league.id]: 'error' }));
+        this.drawFinalMessages.update(s => ({ ...s, [league.id]: err?.error?.message ?? 'Fehler' }));
       },
     });
   }
