@@ -1,0 +1,115 @@
+@use '../../../styles/variables' as *;
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  text-decoration: none;
+  margin-bottom: $space-6;
+  transition: color $transition-fast;
+  &:hover { color: $color-text; }
+}
+
+.modus-content {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: $space-10;
+}
+
+.modus-section {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  .section-header { margin: 0; }
+
+  p {
+    font-size: $font-sm;
+    line-height: 1.7;
+    color: $color-text;
+    margin: 0;
+  }
+}
+
+// ── Snake-Seeding Tabelle ────────────────────────────────────────────────────
+
+.snake-table,
+.bracket-table,
+.calendar-table {
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  font-size: $font-sm;
+}
+
+.snake-row,
+.bracket-row,
+.cal-row {
+  display: grid;
+  padding: $space-2 $space-4;
+  border-bottom: 1px solid $color-border;
+
+  &:last-child { border-bottom: none; }
+
+  &--header {
+    background: $color-surface-alt;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+.snake-row {
+  grid-template-columns: 60px repeat(4, 1fr);
+}
+
+.snake-round {
+  color: $color-text-muted;
+  font-size: $font-xs;
+  font-variant-numeric: tabular-nums;
+}
+
+// ── Bracket Tabelle ──────────────────────────────────────────────────────────
+
+.bracket-row {
+  grid-template-columns: 1fr 80px 80px;
+  align-items: center;
+
+  &--sep {
+    padding: 0;
+    height: 1px;
+    background: $color-border;
+    border-bottom: none;
+  }
+
+  &--final {
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// ── Rahmenkalender ───────────────────────────────────────────────────────────
+
+.cal-row {
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+
+  &--highlight {
+    font-weight: $font-weight-semibold;
+    background: color-mix(in srgb, $color-accent 6%, transparent);
+  }
+}
+
+.cal-md {
+  font-variant-numeric: tabular-nums;
+  color: $color-text-muted;
+  font-size: $font-xs;
+}
+
+.cal-muted {
+  color: $color-text-muted;
+}

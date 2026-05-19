@@ -53,36 +53,34 @@
   }
 }
 
-.h2h-rules {
-  display: flex;
-  flex-wrap: wrap;
+.modus-link {
+  display: inline-flex;
   align-items: center;
   gap: $space-2;
+  height: 36px;
+  padding: 0 $space-3;
+  margin-left: auto;
   font-size: $font-xs;
+  font-weight: $font-weight-medium;
   color: $color-text-muted;
   background: $color-surface-alt;
   border: 1px solid $color-border;
-  border-radius: $radius-sm;
-  padding: $space-2 $space-3;
-  margin-bottom: $space-6;
-}
-
-.h2h-rules__icon {
-  width: 14px;
-  height: 14px;
+  border-radius: $radius-md;
+  text-decoration: none;
+  white-space: nowrap;
   flex-shrink: 0;
-  margin-right: $space-1;
-}
+  transition: border-color $transition-fast, color $transition-fast;
 
-.h2h-rules__sep {
-  color: $color-border;
-}
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
 
-.season-label {
-  font-weight: $font-weight-semibold;
-  font-size: $font-md;
-  min-width: 3ch;
-  text-align: center;
+  &:hover {
+    color: $color-text;
+    border-color: $color-text-muted;
+  }
 }
 
 // ── Group grid ──────────────────────────────────────────────────────────────
