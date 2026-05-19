@@ -227,6 +227,9 @@ trait H2HTrait
             unset($s);
             usort($standingList, function ($a, $b) use ($teamMap, $prevRankByManager) {
                 if ($a['pts'] !== $b['pts'])         return $b['pts'] <=> $a['pts'];
+                $aDiff = $a['goals_for'] - $a['goals_against'];
+                $bDiff = $b['goals_for'] - $b['goals_against'];
+                if ($aDiff !== $bDiff)               return $bDiff <=> $aDiff;
                 if ($a['goals_for'] !== $b['goals_for']) return $b['goals_for'] <=> $a['goals_for'];
                 $aRank = $prevRankByManager[$teamMap[$a['team_id']]['manager_id'] ?? ''] ?? PHP_INT_MAX;
                 $bRank = $prevRankByManager[$teamMap[$b['team_id']]['manager_id'] ?? ''] ?? PHP_INT_MAX;
@@ -783,7 +786,7 @@ trait H2HTrait
             $teamIds  = $groupTeamMap[$gid] ?? [];
             $standing = [];
             foreach ($teamIds as $tid) {
-                $standing[$tid] = ['team_id' => $tid, 'pts' => 0, 'goals_for' => 0];
+                $standing[$tid] = ['team_id' => $tid, 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
             }
             foreach ($groupMatches as $m) {
                 if ($m['group_id'] !== $gid) continue;
@@ -792,16 +795,23 @@ trait H2HTrait
                 if (!$hR || !$aR || $hR['goals'] === null || $aR['goals'] === null) continue;
                 $hp = max(0, $hR['goals'] + intdiv($hR['assists'], 3) - $aR['sds_defender']);
                 $ap = max(0, $aR['goals'] + intdiv($aR['assists'], 3) - $hR['sds_defender']);
-                if (!isset($standing[$m['home_team_id']])) $standing[$m['home_team_id']] = ['team_id' => $m['home_team_id'], 'pts' => 0, 'goals_for' => 0];
-                if (!isset($standing[$m['away_team_id']])) $standing[$m['away_team_id']] = ['team_id' => $m['away_team_id'], 'pts' => 0, 'goals_for' => 0];
-                $standing[$m['home_team_id']]['goals_for'] += $hp;
-                $standing[$m['away_team_id']]['goals_for'] += $ap;
-                if ($hp > $ap)      { $standing[$m['home_team_id']]['pts'] += 3; }
+                if (!isset($standing[$m['home_team_id']])) $standing[$m['home_team_id']] = ['team_id' => $m['home_team_id'], 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
+                if (!isset($standing[$m['away_team_id']])) $standing[$m['away_team_id']] = ['team_id' => $m['away_team_id'], 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
+                $standing[$m['home_team_id']]['goals_for']     += $hp;
+                $standing[$m['home_team_id']]['goals_against'] += $ap;
+                $standing[$m['away_team_id']]['goals_for']     += $ap;
+                $standing[$m['away_team_id']]['goals_against'] += $hp;
+                if ($hp > $ap)       { $standing[$m['home_team_id']]['pts'] += 3; }
                 elseif ($hp === $ap) { $standing[$m['home_team_id']]['pts']++; $standing[$m['away_team_id']]['pts']++; }
                 else                 { $standing[$m['away_team_id']]['pts'] += 3; }
             }
             $list = array_values($standing);
-            usort($list, fn($a, $b) => $b['pts'] <=> $a['pts'] ?: $b['goals_for'] <=> $a['goals_for']);
+            usort($list, function ($a, $b) {
+                if ($a['pts'] !== $b['pts']) return $b['pts'] <=> $a['pts'];
+                $aDiff = $a['goals_for'] - $a['goals_against'];
+                $bDiff = $b['goals_for'] - $b['goals_against'];
+                return $bDiff <=> $aDiff ?: $b['goals_for'] <=> $a['goals_for'];
+            });
             if (empty($list[0]) || empty($list[1])) {
                 http_response_code(400);
                 return ['status' => false, 'message' => "Gruppe {$g['name']}: unvollständige Standings"];
