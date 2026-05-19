@@ -27,9 +27,9 @@
       <!-- Score -->
       <div class="match-score">
         @if (homeRating() && awayRating()) {
-          <span class="score-value">{{ homeRating().points }}</span>
+          <span class="score-value">{{ homeRating().goals }}</span>
           <span class="score-sep">–</span>
-          <span class="score-value">{{ awayRating().points }}</span>
+          <span class="score-value">{{ awayRating().goals }}</span>
         } @else {
           <span class="score-tbd">–</span>
         }
@@ -44,6 +44,27 @@
         <div class="match-team-manager">{{ awayTeam()?.manager_name }}</div>
       </div>
     </div>
+
+    @if (homeGoalscorers().length > 0 || awayGoalscorers().length > 0 || homeSdsDefenders().length > 0 || awaySdsDefenders().length > 0) {
+      <div class="goalscorers">
+        <div class="goalscorers__side goalscorers__side--home">
+          @for (p of homeGoalscorers(); track $index) {
+            <span class="goalscorer">{{ p.displayname }} <img class="goal-icon" src="img/icons/goal.png" alt="" /></span>
+          }
+          @for (p of homeSdsDefenders(); track p.player_id) {
+            <span class="goalscorer">{{ p.displayname }} <img class="goal-icon" src="img/icons/shield.png" alt="" /></span>
+          }
+        </div>
+        <div class="goalscorers__side goalscorers__side--away">
+          @for (p of awayGoalscorers(); track $index) {
+            <span class="goalscorer"><img class="goal-icon" src="img/icons/goal.png" alt="" /> {{ p.displayname }}</span>
+          }
+          @for (p of awaySdsDefenders(); track p.player_id) {
+            <span class="goalscorer"><img class="goal-icon" src="img/icons/shield.png" alt="" /> {{ p.displayname }}</span>
+          }
+        </div>
+      </div>
+    }
   </div>
 
   <!-- Lineups -->

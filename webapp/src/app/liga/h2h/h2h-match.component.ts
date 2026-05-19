@@ -42,6 +42,20 @@ export class H2HMatchComponent {
   homeBench  = computed(() => (this.data()?.home_bench  ?? []) as any[]);
   awayBench  = computed(() => (this.data()?.away_bench  ?? []) as any[]);
 
+  homeGoalscorers = computed(() =>
+    this.homeLineup().filter(p => p.goals > 0).flatMap(p => Array(p.goals).fill(p))
+  );
+  awayGoalscorers = computed(() =>
+    this.awayLineup().filter(p => p.goals > 0).flatMap(p => Array(p.goals).fill(p))
+  );
+
+  homeSdsDefenders = computed(() =>
+    this.homeLineup().filter(p => p.position === 'DEFENDER' && p.sds > 0)
+  );
+  awaySdsDefenders = computed(() =>
+    this.awayLineup().filter(p => p.position === 'DEFENDER' && p.sds > 0)
+  );
+
   phaseLabel = computed(() => {
     const map: Record<string, string> = {
       group: 'Gruppenphase', quarterfinal: 'Viertelfinale', semifinal: 'Halbfinale', final: 'Finale',

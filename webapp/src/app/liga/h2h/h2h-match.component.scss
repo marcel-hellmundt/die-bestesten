@@ -100,6 +100,41 @@
   color: $color-text-muted;
 }
 
+// ── Goalscorers ───────────────────────────────────────────────────────────────
+
+.goalscorers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-6;
+  margin-top: $space-4;
+  padding-top: $space-4;
+  border-top: 1px solid $color-border;
+}
+
+.goalscorers__side {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  &--home { align-items: flex-end; text-align: right; }
+  &--away { align-items: flex-start; text-align: left; }
+}
+
+.goalscorer {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+.goal-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 // ── Lineup grid ───────────────────────────────────────────────────────────────
 
 .lineup-grid {
