@@ -977,11 +977,12 @@ trait H2HTrait
         }
 
         [$vf1, $vf2, $vf3, $vf4] = [$vfWinners[0], $vfWinners[1], $vfWinners[2], $vfWinners[3]];
+        // Cross-bracket: VF1 vs VF4 and VF2 vs VF3 to avoid A/B silo
         $bracket = [
-            [1, $vf1, $vf2, 29, 0],
-            [1, $vf3, $vf4, 30, 1],
-            [2, $vf2, $vf1, 31, 0],
-            [2, $vf4, $vf3, 32, 1],
+            [1, $vf1, $vf4, 29, 0],
+            [1, $vf2, $vf3, 30, 1],
+            [2, $vf4, $vf1, 31, 0],
+            [2, $vf3, $vf2, 32, 1],
         ];
 
         $stmt = $con->prepare(
