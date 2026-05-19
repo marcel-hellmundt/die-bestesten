@@ -105,51 +105,89 @@
       <div class="section-header-row"><h2 class="section-header">{{ phase.label }}</h2></div>
       <div class="knockout-grid">
         @for (mu of phase.matchups; track mu.teamAId + mu.teamBId) {
-          <div class="matchup-card card">
+          <div class="matchup-card card" [class.matchup-card--final]="phase.phase === 'final'">
 
-            <!-- Aggregate header: logo – score – logo -->
-            <div class="agg-header">
-              @if (!logoFailed(mu.teamAId)) {
-                <img class="team-logo-sm" [src]="teamLogoUrl(mu.teamAId)" (error)="onLogoError(mu.teamAId)" alt="" />
-              } @else if (mu.legs[0].home_color) {
-                <span class="team-dot" [style.background-color]="mu.legs[0].home_color"></span>
-              }
-              <span class="agg-score">
-                @if (mu.hasResults) {
-                  <strong>{{ mu.aggA }}</strong>
-                  <span class="h2h-sep">–</span>
-                  <strong>{{ mu.aggB }}</strong>
-                } @else {
-                  <span class="h2h-pending">–</span>
-                }
-              </span>
-              @if (!logoFailed(mu.teamBId)) {
-                <img class="team-logo-sm" [src]="teamLogoUrl(mu.teamBId)" (error)="onLogoError(mu.teamBId)" alt="" />
-              } @else if (mu.legs[0].away_color) {
-                <span class="team-dot" [style.background-color]="mu.legs[0].away_color"></span>
-              }
-            </div>
-
-            <!-- Individual leg rows: matchday + label + score -->
-            <div class="ko-legs">
-              @for (leg of mu.legs; track leg.id) {
-                <div class="ko-leg-row row-link" (click)="navigateToMatch(leg.id)">
-                  <span class="h2h-matchday">{{ leg.matchday_number ?? '?' }}</span>
-                  @if (mu.legs.length > 1) {
-                    <span class="ko-leg-label">{{ leg.leg === 1 ? 'Hin' : 'Rück' }}</span>
+            @if (phase.phase === 'final') {
+              <!-- Final: team names + logos + score, no leg rows -->
+              <div class="agg-header agg-header--final row-link" (click)="navigateToMatch(mu.legs[0].id)">
+                <span class="agg-team-final agg-team-final--home">
+                  {{ mu.legs[0].home_team_name }}
+                  @if (!logoFailed(mu.teamAId)) {
+                    <img class="team-logo-lg" [src]="teamLogoUrl(mu.teamAId)" (error)="onLogoError(mu.teamAId)" alt="" />
+                  } @else if (mu.legs[0].home_color) {
+                    <span class="team-dot" [style.background-color]="mu.legs[0].home_color"></span>
                   }
-                  <span class="ko-leg-score">
-                    @if (leg.home_goals != null) {
-                      <strong>{{ leg.home_goals }}</strong>
-                      <span class="h2h-sep">–</span>
-                      <strong>{{ leg.away_goals }}</strong>
-                    } @else {
-                      <span class="h2h-pending">–</span>
-                    }
-                  </span>
-                </div>
-              }
-            </div>
+                </span>
+                <span class="agg-score agg-score--final">
+                  @if (mu.hasResults) {
+                    <strong>{{ mu.aggA }}</strong>
+                    <span class="h2h-sep">–</span>
+                    <strong>{{ mu.aggB }}</strong>
+                  } @else {
+                    <span class="h2h-pending">–</span>
+                  }
+                </span>
+                <span class="agg-team-final agg-team-final--away">
+                  @if (!logoFailed(mu.teamBId)) {
+                    <img class="team-logo-lg" [src]="teamLogoUrl(mu.teamBId)" (error)="onLogoError(mu.teamBId)" alt="" />
+                  } @else if (mu.legs[0].away_color) {
+                    <span class="team-dot" [style.background-color]="mu.legs[0].away_color"></span>
+                  }
+                  {{ mu.legs[0].away_team_name }}
+                </span>
+              </div>
+            } @else {
+              <!-- QF / SF: logo-only header + leg rows with small logos -->
+              <div class="agg-header">
+                @if (!logoFailed(mu.teamAId)) {
+                  <img class="team-logo-md" [src]="teamLogoUrl(mu.teamAId)" (error)="onLogoError(mu.teamAId)" alt="" />
+                } @else if (mu.legs[0].home_color) {
+                  <span class="team-dot" [style.background-color]="mu.legs[0].home_color"></span>
+                }
+                <span class="agg-score">
+                  @if (mu.hasResults) {
+                    <strong>{{ mu.aggA }}</strong>
+                    <span class="h2h-sep">–</span>
+                    <strong>{{ mu.aggB }}</strong>
+                  } @else {
+                    <span class="h2h-pending">–</span>
+                  }
+                </span>
+                @if (!logoFailed(mu.teamBId)) {
+                  <img class="team-logo-md" [src]="teamLogoUrl(mu.teamBId)" (error)="onLogoError(mu.teamBId)" alt="" />
+                } @else if (mu.legs[0].away_color) {
+                  <span class="team-dot" [style.background-color]="mu.legs[0].away_color"></span>
+                }
+              </div>
+
+              <div class="ko-legs">
+                @for (leg of mu.legs; track leg.id) {
+                  <div class="ko-leg-row row-link" (click)="navigateToMatch(leg.id)">
+                    <span class="h2h-matchday">{{ leg.matchday_number ?? '?' }}</span>
+                    <span class="ko-leg-label">{{ leg.leg === 1 ? 'Hin' : 'Rück' }}</span>
+                    <span class="ko-leg-score">
+                      @if (!logoFailed(leg.home_team_id)) {
+                        <img class="team-logo-sm" [src]="teamLogoUrl(leg.home_team_id)" (error)="onLogoError(leg.home_team_id)" alt="" />
+                      } @else if (leg.home_color) {
+                        <span class="team-dot" [style.background-color]="leg.home_color"></span>
+                      }
+                      @if (leg.home_goals != null) {
+                        <strong>{{ leg.home_goals }}</strong>
+                        <span class="h2h-sep">–</span>
+                        <strong>{{ leg.away_goals }}</strong>
+                      } @else {
+                        <span class="h2h-pending">–</span>
+                      }
+                      @if (!logoFailed(leg.away_team_id)) {
+                        <img class="team-logo-sm" [src]="teamLogoUrl(leg.away_team_id)" (error)="onLogoError(leg.away_team_id)" alt="" />
+                      } @else if (leg.away_color) {
+                        <span class="team-dot" [style.background-color]="leg.away_color"></span>
+                      }
+                    </span>
+                  </div>
+                }
+              </div>
+            }
           </div>
         }
       </div>
