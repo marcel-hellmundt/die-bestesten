@@ -66,12 +66,12 @@
                 <div class="h2h-match-row row-link" (click)="navigateToMatch(m.id)">
                   <span class="h2h-matchday">{{ m.matchday_number ?? '?' }}</span>
                   <span class="h2h-team h2h-team--home">
+                    {{ m.home_team_name }}
                     @if (!logoFailed(m.home_team_id)) {
                       <img class="team-logo-sm" [src]="teamLogoUrl(m.home_team_id)" (error)="onLogoError(m.home_team_id)" alt="" />
                     } @else if (m.home_color) {
                       <span class="team-dot" [style.background-color]="m.home_color"></span>
                     }
-                    {{ m.home_team_name }}
                   </span>
                   <span class="h2h-score">
                     @if (m.home_goals != null) {
@@ -110,12 +110,12 @@
               <div class="h2h-match-row row-link" (click)="navigateToMatch(leg.id)">
                 <span class="h2h-matchday">{{ leg.matchday_number ?? '?' }}</span>
                 <span class="h2h-team h2h-team--home">
+                  {{ leg.home_team_name }}
                   @if (!logoFailed(leg.home_team_id)) {
                     <img class="team-logo-sm" [src]="teamLogoUrl(leg.home_team_id)" (error)="onLogoError(leg.home_team_id)" alt="" />
                   } @else if (leg.home_color) {
                     <span class="team-dot" [style.background-color]="leg.home_color"></span>
                   }
-                  {{ leg.home_team_name }}
                 </span>
                 <span class="h2h-score">
                   @if (leg.home_goals != null) {
