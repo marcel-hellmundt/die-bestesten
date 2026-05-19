@@ -42,6 +42,8 @@
 
 .h2h-standings {
   margin-bottom: $space-4;
+
+  tbody tr:hover { background-color: inherit; }
 }
 
 .col-rank-h2h {
@@ -91,6 +93,8 @@
   border-radius: $radius-sm;
   font-size: $font-sm;
   cursor: pointer;
+
+  &:hover { background-color: $color-surface-alt; }
 }
 
 .h2h-matchday {
@@ -114,8 +118,8 @@
 }
 
 .team-logo-sm {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -157,43 +161,69 @@
 // ── Knockout ──────────────────────────────────────────────────────────────────
 
 .knockout-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: $space-4;
   margin-bottom: $space-8;
-
-  @media (max-width: $mobile-breakpoint) {
-    grid-template-columns: 1fr;
-  }
 }
 
 .matchup-card {
   padding: $space-4;
-
-  .h2h-match-list {
-    border-top: none;
-    padding-top: 0;
-  }
+  flex: 0 1 200px;
+  min-width: 160px;
 }
 
-.aggregate-row {
+// Aggregate header: logo – score – logo
+.agg-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: $space-2 $space-2;
-  border-top: 1px solid $color-border;
-  margin-top: $space-2;
-}
-
-.agg-label {
-  font-size: $font-xs;
-  color: $color-text-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  gap: $space-2;
+  padding-bottom: $space-3;
+  margin-bottom: $space-3;
+  border-bottom: 1px solid $color-border;
 }
 
 .agg-score {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
   font-weight: $font-weight-bold;
   font-size: $font-md;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+// Individual leg rows
+.ko-legs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ko-leg-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1 $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  cursor: pointer;
+
+  &:hover { background-color: $color-surface-alt; }
+}
+
+.ko-leg-label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  min-width: 3ch;
+}
+
+.ko-leg-score {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: $space-1;
   font-variant-numeric: tabular-nums;
 }

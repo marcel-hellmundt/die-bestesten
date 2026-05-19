@@ -106,42 +106,50 @@
       <div class="knockout-grid">
         @for (mu of phase.matchups; track mu.teamAId + mu.teamBId) {
           <div class="matchup-card card">
-            @for (leg of mu.legs; track leg.id) {
-              <div class="h2h-match-row row-link" (click)="navigateToMatch(leg.id)">
-                <span class="h2h-matchday">{{ leg.matchday_number ?? '?' }}</span>
-                <span class="h2h-team h2h-team--home">
-                  {{ leg.home_team_name }}
-                  @if (!logoFailed(leg.home_team_id)) {
-                    <img class="team-logo-sm" [src]="teamLogoUrl(leg.home_team_id)" (error)="onLogoError(leg.home_team_id)" alt="" />
-                  } @else if (leg.home_color) {
-                    <span class="team-dot" [style.background-color]="leg.home_color"></span>
+
+            <!-- Aggregate header: logo – score – logo -->
+            <div class="agg-header">
+              @if (!logoFailed(mu.teamAId)) {
+                <img class="team-logo-sm" [src]="teamLogoUrl(mu.teamAId)" (error)="onLogoError(mu.teamAId)" alt="" />
+              } @else if (mu.legs[0].home_color) {
+                <span class="team-dot" [style.background-color]="mu.legs[0].home_color"></span>
+              }
+              <span class="agg-score">
+                @if (mu.hasResults) {
+                  <strong>{{ mu.aggA }}</strong>
+                  <span class="h2h-sep">–</span>
+                  <strong>{{ mu.aggB }}</strong>
+                } @else {
+                  <span class="h2h-pending">–</span>
+                }
+              </span>
+              @if (!logoFailed(mu.teamBId)) {
+                <img class="team-logo-sm" [src]="teamLogoUrl(mu.teamBId)" (error)="onLogoError(mu.teamBId)" alt="" />
+              } @else if (mu.legs[0].away_color) {
+                <span class="team-dot" [style.background-color]="mu.legs[0].away_color"></span>
+              }
+            </div>
+
+            <!-- Individual leg rows: matchday + label + score -->
+            <div class="ko-legs">
+              @for (leg of mu.legs; track leg.id) {
+                <div class="ko-leg-row row-link" (click)="navigateToMatch(leg.id)">
+                  <span class="h2h-matchday">{{ leg.matchday_number ?? '?' }}</span>
+                  @if (mu.legs.length > 1) {
+                    <span class="ko-leg-label">{{ leg.leg === 1 ? 'Hin' : 'Rück' }}</span>
                   }
-                </span>
-                <span class="h2h-score">
-                  @if (leg.home_goals != null) {
-                    <strong>{{ leg.home_goals }}</strong>
-                    <span class="h2h-sep">–</span>
-                    <strong>{{ leg.away_goals }}</strong>
-                  } @else {
-                    <span class="h2h-pending">–</span>
-                  }
-                </span>
-                <span class="h2h-team h2h-team--away">
-                  @if (!logoFailed(leg.away_team_id)) {
-                    <img class="team-logo-sm" [src]="teamLogoUrl(leg.away_team_id)" (error)="onLogoError(leg.away_team_id)" alt="" />
-                  } @else if (leg.away_color) {
-                    <span class="team-dot" [style.background-color]="leg.away_color"></span>
-                  }
-                  {{ leg.away_team_name }}
-                </span>
-              </div>
-            }
-            @if (mu.hasResults && mu.legs.length > 1) {
-              <div class="aggregate-row">
-                <span class="agg-label">Gesamt</span>
-                <span class="agg-score">{{ mu.aggA }} – {{ mu.aggB }}</span>
-              </div>
-            }
+                  <span class="ko-leg-score">
+                    @if (leg.home_goals != null) {
+                      <strong>{{ leg.home_goals }}</strong>
+                      <span class="h2h-sep">–</span>
+                      <strong>{{ leg.away_goals }}</strong>
+                    } @else {
+                      <span class="h2h-pending">–</span>
+                    }
+                  </span>
+                </div>
+              }
+            </div>
           </div>
         }
       </div>
