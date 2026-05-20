@@ -1,5 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { catchError, of } from 'rxjs';
+import { Injectable, inject, signal } from '@angular/core';
+import { Subscription, catchError, interval, of, switchMap } from 'rxjs';
 import { ApiService } from './api.service';
 
 export interface AppNotification {
@@ -20,19 +20,39 @@ export class NotificationService {
   private api    = inject(ApiService);
   private loaded = false;
 
-  private _notifications  = signal<AppNotification[]>([]);
-  private _preferences    = signal<NotificationPreferences>({});
+  private _notifications = signal<AppNotification[]>([]);
+  private _preferences   = signal<NotificationPreferences>({});
+  private _unreadCount   = signal<number>(0);
 
   notifications = this._notifications.asReadonly();
   preferences   = this._preferences.asReadonly();
-  unreadCount   = computed(() => this._notifications().filter(n => !n.read_at).length);
+  unreadCount   = this._unreadCount.asReadonly();
+
+  private pollSub?: Subscription;
+
+  startPolling(): void {
+    if (this.pollSub) return;
+    this.pollSub = interval(1000).pipe(
+      switchMap(() => this.api.get<{ count: number }>('notification/unread_count').pipe(
+        catchError(() => of({ count: this._unreadCount() }))
+      ))
+    ).subscribe(({ count }) => this._unreadCount.set(count));
+  }
+
+  stopPolling(): void {
+    this.pollSub?.unsubscribe();
+    this.pollSub = undefined;
+  }
 
   load(): void {
     if (this.loaded) return;
     this.loaded = true;
     this.api.get<AppNotification[]>('notification').pipe(
       catchError(() => of([] as AppNotification[]))
-    ).subscribe(ns => this._notifications.set(ns));
+    ).subscribe(ns => {
+      this._notifications.set(ns);
+      this._unreadCount.set(ns.filter(n => !n.read_at).length);
+    });
   }
 
   reload(): void {
@@ -52,17 +72,20 @@ export class NotificationService {
   }
 
   markAsRead(id: string): void {
-    this.api.patch<any>(`notification/${id}`, {}).subscribe(() =>
+    const wasUnread = !this._notifications().find(n => n.id === id)?.read_at;
+    this.api.patch<any>(`notification/${id}`, {}).subscribe(() => {
       this._notifications.update(ns =>
         ns.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n)
-      )
-    );
+      );
+      if (wasUnread) this._unreadCount.update(c => Math.max(0, c - 1));
+    });
   }
 
   markAllAsRead(): void {
     this.api.patch<any>('notification/read_all', {}).subscribe(() => {
       const now = new Date().toISOString();
       this._notifications.update(ns => ns.map(n => ({ ...n, read_at: n.read_at ?? now })));
+      this._unreadCount.set(0);
     });
   }
 }

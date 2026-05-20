@@ -164,6 +164,7 @@ POST     /achievement/evaluate — Achievement-Auswertung für alle Manager anst
 POST     /achievement/evaluate/:id — Einzelnes Achievement neu auswerten: vergibt an neue Gewinner und entzieht Managern, die Anforderungen nicht mehr erfüllen — Admin
 PATCH    /achievement/seen     — Alle noch nicht gesehenen Achievements (seen_at IS NULL) des eingeloggten Managers als gesehen markieren — Auth
 GET      /notification         — [{id,sender_id,sender_name,receiver_id,title,message,created_at,read_at}] neueste zuerst — Auth
+GET      /notification/unread_count — {count: N} — leichtgewichtiger Endpunkt für 1s-Polling — Auth
 PATCH    /notification/:id     — Einzelne Notification als gelesen markieren (read_at = NOW()); 403 wenn nicht eigene — Auth
 PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen markieren — Auth
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin

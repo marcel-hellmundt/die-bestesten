@@ -30,6 +30,7 @@ export class ShellComponent {
       this.unseenAchievements.set(unseen);
     });
     this.notifService.load();
+    this.notifService.startPolling();
 
     this.cache.ensureMyTeam();
 

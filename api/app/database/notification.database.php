@@ -16,6 +16,15 @@ trait NotificationTrait
         return $q->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getUnreadCount(string $managerId): int
+    {
+        $q = $this->con_league->prepare(
+            "SELECT COUNT(*) FROM notification WHERE receiver_id = ? AND read_at IS NULL"
+        );
+        $q->execute([$managerId]);
+        return (int) $q->fetchColumn();
+    }
+
     public function getNotificationById(string $id): array|false
     {
         $q = $this->con_league->prepare("SELECT * FROM notification WHERE id = ?");
