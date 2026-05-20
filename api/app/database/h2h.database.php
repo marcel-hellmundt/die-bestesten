@@ -753,7 +753,10 @@ trait H2HTrait
                 $matchHtml .= '<div class="notif-matches">';
                 foreach ($matches as [$mdNum, $homeId, $awayId]) {
                     $matchHtml .= '<div class="notif-match-row"><span class="notif-md">ST ' . $mdNum . '</span>'
-                        . $teamCell($homeId, true) . ' &ndash; ' . $teamCell($awayId) . '</div>';
+                        . '<span class="notif-match-side notif-match-home">' . $teamCell($homeId, true) . '</span>'
+                        . '<span class="notif-sep">&ndash;</span>'
+                        . '<span class="notif-match-side notif-match-away">' . $teamCell($awayId) . '</span>'
+                        . '</div>';
                 }
                 $matchHtml .= '</div>';
                 $msg = $staticHtml . $matchHtml;
@@ -955,11 +958,19 @@ trait H2HTrait
             return $logoRight ? $span . $img : $img . $span;
         };
 
+        $qfRow = function (string $md, string $home, string $away) use ($qfCell): string {
+            return '<div class="notif-match-row"><span class="notif-md">' . $md . '</span>'
+                . '<span class="notif-match-side notif-match-home">' . $qfCell($home, true) . '</span>'
+                . '<span class="notif-sep">&ndash;</span>'
+                . '<span class="notif-match-side notif-match-away">' . $qfCell($away) . '</span>'
+                . '</div>';
+        };
+
         $qfMsg  = '<div class="notif-matches">';
-        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST20/24</span>' . $qfCell($a1, true) . ' &ndash; ' . $qfCell($b2) . '</div>';
-        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST21/25</span>' . $qfCell($b1, true) . ' &ndash; ' . $qfCell($a2) . '</div>';
-        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST22/26</span>' . $qfCell($c1, true) . ' &ndash; ' . $qfCell($d2) . '</div>';
-        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST23/27</span>' . $qfCell($d1, true) . ' &ndash; ' . $qfCell($c2) . '</div>';
+        $qfMsg .= $qfRow('ST20/24', $a1, $b2);
+        $qfMsg .= $qfRow('ST21/25', $b1, $a2);
+        $qfMsg .= $qfRow('ST22/26', $c1, $d2);
+        $qfMsg .= $qfRow('ST23/27', $d1, $c2);
         $qfMsg .= '</div>';
 
         $allMgrsQ = $con->prepare(
@@ -1135,9 +1146,17 @@ trait H2HTrait
             return $logoRight ? $span . $img : $img . $span;
         };
 
+        $sfRow = function (string $md, string $home, string $away) use ($sfCell): string {
+            return '<div class="notif-match-row"><span class="notif-md">' . $md . '</span>'
+                . '<span class="notif-match-side notif-match-home">' . $sfCell($home, true) . '</span>'
+                . '<span class="notif-sep">&ndash;</span>'
+                . '<span class="notif-match-side notif-match-away">' . $sfCell($away) . '</span>'
+                . '</div>';
+        };
+
         $sfMsg  = '<div class="notif-matches">';
-        $sfMsg .= '<div class="notif-match-row"><span class="notif-md">ST29/31</span>' . $sfCell($vf1, true) . ' &ndash; ' . $sfCell($vf4) . '</div>';
-        $sfMsg .= '<div class="notif-match-row"><span class="notif-md">ST30/32</span>' . $sfCell($vf2, true) . ' &ndash; ' . $sfCell($vf3) . '</div>';
+        $sfMsg .= $sfRow('ST29/31', $vf1, $vf4);
+        $sfMsg .= $sfRow('ST30/32', $vf2, $vf3);
         $sfMsg .= '</div>';
 
         $allMgrsQ = $con->prepare(

@@ -144,6 +144,11 @@
           vertical-align: middle;
           white-space: nowrap;
           text-align: center;
+
+          .notif-logo {
+            display: block;
+            margin: 0 auto;
+          }
         }
       }
 
@@ -182,9 +187,27 @@
       .notif-match-row {
         display: flex;
         align-items: center;
-        justify-content: center;
         gap: 4px;
         font-size: $font-sm;
+      }
+
+      .notif-match-side {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .notif-match-home {
+        justify-content: flex-end;
+      }
+
+      .notif-match-away {
+        justify-content: flex-start;
+      }
+
+      .notif-sep {
+        flex-shrink: 0;
       }
 
       .notif-md {
