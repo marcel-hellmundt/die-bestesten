@@ -802,13 +802,13 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/h2h/draw_semifinals',
-                        'description' => 'Halbfinale auslosen aus VF-Siegern (Aggregat; Bed.: Spieltag 27 abgeschlossen) → {matches:4}; sendet Notification an alle Manager — Admin',
+                        'description' => 'Halbfinale auslosen aus VF-Siegern (Aggregat-Tore, Tiebreaker: Gesamtpunkte; Bed.: Spieltag 27 abgeschlossen) → {matches:4}; sendet Notification an alle Manager — Admin',
                         'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/h2h/draw_final',
-                        'description' => 'Finale auslosen aus HF-Siegern (Aggregat; Bed.: Spieltag 32 abgeschlossen) → {matches:1} — Admin',
+                        'description' => 'Finale auslosen aus HF-Siegern (Aggregat-Tore, Tiebreaker: Gesamtpunkte; Bed.: Spieltag 32 abgeschlossen) → {matches:1} — Admin',
                         'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
                     ],
                 ],

@@ -5,13 +5,16 @@
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else if (data()) {
-
   <!-- Header -->
   <div class="match-header card">
     <div class="match-meta">
       {{ phaseLabel() }}
-      @if (match()?.leg > 1) { · {{ match()?.leg }}. Leg }
-      @if (matchday()) { · Spieltag {{ matchday().number }} }
+      @if (match()?.leg > 1) {
+        · {{ match()?.leg }}. Leg
+      }
+      @if (matchday()) {
+        · Spieltag {{ matchday().number }}
+      }
     </div>
 
     <div class="match-scoreboard">
@@ -21,14 +24,17 @@
           <span class="team-color-bar" [style.background-color]="homeTeam().color"></span>
         }
         <div class="match-team-name">{{ homeTeam()?.team_name }}</div>
-        <div class="match-team-manager">{{ homeTeam()?.manager_name }}</div>
       </div>
 
       <!-- Score -->
       <div class="match-score">
         @if (homeLogoUrl()) {
-          <img class="score-logo" [src]="homeLogoUrl()!"
-               (error)="$any($event.target).style.display='none'" alt="" />
+          <img
+            class="score-logo"
+            [src]="homeLogoUrl()!"
+            (error)="$any($event.target).style.display = 'none'"
+            alt=""
+          />
         }
         <div class="score-values">
           @if (homeRating() && awayRating()) {
@@ -40,8 +46,12 @@
           }
         </div>
         @if (awayLogoUrl()) {
-          <img class="score-logo" [src]="awayLogoUrl()!"
-               (error)="$any($event.target).style.display='none'" alt="" />
+          <img
+            class="score-logo"
+            [src]="awayLogoUrl()!"
+            (error)="$any($event.target).style.display = 'none'"
+            alt=""
+          />
         }
       </div>
 
@@ -51,32 +61,56 @@
           <span class="team-color-bar" [style.background-color]="awayTeam().color"></span>
         }
         <div class="match-team-name">{{ awayTeam()?.team_name }}</div>
-        <div class="match-team-manager">{{ awayTeam()?.manager_name }}</div>
       </div>
     </div>
 
-    @if (homeGoalscorers().length > 0 || awayGoalscorers().length > 0 || homeSdsDefenders().length > 0 || awaySdsDefenders().length > 0 || homeAssistBlocks().length > 0 || awayAssistBlocks().length > 0) {
+    @if (
+      homeGoalEvents().length > 0 ||
+      awayGoalEvents().length > 0 ||
+      homeSdsDefenders().length > 0 ||
+      awaySdsDefenders().length > 0
+    ) {
       <div class="goalscorers">
         <div class="goalscorers__side goalscorers__side--home">
-          @for (p of homeGoalscorers(); track $index) {
-            <span class="goalscorer">{{ p.displayname }} <img class="goal-icon" src="img/icons/goal.png" alt="" /></span>
+          @for (e of homeGoalEvents(); track $index; let i = $index) {
+            <span
+              class="goalscorer"
+              [class.goalscorer--blocked]="i >= homeGoalEvents().length - homeGoalsBlocked()"
+            >
+              {{ e.label }}
+              <img
+                class="goal-icon"
+                [src]="e.type === 'goal' ? 'img/icons/goal.png' : 'img/icons/assist.png'"
+                alt=""
+              />
+            </span>
           }
           @for (p of homeSdsDefenders(); track $index) {
-            <span class="goalscorer">{{ p?.displayname ?? 'SdS Abwehr' }} <img class="goal-icon" src="img/icons/shield.png" alt="" /></span>
-          }
-          @for (block of homeAssistBlocks(); track $index) {
-            <span class="goalscorer">{{ block.join(', ') }} <img class="goal-icon" src="img/icons/assist.png" alt="" /></span>
+            <span class="goalscorer"
+              >{{ p?.displayname ?? 'SdS Abwehr' }}
+              <img class="goal-icon" src="img/icons/shield.png" alt=""
+            /></span>
           }
         </div>
         <div class="goalscorers__side goalscorers__side--away">
-          @for (p of awayGoalscorers(); track $index) {
-            <span class="goalscorer"><img class="goal-icon" src="img/icons/goal.png" alt="" /> {{ p.displayname }}</span>
+          @for (e of awayGoalEvents(); track $index; let i = $index) {
+            <span
+              class="goalscorer"
+              [class.goalscorer--blocked]="i >= awayGoalEvents().length - awayGoalsBlocked()"
+            >
+              <img
+                class="goal-icon"
+                [src]="e.type === 'goal' ? 'img/icons/goal.png' : 'img/icons/assist.png'"
+                alt=""
+              />
+              {{ e.label }}
+            </span>
           }
           @for (p of awaySdsDefenders(); track $index) {
-            <span class="goalscorer"><img class="goal-icon" src="img/icons/shield.png" alt="" /> {{ p?.displayname ?? 'SdS Abwehr' }}</span>
-          }
-          @for (block of awayAssistBlocks(); track $index) {
-            <span class="goalscorer"><img class="goal-icon" src="img/icons/assist.png" alt="" /> {{ block.join(', ') }}</span>
+            <span class="goalscorer"
+              ><img class="goal-icon" src="img/icons/shield.png" alt="" />
+              {{ p?.displayname ?? 'SdS Abwehr' }}</span
+            >
           }
         </div>
       </div>
@@ -85,19 +119,28 @@
 
   <!-- Lineups -->
   <div class="lineup-grid">
-
     <!-- Home lineup -->
     <section class="lineup-section">
-      <div class="section-header-row">
+      <div class="section-header-row home">
         <h2 class="section-header">{{ homeTeam()?.team_name }}</h2>
       </div>
+      @if (homeTeam()?.manager_id) {
+        <div class="manager home">
+          <img
+            class="player-avatar-sm"
+            [src]="managerPhotoUrl(homeTeam().manager_id)"
+            (error)="$any($event.target).style.display = 'none'"
+            alt=""
+          />
+          <span class="manager-name">{{ homeTeam().manager_name }}</span>
+        </div>
+      }
       @if (homeLineup().length > 0) {
         <div class="table-container">
           <table class="data-table data-table--compact">
             <thead>
               <tr>
                 <th>Spieler</th>
-                <th class="col-pos">Pos</th>
                 <th class="col-grade">Note</th>
                 <th class="col-pts">Pkt</th>
               </tr>
@@ -106,13 +149,31 @@
               @for (p of homeLineup(); track p.player_id) {
                 <tr>
                   <td class="player-cell">
+                    <span
+                      class="position-badge"
+                      [style.background-color]="positionColor(p.position)"
+                    >
+                      {{ positionLabel(p.position) }}
+                    </span>
                     @if (p.photo_uploaded && p.photo_season_id) {
-                      <img class="player-avatar-sm" [src]="homePhotoUrl(p)" [alt]="p.displayname"
-                        (error)="$any($event.target).style.display = 'none'" />
+                      <img
+                        class="player-avatar-sm"
+                        [src]="homePhotoUrl(p)"
+                        [alt]="p.displayname"
+                        (error)="$any($event.target).style.display = 'none'"
+                      />
                     }
                     <span>{{ p.displayname }}</span>
+                    <span class="player-events">
+                      @if (p.sds) { <img class="event-icon" src="img/icons/shield.png" alt="SdS" title="SdS" /> }
+                      @for (_ of [].constructor(p.goals ?? 0); track $index) {
+                        <img class="event-icon" src="img/icons/goal.png" alt="Tor" title="Tor" />
+                      }
+                      @for (_ of [].constructor(p.assists ?? 0); track $index) {
+                        <img class="event-icon" src="img/icons/assist.png" alt="Vorlage" title="Vorlage" />
+                      }
+                    </span>
                   </td>
-                  <td class="col-pos">{{ p.position | slice:0:3 }}</td>
                   <td class="col-grade">{{ p.grade ?? '—' }}</td>
                   <td class="col-pts">{{ p.points ?? '—' }}</td>
                 </tr>
@@ -127,16 +188,26 @@
 
     <!-- Away lineup -->
     <section class="lineup-section">
-      <div class="section-header-row">
+      <div class="section-header-row away">
         <h2 class="section-header">{{ awayTeam()?.team_name }}</h2>
       </div>
+      @if (awayTeam()?.manager_id) {
+        <div class="manager away">
+          <img
+            class="player-avatar-sm"
+            [src]="managerPhotoUrl(awayTeam().manager_id)"
+            (error)="$any($event.target).style.display = 'none'"
+            alt=""
+          />
+          <span class="manager-name">{{ awayTeam().manager_name }}</span>
+        </div>
+      }
       @if (awayLineup().length > 0) {
         <div class="table-container">
           <table class="data-table data-table--compact">
             <thead>
               <tr>
                 <th>Spieler</th>
-                <th class="col-pos">Pos</th>
                 <th class="col-grade">Note</th>
                 <th class="col-pts">Pkt</th>
               </tr>
@@ -145,13 +216,31 @@
               @for (p of awayLineup(); track p.player_id) {
                 <tr>
                   <td class="player-cell">
+                    <span
+                      class="position-badge"
+                      [style.background-color]="positionColor(p.position)"
+                    >
+                      {{ positionLabel(p.position) }}
+                    </span>
                     @if (p.photo_uploaded && p.photo_season_id) {
-                      <img class="player-avatar-sm" [src]="homePhotoUrl(p)" [alt]="p.displayname"
-                        (error)="$any($event.target).style.display = 'none'" />
+                      <img
+                        class="player-avatar-sm"
+                        [src]="homePhotoUrl(p)"
+                        [alt]="p.displayname"
+                        (error)="$any($event.target).style.display = 'none'"
+                      />
                     }
                     <span>{{ p.displayname }}</span>
+                    <span class="player-events">
+                      @if (p.sds) { <img class="event-icon" src="img/icons/shield.png" alt="SdS" title="SdS" /> }
+                      @for (_ of [].constructor(p.goals ?? 0); track $index) {
+                        <img class="event-icon" src="img/icons/goal.png" alt="Tor" title="Tor" />
+                      }
+                      @for (_ of [].constructor(p.assists ?? 0); track $index) {
+                        <img class="event-icon" src="img/icons/assist.png" alt="Vorlage" title="Vorlage" />
+                      }
+                    </span>
                   </td>
-                  <td class="col-pos">{{ p.position | slice:0:3 }}</td>
                   <td class="col-grade">{{ p.grade ?? '—' }}</td>
                   <td class="col-pts">{{ p.points ?? '—' }}</td>
                 </tr>
@@ -177,12 +266,18 @@
           @if (homeBench().length > 0) {
             <div class="table-container">
               <table class="data-table data-table--compact">
-                <thead><tr><th>Bank</th><th class="col-pos">Pos</th><th class="col-pts">Pkt</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Bank</th>
+                    <th class="col-pos">Pos</th>
+                    <th class="col-pts">Pkt</th>
+                  </tr>
+                </thead>
                 <tbody>
                   @for (p of homeBench(); track p.player_id) {
                     <tr class="bench-row">
                       <td>{{ p.displayname }}</td>
-                      <td class="col-pos">{{ p.position | slice:0:3 }}</td>
+                      <td class="col-pos">{{ p.position | slice: 0 : 3 }}</td>
                       <td class="col-pts">{{ p.points ?? '—' }}</td>
                     </tr>
                   }
@@ -195,12 +290,18 @@
           @if (awayBench().length > 0) {
             <div class="table-container">
               <table class="data-table data-table--compact">
-                <thead><tr><th>Bank</th><th class="col-pos">Pos</th><th class="col-pts">Pkt</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Bank</th>
+                    <th class="col-pos">Pos</th>
+                    <th class="col-pts">Pkt</th>
+                  </tr>
+                </thead>
                 <tbody>
                   @for (p of awayBench(); track p.player_id) {
                     <tr class="bench-row">
                       <td>{{ p.displayname }}</td>
-                      <td class="col-pos">{{ p.position | slice:0:3 }}</td>
+                      <td class="col-pos">{{ p.position | slice: 0 : 3 }}</td>
                       <td class="col-pts">{{ p.points ?? '—' }}</td>
                     </tr>
                   }

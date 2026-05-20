@@ -340,9 +340,16 @@
 
 .knockout-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
-  gap: $space-4;
-  margin-bottom: $space-8;
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 200px));
+  justify-content: center;
+  gap: $space-10;
+  margin-bottom: $space-14;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
+    justify-content: stretch;
+    row-gap: $space-8;
+  }
 }
 
 .matchup-card {
@@ -379,7 +386,6 @@
   &--final {
     grid-column: 1 / -1;
     justify-self: center;
-    width: min(360px, 100%);
   }
 }
 
@@ -429,6 +435,9 @@
   font-weight: $font-weight-semibold;
   overflow: hidden;
   min-width: 0;
+  span {
+    white-space: nowrap;
+  }
 
   &--home {
     justify-content: flex-end;

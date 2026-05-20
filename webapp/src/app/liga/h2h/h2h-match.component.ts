@@ -42,44 +42,61 @@ export class H2HMatchComponent {
   homeBench  = computed(() => (this.data()?.home_bench  ?? []) as any[]);
   awayBench  = computed(() => (this.data()?.away_bench  ?? []) as any[]);
 
-  homeGoalscorers = computed(() =>
-    this.homeLineup().filter(p => p.goals > 0).flatMap(p => Array(p.goals).fill(p))
-  );
-  awayGoalscorers = computed(() =>
-    this.awayLineup().filter(p => p.goals > 0).flatMap(p => Array(p.goals).fill(p))
-  );
-
   homeSdsDefenders = computed(() => {
     const count = this.homeRating()?.sds_defender ?? 0;
-    const named = this.homeLineup().filter(p => p.position === 'DEFENDER' && p.sds > 0);
+    const named = this.homeLineup().filter(p =>
+      (p.position === 'DEFENDER' || p.position === 'GOALKEEPER') && p.sds
+    );
     return named.length >= count
       ? named.slice(0, count)
       : [...named, ...Array(count - named.length).fill(null)];
   });
   awaySdsDefenders = computed(() => {
     const count = this.awayRating()?.sds_defender ?? 0;
-    const named = this.awayLineup().filter(p => p.position === 'DEFENDER' && p.sds > 0);
+    const named = this.awayLineup().filter(p =>
+      (p.position === 'DEFENDER' || p.position === 'GOALKEEPER') && p.sds
+    );
     return named.length >= count
       ? named.slice(0, count)
       : [...named, ...Array(count - named.length).fill(null)];
   });
 
-  homeAssistBlocks = computed(() => {
-    const flat = this.homeLineup()
-      .filter(p => p.assists > 0)
-      .flatMap((p: any) => Array(p.assists).fill(p.displayname));
+  private assistBlocks(lineup: any[]): string[][] {
+    const flat = lineup.filter(p => p.assists > 0).flatMap(p => Array(p.assists).fill(p.displayname));
     const blocks: string[][] = [];
     for (let i = 0; i + 2 < flat.length; i += 3) blocks.push(flat.slice(i, i + 3));
     return blocks;
-  });
-  awayAssistBlocks = computed(() => {
-    const flat = this.awayLineup()
-      .filter(p => p.assists > 0)
-      .flatMap((p: any) => Array(p.assists).fill(p.displayname));
-    const blocks: string[][] = [];
-    for (let i = 0; i + 2 < flat.length; i += 3) blocks.push(flat.slice(i, i + 3));
-    return blocks;
-  });
+  }
+
+  homeGoalEvents = computed(() => [
+    ...this.homeLineup().filter(p => p.goals > 0).flatMap(p =>
+      Array(p.goals).fill({ type: 'goal' as const, label: p.displayname })
+    ),
+    ...this.assistBlocks(this.homeLineup()).map(b => ({ type: 'assist' as const, label: b.join(', ') })),
+  ]);
+  awayGoalEvents = computed(() => [
+    ...this.awayLineup().filter(p => p.goals > 0).flatMap(p =>
+      Array(p.goals).fill({ type: 'goal' as const, label: p.displayname })
+    ),
+    ...this.assistBlocks(this.awayLineup()).map(b => ({ type: 'assist' as const, label: b.join(', ') })),
+  ]);
+
+  awayGoalsBlocked = computed(() =>
+    Math.min(this.homeSdsDefenders().length, this.awayGoalEvents().length)
+  );
+  homeGoalsBlocked = computed(() =>
+    Math.min(this.awaySdsDefenders().length, this.homeGoalEvents().length)
+  );
+
+  positionLabel(pos: string): string {
+    return ({ GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU' } as any)[pos] ?? pos;
+  }
+  positionColor(pos: string): string {
+    return ({ GOALKEEPER: 'var(--position-goalkeeper)', DEFENDER: 'var(--position-defender)', MIDFIELDER: 'var(--position-midfielder)', FORWARD: 'var(--position-forward)' } as any)[pos] ?? 'transparent';
+  }
+  managerPhotoUrl(managerId: string): string {
+    return `https://img.die-bestesten.de/img/manager/${managerId}.jpg`;
+  }
 
   phaseLabel = computed(() => {
     const map: Record<string, string> = {

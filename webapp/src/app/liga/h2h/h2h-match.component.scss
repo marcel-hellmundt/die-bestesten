@@ -9,7 +9,9 @@
   text-decoration: none;
   margin-bottom: $space-6;
   transition: color $transition-fast;
-  &:hover { color: $color-text; }
+  &:hover {
+    color: $color-text;
+  }
 }
 
 // ── Header / Scoreboard ───────────────────────────────────────────────────────
@@ -58,18 +60,13 @@
 }
 
 .match-team-name {
-  font-size: $font-lg;
+  font-size: $font-xl;
   font-weight: $font-weight-semibold;
   line-height: 1.1;
 
   @media (max-width: $mobile-breakpoint) {
-    font-size: $font-md;
+    font-size: $font-lg;
   }
-}
-
-.match-team-manager {
-  font-size: $font-xs;
-  color: $color-text-muted;
 }
 
 .match-score {
@@ -134,8 +131,14 @@
   flex-direction: column;
   gap: $space-1;
 
-  &--home { align-items: flex-end; text-align: right; }
-  &--away { align-items: flex-start; text-align: left; }
+  &--home {
+    align-items: flex-end;
+    text-align: right;
+  }
+  &--away {
+    align-items: flex-start;
+    text-align: left;
+  }
 }
 
 .goalscorer {
@@ -146,11 +149,30 @@
   color: $color-text-muted;
 }
 
+.goalscorer--blocked {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+
 .goal-icon {
   width: 14px;
   height: 14px;
   object-fit: contain;
   flex-shrink: 0;
+}
+
+// ── Manager row ───────────────────────────────────────────────────────────────
+
+.manager-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+}
+
+.manager-name {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
 }
 
 // ── Lineup grid ───────────────────────────────────────────────────────────────
@@ -168,6 +190,52 @@
 
 .lineup-section {
   min-width: 0;
+  position: relative;
+  .section-header-row {
+    .section-header {
+      transform: translateY(16px);
+    }
+    &.home {
+      justify-content: flex-end;
+    }
+    &.away {
+      justify-content: flex-start;
+    }
+
+    @media (min-width: calc($mobile-breakpoint + 1px)) {
+      display: none;
+    }
+  }
+  .manager {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    position: absolute;
+    top: 0;
+    &.home {
+      left: 8px;
+    }
+    &.away {
+      flex-direction: row-reverse;
+      right: 8px;
+    }
+    img {
+      height: 64px;
+      width: 64px;
+    }
+    .manager-name {
+      font-size: 32px;
+      font-weight: 500;
+      font-family: bridge;
+      text-transform: uppercase;
+      line-height: 64px;
+    }
+  }
+  .table-container {
+    z-index: 1;
+    position: relative;
+    margin-top: 54px;
+  }
 }
 
 .player-cell {
@@ -196,6 +264,19 @@
   width: 44px;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.player-events {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  .event-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    vertical-align: middle;
+  }
 }
 
 .col-pts {

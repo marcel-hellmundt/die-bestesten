@@ -49,38 +49,78 @@
   <!-- ── K.o.-Runde (oben) ─────────────────────────────────────────────────── -->
   @if (knockoutPhases().length > 0) {
     <div #koSection class="knockout-section">
-    @for (phase of knockoutPhases(); track phase.phase) {
-      <div class="section-header-row">
-        <h2 class="section-header">{{ phase.label }}</h2>
-      </div>
-      <div class="knockout-grid">
-        @for (mu of phase.matchups; track mu.teamAId + mu.teamBId; let i = $index) {
-          <div
-            class="matchup-card card"
-            [class.matchup-card--final]="phase.phase === 'final'"
-            [attr.data-phase]="phase.phase"
-            [attr.data-index]="i"
-          >
-            <div class="title">
-              @if (phase.phase === 'quarterfinal') {
-                <div class="prev">{{ qfSeedLabels(i)[0] }}</div>
-              }
-              <div class="identifier">{{ matchupLabel(phase.phase, i) }}</div>
-              @if (phase.phase === 'quarterfinal') {
-                <div class="prev">{{ qfSeedLabels(i)[1] }}</div>
-              }
-            </div>
-            @if (phase.phase === 'final') {
-              <!-- Final: team names + logos + score, no leg rows -->
-              <div
-                class="agg-header agg-header--final row-link"
-                (click)="navigateToMatch(mu.legs[0].id)"
-              >
-                <span class="agg-team-final agg-team-final--home">
-                  {{ mu.legs[0].home_team_name }}
+      @for (phase of knockoutPhases(); track phase.phase) {
+        <div class="knockout-grid">
+          @for (mu of phase.matchups; track mu.teamAId + mu.teamBId; let i = $index) {
+            <div
+              class="matchup-card card"
+              [class.matchup-card--final]="phase.phase === 'final'"
+              [attr.data-phase]="phase.phase"
+              [attr.data-index]="i"
+            >
+              <div class="title">
+                @if (phase.phase === 'quarterfinal') {
+                  <div class="prev">{{ qfSeedLabels(i)[0] }}</div>
+                }
+                <div class="identifier">{{ matchupLabel(phase.phase, i) }}</div>
+                @if (phase.phase === 'quarterfinal') {
+                  <div class="prev">{{ qfSeedLabels(i)[1] }}</div>
+                }
+              </div>
+              @if (phase.phase === 'final') {
+                <!-- Final: team names + logos + score, no leg rows -->
+                <div
+                  class="agg-header agg-header--final row-link"
+                  (click)="navigateToMatch(mu.legs[0].id)"
+                >
+                  <span class="agg-team-final agg-team-final--home">
+                    <span>{{ mu.legs[0].home_team_name }}</span>
+                    @if (!logoFailed(mu.teamAId)) {
+                      <img
+                        class="team-logo-lg"
+                        [src]="teamLogoUrl(mu.teamAId)"
+                        (error)="onLogoError(mu.teamAId)"
+                        alt=""
+                      />
+                    } @else if (mu.legs[0].home_color) {
+                      <span
+                        class="team-dot"
+                        [style.background-color]="mu.legs[0].home_color"
+                      ></span>
+                    }
+                  </span>
+                  <span class="agg-score agg-score--final h2h-score">
+                    @if (mu.hasResults) {
+                      <strong>{{ mu.aggA }}</strong>
+                      <span class="h2h-sep">:</span>
+                      <strong>{{ mu.aggB }}</strong>
+                    } @else {
+                      <span class="h2h-pending">–</span>
+                    }
+                  </span>
+                  <span class="agg-team-final agg-team-final--away">
+                    @if (!logoFailed(mu.teamBId)) {
+                      <img
+                        class="team-logo-lg"
+                        [src]="teamLogoUrl(mu.teamBId)"
+                        (error)="onLogoError(mu.teamBId)"
+                        alt=""
+                      />
+                    } @else if (mu.legs[0].away_color) {
+                      <span
+                        class="team-dot"
+                        [style.background-color]="mu.legs[0].away_color"
+                      ></span>
+                    }
+                    <span>{{ mu.legs[0].away_team_name }}</span>
+                  </span>
+                </div>
+              } @else {
+                <!-- QF / SF: logo-only header + leg rows with small logos -->
+                <div class="agg-header">
                   @if (!logoFailed(mu.teamAId)) {
                     <img
-                      class="team-logo-lg"
+                      class="team-logo-md"
                       [src]="teamLogoUrl(mu.teamAId)"
                       (error)="onLogoError(mu.teamAId)"
                       alt=""
@@ -88,20 +128,18 @@
                   } @else if (mu.legs[0].home_color) {
                     <span class="team-dot" [style.background-color]="mu.legs[0].home_color"></span>
                   }
-                </span>
-                <span class="agg-score agg-score--final h2h-score">
-                  @if (mu.hasResults) {
-                    <strong>{{ mu.aggA }}</strong>
-                    <span class="h2h-sep">:</span>
-                    <strong>{{ mu.aggB }}</strong>
-                  } @else {
-                    <span class="h2h-pending">–</span>
-                  }
-                </span>
-                <span class="agg-team-final agg-team-final--away">
+                  <span class="agg-score">
+                    @if (mu.hasResults) {
+                      <strong>{{ mu.aggA }}</strong>
+                      <span class="h2h-sep">:</span>
+                      <strong>{{ mu.aggB }}</strong>
+                    } @else {
+                      <span class="h2h-pending">–</span>
+                    }
+                  </span>
                   @if (!logoFailed(mu.teamBId)) {
                     <img
-                      class="team-logo-lg"
+                      class="team-logo-md"
                       [src]="teamLogoUrl(mu.teamBId)"
                       (error)="onLogoError(mu.teamBId)"
                       alt=""
@@ -109,97 +147,61 @@
                   } @else if (mu.legs[0].away_color) {
                     <span class="team-dot" [style.background-color]="mu.legs[0].away_color"></span>
                   }
-                  {{ mu.legs[0].away_team_name }}
-                </span>
-              </div>
-            } @else {
-              <!-- QF / SF: logo-only header + leg rows with small logos -->
-              <div class="agg-header">
-                @if (!logoFailed(mu.teamAId)) {
-                  <img
-                    class="team-logo-md"
-                    [src]="teamLogoUrl(mu.teamAId)"
-                    (error)="onLogoError(mu.teamAId)"
-                    alt=""
-                  />
-                } @else if (mu.legs[0].home_color) {
-                  <span class="team-dot" [style.background-color]="mu.legs[0].home_color"></span>
-                }
-                <span class="agg-score">
-                  @if (mu.hasResults) {
-                    <strong>{{ mu.aggA }}</strong>
-                    <span class="h2h-sep">:</span>
-                    <strong>{{ mu.aggB }}</strong>
-                  } @else {
-                    <span class="h2h-pending">–</span>
-                  }
-                </span>
-                @if (!logoFailed(mu.teamBId)) {
-                  <img
-                    class="team-logo-md"
-                    [src]="teamLogoUrl(mu.teamBId)"
-                    (error)="onLogoError(mu.teamBId)"
-                    alt=""
-                  />
-                } @else if (mu.legs[0].away_color) {
-                  <span class="team-dot" [style.background-color]="mu.legs[0].away_color"></span>
-                }
-              </div>
+                </div>
 
-              <div class="ko-legs">
-                @for (leg of mu.legs; track leg.id) {
-                  <div class="ko-leg-row row-link" (click)="navigateToMatch(leg.id)">
-                    <span class="h2h-matchday">{{ leg.matchday_number ?? '?' }}</span>
-                    <span class="ko-leg-score">
-                      @if (!logoFailed(leg.home_team_id)) {
-                        <img
-                          class="team-logo-sm"
-                          [src]="teamLogoUrl(leg.home_team_id)"
-                          (error)="onLogoError(leg.home_team_id)"
-                          alt=""
-                        />
-                      } @else if (leg.home_color) {
-                        <span class="team-dot" [style.background-color]="leg.home_color"></span>
-                      }
-                      <span class="h2h-score" [class.h2h-score--live]="isLive(leg)">
-                        @if (leg.home_goals != null) {
-                          <strong>{{ leg.home_goals }}</strong>
-                          <span class="h2h-sep">:</span>
-                          <strong>{{ leg.away_goals }}</strong>
-                        } @else {
-                          <span class="h2h-pending">–</span>
+                <div class="ko-legs">
+                  @for (leg of mu.legs; track leg.id) {
+                    <div class="ko-leg-row row-link" (click)="navigateToMatch(leg.id)">
+                      <span class="h2h-matchday">{{ leg.matchday_number ?? '?' }}</span>
+                      <span class="ko-leg-score">
+                        @if (!logoFailed(leg.home_team_id)) {
+                          <img
+                            class="team-logo-sm"
+                            [src]="teamLogoUrl(leg.home_team_id)"
+                            (error)="onLogoError(leg.home_team_id)"
+                            alt=""
+                          />
+                        } @else if (leg.home_color) {
+                          <span class="team-dot" [style.background-color]="leg.home_color"></span>
+                        }
+                        <span class="h2h-score" [class.h2h-score--live]="isLive(leg)">
+                          @if (leg.home_goals != null) {
+                            <strong>{{ leg.home_goals }}</strong>
+                            <span class="h2h-sep">:</span>
+                            <strong>{{ leg.away_goals }}</strong>
+                          } @else {
+                            <span class="h2h-pending">–</span>
+                          }
+                        </span>
+                        @if (!logoFailed(leg.away_team_id)) {
+                          <img
+                            class="team-logo-sm"
+                            [src]="teamLogoUrl(leg.away_team_id)"
+                            (error)="onLogoError(leg.away_team_id)"
+                            alt=""
+                          />
+                        } @else if (leg.away_color) {
+                          <span class="team-dot" [style.background-color]="leg.away_color"></span>
                         }
                       </span>
-                      @if (!logoFailed(leg.away_team_id)) {
-                        <img
-                          class="team-logo-sm"
-                          [src]="teamLogoUrl(leg.away_team_id)"
-                          (error)="onLogoError(leg.away_team_id)"
-                          alt=""
-                        />
-                      } @else if (leg.away_color) {
-                        <span class="team-dot" [style.background-color]="leg.away_color"></span>
-                      }
-                    </span>
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        }
-      </div>
-    }
-    <svg class="ko-lines-svg" [style.width.px]="svgSize().w" [style.height.px]="svgSize().h">
-      @for (line of koLines(); track $index) {
-        <path [attr.d]="line" class="ko-line" />
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
       }
-    </svg>
+      <svg class="ko-lines-svg" [style.width.px]="svgSize().w" [style.height.px]="svgSize().h">
+        @for (line of koLines(); track $index) {
+          <path [attr.d]="line" class="ko-line" />
+        }
+      </svg>
     </div>
   }
 
   <!-- ── Gruppenphase ─────────────────────────────────────────────────────── -->
   @if (groups().length > 0) {
-    <div class="section-header-row"><h2 class="section-header">Gruppenphase</h2></div>
     <div class="group-grid">
       @for (group of groups(); track group.id) {
         <div class="h2h-group-card card">

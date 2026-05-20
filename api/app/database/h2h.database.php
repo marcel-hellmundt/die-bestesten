@@ -1050,7 +1050,7 @@ trait H2HTrait
             $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
             $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
             $rq  = $con->prepare(
-                "SELECT team_id, matchday_id, goals, assists, sds_defender
+                "SELECT team_id, matchday_id, goals, assists, sds_defender, points
                  FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
             );
             $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
@@ -1059,6 +1059,7 @@ trait H2HTrait
                     'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
                     'assists'      => (int) ($r['assists'] ?? 0),
                     'sds_defender' => (int) ($r['sds_defender'] ?? 0),
+                    'points'       => (int) ($r['points'] ?? 0),
                 ];
             }
         }
@@ -1091,10 +1092,18 @@ trait H2HTrait
             $aTotal = $a1 + $a2;
             $bTotal = $b1 + $b2;
             if ($aTotal === $bTotal) {
-                http_response_code(400);
-                return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": Unentschieden — Sieger kann nicht automatisch ermittelt werden"];
+                $aPoints = ($ratingMap[$teamA][$leg1['matchday_id']]['points'] ?? 0)
+                         + ($ratingMap[$teamA][$leg2['matchday_id']]['points'] ?? 0);
+                $bPoints = ($ratingMap[$teamB][$leg1['matchday_id']]['points'] ?? 0)
+                         + ($ratingMap[$teamB][$leg2['matchday_id']]['points'] ?? 0);
+                if ($aPoints === $bPoints) {
+                    http_response_code(400);
+                    return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": Gleichstand auch bei Gesamtpunkten — Admin muss manuell entscheiden"];
+                }
+                $vfWinners[$si] = $aPoints > $bPoints ? $teamA : $teamB;
+            } else {
+                $vfWinners[$si] = $aTotal > $bTotal ? $teamA : $teamB;
             }
-            $vfWinners[$si] = $aTotal > $bTotal ? $teamA : $teamB;
         }
 
         $mdQ = $this->con->prepare(
@@ -1236,7 +1245,7 @@ trait H2HTrait
             $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
             $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
             $rq  = $con->prepare(
-                "SELECT team_id, matchday_id, goals, assists, sds_defender
+                "SELECT team_id, matchday_id, goals, assists, sds_defender, points
                  FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
             );
             $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
@@ -1245,6 +1254,7 @@ trait H2HTrait
                     'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
                     'assists'      => (int) ($r['assists'] ?? 0),
                     'sds_defender' => (int) ($r['sds_defender'] ?? 0),
+                    'points'       => (int) ($r['points'] ?? 0),
                 ];
             }
         }
@@ -1277,10 +1287,18 @@ trait H2HTrait
             $aTotal = $a1 + $a2;
             $bTotal = $b1 + $b2;
             if ($aTotal === $bTotal) {
-                http_response_code(400);
-                return ['status' => false, 'message' => "Halbfinale " . ($si + 1) . ": Unentschieden — Sieger kann nicht automatisch ermittelt werden"];
+                $aPoints = ($ratingMap[$teamA][$leg1['matchday_id']]['points'] ?? 0)
+                         + ($ratingMap[$teamA][$leg2['matchday_id']]['points'] ?? 0);
+                $bPoints = ($ratingMap[$teamB][$leg1['matchday_id']]['points'] ?? 0)
+                         + ($ratingMap[$teamB][$leg2['matchday_id']]['points'] ?? 0);
+                if ($aPoints === $bPoints) {
+                    http_response_code(400);
+                    return ['status' => false, 'message' => "Halbfinale " . ($si + 1) . ": Gleichstand auch bei Gesamtpunkten — Admin muss manuell entscheiden"];
+                }
+                $sfWinners[$si] = $aPoints > $bPoints ? $teamA : $teamB;
+            } else {
+                $sfWinners[$si] = $aTotal > $bTotal ? $teamA : $teamB;
             }
-            $sfWinners[$si] = $aTotal > $bTotal ? $teamA : $teamB;
         }
 
         $mdQ = $this->con->prepare(
