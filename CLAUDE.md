@@ -167,8 +167,8 @@ GET      /notification         — [{id,sender_id,sender_name,receiver_id,title,
 PATCH    /notification/:id     — Einzelne Notification als gelesen markieren (read_at = NOW()); 403 wenn nicht eigene — Auth
 PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen markieren — Auth
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
-GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool, scouted_player_update: bool}; fehlende DB-Einträge = true (default ON) — Auth
-PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|scouted_player_update, enabled: bool} — Auth
+GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool, h2h_draw: bool}; fehlende DB-Einträge = true (default ON) — Auth
+PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|h2h_draw, enabled: bool} — Auth
 ```
 
 ## Liga-DB (`database/league_schema.sql`)

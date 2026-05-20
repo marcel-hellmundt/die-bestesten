@@ -729,7 +729,10 @@ trait H2HTrait
             $managerTeamMap[$team['manager_id']] = $team['id'];
         }
 
-        $allMgrsQ = $con->prepare("SELECT id FROM manager WHERE status = 'active'");
+        $allMgrsQ = $con->prepare(
+            "SELECT id FROM manager WHERE status = 'active'
+             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
+        );
         $allMgrsQ->execute();
         $allManagerIds = $allMgrsQ->fetchAll(PDO::FETCH_COLUMN);
 
@@ -955,7 +958,10 @@ trait H2HTrait
         $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST23/27</span>' . $qfCell($d1) . ' &ndash; ' . $qfCell($c2) . '</div>';
         $qfMsg .= '</div>';
 
-        $allMgrsQ = $con->prepare("SELECT id FROM manager WHERE status = 'active'");
+        $allMgrsQ = $con->prepare(
+            "SELECT id FROM manager WHERE status = 'active'
+             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
+        );
         $allMgrsQ->execute();
         $notifStmt = $con->prepare(
             "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
@@ -1128,7 +1134,10 @@ trait H2HTrait
         $sfMsg .= '<div class="notif-match-row"><span class="notif-md">ST30/32</span>' . $sfCell($vf2) . ' &ndash; ' . $sfCell($vf3) . '</div>';
         $sfMsg .= '</div>';
 
-        $allMgrsQ = $con->prepare("SELECT id FROM manager WHERE status = 'active'");
+        $allMgrsQ = $con->prepare(
+            "SELECT id FROM manager WHERE status = 'active'
+             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
+        );
         $allMgrsQ->execute();
         $notifStmt = $con->prepare(
             "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"

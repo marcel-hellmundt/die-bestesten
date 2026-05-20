@@ -38,10 +38,10 @@ class NotificationController extends _BaseController
             $body      = $this->body();
             $eventType = $body['event_type'] ?? null;
             $enabled   = $body['enabled']    ?? null;
-            $allowed   = ['matchday_completed', 'achievement_earned'];
+            $allowed   = ['matchday_completed', 'achievement_earned', 'h2h_draw'];
             if (!$eventType || !in_array($eventType, $allowed) || $enabled === null) {
                 http_response_code(422);
-                return ['message' => 'event_type (matchday_completed|achievement_earned) und enabled (bool) erforderlich'];
+                return ['message' => 'event_type (matchday_completed|achievement_earned|h2h_draw) und enabled (bool) erforderlich'];
             }
             $this->db->setNotificationPreference($managerId, $eventType, (bool) $enabled);
             return ['ok' => true];

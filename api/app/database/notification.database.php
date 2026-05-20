@@ -54,7 +54,7 @@ trait NotificationTrait
 
     public function getNotificationPreferences(string $managerId): array
     {
-        $defined = ['matchday_completed' => true, 'achievement_earned' => true];
+        $defined = ['matchday_completed' => true, 'achievement_earned' => true, 'h2h_draw' => true];
         $q = $this->con_league->prepare(
             "SELECT event_type, enabled FROM notification_preference WHERE manager_id = ?"
         );

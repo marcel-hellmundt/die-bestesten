@@ -139,6 +139,21 @@
         <span class="toggle__track"></span>
       </span>
     </label>
+
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">H2H-Auslosung</span>
+        <span class="pref-desc">Bei Auslosung der Gruppenphase, des Viertelfinales oder Halbfinales</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('h2h_draw')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('h2h_draw', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
   </div>
 </section>
 
