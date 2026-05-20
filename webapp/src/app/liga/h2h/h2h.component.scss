@@ -339,9 +339,8 @@
 }
 
 .knockout-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
   gap: $space-4;
   margin-bottom: $space-8;
 }
@@ -376,13 +375,19 @@
       padding: 2px 8px;
     }
   }
+
+  &--final {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(360px, 100%);
+  }
 }
 
 // Aggregate header: logo – score – logo
 .agg-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: $space-2;
   padding-bottom: $space-3;
   margin-bottom: $space-3;
@@ -444,6 +449,7 @@
 .ko-leg-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: $space-2;
   padding: $space-1 $space-2;
   border-radius: $radius-sm;
@@ -462,7 +468,6 @@
 }
 
 .ko-leg-score {
-  margin-left: auto;
   display: flex;
   align-items: center;
   gap: $space-1;
