@@ -1,5 +1,9 @@
 @use '../../../styles/variables' as *;
 
+h1 {
+  margin-bottom: 24px;
+}
+
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -9,7 +13,9 @@
   text-decoration: none;
   margin-bottom: $space-6;
   transition: color $transition-fast;
-  &:hover { color: $color-text; }
+  &:hover {
+    color: $color-text;
+  }
 }
 
 .modus-content {
@@ -24,13 +30,37 @@
   flex-direction: column;
   gap: $space-3;
 
-  .section-header { margin: 0; }
+  .section-header {
+    margin: 0;
+  }
+
+  .section-part {
+    display: flex;
+    gap: 8px;
+
+    .image-row {
+      flex-shrink: 0;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      img {
+        height: 20px;
+        width: 20px;
+      }
+    }
+
+    strong {
+      white-space: nowrap;
+    }
+  }
 
   p {
     font-size: $font-sm;
     line-height: 1.7;
     color: $color-text;
     margin: 0;
+    text-align: justify;
   }
 }
 
@@ -52,7 +82,9 @@
   padding: $space-2 $space-4;
   border-bottom: 1px solid $color-border;
 
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 
   &--header {
     background: $color-surface-alt;
