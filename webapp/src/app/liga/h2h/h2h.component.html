@@ -24,9 +24,17 @@
   </button>
   <a class="modus-link" routerLink="/liga/h2h/modus">
     <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
-      <line x1="8" y1="7" x2="8" y2="11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      <circle cx="8" cy="4.5" r="0.75" fill="currentColor"/>
+      <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
+      <line
+        x1="8"
+        y1="7"
+        x2="8"
+        y2="11.5"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+      />
+      <circle cx="8" cy="4.5" r="0.75" fill="currentColor" />
     </svg>
     <span class="modus-link__long">Welchen Modus spielen wir?</span>
     <span class="modus-link__short">Modus</span>
@@ -38,127 +46,30 @@
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
-  <!-- ── Gruppenphase ─────────────────────────────────────────────────────── -->
-  @if (groups().length > 0) {
-    <div class="section-header-row"><h2 class="section-header">Gruppenphase</h2></div>
-    <div class="group-grid">
-      @for (group of groups(); track group.id) {
-        <div class="h2h-group-card card">
-          <div class="h2h-group-name">{{ group.name }}</div>
-
-          <!-- Standings -->
-          <table class="data-table data-table--compact h2h-standings">
-            <thead>
-              <tr>
-                <th class="col-rank-h2h">#</th>
-                <th>Team</th>
-                <th class="col-num-h2h col-wdl-h2h">S</th>
-                <th class="col-num-h2h col-wdl-h2h">U</th>
-                <th class="col-num-h2h col-wdl-h2h">N</th>
-                <th class="col-num-h2h">+</th>
-                <th class="col-num-h2h">-</th>
-                <th class="col-num-h2h col-diff-h2h">+/-</th>
-                <th class="col-num-h2h">
-                  <span class="hidden-mobile">Pts</span><span class="visible-mobile">Pkt.</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of group.standings; track row.team_id; let i = $index) {
-                <tr [class.row--first]="i === 0" [class.row--second]="i === 1">
-                  <td class="col-rank-h2h">{{ i + 1 }}</td>
-                  <td>
-                    <span class="team-chip">
-                      @if (!logoFailed(row.team_id)) {
-                        <img
-                          class="team-logo-md"
-                          [src]="teamLogoUrl(row.team_id)"
-                          (error)="onLogoError(row.team_id)"
-                          alt=""
-                        />
-                      } @else if (row.color) {
-                        <span class="team-dot" [style.background-color]="row.color"></span>
-                      }
-                      {{ row.team_name }}
-                    </span>
-                  </td>
-                  <td class="col-num-h2h col-wdl-h2h">{{ row.w }}</td>
-                  <td class="col-num-h2h col-wdl-h2h">{{ row.d }}</td>
-                  <td class="col-num-h2h col-wdl-h2h">{{ row.l }}</td>
-                  <td class="col-num-h2h">{{ row.goals_for }}</td>
-                  <td class="col-num-h2h">{{ row.goals_against }}</td>
-                  <td
-                    class="col-num-h2h col-diff-h2h"
-                    [class.col-diff--pos]="row.goals_for > row.goals_against"
-                    [class.col-diff--neg]="row.goals_for < row.goals_against"
-                  >
-                    {{ row.goals_for - row.goals_against }}
-                  </td>
-                  <td class="col-num-h2h col-pts-h2h">{{ row.pts }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-
-          <!-- Matches -->
-          @if (group.matches.length > 0) {
-            <div class="h2h-match-list">
-              @for (m of group.matches; track m.id) {
-                <div class="h2h-match-row row-link" (click)="navigateToMatch(m.id)">
-                  <span class="h2h-matchday">{{ m.matchday_number ?? '?' }}</span>
-                  <span class="h2h-team h2h-team--home">
-                    {{ m.home_team_name }}
-                    @if (!logoFailed(m.home_team_id)) {
-                      <img
-                        class="team-logo-md"
-                        [src]="teamLogoUrl(m.home_team_id)"
-                        (error)="onLogoError(m.home_team_id)"
-                        alt=""
-                      />
-                    } @else if (m.home_color) {
-                      <span class="team-dot" [style.background-color]="m.home_color"></span>
-                    }
-                  </span>
-                  <span class="h2h-score" [class.h2h-score--live]="isLive(m)">
-                    @if (m.home_goals != null) {
-                      <strong>{{ m.home_goals }}</strong>
-                      <span class="h2h-sep">:</span>
-                      <strong>{{ m.away_goals }}</strong>
-                    } @else {
-                      <span class="h2h-pending">–</span>
-                    }
-                  </span>
-                  <span class="h2h-team h2h-team--away">
-                    @if (!logoFailed(m.away_team_id)) {
-                      <img
-                        class="team-logo-md"
-                        [src]="teamLogoUrl(m.away_team_id)"
-                        (error)="onLogoError(m.away_team_id)"
-                        alt=""
-                      />
-                    } @else if (m.away_color) {
-                      <span class="team-dot" [style.background-color]="m.away_color"></span>
-                    }
-                    {{ m.away_team_name }}
-                  </span>
-                </div>
-              }
-            </div>
-          }
-        </div>
-      }
-    </div>
-  }
-
-  <!-- ── K.o.-Runde ──────────────────────────────────────────────────────── -->
+  <!-- ── K.o.-Runde (oben) ─────────────────────────────────────────────────── -->
   @if (knockoutPhases().length > 0) {
+    <div #koSection class="knockout-section">
     @for (phase of knockoutPhases(); track phase.phase) {
       <div class="section-header-row">
         <h2 class="section-header">{{ phase.label }}</h2>
       </div>
       <div class="knockout-grid">
-        @for (mu of phase.matchups; track mu.teamAId + mu.teamBId) {
-          <div class="matchup-card card" [class.matchup-card--final]="phase.phase === 'final'">
+        @for (mu of phase.matchups; track mu.teamAId + mu.teamBId; let i = $index) {
+          <div
+            class="matchup-card card"
+            [class.matchup-card--final]="phase.phase === 'final'"
+            [attr.data-phase]="phase.phase"
+            [attr.data-index]="i"
+          >
+            <div class="title">
+              @if (phase.phase === 'quarterfinal') {
+                <div class="prev">{{ qfSeedLabels(i)[0] }}</div>
+              }
+              <div class="identifier">{{ matchupLabel(phase.phase, i) }}</div>
+              @if (phase.phase === 'quarterfinal') {
+                <div class="prev">{{ qfSeedLabels(i)[1] }}</div>
+              }
+            </div>
             @if (phase.phase === 'final') {
               <!-- Final: team names + logos + score, no leg rows -->
               <div
@@ -278,6 +189,124 @@
         }
       </div>
     }
+    <svg class="ko-lines-svg" [style.width.px]="svgSize().w" [style.height.px]="svgSize().h">
+      @for (line of koLines(); track $index) {
+        <path [attr.d]="line" class="ko-line" />
+      }
+    </svg>
+    </div>
+  }
+
+  <!-- ── Gruppenphase ─────────────────────────────────────────────────────── -->
+  @if (groups().length > 0) {
+    <div class="section-header-row"><h2 class="section-header">Gruppenphase</h2></div>
+    <div class="group-grid">
+      @for (group of groups(); track group.id) {
+        <div class="h2h-group-card card">
+          <div class="h2h-group-name">{{ group.name }}</div>
+
+          <!-- Standings -->
+          <table class="data-table data-table--compact h2h-standings">
+            <thead>
+              <tr>
+                <th class="col-rank-h2h">#</th>
+                <th>Team</th>
+                <th class="col-num-h2h col-wdl-h2h">S</th>
+                <th class="col-num-h2h col-wdl-h2h">U</th>
+                <th class="col-num-h2h col-wdl-h2h">N</th>
+                <th class="col-num-h2h">+</th>
+                <th class="col-num-h2h">-</th>
+                <th class="col-num-h2h col-diff-h2h">+/-</th>
+                <th class="col-num-h2h">
+                  <span class="hidden-mobile">Pts</span><span class="visible-mobile">Pkt.</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of group.standings; track row.team_id; let i = $index) {
+                <tr [class.row--first]="i === 0" [class.row--second]="i === 1">
+                  <td class="col-rank-h2h">{{ i + 1 }}</td>
+                  <td>
+                    <span class="team-chip">
+                      @if (!logoFailed(row.team_id)) {
+                        <img
+                          class="team-logo-md"
+                          [src]="teamLogoUrl(row.team_id)"
+                          (error)="onLogoError(row.team_id)"
+                          alt=""
+                        />
+                      } @else if (row.color) {
+                        <span class="team-dot" [style.background-color]="row.color"></span>
+                      }
+                      {{ row.team_name }}
+                    </span>
+                  </td>
+                  <td class="col-num-h2h col-wdl-h2h">{{ row.w }}</td>
+                  <td class="col-num-h2h col-wdl-h2h">{{ row.d }}</td>
+                  <td class="col-num-h2h col-wdl-h2h">{{ row.l }}</td>
+                  <td class="col-num-h2h">{{ row.goals_for }}</td>
+                  <td class="col-num-h2h">{{ row.goals_against }}</td>
+                  <td
+                    class="col-num-h2h col-diff-h2h"
+                    [class.col-diff--pos]="row.goals_for > row.goals_against"
+                    [class.col-diff--neg]="row.goals_for < row.goals_against"
+                  >
+                    {{ row.goals_for - row.goals_against }}
+                  </td>
+                  <td class="col-num-h2h col-pts-h2h">{{ row.pts }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <!-- Matches -->
+          @if (group.matches.length > 0) {
+            <div class="h2h-match-list">
+              @for (m of group.matches; track m.id) {
+                <div class="h2h-match-row row-link" (click)="navigateToMatch(m.id)">
+                  <span class="h2h-matchday">{{ m.matchday_number ?? '?' }}</span>
+                  <span class="h2h-team h2h-team--home">
+                    {{ m.home_team_name }}
+                    @if (!logoFailed(m.home_team_id)) {
+                      <img
+                        class="team-logo-md"
+                        [src]="teamLogoUrl(m.home_team_id)"
+                        (error)="onLogoError(m.home_team_id)"
+                        alt=""
+                      />
+                    } @else if (m.home_color) {
+                      <span class="team-dot" [style.background-color]="m.home_color"></span>
+                    }
+                  </span>
+                  <span class="h2h-score" [class.h2h-score--live]="isLive(m)">
+                    @if (m.home_goals != null) {
+                      <strong>{{ m.home_goals }}</strong>
+                      <span class="h2h-sep">:</span>
+                      <strong>{{ m.away_goals }}</strong>
+                    } @else {
+                      <span class="h2h-pending">–</span>
+                    }
+                  </span>
+                  <span class="h2h-team h2h-team--away">
+                    @if (!logoFailed(m.away_team_id)) {
+                      <img
+                        class="team-logo-md"
+                        [src]="teamLogoUrl(m.away_team_id)"
+                        (error)="onLogoError(m.away_team_id)"
+                        alt=""
+                      />
+                    } @else if (m.away_color) {
+                      <span class="team-dot" [style.background-color]="m.away_color"></span>
+                    }
+                    {{ m.away_team_name }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
   }
 
   @if (groups().length === 0 && knockoutMatches().length === 0) {
