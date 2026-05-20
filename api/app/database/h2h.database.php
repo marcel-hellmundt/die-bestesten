@@ -692,9 +692,11 @@ trait H2HTrait
         }
 
         $imgBase  = "https://img.die-bestesten.de/img/team/{$seasonId}";
-        $teamCell = function (string $tid) use ($teamNameMap, $imgBase): string {
+        $teamCell = function (string $tid, bool $logoRight = false) use ($teamNameMap, $imgBase): string {
             $name = htmlspecialchars($teamNameMap[$tid] ?? '?');
-            return "<img class=\"notif-logo\" src=\"{$imgBase}/{$tid}.png\" alt=\"\" /><span class=\"notif-team-name\">{$name}</span>";
+            $img  = "<img class=\"notif-logo\" src=\"{$imgBase}/{$tid}.png\" alt=\"\" />";
+            $span = "<span class=\"notif-team-name\">{$name}</span>";
+            return $logoRight ? $span . $img : $img . $span;
         };
 
         // Static part: group table (same for every manager)
@@ -751,7 +753,7 @@ trait H2HTrait
                 $matchHtml .= '<div class="notif-matches">';
                 foreach ($matches as [$mdNum, $homeId, $awayId]) {
                     $matchHtml .= '<div class="notif-match-row"><span class="notif-md">ST ' . $mdNum . '</span>'
-                        . $teamCell($homeId) . ' &ndash; ' . $teamCell($awayId) . '</div>';
+                        . $teamCell($homeId, true) . ' &ndash; ' . $teamCell($awayId) . '</div>';
                 }
                 $matchHtml .= '</div>';
                 $msg = $staticHtml . $matchHtml;
@@ -946,16 +948,18 @@ trait H2HTrait
             $qfNames[$r['id']] = $r['team_name'];
         }
         $qfImgBase = "https://img.die-bestesten.de/img/team/{$seasonId}";
-        $qfCell = function (string $id) use ($qfNames, $qfImgBase): string {
+        $qfCell = function (string $id, bool $logoRight = false) use ($qfNames, $qfImgBase): string {
             $name = htmlspecialchars($qfNames[$id] ?? '?');
-            return "<img class=\"notif-logo\" src=\"{$qfImgBase}/{$id}.png\" alt=\"\" /><span class=\"notif-team-name\">{$name}</span>";
+            $img  = "<img class=\"notif-logo\" src=\"{$qfImgBase}/{$id}.png\" alt=\"\" />";
+            $span = "<span class=\"notif-team-name\">{$name}</span>";
+            return $logoRight ? $span . $img : $img . $span;
         };
 
         $qfMsg  = '<div class="notif-matches">';
-        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST20/24</span>' . $qfCell($a1) . ' &ndash; ' . $qfCell($b2) . '</div>';
-        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST21/25</span>' . $qfCell($b1) . ' &ndash; ' . $qfCell($a2) . '</div>';
-        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST22/26</span>' . $qfCell($c1) . ' &ndash; ' . $qfCell($d2) . '</div>';
-        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST23/27</span>' . $qfCell($d1) . ' &ndash; ' . $qfCell($c2) . '</div>';
+        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST20/24</span>' . $qfCell($a1, true) . ' &ndash; ' . $qfCell($b2) . '</div>';
+        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST21/25</span>' . $qfCell($b1, true) . ' &ndash; ' . $qfCell($a2) . '</div>';
+        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST22/26</span>' . $qfCell($c1, true) . ' &ndash; ' . $qfCell($d2) . '</div>';
+        $qfMsg .= '<div class="notif-match-row"><span class="notif-md">ST23/27</span>' . $qfCell($d1, true) . ' &ndash; ' . $qfCell($c2) . '</div>';
         $qfMsg .= '</div>';
 
         $allMgrsQ = $con->prepare(
@@ -1124,14 +1128,16 @@ trait H2HTrait
             $sfNames[$r['id']] = $r['team_name'];
         }
         $sfImgBase = "https://img.die-bestesten.de/img/team/{$seasonId}";
-        $sfCell = function (string $id) use ($sfNames, $sfImgBase): string {
+        $sfCell = function (string $id, bool $logoRight = false) use ($sfNames, $sfImgBase): string {
             $name = htmlspecialchars($sfNames[$id] ?? '?');
-            return "<img class=\"notif-logo\" src=\"{$sfImgBase}/{$id}.png\" alt=\"\" /><span class=\"notif-team-name\">{$name}</span>";
+            $img  = "<img class=\"notif-logo\" src=\"{$sfImgBase}/{$id}.png\" alt=\"\" />";
+            $span = "<span class=\"notif-team-name\">{$name}</span>";
+            return $logoRight ? $span . $img : $img . $span;
         };
 
         $sfMsg  = '<div class="notif-matches">';
-        $sfMsg .= '<div class="notif-match-row"><span class="notif-md">ST29/31</span>' . $sfCell($vf1) . ' &ndash; ' . $sfCell($vf4) . '</div>';
-        $sfMsg .= '<div class="notif-match-row"><span class="notif-md">ST30/32</span>' . $sfCell($vf2) . ' &ndash; ' . $sfCell($vf3) . '</div>';
+        $sfMsg .= '<div class="notif-match-row"><span class="notif-md">ST29/31</span>' . $sfCell($vf1, true) . ' &ndash; ' . $sfCell($vf4) . '</div>';
+        $sfMsg .= '<div class="notif-match-row"><span class="notif-md">ST30/32</span>' . $sfCell($vf2, true) . ' &ndash; ' . $sfCell($vf3) . '</div>';
         $sfMsg .= '</div>';
 
         $allMgrsQ = $con->prepare(
