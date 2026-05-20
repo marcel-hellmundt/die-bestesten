@@ -41,74 +41,109 @@
     }
   </div>
 
-  <div class="table-container">
-    <table class="data-table data-table--compact">
-      <thead>
-        <tr>
-          <th class="col-st">Sp.</th>
-          <th class="col-rank">#</th>
-          <th class="col-icons">SdS</th>
-          <th class="col-icons">Tore</th>
-          <th class="col-icons">Assists</th>
-          <th class="col-cs">CS</th>
-          <th class="col-rc col-rc--yr">Gelb-Rot</th>
-          <th class="col-rc col-rc--red">Rot</th>
-          <th class="col-points">Punkte</th>
-          <th class="col-fine">Strafe</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of ratings(); track r.id) {
-          <tr [class.row--invalid]="r.invalid" [class.row--first]="r.placement === 1">
-            <td class="col-st"><a routerLink="/liga/spieltag" [queryParams]="{number: r.matchday_number}" class="matchday-link">{{ r.matchday_number }}</a></td>
-            <td class="col-rank">{{ r.placement ?? '–' }}</td>
-            <td class="col-icons">
-              <span class="icons-wrap">
-                @if (+r.sds) {
-                  <img src="/img/icons/sds.png" class="rating-icon" alt="SdS" />
-                }
-              </span>
-            </td>
-            <td class="col-icons">
-              <span class="icons-wrap">
-                @for (g of range(+r.goals); track g) {
-                  <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" />
-                }
-              </span>
-            </td>
-            <td class="col-icons">
-              <span class="icons-wrap">
-                @for (a of range(+r.assists); track a) {
-                  <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" />
-                }
-              </span>
-            </td>
-            <td class="col-cs">@if (+r.clean_sheet) { ✓ }</td>
-            <td class="col-rc col-rc--yr">@if (+r.yellow_red_cards) { {{ r.yellow_red_cards }} }</td>
-            <td class="col-rc col-rc--red">@if (+r.red_cards) { {{ r.red_cards }} }</td>
-            <td class="col-points">{{ r.points }}</td>
-            <td class="col-fine" [class.col-fine--active]="r.fine > 0">
-              @if (r.fine > 0) { {{ r.fine | number:'1.2-2' }} € }
+  <div class="overview-row">
+    <div class="table-container">
+      <table class="data-table data-table--compact">
+        <thead>
+          <tr>
+            <th class="col-st">Sp.</th>
+            <th class="col-rank">#</th>
+            <th class="col-icons">SdS</th>
+            <th class="col-icons">Tore</th>
+            <th class="col-icons">Assists</th>
+            <th class="col-cs">CS</th>
+            <th class="col-rc col-rc--yr">Gelb-Rot</th>
+            <th class="col-rc col-rc--red">Rot</th>
+            <th class="col-points">Punkte</th>
+            <th class="col-fine">Strafe</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of ratings(); track r.id) {
+            <tr [class.row--invalid]="r.invalid" [class.row--first]="r.placement === 1">
+              <td class="col-st"><a routerLink="/liga/spieltag" [queryParams]="{number: r.matchday_number}" class="matchday-link">{{ r.matchday_number }}</a></td>
+              <td class="col-rank">{{ r.placement ?? '–' }}</td>
+              <td class="col-icons">
+                <span class="icons-wrap">
+                  @if (+r.sds) {
+                    <img src="/img/icons/sds.png" class="rating-icon" alt="SdS" />
+                  }
+                </span>
+              </td>
+              <td class="col-icons">
+                <span class="icons-wrap">
+                  @for (g of range(+r.goals); track g) {
+                    <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" />
+                  }
+                </span>
+              </td>
+              <td class="col-icons">
+                <span class="icons-wrap">
+                  @for (a of range(+r.assists); track a) {
+                    <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" />
+                  }
+                </span>
+              </td>
+              <td class="col-cs">@if (+r.clean_sheet) { ✓ }</td>
+              <td class="col-rc col-rc--yr">@if (+r.yellow_red_cards) { {{ r.yellow_red_cards }} }</td>
+              <td class="col-rc col-rc--red">@if (+r.red_cards) { {{ r.red_cards }} }</td>
+              <td class="col-points">{{ r.points }}</td>
+              <td class="col-fine" [class.col-fine--active]="r.fine > 0">
+                @if (r.fine > 0) { {{ r.fine | number:'1.2-2' }} € }
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="col-st foot-label">Gesamt</td>
+            <td></td>
+            <td class="col-icons">{{ totalSds() || '' }}</td>
+            <td class="col-icons">{{ totalGoals() || '' }}</td>
+            <td class="col-icons">{{ totalAssists() || '' }}</td>
+            <td class="col-cs">{{ totalCleanSheet() || '' }}</td>
+            <td class="col-rc col-rc--yr">{{ totalYellowRedCards() || '' }}</td>
+            <td class="col-rc col-rc--red">{{ totalRedCards() || '' }}</td>
+            <td class="col-points">{{ totalPoints() }}</td>
+            <td class="col-fine col-fine--active">
+              @if (totalFine() > 0) { {{ totalFine() | number:'1.2-2' }} € }
             </td>
           </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    @if (h2hByPhase().length > 0) {
+      <div class="card h2h-panel">
+        <span class="h2h-panel-title">H2H</span>
+        @for (pg of h2hByPhase(); track pg.phase) {
+          <div class="h2h-phase-sep">{{ pg.label }}</div>
+          @for (m of pg.matches; track m.id) {
+            <div class="h2h-panel-row row-link" (click)="navigateToMatch(m.id)">
+              <span class="h2h-panel-md">{{ m.matchday_number ?? '?' }}</span>
+              @if (!logoFailed(m.home_team_id)) {
+                <img class="panel-logo" [src]="teamLogoUrl(m.home_team_id)" (error)="onLogoError(m.home_team_id)" alt="" />
+              } @else {
+                <span class="panel-logo-placeholder"></span>
+              }
+              <span class="h2h-score h2h-score--compact">
+                @if (m.home_goals != null) {
+                  <strong>{{ m.home_goals }}</strong>
+                  <span class="h2h-sep">:</span>
+                  <strong>{{ m.away_goals }}</strong>
+                } @else {
+                  <span class="h2h-pending">–</span>
+                }
+              </span>
+              @if (!logoFailed(m.away_team_id)) {
+                <img class="panel-logo" [src]="teamLogoUrl(m.away_team_id)" (error)="onLogoError(m.away_team_id)" alt="" />
+              } @else {
+                <span class="panel-logo-placeholder"></span>
+              }
+            </div>
+          }
         }
-      </tbody>
-      <tfoot>
-        <tr>
-          <td class="col-st foot-label">Gesamt</td>
-          <td></td>
-          <td class="col-icons">{{ totalSds() || '' }}</td>
-          <td class="col-icons">{{ totalGoals() || '' }}</td>
-          <td class="col-icons">{{ totalAssists() || '' }}</td>
-          <td class="col-cs">{{ totalCleanSheet() || '' }}</td>
-          <td class="col-rc col-rc--yr">{{ totalYellowRedCards() || '' }}</td>
-          <td class="col-rc col-rc--red">{{ totalRedCards() || '' }}</td>
-          <td class="col-points">{{ totalPoints() }}</td>
-          <td class="col-fine col-fine--active">
-            @if (totalFine() > 0) { {{ totalFine() | number:'1.2-2' }} € }
-          </td>
-        </tr>
-      </tfoot>
-    </table>
+      </div>
+    }
   </div>
 }

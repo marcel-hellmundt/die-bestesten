@@ -121,7 +121,7 @@
                   <span class="h2h-score" [class.h2h-score--live]="isLive(m)">
                     @if (m.home_goals != null) {
                       <strong>{{ m.home_goals }}</strong>
-                      <span class="h2h-sep">–</span>
+                      <span class="h2h-sep">:</span>
                       <strong>{{ m.away_goals }}</strong>
                     } @else {
                       <span class="h2h-pending">–</span>
@@ -180,7 +180,7 @@
                 <span class="agg-score agg-score--final h2h-score">
                   @if (mu.hasResults) {
                     <strong>{{ mu.aggA }}</strong>
-                    <span class="h2h-sep">–</span>
+                    <span class="h2h-sep">:</span>
                     <strong>{{ mu.aggB }}</strong>
                   } @else {
                     <span class="h2h-pending">–</span>
@@ -216,7 +216,7 @@
                 <span class="agg-score">
                   @if (mu.hasResults) {
                     <strong>{{ mu.aggA }}</strong>
-                    <span class="h2h-sep">–</span>
+                    <span class="h2h-sep">:</span>
                     <strong>{{ mu.aggB }}</strong>
                   } @else {
                     <span class="h2h-pending">–</span>
@@ -252,7 +252,7 @@
                       <span class="h2h-score" [class.h2h-score--live]="isLive(leg)">
                         @if (leg.home_goals != null) {
                           <strong>{{ leg.home_goals }}</strong>
-                          <span class="h2h-sep">–</span>
+                          <span class="h2h-sep">:</span>
                           <strong>{{ leg.away_goals }}</strong>
                         } @else {
                           <span class="h2h-pending">–</span>

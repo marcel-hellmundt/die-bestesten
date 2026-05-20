@@ -684,6 +684,56 @@ trait H2HTrait
             $created++;
         }
 
+        // ── Notifications ─────────────────────────────────────────────────────
+
+        $teamNameMap = [];
+        foreach ($teams as $t) {
+            $teamNameMap[$t['id']] = $t['team_name'];
+        }
+
+        // General: all 4 groups with their teams
+        $generalMsg = '';
+        for ($gi = 0; $gi < 4; $gi++) {
+            $names       = array_map(fn($tid) => $teamNameMap[$tid] ?? '?', $groupSlots[$gi]);
+            $generalMsg .= $groupNames[$gi] . ': ' . implode(', ', $names) . "\n";
+        }
+        $generalMsg = trim($generalMsg);
+
+        $allMgrsQ = $con->prepare("SELECT id FROM manager WHERE status = 'active'");
+        $allMgrsQ->execute();
+        $allManagerIds = $allMgrsQ->fetchAll(PDO::FETCH_COLUMN);
+
+        $notifStmt = $con->prepare(
+            "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
+        );
+        foreach ($allManagerIds as $mid) {
+            $notifStmt->execute([$mid, 'H2H-Gruppenphase ausgelost', $generalMsg]);
+        }
+
+        // Individual: each manager's own 4 matches
+        $teamMatchList = [];
+        foreach ($template as [$mdNum, $gi, $leg, $homeSlot, $awaySlot]) {
+            $homeId = $groupSlots[$gi][$homeSlot] ?? null;
+            $awayId = $groupSlots[$gi][$awaySlot] ?? null;
+            if (!$homeId || !$awayId) continue;
+            $teamMatchList[$homeId][] = [$mdNum, $teamNameMap[$awayId] ?? '?', true];
+            $teamMatchList[$awayId][] = [$mdNum, $teamNameMap[$homeId] ?? '?', false];
+        }
+        $indivStmt = $con->prepare(
+            "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
+        );
+        foreach ($teams as $team) {
+            $matches = $teamMatchList[$team['id']] ?? [];
+            if (empty($matches)) continue;
+            usort($matches, fn($a, $b) => $a[0] <=> $b[0]);
+            $msg = '';
+            foreach ($matches as [$mdNum, $oppName, $isHome]) {
+                $loc  = $isHome ? 'Heim' : 'Auswärts';
+                $msg .= "Spieltag $mdNum – $oppName ($loc)\n";
+            }
+            $indivStmt->execute([$team['manager_id'], 'Deine H2H-Gruppenspiele', trim($msg)]);
+        }
+
         return ['status' => true, 'groups' => 4, 'matches' => $created];
     }
 
@@ -861,6 +911,30 @@ trait H2HTrait
             $stmt->execute([$seasonId, $leg, $home, $away, $matchdays[$mdNum], $si]);
         }
 
+        // ── Notifications ─────────────────────────────────────────────────────
+
+        $tnQ = $con->prepare("SELECT id, team_name FROM team WHERE id IN (?,?,?,?,?,?,?,?)");
+        $tnQ->execute([$a1, $a2, $b1, $b2, $c1, $c2, $d1, $d2]);
+        $qfNames = [];
+        foreach ($tnQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $qfNames[$r['id']] = $r['team_name'];
+        }
+        $tn = fn(string $id) => $qfNames[$id] ?? '?';
+
+        $qfMsg  = "VF 1: {$tn($a1)} – {$tn($b2)} (Hin: ST20, Rück: ST24)\n";
+        $qfMsg .= "VF 2: {$tn($b1)} – {$tn($a2)} (Hin: ST21, Rück: ST25)\n";
+        $qfMsg .= "VF 3: {$tn($c1)} – {$tn($d2)} (Hin: ST22, Rück: ST26)\n";
+        $qfMsg .= "VF 4: {$tn($d1)} – {$tn($c2)} (Hin: ST23, Rück: ST27)";
+
+        $allMgrsQ = $con->prepare("SELECT id FROM manager WHERE status = 'active'");
+        $allMgrsQ->execute();
+        $notifStmt = $con->prepare(
+            "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
+        );
+        foreach ($allMgrsQ->fetchAll(PDO::FETCH_COLUMN) as $mid) {
+            $notifStmt->execute([$mid, 'H2H-Viertelfinale ausgelost', $qfMsg]);
+        }
+
         return ['status' => true, 'matches' => 8];
     }
 
@@ -1002,6 +1076,30 @@ trait H2HTrait
         );
         foreach ($bracket as [$leg, $home, $away, $mdNum, $si]) {
             $stmt->execute([$seasonId, $leg, $home, $away, $matchdays[$mdNum], $si]);
+        }
+
+        // ── Notifications ─────────────────────────────────────────────────────
+
+        $sfTeamIds = array_values(array_unique([$vf1, $vf2, $vf3, $vf4]));
+        $ph        = implode(',', array_fill(0, count($sfTeamIds), '?'));
+        $tnQ       = $con->prepare("SELECT id, team_name FROM team WHERE id IN ($ph)");
+        $tnQ->execute($sfTeamIds);
+        $sfNames = [];
+        foreach ($tnQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $sfNames[$r['id']] = $r['team_name'];
+        }
+        $tn = fn(string $id) => $sfNames[$id] ?? '?';
+
+        $sfMsg  = "HF 1: {$tn($vf1)} – {$tn($vf4)} (Hin: ST29, Rück: ST31)\n";
+        $sfMsg .= "HF 2: {$tn($vf2)} – {$tn($vf3)} (Hin: ST30, Rück: ST32)";
+
+        $allMgrsQ = $con->prepare("SELECT id FROM manager WHERE status = 'active'");
+        $allMgrsQ->execute();
+        $notifStmt = $con->prepare(
+            "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
+        );
+        foreach ($allMgrsQ->fetchAll(PDO::FETCH_COLUMN) as $mid) {
+            $notifStmt->execute([$mid, 'H2H-Halbfinale ausgelost', $sfMsg]);
         }
 
         return ['status' => true, 'matches' => 4];

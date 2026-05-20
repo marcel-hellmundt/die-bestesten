@@ -790,7 +790,25 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/h2h/generate',
-                        'description' => 'H2H-Gruppenphase nach festem Template generieren (Snake-Seeding nach Vorjahresrang, 4 Gruppen à 3, 24 Matches auf Spieltage 1–18) → {status,groups,matches} — Admin',
+                        'description' => 'H2H-Gruppenphase nach festem Template generieren (Snake-Seeding nach Vorjahresrang, 4 Gruppen à 3, 24 Matches auf Spieltage 1–18) → {status,groups,matches}; sendet allgemeine Gruppen-Notification + individuelle Spiele-Notification an alle Manager — Admin',
+                        'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/h2h/draw_quarterfinals',
+                        'description' => 'Viertelfinale auslosen aus Gruppenständen (Bed.: Spieltag 18 abgeschlossen) → {matches:8}; sendet Notification an alle Manager — Admin',
+                        'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/h2h/draw_semifinals',
+                        'description' => 'Halbfinale auslosen aus VF-Siegern (Aggregat; Bed.: Spieltag 27 abgeschlossen) → {matches:4}; sendet Notification an alle Manager — Admin',
+                        'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/h2h/draw_final',
+                        'description' => 'Finale auslosen aus HF-Siegern (Aggregat; Bed.: Spieltag 32 abgeschlossen) → {matches:1} — Admin',
                         'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
                     ],
                 ],

@@ -1,8 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith, switchMap } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
+import { catchError, distinctUntilChanged, filter, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-team-overview',
@@ -11,8 +12,9 @@ import { ApiService } from '../../core/api.service';
   styleUrl: './team-overview.component.scss'
 })
 export class TeamOverviewComponent {
-  private api   = inject(ApiService);
-  private route = inject(ActivatedRoute);
+  private api    = inject(ApiService);
+  private route  = inject(ActivatedRoute);
+  private router = inject(Router);
 
   private id$ = this.route.parent!.paramMap.pipe(map(p => p.get('id')!));
 
@@ -32,8 +34,57 @@ export class TeamOverviewComponent {
   ratings    = computed(() => (this.state().data?.ratings ?? []) as any[]);
   teamColor  = computed(() => (this.state().data?.color as string | null) ?? null);
   teamCount  = computed(() => Number(this.state().data?.team_count ?? 12));
-  loading   = computed(() => this.state().loading);
-  error     = computed(() => this.state().error);
+  teamId     = computed(() => (this.state().data?.id as string | null) ?? null);
+  seasonId   = computed(() => (this.state().data?.season_id as string | null) ?? null);
+  loading    = computed(() => this.state().loading);
+  error      = computed(() => this.state().error);
+
+  private h2hRaw = toSignal(
+    toObservable(this.state).pipe(
+      map(s => s.data?.season_id as string | null),
+      filter((sid): sid is string => !!sid),
+      distinctUntilChanged(),
+      switchMap(sid =>
+        this.api.get<any>(`h2h?season_id=${sid}`).pipe(
+          catchError(() => of(null))
+        )
+      )
+    ),
+    { initialValue: null as any }
+  );
+
+  private h2hMatches = computed(() => {
+    const data = this.h2hRaw();
+    const tid  = this.teamId();
+    if (!data || !tid) return [];
+    const all: any[] = [];
+    for (const g of data.groups ?? []) {
+      for (const m of g.matches ?? []) {
+        if (m.home_team_id === tid || m.away_team_id === tid) {
+          all.push({ ...m, phase: 'group' });
+        }
+      }
+    }
+    for (const m of data.knockout_matches ?? []) {
+      if (m.home_team_id === tid || m.away_team_id === tid) {
+        all.push(m);
+      }
+    }
+    return all.sort((a, b) => (a.matchday_number ?? 999) - (b.matchday_number ?? 999));
+  });
+
+  h2hByPhase = computed(() => {
+    const order = ['group', 'quarterfinal', 'semifinal', 'final'];
+    const byPhase = new Map<string, any[]>();
+    for (const m of this.h2hMatches()) {
+      const p = m.phase ?? 'group';
+      if (!byPhase.has(p)) byPhase.set(p, []);
+      byPhase.get(p)!.push(m);
+    }
+    return order
+      .filter(p => byPhase.has(p))
+      .map(phase => ({ phase, label: this.phaseLabel(phase), matches: byPhase.get(phase)! }));
+  });
 
   totalPoints    = computed(() => this.ratings().filter((r: any) => !r.invalid).reduce((s: number, r: any) => s + Number(r.points), 0));
   totalFine      = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.fine ?? 0), 0));
@@ -45,6 +96,28 @@ export class TeamOverviewComponent {
   totalYellowRedCards = computed(() => this.ratings().reduce((s: number, r: any) => s + Number(r.yellow_red_cards ?? 0), 0));
 
   range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
+
+  phaseLabel(phase: string): string {
+    const labels: Record<string, string> = {
+      group: 'Gruppenphase',
+      quarterfinal: 'Viertelfinale',
+      semifinal: 'Halbfinale',
+      final: 'Finale',
+    };
+    return labels[phase] ?? phase;
+  }
+
+  navigateToMatch(id: string): void {
+    this.router.navigate(['/liga/h2h', id]);
+  }
+
+  teamLogoUrl(teamId: string): string {
+    return `${environment.imageApiUrl}/img/team/${this.seasonId() ?? ''}/${teamId}.png`;
+  }
+
+  private logoErrors = new Set<string>();
+  logoFailed(teamId: string): boolean { return this.logoErrors.has(teamId); }
+  onLogoError(teamId: string): void   { this.logoErrors.add(teamId); }
 
   // ── Chart layout constants ────────────────────────────────────────────────
   readonly cW   = 700;
