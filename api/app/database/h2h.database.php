@@ -691,13 +691,43 @@ trait H2HTrait
             $teamNameMap[$t['id']] = $t['team_name'];
         }
 
-        // General: all 4 groups with their teams
-        $generalMsg = '';
-        for ($gi = 0; $gi < 4; $gi++) {
-            $names       = array_map(fn($tid) => $teamNameMap[$tid] ?? '?', $groupSlots[$gi]);
-            $generalMsg .= $groupNames[$gi] . ': ' . implode(', ', $names) . "\n";
+        $imgBase  = "https://img.die-bestesten.de/img/team/{$seasonId}";
+        $teamCell = function (string $tid) use ($teamNameMap, $imgBase): string {
+            $name = htmlspecialchars($teamNameMap[$tid] ?? '?');
+            return "<img class=\"notif-logo\" src=\"{$imgBase}/{$tid}.png\" alt=\"\" />{$name}";
+        };
+
+        // Static part: group table (same for every manager)
+        $staticHtml  = '<table class="notif-groups"><thead><tr>';
+        foreach ($groupNames as $name) {
+            $staticHtml .= '<th>' . htmlspecialchars($name) . '</th>';
         }
-        $generalMsg = trim($generalMsg);
+        $staticHtml .= '</tr></thead><tbody>';
+        for ($slot = 0; $slot < 3; $slot++) {
+            $staticHtml .= '<tr>';
+            for ($gi = 0; $gi < 4; $gi++) {
+                $tid         = $groupSlots[$gi][$slot] ?? null;
+                $staticHtml .= '<td>' . ($tid ? $teamCell($tid) : '') . '</td>';
+            }
+            $staticHtml .= '</tr>';
+        }
+        $staticHtml .= '</tbody></table>';
+
+        // Per-team match list: team_id → [[mdNum, homeId, awayId], ...]
+        $teamMatchList = [];
+        foreach ($template as [$mdNum, $gi, $leg, $homeSlot, $awaySlot]) {
+            $homeId = $groupSlots[$gi][$homeSlot] ?? null;
+            $awayId = $groupSlots[$gi][$awaySlot] ?? null;
+            if (!$homeId || !$awayId) continue;
+            $teamMatchList[$homeId][] = [$mdNum, $homeId, $awayId];
+            $teamMatchList[$awayId][] = [$mdNum, $homeId, $awayId];
+        }
+
+        // manager_id → team_id
+        $managerTeamMap = [];
+        foreach ($teams as $team) {
+            $managerTeamMap[$team['manager_id']] = $team['id'];
+        }
 
         $allMgrsQ = $con->prepare("SELECT id FROM manager WHERE status = 'active'");
         $allMgrsQ->execute();
@@ -707,31 +737,25 @@ trait H2HTrait
             "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
         );
         foreach ($allManagerIds as $mid) {
-            $notifStmt->execute([$mid, 'H2H-Gruppenphase ausgelost', $generalMsg]);
-        }
+            $teamId  = $managerTeamMap[$mid] ?? null;
+            $matches = $teamId ? ($teamMatchList[$teamId] ?? []) : [];
 
-        // Individual: each manager's own 4 matches
-        $teamMatchList = [];
-        foreach ($template as [$mdNum, $gi, $leg, $homeSlot, $awaySlot]) {
-            $homeId = $groupSlots[$gi][$homeSlot] ?? null;
-            $awayId = $groupSlots[$gi][$awaySlot] ?? null;
-            if (!$homeId || !$awayId) continue;
-            $teamMatchList[$homeId][] = [$mdNum, $teamNameMap[$awayId] ?? '?', true];
-            $teamMatchList[$awayId][] = [$mdNum, $teamNameMap[$homeId] ?? '?', false];
-        }
-        $indivStmt = $con->prepare(
-            "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
-        );
-        foreach ($teams as $team) {
-            $matches = $teamMatchList[$team['id']] ?? [];
-            if (empty($matches)) continue;
-            usort($matches, fn($a, $b) => $a[0] <=> $b[0]);
-            $msg = '';
-            foreach ($matches as [$mdNum, $oppName, $isHome]) {
-                $loc  = $isHome ? 'Heim' : 'Auswärts';
-                $msg .= "Spieltag $mdNum – $oppName ($loc)\n";
+            if (empty($matches)) {
+                $msg = $staticHtml;
+            } else {
+                usort($matches, fn($a, $b) => $a[0] <=> $b[0]);
+                $matchHtml  = '<hr class="notif-divider"><p class="notif-matches-label">Deine Spiele</p>';
+                $matchHtml .= '<div class="notif-matches">';
+                foreach ($matches as [$mdNum, $homeId, $awayId]) {
+                    $matchHtml .= '<div class="notif-match-row">'
+                        . $teamCell($homeId) . ' &ndash; ' . $teamCell($awayId)
+                        . '<span class="notif-md">ST ' . $mdNum . '</span></div>';
+                }
+                $matchHtml .= '</div>';
+                $msg = $staticHtml . $matchHtml;
             }
-            $indivStmt->execute([$team['manager_id'], 'Deine H2H-Gruppenspiele', trim($msg)]);
+
+            $notifStmt->execute([$mid, 'H2H-Gruppenphase ausgelost', $msg]);
         }
 
         return ['status' => true, 'groups' => 4, 'matches' => $created];

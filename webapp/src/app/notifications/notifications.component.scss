@@ -118,7 +118,75 @@
   &__body {
     font-size: $font-sm;
     line-height: 1.7;
-    white-space: pre-wrap;
     color: $color-text;
+
+    ::ng-deep {
+      .notif-groups {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: $space-4;
+
+        th {
+          font-size: $font-xs;
+          font-weight: $font-weight-semibold;
+          color: $color-text-muted;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: $space-2 $space-3 $space-2 0;
+          border-bottom: 2px solid $color-border;
+          text-align: left;
+          white-space: nowrap;
+        }
+
+        td {
+          padding: $space-2 $space-3 $space-2 0;
+          border-bottom: 1px solid $color-border;
+          vertical-align: middle;
+          white-space: nowrap;
+        }
+      }
+
+      .notif-logo {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        vertical-align: middle;
+        margin-right: 4px;
+      }
+
+      .notif-divider {
+        border: none;
+        border-top: 1px solid $color-border;
+        margin: $space-4 0;
+      }
+
+      .notif-matches-label {
+        font-size: $font-xs;
+        font-weight: $font-weight-semibold;
+        color: $color-text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: $space-2;
+      }
+
+      .notif-matches {
+        display: flex;
+        flex-direction: column;
+        gap: $space-1;
+      }
+
+      .notif-match-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: $font-sm;
+      }
+
+      .notif-md {
+        margin-left: $space-1;
+        font-size: $font-xs;
+        color: $color-text-muted;
+      }
+    }
   }
 }

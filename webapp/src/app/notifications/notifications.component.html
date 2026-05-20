@@ -40,7 +40,7 @@
         </p>
       </div>
       @if (n.message) {
-        <div class="notif-detail__body">{{ n.message }}</div>
+        <div class="notif-detail__body" [innerHTML]="renderMessage(n.message)"></div>
       }
     } @else {
       <p class="state-msg">Benachrichtigung auswählen.</p>
