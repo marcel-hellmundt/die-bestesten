@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AppNotification, NotificationService } from '../core/notification.service';
 
@@ -8,10 +8,14 @@ import { AppNotification, NotificationService } from '../core/notification.servi
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.scss'
 })
-export class NotificationsComponent {
+export class NotificationsComponent implements OnInit {
   service   = inject(NotificationService);
   private sanitizer = inject(DomSanitizer);
   selected  = signal<AppNotification | null>(null);
+
+  ngOnInit(): void {
+    this.service.reload();
+  }
 
   renderMessage(msg: string | null): SafeHtml {
     if (!msg) return '';
