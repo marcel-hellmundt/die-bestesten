@@ -81,6 +81,13 @@
     color: $color-text;
     border-color: $color-text-muted;
   }
+
+  &__short { display: none; }
+
+  @media (max-width: $mobile-breakpoint) {
+    &__long  { display: none; }
+    &__short { display: inline; }
+  }
 }
 
 // ── Group grid ──────────────────────────────────────────────────────────────
