@@ -1,5 +1,5 @@
 -- Globale Datenbank Schema
--- Enthält Tabellen für league, season, matchday, player, player_in_season, player_rating
+-- Enthält Tabellen für league, season, matchday, player, player_in_season, player_rating, manager
 
 -- Tabelle: country
 CREATE TABLE IF NOT EXISTS country (
@@ -200,6 +200,99 @@ CREATE TABLE IF NOT EXISTS achievement (
     threshold_gold   INT          NULL DEFAULT NULL  -- Schwellwert für Gold
 );
 
+
+-- ── Manager (global) ────────────────────────────────────────────────────────────
+
+-- Tabelle: manager (global; ein Account kann in mehreren Ligen spielen)
+CREATE TABLE IF NOT EXISTS manager (
+    id            CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    manager_name  VARCHAR(64)  NOT NULL UNIQUE,
+    first_name    VARCHAR(100) NULL DEFAULT NULL,
+    alias         VARCHAR(64)  NULL DEFAULT NULL UNIQUE,
+    password      VARCHAR(255) NOT NULL,
+    status        ENUM('active', 'blocked', 'deleted') NOT NULL DEFAULT 'active',
+    email         VARCHAR(255) NULL UNIQUE,
+    date_of_birth DATE         NULL,
+    last_activity DATETIME     NULL DEFAULT NULL
+);
+
+-- Tabelle: manager_role (zusätzliche Rollen pro Manager; additiv)
+CREATE TABLE IF NOT EXISTS manager_role (
+    id         CHAR(36)                    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    manager_id CHAR(36)                    NOT NULL,
+    role       ENUM('maintainer', 'admin') NOT NULL,
+    UNIQUE KEY uk_manager_role (manager_id, role),
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
+);
+
+-- Tabelle: password_reset_token
+CREATE TABLE IF NOT EXISTS password_reset_token (
+    id         CHAR(36)    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    manager_id CHAR(36)    NOT NULL,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME    NOT NULL,
+    used       TINYINT(1)  NOT NULL DEFAULT 0,
+    created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id)
+);
+
+-- Tabelle: manager_league (Ligamitgliedschaften eines Managers)
+CREATE TABLE IF NOT EXISTS manager_league (
+    id         CHAR(36) NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    manager_id CHAR(36) NOT NULL,
+    league_id  CHAR(36) NOT NULL,
+    joined_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    FOREIGN KEY (league_id)  REFERENCES league(id)  ON DELETE CASCADE,
+    UNIQUE KEY uk_manager_league (manager_id, league_id)
+);
+
+-- Tabelle: notification
+CREATE TABLE IF NOT EXISTS notification (
+    id          CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    sender_id   CHAR(36)     NULL DEFAULT NULL,   -- NULL = Systemnachricht
+    receiver_id CHAR(36)     NOT NULL,
+    title       VARCHAR(255) NOT NULL,
+    message     TEXT         NULL,
+    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at     DATETIME     NULL DEFAULT NULL,
+    FOREIGN KEY (receiver_id) REFERENCES manager(id) ON DELETE CASCADE
+);
+
+-- Tabelle: notification_preference
+CREATE TABLE IF NOT EXISTS notification_preference (
+    manager_id CHAR(36)    NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    enabled    BOOL        NOT NULL DEFAULT 1,
+    PRIMARY KEY (manager_id, event_type),
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
+);
+
+-- Tabelle: manager_achievement
+CREATE TABLE IF NOT EXISTS manager_achievement (
+    id             CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id     CHAR(36)     NOT NULL,
+    achievement_id CHAR(36)     NOT NULL,  -- Referenz auf achievement.id (gleiche DB)
+    earned_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reason         VARCHAR(255) NULL DEFAULT NULL,
+    seen_at        DATETIME     NULL DEFAULT NULL,
+    level          ENUM('bronze', 'silver', 'gold') NOT NULL DEFAULT 'gold',
+    FOREIGN KEY (manager_id)     REFERENCES manager(id),
+    FOREIGN KEY (achievement_id) REFERENCES achievement(id),
+    UNIQUE KEY uk_manager_achievement (manager_id, achievement_id)
+);
+
+-- Tabelle: maintainer_contribution (welcher Maintainer hat Spielerratings eingetragen)
+-- player_rating_id ist Cross-DB-Referenz auf player_rating.id (kein FK)
+CREATE TABLE IF NOT EXISTS maintainer_contribution (
+    id                CHAR(36)                                       NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id        CHAR(36)                                       NOT NULL,
+    player_rating_id  CHAR(36)                                       NOT NULL,
+    contribution_type ENUM('bulk_create', 'manual_create', 'grade') NOT NULL,
+    created_at        DATETIME                                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_contribution (player_rating_id, contribution_type)
+);
 
 -- Achievements (v2)
 -- Spaltenreihenfolge: id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold

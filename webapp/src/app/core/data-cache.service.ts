@@ -16,7 +16,7 @@ export class DataCacheService {
   private divisionsState = signal<{ data: Division[]; loaded: boolean }>({ data: [], loaded: false });
   private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string; color: string | null; color_secondary: string | null } | null; loaded: boolean }>({ data: null, loaded: false });
   private squadState     = signal<{ players: any[]; loaded: boolean }>({ players: [], loaded: false });
-  private leagueState    = signal<{ divisionId: string | null; loaded: boolean }>({ divisionId: null, loaded: false });
+  private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, loaded: false });
 
   seasons        = computed(() => this.seasonsState().data);
   startedSeasons = computed(() => {
@@ -28,6 +28,8 @@ export class DataCacheService {
   myTeam       = computed(() => this.myTeamState().data);
   myTeamLoaded = computed(() => this.myTeamState().loaded);
 
+  leagueId         = computed(() => this.leagueState().id);
+  leagueName       = computed(() => this.leagueState().name);
   leagueDivisionId = computed(() => this.leagueState().divisionId);
   leagueDivision   = computed(() => {
     const id = this.leagueDivisionId();
@@ -89,9 +91,13 @@ export class DataCacheService {
   ensureLeague(): void {
     if (this.leagueState().loaded) return;
     this.api.get<any>('league/mine').subscribe({
-      next: data => this.leagueState.set({ divisionId: data.division_id ?? null, loaded: true }),
-      error: ()   => this.leagueState.set({ divisionId: null, loaded: true }),
+      next: data => this.leagueState.set({ id: data.id ?? null, slug: data.slug ?? null, name: data.name ?? null, divisionId: data.division_id ?? null, loaded: true }),
+      error: ()   => this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, loaded: true }),
     });
+  }
+
+  invalidateLeague(): void {
+    this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, loaded: false });
   }
 
   seasonName(seasonId: string): string {

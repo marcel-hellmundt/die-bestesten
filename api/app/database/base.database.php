@@ -83,13 +83,36 @@ class Database
 
     protected function __construct()
     {
-        $host = $_ENV['DB_HOST'];
-        $user = $_ENV['DB_USER'];
+        $host     = $_ENV['DB_HOST'];
+        $user     = $_ENV['DB_USER'];
         $password = $_ENV['DB_PASSWORD'];
 
-        $this->con = $this->createConnection($host, $_ENV['DB_NAME'], $user, $password);
+        $this->con        = $this->createConnection($host, $_ENV['DB_NAME'], $user, $password);
         $this->con_league = $this->createConnection($host, $_ENV['DB_NAME_LEAGUE'], $user, $password);
-        $this->con_old = $this->createConnection($host, $_ENV['DB_NAME_OLD'], $user, $password);
+        $this->con_old    = $this->createConnection($host, $_ENV['DB_NAME_OLD'], $user, $password);
+        $this->ensureManagerView();
+    }
+
+    // Called by guard after JWT decode to switch to the correct league DB
+    public function switchLeagueConnection(string $leagueId): bool
+    {
+        $dbName = $this->getManagerLeagueDbName($leagueId);
+        if (!$dbName) return false;
+        $this->con_league = $this->createConnection(
+            $_ENV['DB_HOST'], $dbName, $_ENV['DB_USER'], $_ENV['DB_PASSWORD']
+        );
+        $this->ensureManagerView();
+        return true;
+    }
+
+    // Creates a VIEW named `manager` in the league DB pointing to global manager table.
+    // This lets all existing con_league queries that JOIN/FROM manager work without changes.
+    private function ensureManagerView(): void
+    {
+        $globalDb = $_ENV['DB_NAME'];
+        $this->con_league->exec(
+            "CREATE OR REPLACE VIEW manager AS SELECT * FROM `$globalDb`.manager"
+        );
     }
 
     private function createConnection(string $host, string $name, string $user, string $password): \PDO
@@ -142,15 +165,21 @@ class Database
 
     protected function getLeagueDivisionId(): ?string
     {
-        $q = $this->con->prepare("SELECT division_id FROM league WHERE db_name = :db_name LIMIT 1");
-        $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        $leagueId = $GLOBALS['auth_league_id'] ?? null;
+        if ($leagueId) {
+            $q = $this->con->prepare("SELECT division_id FROM league WHERE id = :id LIMIT 1");
+            $q->execute([':id' => $leagueId]);
+        } else {
+            $q = $this->con->prepare("SELECT division_id FROM league WHERE db_name = :db_name LIMIT 1");
+            $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        }
         return $q->fetchColumn() ?: null;
     }
 
-    // Auth — used by guard; requires manager table (league schema)
+    // Auth — uses global DB (manager table is in global schema)
     public function getAuthManagerById(string $id): array|false
     {
-        $query = $this->con_league->prepare("SELECT * FROM manager WHERE id = :id LIMIT 1");
+        $query = $this->con->prepare("SELECT * FROM manager WHERE id = :id LIMIT 1");
         $query->execute([':id' => $id]);
         $manager = $query->fetch(PDO::FETCH_ASSOC);
         if ($manager) $manager['roles'] = $this->fetchManagerRoles($manager['id']);
@@ -159,14 +188,14 @@ class Database
 
     public function touchLastActivity(string $id): void
     {
-        $this->con_league->prepare(
+        $this->con->prepare(
             "UPDATE manager SET last_activity = NOW() WHERE id = :id"
         )->execute([':id' => $id]);
     }
 
     public function getAuthManagerByNameOrEmail(string $identifier): array|false
     {
-        $query = $this->con_league->prepare(
+        $query = $this->con->prepare(
             "SELECT * FROM manager WHERE manager_name = :identifier OR email = :identifier LIMIT 1"
         );
         $query->execute([':identifier' => $identifier]);
@@ -177,8 +206,43 @@ class Database
 
     private function fetchManagerRoles(string $managerId): array
     {
-        $q = $this->con_league->prepare("SELECT role FROM manager_role WHERE manager_id = :id");
+        $q = $this->con->prepare("SELECT role FROM manager_role WHERE manager_id = :id");
         $q->execute([':id' => $managerId]);
         return $q->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    public function getManagerLeagueDbName(string $leagueId): string|false
+    {
+        $q = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $q->execute([':id' => $leagueId]);
+        return $q->fetchColumn();
+    }
+
+    public function getManagerLeagues(string $managerId): array
+    {
+        $q = $this->con->prepare(
+            "SELECT l.id, l.slug, l.name FROM manager_league ml
+             JOIN league l ON l.id = ml.league_id
+             WHERE ml.manager_id = :manager_id
+             ORDER BY l.name"
+        );
+        $q->execute([':manager_id' => $managerId]);
+        return $q->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function joinLeague(string $managerId, string $leagueId): void
+    {
+        $this->con->prepare(
+            "INSERT IGNORE INTO manager_league (manager_id, league_id) VALUES (:manager_id, :league_id)"
+        )->execute([':manager_id' => $managerId, ':league_id' => $leagueId]);
+    }
+
+    public function isManagerInLeague(string $managerId, string $leagueId): bool
+    {
+        $q = $this->con->prepare(
+            "SELECT COUNT(*) FROM manager_league WHERE manager_id = :m AND league_id = :l"
+        );
+        $q->execute([':m' => $managerId, ':l' => $leagueId]);
+        return (int) $q->fetchColumn() > 0;
     }
 }

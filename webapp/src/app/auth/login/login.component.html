@@ -89,6 +89,38 @@
           Zum Login
         </button>
       }
+
+      @if (mode() === 'choose-league') {
+        <p class="reset-hint">Wähle eine Liga aus, in der du spielen möchtest:</p>
+        <div class="league-list">
+          @for (league of myLeagues(); track league.id) {
+            <button type="button" class="league-list-item" (click)="selectLeague(league.id)">
+              {{ league.name }}
+            </button>
+          }
+        </div>
+      }
+
+      @if (mode() === 'join-league') {
+        <p class="reset-hint">Du bist noch keiner Liga zugeordnet. Tritt einer Liga bei:</p>
+        <div class="league-list">
+          @for (league of allLeagues(); track league.id) {
+            <button
+              type="button"
+              class="league-list-item"
+              [disabled]="!!joinLoading()"
+              (click)="joinLeague(league)"
+            >
+              {{ league.name }}
+              @if (joinLoading() === league.id) {
+                <span>…</span>
+              }
+            </button>
+          } @empty {
+            <p class="reset-hint">Lade Ligen…</p>
+          }
+        </div>
+      }
     </div>
   </div>
 </div>

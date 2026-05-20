@@ -97,6 +97,7 @@ GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_po
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
 GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}
 PATCH    /league/:id           — {division_id: UUID|null} — Spielerpool-Division setzen — Admin
+POST     /league/:id/join      — Liga beitreten (manager_league-Eintrag anlegen); idempotent (INSERT IGNORE) — Auth
 POST     /league/migrate           — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
 POST     /league/validate_ratings  — {league_id} — prüft team_ratings ab 2020/21 gegen team_lineup + player_rating — Admin
 POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB + alte DB) — Admin
@@ -125,7 +126,8 @@ GET      /player_rating/status — ?matchday_id → [{club_id, rating_count, sta
 POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen (gleiche ID in alte DB gespiegelt); 409 wenn completed oder (vor kickoff_date und nicht Admin) — Maintainer+
 POST     /player_rating/validate-csv — multipart: matchday_id + csv-Datei (;-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte) → {ok, checked?} oder {ok: false, mismatches: [{kicker_id, displayname, csv_points, db_points, error}]}; error: 'points mismatch' | 'player not found in db' (+ first_name/last_name/club_name/position/price) | 'no ratings in season' — Maintainer+
 PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed; Body: grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card (points wird immer serverseitig berechnet); Änderungen + berechnete points werden in alte DB gespiegelt
-POST     /auth                 — JWT-Login
+POST     /auth                 — JWT-Login; Response enthält token + leagues[] + league_id (null wenn keine Liga)
+POST     /auth/switch-league  — {league_id} → {token, league_id}; neues JWT mit geänderter league_id; 403 wenn kein Zugang — Auth
 POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)
 POST     /auth/password-reset — {token,new_password} — setzt Passwort zurück; 400 wenn Token ungültig/abgelaufen
 GET      /team_rating          — ?season_id → { matchday, ratings[], sds_player, max_matchday_number } letzter gestarteter Spieltag; bei nicht-abgeschlossenem Spieltag: Live-Punkte aus player_rating × team_lineup (fine = 0) — Auth
@@ -139,6 +141,7 @@ PATCH    /color/:name         — {hex: '#rrggbb'} Hex ändern, kaskadiert auf t
 GET      /team/previous        — Letztes Team aus Vorsaison {id,team_name,color,season_id}; 404 wenn keines — Auth
 GET      /team/check-name      — ?name= (min. 3 Zeichen) → {available: bool}; 400 wenn zu kurz — Auth
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
+GET      /manager/leagues      — [{id,name,slug}] — alle Ligen des eingeloggten Managers — Auth
 PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} oder {first_name} allein ohne Passwort — Auth
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
@@ -172,15 +175,31 @@ GET      /notification/preferences — {matchday_completed: bool, achievement_ea
 PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|h2h_draw, enabled: bool} — Auth
 ```
 
-## Liga-DB (`database/league_schema.sql`)
+## Global-DB — Manager-Tabellen (`database/global_schema.sql`)
 
-**manager**: id PK, manager_name UNIQUE (Anzeigename/Username), first_name VARCHAR(100)? (echter Vorname — für Achievement-Vergleiche), alias UNIQUE?, password, status ENUM(active/blocked/deleted) DEFAULT active, email UNIQUE?, date_of_birth?
+*Seit Multi-Liga-Support sind Manager-Daten global — ein Account kann mehreren Ligen beitreten.*
+
+**manager**: id PK, manager_name UNIQUE (Anzeigename/Username), first_name VARCHAR(100)? (echter Vorname — für Achievement-Vergleiche), alias UNIQUE?, password, status ENUM(active/blocked/deleted) DEFAULT active, email UNIQUE?, date_of_birth?, last_activity DATETIME?
 
 **manager_role**: id PK, manager_id FK, role ENUM(maintainer/admin) — UNIQUE(manager_id, role) — additiv; jeder Manager hat implizit 'manager'
 
 **password_reset_token**: id PK, manager_id FK, token_hash VARCHAR(64) UNIQUE, expires_at DATETIME, used BOOL DEFAULT 0, created_at DATETIME
 
-**team**: id PK, manager_id FK, season_id (cross-DB, kein FK), team_name VARCHAR(100), color VARCHAR(7)?, created_at — UNIQUE(manager_id, season_id)
+**manager_league**: id PK, manager_id FK → manager, league_id FK → league, joined_at DATETIME — UNIQUE(manager_id, league_id) — Ligamitgliedschaft; INSERT IGNORE für idempotenten Beitritt
+
+**notification**: id PK, sender_id CHAR(36)? (NULL = Systemnachricht; kein FK), receiver_id FK → manager, title VARCHAR(255), message TEXT?, created_at DATETIME, read_at DATETIME? (NULL = ungelesen)
+
+**notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned, scouted_player_update
+
+**manager_achievement**: id PK, manager_id FK, achievement_id FK → achievement (echtes FK, gleiche DB!), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen
+
+**maintainer_contribution**: id PK, manager_id FK, player_rating_id (cross-DB auf global_schema.player_rating, kein FK), contribution_type ENUM(bulk_create/manual_create/grade), created_at — UNIQUE(player_rating_id, contribution_type) — trackt welcher Maintainer Aufstellung/Noten eingetragen hat; grade-Einträge werden per UPSERT ersetzt (letzter Setzer behält Credit)
+
+## Liga-DB (`database/league_schema.sql`)
+
+*Jede Liga hat eine eigene DB. `con_league` verbindet sich dynamisch nach JWT-Decode auf die Liga des auth_league_id. Eine VIEW `manager` in der Liga-DB zeigt auf global_schema.manager — bestehende JOINs funktionieren unverändert.*
+
+**team**: id PK, manager_id CHAR(36) (cross-DB auf global_schema.manager, kein FK), season_id (cross-DB, kein FK), team_name VARCHAR(100), color VARCHAR(7)?, created_at — UNIQUE(manager_id, season_id)
 
 **transaction**: id PK, team_id FK, amount DECIMAL(10,2), reason VARCHAR(255), matchday_id (cross-DB, kein FK)?, created_at — Budget = SUM(amount) pro team_id
 
@@ -188,18 +207,10 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 
 **team_award**: id PK, team_id FK, award_id (cross-DB auf global_schema.award, kein FK) — UNIQUE(award_id, team_id) — season ergibt sich aus team.season_id
 
-**notification**: id PK, sender_id CHAR(36)? (NULL = Systemnachricht; kein FK), receiver_id FK → manager, title VARCHAR(255), message TEXT?, created_at DATETIME, read_at DATETIME? (NULL = ungelesen)
-
-**notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned, scouted_player_update
-
-**manager_achievement**: id PK, manager_id FK, achievement_id (cross-DB auf global_schema.achievement, kein FK), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen; Achievements ohne Stufen speichern immer 'gold'
-
 **sell**: id PK, player_id (cross-DB), team_id FK (Verkäufer), transferwindow_id (cross-DB), price INT, created_at
 
 **player_in_team**: id PK, team_id FK, player_id (cross-DB), from_matchday_id (cross-DB, Kauf), to_matchday_id (cross-DB, Verkauf; NULL = aktiv), offer_id FK?, sell_id FK? — UNIQUE(player_id, team_id, from_matchday_id) — max. 1 aktives Team pro Spieler wird auf Applikationsebene geprüft
 
 **team_lineup**: id PK, team_id FK, player_id (cross-DB), matchday_id (cross-DB), nominated BOOL, position_index INT? — UNIQUE(team_id, player_id, matchday_id) — alle Kader-Spieler des Spieltags; nominated=1 = aufgestellt
-
-**maintainer_contribution**: id PK, manager_id FK, player_rating_id (cross-DB auf global_schema.player_rating, kein FK), contribution_type ENUM(bulk_create/manual_create/grade), created_at — UNIQUE(player_rating_id, contribution_type) — trackt welcher Maintainer Aufstellung/Noten eingetragen hat; grade-Einträge werden per UPSERT ersetzt (letzter Setzer behält Credit)
 
 **team_watchlist**: id PK, team_id FK, player_id CHAR(36) (cross-DB auf global_schema.player, kein FK), created_at — UNIQUE(team_id, player_id) — private Beobachtungsliste; Benachrichtigung bei Kauf/Verkauf/SdS des Spielers (event_type: scouted_player_update)

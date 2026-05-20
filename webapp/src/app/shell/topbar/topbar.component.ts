@@ -3,7 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'rxjs';
-import { AuthService } from '../../auth/auth.service';
+import { AuthService, League } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { ApiService } from '../../core/api.service';
 import { NotificationService } from '../../core/notification.service';
@@ -29,9 +29,13 @@ export class TopbarComponent implements OnDestroy {
   private api    = inject(ApiService);
   notifService   = inject(NotificationService);
 
-  isDropdownOpen  = signal(false);
-  avatarImgFailed = signal(false);
-  currentUrl      = signal(this.router.url);
+  isDropdownOpen       = signal(false);
+  isLeagueDropdownOpen = signal(false);
+  avatarImgFailed      = signal(false);
+  currentUrl           = signal(this.router.url);
+
+  leagues       = signal<League[]>([]);
+  leagueSwitching = signal(false);
 
   searchQuery   = signal('');
   searchResults = signal<SearchResults | null>(null);
@@ -40,6 +44,13 @@ export class TopbarComponent implements OnDestroy {
 
   managerName        = computed(() => this.auth.getManagerName() ?? '');
   managerId          = computed(() => this.auth.getManagerId());
+  activeLeagueId     = computed(() => this.auth.getLeagueId());
+  activeLeagueName   = computed(() => {
+    const id = this.activeLeagueId();
+    const cached = this.cache.leagueName();
+    if (cached) return cached;
+    return id ? (this.leagues().find(l => l.id === id)?.name ?? null) : null;
+  });
   readonly roleOrder = ROLE_ORDER;
   readonly roleLabel = ROLE_LABEL;
 
@@ -76,6 +87,11 @@ export class TopbarComponent implements OnDestroy {
   constructor() {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
       this.currentUrl.set(e.urlAfterRedirects);
+    });
+
+    this.api.get<{ leagues: League[] }>('manager/leagues').subscribe({
+      next: data => this.leagues.set(data.leagues ?? []),
+      error: ()  => {},
     });
 
     this.searchSub = this.searchSubject.pipe(
@@ -158,10 +174,36 @@ export class TopbarComponent implements OnDestroy {
   toggleDropdown(event: Event): void {
     event.stopPropagation();
     this.isDropdownOpen.update(v => !v);
+    if (this.isDropdownOpen()) this.isLeagueDropdownOpen.set(false);
   }
 
   closeDropdown(): void {
     this.isDropdownOpen.set(false);
+  }
+
+  toggleLeagueDropdown(event: Event): void {
+    event.stopPropagation();
+    this.isLeagueDropdownOpen.update(v => !v);
+    if (this.isLeagueDropdownOpen()) this.isDropdownOpen.set(false);
+  }
+
+  closeLeagueDropdown(): void {
+    this.isLeagueDropdownOpen.set(false);
+  }
+
+  switchLeague(leagueId: string): void {
+    if (leagueId === this.activeLeagueId() || this.leagueSwitching()) return;
+    this.leagueSwitching.set(true);
+    this.closeLeagueDropdown();
+    this.auth.switchLeague(leagueId).subscribe({
+      next: () => {
+        this.cache.invalidateLeague();
+        this.cache.refreshMyTeam();
+        this.leagueSwitching.set(false);
+        this.router.navigate(['/']);
+      },
+      error: () => this.leagueSwitching.set(false),
+    });
   }
 
   navigateTo(route: string): void {

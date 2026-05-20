@@ -420,9 +420,9 @@ trait PlayerRatingTrait
         $this->con_old->prepare('UPDATE player_rating SET points = :p WHERE player_rating_id = :id')
             ->execute([':p' => $newPoints, ':id' => $id]);
 
-        // Track maintainer contributions
+        // Track maintainer contributions (global DB)
         if (array_key_exists('participation', $data) && $data['participation'] !== null) {
-            $this->con_league->prepare(
+            $this->con->prepare(
                 "DELETE FROM maintainer_contribution
                  WHERE player_rating_id = :id
                    AND contribution_type IN ('bulk_create', 'manual_create')"
@@ -430,7 +430,7 @@ trait PlayerRatingTrait
             $type = in_array($data['_contribution_type'] ?? '', ['bulk_create', 'manual_create'])
                 ? $data['_contribution_type']
                 : 'manual_create';
-            $this->con_league->prepare(
+            $this->con->prepare(
                 "INSERT INTO maintainer_contribution (id, manager_id, player_rating_id, contribution_type)
                  VALUES (UUID(), :manager_id, :rating_id, :type)"
             )->execute([':manager_id' => $managerId, ':rating_id' => $id, ':type' => $type]);
@@ -438,14 +438,14 @@ trait PlayerRatingTrait
 
         if (array_key_exists('grade', $data)) {
             if ($data['grade'] !== null) {
-                $this->con_league->prepare(
+                $this->con->prepare(
                     "INSERT INTO maintainer_contribution
                      (id, manager_id, player_rating_id, contribution_type)
                      VALUES (UUID(), :m, :r, 'grade')
                      ON DUPLICATE KEY UPDATE manager_id = :m2, created_at = NOW()"
                 )->execute([':m' => $managerId, ':r' => $id, ':m2' => $managerId]);
             } else {
-                $this->con_league->prepare(
+                $this->con->prepare(
                     "DELETE FROM maintainer_contribution
                      WHERE player_rating_id = :id AND contribution_type = 'grade'"
                 )->execute([':id' => $id]);

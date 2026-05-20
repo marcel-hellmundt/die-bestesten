@@ -789,7 +789,7 @@ trait AchievementConditionsTrait
 
         // Load contributions first (no IN clause) so we only query global DB for
         // the rating IDs that actually have contributions — avoids max_allowed_packet.
-        $contributions = $this->con_league->query(
+        $contributions = $this->con->query(
             "SELECT player_rating_id, manager_id FROM maintainer_contribution"
         )->fetchAll(PDO::FETCH_ASSOC);
 

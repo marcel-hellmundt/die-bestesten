@@ -3,6 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export interface League {
+  id:   string;
+  name: string;
+  slug: string;
+}
+
+export interface LoginResponse {
+  token:     string;
+  leagues:   League[];
+  league_id: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,8 +23,20 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(name: string, password: string): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(`${environment.apiUrl}/auth`, { name, password }).pipe(
+  login(name: string, password: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/auth`, { name, password }).pipe(
+      tap(response => {
+        localStorage.setItem(this.TOKEN_KEY, response.token);
+      })
+    );
+  }
+
+  switchLeague(leagueId: string): Observable<{ token: string; league_id: string }> {
+    return this.http.post<{ token: string; league_id: string }>(
+      `${environment.apiUrl}/auth/switch-league`,
+      { league_id: leagueId },
+      { headers: { Authorization: `Bearer ${this.getToken()}` } }
+    ).pipe(
       tap(response => {
         localStorage.setItem(this.TOKEN_KEY, response.token);
       })
@@ -66,6 +90,10 @@ export class AuthService {
 
   isMaintainer(): boolean {
     return this.hasRole('maintainer') || this.hasRole('admin');
+  }
+
+  getLeagueId(): string | null {
+    return (this.getPayload()?.['league_id'] as string) ?? null;
   }
 
   getPayload(): Record<string, unknown> | null {

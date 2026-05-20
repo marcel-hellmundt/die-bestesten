@@ -13,7 +13,7 @@ trait AchievementTrait
 
         if (empty($achievements)) return ['count' => 0, 'new' => []];
 
-        $managerRows  = $this->con_league->query(
+        $managerRows  = $this->con->query(
             "SELECT id, manager_name FROM manager WHERE status = 'active'"
         )->fetchAll(PDO::FETCH_ASSOC);
         $managerIds   = array_column($managerRows, 'id');
@@ -21,7 +21,7 @@ trait AchievementTrait
 
         if (empty($managerIds)) return ['count' => 0, 'new' => []];
 
-        $stmt = $this->con_league->prepare(
+        $stmt = $this->con->prepare(
             "INSERT IGNORE INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at, level)
              VALUES (UUID(), ?, ?, ?, ?, ?)"
         );
@@ -61,7 +61,7 @@ trait AchievementTrait
 
         if (!$achievement) return;
 
-        $managerIds = $this->con_league->query(
+        $managerIds = $this->con->query(
             "SELECT id FROM manager WHERE status = 'active'"
         )->fetchAll(PDO::FETCH_COLUMN);
 
@@ -69,7 +69,7 @@ trait AchievementTrait
         $earners = method_exists($this, $method) ? $this->$method($managerIds) : [];
 
         if (empty($earners)) {
-            $this->con_league->prepare(
+            $this->con->prepare(
                 "DELETE FROM manager_achievement WHERE achievement_id = ?"
             )->execute([$achievementId]);
             return;
@@ -77,11 +77,11 @@ trait AchievementTrait
 
         $earnerIds = array_keys($earners);
         $plh       = implode(',', array_fill(0, count($earnerIds), '?'));
-        $this->con_league->prepare(
+        $this->con->prepare(
             "DELETE FROM manager_achievement WHERE achievement_id = ? AND manager_id NOT IN ($plh)"
         )->execute([$achievementId, ...$earnerIds]);
 
-        $stmt = $this->con_league->prepare(
+        $stmt = $this->con->prepare(
             "INSERT INTO manager_achievement (id, manager_id, achievement_id, reason, earned_at, level)
              VALUES (UUID(), ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE reason = VALUES(reason), earned_at = VALUES(earned_at), level = VALUES(level)"
@@ -99,13 +99,13 @@ trait AchievementTrait
 
         if (empty($achievements)) return [];
 
-        $managers = $this->con_league->query(
+        $managers = $this->con->query(
             "SELECT id, manager_name FROM manager WHERE status = 'active' ORDER BY manager_name ASC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $totalManagers = count($managers);
 
-        $earned = $this->con_league->query(
+        $earned = $this->con->query(
             "SELECT manager_id, achievement_id, earned_at, reason, level FROM manager_achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
@@ -162,7 +162,7 @@ trait AchievementTrait
         $achievementIds = array_column($rows, 'id');
         $plh = implode(',', array_fill(0, count($achievementIds), '?'));
 
-        $earned = $this->con_league->prepare(
+        $earned = $this->con->prepare(
             "SELECT achievement_id, earned_at, reason, seen_at, level FROM manager_achievement
              WHERE manager_id = ? AND achievement_id IN ($plh)"
         );
@@ -172,11 +172,11 @@ trait AchievementTrait
             $earnedMap[$row['achievement_id']] = ['earned_at' => $row['earned_at'], 'reason' => $row['reason'], 'seen_at' => $row['seen_at'], 'level' => $row['level']];
         }
 
-        $counts = $this->con_league->query(
+        $counts = $this->con->query(
             "SELECT achievement_id, COUNT(*) AS cnt FROM manager_achievement GROUP BY achievement_id"
         )->fetchAll(PDO::FETCH_KEY_PAIR);
 
-        $totalManagers = (int) $this->con_league->query(
+        $totalManagers = (int) $this->con->query(
             "SELECT COUNT(*) FROM manager WHERE status = 'active'"
         )->fetchColumn();
 
@@ -211,7 +211,7 @@ trait AchievementTrait
 
     public function setAchievementsSeen(string $managerId): void
     {
-        $this->con_league->prepare(
+        $this->con->prepare(
             "UPDATE manager_achievement SET seen_at = NOW()
              WHERE manager_id = ? AND seen_at IS NULL AND earned_at IS NOT NULL"
         )->execute([$managerId]);
@@ -221,7 +221,7 @@ trait AchievementTrait
     {
         $this->setAchievementsSeen($managerId);
 
-        $this->con_league->prepare(
+        $this->con->prepare(
             "UPDATE notification SET read_at = NOW()
              WHERE receiver_id = ? AND read_at IS NULL AND sender_id IS NULL AND title LIKE 'Achievement:%'"
         )->execute([$managerId]);

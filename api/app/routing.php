@@ -45,6 +45,12 @@ class Routing
                         'path' => '/auth/password-reset',
                         'description' => 'Passwort zurücksetzen — Body: { token, new_password } — Token aus dem Reset-Link; 400 wenn ungültig/abgelaufen',
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/auth/switch-league',
+                        'description' => 'Liga wechseln — Body: { league_id }; gibt neues JWT mit geänderter league_id zurück; 403 wenn kein Zugang zur angeforderten Liga — Auth',
+                        'body' => ['league_id' => 'UUID der Ziel-Liga'],
+                    ],
                 ],
             ]),
 
@@ -74,6 +80,12 @@ class Routing
                         'description' => 'Spielerpool-Division der Liga setzen — Body: {division_id: UUID|null} — Admin',
                         'path_params' => [':id' => 'UUID der Liga'],
                         'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/league/:id/join',
+                        'description' => 'Liga beitreten — trägt den eingeloggten Manager in manager_league ein; 404 wenn Liga nicht gefunden — Auth',
+                        'path_params' => [':id' => 'UUID der Liga'],
                     ],
                     [
                         'method' => 'POST',
@@ -562,6 +574,11 @@ class Routing
                         'method' => 'GET',
                         'path' => '/manager/me',
                         'description' => 'Eigenes Profil abrufen (id, manager_name, alias, roles[], status)',
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/manager/leagues',
+                        'description' => 'Alle Ligen des eingeloggten Managers — gibt [{id, name, slug}] zurück — Auth',
                     ],
                     [
                         'method' => 'GET',

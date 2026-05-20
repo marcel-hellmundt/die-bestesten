@@ -2,7 +2,7 @@
 
 class LeagueController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'admin', 'PATCH' => 'admin'];
+    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'manager', 'PATCH' => 'admin'];
 
     protected function get(): mixed
     {
@@ -29,6 +29,28 @@ class LeagueController extends _BaseController
 
     protected function post(): mixed
     {
+        // POST /league/:id/join  — any authenticated manager can join a league
+        if ($this->sub === 'join') {
+            $leagueId = $this->id;
+            if (!$leagueId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Liga-ID fehlt'];
+            }
+            $league = $this->db->getLeagueById($leagueId);
+            if (!$league) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Liga nicht gefunden'];
+            }
+            $this->db->joinLeague($GLOBALS['auth_manager_id'], $leagueId);
+            return ['status' => true];
+        }
+
+        // All remaining POST routes require admin
+        if (!$this->isAdmin()) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Forbidden'];
+        }
+
         // POST /league/migrate  { league_id }
         if ($this->id === 'migrate') {
             $body     = $this->body();

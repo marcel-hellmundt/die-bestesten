@@ -4,7 +4,7 @@ trait NotificationTrait
 {
     public function getNotifications(string $managerId): array
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT n.id, n.sender_id, m.manager_name AS sender_name,
                     n.receiver_id, n.title, n.message, n.created_at, n.read_at
              FROM notification n
@@ -18,7 +18,7 @@ trait NotificationTrait
 
     public function getUnreadCount(string $managerId): int
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT COUNT(*) FROM notification WHERE receiver_id = ? AND read_at IS NULL"
         );
         $q->execute([$managerId]);
@@ -27,14 +27,14 @@ trait NotificationTrait
 
     public function getNotificationById(string $id): array|false
     {
-        $q = $this->con_league->prepare("SELECT * FROM notification WHERE id = ?");
+        $q = $this->con->prepare("SELECT * FROM notification WHERE id = ?");
         $q->execute([$id]);
         return $q->fetch(PDO::FETCH_ASSOC);
     }
 
     public function markNotificationRead(string $id): void
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "UPDATE notification SET read_at = NOW() WHERE id = ? AND read_at IS NULL"
         );
         $q->execute([$id]);
@@ -42,7 +42,7 @@ trait NotificationTrait
 
     public function markAllNotificationsRead(string $managerId): void
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "UPDATE notification SET read_at = NOW() WHERE receiver_id = ? AND read_at IS NULL"
         );
         $q->execute([$managerId]);
@@ -50,8 +50,8 @@ trait NotificationTrait
 
     public function createNotification(string $receiverId, string $title, ?string $message, ?string $senderId): string
     {
-        $id = $this->con_league->query("SELECT UUID()")->fetchColumn();
-        $q = $this->con_league->prepare(
+        $id = $this->con->query("SELECT UUID()")->fetchColumn();
+        $q = $this->con->prepare(
             "INSERT INTO notification (id, sender_id, receiver_id, title, message)
              VALUES (?, ?, ?, ?, ?)"
         );
@@ -64,7 +64,7 @@ trait NotificationTrait
     public function getNotificationPreferences(string $managerId): array
     {
         $defined = ['matchday_completed' => true, 'achievement_earned' => true, 'h2h_draw' => true];
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT event_type, enabled FROM notification_preference WHERE manager_id = ?"
         );
         $q->execute([$managerId]);
@@ -78,7 +78,7 @@ trait NotificationTrait
 
     public function setNotificationPreference(string $managerId, string $eventType, bool $enabled): void
     {
-        $this->con_league->prepare(
+        $this->con->prepare(
             "INSERT INTO notification_preference (manager_id, event_type, enabled)
              VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE enabled = VALUES(enabled)"
@@ -89,7 +89,7 @@ trait NotificationTrait
 
     public function createMatchdayCompletedNotifications(int $matchdayNumber): void
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT id FROM manager WHERE status = 'active'
              AND id NOT IN (
                  SELECT manager_id FROM notification_preference
@@ -101,7 +101,7 @@ trait NotificationTrait
 
         if (empty($managerIds)) return;
 
-        $insert = $this->con_league->prepare(
+        $insert = $this->con->prepare(
             "INSERT INTO notification (id, receiver_id, title, created_at)
              VALUES (UUID(), ?, ?, NOW())"
         );
@@ -113,7 +113,7 @@ trait NotificationTrait
 
     public function createAchievementNotification(string $managerId, string $achievementName, string $level, ?string $reason, ?string $earnedAt = null): void
     {
-        $pref = $this->con_league->prepare(
+        $pref = $this->con->prepare(
             "SELECT enabled FROM notification_preference
              WHERE manager_id = ? AND event_type = 'achievement_earned'"
         );
@@ -124,7 +124,7 @@ trait NotificationTrait
         $levelLabel = match ($level) { 'bronze' => ' (Bronze)', 'silver' => ' (Silber)', default => '' };
         $title = "Achievement: $achievementName$levelLabel";
         $createdAt = $earnedAt ?? date('Y-m-d H:i:s');
-        $this->con_league->prepare(
+        $this->con->prepare(
             "INSERT INTO notification (id, receiver_id, title, message, created_at)
              VALUES (UUID(), ?, ?, ?, ?)"
         )->execute([$managerId, $title, $reason, $createdAt]);

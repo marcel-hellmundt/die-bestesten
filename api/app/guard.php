@@ -46,6 +46,13 @@ class Guard
             $GLOBALS['auth_manager_id'] = $manager['id'];
             $GLOBALS['auth_roles']      = $manager['roles']; // array, e.g. ['maintainer', 'admin']
 
+            // Switch to the league DB from JWT (null = no active league)
+            $leagueId = $decoded->league_id ?? null;
+            $GLOBALS['auth_league_id'] = $leagueId;
+            if ($leagueId) {
+                $this->db->switchLeagueConnection($leagueId);
+            }
+
             $this->db->touchLastActivity($manager['id']);
 
             // 'manager' = any authenticated active manager; additional roles require explicit assignment
@@ -61,6 +68,7 @@ class Guard
                     'manager_name' => $manager['manager_name'],
                     'roles'        => $manager['roles'],
                     'status'       => $manager['status'],
+                    'league_id'    => $leagueId,
                     'iat'          => $now,
                     'exp'          => $now + (60 * 60 * 24 * 7),
                 ], $_ENV['JWT_SECRET'], 'HS256');

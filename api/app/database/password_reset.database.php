@@ -4,7 +4,7 @@ trait PasswordResetTrait
 {
     public function getManagerByEmail(string $email): array|false
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT id, manager_name, alias FROM manager WHERE email = :email AND status = 'active' LIMIT 1"
         );
         $q->execute([':email' => $email]);
@@ -14,7 +14,7 @@ trait PasswordResetTrait
     public function createPasswordResetToken(string $managerId): string
     {
         // Invalidate any existing unused tokens for this manager
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "UPDATE password_reset_token SET used = 1 WHERE manager_id = :manager_id AND used = 0"
         );
         $q->execute([':manager_id' => $managerId]);
@@ -23,7 +23,7 @@ trait PasswordResetTrait
         $tokenHash  = hash('sha256', $plainToken);
         $expiresAt  = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "INSERT INTO password_reset_token (manager_id, token_hash, expires_at)
              VALUES (:manager_id, :token_hash, :expires_at)"
         );
@@ -40,7 +40,7 @@ trait PasswordResetTrait
     {
         $tokenHash = hash('sha256', $plainToken);
 
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT id, manager_id FROM password_reset_token
              WHERE token_hash = :hash AND used = 0 AND expires_at > NOW() LIMIT 1"
         );
@@ -49,7 +49,7 @@ trait PasswordResetTrait
 
         if (!$row) return false;
 
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "UPDATE password_reset_token SET used = 1 WHERE id = :id"
         );
         $q->execute([':id' => $row['id']]);

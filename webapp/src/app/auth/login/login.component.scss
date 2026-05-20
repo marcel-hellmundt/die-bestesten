@@ -140,3 +140,37 @@
     color: $color-success;
   }
 }
+
+.league-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin-bottom: $space-4;
+
+  .league-list-item {
+    display: block;
+    width: 100%;
+    padding: $space-3 $space-4;
+    background: $color-surface-alt;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+    cursor: pointer;
+    text-align: left;
+    transition:
+      border-color $transition-fast,
+      background-color $transition-fast;
+
+    &:hover:not(:disabled) {
+      border-color: $color-accent;
+      background: $color-surface;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}

@@ -3,7 +3,7 @@ use \Firebase\JWT\JWT;
 
 class AuthController extends _BaseController
 {
-    public static array $methodRoles = ['POST' => 'guest'];
+    public static array $methodRoles = ['POST' => 'guest', 'GET' => 'guest'];
 
     protected function get(): mixed
     {
@@ -26,6 +26,10 @@ class AuthController extends _BaseController
 
         if ($this->id === 'password-reset') {
             return $this->handleReset();
+        }
+
+        if ($this->id === 'switch-league') {
+            return $this->handleSwitchLeague();
         }
 
         $body = $this->body();
@@ -54,18 +58,69 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Account wurde deaktiviert'];
         }
 
+        $leagues  = $this->db->getManagerLeagues($manager['id']);
+        $leagueId = count($leagues) === 1 ? $leagues[0]['id'] : null;
+
         $now = time();
         $payload = [
             'sub'          => $manager['id'],
             'manager_name' => $manager['manager_name'],
-            'roles'        => $manager['roles'], // array, e.g. ['maintainer', 'admin']
+            'roles'        => $manager['roles'],
             'status'       => $manager['status'],
+            'league_id'    => $leagueId,
             'iat'          => $now,
             'exp'          => $now + (60 * 60 * 24 * 7),
         ];
 
         $token = JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');
-        return ['token' => $token];
+        return ['token' => $token, 'leagues' => $leagues, 'league_id' => $leagueId];
+    }
+
+    private function handleSwitchLeague(): array
+    {
+        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        if (!$header) {
+            http_response_code(401);
+            return ['status' => false, 'message' => 'Authorization Token nicht gesendet'];
+        }
+        try {
+            $decoded = \Firebase\JWT\JWT::decode(
+                substr($header, 7),
+                new \Firebase\JWT\Key($_ENV['JWT_SECRET'], 'HS256')
+            );
+        } catch (\Exception $e) {
+            http_response_code(401);
+            return ['status' => false, 'message' => 'Ungültiger Token'];
+        }
+
+        $managerId = $decoded->sub;
+        $leagueId  = $this->body()['league_id'] ?? null;
+
+        if (!$leagueId) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'league_id fehlt'];
+        }
+
+        if (!$this->db->isManagerInLeague($managerId, $leagueId)) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Kein Zugang zu dieser Liga'];
+        }
+
+        $manager = $this->db->getAuthManagerById($managerId);
+
+        $now = time();
+        $payload = [
+            'sub'          => $manager['id'],
+            'manager_name' => $manager['manager_name'],
+            'roles'        => $manager['roles'],
+            'status'       => $manager['status'],
+            'league_id'    => $leagueId,
+            'iat'          => $now,
+            'exp'          => $now + (60 * 60 * 24 * 7),
+        ];
+
+        $token = JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');
+        return ['token' => $token, 'league_id' => $leagueId];
     }
 
     private function handleResetRequest(): array

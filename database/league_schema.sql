@@ -1,52 +1,16 @@
 -- Liga-spezifische Datenbank Schema
--- Enthält Tabellen für manager, team, transaction, team_rating, team_lineup, player_in_team
-
-CREATE TABLE IF NOT EXISTS manager (
-    id            CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
-    manager_name  VARCHAR(64)  NOT NULL UNIQUE,
-    first_name    VARCHAR(100) NULL DEFAULT NULL,
-    alias         VARCHAR(64)  NULL DEFAULT NULL UNIQUE,
-    password      VARCHAR(255) NOT NULL,
-    status        ENUM('active', 'blocked', 'deleted') NOT NULL DEFAULT 'active',
-    email         VARCHAR(255) NULL UNIQUE,
-    date_of_birth DATE         NULL,
-    last_activity DATETIME     NULL DEFAULT NULL
-);
-
--- Zusätzliche Rollen pro Manager (additiv; jeder Manager hat implizit die Basisrolle 'manager')
-CREATE TABLE IF NOT EXISTS manager_role (
-    id         CHAR(36)                        NOT NULL DEFAULT (UUID()) PRIMARY KEY,
-    manager_id CHAR(36)                        NOT NULL,
-    role       ENUM('maintainer', 'admin')     NOT NULL,
-    UNIQUE KEY uk_manager_role (manager_id, role),
-    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
-);
-
--- Migration bestehender Rollen (einmalig ausführen, wenn role-Spalte noch existiert):
--- INSERT INTO manager_role (manager_id, role) SELECT id, 'maintainer' FROM manager WHERE role IN ('maintainer', 'admin');
--- INSERT INTO manager_role (manager_id, role) SELECT id, 'admin'      FROM manager WHERE role = 'admin';
--- ALTER TABLE manager DROP COLUMN role;
-
-CREATE TABLE IF NOT EXISTS password_reset_token (
-    id         CHAR(36)    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
-    manager_id CHAR(36)    NOT NULL,
-    token_hash VARCHAR(64) NOT NULL UNIQUE,
-    expires_at DATETIME    NOT NULL,
-    used       TINYINT(1)  NOT NULL DEFAULT 0,
-    created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (manager_id) REFERENCES manager(id)
-);
+-- Enthält Tabellen für team, transaction, team_rating, team_lineup, player_in_team
+-- manager und verwandte Tabellen (manager_role, notification, etc.) sind in global_schema
 
 -- Tabelle: team (1 Team pro Manager pro Saison)
 CREATE TABLE IF NOT EXISTS team (
-    id           CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    manager_id   CHAR(36)     NOT NULL,
-    season_id    CHAR(36)     NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
-    team_name    VARCHAR(100) NOT NULL,
-    color_primary        VARCHAR(50)  DEFAULT NULL,         -- Logische Referenz auf global_schema.color.name (kein FK, cross-DB), z.B. 'red'
-    color_secondary      VARCHAR(50)  DEFAULT NULL,         -- Logische Referenz auf global_schema.color.name (kein FK, cross-DB)
-    created_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (manager_id) REFERENCES manager(id),
+    id              CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id      CHAR(36)     NOT NULL,             -- Referenz auf global_schema.manager.id (kein FK, cross-DB)
+    season_id       CHAR(36)     NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
+    team_name       VARCHAR(100) NOT NULL,
+    color_primary   VARCHAR(50)  DEFAULT NULL,         -- Logische Referenz auf global_schema.color.name (kein FK, cross-DB)
+    color_secondary VARCHAR(50)  DEFAULT NULL,         -- Logische Referenz auf global_schema.color.name (kein FK, cross-DB)
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uk_team_manager_season (manager_id, season_id),
     UNIQUE KEY uk_team_name_season (team_name, season_id)
 );
@@ -138,34 +102,6 @@ CREATE TABLE IF NOT EXISTS player_in_team (
     UNIQUE KEY uk_player_from (player_id, team_id, from_matchday_id)  -- kein Doppelkauf desselben Teams in derselben Transferphase
 );
 
--- Tabelle: maintainer_contribution (Tracking welcher Maintainer Aufstellung/Noten eingetragen hat)
--- player_rating_id ist Cross-DB-Referenz auf global_schema.player_rating.id (kein FK)
-CREATE TABLE IF NOT EXISTS maintainer_contribution (
-    id                CHAR(36)                                       NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    manager_id        CHAR(36)                                       NOT NULL,
-    player_rating_id  CHAR(36)                                       NOT NULL,
-    contribution_type ENUM('bulk_create', 'manual_create', 'grade') NOT NULL,
-    created_at        DATETIME                                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
-    UNIQUE KEY uk_contribution (player_rating_id, contribution_type)
-);
-
--- Tabelle: manager_achievement (welcher Manager hat welche Errungenschaft verdient)
-CREATE TABLE IF NOT EXISTS manager_achievement (
-    id             CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    manager_id     CHAR(36)     NOT NULL,
-    achievement_id CHAR(36)     NOT NULL,  -- Referenz auf global_schema.achievement.id (kein FK, cross-DB)
-    earned_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    reason         VARCHAR(255) NULL DEFAULT NULL,
-    seen_at        DATETIME     NULL DEFAULT NULL,
-    level          ENUM('bronze', 'silver', 'gold') NOT NULL DEFAULT 'gold',
-    FOREIGN KEY (manager_id) REFERENCES manager(id),
-    UNIQUE KEY uk_manager_achievement (manager_id, achievement_id)
-);
-
-ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS reason VARCHAR(255) NULL DEFAULT NULL;
-ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS seen_at DATETIME NULL DEFAULT NULL;
-ALTER TABLE manager_achievement ADD COLUMN IF NOT EXISTS level ENUM('bronze', 'silver', 'gold') NOT NULL DEFAULT 'gold';
 
 ALTER TABLE team_rating ADD COLUMN IF NOT EXISTS red_cards INT DEFAULT NULL;
 ALTER TABLE team_rating ADD COLUMN IF NOT EXISTS yellow_red_cards INT DEFAULT NULL AFTER red_cards;
@@ -180,26 +116,6 @@ CREATE TABLE IF NOT EXISTS team_award (
     UNIQUE KEY uk_team_award (award_id, team_id)  -- ein Team kann denselben Award nicht zweimal gewinnen
 );
 
--- Tabelle: notification (In-App-Benachrichtigungen zwischen Managern oder Systemmeldungen)
-CREATE TABLE IF NOT EXISTS notification (
-    id          CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
-    sender_id   CHAR(36)     NULL DEFAULT NULL,          -- NULL = Systemnachricht
-    receiver_id CHAR(36)     NOT NULL,
-    title       VARCHAR(255) NOT NULL,
-    message     TEXT         NULL,
-    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    read_at     DATETIME     NULL DEFAULT NULL,
-    FOREIGN KEY (receiver_id) REFERENCES manager(id) ON DELETE CASCADE
-);
-
--- Tabelle: notification_preference (Manager-Einstellungen welche Events Notifications auslösen)
-CREATE TABLE IF NOT EXISTS notification_preference (
-    manager_id  CHAR(36)     NOT NULL,
-    event_type  VARCHAR(50)  NOT NULL,
-    enabled     BOOL         NOT NULL DEFAULT 1,
-    PRIMARY KEY (manager_id, event_type),
-    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
-);
 
 CREATE TABLE IF NOT EXISTS team_watchlist (
     id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),

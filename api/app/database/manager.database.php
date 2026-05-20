@@ -4,7 +4,7 @@ trait ManagerTrait
 {
     public function getManagerById(string $id): array|false
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT id, manager_name, first_name, alias, status, email FROM manager WHERE id = :id LIMIT 1"
         );
         $q->execute([':id' => $id]);
@@ -15,21 +15,21 @@ trait ManagerTrait
 
     public function updateManagerFirstName(string $id, ?string $firstName): void
     {
-        $this->con_league->prepare(
+        $this->con->prepare(
             "UPDATE manager SET first_name = :first_name WHERE id = :id"
         )->execute([':first_name' => $firstName, ':id' => $id]);
     }
 
     public function getManagerRoles(string $managerId): array
     {
-        $q = $this->con_league->prepare("SELECT role FROM manager_role WHERE manager_id = :id");
+        $q = $this->con->prepare("SELECT role FROM manager_role WHERE manager_id = :id");
         $q->execute([':id' => $managerId]);
         return $q->fetchAll(PDO::FETCH_COLUMN);
     }
 
     public function addManagerRole(string $managerId, string $role): void
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "INSERT IGNORE INTO manager_role (manager_id, role) VALUES (:manager_id, :role)"
         );
         $q->execute([':manager_id' => $managerId, ':role' => $role]);
@@ -37,7 +37,7 @@ trait ManagerTrait
 
     public function removeManagerRole(string $managerId, string $role): void
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "DELETE FROM manager_role WHERE manager_id = :manager_id AND role = :role"
         );
         $q->execute([':manager_id' => $managerId, ':role' => $role]);
@@ -45,7 +45,7 @@ trait ManagerTrait
 
     public function setManagerRoles(string $managerId, array $roles): void
     {
-        $this->con_league->prepare("DELETE FROM manager_role WHERE manager_id = :id")
+        $this->con->prepare("DELETE FROM manager_role WHERE manager_id = :id")
             ->execute([':id' => $managerId]);
         foreach ($roles as $role) {
             $this->addManagerRole($managerId, $role);
@@ -54,7 +54,7 @@ trait ManagerTrait
 
     public function getManagerWithTeams(string $id): array|false
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT id, manager_name, alias, status FROM manager WHERE id = :id LIMIT 1"
         );
         $q->execute([':id' => $id]);
@@ -212,7 +212,7 @@ trait ManagerTrait
         }
 
         // Achievements: earned by this manager
-        $earnedQ = $this->con_league->prepare(
+        $earnedQ = $this->con->prepare(
             "SELECT achievement_id, reason, level FROM manager_achievement WHERE manager_id = ?"
         );
         $earnedQ->execute([$id]);
@@ -532,7 +532,7 @@ trait ManagerTrait
 
     public function updateManagerPassword(string $id, string $hashedPassword): bool
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "UPDATE manager SET password = :password WHERE id = :id"
         );
         $q->execute([':password' => $hashedPassword, ':id' => $id]);
@@ -541,7 +541,7 @@ trait ManagerTrait
 
     public function updateManagerEmail(string $id, ?string $email): bool
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "UPDATE manager SET email = :email WHERE id = :id"
         );
         $q->execute([':email' => $email, ':id' => $id]);
@@ -550,7 +550,7 @@ trait ManagerTrait
 
     public function markManagerDeleted(string $id): void
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "UPDATE manager SET status = 'deleted' WHERE id = :id"
         );
         $q->execute([':id' => $id]);

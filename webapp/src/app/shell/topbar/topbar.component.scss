@@ -290,6 +290,106 @@
   }
 }
 
+// Liga-Switcher
+
+.topbar-league {
+  position: relative;
+
+  .league-btn {
+    display: flex;
+    align-items: center;
+    gap: $space-1;
+    height: $control-height;
+    padding: 0 $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    color: $color-text;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition:
+      border-color $transition-fast,
+      background-color $transition-fast;
+    white-space: nowrap;
+    max-width: 180px;
+
+    &:hover:not(:disabled) {
+      border-color: $color-accent;
+    }
+
+    &--open {
+      border-color: $color-accent;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .league-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .league-chevron {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      color: $color-text-muted;
+    }
+
+    @media (max-width: #{$mobile-breakpoint}) {
+      max-width: 120px;
+      padding: 0 $space-2;
+    }
+  }
+
+  .league-dropdown {
+    position: absolute;
+    top: calc(100% + $space-2);
+    left: 0;
+    min-width: 180px;
+    background: $color-surface;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+    padding: $space-2;
+    z-index: $z-dropdown;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+    .league-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: $space-2 $space-3;
+      border-radius: $radius-md;
+      font-size: $font-sm;
+      color: $color-text;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background-color $transition-fast;
+
+      &:hover {
+        background: $color-surface-alt;
+      }
+
+      &--active {
+        color: $color-accent;
+        font-weight: $font-weight-medium;
+      }
+
+      .league-check {
+        width: 14px;
+        height: 14px;
+        color: $color-accent;
+      }
+    }
+  }
+}
+
 // Search overlay
 
 .search-overlay {

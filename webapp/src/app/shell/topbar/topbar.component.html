@@ -126,6 +126,38 @@
     </div>
   </div>
 
+  @if (leagues().length > 1) {
+    <div class="topbar-league">
+      <button
+        class="league-btn"
+        [class.league-btn--open]="isLeagueDropdownOpen()"
+        (click)="toggleLeagueDropdown($event)"
+        [disabled]="leagueSwitching()"
+        aria-label="Liga wechseln"
+      >
+        <span class="league-name">{{ activeLeagueName() ?? '—' }}</span>
+        <app-icon name="chevron-down" class="league-chevron"></app-icon>
+      </button>
+
+      @if (isLeagueDropdownOpen()) {
+        <div class="league-dropdown">
+          @for (league of leagues(); track league.id) {
+            <button
+              class="league-item"
+              [class.league-item--active]="league.id === activeLeagueId()"
+              (click)="switchLeague(league.id)"
+            >
+              {{ league.name }}
+              @if (league.id === activeLeagueId()) {
+                <app-icon name="check" class="league-check"></app-icon>
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+
   <div class="topbar-right">
     <button
       class="topbar-icon-btn topbar-bell"
@@ -201,6 +233,10 @@
 
 @if (isDropdownOpen()) {
   <div class="dropdown-backdrop" (click)="closeDropdown()"></div>
+}
+
+@if (isLeagueDropdownOpen()) {
+  <div class="dropdown-backdrop" (click)="closeLeagueDropdown()"></div>
 }
 
 @if (isSearchOpen()) {
