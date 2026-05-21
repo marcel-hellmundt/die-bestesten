@@ -45,6 +45,13 @@ trait H2HTrait
 
         $allMatches = array_merge($groupMatches, $koMatches);
 
+        // Normalize phase values: production DB may store ENUM as ucs2/utf16,
+        // causing null bytes (\0g\0r\0o\0u\0p) that break PHP string comparisons.
+        foreach ($allMatches as &$m) {
+            $m['phase'] = str_replace("\0", '', $m['phase']);
+        }
+        unset($m);
+
         // Collect all team_ids and matchday_ids referenced
         $allTeamIds     = [];
         $allMatchdayIds = [];
@@ -285,6 +292,7 @@ trait H2HTrait
         $mq->execute([':id' => $matchId]);
         $match = $mq->fetch(PDO::FETCH_ASSOC);
         if (!$match) return false;
+        $match['phase'] = str_replace("\0", '', $match['phase']);
 
         // Load both teams
         $tq = $this->con_league->prepare(
