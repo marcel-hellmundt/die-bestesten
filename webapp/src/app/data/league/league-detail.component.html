@@ -1,0 +1,143 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (league()) {
+  <div class="detail-bar">
+    <button class="back-btn" (click)="back()">← Ligen</button>
+    <span class="detail-title">{{ league().name }}</span>
+  </div>
+  <p class="detail-meta">
+    <span class="mono">{{ league().slug }}</span> ·
+    <span class="mono">{{ league().db_name }}</span> ·
+    {{ league().manager_count }} Manager
+  </p>
+
+  @if (isAdmin()) {
+    <div class="admin-actions">
+      @if (migrateState() === 'success') {
+        <span class="state-msg">Migriert</span>
+      } @else if (migrateState() === 'error') {
+        <span class="state-msg state-msg--error">Fehler beim Migrieren</span>
+      } @else {
+        <button
+          class="btn btn-sm"
+          [disabled]="migrateState() === 'loading'"
+          (click)="migrate()"
+        >{{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}</button>
+      }
+      <button
+        class="btn btn-sm btn-ghost"
+        [disabled]="validateState() === 'loading'"
+        (click)="validate()"
+      >{{ validateState() === 'loading' ? 'Prüft…' : 'Prüfen' }}</button>
+    </div>
+  }
+
+  <div class="season-list">
+    @for (sg of seasonGroups(); track sg.seasonId) {
+      <div
+        class="season-row"
+        [class.season-row--open]="expandedSeasonId() === sg.seasonId"
+        (click)="toggleSeason(sg.seasonId)"
+      >
+        <span class="season-name">{{ cache.seasonName(sg.seasonId) }}</span>
+        <span class="season-count">{{ sg.teams.length }} Teams</span>
+      </div>
+      @if (expandedSeasonId() === sg.seasonId) {
+        <div class="season-expand">
+          <table class="data-table data-table--compact">
+            <tbody>
+              @for (team of sg.teams; track team.id) {
+                <tr>
+                  <td>
+                    <span class="team-name-cell">
+                      <span class="team-color-dot" [style.background]="team.color"></span>
+                      {{ team.team_name }}
+                    </span>
+                  </td>
+                  <td class="col-muted">{{ team.manager_name }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+    @if (seasonGroups().length === 0) {
+      <p class="state-msg">Keine Teams vorhanden</p>
+    }
+  </div>
+
+  @if (validateState() === 'done' && validateResult(); as vr) {
+    <div class="validate-result">
+      <span class="validate-summary">
+        {{ vr.checked }} Einträge geprüft —
+        @if (vr.mismatches.length === 0) {
+          <span class="validate-ok">Alles korrekt</span>
+        } @else {
+          <span class="validate-warn">{{ vr.mismatches.length }} Abweichungen</span>
+        }
+      </span>
+      @if (vr.mismatches.length > 0) {
+        @for (season of groupedMismatches(vr.mismatches); track season.seasonId) {
+          <div class="validate-season">
+            <span class="validate-season-header">{{ cache.seasonName(season.seasonId) }}</span>
+            @for (group of season.matchdays; track group.matchdayNumber) {
+              <div class="validate-group">
+                <span class="validate-group-header">Spieltag {{ group.matchdayNumber }}</span>
+                <table class="data-table data-table--compact validate-table">
+                  <thead>
+                    <tr>
+                      <th>Team</th>
+                      <th>Manager</th>
+                      <th>Abweichungen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (mm of group.items; track mm.team_name) {
+                      <tr>
+                        <td>{{ mm.team_name }}</td>
+                        <td>{{ mm.manager_name }}</td>
+                        <td class="validate-fields">
+                          @for (entry of mm.fields | keyvalue; track entry.key) {
+                            <button
+                              class="validate-field"
+                              [class.validate-field--critical]="entry.key === 'points'"
+                              [class.validate-field--minor]="entry.key !== 'points'"
+                              [class.validate-field--fixing]="isFixing(mm, $any(entry.key))"
+                              [disabled]="isFixing(mm, $any(entry.key))"
+                              (click)="fixField(mm, $any(entry.key), entry.value.calculated)"
+                              title="Auf {{ entry.value.calculated }} korrigieren"
+                            >{{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}</button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  } @else if (validateState() === 'error') {
+    <p class="state-msg state-msg--error">Fehler beim Prüfen</p>
+  }
+
+  @if (migrateState() === 'success') {
+    @if (createdMatchdays().length > 0) {
+      <div class="migrate-skipped">
+        <span class="migrate-skipped__title">{{ createdMatchdays().length }} fehlende Spieltage automatisch angelegt</span>
+        <ul class="migrate-skipped__list">
+          @for (entry of createdMatchdays(); track entry.season_id + entry.matchday_number) {
+            <li>{{ cache.seasonName(entry.season_id) }} · Spieltag {{ entry.matchday_number }}</li>
+          }
+        </ul>
+      </div>
+    } @else {
+      <p class="migrate-ok">Alle team_ratings erfolgreich migriert.</p>
+    }
+  }
+}

@@ -18,158 +18,20 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th class="col-id">ID</th>
           <th>Name</th>
           <th>Slug</th>
           <th>Datenbank</th>
           <th class="col-num">Manager</th>
-          @if (isAdmin()) { <th></th> }
         </tr>
       </thead>
       <tbody>
         @for (item of filteredItems(); track item.id) {
-          <tr
-            class="row-link"
-            [class.row--selected]="expandedId() === item.id"
-            (click)="toggleLeague(item)"
-          >
-            <td class="col-id">{{ item.id }}</td>
+          <tr class="row-link" (click)="open(item)">
             <td>{{ item.name }}</td>
             <td class="col-slug">{{ item.slug }}</td>
             <td class="col-slug">{{ item.db_name }}</td>
             <td class="col-num">{{ item.manager_count }}</td>
-            @if (isAdmin()) {
-              <td class="col-action col-action--multi" (click)="$event.stopPropagation()">
-                @if (migrateState(item.id) === 'success') {
-                  <span class="state-msg">Migriert</span>
-                } @else if (migrateState(item.id) === 'error') {
-                  <span class="state-msg state-msg--error">Fehler</span>
-                } @else {
-                  <button
-                    class="btn btn-sm"
-                    [disabled]="migrateState(item.id) === 'loading'"
-                    (click)="migrate(item)"
-                  >{{ migrateState(item.id) === 'loading' ? 'Läuft…' : 'Migrieren' }}</button>
-                }
-                <button
-                  class="btn btn-sm btn-ghost"
-                  [disabled]="validateState(item.id) === 'loading'"
-                  (click)="validate(item)"
-                >{{ validateState(item.id) === 'loading' ? 'Prüft…' : 'Prüfen' }}</button>
-              </td>
-            }
           </tr>
-          @if (expandedId() === item.id) {
-            <tr class="expand-row">
-              <td [colSpan]="isAdmin() ? 6 : 5">
-                <div class="league-expand">
-                  @if (teamsLoading()[item.id]) {
-                    <p class="state-msg">Laden…</p>
-                  } @else if (teams(item.id).length === 0) {
-                    <p class="state-msg">Keine Teams</p>
-                  } @else {
-                    <table class="data-table data-table--compact">
-                      <thead>
-                        <tr>
-                          <th>Team</th>
-                          <th>Manager</th>
-                          <th>Saison</th>
-                          <th class="col-num">Punkte</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (team of teams(item.id); track team.id) {
-                          <tr>
-                            <td>
-                              <span class="team-name-cell">
-                                <span class="team-color-dot" [style.background]="team.color"></span>
-                                {{ team.team_name }}
-                              </span>
-                            </td>
-                            <td class="col-muted">{{ team.manager_name }}</td>
-                            <td class="col-muted">{{ cache.seasonName(team.season_id) }}</td>
-                            <td class="col-num">{{ team.total_points }}</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  }
-
-                  @if (validateState(item.id) === 'done' && validateResult(item.id); as vr) {
-                    <div class="validate-result">
-                      <span class="validate-summary">
-                        {{ vr.checked }} Einträge geprüft —
-                        @if (vr.mismatches.length === 0) {
-                          <span class="validate-ok">Alles korrekt</span>
-                        } @else {
-                          <span class="validate-warn">{{ vr.mismatches.length }} Abweichungen</span>
-                        }
-                      </span>
-                      @if (vr.mismatches.length > 0) {
-                        @for (season of groupedMismatches(vr.mismatches); track season.seasonId) {
-                          <div class="validate-season">
-                            <span class="validate-season-header">{{ cache.seasonName(season.seasonId) }}</span>
-                            @for (group of season.matchdays; track group.matchdayNumber) {
-                              <div class="validate-group">
-                                <span class="validate-group-header">Spieltag {{ group.matchdayNumber }}</span>
-                                <table class="data-table data-table--compact validate-table">
-                                  <thead>
-                                    <tr>
-                                      <th>Team</th>
-                                      <th>Manager</th>
-                                      <th>Abweichungen</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    @for (mm of group.items; track mm.team_name) {
-                                      <tr>
-                                        <td>{{ mm.team_name }}</td>
-                                        <td>{{ mm.manager_name }}</td>
-                                        <td class="validate-fields">
-                                          @for (entry of mm.fields | keyvalue; track entry.key) {
-                                            <button
-                                              class="validate-field"
-                                              [class.validate-field--critical]="entry.key === 'points'"
-                                              [class.validate-field--minor]="entry.key !== 'points'"
-                                              [class.validate-field--fixing]="isFixing(item.id, mm, $any(entry.key))"
-                                              [disabled]="isFixing(item.id, mm, $any(entry.key))"
-                                              (click)="fixField(item.id, mm, $any(entry.key), entry.value.calculated)"
-                                              title="Auf {{ entry.value.calculated }} korrigieren"
-                                            >{{ entry.key }}: {{ entry.value.stored }} → {{ entry.value.calculated }}</button>
-                                          }
-                                        </td>
-                                      </tr>
-                                    }
-                                  </tbody>
-                                </table>
-                              </div>
-                            }
-                          </div>
-                        }
-                      }
-                    </div>
-                  } @else if (validateState(item.id) === 'error') {
-                    <p class="state-msg state-msg--error">Fehler beim Prüfen</p>
-                  }
-
-                  @if (migrateState(item.id) === 'success') {
-                    @if (createdMatchdays(item.id).length > 0) {
-                      <div class="migrate-skipped">
-                        <span class="migrate-skipped__title">{{ createdMatchdays(item.id).length }} fehlende Spieltage automatisch angelegt</span>
-                        <ul class="migrate-skipped__list">
-                          @for (entry of createdMatchdays(item.id); track entry.season_id + entry.matchday_number) {
-                            <li>{{ cache.seasonName(entry.season_id) }} · Spieltag {{ entry.matchday_number }}</li>
-                          }
-                        </ul>
-                      </div>
-                    } @else {
-                      <p class="migrate-ok">Alle team_ratings erfolgreich migriert.</p>
-                    }
-                  }
-                </div>
-              </td>
-            </tr>
-          }
         }
       </tbody>
     </table>

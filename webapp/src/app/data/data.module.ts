@@ -16,8 +16,8 @@ import { PlayerDataComponent } from './player/player.component';
 import { PlayerDetailComponent } from './player/player-detail.component';
 import { RatingsDataComponent } from './ratings/ratings.component';
 import { LeagueDataComponent } from './league/league.component';
+import { LeagueDetailComponent } from './league/league-detail.component';
 import { AchievementsDataComponent } from './achievements/achievements-data.component';
-import { H2HDataComponent } from './h2h/h2h-data.component';
 import { ManagerDataComponent } from './manager/manager-data.component';
 
 const M = [MaintainerGuard];
@@ -33,6 +33,7 @@ const routes: Routes = [
       { path: 'division',     component: DivisionDataComponent,   canActivate: M },
       { path: 'division/:id', component: DivisionDetailComponent, canActivate: M },
       { path: 'league',       component: LeagueDataComponent,     canActivate: M },
+      { path: 'league/:id',   component: LeagueDetailComponent,   canActivate: M },
       { path: 'club',         component: ClubDataComponent,       canActivate: M },
       { path: 'club/:id',     component: ClubDetailComponent,     canActivate: M },
       { path: 'season',       component: SeasonDataComponent,     canActivate: M },
@@ -40,7 +41,6 @@ const routes: Routes = [
       // player routes: no MaintainerGuard — managers may get read access here later
       { path: 'player',        component: PlayerDataComponent },
       { path: 'player/:id',    component: PlayerDetailComponent },
-      { path: 'h2h',           component: H2HDataComponent,          canActivate: M },
       { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
       { path: 'manager',       component: ManagerDataComponent,      canActivate: M },
     ]
@@ -62,8 +62,8 @@ const routes: Routes = [
     PlayerDetailComponent,
     RatingsDataComponent,
     LeagueDataComponent,
+    LeagueDetailComponent,
     AchievementsDataComponent,
-    H2HDataComponent,
     ManagerDataComponent,
   ],
   imports: [
