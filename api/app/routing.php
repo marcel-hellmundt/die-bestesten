@@ -572,6 +572,11 @@ class Routing
                 'endpoints' => [
                     [
                         'method' => 'GET',
+                        'path' => '/manager',
+                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, roles[], leagues[{id,name}]}] — Admin',
+                    ],
+                    [
+                        'method' => 'GET',
                         'path' => '/manager/me',
                         'description' => 'Eigenes Profil abrufen (id, manager_name, alias, roles[], status)',
                     ],

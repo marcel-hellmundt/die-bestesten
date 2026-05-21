@@ -11,6 +11,11 @@ class ManagerController extends _BaseController
 
     protected function get(): mixed
     {
+        if (!$this->id) {
+            if (!$this->isAdmin()) { http_response_code(403); return ['status' => false, 'message' => 'Forbidden']; }
+            return $this->db->getAllManagers();
+        }
+
         if ($this->id === 'me') {
             $manager = $this->db->getManagerById($GLOBALS['auth_manager_id']);
             if (!$manager) {

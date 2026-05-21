@@ -18,6 +18,7 @@ import { RatingsDataComponent } from './ratings/ratings.component';
 import { LeagueDataComponent } from './league/league.component';
 import { AchievementsDataComponent } from './achievements/achievements-data.component';
 import { H2HDataComponent } from './h2h/h2h-data.component';
+import { ManagerDataComponent } from './manager/manager-data.component';
 
 const M = [MaintainerGuard];
 
@@ -41,6 +42,7 @@ const routes: Routes = [
       { path: 'player/:id',    component: PlayerDetailComponent },
       { path: 'h2h',           component: H2HDataComponent,          canActivate: M },
       { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
+      { path: 'manager',       component: ManagerDataComponent,      canActivate: M },
     ]
   }
 ];
@@ -62,6 +64,7 @@ const routes: Routes = [
     LeagueDataComponent,
     AchievementsDataComponent,
     H2HDataComponent,
+    ManagerDataComponent,
   ],
   imports: [
     CommonModule,

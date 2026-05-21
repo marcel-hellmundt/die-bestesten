@@ -26,7 +26,7 @@ trait LeagueTrait
         $leagues = $query->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($leagues as &$league) {
-            $league['manager_count'] = $this->getLeagueManagerCount($league['db_name']);
+            $league['manager_count'] = $this->getLeagueManagerCount($league['id']);
         }
 
         return $leagues;
@@ -38,8 +38,8 @@ trait LeagueTrait
         $query->execute([':id' => $id]);
         $league = $query->fetch(PDO::FETCH_ASSOC);
         if ($league) {
-            $league['manager_count'] = $this->getLeagueManagerCount($league['db_name']);
-            $league['managers']      = $this->getLeagueManagerList($league['db_name']);
+            $league['manager_count'] = $this->getLeagueManagerCount($id);
+            $league['teams']         = $this->getLeagueTeamList($league['db_name']);
         }
         return $league;
     }
@@ -895,44 +895,31 @@ trait LeagueTrait
         return ['status' => true];
     }
 
-    private function getLeagueManagerCount(string $dbName): int
+    private function getLeagueManagerCount(string $leagueId): int
     {
-        try {
-            $pdo = $this->openLeagueConnection($dbName);
-            if (!$pdo) return 0;
-            return (int) $pdo->query("SELECT COUNT(*) FROM manager")->fetchColumn();
-        } catch (PDOException) {
-            return 0;
-        }
+        $q = $this->con->prepare("SELECT COUNT(*) FROM manager_league WHERE league_id = ?");
+        $q->execute([$leagueId]);
+        return (int) $q->fetchColumn();
     }
 
-    private function getLeagueManagerList(string $dbName): array
+    private function getLeagueTeamList(string $dbName): array
     {
         try {
             $pdo = $this->openLeagueConnection($dbName);
             if (!$pdo) return [];
             $rows = $pdo->query(
-                "SELECT m.id, m.manager_name, m.alias, m.status,
-                        GROUP_CONCAT(mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv,
-                        (SELECT SUM(mc.contribution_type IN ('bulk_create','manual_create'))
-                         FROM maintainer_contribution mc WHERE mc.manager_id = m.id) AS contributions_lineup,
-                        (SELECT SUM(mc.contribution_type = 'grade')
-                         FROM maintainer_contribution mc WHERE mc.manager_id = m.id) AS contributions_grade
-                 FROM manager m
-                 LEFT JOIN manager_role mr ON mr.manager_id = m.id
-                 GROUP BY m.id
-                 ORDER BY
-                     CASE WHEN MAX(mr.role = 'admin')      = 1 THEN 0
-                          WHEN MAX(mr.role = 'maintainer') = 1 THEN 1
-                          ELSE 2 END ASC,
-                     m.manager_name ASC"
+                "SELECT t.id, t.team_name, t.color_primary AS color, t.season_id, t.manager_id,
+                        m.manager_name,
+                        COALESCE(SUM(tr.points), 0) AS total_points
+                 FROM team t
+                 JOIN manager m ON m.id = t.manager_id
+                 LEFT JOIN team_rating tr ON tr.team_id = t.id
+                 GROUP BY t.id, t.team_name, t.color_primary, t.season_id, t.manager_id, m.manager_name
+                 ORDER BY t.season_id DESC, t.team_name ASC"
             )->fetchAll(\PDO::FETCH_ASSOC);
-
             foreach ($rows as &$row) {
-                $row['roles']                  = $row['roles_csv'] ? explode(',', $row['roles_csv']) : [];
-                $row['contributions_lineup']   = (int) $row['contributions_lineup'];
-                $row['contributions_grade']    = (int) $row['contributions_grade'];
-                unset($row['roles_csv']);
+                $row['total_points'] = (int) $row['total_points'];
+                $row['color']        = $this->resolveColor($row['color'] ?? null);
             }
             return $rows;
         } catch (\PDOException) {

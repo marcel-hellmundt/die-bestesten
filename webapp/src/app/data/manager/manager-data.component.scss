@@ -1,0 +1,112 @@
+@use '../../../styles/variables' as *;
+
+.col-muted {
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.col-roles {
+  white-space: nowrap;
+}
+
+.col-leagues {
+  max-width: 220px;
+}
+
+.manager-name-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.manager-avatar {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: $color-border;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  &__initials {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    pointer-events: none;
+    line-height: 1;
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px $space-2;
+  border-radius: $radius-full;
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+
+  &--active  { background: color-mix(in srgb, $color-success 15%, transparent); color: $color-success; }
+  &--blocked { background: color-mix(in srgb, $color-danger  15%, transparent); color: $color-danger; }
+  &--deleted { background: $color-surface-alt; color: $color-text-muted; }
+}
+
+.role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 2px $space-2;
+  border-radius: $radius-full;
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+  border: none;
+  background: none;
+  cursor: default;
+
+  &--admin      { background: color-mix(in srgb, var(--flat-river)    18%, transparent); color: var(--flat-river); }
+  &--maintainer { background: color-mix(in srgb, var(--flat-emerald)  18%, transparent); color: var(--flat-emerald); }
+  &--manager    { background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent); color: var(--flat-alizarin); }
+
+  &--inactive {
+    background: $color-surface;
+    color: $color-text-muted;
+    border: 1px dashed $color-border;
+  }
+}
+
+button.role-badge {
+  cursor: pointer;
+  transition: opacity $transition-fast, filter $transition-fast;
+
+  &:not(.role-badge--inactive):hover { filter: brightness(1.1); }
+  &.role-badge--inactive:hover { background: $color-surface-alt; color: $color-text; }
+  &:disabled { opacity: 0.5; cursor: wait; }
+}
+
+.league-tag {
+  display: inline-block;
+  padding: 2px $space-2;
+  background: $color-surface-alt;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  & + & {
+    margin-left: 4px;
+  }
+}

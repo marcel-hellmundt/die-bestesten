@@ -5,7 +5,6 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { League } from '../../core/models/league.model';
-import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
 
 @Component({
   selector: 'app-data-league',
@@ -45,9 +44,9 @@ export class LeagueDataComponent {
     );
   });
 
-  expandedId = signal<string | null>(null);
-  managersCache = signal<Record<string, any[]>>({});
-  managersLoading = signal<Record<string, boolean>>({});
+  expandedId   = signal<string | null>(null);
+  teamsCache   = signal<Record<string, any[]>>({});
+  teamsLoading = signal<Record<string, boolean>>({});
 
   toggleLeague(league: League): void {
     if (this.expandedId() === league.id) {
@@ -55,71 +54,27 @@ export class LeagueDataComponent {
       return;
     }
     this.expandedId.set(league.id);
-    if (this.managersCache()[league.id]) return;
+    if (this.teamsCache()[league.id]) return;
 
-    this.managersLoading.update((s) => ({ ...s, [league.id]: true }));
+    this.teamsLoading.update((s) => ({ ...s, [league.id]: true }));
+    this.cache.ensureSeasons();
     this.api
       .get<any>(`league/${league.id}`)
       .pipe(
         tap((data) => {
-          this.managersCache.update((s) => ({ ...s, [league.id]: data.managers ?? [] }));
-          this.managersLoading.update((s) => ({ ...s, [league.id]: false }));
+          this.teamsCache.update((s) => ({ ...s, [league.id]: data.teams ?? [] }));
+          this.teamsLoading.update((s) => ({ ...s, [league.id]: false }));
         }),
         catchError(() => {
-          this.managersLoading.update((s) => ({ ...s, [league.id]: false }));
+          this.teamsLoading.update((s) => ({ ...s, [league.id]: false }));
           return of(null);
         }),
       )
       .subscribe();
   }
 
-  managers(leagueId: string): any[] {
-    return this.managersCache()[leagueId] ?? [];
-  }
-
-  readonly roleOrder = ROLE_ORDER;
-  readonly roleLabel = ROLE_LABEL;
-
-  sortedRoles(roles: string[]): string[] {
-    const r = roles?.length ? roles : ['manager'];
-    return [...r].sort((a, b) => this.roleOrder.indexOf(a) - this.roleOrder.indexOf(b));
-  }
-
-  readonly assignableRoles = ['admin', 'maintainer'];
-  roleTogglingState = signal<Record<string, boolean>>({});
-
-  isRoleToggling(managerId: string, role: string): boolean {
-    return this.roleTogglingState()[`${managerId}:${role}`] ?? false;
-  }
-
-  toggleRole(leagueId: string, manager: any, role: string): void {
-    const key = `${manager.id}:${role}`;
-    if (this.roleTogglingState()[key]) return;
-
-    const hasRole = (manager.roles ?? []).includes(role);
-    this.roleTogglingState.update(s => ({ ...s, [key]: true }));
-
-    const req = hasRole
-      ? this.api.delete<any>(`manager/${manager.id}/roles/${role}`)
-      : this.api.post<any>(`manager/${manager.id}/roles`, { role });
-
-    req.subscribe({
-      next: () => {
-        const newRoles = hasRole
-          ? (manager.roles ?? []).filter((r: string) => r !== role)
-          : [...(manager.roles ?? []), role];
-        this.managersCache.update(cache => {
-          const list = (cache[leagueId] ?? []).map((m: any) =>
-            m.id === manager.id ? { ...m, roles: newRoles } : m
-          );
-          return { ...cache, [leagueId]: list };
-        });
-        this.roleTogglingState.update(s => { const n = { ...s }; delete n[key]; return n; });
-      },
-      error: () => {
-        this.roleTogglingState.update(s => { const n = { ...s }; delete n[key]; return n; });
-      },
-    });
+  teams(leagueId: string): any[] {
+    return this.teamsCache()[leagueId] ?? [];
   }
 
   migrateStates = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});

@@ -34,57 +34,23 @@
   padding: $space-1 0;
 }
 
-.manager-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $space-3;
-}
-
-.manager-chip {
+.team-name-cell {
   display: flex;
   align-items: center;
   gap: $space-2;
+}
 
-  &__avatar {
-    position: relative;
-    width: 64px;
-    height: 64px;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: $color-border;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.team-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
 
-    img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-  }
-
-  &__initials {
-    font-size: $font-lg;
-    font-weight: $font-weight-semibold;
-    color: $color-text-muted;
-    pointer-events: none;
-  }
-
-  &__info {
-    display: flex;
-    flex-direction: column;
-    gap: $space-1;
-  }
-
-  &__name {
-    font-size: $font-sm;
-    font-weight: $font-weight-medium;
-    color: $color-text;
-  }
+.col-muted {
+  font-size: $font-sm;
+  color: $color-text-muted;
 }
 
 .migrate-skipped {
@@ -128,47 +94,6 @@
   font-weight: $font-weight-medium;
 }
 
-.role-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.role-badge {
-  display: inline-block;
-  padding: 2px $space-2;
-  border-radius: $radius-full;
-  font-size: $font-xs;
-  font-weight: $font-weight-medium;
-  border: none;
-  background: none;
-  cursor: default;
-
-  &--admin      { background: color-mix(in srgb, var(--flat-river)    18%, transparent); color: var(--flat-river); }
-  &--maintainer { background: color-mix(in srgb, var(--flat-emerald)  18%, transparent); color: var(--flat-emerald); }
-  &--manager    { background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent); color: var(--flat-alizarin); }
-
-  &--inactive {
-    background: $color-surface;
-    color: $color-text-muted;
-    border: 1px dashed $color-border;
-  }
-
-}
-
-.manager-contributions {
-  display: flex;
-  gap: $space-2;
-}
-
-.contrib-item {
-  font-size: $font-xs;
-  color: $color-text-muted;
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-sm;
-  padding: 1px $space-2;
-}
 
 .validate-result {
   margin-top: $space-4;
@@ -244,11 +169,3 @@
   }
 }
 
-button.role-badge {
-  cursor: pointer;
-  transition: opacity $transition-fast, filter $transition-fast;
-
-  &:not(.role-badge--inactive):hover { filter: brightness(1.1); }
-  &.role-badge--inactive:hover { background: $color-surface-alt; color: $color-text; }
-  &:disabled { opacity: 0.5; cursor: wait; }
-}

@@ -1,0 +1,80 @@
+<div class="list-bar">
+  <input
+    class="input search-input"
+    type="search"
+    placeholder="Suchen…"
+    [value]="searchQuery()"
+    (input)="searchQuery.set($any($event.target).value)"
+  />
+  <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
+</div>
+
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="col-id">ID</th>
+          <th>Name</th>
+          <th>Alias</th>
+          <th>Status</th>
+          <th>Rollen</th>
+          <th>Ligen</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (m of filteredItems(); track m.id) {
+          <tr>
+            <td class="col-id">{{ m.id }}</td>
+            <td>
+              <div class="manager-name-cell">
+                <div class="manager-avatar">
+                  <img
+                    [src]="cache.managerPhotoUrl(m.id)"
+                    [alt]="m.manager_name"
+                    (error)="$any($event.target).style.display='none'"
+                  />
+                  <span class="manager-avatar__initials">{{ m.manager_name[0].toUpperCase() }}</span>
+                </div>
+                <span>{{ m.manager_name }}</span>
+              </div>
+            </td>
+            <td class="col-muted">{{ m.alias ?? '—' }}</td>
+            <td>
+              <span class="status-badge status-badge--{{ m.status }}">{{ m.status }}</span>
+            </td>
+            <td class="col-roles" (click)="$event.stopPropagation()">
+              <div class="role-badges">
+                @for (role of assignableRoles; track role) {
+                  @if (isAdmin()) {
+                    <button
+                      class="role-badge role-badge--{{ role }}"
+                      [class.role-badge--inactive]="!(m.roles ?? []).includes(role)"
+                      [disabled]="isRoleToggling(m.id, role)"
+                      (click)="toggleRole(m, role)"
+                    >{{ roleLabel[role] }}</button>
+                  } @else if ((m.roles ?? []).includes(role)) {
+                    <span class="role-badge role-badge--{{ role }}">{{ roleLabel[role] }}</span>
+                  }
+                }
+                <span class="role-badge role-badge--manager">{{ roleLabel['manager'] }}</span>
+              </div>
+            </td>
+            <td class="col-leagues">
+              @for (league of m.leagues; track league.id) {
+                <span class="league-tag">{{ league.name }}</span>
+              }
+              @if (!m.leagues?.length) {
+                <span class="col-muted">—</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

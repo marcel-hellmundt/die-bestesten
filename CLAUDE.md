@@ -140,6 +140,7 @@ GET      /color               — [{name, hex}] globale Farbpalette (name = PK, 
 PATCH    /color/:name         — {hex: '#rrggbb'} Hex ändern, kaskadiert auf team.color aller Teams dieser Liga — Admin
 GET      /team/previous        — Letztes Team aus Vorsaison {id,team_name,color,season_id}; 404 wenn keines — Auth
 GET      /team/check-name      — ?name= (min. 3 Zeichen) → {available: bool}; 400 wenn zu kurz — Auth
+GET      /manager              — [{id,manager_name,alias,status,roles[],leagues[{id,name}]}] alle Manager global — Admin
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 GET      /manager/leagues      — [{id,name,slug}] — alle Ligen des eingeloggten Managers — Auth
 PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} oder {first_name} allein ohne Passwort — Auth

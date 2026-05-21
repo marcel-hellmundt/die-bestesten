@@ -2,6 +2,41 @@
 
 trait ManagerTrait
 {
+    public function getAllManagers(): array
+    {
+        $q = $this->con->prepare(
+            "SELECT m.id, m.manager_name, m.alias, m.status,
+                    GROUP_CONCAT(DISTINCT mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv,
+                    GROUP_CONCAT(DISTINCT l.id   ORDER BY l.name SEPARATOR '|')  AS league_ids,
+                    GROUP_CONCAT(DISTINCT l.name ORDER BY l.name SEPARATOR '|')  AS league_names
+             FROM manager m
+             LEFT JOIN manager_role mr  ON mr.manager_id  = m.id
+             LEFT JOIN manager_league ml ON ml.manager_id = m.id
+             LEFT JOIN league l          ON l.id           = ml.league_id
+             GROUP BY m.id, m.manager_name, m.alias, m.status
+             ORDER BY
+                 CASE WHEN MAX(mr.role = 'admin')      = 1 THEN 0
+                      WHEN MAX(mr.role = 'maintainer') = 1 THEN 1
+                      ELSE 2 END ASC,
+                 m.manager_name ASC"
+        );
+        $q->execute();
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row['roles']   = $row['roles_csv'] ? explode(',', $row['roles_csv']) : [];
+            $row['leagues'] = [];
+            if ($row['league_ids']) {
+                $ids   = explode('|', $row['league_ids']);
+                $names = explode('|', $row['league_names']);
+                foreach ($ids as $i => $id) {
+                    $row['leagues'][] = ['id' => $id, 'name' => $names[$i] ?? $id];
+                }
+            }
+            unset($row['roles_csv'], $row['league_ids'], $row['league_names']);
+        }
+        return $rows;
+    }
+
     public function getManagerById(string $id): array|false
     {
         $q = $this->con->prepare(
