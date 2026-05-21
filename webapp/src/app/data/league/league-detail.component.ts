@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-league-detail',
@@ -59,8 +60,45 @@ export class LeagueDetailComponent {
   expandedSeasonId = signal<string | null>(null);
 
   toggleSeason(seasonId: string): void {
-    this.expandedSeasonId.set(this.expandedSeasonId() === seasonId ? null : seasonId);
+    const opening = this.expandedSeasonId() !== seasonId;
+    this.expandedSeasonId.set(opening ? seasonId : null);
+    if (opening) this.loadH2HStatus(seasonId);
   }
+
+  private h2hStatus = signal<Record<string, { hasGroups: boolean; hasQF: boolean; hasSF: boolean; hasFinal: boolean }>>({});
+
+  private loadH2HStatus(seasonId: string): void {
+    if (this.h2hStatus()[seasonId] !== undefined) return;
+    this.api.get<any>(`h2h?season_id=${seasonId}`).subscribe({
+      next: data => {
+        const kos = data?.knockout_matches ?? [];
+        this.h2hStatus.update(s => ({
+          ...s,
+          [seasonId]: {
+            hasGroups: (data?.groups ?? []).length > 0,
+            hasQF:     kos.some((m: any) => m.phase === 'quarterfinal'),
+            hasSF:     kos.some((m: any) => m.phase === 'semifinal'),
+            hasFinal:  kos.some((m: any) => m.phase === 'final'),
+          },
+        }));
+      },
+      error: () => {},
+    });
+  }
+
+  h2hDone(seasonId: string, action: 'generate' | 'quarterfinals' | 'semifinals' | 'final'): boolean {
+    const s = this.h2hStatus()[seasonId];
+    if (!s) return false;
+    const map = { generate: 'hasGroups', quarterfinals: 'hasQF', semifinals: 'hasSF', final: 'hasFinal' } as const;
+    return s[map[action]];
+  }
+
+  teamLogoUrl(team: any): string {
+    return `${environment.imageApiUrl}/img/team/${team.season_id}/${team.id}.png`;
+  }
+
+  logoFailed = new Set<string>();
+  onLogoError(teamId: string): void { this.logoFailed.add(teamId); }
 
   private get leagueId(): string {
     return this.route.snapshot.params['id'];
@@ -185,6 +223,11 @@ export class LeagueDetailComponent {
           : `${res.matches} Matches angelegt`;
         this.h2hStates.update(s => ({ ...s, [key]: 'success' }));
         this.h2hMessages.update(s => ({ ...s, [key]: msg }));
+        const doneMap = { generate: 'hasGroups', quarterfinals: 'hasQF', semifinals: 'hasSF', final: 'hasFinal' } as const;
+        this.h2hStatus.update(s => {
+          const cur = s[seasonId] ?? { hasGroups: false, hasQF: false, hasSF: false, hasFinal: false };
+          return { ...s, [seasonId]: { ...cur, [doneMap[action]]: true } };
+        });
       },
       error: err => {
         this.h2hStates.update(s => ({ ...s, [key]: 'error' }));
