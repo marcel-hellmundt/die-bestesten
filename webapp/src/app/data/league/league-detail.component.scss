@@ -79,6 +79,46 @@
   border-bottom: 1px solid $color-border;
 }
 
+.season-expand-grid {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: $space-6;
+  align-items: start;
+}
+
+.h2h-panel {
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+}
+
+.h2h-panel-title {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  margin-bottom: $space-3;
+}
+
+.h2h-action {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-bottom: $space-2;
+
+  &:last-child { margin-bottom: 0; }
+
+  .btn { width: 100%; justify-content: flex-start; }
+}
+
+.h2h-msg {
+  font-size: $font-xs;
+  color: $color-success;
+  white-space: nowrap;
+
+  &--error { color: $color-danger; }
+}
+
 .team-name-cell {
   display: flex;
   align-items: center;

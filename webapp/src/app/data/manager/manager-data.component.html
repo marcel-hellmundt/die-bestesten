@@ -18,7 +18,6 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th class="col-id">ID</th>
           <th>Name</th>
           <th>Alias</th>
           <th>Status</th>
@@ -29,7 +28,6 @@
       <tbody>
         @for (m of filteredItems(); track m.id) {
           <tr>
-            <td class="col-id">{{ m.id }}</td>
             <td>
               <div class="manager-name-cell">
                 <div class="manager-avatar">

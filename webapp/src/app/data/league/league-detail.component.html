@@ -46,21 +46,44 @@
       </div>
       @if (expandedSeasonId() === sg.seasonId) {
         <div class="season-expand">
-          <table class="data-table data-table--compact">
-            <tbody>
-              @for (team of sg.teams; track team.id) {
-                <tr>
-                  <td>
-                    <span class="team-name-cell">
-                      <span class="team-color-dot" [style.background]="team.color"></span>
-                      {{ team.team_name }}
-                    </span>
-                  </td>
-                  <td class="col-muted">{{ team.manager_name }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <div class="season-expand-grid">
+            <table class="data-table data-table--compact">
+              <tbody>
+                @for (team of sg.teams; track team.id) {
+                  <tr>
+                    <td>
+                      <span class="team-name-cell">
+                        <span class="team-color-dot" [style.background]="team.color"></span>
+                        {{ team.team_name }}
+                      </span>
+                    </td>
+                    <td class="col-muted">{{ team.manager_name }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+
+            @if (isAdmin()) {
+              <div class="h2h-panel">
+                <p class="h2h-panel-title">H2H Turnier</p>
+                @for (action of h2hActions; track action.key) {
+                  <div class="h2h-action">
+                    <button
+                      class="btn btn-sm btn-ghost"
+                      [disabled]="h2hState(sg.seasonId, action.key) === 'loading'"
+                      (click)="runH2H(sg.seasonId, action.key)"
+                    >{{ h2hState(sg.seasonId, action.key) === 'loading' ? 'Läuft…' : action.label }}</button>
+                    @if (h2hMessage(sg.seasonId, action.key)) {
+                      <span
+                        class="h2h-msg"
+                        [class.h2h-msg--error]="h2hState(sg.seasonId, action.key) === 'error'"
+                      >{{ h2hMessage(sg.seasonId, action.key) }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
         </div>
       }
     }

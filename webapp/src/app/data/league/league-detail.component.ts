@@ -148,6 +148,51 @@ export class LeagueDetailComponent {
     });
   }
 
+  // ── H2H tournament actions ──────────────────────────────────────────────────
+
+  readonly h2hActions = [
+    { key: 'generate'      as const, label: 'Gruppenphase generieren' },
+    { key: 'quarterfinals' as const, label: 'Viertelfinale auslosen' },
+    { key: 'semifinals'    as const, label: 'Halbfinale auslosen' },
+    { key: 'final'         as const, label: 'Finale auslosen' },
+  ];
+
+  h2hStates   = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
+  h2hMessages = signal<Record<string, string>>({});
+
+  h2hState(seasonId: string, action: string): 'idle' | 'loading' | 'success' | 'error' {
+    return this.h2hStates()[`${seasonId}:${action}`] ?? 'idle';
+  }
+
+  h2hMessage(seasonId: string, action: string): string {
+    return this.h2hMessages()[`${seasonId}:${action}`] ?? '';
+  }
+
+  runH2H(seasonId: string, action: 'generate' | 'quarterfinals' | 'semifinals' | 'final'): void {
+    const endpoints: Record<string, string> = {
+      generate:      'h2h/generate',
+      quarterfinals: 'h2h/draw_quarterfinals',
+      semifinals:    'h2h/draw_semifinals',
+      final:         'h2h/draw_final',
+    };
+    const key = `${seasonId}:${action}`;
+    this.h2hStates.update(s => ({ ...s, [key]: 'loading' }));
+    this.h2hMessages.update(s => ({ ...s, [key]: '' }));
+    this.api.post<any>(endpoints[action], { league_id: this.leagueId, season_id: seasonId }).subscribe({
+      next: res => {
+        const msg = action === 'generate'
+          ? `${res.groups} Gruppen, ${res.matches} Matches`
+          : `${res.matches} Matches angelegt`;
+        this.h2hStates.update(s => ({ ...s, [key]: 'success' }));
+        this.h2hMessages.update(s => ({ ...s, [key]: msg }));
+      },
+      error: err => {
+        this.h2hStates.update(s => ({ ...s, [key]: 'error' }));
+        this.h2hMessages.update(s => ({ ...s, [key]: err?.error?.message ?? 'Fehler' }));
+      },
+    });
+  }
+
   createdMatchdays(): { season_id: string; matchday_number: number }[] {
     const details = this.migrateResult()?.matchdays_created ?? [];
     return [...details].sort((a: any, b: any) => {
