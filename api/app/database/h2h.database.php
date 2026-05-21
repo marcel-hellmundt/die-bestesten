@@ -23,13 +23,27 @@ trait H2HTrait
             }
         }
 
-        // Load all h2h_matches for this season
-        $mq = $this->con_league->prepare(
+        // Load group matches by group_id (avoids relying on season_id in h2h_match)
+        $groupMatches = [];
+        if (!empty($groupIds)) {
+            $ph = implode(',', array_fill(0, count($groupIds), '?'));
+            $gmq = $this->con_league->prepare(
+                "SELECT id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index
+                 FROM h2h_match WHERE group_id IN ($ph) ORDER BY sort_index ASC"
+            );
+            $gmq->execute($groupIds);
+            $groupMatches = $gmq->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // Load knockout matches by season_id (group_id IS NULL)
+        $koq = $this->con_league->prepare(
             "SELECT id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index
-             FROM h2h_match WHERE season_id = :s ORDER BY sort_index ASC"
+             FROM h2h_match WHERE season_id = :s AND group_id IS NULL ORDER BY sort_index ASC"
         );
-        $mq->execute([':s' => $seasonId]);
-        $allMatches = $mq->fetchAll(PDO::FETCH_ASSOC);
+        $koq->execute([':s' => $seasonId]);
+        $koMatches = $koq->fetchAll(PDO::FETCH_ASSOC);
+
+        $allMatches = array_merge($groupMatches, $koMatches);
 
         // Collect all team_ids and matchday_ids referenced
         $allTeamIds     = [];
