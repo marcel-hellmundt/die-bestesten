@@ -561,6 +561,62 @@ trait H2HTrait
         $q->execute([':id' => $id]);
     }
 
+    public function resetH2HTournament(string $leagueId, string $seasonId): array
+    {
+        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq->execute([':id' => $leagueId]);
+        $league = $lq->fetch(PDO::FETCH_ASSOC);
+        if (!$league) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Liga nicht gefunden'];
+        }
+
+        try {
+            $con = new PDO(
+                "mysql:host={$_ENV['DB_HOST']};dbname={$league['db_name']};charset=utf8",
+                $_ENV['DB_USER'], $_ENV['DB_PASSWORD']
+            );
+            $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException) {
+            http_response_code(500);
+            return ['status' => false, 'message' => 'Verbindung zur Liga-DB fehlgeschlagen'];
+        }
+
+        // Delete all h2h_match rows for this season (any phase)
+        // Also delete rows where group_id references a group of this season
+        $delMatches = $con->prepare(
+            "DELETE m FROM h2h_match m
+             LEFT JOIN h2h_group g ON g.id = m.group_id
+             WHERE m.season_id = :s OR g.season_id = :s2"
+        );
+        $delMatches->execute([':s' => $seasonId, ':s2' => $seasonId]);
+        $matchesDeleted = $delMatches->rowCount();
+
+        // Delete orphaned matches (group_id IS NULL and season_id = :s already handled above;
+        // also catch rows with NULL season_id that have group_id referencing this season's groups — already caught)
+        // Fallback: delete any remaining h2h_match rows linked to this season's groups
+        $groupIds = $con->prepare("SELECT id FROM h2h_group WHERE season_id = :s");
+        $groupIds->execute([':s' => $seasonId]);
+        $gids = $groupIds->fetchAll(PDO::FETCH_COLUMN);
+        if (!empty($gids)) {
+            $ph = implode(',', array_fill(0, count($gids), '?'));
+            $con->prepare("DELETE FROM h2h_match WHERE group_id IN ($ph)")->execute($gids);
+        }
+
+        // Delete group-team assignments
+        if (!empty($gids)) {
+            $ph = implode(',', array_fill(0, count($gids), '?'));
+            $con->prepare("DELETE FROM h2h_group_team WHERE group_id IN ($ph)")->execute($gids);
+        }
+
+        // Delete groups
+        $delGroups = $con->prepare("DELETE FROM h2h_group WHERE season_id = :s");
+        $delGroups->execute([':s' => $seasonId]);
+        $groupsDeleted = $delGroups->rowCount();
+
+        return ['status' => true, 'matches_deleted' => $matchesDeleted, 'groups_deleted' => $groupsDeleted];
+    }
+
     public function generateH2HTournament(string $leagueId, string $seasonId): array
     {
         $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");

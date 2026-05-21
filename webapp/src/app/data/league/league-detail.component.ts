@@ -195,6 +195,37 @@ export class LeagueDetailComponent {
     { key: 'final'         as const, label: 'Finale auslosen' },
   ];
 
+  h2hResetStates = signal<Record<string, 'idle' | 'loading'>>({});
+
+  h2hResetState(seasonId: string): 'idle' | 'loading' {
+    return this.h2hResetStates()[seasonId] ?? 'idle';
+  }
+
+  resetH2H(seasonId: string): void {
+    const key = seasonId;
+    this.h2hResetStates.update(s => ({ ...s, [key]: 'loading' }));
+    this.api.post<any>('h2h/reset', { league_id: this.leagueId, season_id: seasonId }).subscribe({
+      next: () => {
+        this.h2hResetStates.update(s => ({ ...s, [key]: 'idle' }));
+        this.h2hStatus.update(s => ({
+          ...s,
+          [seasonId]: { hasGroups: false, hasQF: false, hasSF: false, hasFinal: false },
+        }));
+        this.h2hStates.update(s => {
+          const n = { ...s };
+          for (const a of this.h2hActions) delete n[`${seasonId}:${a.key}`];
+          return n;
+        });
+        this.h2hMessages.update(s => {
+          const n = { ...s };
+          for (const a of this.h2hActions) delete n[`${seasonId}:${a.key}`];
+          return n;
+        });
+      },
+      error: () => this.h2hResetStates.update(s => ({ ...s, [key]: 'idle' })),
+    });
+  }
+
   h2hStates   = signal<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({});
   h2hMessages = signal<Record<string, string>>({});
 

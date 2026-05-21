@@ -117,6 +117,12 @@
   font-weight: $font-weight-medium;
 }
 
+.h2h-reset {
+  margin-top: $space-3;
+  padding-top: $space-3;
+  border-top: 1px solid $color-border;
+}
+
 .h2h-msg {
   font-size: $font-xs;
   color: $color-success;

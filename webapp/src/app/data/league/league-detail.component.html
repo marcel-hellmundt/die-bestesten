@@ -94,6 +94,15 @@
                     }
                   </div>
                 }
+                @if (h2hDone(sg.seasonId, 'generate')) {
+                  <div class="h2h-reset">
+                    <button
+                      class="btn btn-sm btn-ghost btn-danger"
+                      [disabled]="h2hResetState(sg.seasonId) === 'loading'"
+                      (click)="resetH2H(sg.seasonId)"
+                    >{{ h2hResetState(sg.seasonId) === 'loading' ? 'Läuft…' : 'Turnier zurücksetzen' }}</button>
+                  </div>
+                }
               </div>
             }
           </div>
