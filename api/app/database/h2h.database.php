@@ -731,14 +731,14 @@ trait H2HTrait
             $managerTeamMap[$team['manager_id']] = $team['id'];
         }
 
-        $allMgrsQ = $con->prepare(
+        $allMgrsQ = $this->con->prepare(
             "SELECT id FROM manager WHERE status = 'active'
              AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
         );
         $allMgrsQ->execute();
         $allManagerIds = $allMgrsQ->fetchAll(PDO::FETCH_COLUMN);
 
-        $notifStmt = $con->prepare(
+        $notifStmt = $this->con->prepare(
             "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
         );
         foreach ($allManagerIds as $mid) {
@@ -973,12 +973,12 @@ trait H2HTrait
         $qfMsg .= $qfRow('ST23/27', $d1, $c2);
         $qfMsg .= '</div>';
 
-        $allMgrsQ = $con->prepare(
+        $allMgrsQ = $this->con->prepare(
             "SELECT id FROM manager WHERE status = 'active'
              AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
         );
         $allMgrsQ->execute();
-        $notifStmt = $con->prepare(
+        $notifStmt = $this->con->prepare(
             "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
         );
         foreach ($allMgrsQ->fetchAll(PDO::FETCH_COLUMN) as $mid) {
@@ -1168,12 +1168,12 @@ trait H2HTrait
         $sfMsg .= $sfRow('ST30/32', $vf2, $vf4);
         $sfMsg .= '</div>';
 
-        $allMgrsQ = $con->prepare(
+        $allMgrsQ = $this->con->prepare(
             "SELECT id FROM manager WHERE status = 'active'
              AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
         );
         $allMgrsQ->execute();
-        $notifStmt = $con->prepare(
+        $notifStmt = $this->con->prepare(
             "INSERT INTO notification (id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
         );
         foreach ($allMgrsQ->fetchAll(PDO::FETCH_COLUMN) as $mid) {

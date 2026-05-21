@@ -165,7 +165,7 @@ trait WatchlistTrait
 
     private function isNotificationEnabled(string $managerId, string $eventType): bool
     {
-        $q = $this->con_league->prepare(
+        $q = $this->con->prepare(
             "SELECT enabled FROM notification_preference WHERE manager_id = ? AND event_type = ?"
         );
         $q->execute([$managerId, $eventType]);
