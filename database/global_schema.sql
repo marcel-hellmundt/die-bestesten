@@ -30,11 +30,14 @@ CREATE TABLE IF NOT EXISTS season (
 CREATE TABLE IF NOT EXISTS matchday (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     season_id CHAR(36) NOT NULL,                -- Foreign Key zu season.id
+    division_id CHAR(36) NOT NULL,              -- Foreign Key zu division.id — jede Division pflegt eigene Spieltage
     start_date DATE NOT NULL,                   -- Startdatum, ab wann Spieler offiziell in diesem Spieltag sind
     kickoff_date DATETIME NOT NULL,             -- Bis wann Spieler ihre Aufstellung anpassen können
     number INT NOT NULL,                        -- Nummer des Spieltages (z.B. 12)
     completed BOOLEAN NOT NULL DEFAULT FALSE,   -- Spieltag abgeschlossen? (Ratings gesperrt wenn TRUE)
-    FOREIGN KEY (season_id) REFERENCES season(id)
+    FOREIGN KEY (season_id) REFERENCES season(id),
+    FOREIGN KEY (division_id) REFERENCES division(id),
+    UNIQUE KEY uk_matchday (season_id, division_id, number)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: transferwindow (Transferfenster je Spieltag)

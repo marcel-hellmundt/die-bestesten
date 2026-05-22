@@ -68,7 +68,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 | league | id PK, slug UNIQUE, name, db_name |
 | club | id PK, country_id FK, name, short_name, logo_uploaded BOOL |
 | division | id PK, name, level INT, seats INT, country_id FK |
-| matchday | id PK, season_id FK, start_date DATE, kickoff_date DATETIME, number INT, completed BOOL |
+| matchday | id PK, season_id FK, division_id FK, start_date DATE, kickoff_date DATETIME, number INT, completed BOOL — UNIQUE(season_id, division_id, number) — jede Division pflegt eigene Spieltage |
 | player | id PK, kicker_id INT UNIQUE?, country_id FK?, first_name, last_name, displayname UNIQUE, birth_city, date_of_birth, height_cm, weight_kg |
 | club_in_season | id PK, club_id FK, season_id FK, division_id FK, position INT? — UNIQUE(club_id, season_id) |
 | player_in_season | id PK, player_id FK, season_id FK, price DECIMAL, position ENUM(GOALKEEPER/DEFENDER/MIDFIELDER/FORWARD), photo_uploaded — UNIQUE(player_id, season_id) |
@@ -91,7 +91,8 @@ GET      /club[/:id]           — /:id enthält stadium-Objekt (aktuelles Stadi
 GET      /country[/:id]
 GET      /season[/:id|/active]
 POST     /season                — {start_date: YYYY-MM-DD} → {id}; UNIQUE auf start_date — Admin
-GET      /matchday[/:id]       — ?season_id gibt has_ratings (bool) zurück ob mindestens ein player_rating für den Spieltag existiert
+GET      /matchday[/:id]       — ?season_id gibt has_ratings (bool) zurück; filtert nach Division der aktiven Liga — Auth
+POST     /matchday             — {season_id, number, start_date, kickoff_date} → {id}; division_id aus Liga-Kontext; 409 bei Duplikat, 422 wenn keine Division konfiguriert — Admin
 PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team_rating + Transaktionen erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an Admins (nur wenn email hinterlegt) — Admin
 GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_points}], top_matchdays: [{points,matchday_number,team_name,season_id,manager_name}] } — Auth
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB

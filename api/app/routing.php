@@ -183,19 +183,24 @@ class Routing
 
             new Route('matchday', 'Matchday', [
                 'title' => 'Matchday',
-                'description' => 'Spieltage einer Saison',
+                'description' => 'Spieltage — divisionsspezifisch; jede Liga pflegt eigene Spieltage',
                 'endpoints' => [
                     [
                         'method' => 'GET',
                         'path' => '/matchday',
-                        'description' => 'Alle Spieltage, optional gefiltert nach Saison; mit season_id: enthält has_ratings (bool)',
+                        'description' => 'Alle Spieltage, optional gefiltert nach Saison; mit season_id: filtert nach Division der aktiven Liga, enthält has_ratings (bool) — Auth',
                         'query_params' => ['season_id' => 'UUID der Saison (optional)'],
                     ],
                     [
                         'method' => 'GET',
                         'path' => '/matchday/:id',
-                        'description' => 'Ein Spieltag per ID',
+                        'description' => 'Ein Spieltag per ID — Auth',
                         'path_params' => [':id' => 'UUID des Spieltags'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/matchday',
+                        'description' => 'Neuen Spieltag anlegen — Body: { season_id, number, start_date, end_date, kickoff_date }; division_id wird aus Liga-Kontext ermittelt; 409 bei Duplikat, 422 wenn keine Division konfiguriert — Admin',
                     ],
                     [
                         'method' => 'PATCH',

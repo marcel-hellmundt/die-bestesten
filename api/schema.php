@@ -286,6 +286,7 @@ flowchart TD
     country -.->|country_id ?| player
 
     season -->|season_id| matchday
+    division -->|division_id| matchday
     season -->|season_id| player_in_season
     season -->|season_id| club_in_season
 

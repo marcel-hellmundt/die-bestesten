@@ -10,13 +10,25 @@ trait TransferwindowTrait
             );
             $query->execute([':matchday_id' => $matchdayId]);
         } elseif ($seasonId) {
-            $query = $this->con->prepare(
-                "SELECT tw.* FROM transferwindow tw
-                 JOIN matchday m ON m.id = tw.matchday_id
-                 WHERE m.season_id = :season_id
-                 ORDER BY tw.start_date ASC"
-            );
-            $query->execute([':season_id' => $seasonId]);
+            $divisionId = $this->getLeagueDivisionId();
+            if ($divisionId !== null) {
+                $query = $this->con->prepare(
+                    "SELECT tw.* FROM transferwindow tw
+                     JOIN matchday m ON m.id = tw.matchday_id
+                     WHERE m.season_id = :season_id AND m.division_id = :division_id
+                     ORDER BY tw.start_date ASC"
+                );
+                $query->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
+            } else {
+                $query = $this->con->prepare(
+                    "SELECT tw.* FROM transferwindow tw
+                     JOIN matchday m ON m.id = tw.matchday_id
+                     JOIN division d ON d.id = m.division_id
+                     WHERE m.season_id = :season_id AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                     ORDER BY tw.start_date ASC"
+                );
+                $query->execute([':season_id' => $seasonId]);
+            }
         } else {
             $query = $this->con->prepare("SELECT * FROM transferwindow ORDER BY start_date ASC");
             $query->execute();

@@ -2,7 +2,7 @@
 
 class TransferwindowController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'maintainer'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'maintainer'];
 
     protected function get(): mixed
     {

@@ -5,19 +5,53 @@ trait MatchdayTrait
     public function getMatchdayList(?string $seasonId = null): array
     {
         if ($seasonId) {
-            $query = $this->con->prepare("
-                SELECT m.*,
-                       EXISTS(SELECT 1 FROM player_rating pr WHERE pr.matchday_id = m.id) AS has_ratings
-                FROM matchday m
-                WHERE m.season_id = :season_id
-                ORDER BY m.number DESC
-            ");
-            $query->execute([':season_id' => $seasonId]);
+            $divisionId = $this->getLeagueDivisionId();
+            if ($divisionId !== null) {
+                $query = $this->con->prepare("
+                    SELECT m.*,
+                           EXISTS(SELECT 1 FROM player_rating pr WHERE pr.matchday_id = m.id) AS has_ratings
+                    FROM matchday m
+                    WHERE m.season_id = :season_id AND m.division_id = :division_id
+                    ORDER BY m.number DESC
+                ");
+                $query->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
+            } else {
+                $query = $this->con->prepare("
+                    SELECT m.*,
+                           EXISTS(SELECT 1 FROM player_rating pr WHERE pr.matchday_id = m.id) AS has_ratings
+                    FROM matchday m
+                    JOIN division d ON d.id = m.division_id
+                    WHERE m.season_id = :season_id AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                    ORDER BY m.number DESC
+                ");
+                $query->execute([':season_id' => $seasonId]);
+            }
         } else {
             $query = $this->con->prepare("SELECT * FROM matchday ORDER BY start_date DESC");
             $query->execute();
         }
         return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function createMatchday(string $seasonId, int $number, string $startDate, string $kickoffDate): string
+    {
+        $divisionId = $this->getLeagueDivisionId();
+        if (!$divisionId) {
+            throw new \RuntimeException('Liga hat keine Division konfiguriert');
+        }
+        $id = $this->generateGUID();
+        $this->con->prepare(
+            "INSERT INTO matchday (id, season_id, division_id, number, start_date, kickoff_date)
+             VALUES (:id, :season_id, :division_id, :number, :start_date, :kickoff_date)"
+        )->execute([
+            ':id'           => $id,
+            ':season_id'    => $seasonId,
+            ':division_id'  => $divisionId,
+            ':number'       => $number,
+            ':start_date'   => $startDate,
+            ':kickoff_date' => $kickoffDate,
+        ]);
+        return $id;
     }
 
     public function getMatchdayById(string $id): array|false
@@ -365,15 +399,21 @@ trait MatchdayTrait
 
     public function migrateMatchday(): array
     {
+        $divisionId = $this->getLeagueDivisionId();
+        if (!$divisionId) {
+            throw new \RuntimeException('Liga hat keine Division konfiguriert');
+        }
+
         $rows = $this->con_old->query(
             "SELECT matchday_id, season_id, number, start_date, kickoff_date FROM matchday"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $stmt = $this->con->prepare(
-            "INSERT INTO matchday (id, season_id, number, start_date, kickoff_date)
-             VALUES (:id, :season_id, :number, :start_date, :kickoff_date)
+            "INSERT INTO matchday (id, season_id, division_id, number, start_date, kickoff_date)
+             VALUES (:id, :season_id, :division_id, :number, :start_date, :kickoff_date)
              ON DUPLICATE KEY UPDATE
                season_id    = VALUES(season_id),
+               division_id  = VALUES(division_id),
                number       = VALUES(number),
                start_date   = VALUES(start_date),
                kickoff_date = VALUES(kickoff_date)"
@@ -383,6 +423,7 @@ trait MatchdayTrait
             $stmt->execute([
                 ':id'           => $row['matchday_id'],
                 ':season_id'    => $row['season_id'],
+                ':division_id'  => $divisionId,
                 ':number'       => $row['number'],
                 ':start_date'   => $row['start_date'],
                 ':kickoff_date' => $row['kickoff_date'],

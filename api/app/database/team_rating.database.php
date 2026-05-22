@@ -26,10 +26,22 @@ trait TeamRatingTrait
 
     public function getSeasonStandings(string $seasonId): array
     {
-        $matchdayIds = $this->con->prepare(
-            "SELECT id, number FROM matchday WHERE season_id = :season_id AND completed = 1"
-        );
-        $matchdayIds->execute([':season_id' => $seasonId]);
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $matchdayIds = $this->con->prepare(
+                "SELECT id, number FROM matchday
+                 WHERE season_id = :season_id AND completed = 1 AND division_id = :division_id"
+            );
+            $matchdayIds->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
+        } else {
+            $matchdayIds = $this->con->prepare(
+                "SELECT m.id, m.number FROM matchday m
+                 JOIN division d ON d.id = m.division_id
+                 WHERE m.season_id = :season_id AND m.completed = 1
+                   AND d.level = 1 AND LOWER(d.country_id) = 'de'"
+            );
+            $matchdayIds->execute([':season_id' => $seasonId]);
+        }
         $matchdayRows = $matchdayIds->fetchAll(PDO::FETCH_ASSOC);
         $ids = array_column($matchdayRows, 'id');
         $numberById = array_column($matchdayRows, 'number', 'id');
@@ -207,24 +219,49 @@ trait TeamRatingTrait
 
     public function getTeamRatingsByActiveSeason(string $seasonId, ?int $matchdayNumber = null): array|false
     {
+        $divisionId = $this->getLeagueDivisionId();
+
         if ($matchdayNumber !== null) {
-            $mq = $this->con->prepare(
-                "SELECT id, number, kickoff_date, completed FROM matchday
-                 WHERE season_id = :season_id AND number = :number
-                   AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()
-                 LIMIT 1"
-            );
-            $mq->execute([':season_id' => $seasonId, ':number' => $matchdayNumber]);
+            if ($divisionId !== null) {
+                $mq = $this->con->prepare(
+                    "SELECT id, number, kickoff_date, completed FROM matchday
+                     WHERE season_id = :season_id AND number = :number AND division_id = :division_id
+                       AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()
+                     LIMIT 1"
+                );
+                $mq->execute([':season_id' => $seasonId, ':number' => $matchdayNumber, ':division_id' => $divisionId]);
+            } else {
+                $mq = $this->con->prepare(
+                    "SELECT m.id, m.number, m.kickoff_date, m.completed FROM matchday m
+                     JOIN division d ON d.id = m.division_id
+                     WHERE m.season_id = :season_id AND m.number = :number
+                       AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                       AND m.kickoff_date IS NOT NULL AND m.kickoff_date <= NOW()
+                     LIMIT 1"
+                );
+                $mq->execute([':season_id' => $seasonId, ':number' => $matchdayNumber]);
+            }
         } else {
             // Smallest uncompleted matchday first (= current round);
             // fall back to latest completed if all are done.
-            $mq = $this->con->prepare(
-                "SELECT id, number, kickoff_date, completed FROM matchday
-                 WHERE season_id = :season_id
-                 ORDER BY completed ASC, IF(completed = 0, number, -number) ASC
-                 LIMIT 1"
-            );
-            $mq->execute([':season_id' => $seasonId]);
+            if ($divisionId !== null) {
+                $mq = $this->con->prepare(
+                    "SELECT id, number, kickoff_date, completed FROM matchday
+                     WHERE season_id = :season_id AND division_id = :division_id
+                     ORDER BY completed ASC, IF(completed = 0, number, -number) ASC
+                     LIMIT 1"
+                );
+                $mq->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
+            } else {
+                $mq = $this->con->prepare(
+                    "SELECT m.id, m.number, m.kickoff_date, m.completed FROM matchday m
+                     JOIN division d ON d.id = m.division_id
+                     WHERE m.season_id = :season_id AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                     ORDER BY m.completed ASC, IF(m.completed = 0, m.number, -m.number) ASC
+                     LIMIT 1"
+                );
+                $mq->execute([':season_id' => $seasonId]);
+            }
         }
         $matchday = $mq->fetch(PDO::FETCH_ASSOC);
 
@@ -278,12 +315,22 @@ trait TeamRatingTrait
         $sq->execute($sdsParams);
         $sdsPlayer = $sq->fetch(PDO::FETCH_ASSOC) ?: null;
 
-        $maxQ = $this->con->prepare(
-            "SELECT MAX(number) AS max_number FROM matchday
-             WHERE season_id = :season_id
-               AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()"
-        );
-        $maxQ->execute([':season_id' => $seasonId]);
+        if ($divisionId !== null) {
+            $maxQ = $this->con->prepare(
+                "SELECT MAX(number) AS max_number FROM matchday
+                 WHERE season_id = :season_id AND division_id = :division_id
+                   AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()"
+            );
+            $maxQ->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
+        } else {
+            $maxQ = $this->con->prepare(
+                "SELECT MAX(m.number) AS max_number FROM matchday m
+                 JOIN division d ON d.id = m.division_id
+                 WHERE m.season_id = :season_id AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                   AND m.kickoff_date IS NOT NULL AND m.kickoff_date <= NOW()"
+            );
+            $maxQ->execute([':season_id' => $seasonId]);
+        }
         $maxNumber = (int) $maxQ->fetchColumn();
 
         return [
