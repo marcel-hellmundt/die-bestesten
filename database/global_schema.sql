@@ -1,11 +1,14 @@
 -- Globale Datenbank Schema
 -- Enthält Tabellen für league, season, matchday, player, player_in_season, player_rating, manager
 
+SET NAMES utf8mb4;
+SET character_set_client = utf8mb4;
+
 -- Tabelle: country
 CREATE TABLE IF NOT EXISTS country (
     id CHAR(2) PRIMARY KEY,     -- ISO Alpha-2 Code, z.B. 'DE'
     name VARCHAR(100) NOT NULL  -- Name des Landes
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: club
 CREATE TABLE IF NOT EXISTS club (
@@ -15,13 +18,13 @@ CREATE TABLE IF NOT EXISTS club (
     short_name VARCHAR(10) DEFAULT NULL,        -- Kurzname/Kürzel, z.B. 'FCB', 'BVB'
     logo_uploaded BOOLEAN DEFAULT FALSE,        -- Gibt an, ob ein Logo für den Club hochgeladen wurde
     FOREIGN KEY (country_id) REFERENCES country(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: season
 CREATE TABLE IF NOT EXISTS season (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     start_date DATE NOT NULL UNIQUE             -- Startdatum der Saison; aktive Saison = höchstes start_date
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: matchday
 CREATE TABLE IF NOT EXISTS matchday (
@@ -32,7 +35,7 @@ CREATE TABLE IF NOT EXISTS matchday (
     number INT NOT NULL,                        -- Nummer des Spieltages (z.B. 12)
     completed BOOLEAN NOT NULL DEFAULT FALSE,   -- Spieltag abgeschlossen? (Ratings gesperrt wenn TRUE)
     FOREIGN KEY (season_id) REFERENCES season(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: transferwindow (Transferfenster je Spieltag)
 CREATE TABLE IF NOT EXISTS transferwindow (
@@ -41,7 +44,7 @@ CREATE TABLE IF NOT EXISTS transferwindow (
     start_date  DATETIME  NOT NULL,                               -- Beginn des Transferfensters
     end_date    DATETIME  NOT NULL,                               -- Ende des Transferfensters
     FOREIGN KEY (matchday_id) REFERENCES matchday(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: player
 CREATE TABLE IF NOT EXISTS player (
@@ -56,7 +59,7 @@ CREATE TABLE IF NOT EXISTS player (
     height_cm INT DEFAULT NULL,                 -- Größe in cm
     weight_kg INT DEFAULT NULL,                 -- Gewicht in kg
     FOREIGN KEY (country_id) REFERENCES country(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: player_in_season (m-n Beziehung player <-> season)
 CREATE TABLE IF NOT EXISTS player_in_season (
@@ -64,12 +67,12 @@ CREATE TABLE IF NOT EXISTS player_in_season (
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
     season_id CHAR(36) NOT NULL,                -- FK zu season.id
     price DECIMAL(10,2) DEFAULT NULL,           -- Marktwert
-    position ENUM('GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD') DEFAULT NULL,  -- Position
+    position ENUM('GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD') CHARACTER SET utf8mb4 DEFAULT NULL,  -- Position
     photo_uploaded BOOLEAN DEFAULT FALSE,       -- Gibt an, ob ein Foto für den Spieler in dieser Saison hochgeladen wurde
     FOREIGN KEY (player_id) REFERENCES player(id),
     FOREIGN KEY (season_id) REFERENCES season(id),
     UNIQUE KEY uk_player_season (player_id, season_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: player_in_club (m-n Beziehung player <-> club)
 CREATE TABLE IF NOT EXISTS player_in_club (
@@ -82,7 +85,7 @@ CREATE TABLE IF NOT EXISTS player_in_club (
     FOREIGN KEY (player_id) REFERENCES player(id),
     FOREIGN KEY (club_id) REFERENCES club(id),
     UNIQUE KEY uk_player_club_from (player_id, club_id, from_date)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: player_rating (Bewertungen pro Spieler und Spieltag)
 CREATE TABLE IF NOT EXISTS player_rating (
@@ -91,7 +94,7 @@ CREATE TABLE IF NOT EXISTS player_rating (
     matchday_id CHAR(36) NOT NULL,              -- FK zu matchday.id
     club_id CHAR(36) DEFAULT NULL,              -- FK zu club.id — Club des Spielers zum Zeitpunkt des Spieltags; NULL für historische Daten ohne Club-Tracking
     grade DECIMAL(3,1) DEFAULT NULL,            -- Note, z.B. 1.5; Wertebereich 1.0..6.0
-    participation ENUM('starting', 'substitute') DEFAULT NULL,  -- 'starting' = Startelf, 'substitute' = Eingewechselt, NULL = nicht gespielt
+    participation ENUM('starting', 'substitute') CHARACTER SET utf8mb4 DEFAULT NULL,  -- 'starting' = Startelf, 'substitute' = Eingewechselt, NULL = nicht gespielt
     goals INT DEFAULT 0,                        -- Tore
     assists INT DEFAULT 0,                      -- Vorlagen
     clean_sheet BOOLEAN DEFAULT FALSE,          -- Weiße Weste
@@ -106,7 +109,7 @@ CREATE TABLE IF NOT EXISTS player_rating (
     INDEX idx_player_id (player_id),
     INDEX idx_matchday_id (matchday_id),
     INDEX idx_club_id (club_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: division (reale Fußball-Spielklassen, z.B. 1. Bundesliga)
 CREATE TABLE IF NOT EXISTS division (
@@ -116,7 +119,7 @@ CREATE TABLE IF NOT EXISTS division (
     seats      INT          NOT NULL DEFAULT 18, -- Anzahl Clubs in dieser Liga
     country_id CHAR(2)      NOT NULL,           -- FK zu country.id
     FOREIGN KEY (country_id) REFERENCES country(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: club_in_season (Zuordnung Club -> Saison -> Spielklasse + Tabellenplatz)
 CREATE TABLE IF NOT EXISTS club_in_season (
@@ -129,7 +132,7 @@ CREATE TABLE IF NOT EXISTS club_in_season (
     FOREIGN KEY (season_id)   REFERENCES season(id),
     FOREIGN KEY (division_id) REFERENCES division(id),
     UNIQUE KEY uk_club_season (club_id, season_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: stadium
 CREATE TABLE IF NOT EXISTS stadium (
@@ -141,7 +144,7 @@ CREATE TABLE IF NOT EXISTS stadium (
     lng           DECIMAL(9,6)  DEFAULT NULL,        -- Längengrad
     opened_date   DATE          DEFAULT NULL,        -- Eröffnungsdatum
     closed_date   DATE          DEFAULT NULL         -- Schließungsdatum (NULL = noch in Betrieb)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: club_stadium (m-n Beziehung club <-> stadium mit Zeitraum)
 CREATE TABLE IF NOT EXISTS club_stadium (
@@ -153,7 +156,7 @@ CREATE TABLE IF NOT EXISTS club_stadium (
     FOREIGN KEY (club_id)    REFERENCES club(id),
     FOREIGN KEY (stadium_id) REFERENCES stadium(id),
     UNIQUE KEY uk_club_stadium_from (club_id, from_date)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: league (Spiel-Instanzen; jede Liga hat eine eigene Datenbank)
 CREATE TABLE IF NOT EXISTS league (
@@ -163,13 +166,13 @@ CREATE TABLE IF NOT EXISTS league (
     db_name     VARCHAR(64)  NOT NULL,              -- Datenbankname der Liga-Datenbank
     division_id CHAR(36)     DEFAULT NULL,          -- Spielerpool-Division (NULL = kein Filter aktiv)
     FOREIGN KEY (division_id) REFERENCES division(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: color (globale Farbpalette; name = PK; Änderung kaskadiert manuell auf league.team.color)
 CREATE TABLE IF NOT EXISTS color (
     name VARCHAR(50) NOT NULL PRIMARY KEY,  -- lesbarer Bezeichner, z.B. 'red', 'blue'
     hex  VARCHAR(7)  NOT NULL               -- '#rrggbb'
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 INSERT IGNORE INTO color (name, hex) VALUES
     ('red',    '#e74c3c'),
     ('blue',   '#3498db'),
@@ -186,7 +189,7 @@ CREATE TABLE IF NOT EXISTS award (
     name       VARCHAR(100) NOT NULL UNIQUE,
     icon       VARCHAR(100) NULL DEFAULT NULL,  -- Pfad zum Icon, z.B. "img/icons/trophy.png"
     sort_index INT          NOT NULL DEFAULT 0
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: achievement (Errungenschafts-Definitionen; liganeutral)
 CREATE TABLE IF NOT EXISTS achievement (
@@ -198,7 +201,7 @@ CREATE TABLE IF NOT EXISTS achievement (
     threshold_bronze INT          NULL DEFAULT NULL, -- Schwellwert für Bronze (NULL = kein Level-System)
     threshold_silver INT          NULL DEFAULT NULL, -- Schwellwert für Silber
     threshold_gold   INT          NULL DEFAULT NULL  -- Schwellwert für Gold
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
 -- ── Manager (global) ────────────────────────────────────────────────────────────
@@ -210,20 +213,20 @@ CREATE TABLE IF NOT EXISTS manager (
     first_name    VARCHAR(100) NULL DEFAULT NULL,
     alias         VARCHAR(64)  NULL DEFAULT NULL UNIQUE,
     password      VARCHAR(255) NOT NULL,
-    status        ENUM('active', 'blocked', 'deleted') NOT NULL DEFAULT 'active',
+    status        ENUM('active', 'blocked', 'deleted') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'active',
     email         VARCHAR(255) NULL UNIQUE,
     date_of_birth DATE         NULL,
     last_activity DATETIME     NULL DEFAULT NULL
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: manager_role (zusätzliche Rollen pro Manager; additiv)
 CREATE TABLE IF NOT EXISTS manager_role (
     id         CHAR(36)                    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
     manager_id CHAR(36)                    NOT NULL,
-    role       ENUM('maintainer', 'admin') NOT NULL,
+    role       ENUM('maintainer', 'admin') CHARACTER SET utf8mb4 NOT NULL,
     UNIQUE KEY uk_manager_role (manager_id, role),
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: password_reset_token
 CREATE TABLE IF NOT EXISTS password_reset_token (
@@ -234,7 +237,7 @@ CREATE TABLE IF NOT EXISTS password_reset_token (
     used       TINYINT(1)  NOT NULL DEFAULT 0,
     created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: manager_league (Ligamitgliedschaften eines Managers)
 CREATE TABLE IF NOT EXISTS manager_league (
@@ -242,10 +245,11 @@ CREATE TABLE IF NOT EXISTS manager_league (
     manager_id CHAR(36) NOT NULL,
     league_id  CHAR(36) NOT NULL,
     joined_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status     ENUM('active','invited','requested','denied') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'active',
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     FOREIGN KEY (league_id)  REFERENCES league(id)  ON DELETE CASCADE,
     UNIQUE KEY uk_manager_league (manager_id, league_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: notification
 CREATE TABLE IF NOT EXISTS notification (
@@ -257,7 +261,7 @@ CREATE TABLE IF NOT EXISTS notification (
     created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     read_at     DATETIME     NULL DEFAULT NULL,
     FOREIGN KEY (receiver_id) REFERENCES manager(id) ON DELETE CASCADE
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: notification_preference
 CREATE TABLE IF NOT EXISTS notification_preference (
@@ -266,7 +270,7 @@ CREATE TABLE IF NOT EXISTS notification_preference (
     enabled    BOOL        NOT NULL DEFAULT 1,
     PRIMARY KEY (manager_id, event_type),
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: manager_achievement
 CREATE TABLE IF NOT EXISTS manager_achievement (
@@ -276,11 +280,11 @@ CREATE TABLE IF NOT EXISTS manager_achievement (
     earned_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     reason         VARCHAR(255) NULL DEFAULT NULL,
     seen_at        DATETIME     NULL DEFAULT NULL,
-    level          ENUM('bronze', 'silver', 'gold') NOT NULL DEFAULT 'gold',
+    level          ENUM('bronze', 'silver', 'gold') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'gold',
     FOREIGN KEY (manager_id)     REFERENCES manager(id),
     FOREIGN KEY (achievement_id) REFERENCES achievement(id),
     UNIQUE KEY uk_manager_achievement (manager_id, achievement_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: maintainer_contribution (welcher Maintainer hat Spielerratings eingetragen)
 -- player_rating_id ist Cross-DB-Referenz auf player_rating.id (kein FK)
@@ -288,11 +292,11 @@ CREATE TABLE IF NOT EXISTS maintainer_contribution (
     id                CHAR(36)                                       NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id        CHAR(36)                                       NOT NULL,
     player_rating_id  CHAR(36)                                       NOT NULL,
-    contribution_type ENUM('bulk_create', 'manual_create', 'grade') NOT NULL,
+    contribution_type ENUM('bulk_create', 'manual_create', 'grade') CHARACTER SET utf8mb4 NOT NULL,
     created_at        DATETIME                                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     UNIQUE KEY uk_contribution (player_rating_id, contribution_type)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Achievements (v2)
 -- Spaltenreihenfolge: id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold

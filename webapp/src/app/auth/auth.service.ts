@@ -4,9 +4,10 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface League {
-  id:   string;
-  name: string;
-  slug: string;
+  id:     string;
+  name:   string;
+  slug:   string;
+  status?: 'active' | 'invited' | 'requested' | 'denied';
 }
 
 export interface LoginResponse {

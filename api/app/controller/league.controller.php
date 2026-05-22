@@ -29,9 +29,10 @@ class LeagueController extends _BaseController
 
     protected function post(): mixed
     {
-        // POST /league/:id/join  — any authenticated manager can join a league
+        // POST /league/:id/join — manager sends a join request (status='requested')
         if ($this->sub === 'join') {
-            $leagueId = $this->id;
+            $leagueId  = $this->id;
+            $managerId = $GLOBALS['auth_manager_id'];
             if (!$leagueId) {
                 http_response_code(400);
                 return ['status' => false, 'message' => 'Liga-ID fehlt'];
@@ -41,7 +42,34 @@ class LeagueController extends _BaseController
                 http_response_code(404);
                 return ['status' => false, 'message' => 'Liga nicht gefunden'];
             }
-            $this->db->joinLeague($GLOBALS['auth_manager_id'], $leagueId);
+            $this->db->requestJoinLeague($managerId, $leagueId);
+
+            $manager  = $this->db->getAuthManagerById($managerId);
+            $adminIds = $this->db->getAdminManagerIds();
+            foreach ($adminIds as $adminId) {
+                $this->db->createNotification(
+                    $adminId,
+                    "Beitrittsanfrage: {$manager['manager_name']} möchte {$league['name']} beitreten",
+                    null,
+                    null
+                );
+            }
+            return ['status' => true];
+        }
+
+        // POST /league/:id/accept — manager accepts own invitation (status invited→active)
+        if ($this->sub === 'accept') {
+            $leagueId  = $this->id;
+            $managerId = $GLOBALS['auth_manager_id'];
+            if (!$leagueId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Liga-ID fehlt'];
+            }
+            $ok = $this->db->acceptLeagueInvite($managerId, $leagueId);
+            if (!$ok) {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Keine ausstehende Einladung'];
+            }
             return ['status' => true];
         }
 
@@ -49,6 +77,69 @@ class LeagueController extends _BaseController
         if (!$this->isAdmin()) {
             http_response_code(403);
             return ['status' => false, 'message' => 'Forbidden'];
+        }
+
+        // POST /league/:id/invite  { manager_id }  — admin invites a manager
+        if ($this->sub === 'invite') {
+            $leagueId  = $this->id;
+            $body      = $this->body();
+            $managerId = $body['manager_id'] ?? null;
+            if (!$leagueId || !$managerId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Liga-ID und Manager-ID erforderlich'];
+            }
+            $league = $this->db->getLeagueById($leagueId);
+            if (!$league) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Liga nicht gefunden'];
+            }
+            $this->db->inviteManagerToLeague($managerId, $leagueId);
+            $this->db->createNotification(
+                $managerId,
+                "Einladung: {$league['name']}",
+                null,
+                null
+            );
+            return ['status' => true];
+        }
+
+        // POST /league/:id/approve  { manager_id }  — admin approves a join request
+        if ($this->sub === 'approve') {
+            $leagueId  = $this->id;
+            $body      = $this->body();
+            $managerId = $body['manager_id'] ?? null;
+            if (!$leagueId || !$managerId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Liga-ID und Manager-ID erforderlich'];
+            }
+            $league = $this->db->getLeagueById($leagueId);
+            if (!$league) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Liga nicht gefunden'];
+            }
+            $ok = $this->db->approveMembership($managerId, $leagueId);
+            if ($ok) {
+                $this->db->createNotification(
+                    $managerId,
+                    "Beitritt genehmigt: {$league['name']}",
+                    null,
+                    null
+                );
+            }
+            return ['status' => true];
+        }
+
+        // POST /league/:id/deny  { manager_id }  — admin denies/cancels a membership
+        if ($this->sub === 'deny') {
+            $leagueId  = $this->id;
+            $body      = $this->body();
+            $managerId = $body['manager_id'] ?? null;
+            if (!$leagueId || !$managerId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Liga-ID und Manager-ID erforderlich'];
+            }
+            $this->db->denyMembership($managerId, $leagueId);
+            return ['status' => true];
         }
 
         // POST /league/migrate  { league_id }

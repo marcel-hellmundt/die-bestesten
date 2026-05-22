@@ -62,11 +62,55 @@
                 <span class="role-badge role-badge--manager">{{ roleLabel['manager'] }}</span>
               </div>
             </td>
-            <td class="col-leagues">
+            <td class="col-leagues" (click)="$event.stopPropagation()">
               @for (league of m.leagues; track league.id) {
-                <span class="league-tag">{{ league.name }}</span>
+                <span class="league-tag league-tag--{{ league.status ?? 'active' }}">
+                  {{ league.name }}
+                  @if (league.status === 'requested' && isAdmin()) {
+                    <button
+                      class="league-tag-btn league-tag-btn--approve"
+                      [disabled]="isMembershipLoading(m.id, league.id)"
+                      (click)="approveMembership(m, league.id)"
+                      title="Genehmigen"
+                    >✓</button>
+                    <button
+                      class="league-tag-btn league-tag-btn--deny"
+                      [disabled]="isMembershipLoading(m.id, league.id)"
+                      (click)="denyMembership(m, league.id)"
+                      title="Ablehnen"
+                    >✕</button>
+                  }
+                  @if (league.status === 'invited') {
+                    <span class="league-tag-badge">eingeladen</span>
+                  }
+                </span>
               }
-              @if (!m.leagues?.length) {
+              @if (isAdmin()) {
+                <div class="league-invite-wrap">
+                  <button
+                    class="league-tag league-tag--add"
+                    (click)="openInvitePopup(m.id)"
+                    title="Manager zu Liga einladen"
+                  >+</button>
+                  @if (activeInvitePopup() === m.id) {
+                    <div class="league-invite-popup">
+                      @if (!allLeaguesLoaded()) {
+                        <span class="league-invite-empty">Laden…</span>
+                      } @else if (availableLeaguesFor(m).length === 0) {
+                        <span class="league-invite-empty">Keine weiteren Ligen</span>
+                      } @else {
+                        @for (league of availableLeaguesFor(m); track league.id) {
+                          <button
+                            class="league-invite-option"
+                            [disabled]="isMembershipLoading(m.id, league.id)"
+                            (click)="inviteToLeague(m, league.id)"
+                          >{{ league.name }}</button>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+              } @else if (!m.leagues?.length) {
                 <span class="col-muted">—</span>
               }
             </td>

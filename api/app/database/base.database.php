@@ -221,7 +221,7 @@ class Database
     public function getManagerLeagues(string $managerId): array
     {
         $q = $this->con->prepare(
-            "SELECT l.id, l.slug, l.name FROM manager_league ml
+            "SELECT l.id, l.slug, l.name, ml.status FROM manager_league ml
              JOIN league l ON l.id = ml.league_id
              WHERE ml.manager_id = :manager_id
              ORDER BY l.name"
@@ -230,19 +230,61 @@ class Database
         return $q->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function joinLeague(string $managerId, string $leagueId): void
+    public function requestJoinLeague(string $managerId, string $leagueId): void
     {
         $this->con->prepare(
-            "INSERT IGNORE INTO manager_league (manager_id, league_id) VALUES (:manager_id, :league_id)"
-        )->execute([':manager_id' => $managerId, ':league_id' => $leagueId]);
+            "INSERT INTO manager_league (manager_id, league_id, status) VALUES (:m, :l, 'requested')
+             ON DUPLICATE KEY UPDATE status = IF(status = 'denied', 'requested', status)"
+        )->execute([':m' => $managerId, ':l' => $leagueId]);
+    }
+
+    public function inviteManagerToLeague(string $managerId, string $leagueId): void
+    {
+        $this->con->prepare(
+            "INSERT INTO manager_league (manager_id, league_id, status) VALUES (:m, :l, 'invited')
+             ON DUPLICATE KEY UPDATE status = IF(status IN ('denied','requested'), 'invited', status)"
+        )->execute([':m' => $managerId, ':l' => $leagueId]);
+    }
+
+    public function acceptLeagueInvite(string $managerId, string $leagueId): bool
+    {
+        $q = $this->con->prepare(
+            "UPDATE manager_league SET status = 'active'
+             WHERE manager_id = :m AND league_id = :l AND status = 'invited'"
+        );
+        $q->execute([':m' => $managerId, ':l' => $leagueId]);
+        return $q->rowCount() > 0;
+    }
+
+    public function approveMembership(string $managerId, string $leagueId): bool
+    {
+        $q = $this->con->prepare(
+            "UPDATE manager_league SET status = 'active'
+             WHERE manager_id = :m AND league_id = :l AND status = 'requested'"
+        );
+        $q->execute([':m' => $managerId, ':l' => $leagueId]);
+        return $q->rowCount() > 0;
+    }
+
+    public function denyMembership(string $managerId, string $leagueId): void
+    {
+        $this->con->prepare(
+            "UPDATE manager_league SET status = 'denied' WHERE manager_id = :m AND league_id = :l"
+        )->execute([':m' => $managerId, ':l' => $leagueId]);
     }
 
     public function isManagerInLeague(string $managerId, string $leagueId): bool
     {
         $q = $this->con->prepare(
-            "SELECT COUNT(*) FROM manager_league WHERE manager_id = :m AND league_id = :l"
+            "SELECT COUNT(*) FROM manager_league WHERE manager_id = :m AND league_id = :l AND status = 'active'"
         );
         $q->execute([':m' => $managerId, ':l' => $leagueId]);
         return (int) $q->fetchColumn() > 0;
+    }
+
+    public function getAdminManagerIds(): array
+    {
+        $q = $this->con->query("SELECT manager_id FROM manager_role WHERE role = 'admin'");
+        return $q->fetchAll(PDO::FETCH_COLUMN);
     }
 }

@@ -45,6 +45,8 @@
 
 .season-list {
   margin-top: $space-2;
+  padding: 0;
+  overflow: hidden;
 }
 
 .season-row {
@@ -129,6 +131,12 @@
   white-space: nowrap;
 
   &--error { color: $color-danger; }
+
+  &--standalone {
+    display: inline-flex;
+    align-items: center;
+    height: $control-height;
+  }
 }
 
 .team-name-cell {

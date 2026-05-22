@@ -10,7 +10,8 @@
 }
 
 .col-leagues {
-  max-width: 220px;
+  max-width: 260px;
+  white-space: nowrap;
 }
 
 .manager-name-cell {
@@ -98,15 +99,109 @@ button.role-badge {
 }
 
 .league-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 2px $space-2;
   background: $color-surface-alt;
   border: 1px solid $color-border;
   border-radius: $radius-sm;
   font-size: $font-xs;
   color: $color-text-muted;
+  vertical-align: middle;
 
   & + & {
     margin-left: 4px;
   }
+
+  &--requested {
+    background: color-mix(in srgb, $color-warning 15%, transparent);
+    border-color: $color-warning;
+    color: color-mix(in srgb, $color-warning 80%, #000);
+  }
+
+  &--invited {
+    background: color-mix(in srgb, $color-accent 12%, transparent);
+    border-color: $color-accent;
+    color: $color-accent;
+  }
+
+  &--add {
+    border-style: dashed;
+    cursor: pointer;
+    background: none;
+
+    &:hover { background: $color-surface-alt; }
+  }
+}
+
+.league-tag-badge {
+  font-size: 10px;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.league-tag-btn {
+  padding: 0 3px;
+  border-radius: 2px;
+  border: none;
+  font-size: 10px;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: opacity $transition-fast;
+
+  &:disabled { opacity: 0.4; cursor: wait; }
+
+  &--approve {
+    background: $color-success;
+    color: #fff;
+  }
+
+  &--deny {
+    background: $color-danger;
+    color: #fff;
+  }
+}
+
+.league-invite-wrap {
+  display: inline-block;
+  position: relative;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.league-invite-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: $space-1;
+}
+
+.league-invite-option {
+  display: block;
+  width: 100%;
+  padding: $space-2 $space-3;
+  font-size: $font-sm;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: $radius-sm;
+  color: $color-text;
+
+  &:hover { background: $color-surface-alt; }
+  &:disabled { opacity: 0.5; cursor: wait; }
+}
+
+.league-invite-empty {
+  display: block;
+  padding: $space-2 $space-3;
+  font-size: $font-sm;
+  color: $color-text-muted;
 }

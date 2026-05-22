@@ -34,7 +34,7 @@
     </div>
   }
 
-  <div class="season-list">
+  <div class="card season-list">
     @for (sg of seasonGroups(); track sg.seasonId) {
       <div
         class="season-row"
@@ -79,6 +79,10 @@
                   <div class="h2h-action">
                     @if (h2hDone(sg.seasonId, action.key)) {
                       <span class="h2h-done">✓ {{ action.label }}</span>
+                    } @else if (h2hState(sg.seasonId, action.key) === 'error') {
+                      <span class="h2h-msg h2h-msg--error h2h-msg--standalone">
+                        {{ h2hMessage(sg.seasonId, action.key) }}
+                      </span>
                     } @else {
                       <button
                         class="btn btn-sm btn-ghost"
@@ -86,10 +90,7 @@
                         (click)="runH2H(sg.seasonId, action.key)"
                       >{{ h2hState(sg.seasonId, action.key) === 'loading' ? 'Läuft…' : action.label }}</button>
                       @if (h2hMessage(sg.seasonId, action.key)) {
-                        <span
-                          class="h2h-msg"
-                          [class.h2h-msg--error]="h2hState(sg.seasonId, action.key) === 'error'"
-                        >{{ h2hMessage(sg.seasonId, action.key) }}</span>
+                        <span class="h2h-msg">{{ h2hMessage(sg.seasonId, action.key) }}</span>
                       }
                     }
                   </div>

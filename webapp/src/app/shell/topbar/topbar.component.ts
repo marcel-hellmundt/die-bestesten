@@ -34,8 +34,19 @@ export class TopbarComponent implements OnDestroy {
   avatarImgFailed      = signal(false);
   currentUrl           = signal(this.router.url);
 
-  leagues       = signal<League[]>([]);
-  leagueSwitching = signal(false);
+  leagues          = signal<League[]>([]);
+  leagueSwitching  = signal(false);
+  allLeagues       = signal<any[]>([]);
+  allLeaguesLoaded = signal(false);
+  showJoinSection  = signal(false);
+  leagueActionState = signal<Record<string, 'loading' | 'done' | 'error'>>({});
+
+  activeLeagues   = computed(() => this.leagues().filter(l => !l.status || l.status === 'active'));
+  invitedLeagues  = computed(() => this.leagues().filter(l => l.status === 'invited'));
+  availableLeagues = computed(() => {
+    const myIds = new Set(this.leagues().map(l => l.id));
+    return this.allLeagues().filter(l => !myIds.has(l.id));
+  });
 
   searchQuery   = signal('');
   searchResults = signal<SearchResults | null>(null);
@@ -203,6 +214,51 @@ export class TopbarComponent implements OnDestroy {
         this.router.navigate(['/']);
       },
       error: () => this.leagueSwitching.set(false),
+    });
+  }
+
+  loadAllLeagues(): void {
+    if (this.allLeaguesLoaded()) return;
+    this.api.get<any[]>('league').subscribe({
+      next: (data) => { this.allLeagues.set(data ?? []); this.allLeaguesLoaded.set(true); },
+      error: () => {},
+    });
+  }
+
+  toggleJoinSection(): void {
+    this.showJoinSection.update(v => !v);
+    if (this.showJoinSection()) this.loadAllLeagues();
+  }
+
+  acceptInvite(leagueId: string): void {
+    if (this.leagueActionState()[leagueId] === 'loading') return;
+    this.leagueActionState.update(s => ({ ...s, [leagueId]: 'loading' }));
+    this.api.post<any>(`league/${leagueId}/accept`, {}).subscribe({
+      next: () => {
+        this.api.get<{ leagues: League[] }>('manager/leagues').subscribe({
+          next: (data) => {
+            this.leagues.set(data.leagues ?? []);
+            this.leagueActionState.update(s => { const n = { ...s }; delete n[leagueId]; return n; });
+            this.switchLeague(leagueId);
+          },
+          error: () => this.leagueActionState.update(s => { const n = { ...s }; delete n[leagueId]; return n; }),
+        });
+      },
+      error: () => this.leagueActionState.update(s => { const n = { ...s }; delete n[leagueId]; return n; }),
+    });
+  }
+
+  requestJoin(leagueId: string): void {
+    if (this.leagueActionState()[leagueId] === 'loading') return;
+    this.leagueActionState.update(s => ({ ...s, [leagueId]: 'loading' }));
+    const leagueName = this.allLeagues().find(l => l.id === leagueId)?.name ?? leagueId;
+    this.api.post<any>(`league/${leagueId}/join`, {}).subscribe({
+      next: () => {
+        this.allLeagues.update(list => list.filter(l => l.id !== leagueId));
+        this.leagues.update(list => [...list, { id: leagueId, name: leagueName, slug: '', status: 'requested' as const }]);
+        this.leagueActionState.update(s => { const n = { ...s }; delete n[leagueId]; return n; });
+      },
+      error: () => this.leagueActionState.update(s => { const n = { ...s }; delete n[leagueId]; return n; }),
     });
   }
 

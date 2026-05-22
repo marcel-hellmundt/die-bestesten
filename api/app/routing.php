@@ -84,8 +84,35 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/league/:id/join',
-                        'description' => 'Liga beitreten — trägt den eingeloggten Manager in manager_league ein; 404 wenn Liga nicht gefunden — Auth',
+                        'description' => 'Liga-Beitrittsanfrage stellen (status=requested); benachrichtigt alle Admins — Auth',
                         'path_params' => [':id' => 'UUID der Liga'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/league/:id/accept',
+                        'description' => 'Einladung annehmen (status invited→active) — Auth; 409 wenn keine ausstehende Einladung',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/league/:id/invite',
+                        'description' => 'Manager einladen (status=invited); benachrichtigt den Manager — Body: {manager_id} — Admin',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                        'body' => ['manager_id' => 'UUID des Managers'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/league/:id/approve',
+                        'description' => 'Beitrittsanfrage genehmigen (status requested→active); benachrichtigt Manager — Body: {manager_id} — Admin',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                        'body' => ['manager_id' => 'UUID des Managers'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/league/:id/deny',
+                        'description' => 'Mitgliedschaft ablehnen (status→denied) — Body: {manager_id} — Admin',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                        'body' => ['manager_id' => 'UUID des Managers'],
                     ],
                     [
                         'method' => 'POST',

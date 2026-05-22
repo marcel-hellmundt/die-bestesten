@@ -97,7 +97,11 @@ GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_po
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
 GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}
 PATCH    /league/:id           — {division_id: UUID|null} — Spielerpool-Division setzen — Admin
-POST     /league/:id/join      — Liga beitreten (manager_league-Eintrag anlegen); idempotent (INSERT IGNORE) — Auth
+POST     /league/:id/join      — Beitrittsanfrage stellen (status='requested'); benachrichtigt alle Admins — Auth
+POST     /league/:id/accept    — Einladung annehmen (invited→active); 409 wenn keine ausstehende Einladung — Auth
+POST     /league/:id/invite    — {manager_id} Manager einladen (status='invited'); benachrichtigt Manager — Admin
+POST     /league/:id/approve   — {manager_id} Anfrage genehmigen (requested→active); benachrichtigt Manager — Admin
+POST     /league/:id/deny      — {manager_id} Mitgliedschaft ablehnen (→denied) — Admin
 POST     /league/migrate           — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
 POST     /league/validate_ratings  — {league_id} — prüft team_ratings ab 2020/21 gegen team_lineup + player_rating — Admin
 POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB + alte DB) — Admin
@@ -186,7 +190,7 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 
 **password_reset_token**: id PK, manager_id FK, token_hash VARCHAR(64) UNIQUE, expires_at DATETIME, used BOOL DEFAULT 0, created_at DATETIME
 
-**manager_league**: id PK, manager_id FK → manager, league_id FK → league, joined_at DATETIME — UNIQUE(manager_id, league_id) — Ligamitgliedschaft; INSERT IGNORE für idempotenten Beitritt
+**manager_league**: id PK, manager_id FK → manager, league_id FK → league, joined_at DATETIME, status ENUM('active','invited','requested','denied') DEFAULT 'active' — UNIQUE(manager_id, league_id) — Bidirektionaler Beitritts-Workflow: Admin lädt ein (invited) oder Manager stellt Anfrage (requested); Genehmigung/Annahme → active; Ablehnung → denied (final)
 
 **notification**: id PK, sender_id CHAR(36)? (NULL = Systemnachricht; kein FK), receiver_id FK → manager, title VARCHAR(255), message TEXT?, created_at DATETIME, read_at DATETIME? (NULL = ungelesen)
 

@@ -2,6 +2,9 @@
 -- Enthält Tabellen für team, transaction, team_rating, team_lineup, player_in_team
 -- manager und verwandte Tabellen (manager_role, notification, etc.) sind in global_schema
 
+SET NAMES utf8mb4;
+SET character_set_client = utf8mb4;
+
 -- Tabelle: team (1 Team pro Manager pro Saison)
 CREATE TABLE IF NOT EXISTS team (
     id              CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
@@ -13,7 +16,7 @@ CREATE TABLE IF NOT EXISTS team (
     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uk_team_manager_season (manager_id, season_id),
     UNIQUE KEY uk_team_name_season (team_name, season_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: transaction (Einnahmen/Ausgaben pro Team; aktuelles Budget = SUM(amount))
 CREATE TABLE IF NOT EXISTS transaction (
@@ -24,7 +27,7 @@ CREATE TABLE IF NOT EXISTS transaction (
     matchday_id  CHAR(36)      DEFAULT NULL,        -- Referenz auf global_schema.matchday.id (kein FK, cross-DB); NULL wenn nicht spieltagsbezogen
     created_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES team(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: team_rating (1 Rating pro Team pro Spieltag)
 CREATE TABLE IF NOT EXISTS team_rating (
@@ -48,7 +51,7 @@ CREATE TABLE IF NOT EXISTS team_rating (
     invalid             TINYINT(1)  NOT NULL DEFAULT 0,  -- 1 = kein Team rechtzeitig aufgestellt
     FOREIGN KEY (team_id) REFERENCES team(id),
     UNIQUE KEY uk_team_rating (team_id, matchday_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: team_lineup (Aufstellung pro Team pro Spieltag — alle Kader-Spieler, nominated = eingesetzt)
 CREATE TABLE IF NOT EXISTS team_lineup (
@@ -60,7 +63,7 @@ CREATE TABLE IF NOT EXISTS team_lineup (
     position_index INT        NULL DEFAULT NULL,    -- visuell: Reihenfolge pro Position (links/mitte/rechts)
     FOREIGN KEY (team_id) REFERENCES team(id),
     UNIQUE KEY uk_team_lineup (team_id, player_id, matchday_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: offer (Gebote auf Spieler in einer Transferphase)
 CREATE TABLE IF NOT EXISTS offer (
@@ -70,10 +73,10 @@ CREATE TABLE IF NOT EXISTS offer (
     transferwindow_id   CHAR(36)    NOT NULL,             -- Referenz auf global_schema.transferwindow.id (kein FK, cross-DB)
     offer_value         INT         NOT NULL,
     price_snapshot      INT         DEFAULT NULL,         -- Marktwert zum Zeitpunkt des Gebots (denormalisiert für Performance)
-    status              ENUM('pending', 'success', 'lost', 'cancelled') NOT NULL DEFAULT 'pending',
+    status              ENUM('pending', 'success', 'lost', 'cancelled') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'pending',
     created_at          DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES team(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: sell (Direktverkauf eines Spielers zu Marktwert)
 CREATE TABLE IF NOT EXISTS sell (
@@ -84,7 +87,7 @@ CREATE TABLE IF NOT EXISTS sell (
     price             INT       NOT NULL,             -- Marktwert zum Zeitpunkt des Verkaufs
     created_at        DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES team(id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: player_in_team (Spieler-Zugehörigkeit zu einem Team pro Transferphase)
 -- Applikationsebene stellt sicher: pro Spieler max. 1 aktiver Eintrag (to_matchday_id IS NULL)
@@ -100,11 +103,7 @@ CREATE TABLE IF NOT EXISTS player_in_team (
     FOREIGN KEY (offer_id) REFERENCES offer(id),
     FOREIGN KEY (sell_id) REFERENCES sell(id),
     UNIQUE KEY uk_player_from (player_id, team_id, from_matchday_id)  -- kein Doppelkauf desselben Teams in derselben Transferphase
-);
-
-
-ALTER TABLE team_rating ADD COLUMN IF NOT EXISTS red_cards INT DEFAULT NULL;
-ALTER TABLE team_rating ADD COLUMN IF NOT EXISTS yellow_red_cards INT DEFAULT NULL AFTER red_cards;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)
 -- award-Typen sind in global_schema.award definiert (cross-DB, kein FK auf award_id)
@@ -114,8 +113,7 @@ CREATE TABLE IF NOT EXISTS team_award (
     award_id CHAR(36) NOT NULL,              -- Referenz auf global_schema.award.id (kein FK, cross-DB)
     FOREIGN KEY (team_id) REFERENCES team(id),
     UNIQUE KEY uk_team_award (award_id, team_id)  -- ein Team kann denselben Award nicht zweimal gewinnen
-);
-
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS team_watchlist (
     id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
@@ -124,16 +122,7 @@ CREATE TABLE IF NOT EXISTS team_watchlist (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE CASCADE,
     UNIQUE KEY uk_team_player (team_id, player_id)
-);
-
--- Fix UNIQUE constraint on player_in_team: team_id must be included so two teams can hold
--- the same player on the same matchday (e.g. sold and re-bought within one matchday's transfer phases)
-ALTER TABLE player_in_team DROP INDEX uk_player_from;
-ALTER TABLE player_in_team ADD UNIQUE KEY uk_player_from (player_id, team_id, from_matchday_id);
-
--- Farbpaletten-Referenz (global_schema.color, cross-DB, kein FK-Constraint möglich)
-ALTER TABLE team ADD COLUMN color_primary   VARCHAR(50) DEFAULT NULL;
-ALTER TABLE team ADD COLUMN color_secondary VARCHAR(50) DEFAULT NULL;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- H2H-Turniermodus
 CREATE TABLE IF NOT EXISTS h2h_group (
@@ -141,7 +130,7 @@ CREATE TABLE IF NOT EXISTS h2h_group (
     season_id  CHAR(36)     NOT NULL,
     name       VARCHAR(50)  NOT NULL,
     sort_index INT          NOT NULL DEFAULT 0
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS h2h_group_team (
     id       CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
@@ -149,17 +138,17 @@ CREATE TABLE IF NOT EXISTS h2h_group_team (
     team_id  CHAR(36) NOT NULL,
     UNIQUE KEY uk_h2h_group_team (group_id, team_id),
     FOREIGN KEY (group_id) REFERENCES h2h_group(id) ON DELETE CASCADE
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS h2h_match (
-    id            CHAR(36)                                                NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    season_id     CHAR(36)                                                NOT NULL,
-    phase         ENUM('group','quarterfinal','semifinal','final')        NOT NULL,
-    leg           TINYINT                                                 NOT NULL DEFAULT 1,
-    home_team_id  CHAR(36)                                                NOT NULL,
-    away_team_id  CHAR(36)                                                NOT NULL,
-    matchday_id   CHAR(36)                                                NOT NULL,
-    group_id      CHAR(36)                                                NULL DEFAULT NULL,
-    sort_index    INT                                                     NOT NULL DEFAULT 0,
+    id            CHAR(36)                                                         NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    season_id     CHAR(36)                                                         NOT NULL,
+    phase         ENUM('group','quarterfinal','semifinal','final') CHARACTER SET utf8mb4 NOT NULL,
+    leg           TINYINT                                                          NOT NULL DEFAULT 1,
+    home_team_id  CHAR(36)                                                         NOT NULL,
+    away_team_id  CHAR(36)                                                         NOT NULL,
+    matchday_id   CHAR(36)                                                         NOT NULL,
+    group_id      CHAR(36)                                                         NULL DEFAULT NULL,
+    sort_index    INT                                                              NOT NULL DEFAULT 0,
     FOREIGN KEY (group_id) REFERENCES h2h_group(id) ON DELETE SET NULL
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
