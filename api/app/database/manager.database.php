@@ -7,9 +7,7 @@ trait ManagerTrait
         $q = $this->con->prepare(
             "SELECT m.id, m.manager_name, m.alias, m.status,
                     GROUP_CONCAT(DISTINCT mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv,
-                    GROUP_CONCAT(l.id   ORDER BY l.name SEPARATOR '|') AS league_ids,
-                    GROUP_CONCAT(l.name ORDER BY l.name SEPARATOR '|') AS league_names,
-                    GROUP_CONCAT(ml.status ORDER BY l.name SEPARATOR '|') AS league_statuses
+                    GROUP_CONCAT(DISTINCT CONCAT(l.id, '~~', l.name, '~~', COALESCE(ml.status, 'active')) ORDER BY l.name SEPARATOR '|') AS league_data
              FROM manager m
              LEFT JOIN manager_role mr  ON mr.manager_id  = m.id
              LEFT JOIN manager_league ml ON ml.manager_id = m.id
@@ -26,15 +24,13 @@ trait ManagerTrait
         foreach ($rows as &$row) {
             $row['roles']   = $row['roles_csv'] ? explode(',', $row['roles_csv']) : [];
             $row['leagues'] = [];
-            if ($row['league_ids']) {
-                $ids      = explode('|', $row['league_ids']);
-                $names    = explode('|', $row['league_names']);
-                $statuses = explode('|', $row['league_statuses']);
-                foreach ($ids as $i => $id) {
-                    $row['leagues'][] = ['id' => $id, 'name' => $names[$i] ?? $id, 'status' => $statuses[$i] ?? 'active'];
+            if ($row['league_data']) {
+                foreach (explode('|', $row['league_data']) as $entry) {
+                    [$lid, $lname, $lstatus] = explode('~~', $entry, 3);
+                    $row['leagues'][] = ['id' => $lid, 'name' => $lname, 'status' => $lstatus];
                 }
             }
-            unset($row['roles_csv'], $row['league_ids'], $row['league_names'], $row['league_statuses']);
+            unset($row['roles_csv'], $row['league_data']);
         }
         return $rows;
     }
