@@ -20,7 +20,9 @@
       line-height: 1.1;
       color: $color-text;
       text-decoration: none;
-      &:hover { color: $color-accent; }
+      &:hover {
+        color: $color-accent;
+      }
     }
 
     .team {
@@ -28,13 +30,16 @@
       color: $color-text-muted;
       margin-top: 1px;
       text-decoration: none;
-      &:hover { color: $color-text; }
+      &:hover {
+        color: $color-text;
+      }
     }
   }
 
   &-logo {
     width: 44px;
     height: 44px;
+    min-width: 44px;
     object-fit: contain;
     flex-shrink: 0;
   }
@@ -107,7 +112,9 @@
       background-color: color-mix(in srgb, var(--flat-river) 12%, transparent);
       border-radius: $radius-md;
 
-      .nav-icon { color: var(--flat-river); }
+      .nav-icon {
+        color: var(--flat-river);
+      }
 
       &:hover {
         color: var(--flat-river);
