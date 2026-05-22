@@ -126,6 +126,8 @@
     </div>
   </div>
 
+  <div class="spacer"></div>
+
   <div class="topbar-league">
     <button
       class="league-btn"
@@ -143,7 +145,6 @@
 
     @if (isLeagueDropdownOpen()) {
       <div class="league-dropdown">
-
         @if (activeLeagues().length > 0) {
           <div class="league-section-label">Meine Ligen</div>
           @for (league of activeLeagues(); track league.id) {
@@ -169,7 +170,9 @@
                 class="league-accept-btn"
                 [disabled]="leagueActionState()[league.id] === 'loading'"
                 (click)="acceptInvite(league.id)"
-              >{{ leagueActionState()[league.id] === 'loading' ? '…' : 'Annehmen' }}</button>
+              >
+                {{ leagueActionState()[league.id] === 'loading' ? '…' : 'Annehmen' }}
+              </button>
             </div>
           }
         }
@@ -192,12 +195,13 @@
                   class="league-request-btn"
                   [disabled]="leagueActionState()[league.id] === 'loading'"
                   (click)="requestJoin(league.id)"
-                >{{ leagueActionState()[league.id] === 'loading' ? '…' : 'Anfragen' }}</button>
+                >
+                  {{ leagueActionState()[league.id] === 'loading' ? '…' : 'Anfragen' }}
+                </button>
               </div>
             }
           }
         }
-
       </div>
     }
   </div>
