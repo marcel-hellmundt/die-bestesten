@@ -11,10 +11,14 @@ trait AwardTrait
 
         if (empty($awards)) return [];
 
-        // All seasons from global DB, oldest first
-        $seasons = $this->con->query(
+        // Seasons played in this league
+        $leagueSeasonIds = array_flip(
+            $this->con_league->query("SELECT DISTINCT season_id FROM team")->fetchAll(PDO::FETCH_COLUMN)
+        );
+        $allSeasons = $this->con->query(
             "SELECT id, start_date FROM season ORDER BY start_date DESC"
         )->fetchAll(PDO::FETCH_ASSOC);
+        $seasons = array_values(array_filter($allSeasons, fn($s) => isset($leagueSeasonIds[$s['id']])));
 
         // All winners from league DB
         $winners = $this->con_league->query(
