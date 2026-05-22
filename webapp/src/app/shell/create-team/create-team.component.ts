@@ -16,8 +16,8 @@ import {
   switchMap,
   of,
   forkJoin,
+  catchError,
 } from 'rxjs';
-import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
@@ -102,15 +102,14 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
           this.nameStatus.set('checking');
           return this.api.get<{ available: boolean }>(
             `team/check-name?name=${encodeURIComponent(name)}`,
+          ).pipe(
+            catchError(() => { this.nameStatus.set('idle'); return of(null); })
           );
         }),
       )
-      .subscribe({
-        next: (result) => {
-          if (result === null) return;
-          this.nameStatus.set(result.available ? 'valid' : 'invalid');
-        },
-        error: () => this.nameStatus.set('idle'),
+      .subscribe(result => {
+        if (result === null) return;
+        this.nameStatus.set(result.available ? 'valid' : 'invalid');
       });
 
     forkJoin({

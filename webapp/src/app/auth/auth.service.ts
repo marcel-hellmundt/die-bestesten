@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -22,12 +22,17 @@ export interface LoginResponse {
 export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
 
+  private readonly _leagueId = signal<string | null>(
+    (this.getPayload()?.['league_id'] as string) ?? null
+  );
+
   constructor(private http: HttpClient) {}
 
   login(name: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${environment.apiUrl}/auth`, { name, password }).pipe(
       tap(response => {
         localStorage.setItem(this.TOKEN_KEY, response.token);
+        this._leagueId.set(response.league_id ?? null);
       })
     );
   }
@@ -40,6 +45,7 @@ export class AuthService {
     ).pipe(
       tap(response => {
         localStorage.setItem(this.TOKEN_KEY, response.token);
+        this._leagueId.set(response.league_id ?? null);
       })
     );
   }
@@ -94,7 +100,7 @@ export class AuthService {
   }
 
   getLeagueId(): string | null {
-    return (this.getPayload()?.['league_id'] as string) ?? null;
+    return this._leagueId();
   }
 
   getPayload(): Record<string, unknown> | null {
