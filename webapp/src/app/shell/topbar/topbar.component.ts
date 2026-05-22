@@ -58,9 +58,8 @@ export class TopbarComponent implements OnDestroy {
   activeLeagueId     = computed(() => this.auth.getLeagueId());
   activeLeagueName   = computed(() => {
     const id = this.activeLeagueId();
-    const cached = this.cache.leagueName();
-    if (cached) return cached;
-    return id ? (this.leagues().find(l => l.id === id)?.name ?? null) : null;
+    if (!id) return null;
+    return this.leagues().find(l => l.id === id)?.name ?? this.cache.leagueName() ?? null;
   });
   readonly roleOrder = ROLE_ORDER;
   readonly roleLabel = ROLE_LABEL;
@@ -210,6 +209,10 @@ export class TopbarComponent implements OnDestroy {
       next: () => {
         this.cache.invalidateLeague();
         this.cache.refreshMyTeam();
+        this.api.get<{ leagues: League[] }>('manager/leagues').subscribe({
+          next: data => this.leagues.set(data.leagues ?? []),
+          error: () => {},
+        });
         this.leagueSwitching.set(false);
         this.router.navigate(['/']);
       },

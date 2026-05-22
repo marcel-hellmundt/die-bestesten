@@ -58,8 +58,9 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Account wurde deaktiviert'];
         }
 
-        $leagues  = $this->db->getManagerLeagues($manager['id']);
-        $leagueId = count($leagues) === 1 ? $leagues[0]['id'] : null;
+        $leagues       = $this->db->getManagerLeagues($manager['id']);
+        $activeLeagues = array_values(array_filter($leagues, fn($l) => $l['status'] === 'active'));
+        $leagueId      = count($activeLeagues) === 1 ? $activeLeagues[0]['id'] : null;
 
         $now = time();
         $payload = [
