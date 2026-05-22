@@ -54,6 +54,7 @@ class LeagueController extends _BaseController
                     null
                 );
             }
+            $this->db->sendJoinRequestAdminEmail($manager['manager_name'], $league['name']);
             return ['status' => true];
         }
 

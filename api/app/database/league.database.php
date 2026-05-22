@@ -895,6 +895,35 @@ trait LeagueTrait
         return ['status' => true];
     }
 
+    public function sendJoinRequestAdminEmail(string $managerName, string $leagueName): void
+    {
+        try {
+            $adminEmails = $this->con->query(
+                "SELECT m.email FROM manager m
+                 JOIN manager_role mr ON mr.manager_id = m.id
+                 WHERE mr.role = 'admin' AND m.email IS NOT NULL AND m.status = 'active'"
+            )->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($adminEmails)) return;
+
+            $subject = "Beitrittsanfrage: $managerName — die bestesten";
+            $body    = "<!DOCTYPE html><html lang=\"de\"><head><meta charset=\"UTF-8\"></head>"
+                . "<body style=\"font-family:sans-serif;color:#1e293b;background:#f8fafc;padding:24px;max-width:600px;margin:0 auto;\">"
+                . "<h2 style=\"margin:0 0 12px;\">Neue Beitrittsanfrage</h2>"
+                . "<p><strong>" . htmlspecialchars($managerName) . "</strong> möchte der Liga "
+                . "<strong>" . htmlspecialchars($leagueName) . "</strong> beitreten.</p>"
+                . "<p style=\"color:#64748b;\">Bitte genehmige oder lehne die Anfrage in der Manager-Übersicht ab.</p>"
+                . "</body></html>";
+            $headers = "From: noreply@die-bestesten.de\r\nContent-Type: text/html; charset=UTF-8";
+
+            foreach ($adminEmails as $email) {
+                mail($email, $subject, $body, $headers);
+            }
+        } catch (\Throwable $e) {
+            error_log('sendJoinRequestAdminEmail failed: ' . $e->getMessage());
+        }
+    }
+
     private function getLeagueManagerCount(string $leagueId): int
     {
         $q = $this->con->prepare("SELECT COUNT(*) FROM manager_league WHERE league_id = ?");
