@@ -251,17 +251,31 @@ trait TeamRatingTrait
             $ratings = $this->getLiveTeamRatings($matchday['id']);
         }
 
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $divisionJoin  = 'JOIN club_in_season cis ON cis.club_id = pr.club_id AND cis.season_id = :season_id
+             JOIN division d ON d.id = cis.division_id';
+            $divisionWhere = 'AND d.id = :division_id';
+            $sdsParams = [':matchday_id' => $matchday['id'], ':season_id' => $seasonId, ':division_id' => $divisionId];
+        } else {
+            $divisionJoin  = 'JOIN club_in_season cis ON cis.club_id = pr.club_id AND cis.season_id = :season_id
+             JOIN division d ON d.id = cis.division_id';
+            $divisionWhere = "AND d.level = 1 AND LOWER(d.country_id) = 'de'";
+            $sdsParams = [':matchday_id' => $matchday['id'], ':season_id' => $seasonId];
+        }
+
         $sq = $this->con->prepare(
             "SELECT p.id, p.displayname, pis.photo_uploaded, pis.position,
                     pr.points, pr.grade, pr.goals, pr.assists, pr.clean_sheet
              FROM player_rating pr
              JOIN player p ON p.id = pr.player_id
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
-             WHERE pr.matchday_id = :matchday_id
+             $divisionJoin
+             WHERE pr.matchday_id = :matchday_id $divisionWhere
              ORDER BY pr.points DESC
              LIMIT 1"
         );
-        $sq->execute([':matchday_id' => $matchday['id'], ':season_id' => $seasonId]);
+        $sq->execute($sdsParams);
         $sdsPlayer = $sq->fetch(PDO::FETCH_ASSOC) ?: null;
 
         $maxQ = $this->con->prepare(
