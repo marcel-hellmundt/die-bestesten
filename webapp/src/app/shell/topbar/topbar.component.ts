@@ -207,14 +207,7 @@ export class TopbarComponent implements OnDestroy {
     this.closeLeagueDropdown();
     this.auth.switchLeague(leagueId).subscribe({
       next: () => {
-        this.cache.invalidateLeague();
-        this.cache.refreshMyTeam();
-        this.api.get<{ leagues: League[] }>('manager/leagues').subscribe({
-          next: data => this.leagues.set(data.leagues ?? []),
-          error: () => {},
-        });
-        this.leagueSwitching.set(false);
-        this.router.navigate(['/']);
+        window.location.href = '/';
       },
       error: () => this.leagueSwitching.set(false),
     });
