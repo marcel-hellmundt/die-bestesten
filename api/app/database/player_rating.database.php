@@ -197,6 +197,17 @@ trait PlayerRatingTrait
         if (!$matchday) return ['formation' => null, 'players' => [], 'total_points' => 0];
         $seasonId = $matchday['season_id'];
 
+        $divisionId   = $this->getLeagueDivisionId();
+        $divisionJoin = 'JOIN club_in_season cis ON cis.club_id = pr.club_id AND cis.season_id = :season_id
+             JOIN division d ON d.id = cis.division_id';
+        if ($divisionId !== null) {
+            $divisionWhere  = 'AND d.id = :division_id';
+            $divisionParams = [':division_id' => $divisionId];
+        } else {
+            $divisionWhere  = "AND d.level = 1 AND LOWER(d.country_id) = 'de'";
+            $divisionParams = [];
+        }
+
         $q = $this->con->prepare("
             SELECT pr.player_id, p.displayname, p.first_name, p.last_name,
                    pis.position, pis.photo_uploaded, pis.price,
@@ -208,10 +219,15 @@ trait PlayerRatingTrait
             JOIN player p ON p.id = pr.player_id
             LEFT JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = :season_id
             LEFT JOIN club c ON c.id = pr.club_id
+            $divisionJoin
             WHERE pr.matchday_id = :matchday_id
               AND pis.position IS NOT NULL
+              $divisionWhere
         ");
-        $q->execute([':matchday_id' => $matchdayId, ':season_id' => $seasonId]);
+        $q->execute(array_merge(
+            [':matchday_id' => $matchdayId, ':season_id' => $seasonId],
+            $divisionParams
+        ));
         $ratings = $q->fetchAll(PDO::FETCH_ASSOC);
 
         if ($freeAgentsOnly) {
