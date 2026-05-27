@@ -65,7 +65,7 @@
               <td class="col-rank">{{ r.placement ?? '–' }}</td>
               <td class="col-icons">
                 <span class="icons-wrap">
-                  @if (+r.sds) {
+                  @for (i of range(+r.sds); track i) {
                     <img src="/img/icons/sds.png" class="rating-icon" alt="SdS" />
                   }
                 </span>
