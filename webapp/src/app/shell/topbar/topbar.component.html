@@ -255,11 +255,6 @@
             </div>
           </a>
           <hr class="dropdown-divider" />
-          <a class="dropdown-item" routerLink="/achievements" (click)="closeDropdown()">
-            <app-icon name="award"></app-icon>
-            Achievements
-          </a>
-          <hr class="dropdown-divider" />
           @if (isMaintainer()) {
             <a class="dropdown-item" routerLink="/daten" (click)="closeDropdown()">
               <app-icon name="data"></app-icon>
@@ -296,7 +291,9 @@
                     class="league-accept-btn"
                     [disabled]="leagueActionState()[league.id] === 'loading'"
                     (click)="acceptInvite(league.id)"
-                  >{{ leagueActionState()[league.id] === 'loading' ? '…' : 'Annehmen' }}</button>
+                  >
+                    {{ leagueActionState()[league.id] === 'loading' ? '…' : 'Annehmen' }}
+                  </button>
                 </div>
               }
             }
@@ -317,7 +314,9 @@
                       class="league-request-btn"
                       [disabled]="leagueActionState()[league.id] === 'loading'"
                       (click)="requestJoin(league.id)"
-                    >{{ leagueActionState()[league.id] === 'loading' ? '…' : 'Anfragen' }}</button>
+                    >
+                      {{ leagueActionState()[league.id] === 'loading' ? '…' : 'Anfragen' }}
+                    </button>
                   </div>
                 }
               }

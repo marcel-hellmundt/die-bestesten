@@ -77,14 +77,14 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/league/:id',
-                        'description' => 'Spielerpool-Division der Liga setzen — Body: {division_id: UUID|null} — Admin',
+                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) — Admin',
                         'path_params' => [':id' => 'UUID der Liga'],
-                        'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)'],
+                        'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)', 'visibility' => '"public" oder "private"'],
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/league/:id/join',
-                        'description' => 'Liga-Beitrittsanfrage stellen (status=requested); benachrichtigt alle Admins — Auth',
+                        'description' => 'Liga-Beitrittsanfrage stellen (status=requested); benachrichtigt alle Admins; 403 wenn Liga visibility=private — Auth',
                         'path_params' => [':id' => 'UUID der Liga'],
                     ],
                     [

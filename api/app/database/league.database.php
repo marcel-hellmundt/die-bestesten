@@ -19,6 +19,12 @@ trait LeagueTrait
         $q->execute([':division_id' => $divisionId, ':id' => $id]);
     }
 
+    public function updateLeagueVisibility(string $id, string $visibility): void
+    {
+        $q = $this->con->prepare("UPDATE league SET visibility = :visibility WHERE id = :id");
+        $q->execute([':visibility' => $visibility, ':id' => $id]);
+    }
+
     public function getLeagueList(): array
     {
         $query = $this->con->prepare("SELECT * FROM league ORDER BY name ASC");

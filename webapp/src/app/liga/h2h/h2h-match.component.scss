@@ -91,7 +91,6 @@
 .score-values {
   display: flex;
   align-items: center;
-  gap: $space-2;
 }
 
 .score-value {
@@ -99,6 +98,9 @@
   font-weight: $font-weight-bold;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  padding: 8px 16px;
+  color: #fffafa;
+  background-color: #353839;
 
   @media (max-width: $mobile-breakpoint) {
     font-size: $font-2xl;
@@ -106,8 +108,9 @@
 }
 
 .score-sep {
-  font-size: $font-2xl;
-  color: $color-text-muted;
+  width: 1px;
+  height: 52px;
+  filter: brightness(0.75);
 }
 
 .score-tbd {
@@ -145,8 +148,9 @@
   display: flex;
   align-items: center;
   gap: $space-1;
-  font-size: $font-xs;
+  font-size: $font-sm;
   color: $color-text-muted;
+  height: 20px;
 }
 
 .goalscorer--blocked {
@@ -155,8 +159,8 @@
 }
 
 .goal-icon {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 16px;
   object-fit: contain;
   flex-shrink: 0;
 }

@@ -42,6 +42,10 @@ class LeagueController extends _BaseController
                 http_response_code(404);
                 return ['status' => false, 'message' => 'Liga nicht gefunden'];
             }
+            if (($league['visibility'] ?? 'public') === 'private') {
+                http_response_code(403);
+                return ['status' => false, 'message' => 'Diese Liga ist privat — Beitritt nur per Einladung möglich'];
+            }
             $this->db->requestJoinLeague($managerId, $leagueId);
 
             $manager  = $this->db->getAuthManagerById($managerId);
@@ -187,11 +191,22 @@ class LeagueController extends _BaseController
     {
         if (!$this->id || $this->id === 'mine') return $this->methodNotAllowed();
 
-        $body       = $this->body();
+        $body = $this->body();
+
+        if (array_key_exists('visibility', $body)) {
+            $visibility = $body['visibility'];
+            if (!in_array($visibility, ['public', 'private'], true)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'visibility muss "public" oder "private" sein'];
+            }
+            $this->db->updateLeagueVisibility($this->id, $visibility);
+            return ['status' => true];
+        }
+
         $divisionId = array_key_exists('division_id', $body) ? ($body['division_id'] ?: null) : 'MISSING';
         if ($divisionId === 'MISSING') {
             http_response_code(400);
-            return ['status' => false, 'message' => 'division_id required (use null to clear)'];
+            return ['status' => false, 'message' => 'division_id oder visibility erforderlich'];
         }
 
         $this->db->updateLeagueDivision($this->id, $divisionId);

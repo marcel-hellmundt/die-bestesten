@@ -45,7 +45,7 @@ export class TopbarComponent implements OnDestroy {
   invitedLeagues  = computed(() => this.leagues().filter(l => l.status === 'invited'));
   availableLeagues = computed(() => {
     const myIds = new Set(this.leagues().map(l => l.id));
-    return this.allLeagues().filter(l => !myIds.has(l.id));
+    return this.allLeagues().filter(l => !myIds.has(l.id) && l.visibility !== 'private');
   });
 
   searchQuery   = signal('');

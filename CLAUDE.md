@@ -65,7 +65,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 |---------|---------|
 | country | id PK, name |
 | season | id PK, start_date UNIQUE — aktiv = höchstes start_date |
-| league | id PK, slug UNIQUE, name, db_name |
+| league | id PK, slug UNIQUE, name, db_name, visibility ENUM('public','private') DEFAULT 'public' — public = Beitrittsanfragen erlaubt; private = nur Einladung |
 | club | id PK, country_id FK, name, short_name, logo_uploaded BOOL |
 | division | id PK, name, level INT, seats INT, country_id FK |
 | matchday | id PK, season_id FK, division_id FK, start_date DATE, kickoff_date DATETIME, number INT, completed BOOL — UNIQUE(season_id, division_id, number) — jede Division pflegt eigene Spieltage |
@@ -97,8 +97,8 @@ PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team
 GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_points}], top_matchdays: [{points,matchday_number,team_name,season_id,manager_name}] } — Auth
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
 GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}
-PATCH    /league/:id           — {division_id: UUID|null} — Spielerpool-Division setzen — Admin
-POST     /league/:id/join      — Beitrittsanfrage stellen (status='requested'); benachrichtigt alle Admins — Auth
+PATCH    /league/:id           — {division_id: UUID|null} Spielerpool-Division setzen; oder {visibility: 'public'|'private'} Sichtbarkeit setzen — Admin
+POST     /league/:id/join      — Beitrittsanfrage stellen (status='requested'); benachrichtigt alle Admins; 403 wenn visibility='private' — Auth
 POST     /league/:id/accept    — Einladung annehmen (invited→active); 409 wenn keine ausstehende Einladung — Auth
 POST     /league/:id/invite    — {manager_id} Manager einladen (status='invited'); benachrichtigt Manager — Admin
 POST     /league/:id/approve   — {manager_id} Anfrage genehmigen (requested→active); benachrichtigt Manager — Admin

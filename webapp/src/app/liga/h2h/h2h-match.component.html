@@ -38,9 +38,15 @@
         }
         <div class="score-values">
           @if (homeRating() && awayRating()) {
-            <span class="score-value">{{ homeRating().goals }}</span>
-            <span class="score-sep">–</span>
-            <span class="score-value">{{ awayRating().goals }}</span>
+            <span class="score-value" [style.background-color]="homeTeam().color">{{
+              homeRating().goals
+            }}</span>
+            @if (homeTeam().color == awayTeam().color) {
+              <span class="score-sep" [style.background-color]="homeTeam().color"></span>
+            }
+            <span class="score-value" [style.background-color]="awayTeam().color">{{
+              awayRating().goals
+            }}</span>
           } @else {
             <span class="score-tbd">–</span>
           }
@@ -165,12 +171,19 @@
                     }
                     <span>{{ p.displayname }}</span>
                     <span class="player-events">
-                      @if (p.sds) { <img class="event-icon" src="img/icons/shield.png" alt="SdS" title="SdS" /> }
+                      @if (p.sds) {
+                        <img class="event-icon" src="img/icons/shield.png" alt="SdS" title="SdS" />
+                      }
                       @for (_ of [].constructor(p.goals ?? 0); track $index) {
                         <img class="event-icon" src="img/icons/goal.png" alt="Tor" title="Tor" />
                       }
                       @for (_ of [].constructor(p.assists ?? 0); track $index) {
-                        <img class="event-icon" src="img/icons/assist.png" alt="Vorlage" title="Vorlage" />
+                        <img
+                          class="event-icon"
+                          src="img/icons/assist.png"
+                          alt="Vorlage"
+                          title="Vorlage"
+                        />
                       }
                     </span>
                   </td>
@@ -232,12 +245,19 @@
                     }
                     <span>{{ p.displayname }}</span>
                     <span class="player-events">
-                      @if (p.sds) { <img class="event-icon" src="img/icons/shield.png" alt="SdS" title="SdS" /> }
+                      @if (p.sds) {
+                        <img class="event-icon" src="img/icons/shield.png" alt="SdS" title="SdS" />
+                      }
                       @for (_ of [].constructor(p.goals ?? 0); track $index) {
                         <img class="event-icon" src="img/icons/goal.png" alt="Tor" title="Tor" />
                       }
                       @for (_ of [].constructor(p.assists ?? 0); track $index) {
-                        <img class="event-icon" src="img/icons/assist.png" alt="Vorlage" title="Vorlage" />
+                        <img
+                          class="event-icon"
+                          src="img/icons/assist.png"
+                          alt="Vorlage"
+                          title="Vorlage"
+                        />
                       }
                     </span>
                   </td>
