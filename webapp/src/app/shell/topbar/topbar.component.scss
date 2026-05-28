@@ -499,7 +499,7 @@
       text-align: left;
       transition: background-color $transition-fast;
 
-      &:hover:not(.league-item--muted) {
+      &:hover:not(.league-item--muted):not(.league-item--invited):not(.league-item--available) {
         background: $color-surface-alt;
       }
 
@@ -579,18 +579,22 @@
     cursor: default;
   }
 
-  &:not(:disabled):hover {
-    filter: brightness(0.92);
-  }
-
   &--accept {
     background: color-mix(in srgb, #22c55e 18%, transparent);
     color: #16a34a;
+
+    &:not(:disabled):hover {
+      background: color-mix(in srgb, #22c55e 32%, transparent);
+    }
   }
 
   &--decline {
     background: color-mix(in srgb, $color-danger 18%, transparent);
     color: $color-danger;
+
+    &:not(:disabled):hover {
+      background: color-mix(in srgb, $color-danger 32%, transparent);
+    }
   }
 }
 
