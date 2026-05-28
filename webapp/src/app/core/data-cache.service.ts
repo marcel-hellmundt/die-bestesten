@@ -1,4 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from './api.service';
 import { Season } from './models/season.model';
 import { Division } from './models/division.model';
@@ -56,7 +57,9 @@ export class DataCacheService {
     if (this.myTeamState().loaded) return;
     this.api.get<any>('team/mine').subscribe({
       next: data => this.myTeamState.set({ data, loaded: true }),
-      error: ()   => this.myTeamState.set({ data: null, loaded: true }),
+      error: (err: HttpErrorResponse) => {
+      if (err.status === 404) this.myTeamState.set({ data: null, loaded: true });
+    },
     });
   }
 

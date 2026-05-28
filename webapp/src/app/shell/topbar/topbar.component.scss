@@ -355,9 +355,7 @@
         color: $color-accent;
         flex-shrink: 0;
       }
-
     }
-
 
     // Badge auf dem Avatar (Mobile: zeigt ausstehende Liga-Einladungen)
     .avatar-league-badge {
@@ -385,12 +383,23 @@
   }
 }
 
-
 .birthday-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: $radius-md;
+  background: color-mix(in srgb, $color-warning 24%, transparent);
+  border: 1px solid color-mix(in srgb, $color-warning 32%, transparent);
   font-size: $font-xs;
-  color: $color-text-muted;
   white-space: nowrap;
   flex-shrink: 0;
+
+  .birthday-emoji {
+    font-size: calc(#{$font-xs} * 1.35);
+    line-height: 1;
+    flex-shrink: 0;
+  }
 
   @media (max-width: #{$mobile-breakpoint}) {
     display: none;

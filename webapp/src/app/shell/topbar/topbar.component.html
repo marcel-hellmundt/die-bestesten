@@ -127,7 +127,10 @@
   </div>
 
   @if (birthdayLabel()) {
-    <span class="birthday-label">{{ birthdayLabel() }} {{ birthdayEmoji() }}</span>
+    <span class="birthday-label">
+      <span class="birthday-emoji">{{ birthdayEmoji() }}</span>
+      {{ birthdayLabel() }}
+    </span>
   }
 
   <div class="spacer"></div>
