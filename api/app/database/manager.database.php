@@ -2,6 +2,19 @@
 
 trait ManagerTrait
 {
+    public function getTodaysBirthdays(): array
+    {
+        $q = $this->con->prepare(
+            "SELECT id, manager_name FROM manager
+             WHERE status = 'active'
+               AND date_of_birth IS NOT NULL
+               AND MONTH(date_of_birth) = MONTH(CURDATE())
+               AND DAY(date_of_birth)   = DAY(CURDATE())"
+        );
+        $q->execute();
+        return $q->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getAllManagers(): array
     {
         $q = $this->con->prepare(

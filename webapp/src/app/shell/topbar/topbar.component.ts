@@ -49,6 +49,18 @@ export class TopbarComponent implements OnDestroy {
     return this.allLeagues().filter(l => !myIds.has(l.id) && l.visibility !== 'private');
   });
 
+  birthdayNames = signal<string[]>([]);
+  birthdayEmoji = signal('');
+  birthdayLabel = computed(() => {
+    const names = this.birthdayNames();
+    if (!names.length) return null;
+    if (names.length === 1) return `Heute hat ${names[0]} Geburtstag`;
+    if (names.length === 2) return `Heute haben ${names[0]} und ${names[1]} Geburtstag`;
+    return `Heute haben ${names.length} Manager Geburtstag`;
+  });
+
+  private readonly birthdayEmojis = ['🎂', '🥳', '🎉', '🍾', '🎊', '🎈'];
+
   searchQuery   = signal('');
   searchResults = signal<SearchResults | null>(null);
   searchLoading = signal(false);
@@ -103,6 +115,16 @@ export class TopbarComponent implements OnDestroy {
     this.api.get<{ leagues: League[] }>('manager/leagues').subscribe({
       next: data => this.leagues.set(data.leagues ?? []),
       error: ()  => {},
+    });
+
+    this.api.get<any[]>('manager/birthdays').subscribe({
+      next: data => {
+        if (data?.length) {
+          this.birthdayNames.set(data.map(m => m.manager_name));
+          this.birthdayEmoji.set(this.birthdayEmojis[Math.floor(Math.random() * this.birthdayEmojis.length)]);
+        }
+      },
+      error: () => {},
     });
 
     this.searchSub = this.searchSubject.pipe(

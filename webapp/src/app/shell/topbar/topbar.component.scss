@@ -386,6 +386,17 @@
 }
 
 
+.birthday-label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: #{$mobile-breakpoint}) {
+    display: none;
+  }
+}
+
 // Liga-Switcher (Desktop only)
 
 .topbar-league {

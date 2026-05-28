@@ -29,6 +29,10 @@ class ManagerController extends _BaseController
             return ['leagues' => $this->db->getManagerLeagues($GLOBALS['auth_manager_id'])];
         }
 
+        if ($this->id === 'birthdays') {
+            return $this->db->getTodaysBirthdays();
+        }
+
         if ($this->id && $this->sub === 'roles') {
             if (!$this->isAdmin()) { http_response_code(403); return ['status' => false, 'message' => 'Forbidden']; }
             return ['roles' => $this->db->getManagerRoles($this->id)];

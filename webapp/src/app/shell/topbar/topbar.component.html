@@ -126,6 +126,10 @@
     </div>
   </div>
 
+  @if (birthdayLabel()) {
+    <span class="birthday-label">{{ birthdayLabel() }} {{ birthdayEmoji() }}</span>
+  }
+
   <div class="spacer"></div>
 
   @if (showLeagueSwitcher()) {
