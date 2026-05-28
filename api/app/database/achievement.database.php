@@ -54,7 +54,7 @@ trait AchievementTrait
     public function evaluateAchievementById(string $achievementId): void
     {
         $achievement = $this->con->prepare(
-            "SELECT id, condition_key FROM achievement WHERE id = ?"
+            "SELECT id, condition_key, name FROM achievement WHERE id = ?"
         );
         $achievement->execute([$achievementId]);
         $achievement = $achievement->fetch(PDO::FETCH_ASSOC);
@@ -88,6 +88,9 @@ trait AchievementTrait
         );
         foreach ($earners as $managerId => $meta) {
             $stmt->execute([$managerId, $achievementId, $meta['reason'], $meta['earned_at'], $meta['level'] ?? 'gold']);
+            if ($stmt->rowCount() === 1) {
+                $this->createAchievementNotification($managerId, $achievement['name'], $meta['level'] ?? 'gold', $meta['reason'], $meta['earned_at']);
+            }
         }
     }
 
