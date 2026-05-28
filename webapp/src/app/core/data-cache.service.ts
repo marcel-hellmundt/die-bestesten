@@ -37,6 +37,8 @@ export class DataCacheService {
     return id ? (this.divisionsState().data.find(d => d.id === id) ?? null) : null;
   });
 
+  squadCount   = computed(() => this.squadState().players.length);
+
   squadInvalid = computed(() => {
     if (!this.squadState().loaded) return false;
     const counts: Record<string, number> = { GOALKEEPER: 0, DEFENDER: 0, MIDFIELDER: 0, FORWARD: 0 };

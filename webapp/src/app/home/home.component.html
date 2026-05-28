@@ -28,6 +28,7 @@
           Zum Transfermarkt →
         </a>
       }
+      <a class="status-cta" routerLink="/liga/spieltag">Spieltagsauswertung →</a>
     </div>
 
     <!-- Squad warning -->
@@ -38,47 +39,101 @@
       </div>
     }
 
-    <!-- H2H Card -->
-    <div class="card home-card--h2h">
-      <div class="card-title">H2H — Spieltag {{ currentMatchday()?.number }}</div>
-      @if (h2hMatchesForDay().length === 0) {
-        <p class="card-empty">Keine H2H-Spiele an diesem Spieltag.</p>
-      } @else {
-        <div class="h2h-list">
-          @for (m of h2hMatchesForDay(); track m.id) {
-            <div class="h2h-row row-link" (click)="router.navigate(['/liga/h2h', m.id])">
-              <span class="h2h-team">
-                @if (m.home_color) {
-                  <span class="team-dot" [style.background-color]="m.home_color"></span>
-                }
-                {{ m.home_team_name }}
-              </span>
-              <span class="h2h-score" [class.h2h-score--pending]="m.home_goals == null">
-                @if (m.home_goals != null) {
-                  {{ m.home_goals }} : {{ m.away_goals }}
-                } @else {
-                  –
-                }
-              </span>
-              <span class="h2h-team h2h-team--away">
-                {{ m.away_team_name }}
-                @if (m.away_color) {
-                  <span class="team-dot" [style.background-color]="m.away_color"></span>
-                }
-              </span>
-            </div>
+    <!-- Left column -->
+    <div class="home-col">
+
+      <!-- H2H Card -->
+      <div class="card home-card--h2h">
+        <div class="card-header-row">
+          <span class="card-title">H2H</span>
+          @if (matchdayStatus() === 'live') {
+            <span class="live-badge">LIVE</span>
           }
         </div>
+        @if (h2hPhase()) {
+          <div class="h2h-phase">{{ h2hPhase() }}</div>
+        }
+        @if (h2hMatchesForDay().length === 0) {
+          <p class="card-empty">Keine H2H-Spiele an diesem Spieltag.</p>
+        } @else {
+          <div class="h2h-list">
+            @for (m of h2hMatchesForDay(); track m.id) {
+              <div class="h2h-row row-link" (click)="router.navigate(['/liga/h2h', m.id])">
+                <span class="h2h-team h2h-team--home">
+                  {{ m.home_team_name }}
+                  @if (!logoFailed(m.home_team_id)) {
+                    <img class="team-logo-h2h" [src]="teamLogoUrl(m.home_team_id)" (error)="onLogoError(m.home_team_id)" alt="" />
+                  } @else if (m.home_color) {
+                    <span class="team-dot" [style.background-color]="m.home_color"></span>
+                  }
+                </span>
+                <span class="h2h-score">
+                  @if (m.home_goals != null) {
+                    <span class="score-pill" [style.background-color]="m.home_color">{{ m.home_goals }}</span>
+                    <span class="score-pill" [style.background-color]="m.away_color">{{ m.away_goals }}</span>
+                  } @else {
+                    <span class="score-tbd">–</span>
+                  }
+                </span>
+                <span class="h2h-team h2h-team--away">
+                  @if (!logoFailed(m.away_team_id)) {
+                    <img class="team-logo-h2h" [src]="teamLogoUrl(m.away_team_id)" (error)="onLogoError(m.away_team_id)" alt="" />
+                  } @else if (m.away_color) {
+                    <span class="team-dot" [style.background-color]="m.away_color"></span>
+                  }
+                  {{ m.away_team_name }}
+                </span>
+              </div>
+            }
+          </div>
+        }
+        @if (nextH2hMatch()) {
+          <div class="h2h-next">
+            <span class="h2h-next-label">Nächstes Spiel · Spieltag {{ nextH2hMatch()!.matchday?.number }}</span>
+            <div class="h2h-next-row">
+              @if (!logoFailed(nextH2hMatch()!.opponentId)) {
+                <img class="team-logo-h2h" [src]="teamLogoUrl(nextH2hMatch()!.opponentId)"
+                  (error)="onLogoError(nextH2hMatch()!.opponentId)" alt="" />
+              } @else if (nextH2hMatch()!.opponentColor) {
+                <span class="team-dot" [style.background-color]="nextH2hMatch()!.opponentColor"></span>
+              }
+              <span class="h2h-next-name">{{ nextH2hMatch()!.opponentName }}</span>
+              @if (nextH2hMatch()!.matchday) {
+                <span class="h2h-next-date">{{ nextH2hMatch()!.matchday!.kickoff_date | date:'EE dd.MM.' }}</span>
+              }
+            </div>
+          </div>
+        }
+        <a class="card-link" routerLink="/liga/h2h">Zum Turnier →</a>
+      </div>
+
+      <!-- Kader card -->
+      @if (cache.myTeamId()) {
+        <div class="card home-card--sm">
+          <div class="card-title">Kader</div>
+          <div class="kader-row">
+            <span class="kader-count">{{ cache.squadCount() }} / 18 Spieler</span>
+            @if (cache.squadInvalid()) {
+              <span class="kader-invalid">Unvollständig</span>
+            }
+          </div>
+          @if (matchdayStatus() === 'lineup' && nominatedCount() !== null) {
+            <div class="kader-lineup" [class.kader-lineup--warn]="nominatedCount()! < 11">
+              Aufstellung: {{ nominatedCount() }} / 11
+            </div>
+          }
+          <a class="card-link" [routerLink]="['/team', cache.myTeamId(), 'kader']">Zum Kader →</a>
+        </div>
       }
-      <a class="card-link" routerLink="/liga/h2h">Alle H2H →</a>
+
     </div>
 
-    <!-- Mini Table + Budget column -->
-    <div class="home-col-right">
+    <!-- Right column -->
+    <div class="home-col">
 
       <!-- Mini Table -->
       <div class="card home-card--table">
-        <div class="card-title">Tabelle</div>
+        <div class="card-title">Gesamttabelle</div>
         @if (miniTable().length === 0) {
           <p class="card-empty">Noch keine Tabelle verfügbar.</p>
         } @else {
@@ -89,7 +144,10 @@
                 [class.mini-table-row--me]="row.team_id === cache.myTeamId()"
               >
                 <span class="mini-rank">{{ row.rank }}.</span>
-                <span class="mini-name">{{ row.team_name }}</span>
+                <span class="mini-team">
+                  <img class="team-logo-table" [src]="teamLogoUrl(row.team_id)" (error)="onLogoError(row.team_id)" alt="" />
+                  <span class="mini-name">{{ row.team_name }}</span>
+                </span>
                 <span class="mini-pts">{{ row.total_points }}</span>
               </div>
             }
@@ -98,9 +156,49 @@
         <a class="card-link" routerLink="/liga/tabelle">Gesamttabelle →</a>
       </div>
 
+      <!-- Last matchday card -->
+      @if (myLastMatchdayRating()) {
+        <div class="card home-card--sm">
+          <div class="card-header-row">
+            <span class="card-title">Letzter Spieltag</span>
+            @if (!lastMatchday()?.matchday?.completed) {
+              <span class="live-badge">LIVE</span>
+            }
+            @if (lastMatchday()?.matchday?.number) {
+              <span class="last-md-number">Spieltag {{ lastMatchday()!.matchday!.number }}</span>
+            }
+          </div>
+          <div class="last-md-stats">
+            <span class="last-md-pts">{{ myLastMatchdayRating()!.points }}</span>
+            @if (myLastMatchdayRank()) {
+              <span class="last-md-rank">Platz {{ myLastMatchdayRank() }}</span>
+            }
+          </div>
+          <a class="card-link" routerLink="/liga/spieltag">Zur Auswertung →</a>
+        </div>
+      }
+
+      <!-- Transfer window card -->
+      @if (nextTransferWindowInfo()) {
+        <div class="card home-card--sm">
+          <div class="card-title">Transfermarkt</div>
+          @if (nextTransferWindowInfo()!.status === 'open') {
+            <div class="transfer-row">
+              <span class="transfer-open-badge">Offen</span>
+              <span class="transfer-relative">{{ relativeTime(nextTransferWindowInfo()!.date) }}</span>
+            </div>
+            <div class="transfer-detail">Schließt {{ nextTransferWindowInfo()!.date | date:'EE dd.MM. HH:mm' }}</div>
+            <a class="card-link" routerLink="/markt/transferphasen">Zur Spielerliste →</a>
+          } @else {
+            <div class="transfer-detail">Öffnet {{ nextTransferWindowInfo()!.date | date:'EE dd.MM. HH:mm' }}</div>
+            <div class="transfer-relative">{{ relativeTime(nextTransferWindowInfo()!.date) }}</div>
+          }
+        </div>
+      }
+
       <!-- Budget Card -->
       @if (budget() !== null) {
-        <div class="card home-card--budget">
+        <div class="card home-card--sm home-card--budget">
           <div class="card-title">Budget</div>
           <span class="budget-value">{{ budget() | number:'1.0-0' }} €</span>
         </div>
