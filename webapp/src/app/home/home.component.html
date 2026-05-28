@@ -1,0 +1,112 @@
+@if (loading()) {
+  <div class="home-loading">Laden…</div>
+} @else {
+  <div class="home-grid">
+
+    <!-- Status Card -->
+    <div class="card home-card--status">
+      <div class="status-header">
+        <span class="status-matchday">Spieltag {{ currentMatchday()?.number ?? '–' }}</span>
+        @if (matchdayStatus()) {
+          <span class="status-badge status-badge--{{ matchdayStatus() }}">
+            @switch (matchdayStatus()) {
+              @case ('transfer') { Transfermarkt offen bis {{ transferWindowEnd() | date:'dd.MM. HH:mm' }} }
+              @case ('lineup')   { Aufstellen bis {{ currentMatchday()?.kickoff_date | date:'EE dd.MM. HH:mm' }} }
+              @case ('live')     { Läuft }
+              @case ('completed'){ Abgeschlossen }
+            }
+          </span>
+        }
+      </div>
+      @if (matchdayStatus() === 'lineup' && cache.myTeamId()) {
+        <a class="status-cta" [routerLink]="['/team', cache.myTeamId(), 'aufstellung']">
+          Aufstellung bearbeiten →
+        </a>
+      }
+      @if (matchdayStatus() === 'transfer' && cache.myTeamId()) {
+        <a class="status-cta" routerLink="/markt/transferphasen">
+          Zum Transfermarkt →
+        </a>
+      }
+    </div>
+
+    <!-- Squad warning -->
+    @if (cache.squadInvalid()) {
+      <div class="card home-card--warning">
+        Dein Kader erfüllt nicht die Mindestanforderungen.
+        <a class="warning-link" [routerLink]="['/team', cache.myTeamId(), 'kader']">Kader bearbeiten →</a>
+      </div>
+    }
+
+    <!-- H2H Card -->
+    <div class="card home-card--h2h">
+      <div class="card-title">H2H — Spieltag {{ currentMatchday()?.number }}</div>
+      @if (h2hMatchesForDay().length === 0) {
+        <p class="card-empty">Keine H2H-Spiele an diesem Spieltag.</p>
+      } @else {
+        <div class="h2h-list">
+          @for (m of h2hMatchesForDay(); track m.id) {
+            <div class="h2h-row row-link" (click)="router.navigate(['/liga/h2h', m.id])">
+              <span class="h2h-team">
+                @if (m.home_color) {
+                  <span class="team-dot" [style.background-color]="m.home_color"></span>
+                }
+                {{ m.home_team_name }}
+              </span>
+              <span class="h2h-score" [class.h2h-score--pending]="m.home_goals == null">
+                @if (m.home_goals != null) {
+                  {{ m.home_goals }} : {{ m.away_goals }}
+                } @else {
+                  –
+                }
+              </span>
+              <span class="h2h-team h2h-team--away">
+                {{ m.away_team_name }}
+                @if (m.away_color) {
+                  <span class="team-dot" [style.background-color]="m.away_color"></span>
+                }
+              </span>
+            </div>
+          }
+        </div>
+      }
+      <a class="card-link" routerLink="/liga/h2h">Alle H2H →</a>
+    </div>
+
+    <!-- Mini Table + Budget column -->
+    <div class="home-col-right">
+
+      <!-- Mini Table -->
+      <div class="card home-card--table">
+        <div class="card-title">Tabelle</div>
+        @if (miniTable().length === 0) {
+          <p class="card-empty">Noch keine Tabelle verfügbar.</p>
+        } @else {
+          <div class="mini-table">
+            @for (row of miniTable(); track row.team_id) {
+              <div
+                class="mini-table-row"
+                [class.mini-table-row--me]="row.team_id === cache.myTeamId()"
+              >
+                <span class="mini-rank">{{ row.rank }}.</span>
+                <span class="mini-name">{{ row.team_name }}</span>
+                <span class="mini-pts">{{ row.total_points }}</span>
+              </div>
+            }
+          </div>
+        }
+        <a class="card-link" routerLink="/liga/tabelle">Gesamttabelle →</a>
+      </div>
+
+      <!-- Budget Card -->
+      @if (budget() !== null) {
+        <div class="card home-card--budget">
+          <div class="card-title">Budget</div>
+          <span class="budget-value">{{ budget() | number:'1.0-0' }} €</span>
+        </div>
+      }
+
+    </div>
+
+  </div>
+}

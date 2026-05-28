@@ -16,7 +16,7 @@ const routes: Routes = [
     component: ShellComponent,
     canActivate: [AuthGuard],
     children: [
-      { path: '', redirectTo: 'liga', pathMatch: 'full' },
+      { path: '', loadChildren: () => import('../home/home.module').then(m => m.HomeModule) },
       { path: 'liga',          loadChildren: () => import('../liga/liga.module').then(m => m.LigaModule) },
       { path: 'team',          loadChildren: () => import('../team/team.module').then(m => m.TeamModule) },
       { path: 'markt',         loadChildren: () => import('../markt/markt.module').then(m => m.MarktModule) },
