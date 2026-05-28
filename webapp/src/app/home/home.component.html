@@ -201,6 +201,7 @@
         <div class="card home-card--sm home-card--budget">
           <div class="card-title">Budget</div>
           <span class="budget-value">{{ budget() | number:'1.0-0' }} €</span>
+          <a class="card-link" [routerLink]="['/team', cache.myTeamId(), 'finanzen']">Zu den Finanzen →</a>
         </div>
       }
 
