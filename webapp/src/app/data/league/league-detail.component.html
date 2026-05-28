@@ -104,6 +104,25 @@
                     >{{ h2hResetState(sg.seasonId) === 'loading' ? 'Läuft…' : 'Turnier zurücksetzen' }}</button>
                   </div>
                 }
+                <div class="h2h-action" style="margin-top: 8px; border-top: 1px solid var(--color-border); padding-top: 8px;">
+                  <p class="h2h-panel-title">Saisonabschluss</p>
+                  @if (concludeState(sg.seasonId) === 'success') {
+                    <span class="h2h-done">✓ Awards vergeben</span>
+                    @if (concludeMessage(sg.seasonId)) {
+                      <span class="h2h-msg">{{ concludeMessage(sg.seasonId) }}</span>
+                    }
+                  } @else if (concludeState(sg.seasonId) === 'skipped') {
+                    <span class="h2h-done">✓ Bereits vergeben</span>
+                  } @else if (concludeState(sg.seasonId) === 'error') {
+                    <span class="h2h-msg h2h-msg--error h2h-msg--standalone">{{ concludeMessage(sg.seasonId) }}</span>
+                  } @else {
+                    <button
+                      class="btn btn-sm btn-ghost"
+                      [disabled]="concludeState(sg.seasonId) === 'loading'"
+                      (click)="concludeSeason(sg.seasonId)"
+                    >{{ concludeState(sg.seasonId) === 'loading' ? 'Läuft…' : 'Saison abschließen' }}</button>
+                  }
+                </div>
               </div>
             }
           </div>

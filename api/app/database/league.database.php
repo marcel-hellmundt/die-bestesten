@@ -962,6 +962,95 @@ trait LeagueTrait
         }
     }
 
+    public function concludeSeasonForLeague(string $leagueId, string $seasonId): array
+    {
+        $league = $this->getLeagueById($leagueId);
+        if (!$league) return ['status' => false, 'message' => 'Liga nicht gefunden'];
+
+        $con = $this->openLeagueConnection($league['db_name']);
+        if (!$con) return ['status' => false, 'message' => 'DB-Verbindung fehlgeschlagen'];
+
+        $awardIds = [
+            '93e28cd3-07db-11f0-9187-c81f66ca5914', // Meister
+            '9f21fdf6-07db-11f0-9187-c81f66ca5914', // Goldene Bürste
+            '93e2a7ab-07db-11f0-9187-c81f66ca5914', // Hölzerne Bank
+        ];
+        $ph = implode(',', array_fill(0, count($awardIds), '?'));
+
+        // Idempotency check
+        $existQ = $con->prepare(
+            "SELECT COUNT(*) FROM team_award ta JOIN team t ON t.id = ta.team_id
+             WHERE t.season_id = ? AND ta.award_id IN ($ph)"
+        );
+        $existQ->execute([$seasonId, ...$awardIds]);
+        if ((int) $existQ->fetchColumn() > 0) {
+            return ['status' => true, 'skipped' => true, 'message' => 'Awards bereits vergeben'];
+        }
+
+        // Award names from global DB
+        $namesQ = $this->con->prepare("SELECT id, name FROM award WHERE id IN ($ph)");
+        $namesQ->execute($awardIds);
+        $awardNames = array_column($namesQ->fetchAll(PDO::FETCH_ASSOC), 'name', 'id');
+
+        // Meister: highest total points
+        $meisterQ = $con->prepare("
+            SELECT tr.team_id, t.manager_id, t.team_name
+            FROM team_rating tr JOIN team t ON t.id = tr.team_id
+            WHERE t.season_id = ? AND tr.invalid = 0
+            GROUP BY tr.team_id, t.manager_id, t.team_name
+            ORDER BY SUM(tr.points) DESC LIMIT 1
+        ");
+        $meisterQ->execute([$seasonId]);
+        $meister = $meisterQ->fetch(PDO::FETCH_ASSOC);
+
+        // Goldene Bürste: lowest single-matchday points
+        $buersteQ = $con->prepare("
+            SELECT tr.team_id, t.manager_id, t.team_name
+            FROM team_rating tr JOIN team t ON t.id = tr.team_id
+            WHERE t.season_id = ? AND tr.invalid = 0
+            ORDER BY tr.points ASC LIMIT 1
+        ");
+        $buersteQ->execute([$seasonId]);
+        $goldene = $buersteQ->fetch(PDO::FETCH_ASSOC);
+
+        // Hölzerne Bank: highest total (max_points - points)
+        $bankQ = $con->prepare("
+            SELECT tr.team_id, t.manager_id, t.team_name
+            FROM team_rating tr JOIN team t ON t.id = tr.team_id
+            WHERE t.season_id = ? AND tr.invalid = 0
+            GROUP BY tr.team_id, t.manager_id, t.team_name
+            ORDER BY SUM(tr.max_points - tr.points) DESC LIMIT 1
+        ");
+        $bankQ->execute([$seasonId]);
+        $bank = $bankQ->fetch(PDO::FETCH_ASSOC);
+
+        $toGrant = [
+            '93e28cd3-07db-11f0-9187-c81f66ca5914' => $meister,
+            '9f21fdf6-07db-11f0-9187-c81f66ca5914' => $goldene,
+            '93e2a7ab-07db-11f0-9187-c81f66ca5914' => $bank,
+        ];
+
+        $insertAward = $con->prepare(
+            "INSERT IGNORE INTO team_award (id, team_id, award_id) VALUES (UUID(), ?, ?)"
+        );
+
+        $granted = [];
+        foreach ($toGrant as $awardId => $team) {
+            if (!$team) continue;
+            $insertAward->execute([$team['team_id'], $awardId]);
+            $awardName = $awardNames[$awardId] ?? $awardId;
+            $this->createNotification(
+                $team['manager_id'],
+                "Saisonauszeichnung: $awardName",
+                null,
+                null
+            );
+            $granted[] = ['award' => $awardName, 'team' => $team['team_name']];
+        }
+
+        return ['status' => true, 'skipped' => false, 'granted' => $granted];
+    }
+
     private function openLeagueConnection(string $dbName): ?\PDO
     {
         try {

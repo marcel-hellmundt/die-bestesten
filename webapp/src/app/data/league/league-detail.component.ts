@@ -186,6 +186,38 @@ export class LeagueDetailComponent {
     });
   }
 
+  // ── Season awards ───────────────────────────────────────────────────────────
+
+  concludeStates   = signal<Record<string, 'idle' | 'loading' | 'success' | 'skipped' | 'error'>>({});
+  concludeMessages = signal<Record<string, string>>({});
+
+  concludeState(seasonId: string): 'idle' | 'loading' | 'success' | 'skipped' | 'error' {
+    return this.concludeStates()[seasonId] ?? 'idle';
+  }
+
+  concludeMessage(seasonId: string): string {
+    return this.concludeMessages()[seasonId] ?? '';
+  }
+
+  concludeSeason(seasonId: string): void {
+    if (this.concludeStates()[seasonId] === 'loading') return;
+    this.concludeStates.update(s => ({ ...s, [seasonId]: 'loading' }));
+    this.api.post<any>('league/conclude_season', { league_id: this.leagueId, season_id: seasonId }).subscribe({
+      next: res => {
+        const state = res.skipped ? 'skipped' : 'success';
+        const msg = res.skipped
+          ? 'Bereits vergeben'
+          : (res.granted as any[] ?? []).map((g: any) => `${g.award}: ${g.team}`).join(' · ');
+        this.concludeStates.update(s => ({ ...s, [seasonId]: state }));
+        this.concludeMessages.update(s => ({ ...s, [seasonId]: msg }));
+      },
+      error: err => {
+        this.concludeStates.update(s => ({ ...s, [seasonId]: 'error' }));
+        this.concludeMessages.update(s => ({ ...s, [seasonId]: err?.error?.message ?? 'Fehler' }));
+      },
+    });
+  }
+
   // ── H2H tournament actions ──────────────────────────────────────────────────
 
   readonly h2hActions = [

@@ -125,6 +125,12 @@ class Routing
                         'path' => '/league/migrate',
                         'description' => 'Teams aus der alten DB in die Liga-DB migrieren — Body: { league_id } — Admin',
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/league/conclude_season',
+                        'description' => 'Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent — Body: { league_id, season_id } — Admin',
+                        'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
+                    ],
                 ],
             ]),
 

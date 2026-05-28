@@ -73,15 +73,22 @@ class MatchdayController extends _BaseController
         $completed = (bool) $body['completed'];
         $teamRatings  = 0;
         $achievements = 0;
+        $seasonAwards = null;
         if ($completed) {
             $teamRatings = $this->db->finalizeMatchday($this->id);
             $achResult   = $this->db->evaluateAchievements(true);
             $achievements = $achResult['count'];
             $this->db->createMatchdayCompletedNotifications((int) $matchday['number']);
             $this->db->sendMatchdayCompletedAdminEmail($this->id, $teamRatings, $achResult['new'], (int) $matchday['number']);
+            if ((int) $matchday['number'] === 34) {
+                $leagueId = $GLOBALS['auth_league_id'] ?? null;
+                if ($leagueId) {
+                    $seasonAwards = $this->db->concludeSeasonForLeague($leagueId, $matchday['season_id']);
+                }
+            }
         }
         $this->db->updateMatchdayCompleted($this->id, $completed);
-        return ['status' => true, 'team_ratings' => $teamRatings, 'achievements' => $achievements];
+        return ['status' => true, 'team_ratings' => $teamRatings, 'achievements' => $achievements, 'season_awards' => $seasonAwards];
     }
 
     protected function delete(): mixed { return $this->methodNotAllowed(); }

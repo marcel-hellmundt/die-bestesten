@@ -107,6 +107,7 @@ POST     /league/:id/deny      — {manager_id} Mitgliedschaft ablehnen (→deni
 POST     /league/migrate           — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
 POST     /league/validate_ratings  — {league_id} — prüft team_ratings ab 2020/21 gegen team_lineup + player_rating — Admin
 POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB + alte DB) — Admin
+POST     /league/conclude_season   — {league_id, season_id} — Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent; wird auch automatisch bei Spieltag 34 ausgeführt — Admin
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
 POST     /transferwindow/migrate — Admin

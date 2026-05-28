@@ -200,6 +200,18 @@ class LeagueController extends _BaseController
             return $this->db->fixTeamRatingField($leagueId, $teamId, $matchdayId, $field, (int) $value);
         }
 
+        // POST /league/conclude_season  { league_id, season_id }
+        if ($this->id === 'conclude_season') {
+            $body     = $this->body();
+            $leagueId = $body['league_id'] ?? null;
+            $seasonId = $body['season_id'] ?? null;
+            if (!$leagueId || !$seasonId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'league_id und season_id sind erforderlich'];
+            }
+            return $this->db->concludeSeasonForLeague($leagueId, $seasonId);
+        }
+
         return $this->methodNotAllowed();
     }
 
