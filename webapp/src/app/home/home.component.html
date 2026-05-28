@@ -174,7 +174,11 @@
               <span class="last-md-rank">Platz {{ myLastMatchdayRank() }}</span>
             }
           </div>
-          <a class="card-link" routerLink="/liga/spieltag">Zur Auswertung →</a>
+          <a class="card-link"
+            [routerLink]="['/team', cache.myTeamId(), 'aufstellung']"
+            [queryParams]="{ matchday_id: lastMatchday()?.matchday?.id }">
+            Meine Aufstellung →
+          </a>
         </div>
       }
 
