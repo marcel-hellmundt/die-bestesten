@@ -77,11 +77,11 @@ export class HomeComponent {
     this.cache.ensureMyTeam();
     this.cache.ensureSquad();
 
-    toObservable(this.cache.seasons).pipe(
+    toObservable(this.cache.startedSeasons).pipe(
       filter(s => s.length > 0),
       take(1),
       switchMap(seasons => {
-        const seasonId = seasons[0].id;
+        const seasonId = [...seasons].sort((a, b) => b.start_date.localeCompare(a.start_date))[0].id;
         return forkJoin({
           matchdays: this.api.get<any[]>(`matchday?season_id=${seasonId}`).pipe(
             map(d => d.map(Matchday.from)),
