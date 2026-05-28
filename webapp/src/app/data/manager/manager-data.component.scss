@@ -57,9 +57,18 @@
   font-size: $font-xs;
   font-weight: $font-weight-medium;
 
-  &--active  { background: color-mix(in srgb, $color-success 15%, transparent); color: $color-success; }
-  &--blocked { background: color-mix(in srgb, $color-danger  15%, transparent); color: $color-danger; }
-  &--deleted { background: $color-surface-alt; color: $color-text-muted; }
+  &--active {
+    background: color-mix(in srgb, $color-success 15%, transparent);
+    color: $color-success;
+  }
+  &--blocked {
+    background: color-mix(in srgb, $color-danger 15%, transparent);
+    color: $color-danger;
+  }
+  &--deleted {
+    background: $color-surface-alt;
+    color: $color-text-muted;
+  }
 }
 
 .role-badges {
@@ -78,9 +87,18 @@
   background: none;
   cursor: default;
 
-  &--admin      { background: color-mix(in srgb, var(--flat-river)    18%, transparent); color: var(--flat-river); }
-  &--maintainer { background: color-mix(in srgb, var(--flat-emerald)  18%, transparent); color: var(--flat-emerald); }
-  &--manager    { background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent); color: var(--flat-alizarin); }
+  &--admin {
+    background: color-mix(in srgb, var(--flat-river) 18%, transparent);
+    color: var(--flat-river);
+  }
+  &--maintainer {
+    background: color-mix(in srgb, var(--flat-emerald) 18%, transparent);
+    color: var(--flat-emerald);
+  }
+  &--manager {
+    background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent);
+    color: var(--flat-alizarin);
+  }
 
   &--inactive {
     background: $color-surface;
@@ -91,11 +109,21 @@
 
 button.role-badge {
   cursor: pointer;
-  transition: opacity $transition-fast, filter $transition-fast;
+  transition:
+    opacity $transition-fast,
+    filter $transition-fast;
 
-  &:not(.role-badge--inactive):hover { filter: brightness(1.1); }
-  &.role-badge--inactive:hover { background: $color-surface-alt; color: $color-text; }
-  &:disabled { opacity: 0.5; cursor: wait; }
+  &:not(.role-badge--inactive):hover {
+    filter: brightness(1.1);
+  }
+  &.role-badge--inactive:hover {
+    background: $color-surface-alt;
+    color: $color-text;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
 }
 
 .league-tag {
@@ -105,9 +133,8 @@ button.role-badge {
   padding: 2px $space-2;
   background: $color-surface-alt;
   border: 1px solid $color-border;
-  border-radius: $radius-sm;
+  border-radius: $radius-md;
   font-size: $font-xs;
-  color: $color-text-muted;
   vertical-align: middle;
 
   & + & {
@@ -121,9 +148,54 @@ button.role-badge {
   }
 
   &--invited {
-    background: color-mix(in srgb, $color-accent 12%, transparent);
-    border-color: $color-accent;
     color: $color-accent;
+    border: none;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        $color-accent 0,
+        $color-accent 4px,
+        transparent 4px,
+        transparent 8px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        $color-accent 0,
+        $color-accent 4px,
+        transparent 4px,
+        transparent 8px
+      ),
+      repeating-linear-gradient(
+        180deg,
+        $color-accent 0,
+        $color-accent 4px,
+        transparent 4px,
+        transparent 8px
+      ),
+      repeating-linear-gradient(
+        270deg,
+        $color-accent 0,
+        $color-accent 4px,
+        transparent 4px,
+        transparent 8px
+      );
+    background-size:
+      1px 100%,
+      100% 1px,
+      1px 100%,
+      100% 1px;
+    background-position:
+      0 0,
+      0 0,
+      100% 0,
+      0 100%;
+    background-repeat: no-repeat;
+    animation: league-invite-march 0.8s linear infinite;
+  }
+
+  &--denied {
+    color: $color-text-muted;
+    text-decoration: line-through;
   }
 
   &--add {
@@ -131,7 +203,9 @@ button.role-badge {
     cursor: pointer;
     background: none;
 
-    &:hover { background: $color-surface-alt; }
+    &:hover {
+      background: $color-surface-alt;
+    }
   }
 }
 
@@ -150,7 +224,10 @@ button.role-badge {
   line-height: 1.4;
   transition: opacity $transition-fast;
 
-  &:disabled { opacity: 0.4; cursor: wait; }
+  &:disabled {
+    opacity: 0.4;
+    cursor: wait;
+  }
 
   &--approve {
     background: $color-success;
@@ -195,8 +272,13 @@ button.role-badge {
   border-radius: $radius-sm;
   color: $color-text;
 
-  &:hover { background: $color-surface-alt; }
-  &:disabled { opacity: 0.5; cursor: wait; }
+  &:hover {
+    background: $color-surface-alt;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
 }
 
 .league-invite-empty {
@@ -204,4 +286,21 @@ button.role-badge {
   padding: $space-2 $space-3;
   font-size: $font-sm;
   color: $color-text-muted;
+}
+
+@keyframes league-invite-march {
+  0% {
+    background-position:
+      0 0,
+      0 0,
+      100% 0,
+      0 100%;
+  }
+  100% {
+    background-position:
+      0 -8px,
+      8px 0,
+      100% 8px,
+      -8px 100%;
+  }
 }
