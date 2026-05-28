@@ -100,6 +100,7 @@ GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,d
 PATCH    /league/:id           — {division_id: UUID|null} Spielerpool-Division setzen; oder {visibility: 'public'|'private'} Sichtbarkeit setzen — Admin
 POST     /league/:id/join      — Beitrittsanfrage stellen (status='requested'); benachrichtigt alle Admins; 403 wenn visibility='private' — Auth
 POST     /league/:id/accept    — Einladung annehmen (invited→active); 409 wenn keine ausstehende Einladung — Auth
+POST     /league/:id/decline   — Einladung ablehnen (invited→denied); 409 wenn keine ausstehende Einladung — Auth
 POST     /league/:id/invite    — {manager_id} Manager einladen (status='invited'); benachrichtigt Manager — Admin
 POST     /league/:id/approve   — {manager_id} Anfrage genehmigen (requested→active); benachrichtigt Manager — Admin
 POST     /league/:id/deny      — {manager_id} Mitgliedschaft ablehnen (→denied) — Admin

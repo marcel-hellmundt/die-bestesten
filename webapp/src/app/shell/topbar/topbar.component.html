@@ -128,83 +128,73 @@
 
   <div class="spacer"></div>
 
-  <div class="topbar-league">
-    <button
-      class="league-btn"
-      [class.league-btn--open]="isLeagueDropdownOpen()"
-      (click)="toggleLeagueDropdown($event)"
-      [disabled]="leagueSwitching()"
-      aria-label="Liga wechseln"
-    >
-      <span class="league-name">{{ activeLeagueName() ?? '—' }}</span>
-      @if (invitedLeagues().length > 0) {
-        <span class="league-invite-badge">{{ invitedLeagues().length }}</span>
-      }
-      <app-icon name="chevron-down" class="league-chevron"></app-icon>
-    </button>
-
-    @if (isLeagueDropdownOpen()) {
-      <div class="league-dropdown">
-        @if (activeLeagues().length > 0) {
-          <div class="league-section-label">Meine Ligen</div>
-          @for (league of activeLeagues(); track league.id) {
-            <button
-              class="league-item"
-              [class.league-item--active]="league.id === activeLeagueId()"
-              (click)="switchLeague(league.id)"
-            >
-              {{ league.name }}
-              @if (league.id === activeLeagueId()) {
-                <app-icon name="check" class="league-check"></app-icon>
-              }
-            </button>
-          }
-        }
-
+  @if (showLeagueSwitcher()) {
+    <div class="topbar-league">
+      <button
+        class="league-btn"
+        [class.league-btn--open]="isLeagueDropdownOpen()"
+        (click)="toggleLeagueDropdown($event)"
+        [disabled]="leagueSwitching()"
+        aria-label="Liga wechseln"
+      >
+        <span class="league-name">{{ activeLeagueName() ?? '—' }}</span>
         @if (invitedLeagues().length > 0) {
-          <div class="league-section-label league-section-label--invite">Einladungen</div>
-          @for (league of invitedLeagues(); track league.id) {
-            <div class="league-item league-item--invited">
-              <span class="league-item__name">{{ league.name }}</span>
-              <button
-                class="league-accept-btn"
-                [disabled]="leagueActionState()[league.id] === 'loading'"
-                (click)="acceptInvite(league.id)"
-              >
-                {{ leagueActionState()[league.id] === 'loading' ? '…' : 'Annehmen' }}
-              </button>
-            </div>
-          }
+          <span class="league-invite-badge">{{ invitedLeagues().length }}</span>
         }
+        <app-icon name="chevron-down" class="league-chevron"></app-icon>
+      </button>
 
-        <div class="league-divider"></div>
-        <button class="league-join-trigger" (click)="toggleJoinSection()">
-          {{ showJoinSection() ? '▾' : '▸' }} Andere Liga anfragen
-        </button>
+      @if (isLeagueDropdownOpen()) {
+        <div class="league-dropdown">
+          @if (activeLeagues().length > 0) {
+            <div class="league-section-label">Meine Ligen</div>
+            @for (league of activeLeagues(); track league.id) {
+              <button
+                class="league-item"
+                [class.league-item--active]="league.id === activeLeagueId()"
+                (click)="switchLeague(league.id)"
+              >
+                {{ league.name }}
+                @if (league.id === activeLeagueId()) {
+                  <app-icon name="check" class="league-check"></app-icon>
+                }
+              </button>
+            }
+          }
 
-        @if (showJoinSection()) {
-          @if (!allLeaguesLoaded()) {
-            <div class="league-item league-item--muted">Laden…</div>
-          } @else if (availableLeagues().length === 0) {
-            <div class="league-item league-item--muted">Keine weiteren Ligen verfügbar</div>
-          } @else {
-            @for (league of availableLeagues(); track league.id) {
-              <div class="league-item league-item--available">
+          @if (invitedLeagues().length > 0) {
+            @if (activeLeagues().length > 0) {
+              <div class="league-divider"></div>
+            }
+            <div class="league-section-label">Einladungen</div>
+            @for (league of invitedLeagues(); track league.id) {
+              <div class="league-item league-item--invited">
                 <span class="league-item__name">{{ league.name }}</span>
-                <button
-                  class="league-request-btn"
-                  [disabled]="leagueActionState()[league.id] === 'loading'"
-                  (click)="requestJoin(league.id)"
-                >
-                  {{ leagueActionState()[league.id] === 'loading' ? '…' : 'Anfragen' }}
-                </button>
+                <div class="invite-actions">
+                  <button
+                    class="invite-btn invite-btn--accept"
+                    [disabled]="leagueActionState()[league.id] === 'loading'"
+                    (click)="acceptInvite(league.id)"
+                    title="Annehmen"
+                  >
+                    <app-icon name="check"></app-icon>
+                  </button>
+                  <button
+                    class="invite-btn invite-btn--decline"
+                    [disabled]="leagueActionState()[league.id] === 'loading'"
+                    (click)="declineInvite(league.id)"
+                    title="Ablehnen"
+                  >
+                    <app-icon name="x"></app-icon>
+                  </button>
+                </div>
               </div>
             }
           }
-        }
-      </div>
-    }
-  </div>
+        </div>
+      }
+    </div>
+  }
 
   <div class="topbar-right">
     <button
@@ -266,62 +256,52 @@
             <app-icon name="settings"></app-icon>
             Einstellungen
           </a>
-          <hr class="dropdown-divider dropdown-divider--mobile-league" />
-          <div class="dropdown-league-section">
-            <div class="dropdown-league-label">Liga</div>
-            @for (league of activeLeagues(); track league.id) {
-              <button
-                class="dropdown-item"
-                [class.dropdown-item--active]="league.id === activeLeagueId()"
-                (click)="switchLeague(league.id); closeDropdown()"
-              >
-                <app-icon name="globe"></app-icon>
-                <span class="dropdown-league-item-name">{{ league.name }}</span>
-                @if (league.id === activeLeagueId()) {
-                  <app-icon name="check" class="dropdown-league-check"></app-icon>
-                }
-              </button>
-            }
-            @if (invitedLeagues().length > 0) {
-              <div class="dropdown-league-label dropdown-league-label--invite">Einladungen</div>
-              @for (league of invitedLeagues(); track league.id) {
-                <div class="dropdown-item dropdown-item--invited">
+          @if (showLeagueSwitcher()) {
+            <hr class="dropdown-divider dropdown-divider--mobile-league" />
+            <div class="dropdown-league-section">
+              <div class="dropdown-league-label">Liga</div>
+              @for (league of activeLeagues(); track league.id) {
+                <button
+                  class="dropdown-item"
+                  [class.dropdown-item--active]="league.id === activeLeagueId()"
+                  (click)="switchLeague(league.id); closeDropdown()"
+                >
+                  <app-icon name="globe"></app-icon>
                   <span class="dropdown-league-item-name">{{ league.name }}</span>
-                  <button
-                    class="league-accept-btn"
-                    [disabled]="leagueActionState()[league.id] === 'loading'"
-                    (click)="acceptInvite(league.id)"
-                  >
-                    {{ leagueActionState()[league.id] === 'loading' ? '…' : 'Annehmen' }}
-                  </button>
-                </div>
+                  @if (league.id === activeLeagueId()) {
+                    <app-icon name="check" class="dropdown-league-check"></app-icon>
+                  }
+                </button>
               }
-            }
-            <button class="dropdown-item dropdown-item--muted" (click)="toggleJoinSection()">
-              <app-icon name="plus"></app-icon>
-              Andere Liga anfragen
-            </button>
-            @if (showJoinSection()) {
-              @if (!allLeaguesLoaded()) {
-                <div class="dropdown-item dropdown-item--muted">Laden…</div>
-              } @else if (availableLeagues().length === 0) {
-                <div class="dropdown-item dropdown-item--muted">Keine weiteren Ligen</div>
-              } @else {
-                @for (league of availableLeagues(); track league.id) {
+              @if (invitedLeagues().length > 0) {
+                <hr class="dropdown-divider" />
+                <div class="dropdown-league-label">Einladungen</div>
+                @for (league of invitedLeagues(); track league.id) {
                   <div class="dropdown-item dropdown-item--invited">
                     <span class="dropdown-league-item-name">{{ league.name }}</span>
-                    <button
-                      class="league-request-btn"
-                      [disabled]="leagueActionState()[league.id] === 'loading'"
-                      (click)="requestJoin(league.id)"
-                    >
-                      {{ leagueActionState()[league.id] === 'loading' ? '…' : 'Anfragen' }}
-                    </button>
+                    <div class="invite-actions">
+                      <button
+                        class="invite-btn invite-btn--accept"
+                        [disabled]="leagueActionState()[league.id] === 'loading'"
+                        (click)="acceptInvite(league.id)"
+                        title="Annehmen"
+                      >
+                        <app-icon name="check"></app-icon>
+                      </button>
+                      <button
+                        class="invite-btn invite-btn--decline"
+                        [disabled]="leagueActionState()[league.id] === 'loading'"
+                        (click)="declineInvite(league.id)"
+                        title="Ablehnen"
+                      >
+                        <app-icon name="x"></app-icon>
+                      </button>
+                    </div>
                   </div>
                 }
               }
-            }
-          </div>
+            </div>
+          }
           <hr class="dropdown-divider" />
           <button class="dropdown-item dropdown-item--danger" (click)="logout()">
             <app-icon name="logout"></app-icon>

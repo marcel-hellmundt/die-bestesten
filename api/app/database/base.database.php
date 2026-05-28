@@ -256,6 +256,16 @@ class Database
         return $q->rowCount() > 0;
     }
 
+    public function declineLeagueInvite(string $managerId, string $leagueId): bool
+    {
+        $q = $this->con->prepare(
+            "UPDATE manager_league SET status = 'denied'
+             WHERE manager_id = :m AND league_id = :l AND status = 'invited'"
+        );
+        $q->execute([':m' => $managerId, ':l' => $leagueId]);
+        return $q->rowCount() > 0;
+    }
+
     public function approveMembership(string $managerId, string $leagueId): bool
     {
         $q = $this->con->prepare(

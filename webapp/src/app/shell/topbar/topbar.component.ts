@@ -41,8 +41,9 @@ export class TopbarComponent implements OnDestroy {
   showJoinSection  = signal(false);
   leagueActionState = signal<Record<string, 'loading' | 'done' | 'error'>>({});
 
-  activeLeagues   = computed(() => this.leagues().filter(l => !l.status || l.status === 'active'));
-  invitedLeagues  = computed(() => this.leagues().filter(l => l.status === 'invited'));
+  activeLeagues    = computed(() => this.leagues().filter(l => !l.status || l.status === 'active'));
+  invitedLeagues   = computed(() => this.leagues().filter(l => l.status === 'invited'));
+  showLeagueSwitcher = computed(() => this.activeLeagues().length > 1 || this.invitedLeagues().length > 0);
   availableLeagues = computed(() => {
     const myIds = new Set(this.leagues().map(l => l.id));
     return this.allLeagues().filter(l => !myIds.has(l.id) && l.visibility !== 'private');
@@ -224,6 +225,18 @@ export class TopbarComponent implements OnDestroy {
   toggleJoinSection(): void {
     this.showJoinSection.update(v => !v);
     if (this.showJoinSection()) this.loadAllLeagues();
+  }
+
+  declineInvite(leagueId: string): void {
+    if (this.leagueActionState()[leagueId] === 'loading') return;
+    this.leagueActionState.update(s => ({ ...s, [leagueId]: 'loading' }));
+    this.api.post<any>(`league/${leagueId}/decline`, {}).subscribe({
+      next: () => {
+        this.leagues.update(list => list.filter(l => l.id !== leagueId));
+        this.leagueActionState.update(s => { const n = { ...s }; delete n[leagueId]; return n; });
+      },
+      error: () => this.leagueActionState.update(s => { const n = { ...s }; delete n[leagueId]; return n; }),
+    });
   }
 
   acceptInvite(leagueId: string): void {

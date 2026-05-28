@@ -78,6 +78,22 @@ class LeagueController extends _BaseController
             return ['status' => true];
         }
 
+        // POST /league/:id/decline — manager declines own invitation (invited→denied)
+        if ($this->sub === 'decline') {
+            $leagueId  = $this->id;
+            $managerId = $GLOBALS['auth_manager_id'];
+            if (!$leagueId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Liga-ID fehlt'];
+            }
+            $ok = $this->db->declineLeagueInvite($managerId, $leagueId);
+            if (!$ok) {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Keine ausstehende Einladung'];
+            }
+            return ['status' => true];
+        }
+
         // All remaining POST routes require admin
         if (!$this->isAdmin()) {
             http_response_code(403);

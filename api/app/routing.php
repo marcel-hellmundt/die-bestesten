@@ -95,6 +95,12 @@ class Routing
                     ],
                     [
                         'method' => 'POST',
+                        'path' => '/league/:id/decline',
+                        'description' => 'Einladung ablehnen (status invited→denied) — Auth; 409 wenn keine ausstehende Einladung',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                    ],
+                    [
+                        'method' => 'POST',
                         'path' => '/league/:id/invite',
                         'description' => 'Manager einladen (status=invited); benachrichtigt den Manager — Body: {manager_id} — Admin',
                         'path_params' => [':id' => 'UUID der Liga'],
