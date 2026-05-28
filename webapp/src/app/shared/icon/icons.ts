@@ -17,6 +17,10 @@ export const ICONS: Record<string, string> = {
     <path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
   </svg>`,
 
+  x: `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>`,
+
   stadium: `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M2 13V6l6-4 6 4v7" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
     <rect x="5" y="9" width="2.5" height="4" rx="0.5" fill="currentColor" opacity="0.5"/>
