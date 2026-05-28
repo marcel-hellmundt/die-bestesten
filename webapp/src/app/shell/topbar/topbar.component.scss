@@ -317,6 +317,10 @@
 
         &--invited {
           cursor: default;
+
+          &:hover {
+            background: none;
+          }
         }
       }
 
@@ -507,6 +511,10 @@
       &--invited,
       &--available {
         cursor: default;
+
+        &:hover {
+          background: none;
+        }
       }
 
       &--muted {
