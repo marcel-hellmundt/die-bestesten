@@ -241,7 +241,7 @@ $methodColors = [
 
 <header>
     <h1>API Schema</h1>
-    <p><?= htmlspecialchars('https://api.claude.die-bestesten.de') ?></p>
+    <p><?= htmlspecialchars('https://api.die-bestesten.de') ?></p>
 </header>
 
 <div class="diagram-section" id="diagram-section">
