@@ -441,6 +441,12 @@ trait ManagerTrait
             ':color_primary'  => $colorPrimary,
             ':color_secondary' => $colorSecondary,
         ]);
+
+        $tq = $this->con_league->prepare(
+            "INSERT INTO transaction (team_id, amount, reason, matchday_id)
+             VALUES (:tid, 50000000, 'Startguthaben', NULL)"
+        );
+        $tq->execute([':tid' => $id]);
     }
 
     public function isTeamNameTaken(string $teamName): bool
