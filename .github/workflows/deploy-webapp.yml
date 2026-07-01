@@ -2,7 +2,7 @@ name: Deploy Webapp
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
     paths: [webapp/**]
   workflow_dispatch:
 
@@ -17,6 +17,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +27,7 @@ jobs:
 
       - name: Build
         working-directory: webapp
-        run: npm run build
+        run: npm run build -- --configuration=${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
       - name: Install lftp
         run: sudo apt-get install -y lftp
@@ -38,5 +39,5 @@ jobs:
             set ftp:ssl-protect-data true;
             set ssl:verify-certificate false;
             open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-            mirror --reverse --delete --verbose ./webapp/dist/webapp/browser/ /html/claude/;
+            mirror --reverse --delete --verbose ./webapp/dist/webapp/browser/ ${{ vars.FTP_DIR_WEBAPP }};
           "

@@ -2,7 +2,7 @@ name: Deploy API
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
     paths: [api/**]
   workflow_dispatch:
 
@@ -17,6 +17,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -34,5 +35,5 @@ jobs:
             set ftp:ssl-protect-data true;
             set ssl:verify-certificate false;
             open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-            mirror --reverse --delete --exclude .env --exclude .git --verbose ./api/ /html/claude_api/;
+            mirror --reverse --delete --exclude .env --exclude .git --verbose ./api/ ${{ vars.FTP_DIR_API }};
           "

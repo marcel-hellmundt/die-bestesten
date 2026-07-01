@@ -139,7 +139,8 @@ class AuthController extends _BaseController
         if ($manager) {
             $token   = $this->db->createPasswordResetToken($manager['id']);
             $name    = $manager['manager_name'];
-            $link    = 'https://claude.die-bestesten.de/login/reset-password?token=' . $token;
+            $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'https://die-bestesten.de';
+            $link    = $frontendUrl . '/login/reset-password?token=' . $token;
             $subject = 'Passwort zurücksetzen — die bestesten';
             $body    = "Hallo $name,\n\n"
                      . "du hast eine Passwort-Zurücksetzen-Anfrage gestellt.\n\n"

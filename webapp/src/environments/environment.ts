@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://api.claude.die-bestesten.de',
+  apiUrl: 'https://api.dev.die-bestesten.de',
   imageApiUrl: 'https://img.die-bestesten.de',
 };
