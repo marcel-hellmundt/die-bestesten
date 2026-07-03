@@ -75,6 +75,9 @@ class LeagueController extends _BaseController
                 http_response_code(409);
                 return ['status' => false, 'message' => 'Keine ausstehende Einladung'];
             }
+            $manager = $this->db->getAuthManagerById($managerId);
+            $league  = $this->db->getLeagueById($leagueId);
+            $this->db->sendInviteAcceptedAdminEmail($manager['manager_name'], $league['name']);
             return ['status' => true];
         }
 

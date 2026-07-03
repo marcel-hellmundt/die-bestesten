@@ -121,13 +121,7 @@ class ManagerController extends _BaseController
         $alias = $manager['alias'] ?? null;
         $id   = $manager['id'];
 
-        $subject = 'Konto-Löschung angefragt: ' . $name;
-        $body    = "Manager möchte sein Konto löschen:\n\n"
-                 . "Name:  $name\n"
-                 . ($alias ? "Alias: $alias\n" : '')
-                 . "ID:    $id\n";
-
-        mail('mail@marcelkrause.de', $subject, $body, 'From: noreply@die-bestesten.de');
+        $this->db->sendAccountDeletionAdminEmail($name, $alias, $id);
 
         $this->db->markManagerDeleted($id);
 

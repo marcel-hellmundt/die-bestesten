@@ -99,7 +99,7 @@ GET      /league[/:id]         — enthält manager_count aus der jeweiligen Lig
 GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}
 PATCH    /league/:id           — {division_id: UUID|null} Spielerpool-Division setzen; oder {visibility: 'public'|'private'} Sichtbarkeit setzen — Admin
 POST     /league/:id/join      — Beitrittsanfrage stellen (status='requested'); benachrichtigt alle Admins; 403 wenn visibility='private' — Auth
-POST     /league/:id/accept    — Einladung annehmen (invited→active); 409 wenn keine ausstehende Einladung — Auth
+POST     /league/:id/accept    — Einladung annehmen (invited→active); benachrichtigt alle Admins per E-Mail; 409 wenn keine ausstehende Einladung — Auth
 POST     /league/:id/decline   — Einladung ablehnen (invited→denied); 409 wenn keine ausstehende Einladung — Auth
 POST     /league/:id/invite    — {manager_id} Manager einladen (status='invited'); benachrichtigt Manager — Admin
 POST     /league/:id/approve   — {manager_id} Anfrage genehmigen (requested→active); benachrichtigt Manager — Admin
@@ -142,7 +142,7 @@ GET      /team_rating/season   — ?season_id → aggregierte Saisontabelle alle
 GET      /team                 — ?season_id → [{id,team_name,color,color_secondary,season_id,manager_id,manager_name,alias}] sortiert nach Name — Auth
 GET      /team/mine            — Eigenes Team der aktiven Saison {id, team_name, season_id, color}; 404 wenn kein Team — Auth
 GET      /team/:id             — Team per ID (manager_name, alias, total_points, matchdays_played) — Auth
-POST     /team                 — {team_name, color_name?, color_secondary_name?} → {id}; color_name referenziert global.color.name (z.B. "red"); 409 wenn bereits Team vorhanden — Auth
+POST     /team                 — {team_name, color_name?, color_secondary_name?} → {id}; color_name referenziert global.color.name (z.B. "red"); benachrichtigt alle Admins per E-Mail; 409 wenn bereits Team vorhanden — Auth
 GET      /color               — [{name, hex}] globale Farbpalette (name = PK, z.B. "red") — kein Auth erforderlich
 PATCH    /color/:name         — {hex: '#rrggbb'} Hex ändern, kaskadiert auf team.color aller Teams dieser Liga — Admin
 GET      /team/previous        — Letztes Team aus Vorsaison {id,team_name,color,season_id}; 404 wenn keines — Auth

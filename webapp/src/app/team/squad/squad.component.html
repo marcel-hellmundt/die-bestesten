@@ -21,10 +21,14 @@
         @if (positionWarnings().length > 0) {
           <div class="squad-warning">
             <img class="squad-warning__icon" src="img/icons/warning.png" alt="" />
-            <span
-              >Zu wenige Spieler:
-              {{ positionWarnings().map(s => positionLabel(s.position) + ' (' + s.count + '/' + s.min + ')').join(', ') }}</span
-            >
+            @if (playerCount() === 0) {
+              <span>Dein Kader ist noch leer</span>
+            } @else {
+              <span
+                >Zu wenige Spieler:
+                {{ positionWarnings().map(s => positionLabel(s.position) + ' (' + s.count + '/' + s.min + ')').join(', ') }}</span
+              >
+            }
           </div>
         }
         <div class="pos-card__content">

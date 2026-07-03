@@ -74,6 +74,7 @@ class TeamController extends _BaseController
 
         $id = $this->generateGUID();
         $this->db->createTeam($id, $GLOBALS['auth_manager_id'], $teamName, $colorPrimary ?: null, $colorSecondary ?: null);
+        $this->db->sendTeamCreatedAdminEmail($id, $GLOBALS['auth_manager_id'], $teamName, $colorPrimary ?: null, $colorSecondary ?: null);
         http_response_code(201);
         return ['status' => true, 'id' => $id];
     }
