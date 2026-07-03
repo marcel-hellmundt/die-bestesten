@@ -930,6 +930,34 @@ trait LeagueTrait
         }
     }
 
+    public function sendInviteAcceptedAdminEmail(string $managerName, string $leagueName): void
+    {
+        try {
+            $adminEmails = $this->con->query(
+                "SELECT m.email FROM manager m
+                 JOIN manager_role mr ON mr.manager_id = m.id
+                 WHERE mr.role = 'admin' AND m.email IS NOT NULL AND m.status = 'active'"
+            )->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($adminEmails)) return;
+
+            $subject = "Einladung angenommen: $managerName — die bestesten";
+            $body    = "<!DOCTYPE html><html lang=\"de\"><head><meta charset=\"UTF-8\"></head>"
+                . "<body style=\"font-family:sans-serif;color:#1e293b;background:#f8fafc;padding:24px;max-width:600px;margin:0 auto;\">"
+                . "<h2 style=\"margin:0 0 12px;\">Einladung angenommen</h2>"
+                . "<p><strong>" . htmlspecialchars($managerName) . "</strong> hat die Einladung zur Liga "
+                . "<strong>" . htmlspecialchars($leagueName) . "</strong> angenommen.</p>"
+                . "</body></html>";
+            $headers = "From: noreply@die-bestesten.de\r\nContent-Type: text/html; charset=UTF-8";
+
+            foreach ($adminEmails as $email) {
+                mail($email, $subject, $body, $headers);
+            }
+        } catch (\Throwable $e) {
+            error_log('sendInviteAcceptedAdminEmail failed: ' . $e->getMessage());
+        }
+    }
+
     private function getLeagueManagerCount(string $leagueId): int
     {
         $q = $this->con->prepare("SELECT COUNT(*) FROM manager_league WHERE league_id = ?");

@@ -449,6 +449,48 @@ trait ManagerTrait
         $tq->execute([':tid' => $id]);
     }
 
+    public function sendTeamCreatedAdminEmail(string $teamId, string $managerId, string $teamName, ?string $colorPrimary, ?string $colorSecondary): void
+    {
+        try {
+            $adminEmails = $this->con->query(
+                "SELECT m.email FROM manager m
+                 JOIN manager_role mr ON mr.manager_id = m.id
+                 WHERE mr.role = 'admin' AND m.email IS NOT NULL AND m.status = 'active'"
+            )->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($adminEmails)) return;
+
+            $managerQ = $this->con->prepare("SELECT manager_name FROM manager WHERE id = :id");
+            $managerQ->execute([':id' => $managerId]);
+            $managerName = $managerQ->fetchColumn() ?: 'Unbekannt';
+
+            $league     = $this->getMyLeague();
+            $leagueName = $league['name'] ?? 'Unbekannt';
+
+            $seasonId = $this->getActiveSeasonId();
+            $logoUrl  = "https://img.die-bestesten.de/img/team/$seasonId/$teamId.png";
+            $colors   = $colorPrimary ? ($colorPrimary . ($colorSecondary ? " / $colorSecondary" : '')) : '–';
+
+            $subject = "Neues Team erstellt: $teamName — die bestesten";
+            $body    = "<!DOCTYPE html><html lang=\"de\"><head><meta charset=\"UTF-8\"></head>"
+                . "<body style=\"font-family:sans-serif;color:#1e293b;background:#f8fafc;padding:24px;max-width:600px;margin:0 auto;\">"
+                . "<h2 style=\"margin:0 0 12px;\">Neues Team erstellt</h2>"
+                . "<p><strong>" . htmlspecialchars($managerName) . "</strong> hat in der Liga "
+                . "<strong>" . htmlspecialchars($leagueName) . "</strong> das Team "
+                . "<strong>" . htmlspecialchars($teamName) . "</strong> erstellt.</p>"
+                . "<p>Farben: " . htmlspecialchars($colors) . "</p>"
+                . "<img src=\"" . htmlspecialchars($logoUrl) . "\" alt=\"Team-Logo\" style=\"max-width:120px;margin-top:8px;\">"
+                . "</body></html>";
+            $headers = "From: noreply@die-bestesten.de\r\nContent-Type: text/html; charset=UTF-8";
+
+            foreach ($adminEmails as $email) {
+                mail($email, $subject, $body, $headers);
+            }
+        } catch (\Throwable $e) {
+            error_log('sendTeamCreatedAdminEmail failed: ' . $e->getMessage());
+        }
+    }
+
     public function isTeamNameTaken(string $teamName): bool
     {
         $activeSeasonId = $this->getActiveSeasonId();

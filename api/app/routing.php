@@ -90,7 +90,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/league/:id/accept',
-                        'description' => 'Einladung annehmen (status invited→active) — Auth; 409 wenn keine ausstehende Einladung',
+                        'description' => 'Einladung annehmen (status invited→active); benachrichtigt alle Admins per E-Mail — Auth; 409 wenn keine ausstehende Einladung',
                         'path_params' => [':id' => 'UUID der Liga'],
                     ],
                     [
@@ -593,7 +593,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/team',
-                        'description' => 'Team für die aktive Saison anlegen — {team_name, color_name?, color_secondary_name?} → {id}; color_name referenziert global.color.name; 409 wenn Manager bereits ein Team hat — Auth',
+                        'description' => 'Team für die aktive Saison anlegen — {team_name, color_name?, color_secondary_name?} → {id}; color_name referenziert global.color.name; benachrichtigt alle Admins per E-Mail; 409 wenn Manager bereits ein Team hat — Auth',
                         'body' => ['team_name' => 'string (required)', 'color_name' => 'Name aus GET /color, z.B. "red" (optional)', 'color_secondary_name' => 'Name aus GET /color (optional)'],
                     ],
                     [
