@@ -1,6 +1,5 @@
 <?php
 
-// Dev pipeline test
 // Load environment variables
 foreach (file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
     if (strpos(trim($line), '#') === 0 || strpos($line, '=') === false) continue;
