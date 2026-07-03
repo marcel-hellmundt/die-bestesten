@@ -607,4 +607,30 @@ trait ManagerTrait
         );
         $q->execute([':id' => $id]);
     }
+
+    public function sendAccountDeletionAdminEmail(string $managerName, ?string $alias, string $managerId): void
+    {
+        try {
+            $adminEmails = $this->con->query(
+                "SELECT m.email FROM manager m
+                 JOIN manager_role mr ON mr.manager_id = m.id
+                 WHERE mr.role = 'admin' AND m.email IS NOT NULL AND m.status = 'active'"
+            )->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($adminEmails)) return;
+
+            $subject = 'Konto-Löschung angefragt: ' . $managerName;
+            $body    = "Manager möchte sein Konto löschen:\n\n"
+                     . "Name:  $managerName\n"
+                     . ($alias ? "Alias: $alias\n" : '')
+                     . "ID:    $managerId\n";
+            $headers = 'From: noreply@die-bestesten.de';
+
+            foreach ($adminEmails as $email) {
+                mail($email, $subject, $body, $headers);
+            }
+        } catch (\Throwable $e) {
+            error_log('sendAccountDeletionAdminEmail failed: ' . $e->getMessage());
+        }
+    }
 }
