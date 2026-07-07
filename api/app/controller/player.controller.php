@@ -58,7 +58,7 @@ class PlayerController extends _BaseController
             return ['status' => false, 'message' => 'season_id fehlt'];
         }
 
-        $result = ImageUpload::store($_FILES['image'] ?? [], "player/{$seasonId}/{$this->id}.png", 'image/png');
+        $result = ImageUpload::store($_FILES['image'] ?? [], "player/{$seasonId}/{$this->id}.png", 'png');
         if (!$result['status']) {
             http_response_code($result['code']);
             return $result;

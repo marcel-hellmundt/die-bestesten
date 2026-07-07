@@ -131,7 +131,7 @@ class ManagerController extends _BaseController
     protected function post(): mixed
     {
         if ($this->id === 'me' && $this->sub === 'photo') {
-            $result = ImageUpload::store($_FILES['image'] ?? [], "manager/{$GLOBALS['auth_manager_id']}.jpg", 'image/jpeg');
+            $result = ImageUpload::store($_FILES['image'] ?? [], "manager/{$GLOBALS['auth_manager_id']}.jpg", 'jpeg');
             if (!$result['status']) {
                 http_response_code($result['code']);
                 return $result;

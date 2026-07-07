@@ -92,7 +92,7 @@ class TeamController extends _BaseController
         if (isset($owned['error'])) return $owned['error'];
         $team = $owned['team'];
 
-        $result = ImageUpload::store($_FILES['image'] ?? [], "team/{$team['season_id']}/{$this->id}.png", 'image/png');
+        $result = ImageUpload::store($_FILES['image'] ?? [], "team/{$team['season_id']}/{$this->id}.png", 'png');
         if (!$result['status']) {
             http_response_code($result['code']);
             return $result;

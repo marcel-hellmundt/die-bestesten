@@ -47,7 +47,7 @@ class ClubController extends _BaseController
             return ['status' => false, 'message' => 'Club not found'];
         }
 
-        $result = ImageUpload::store($_FILES['image'] ?? [], "club/{$this->id}.png", 'image/png');
+        $result = ImageUpload::store($_FILES['image'] ?? [], "club/{$this->id}.png", 'png');
         if (!$result['status']) {
             http_response_code($result['code']);
             return $result;
