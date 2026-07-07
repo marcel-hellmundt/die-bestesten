@@ -18,6 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify FTP_DIR_IMG is set
+        run: |
+          if [ -z "${{ vars.FTP_DIR_IMG }}" ]; then
+            echo "FTP_DIR_IMG is not set for this environment — aborting to avoid mirroring to the FTP root."
+            exit 1
+          fi
+
       - name: Install lftp
         run: sudo apt-get install -y lftp
 
@@ -28,5 +35,5 @@ jobs:
             set ftp:ssl-protect-data true;
             set ssl:verify-certificate false;
             open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-            mirror --reverse --delete --exclude img/ --verbose ./img-server/ ${{ vars.FTP_DIR_IMG }};
+            mirror --reverse --verbose ./img-server/ ${{ vars.FTP_DIR_IMG }};
           "
