@@ -20,11 +20,13 @@ class ImageUpload
         if ($target === null) {
             return ['status' => false, 'code' => 500, 'message' => 'IMG_STORAGE_PATH nicht konfiguriert'];
         }
-        if (!self::ensureDir(dirname($target))) {
-            return ['status' => false, 'code' => 500, 'message' => 'Zielverzeichnis konnte nicht erstellt werden'];
+        $dirError = self::ensureDir(dirname($target));
+        if ($dirError !== null) {
+            return ['status' => false, 'code' => 500, 'message' => "Zielverzeichnis konnte nicht erstellt werden: $dirError (dir: " . dirname($target) . ')'];
         }
         if (!move_uploaded_file($file['tmp_name'], $target)) {
-            return ['status' => false, 'code' => 500, 'message' => 'Datei konnte nicht gespeichert werden'];
+            $err = error_get_last()['message'] ?? 'unbekannt';
+            return ['status' => false, 'code' => 500, 'message' => "Datei konnte nicht gespeichert werden: $err (target: $target)"];
         }
 
         return ['status' => true];
@@ -40,11 +42,13 @@ class ImageUpload
         if (!is_file($source)) {
             return ['status' => false, 'code' => 404, 'message' => 'Quelldatei nicht gefunden'];
         }
-        if (!self::ensureDir(dirname($target))) {
-            return ['status' => false, 'code' => 500, 'message' => 'Zielverzeichnis konnte nicht erstellt werden'];
+        $dirError = self::ensureDir(dirname($target));
+        if ($dirError !== null) {
+            return ['status' => false, 'code' => 500, 'message' => "Zielverzeichnis konnte nicht erstellt werden: $dirError (dir: " . dirname($target) . ')'];
         }
         if (!copy($source, $target)) {
-            return ['status' => false, 'code' => 500, 'message' => 'Datei konnte nicht kopiert werden'];
+            $err = error_get_last()['message'] ?? 'unbekannt';
+            return ['status' => false, 'code' => 500, 'message' => "Datei konnte nicht kopiert werden: $err"];
         }
 
         return ['status' => true];
@@ -57,8 +61,12 @@ class ImageUpload
         return $basePath . '/' . ltrim($relativePath, '/');
     }
 
-    private static function ensureDir(string $dir): bool
+    /** Returns null on success, or an error message on failure. */
+    private static function ensureDir(string $dir): ?string
     {
-        return is_dir($dir) || mkdir($dir, 0755, true);
+        if (is_dir($dir)) return null;
+        error_clear_last();
+        if (@mkdir($dir, 0755, true)) return null;
+        return error_get_last()['message'] ?? 'unbekannter Fehler';
     }
 }
