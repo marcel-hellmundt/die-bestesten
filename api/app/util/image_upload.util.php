@@ -15,8 +15,9 @@ class ImageUpload
         if (($file['size'] ?? 0) > self::MAX_BYTES) {
             return ['status' => false, 'code' => 413, 'message' => 'Datei zu groß'];
         }
-        if (mime_content_type($file['tmp_name']) !== $expectedMime || getimagesize($file['tmp_name']) === false) {
-            return ['status' => false, 'code' => 415, 'message' => 'Ungültiges Bildformat'];
+        $detectedMime = mime_content_type($file['tmp_name']);
+        if ($detectedMime !== $expectedMime || getimagesize($file['tmp_name']) === false) {
+            return ['status' => false, 'code' => 415, 'message' => "Ungültiges Bildformat: erkannt als '$detectedMime', erwartet '$expectedMime'"];
         }
 
         $conn = self::connect();
