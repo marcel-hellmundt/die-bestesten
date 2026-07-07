@@ -59,6 +59,11 @@ trait ClubTrait
         ];
     }
 
+    public function setClubLogoUploaded(string $id): void
+    {
+        $this->con->prepare("UPDATE club SET logo_uploaded = 1 WHERE id = :id")->execute([':id' => $id]);
+    }
+
     public function migrateClub(): array
     {
         $rows = $this->con_old->query("SELECT club_id, country_code, name FROM club")

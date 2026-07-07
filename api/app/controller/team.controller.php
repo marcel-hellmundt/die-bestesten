@@ -57,6 +57,10 @@ class TeamController extends _BaseController
 
     protected function post(): mixed
     {
+        if ($this->id && $this->sub === 'logo') {
+            return $this->sub_id === 'takeover' ? $this->takeoverLogo() : $this->uploadLogo();
+        }
+
         $body           = $this->body();
         $teamName       = trim($body['team_name'] ?? '');
         $colorPrimary   = $body['color'] ?? null;
@@ -81,4 +85,58 @@ class TeamController extends _BaseController
 
     protected function patch(): mixed  { return $this->methodNotAllowed(); }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
+
+    private function uploadLogo(): mixed
+    {
+        $owned = $this->requireOwnTeam();
+        if (isset($owned['error'])) return $owned['error'];
+        $team = $owned['team'];
+
+        $result = ImageUpload::store($_FILES['image'] ?? [], "team/{$team['season_id']}/{$this->id}.png", 'image/png');
+        if (!$result['status']) {
+            http_response_code($result['code']);
+            return $result;
+        }
+
+        return ['status' => true];
+    }
+
+    private function takeoverLogo(): mixed
+    {
+        $owned = $this->requireOwnTeam();
+        if (isset($owned['error'])) return $owned['error'];
+        $team = $owned['team'];
+
+        $previous = $this->db->getPreviousTeam($GLOBALS['auth_manager_id']);
+        if (!$previous) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'No previous team found'];
+        }
+
+        $result = ImageUpload::copy(
+            "team/{$previous['season_id']}/{$previous['id']}.png",
+            "team/{$team['season_id']}/{$this->id}.png"
+        );
+        if (!$result['status']) {
+            http_response_code($result['code']);
+            return $result;
+        }
+
+        return ['status' => true];
+    }
+
+    /** @return array{team: array}|array{error: array} */
+    private function requireOwnTeam(): array
+    {
+        $team = $this->db->getTeamById($this->id);
+        if (!$team) {
+            http_response_code(404);
+            return ['error' => ['status' => false, 'message' => 'Team not found']];
+        }
+        if ($team['manager_id'] !== $GLOBALS['auth_manager_id']) {
+            http_response_code(403);
+            return ['error' => ['status' => false, 'message' => 'Forbidden']];
+        }
+        return ['team' => $team];
+    }
 }

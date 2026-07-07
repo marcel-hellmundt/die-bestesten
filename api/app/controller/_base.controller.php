@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../database/base.database.php';
+require_once __DIR__ . '/../util/image_upload.util.php';
 
 abstract class _BaseController
 {

@@ -99,6 +99,15 @@ trait PlayerInSeasonTrait
         ], $stmt->fetchAll(PDO::FETCH_ASSOC))];
     }
 
+    public function setPlayerPhotoUploaded(string $playerId, string $seasonId): bool
+    {
+        $q = $this->con->prepare(
+            "UPDATE player_in_season SET photo_uploaded = 1 WHERE player_id = :p AND season_id = :s"
+        );
+        $q->execute([':p' => $playerId, ':s' => $seasonId]);
+        return $q->rowCount() > 0;
+    }
+
     public function createPlayerInSeason(string $id, string $playerId, string $seasonId, string $position, int $price): void
     {
         $q = $this->con->prepare(

@@ -239,6 +239,12 @@ class Routing
                         'description' => 'Ein Club per ID — enthält aktuelles Stadion als stadium-Objekt (oder null)',
                         'path_params' => [':id' => 'UUID des Clubs'],
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/club/:id/logo',
+                        'description' => 'Vereinswappen hochladen (multipart/form-data, Feld "image", PNG) — setzt club.logo_uploaded — Maintainer+',
+                        'path_params' => [':id' => 'UUID des Clubs'],
+                    ],
                 ],
             ]),
 
@@ -607,6 +613,18 @@ class Routing
                         'description' => 'Prüft ob ein Teamname in der aktiven Saison verfügbar ist — { available: bool }; 400 wenn Name < 3 Zeichen — Auth',
                         'query_params' => ['name' => 'Teamname (min. 3 Zeichen)'],
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/team/:id/logo',
+                        'description' => 'Team-Logo hochladen (multipart/form-data, Feld "image", PNG) — nur eigenes Team — Auth',
+                        'path_params' => [':id' => 'UUID des Teams'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/team/:id/logo/takeover',
+                        'description' => 'Übernimmt das Logo aus dem Vorsaison-Team desselben Managers für dieses Team — nur eigenes Team; 404 wenn kein Vorsaison-Team — Auth',
+                        'path_params' => [':id' => 'UUID des Teams'],
+                    ],
                 ],
             ]),
 
@@ -652,6 +670,11 @@ class Routing
                         'path' => '/manager/:id/roles/:role',
                         'description' => 'Rolle entziehen — gibt aktualisierte roles[] zurück — Admin',
                         'path_params' => [':id' => 'UUID des Managers', ':role' => 'Rollenname (maintainer|admin)'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/manager/me/photo',
+                        'description' => 'Eigenes Profilfoto hochladen (multipart/form-data, Feld "image", JPEG)',
                     ],
                     [
                         'method' => 'PATCH',
@@ -752,6 +775,13 @@ class Routing
                         'description' => 'Ein Spieler mit aktuellem Club, Saisondaten und allen Spieltagsbewertungen',
                         'path_params' => [':id' => 'UUID des Spielers'],
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/player/:id/photo',
+                        'description' => 'Spielerfoto hochladen (multipart/form-data, Feld "image", PNG; Body-Feld season_id) — setzt player_in_season.photo_uploaded für diese Saison — Maintainer+',
+                        'path_params' => [':id' => 'UUID des Spielers'],
+                        'body' => ['season_id' => 'UUID der Saison'],
                     ],
                     [
                         'method' => 'POST',

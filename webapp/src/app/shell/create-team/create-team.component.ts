@@ -196,7 +196,7 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
   private uploadLogo(team: { id: string; season_id: string }): void {
     const newFile = this.logoFile();
     if (newFile) {
-      this.api.uploadTeamLogo(team.season_id, team.id, newFile).subscribe({
+      this.api.uploadTeamLogo(team.id, newFile).subscribe({
         next: () => this.finalize(),
         error: () => this.finalize(),
       });
@@ -205,7 +205,7 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
 
     const prev = this.previousTeam();
     if (prev) {
-      this.api.takeoverTeamLogo(team.season_id, team.id, prev.season_id, prev.id).subscribe({
+      this.api.takeoverTeamLogo(team.id).subscribe({
         next: () => this.finalize(),
         error: () => this.finalize(),
       });

@@ -13,15 +13,17 @@ Angular-Webapp + PHP-REST-API, Fantasy-Football. Frontend: Angular (`standalone:
 
 ```
 die-bestesten/
-├── .github/workflows/  — deploy-api.yml, deploy-webapp.yml (Push auf main → Deploy)
+├── .github/workflows/  — deploy-api.yml, deploy-webapp.yml, deploy-img.yml (Push auf main → Deploy)
 ├── api/app/
 │   ├── controller/     — Ein Controller pro Ressource (erbt _BaseController)
 │   ├── database/       — Ein Trait pro Ressource; composited in base.database.php
+│   ├── util/           — image_upload.util.php (Bild-Validierung + Datei-Write, IMG_STORAGE_PATH)
 │   ├── guard.php       — JWT + RBAC; setzt $GLOBALS['auth_roles'(array)/'auth_manager_id']
 │   └── routing.php     — Routen + eingebettete API-Doku
 ├── api/index.php       — Einstiegspunkt; parst URL → Routing → Controller
 ├── api/schema.php      — Web-UI für API-Doku (Mermaid-ER + Endpunkte aus routing.php)
 ├── database/global_schema.sql, league_schema.sql
+├── img-server/         — deployt nach img.die-bestesten.de (nur .htaccess; img/-Unterordner mit Uploads bleibt beim Deploy erhalten); reines statisches Bild-Serving, kein PHP — Uploads laufen über api/
 └── webapp/
 ```
 
@@ -88,6 +90,7 @@ GET/POST /club_in_season       — Saison-Zuordnungen; POST 409 bei Duplikat
 PATCH    /club_in_season/:id   — Division/Position aktualisieren
 GET      /division[/:id]
 GET      /club[/:id]           — /:id enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null
+POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → setzt club.logo_uploaded — Maintainer+
 GET      /country[/:id]
 GET      /season[/:id|/active]
 POST     /season                — {start_date: YYYY-MM-DD} → {id}; UNIQUE auf start_date — Admin
@@ -126,6 +129,7 @@ POST     /player_in_season — {player_id, season_id, position, price} → {id};
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
 POST     /player/migrate       — gibt migrated/skipped-Counts zurück — Admin
 POST     /player/create        — {kicker_id, first_name, last_name, displayname, season_id, position, price, club_id?, from_date?} → {id} — erstellt player + player_in_season + optional player_in_club — Maintainer+
+POST     /player/:id/photo     — multipart/form-data, Feld "image" (PNG) + Body season_id → setzt player_in_season.photo_uploaded — Maintainer+
 POST     /player_in_club       — {player_id, club_id, from_date, on_loan?} → {id} — fügt Spieler einem Verein zu (neuer player_in_club-Eintrag) — Maintainer+
 GET      /player_rating        — ?matchday_id&club_id → Spielerinfos + price, starting_count (Starts in der Saison); sortiert nach starting_count DESC, position, price DESC
 GET      /player_rating/best_xi — ?matchday_id (required), ?free_agents_only=0|1 — beste valide 11 (343/352/433/442/451) für einen Spieltag; gibt {formation, players[{player_id,displayname,position,points,grade,club_id,club_name,club_short_name}], total_points} zurück; free_agents_only=1 nur Spieler ohne Fantasy-Team — Auth
@@ -147,10 +151,13 @@ GET      /color               — [{name, hex}] globale Farbpalette (name = PK, 
 PATCH    /color/:name         — {hex: '#rrggbb'} Hex ändern, kaskadiert auf team.color aller Teams dieser Liga — Admin
 GET      /team/previous        — Letztes Team aus Vorsaison {id,team_name,color,season_id}; 404 wenn keines — Auth
 GET      /team/check-name      — ?name= (min. 3 Zeichen) → {available: bool}; 400 wenn zu kurz — Auth
+POST     /team/:id/logo        — multipart/form-data, Feld "image" (PNG) — nur eigenes Team — Auth
+POST     /team/:id/logo/takeover — übernimmt Logo aus Vorsaison-Team desselben Managers — nur eigenes Team; 404 wenn kein Vorsaison-Team — Auth
 GET      /manager              — [{id,manager_name,alias,status,roles[],leagues[{id,name}]}] alle Manager global — Admin
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 GET      /manager/birthdays   — [{id,manager_name}] — Manager mit heutigem Geburtstag (MONTH+DAY match) — Auth
 GET      /manager/leagues      — [{id,name,slug}] — alle Ligen des eingeloggten Managers — Auth
+POST     /manager/me/photo     — multipart/form-data, Feld "image" (JPEG) — eigenes Profilfoto — Auth
 PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} oder {first_name} allein ohne Passwort — Auth
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth

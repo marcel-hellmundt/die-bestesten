@@ -24,6 +24,10 @@ class PlayerController extends _BaseController
 
     protected function post(): mixed
     {
+        if ($this->id && $this->sub === 'photo') {
+            return $this->uploadPhoto();
+        }
+
         if ($this->id === 'migrate') {
             if (!$this->isAdmin()) {
                 http_response_code(403);
@@ -45,6 +49,29 @@ class PlayerController extends _BaseController
 
         return $this->methodNotAllowed();
     }
+
+    private function uploadPhoto(): mixed
+    {
+        $seasonId = $_POST['season_id'] ?? null;
+        if (!$seasonId) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'season_id fehlt'];
+        }
+
+        $result = ImageUpload::store($_FILES['image'] ?? [], "player/{$seasonId}/{$this->id}.png", 'image/png');
+        if (!$result['status']) {
+            http_response_code($result['code']);
+            return $result;
+        }
+
+        if (!$this->db->setPlayerPhotoUploaded($this->id, $seasonId)) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'player_in_season nicht gefunden'];
+        }
+
+        return ['status' => true];
+    }
+
     protected function patch(): mixed  { return $this->methodNotAllowed(); }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

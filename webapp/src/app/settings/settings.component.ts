@@ -157,7 +157,7 @@ export class SettingsComponent {
     if (!id) return;
 
     this.photoState.set('loading');
-    this.api.uploadManagerPhoto(id, file).subscribe({
+    this.api.uploadManagerPhoto(file).subscribe({
       next: () => {
         this.avatarFailed.set(false);
         this.avatarBust.set(Date.now());

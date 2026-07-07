@@ -35,43 +35,32 @@ export class ApiService {
   }
 
   uploadClubLogo(clubId: string, photo: File): Observable<any> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
     const formData = new FormData();
-    formData.append('club_id', clubId);
     formData.append('image', photo);
-    return this.http.post(`${environment.imageApiUrl}/club/`, formData, { headers });
+    return this.postForm(`club/${clubId}/logo`, formData);
   }
 
-  uploadTeamLogo(seasonId: string, teamId: string, photo: File): Observable<any> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+  uploadPlayerPhoto(playerId: string, seasonId: string, photo: File): Observable<any> {
     const formData = new FormData();
     formData.append('season_id', seasonId);
-    formData.append('team_id', teamId);
     formData.append('image', photo);
-    return this.http.post(`${environment.imageApiUrl}/team/`, formData, { headers });
+    return this.postForm(`player/${playerId}/photo`, formData);
   }
 
-  uploadManagerPhoto(managerId: string, photo: File): Observable<any> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+  uploadTeamLogo(teamId: string, photo: File): Observable<any> {
     const formData = new FormData();
-    formData.append('manager_id', managerId);
     formData.append('image', photo);
-    return this.http.post(`${environment.imageApiUrl}/manager/`, formData, { headers });
+    return this.postForm(`team/${teamId}/logo`, formData);
   }
 
-  takeoverTeamLogo(seasonId: string, teamId: string, lastSeasonId: string, lastTeamId: string): Observable<any> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+  uploadManagerPhoto(photo: File): Observable<any> {
     const formData = new FormData();
-    formData.append('season_id', seasonId);
-    formData.append('team_id', teamId);
-    formData.append('takeover', 'true');
-    formData.append('last_season_id', lastSeasonId);
-    formData.append('last_team_id', lastTeamId);
-    return this.http.post(`${environment.imageApiUrl}/team/`, formData, { headers });
+    formData.append('image', photo);
+    return this.postForm(`manager/me/photo`, formData);
+  }
+
+  takeoverTeamLogo(teamId: string): Observable<any> {
+    return this.post(`team/${teamId}/logo/takeover`);
   }
 
   delete<T>(path: string, body: unknown = {}): Observable<T> {
