@@ -1,5 +1,8 @@
 <?php
 
+// api/'s webspace and img.die-bestesten.de's webspace are separate, read-only-to-each-other
+// mounts on the same hosting account — direct filesystem writes across that boundary are not
+// possible, so uploads go over FTPS instead (same account the deploy workflows already use).
 class ImageUpload
 {
     private const MAX_BYTES = 5 * 1024 * 1024;
@@ -16,57 +19,77 @@ class ImageUpload
             return ['status' => false, 'code' => 415, 'message' => 'Ungültiges Bildformat'];
         }
 
-        $target = self::resolvePath($relativePath);
-        if ($target === null) {
-            return ['status' => false, 'code' => 500, 'message' => 'IMG_STORAGE_PATH nicht konfiguriert'];
-        }
-        $dirError = self::ensureDir(dirname($target));
-        if ($dirError !== null) {
-            return ['status' => false, 'code' => 500, 'message' => "Zielverzeichnis konnte nicht erstellt werden: $dirError (dir: " . dirname($target) . ')'];
-        }
-        if (!move_uploaded_file($file['tmp_name'], $target)) {
-            $err = error_get_last()['message'] ?? 'unbekannt';
-            return ['status' => false, 'code' => 500, 'message' => "Datei konnte nicht gespeichert werden: $err (target: $target)"];
-        }
+        $conn = self::connect();
+        if (is_array($conn)) return $conn;
 
-        return ['status' => true];
+        $result = self::putFile($conn, $file['tmp_name'], $relativePath);
+        ftp_close($conn);
+        return $result;
     }
 
     public static function copy(string $sourceRelativePath, string $targetRelativePath): array
     {
-        $source = self::resolvePath($sourceRelativePath);
-        $target = self::resolvePath($targetRelativePath);
-        if ($source === null || $target === null) {
-            return ['status' => false, 'code' => 500, 'message' => 'IMG_STORAGE_PATH nicht konfiguriert'];
-        }
-        if (!is_file($source)) {
+        $conn = self::connect();
+        if (is_array($conn)) return $conn;
+
+        $tmp = tempnam(sys_get_temp_dir(), 'img');
+        if (!@ftp_get($conn, $tmp, self::remotePath($sourceRelativePath), FTP_BINARY)) {
+            ftp_close($conn);
+            @unlink($tmp);
             return ['status' => false, 'code' => 404, 'message' => 'Quelldatei nicht gefunden'];
         }
-        $dirError = self::ensureDir(dirname($target));
-        if ($dirError !== null) {
-            return ['status' => false, 'code' => 500, 'message' => "Zielverzeichnis konnte nicht erstellt werden: $dirError (dir: " . dirname($target) . ')'];
-        }
-        if (!copy($source, $target)) {
-            $err = error_get_last()['message'] ?? 'unbekannt';
-            return ['status' => false, 'code' => 500, 'message' => "Datei konnte nicht kopiert werden: $err"];
+
+        $result = self::putFile($conn, $tmp, $targetRelativePath);
+        ftp_close($conn);
+        @unlink($tmp);
+        return $result;
+    }
+
+    private static function connect()
+    {
+        $host = $_ENV['IMG_FTP_HOST'] ?? null;
+        $user = $_ENV['IMG_FTP_USER'] ?? null;
+        $pass = $_ENV['IMG_FTP_PASSWORD'] ?? null;
+        if (!$host || !$user || !$pass || !($_ENV['IMG_FTP_DIR'] ?? null)) {
+            return ['status' => false, 'code' => 500, 'message' => 'IMG_FTP_* nicht konfiguriert'];
         }
 
+        $conn = @ftp_ssl_connect($host);
+        if (!$conn) {
+            return ['status' => false, 'code' => 500, 'message' => "FTPS-Verbindung zu $host fehlgeschlagen"];
+        }
+        if (!@ftp_login($conn, $user, $pass)) {
+            ftp_close($conn);
+            return ['status' => false, 'code' => 500, 'message' => 'FTP-Login fehlgeschlagen'];
+        }
+        ftp_pasv($conn, true);
+        return $conn;
+    }
+
+    private static function putFile($conn, string $localFile, string $relativePath): array
+    {
+        self::ensureRemoteDir($conn, dirname($relativePath));
+        if (!@ftp_put($conn, self::remotePath($relativePath), $localFile, FTP_BINARY)) {
+            return ['status' => false, 'code' => 500, 'message' => 'Datei konnte nicht per FTP hochgeladen werden'];
+        }
         return ['status' => true];
     }
 
-    private static function resolvePath(string $relativePath): ?string
+    private static function remotePath(string $relativePath): string
     {
-        $basePath = rtrim($_ENV['IMG_STORAGE_PATH'] ?? '', '/');
-        if (!$basePath) return null;
-        return $basePath . '/' . ltrim($relativePath, '/');
+        $base = rtrim($_ENV['IMG_FTP_DIR'] ?? '', '/');
+        return $base . '/' . ltrim($relativePath, '/');
     }
 
-    /** Returns null on success, or an error message on failure. */
-    private static function ensureDir(string $dir): ?string
+    private static function ensureRemoteDir($conn, string $relativeDir): void
     {
-        if (is_dir($dir)) return null;
-        error_clear_last();
-        if (@mkdir($dir, 0755, true)) return null;
-        return error_get_last()['message'] ?? 'unbekannter Fehler';
+        $base = rtrim($_ENV['IMG_FTP_DIR'] ?? '', '/');
+        $path = $base;
+        foreach (array_filter(explode('/', $relativeDir), fn($p) => $p !== '' && $p !== '.') as $part) {
+            $path .= '/' . $part;
+            if (!@ftp_chdir($conn, $path)) {
+                @ftp_mkdir($conn, $path);
+            }
+        }
     }
 }
