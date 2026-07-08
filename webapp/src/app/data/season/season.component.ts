@@ -253,6 +253,15 @@ export class SeasonDataComponent {
     return kickoffDate.substring(11, 16);
   }
 
+  private nextFriday(dateStr: string): string {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + (5 - d.getDay() + 7) % 7);
+    const y   = d.getFullYear();
+    const m   = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   submitTwForm(matchday: Matchday): void {
     if (this.twFormStart() >= this.twFormEnd()) {
       this.twSaveState.set('error');
@@ -277,13 +286,26 @@ export class SeasonDataComponent {
     });
   }
 
-  creatingMatchday    = signal(false);
-  createMdNumber      = signal<number | null>(null);
-  createMdStart       = signal('');
-  createMdKickoffDate = signal('');
-  createMdKickoffTime = signal(this.DEFAULT_KICKOFF_TIME);
-  createMdState       = signal<'idle' | 'loading' | 'error'>('idle');
-  createMdError       = signal('');
+  creatingMatchday           = signal(false);
+  createMdNumber             = signal<number | null>(null);
+  createMdStart              = signal('');
+  createMdKickoffDate        = signal('');
+  createMdKickoffDateTouched = signal(false);
+  createMdKickoffTime        = signal(this.DEFAULT_KICKOFF_TIME);
+  createMdState              = signal<'idle' | 'loading' | 'error'>('idle');
+  createMdError              = signal('');
+
+  onCreateMdStartChange(value: string): void {
+    this.createMdStart.set(value);
+    if (!this.createMdKickoffDateTouched() && value) {
+      this.createMdKickoffDate.set(this.nextFriday(value));
+    }
+  }
+
+  onCreateMdKickoffDateChange(value: string): void {
+    this.createMdKickoffDate.set(value);
+    this.createMdKickoffDateTouched.set(true);
+  }
 
   openCreateMatchday(): void {
     const nextNumber = (this.matchdays()[0]?.number ?? 0) + 1;
@@ -291,6 +313,7 @@ export class SeasonDataComponent {
     this.createMdNumber.set(nextNumber);
     this.createMdStart.set('');
     this.createMdKickoffDate.set('');
+    this.createMdKickoffDateTouched.set(false);
     this.createMdKickoffTime.set(this.DEFAULT_KICKOFF_TIME);
     this.createMdState.set('idle');
     this.createMdError.set('');

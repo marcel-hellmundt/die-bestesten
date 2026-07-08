@@ -128,7 +128,7 @@
                   class="input"
                   type="date"
                   [value]="createMdStart()"
-                  (input)="createMdStart.set($any($event.target).value)"
+                  (input)="onCreateMdStartChange($any($event.target).value)"
                 />
               </div>
               <div class="tw-form__field">
@@ -138,7 +138,7 @@
                     class="input"
                     type="date"
                     [value]="createMdKickoffDate()"
-                    (input)="createMdKickoffDate.set($any($event.target).value)"
+                    (input)="onCreateMdKickoffDateChange($any($event.target).value)"
                   />
                   <input
                     class="input"
