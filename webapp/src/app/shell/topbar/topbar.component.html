@@ -209,6 +209,7 @@
       [class.active]="currentUrl().startsWith('/achievements')"
       (click)="navigateTo('/achievements')"
       aria-label="Achievements"
+      data-tooltip="Achievements"
     >
       <app-icon name="award"></app-icon>
     </button>
@@ -218,6 +219,7 @@
       [class.active]="currentUrl().startsWith('/benachrichtigungen')"
       (click)="navigateTo('/benachrichtigungen')"
       aria-label="Benachrichtigungen"
+      data-tooltip="Benachrichtigungen"
     >
       <app-icon name="bell"></app-icon>
       @if (notifService.unreadCount() > 0) {
