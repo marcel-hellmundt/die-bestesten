@@ -253,13 +253,26 @@ export class SeasonDataComponent {
     return kickoffDate.substring(11, 16);
   }
 
-  private nextFriday(dateStr: string): string {
-    const d = new Date(dateStr + 'T00:00:00');
-    d.setDate(d.getDate() + (5 - d.getDay() + 7) % 7);
+  private formatDateYMD(d: Date): string {
     const y   = d.getFullYear();
     const m   = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  }
+
+  private nextFriday(dateStr: string): string {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + (5 - d.getDay() + 7) % 7);
+    return this.formatDateYMD(d);
+  }
+
+  // Next Tuesday strictly after the given date (or datetime) — used to default a new
+  // matchday's start_date to the Tuesday following the previous matchday's kickoff.
+  private nextTuesdayAfter(dateStr: string): string {
+    const d = new Date(dateStr.substring(0, 10) + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    d.setDate(d.getDate() + (2 - d.getDay() + 7) % 7);
+    return this.formatDateYMD(d);
   }
 
   submitTwForm(matchday: Matchday): void {
@@ -308,12 +321,17 @@ export class SeasonDataComponent {
   }
 
   openCreateMatchday(): void {
-    const nextNumber = (this.matchdays()[0]?.number ?? 0) + 1;
+    const lastMatchday = this.matchdays()[0];
+    const nextNumber   = (lastMatchday?.number ?? 0) + 1;
+    const defaultStart = lastMatchday
+      ? this.nextTuesdayAfter(lastMatchday.kickoff_date)
+      : (this.selectedSeason()?.start_date ?? '');
+
     this.creatingMatchday.set(true);
     this.createMdNumber.set(nextNumber);
-    this.createMdStart.set('');
     this.createMdKickoffDate.set('');
     this.createMdKickoffDateTouched.set(false);
+    this.onCreateMdStartChange(defaultStart);
     this.createMdKickoffTime.set(this.DEFAULT_KICKOFF_TIME);
     this.createMdState.set('idle');
     this.createMdError.set('');
