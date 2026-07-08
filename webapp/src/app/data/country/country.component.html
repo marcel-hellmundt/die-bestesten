@@ -7,17 +7,6 @@
     (input)="searchQuery.set($any($event.target).value)"
   />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
-  @if (isAdmin()) {
-    <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
-      {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
-    </button>
-    @if (migrateState() === 'success') {
-      <span class="state-msg">Migration erfolgreich</span>
-    }
-    @if (migrateState() === 'error') {
-      <span class="state-msg state-msg--error">Fehler bei der Migration</span>
-    }
-  }
 </div>
 
 @if (loading()) {

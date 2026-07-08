@@ -58,10 +58,6 @@ trait PlayerRatingTrait
      */
     public function initPlayerRatingsForClub(string $matchdayId, string $clubId): array
     {
-        $matchday     = $this->getMatchdayById($matchdayId);
-        $seasonId     = $matchday['season_id'];
-        $matchdayNum  = (int) $matchday['number'];
-
         $players = $this->con->prepare(
             "SELECT p.id AS player_id, p.displayname
              FROM player_in_club pic
@@ -75,16 +71,6 @@ trait PlayerRatingTrait
         $insert = $this->con->prepare(
             "INSERT IGNORE INTO player_rating (id, player_id, matchday_id, club_id)
              VALUES (:id, :player_id, :matchday_id, :club_id)"
-        );
-
-        $insertOld = $this->con_old->prepare(
-            "INSERT IGNORE INTO player_rating
-                (player_rating_id, player_id, club_id, season_id, matchday,
-                 grade, start_lineup, substitution,
-                 goals, assists, clean_sheet, sds, red_card, yellow_red_card, points)
-             VALUES
-                (:id, :player_id, :club_id, :season_id, :matchday,
-                 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL)"
         );
 
         $checkExisting = $this->con->prepare(
@@ -112,13 +98,6 @@ trait PlayerRatingTrait
                     ':player_id'   => $row['player_id'],
                     ':matchday_id' => $matchdayId,
                     ':club_id'     => $clubId,
-                ]);
-                $insertOld->execute([
-                    ':id'        => $newId,
-                    ':player_id' => $row['player_id'],
-                    ':club_id'   => $clubId,
-                    ':season_id' => $seasonId,
-                    ':matchday'  => $matchdayNum,
                 ]);
                 $created[] = ['player_id' => $row['player_id'], 'displayname' => $row['displayname']];
             }
@@ -407,33 +386,9 @@ trait PlayerRatingTrait
         $query->execute($params);
         $updated = $query->rowCount() > 0;
 
-        // Mirror to old DB
-        $oldSets   = [];
-        $oldParams = [':id' => $id];
-        foreach ($data as $field => $value) {
-            if ($field === 'participation') {
-                $oldSets[]                  = 'start_lineup = :start_lineup';
-                $oldSets[]                  = 'substitution = :substitution';
-                $oldParams[':start_lineup'] = ($value === 'starting')  ? 1 : 0;
-                $oldParams[':substitution'] = ($value === 'substitute') ? 1 : 0;
-            } elseif (in_array($field, ['grade', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card', 'points'])) {
-                $oldSets[]            = "$field = :$field";
-                // Old DB uses 0 for "not set"; new DB uses null
-                $oldParams[":$field"] = $value ?? 0;
-            }
-        }
-        if (!empty($oldSets)) {
-            $oldQuery = $this->con_old->prepare(
-                'UPDATE player_rating SET ' . implode(', ', $oldSets) . ' WHERE player_rating_id = :id'
-            );
-            $oldQuery->execute($oldParams);
-        }
-
         // Always recalculate and persist points
         $newPoints = $this->calculatePoints($id);
         $this->con->prepare('UPDATE player_rating SET points = :p WHERE id = :id')
-            ->execute([':p' => $newPoints, ':id' => $id]);
-        $this->con_old->prepare('UPDATE player_rating SET points = :p WHERE player_rating_id = :id')
             ->execute([':p' => $newPoints, ':id' => $id]);
 
         // Track maintainer contributions (global DB)

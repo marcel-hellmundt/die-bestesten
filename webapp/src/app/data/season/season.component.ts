@@ -127,7 +127,6 @@ export class SeasonDataComponent {
 
   isAdmin       = computed(() => this.auth.isAdmin());
   isMaintainer  = computed(() => this.auth.isMaintainer());
-  migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   sanityState    = signal<'idle' | 'loading' | 'done'>('idle');
   sanityWarnings = signal<string[]>([]);
@@ -298,20 +297,6 @@ export class SeasonDataComponent {
         this.createSeasonState.set('error');
         this.createSeasonError.set(err?.error?.message ?? 'Fehler beim Erstellen');
       },
-    });
-  }
-
-  migrate(): void {
-    this.migrateState.set('loading');
-    this.api.post<any>('season/migrate').pipe(
-      switchMap(() => this.api.post<any>('matchday/migrate')),
-      switchMap(() => this.api.post<any>('transferwindow/migrate')),
-    ).subscribe({
-      next: () => {
-        this.migrateState.set('success');
-        this.reload$.next();
-      },
-      error: () => this.migrateState.set('error'),
     });
   }
 }

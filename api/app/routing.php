@@ -122,11 +122,6 @@ class Routing
                     ],
                     [
                         'method' => 'POST',
-                        'path' => '/league/migrate',
-                        'description' => 'Teams aus der alten DB in die Liga-DB migrieren — Body: { league_id } — Admin',
-                    ],
-                    [
-                        'method' => 'POST',
                         'path' => '/league/conclude_season',
                         'description' => 'Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent — Body: { league_id, season_id } — Admin',
                         'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
@@ -327,11 +322,6 @@ class Routing
                         'path' => '/transferwindow',
                         'description' => 'Neues Transferfenster anlegen — Body: { matchday_id, start_date, end_date } — Maintainer+',
                     ],
-                    [
-                        'method' => 'POST',
-                        'path' => '/transferwindow/migrate',
-                        'description' => 'Migriert Transferfenster aus der alten DB — gibt migrated-Count zurück (nur Admin)',
-                    ],
                 ],
             ]),
 
@@ -368,7 +358,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/player_rating/init',
-                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück; neue Ratings werden mit gleicher ID in alte DB gespiegelt',
+                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück',
                     ],
                     [
                         'method' => 'POST',
@@ -378,7 +368,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/player_rating/:id',
-                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; optionales _contribution_type (bulk_create|manual_create, default manual_create) bei participation-Änderungen; points wird immer serverseitig berechnet; Änderungen gespiegelt — Maintainer+',
+                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; optionales _contribution_type (bulk_create|manual_create, default manual_create) bei participation-Änderungen; points wird immer serverseitig berechnet — Maintainer+',
                         'path_params' => [':id' => 'UUID der player_rating-Zeile'],
                     ],
                 ],
@@ -782,11 +772,6 @@ class Routing
                         'description' => 'Spielerfoto hochladen (multipart/form-data, Feld "image", PNG; Body-Feld season_id) — setzt player_in_season.photo_uploaded für diese Saison — Maintainer+',
                         'path_params' => [':id' => 'UUID des Spielers'],
                         'body' => ['season_id' => 'UUID der Saison'],
-                    ],
-                    [
-                        'method' => 'POST',
-                        'path' => '/player/migrate',
-                        'description' => 'Migriert player, player_in_season, player_in_club und player_rating aus der alten DB — gibt migrated/skipped-Counts zurück — Admin',
                     ],
                     [
                         'method' => 'POST',

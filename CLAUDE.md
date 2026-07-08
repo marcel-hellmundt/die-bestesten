@@ -108,13 +108,11 @@ POST     /league/:id/decline   — Einladung ablehnen (invited→denied); 409 we
 POST     /league/:id/invite    — {manager_id} Manager einladen (status='invited'); benachrichtigt Manager — Admin
 POST     /league/:id/approve   — {manager_id} Anfrage genehmigen (requested→active); benachrichtigt Manager — Admin
 POST     /league/:id/deny      — {manager_id} Mitgliedschaft ablehnen (→denied) — Admin
-POST     /league/migrate           — {league_id} — Teams + TeamRatings aus Old-DB in Liga-DB migrieren — Admin
 POST     /league/validate_ratings  — {league_id} — prüft team_ratings ab 2020/21 gegen team_lineup + player_rating — Admin
-POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB + alte DB) — Admin
+POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB) — Admin
 POST     /league/conclude_season   — {league_id, season_id} — Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent; wird auch automatisch bei Spieltag 34 ausgeführt — Admin
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
-POST     /transferwindow/migrate — Admin
 GET      /team_lineup          — ?team_id (erforderlich), ?matchday_id (optional) → {matchday, matchdays[], nominated[], bench[], points, max_points} — jeder Spieler enthält grade, points, goals, assists, clean_sheet, sds, participation; Auto-Init für aktuellen Spieltag wenn noch keine Einträge — Auth; alternativ ?player_id + ?season_id → [{matchday_number, nominated}] — Auth
 PATCH    /team_lineup          — {team_id, matchday_id, players:[{player_id, nominated, position_index}]} — nur eigenes Team, nur Editierfenster (start_date ≤ now < kickoff_date) — Auth
 GET      /player_in_team             — ?team_id (erforderlich) → aktive Spieler mit position, price, points, current_club_id, club_logo_uploaded; ?include_former=1 → {current, former}; ?player_id → aktuelles Team oder null; ?player_id + ?season_id → Teamhistorie [{team_id, team_name, color, manager_name, alias, from_matchday_number, to_matchday_number}] — Auth
@@ -128,16 +126,15 @@ GET      /player_in_season/bundesliga_count — ?season_id (optional, default ak
 GET      /player_in_season/available_players — ?season_id (optional, default aktiv) → {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]} — Spieler der konfigurierten Liga-Division ohne Fantasy-Team
 POST     /player_in_season — {player_id, season_id, position, price} → {id}; 409 bei Duplikat — Maintainer+
 GET      /player[/:id]           — ?club_id=UUID gibt aktuellen Kader zurück (player_in_club.to_date IS NULL) mit season_position
-POST     /player/migrate       — gibt migrated/skipped-Counts zurück — Admin
 POST     /player/create        — {kicker_id, first_name, last_name, displayname, season_id, position, price, club_id?, from_date?} → {id} — erstellt player + player_in_season + optional player_in_club — Maintainer+
 POST     /player/:id/photo     — multipart/form-data, Feld "image" (PNG) + Body season_id → setzt player_in_season.photo_uploaded — Maintainer+
 POST     /player_in_club       — {player_id, club_id, from_date, on_loan?} → {id} — fügt Spieler einem Verein zu (neuer player_in_club-Eintrag) — Maintainer+
 GET      /player_rating        — ?matchday_id&club_id → Spielerinfos + price, starting_count (Starts in der Saison); sortiert nach starting_count DESC, position, price DESC
 GET      /player_rating/best_xi — ?matchday_id (required), ?free_agents_only=0|1 — beste valide 11 (343/352/433/442/451) für einen Spieltag; gibt {formation, players[{player_id,displayname,position,points,grade,club_id,club_name,club_short_name}], total_points} zurück; free_agents_only=1 nur Spieler ohne Fantasy-Team — Auth
 GET      /player_rating/status — ?matchday_id → [{club_id, rating_count, starter_count, grade_count, goals, assists, has_sds}] — aggregierter Status aller Clubs für einen Spieltag
-POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen (gleiche ID in alte DB gespiegelt); 409 wenn completed oder (vor kickoff_date und nicht Admin) — Maintainer+
+POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen; 409 wenn completed oder (vor kickoff_date und nicht Admin) — Maintainer+
 POST     /player_rating/validate-csv — multipart: matchday_id + csv-Datei (;-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte) → {ok, checked?} oder {ok: false, mismatches: [{kicker_id, displayname, csv_points, db_points, error}]}; error: 'points mismatch' | 'player not found in db' (+ first_name/last_name/club_name/position/price) | 'no ratings in season' — Maintainer+
-PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed; Body: grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card (points wird immer serverseitig berechnet); Änderungen + berechnete points werden in alte DB gespiegelt
+PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed; Body: grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card (points wird immer serverseitig berechnet)
 POST     /auth                 — JWT-Login; Response enthält token + leagues[] + league_id (null wenn keine Liga)
 POST     /auth/switch-league  — {league_id} → {token, league_id}; neues JWT mit geänderter league_id; 403 wenn kein Zugang — Auth
 POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)

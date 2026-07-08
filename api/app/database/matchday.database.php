@@ -76,13 +76,7 @@ trait MatchdayTrait
         $matchday = $this->getMatchdayById($matchdayId);
         if (!$matchday) return 0;
         $seasonId    = $matchday['season_id'];
-        $matchdayNum = (int) $matchday['number'];
         $kickoffDate = $matchday['kickoff_date'];
-
-        $sQ = $this->con->prepare("SELECT start_date FROM season WHERE id = ? LIMIT 1");
-        $sQ->execute([$seasonId]);
-        $startYear   = (int) substr((string) $sQ->fetchColumn(), 0, 4);
-        $seasonLabel = $startYear . '-' . ($startYear + 1);
 
         $teamsQ = $this->con_league->prepare(
             "SELECT id, manager_id FROM team WHERE season_id = ?"
@@ -227,51 +221,6 @@ trait MatchdayTrait
                     $insertTx->execute([$teamId, $points * 20000, $matchdayId, $kickoffDate]);
                 }
             }
-
-            try {
-                if ($points > 0) {
-                    $this->con_old->prepare(
-                        "UPDATE team SET budget = budget + ? WHERE team_id = ?"
-                    )->execute([$points * 20000, $teamId]);
-                }
-                $this->con_old->prepare(
-                    "UPDATE team_rating
-                     SET points            = ?,
-                         max_points        = ?,
-                         goals             = ?,
-                         assists           = ?,
-                         clean_sheet       = ?,
-                         sds               = ?,
-                         sds_defender      = ?,
-                         missed_goals      = ?,
-                         points_goalkeeper = ?,
-                         points_defender   = ?,
-                         points_midfielder = ?,
-                         points_forward    = ?,
-                         invalid           = ?
-                     WHERE team_id = ? AND matchday_number = ?"
-                )->execute([
-                    $points, $maxPoints, $goals, $assists,
-                    $cleanSheet, $sds, $sdsDefender, 0,
-                    $ptsGk, $ptsDef, $ptsMid, $ptsFwd, $invalid,
-                    $teamId, $matchdayNum,
-                ]);
-
-                $reward  = number_format($points * 20000, 0, ',', '.');
-                $message = 'Dein Team hat <b>' . $points . ' Punkte</b> erzielt. Dafür bekommst du <b>' . $reward . '</b> <i class="fa-solid fa-peseta-sign"></i>.<br><br>'
-                    . 'Dein Team hat <b>' . $goals . ' Tore</b> erzielt und <b>' . $assists . ' Vorlagen</b> geliefert.<br>'
-                    . 'Mit einer optimalen Aufstellung hättest du <b>' . $maxPoints . ' Punkte</b> erzielt.<br><br>'
-                    . '<a href="http://die-bestesten.de/liga/pro/' . $seasonLabel . '/' . $matchdayNum . '">Zur Spieltagstabelle</a>';
-                $this->con_old->prepare(
-                    "INSERT INTO notification (notification_id, receiver_id, title, message) VALUES (UUID(), ?, ?, ?)"
-                )->execute([
-                    $team['manager_id'],
-                    $matchdayNum . '. Spieltag abgeschlossen!',
-                    $message,
-                ]);
-            } catch (\Throwable $e) {
-                error_log('finalizeMatchday old-DB sync failed for team ' . $teamId . ': ' . $e->getMessage());
-            }
         }
         return $updatedCount;
     }
@@ -395,41 +344,5 @@ trait MatchdayTrait
     $achSection
 </body>
 </html>";
-    }
-
-    public function migrateMatchday(): array
-    {
-        $divisionId = $this->getLeagueDivisionId();
-        if (!$divisionId) {
-            throw new \RuntimeException('Liga hat keine Division konfiguriert');
-        }
-
-        $rows = $this->con_old->query(
-            "SELECT matchday_id, season_id, number, start_date, kickoff_date FROM matchday"
-        )->fetchAll(PDO::FETCH_ASSOC);
-
-        $stmt = $this->con->prepare(
-            "INSERT INTO matchday (id, season_id, division_id, number, start_date, kickoff_date)
-             VALUES (:id, :season_id, :division_id, :number, :start_date, :kickoff_date)
-             ON DUPLICATE KEY UPDATE
-               season_id    = VALUES(season_id),
-               division_id  = VALUES(division_id),
-               number       = VALUES(number),
-               start_date   = VALUES(start_date),
-               kickoff_date = VALUES(kickoff_date)"
-        );
-
-        foreach ($rows as $row) {
-            $stmt->execute([
-                ':id'           => $row['matchday_id'],
-                ':season_id'    => $row['season_id'],
-                ':division_id'  => $divisionId,
-                ':number'       => $row['number'],
-                ':start_date'   => $row['start_date'],
-                ':kickoff_date' => $row['kickoff_date'],
-            ]);
-        }
-
-        return ['status' => true, 'migrated' => count($rows)];
     }
 }

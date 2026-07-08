@@ -2,7 +2,7 @@
 
 class CountryController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'admin'];
+    public static array $methodRoles = ['GET' => 'guest'];
 
 	protected function get(): mixed
 	{
@@ -20,8 +20,7 @@ class CountryController extends _BaseController
 
 	protected function post(): mixed
 	{
-		if ($this->id !== 'migrate') return $this->methodNotAllowed();
-		return $this->db->migrateCountry();
+		return $this->methodNotAllowed();
 	}
 	protected function patch(): mixed
 	{

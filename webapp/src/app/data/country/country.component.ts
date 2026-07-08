@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { AuthService } from '../../auth/auth.service';
 import { Country } from '../../core/models/country.model';
 
 @Component({
@@ -14,7 +13,6 @@ import { Country } from '../../core/models/country.model';
 })
 export class CountryDataComponent {
   private api    = inject(ApiService);
-  private auth   = inject(AuthService);
   private router = inject(Router);
   private route  = inject(ActivatedRoute);
 
@@ -42,18 +40,4 @@ export class CountryDataComponent {
     if (!q) return this.items();
     return this.items().filter(i => i.name.toLowerCase().includes(q));
   });
-
-  isAdmin      = computed(() => this.auth.isAdmin());
-  migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
-
-  migrate(): void {
-    this.migrateState.set('loading');
-    this.api.post<{ status: boolean; migrated: number }>('country/migrate').subscribe({
-      next: () => {
-        this.migrateState.set('success');
-        this.reload$.next();
-      },
-      error: () => this.migrateState.set('error'),
-    });
-  }
 }

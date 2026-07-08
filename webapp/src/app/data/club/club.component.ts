@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Club } from '../../core/models/club.model';
 
@@ -19,7 +18,6 @@ export class ClubDataComponent {
   private route  = inject(ActivatedRoute);
 
   navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
-  private auth  = inject(AuthService);
   cache         = inject(DataCacheService);
 
   private reload$ = new BehaviorSubject<void>(undefined);
@@ -108,9 +106,6 @@ export class ClubDataComponent {
     return this.filteredItems().filter(c => !blIds.has(c.id));
   });
 
-  isAdmin      = computed(() => this.auth.isAdmin());
-  migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
-
   sanityState    = signal<'idle' | 'loading' | 'done'>('idle');
   sanityWarnings = signal<string[]>([]);
 
@@ -173,17 +168,6 @@ export class ClubDataComponent {
         this.sanityState.set('done');
       },
       error: () => this.sanityState.set('idle'),
-    });
-  }
-
-  migrate(): void {
-    this.migrateState.set('loading');
-    this.api.post<{ status: boolean; migrated: number }>('club/migrate').subscribe({
-      next: () => {
-        this.migrateState.set('success');
-        this.reload$.next();
-      },
-      error: () => this.migrateState.set('error'),
     });
   }
 }

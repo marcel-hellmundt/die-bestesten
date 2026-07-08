@@ -65,7 +65,6 @@ class Database
 
     private $con;
     private $con_league;
-    private $con_old;
 
     protected static $_instance = null;
 
@@ -89,7 +88,6 @@ class Database
 
         $this->con        = $this->createConnection($host, $_ENV['DB_NAME'], $user, $password);
         $this->con_league = $this->createConnection($host, $_ENV['DB_NAME_LEAGUE'], $user, $password);
-        $this->con_old    = $this->createConnection($host, $_ENV['DB_NAME_OLD'], $user, $password);
         $this->ensureManagerView();
     }
 
@@ -132,7 +130,6 @@ class Database
     {
         $this->con = null;
         $this->con_league = null;
-        $this->con_old = null;
     }
 
     protected const SQUAD_MAX = [

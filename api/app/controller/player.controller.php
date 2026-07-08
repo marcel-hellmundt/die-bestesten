@@ -28,14 +28,6 @@ class PlayerController extends _BaseController
             return $this->uploadPhoto();
         }
 
-        if ($this->id === 'migrate') {
-            if (!$this->isAdmin()) {
-                http_response_code(403);
-                return ['status' => false, 'message' => 'Forbidden'];
-            }
-            return $this->db->migratePlayer();
-        }
-
         if ($this->id === 'create') {
             $body = $this->body();
             foreach (['kicker_id', 'first_name', 'last_name', 'displayname', 'season_id', 'position', 'price'] as $f) {

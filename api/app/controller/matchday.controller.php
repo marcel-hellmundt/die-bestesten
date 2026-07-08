@@ -20,10 +20,6 @@ class MatchdayController extends _BaseController
 
     protected function post(): mixed
     {
-        if ($this->id === 'migrate') {
-            return $this->db->migrateMatchday();
-        }
-
         if ($this->id !== null) return $this->methodNotAllowed();
 
         $body        = $this->body();

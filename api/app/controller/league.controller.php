@@ -166,17 +166,6 @@ class LeagueController extends _BaseController
             return ['status' => true];
         }
 
-        // POST /league/migrate  { league_id }
-        if ($this->id === 'migrate') {
-            $body     = $this->body();
-            $leagueId = $body['league_id'] ?? null;
-            if (!$leagueId) {
-                http_response_code(400);
-                return ['status' => false, 'message' => 'league_id ist erforderlich'];
-            }
-            return $this->db->migrateLeagueTeams($leagueId);
-        }
-
         // POST /league/validate_ratings  { league_id }
         if ($this->id === 'validate_ratings') {
             $body     = $this->body();

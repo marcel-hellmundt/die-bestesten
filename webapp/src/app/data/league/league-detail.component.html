@@ -15,17 +15,6 @@
 
   @if (isAdmin()) {
     <div class="admin-actions">
-      @if (migrateState() === 'success') {
-        <span class="state-msg">Migriert</span>
-      } @else if (migrateState() === 'error') {
-        <span class="state-msg state-msg--error">Fehler beim Migrieren</span>
-      } @else {
-        <button
-          class="btn btn-sm"
-          [disabled]="migrateState() === 'loading'"
-          (click)="migrate()"
-        >{{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}</button>
-      }
       <button
         class="btn btn-sm btn-ghost"
         [disabled]="validateState() === 'loading'"
@@ -194,20 +183,5 @@
     </div>
   } @else if (validateState() === 'error') {
     <p class="state-msg state-msg--error">Fehler beim Prüfen</p>
-  }
-
-  @if (migrateState() === 'success') {
-    @if (createdMatchdays().length > 0) {
-      <div class="migrate-skipped">
-        <span class="migrate-skipped__title">{{ createdMatchdays().length }} fehlende Spieltage automatisch angelegt</span>
-        <ul class="migrate-skipped__list">
-          @for (entry of createdMatchdays(); track entry.season_id + entry.matchday_number) {
-            <li>{{ cache.seasonName(entry.season_id) }} · Spieltag {{ entry.matchday_number }}</li>
-          }
-        </ul>
-      </div>
-    } @else {
-      <p class="migrate-ok">Alle team_ratings erfolgreich migriert.</p>
-    }
   }
 }

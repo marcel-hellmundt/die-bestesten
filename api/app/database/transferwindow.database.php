@@ -58,31 +58,4 @@ trait TransferwindowTrait
         ]);
         return $this->getTransferwindowById($id);
     }
-
-    public function migrateTransferwindow(): array
-    {
-        $rows = $this->con_old->query(
-            "SELECT transferwindow_id, matchday_id, start_date, end_date FROM transferwindow"
-        )->fetchAll(PDO::FETCH_ASSOC);
-
-        $stmt = $this->con->prepare(
-            "INSERT INTO transferwindow (id, matchday_id, start_date, end_date)
-             VALUES (:id, :matchday_id, :start_date, :end_date)
-             ON DUPLICATE KEY UPDATE
-               matchday_id = VALUES(matchday_id),
-               start_date  = VALUES(start_date),
-               end_date    = VALUES(end_date)"
-        );
-
-        foreach ($rows as $row) {
-            $stmt->execute([
-                ':id'          => $row['transferwindow_id'],
-                ':matchday_id' => $row['matchday_id'],
-                ':start_date'  => $row['start_date'],
-                ':end_date'    => $row['end_date'],
-            ]);
-        }
-
-        return ['status' => true, 'migrated' => count($rows)];
-    }
 }

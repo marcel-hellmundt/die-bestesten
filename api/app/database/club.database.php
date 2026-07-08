@@ -63,25 +63,4 @@ trait ClubTrait
     {
         $this->con->prepare("UPDATE club SET logo_uploaded = 1 WHERE id = :id")->execute([':id' => $id]);
     }
-
-    public function migrateClub(): array
-    {
-        $rows = $this->con_old->query("SELECT club_id, country_code, name FROM club")
-            ->fetchAll(PDO::FETCH_ASSOC);
-
-        $stmt = $this->con->prepare(
-            "INSERT INTO club (id, country_id, name) VALUES (:id, :country_id, :name)
-             ON DUPLICATE KEY UPDATE country_id = VALUES(country_id), name = VALUES(name)"
-        );
-
-        foreach ($rows as $row) {
-            $stmt->execute([
-                ':id'         => $row['club_id'],
-                ':country_id' => $row['country_code'],
-                ':name'       => $row['name'],
-            ]);
-        }
-
-        return ['status' => true, 'migrated' => count($rows)];
-    }
 }

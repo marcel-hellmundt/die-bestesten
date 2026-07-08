@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { AuthService } from '../../auth/auth.service';
 import { Player } from '../../core/models/player.model';
 import { DataCacheService } from '../../core/data-cache.service';
 
@@ -19,7 +18,6 @@ export class PlayerDataComponent {
   private route  = inject(ActivatedRoute);
 
   navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
-  private auth  = inject(AuthService);
   cache = inject(DataCacheService);
 
   private reload$ = new BehaviorSubject<void>(undefined);
@@ -79,22 +77,8 @@ export class PlayerDataComponent {
     )
   );
 
-  isAdmin      = computed(() => this.auth.isAdmin());
-
   constructor() {
     this.cache.ensureLeague();
     this.cache.ensureDivisions();
-  }
-  migrateState = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
-
-  migrate(): void {
-    this.migrateState.set('loading');
-    this.api.post<{ status: boolean; migrated_players: number; migrated_seasons: number }>('player/migrate').subscribe({
-      next: () => {
-        this.migrateState.set('success');
-        this.reload$.next();
-      },
-      error: () => this.migrateState.set('error'),
-    });
   }
 }

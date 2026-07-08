@@ -106,20 +106,8 @@ export class LeagueDetailComponent {
 
   // ── Admin tools ─────────────────────────────────────────────────────────────
 
-  migrateState  = signal<'idle' | 'loading' | 'success' | 'error'>('idle');
-  migrateResult = signal<any>(null);
-
   validateState  = signal<'idle' | 'loading' | 'done' | 'error'>('idle');
   validateResult = signal<any>(null);
-
-  migrate(): void {
-    this.migrateState.set('loading');
-    this.cache.ensureSeasons();
-    this.api.post<any>('league/migrate', { league_id: this.leagueId }).subscribe({
-      next: res => { this.migrateState.set('success'); this.migrateResult.set(res); },
-      error: () => this.migrateState.set('error'),
-    });
-  }
 
   validate(): void {
     this.validateState.set('loading');
@@ -296,16 +284,6 @@ export class LeagueDetailComponent {
         this.h2hStates.update(s => ({ ...s, [key]: 'error' }));
         this.h2hMessages.update(s => ({ ...s, [key]: err?.error?.message ?? 'Fehler' }));
       },
-    });
-  }
-
-  createdMatchdays(): { season_id: string; matchday_number: number }[] {
-    const details = this.migrateResult()?.matchdays_created ?? [];
-    return [...details].sort((a: any, b: any) => {
-      const aDate = this.cache.seasons().find(s => s.id === a.season_id)?.start_date ?? '';
-      const bDate = this.cache.seasons().find(s => s.id === b.season_id)?.start_date ?? '';
-      if (bDate !== aDate) return bDate.localeCompare(aDate);
-      return Number(a.matchday_number) - Number(b.matchday_number);
     });
   }
 

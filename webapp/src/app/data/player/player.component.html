@@ -3,7 +3,7 @@
     <div class="stat-card">
       <span class="stat-label" style="color: var(--flat-carrot)">Spieler</span>
       <div class="stat-value">{{ items().length }}</div>
-      <div class="stat-desc">Gesamt migriert</div>
+      <div class="stat-desc">Gesamt</div>
     </div>
     @if (bundesligaCount() != null) {
       <div class="stat-card">
@@ -31,17 +31,6 @@
     (input)="searchQuery.set($any($event.target).value)"
   />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
-  @if (isAdmin()) {
-    <button class="btn btn-primary" [disabled]="migrateState() === 'loading'" (click)="migrate()">
-      {{ migrateState() === 'loading' ? 'Läuft…' : 'Migrieren' }}
-    </button>
-    @if (migrateState() === 'success') {
-      <span class="state-msg">Migration erfolgreich</span>
-    }
-    @if (migrateState() === 'error') {
-      <span class="state-msg state-msg--error">Fehler bei der Migration</span>
-    }
-  }
 </div>
 
 @if (loading()) {

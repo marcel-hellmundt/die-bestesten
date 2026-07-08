@@ -24,14 +24,6 @@ class ClubController extends _BaseController
             return $this->uploadLogo();
         }
 
-        if ($this->id === 'migrate') {
-            if (!$this->isAdmin()) {
-                http_response_code(403);
-                return ['status' => false, 'message' => 'Forbidden'];
-            }
-            return $this->db->migrateClub();
-        }
-
         return $this->methodNotAllowed();
     }
 
