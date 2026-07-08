@@ -14,7 +14,7 @@ Angular-Webapp + PHP-REST-API, Fantasy-Football. Frontend: Angular (`standalone:
 
 ```
 die-bestesten/
-├── .github/workflows/  — deploy-api.yml, deploy-webapp.yml, deploy-img.yml (Push auf main → Deploy)
+├── .github/workflows/  — deploy-api.yml, deploy-webapp.yml, deploy-asset-server.yml (Push auf main → Deploy)
 ├── api/app/
 │   ├── controller/     — Ein Controller pro Ressource (erbt _BaseController)
 │   ├── database/       — Ein Trait pro Ressource; composited in base.database.php
