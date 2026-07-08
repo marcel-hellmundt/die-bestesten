@@ -21,6 +21,7 @@
           <th>Name</th>
           <th>Alias</th>
           <th>Status</th>
+          <th class="hidden-mobile">Zuletzt aktiv</th>
           <th>Rollen</th>
           <th>Ligen</th>
         </tr>
@@ -45,6 +46,7 @@
             <td>
               <span class="status-badge status-badge--{{ m.status }}">{{ m.status }}</span>
             </td>
+            <td class="col-muted hidden-mobile">{{ formatLastActivity(m.last_activity) }}</td>
             <td class="col-roles" (click)="$event.stopPropagation()">
               <div class="role-badges">
                 @for (role of assignableRoles; track role) {

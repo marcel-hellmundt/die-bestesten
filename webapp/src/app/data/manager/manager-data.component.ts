@@ -44,6 +44,13 @@ export class ManagerDataComponent {
   activeInvitePopup    = signal<string | null>(null);
   membershipLoading    = signal<Record<string, boolean>>({});
 
+  formatLastActivity(dateStr: string | null): string {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+      + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  }
+
   constructor() {
     this.api.get<any[]>('manager').subscribe({
       next: (data) => {

@@ -625,7 +625,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/manager',
-                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, roles[], leagues[{id,name}]}] — Admin',
+                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, last_activity, roles[], leagues[{id,name}]}] — Admin',
                     ],
                     [
                         'method' => 'GET',
