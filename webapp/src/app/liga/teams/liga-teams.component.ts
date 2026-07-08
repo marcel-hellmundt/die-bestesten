@@ -70,11 +70,11 @@ export class LigaTeamsComponent {
   onManagerError(mId: string): void      { this.managerErrors.add(mId); }
 
   teamLogoUrl(t: LigaTeam): string {
-    return `${environment.imageApiUrl}/img/team/${t.season_id}/${t.id}.png`;
+    return `${environment.imageApiUrl}/team/${t.season_id}/${t.id}.png`;
   }
 
   managerPhotoUrl(t: LigaTeam): string {
-    return `${environment.imageApiUrl}/img/manager/${t.manager_id}.jpg`;
+    return `${environment.imageApiUrl}/manager/${t.manager_id}.jpg`;
   }
 
   formatValue(v: number): string {

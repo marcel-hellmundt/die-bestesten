@@ -9,7 +9,7 @@
         @if (!logoFailed) {
           <img
             class="team-logo"
-            [src]="'https://img.die-bestesten.de/img/team/' + t.season_id + '/' + t.id + '.png'"
+            [src]="'https://img.die-bestesten.de/team/' + t.season_id + '/' + t.id + '.png'"
             [alt]="t.team_name"
             (error)="logoFailed = true"
           />

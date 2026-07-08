@@ -142,7 +142,7 @@ export class BidsComponent {
   onLoserError(teamId: string): void { this.loserErrors.add(teamId); }
 
   loserLogoUrl(loser: { team_id: string; team_season_id: string | null }): string {
-    return `https://img.die-bestesten.de/img/team/${loser.team_season_id}/${loser.team_id}.png`;
+    return `https://img.die-bestesten.de/team/${loser.team_season_id}/${loser.team_id}.png`;
   }
 
   sortedLosers(offer: Offer): Offer['losers'] {
@@ -151,12 +151,12 @@ export class BidsComponent {
 
   photoUrl(offer: Offer): string | null {
     if (!offer.photo_uploaded || !offer.season_id) return null;
-    return `https://img.die-bestesten.de/img/player/${offer.season_id}/${offer.player_id}.png`;
+    return `https://img.die-bestesten.de/player/${offer.season_id}/${offer.player_id}.png`;
   }
 
   clubLogoUrl(offer: Offer): string | null {
     if (!offer.club_id || !offer.club_logo_uploaded) return null;
-    return `https://img.die-bestesten.de/img/club/${offer.club_id}.png`;
+    return `https://img.die-bestesten.de/club/${offer.club_id}.png`;
   }
 
   bidPctClass(offer: Offer): string {

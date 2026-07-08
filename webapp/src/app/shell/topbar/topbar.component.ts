@@ -185,19 +185,19 @@ export class TopbarComponent implements OnDestroy {
 
   playerPhotoUrl(p: any): string | null {
     if (!p.photo_uploaded || !p.season_id) return null;
-    return `https://img.die-bestesten.de/img/player/${p.season_id}/${p.id}.png`;
+    return `https://img.die-bestesten.de/player/${p.season_id}/${p.id}.png`;
   }
 
   clubLogoUrl(club: any): string {
-    return `https://img.die-bestesten.de/img/club/${club.id}.png`;
+    return `https://img.die-bestesten.de/club/${club.id}.png`;
   }
 
   teamPhotoUrl(t: any): string {
-    return `https://img.die-bestesten.de/img/team/${t.season_id}/${t.id}.png`;
+    return `https://img.die-bestesten.de/team/${t.season_id}/${t.id}.png`;
   }
 
   managerPhotoUrl(m: any): string {
-    return `https://img.die-bestesten.de/img/manager/${m.id}.jpg`;
+    return `https://img.die-bestesten.de/manager/${m.id}.jpg`;
   }
 
   onAvatarError(): void {

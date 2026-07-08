@@ -124,7 +124,7 @@ export class H2HComponent implements OnDestroy {
 
   teamLogoUrl(teamId: string): string {
     const sid = this.selectedSeason()?.id ?? '';
-    return `${environment.imageApiUrl}/img/team/${sid}/${teamId}.png`;
+    return `${environment.imageApiUrl}/team/${sid}/${teamId}.png`;
   }
 
   logoFailed(teamId: string): boolean { return this.logoErrors.has(teamId); }

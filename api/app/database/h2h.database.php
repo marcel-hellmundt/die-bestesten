@@ -769,7 +769,7 @@ trait H2HTrait
             $teamNameMap[$t['id']] = $t['team_name'];
         }
 
-        $imgBase  = "https://img.die-bestesten.de/img/team/{$seasonId}";
+        $imgBase  = "https://img.die-bestesten.de/team/{$seasonId}";
         $teamCell = function (string $tid, bool $logoRight = false) use ($teamNameMap, $imgBase): string {
             $name = htmlspecialchars($teamNameMap[$tid] ?? '?');
             $img  = "<img class=\"notif-logo\" src=\"{$imgBase}/{$tid}.png\" alt=\"\" />";
@@ -1028,7 +1028,7 @@ trait H2HTrait
         foreach ($tnQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $qfNames[$r['id']] = $r['team_name'];
         }
-        $qfImgBase = "https://img.die-bestesten.de/img/team/{$seasonId}";
+        $qfImgBase = "https://img.die-bestesten.de/team/{$seasonId}";
         $qfCell = function (string $id, bool $logoRight = false) use ($qfNames, $qfImgBase): string {
             $name = htmlspecialchars($qfNames[$id] ?? '?');
             $img  = "<img class=\"notif-logo\" src=\"{$qfImgBase}/{$id}.png\" alt=\"\" />";
@@ -1225,7 +1225,7 @@ trait H2HTrait
         foreach ($tnQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $sfNames[$r['id']] = $r['team_name'];
         }
-        $sfImgBase = "https://img.die-bestesten.de/img/team/{$seasonId}";
+        $sfImgBase = "https://img.die-bestesten.de/team/{$seasonId}";
         $sfCell = function (string $id, bool $logoRight = false) use ($sfNames, $sfImgBase): string {
             $name = htmlspecialchars($sfNames[$id] ?? '?');
             $img  = "<img class=\"notif-logo\" src=\"{$sfImgBase}/{$id}.png\" alt=\"\" />";

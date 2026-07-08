@@ -91,17 +91,17 @@ export class TransferWindowDetailComponent {
   onLogoError(teamId: string): void { this.logoErrors.add(teamId); }
 
   teamLogoUrl(bid: Bid): string {
-    return `https://img.die-bestesten.de/img/team/${bid.team_season_id}/${bid.team_id}.png`;
+    return `https://img.die-bestesten.de/team/${bid.team_season_id}/${bid.team_id}.png`;
   }
 
   photoUrl(entry: PlayerOffers): string | null {
     if (!entry.photo_uploaded || !entry.season_id) return null;
-    return `https://img.die-bestesten.de/img/player/${entry.season_id}/${entry.player_id}.png`;
+    return `https://img.die-bestesten.de/player/${entry.season_id}/${entry.player_id}.png`;
   }
 
   clubLogoUrl(clubId: string | null, uploaded: boolean): string {
     if (!clubId || !uploaded) return 'img/placeholders/club.png';
-    return `https://img.die-bestesten.de/img/club/${clubId}.png`;
+    return `https://img.die-bestesten.de/club/${clubId}.png`;
   }
 
   winner(entry: PlayerOffers): Bid | undefined {

@@ -66,7 +66,7 @@ export class AchievementsDataComponent {
   }
 
   managerPhotoUrl(id: string): string {
-    return `https://img.die-bestesten.de/img/manager/${id}.jpg`;
+    return `https://img.die-bestesten.de/manager/${id}.jpg`;
   }
 
   onImageError(id: string): void {

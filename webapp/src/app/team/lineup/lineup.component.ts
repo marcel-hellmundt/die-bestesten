@@ -210,7 +210,7 @@ export class LineupComponent {
 
   photoUrl(p: any): string | null {
     if (!p.photo_uploaded || !p.season_id) return null;
-    return `https://img.die-bestesten.de/img/player/${p.season_id}/${p.id}.png`;
+    return `https://img.die-bestesten.de/player/${p.season_id}/${p.id}.png`;
   }
 
   photoErrors = new Set<string>();

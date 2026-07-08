@@ -18,13 +18,13 @@ die-bestesten/
 ├── api/app/
 │   ├── controller/     — Ein Controller pro Ressource (erbt _BaseController)
 │   ├── database/       — Ein Trait pro Ressource; composited in base.database.php
-│   ├── util/           — image_upload.util.php (Bild-Validierung + Datei-Write, IMG_STORAGE_PATH)
+│   ├── util/           — image_upload.util.php (Bild-Validierung + Datei-Write per FTP, IMG_FTP_HOST/USER/PASSWORD/DIR)
 │   ├── guard.php       — JWT + RBAC; setzt $GLOBALS['auth_roles'(array)/'auth_manager_id']
 │   └── routing.php     — Routen + eingebettete API-Doku
 ├── api/index.php       — Einstiegspunkt; parst URL → Routing → Controller
 ├── api/schema.php      — Web-UI für API-Doku (Mermaid-ER + Endpunkte aus routing.php)
 ├── database/global_schema.sql, league_schema.sql
-├── img-server/         — deployt nach img.die-bestesten.de (nur .htaccess; img/-Unterordner mit Uploads bleibt beim Deploy erhalten); reines statisches Bild-Serving, kein PHP — Uploads laufen über api/
+├── img-server/         — deployt nach img.die-bestesten.de (nur .htaccess; Entity-Ordner mit Uploads liegen direkt im Webroot und bleiben beim Deploy erhalten); reines statisches Bild-Serving, kein PHP — Uploads laufen über api/
 └── webapp/
 ```
 

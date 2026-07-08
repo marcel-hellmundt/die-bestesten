@@ -363,7 +363,7 @@ export class RatingsDataComponent {
 
   logoUrl(club: Club): string {
     return club.logo_uploaded
-      ? `https://img.die-bestesten.de/img/club/${club.id}.png`
+      ? `https://img.die-bestesten.de/club/${club.id}.png`
       : 'img/placeholders/club.png';
   }
 

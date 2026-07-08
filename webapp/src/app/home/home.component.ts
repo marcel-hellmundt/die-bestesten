@@ -31,7 +31,7 @@ export class HomeComponent {
 
   private logoErrors = new Set<string>();
   teamLogoUrl(teamId: string): string {
-    return `${environment.imageApiUrl}/img/team/${this.currentSeasonId()}/${teamId}.png`;
+    return `${environment.imageApiUrl}/team/${this.currentSeasonId()}/${teamId}.png`;
   }
   logoFailed(teamId: string): boolean { return this.logoErrors.has(teamId); }
   onLogoError(teamId: string): void   { this.logoErrors.add(teamId); }

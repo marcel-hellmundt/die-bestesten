@@ -64,7 +64,7 @@ export class SettingsComponent {
   private avatarBust = signal(Date.now());
   avatarUrl      = computed(() => {
     const id = this.managerId();
-    return id ? `${environment.imageApiUrl}/img/manager/${id}.jpg?v=${this.avatarBust()}` : null;
+    return id ? `${environment.imageApiUrl}/manager/${id}.jpg?v=${this.avatarBust()}` : null;
   });
   photoState     = signal<'idle' | 'loading' | 'error'>('idle');
   initials     = computed(() => {

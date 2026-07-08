@@ -68,15 +68,15 @@ export class ScoutingComponent {
   };
 
   playerPhotoUrl(e: WatchlistEntry): string | null {
-    return e.photo_uploaded && e.season_id ? `https://img.die-bestesten.de/img/player/${e.season_id}/${e.player_id}.png` : null;
+    return e.photo_uploaded && e.season_id ? `https://img.die-bestesten.de/player/${e.season_id}/${e.player_id}.png` : null;
   }
 
   clubLogoUrl(e: WatchlistEntry): string {
-    return `https://img.die-bestesten.de/img/club/${e.club_id}.png`;
+    return `https://img.die-bestesten.de/club/${e.club_id}.png`;
   }
 
   teamLogoUrl(teamId: string, seasonId: string): string {
-    return `https://img.die-bestesten.de/img/team/${seasonId}/${teamId}.png`;
+    return `https://img.die-bestesten.de/team/${seasonId}/${teamId}.png`;
   }
 
   navigateToPlayer(playerId: string): void {

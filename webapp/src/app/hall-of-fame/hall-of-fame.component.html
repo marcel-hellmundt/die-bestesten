@@ -103,7 +103,7 @@
                         <img
                           class="team-logo"
                           [src]="
-                            'https://img.die-bestesten.de/img/team/' +
+                            'https://img.die-bestesten.de/team/' +
                             row.season_id +
                             '/' +
                             row.winner.team_id +
@@ -158,7 +158,7 @@
                     @if (!logoFailed.has(r.team_id)) {
                       <img
                         class="team-logo"
-                        [src]="'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                        [src]="'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
                         [alt]="r.team_name"
                         (error)="onLogoError(r.team_id)"
                       />

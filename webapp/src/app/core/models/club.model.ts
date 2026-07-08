@@ -20,7 +20,7 @@ export class Club {
 
   get logoUrl(): string {
     return this.logo_uploaded
-      ? `https://img.die-bestesten.de/img/club/${this.id}.png`
+      ? `https://img.die-bestesten.de/club/${this.id}.png`
       : 'img/placeholders/club.png';
   }
 

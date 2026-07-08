@@ -94,7 +94,7 @@ export class LeagueDetailComponent {
   }
 
   teamLogoUrl(team: any): string {
-    return `${environment.imageApiUrl}/img/team/${team.season_id}/${team.id}.png`;
+    return `${environment.imageApiUrl}/team/${team.season_id}/${team.id}.png`;
   }
 
   logoFailed = new Set<string>();

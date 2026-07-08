@@ -468,7 +468,7 @@ trait ManagerTrait
             $leagueName = $league['name'] ?? 'Unbekannt';
 
             $seasonId = $this->getActiveSeasonId();
-            $logoUrl  = "https://img.die-bestesten.de/img/team/$seasonId/$teamId.png";
+            $logoUrl  = "https://img.die-bestesten.de/team/$seasonId/$teamId.png";
             $colors   = $colorPrimary ? ($colorPrimary . ($colorSecondary ? " / $colorSecondary" : '')) : '–';
 
             $subject = "Neues Team erstellt: $teamName — die bestesten";

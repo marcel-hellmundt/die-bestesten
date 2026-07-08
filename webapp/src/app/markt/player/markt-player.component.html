@@ -37,7 +37,7 @@
           <button class="filter-club-btn" [class.filter-club-btn--active]="clubFilter() === club.id"
                   [title]="club.name" (click)="toggleClub(club.id)">
             @if (club.logo_uploaded && !clubErrors.has(club.id)) {
-              <img [src]="'https://img.die-bestesten.de/img/club/' + club.id + '.png'"
+              <img [src]="'https://img.die-bestesten.de/club/' + club.id + '.png'"
                    (error)="onClubError(club.id)" alt="" />
             } @else {
               <span class="filter-club-abbr">{{ (club.short_name ?? club.name).slice(0, 3) }}</span>
@@ -150,7 +150,7 @@
           <button class="filter-club-btn" [class.filter-club-btn--active]="clubFilter() === club.id"
                   [title]="club.name" (click)="toggleClub(club.id)">
             @if (club.logo_uploaded && !clubErrors.has(club.id)) {
-              <img [src]="'https://img.die-bestesten.de/img/club/' + club.id + '.png'"
+              <img [src]="'https://img.die-bestesten.de/club/' + club.id + '.png'"
                    (error)="onClubError(club.id)" alt="" />
             } @else {
               <span class="filter-club-abbr">{{ (club.short_name ?? club.name).slice(0, 3) }}</span>

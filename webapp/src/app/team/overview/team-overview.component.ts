@@ -112,7 +112,7 @@ export class TeamOverviewComponent {
   }
 
   teamLogoUrl(teamId: string): string {
-    return `${environment.imageApiUrl}/img/team/${this.seasonId() ?? ''}/${teamId}.png`;
+    return `${environment.imageApiUrl}/team/${this.seasonId() ?? ''}/${teamId}.png`;
   }
 
   private logoErrors = new Set<string>();

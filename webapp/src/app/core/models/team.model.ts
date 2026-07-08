@@ -12,7 +12,7 @@ export class Team {
   ) {}
 
   get logoUrl(): string {
-    return `https://img.die-bestesten.de/img/team/${this.season_id}/${this.id}.png`;
+    return `https://img.die-bestesten.de/team/${this.season_id}/${this.id}.png`;
   }
 
   static from(data: any): Team {

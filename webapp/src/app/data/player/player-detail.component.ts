@@ -546,7 +546,7 @@ export class PlayerDetailComponent {
   teamLogoError = signal(false);
 
   teamLogoUrl(team: { id: string; season_id: string }): string {
-    return `https://img.die-bestesten.de/img/team/${team.season_id}/${team.id}.png`;
+    return `https://img.die-bestesten.de/team/${team.season_id}/${team.id}.png`;
   }
 
   sellPlayer(): void {
@@ -582,7 +582,7 @@ export class PlayerDetailComponent {
     if (!p) return null;
     const latest = p.seasons[0]; // sorted newest first
     if (!latest?.photo_uploaded) return null;
-    return `https://img.die-bestesten.de/img/player/${latest.season_id}/${p.id}.png`;
+    return `https://img.die-bestesten.de/player/${latest.season_id}/${p.id}.png`;
   });
 
   positionColor(position: string): string {
@@ -595,7 +595,7 @@ export class PlayerDetailComponent {
 
   clubLogoUrl(clubId: string, logoUploaded: number): string {
     return logoUploaded
-      ? `https://img.die-bestesten.de/img/club/${clubId}.png`
+      ? `https://img.die-bestesten.de/club/${clubId}.png`
       : 'img/placeholders/club.png';
   }
 

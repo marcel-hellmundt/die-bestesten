@@ -84,7 +84,7 @@ export class CreateTeamComponent implements OnInit, OnDestroy {
 
   previousLogoUrl = computed(() => {
     const prev = this.previousTeam();
-    return prev ? `https://img.die-bestesten.de/img/team/${prev.season_id}/${prev.id}.png` : null;
+    return prev ? `https://img.die-bestesten.de/team/${prev.season_id}/${prev.id}.png` : null;
   });
 
   displayedLogo = computed(() => this.logoPreview() ?? this.previousLogoUrl());

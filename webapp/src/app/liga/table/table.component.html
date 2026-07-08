@@ -81,7 +81,7 @@
                   <span class="team-cell">
                     <img
                       class="tbl-logo"
-                      [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/img/team/' + r.season_id + '/' + r.team_id + '.png'"
+                      [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
                       [class.logo--placeholder]="logoErrors.has(r.team_id)"
                       [alt]="r.team_name"
                       (error)="onLogoError(r.team_id)"

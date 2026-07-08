@@ -95,7 +95,7 @@ export class H2HMatchComponent {
     return ({ GOALKEEPER: 'var(--position-goalkeeper)', DEFENDER: 'var(--position-defender)', MIDFIELDER: 'var(--position-midfielder)', FORWARD: 'var(--position-forward)' } as any)[pos] ?? 'transparent';
   }
   managerPhotoUrl(managerId: string): string {
-    return `https://img.die-bestesten.de/img/manager/${managerId}.jpg`;
+    return `https://img.die-bestesten.de/manager/${managerId}.jpg`;
   }
 
   phaseLabel = computed(() => {
@@ -109,15 +109,15 @@ export class H2HMatchComponent {
 
   homeLogoUrl = computed(() => {
     const t = this.homeTeam();
-    return t?.id && t?.season_id ? `https://img.die-bestesten.de/img/team/${t.season_id}/${t.id}.png` : null;
+    return t?.id && t?.season_id ? `https://img.die-bestesten.de/team/${t.season_id}/${t.id}.png` : null;
   });
 
   awayLogoUrl = computed(() => {
     const t = this.awayTeam();
-    return t?.id && t?.season_id ? `https://img.die-bestesten.de/img/team/${t.season_id}/${t.id}.png` : null;
+    return t?.id && t?.season_id ? `https://img.die-bestesten.de/team/${t.season_id}/${t.id}.png` : null;
   });
 
   homePhotoUrl(p: any): string {
-    return `https://img.die-bestesten.de/img/player/${p.photo_season_id}/${p.player_id}.png`;
+    return `https://img.die-bestesten.de/player/${p.photo_season_id}/${p.player_id}.png`;
   }
 }

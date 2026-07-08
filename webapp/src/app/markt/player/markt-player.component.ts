@@ -110,12 +110,12 @@ export class MarktPlayerComponent {
 
   photoUrl(p: FreeAgent): string | null {
     if (!p.photo_uploaded) return null;
-    return `https://img.die-bestesten.de/img/player/${p.season_id}/${p.id}.png`;
+    return `https://img.die-bestesten.de/player/${p.season_id}/${p.id}.png`;
   }
 
   clubLogoUrl(p: FreeAgent): string | null {
     if (!p.club_logo_uploaded) return null;
-    return `https://img.die-bestesten.de/img/club/${p.club_id}.png`;
+    return `https://img.die-bestesten.de/club/${p.club_id}.png`;
   }
 
   togglePosition(pos: string): void {

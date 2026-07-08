@@ -79,7 +79,7 @@
                         [src]="
                           logoErrors.has(r.team_id)
                             ? 'img/placeholders/club.png'
-                            : 'https://img.die-bestesten.de/img/team/' +
+                            : 'https://img.die-bestesten.de/team/' +
                               r.season_id +
                               '/' +
                               r.team_id +
@@ -231,7 +231,7 @@
                     @if (p.club_logo_uploaded && p.club_id) {
                       <img
                         class="bxi-club-logo"
-                        [src]="'https://img.die-bestesten.de/img/club/' + p.club_id + '.png'"
+                        [src]="'https://img.die-bestesten.de/club/' + p.club_id + '.png'"
                         [alt]="p.club_short_name"
                         (error)="$any($event.target).style.display = 'none'"
                       />
@@ -241,7 +241,7 @@
                         class="bxi-team-logo"
                         [class.bxi-team-logo--bench]="p.nominated === false"
                         [src]="
-                          'https://img.die-bestesten.de/img/team/' +
+                          'https://img.die-bestesten.de/team/' +
                           p.team_season_id +
                           '/' +
                           p.team_id +
@@ -293,7 +293,7 @@
               @if (p.photo_uploaded && seasonId()) {
                 <img
                   [src]="
-                    'https://img.die-bestesten.de/img/player/' + seasonId() + '/' + p.id + '.png'
+                    'https://img.die-bestesten.de/player/' + seasonId() + '/' + p.id + '.png'
                   "
                   [alt]="p.displayname"
                   (error)="$any($event.target).style.display = 'none'"
