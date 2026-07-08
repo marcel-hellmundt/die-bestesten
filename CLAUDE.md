@@ -4,6 +4,7 @@
 
 - **API-Änderungen**: Bei jeder Änderung in `/api` → `CLAUDE.md` + `api/schema.php` aktualisieren, dann committen **und pushen** (Push triggert GitHub Action → Server-Deploy).
 - **Webapp-Änderungen**: Mobile + Desktop berücksichtigen. Infos dürfen auf kleinen Screens reduziert/ausgeblendet werden — Kernfunktionalität muss auf beiden nutzbar sein.
+- **Branch-Cleanup**: Nach jedem erfolgreichen lokalen Merge eines Branches nach `main` (inkl. Push) den gemergten Source-Branch löschen (`git branch -d <branch>`), damit nur Branches mit aktiver Arbeit übrig bleiben.
 
 ## Stack
 
