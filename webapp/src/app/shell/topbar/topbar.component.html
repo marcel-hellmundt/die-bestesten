@@ -204,20 +204,22 @@
   }
 
   <div class="topbar-right">
-    <button
+    <a
       class="topbar-icon-btn topbar-bell"
       [class.active]="currentUrl().startsWith('/achievements')"
-      (click)="navigateTo('/achievements')"
+      routerLink="/achievements"
+      (click)="closeDropdown()"
       aria-label="Achievements"
       data-tooltip="Achievements"
     >
       <app-icon name="award"></app-icon>
-    </button>
+    </a>
 
-    <button
+    <a
       class="topbar-icon-btn topbar-bell"
       [class.active]="currentUrl().startsWith('/benachrichtigungen')"
-      (click)="navigateTo('/benachrichtigungen')"
+      routerLink="/benachrichtigungen"
+      (click)="closeDropdown()"
       aria-label="Benachrichtigungen"
       data-tooltip="Benachrichtigungen"
     >
@@ -225,7 +227,7 @@
       @if (notifService.unreadCount() > 0) {
         <span class="notif-badge">{{ notifService.unreadCount() }}</span>
       }
-    </button>
+    </a>
 
     <div class="topbar-user">
       <button class="user-avatar" (click)="toggleDropdown($event)" aria-label="Benutzermenü">

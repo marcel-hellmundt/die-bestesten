@@ -293,11 +293,6 @@ export class TopbarComponent implements OnDestroy {
     });
   }
 
-  navigateTo(route: string): void {
-    this.closeDropdown();
-    this.router.navigate([route]);
-  }
-
   logout(): void {
     this.auth.logout();
     this.router.navigate(['/login']);
