@@ -68,6 +68,11 @@
   gap: $space-2;
 }
 
+.edit-input-row {
+  display: flex;
+  gap: $space-2;
+}
+
 .edit-input {
   padding: $space-1 $space-2;
 
@@ -163,6 +168,11 @@
     gap: $space-1;
     flex: 1;
     min-width: 200px;
+  }
+
+  &__field-row {
+    display: flex;
+    gap: $space-2;
   }
 
   &__label {

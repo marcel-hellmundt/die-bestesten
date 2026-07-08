@@ -243,8 +243,14 @@ export class SeasonDataComponent {
     return localDt.replace('T', ' ') + ':00';
   }
 
-  private toDatetimeLocal(mysqlDt: string): string {
-    return mysqlDt.replace(' ', 'T').substring(0, 16);
+  private readonly DEFAULT_KICKOFF_TIME = '20:30';
+
+  private combineDateTime(date: string, time: string): string {
+    return `${date} ${time}:00`;
+  }
+
+  private kickoffTime(kickoffDate: string): string {
+    return kickoffDate.substring(11, 16);
   }
 
   submitTwForm(matchday: Matchday): void {
@@ -271,19 +277,21 @@ export class SeasonDataComponent {
     });
   }
 
-  creatingMatchday = signal(false);
-  createMdNumber   = signal<number | null>(null);
-  createMdStart    = signal('');
-  createMdKickoff  = signal('');
-  createMdState    = signal<'idle' | 'loading' | 'error'>('idle');
-  createMdError    = signal('');
+  creatingMatchday    = signal(false);
+  createMdNumber      = signal<number | null>(null);
+  createMdStart       = signal('');
+  createMdKickoffDate = signal('');
+  createMdKickoffTime = signal(this.DEFAULT_KICKOFF_TIME);
+  createMdState       = signal<'idle' | 'loading' | 'error'>('idle');
+  createMdError       = signal('');
 
   openCreateMatchday(): void {
     const nextNumber = (this.matchdays()[0]?.number ?? 0) + 1;
     this.creatingMatchday.set(true);
     this.createMdNumber.set(nextNumber);
     this.createMdStart.set('');
-    this.createMdKickoff.set('');
+    this.createMdKickoffDate.set('');
+    this.createMdKickoffTime.set(this.DEFAULT_KICKOFF_TIME);
     this.createMdState.set('idle');
     this.createMdError.set('');
   }
@@ -295,14 +303,14 @@ export class SeasonDataComponent {
   submitCreateMatchday(): void {
     const season = this.selectedSeason();
     const number = this.createMdNumber();
-    if (!season || !number || !this.createMdStart() || !this.createMdKickoff()) return;
+    if (!season || !number || !this.createMdStart() || !this.createMdKickoffDate() || !this.createMdKickoffTime()) return;
 
     this.createMdState.set('loading');
     this.api.post<any>('matchday', {
       season_id:    season.id,
       number,
       start_date:   this.createMdStart(),
-      kickoff_date: this.toMysqlDatetime(this.createMdKickoff()),
+      kickoff_date: this.combineDateTime(this.createMdKickoffDate(), this.createMdKickoffTime()),
     }).subscribe({
       next: () => {
         this.creatingMatchday.set(false);
@@ -319,7 +327,8 @@ export class SeasonDataComponent {
   editingMatchdayId = signal<string | null>(null);
   editMdNumber      = signal<number | null>(null);
   editMdStart       = signal('');
-  editMdKickoff     = signal('');
+  editMdKickoffDate = signal('');
+  editMdKickoffTime = signal(this.DEFAULT_KICKOFF_TIME);
   editMdState       = signal<'idle' | 'loading' | 'error'>('idle');
   editMdError       = signal('');
 
@@ -327,7 +336,8 @@ export class SeasonDataComponent {
     this.editingMatchdayId.set(matchday.id);
     this.editMdNumber.set(matchday.number);
     this.editMdStart.set(matchday.start_date);
-    this.editMdKickoff.set(this.toDatetimeLocal(matchday.kickoff_date));
+    this.editMdKickoffDate.set(matchday.kickoff_date.substring(0, 10));
+    this.editMdKickoffTime.set(this.kickoffTime(matchday.kickoff_date));
     this.editMdState.set('idle');
     this.editMdError.set('');
   }
@@ -338,13 +348,13 @@ export class SeasonDataComponent {
 
   submitEditMatchday(matchday: Matchday): void {
     const number = this.editMdNumber();
-    if (!number || !this.editMdStart() || !this.editMdKickoff()) return;
+    if (!number || !this.editMdStart() || !this.editMdKickoffDate() || !this.editMdKickoffTime()) return;
 
     this.editMdState.set('loading');
     this.api.patch<any>(`matchday/${matchday.id}`, {
       number,
       start_date:   this.editMdStart(),
-      kickoff_date: this.toMysqlDatetime(this.editMdKickoff()),
+      kickoff_date: this.combineDateTime(this.editMdKickoffDate(), this.editMdKickoffTime()),
     }).subscribe({
       next: () => {
         this.editingMatchdayId.set(null);

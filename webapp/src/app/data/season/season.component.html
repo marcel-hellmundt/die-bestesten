@@ -133,19 +133,27 @@
               </div>
               <div class="tw-form__field">
                 <label class="tw-form__label">Anpfiff</label>
-                <input
-                  class="input"
-                  type="datetime-local"
-                  [value]="createMdKickoff()"
-                  (input)="createMdKickoff.set($any($event.target).value)"
-                />
+                <div class="tw-form__field-row">
+                  <input
+                    class="input"
+                    type="date"
+                    [value]="createMdKickoffDate()"
+                    (input)="createMdKickoffDate.set($any($event.target).value)"
+                  />
+                  <input
+                    class="input"
+                    type="time"
+                    [value]="createMdKickoffTime()"
+                    (input)="createMdKickoffTime.set($any($event.target).value)"
+                  />
+                </div>
               </div>
             </div>
             <div class="tw-form__actions">
               <button class="btn btn-sm" [disabled]="createMdState() === 'loading'" (click)="cancelCreateMatchday()">Abbrechen</button>
               <button
                 class="btn btn-primary btn-sm"
-                [disabled]="createMdState() === 'loading' || !createMdNumber() || !createMdStart() || !createMdKickoff()"
+                [disabled]="createMdState() === 'loading' || !createMdNumber() || !createMdStart() || !createMdKickoffDate() || !createMdKickoffTime()"
                 (click)="submitCreateMatchday()"
               >{{ createMdState() === 'loading' ? 'Erstellt…' : 'Erstellen' }}</button>
             </div>
@@ -201,12 +209,20 @@
                         />
                       </td>
                       <td (click)="$event.stopPropagation()">
-                        <input
-                          class="input edit-input"
-                          type="datetime-local"
-                          [value]="editMdKickoff()"
-                          (input)="editMdKickoff.set($any($event.target).value)"
-                        />
+                        <div class="edit-input-row">
+                          <input
+                            class="input edit-input"
+                            type="date"
+                            [value]="editMdKickoffDate()"
+                            (input)="editMdKickoffDate.set($any($event.target).value)"
+                          />
+                          <input
+                            class="input edit-input"
+                            type="time"
+                            [value]="editMdKickoffTime()"
+                            (input)="editMdKickoffTime.set($any($event.target).value)"
+                          />
+                        </div>
                       </td>
                       <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
                       <td class="col-actions" (click)="$event.stopPropagation()">
