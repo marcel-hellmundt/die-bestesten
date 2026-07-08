@@ -92,11 +92,11 @@ class ImageUpload
 
     private static function connect()
     {
-        $host = $_ENV['IMG_FTP_HOST'] ?? null;
-        $user = $_ENV['IMG_FTP_USER'] ?? null;
-        $pass = $_ENV['IMG_FTP_PASSWORD'] ?? null;
-        if (!$host || !$user || !$pass || !($_ENV['IMG_FTP_DIR'] ?? null)) {
-            return ['status' => false, 'code' => 500, 'message' => 'IMG_FTP_* nicht konfiguriert'];
+        $host = $_ENV['FTP_HOST'] ?? null;
+        $user = $_ENV['FTP_USER'] ?? null;
+        $pass = $_ENV['FTP_PASSWORD'] ?? null;
+        if (!$host || !$user || !$pass || !($_ENV['FTP_DIR_IMAGE'] ?? null)) {
+            return ['status' => false, 'code' => 500, 'message' => 'FTP_* nicht konfiguriert'];
         }
 
         $conn = @ftp_ssl_connect($host);
@@ -122,13 +122,13 @@ class ImageUpload
 
     private static function remotePath(string $relativePath): string
     {
-        $base = rtrim($_ENV['IMG_FTP_DIR'] ?? '', '/');
+        $base = rtrim($_ENV['FTP_DIR_IMAGE'] ?? '', '/');
         return $base . '/' . ltrim($relativePath, '/');
     }
 
     private static function ensureRemoteDir($conn, string $relativeDir): void
     {
-        $base = rtrim($_ENV['IMG_FTP_DIR'] ?? '', '/');
+        $base = rtrim($_ENV['FTP_DIR_IMAGE'] ?? '', '/');
         $path = $base;
         foreach (array_filter(explode('/', $relativeDir), fn($p) => $p !== '' && $p !== '.') as $part) {
             $path .= '/' . $part;

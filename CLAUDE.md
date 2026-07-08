@@ -18,7 +18,7 @@ die-bestesten/
 ├── api/app/
 │   ├── controller/     — Ein Controller pro Ressource (erbt _BaseController)
 │   ├── database/       — Ein Trait pro Ressource; composited in base.database.php
-│   ├── util/           — image_upload.util.php (Bild-Validierung + Datei-Write per FTP, IMG_FTP_HOST/USER/PASSWORD/DIR)
+│   ├── util/           — image_upload.util.php (Bild-Validierung + Datei-Write per FTP, FTP_HOST/USER/PASSWORD + FTP_DIR_IMAGE; gemeinsamer FTP-Zugang für mehrere Asset-Server, FTP_DIR_AUDIO reserviert für zukünftigen Audio-Server)
 │   ├── guard.php       — JWT + RBAC; setzt $GLOBALS['auth_roles'(array)/'auth_manager_id']
 │   └── routing.php     — Routen + eingebettete API-Doku
 ├── api/index.php       — Einstiegspunkt; parst URL → Routing → Controller
