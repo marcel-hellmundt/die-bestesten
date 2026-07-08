@@ -2,7 +2,7 @@
 
 class MatchdayController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'admin', 'PATCH' => 'admin'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'admin', 'PATCH' => 'admin', 'DELETE' => 'admin'];
 
     protected function get(): mixed
     {
@@ -55,9 +55,17 @@ class MatchdayController extends _BaseController
         if (!$this->id) return $this->methodNotAllowed();
 
         $body = $this->body();
+
         if (!array_key_exists('completed', $body)) {
-            http_response_code(400);
-            return ['status' => false, 'message' => 'Feld "completed" fehlt'];
+            $editable = array_intersect_key($body, array_flip(['number', 'start_date', 'kickoff_date']));
+            if (empty($editable)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Feld "completed" fehlt'];
+            }
+            if (isset($editable['number'])) {
+                $editable['number'] = (int) $editable['number'];
+            }
+            return $this->db->updateMatchdayFields($this->id, $editable);
         }
 
         $matchday = $this->db->getMatchdayById($this->id);
@@ -87,5 +95,9 @@ class MatchdayController extends _BaseController
         return ['status' => true, 'team_ratings' => $teamRatings, 'achievements' => $achievements, 'season_awards' => $seasonAwards];
     }
 
-    protected function delete(): mixed { return $this->methodNotAllowed(); }
+    protected function delete(): mixed
+    {
+        if (!$this->id) return $this->methodNotAllowed();
+        return $this->db->deleteMatchday($this->id);
+    }
 }

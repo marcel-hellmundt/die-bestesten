@@ -207,12 +207,18 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/matchday',
-                        'description' => 'Neuen Spieltag anlegen — Body: { season_id, number, start_date, end_date, kickoff_date }; division_id wird aus Liga-Kontext ermittelt; 409 bei Duplikat, 422 wenn keine Division konfiguriert — Admin',
+                        'description' => 'Neuen Spieltag anlegen — Body: { season_id, number, start_date, kickoff_date }; division_id wird aus Liga-Kontext ermittelt; 409 bei Duplikat, 422 wenn keine Division konfiguriert — Admin',
                     ],
                     [
                         'method' => 'PATCH',
                         'path' => '/matchday/:id',
-                        'description' => 'completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an alle Admins mit hinterlegter E-Mail-Adresse senden — Admin',
+                        'description' => 'Entweder completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an alle Admins mit hinterlegter E-Mail-Adresse senden — Admin. Oder Stammdaten bearbeiten — Body: beliebige Kombination aus number, start_date, kickoff_date; 404 wenn nicht gefunden, 409 wenn Spieltag bereits completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date liegt — Admin',
+                        'path_params' => [':id' => 'UUID des Spieltags'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/matchday/:id',
+                        'description' => 'Spieltag löschen — 404 wenn nicht gefunden, 409 wenn bereits completed oder bereits in der Liga verwendet (Aufstellungen, Ratings, Transaktionen, H2H) oder noch von Bewertungen/Transferfenstern referenziert — Admin',
                         'path_params' => [':id' => 'UUID des Spieltags'],
                     ],
                 ],

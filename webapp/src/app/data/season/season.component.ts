@@ -243,6 +243,10 @@ export class SeasonDataComponent {
     return localDt.replace('T', ' ') + ':00';
   }
 
+  private toDatetimeLocal(mysqlDt: string): string {
+    return mysqlDt.replace(' ', 'T').substring(0, 16);
+  }
+
   submitTwForm(matchday: Matchday): void {
     if (this.twFormStart() >= this.twFormEnd()) {
       this.twSaveState.set('error');
@@ -263,6 +267,114 @@ export class SeasonDataComponent {
       error: (err) => {
         this.twSaveState.set('error');
         this.twSaveError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
+
+  creatingMatchday = signal(false);
+  createMdNumber   = signal<number | null>(null);
+  createMdStart    = signal('');
+  createMdKickoff  = signal('');
+  createMdState    = signal<'idle' | 'loading' | 'error'>('idle');
+  createMdError    = signal('');
+
+  openCreateMatchday(): void {
+    const nextNumber = (this.matchdays()[0]?.number ?? 0) + 1;
+    this.creatingMatchday.set(true);
+    this.createMdNumber.set(nextNumber);
+    this.createMdStart.set('');
+    this.createMdKickoff.set('');
+    this.createMdState.set('idle');
+    this.createMdError.set('');
+  }
+
+  cancelCreateMatchday(): void {
+    this.creatingMatchday.set(false);
+  }
+
+  submitCreateMatchday(): void {
+    const season = this.selectedSeason();
+    const number = this.createMdNumber();
+    if (!season || !number || !this.createMdStart() || !this.createMdKickoff()) return;
+
+    this.createMdState.set('loading');
+    this.api.post<any>('matchday', {
+      season_id:    season.id,
+      number,
+      start_date:   this.createMdStart(),
+      kickoff_date: this.toMysqlDatetime(this.createMdKickoff()),
+    }).subscribe({
+      next: () => {
+        this.creatingMatchday.set(false);
+        this.createMdState.set('idle');
+        this.detailReload$.next();
+      },
+      error: (err) => {
+        this.createMdState.set('error');
+        this.createMdError.set(err?.error?.message ?? 'Fehler beim Erstellen');
+      },
+    });
+  }
+
+  editingMatchdayId = signal<string | null>(null);
+  editMdNumber      = signal<number | null>(null);
+  editMdStart       = signal('');
+  editMdKickoff     = signal('');
+  editMdState       = signal<'idle' | 'loading' | 'error'>('idle');
+  editMdError       = signal('');
+
+  startEditMatchday(matchday: Matchday): void {
+    this.editingMatchdayId.set(matchday.id);
+    this.editMdNumber.set(matchday.number);
+    this.editMdStart.set(matchday.start_date);
+    this.editMdKickoff.set(this.toDatetimeLocal(matchday.kickoff_date));
+    this.editMdState.set('idle');
+    this.editMdError.set('');
+  }
+
+  cancelEditMatchday(): void {
+    this.editingMatchdayId.set(null);
+  }
+
+  submitEditMatchday(matchday: Matchday): void {
+    const number = this.editMdNumber();
+    if (!number || !this.editMdStart() || !this.editMdKickoff()) return;
+
+    this.editMdState.set('loading');
+    this.api.patch<any>(`matchday/${matchday.id}`, {
+      number,
+      start_date:   this.editMdStart(),
+      kickoff_date: this.toMysqlDatetime(this.editMdKickoff()),
+    }).subscribe({
+      next: () => {
+        this.editingMatchdayId.set(null);
+        this.editMdState.set('idle');
+        this.detailReload$.next();
+      },
+      error: (err) => {
+        this.editMdState.set('error');
+        this.editMdError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
+
+  deletingMatchdayId  = signal<string | null>(null);
+  matchdayDeleteError = signal<string | null>(null);
+
+  deleteMatchday(matchday: Matchday): void {
+    if (!confirm(`Spieltag ${matchday.number} wirklich löschen?`)) return;
+
+    this.deletingMatchdayId.set(matchday.id);
+    this.matchdayDeleteError.set(null);
+    this.api.delete<any>(`matchday/${matchday.id}`).subscribe({
+      next: () => {
+        this.deletingMatchdayId.set(null);
+        if (this.selectedMatchday()?.id === matchday.id) this.selectedMatchday.set(null);
+        this.detailReload$.next();
+      },
+      error: (err) => {
+        this.deletingMatchdayId.set(null);
+        this.matchdayDeleteError.set(err?.error?.message ?? 'Fehler beim Löschen');
       },
     });
   }

@@ -104,7 +104,61 @@
       <div class="matchday-panel">
         <div class="section-header-row">
           <h2 class="section-header">Spieltage</h2>
+          @if (isAdmin()) {
+            <button class="btn btn-sm" (click)="openCreateMatchday()">+ Spieltag hinzufügen</button>
+          }
         </div>
+
+        @if (creatingMatchday()) {
+          <div class="tw-form">
+            <div class="tw-form__fields">
+              <div class="tw-form__field">
+                <label class="tw-form__label">Nummer</label>
+                <input
+                  class="input"
+                  type="number"
+                  min="1"
+                  [value]="createMdNumber()"
+                  (input)="createMdNumber.set($any($event.target).valueAsNumber || null)"
+                />
+              </div>
+              <div class="tw-form__field">
+                <label class="tw-form__label">Start</label>
+                <input
+                  class="input"
+                  type="date"
+                  [value]="createMdStart()"
+                  (input)="createMdStart.set($any($event.target).value)"
+                />
+              </div>
+              <div class="tw-form__field">
+                <label class="tw-form__label">Anpfiff</label>
+                <input
+                  class="input"
+                  type="datetime-local"
+                  [value]="createMdKickoff()"
+                  (input)="createMdKickoff.set($any($event.target).value)"
+                />
+              </div>
+            </div>
+            <div class="tw-form__actions">
+              <button class="btn btn-sm" [disabled]="createMdState() === 'loading'" (click)="cancelCreateMatchday()">Abbrechen</button>
+              <button
+                class="btn btn-primary btn-sm"
+                [disabled]="createMdState() === 'loading' || !createMdNumber() || !createMdStart() || !createMdKickoff()"
+                (click)="submitCreateMatchday()"
+              >{{ createMdState() === 'loading' ? 'Erstellt…' : 'Erstellen' }}</button>
+            </div>
+            @if (createMdState() === 'error') {
+              <p class="state-msg state-msg--error">{{ createMdError() }}</p>
+            }
+          </div>
+        }
+
+        @if (matchdayDeleteError()) {
+          <p class="state-msg state-msg--error">{{ matchdayDeleteError() }}</p>
+        }
+
         @if (detailLoading()) {
           <p class="state-msg">Laden…</p>
         } @else {
@@ -116,6 +170,9 @@
                   <th>Start</th>
                   <th>Anpfiff</th>
                   <th class="col-tw" title="Transferfenster">TF</th>
+                  @if (isAdmin()) {
+                    <th class="col-actions">Aktionen</th>
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -123,16 +180,74 @@
                   <tr
                     class="row-link"
                     [class.row--selected]="selectedMatchday()?.id === md.id"
-                    (click)="selectMatchday(md)"
+                    (click)="editingMatchdayId() !== md.id && selectMatchday(md)"
                   >
-                    <td class="col-number">{{ md.number }}</td>
-                    <td>{{ formatDate(md.start_date) }}</td>
-                    <td>{{ formatDatetime(md.kickoff_date) }}</td>
-                    <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
+                    @if (editingMatchdayId() === md.id) {
+                      <td class="col-number" (click)="$event.stopPropagation()">
+                        <input
+                          class="input edit-input edit-input--number"
+                          type="number"
+                          min="1"
+                          [value]="editMdNumber()"
+                          (input)="editMdNumber.set($any($event.target).valueAsNumber || null)"
+                        />
+                      </td>
+                      <td (click)="$event.stopPropagation()">
+                        <input
+                          class="input edit-input"
+                          type="date"
+                          [value]="editMdStart()"
+                          (input)="editMdStart.set($any($event.target).value)"
+                        />
+                      </td>
+                      <td (click)="$event.stopPropagation()">
+                        <input
+                          class="input edit-input"
+                          type="datetime-local"
+                          [value]="editMdKickoff()"
+                          (input)="editMdKickoff.set($any($event.target).value)"
+                        />
+                      </td>
+                      <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
+                      <td class="col-actions" (click)="$event.stopPropagation()">
+                        <div class="actions-row">
+                          <button class="btn btn-ghost btn-sm" [disabled]="editMdState() === 'loading'" (click)="cancelEditMatchday()">Abbrechen</button>
+                          <button
+                            class="btn btn-primary btn-sm"
+                            [disabled]="editMdState() === 'loading'"
+                            (click)="submitEditMatchday(md)"
+                          >{{ editMdState() === 'loading' ? 'Speichert…' : 'Speichern' }}</button>
+                        </div>
+                      </td>
+                    } @else {
+                      <td class="col-number">{{ md.number }}</td>
+                      <td>{{ formatDate(md.start_date) }}</td>
+                      <td>{{ formatDatetime(md.kickoff_date) }}</td>
+                      <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
+                      @if (isAdmin()) {
+                        <td class="col-actions" (click)="$event.stopPropagation()">
+                          <div class="actions-row">
+                            <button class="btn btn-ghost btn-sm" (click)="startEditMatchday(md)">Bearbeiten</button>
+                            <button
+                              class="btn btn-ghost btn-sm btn-danger"
+                              [disabled]="deletingMatchdayId() === md.id"
+                              (click)="deleteMatchday(md)"
+                            >Löschen</button>
+                          </div>
+                        </td>
+                      }
+                    }
                   </tr>
+                  @if (editingMatchdayId() === md.id && editMdState() === 'error') {
+                    <tr>
+                      <td [attr.colspan]="isAdmin() ? 5 : 4">
+                        <p class="state-msg state-msg--error">{{ editMdError() }}</p>
+                      </td>
+                    </tr>
+                  }
                   @if (selectedMatchday()?.id === md.id) {
                     <tr class="expand-row">
-                      <td colspan="4">
+                      <td [attr.colspan]="isAdmin() ? 5 : 4">
                         <div class="tw-expand-content">
                           @if (matchdayTransferwindows().length === 0) {
                             <p class="state-msg">Keine Transferfenster vorhanden</p>

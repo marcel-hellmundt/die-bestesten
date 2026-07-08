@@ -39,7 +39,7 @@ trait MatchdayTrait
         if (!$divisionId) {
             throw new \RuntimeException('Liga hat keine Division konfiguriert');
         }
-        $id = $this->generateGUID();
+        $id = $this->generateUUID();
         $this->con->prepare(
             "INSERT INTO matchday (id, season_id, division_id, number, start_date, kickoff_date)
              VALUES (:id, :season_id, :division_id, :number, :start_date, :kickoff_date)"
@@ -68,6 +68,93 @@ trait MatchdayTrait
         );
         $query->execute([':completed' => $completed ? 1 : 0, ':id' => $id]);
         return $query->rowCount() > 0;
+    }
+
+    public function updateMatchdayFields(string $id, array $fields): array
+    {
+        $matchday = $this->getMatchdayById($id);
+        if (!$matchday) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Matchday not found'];
+        }
+        if ((bool) $matchday['completed']) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Abgeschlossener Spieltag kann nicht bearbeitet werden'];
+        }
+
+        $allowed = ['number', 'start_date', 'kickoff_date'];
+        $sets    = [];
+        $params  = [':id' => $id];
+        foreach ($allowed as $f) {
+            if (array_key_exists($f, $fields)) {
+                $sets[]        = "$f = :$f";
+                $params[":$f"] = $fields[$f];
+            }
+        }
+        if (empty($sets)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Keine Felder zum Aktualisieren'];
+        }
+
+        $startDate   = $fields['start_date']   ?? $matchday['start_date'];
+        $kickoffDate = $fields['kickoff_date'] ?? $matchday['kickoff_date'];
+        if (strtotime($kickoffDate) < strtotime($startDate)) {
+            http_response_code(422);
+            return ['status' => false, 'message' => 'Anpfiff darf nicht vor Start liegen'];
+        }
+
+        try {
+            $this->con->prepare(
+                "UPDATE matchday SET " . implode(', ', $sets) . " WHERE id = :id"
+            )->execute($params);
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '23000') {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Spieltag-Nummer existiert bereits für diese Division'];
+            }
+            throw $e;
+        }
+        return ['status' => true];
+    }
+
+    public function deleteMatchday(string $id): array
+    {
+        $matchday = $this->getMatchdayById($id);
+        if (!$matchday) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Matchday not found'];
+        }
+        if ((bool) $matchday['completed']) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Abgeschlossener Spieltag kann nicht gelöscht werden'];
+        }
+
+        $usageQuery = $this->con_league->prepare(
+            "SELECT
+                (SELECT COUNT(*) FROM team_lineup WHERE matchday_id = :id1) +
+                (SELECT COUNT(*) FROM team_rating WHERE matchday_id = :id2) +
+                (SELECT COUNT(*) FROM transaction  WHERE matchday_id = :id3) +
+                (SELECT COUNT(*) FROM player_in_team WHERE from_matchday_id = :id4 OR to_matchday_id = :id5) +
+                (SELECT COUNT(*) FROM h2h_match WHERE matchday_id = :id6) AS cnt"
+        );
+        $usageQuery->execute([
+            ':id1' => $id, ':id2' => $id, ':id3' => $id, ':id4' => $id, ':id5' => $id, ':id6' => $id,
+        ]);
+        if ((int) $usageQuery->fetchColumn() > 0) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Spieltag wird bereits in der Liga verwendet (Aufstellungen, Ratings, Transaktionen oder H2H) und kann nicht gelöscht werden'];
+        }
+
+        try {
+            $this->con->prepare("DELETE FROM matchday WHERE id = :id")->execute([':id' => $id]);
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '23000') {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Spieltag wird noch referenziert (Bewertungen oder Transferfenster) und kann nicht gelöscht werden'];
+            }
+            throw $e;
+        }
+        return ['status' => true];
     }
 
     public function finalizeMatchday(string $matchdayId): int

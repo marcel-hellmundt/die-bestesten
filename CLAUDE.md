@@ -97,7 +97,8 @@ GET      /season[/:id|/active]
 POST     /season                — {start_date: YYYY-MM-DD} → {id}; UNIQUE auf start_date — Admin
 GET      /matchday[/:id]       — ?season_id gibt has_ratings (bool) zurück; filtert nach Division der aktiven Liga — Auth
 POST     /matchday             — {season_id, number, start_date, kickoff_date} → {id}; division_id aus Liga-Kontext; 409 bei Duplikat, 422 wenn keine Division konfiguriert — Admin
-PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team_rating + Transaktionen erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an Admins (nur wenn email hinterlegt) — Admin
+PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team_rating + Transaktionen erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an Admins (nur wenn email hinterlegt) — Admin; ODER beliebige Kombination aus {number, start_date, kickoff_date} — Stammdaten bearbeiten; 409 wenn completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date — Admin
+DELETE   /matchday/:id         — 409 wenn completed oder bereits in der Liga verwendet (team_lineup/team_rating/transaction/player_in_team/h2h_match) oder von Bewertungen/Transferfenstern referenziert — Admin
 GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_points}], top_matchdays: [{points,matchday_number,team_name,season_id,manager_name}] } — Auth
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
 GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}

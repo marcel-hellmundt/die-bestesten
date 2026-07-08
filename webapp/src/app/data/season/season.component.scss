@@ -58,6 +58,24 @@
   font-size: $font-sm;
 }
 
+.col-actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.actions-row {
+  display: flex;
+  gap: $space-2;
+}
+
+.edit-input {
+  padding: $space-1 $space-2;
+
+  &--number {
+    width: 64px;
+  }
+}
+
 .expand-row td {
   padding: $space-3 $space-4 $space-4;
   background: $color-surface-alt;
