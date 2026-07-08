@@ -1,9 +1,9 @@
-name: Deploy Img Server
+name: Deploy Asset Server
 
 on:
   push:
     branches: ['**']
-    paths: [img-server/**]
+    paths: [asset_server/**]
   workflow_dispatch:
 
 concurrency:
@@ -18,10 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify FTP_DIR_IMG is set
+      - name: Verify FTP_DIR_IMAGE and FTP_DIR_AUDIO are set
         run: |
-          if [ -z "${{ vars.FTP_DIR_IMG }}" ]; then
-            echo "FTP_DIR_IMG is not set for this environment — aborting to avoid mirroring to the FTP root."
+          if [ -z "${{ vars.FTP_DIR_IMAGE }}" ]; then
+            echo "FTP_DIR_IMAGE is not set for this environment — aborting to avoid mirroring to the FTP root."
+            exit 1
+          fi
+          if [ -z "${{ vars.FTP_DIR_AUDIO }}" ]; then
+            echo "FTP_DIR_AUDIO is not set for this environment — aborting to avoid mirroring to the FTP root."
             exit 1
           fi
 
@@ -35,5 +39,6 @@ jobs:
             set ftp:ssl-protect-data true;
             set ssl:verify-certificate false;
             open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-            mirror --reverse --verbose ./img-server/ ${{ vars.FTP_DIR_IMG }};
+            mirror --reverse --verbose ./asset_server/ ${{ vars.FTP_DIR_IMAGE }};
+            mirror --reverse --verbose ./asset_server/ ${{ vars.FTP_DIR_AUDIO }};
           "

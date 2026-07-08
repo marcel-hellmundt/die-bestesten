@@ -24,7 +24,7 @@ die-bestesten/
 ├── api/index.php       — Einstiegspunkt; parst URL → Routing → Controller
 ├── api/schema.php      — Web-UI für API-Doku (Mermaid-ER + Endpunkte aus routing.php)
 ├── database/global_schema.sql, league_schema.sql
-├── img-server/         — deployt nach img.die-bestesten.de (nur .htaccess; Entity-Ordner mit Uploads liegen direkt im Webroot und bleiben beim Deploy erhalten); reines statisches Bild-Serving, kein PHP — Uploads laufen über api/
+├── asset_server/        — deployt (nur .htaccess) auf beide Asset-Server-Ordner (Bild + Audio, FTP_DIR_IMAGE/FTP_DIR_AUDIO); Entity-Ordner mit Uploads liegen direkt im jeweiligen Webroot und bleiben beim Deploy erhalten; reines statisches Datei-Serving, kein PHP — Uploads laufen über api/
 └── webapp/
 ```
 
