@@ -44,11 +44,31 @@ export class ManagerDataComponent {
   activeInvitePopup    = signal<string | null>(null);
   membershipLoading    = signal<Record<string, boolean>>({});
 
+  private exactDateTime(d: Date): string {
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+      + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  }
+
   formatLastActivity(dateStr: string | null): string {
     if (!dateStr) return '—';
     const d = new Date(dateStr);
-    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
-      + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const diffMin = Math.floor((Date.now() - d.getTime()) / 60000);
+
+    if (diffMin < 1) return 'gerade eben';
+    if (diffMin < 60) return `vor ${diffMin} Minute${diffMin === 1 ? '' : 'n'}`;
+
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `vor ${diffHours} Stunde${diffHours === 1 ? '' : 'n'}`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays <= 3) return `vor ${diffDays} Tag${diffDays === 1 ? '' : 'en'}`;
+
+    return this.exactDateTime(d);
+  }
+
+  lastActivityTitle(dateStr: string | null): string {
+    if (!dateStr) return '';
+    return this.exactDateTime(new Date(dateStr));
   }
 
   constructor() {
