@@ -195,8 +195,11 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/matchday',
-                        'description' => 'Alle Spieltage, optional gefiltert nach Saison; mit season_id: filtert nach Division der aktiven Liga, enthält has_ratings (bool) — Auth',
-                        'query_params' => ['season_id' => 'UUID der Saison (optional)'],
+                        'description' => 'Alle Spieltage, optional gefiltert nach Saison; mit season_id: filtert nach Division (division_id-Param oder Division der aktiven Liga als Default), enthält has_ratings (bool) — Auth',
+                        'query_params' => [
+                            'season_id' => 'UUID der Saison (optional)',
+                            'division_id' => 'UUID der Division (optional) — überschreibt die Division der aktiven Liga, z.B. für Admins, die Spieltage anderer Ligen verwalten',
+                        ],
                     ],
                     [
                         'method' => 'GET',
@@ -207,7 +210,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/matchday',
-                        'description' => 'Neuen Spieltag anlegen — Body: { season_id, number, start_date, kickoff_date }; division_id wird aus Liga-Kontext ermittelt; 409 bei Duplikat, 422 wenn keine Division konfiguriert — Admin',
+                        'description' => 'Neuen Spieltag anlegen — Body: { season_id, number, start_date, kickoff_date, division_id? }; division_id optional, Default = Division der aktiven Liga; 409 bei Duplikat, 422 wenn keine Division konfiguriert oder division_id ungültig — Admin',
                     ],
                     [
                         'method' => 'PATCH',
@@ -315,6 +318,7 @@ class Routing
                         'query_params' => [
                             'matchday_id' => 'UUID des Spieltags (optional)',
                             'season_id' => 'UUID der Saison (optional) — gibt alle TF der Saison zurück',
+                            'division_id' => 'UUID der Division (optional, nur mit season_id) — überschreibt die Division der aktiven Liga',
                         ],
                     ],
                     [

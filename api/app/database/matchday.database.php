@@ -2,10 +2,10 @@
 
 trait MatchdayTrait
 {
-    public function getMatchdayList(?string $seasonId = null): array
+    public function getMatchdayList(?string $seasonId = null, ?string $divisionId = null): array
     {
         if ($seasonId) {
-            $divisionId = $this->getLeagueDivisionId();
+            $divisionId = $divisionId ?? $this->getLeagueDivisionId();
             if ($divisionId !== null) {
                 $query = $this->con->prepare("
                     SELECT m.*,
@@ -33,9 +33,9 @@ trait MatchdayTrait
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function createMatchday(string $seasonId, int $number, string $startDate, string $kickoffDate): string
+    public function createMatchday(string $seasonId, int $number, string $startDate, string $kickoffDate, ?string $divisionId = null): string
     {
-        $divisionId = $this->getLeagueDivisionId();
+        $divisionId = $divisionId ?? $this->getLeagueDivisionId();
         if (!$divisionId) {
             throw new \RuntimeException('Liga hat keine Division konfiguriert');
         }

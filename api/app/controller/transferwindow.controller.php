@@ -17,7 +17,8 @@ class TransferwindowController extends _BaseController
 
         return $this->db->getTransferwindowList(
             $this->params['matchday_id'] ?? null,
-            $this->params['season_id']   ?? null
+            $this->params['season_id']   ?? null,
+            $this->params['division_id'] ?? null
         );
     }
 

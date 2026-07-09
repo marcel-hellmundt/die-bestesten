@@ -107,6 +107,17 @@
           @if (isAdmin()) {
             <button class="btn btn-sm" (click)="openCreateMatchday()">+ Spieltag hinzufügen</button>
           }
+          @if (isAdmin() && cache.divisions().length > 0) {
+            <select
+              class="input division-select"
+              [value]="selectedDivisionId() ?? ''"
+              (change)="onDivisionChange($any($event.target).value)"
+            >
+              @for (d of cache.divisions(); track d.id) {
+                <option [value]="d.id">{{ d.name }}</option>
+              }
+            </select>
+          }
         </div>
 
         @if (creatingMatchday()) {

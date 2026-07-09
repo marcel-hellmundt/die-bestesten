@@ -15,7 +15,7 @@ class MatchdayController extends _BaseController
             return $matchday;
         }
 
-        return $this->db->getMatchdayList($this->params['season_id'] ?? null);
+        return $this->db->getMatchdayList($this->params['season_id'] ?? null, $this->params['division_id'] ?? null);
     }
 
     protected function post(): mixed
@@ -27,6 +27,7 @@ class MatchdayController extends _BaseController
         $number      = isset($body['number']) ? (int) $body['number'] : null;
         $startDate   = $body['start_date']   ?? null;
         $kickoffDate = $body['kickoff_date'] ?? null;
+        $divisionId  = $body['division_id']  ?? null;
 
         if (!$seasonId || !$number || !$startDate || !$kickoffDate) {
             http_response_code(400);
@@ -34,11 +35,16 @@ class MatchdayController extends _BaseController
         }
 
         try {
-            $id = $this->db->createMatchday($seasonId, $number, $startDate, $kickoffDate);
+            $id = $this->db->createMatchday($seasonId, $number, $startDate, $kickoffDate, $divisionId);
         } catch (\RuntimeException $e) {
             http_response_code(422);
             return ['status' => false, 'message' => $e->getMessage()];
         } catch (\PDOException $e) {
+            $mysqlErrorCode = $e->errorInfo[1] ?? null;
+            if ($e->getCode() === '23000' && $mysqlErrorCode === 1452) {
+                http_response_code(422);
+                return ['status' => false, 'message' => 'Ungültige division_id'];
+            }
             if ($e->getCode() === '23000') {
                 http_response_code(409);
                 return ['status' => false, 'message' => 'Spieltag existiert bereits für diese Division'];

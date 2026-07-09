@@ -95,8 +95,8 @@ POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → s
 GET      /country[/:id]
 GET      /season[/:id|/active]
 POST     /season                — {start_date: YYYY-MM-DD} → {id}; UNIQUE auf start_date — Admin
-GET      /matchday[/:id]       — ?season_id gibt has_ratings (bool) zurück; filtert nach Division der aktiven Liga — Auth
-POST     /matchday             — {season_id, number, start_date, kickoff_date} → {id}; division_id aus Liga-Kontext; 409 bei Duplikat, 422 wenn keine Division konfiguriert — Admin
+GET      /matchday[/:id]       — ?season_id gibt has_ratings (bool) zurück; filtert nach Division der aktiven Liga — Auth; ?division_id überschreibt die Division (Default aus Liga-Kontext)
+POST     /matchday             — {season_id, number, start_date, kickoff_date, division_id?} → {id}; division_id optional (Default aus Liga-Kontext); 409 bei Duplikat, 422 wenn keine Division konfiguriert oder division_id ungültig — Admin
 PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team_rating + Transaktionen erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an Admins (nur wenn email hinterlegt) — Admin; ODER beliebige Kombination aus {number, start_date, kickoff_date} — Stammdaten bearbeiten; 409 wenn completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date — Admin
 DELETE   /matchday/:id         — 409 wenn completed oder bereits in der Liga verwendet (team_lineup/team_rating/transaction/player_in_team/h2h_match) oder von Bewertungen/Transferfenstern referenziert — Admin
 GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_points}], top_matchdays: [{points,matchday_number,team_name,season_id,manager_name}] } — Auth
@@ -112,7 +112,7 @@ POST     /league/:id/deny      — {manager_id} Mitgliedschaft ablehnen (→deni
 POST     /league/validate_ratings  — {league_id} — prüft team_ratings ab 2020/21 gegen team_lineup + player_rating — Admin
 POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB) — Admin
 POST     /league/conclude_season   — {league_id, season_id} — Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent; wird auch automatisch bei Spieltag 34 ausgeführt — Admin
-GET      /transferwindow[/:id] — ?matchday_id|season_id; jedes Fenster enthält offer_count (Anzahl Gebote)
+GET      /transferwindow[/:id] — ?matchday_id|season_id (+ optional ?division_id überschreibt Division der aktiven Liga); jedes Fenster enthält offer_count (Anzahl Gebote)
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
 PATCH    /transferwindow/:id   — beliebige Kombination aus {start_date,end_date}; 422 bei Regelverstoß (außerhalb Spieltag-Zeitraum), 409 bei Überschneidung — Admin
 DELETE   /transferwindow/:id   — 409 wenn bereits Gebote (offer) existieren — Admin

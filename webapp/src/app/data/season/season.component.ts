@@ -3,6 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, combineLatest, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { DataCacheService } from '../../core/data-cache.service';
 import { Season } from '../../core/models/season.model';
 import { Matchday } from '../../core/models/matchday.model';
 import { Transferwindow } from '../../core/models/transferwindow.model';
@@ -16,6 +17,12 @@ import { Transferwindow } from '../../core/models/transferwindow.model';
 export class SeasonDataComponent {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
+  cache         = inject(DataCacheService);
+
+  constructor() {
+    this.cache.ensureDivisions();
+    this.cache.ensureLeague();
+  }
 
   private reload$       = new BehaviorSubject<void>(undefined);
   private detailReload$ = new BehaviorSubject<void>(undefined);
@@ -55,15 +62,33 @@ export class SeasonDataComponent {
     }
   });
 
-  private selectedSeasonId$ = toObservable(computed(() => this.selectedSeason()?.id ?? null));
+  // Which division's matchdays to show/create — defaults to the active league's own
+  // division once loaded, but admins can switch it via the dropdown to manage other leagues.
+  selectedDivisionId = signal<string | null>(null);
+
+  private divisionDefaultEffect = effect(() => {
+    const leagueDivisionId = this.cache.leagueDivisionId();
+    if (leagueDivisionId && this.selectedDivisionId() === null) {
+      this.selectedDivisionId.set(leagueDivisionId);
+    }
+  });
+
+  onDivisionChange(divisionId: string): void {
+    this.selectedDivisionId.set(divisionId);
+    this.selectedMatchday.set(null);
+  }
+
+  private selectedSeasonId$   = toObservable(computed(() => this.selectedSeason()?.id ?? null));
+  private selectedDivisionId$ = toObservable(this.selectedDivisionId);
 
   private detailState = toSignal(
-    combineLatest([this.selectedSeasonId$, this.detailReload$]).pipe(
-      switchMap(([id]) => {
+    combineLatest([this.selectedSeasonId$, this.selectedDivisionId$, this.detailReload$]).pipe(
+      switchMap(([id, divisionId]) => {
         if (!id) return of({ matchdays: [] as Matchday[], transferwindows: [] as Transferwindow[], loading: false });
+        const divisionParam = divisionId ? `&division_id=${divisionId}` : '';
         return forkJoin({
-          matchdays:       this.api.get<any[]>(`matchday?season_id=${id}`),
-          transferwindows: this.api.get<any[]>(`transferwindow?season_id=${id}`),
+          matchdays:       this.api.get<any[]>(`matchday?season_id=${id}${divisionParam}`),
+          transferwindows: this.api.get<any[]>(`transferwindow?season_id=${id}${divisionParam}`),
         }).pipe(
           map(({ matchdays, transferwindows }) => ({
             matchdays:       matchdays.map(Matchday.from),
@@ -441,6 +466,7 @@ export class SeasonDataComponent {
       number,
       start_date:   this.createMdStart(),
       kickoff_date: this.combineDateTime(this.createMdKickoffDate(), this.createMdKickoffTime()),
+      division_id:  this.selectedDivisionId(),
     }).subscribe({
       next: () => {
         this.creatingMatchday.set(false);

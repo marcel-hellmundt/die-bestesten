@@ -2,7 +2,7 @@
 
 trait TransferwindowTrait
 {
-    public function getTransferwindowList(?string $matchdayId = null, ?string $seasonId = null): array
+    public function getTransferwindowList(?string $matchdayId = null, ?string $seasonId = null, ?string $divisionId = null): array
     {
         if ($matchdayId) {
             $query = $this->con->prepare(
@@ -10,7 +10,7 @@ trait TransferwindowTrait
             );
             $query->execute([':matchday_id' => $matchdayId]);
         } elseif ($seasonId) {
-            $divisionId = $this->getLeagueDivisionId();
+            $divisionId = $divisionId ?? $this->getLeagueDivisionId();
             if ($divisionId !== null) {
                 $query = $this->con->prepare(
                     "SELECT tw.* FROM transferwindow tw
