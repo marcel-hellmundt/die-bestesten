@@ -225,7 +225,17 @@
                           />
                         </div>
                       </td>
-                      <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
+                      <td class="col-tw">
+                        {{ transferwindowCount(md.id) }}
+                        @if (hasLowTransferwindowCount(md)) {
+                          <img
+                            class="tw-count-warning"
+                            src="img/icons/warning.png"
+                            alt=""
+                            title="Freitags-Spieltag mit weniger als 2 Transferfenstern"
+                          />
+                        }
+                      </td>
                       <td class="col-actions" (click)="$event.stopPropagation()">
                         <div class="actions-row">
                           <button class="btn btn-ghost btn-sm" [disabled]="editMdState() === 'loading'" (click)="cancelEditMatchday()">Abbrechen</button>
@@ -240,7 +250,17 @@
                       <td class="col-number">{{ md.number }}</td>
                       <td>{{ formatDate(md.start_date) }}</td>
                       <td>{{ formatDatetime(md.kickoff_date) }}</td>
-                      <td class="col-tw">{{ transferwindowCount(md.id) }}</td>
+                      <td class="col-tw">
+                        {{ transferwindowCount(md.id) }}
+                        @if (hasLowTransferwindowCount(md)) {
+                          <img
+                            class="tw-count-warning"
+                            src="img/icons/warning.png"
+                            alt=""
+                            title="Freitags-Spieltag mit weniger als 2 Transferfenstern"
+                          />
+                        }
+                      </td>
                       @if (isAdmin()) {
                         <td class="col-actions" (click)="$event.stopPropagation()">
                           <div class="actions-row">

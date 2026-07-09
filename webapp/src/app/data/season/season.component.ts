@@ -97,6 +97,12 @@ export class SeasonDataComponent {
     return this.transferwindows().filter(tw => tw.matchday_id === matchdayId).length;
   }
 
+  // Friday-kickoff matchdays are expected to have at least 2 transfer windows.
+  hasLowTransferwindowCount(md: Matchday): boolean {
+    const isFriday = new Date(md.kickoff_date.replace(' ', 'T')).getDay() === 5;
+    return isFriday && this.transferwindowCount(md.id) < 2;
+  }
+
   selectSeasonById(id: string): void {
     const season = this.items().find(s => s.id === id);
     if (season) this.selectSeason(season);
