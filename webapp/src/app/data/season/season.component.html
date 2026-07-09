@@ -226,15 +226,17 @@
                         </div>
                       </td>
                       <td class="col-tw">
-                        @if (hasLowTransferwindowCount(md)) {
-                          <img
-                            class="tw-count-warning"
-                            src="img/icons/warning.png"
-                            alt=""
-                            title="Freitags-Spieltag mit weniger als 2 Transferfenstern"
-                          />
-                        }
-                        {{ transferwindowCount(md.id) }}
+                        <span class="tw-count">
+                          @if (hasLowTransferwindowCount(md)) {
+                            <img
+                              class="tw-count-warning"
+                              src="img/icons/warning.png"
+                              alt=""
+                              title="Freitags-Spieltag mit weniger als 2 Transferfenstern"
+                            />
+                          }
+                          {{ transferwindowCount(md.id) }}
+                        </span>
                       </td>
                       <td class="col-actions" (click)="$event.stopPropagation()">
                         <div class="actions-row">
@@ -251,15 +253,17 @@
                       <td>{{ formatDate(md.start_date) }}</td>
                       <td>{{ formatDatetime(md.kickoff_date) }}</td>
                       <td class="col-tw">
-                        @if (hasLowTransferwindowCount(md)) {
-                          <img
-                            class="tw-count-warning"
-                            src="img/icons/warning.png"
-                            alt=""
-                            title="Freitags-Spieltag mit weniger als 2 Transferfenstern"
-                          />
-                        }
-                        {{ transferwindowCount(md.id) }}
+                        <span class="tw-count">
+                          @if (hasLowTransferwindowCount(md)) {
+                            <img
+                              class="tw-count-warning"
+                              src="img/icons/warning.png"
+                              alt=""
+                              title="Freitags-Spieltag mit weniger als 2 Transferfenstern"
+                            />
+                          }
+                          {{ transferwindowCount(md.id) }}
+                        </span>
                       </td>
                       @if (isAdmin()) {
                         <td class="col-actions" (click)="$event.stopPropagation()">

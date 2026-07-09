@@ -62,12 +62,16 @@
   font-size: $font-sm;
 }
 
+.tw-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .tw-count-warning {
   width: 12px;
   height: 12px;
   object-fit: contain;
-  margin-right: 2px;
-  vertical-align: middle;
 }
 
 .col-actions {
