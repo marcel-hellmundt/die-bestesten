@@ -36,6 +36,10 @@
 }
 
 .data-table tbody tr {
+  &.row--current {
+    background-color: #fef9c3;
+  }
+
   &.row--selected {
     background-color: $color-surface-alt;
 

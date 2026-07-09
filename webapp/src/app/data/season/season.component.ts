@@ -80,6 +80,13 @@ export class SeasonDataComponent {
   transferwindows = computed(() => this.detailState()?.transferwindows ?? []);
   detailLoading   = computed(() => this.detailState()?.loading         ?? false);
 
+  // Highest-numbered matchday whose start_date has already begun — same "current matchday"
+  // definition used on the home page. matchdays() is already sorted DESC by number.
+  currentMatchdayId = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.matchdays().find(m => m.start_date <= today)?.id ?? null;
+  });
+
   matchdayTransferwindows = computed(() => {
     const id = this.selectedMatchday()?.id;
     if (!id) return [];

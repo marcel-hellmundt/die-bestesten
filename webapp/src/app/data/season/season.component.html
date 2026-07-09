@@ -188,6 +188,7 @@
                   <tr
                     class="row-link"
                     [class.row--selected]="selectedMatchday()?.id === md.id"
+                    [class.row--current]="currentMatchdayId() === md.id"
                     (click)="editingMatchdayId() !== md.id && selectMatchday(md)"
                   >
                     @if (editingMatchdayId() === md.id) {
