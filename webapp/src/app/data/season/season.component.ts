@@ -299,6 +299,71 @@ export class SeasonDataComponent {
     });
   }
 
+  private toDatetimeLocal(mysqlDt: string): string {
+    return mysqlDt.replace(' ', 'T').substring(0, 16);
+  }
+
+  editingTwId = signal<string | null>(null);
+  editTwStart = signal('');
+  editTwEnd   = signal('');
+  editTwState = signal<'idle' | 'loading' | 'error'>('idle');
+  editTwError = signal('');
+
+  startEditTw(tw: Transferwindow): void {
+    this.editingTwId.set(tw.id);
+    this.editTwStart.set(this.toDatetimeLocal(tw.start_date));
+    this.editTwEnd.set(this.toDatetimeLocal(tw.end_date));
+    this.editTwState.set('idle');
+    this.editTwError.set('');
+  }
+
+  cancelEditTw(): void {
+    this.editingTwId.set(null);
+  }
+
+  submitEditTw(tw: Transferwindow): void {
+    if (this.editTwStart() >= this.editTwEnd()) {
+      this.editTwState.set('error');
+      this.editTwError.set('Start muss vor Ende liegen');
+      return;
+    }
+    this.editTwState.set('loading');
+    this.api.patch<any>(`transferwindow/${tw.id}`, {
+      start_date: this.toMysqlDatetime(this.editTwStart()),
+      end_date:   this.toMysqlDatetime(this.editTwEnd()),
+    }).subscribe({
+      next: () => {
+        this.editingTwId.set(null);
+        this.editTwState.set('idle');
+        this.detailReload$.next();
+      },
+      error: (err) => {
+        this.editTwState.set('error');
+        this.editTwError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
+
+  deletingTwId  = signal<string | null>(null);
+  twDeleteError = signal<string | null>(null);
+
+  deleteTw(tw: Transferwindow, label: string): void {
+    if (!confirm(`${label} wirklich löschen?`)) return;
+
+    this.deletingTwId.set(tw.id);
+    this.twDeleteError.set(null);
+    this.api.delete<any>(`transferwindow/${tw.id}`).subscribe({
+      next: () => {
+        this.deletingTwId.set(null);
+        this.detailReload$.next();
+      },
+      error: (err) => {
+        this.deletingTwId.set(null);
+        this.twDeleteError.set(err?.error?.message ?? 'Fehler beim Löschen');
+      },
+    });
+  }
+
   creatingMatchday           = signal(false);
   createMdNumber             = signal<number | null>(null);
   createMdStart              = signal('');

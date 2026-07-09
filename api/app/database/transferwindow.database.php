@@ -58,4 +58,31 @@ trait TransferwindowTrait
         ]);
         return $this->getTransferwindowById($id);
     }
+
+    public function updateTransferwindow(string $id, string $startDate, string $endDate): array
+    {
+        $this->con->prepare(
+            "UPDATE transferwindow SET start_date = :start_date, end_date = :end_date WHERE id = :id"
+        )->execute([':start_date' => $startDate, ':end_date' => $endDate, ':id' => $id]);
+        return ['status' => true];
+    }
+
+    public function deleteTransferwindow(string $id): array
+    {
+        $tw = $this->getTransferwindowById($id);
+        if (!$tw) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Transferwindow not found'];
+        }
+
+        $offerCount = $this->con_league->prepare("SELECT COUNT(*) FROM offer WHERE transferwindow_id = ?");
+        $offerCount->execute([$id]);
+        if ((int) $offerCount->fetchColumn() > 0) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Transferfenster hat bereits Gebote und kann nicht gelöscht werden'];
+        }
+
+        $this->con->prepare("DELETE FROM transferwindow WHERE id = :id")->execute([':id' => $id]);
+        return ['status' => true];
+    }
 }

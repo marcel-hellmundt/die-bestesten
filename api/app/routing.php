@@ -326,7 +326,19 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/transferwindow',
-                        'description' => 'Neues Transferfenster anlegen — Body: { matchday_id, start_date, end_date } — Maintainer+',
+                        'description' => 'Neues Transferfenster anlegen — Body: { matchday_id, start_date, end_date }; muss innerhalb Spieltag-Start und -Anpfiff liegen, darf sich nicht mit bestehenden Fenstern überschneiden — Maintainer+',
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/transferwindow/:id',
+                        'description' => 'Start/Ende bearbeiten — Body: beliebige Kombination aus start_date, end_date; gleiche Validierung wie beim Anlegen (422 bei Regelverstoß, 409 bei Überschneidung) — Admin',
+                        'path_params' => [':id' => 'UUID des Transferfensters'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/transferwindow/:id',
+                        'description' => 'Transferfenster löschen — 409 wenn bereits Gebote (offer) darauf existieren — Admin',
+                        'path_params' => [':id' => 'UUID des Transferfensters'],
                     ],
                 ],
             ]),

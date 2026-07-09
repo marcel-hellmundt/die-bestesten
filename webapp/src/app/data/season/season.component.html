@@ -272,17 +272,64 @@
                               @for (tw of matchdayTransferwindows(); track tw.id; let i = $index) {
                                 <div class="tw-card">
                                   <span class="tw-card__label">Fenster {{ i + 1 }}</span>
-                                  <div class="tw-card__row">
-                                    <span class="tw-card__key">Start</span>
-                                    <span>{{ formatDatetime(tw.start_date) }}</span>
-                                  </div>
-                                  <div class="tw-card__row">
-                                    <span class="tw-card__key">Ende</span>
-                                    <span>{{ formatDatetime(tw.end_date) }}</span>
-                                  </div>
+                                  @if (editingTwId() === tw.id) {
+                                    <div class="tw-form__fields">
+                                      <div class="tw-form__field">
+                                        <label class="tw-form__label">Start</label>
+                                        <input
+                                          class="input"
+                                          type="datetime-local"
+                                          [value]="editTwStart()"
+                                          (input)="editTwStart.set($any($event.target).value)"
+                                        />
+                                      </div>
+                                      <div class="tw-form__field">
+                                        <label class="tw-form__label">Ende</label>
+                                        <input
+                                          class="input"
+                                          type="datetime-local"
+                                          [value]="editTwEnd()"
+                                          (input)="editTwEnd.set($any($event.target).value)"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div class="tw-form__actions">
+                                      <button class="btn btn-sm" [disabled]="editTwState() === 'loading'" (click)="cancelEditTw()">Abbrechen</button>
+                                      <button
+                                        class="btn btn-primary btn-sm"
+                                        [disabled]="editTwState() === 'loading'"
+                                        (click)="submitEditTw(tw)"
+                                      >{{ editTwState() === 'loading' ? 'Speichert…' : 'Speichern' }}</button>
+                                    </div>
+                                    @if (editTwState() === 'error') {
+                                      <p class="state-msg state-msg--error">{{ editTwError() }}</p>
+                                    }
+                                  } @else {
+                                    <div class="tw-card__row">
+                                      <span class="tw-card__key">Start</span>
+                                      <span>{{ formatDatetime(tw.start_date) }}</span>
+                                    </div>
+                                    <div class="tw-card__row">
+                                      <span class="tw-card__key">Ende</span>
+                                      <span>{{ formatDatetime(tw.end_date) }}</span>
+                                    </div>
+                                    @if (isAdmin()) {
+                                      <div class="actions-row tw-card__actions">
+                                        <button class="btn btn-ghost btn-sm" (click)="startEditTw(tw)">Bearbeiten</button>
+                                        <button
+                                          class="btn btn-ghost btn-sm btn-danger"
+                                          [disabled]="deletingTwId() === tw.id"
+                                          (click)="deleteTw(tw, 'Fenster ' + (i + 1))"
+                                        >Löschen</button>
+                                      </div>
+                                    }
+                                  }
                                 </div>
                               }
                             </div>
+                            @if (twDeleteError()) {
+                              <p class="state-msg state-msg--error">{{ twDeleteError() }}</p>
+                            }
                           }
                           @if (isMaintainer()) {
                             @if (addingMatchdayId() === md.id) {

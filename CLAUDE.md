@@ -114,6 +114,8 @@ POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, 
 POST     /league/conclude_season   — {league_id, season_id} — Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent; wird auch automatisch bei Spieltag 34 ausgeführt — Admin
 GET      /transferwindow[/:id] — ?matchday_id|season_id
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
+PATCH    /transferwindow/:id   — beliebige Kombination aus {start_date,end_date}; 422 bei Regelverstoß (außerhalb Spieltag-Zeitraum), 409 bei Überschneidung — Admin
+DELETE   /transferwindow/:id   — 409 wenn bereits Gebote (offer) existieren — Admin
 GET      /team_lineup          — ?team_id (erforderlich), ?matchday_id (optional) → {matchday, matchdays[], nominated[], bench[], points, max_points} — jeder Spieler enthält grade, points, goals, assists, clean_sheet, sds, participation; Auto-Init für aktuellen Spieltag wenn noch keine Einträge — Auth; alternativ ?player_id + ?season_id → [{matchday_number, nominated}] — Auth
 PATCH    /team_lineup          — {team_id, matchday_id, players:[{player_id, nominated, position_index}]} — nur eigenes Team, nur Editierfenster (start_date ≤ now < kickoff_date) — Auth
 GET      /player_in_team             — ?team_id (erforderlich) → aktive Spieler mit position, price, points, current_club_id, club_logo_uploaded; ?include_former=1 → {current, former}; ?player_id → aktuelles Team oder null; ?player_id + ?season_id → Teamhistorie [{team_id, team_name, color, manager_name, alias, from_matchday_number, to_matchday_number}] — Auth

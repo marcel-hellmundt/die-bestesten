@@ -2,7 +2,7 @@
 
 class TransferwindowController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'maintainer'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'maintainer', 'PATCH' => 'admin', 'DELETE' => 'admin'];
 
     protected function get(): mixed
     {
@@ -74,6 +74,67 @@ class TransferwindowController extends _BaseController
         return $this->db->createTransferwindow($matchdayId, $startDate, $endDate);
     }
 
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
-    protected function delete(): mixed { return $this->methodNotAllowed(); }
+    protected function patch(): mixed
+    {
+        if (!$this->id) return $this->methodNotAllowed();
+
+        $tw = $this->db->getTransferwindowById($this->id);
+        if (!$tw) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Transferwindow not found'];
+        }
+
+        $body = $this->body();
+        if (!array_key_exists('start_date', $body) && !array_key_exists('end_date', $body)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'start_date oder end_date erforderlich'];
+        }
+        $startDate = $body['start_date'] ?? $tw['start_date'];
+        $endDate   = $body['end_date']   ?? $tw['end_date'];
+
+        $matchday = $this->db->getMatchdayById($tw['matchday_id']);
+        if (!$matchday) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Spieltag nicht gefunden'];
+        }
+
+        $newStart  = new DateTime($startDate);
+        $newEnd    = new DateTime($endDate);
+        $mdStart   = new DateTime($matchday['start_date']);
+        $mdKickoff = $matchday['kickoff_date'] ? new DateTime($matchday['kickoff_date']) : null;
+
+        if ($newStart >= $newEnd) {
+            http_response_code(422);
+            return ['status' => false, 'message' => 'Start muss vor Ende liegen'];
+        }
+
+        if ($newStart < $mdStart) {
+            http_response_code(422);
+            return ['status' => false, 'message' => 'Transferfenster darf nicht vor Spieltag-Start (' . $matchday['start_date'] . ') öffnen'];
+        }
+
+        if ($mdKickoff && $newEnd > $mdKickoff) {
+            http_response_code(422);
+            return ['status' => false, 'message' => 'Transferfenster muss vor dem Anpfiff (' . $matchday['kickoff_date'] . ') schließen'];
+        }
+
+        $existing = $this->db->getTransferwindowList($tw['matchday_id'], null);
+        foreach ($existing as $other) {
+            if ($other['id'] === $this->id) continue;
+            $exStart = new DateTime($other['start_date']);
+            $exEnd   = new DateTime($other['end_date']);
+            if ($newStart < $exEnd && $newEnd > $exStart) {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Überschneidung mit bestehendem Transferfenster (' . $other['start_date'] . ' – ' . $other['end_date'] . ')'];
+            }
+        }
+
+        return $this->db->updateTransferwindow($this->id, $startDate, $endDate);
+    }
+
+    protected function delete(): mixed
+    {
+        if (!$this->id) return $this->methodNotAllowed();
+        return $this->db->deleteTransferwindow($this->id);
+    }
 }
