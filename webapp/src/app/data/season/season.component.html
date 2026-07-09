@@ -315,18 +315,21 @@
                                       <span class="tw-card__key">Ende</span>
                                       <span>{{ formatDatetime(tw.end_date) }}</span>
                                     </div>
-                                    @if (isAdmin()) {
-                                      <div class="actions-row tw-card__actions">
-                                        <button class="btn btn-ghost btn-sm" (click)="startEditTw(tw)">Bearbeiten</button>
-                                        <button
-                                          class="icon-btn-danger"
-                                          [disabled]="deletingTwId() === tw.id"
-                                          (click)="deleteTw(tw, 'Fenster ' + (i + 1))"
-                                          aria-label="Transferfenster löschen"
-                                          title="Transferfenster löschen"
-                                        ><app-icon name="trash" /></button>
-                                      </div>
-                                    }
+                                    <div class="tw-card__footer">
+                                      <span class="tw-card__offer-badge" [title]="tw.offer_count + ' Gebote'">{{ tw.offer_count }}</span>
+                                      @if (isAdmin()) {
+                                        <div class="actions-row">
+                                          <button class="btn btn-ghost btn-sm" (click)="startEditTw(tw)">Bearbeiten</button>
+                                          <button
+                                            class="icon-btn-danger"
+                                            [disabled]="deletingTwId() === tw.id"
+                                            (click)="deleteTw(tw, 'Fenster ' + (i + 1))"
+                                            aria-label="Transferfenster löschen"
+                                            title="Transferfenster löschen"
+                                          ><app-icon name="trash" /></button>
+                                        </div>
+                                      }
+                                    </div>
                                   }
                                 </div>
                               }

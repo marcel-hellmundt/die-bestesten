@@ -33,7 +33,23 @@ trait TransferwindowTrait
             $query = $this->con->prepare("SELECT * FROM transferwindow ORDER BY start_date ASC");
             $query->execute();
         }
-        return $query->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($rows)) {
+            $ids = array_column($rows, 'id');
+            $ph  = implode(',', array_fill(0, count($ids), '?'));
+            $countQuery = $this->con_league->prepare(
+                "SELECT transferwindow_id, COUNT(*) AS cnt FROM offer WHERE transferwindow_id IN ($ph) GROUP BY transferwindow_id"
+            );
+            $countQuery->execute($ids);
+            $counts = array_column($countQuery->fetchAll(PDO::FETCH_ASSOC), 'cnt', 'transferwindow_id');
+            foreach ($rows as &$row) {
+                $row['offer_count'] = (int) ($counts[$row['id']] ?? 0);
+            }
+            unset($row);
+        }
+
+        return $rows;
     }
 
     public function getTransferwindowById(string $id): array|false
