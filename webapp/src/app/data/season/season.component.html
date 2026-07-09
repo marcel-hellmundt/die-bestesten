@@ -245,10 +245,12 @@
                           <div class="actions-row">
                             <button class="btn btn-ghost btn-sm" (click)="startEditMatchday(md)">Bearbeiten</button>
                             <button
-                              class="btn btn-ghost btn-sm btn-danger"
+                              class="icon-btn-danger"
                               [disabled]="deletingMatchdayId() === md.id"
                               (click)="deleteMatchday(md)"
-                            >Löschen</button>
+                              aria-label="Spieltag löschen"
+                              title="Spieltag löschen"
+                            ><app-icon name="trash" /></button>
                           </div>
                         </td>
                       }
@@ -317,10 +319,12 @@
                                       <div class="actions-row tw-card__actions">
                                         <button class="btn btn-ghost btn-sm" (click)="startEditTw(tw)">Bearbeiten</button>
                                         <button
-                                          class="btn btn-ghost btn-sm btn-danger"
+                                          class="icon-btn-danger"
                                           [disabled]="deletingTwId() === tw.id"
                                           (click)="deleteTw(tw, 'Fenster ' + (i + 1))"
-                                        >Löschen</button>
+                                          aria-label="Transferfenster löschen"
+                                          title="Transferfenster löschen"
+                                        ><app-icon name="trash" /></button>
                                       </div>
                                     }
                                   }

@@ -68,6 +68,31 @@
   gap: $space-2;
 }
 
+.icon-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: $radius-md;
+  background: none;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background-color $transition-fast, color $transition-fast;
+
+  &:hover {
+    background-color: color-mix(in srgb, $color-danger 12%, transparent);
+    color: $color-danger;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+}
+
 .edit-input-row {
   display: flex;
   gap: $space-2;
