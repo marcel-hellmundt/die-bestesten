@@ -97,10 +97,21 @@ export class SeasonDataComponent {
     return this.transferwindows().filter(tw => tw.matchday_id === matchdayId).length;
   }
 
-  // Friday-kickoff matchdays are expected to have at least 2 transfer windows.
+  private kickoffWeekday(md: Matchday): number {
+    return new Date(md.kickoff_date.replace(' ', 'T')).getDay();
+  }
+
+  // Friday-kickoff matchdays (and the special Saturday-kickoff matchday 34, the season
+  // finale) are expected to have at least 2 transfer windows — unless the previous
+  // matchday kicked off on a Tuesday, which leaves no time to open one.
   hasLowTransferwindowCount(md: Matchday): boolean {
-    const isFriday = new Date(md.kickoff_date.replace(' ', 'T')).getDay() === 5;
-    return isFriday && this.transferwindowCount(md.id) < 2;
+    const requiresTwo = this.kickoffWeekday(md) === 5 || md.number === 34;
+    if (!requiresTwo) return false;
+
+    const previous = this.matchdays().find(m => m.number === md.number - 1);
+    if (previous && this.kickoffWeekday(previous) === 2) return false;
+
+    return this.transferwindowCount(md.id) < 2;
   }
 
   selectSeasonById(id: string): void {
