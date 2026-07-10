@@ -9,8 +9,7 @@ trait ClubTrait
         s.name           AS stadium_name,
         s.capacity       AS stadium_capacity,
         s.lat            AS stadium_lat,
-        s.lng            AS stadium_lng,
-        s.opened_date    AS stadium_opened_date
+        s.lng            AS stadium_lng
         FROM club c
         LEFT JOIN club_stadium cs ON cs.club_id = c.id AND cs.to_date IS NULL
         LEFT JOIN stadium s ON s.id = cs.stadium_id
@@ -48,7 +47,6 @@ trait ClubTrait
                 'capacity'      => $row['stadium_capacity'] !== null ? (int) $row['stadium_capacity'] : null,
                 'lat'           => $row['stadium_lat'] !== null ? (float) $row['stadium_lat'] : null,
                 'lng'           => $row['stadium_lng'] !== null ? (float) $row['stadium_lng'] : null,
-                'opened_date'   => $row['stadium_opened_date'],
             ];
         }
 

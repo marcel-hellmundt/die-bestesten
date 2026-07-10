@@ -50,9 +50,6 @@
         @if (s.capacity) {
           <div class="map-card__row">{{ s.capacity | number: '1.0-0' }} Plätze</div>
         }
-        @if (s.opened_date) {
-          <div class="map-card__row">Eröffnet: {{ s.opened_date | date: 'dd.MM.yyyy' }}</div>
-        }
       </div>
     }
   </div>

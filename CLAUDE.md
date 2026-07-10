@@ -78,7 +78,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 | player_in_club | id PK, player_id FK, club_id FK, from_date DATE, to_date DATE?, on_loan BOOL — UNIQUE(player_id, club_id, from_date) |
 | player_rating | id PK, player_id FK, matchday_id FK, club_id FK? (zum Zeitpunkt; NULL für historische Daten), grade DECIMAL?, participation ENUM(starting/substitute)?, goals, assists, clean_sheet, sds BOOL, red_card, yellow_red_card, points — UNIQUE(player_id, matchday_id) |
 | transferwindow | id PK, matchday_id FK, start_date DATETIME, end_date DATETIME — 2–4 pro Spieltag |
-| stadium | id PK, official_name, name? (Spitzname/Alltagsname), capacity INT?, lat DECIMAL(9,6)?, lng DECIMAL(9,6)?, opened_date DATE?, closed_date DATE? |
+| stadium | id PK, official_name, name? (Spitzname/Alltagsname), capacity INT?, lat DECIMAL(9,6)?, lng DECIMAL(9,6)? |
 | club_stadium | id PK, club_id FK, stadium_id FK, from_date DATE, to_date DATE? — UNIQUE(club_id, from_date) |
 | award | id PK, name UNIQUE, icon VARCHAR(100)? (nur Dateiname, z.B. "trophy.png" → public/img/icons/), sort_index INT — Award-Typen; sort_index = Wichtigkeit (1 = wichtigster) |
 
@@ -92,8 +92,8 @@ PATCH    /club_in_season/:id   — Division/Position aktualisieren
 GET      /division[/:id]
 GET      /club[/:id]           — enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null — auch in der Liste
 POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → setzt club.logo_uploaded — Maintainer+
-GET      /stadium              — Alle Stadien inkl. lat/lng, capacity, opened_date und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Admin
-POST     /stadium              — {club_id, official_name, name?, capacity?, lat?, lng?, opened_date?, from_date?} → {id}; legt Stadion an und verknüpft es sofort als aktuelles Stadion des Clubs (club_stadium, to_date NULL); from_date default heute — Admin
+GET      /stadium              — Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Admin
+POST     /stadium              — {club_id, official_name, name?, capacity?, lat?, lng?, from_date?} → {id}; legt Stadion an und verknüpft es sofort als aktuelles Stadion des Clubs (club_stadium, to_date NULL); from_date default heute — Admin
 GET      /country[/:id]
 GET      /season[/:id|/active]
 POST     /season                — {start_date: YYYY-MM-DD} → {id}; UNIQUE auf start_date — Admin

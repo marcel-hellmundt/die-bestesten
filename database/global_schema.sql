@@ -144,9 +144,7 @@ CREATE TABLE IF NOT EXISTS stadium (
     name          VARCHAR(100)  DEFAULT NULL,        -- Umgangssprachlicher Name, z.B. "Allianz Arena"; NULL wenn kein Spitzname
     capacity      INT           DEFAULT NULL,        -- Zuschauerkapazität, z.B. 75000
     lat           DECIMAL(9,6)  DEFAULT NULL,        -- Breitengrad
-    lng           DECIMAL(9,6)  DEFAULT NULL,        -- Längengrad
-    opened_date   DATE          DEFAULT NULL,        -- Eröffnungsdatum
-    closed_date   DATE          DEFAULT NULL         -- Schließungsdatum (NULL = noch in Betrieb)
+    lng           DECIMAL(9,6)  DEFAULT NULL         -- Längengrad
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: club_stadium (m-n Beziehung club <-> stadium mit Zeitraum)

@@ -378,7 +378,6 @@ export class ClubDetailComponent {
   stadiumCapacity     = signal('');
   stadiumLat          = signal('');
   stadiumLng          = signal('');
-  stadiumOpenedDate   = signal('');
   stadiumFromDate     = signal('');
   stadiumSaving       = signal(false);
   stadiumError        = signal<string | null>(null);
@@ -389,7 +388,6 @@ export class ClubDetailComponent {
     this.stadiumCapacity.set('');
     this.stadiumLat.set('');
     this.stadiumLng.set('');
-    this.stadiumOpenedDate.set('');
     this.stadiumFromDate.set(new Date().toISOString().slice(0, 10));
     this.stadiumError.set(null);
     this.bottomSheet.open(this.stadiumSheet, { title: 'Stadion anlegen' });
@@ -407,7 +405,6 @@ export class ClubDetailComponent {
       capacity: this.stadiumCapacity() ? parseInt(this.stadiumCapacity(), 10) : null,
       lat: this.stadiumLat() ? parseFloat(this.stadiumLat()) : null,
       lng: this.stadiumLng() ? parseFloat(this.stadiumLng()) : null,
-      opened_date: this.stadiumOpenedDate() || null,
       from_date: this.stadiumFromDate() || null,
     };
 
@@ -424,7 +421,6 @@ export class ClubDetailComponent {
             capacity: body.capacity,
             lat: body.lat,
             lng: body.lng,
-            opened_date: body.opened_date,
           },
         });
         this.stadiumSaving.set(false);

@@ -12,7 +12,6 @@ export class StadiumMapEntry {
     public capacity: number | null,
     public lat: number | null,
     public lng: number | null,
-    public opened_date: string | null,
     public club: StadiumClub | null
   ) {}
 
@@ -28,7 +27,6 @@ export class StadiumMapEntry {
       data.capacity ?? null,
       data.lat ?? null,
       data.lng ?? null,
-      data.opened_date ?? null,
       data.club ?? null
     );
   }

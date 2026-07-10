@@ -20,15 +20,14 @@ class StadiumController extends _BaseController
             return ['status' => false, 'message' => 'club_id and official_name are required'];
         }
 
-        $name       = $body['name']        ?? null;
-        $capacity   = isset($body['capacity']) && $body['capacity'] !== '' ? (int) $body['capacity'] : null;
-        $lat        = isset($body['lat'])      && $body['lat']      !== '' ? (float) $body['lat']      : null;
-        $lng        = isset($body['lng'])      && $body['lng']      !== '' ? (float) $body['lng']      : null;
-        $openedDate = $body['opened_date'] ?: null;
-        $fromDate   = $body['from_date']   ?: date('Y-m-d');
+        $name     = $body['name']        ?? null;
+        $capacity = isset($body['capacity']) && $body['capacity'] !== '' ? (int) $body['capacity'] : null;
+        $lat      = isset($body['lat'])      && $body['lat']      !== '' ? (float) $body['lat']      : null;
+        $lng      = isset($body['lng'])      && $body['lng']      !== '' ? (float) $body['lng']      : null;
+        $fromDate = $body['from_date']   ?: date('Y-m-d');
 
         $stadiumId = $this->generateGUID();
-        $this->db->createStadium($stadiumId, $officialName, $name, $capacity, $lat, $lng, $openedDate);
+        $this->db->createStadium($stadiumId, $officialName, $name, $capacity, $lat, $lng);
 
         $linkId = $this->generateGUID();
         $this->db->linkClubStadium($linkId, $clubId, $stadiumId, $fromDate);

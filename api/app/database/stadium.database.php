@@ -8,12 +8,11 @@ trait StadiumTrait
         ?string $name,
         ?int $capacity,
         ?float $lat,
-        ?float $lng,
-        ?string $openedDate
+        ?float $lng
     ): void {
         $query = $this->con->prepare(
-            "INSERT INTO stadium (id, official_name, name, capacity, lat, lng, opened_date)
-             VALUES (:id, :official_name, :name, :capacity, :lat, :lng, :opened_date)"
+            "INSERT INTO stadium (id, official_name, name, capacity, lat, lng)
+             VALUES (:id, :official_name, :name, :capacity, :lat, :lng)"
         );
         $query->execute([
             ':id'            => $id,
@@ -22,7 +21,6 @@ trait StadiumTrait
             ':capacity'      => $capacity,
             ':lat'           => $lat,
             ':lng'           => $lng,
-            ':opened_date'   => $openedDate,
         ]);
     }
 
@@ -44,7 +42,7 @@ trait StadiumTrait
     {
         $query = $this->con->prepare("
             SELECT
-                s.id, s.official_name, s.name, s.capacity, s.lat, s.lng, s.opened_date,
+                s.id, s.official_name, s.name, s.capacity, s.lat, s.lng,
                 c.id             AS club_id,
                 c.name           AS club_name,
                 c.logo_uploaded  AS club_logo_uploaded
@@ -64,7 +62,6 @@ trait StadiumTrait
                 'capacity'      => $row['capacity'] !== null ? (int) $row['capacity'] : null,
                 'lat'           => $row['lat']      !== null ? (float) $row['lat']    : null,
                 'lng'           => $row['lng']      !== null ? (float) $row['lng']    : null,
-                'opened_date'   => $row['opened_date'],
                 'club'          => $row['club_id'] ? [
                     'id'            => $row['club_id'],
                     'name'          => $row['club_name'],

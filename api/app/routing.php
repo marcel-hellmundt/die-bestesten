@@ -259,7 +259,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/stadium',
-                        'description' => 'Alle Stadien inkl. lat/lng, capacity, opened_date und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Admin',
+                        'description' => 'Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Admin',
                     ],
                     [
                         'method' => 'POST',
@@ -272,7 +272,6 @@ class Routing
                             'capacity' => 'Zuschauerkapazität (optional)',
                             'lat' => 'Breitengrad (optional)',
                             'lng' => 'Längengrad (optional)',
-                            'opened_date' => 'Eröffnungsdatum YYYY-MM-DD (optional)',
                             'from_date' => 'Seit wann der Club dieses Stadion nutzt YYYY-MM-DD (optional, Default heute)',
                         ],
                     ],
