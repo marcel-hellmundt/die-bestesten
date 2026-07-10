@@ -341,7 +341,7 @@ class Routing
                     [
                         'method' => 'DELETE',
                         'path' => '/transferwindow/:id',
-                        'description' => 'Transferfenster löschen — 409 wenn bereits Gebote (offer) darauf existieren — Admin',
+                        'description' => 'Transferfenster löschen — 409 wenn bereits Gebote (offer) oder Verkäufe (sell) darauf existieren — Admin',
                         'path_params' => [':id' => 'UUID des Transferfensters'],
                     ],
                 ],

@@ -98,6 +98,13 @@ trait TransferwindowTrait
             return ['status' => false, 'message' => 'Transferfenster hat bereits Gebote und kann nicht gelöscht werden'];
         }
 
+        $sellCount = $this->con_league->prepare("SELECT COUNT(*) FROM sell WHERE transferwindow_id = ?");
+        $sellCount->execute([$id]);
+        if ((int) $sellCount->fetchColumn() > 0) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Transferfenster hat bereits Verkäufe und kann nicht gelöscht werden'];
+        }
+
         $this->con->prepare("DELETE FROM transferwindow WHERE id = :id")->execute([':id' => $id]);
         return ['status' => true];
     }
