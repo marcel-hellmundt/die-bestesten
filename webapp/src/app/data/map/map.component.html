@@ -14,6 +14,7 @@
         [position]="m.position"
         [icon]="m.icon"
         [title]="m.club.name"
+        [options]="{ zIndex: m.zIndex }"
         (mapClick)="openInfo(marker, m.stadium)"
       ></map-marker>
     }

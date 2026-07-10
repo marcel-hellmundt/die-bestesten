@@ -1,8 +1,9 @@
 import { Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { MapInfoWindow, MapMarker } from '@angular/google-maps';
 import { ApiService } from '../../core/api.service';
+import { DataCacheService } from '../../core/data-cache.service';
 import { GoogleMapsLoaderService } from '../../core/google-maps-loader.service';
 import { StadiumClub, StadiumMapEntry } from '../../core/models/stadium.model';
 import { environment } from '../../../environments/environment';
@@ -12,6 +13,7 @@ interface MarkerViewModel {
   club: StadiumClub;
   position: google.maps.LatLngLiteral;
   icon: google.maps.Icon;
+  zIndex: number;
 }
 
 // Light custom style — labels/POIs mostly stripped so the club logo markers stand out.
@@ -53,6 +55,7 @@ const MAP_STYLE: google.maps.MapTypeStyle[] = [
 })
 export class MapDataComponent {
   private api = inject(ApiService);
+  private cache = inject(DataCacheService);
   private mapsLoader = inject(GoogleMapsLoaderService);
 
   @ViewChild(MapInfoWindow) infoWindow!: MapInfoWindow;
@@ -71,18 +74,76 @@ export class MapDataComponent {
   loading  = computed(() => this.state()?.loading ?? true);
   error    = computed(() => this.state()?.error ?? null);
 
-  // Only clubs that currently have a stadium are shown — the marker icon is the club
-  // logo (or a placeholder), positioned at the stadium's coordinates.
+  // seasons() is DESC by start_date → [0] = current, [1] = previous — same convention used
+  // elsewhere (club.component.ts, ratings.component.ts) for the stacking-order tiebreakers below.
+  private currentSeasonId = computed(() => this.cache.seasons()[0]?.id ?? null);
+  private prevSeasonId    = computed(() => this.cache.seasons()[1]?.id ?? null);
+
+  private currentSeasonEntries = toSignal(
+    toObservable(this.currentSeasonId).pipe(
+      switchMap(id => (id ? this.api.get<any[]>(`club_in_season?season_id=${id}`) : of([] as any[]))),
+      catchError(() => of([] as any[])),
+    ),
+    { initialValue: [] as any[] },
+  );
+
+  private prevSeasonEntries = toSignal(
+    toObservable(this.prevSeasonId).pipe(
+      switchMap(id => (id ? this.api.get<any[]>(`club_in_season?season_id=${id}`) : of([] as any[]))),
+      catchError(() => of([] as any[])),
+    ),
+    { initialValue: [] as any[] },
+  );
+
+  // club_id -> current division level (1 = top division)
+  private clubLevel = computed(() => {
+    const levelByDivision = new Map(this.cache.divisions().map(d => [d.id, d.level]));
+    const map = new Map<string, number>();
+    for (const e of this.currentSeasonEntries()) {
+      const level = e.division_id ? levelByDivision.get(e.division_id) : undefined;
+      if (level !== undefined) map.set(e.club_id, level);
+    }
+    return map;
+  });
+
+  // club_id -> previous season's table position
+  private clubPrevPosition = computed(() => {
+    const map = new Map<string, number>();
+    for (const e of this.prevSeasonEntries()) {
+      if (e.position != null) map.set(e.club_id, e.position as number);
+    }
+    return map;
+  });
+
+  // Only clubs that currently have a stadium are shown — the marker icon is the club logo
+  // (or a placeholder), positioned at the stadium's coordinates. Stacking order (zIndex) is
+  // explicit rather than left to Maps' default screen-position stacking: higher division
+  // (lower level number) renders on top, previous-season table position breaks ties.
   markers = computed<MarkerViewModel[]>(() => {
-    const dims = this.logoDims();
-    return this.stadiums()
+    const dims  = this.logoDims();
+    const level = this.clubLevel();
+    const prevPos = this.clubPrevPosition();
+
+    const entries = this.stadiums()
       .filter((s): s is StadiumMapEntry & { club: StadiumClub } => s.lat != null && s.lng != null && s.club !== null)
       .map(s => ({
         stadium: s,
         club: s.club,
         position: { lat: s.lat as number, lng: s.lng as number },
         icon: this.clubIcon(s.club, dims[this.clubLogoUrl(s.club)]),
+        level: level.get(s.club.id) ?? Number.MAX_SAFE_INTEGER,
+        prevPos: prevPos.get(s.club.id) ?? Number.MAX_SAFE_INTEGER,
       }));
+
+    entries.sort((a, b) => a.level - b.level || a.prevPos - b.prevPos);
+
+    return entries.map((e, i) => ({
+      stadium: e.stadium,
+      club: e.club,
+      position: e.position,
+      icon: e.icon,
+      zIndex: entries.length - i,
+    }));
   });
 
   clubLogoUrl(club: StadiumClub): string {
@@ -143,6 +204,8 @@ export class MapDataComponent {
 
   constructor() {
     this.mapsLoader.load();
+    this.cache.ensureSeasons();
+    this.cache.ensureDivisions();
 
     effect(() => {
       for (const s of this.stadiums()) {
