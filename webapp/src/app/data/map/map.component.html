@@ -50,6 +50,13 @@
         @if (s.capacity) {
           <div class="map-card__row">{{ s.capacity | number: '1.0-0' }} Plätze</div>
         }
+        <button
+          class="map-card__visit-btn"
+          [class.map-card__visit-btn--active]="isVisited(s.id)"
+          (click)="toggleVisited(s.id)"
+        >
+          {{ isVisited(s.id) ? '✓ Besucht' : 'Als besucht markieren' }}
+        </button>
       </div>
     }
   </div>

@@ -259,7 +259,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/stadium',
-                        'description' => 'Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Admin',
+                        'description' => 'Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth',
                     ],
                     [
                         'method' => 'POST',
@@ -274,6 +274,30 @@ class Routing
                             'lng' => 'Längengrad (optional)',
                             'from_date' => 'Seit wann der Club dieses Stadion nutzt YYYY-MM-DD (optional, Default heute)',
                         ],
+                    ],
+                ],
+            ]),
+
+            new Route('manager_stadium', 'ManagerStadium', [
+                'title' => 'ManagerStadium',
+                'description' => 'Von einem Manager als besucht markierte Stadien',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/manager_stadium',
+                        'description' => 'Stadion-IDs, die der eingeloggte Manager als besucht markiert hat — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/manager_stadium',
+                        'description' => 'Stadion als besucht markieren (idempotent) — Auth',
+                        'body' => ['stadium_id' => 'UUID des Stadions (erforderlich)'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/manager_stadium/:stadium_id',
+                        'description' => 'Markierung als besucht wieder entfernen (idempotent) — Auth',
+                        'path_params' => [':stadium_id' => 'UUID des Stadions'],
                     ],
                 ],
             ]),

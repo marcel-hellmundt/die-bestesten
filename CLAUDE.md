@@ -92,8 +92,11 @@ PATCH    /club_in_season/:id   — Division/Position aktualisieren
 GET      /division[/:id]
 GET      /club[/:id]           — enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null — auch in der Liste
 POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → setzt club.logo_uploaded — Maintainer+
-GET      /stadium              — Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Admin
+GET      /stadium              — Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth
 POST     /stadium              — {club_id, official_name, name?, capacity?, lat?, lng?, from_date?} → {id}; legt Stadion an und verknüpft es sofort als aktuelles Stadion des Clubs (club_stadium, to_date NULL); from_date default heute — Admin
+GET      /manager_stadium      — Stadion-IDs, die der eingeloggte Manager als besucht markiert hat — Auth
+POST     /manager_stadium      — {stadium_id} — als besucht markieren (idempotent) — Auth
+DELETE   /manager_stadium/:stadium_id — Markierung entfernen (idempotent) — Auth
 GET      /country[/:id]
 GET      /season[/:id|/active]
 POST     /season                — {start_date: YYYY-MM-DD} → {id}; UNIQUE auf start_date — Admin
@@ -211,6 +214,8 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 **notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned, scouted_player_update
 
 **manager_achievement**: id PK, manager_id FK, achievement_id FK → achievement (echtes FK, gleiche DB!), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen
+
+**manager_stadium**: id PK, manager_id FK, stadium_id FK → stadium (echtes FK, gleiche DB!), created_at — UNIQUE(manager_id, stadium_id) — vom Manager als besucht markierte Stadien; idempotent per INSERT IGNORE
 
 **maintainer_contribution**: id PK, manager_id FK, player_rating_id (cross-DB auf global_schema.player_rating, kein FK), contribution_type ENUM(bulk_create/manual_create/grade), created_at — UNIQUE(player_rating_id, contribution_type) — trackt welcher Maintainer Aufstellung/Noten eingetragen hat; grade-Einträge werden per UPSERT ersetzt (letzter Setzer behält Credit)
 

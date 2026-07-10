@@ -158,6 +158,7 @@ export class MapDataComponent {
     const prevPos  = this.clubPrevPosition();
     const divisionByClub = this.clubDivisionId();
     const active   = this.activeDivisionIds();
+    const visited  = this.visitedStadiumIds();
 
     const entries = this.stadiums()
       .filter((s): s is StadiumMapEntry & { club: StadiumClub } => s.lat != null && s.lng != null && s.club !== null)
@@ -169,7 +170,7 @@ export class MapDataComponent {
         stadium: s,
         club: s.club,
         position: { lat: s.lat as number, lng: s.lng as number },
-        icon: this.clubIcon(s.club, dims[this.clubLogoUrl(s.club)]),
+        icon: this.clubIcon(s.club, visited.has(s.id), dims[this.clubLogoUrl(s.club)]),
         level: level.get(s.club.id) ?? Number.MAX_SAFE_INTEGER,
         prevLevel: prevLvl.get(s.club.id) ?? Number.MAX_SAFE_INTEGER,
         prevPos: prevPos.get(s.club.id) ?? Number.MAX_SAFE_INTEGER,
@@ -197,23 +198,47 @@ export class MapDataComponent {
   // Google Maps' scaledSize always stretches an icon to the exact box, unlike CSS
   // object-fit: contain. So the natural size of every logo is preloaded once and used
   // to scale proportionally within logoBox, keeping narrow/non-square crests undistorted.
+  // A grayscale+dimmed data-URL variant is generated at the same time (via canvas — the
+  // asset server sends Access-Control-Allow-Origin so this doesn't taint the canvas), since
+  // Google Maps' classic Icon has no CSS-filter equivalent for unvisited stadiums.
   private logoDims = signal<Record<string, { w: number; h: number }>>({});
+  private logoGrey = signal<Record<string, string>>({});
   private requestedLogos = new Set<string>();
 
   private preloadLogo(url: string): void {
     if (this.requestedLogos.has(url)) return;
     this.requestedLogos.add(url);
     const img = new Image();
-    img.onload = () => this.logoDims.update(m => ({ ...m, [url]: { w: img.naturalWidth, h: img.naturalHeight } }));
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      this.logoDims.update(m => ({ ...m, [url]: { w: img.naturalWidth, h: img.naturalHeight } }));
+      this.logoGrey.update(m => ({ ...m, [url]: this.toGreyscaleUrl(img) }));
+    };
     img.onerror = () => this.logoDims.update(m => ({ ...m, [url]: { w: 1, h: 1 } }));
     img.src = url;
   }
 
-  private clubIcon(club: StadiumClub, dims?: { w: number; h: number }): google.maps.Icon {
+  private toGreyscaleUrl(img: HTMLImageElement): string {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return img.src;
+    ctx.filter = 'grayscale(1) opacity(0.5)';
+    ctx.drawImage(img, 0, 0);
+    try {
+      return canvas.toDataURL('image/png');
+    } catch {
+      return img.src; // cross-origin canvas got tainted — fall back to the color icon
+    }
+  }
+
+  private clubIcon(club: StadiumClub, visited: boolean, dims?: { w: number; h: number }): google.maps.Icon {
     const box = this.logoBox;
     const { w, h } = dims ? this.fitInBox(dims.w, dims.h, box) : { w: box, h: box };
+    const url = this.clubLogoUrl(club);
     return {
-      url: this.clubLogoUrl(club),
+      url: visited ? url : (this.logoGrey()[url] ?? url),
       // Plain {width,height}/{x,y} objects work at runtime — avoids depending on
       // google.maps.Size/Point classes, which may not be loaded yet at this point.
       scaledSize: { width: w, height: h } as google.maps.Size,
@@ -245,10 +270,48 @@ export class MapDataComponent {
     this.selected.set(null);
   }
 
+  // Stadiums the logged-in manager has marked as visited.
+  private visitedStadiumIds = signal<Set<string>>(new Set());
+
+  isVisited(stadiumId: string): boolean {
+    return this.visitedStadiumIds().has(stadiumId);
+  }
+
+  toggleVisited(stadiumId: string): void {
+    const wasVisited = this.isVisited(stadiumId);
+
+    // Optimistic update, rolled back if the request fails.
+    this.visitedStadiumIds.update(set => {
+      const next = new Set(set);
+      if (wasVisited) next.delete(stadiumId);
+      else next.add(stadiumId);
+      return next;
+    });
+
+    const request = wasVisited
+      ? this.api.delete<{ status: boolean }>(`manager_stadium/${stadiumId}`)
+      : this.api.post<{ status: boolean }>('manager_stadium', { stadium_id: stadiumId });
+
+    request.subscribe({
+      error: () => {
+        this.visitedStadiumIds.update(set => {
+          const next = new Set(set);
+          if (wasVisited) next.add(stadiumId);
+          else next.delete(stadiumId);
+          return next;
+        });
+      },
+    });
+  }
+
   constructor() {
     this.mapsLoader.load();
     this.cache.ensureSeasons();
     this.cache.ensureDivisions();
+
+    this.api.get<string[]>('manager_stadium').pipe(catchError(() => of([]))).subscribe(ids => {
+      this.visitedStadiumIds.set(new Set(ids));
+    });
 
     effect(() => {
       for (const s of this.stadiums()) {

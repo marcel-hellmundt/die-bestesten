@@ -12,5 +12,6 @@ DirectoryIndex disabled
 <IfModule mod_headers.c>
     <FilesMatch "\.(png|jpg|jpeg|gif|webp)$">
         Header set Cache-Control "public, max-age=86400"
+        Header set Access-Control-Allow-Origin "*"
     </FilesMatch>
 </IfModule>

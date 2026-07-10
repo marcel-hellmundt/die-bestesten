@@ -2,7 +2,7 @@
 
 class StadiumController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'admin', 'POST' => 'admin'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'admin'];
 
     protected function get(): mixed
     {

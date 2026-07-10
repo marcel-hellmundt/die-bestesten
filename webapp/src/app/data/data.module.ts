@@ -4,7 +4,6 @@ import { RouterModule, Routes } from '@angular/router';
 import { GoogleMapsModule } from '@angular/google-maps';
 import { IconComponent } from '../shared/icon/icon.component';
 import { MaintainerGuard } from '../auth/maintainer.guard';
-import { AdminGuard } from '../auth/admin.guard';
 
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
@@ -24,7 +23,6 @@ import { ManagerDataComponent } from './manager/manager-data.component';
 import { MapDataComponent } from './map/map.component';
 
 const M = [MaintainerGuard];
-const A = [AdminGuard];
 
 const routes: Routes = [
   {
@@ -47,7 +45,8 @@ const routes: Routes = [
       { path: 'player/:id',    component: PlayerDetailComponent },
       { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
       { path: 'manager',       component: ManagerDataComponent,      canActivate: M },
-      { path: 'map',           component: MapDataComponent,          canActivate: A },
+      // map: no MaintainerGuard — every manager gets to mark stadiums as visited
+      { path: 'map',           component: MapDataComponent },
     ]
   }
 ];
