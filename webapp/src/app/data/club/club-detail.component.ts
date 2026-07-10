@@ -64,13 +64,15 @@ export class ClubDetailComponent {
 
   // Set right after a stadium is created — overlays the freshly created stadium onto the
   // loaded club without a network round-trip (same idea as logoBust for the logo upload).
-  private stadiumOverride = signal<Stadium | null>(null);
+  // Keyed by clubId so it doesn't leak onto a different club after navigating (the
+  // component instance is reused when the route param changes, e.g. via search).
+  private stadiumOverride = signal<{ clubId: string; stadium: Stadium } | null>(null);
 
   club = computed(() => {
     const c = this.clubState()?.data ?? null;
     const override = this.stadiumOverride();
-    if (!c || !override) return c;
-    return new Club(c.id, c.country_id, c.name, c.short_name, c.logo_uploaded, override);
+    if (!c || !override || override.clubId !== c.id) return c;
+    return new Club(c.id, c.country_id, c.name, c.short_name, c.logo_uploaded, override.stadium);
   });
   loading = computed(() => this.clubState()?.loading ?? true);
   error = computed(() => this.clubState()?.error ?? null);
@@ -414,13 +416,16 @@ export class ClubDetailComponent {
     this.api.post<{ id: string }>('stadium', body).subscribe({
       next: (res) => {
         this.stadiumOverride.set({
-          id: res.id,
-          official_name: body.official_name,
-          name: body.name,
-          capacity: body.capacity,
-          lat: body.lat,
-          lng: body.lng,
-          opened_date: body.opened_date,
+          clubId,
+          stadium: {
+            id: res.id,
+            official_name: body.official_name,
+            name: body.name,
+            capacity: body.capacity,
+            lat: body.lat,
+            lng: body.lng,
+            opened_date: body.opened_date,
+          },
         });
         this.stadiumSaving.set(false);
         this.bottomSheet.close();
