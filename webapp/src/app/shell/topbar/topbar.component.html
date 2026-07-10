@@ -60,7 +60,7 @@
                 <div class="search-group-label">Vereine</div>
                 @for (c of searchResults()!.clubs; track c.id) {
                   <a class="search-item" [routerLink]="['/daten/club', c.id]" (click)="closeSearch()">
-                    <div class="search-item-avatar search-item-avatar--player">
+                    <div class="search-item-avatar">
                       @if (c.logo_uploaded && !failedImageIds().has(c.id)) {
                         <img [src]="clubLogoUrl(c)" (error)="onImageError(c.id)" alt="" />
                       } @else {
