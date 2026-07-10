@@ -70,6 +70,7 @@
               <th class="col-logo"></th>
               <th>Name</th>
               <th>Kürzel</th>
+              <th class="col-stadium"></th>
             </tr>
           </thead>
           <tbody>
@@ -89,6 +90,11 @@
                 </td>
                 <td>{{ entry.club.name }}</td>
                 <td class="col-short">{{ entry.club.short_name ?? '—' }}</td>
+                <td class="col-stadium">
+                  @if (entry.club.stadium) {
+                    <app-icon name="stadium" [attr.title]="entry.club.stadium.official_name" />
+                  }
+                </td>
               </tr>
             }
           </tbody>

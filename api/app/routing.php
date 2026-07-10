@@ -234,7 +234,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/club',
-                        'description' => 'Alle Clubs, optional gefiltert nach Land',
+                        'description' => 'Alle Clubs, optional gefiltert nach Land — enthält aktuelles Stadion als stadium-Objekt (oder null)',
                         'query_params' => ['country_id' => 'ISO Alpha-2 Code (optional)'],
                     ],
                     [

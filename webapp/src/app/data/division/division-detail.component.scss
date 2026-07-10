@@ -156,3 +156,14 @@
   color: $color-text-muted;
   font-size: $font-sm;
 }
+
+.col-stadium {
+  width: 36px;
+  text-align: right;
+  padding-inline: $space-2;
+  color: $color-text-muted;
+
+  app-icon {
+    display: inline-flex;
+  }
+}
