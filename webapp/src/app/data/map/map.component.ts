@@ -1,7 +1,6 @@
-import { Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
-import { MapInfoWindow, MapMarker } from '@angular/google-maps';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { GoogleMapsLoaderService } from '../../core/google-maps-loader.service';
@@ -57,8 +56,6 @@ export class MapDataComponent {
   private api = inject(ApiService);
   private cache = inject(DataCacheService);
   private mapsLoader = inject(GoogleMapsLoaderService);
-
-  @ViewChild(MapInfoWindow) infoWindow!: MapInfoWindow;
 
   mapsReady = this.mapsLoader.ready;
 
@@ -118,6 +115,35 @@ export class MapDataComponent {
     return map;
   });
 
+  // club_id -> current division_id
+  private clubDivisionId = computed(() => {
+    const map = new Map<string, string>();
+    for (const e of this.currentSeasonEntries()) {
+      if (e.division_id) map.set(e.club_id, e.division_id);
+    }
+    return map;
+  });
+
+  divisions = computed(() => [...this.cache.divisions()].sort((a, b) => a.level - b.level));
+
+  // Division filter buttons — every division starts active; toggling one hides its clubs'
+  // markers. Lazily initialized to "all active" once the division list has actually loaded.
+  private activeDivisionIds = signal<Set<string>>(new Set());
+  private divisionsInitialized = false;
+
+  isDivisionActive(divisionId: string): boolean {
+    return this.activeDivisionIds().has(divisionId);
+  }
+
+  toggleDivision(divisionId: string): void {
+    this.activeDivisionIds.update(set => {
+      const next = new Set(set);
+      if (next.has(divisionId)) next.delete(divisionId);
+      else next.add(divisionId);
+      return next;
+    });
+  }
+
   // Only clubs that currently have a stadium are shown — the marker icon is the club logo
   // (or a placeholder), positioned at the stadium's coordinates. Stacking order (zIndex) is
   // explicit rather than left to Maps' default screen-position stacking: current division
@@ -130,9 +156,15 @@ export class MapDataComponent {
     const level    = this.clubLevel();
     const prevLvl  = this.clubPrevLevel();
     const prevPos  = this.clubPrevPosition();
+    const divisionByClub = this.clubDivisionId();
+    const active   = this.activeDivisionIds();
 
     const entries = this.stadiums()
       .filter((s): s is StadiumMapEntry & { club: StadiumClub } => s.lat != null && s.lng != null && s.club !== null)
+      .filter(s => {
+        const divisionId = divisionByClub.get(s.club.id);
+        return !divisionId || active.has(divisionId);
+      })
       .map(s => ({
         stadium: s,
         club: s.club,
@@ -205,9 +237,12 @@ export class MapDataComponent {
 
   selected = signal<StadiumMapEntry | null>(null);
 
-  openInfo(marker: MapMarker, stadium: StadiumMapEntry): void {
+  selectStadium(stadium: StadiumMapEntry): void {
     this.selected.set(stadium);
-    this.infoWindow.open(marker);
+  }
+
+  closeInfo(): void {
+    this.selected.set(null);
   }
 
   constructor() {
@@ -218,6 +253,14 @@ export class MapDataComponent {
     effect(() => {
       for (const s of this.stadiums()) {
         if (s.club) this.preloadLogo(this.clubLogoUrl(s.club));
+      }
+    });
+
+    effect(() => {
+      const divs = this.cache.divisions();
+      if (divs.length && !this.divisionsInitialized) {
+        this.divisionsInitialized = true;
+        this.activeDivisionIds.set(new Set(divs.map(d => d.id)));
       }
     });
   }
