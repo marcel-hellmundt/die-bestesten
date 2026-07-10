@@ -78,8 +78,60 @@
   margin-bottom: $space-4;
 }
 
-.season-select {
+.season-nav-group {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
   margin-left: auto;
+}
+
+.nav-arrow {
+  display: flex;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  font-size: $font-3xl;
+  line-height: 28px;
+  color: $color-text;
+  cursor: pointer;
+  transition: border-color $transition-fast, color $transition-fast;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    border-color: $color-text-muted;
+  }
+  &:disabled {
+    color: $color-border;
+    cursor: default;
+  }
+}
+
+.select {
+  width: auto;
+  height: 36px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  color: $color-text;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &:hover {
+    border-color: $color-text-muted;
+  }
+  &:focus {
+    outline: none;
+    border-color: $color-text-muted;
+  }
+}
+
+.season-select {
+  min-width: 120px;
+  text-align: center;
 }
 
 .col-pos {

@@ -1,11 +1,12 @@
-import { Component, computed, ElementRef, inject, signal, ViewChild } from '@angular/core';
+import { Component, computed, ElementRef, inject, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
-import { Club } from '../../core/models/club.model';
+import { BottomSheetService } from '../../core/bottom-sheet.service';
+import { Club, Stadium } from '../../core/models/club.model';
 import { POSITION_COLOR, POSITION_LABEL } from '../../core/constants';
 
 @Component({
@@ -19,6 +20,7 @@ export class ClubDetailComponent {
   private auth   = inject(AuthService);
   private route  = inject(ActivatedRoute);
   private router = inject(Router);
+  bottomSheet    = inject(BottomSheetService);
 
   navigate(path: any[]): void { this.router.navigate(path); }
   cache = inject(DataCacheService);
@@ -60,7 +62,16 @@ export class ClubDetailComponent {
     ),
   );
 
-  club = computed(() => this.clubState()?.data ?? null);
+  // Set right after a stadium is created — overlays the freshly created stadium onto the
+  // loaded club without a network round-trip (same idea as logoBust for the logo upload).
+  private stadiumOverride = signal<Stadium | null>(null);
+
+  club = computed(() => {
+    const c = this.clubState()?.data ?? null;
+    const override = this.stadiumOverride();
+    if (!c || !override) return c;
+    return new Club(c.id, c.country_id, c.name, c.short_name, c.logo_uploaded, override);
+  });
   loading = computed(() => this.clubState()?.loading ?? true);
   error = computed(() => this.clubState()?.error ?? null);
   seasons = computed(() => this.seasonsState()?.data ?? []);
@@ -278,14 +289,26 @@ export class ClubDetailComponent {
     const plotW = this.chartW - this.padL - this.padR;
     const plotH = this.chartH - this.padT - this.padB;
 
-    const toX = (i: number) => this.padL + (i / (entries.length - 1)) * plotW;
+    // X position is driven by each season's index in the full chronological season list
+    // (not by the entry's index among this club's entries), so a run of missing seasons
+    // between two entries stretches the gap on the axis proportionally.
+    const allSeasonsSorted = [...this.cache.seasons()].sort((a, b) =>
+      a.start_date.localeCompare(b.start_date),
+    );
+    const seasonIndex = new Map(allSeasonsSorted.map((s, i) => [s.id, i]));
+    const entryIndices = entries.map((e) => seasonIndex.get(e.season_id) ?? 0);
+    const minIdx = Math.min(...entryIndices);
+    const maxIdx = Math.max(...entryIndices);
+    const idxRange = maxIdx - minIdx || 1;
+
+    const toX = (idx: number) => this.padL + ((idx - minIdx) / idxRange) * plotW;
     const toY = (absPos: number) => this.padT + ((absPos - 1) / (totalSeats - 1)) * plotH;
 
     const points = entries.map((e, i) => {
       const offset = offsetMap.get(e.division_id) ?? 0;
       const absPos = offset + (e.position as number);
       return {
-        x: toX(i),
+        x: toX(entryIndices[i]),
         y: toY(absPos),
         position: e.position as number,
         division: this.cache.divisionName(e.division_id),
@@ -294,7 +317,15 @@ export class ClubDetailComponent {
       };
     });
 
-    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+    // Segments spanning one or more seasons with no entry for this club are drawn dashed,
+    // so a missing season in between is visible instead of looking like a normal gap-free run.
+    const segments = points.slice(1).map((p, i) => {
+      const prev = points[i];
+      return {
+        d: `M${prev.x},${prev.y} L${p.x},${p.y}`,
+        gap: entryIndices[i + 1] - entryIndices[i] > 1,
+      };
+    });
 
     const divLines = sortedDivs.slice(0, -1).map((_, i) => {
       const boundary = offsetMap.get(sortedDivs[i + 1].id)!;
@@ -311,7 +342,7 @@ export class ClubDetailComponent {
       { x: points[points.length - 1].x, label: points[points.length - 1].label },
     ];
 
-    return { points, pathD, yTicks, divLines, xLabels };
+    return { points, segments, yTicks, divLines, xLabels };
   });
 
   private squadState = toSignal(
@@ -335,6 +366,70 @@ export class ClubDetailComponent {
 
   positionColor(pos: string): string {
     return POSITION_COLOR[pos] ?? '#999';
+  }
+
+  // Stadium creation
+  @ViewChild('stadiumSheet') stadiumSheet!: TemplateRef<any>;
+
+  stadiumOfficialName = signal('');
+  stadiumName         = signal('');
+  stadiumCapacity     = signal('');
+  stadiumLat          = signal('');
+  stadiumLng          = signal('');
+  stadiumOpenedDate   = signal('');
+  stadiumFromDate     = signal('');
+  stadiumSaving       = signal(false);
+  stadiumError        = signal<string | null>(null);
+
+  openStadiumForm(): void {
+    this.stadiumOfficialName.set('');
+    this.stadiumName.set('');
+    this.stadiumCapacity.set('');
+    this.stadiumLat.set('');
+    this.stadiumLng.set('');
+    this.stadiumOpenedDate.set('');
+    this.stadiumFromDate.set(new Date().toISOString().slice(0, 10));
+    this.stadiumError.set(null);
+    this.bottomSheet.open(this.stadiumSheet, { title: 'Stadion anlegen' });
+  }
+
+  submitStadium(): void {
+    const clubId = this.club()?.id;
+    const officialName = this.stadiumOfficialName().trim();
+    if (!clubId || !officialName) return;
+
+    const body = {
+      club_id: clubId,
+      official_name: officialName,
+      name: this.stadiumName().trim() || null,
+      capacity: this.stadiumCapacity() ? parseInt(this.stadiumCapacity(), 10) : null,
+      lat: this.stadiumLat() ? parseFloat(this.stadiumLat()) : null,
+      lng: this.stadiumLng() ? parseFloat(this.stadiumLng()) : null,
+      opened_date: this.stadiumOpenedDate() || null,
+      from_date: this.stadiumFromDate() || null,
+    };
+
+    this.stadiumSaving.set(true);
+    this.stadiumError.set(null);
+    this.api.post<{ id: string }>('stadium', body).subscribe({
+      next: (res) => {
+        this.stadiumOverride.set({
+          id: res.id,
+          official_name: body.official_name,
+          name: body.name,
+          capacity: body.capacity,
+          lat: body.lat,
+          lng: body.lng,
+          opened_date: body.opened_date,
+        });
+        this.stadiumSaving.set(false);
+        this.bottomSheet.close();
+      },
+      error: (err: any) => {
+        this.stadiumSaving.set(false);
+        this.stadiumError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
   }
 
   constructor() {

@@ -252,6 +252,28 @@ class Routing
                 ],
             ]),
 
+            new Route('stadium', 'Stadium', [
+                'title' => 'Stadium',
+                'description' => 'Stadien — werden per club_stadium mit einem Club verknüpft',
+                'endpoints' => [
+                    [
+                        'method' => 'POST',
+                        'path' => '/stadium',
+                        'description' => 'Neues Stadion anlegen und direkt als aktuelles Stadion eines Clubs verknüpfen (club_stadium, to_date NULL) — Admin',
+                        'body' => [
+                            'club_id' => 'UUID des Clubs (erforderlich)',
+                            'official_name' => 'Offizieller Name (erforderlich)',
+                            'name' => 'Spitzname (optional)',
+                            'capacity' => 'Zuschauerkapazität (optional)',
+                            'lat' => 'Breitengrad (optional)',
+                            'lng' => 'Längengrad (optional)',
+                            'opened_date' => 'Eröffnungsdatum YYYY-MM-DD (optional)',
+                            'from_date' => 'Seit wann der Club dieses Stadion nutzt YYYY-MM-DD (optional, Default heute)',
+                        ],
+                    ],
+                ],
+            ]),
+
             new Route('division', 'Division', [
                 'title' => 'Division',
                 'description' => 'Spielklassen (1. Bundesliga, 2. Bundesliga, …)',

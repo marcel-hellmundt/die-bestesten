@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -16,9 +16,7 @@ import { Club } from '../../core/models/club.model';
 export class DivisionDetailComponent {
   private api    = inject(ApiService);
   private route  = inject(ActivatedRoute);
-  private router = inject(Router);
 
-  navigate(path: any[]): void { this.router.navigate(path); }
   cache = inject(DataCacheService);
 
   private id$ = this.route.paramMap.pipe(map((p) => p.get('id')!));
@@ -53,11 +51,27 @@ export class DivisionDetailComponent {
   loading = computed(() => this.divisionState()?.loading ?? true);
   error = computed(() => this.divisionState()?.error ?? null);
 
-  selectedSeasonId = signal<string | null>(null);
-
-  private effectiveSeasonId = computed(
-    () => this.selectedSeasonId() ?? this.cache.seasons()[0]?.id ?? null,
+  // Seasons sorted newest first for dropdown
+  seasons = computed(() =>
+    [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date)),
   );
+
+  selectedIndex = signal(0);
+
+  selectedSeason = computed(() => this.seasons()[this.selectedIndex()] ?? null);
+
+  effectiveSeasonId = computed(() => this.selectedSeason()?.id ?? null);
+
+  canDecrement = computed(() => this.selectedIndex() < this.seasons().length - 1);
+  canIncrement = computed(() => this.selectedIndex() > 0);
+
+  decrement() { if (this.canDecrement()) this.selectedIndex.update(i => i + 1); }
+  increment() { if (this.canIncrement()) this.selectedIndex.update(i => i - 1); }
+
+  onSeasonChange(id: string): void {
+    const idx = this.seasons().findIndex(s => s.id === id);
+    if (idx >= 0) this.selectedIndex.set(idx);
+  }
 
   private clubsInSeasonState = toSignal(
     toObservable(this.effectiveSeasonId).pipe(
@@ -94,9 +108,5 @@ export class DivisionDetailComponent {
 
   constructor() {
     this.cache.ensureSeasons();
-  }
-
-  selectSeason(id: string): void {
-    this.selectedSeasonId.set(id);
   }
 }

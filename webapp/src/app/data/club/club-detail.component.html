@@ -70,6 +70,11 @@
             }
           </div>
         </div>
+      } @else if (isAdmin()) {
+        <button class="club-stadium club-stadium--create" (click)="openStadiumForm()">
+          <app-icon name="plus" />
+          Stadion anlegen
+        </button>
       }
     </div>
   </div>
@@ -274,7 +279,14 @@
                 }
 
                 <!-- Line path -->
-                <path [attr.d]="chart.pathD" class="chart-line" fill="none" />
+                @for (seg of chart.segments; track $index) {
+                  <path
+                    [attr.d]="seg.d"
+                    class="chart-line"
+                    [class.chart-line--gap]="seg.gap"
+                    fill="none"
+                  />
+                }
 
                 <!-- Dots -->
                 @for (pt of chart.points; track pt.label) {
@@ -349,3 +361,99 @@
     }
   </section>
 }
+
+<ng-template #stadiumSheet>
+  <div class="add-form stadium-form" (keydown.enter)="!stadiumSaving() && submitStadium()">
+    <div class="add-form-row">
+      <div class="add-form-field">
+        <label class="add-form-label">Offizieller Name</label>
+        <input
+          class="input input--sm"
+          type="text"
+          [value]="stadiumOfficialName()"
+          (input)="stadiumOfficialName.set($any($event.target).value)"
+        />
+      </div>
+      <div class="add-form-field">
+        <label class="add-form-label">Spitzname</label>
+        <input
+          class="input input--sm"
+          type="text"
+          [value]="stadiumName()"
+          (input)="stadiumName.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    <div class="add-form-row">
+      <div class="add-form-field add-form-field--sm">
+        <label class="add-form-label">Kapazität</label>
+        <input
+          class="input input--sm"
+          type="number"
+          min="0"
+          [value]="stadiumCapacity()"
+          (input)="stadiumCapacity.set($any($event.target).value)"
+        />
+      </div>
+      <div class="add-form-field">
+        <label class="add-form-label">Breitengrad</label>
+        <input
+          class="input input--sm"
+          type="number"
+          step="0.000001"
+          [value]="stadiumLat()"
+          (input)="stadiumLat.set($any($event.target).value)"
+        />
+      </div>
+      <div class="add-form-field">
+        <label class="add-form-label">Längengrad</label>
+        <input
+          class="input input--sm"
+          type="number"
+          step="0.000001"
+          [value]="stadiumLng()"
+          (input)="stadiumLng.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    <div class="add-form-row">
+      <div class="add-form-field">
+        <label class="add-form-label">Eröffnungsdatum</label>
+        <input
+          class="input input--sm"
+          type="date"
+          [value]="stadiumOpenedDate()"
+          (input)="stadiumOpenedDate.set($any($event.target).value)"
+        />
+      </div>
+      <div class="add-form-field">
+        <label class="add-form-label">Genutzt seit</label>
+        <input
+          class="input input--sm"
+          type="date"
+          [value]="stadiumFromDate()"
+          (input)="stadiumFromDate.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    @if (stadiumError()) {
+      <p class="add-form-error">{{ stadiumError() }}</p>
+    }
+
+    <div class="add-form-actions">
+      <button
+        class="btn-save"
+        (click)="submitStadium()"
+        [disabled]="stadiumSaving() || !stadiumOfficialName().trim()"
+      >
+        {{ stadiumSaving() ? 'Speichern…' : 'Speichern' }}
+      </button>
+      <button class="btn-cancel" (click)="bottomSheet.close()" [disabled]="stadiumSaving()">
+        Abbrechen
+      </button>
+    </div>
+  </div>
+</ng-template>

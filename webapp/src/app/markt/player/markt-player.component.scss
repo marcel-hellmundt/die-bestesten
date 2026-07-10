@@ -165,7 +165,7 @@
   align-items: center;
   justify-content: center;
   padding: 3px;
-  opacity: 0.55;
+  opacity: 1;
   transition:
     opacity $transition-fast,
     border-color $transition-fast,
@@ -185,7 +185,11 @@
     opacity: 1;
   }
 
-  &:hover:not(.filter-club-btn--active) {
+  &--dim {
+    opacity: 0.55;
+  }
+
+  &:hover.filter-club-btn--dim {
     opacity: 0.85;
     border-color: $color-text-muted;
   }
