@@ -198,38 +198,49 @@ export class MapDataComponent {
   // Google Maps' scaledSize always stretches an icon to the exact box, unlike CSS
   // object-fit: contain. So the natural size of every logo is preloaded once and used
   // to scale proportionally within logoBox, keeping narrow/non-square crests undistorted.
-  // A grayscale+dimmed data-URL variant is generated at the same time (via canvas — the
-  // asset server sends Access-Control-Allow-Origin so this doesn't taint the canvas), since
-  // Google Maps' classic Icon has no CSS-filter equivalent for unvisited stadiums.
   private logoDims = signal<Record<string, { w: number; h: number }>>({});
+  // Grayscale+dimmed data-URL variant, best-effort — see preloadLogo() for why this is a
+  // separate load from the one above.
   private logoGrey = signal<Record<string, string>>({});
   private requestedLogos = new Set<string>();
 
   private preloadLogo(url: string): void {
     if (this.requestedLogos.has(url)) return;
     this.requestedLogos.add(url);
+
+    // Plain load for natural dimensions. naturalWidth/naturalHeight are always readable
+    // regardless of CORS, so aspect-ratio fitting must not depend on crossOrigin — otherwise
+    // a missing Access-Control-Allow-Origin on the asset server fails this load outright
+    // (onerror) and every icon falls back to a stretched square.
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      this.logoDims.update(m => ({ ...m, [url]: { w: img.naturalWidth, h: img.naturalHeight } }));
-      this.logoGrey.update(m => ({ ...m, [url]: this.toGreyscaleUrl(img) }));
-    };
+    img.onload = () => this.logoDims.update(m => ({ ...m, [url]: { w: img.naturalWidth, h: img.naturalHeight } }));
     img.onerror = () => this.logoDims.update(m => ({ ...m, [url]: { w: 1, h: 1 } }));
     img.src = url;
+
+    // Separate CORS-mode load, used only to attempt a grayscale canvas conversion for
+    // unvisited stadiums. If the asset server doesn't send the CORS header, this just fails
+    // quietly and the color icon is used instead — it never touches the load above.
+    const corsImg = new Image();
+    corsImg.crossOrigin = 'anonymous';
+    corsImg.onload = () => {
+      const grey = this.toGreyscaleUrl(corsImg);
+      if (grey) this.logoGrey.update(m => ({ ...m, [url]: grey }));
+    };
+    corsImg.src = url;
   }
 
-  private toGreyscaleUrl(img: HTMLImageElement): string {
+  private toGreyscaleUrl(img: HTMLImageElement): string | null {
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return img.src;
+    if (!ctx) return null;
     ctx.filter = 'grayscale(1) opacity(0.5)';
     ctx.drawImage(img, 0, 0);
     try {
       return canvas.toDataURL('image/png');
     } catch {
-      return img.src; // cross-origin canvas got tainted — fall back to the color icon
+      return null; // cross-origin canvas got tainted — fall back to the color icon
     }
   }
 
