@@ -95,16 +95,19 @@ export class MapDataComponent {
     { initialValue: [] as any[] },
   );
 
-  // club_id -> current division level (1 = top division)
-  private clubLevel = computed(() => {
+  // club_id -> division level (1 = top division) for a given set of club_in_season entries
+  private levelByClub(entries: any[]): Map<string, number> {
     const levelByDivision = new Map(this.cache.divisions().map(d => [d.id, d.level]));
     const map = new Map<string, number>();
-    for (const e of this.currentSeasonEntries()) {
+    for (const e of entries) {
       const level = e.division_id ? levelByDivision.get(e.division_id) : undefined;
       if (level !== undefined) map.set(e.club_id, level);
     }
     return map;
-  });
+  }
+
+  private clubLevel     = computed(() => this.levelByClub(this.currentSeasonEntries()));
+  private clubPrevLevel = computed(() => this.levelByClub(this.prevSeasonEntries()));
 
   // club_id -> previous season's table position
   private clubPrevPosition = computed(() => {
@@ -117,12 +120,16 @@ export class MapDataComponent {
 
   // Only clubs that currently have a stadium are shown — the marker icon is the club logo
   // (or a placeholder), positioned at the stadium's coordinates. Stacking order (zIndex) is
-  // explicit rather than left to Maps' default screen-position stacking: higher division
-  // (lower level number) renders on top, previous-season table position breaks ties.
+  // explicit rather than left to Maps' default screen-position stacking: current division
+  // (lower level number = higher stack) comes first, then previous season's division (a 5th
+  // place in the top flight outranks a 1st place one division down — comparing raw table
+  // position across divisions would get that backwards), and finally the raw previous-season
+  // position as the last tiebreaker.
   markers = computed<MarkerViewModel[]>(() => {
-    const dims  = this.logoDims();
-    const level = this.clubLevel();
-    const prevPos = this.clubPrevPosition();
+    const dims     = this.logoDims();
+    const level    = this.clubLevel();
+    const prevLvl  = this.clubPrevLevel();
+    const prevPos  = this.clubPrevPosition();
 
     const entries = this.stadiums()
       .filter((s): s is StadiumMapEntry & { club: StadiumClub } => s.lat != null && s.lng != null && s.club !== null)
@@ -132,10 +139,11 @@ export class MapDataComponent {
         position: { lat: s.lat as number, lng: s.lng as number },
         icon: this.clubIcon(s.club, dims[this.clubLogoUrl(s.club)]),
         level: level.get(s.club.id) ?? Number.MAX_SAFE_INTEGER,
+        prevLevel: prevLvl.get(s.club.id) ?? Number.MAX_SAFE_INTEGER,
         prevPos: prevPos.get(s.club.id) ?? Number.MAX_SAFE_INTEGER,
       }));
 
-    entries.sort((a, b) => a.level - b.level || a.prevPos - b.prevPos);
+    entries.sort((a, b) => a.level - b.level || a.prevLevel - b.prevLevel || a.prevPos - b.prevPos);
 
     return entries.map((e, i) => ({
       stadium: e.stadium,
