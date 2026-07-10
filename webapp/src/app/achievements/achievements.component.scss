@@ -66,7 +66,7 @@ $card-border: #eee;
           transparent 70%,
           transparent 100%
         );
-        animation: ap-shimmer 2.4s ease-in-out infinite;
+        animation: ap-shimmer 4s ease-in-out infinite;
         pointer-events: none;
       }
     }
@@ -93,6 +93,9 @@ $card-border: #eee;
 @keyframes ap-shimmer {
   0% {
     transform: translateX(-200%);
+  }
+  60% {
+    transform: translateX(400%);
   }
   100% {
     transform: translateX(400%);
