@@ -206,6 +206,17 @@
   <div class="topbar-right">
     <a
       class="topbar-icon-btn topbar-bell"
+      [class.active]="currentUrl().startsWith('/daten/map')"
+      routerLink="/daten/map"
+      (click)="closeDropdown()"
+      aria-label="Karte"
+      data-tooltip="Karte"
+    >
+      <app-icon name="map"></app-icon>
+    </a>
+
+    <a
+      class="topbar-icon-btn topbar-bell"
       [class.active]="currentUrl().startsWith('/achievements')"
       routerLink="/achievements"
       (click)="closeDropdown()"
