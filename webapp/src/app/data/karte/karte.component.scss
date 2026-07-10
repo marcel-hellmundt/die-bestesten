@@ -1,0 +1,21 @@
+@use '../../../styles/variables' as *;
+
+.info-window {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  font-size: $font-sm;
+
+  &__official {
+    color: $color-text-muted;
+  }
+
+  &__club {
+    color: $color-accent;
+  }
+
+  &__none {
+    color: $color-text-muted;
+    font-style: italic;
+  }
+}

@@ -257,6 +257,11 @@ class Routing
                 'description' => 'Stadien — werden per club_stadium mit einem Club verknüpft',
                 'endpoints' => [
                     [
+                        'method' => 'GET',
+                        'path' => '/stadium',
+                        'description' => 'Alle Stadien inkl. lat/lng, capacity, opened_date und aktuell verknüpftem Club ({id,name} oder null) — Admin',
+                    ],
+                    [
                         'method' => 'POST',
                         'path' => '/stadium',
                         'description' => 'Neues Stadion anlegen und direkt als aktuelles Stadion eines Clubs verknüpfen (club_stadium, to_date NULL) — Admin',

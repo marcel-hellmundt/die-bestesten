@@ -1,0 +1,44 @@
+<h1 class="page-title">Stadion-Karte</h1>
+
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (!mapsReady()) {
+  <p class="state-msg">Karte wird geladen…</p>
+} @else {
+  <google-map height="640px" width="100%" [center]="center" [zoom]="zoom" [options]="mapOptions">
+    @for (m of markers(); track m.stadium.id) {
+      <map-marker
+        #marker="mapMarker"
+        [position]="m.position"
+        [title]="m.stadium.displayName"
+        (mapClick)="openInfo(marker, m.stadium)"
+      ></map-marker>
+    }
+
+    <map-info-window>
+      @if (selected(); as s) {
+        <div class="info-window">
+          <strong>{{ s.displayName }}</strong>
+          @if (s.name && s.name !== s.official_name) {
+            <div class="info-window__official">{{ s.official_name }}</div>
+          }
+          @if (s.club) {
+            <a class="info-window__club" [routerLink]="['/daten/club', s.club.id]">{{ s.club.name }}</a>
+          } @else {
+            <div class="info-window__none">Kein aktueller Verein</div>
+          }
+          @if (s.capacity) {
+            <div>{{ s.capacity | number: '1.0-0' }} Plätze</div>
+          }
+          @if (s.opened_date) {
+            <div>Eröffnet: {{ s.opened_date | date: 'dd.MM.yyyy' }}</div>
+          }
+        </div>
+      }
+    </map-info-window>
+  </google-map>
+
+  <p class="state-msg">{{ markers().length }} von {{ stadiums().length }} Stadien mit Koordinaten angezeigt</p>
+}
