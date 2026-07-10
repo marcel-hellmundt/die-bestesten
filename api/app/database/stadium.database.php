@@ -45,8 +45,9 @@ trait StadiumTrait
         $query = $this->con->prepare("
             SELECT
                 s.id, s.official_name, s.name, s.capacity, s.lat, s.lng, s.opened_date,
-                c.id   AS club_id,
-                c.name AS club_name
+                c.id             AS club_id,
+                c.name           AS club_name,
+                c.logo_uploaded  AS club_logo_uploaded
             FROM stadium s
             LEFT JOIN club_stadium cs ON cs.stadium_id = s.id AND cs.to_date IS NULL
             LEFT JOIN club c ON c.id = cs.club_id
@@ -64,7 +65,11 @@ trait StadiumTrait
                 'lat'           => $row['lat']      !== null ? (float) $row['lat']    : null,
                 'lng'           => $row['lng']      !== null ? (float) $row['lng']    : null,
                 'opened_date'   => $row['opened_date'],
-                'club'          => $row['club_id'] ? ['id' => $row['club_id'], 'name' => $row['club_name']] : null,
+                'club'          => $row['club_id'] ? [
+                    'id'            => $row['club_id'],
+                    'name'          => $row['club_name'],
+                    'logo_uploaded' => (bool) $row['club_logo_uploaded'],
+                ] : null,
             ];
         }, $rows);
     }

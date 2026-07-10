@@ -12,7 +12,8 @@
       <map-marker
         #marker="mapMarker"
         [position]="m.position"
-        [title]="m.stadium.displayName"
+        [icon]="m.icon"
+        [title]="m.club.name"
         (mapClick)="openInfo(marker, m.stadium)"
       ></map-marker>
     }
@@ -20,14 +21,15 @@
     <map-info-window>
       @if (selected(); as s) {
         <div class="info-window">
-          <strong>{{ s.displayName }}</strong>
+          @if (s.club; as club) {
+            <div class="info-window__header">
+              <img class="info-window__logo" [src]="clubLogoUrl(club)" alt="" />
+              <a class="info-window__club-name" [routerLink]="['/daten/club', club.id]">{{ club.name }}</a>
+            </div>
+          }
+          <div class="info-window__stadium">{{ s.displayName }}</div>
           @if (s.name && s.name !== s.official_name) {
             <div class="info-window__official">{{ s.official_name }}</div>
-          }
-          @if (s.club) {
-            <a class="info-window__club" [routerLink]="['/daten/club', s.club.id]">{{ s.club.name }}</a>
-          } @else {
-            <div class="info-window__none">Kein aktueller Verein</div>
           }
           @if (s.capacity) {
             <div>{{ s.capacity | number: '1.0-0' }} Plätze</div>
@@ -40,5 +42,5 @@
     </map-info-window>
   </google-map>
 
-  <p class="state-msg">{{ markers().length }} von {{ stadiums().length }} Stadien mit Koordinaten angezeigt</p>
+  <p class="state-msg">{{ markers().length }} Vereine mit Stadion auf der Karte</p>
 }

@@ -6,16 +6,30 @@
   gap: $space-1;
   font-size: $font-sm;
 
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    margin-bottom: $space-1;
+  }
+
+  &__logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &__club-name {
+    color: $color-accent;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__stadium {
+    font-weight: $font-weight-medium;
+  }
+
   &__official {
     color: $color-text-muted;
-  }
-
-  &__club {
-    color: $color-accent;
-  }
-
-  &__none {
-    color: $color-text-muted;
-    font-style: italic;
   }
 }

@@ -4,11 +4,14 @@ import { catchError, map, of, startWith } from 'rxjs';
 import { MapInfoWindow, MapMarker } from '@angular/google-maps';
 import { ApiService } from '../../core/api.service';
 import { GoogleMapsLoaderService } from '../../core/google-maps-loader.service';
-import { StadiumMapEntry } from '../../core/models/stadium.model';
+import { StadiumClub, StadiumMapEntry } from '../../core/models/stadium.model';
+import { environment } from '../../../environments/environment';
 
 interface MarkerViewModel {
   stadium: StadiumMapEntry;
+  club: StadiumClub;
   position: google.maps.LatLngLiteral;
+  icon: google.maps.Icon;
 }
 
 @Component({
@@ -37,11 +40,34 @@ export class KarteDataComponent {
   loading  = computed(() => this.state()?.loading ?? true);
   error    = computed(() => this.state()?.error ?? null);
 
+  // Only clubs that currently have a stadium are shown — the marker icon is the club
+  // logo (or a placeholder), positioned at the stadium's coordinates.
   markers = computed<MarkerViewModel[]>(() =>
     this.stadiums()
-      .filter(s => s.lat != null && s.lng != null)
-      .map(s => ({ stadium: s, position: { lat: s.lat as number, lng: s.lng as number } }))
+      .filter((s): s is StadiumMapEntry & { club: StadiumClub } => s.lat != null && s.lng != null && s.club !== null)
+      .map(s => ({
+        stadium: s,
+        club: s.club,
+        position: { lat: s.lat as number, lng: s.lng as number },
+        icon: this.clubIcon(s.club),
+      }))
   );
+
+  clubLogoUrl(club: StadiumClub): string {
+    return club.logo_uploaded
+      ? `${environment.imageApiUrl}/club/${club.id}.png`
+      : 'img/placeholders/club.png';
+  }
+
+  private clubIcon(club: StadiumClub): google.maps.Icon {
+    return {
+      url: this.clubLogoUrl(club),
+      // Plain {width,height}/{x,y} objects work at runtime — avoids depending on
+      // google.maps.Size/Point classes, which may not be loaded yet at this point.
+      scaledSize: { width: 36, height: 36 } as google.maps.Size,
+      anchor: { x: 18, y: 18 } as google.maps.Point,
+    };
+  }
 
   center: google.maps.LatLngLiteral = { lat: 51.1657, lng: 10.4515 }; // geografische Mitte Deutschlands
   zoom = 6;

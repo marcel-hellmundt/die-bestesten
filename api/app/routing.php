@@ -259,7 +259,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/stadium',
-                        'description' => 'Alle Stadien inkl. lat/lng, capacity, opened_date und aktuell verknüpftem Club ({id,name} oder null) — Admin',
+                        'description' => 'Alle Stadien inkl. lat/lng, capacity, opened_date und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Admin',
                     ],
                     [
                         'method' => 'POST',

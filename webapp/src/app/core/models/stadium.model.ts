@@ -1,6 +1,7 @@
 export interface StadiumClub {
   id: string;
   name: string;
+  logo_uploaded: boolean;
 }
 
 export class StadiumMapEntry {
