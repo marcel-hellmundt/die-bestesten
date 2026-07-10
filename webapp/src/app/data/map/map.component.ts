@@ -46,12 +46,12 @@ const MAP_STYLE: google.maps.MapTypeStyle[] = [
 ];
 
 @Component({
-  selector: 'app-data-karte',
+  selector: 'app-data-map',
   standalone: false,
-  templateUrl: './karte.component.html',
-  styleUrl: './karte.component.scss'
+  templateUrl: './map.component.html',
+  styleUrl: './map.component.scss'
 })
-export class KarteDataComponent {
+export class MapDataComponent {
   private api = inject(ApiService);
   private mapsLoader = inject(GoogleMapsLoaderService);
 
