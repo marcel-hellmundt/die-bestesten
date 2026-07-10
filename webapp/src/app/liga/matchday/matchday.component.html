@@ -2,8 +2,6 @@
   <p class="state-msg">Laden…</p>
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
-} @else if (!matchday()) {
-  <p class="state-msg">Noch kein abgeschlossener Spieltag vorhanden.</p>
 } @else {
   <div class="matchday-nav">
     <button
@@ -45,6 +43,9 @@
     }
   </div>
 
+  @if (!matchday()) {
+    <p class="state-msg">Noch kein abgeschlossener Spieltag vorhanden.</p>
+  } @else {
   <div class="matchday-layout">
     <div class="main-col">
       <div class="table-container">
@@ -331,4 +332,5 @@
       }
     </div>
   </div>
+  }
 }

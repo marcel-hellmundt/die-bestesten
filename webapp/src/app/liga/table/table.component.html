@@ -2,8 +2,6 @@
   <p class="state-msg">Laden…</p>
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
-} @else if (rows().length === 0) {
-  <p class="state-msg">Noch keine abgeschlossenen Spieltage vorhanden.</p>
 } @else {
   <div class="season-nav">
     <button
@@ -40,6 +38,9 @@
     }
   </div>
 
+  @if (rows().length === 0) {
+    <p class="state-msg">Noch keine abgeschlossenen Spieltage vorhanden.</p>
+  } @else {
   <div class="table-layout">
     <div class="main-col">
       <div class="table-container">
@@ -267,4 +268,5 @@
       }
     </div>
   </div>
+  }
 }

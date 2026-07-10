@@ -34,14 +34,22 @@ export class LigaTeamsComponent {
     [...this.cache.startedSeasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
   );
 
-  selectedSeasonId = signal<string | null>(null);
+  selectedIndex = signal(0);
 
-  effectiveSeasonId = computed(() => {
-    const sel = this.selectedSeasonId();
-    const seasons = this.seasons();
-    if (sel && seasons.some(s => s.id === sel)) return sel;
-    return seasons[0]?.id ?? null;
-  });
+  selectedSeason = computed(() => this.seasons()[this.selectedIndex()] ?? null);
+
+  effectiveSeasonId = computed(() => this.selectedSeason()?.id ?? null);
+
+  canDecrement = computed(() => this.selectedIndex() < this.seasons().length - 1);
+  canIncrement = computed(() => this.selectedIndex() > 0);
+
+  decrement() { if (this.canDecrement()) this.selectedIndex.update(i => i + 1); }
+  increment() { if (this.canIncrement()) this.selectedIndex.update(i => i - 1); }
+
+  onSeasonChange(id: string): void {
+    const idx = this.seasons().findIndex(s => s.id === id);
+    if (idx >= 0) this.selectedIndex.set(idx);
+  }
 
   private state = toSignal(
     toObservable(this.effectiveSeasonId).pipe(

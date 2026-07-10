@@ -67,15 +67,22 @@ export class MatchdayComponent {
     return uncompleted.number > 1 ? uncompleted.number - 1 : 1;
   }
 
+  // Validates the user-selected number against the loaded matchdays; falls back to the
+  // current/default matchday otherwise. Used both for fetching and for dropdown selection,
+  // so the "current" matchday stays highlighted even when it has no team_rating data yet.
+  private effectiveNumber = computed(() => {
+    const matchdays = this.matchdays();
+    const number = this.selectedNumber();
+    const validNumber = number !== null && matchdays.some(m => m.number === number) ? number : null;
+    return validNumber ?? this.computeDefaultNumber(matchdays);
+  });
+
   private ratingsState = toSignal(
     combineLatest([
       toObservable(this.seasonData).pipe(filter((sd): sd is NonNullable<typeof sd> => sd !== undefined)),
-      toObservable(this.selectedNumber),
+      toObservable(this.effectiveNumber),
     ]).pipe(
-      switchMap(([{ season, matchdays }, number]) => {
-        // Validate number against the loaded matchdays; fall back to default if it doesn't exist.
-        const validNumber = number !== null && matchdays.some(m => m.number === number) ? number : null;
-        const effectiveNumber = validNumber ?? this.computeDefaultNumber(matchdays);
+      switchMap(([{ season }, effectiveNumber]) => {
         const url = effectiveNumber !== null
           ? `team_rating?season_id=${season!.id}&matchday_number=${effectiveNumber}`
           : `team_rating?season_id=${season!.id}`;
@@ -104,7 +111,7 @@ export class MatchdayComponent {
   );
 
   isLive         = computed(() => this.matchday() && !this.matchday()?.completed);
-  currentNumber  = computed(() => this.matchday()?.number ?? null);
+  currentNumber  = computed(() => this.matchday()?.number ?? this.effectiveNumber());
   canDecrement   = computed(() => (this.currentNumber() ?? 1) > 1);
   canIncrement   = computed(() => (this.currentNumber() ?? 1) < this.maxNumber());
 
