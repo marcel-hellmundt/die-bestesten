@@ -1,0 +1,197 @@
+@use '../../../styles/variables' as *;
+
+.map-shell {
+  position: relative;
+}
+
+.map-filters-wrap {
+  position: absolute;
+  top: $space-6;
+  left: $space-6;
+  z-index: $z-raised;
+}
+
+.map-filters-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: $color-text;
+  color: $color-surface;
+  border: none;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: opacity $transition-fast;
+
+  &:hover {
+    opacity: 0.85;
+  }
+
+  &--active {
+    background: $color-accent;
+  }
+}
+
+.map-filters {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.map-filter-btn {
+  background: $color-text;
+  color: $color-surface;
+  border: none;
+  border-radius: $radius-sm;
+  padding: $space-2 $space-4;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: opacity $transition-fast;
+
+  &--inactive {
+    opacity: 0.4;
+  }
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &--inactive:hover {
+    opacity: 0.6;
+  }
+}
+
+// Mobile: the always-visible button column becomes a toggle + dropdown panel instead,
+// since a row of full-size division buttons doesn't fit a narrow viewport.
+@media (max-width: $mobile-breakpoint) {
+  .map-filters-toggle {
+    display: flex;
+  }
+
+  .map-filters {
+    display: none;
+    position: absolute;
+    top: calc(40px + #{$space-2});
+    left: 0;
+
+    &--open {
+      display: flex;
+    }
+  }
+}
+
+.map-card {
+  position: absolute;
+  top: $space-6;
+  right: $space-6;
+  width: 320px;
+  max-width: calc(100% - #{$space-6} * 2);
+  background: $color-text;
+  color: $color-surface;
+  border-radius: $radius-sm;
+  padding: $space-5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: $z-raised;
+
+  &__close {
+    position: absolute;
+    top: $space-2;
+    right: $space-2;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: $font-xl;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: $radius-sm;
+    transition:
+      color $transition-fast,
+      background-color $transition-fast;
+
+    &:hover {
+      color: $color-surface;
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  &__title {
+    font-size: $font-2xl;
+    font-weight: $font-weight-bold;
+    margin: 0 $space-6 $space-1 0;
+    line-height: 1.2;
+    color: $color-bg;
+  }
+
+  &__official {
+    font-size: $font-sm;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: $space-3;
+  }
+
+  &__club {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    text-decoration: none;
+    color: $color-surface;
+    font-weight: $font-weight-semibold;
+    margin: $space-3 0;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__club-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &__row {
+    font-size: $font-sm;
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: $space-1;
+  }
+
+  &__visit-btn {
+    width: 100%;
+    margin-top: $space-4;
+    padding: $space-2 $space-4;
+    background: transparent;
+    color: $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: $radius-sm;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    transition:
+      background-color $transition-fast,
+      border-color $transition-fast;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    &--active {
+      background: $color-success;
+      border-color: $color-success;
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+  }
+}

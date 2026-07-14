@@ -1,7 +1,9 @@
 import { Component, inject, signal, computed, TemplateRef, ViewChild, ElementRef, effect } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
+import { DataCacheService } from '../../core/data-cache.service';
 
 interface FreeAgent {
   id: string;
@@ -27,6 +29,7 @@ interface FreeAgent {
 export class MarktPlayerComponent {
   private api         = inject(ApiService);
   private bottomSheet = inject(BottomSheetService);
+  private cache       = inject(DataCacheService);
 
   @ViewChild('filterSheet') filterSheet!: TemplateRef<any>;
   @ViewChild('tableContainer') tableContainer?: ElementRef<HTMLDivElement>;
@@ -41,6 +44,9 @@ export class MarktPlayerComponent {
   }
 
   constructor() {
+    this.cache.ensureLeague();
+    this.cache.ensureSeasons();
+
     effect(() => {
       this.filteredPlayers();
       setTimeout(() => { if (this.tableContainer) this.tableContainer.nativeElement.scrollLeft = 0; }, 0);
@@ -73,12 +79,61 @@ export class MarktPlayerComponent {
 
   maxDataPrice = computed(() => Math.max(0, ...this.players().map(p => this.dynamicPrice(p))));
 
+  // All clubs of the active season's league division — independent of whether they
+  // currently have any free-agent players, so the filter always shows the full set.
+  private activeSeasonId = toSignal(
+    this.api.get<any>('season/active').pipe(
+      map(data => data.id as string),
+      catchError(() => of(null as string | null)),
+    ),
+  );
+
+  private clubsPageData = toSignal(
+    toObservable(this.activeSeasonId).pipe(
+      switchMap(seasonId => {
+        if (!seasonId) return of(null);
+        return forkJoin({
+          clubsInSeason: this.api.get<any[]>(`club_in_season?season_id=${seasonId}`),
+          clubs:         this.api.get<any[]>('club'),
+        }).pipe(catchError(() => of(null)));
+      }),
+    ),
+  );
+
+  // seasons() is DESC by start_date → [1] = previous season, used to sort the club
+  // filter by last season's standings (this season's position is usually still unset).
+  private prevSeasonId = computed(() => this.cache.seasons()[1]?.id ?? null);
+
+  private prevSeasonEntries = toSignal(
+    toObservable(this.prevSeasonId).pipe(
+      switchMap(id => {
+        if (!id) return of([] as any[]);
+        return this.api.get<any[]>(`club_in_season?season_id=${id}`).pipe(catchError(() => of([] as any[])));
+      }),
+    ),
+    { initialValue: [] as any[] },
+  );
+
   clubs = computed(() => {
-    const seen = new Set<string>();
-    return this.players()
-      .filter(p => { if (seen.has(p.club_id)) return false; seen.add(p.club_id); return true; })
-      .map(p => ({ id: p.club_id, name: p.club_name, short_name: p.club_short_name, logo_uploaded: p.club_logo_uploaded, prev_pos: p.prev_club_position }))
-      .sort((a, b) => (a.prev_pos ?? 999) - (b.prev_pos ?? 999));
+    const pd = this.clubsPageData();
+    const divisionId = this.cache.leagueDivisionId();
+    if (!pd || !divisionId) return [];
+
+    const clubMap = new Map(pd.clubs.map((c: any) => [c.id, c]));
+    const prevPositionMap = new Map<string, number>(
+      this.prevSeasonEntries()
+        .filter((e: any) => e.division_id === divisionId && e.position != null)
+        .map((e: any) => [e.club_id as string, e.position as number]),
+    );
+
+    return pd.clubsInSeason
+      .filter((e: any) => e.division_id === divisionId)
+      .map((e: any) => {
+        const c = clubMap.get(e.club_id);
+        return c ? { id: c.id, name: c.name, short_name: c.short_name, logo_uploaded: c.logo_uploaded } : null;
+      })
+      .filter((c): c is { id: string; name: string; short_name: string | null; logo_uploaded: boolean } => c !== null)
+      .sort((a, b) => (prevPositionMap.get(a.id) ?? 999) - (prevPositionMap.get(b.id) ?? 999));
   });
 
   filteredPlayers = computed(() => {

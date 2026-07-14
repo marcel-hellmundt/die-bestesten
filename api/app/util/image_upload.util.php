@@ -51,7 +51,7 @@ class ImageUpload
         if (!$image) return null;
 
         $tmp = tempnam(sys_get_temp_dir(), 'img');
-        $ok  = $targetFormat === 'jpeg' ? self::writeJpeg($image, $tmp) : imagepng($image, $tmp);
+        $ok  = $targetFormat === 'jpeg' ? self::writeJpeg($image, $tmp) : self::writePng($image, $tmp);
         imagedestroy($image);
 
         if (!$ok) { @unlink($tmp); return null; }
@@ -70,6 +70,15 @@ class ImageUpload
         $ok = imagejpeg($flat, $tmp, 90);
         imagedestroy($flat);
         return $ok;
+    }
+
+    // Without these, GD drops the alpha channel on write and transparent pixels get
+    // baked in as black instead of staying transparent.
+    private static function writePng($image, string $tmp): bool
+    {
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+        return imagepng($image, $tmp);
     }
 
     public static function copy(string $sourceRelativePath, string $targetRelativePath): array

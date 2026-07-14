@@ -34,7 +34,9 @@
       <p class="filter-label">Verein</p>
       <div class="filter-clubs">
         @for (club of clubs(); track club.id) {
-          <button class="filter-club-btn" [class.filter-club-btn--active]="clubFilter() === club.id"
+          <button class="filter-club-btn"
+                  [class.filter-club-btn--active]="clubFilter() === club.id"
+                  [class.filter-club-btn--dim]="clubFilter() !== null && clubFilter() !== club.id"
                   [title]="club.name" (click)="toggleClub(club.id)">
             @if (club.logo_uploaded && !clubErrors.has(club.id)) {
               <img [src]="'https://img.die-bestesten.de/club/' + club.id + '.png'"
@@ -147,7 +149,9 @@
       <p class="filter-label">Verein</p>
       <div class="filter-clubs">
         @for (club of clubs(); track club.id) {
-          <button class="filter-club-btn" [class.filter-club-btn--active]="clubFilter() === club.id"
+          <button class="filter-club-btn"
+                  [class.filter-club-btn--active]="clubFilter() === club.id"
+                  [class.filter-club-btn--dim]="clubFilter() !== null && clubFilter() !== club.id"
                   [title]="club.name" (click)="toggleClub(club.id)">
             @if (club.logo_uploaded && !clubErrors.has(club.id)) {
               <img [src]="'https://img.die-bestesten.de/club/' + club.id + '.png'"

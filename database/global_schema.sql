@@ -144,9 +144,7 @@ CREATE TABLE IF NOT EXISTS stadium (
     name          VARCHAR(100)  DEFAULT NULL,        -- Umgangssprachlicher Name, z.B. "Allianz Arena"; NULL wenn kein Spitzname
     capacity      INT           DEFAULT NULL,        -- Zuschauerkapazität, z.B. 75000
     lat           DECIMAL(9,6)  DEFAULT NULL,        -- Breitengrad
-    lng           DECIMAL(9,6)  DEFAULT NULL,        -- Längengrad
-    opened_date   DATE          DEFAULT NULL,        -- Eröffnungsdatum
-    closed_date   DATE          DEFAULT NULL         -- Schließungsdatum (NULL = noch in Betrieb)
+    lng           DECIMAL(9,6)  DEFAULT NULL         -- Längengrad
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: club_stadium (m-n Beziehung club <-> stadium mit Zeitraum)
@@ -288,6 +286,17 @@ CREATE TABLE IF NOT EXISTS manager_achievement (
     FOREIGN KEY (manager_id)     REFERENCES manager(id),
     FOREIGN KEY (achievement_id) REFERENCES achievement(id),
     UNIQUE KEY uk_manager_achievement (manager_id, achievement_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: manager_stadium (welche Stadien hat ein Manager als besucht markiert)
+CREATE TABLE IF NOT EXISTS manager_stadium (
+    id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id CHAR(36) NOT NULL,
+    stadium_id CHAR(36) NOT NULL,  -- Referenz auf stadium.id (gleiche DB)
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    FOREIGN KEY (stadium_id) REFERENCES stadium(id),
+    UNIQUE KEY uk_manager_stadium (manager_id, stadium_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: maintainer_contribution (welcher Maintainer hat Spielerratings eingetragen)

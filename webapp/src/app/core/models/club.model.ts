@@ -5,7 +5,6 @@ export interface Stadium {
   capacity: number | null;
   lat: number | null;
   lng: number | null;
-  opened_date: string | null;
 }
 
 export class Club {

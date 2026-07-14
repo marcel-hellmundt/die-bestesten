@@ -78,7 +78,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 | player_in_club | id PK, player_id FK, club_id FK, from_date DATE, to_date DATE?, on_loan BOOL — UNIQUE(player_id, club_id, from_date) |
 | player_rating | id PK, player_id FK, matchday_id FK, club_id FK? (zum Zeitpunkt; NULL für historische Daten), grade DECIMAL?, participation ENUM(starting/substitute)?, goals, assists, clean_sheet, sds BOOL, red_card, yellow_red_card, points — UNIQUE(player_id, matchday_id) |
 | transferwindow | id PK, matchday_id FK, start_date DATETIME, end_date DATETIME — 2–4 pro Spieltag |
-| stadium | id PK, official_name, name? (Spitzname/Alltagsname), capacity INT?, lat DECIMAL(9,6)?, lng DECIMAL(9,6)?, opened_date DATE?, closed_date DATE? |
+| stadium | id PK, official_name, name? (Spitzname/Alltagsname), capacity INT?, lat DECIMAL(9,6)?, lng DECIMAL(9,6)? |
 | club_stadium | id PK, club_id FK, stadium_id FK, from_date DATE, to_date DATE? — UNIQUE(club_id, from_date) |
 | award | id PK, name UNIQUE, icon VARCHAR(100)? (nur Dateiname, z.B. "trophy.png" → public/img/icons/), sort_index INT — Award-Typen; sort_index = Wichtigkeit (1 = wichtigster) |
 
@@ -90,8 +90,13 @@ Vollständige Doku: `api/schema.php`.
 GET/POST /club_in_season       — Saison-Zuordnungen; POST 409 bei Duplikat
 PATCH    /club_in_season/:id   — Division/Position aktualisieren
 GET      /division[/:id]
-GET      /club[/:id]           — /:id enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null
+GET      /club[/:id]           — enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null — auch in der Liste
 POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → setzt club.logo_uploaded — Maintainer+
+GET      /stadium              — Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth
+POST     /stadium              — {club_id, official_name, name?, capacity?, lat?, lng?, from_date?} → {id}; legt Stadion an und verknüpft es sofort als aktuelles Stadion des Clubs (club_stadium, to_date NULL); from_date default heute — Admin
+GET      /manager_stadium      — Stadion-IDs, die der eingeloggte Manager als besucht markiert hat — Auth
+POST     /manager_stadium      — {stadium_id} — als besucht markieren (idempotent) — Auth
+DELETE   /manager_stadium/:stadium_id — Markierung entfernen (idempotent) — Auth
 GET      /country[/:id]
 GET      /season[/:id|/active]
 POST     /season                — {start_date: YYYY-MM-DD} → {id}; UNIQUE auf start_date — Admin
@@ -209,6 +214,8 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 **notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned, scouted_player_update
 
 **manager_achievement**: id PK, manager_id FK, achievement_id FK → achievement (echtes FK, gleiche DB!), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen
+
+**manager_stadium**: id PK, manager_id FK, stadium_id FK → stadium (echtes FK, gleiche DB!), created_at — UNIQUE(manager_id, stadium_id) — vom Manager als besucht markierte Stadien; idempotent per INSERT IGNORE
 
 **maintainer_contribution**: id PK, manager_id FK, player_rating_id (cross-DB auf global_schema.player_rating, kein FK), contribution_type ENUM(bulk_create/manual_create/grade), created_at — UNIQUE(player_rating_id, contribution_type) — trackt welcher Maintainer Aufstellung/Noten eingetragen hat; grade-Einträge werden per UPSERT ersetzt (letzter Setzer behält Credit)
 

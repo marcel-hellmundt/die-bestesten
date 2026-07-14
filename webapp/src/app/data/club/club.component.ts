@@ -5,6 +5,7 @@ import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap } 
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Club } from '../../core/models/club.model';
+import { Country } from '../../core/models/country.model';
 
 @Component({
   selector: 'app-data-club',
@@ -36,13 +37,25 @@ export class ClubDataComponent {
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error   ?? null);
 
+  private countries = toSignal(
+    this.api.get<any[]>('country').pipe(
+      map(data => data.map(Country.from)),
+      catchError(() => of([] as Country[]))
+    ),
+    { initialValue: [] as Country[] }
+  );
+
+  private countryNameById = computed(() => new Map(this.countries().map(c => [c.id, c.name])));
+
   searchQuery   = signal('');
   filteredItems = computed(() => {
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return this.items();
+    const countryNames = this.countryNameById();
     return this.items().filter(i =>
       i.name.toLowerCase().includes(q) ||
-      (i.short_name ?? '').toLowerCase().includes(q)
+      (i.short_name ?? '').toLowerCase().includes(q) ||
+      (countryNames.get(i.country_id) ?? '').toLowerCase().includes(q)
     );
   });
 
@@ -103,7 +116,16 @@ export class ClubDataComponent {
 
   otherClubs = computed(() => {
     const blIds = new Set(this.bundesligaClubs().map(e => e.club.id));
-    return this.filteredItems().filter(c => !blIds.has(c.id));
+    const divisionByClub = new Map(
+      this.currentSeasonEntries().map((e: any) => [e.club_id as string, e.division_id as string | null])
+    );
+
+    return this.filteredItems()
+      .filter(c => !blIds.has(c.id))
+      .map(c => {
+        const divisionId = divisionByClub.get(c.id);
+        return { club: c, divisionName: divisionId ? this.cache.divisionName(divisionId) : null };
+      });
   });
 
   sanityState    = signal<'idle' | 'loading' | 'done'>('idle');

@@ -234,7 +234,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/club',
-                        'description' => 'Alle Clubs, optional gefiltert nach Land',
+                        'description' => 'Alle Clubs, optional gefiltert nach Land — enthält aktuelles Stadion als stadium-Objekt (oder null)',
                         'query_params' => ['country_id' => 'ISO Alpha-2 Code (optional)'],
                     ],
                     [
@@ -248,6 +248,56 @@ class Routing
                         'path' => '/club/:id/logo',
                         'description' => 'Vereinswappen hochladen (multipart/form-data, Feld "image", PNG) — setzt club.logo_uploaded — Maintainer+',
                         'path_params' => [':id' => 'UUID des Clubs'],
+                    ],
+                ],
+            ]),
+
+            new Route('stadium', 'Stadium', [
+                'title' => 'Stadium',
+                'description' => 'Stadien — werden per club_stadium mit einem Club verknüpft',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/stadium',
+                        'description' => 'Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/stadium',
+                        'description' => 'Neues Stadion anlegen und direkt als aktuelles Stadion eines Clubs verknüpfen (club_stadium, to_date NULL) — Admin',
+                        'body' => [
+                            'club_id' => 'UUID des Clubs (erforderlich)',
+                            'official_name' => 'Offizieller Name (erforderlich)',
+                            'name' => 'Spitzname (optional)',
+                            'capacity' => 'Zuschauerkapazität (optional)',
+                            'lat' => 'Breitengrad (optional)',
+                            'lng' => 'Längengrad (optional)',
+                            'from_date' => 'Seit wann der Club dieses Stadion nutzt YYYY-MM-DD (optional, Default heute)',
+                        ],
+                    ],
+                ],
+            ]),
+
+            new Route('manager_stadium', 'ManagerStadium', [
+                'title' => 'ManagerStadium',
+                'description' => 'Von einem Manager als besucht markierte Stadien',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/manager_stadium',
+                        'description' => 'Stadion-IDs, die der eingeloggte Manager als besucht markiert hat — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/manager_stadium',
+                        'description' => 'Stadion als besucht markieren (idempotent) — Auth',
+                        'body' => ['stadium_id' => 'UUID des Stadions (erforderlich)'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/manager_stadium/:stadium_id',
+                        'description' => 'Markierung als besucht wieder entfernen (idempotent) — Auth',
+                        'path_params' => [':stadium_id' => 'UUID des Stadions'],
                     ],
                 ],
             ]),

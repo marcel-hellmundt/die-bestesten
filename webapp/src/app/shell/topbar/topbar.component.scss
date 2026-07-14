@@ -685,6 +685,8 @@
   border: none;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
+  color: inherit;
   transition: background-color $transition-fast;
 
   &:hover {

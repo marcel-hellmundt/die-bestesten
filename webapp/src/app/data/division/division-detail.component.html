@@ -22,14 +22,32 @@
   <section class="detail-section">
     <div class="season-select-bar">
       <h2 class="section-header">Clubs</h2>
-      <select
-        class="input input--sm season-select"
-        (change)="selectSeason($any($event.target).value)"
-      >
-        @for (s of cache.seasons(); track s.id) {
-          <option [value]="s.id">{{ s.displayName }}</option>
-        }
-      </select>
+      <div class="season-nav-group">
+        <button
+          class="nav-arrow"
+          (click)="decrement()"
+          [disabled]="!canDecrement()"
+          aria-label="Ältere Saison"
+        >
+          ‹
+        </button>
+        <select
+          class="select season-select"
+          (change)="onSeasonChange($any($event.target).value)"
+        >
+          @for (s of seasons(); track s.id) {
+            <option [value]="s.id" [selected]="s.id === effectiveSeasonId()">{{ s.displayName }}</option>
+          }
+        </select>
+        <button
+          class="nav-arrow"
+          (click)="increment()"
+          [disabled]="!canIncrement()"
+          aria-label="Neuere Saison"
+        >
+          ›
+        </button>
+      </div>
       <div class="club-count-area">
         @if (!clubsLoading()) {
           <span class="club-count" [class.club-count--full]="clubs().length === d.seats">
@@ -52,12 +70,16 @@
               <th class="col-logo"></th>
               <th>Name</th>
               <th>Kürzel</th>
+              <th class="col-stadium"></th>
             </tr>
           </thead>
           <tbody>
             @for (entry of clubs(); track entry.club.id) {
-              <tr class="row-link" (click)="navigate(['/daten/club', entry.club.id])">
-                <td class="col-pos">{{ entry.position ?? '—' }}</td>
+              <tr class="row-link">
+                <td class="col-pos">
+                  <a class="row-link__anchor" [routerLink]="['/daten/club', entry.club.id]"></a>
+                  {{ entry.position ?? '—' }}
+                </td>
                 <td class="col-logo">
                   <img
                     [src]="entry.club.logoUrl"
@@ -68,6 +90,11 @@
                 </td>
                 <td>{{ entry.club.name }}</td>
                 <td class="col-short">{{ entry.club.short_name ?? '—' }}</td>
+                <td class="col-stadium">
+                  @if (entry.club.stadium) {
+                    <app-icon name="stadium" [attr.title]="entry.club.stadium.official_name" />
+                  }
+                </td>
               </tr>
             }
           </tbody>

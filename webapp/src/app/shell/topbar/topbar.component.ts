@@ -178,11 +178,6 @@ export class TopbarComponent implements OnDestroy {
     this.isSearchOpen.set(false);
   }
 
-  navigateToResult(path: string[]): void {
-    this.closeSearch();
-    this.router.navigate(path);
-  }
-
   playerPhotoUrl(p: any): string | null {
     if (!p.photo_uploaded || !p.season_id) return null;
     return `https://img.die-bestesten.de/player/${p.season_id}/${p.id}.png`;

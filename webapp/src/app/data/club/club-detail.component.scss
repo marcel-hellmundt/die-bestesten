@@ -116,6 +116,28 @@
       @media (max-width: $mobile-breakpoint) {
         display: none;
       }
+
+      &--create {
+        flex-direction: row;
+        align-items: center;
+        gap: $space-2;
+        padding: $space-2 $space-4;
+        border: 1px dashed $color-border;
+        border-radius: $radius-md;
+        background: transparent;
+        color: $color-text-muted;
+        font-size: $font-sm;
+        font-weight: $font-weight-medium;
+        cursor: pointer;
+        transition:
+          color $transition-fast,
+          border-color $transition-fast;
+
+        &:hover {
+          color: $color-text;
+          border-color: $color-text-muted;
+        }
+      }
     }
 
     .club-stadium-photo {
@@ -359,6 +381,10 @@
       stroke-width: 2;
       stroke-linejoin: round;
       stroke-linecap: round;
+
+      &--gap {
+        stroke-dasharray: 4 3;
+      }
     }
 
     .chart-dot {
