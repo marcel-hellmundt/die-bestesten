@@ -245,6 +245,11 @@ class Routing
                     ],
                     [
                         'method' => 'POST',
+                        'path' => '/club',
+                        'description' => 'Neuen Club anlegen — {country_id, name, short_name?} → {id} — Admin',
+                    ],
+                    [
+                        'method' => 'POST',
                         'path' => '/club/:id/logo',
                         'description' => 'Vereinswappen hochladen (multipart/form-data, Feld "image", PNG) — setzt club.logo_uploaded — Maintainer+',
                         'path_params' => [':id' => 'UUID des Clubs'],

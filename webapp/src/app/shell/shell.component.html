@@ -6,7 +6,7 @@
   <div class="shell-main">
     <app-topbar></app-topbar>
 
-    <main class="shell-content">
+    <main class="shell-content" [class.shell-content--full]="isFullBleed()">
       <router-outlet></router-outlet>
     </main>
   </div>

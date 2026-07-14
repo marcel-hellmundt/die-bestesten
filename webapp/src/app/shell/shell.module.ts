@@ -22,6 +22,7 @@ const routes: Routes = [
       { path: 'markt',         loadChildren: () => import('../markt/markt.module').then(m => m.MarktModule) },
       { path: 'manager',       loadChildren: () => import('../manager/manager.module').then(m => m.ManagerModule) },
       { path: 'daten',         loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
+      { path: 'karte',         loadChildren: () => import('../map/map.module').then(m => m.MapModule) },
       { path: 'einstellungen',  loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
       { path: 'achievements',    loadChildren: () => import('../achievements/achievements.module').then(m => m.AchievementsModule) },
       { path: 'scouting',       loadChildren: () => import('../scouting/scouting.module').then(m => m.ScoutingModule) },

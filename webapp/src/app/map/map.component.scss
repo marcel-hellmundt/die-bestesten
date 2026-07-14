@@ -1,14 +1,75 @@
-@use '../../../styles/variables' as *;
+@use '../../styles/variables' as *;
+
+:host {
+  display: block;
+  height: 100%;
+}
 
 .map-shell {
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 
-.map-filters-wrap {
+.map-top-row {
   position: absolute;
   top: $space-6;
   left: $space-6;
+  right: $space-6;
   z-index: $z-raised;
+  display: flex;
+  align-items: flex-start;
+  gap: $space-4;
+  // The row itself is just a layout box — its empty space (between/around the children)
+  // must not swallow clicks meant for map markers underneath. Only the actual visible
+  // pieces re-enable pointer events below.
+  pointer-events: none;
+}
+
+.map-filters-wrap {
+  position: relative; // containing block for the mobile dropdown panel below
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+
+.map-progress {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 20px;
+  border-radius: $radius-sm;
+  background: $color-text;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  pointer-events: auto;
+
+  &__fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background: $color-success;
+    transition: width 0.3s ease;
+  }
+
+  &__label {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-surface;
+  }
+}
+
+// Always reserved at a fixed width — regardless of whether a stadium is selected — so the
+// progress bar's flex:1 width in .map-top-row never shifts based on the card's presence.
+.map-card-slot {
+  flex-shrink: 0;
+  width: 320px;
 }
 
 .map-filters-toggle {
@@ -70,6 +131,10 @@
 // Mobile: the always-visible button column becomes a toggle + dropdown panel instead,
 // since a row of full-size division buttons doesn't fit a narrow viewport.
 @media (max-width: $mobile-breakpoint) {
+  .map-top-row {
+    flex-wrap: wrap;
+  }
+
   .map-filters-toggle {
     display: flex;
   }
@@ -84,20 +149,20 @@
       display: flex;
     }
   }
+
+  .map-card-slot {
+    width: 100%;
+  }
 }
 
 .map-card {
-  position: absolute;
-  top: $space-6;
-  right: $space-6;
-  width: 320px;
-  max-width: calc(100% - #{$space-6} * 2);
+  width: 100%;
   background: $color-text;
   color: $color-surface;
   border-radius: $radius-sm;
   padding: $space-5;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  z-index: $z-raised;
+  pointer-events: auto;
 
   &__close {
     position: absolute;

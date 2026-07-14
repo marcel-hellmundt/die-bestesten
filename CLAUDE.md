@@ -91,6 +91,7 @@ GET/POST /club_in_season       — Saison-Zuordnungen; POST 409 bei Duplikat
 PATCH    /club_in_season/:id   — Division/Position aktualisieren
 GET      /division[/:id]
 GET      /club[/:id]           — enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null — auch in der Liste
+POST     /club                 — {country_id, name, short_name?} → {id} — Admin
 POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → setzt club.logo_uploaded — Maintainer+
 GET      /stadium              — Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth
 POST     /stadium              — {club_id, official_name, name?, capacity?, lat?, lng?, from_date?} → {id}; legt Stadion an und verknüpft es sofort als aktuelles Stadion des Clubs (club_stadium, to_date NULL); from_date default heute — Admin

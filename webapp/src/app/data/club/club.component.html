@@ -40,6 +40,9 @@
     (input)="searchQuery.set($any($event.target).value)"
   />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
+  @if (isAdmin()) {
+    <button class="btn" (click)="openClubForm()">+ Neuer Club</button>
+  }
   <button class="btn" [disabled]="sanityState() === 'loading'" (click)="runSanityCheck()">
     {{ sanityState() === 'loading' ? 'Prüft…' : 'Sanity Check' }}
   </button>
@@ -120,3 +123,60 @@
     </div>
   }
 }
+
+<ng-template #clubSheet>
+  <div class="add-form" (keydown.enter)="!clubSaving() && submitClub()">
+    <div class="add-form-row">
+      <div class="add-form-field">
+        <label class="add-form-label">Land</label>
+        <select
+          class="input input--sm"
+          [value]="clubCountryId()"
+          (change)="clubCountryId.set($any($event.target).value)"
+        >
+          @for (c of countries(); track c.id) {
+            <option [value]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="add-form-row">
+      <div class="add-form-field">
+        <label class="add-form-label">Name</label>
+        <input
+          class="input input--sm"
+          type="text"
+          [value]="clubName()"
+          (input)="clubName.set($any($event.target).value)"
+        />
+      </div>
+      <div class="add-form-field">
+        <label class="add-form-label">Kürzel</label>
+        <input
+          class="input input--sm"
+          type="text"
+          [value]="clubShortName()"
+          (input)="clubShortName.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+
+    @if (clubError()) {
+      <p class="add-form-error">{{ clubError() }}</p>
+    }
+
+    <div class="add-form-actions">
+      <button
+        class="btn-save"
+        (click)="submitClub()"
+        [disabled]="clubSaving() || !clubName().trim() || !clubCountryId()"
+      >
+        {{ clubSaving() ? 'Speichern…' : 'Speichern' }}
+      </button>
+      <button class="btn-cancel" (click)="bottomSheet.close()" [disabled]="clubSaving()">
+        Abbrechen
+      </button>
+    </div>
+  </div>
+</ng-template>

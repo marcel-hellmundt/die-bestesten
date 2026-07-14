@@ -1,8 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
-import { GoogleMapsModule } from '@angular/google-maps';
-import { IconComponent } from '../shared/icon/icon.component';
+import { IconModule } from '../shared/icon/icon.module';
 import { MaintainerGuard } from '../auth/maintainer.guard';
 
 import { DataComponent } from './data.component';
@@ -20,7 +19,6 @@ import { LeagueDataComponent } from './league/league.component';
 import { LeagueDetailComponent } from './league/league-detail.component';
 import { AchievementsDataComponent } from './achievements/achievements-data.component';
 import { ManagerDataComponent } from './manager/manager-data.component';
-import { MapDataComponent } from './map/map.component';
 
 const M = [MaintainerGuard];
 
@@ -45,15 +43,12 @@ const routes: Routes = [
       { path: 'player/:id',    component: PlayerDetailComponent },
       { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
       { path: 'manager',       component: ManagerDataComponent,      canActivate: M },
-      // map: no MaintainerGuard — every manager gets to mark stadiums as visited
-      { path: 'map',           component: MapDataComponent },
     ]
   }
 ];
 
 @NgModule({
   declarations: [
-    IconComponent,
     DataComponent,
     CountryDataComponent,
     CountryDetailComponent,
@@ -69,12 +64,11 @@ const routes: Routes = [
     LeagueDetailComponent,
     AchievementsDataComponent,
     ManagerDataComponent,
-    MapDataComponent,
   ],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
-    GoogleMapsModule,
+    IconModule,
   ]
 })
 export class DataModule {}

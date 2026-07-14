@@ -27,6 +27,19 @@
   &-content {
     flex: 1;
     padding: $space-8;
+
+    // Full-bleed routes (e.g. the map) take the entire viewport below the topbar instead of
+    // sitting in the padded content column — fixed positioning sidesteps the flex/min-height
+    // sizing chain entirely, so it doesn't matter how tall the page content would otherwise be.
+    &--full {
+      position: fixed;
+      top: 60px;
+      left: $sidebar-width;
+      right: 0;
+      bottom: 0;
+      padding: 0;
+      overflow: hidden;
+    }
   }
 
   @media (max-width: #{$mobile-breakpoint}) {
@@ -47,6 +60,11 @@
 
     &-content {
       padding: $space-5 $space-4;
+
+      &--full {
+        left: 0;
+        bottom: 64px;
+      }
     }
   }
 }

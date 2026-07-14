@@ -1,8 +1,10 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../auth/auth.service';
+import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Club } from '../../core/models/club.model';
 import { Country } from '../../core/models/country.model';
@@ -15,11 +17,15 @@ import { Country } from '../../core/models/country.model';
 })
 export class ClubDataComponent {
   private api    = inject(ApiService);
+  private auth   = inject(AuthService);
   private router = inject(Router);
   private route  = inject(ActivatedRoute);
+  bottomSheet    = inject(BottomSheetService);
 
   navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
   cache         = inject(DataCacheService);
+
+  isAdmin = computed(() => this.auth.isAdmin());
 
   private reload$ = new BehaviorSubject<void>(undefined);
 
@@ -37,7 +43,7 @@ export class ClubDataComponent {
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error   ?? null);
 
-  private countries = toSignal(
+  countries = toSignal(
     this.api.get<any[]>('country').pipe(
       map(data => data.map(Country.from)),
       catchError(() => of([] as Country[]))
@@ -191,5 +197,49 @@ export class ClubDataComponent {
       },
       error: () => this.sanityState.set('idle'),
     });
+  }
+
+  // Club creation
+  @ViewChild('clubSheet') clubSheet!: TemplateRef<any>;
+
+  clubCountryId = signal('');
+  clubName      = signal('');
+  clubShortName = signal('');
+  clubSaving    = signal(false);
+  clubError     = signal<string | null>(null);
+
+  openClubForm(): void {
+    this.clubCountryId.set(this.countries()[0]?.id ?? '');
+    this.clubName.set('');
+    this.clubShortName.set('');
+    this.clubError.set(null);
+    this.bottomSheet.open(this.clubSheet, { title: 'Neuen Club anlegen' });
+  }
+
+  submitClub(): void {
+    const countryId = this.clubCountryId();
+    const name = this.clubName().trim();
+    if (!countryId || !name) return;
+
+    this.clubSaving.set(true);
+    this.clubError.set(null);
+    this.api
+      .post<{ id: string }>('club', {
+        country_id: countryId,
+        name,
+        short_name: this.clubShortName().trim() || null,
+      })
+      .subscribe({
+        next: (res) => {
+          this.clubSaving.set(false);
+          this.bottomSheet.close();
+          this.reload$.next();
+          this.router.navigate([res.id], { relativeTo: this.route });
+        },
+        error: (err: any) => {
+          this.clubSaving.set(false);
+          this.clubError.set(err?.error?.message ?? 'Fehler beim Speichern');
+        },
+      });
   }
 }

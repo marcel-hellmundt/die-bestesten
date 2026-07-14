@@ -1,11 +1,11 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
-import { ApiService } from '../../core/api.service';
-import { DataCacheService } from '../../core/data-cache.service';
-import { GoogleMapsLoaderService } from '../../core/google-maps-loader.service';
-import { StadiumClub, StadiumMapEntry } from '../../core/models/stadium.model';
-import { environment } from '../../../environments/environment';
+import { ApiService } from '../core/api.service';
+import { DataCacheService } from '../core/data-cache.service';
+import { GoogleMapsLoaderService } from '../core/google-maps-loader.service';
+import { StadiumClub, StadiumMapEntry } from '../core/models/stadium.model';
+import { environment } from '../../environments/environment';
 
 interface MarkerViewModel {
   stadium: StadiumMapEntry;
@@ -47,12 +47,12 @@ const MAP_STYLE: google.maps.MapTypeStyle[] = [
 ];
 
 @Component({
-  selector: 'app-data-map',
+  selector: 'app-map',
   standalone: false,
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss'
 })
-export class MapDataComponent {
+export class MapComponent {
   private api = inject(ApiService);
   private cache = inject(DataCacheService);
   private mapsLoader = inject(GoogleMapsLoaderService);
@@ -178,7 +178,7 @@ export class MapDataComponent {
       .filter((s): s is StadiumMapEntry & { club: StadiumClub } => s.lat != null && s.lng != null && s.club !== null)
       .filter(s => {
         const divisionId = divisionByClub.get(s.club.id);
-        return !divisionId || active.has(divisionId);
+        return divisionId != null && active.has(divisionId);
       })
       .map(s => ({
         stadium: s,
@@ -199,6 +199,17 @@ export class MapDataComponent {
       icon: e.icon,
       zIndex: entries.length - i,
     }));
+  });
+
+  // Progress bar counts — scoped to the currently visible (filtered) markers, not all stadiums.
+  visibleCount = computed(() => this.markers().length);
+  visitedCount = computed(() => {
+    const visited = this.visitedStadiumIds();
+    return this.markers().filter(m => visited.has(m.stadium.id)).length;
+  });
+  visitedPercent = computed(() => {
+    const total = this.visibleCount();
+    return total ? Math.round((this.visitedCount() / total) * 100) : 0;
   });
 
   clubLogoUrl(club: StadiumClub): string {
