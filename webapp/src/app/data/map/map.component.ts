@@ -234,13 +234,18 @@ export class MapDataComponent {
     // Separate CORS-mode load, used only to attempt a grayscale canvas conversion for
     // unvisited stadiums. If the asset server doesn't send the CORS header, this just fails
     // quietly and the color icon is used instead — it never touches the load above.
+    // Cache-busted with a query param: these logos are also loaded via plain <img> tags all
+    // over the app (club lists, search, topbar, ...), and on Safari/mobile WebKit a CORS-mode
+    // request for a URL already cached from a non-CORS <img> fetch can silently return that
+    // cached (non-CORS) response, tainting the canvas despite crossOrigin being set. A
+    // distinct URL forces a real CORS-negotiated fetch.
     const corsImg = new Image();
     corsImg.crossOrigin = 'anonymous';
     corsImg.onload = () => {
       const grey = this.toGreyscaleUrl(corsImg);
       if (grey) this.logoGrey.update(m => ({ ...m, [url]: grey }));
     };
-    corsImg.src = url;
+    corsImg.src = url + (url.includes('?') ? '&' : '?') + 'cors=1';
   }
 
   private toGreyscaleUrl(img: HTMLImageElement): string | null {
@@ -249,9 +254,19 @@ export class MapDataComponent {
     canvas.height = img.naturalHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-    ctx.filter = 'grayscale(1) opacity(0.5)';
+    // Manual luminance grayscale + halved alpha via getImageData/putImageData rather than
+    // ctx.filter — filter support on canvas 2d contexts is still inconsistent on older/mobile
+    // WebKit, where it can silently no-op and leave the icon in full color.
     ctx.drawImage(img, 0, 0);
     try {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const grey = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+        data[i] = data[i + 1] = data[i + 2] = grey;
+        data[i + 3] = data[i + 3] * 0.5;
+      }
+      ctx.putImageData(imageData, 0, 0);
       return canvas.toDataURL('image/png');
     } catch {
       return null; // cross-origin canvas got tainted — fall back to the color icon
