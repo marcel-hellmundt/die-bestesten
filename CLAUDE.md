@@ -69,7 +69,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 | country | id PK, name |
 | season | id PK, start_date UNIQUE — aktiv = höchstes start_date |
 | league | id PK, slug UNIQUE, name, db_name, visibility ENUM('public','private') DEFAULT 'public' — public = Beitrittsanfragen erlaubt; private = nur Einladung |
-| club | id PK, country_id FK, name, short_name, logo_uploaded BOOL |
+| club | id PK, country_id FK, name UNIQUE, short_name, logo_uploaded BOOL |
 | division | id PK, name, level INT, seats INT, country_id FK |
 | matchday | id PK, season_id FK, division_id FK, start_date DATE, kickoff_date DATETIME, number INT, completed BOOL — UNIQUE(season_id, division_id, number) — jede Division pflegt eigene Spieltage |
 | player | id PK, kicker_id INT UNIQUE?, country_id FK?, first_name, last_name, displayname UNIQUE, birth_city, date_of_birth, height_cm, weight_kg |
@@ -91,7 +91,7 @@ GET/POST /club_in_season       — Saison-Zuordnungen; POST 409 bei Duplikat
 PATCH    /club_in_season/:id   — Division/Position aktualisieren
 GET      /division[/:id]
 GET      /club[/:id]           — enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null — auch in der Liste
-POST     /club                 — {country_id, name, short_name?} → {id} — Admin
+POST     /club                 — {country_id, name, short_name?} → {id}; 409 bei Namensduplikat — Admin
 POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → setzt club.logo_uploaded — Maintainer+
 GET      /stadium              — Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth
 POST     /stadium              — {club_id, official_name, name?, capacity?, lat?, lng?, from_date?} → {id}; legt Stadion an und verknüpft es sofort als aktuelles Stadion des Clubs (club_stadium, to_date NULL); from_date default heute — Admin

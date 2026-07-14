@@ -65,6 +65,13 @@ trait ClubTrait
         $this->con->prepare("UPDATE club SET logo_uploaded = 1 WHERE id = :id")->execute([':id' => $id]);
     }
 
+    public function clubNameExists(string $name): bool
+    {
+        $query = $this->con->prepare("SELECT 1 FROM club WHERE name = :name LIMIT 1");
+        $query->execute([':name' => $name]);
+        return (bool) $query->fetch();
+    }
+
     public function createClub(string $id, string $countryId, string $name, ?string $shortName): void
     {
         $query = $this->con->prepare(

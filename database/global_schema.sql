@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS country (
 CREATE TABLE IF NOT EXISTS club (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     country_id CHAR(2) NOT NULL,                -- Foreign Key zu country.id
-    name VARCHAR(100) NOT NULL,                 -- Name des Clubs
+    name VARCHAR(100) NOT NULL UNIQUE,          -- Name des Clubs
     short_name VARCHAR(10) DEFAULT NULL,        -- Kurzname/Kürzel, z.B. 'FCB', 'BVB'
     logo_uploaded BOOLEAN DEFAULT FALSE,        -- Gibt an, ob ein Logo für den Club hochgeladen wurde
     FOREIGN KEY (country_id) REFERENCES country(id)

@@ -246,7 +246,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/club',
-                        'description' => 'Neuen Club anlegen — {country_id, name, short_name?} → {id} — Admin',
+                        'description' => 'Neuen Club anlegen — {country_id, name, short_name?} → {id}; 409 bei Namensduplikat — Admin',
                     ],
                     [
                         'method' => 'POST',

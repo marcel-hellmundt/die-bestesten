@@ -47,6 +47,11 @@ class ClubController extends _BaseController
             return ['status' => false, 'message' => 'country_id and name are required'];
         }
 
+        if ($this->db->clubNameExists($name)) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Ein Club mit diesem Namen existiert bereits'];
+        }
+
         $shortName = isset($body['short_name']) ? trim($body['short_name']) : null;
         $shortName = $shortName !== '' ? $shortName : null;
 
