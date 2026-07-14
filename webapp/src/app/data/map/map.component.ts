@@ -350,7 +350,8 @@ export class MapDataComponent {
           const validIds = new Set(divs.map(d => d.id));
           this.activeDivisionIds.set(new Set(stored.filter(id => validIds.has(id))));
         } else {
-          this.activeDivisionIds.set(new Set(divs.map(d => d.id)));
+          // No stored selection yet — default to just the top division (level 1).
+          this.activeDivisionIds.set(new Set(divs.filter(d => d.level === 1).map(d => d.id)));
         }
       }
     });
