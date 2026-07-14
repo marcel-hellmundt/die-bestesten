@@ -21,16 +21,27 @@
     </google-map>
 
     @if (divisions().length > 1) {
-      <div class="map-filters">
-        @for (d of divisions(); track d.id) {
-          <button
-            class="map-filter-btn"
-            [class.map-filter-btn--inactive]="!isDivisionActive(d.id)"
-            (click)="toggleDivision(d.id)"
-          >
-            {{ d.name }}
-          </button>
-        }
+      <div class="map-filters-wrap">
+        <button
+          class="map-filters-toggle"
+          [class.map-filters-toggle--active]="filtersMenuOpen()"
+          (click)="filtersMenuOpen.set(!filtersMenuOpen())"
+          aria-label="Ligen filtern"
+        >
+          <app-icon name="filter"></app-icon>
+        </button>
+
+        <div class="map-filters" [class.map-filters--open]="filtersMenuOpen()">
+          @for (d of divisions(); track d.id) {
+            <button
+              class="map-filter-btn"
+              [class.map-filter-btn--inactive]="!isDivisionActive(d.id)"
+              (click)="toggleDivision(d.id)"
+            >
+              {{ d.name }}
+            </button>
+          }
+        </div>
       </div>
     }
 

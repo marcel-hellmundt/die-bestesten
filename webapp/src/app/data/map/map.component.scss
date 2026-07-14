@@ -4,14 +4,40 @@
   position: relative;
 }
 
-.map-filters {
+.map-filters-wrap {
   position: absolute;
   top: $space-6;
   left: $space-6;
+  z-index: $z-raised;
+}
+
+.map-filters-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: $color-text;
+  color: $color-surface;
+  border: none;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: opacity $transition-fast;
+
+  &:hover {
+    opacity: 0.85;
+  }
+
+  &--active {
+    background: $color-accent;
+  }
+}
+
+.map-filters {
   display: flex;
   flex-direction: column;
   gap: $space-2;
-  z-index: $z-raised;
 }
 
 .map-filter-btn {
@@ -23,6 +49,7 @@
   font-size: $font-sm;
   font-weight: $font-weight-semibold;
   text-align: left;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   transition: opacity $transition-fast;
@@ -37,6 +64,25 @@
 
   &--inactive:hover {
     opacity: 0.6;
+  }
+}
+
+// Mobile: the always-visible button column becomes a toggle + dropdown panel instead,
+// since a row of full-size division buttons doesn't fit a narrow viewport.
+@media (max-width: $mobile-breakpoint) {
+  .map-filters-toggle {
+    display: flex;
+  }
+
+  .map-filters {
+    display: none;
+    position: absolute;
+    top: calc(40px + #{$space-2});
+    left: 0;
+
+    &--open {
+      display: flex;
+    }
   }
 }
 

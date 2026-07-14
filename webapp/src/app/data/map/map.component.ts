@@ -126,6 +126,9 @@ export class MapDataComponent {
 
   divisions = computed(() => [...this.cache.divisions()].sort((a, b) => a.level - b.level));
 
+  // Mobile: the division buttons collapse behind this toggle instead of showing all at once.
+  filtersMenuOpen = signal(false);
+
   // Division filter buttons — every division starts active; toggling one hides its clubs'
   // markers. Lazily initialized once the division list has actually loaded, either from a
   // stored selection (persisted across sessions) or "all active" as the default.
