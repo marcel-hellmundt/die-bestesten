@@ -103,7 +103,16 @@ export class ClubDataComponent {
 
   otherClubs = computed(() => {
     const blIds = new Set(this.bundesligaClubs().map(e => e.club.id));
-    return this.filteredItems().filter(c => !blIds.has(c.id));
+    const divisionByClub = new Map(
+      this.currentSeasonEntries().map((e: any) => [e.club_id as string, e.division_id as string | null])
+    );
+
+    return this.filteredItems()
+      .filter(c => !blIds.has(c.id))
+      .map(c => {
+        const divisionId = divisionByClub.get(c.id);
+        return { club: c, divisionName: divisionId ? this.cache.divisionName(divisionId) : null };
+      });
   });
 
   sanityState    = signal<'idle' | 'loading' | 'done'>('idle');

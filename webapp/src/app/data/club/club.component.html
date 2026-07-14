@@ -89,7 +89,7 @@
 
   @if (otherClubs().length > 0) {
     @if (bundesligaClubs().length > 0) {
-      <h3 class="table-section-title">Weitere Vereine</h3>
+      <h3 class="table-section-title">Weitere Clubs</h3>
     }
     <div class="table-container">
       <table class="data-table">
@@ -98,19 +98,21 @@
             <th class="col-id">ID</th>
             <th colspan="2">Name</th>
             <th>Kürzel</th>
+            <th>Liga</th>
           </tr>
         </thead>
         <tbody>
-          @for (item of otherClubs(); track item.id) {
-            <tr class="row-link" (click)="navigate(item.id)">
-              <td class="col-id">{{ item.id }}</td>
-              <td class="col-flag"><img [src]="item.flagUrl" class="flag" /></td>
+          @for (entry of otherClubs(); track entry.club.id) {
+            <tr class="row-link" (click)="navigate(entry.club.id)">
+              <td class="col-id">{{ entry.club.id }}</td>
+              <td class="col-flag"><img [src]="entry.club.flagUrl" class="flag" /></td>
               <td>
                 <span class="flex items-center gap-2">
-                  <img [src]="item.logoUrl" [class]="item.logoClass" /> {{ item.name }}</span
+                  <img [src]="entry.club.logoUrl" [class]="entry.club.logoClass" /> {{ entry.club.name }}</span
                 >
               </td>
-              <td>{{ item.short_name }}</td>
+              <td>{{ entry.club.short_name }}</td>
+              <td>{{ entry.divisionName ?? '—' }}</td>
             </tr>
           }
         </tbody>
