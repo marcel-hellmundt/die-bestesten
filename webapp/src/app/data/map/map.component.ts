@@ -127,9 +127,20 @@ export class MapDataComponent {
   divisions = computed(() => [...this.cache.divisions()].sort((a, b) => a.level - b.level));
 
   // Division filter buttons — every division starts active; toggling one hides its clubs'
-  // markers. Lazily initialized to "all active" once the division list has actually loaded.
+  // markers. Lazily initialized once the division list has actually loaded, either from a
+  // stored selection (persisted across sessions) or "all active" as the default.
+  private readonly DIVISION_FILTER_STORAGE_KEY = 'map-active-divisions';
   private activeDivisionIds = signal<Set<string>>(new Set());
   private divisionsInitialized = false;
+
+  private loadStoredActiveDivisions(): string[] | null {
+    try {
+      const raw = localStorage.getItem(this.DIVISION_FILTER_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
 
   isDivisionActive(divisionId: string): boolean {
     return this.activeDivisionIds().has(divisionId);
@@ -334,8 +345,21 @@ export class MapDataComponent {
       const divs = this.cache.divisions();
       if (divs.length && !this.divisionsInitialized) {
         this.divisionsInitialized = true;
-        this.activeDivisionIds.set(new Set(divs.map(d => d.id)));
+        const stored = this.loadStoredActiveDivisions();
+        if (stored) {
+          const validIds = new Set(divs.map(d => d.id));
+          this.activeDivisionIds.set(new Set(stored.filter(id => validIds.has(id))));
+        } else {
+          this.activeDivisionIds.set(new Set(divs.map(d => d.id)));
+        }
       }
+    });
+
+    // Persist the division filter selection across sessions, once initialized.
+    effect(() => {
+      const active = this.activeDivisionIds();
+      if (!this.divisionsInitialized) return;
+      localStorage.setItem(this.DIVISION_FILTER_STORAGE_KEY, JSON.stringify([...active]));
     });
   }
 }
