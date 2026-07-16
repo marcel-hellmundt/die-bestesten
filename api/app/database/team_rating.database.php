@@ -46,8 +46,35 @@ trait TeamRatingTrait
         $ids = array_column($matchdayRows, 'id');
         $numberById = array_column($matchdayRows, 'number', 'id');
 
-        if (empty($ids))
-            return ['standings' => [], 'luck' => ['lucky' => [], 'unlucky' => []]];
+        if (empty($ids)) {
+            // No completed matchday yet — still list teams already registered for the
+            // season (e.g. before a season starts) instead of an empty table.
+            $tq = $this->con_league->prepare(
+                "SELECT t.id AS team_id, t.team_name, t.color_primary AS color, t.season_id, m.manager_name
+                 FROM team t
+                 JOIN manager m ON m.id = t.manager_id
+                 WHERE t.season_id = :season_id
+                 ORDER BY t.team_name ASC"
+            );
+            $tq->execute([':season_id' => $seasonId]);
+            $teams = $tq->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($teams as &$t) {
+                $t['color']                   = $this->resolveColor($t['color']);
+                $t['total_points']            = 0;
+                $t['total_goals']             = 0;
+                $t['total_assists']           = 0;
+                $t['total_red_cards']         = 0;
+                $t['total_yellow_red_cards']  = 0;
+                $t['total_sds']               = 0;
+                $t['total_sds_defender']      = 0;
+                $t['total_clean_sheet']       = 0;
+                $t['total_missed_goals']      = 0;
+                $t['matchdays_played']        = 0;
+            }
+            unset($t);
+
+            return ['standings' => $teams, 'luck' => ['lucky' => [], 'unlucky' => []], 'chart' => []];
+        }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
