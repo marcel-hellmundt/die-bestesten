@@ -70,22 +70,19 @@
               @if (s.other_visitors.length > 0) {
                 <span class="map-card__visitor-avatars">
                   @for (v of s.other_visitors; track v.id) {
-                    @if (!managerPhotoFailed(v.id)) {
-                      <img
-                        class="map-card__visitor-avatar"
-                        [src]="managerPhotoUrl(v.id)"
-                        (error)="onManagerPhotoError(v.id)"
-                        alt=""
-                      />
-                    } @else {
-                      <span class="map-card__visitor-avatar map-card__visitor-avatar--initials">{{
-                        v.manager_name.charAt(0).toUpperCase()
-                      }}</span>
-                    }
+                    <span class="map-card__visitor-avatar" [attr.data-tooltip]="v.manager_name">
+                      @if (!managerPhotoFailed(v.id)) {
+                        <img [src]="managerPhotoUrl(v.id)" (error)="onManagerPhotoError(v.id)" alt="" />
+                      } @else {
+                        <span class="map-card__visitor-avatar-initials">{{
+                          v.manager_name.charAt(0).toUpperCase()
+                        }}</span>
+                      }
+                    </span>
                   }
                 </span>
               }
-              {{ visitorText(s) }}
+              <span>{{ visitorText(s) }}</span>
             </div>
             <button
               class="map-card__visit-btn"
