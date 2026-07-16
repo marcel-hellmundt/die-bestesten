@@ -328,6 +328,34 @@ export class MapComponent {
     return this.visitedStadiumIds().has(stadiumId);
   }
 
+  visitorText(stadium: StadiumMapEntry): string {
+    const iVisited = this.isVisited(stadium.id);
+    const others = stadium.other_visitors.length;
+
+    if (!iVisited && others === 0) return 'Hier war noch niemand';
+    if (iVisited && others === 0) return 'Außer dir war noch niemand hier';
+    if (!iVisited && others === 1) return '1 anderer Manager war hier';
+    if (!iVisited) return `${others} andere Manager waren hier`;
+    if (others === 1) return '1 anderer Manager war neben dir hier';
+    return `${others} andere Manager waren neben dir hier`;
+  }
+
+  // Small avatar row shown next to visitorText() — falls back to initials on load error,
+  // same pattern as liga-teams.component.ts's manager avatars.
+  private managerPhotoErrors = new Set<string>();
+
+  managerPhotoFailed(managerId: string): boolean {
+    return this.managerPhotoErrors.has(managerId);
+  }
+
+  onManagerPhotoError(managerId: string): void {
+    this.managerPhotoErrors.add(managerId);
+  }
+
+  managerPhotoUrl(managerId: string): string {
+    return `${environment.imageApiUrl}/manager/${managerId}.jpg`;
+  }
+
   toggleVisited(stadiumId: string): void {
     const wasVisited = this.isVisited(stadiumId);
 
@@ -379,8 +407,8 @@ export class MapComponent {
           const validIds = new Set(divs.map(d => d.id));
           this.activeDivisionIds.set(new Set(stored.filter(id => validIds.has(id))));
         } else {
-          // No stored selection yet — default to just the top division (level 1).
-          this.activeDivisionIds.set(new Set(divs.filter(d => d.level === 1).map(d => d.id)));
+          // No stored selection yet — default to the top two divisions (1. + 2. Liga).
+          this.activeDivisionIds.set(new Set(divs.filter(d => d.level <= 2).map(d => d.id)));
         }
       }
     });
