@@ -209,7 +209,9 @@ export class ClubDataComponent {
   clubError     = signal<string | null>(null);
 
   openClubForm(): void {
-    this.clubCountryId.set(this.countries()[0]?.id ?? '');
+    const countries = this.countries();
+    const germany = countries.find(c => c.id.toLowerCase() === 'de');
+    this.clubCountryId.set(germany?.id ?? countries[0]?.id ?? '');
     this.clubName.set('');
     this.clubShortName.set('');
     this.clubError.set(null);
