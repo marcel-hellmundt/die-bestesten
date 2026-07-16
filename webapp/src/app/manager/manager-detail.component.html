@@ -29,15 +29,16 @@
         @if (achievements().length > 0) {
           <div class="manager-achievements">
             @for (a of achievements(); track a.id) {
-              <div
+              <a
                 class="achievement-icon-tile"
                 [attr.data-tooltip]="a.name"
+                routerLink="/achievements"
               >
                 <img [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'" [alt]="a.name" />
                 @if (a.level === 'bronze' || a.level === 'silver' || (a.level === 'gold' && a.threshold_bronze != null)) {
                   <span class="ach-level-label ach-level-label--{{ a.level }}">{{ a.level === 'bronze' ? 'Bronze' : a.level === 'silver' ? 'Silber' : 'Gold' }}</span>
                 }
-              </div>
+              </a>
             }
           </div>
         }
