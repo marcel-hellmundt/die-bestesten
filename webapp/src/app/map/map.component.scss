@@ -231,6 +231,37 @@
     margin-top: $space-1;
   }
 
+  &__visitors {
+    margin-top: $space-8;
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__visitor-avatars {
+    display: flex;
+    gap: $space-1;
+    flex-shrink: 0;
+  }
+
+  &__visitor-avatar {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+
+    &--initials {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.2);
+      color: $color-surface;
+      font-size: 9px;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
   &__visit-btn {
     width: 100%;
     margin-top: $space-4;

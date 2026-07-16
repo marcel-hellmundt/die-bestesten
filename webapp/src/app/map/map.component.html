@@ -66,6 +66,27 @@
             @if (s.capacity) {
               <div class="map-card__row">{{ s.capacity | number: '1.0-0' }} Plätze</div>
             }
+            <div class="map-card__row map-card__visitors">
+              @if (s.other_visitors.length > 0) {
+                <span class="map-card__visitor-avatars">
+                  @for (v of s.other_visitors; track v.id) {
+                    @if (!managerPhotoFailed(v.id)) {
+                      <img
+                        class="map-card__visitor-avatar"
+                        [src]="managerPhotoUrl(v.id)"
+                        (error)="onManagerPhotoError(v.id)"
+                        alt=""
+                      />
+                    } @else {
+                      <span class="map-card__visitor-avatar map-card__visitor-avatar--initials">{{
+                        v.manager_name.charAt(0).toUpperCase()
+                      }}</span>
+                    }
+                  }
+                </span>
+              }
+              {{ visitorText(s) }}
+            </div>
             <button
               class="map-card__visit-btn"
               [class.map-card__visit-btn--active]="isVisited(s.id)"

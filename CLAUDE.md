@@ -93,7 +93,7 @@ GET      /division[/:id]
 GET      /club[/:id]           — enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null — auch in der Liste
 POST     /club                 — {country_id, name, short_name?} → {id}; 409 bei Namensduplikat — Admin
 POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → setzt club.logo_uploaded — Maintainer+
-GET      /stadium              — Alle Stadien inkl. lat/lng, capacity und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth
+GET      /stadium              — Alle Stadien inkl. lat/lng, capacity, other_visitors ([{id,manager_name}] anderer Manager, die das Stadion besucht haben, eingeloggter Manager ausgeschlossen) und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth
 POST     /stadium              — {club_id, official_name, name?, capacity?, lat?, lng?, from_date?} → {id}; legt Stadion an und verknüpft es sofort als aktuelles Stadion des Clubs (club_stadium, to_date NULL); from_date default heute — Admin
 GET      /manager_stadium      — Stadion-IDs, die der eingeloggte Manager als besucht markiert hat — Auth
 POST     /manager_stadium      — {stadium_id} — als besucht markieren (idempotent) — Auth

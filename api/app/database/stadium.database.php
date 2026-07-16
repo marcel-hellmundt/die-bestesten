@@ -38,7 +38,7 @@ trait StadiumTrait
         ]);
     }
 
-    public function getAllStadiums(): array
+    public function getAllStadiums(string $excludeManagerId): array
     {
         $query = $this->con->prepare("
             SELECT
@@ -54,15 +54,32 @@ trait StadiumTrait
         $query->execute();
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
 
-        return array_map(function (array $row): array {
-            return [
+        $visitorsQuery = $this->con->prepare("
+            SELECT ms.stadium_id, m.id, m.manager_name
+            FROM manager_stadium ms
+            JOIN manager m ON m.id = ms.manager_id
+            WHERE ms.manager_id != :exclude_manager_id
+        ");
+        $visitorsQuery->execute([':exclude_manager_id' => $excludeManagerId]);
+
+        $visitorsByStadium = [];
+        foreach ($visitorsQuery->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $visitorsByStadium[$row['stadium_id']][] = [
                 'id'            => $row['id'],
-                'official_name' => $row['official_name'],
-                'name'          => $row['name'],
-                'capacity'      => $row['capacity'] !== null ? (int) $row['capacity'] : null,
-                'lat'           => $row['lat']      !== null ? (float) $row['lat']    : null,
-                'lng'           => $row['lng']      !== null ? (float) $row['lng']    : null,
-                'club'          => $row['club_id'] ? [
+                'manager_name'  => $row['manager_name'],
+            ];
+        }
+
+        return array_map(function (array $row) use ($visitorsByStadium): array {
+            return [
+                'id'             => $row['id'],
+                'official_name'  => $row['official_name'],
+                'name'           => $row['name'],
+                'capacity'       => $row['capacity'] !== null ? (int) $row['capacity'] : null,
+                'lat'            => $row['lat']      !== null ? (float) $row['lat']    : null,
+                'lng'            => $row['lng']      !== null ? (float) $row['lng']    : null,
+                'other_visitors' => $visitorsByStadium[$row['id']] ?? [],
+                'club'           => $row['club_id'] ? [
                     'id'            => $row['club_id'],
                     'name'          => $row['club_name'],
                     'logo_uploaded' => (bool) $row['club_logo_uploaded'],

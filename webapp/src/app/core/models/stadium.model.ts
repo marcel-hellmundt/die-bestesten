@@ -4,6 +4,11 @@ export interface StadiumClub {
   logo_uploaded: boolean;
 }
 
+export interface StadiumVisitor {
+  id: string;
+  manager_name: string;
+}
+
 export class StadiumMapEntry {
   constructor(
     public id: string,
@@ -12,6 +17,7 @@ export class StadiumMapEntry {
     public capacity: number | null,
     public lat: number | null,
     public lng: number | null,
+    public other_visitors: StadiumVisitor[],
     public club: StadiumClub | null
   ) {}
 
@@ -27,6 +33,7 @@ export class StadiumMapEntry {
       data.capacity ?? null,
       data.lat ?? null,
       data.lng ?? null,
+      data.other_visitors ?? [],
       data.club ?? null
     );
   }

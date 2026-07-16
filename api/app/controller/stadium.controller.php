@@ -6,7 +6,7 @@ class StadiumController extends _BaseController
 
     protected function get(): mixed
     {
-        return $this->db->getAllStadiums();
+        return $this->db->getAllStadiums($GLOBALS['auth_manager_id']);
     }
 
     protected function post(): mixed
