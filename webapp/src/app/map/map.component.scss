@@ -34,6 +34,7 @@
 
 .map-progress {
   position: relative;
+  z-index: 1;
   flex: 1;
   min-width: 0;
   height: 20px;
@@ -139,11 +140,19 @@
     display: flex;
   }
 
+  // Dropdown must span the same edge-to-edge width as the rest of the top row, so it
+  // needs .map-top-row (not .map-filters-wrap, which is only as wide as the toggle
+  // button) as its positioning context.
+  .map-filters-wrap {
+    position: static;
+  }
+
   .map-filters {
     display: none;
     position: absolute;
     top: calc(40px + #{$space-2});
     left: 0;
+    right: 0;
 
     &--open {
       display: flex;
@@ -151,11 +160,17 @@
   }
 
   .map-card-slot {
-    width: 100%;
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: auto;
   }
 }
 
 .map-card {
+  position: relative;
   width: 100%;
   background: $color-text;
   color: $color-surface;

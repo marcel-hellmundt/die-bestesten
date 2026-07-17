@@ -19,10 +19,26 @@ interface MarkerViewModel {
 const MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: 'all', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
   { featureType: 'administrative', elementType: 'all', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ visibility: 'on' }, { color: '#d0d0d0' }] },
-  { featureType: 'landscape', elementType: 'all', stylers: [{ color: '#e5e8e7' }, { visibility: 'off' }] },
-  { featureType: 'landscape.man_made', elementType: 'geometry.fill', stylers: [{ color: '#ffffff' }, { visibility: 'on' }] },
-  { featureType: 'landscape.natural', elementType: 'geometry.fill', stylers: [{ color: '#f5f5f2' }, { visibility: 'on' }] },
+  {
+    featureType: 'administrative.country',
+    elementType: 'geometry.stroke',
+    stylers: [{ visibility: 'on' }, { color: '#d0d0d0' }],
+  },
+  {
+    featureType: 'landscape',
+    elementType: 'all',
+    stylers: [{ color: '#e5e8e7' }, { visibility: 'off' }],
+  },
+  {
+    featureType: 'landscape.man_made',
+    elementType: 'geometry.fill',
+    stylers: [{ color: '#ffffff' }, { visibility: 'on' }],
+  },
+  {
+    featureType: 'landscape.natural',
+    elementType: 'geometry.fill',
+    stylers: [{ color: '#f5f5f2' }, { visibility: 'on' }],
+  },
   { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi.attraction', elementType: 'all', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi.business', elementType: 'all', stylers: [{ visibility: 'off' }] },
@@ -33,14 +49,38 @@ const MAP_STYLE: google.maps.MapTypeStyle[] = [
   { featureType: 'poi.place_of_worship', elementType: 'all', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi.school', elementType: 'all', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi.sports_complex', elementType: 'all', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.sports_complex', elementType: 'geometry', stylers: [{ color: '#c7c7c7' }, { visibility: 'off' }] },
+  {
+    featureType: 'poi.sports_complex',
+    elementType: 'geometry',
+    stylers: [{ color: '#c7c7c7' }, { visibility: 'off' }],
+  },
   { featureType: 'road', elementType: 'all', stylers: [{ color: '#ffffff' }] },
   { featureType: 'road', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#ffffff' }, { visibility: 'simplified' }] },
-  { featureType: 'road.highway', elementType: 'labels.icon', stylers: [{ color: '#ffffff' }, { visibility: 'off' }] },
-  { featureType: 'road.arterial', elementType: 'all', stylers: [{ visibility: 'simplified' }, { color: '#ffffff' }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ visibility: 'simplified' }] },
-  { featureType: 'road.local', elementType: 'all', stylers: [{ color: '#ffffff' }, { visibility: 'simplified' }] },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry',
+    stylers: [{ color: '#ffffff' }, { visibility: 'simplified' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'labels.icon',
+    stylers: [{ color: '#ffffff' }, { visibility: 'off' }],
+  },
+  {
+    featureType: 'road.arterial',
+    elementType: 'all',
+    stylers: [{ visibility: 'simplified' }, { color: '#ffffff' }],
+  },
+  {
+    featureType: 'road.arterial',
+    elementType: 'geometry',
+    stylers: [{ visibility: 'simplified' }],
+  },
+  {
+    featureType: 'road.local',
+    elementType: 'all',
+    stylers: [{ color: '#ffffff' }, { visibility: 'simplified' }],
+  },
   { featureType: 'road.local', elementType: 'geometry', stylers: [{ visibility: 'on' }] },
   { featureType: 'transit', elementType: 'all', stylers: [{ visibility: 'off' }] },
   { featureType: 'water', elementType: 'all', stylers: [{ color: '#a0d3d3' }] },
@@ -50,7 +90,7 @@ const MAP_STYLE: google.maps.MapTypeStyle[] = [
   selector: 'app-map',
   standalone: false,
   templateUrl: './map.component.html',
-  styleUrl: './map.component.scss'
+  styleUrl: './map.component.scss',
 })
 export class MapComponent {
   private api = inject(ApiService);
@@ -61,24 +101,32 @@ export class MapComponent {
 
   private state = toSignal(
     this.api.get<any[]>('stadium').pipe(
-      map(data => ({ data: data.map(StadiumMapEntry.from), loading: false, error: null as string | null })),
+      map((data) => ({
+        data: data.map(StadiumMapEntry.from),
+        loading: false,
+        error: null as string | null,
+      })),
       startWith({ data: [] as StadiumMapEntry[], loading: true, error: null as string | null }),
-      catchError(() => of({ data: [] as StadiumMapEntry[], loading: false, error: 'Fehler beim Laden' }))
-    )
+      catchError(() =>
+        of({ data: [] as StadiumMapEntry[], loading: false, error: 'Fehler beim Laden' }),
+      ),
+    ),
   );
 
   stadiums = computed(() => this.state()?.data ?? []);
-  loading  = computed(() => this.state()?.loading ?? true);
-  error    = computed(() => this.state()?.error ?? null);
+  loading = computed(() => this.state()?.loading ?? true);
+  error = computed(() => this.state()?.error ?? null);
 
   // seasons() is DESC by start_date → [0] = current, [1] = previous — same convention used
   // elsewhere (club.component.ts, ratings.component.ts) for the stacking-order tiebreakers below.
   private currentSeasonId = computed(() => this.cache.seasons()[0]?.id ?? null);
-  private prevSeasonId    = computed(() => this.cache.seasons()[1]?.id ?? null);
+  private prevSeasonId = computed(() => this.cache.seasons()[1]?.id ?? null);
 
   private currentSeasonEntries = toSignal(
     toObservable(this.currentSeasonId).pipe(
-      switchMap(id => (id ? this.api.get<any[]>(`club_in_season?season_id=${id}`) : of([] as any[]))),
+      switchMap((id) =>
+        id ? this.api.get<any[]>(`club_in_season?season_id=${id}`) : of([] as any[]),
+      ),
       catchError(() => of([] as any[])),
     ),
     { initialValue: [] as any[] },
@@ -86,7 +134,9 @@ export class MapComponent {
 
   private prevSeasonEntries = toSignal(
     toObservable(this.prevSeasonId).pipe(
-      switchMap(id => (id ? this.api.get<any[]>(`club_in_season?season_id=${id}`) : of([] as any[]))),
+      switchMap((id) =>
+        id ? this.api.get<any[]>(`club_in_season?season_id=${id}`) : of([] as any[]),
+      ),
       catchError(() => of([] as any[])),
     ),
     { initialValue: [] as any[] },
@@ -94,7 +144,7 @@ export class MapComponent {
 
   // club_id -> division level (1 = top division) for a given set of club_in_season entries
   private levelByClub(entries: any[]): Map<string, number> {
-    const levelByDivision = new Map(this.cache.divisions().map(d => [d.id, d.level]));
+    const levelByDivision = new Map(this.cache.divisions().map((d) => [d.id, d.level]));
     const map = new Map<string, number>();
     for (const e of entries) {
       const level = e.division_id ? levelByDivision.get(e.division_id) : undefined;
@@ -103,7 +153,7 @@ export class MapComponent {
     return map;
   }
 
-  private clubLevel     = computed(() => this.levelByClub(this.currentSeasonEntries()));
+  private clubLevel = computed(() => this.levelByClub(this.currentSeasonEntries()));
   private clubPrevLevel = computed(() => this.levelByClub(this.prevSeasonEntries()));
 
   // club_id -> previous season's table position
@@ -150,7 +200,7 @@ export class MapComponent {
   }
 
   toggleDivision(divisionId: string): void {
-    this.activeDivisionIds.update(set => {
+    this.activeDivisionIds.update((set) => {
       const next = new Set(set);
       if (next.has(divisionId)) next.delete(divisionId);
       else next.add(divisionId);
@@ -166,21 +216,24 @@ export class MapComponent {
   // position across divisions would get that backwards), and finally the raw previous-season
   // position as the last tiebreaker.
   markers = computed<MarkerViewModel[]>(() => {
-    const dims     = this.logoDims();
-    const level    = this.clubLevel();
-    const prevLvl  = this.clubPrevLevel();
-    const prevPos  = this.clubPrevPosition();
+    const dims = this.logoDims();
+    const level = this.clubLevel();
+    const prevLvl = this.clubPrevLevel();
+    const prevPos = this.clubPrevPosition();
     const divisionByClub = this.clubDivisionId();
-    const active   = this.activeDivisionIds();
-    const visited  = this.visitedStadiumIds();
+    const active = this.activeDivisionIds();
+    const visited = this.visitedStadiumIds();
 
     const entries = this.stadiums()
-      .filter((s): s is StadiumMapEntry & { club: StadiumClub } => s.lat != null && s.lng != null && s.club !== null)
-      .filter(s => {
+      .filter(
+        (s): s is StadiumMapEntry & { club: StadiumClub } =>
+          s.lat != null && s.lng != null && s.club !== null,
+      )
+      .filter((s) => {
         const divisionId = divisionByClub.get(s.club.id);
         return divisionId != null && active.has(divisionId);
       })
-      .map(s => ({
+      .map((s) => ({
         stadium: s,
         club: s.club,
         position: { lat: s.lat as number, lng: s.lng as number },
@@ -205,7 +258,7 @@ export class MapComponent {
   visibleCount = computed(() => this.markers().length);
   visitedCount = computed(() => {
     const visited = this.visitedStadiumIds();
-    return this.markers().filter(m => visited.has(m.stadium.id)).length;
+    return this.markers().filter((m) => visited.has(m.stadium.id)).length;
   });
   visitedPercent = computed(() => {
     const total = this.visibleCount();
@@ -238,8 +291,9 @@ export class MapComponent {
     // a missing Access-Control-Allow-Origin on the asset server fails this load outright
     // (onerror) and every icon falls back to a stretched square.
     const img = new Image();
-    img.onload = () => this.logoDims.update(m => ({ ...m, [url]: { w: img.naturalWidth, h: img.naturalHeight } }));
-    img.onerror = () => this.logoDims.update(m => ({ ...m, [url]: { w: 1, h: 1 } }));
+    img.onload = () =>
+      this.logoDims.update((m) => ({ ...m, [url]: { w: img.naturalWidth, h: img.naturalHeight } }));
+    img.onerror = () => this.logoDims.update((m) => ({ ...m, [url]: { w: 1, h: 1 } }));
     img.src = url;
 
     // Separate CORS-mode load, used only to attempt a grayscale canvas conversion for
@@ -254,7 +308,7 @@ export class MapComponent {
     corsImg.crossOrigin = 'anonymous';
     corsImg.onload = () => {
       const grey = this.toGreyscaleUrl(corsImg);
-      if (grey) this.logoGrey.update(m => ({ ...m, [url]: grey }));
+      if (grey) this.logoGrey.update((m) => ({ ...m, [url]: grey }));
     };
     corsImg.src = url + (url.includes('?') ? '&' : '?') + 'cors=1';
   }
@@ -284,7 +338,11 @@ export class MapComponent {
     }
   }
 
-  private clubIcon(club: StadiumClub, visited: boolean, dims?: { w: number; h: number }): google.maps.Icon {
+  private clubIcon(
+    club: StadiumClub,
+    visited: boolean,
+    dims?: { w: number; h: number },
+  ): google.maps.Icon {
     const box = this.logoBox;
     const { w, h } = dims ? this.fitInBox(dims.w, dims.h, box) : { w: box, h: box };
     const url = this.clubLogoUrl(club);
@@ -336,8 +394,8 @@ export class MapComponent {
     if (iVisited && others === 0) return 'Außer dir war noch niemand hier';
     if (!iVisited && others === 1) return '1 anderer Manager war hier';
     if (!iVisited) return `${others} andere Manager waren hier`;
-    if (others === 1) return '1 anderer Manager war neben dir hier';
-    return `${others} andere Manager waren neben dir hier`;
+    if (others === 1) return '1 anderer Manager war mit dir hier';
+    return `${others} andere Manager waren mit dir hier`;
   }
 
   // Small avatar row shown next to visitorText() — falls back to initials on load error,
@@ -360,7 +418,7 @@ export class MapComponent {
     const wasVisited = this.isVisited(stadiumId);
 
     // Optimistic update, rolled back if the request fails.
-    this.visitedStadiumIds.update(set => {
+    this.visitedStadiumIds.update((set) => {
       const next = new Set(set);
       if (wasVisited) next.delete(stadiumId);
       else next.add(stadiumId);
@@ -373,7 +431,7 @@ export class MapComponent {
 
     request.subscribe({
       error: () => {
-        this.visitedStadiumIds.update(set => {
+        this.visitedStadiumIds.update((set) => {
           const next = new Set(set);
           if (wasVisited) next.add(stadiumId);
           else next.delete(stadiumId);
@@ -388,9 +446,12 @@ export class MapComponent {
     this.cache.ensureSeasons();
     this.cache.ensureDivisions();
 
-    this.api.get<string[]>('manager_stadium').pipe(catchError(() => of([]))).subscribe(ids => {
-      this.visitedStadiumIds.set(new Set(ids));
-    });
+    this.api
+      .get<string[]>('manager_stadium')
+      .pipe(catchError(() => of([])))
+      .subscribe((ids) => {
+        this.visitedStadiumIds.set(new Set(ids));
+      });
 
     effect(() => {
       for (const s of this.stadiums()) {
@@ -404,11 +465,11 @@ export class MapComponent {
         this.divisionsInitialized = true;
         const stored = this.loadStoredActiveDivisions();
         if (stored) {
-          const validIds = new Set(divs.map(d => d.id));
-          this.activeDivisionIds.set(new Set(stored.filter(id => validIds.has(id))));
+          const validIds = new Set(divs.map((d) => d.id));
+          this.activeDivisionIds.set(new Set(stored.filter((id) => validIds.has(id))));
         } else {
           // No stored selection yet — default to the top two divisions (1. + 2. Liga).
-          this.activeDivisionIds.set(new Set(divs.filter(d => d.level <= 2).map(d => d.id)));
+          this.activeDivisionIds.set(new Set(divs.filter((d) => d.level <= 2).map((d) => d.id)));
         }
       }
     });
