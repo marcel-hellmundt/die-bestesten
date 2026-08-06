@@ -41,14 +41,8 @@ export const ICONS: Record<string, string> = {
     <path d="M2 4h12M4.5 8h7M7 12h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
   </svg>`,
 
-  'check-circle': `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.4"/>
-    <path d="M5.5 9.2l2.2 2.2 4.8-4.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-
-  'help-circle': `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.4"/>
-    <path d="M6.8 6.8a2.2 2.2 0 114 1.3c-.9.5-1.3 1-1.3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    <path d="M9 13h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  'external-link': `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.5 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M9 2h5v5M13.5 2.5L7 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`,
 };

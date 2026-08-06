@@ -49,9 +49,6 @@ export class PlayerImportDataComponent {
   endingMembership = signal<Set<string>>(new Set());
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
-  matchedCount = computed(() => this.rows().filter((r) => r.isMatched).length);
-  duplicateCount = computed(() => this.rows().filter((r) => r.isMatched && r.already_in_season).length);
-  unmatchedCount = computed(() => this.rows().filter((r) => !r.isMatched).length);
 
   caseTab = signal<'matched' | 'unmatched' | 'missing'>('matched');
 
@@ -62,11 +59,10 @@ export class PlayerImportDataComponent {
   sortDir = signal<'asc' | 'desc'>('asc');
 
   sortedRows = computed(() => {
-    const base = this.caseTab() === 'unmatched' ? this.unmatchedRows() : this.matchedRows();
     const col = this.sortCol();
     const dir = this.sortDir();
     const sign = dir === 'asc' ? 1 : -1;
-    return [...base].sort((a, b) => sign * this.compareRows(a, b, col));
+    return [...this.unmatchedRows()].sort((a, b) => sign * this.compareRows(a, b, col));
   });
 
   private compareRows(a: PlayerImportRow, b: PlayerImportRow, col: 'name' | 'club' | 'position' | 'price'): number {
@@ -88,6 +84,56 @@ export class PlayerImportDataComponent {
     } else {
       this.sortCol.set(col);
       this.sortDir.set('asc');
+    }
+  }
+
+  matchedSortCol = signal<'state' | 'firstName' | 'lastName' | 'club' | 'position' | 'price'>('state');
+  matchedSortDir = signal<'asc' | 'desc'>('desc');
+
+  sortedMatchedRows = computed(() => {
+    const col = this.matchedSortCol();
+    const dir = this.matchedSortDir();
+    const sign = dir === 'asc' ? 1 : -1;
+    return [...this.matchedRows()].sort((a, b) => sign * this.compareMatchedRows(a, b, col));
+  });
+
+  /** Number of "green" states (found, club match, has entry, entry matches CSV) — used for the initial sort. */
+  private rowGreenScore(r: PlayerImportRow): number {
+    return (
+      1 + // Spieler gefunden (immer wahr in dieser Tabelle)
+      (r.club_mismatch ? 0 : 1) +
+      (r.already_in_season ? 1 : 0) +
+      (r.already_in_season && !r.position_price_mismatch ? 1 : 0)
+    );
+  }
+
+  private compareMatchedRows(
+    a: PlayerImportRow,
+    b: PlayerImportRow,
+    col: 'state' | 'firstName' | 'lastName' | 'club' | 'position' | 'price'
+  ): number {
+    switch (col) {
+      case 'state':
+        return this.rowGreenScore(a) - this.rowGreenScore(b);
+      case 'firstName':
+        return a.csv_first_name.localeCompare(b.csv_first_name);
+      case 'lastName':
+        return a.csv_last_name.localeCompare(b.csv_last_name);
+      case 'club':
+        return a.csv_club_name.localeCompare(b.csv_club_name);
+      case 'position':
+        return (a.csv_position ?? '').localeCompare(b.csv_position ?? '');
+      case 'price':
+        return (a.csv_price ?? 0) - (b.csv_price ?? 0);
+    }
+  }
+
+  matchedSort(col: 'state' | 'firstName' | 'lastName' | 'club' | 'position' | 'price'): void {
+    if (this.matchedSortCol() === col) {
+      this.matchedSortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.matchedSortCol.set(col);
+      this.matchedSortDir.set('asc');
     }
   }
 
@@ -285,6 +331,8 @@ export class PlayerImportDataComponent {
     this.caseTab.set('matched');
     this.sortCol.set('name');
     this.sortDir.set('asc');
+    this.matchedSortCol.set('state');
+    this.matchedSortDir.set('desc');
     this.missingSortCol.set('name');
     this.missingSortDir.set('asc');
   }
