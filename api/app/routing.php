@@ -778,6 +778,18 @@ class Routing
                         'description' => 'Neuen player_in_season Eintrag anlegen → {id}; 409 bei Duplikat (player_id + season_id) — Maintainer+',
                         'body' => ['player_id' => 'UUID', 'season_id' => 'UUID', 'position' => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD', 'price' => 'int (€, > 0)'],
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/player_in_season/preview_csv',
+                        'description' => 'CSV parsen (;-getrennt: ID;Vorname;Nachname;Kurzname;Angezeigter Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt) und gegen player (kicker_id) + club (Name, exakt mit Fuzzy-Fallback) abgleichen für die aktive Saison; gibt {status,season_id,rows[{kicker_id,csv_*,matched_player_id,matched_displayname,matched_club_id,club_logo_uploaded,already_in_season,importable}]} zurück; schreibt nichts — Admin',
+                        'body' => ['csv' => 'multipart/form-data Datei'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/player_in_season/import_csv',
+                        'description' => 'Erstellt player_in_season-Einträge für die aktive Saison aus bestätigten preview_csv-Zeilen; überspringt Zeilen mit bereits vorhandenem player_in_season statt 409 zu werfen; gibt {status,season_id,created[{player_id,id}],created_count,skipped[{player_id,reason}]} zurück — Admin',
+                        'body' => ['rows' => '[{player_id, position, price}]'],
+                    ],
                 ],
             ]),
 

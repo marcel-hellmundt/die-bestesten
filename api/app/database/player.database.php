@@ -136,6 +136,26 @@ trait PlayerTrait
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Bulk-lookup by kicker_id, indexed by (int) kicker_id for fast matching.
+     */
+    public function getPlayersByKickerIds(array $kickerIds): array
+    {
+        if (empty($kickerIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($kickerIds), '?'));
+        $query = $this->con->prepare(
+            "SELECT id, kicker_id, displayname FROM player WHERE kicker_id IN ($placeholders)"
+        );
+        $query->execute($kickerIds);
+
+        $out = [];
+        foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[(int) $row['kicker_id']] = $row;
+        }
+        return $out;
+    }
+
     public function createPlayer(array $body): array
     {
         $playerId = $this->con->query("SELECT UUID() AS id")->fetchColumn();

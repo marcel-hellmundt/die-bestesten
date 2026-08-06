@@ -1,0 +1,21 @@
+@use '../../../styles/variables' as *;
+
+.import-upload-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-3;
+  max-width: 520px;
+
+  p {
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+}
+
+.import-actions {
+  display: flex;
+  gap: $space-3;
+  margin-top: $space-4;
+}

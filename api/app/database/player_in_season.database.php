@@ -118,6 +118,150 @@ trait PlayerInSeasonTrait
     }
 
     /**
+     * player_id set (for isset() checks) of players that already have a
+     * player_in_season row for the given season.
+     */
+    public function getExistingPlayerInSeasonIds(array $playerIds, string $seasonId): array
+    {
+        if (empty($playerIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+        $q = $this->con->prepare(
+            "SELECT player_id FROM player_in_season WHERE season_id = ? AND player_id IN ($placeholders)"
+        );
+        $q->execute(array_merge([$seasonId], $playerIds));
+        return array_flip($q->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    private const CSV_VALID_POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+
+    /**
+     * Parses a bulk player-season-import CSV (semicolon-separated:
+     * ID;Vorname;Nachname;Kurzname;Angezeigter Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt)
+     * and matches every row against player (kicker_id) and club (name).
+     * Writes nothing.
+     */
+    public function previewCsvImport(string $filePath): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) {
+            throw new RuntimeException('Keine aktive Saison konfiguriert');
+        }
+
+        $handle = fopen($filePath, 'r');
+        $parsedRows = [];
+        $firstLine  = true;
+        while (($line = fgets($handle)) !== false) {
+            $line = rtrim($line, "\r\n");
+            if ($firstLine) { $firstLine = false; continue; }
+            if (trim($line) === '') continue;
+
+            $cols = str_getcsv($line, ';');
+            if (count($cols) < 8) continue;
+
+            $kickerId = (int) substr($cols[0], 4);
+            $position = in_array($cols[6], self::CSV_VALID_POSITIONS, true) ? $cols[6] : null;
+            $price    = is_numeric($cols[7]) ? (int) $cols[7] : null;
+
+            $parsedRows[] = [
+                'kicker_id'   => $kickerId,
+                'first_name'  => $cols[1],
+                'last_name'   => $cols[2],
+                'displayname' => $cols[4],
+                'club_name'   => $cols[5],
+                'position'    => $position,
+                'price'       => $price,
+            ];
+        }
+        fclose($handle);
+
+        $kickerIds = array_column($parsedRows, 'kicker_id');
+        $playerMap = $this->getPlayersByKickerIds($kickerIds);
+
+        $matchedPlayerIds = array_values(array_filter(array_map(
+            fn($r) => $playerMap[$r['kicker_id']]['id'] ?? null,
+            $parsedRows
+        )));
+        $existingSet = $this->getExistingPlayerInSeasonIds($matchedPlayerIds, $seasonId);
+
+        $rows = array_map(function ($r) use ($playerMap, $existingSet) {
+            $player = $playerMap[$r['kicker_id']] ?? null;
+            $club   = $this->findClubByName($r['club_name']);
+            $alreadyInSeason = $player && isset($existingSet[$player['id']]);
+
+            return [
+                'kicker_id'           => $r['kicker_id'],
+                'csv_first_name'      => $r['first_name'],
+                'csv_last_name'       => $r['last_name'],
+                'csv_displayname'     => $r['displayname'],
+                'csv_club_name'       => $r['club_name'],
+                'csv_position'        => $r['position'],
+                'csv_price'           => $r['price'],
+                'matched_player_id'   => $player['id'] ?? null,
+                'matched_displayname' => $player['displayname'] ?? null,
+                'matched_club_id'     => $club['id'] ?? null,
+                'club_logo_uploaded'  => $club ? (bool) $club['logo_uploaded'] : false,
+                'already_in_season'   => $alreadyInSeason,
+                'importable'          => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0),
+            ];
+        }, $parsedRows);
+
+        return ['season_id' => $seasonId, 'rows' => $rows];
+    }
+
+    /**
+     * Bulk-creates player_in_season rows for the active season from client-confirmed
+     * preview rows. Re-resolves the season server-side and re-checks duplicates for
+     * race-safety — duplicates/invalid rows are reported in skipped[], not thrown.
+     */
+    public function importCsvRows(array $rows): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) {
+            throw new RuntimeException('Keine aktive Saison konfiguriert');
+        }
+
+        $playerIds   = array_column($rows, 'player_id');
+        $existingSet = $this->getExistingPlayerInSeasonIds($playerIds, $seasonId);
+
+        $created = [];
+        $skipped = [];
+        foreach ($rows as $row) {
+            $playerId = $row['player_id'] ?? null;
+            $position = $row['position']  ?? null;
+            $price    = isset($row['price']) ? (int) $row['price'] : null;
+
+            if (!$playerId || !in_array($position, self::CSV_VALID_POSITIONS, true) || !$price || $price <= 0) {
+                $skipped[] = ['player_id' => $playerId, 'reason' => 'invalid_row'];
+                continue;
+            }
+            if (isset($existingSet[$playerId])) {
+                $skipped[] = ['player_id' => $playerId, 'reason' => 'already_in_season'];
+                continue;
+            }
+
+            $id = $this->con->query("SELECT UUID() AS id")->fetchColumn();
+            try {
+                $this->createPlayerInSeason($id, $playerId, $seasonId, $position, $price);
+                $created[] = ['player_id' => $playerId, 'id' => $id];
+            } catch (PDOException $e) {
+                if ($e->getCode() === '23000') {
+                    $skipped[] = ['player_id' => $playerId, 'reason' => 'already_in_season'];
+                    continue;
+                }
+                throw $e;
+            }
+        }
+
+        return [
+            'season_id'     => $seasonId,
+            'created'       => $created,
+            'created_count' => count($created),
+            'skipped'       => $skipped,
+        ];
+    }
+
+    /**
      * Count of league-division players for a season.
      * Falls back to level 1 / DE if no division is configured.
      */

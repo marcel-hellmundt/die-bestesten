@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { IconModule } from '../shared/icon/icon.module';
 import { MaintainerGuard } from '../auth/maintainer.guard';
+import { AdminGuard } from '../auth/admin.guard';
 
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
@@ -19,8 +20,10 @@ import { LeagueDataComponent } from './league/league.component';
 import { LeagueDetailComponent } from './league/league-detail.component';
 import { AchievementsDataComponent } from './achievements/achievements-data.component';
 import { ManagerDataComponent } from './manager/manager-data.component';
+import { PlayerImportDataComponent } from './player-import/player-import.component';
 
 const M = [MaintainerGuard];
+const AD = [AdminGuard];
 
 const routes: Routes = [
   {
@@ -43,6 +46,7 @@ const routes: Routes = [
       { path: 'player/:id',    component: PlayerDetailComponent },
       { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
       { path: 'manager',       component: ManagerDataComponent,      canActivate: M },
+      { path: 'player-import', component: PlayerImportDataComponent, canActivate: AD },
     ]
   }
 ];
@@ -64,6 +68,7 @@ const routes: Routes = [
     LeagueDetailComponent,
     AchievementsDataComponent,
     ManagerDataComponent,
+    PlayerImportDataComponent,
   ],
   imports: [
     CommonModule,

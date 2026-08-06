@@ -1,0 +1,111 @@
+<h1 class="page-title">Spieler-Import</h1>
+<p class="page-subtitle">Spieler-Saisondaten per CSV für die aktive Saison importieren</p>
+
+@switch (step()) {
+  @case ('upload') {
+    <div class="card import-upload-card">
+      <p>
+        CSV-Datei hochladen (Semikolon-getrennt: ID;Vorname;Nachname;Kurzname;Angezeigter
+        Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt).
+      </p>
+      <input #csvInput type="file" accept=".csv" hidden (change)="onCsvFileSelected($event)" />
+      <button class="btn btn-primary" (click)="csvInput.click()" [disabled]="uploading()">
+        {{ uploading() ? 'Wird geladen…' : 'CSV hochladen' }}
+      </button>
+      @if (uploadError()) {
+        <div class="warning-panel">{{ uploadError() }}</div>
+      }
+    </div>
+  }
+
+  @case ('preview') {
+    <div class="list-bar">
+      <span class="list-count"
+        >{{ matchedCount() }}/{{ rows().length }} gematcht · {{ importableCount() }} importierbar
+        @if (duplicateCount() > 0) {
+          · {{ duplicateCount() }} bereits importiert
+        }
+        @if (unmatchedCount() > 0) {
+          · {{ unmatchedCount() }} nicht gefunden
+        }
+      </span>
+    </div>
+
+    <div class="table-container">
+      <table class="data-table data-table--compact">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Spieler</th>
+            <th>Verein</th>
+            <th>Position</th>
+            <th>Marktwert</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows(); track r.kicker_id) {
+            <tr>
+              <td>
+                @if (!r.isMatched) {
+                  <app-icon name="help-circle" />
+                } @else if (r.already_in_season) {
+                  <app-icon name="upload-error" />
+                } @else {
+                  <app-icon name="check-circle" />
+                }
+              </td>
+              <td>{{ r.matched_displayname ?? r.csv_displayname }}</td>
+              <td class="mismatch-club">
+                @if (r.clubLogoUrl) {
+                  <img
+                    class="tbl-logo tbl-logo--sm"
+                    [src]="r.clubLogoUrl"
+                    [alt]="r.csv_club_name"
+                    (error)="$any($event.target).replaceWith(r.csv_club_name)"
+                  />
+                } @else {
+                  {{ r.csv_club_name }}
+                }
+              </td>
+              <td [style.color]="r.csv_position ? POSITION_COLOR[r.csv_position] : null">
+                {{ r.csv_position ? POSITION_LABEL[r.csv_position] : '—' }}
+              </td>
+              <td>{{ r.csv_price != null ? (r.csv_price | number) + ' €' : '—' }}</td>
+              <td class="mismatch-error">
+                @if (!r.isMatched) {
+                  Kein Treffer
+                } @else if (r.already_in_season) {
+                  Bereits importiert
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="import-actions">
+      <button class="btn btn-secondary" (click)="reset()">Abbrechen</button>
+      <button
+        class="btn btn-primary"
+        (click)="confirmImport()"
+        [disabled]="importing() || importableCount() === 0"
+      >
+        {{ importing() ? 'Wird importiert…' : 'Weiter (' + importableCount() + ' Spieler importieren)' }}
+      </button>
+    </div>
+  }
+
+  @case ('result') {
+    <div class="completed-banner">{{ importResult()?.created_count }} Spieler importiert ✓</div>
+    @if (importResult() && importResult()!.skipped.length > 0) {
+      <div class="warning-panel">
+        {{ importResult()!.skipped.length }} Spieler übersprungen (bereits in dieser Saison vorhanden)
+      </div>
+    }
+    <div class="import-actions">
+      <button class="btn btn-primary" (click)="reset()">Weitere CSV importieren</button>
+    </div>
+  }
+}

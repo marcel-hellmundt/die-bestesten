@@ -72,6 +72,32 @@ trait ClubTrait
         return (bool) $query->fetch();
     }
 
+    /**
+     * Matches a club name against club.name — exact match first, falling back to an
+     * unscharfe LIKE-Suche if no exact match exists. The fuzzy fallback only counts
+     * as a match if it yields exactly one candidate; 0 or >1 candidates = no match.
+     */
+    public function findClubByName(string $name): array|false
+    {
+        $query = $this->con->prepare("SELECT id, name, logo_uploaded FROM club WHERE name = :name LIMIT 1");
+        $query->execute([':name' => $name]);
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $row['logo_uploaded'] = (bool) $row['logo_uploaded'];
+            return $row;
+        }
+
+        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $name);
+        $query = $this->con->prepare("SELECT id, name, logo_uploaded FROM club WHERE name LIKE :pattern LIMIT 2");
+        $query->execute([':pattern' => '%' . $escaped . '%']);
+        $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        if (count($rows) !== 1) return false;
+
+        $rows[0]['logo_uploaded'] = (bool) $rows[0]['logo_uploaded'];
+        return $rows[0];
+    }
+
     public function createClub(string $id, string $countryId, string $name, ?string $shortName): void
     {
         $query = $this->con->prepare(

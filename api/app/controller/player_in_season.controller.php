@@ -22,6 +22,9 @@ class PlayerInSeasonController extends _BaseController
 
     protected function post(): mixed
     {
+        if ($this->id === 'preview_csv') return $this->previewCsv();
+        if ($this->id === 'import_csv')  return $this->importCsv();
+
         $body     = $this->body();
         $playerId = $body['player_id'] ?? null;
         $seasonId = $body['season_id'] ?? null;
@@ -54,6 +57,54 @@ class PlayerInSeasonController extends _BaseController
         http_response_code(201);
         return ['status' => true, 'id' => $id];
     }
+
+    private function previewCsv(): mixed
+    {
+        if (!$this->isAdmin()) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Nur Admins dürfen CSV-Imports durchführen'];
+        }
+
+        $file = $_FILES['csv']['tmp_name'] ?? null;
+        if (!$file || !is_readable($file)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'CSV-Datei fehlt'];
+        }
+
+        try {
+            $result = $this->db->previewCsvImport($file);
+        } catch (RuntimeException $e) {
+            http_response_code(422);
+            return ['status' => false, 'message' => $e->getMessage()];
+        }
+
+        return ['status' => true, ...$result];
+    }
+
+    private function importCsv(): mixed
+    {
+        if (!$this->isAdmin()) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Nur Admins dürfen CSV-Imports durchführen'];
+        }
+
+        $rows = $this->body()['rows'] ?? null;
+        if (!is_array($rows) || empty($rows)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'rows[] erforderlich'];
+        }
+
+        try {
+            $result = $this->db->importCsvRows($rows);
+        } catch (RuntimeException $e) {
+            http_response_code(422);
+            return ['status' => false, 'message' => $e->getMessage()];
+        }
+
+        http_response_code(201);
+        return ['status' => true, ...$result];
+    }
+
     protected function patch(): mixed  { return $this->methodNotAllowed(); }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }
