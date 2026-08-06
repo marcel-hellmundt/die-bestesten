@@ -53,6 +53,66 @@ export class PlayerImportDataComponent {
   duplicateCount = computed(() => this.rows().filter((r) => r.isMatched && r.already_in_season).length);
   unmatchedCount = computed(() => this.rows().filter((r) => !r.isMatched).length);
 
+  caseTab = signal<'matched' | 'unmatched' | 'missing'>('matched');
+
+  matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
+  unmatchedRows = computed(() => this.rows().filter((r) => !r.isMatched));
+
+  sortCol = signal<'name' | 'club' | 'position' | 'price'>('name');
+  sortDir = signal<'asc' | 'desc'>('asc');
+
+  sortedRows = computed(() => {
+    const base = this.caseTab() === 'unmatched' ? this.unmatchedRows() : this.matchedRows();
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    const sign = dir === 'asc' ? 1 : -1;
+    return [...base].sort((a, b) => sign * this.compareRows(a, b, col));
+  });
+
+  private compareRows(a: PlayerImportRow, b: PlayerImportRow, col: 'name' | 'club' | 'position' | 'price'): number {
+    switch (col) {
+      case 'name':
+        return (a.matched_displayname ?? a.csv_displayname).localeCompare(b.matched_displayname ?? b.csv_displayname);
+      case 'club':
+        return a.csv_club_name.localeCompare(b.csv_club_name);
+      case 'position':
+        return (a.csv_position ?? '').localeCompare(b.csv_position ?? '');
+      case 'price':
+        return (a.csv_price ?? 0) - (b.csv_price ?? 0);
+    }
+  }
+
+  sort(col: 'name' | 'club' | 'position' | 'price'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('asc');
+    }
+  }
+
+  missingSortCol = signal<'name' | 'club'>('name');
+  missingSortDir = signal<'asc' | 'desc'>('asc');
+
+  sortedMissingPlayers = computed(() => {
+    const col = this.missingSortCol();
+    const dir = this.missingSortDir();
+    const sign = dir === 'asc' ? 1 : -1;
+    return [...this.missingPlayers()].sort((a, b) => {
+      const cmp = col === 'name' ? a.displayname.localeCompare(b.displayname) : a.club_name.localeCompare(b.club_name);
+      return sign * cmp;
+    });
+  });
+
+  sortMissing(col: 'name' | 'club'): void {
+    if (this.missingSortCol() === col) {
+      this.missingSortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.missingSortCol.set(col);
+      this.missingSortDir.set('asc');
+    }
+  }
+
   constructor() {
     this.cache.ensureDivisions();
     this.cache.ensureLeague();
@@ -222,5 +282,10 @@ export class PlayerImportDataComponent {
     this.seasonId.set(null);
     this.seasonStartDate.set(null);
     this.importResult.set(null);
+    this.caseTab.set('matched');
+    this.sortCol.set('name');
+    this.sortDir.set('asc');
+    this.missingSortCol.set('name');
+    this.missingSortDir.set('asc');
   }
 }
