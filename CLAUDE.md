@@ -56,7 +56,7 @@ styles/
 
 **Additives Rollenmodell**: Jeder Manager hat die Basisrolle `manager` (implizit). Zusätzliche Rollen (`maintainer`, `admin`) werden in der `manager_role`-Tabelle gespeichert und sind frei kombinierbar.
 
-`$methodRoles` pro Controller: HTTP-Methode → erforderliche Rolle. Prüfung: `guest` = kein Token nötig; `manager` = jeder eingeloggte Manager; `maintainer`/`admin` = Manager muss diese Rolle in seiner Rollenliste haben. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle fehlt. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_roles']` (Array).
+`$methodRoles` pro Controller: HTTP-Methode → erforderliche Rolle. Prüfung: `guest` = kein Token nötig, aber falls ein gültiger Token mitgeschickt wird, dekodiert der Guard ihn trotzdem optional (setzt `auth_manager_id`/`auth_league_id`, ohne bei ungültigem/fehlendem Token einen Fehler zu werfen) — relevant für Endpunkte wie `/league/mine`, die sich für eingeloggte Manager anders verhalten; `manager` = jeder eingeloggte Manager; `maintainer`/`admin` = Manager muss diese Rolle in seiner Rollenliste haben. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle fehlt. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_roles']` (Array).
 
 Rollenvergabe: `POST /manager/:id/roles` mit `{role}`, Entzug: `DELETE /manager/:id/roles/:role` — jeweils Admin.
 

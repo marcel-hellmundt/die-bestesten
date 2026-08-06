@@ -20,12 +20,34 @@ class Guard
         $methodRoles  = $controllerClass ? $controllerClass::$methodRoles : [];
         $requiredRole = $methodRoles[$method] ?? 'guest';
 
-        // Guest = no auth needed
+        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+
+        // Guest = no auth required, but still decode an optional token (if sent) so
+        // auth_manager_id/auth_league_id are populated for guest-accessible endpoints
+        // that behave differently for a logged-in manager (e.g. /league/mine resolving
+        // the manager's currently switched league instead of the deployment default).
+        // Invalid/expired tokens are ignored here rather than rejected.
         if ($requiredRole === 'guest') {
+            if ($header) {
+                try {
+                    $decoded = JWT::decode(substr($header, 7), new Key($_ENV['JWT_SECRET'], 'HS256'));
+                    $manager = $this->db->getAuthManagerById($decoded->sub);
+                    if ($manager && $manager['status'] === 'active') {
+                        $GLOBALS['auth_manager_id'] = $manager['id'];
+                        $GLOBALS['auth_roles']      = $manager['roles'];
+                        $leagueId = $decoded->league_id ?? null;
+                        $GLOBALS['auth_league_id'] = $leagueId;
+                        if ($leagueId) {
+                            $this->db->switchLeagueConnection($leagueId);
+                        }
+                    }
+                } catch (Exception) {
+                    // Anonymous fallback — no error on a guest route.
+                }
+            }
             return ['status' => true];
         }
 
-        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
         if (!$header) {
             return ['status' => false, 'code' => 401, 'message' => 'Authorization Token nicht gesendet'];
         }
