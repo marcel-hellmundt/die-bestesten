@@ -4,12 +4,22 @@ trait LeagueTrait
 {
     public function getMyLeague(): array|false
     {
-        $q = $this->con->prepare(
-            "SELECT l.id, l.slug, l.name, l.db_name, l.division_id
-             FROM league l
-             WHERE l.db_name = :db_name LIMIT 1"
-        );
-        $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        $leagueId = $GLOBALS['auth_league_id'] ?? null;
+        if ($leagueId) {
+            $q = $this->con->prepare(
+                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id
+                 FROM league l
+                 WHERE l.id = :id LIMIT 1"
+            );
+            $q->execute([':id' => $leagueId]);
+        } else {
+            $q = $this->con->prepare(
+                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id
+                 FROM league l
+                 WHERE l.db_name = :db_name LIMIT 1"
+            );
+            $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        }
         return $q->fetch(PDO::FETCH_ASSOC);
     }
 

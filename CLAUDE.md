@@ -107,7 +107,7 @@ PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team
 DELETE   /matchday/:id         — 409 wenn completed oder bereits in der Liga verwendet (team_lineup/team_rating/transaction/player_in_team/h2h_match) oder von Bewertungen/Transferfenstern referenziert — Admin
 GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_points}], top_matchdays: [{points,matchday_number,team_name,season_id,manager_name}] } — Auth
 GET      /league[/:id]         — enthält manager_count aus der jeweiligen Liga-DB
-GET      /league/mine          — Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}
+GET      /league/mine          — Aktuelle Liga {id,slug,name,db_name,division_id} — bei JWT die Liga aus auth_league_id, sonst Fallback auf die per DB_NAME_LEAGUE konfigurierte Deployment-Liga
 PATCH    /league/:id           — {division_id: UUID|null} Spielerpool-Division setzen; oder {visibility: 'public'|'private'} Sichtbarkeit setzen — Admin
 POST     /league/:id/join      — Beitrittsanfrage stellen (status='requested'); benachrichtigt alle Admins; 403 wenn visibility='private' — Auth
 POST     /league/:id/accept    — Einladung annehmen (invited→active); benachrichtigt alle Admins per E-Mail; 409 wenn keine ausstehende Einladung — Auth

@@ -66,7 +66,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/league/mine',
-                        'description' => 'Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}; 404 wenn nicht konfiguriert',
+                        'description' => 'Aktuelle Liga {id,slug,name,db_name,division_id} — bei vorhandenem JWT die Liga aus auth_league_id, sonst Fallback auf die per DB_NAME_LEAGUE konfigurierte Deployment-Liga; 404 wenn nicht gefunden',
                     ],
                     [
                         'method' => 'GET',
