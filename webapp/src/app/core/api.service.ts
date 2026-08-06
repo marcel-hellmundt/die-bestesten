@@ -63,9 +63,10 @@ export class ApiService {
     return this.post(`team/${teamId}/logo/takeover`);
   }
 
-  previewPlayerSeasonImport(csv: File): Observable<any> {
+  previewPlayerSeasonImport(csv: File, divisionId: string): Observable<any> {
     const formData = new FormData();
     formData.append('csv', csv);
+    formData.append('division_id', divisionId);
     return this.postForm('player_in_season/preview_csv', formData);
   }
 

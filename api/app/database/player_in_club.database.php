@@ -19,4 +19,82 @@ trait PlayerInClubTrait
         ]);
         return ['id' => $id];
     }
+
+    /**
+     * Ends an active club membership (to_date = NULL) by setting to_date.
+     * Idempotent-safe: only touches rows that are still active.
+     */
+    public function endPlayerInClub(string $id, string $toDate): bool
+    {
+        $q = $this->con->prepare(
+            "UPDATE player_in_club SET to_date = :to_date WHERE id = :id AND to_date IS NULL"
+        );
+        $q->execute([':to_date' => $toDate, ':id' => $id]);
+        return $q->rowCount() > 0;
+    }
+
+    /**
+     * Bulk-lookup of each player's current (to_date IS NULL) club membership,
+     * indexed by player_id.
+     */
+    public function getCurrentClubByPlayerIds(array $playerIds): array
+    {
+        if (empty($playerIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+        $q = $this->con->prepare(
+            "SELECT pic.player_id, pic.id AS player_in_club_id, pic.club_id,
+                    c.name AS club_name, c.logo_uploaded
+             FROM player_in_club pic
+             JOIN club c ON c.id = pic.club_id
+             WHERE pic.to_date IS NULL AND pic.player_id IN ($placeholders)"
+        );
+        $q->execute($playerIds);
+
+        $out = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[$row['player_id']] = $row;
+        }
+        return $out;
+    }
+
+    /**
+     * Players currently assigned to a club that plays in the given division for the
+     * given season, but whose player_id is not in $excludePlayerIds (typically the
+     * kicker_id-matched players from an uploaded CSV) — likely stale club data
+     * (player has since transferred away and the DB hasn't been updated yet).
+     */
+    public function getMissingClubMembers(string $seasonId, string $divisionId, array $excludePlayerIds): array
+    {
+        $excludeClause = '';
+        $excludeParams = [];
+        if (!empty($excludePlayerIds)) {
+            $placeholders  = implode(',', array_fill(0, count($excludePlayerIds), '?'));
+            $excludeClause = "AND pic.player_id NOT IN ($placeholders)";
+            $excludeParams = $excludePlayerIds;
+        }
+
+        $q = $this->con->prepare(
+            "SELECT pic.player_id, pic.id AS player_in_club_id, p.displayname,
+                    c.id AS club_id, c.name AS club_name, c.logo_uploaded
+             FROM player_in_club pic
+             JOIN player p ON p.id = pic.player_id
+             JOIN club c   ON c.id = pic.club_id
+             JOIN club_in_season cis ON cis.club_id = pic.club_id
+                                     AND cis.season_id = ? AND cis.division_id = ?
+             WHERE pic.to_date IS NULL
+               $excludeClause
+             ORDER BY p.displayname ASC"
+        );
+        $q->execute(array_merge([$seasonId, $divisionId], $excludeParams));
+
+        return array_map(fn($r) => [
+            'player_id'         => $r['player_id'],
+            'player_in_club_id' => $r['player_in_club_id'],
+            'displayname'       => $r['displayname'],
+            'club_id'           => $r['club_id'],
+            'club_name'         => $r['club_name'],
+            'club_logo_uploaded' => (bool) $r['club_logo_uploaded'],
+        ], $q->fetchAll(PDO::FETCH_ASSOC));
+    }
 }

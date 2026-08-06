@@ -779,10 +779,17 @@ class Routing
                         'body' => ['player_id' => 'UUID', 'season_id' => 'UUID', 'position' => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD', 'price' => 'int (€, > 0)'],
                     ],
                     [
+                        'method' => 'PATCH',
+                        'path' => '/player_in_season/:id',
+                        'description' => 'Position und/oder Marktwert eines bestehenden Eintrags korrigieren; 404 wenn nicht gefunden — Maintainer+',
+                        'path_params' => [':id' => 'UUID des player_in_season-Eintrags'],
+                        'body' => ['position' => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD (optional)', 'price' => 'int (€, > 0, optional)', '_hinweis' => 'mind. eines der beiden Felder erforderlich'],
+                    ],
+                    [
                         'method' => 'POST',
                         'path' => '/player_in_season/preview_csv',
-                        'description' => 'CSV parsen (;-getrennt: ID;Vorname;Nachname;Kurzname;Angezeigter Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt) und gegen player (kicker_id) + club (Name, exakt mit Fuzzy-Fallback) abgleichen für die aktive Saison; gibt {status,season_id,rows[{kicker_id,csv_*,matched_player_id,matched_displayname,matched_club_id,club_logo_uploaded,already_in_season,importable}]} zurück; schreibt nichts — Admin',
-                        'body' => ['csv' => 'multipart/form-data Datei'],
+                        'description' => 'CSV parsen (;-getrennt: ID;Vorname;Nachname;Kurzname;Angezeigter Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt) und für eine gewählte Spielklasse gegen player (kicker_id) + club (Name, exakt mit Fuzzy-Fallback) abgleichen; erkennt zusätzlich Positions-/Marktwert-Abweichungen bei bestehenden player_in_season-Einträgen, Club-Abweichungen (aktueller player_in_club vs. CSV-Club) und Spieler, die aktuell einem Club dieser Spielklasse zugeordnet sind aber in der CSV fehlen (missing_players); gibt {status,season_id,season_start_date,division_id,rows[{kicker_id,csv_*,matched_player_id,matched_displayname,matched_club_id,club_logo_uploaded,already_in_season,importable,existing_player_in_season_id,existing_position,existing_price,position_price_mismatch,current_player_in_club_id,current_club_id,current_club_name,current_club_logo_uploaded,club_mismatch}],missing_players[{player_id,player_in_club_id,displayname,club_id,club_name,club_logo_uploaded}]} zurück; schreibt nichts — Admin',
+                        'body' => ['csv' => 'multipart/form-data Datei', 'division_id' => 'UUID der Spielklasse (Pflicht)'],
                     ],
                     [
                         'method' => 'POST',
@@ -895,6 +902,13 @@ class Routing
                             'from_date' => 'DATE YYYY-MM-DD',
                             'on_loan'   => 'bool (optional, default false)',
                         ],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/player_in_club/:id',
+                        'description' => 'Beendet eine aktive Vereinszugehörigkeit (setzt to_date); 404 wenn nicht gefunden oder bereits beendet — Maintainer+',
+                        'path_params' => [':id' => 'UUID des player_in_club-Eintrags'],
+                        'body' => ['to_date' => 'DATE YYYY-MM-DD'],
                     ],
                 ],
             ]),

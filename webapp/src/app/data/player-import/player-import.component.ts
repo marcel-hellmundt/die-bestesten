@@ -1,11 +1,17 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
+import { DataCacheService } from '../../core/data-cache.service';
 import { PlayerImportRow } from '../../core/models/player-import-row.model';
+import { MissingClubMember } from '../../core/models/missing-club-member.model';
 import { POSITION_COLOR, POSITION_LABEL } from '../../core/constants';
 
 interface ImportResult {
   created_count: number;
   skipped: { player_id: string; reason: string }[];
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 @Component({
@@ -16,9 +22,13 @@ interface ImportResult {
 })
 export class PlayerImportDataComponent {
   private api = inject(ApiService);
+  private cache = inject(DataCacheService);
 
   readonly POSITION_LABEL = POSITION_LABEL;
   readonly POSITION_COLOR = POSITION_COLOR;
+
+  divisions = this.cache.divisions;
+  divisionId = signal<string | null>(null);
 
   step = signal<'upload' | 'preview' | 'result'>('upload');
 
@@ -26,27 +36,49 @@ export class PlayerImportDataComponent {
   uploadError = signal<string | null>(null);
 
   rows = signal<PlayerImportRow[]>([]);
+  missingPlayers = signal<MissingClubMember[]>([]);
   seasonId = signal<string | null>(null);
+  seasonStartDate = signal<string | null>(null);
 
   importing = signal(false);
   importResult = signal<ImportResult | null>(null);
+
+  fixingMismatch = signal<Set<number>>(new Set());
+  fixingClub = signal<Set<number>>(new Set());
+  creatingPlayers = signal<Set<number>>(new Set());
+  endingMembership = signal<Set<string>>(new Set());
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
   matchedCount = computed(() => this.rows().filter((r) => r.isMatched).length);
   duplicateCount = computed(() => this.rows().filter((r) => r.isMatched && r.already_in_season).length);
   unmatchedCount = computed(() => this.rows().filter((r) => !r.isMatched).length);
 
+  constructor() {
+    this.cache.ensureDivisions();
+    this.cache.ensureLeague();
+
+    effect(() => {
+      const leagueDivisionId = this.cache.leagueDivisionId();
+      if (leagueDivisionId && this.divisionId() === null) {
+        this.divisionId.set(leagueDivisionId);
+      }
+    });
+  }
+
   onCsvFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
+    const divisionId = this.divisionId();
+    if (!file || !divisionId) return;
 
     this.uploading.set(true);
     this.uploadError.set(null);
-    this.api.previewPlayerSeasonImport(file).subscribe({
+    this.api.previewPlayerSeasonImport(file, divisionId).subscribe({
       next: (res) => {
         this.uploading.set(false);
         this.rows.set((res.rows ?? []).map((r: any) => PlayerImportRow.from(r)));
+        this.missingPlayers.set((res.missing_players ?? []).map((m: any) => MissingClubMember.from(m)));
         this.seasonId.set(res.season_id);
+        this.seasonStartDate.set(res.season_start_date);
         this.step.set('preview');
       },
       error: (err) => {
@@ -55,6 +87,108 @@ export class PlayerImportDataComponent {
       },
     });
     (event.target as HTMLInputElement).value = '';
+  }
+
+  fixPositionPrice(row: PlayerImportRow): void {
+    if (!row.existing_player_in_season_id) return;
+
+    this.fixingMismatch.update((s) => new Set([...s, row.kicker_id]));
+    this.api.patch(`player_in_season/${row.existing_player_in_season_id}`, {
+      position: row.csv_position,
+      price: row.csv_price,
+    }).subscribe({
+      next: () => {
+        this.fixingMismatch.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+        this.rows.update((list) => list.map((r) => r !== row ? r : PlayerImportRow.from({
+          ...r,
+          existing_position: r.csv_position,
+          existing_price: r.csv_price,
+          position_price_mismatch: false,
+        })));
+      },
+      error: () => {
+        this.fixingMismatch.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+      },
+    });
+  }
+
+  fixClubMismatch(row: PlayerImportRow): void {
+    if (!row.current_player_in_club_id || !row.matched_player_id || !row.matched_club_id) return;
+
+    this.fixingClub.update((s) => new Set([...s, row.kicker_id]));
+    const today = todayIso();
+    this.api.patch(`player_in_club/${row.current_player_in_club_id}`, { to_date: today }).subscribe({
+      next: () => {
+        this.api.post('player_in_club', {
+          player_id: row.matched_player_id,
+          club_id: row.matched_club_id,
+          from_date: today,
+        }).subscribe({
+          next: () => {
+            this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+            this.rows.update((list) => list.map((r) => r !== row ? r : PlayerImportRow.from({
+              ...r,
+              current_club_id: r.matched_club_id,
+              current_club_name: r.csv_club_name,
+              current_club_logo_uploaded: r.club_logo_uploaded,
+              club_mismatch: false,
+            })));
+          },
+          error: () => {
+            this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+          },
+        });
+      },
+      error: () => {
+        this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+      },
+    });
+  }
+
+  createMissingPlayer(row: PlayerImportRow): void {
+    const seasonId = this.seasonId();
+    if (!seasonId || !row.csv_position || !row.csv_price) return;
+
+    this.creatingPlayers.update((s) => new Set([...s, row.kicker_id]));
+    this.api.post<{ id: string }>('player/create', {
+      kicker_id: row.kicker_id,
+      first_name: row.csv_first_name,
+      last_name: row.csv_last_name,
+      displayname: row.csv_displayname,
+      season_id: seasonId,
+      position: row.csv_position,
+      price: row.csv_price,
+      club_id: row.matched_club_id ?? undefined,
+      from_date: this.seasonStartDate() ?? undefined,
+    }).subscribe({
+      next: ({ id }) => {
+        this.creatingPlayers.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+        this.rows.update((list) => list.map((r) => r !== row ? r : PlayerImportRow.from({
+          ...r,
+          matched_player_id: id,
+          matched_displayname: r.csv_displayname,
+          current_club_id: r.matched_club_id,
+          current_club_name: r.csv_club_name,
+          current_club_logo_uploaded: r.club_logo_uploaded,
+          importable: true,
+        })));
+      },
+      error: () => {
+        this.creatingPlayers.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+      },
+    });
+  }
+
+  endClubMembership(member: MissingClubMember): void {
+    this.endingMembership.update((s) => new Set([...s, member.player_in_club_id]));
+    this.api.patch(`player_in_club/${member.player_in_club_id}`, { to_date: todayIso() }).subscribe({
+      next: () => {
+        this.missingPlayers.update((list) => list.filter((m) => m !== member));
+      },
+      error: () => {
+        this.endingMembership.update((s) => { const n = new Set(s); n.delete(member.player_in_club_id); return n; });
+      },
+    });
   }
 
   confirmImport(): void {
@@ -84,7 +218,9 @@ export class PlayerImportDataComponent {
     this.step.set('upload');
     this.uploadError.set(null);
     this.rows.set([]);
+    this.missingPlayers.set([]);
     this.seasonId.set(null);
+    this.seasonStartDate.set(null);
     this.importResult.set(null);
   }
 }

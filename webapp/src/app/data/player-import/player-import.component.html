@@ -6,10 +6,25 @@
     <div class="card import-upload-card">
       <p>
         CSV-Datei hochladen (Semikolon-getrennt: ID;Vorname;Nachname;Kurzname;Angezeigter
-        Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt).
+        Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt). Eine CSV enthält immer nur Spieler
+        einer Spielklasse — bitte vorher auswählen.
       </p>
+      <select
+        class="input input--sm"
+        [value]="divisionId() ?? ''"
+        (change)="divisionId.set($any($event.target).value || null)"
+      >
+        <option value="" disabled>Spielklasse wählen…</option>
+        @for (d of divisions(); track d.id) {
+          <option [value]="d.id">{{ d.name }}</option>
+        }
+      </select>
       <input #csvInput type="file" accept=".csv" hidden (change)="onCsvFileSelected($event)" />
-      <button class="btn btn-primary" (click)="csvInput.click()" [disabled]="uploading()">
+      <button
+        class="btn btn-primary"
+        (click)="csvInput.click()"
+        [disabled]="uploading() || !divisionId()"
+      >
         {{ uploading() ? 'Wird geladen…' : 'CSV hochladen' }}
       </button>
       @if (uploadError()) {
@@ -37,7 +52,7 @@
           <tr>
             <th></th>
             <th>Spieler</th>
-            <th>Verein</th>
+            <th>Verein (CSV)</th>
             <th>Position</th>
             <th>Marktwert</th>
             <th></th>
@@ -49,10 +64,10 @@
               <td>
                 @if (!r.isMatched) {
                   <app-icon name="help-circle" />
-                } @else if (r.already_in_season) {
-                  <app-icon name="upload-error" />
-                } @else {
+                } @else if (r.already_in_season && !r.position_price_mismatch && !r.club_mismatch) {
                   <app-icon name="check-circle" />
+                } @else {
+                  <app-icon name="upload-error" />
                 }
               </td>
               <td>{{ r.matched_displayname ?? r.csv_displayname }}</td>
@@ -73,17 +88,102 @@
               </td>
               <td>{{ r.csv_price != null ? (r.csv_price | number) + ' €' : '—' }}</td>
               <td class="mismatch-error">
-                @if (!r.isMatched) {
-                  Kein Treffer
-                } @else if (r.already_in_season) {
-                  Bereits importiert
-                }
+                <div class="row-issues">
+                  @if (!r.isMatched) {
+                    <span>Kein Treffer</span>
+                    <button
+                      class="btn btn-primary btn-sm"
+                      [disabled]="creatingPlayers().has(r.kicker_id)"
+                      (click)="createMissingPlayer(r)"
+                    >
+                      {{ creatingPlayers().has(r.kicker_id) ? '…' : 'Spieler anlegen' }}
+                    </button>
+                  }
+                  @if (r.isMatched && !r.already_in_season) {
+                    <span>Noch kein Eintrag</span>
+                  }
+                  @if (r.position_price_mismatch) {
+                    <span>
+                      Abweichung: {{ r.existing_position ? POSITION_LABEL[r.existing_position] : '—' }} /
+                      {{ r.existing_price | number }} € (DB) vs.
+                      {{ r.csv_position ? POSITION_LABEL[r.csv_position] : '—' }} /
+                      {{ r.csv_price | number }} € (CSV)
+                    </span>
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      [disabled]="fixingMismatch().has(r.kicker_id)"
+                      (click)="fixPositionPrice(r)"
+                    >
+                      {{ fixingMismatch().has(r.kicker_id) ? '…' : 'Übernehmen' }}
+                    </button>
+                  }
+                  @if (r.club_mismatch) {
+                    <span>
+                      Verein weicht ab: {{ r.current_club_name ?? '—' }} (DB) vs. {{ r.csv_club_name }} (CSV)
+                    </span>
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      [disabled]="fixingClub().has(r.kicker_id)"
+                      (click)="fixClubMismatch(r)"
+                    >
+                      {{ fixingClub().has(r.kicker_id) ? '…' : 'Club aktualisieren' }}
+                    </button>
+                  }
+                </div>
               </td>
             </tr>
           }
         </tbody>
       </table>
     </div>
+
+    @if (missingPlayers().length > 0) {
+      <h2 class="section-title">Vereinswechsel-Verdacht</h2>
+      <p class="page-subtitle">
+        Diese Spieler sind laut unserer Datenbank noch einem Club dieser Spielklasse zugeordnet, tauchen
+        aber nicht in der CSV auf — vermutlich veraltete Daten. Nicht kritisch, solange kein
+        Saison-Eintrag existiert.
+      </p>
+      <div class="table-container">
+        <table class="data-table data-table--compact">
+          <thead>
+            <tr>
+              <th>Spieler</th>
+              <th>Aktueller Club</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of missingPlayers(); track m.player_id) {
+              <tr>
+                <td>{{ m.displayname }}</td>
+                <td class="mismatch-club">
+                  @if (m.clubLogoUrl) {
+                    <img
+                      class="tbl-logo tbl-logo--sm"
+                      [src]="m.clubLogoUrl"
+                      [alt]="m.club_name"
+                      (error)="$any($event.target).replaceWith(m.club_name)"
+                    />
+                  } @else {
+                    {{ m.club_name }}
+                  }
+                </td>
+                <td>
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    [disabled]="endingMembership().has(m.player_in_club_id)"
+                    (click)="endClubMembership(m)"
+                  >
+                    {{ endingMembership().has(m.player_in_club_id) ? '…' : 'Vereinszugehörigkeit beenden' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
 
     <div class="import-actions">
       <button class="btn btn-secondary" (click)="reset()">Abbrechen</button>

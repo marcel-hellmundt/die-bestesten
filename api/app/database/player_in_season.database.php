@@ -118,19 +118,46 @@ trait PlayerInSeasonTrait
     }
 
     /**
-     * player_id set (for isset() checks) of players that already have a
-     * player_in_season row for the given season.
+     * player_in_season rows (id, position, price) for the given players/season,
+     * indexed by player_id. Doubles as an existence check via isset().
      */
-    public function getExistingPlayerInSeasonIds(array $playerIds, string $seasonId): array
+    public function getExistingPlayerInSeasonMap(array $playerIds, string $seasonId): array
     {
         if (empty($playerIds)) return [];
 
         $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
         $q = $this->con->prepare(
-            "SELECT player_id FROM player_in_season WHERE season_id = ? AND player_id IN ($placeholders)"
+            "SELECT id, player_id, position, price
+             FROM player_in_season
+             WHERE season_id = ? AND player_id IN ($placeholders)"
         );
         $q->execute(array_merge([$seasonId], $playerIds));
-        return array_flip($q->fetchAll(PDO::FETCH_COLUMN));
+
+        $out = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[$row['player_id']] = $row;
+        }
+        return $out;
+    }
+
+    public function updatePlayerInSeason(string $id, ?string $position, ?int $price): bool
+    {
+        $sets   = [];
+        $params = [':id' => $id];
+
+        if ($position !== null) {
+            $sets[] = 'position = :position';
+            $params[':position'] = $position;
+        }
+        if ($price !== null) {
+            $sets[] = 'price = :price';
+            $params[':price'] = $price;
+        }
+        if (empty($sets)) return false;
+
+        $q = $this->con->prepare('UPDATE player_in_season SET ' . implode(', ', $sets) . ' WHERE id = :id');
+        $q->execute($params);
+        return $q->rowCount() > 0;
     }
 
     private const CSV_VALID_POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
@@ -141,12 +168,13 @@ trait PlayerInSeasonTrait
      * and matches every row against player (kicker_id) and club (name).
      * Writes nothing.
      */
-    public function previewCsvImport(string $filePath): array
+    public function previewCsvImport(string $filePath, string $divisionId): array
     {
-        $seasonId = $this->getActiveSeasonId();
-        if (!$seasonId) {
+        $season = $this->getActiveSeason();
+        if (!$season) {
             throw new RuntimeException('Keine aktive Saison konfiguriert');
         }
+        $seasonId = $season['id'];
 
         $handle = fopen($filePath, 'r');
         $parsedRows = [];
@@ -182,31 +210,55 @@ trait PlayerInSeasonTrait
             fn($r) => $playerMap[$r['kicker_id']]['id'] ?? null,
             $parsedRows
         )));
-        $existingSet = $this->getExistingPlayerInSeasonIds($matchedPlayerIds, $seasonId);
+        $existingMap    = $this->getExistingPlayerInSeasonMap($matchedPlayerIds, $seasonId);
+        $currentClubMap = $this->getCurrentClubByPlayerIds($matchedPlayerIds);
 
-        $rows = array_map(function ($r) use ($playerMap, $existingSet) {
-            $player = $playerMap[$r['kicker_id']] ?? null;
-            $club   = $this->findClubByName($r['club_name']);
-            $alreadyInSeason = $player && isset($existingSet[$player['id']]);
+        $rows = array_map(function ($r) use ($playerMap, $existingMap, $currentClubMap) {
+            $player  = $playerMap[$r['kicker_id']] ?? null;
+            $club    = $this->findClubByName($r['club_name']);
+            $existing = $player ? ($existingMap[$player['id']] ?? null) : null;
+            $currentClub = $player ? ($currentClubMap[$player['id']] ?? null) : null;
+
+            $alreadyInSeason = $existing !== null;
+            $positionPriceMismatch = $existing !== null
+                && ($existing['position'] !== $r['position'] || (int) $existing['price'] !== $r['price']);
+            $clubMismatch = $club && $currentClub && $currentClub['club_id'] !== $club['id'];
 
             return [
-                'kicker_id'           => $r['kicker_id'],
-                'csv_first_name'      => $r['first_name'],
-                'csv_last_name'       => $r['last_name'],
-                'csv_displayname'     => $r['displayname'],
-                'csv_club_name'       => $r['club_name'],
-                'csv_position'        => $r['position'],
-                'csv_price'           => $r['price'],
-                'matched_player_id'   => $player['id'] ?? null,
-                'matched_displayname' => $player['displayname'] ?? null,
-                'matched_club_id'     => $club['id'] ?? null,
-                'club_logo_uploaded'  => $club ? (bool) $club['logo_uploaded'] : false,
-                'already_in_season'   => $alreadyInSeason,
-                'importable'          => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0),
+                'kicker_id'                  => $r['kicker_id'],
+                'csv_first_name'             => $r['first_name'],
+                'csv_last_name'              => $r['last_name'],
+                'csv_displayname'            => $r['displayname'],
+                'csv_club_name'              => $r['club_name'],
+                'csv_position'               => $r['position'],
+                'csv_price'                  => $r['price'],
+                'matched_player_id'          => $player['id'] ?? null,
+                'matched_displayname'        => $player['displayname'] ?? null,
+                'matched_club_id'            => $club['id'] ?? null,
+                'club_logo_uploaded'         => $club ? (bool) $club['logo_uploaded'] : false,
+                'already_in_season'          => $alreadyInSeason,
+                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0),
+                'existing_player_in_season_id' => $existing['id'] ?? null,
+                'existing_position'          => $existing['position'] ?? null,
+                'existing_price'             => $existing !== null ? (int) $existing['price'] : null,
+                'position_price_mismatch'    => $positionPriceMismatch,
+                'current_player_in_club_id'  => $currentClub['player_in_club_id'] ?? null,
+                'current_club_id'            => $currentClub['club_id'] ?? null,
+                'current_club_name'          => $currentClub['club_name'] ?? null,
+                'current_club_logo_uploaded' => $currentClub ? (bool) $currentClub['logo_uploaded'] : false,
+                'club_mismatch'              => $clubMismatch,
             ];
         }, $parsedRows);
 
-        return ['season_id' => $seasonId, 'rows' => $rows];
+        $missingPlayers = $this->getMissingClubMembers($seasonId, $divisionId, $matchedPlayerIds);
+
+        return [
+            'season_id'         => $seasonId,
+            'season_start_date' => $season['start_date'],
+            'division_id'       => $divisionId,
+            'rows'              => $rows,
+            'missing_players'   => $missingPlayers,
+        ];
     }
 
     /**
@@ -222,7 +274,7 @@ trait PlayerInSeasonTrait
         }
 
         $playerIds   = array_column($rows, 'player_id');
-        $existingSet = $this->getExistingPlayerInSeasonIds($playerIds, $seasonId);
+        $existingSet = $this->getExistingPlayerInSeasonMap($playerIds, $seasonId);
 
         $created = [];
         $skipped = [];

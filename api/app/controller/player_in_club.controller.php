@@ -2,7 +2,7 @@
 
 class PlayerInClubController extends _BaseController
 {
-    public static array $methodRoles = ['POST' => 'maintainer'];
+    public static array $methodRoles = ['POST' => 'maintainer', 'PATCH' => 'maintainer'];
 
     protected function get(): mixed   { return $this->methodNotAllowed(); }
 
@@ -19,6 +19,22 @@ class PlayerInClubController extends _BaseController
         return $this->db->createPlayerInClub($body);
     }
 
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
+    protected function patch(): mixed
+    {
+        $body   = $this->body();
+        $toDate = $body['to_date'] ?? null;
+        if (!$toDate) {
+            http_response_code(400);
+            return ['message' => 'to_date fehlt'];
+        }
+
+        if (!$this->db->endPlayerInClub($this->id, $toDate)) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'player_in_club nicht gefunden oder bereits beendet'];
+        }
+
+        return ['status' => true];
+    }
+
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }
