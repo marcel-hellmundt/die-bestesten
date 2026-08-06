@@ -156,6 +156,29 @@ trait PlayerTrait
         return $out;
     }
 
+    /**
+     * Bulk-lookup by exact displayname, indexed by displayname. Used as a second-pass check
+     * for kicker_id-matching CSV rows that found no player: if a player with the same
+     * displayname already exists under a different kicker_id, the CSV's kicker_id is likely
+     * wrong/changed rather than the player being genuinely new.
+     */
+    public function getPlayersByDisplaynames(array $displaynames): array
+    {
+        if (empty($displaynames)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($displaynames), '?'));
+        $query = $this->con->prepare(
+            "SELECT id, kicker_id, displayname FROM player WHERE displayname IN ($placeholders)"
+        );
+        $query->execute($displaynames);
+
+        $out = [];
+        foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[$row['displayname']] = $row;
+        }
+        return $out;
+    }
+
     public function createPlayer(array $body): array
     {
         $playerId = $this->con->query("SELECT UUID() AS id")->fetchColumn();

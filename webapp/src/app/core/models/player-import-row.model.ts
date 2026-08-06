@@ -21,11 +21,18 @@ export class PlayerImportRow {
     public current_club_id: string | null,
     public current_club_name: string | null,
     public current_club_logo_uploaded: boolean,
-    public club_mismatch: boolean
+    public club_mismatch: boolean,
+    public club_confirmed: boolean,
+    public duplicate_candidate_player_id: string | null,
+    public duplicate_candidate_kicker_id: number | null
   ) {}
 
   get isMatched(): boolean {
     return this.matched_player_id !== null;
+  }
+
+  get hasDuplicateCandidate(): boolean {
+    return this.duplicate_candidate_player_id !== null;
   }
 
   get clubLogoUrl(): string | null {
@@ -63,7 +70,10 @@ export class PlayerImportRow {
       data.current_club_id ?? null,
       data.current_club_name ?? null,
       !!data.current_club_logo_uploaded,
-      !!data.club_mismatch
+      !!data.club_mismatch,
+      !!data.club_confirmed,
+      data.duplicate_candidate_player_id ?? null,
+      data.duplicate_candidate_kicker_id ?? null
     );
   }
 }

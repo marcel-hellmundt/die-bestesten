@@ -213,16 +213,35 @@ trait PlayerInSeasonTrait
         $existingMap    = $this->getExistingPlayerInSeasonMap($matchedPlayerIds, $seasonId);
         $currentClubMap = $this->getCurrentClubByPlayerIds($matchedPlayerIds);
 
-        $rows = array_map(function ($r) use ($playerMap, $existingMap, $currentClubMap) {
+        // Second-pass check for rows with no kicker_id match: same displayname already in DB
+        // under a different kicker_id likely means the CSV's kicker_id is wrong/changed rather
+        // than the player being genuinely new.
+        $unmatchedDisplaynames = array_values(array_unique(array_map(
+            fn($r) => $r['displayname'],
+            array_filter($parsedRows, fn($r) => !isset($playerMap[$r['kicker_id']]))
+        )));
+        $duplicateCandidateMap = $this->getPlayersByDisplaynames($unmatchedDisplaynames);
+
+        $rows = array_map(function ($r) use ($playerMap, $existingMap, $currentClubMap, $duplicateCandidateMap) {
             $player  = $playerMap[$r['kicker_id']] ?? null;
             $club    = $this->findClubByName($r['club_name']);
             $existing = $player ? ($existingMap[$player['id']] ?? null) : null;
             $currentClub = $player ? ($currentClubMap[$player['id']] ?? null) : null;
+            $duplicateCandidate = $player ? null : ($duplicateCandidateMap[$r['displayname']] ?? null);
 
             $alreadyInSeason = $existing !== null;
             $positionPriceMismatch = $existing !== null
                 && ($existing['position'] !== $r['position'] || (int) $existing['price'] !== $r['price']);
+            // Explicit conflict: both clubs known and different — the only case worth blocking
+            // bulk-creation for, since the player might actually be at a different (possibly
+            // out-of-league) club per our stale data and would become wrongly purchasable.
+            // Missing player_in_club data (no current club on file) is NOT treated as a conflict —
+            // that's the normal state for most players right before a new season's transfers have
+            // been entered, and blocking on it would defeat the point of this import.
             $clubMismatch = $club && $currentClub && $currentClub['club_id'] !== $club['id'];
+            // Positive confirmation (both clubs known and identical) — informational only, shown in
+            // the UI tooltip; not required for importable.
+            $clubConfirmed = $club && $currentClub && $currentClub['club_id'] === $club['id'];
 
             return [
                 'kicker_id'                  => $r['kicker_id'],
@@ -237,7 +256,7 @@ trait PlayerInSeasonTrait
                 'matched_club_id'            => $club['id'] ?? null,
                 'club_logo_uploaded'         => $club ? (bool) $club['logo_uploaded'] : false,
                 'already_in_season'          => $alreadyInSeason,
-                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0),
+                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch),
                 'existing_player_in_season_id' => $existing['id'] ?? null,
                 'existing_position'          => $existing['position'] ?? null,
                 'existing_price'             => $existing !== null ? (int) $existing['price'] : null,
@@ -247,6 +266,9 @@ trait PlayerInSeasonTrait
                 'current_club_name'          => $currentClub['club_name'] ?? null,
                 'current_club_logo_uploaded' => $currentClub ? (bool) $currentClub['logo_uploaded'] : false,
                 'club_mismatch'              => $clubMismatch,
+                'club_confirmed'             => $clubConfirmed,
+                'duplicate_candidate_player_id' => $duplicateCandidate['id'] ?? null,
+                'duplicate_candidate_kicker_id' => $duplicateCandidate ? (int) $duplicateCandidate['kicker_id'] : null,
             ];
         }, $parsedRows);
 

@@ -46,14 +46,56 @@ export class PlayerImportDataComponent {
   fixingMismatch = signal<Set<number>>(new Set());
   fixingClub = signal<Set<number>>(new Set());
   creatingPlayers = signal<Set<number>>(new Set());
-  endingMembership = signal<Set<string>>(new Set());
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
 
   caseTab = signal<'matched' | 'unmatched' | 'missing'>('matched');
 
+  searchQuery = signal('');
+  hideComplete = signal(false);
+
+  private matchesSearch(haystacks: (string | null | undefined)[]): boolean {
+    const q = this.searchQuery().trim().toLowerCase();
+    if (!q) return true;
+    return haystacks.some((h) => (h ?? '').toLowerCase().includes(q));
+  }
+
+  isRowComplete(r: PlayerImportRow): boolean {
+    return !r.club_mismatch && r.already_in_season && !r.position_price_mismatch;
+  }
+
   matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
   unmatchedRows = computed(() => this.rows().filter((r) => !r.isMatched));
+  creatableUnmatchedRows = computed(() =>
+    this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate)
+  );
+
+  filteredMatchedRows = computed(() =>
+    this.matchedRows().filter((r) => {
+      if (this.hideComplete() && this.isRowComplete(r)) return false;
+      return this.matchesSearch([
+        r.csv_first_name,
+        r.csv_last_name,
+        r.csv_club_name,
+        r.csv_position ? POSITION_LABEL[r.csv_position] : null,
+      ]);
+    })
+  );
+
+  filteredUnmatchedRows = computed(() =>
+    this.unmatchedRows().filter((r) =>
+      this.matchesSearch([
+        r.csv_first_name,
+        r.csv_last_name,
+        r.csv_club_name,
+        r.csv_position ? POSITION_LABEL[r.csv_position] : null,
+      ])
+    )
+  );
+
+  filteredMissingPlayers = computed(() =>
+    this.missingPlayers().filter((m) => this.matchesSearch([m.displayname, m.club_name]))
+  );
 
   sortCol = signal<'name' | 'club' | 'position' | 'price'>('name');
   sortDir = signal<'asc' | 'desc'>('asc');
@@ -62,7 +104,7 @@ export class PlayerImportDataComponent {
     const col = this.sortCol();
     const dir = this.sortDir();
     const sign = dir === 'asc' ? 1 : -1;
-    return [...this.unmatchedRows()].sort((a, b) => sign * this.compareRows(a, b, col));
+    return [...this.filteredUnmatchedRows()].sort((a, b) => sign * this.compareRows(a, b, col));
   });
 
   private compareRows(a: PlayerImportRow, b: PlayerImportRow, col: 'name' | 'club' | 'position' | 'price'): number {
@@ -94,10 +136,10 @@ export class PlayerImportDataComponent {
     const col = this.matchedSortCol();
     const dir = this.matchedSortDir();
     const sign = dir === 'asc' ? 1 : -1;
-    return [...this.matchedRows()].sort((a, b) => sign * this.compareMatchedRows(a, b, col));
+    return [...this.filteredMatchedRows()].sort((a, b) => sign * this.compareMatchedRows(a, b, col));
   });
 
-  /** Number of "green" states (found, club match, has entry, entry matches CSV) — used for the initial sort. */
+  /** Number of "green" states (found, no club conflict, has entry, entry matches CSV) — used for the initial sort. */
   private rowGreenScore(r: PlayerImportRow): number {
     return (
       1 + // Spieler gefunden (immer wahr in dieser Tabelle)
@@ -144,7 +186,7 @@ export class PlayerImportDataComponent {
     const col = this.missingSortCol();
     const dir = this.missingSortDir();
     const sign = dir === 'asc' ? 1 : -1;
-    return [...this.missingPlayers()].sort((a, b) => {
+    return [...this.filteredMissingPlayers()].sort((a, b) => {
       const cmp = col === 'name' ? a.displayname.localeCompare(b.displayname) : a.club_name.localeCompare(b.club_name);
       return sign * cmp;
     });
@@ -238,6 +280,8 @@ export class PlayerImportDataComponent {
               current_club_name: r.csv_club_name,
               current_club_logo_uploaded: r.club_logo_uploaded,
               club_mismatch: false,
+              club_confirmed: true,
+              importable: !r.already_in_season && !!r.csv_position && !!r.csv_price && r.csv_price > 0,
             })));
           },
           error: () => {
@@ -276,7 +320,15 @@ export class PlayerImportDataComponent {
           current_club_id: r.matched_club_id,
           current_club_name: r.csv_club_name,
           current_club_logo_uploaded: r.club_logo_uploaded,
-          importable: true,
+          club_mismatch: false,
+          club_confirmed: !!r.matched_club_id,
+          // POST /player/create legt player_in_season direkt mit an — Zeile hat also bereits
+          // einen Eintrag und ist nicht (mehr) über "Spieler-Saison-Objekt erstellen" importierbar.
+          already_in_season: true,
+          existing_position: r.csv_position,
+          existing_price: r.csv_price,
+          position_price_mismatch: false,
+          importable: false,
         })));
       },
       error: () => {
@@ -285,16 +337,10 @@ export class PlayerImportDataComponent {
     });
   }
 
-  endClubMembership(member: MissingClubMember): void {
-    this.endingMembership.update((s) => new Set([...s, member.player_in_club_id]));
-    this.api.patch(`player_in_club/${member.player_in_club_id}`, { to_date: todayIso() }).subscribe({
-      next: () => {
-        this.missingPlayers.update((list) => list.filter((m) => m !== member));
-      },
-      error: () => {
-        this.endingMembership.update((s) => { const n = new Set(s); n.delete(member.player_in_club_id); return n; });
-      },
-    });
+  confirmCreateAll(): void {
+    this.creatableUnmatchedRows()
+      .filter((r) => !this.creatingPlayers().has(r.kicker_id))
+      .forEach((r) => this.createMissingPlayer(r));
   }
 
   confirmImport(): void {
@@ -329,6 +375,8 @@ export class PlayerImportDataComponent {
     this.seasonStartDate.set(null);
     this.importResult.set(null);
     this.caseTab.set('matched');
+    this.searchQuery.set('');
+    this.hideComplete.set(false);
     this.sortCol.set('name');
     this.sortDir.set('asc');
     this.matchedSortCol.set('state');
