@@ -48,6 +48,10 @@ export class PlayerImportDataComponent {
   creatingPlayers = signal<Set<number>>(new Set());
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
+  /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against CSV). */
+  clubMismatchCount = computed(
+    () => this.matchedRows().filter((r) => r.club_mismatch || r.club_unresolved).length
+  );
 
   caseTab = signal<'matched' | 'unmatched' | 'missing'>('matched');
 
@@ -143,7 +147,7 @@ export class PlayerImportDataComponent {
   private rowGreenScore(r: PlayerImportRow): number {
     return (
       1 + // Spieler gefunden (immer wahr in dieser Tabelle)
-      (r.club_mismatch ? 0 : 1) +
+      (r.club_mismatch || r.club_unresolved ? 0 : 1) +
       (r.already_in_season ? 1 : 0) +
       (r.already_in_season && !r.position_price_mismatch ? 1 : 0)
     );

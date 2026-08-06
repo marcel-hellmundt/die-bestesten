@@ -242,6 +242,11 @@ trait PlayerInSeasonTrait
             // Positive confirmation (both clubs known and identical) — informational only, shown in
             // the UI tooltip; not required for importable.
             $clubConfirmed = $club && $currentClub && $currentClub['club_id'] === $club['id'];
+            // CSV club name couldn't be resolved to a known club at all (no exact/unique fuzzy match).
+            // We can't verify it against the player's actual current club (which might be at a
+            // different, possibly out-of-league club per our data) — block bulk-creation rather than
+            // risk making the player wrongly purchasable under this league's price.
+            $clubUnresolved = !$club;
 
             return [
                 'kicker_id'                  => $r['kicker_id'],
@@ -256,7 +261,7 @@ trait PlayerInSeasonTrait
                 'matched_club_id'            => $club['id'] ?? null,
                 'club_logo_uploaded'         => $club ? (bool) $club['logo_uploaded'] : false,
                 'already_in_season'          => $alreadyInSeason,
-                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch),
+                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved),
                 'existing_player_in_season_id' => $existing['id'] ?? null,
                 'existing_position'          => $existing['position'] ?? null,
                 'existing_price'             => $existing !== null ? (int) $existing['price'] : null,
@@ -267,6 +272,7 @@ trait PlayerInSeasonTrait
                 'current_club_logo_uploaded' => $currentClub ? (bool) $currentClub['logo_uploaded'] : false,
                 'club_mismatch'              => $clubMismatch,
                 'club_confirmed'             => $clubConfirmed,
+                'club_unresolved'            => $clubUnresolved,
                 'duplicate_candidate_player_id' => $duplicateCandidate['id'] ?? null,
                 'duplicate_candidate_kicker_id' => $duplicateCandidate ? (int) $duplicateCandidate['kicker_id'] : null,
             ];

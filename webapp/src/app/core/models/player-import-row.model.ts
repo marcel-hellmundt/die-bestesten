@@ -23,6 +23,7 @@ export class PlayerImportRow {
     public current_club_logo_uploaded: boolean,
     public club_mismatch: boolean,
     public club_confirmed: boolean,
+    public club_unresolved: boolean,
     public duplicate_candidate_player_id: string | null,
     public duplicate_candidate_kicker_id: number | null
   ) {}
@@ -72,6 +73,7 @@ export class PlayerImportRow {
       !!data.current_club_logo_uploaded,
       !!data.club_mismatch,
       !!data.club_confirmed,
+      !!data.club_unresolved,
       data.duplicate_candidate_player_id ?? null,
       data.duplicate_candidate_kicker_id ?? null
     );

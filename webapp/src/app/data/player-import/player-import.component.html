@@ -76,6 +76,11 @@
       >
         {{ hideComplete() ? 'Fertige einblenden' : 'Fertige ausblenden' }}
       </button>
+      @if (caseTab() === 'matched' && clubMismatchCount() > 0) {
+        <span class="mismatch-hint">
+          {{ clubMismatchCount() }} Spieler mit abweichendem/ungeklärtem Verein — nicht automatisch anlegbar
+        </span>
+      }
     </div>
 
     @if (caseTab() === 'matched') {
@@ -151,15 +156,17 @@
                           ? 'Wird aktualisiert…'
                           : r.club_mismatch
                             ? ('Verein weicht ab: ' + (r.current_club_name ?? '—') + ' (DB) vs. ' + r.csv_club_name + ' (CSV) — klicken zum Übernehmen')
-                            : r.club_confirmed
-                              ? 'Verein in CSV identisch mit Datenbank'
-                              : 'Keine aktuelle Vereinszuordnung in der Datenbank hinterlegt — kein Widerspruch zur CSV, blockiert die Erstellung nicht'
+                            : r.club_unresolved
+                              ? ('Verein „' + r.csv_club_name + '“ (CSV) konnte keinem Verein in der Datenbank zugeordnet werden — blockiert die automatische Erstellung, da der Spieler laut unseren Daten evtl. noch bei einem anderen Verein ist')
+                              : r.club_confirmed
+                                ? 'Verein in CSV identisch mit Datenbank'
+                                : 'Keine aktuelle Vereinszuordnung in der Datenbank hinterlegt — kein Widerspruch zur CSV, blockiert die Erstellung nicht'
                       "
                     >
                       <img
                         class="status-icon-img"
-                        [src]="r.club_mismatch ? 'img/icons/warning.png' : 'img/icons/check.png'"
-                        [alt]="r.club_mismatch ? 'Warnung' : 'OK'"
+                        [src]="r.club_mismatch || r.club_unresolved ? 'img/icons/warning.png' : 'img/icons/check.png'"
+                        [alt]="r.club_mismatch || r.club_unresolved ? 'Warnung' : 'OK'"
                       />
                     </span>
                     <span
