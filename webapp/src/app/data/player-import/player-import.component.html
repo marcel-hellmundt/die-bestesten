@@ -34,6 +34,14 @@
   }
 
   @case ('preview') {
+    @if (divisionWarning()) {
+      <div class="warning-panel">
+        {{ divisionMismatchCount() }} von {{ resolvedClubCount() }} erkannten Vereinen in dieser CSV
+        gehören laut unseren Daten einer anderen Spielklasse an als der ausgewählten — evtl. wurde die
+        falsche Spielklasse oder die falsche CSV-Datei ausgewählt.
+      </div>
+    }
+
     <div class="case-tabs">
       <button
         class="case-tab"
@@ -167,6 +175,20 @@
                         class="status-icon-img"
                         [src]="r.club_mismatch || r.club_unresolved ? 'img/icons/warning.png' : 'img/icons/check.png'"
                         [alt]="r.club_mismatch || r.club_unresolved ? 'Warnung' : 'OK'"
+                      />
+                    </span>
+                    <span
+                      class="status-icon"
+                      [attr.data-tooltip]="
+                        r.division_mismatch
+                          ? ('Verein „' + (r.current_club_name ?? r.csv_club_name) + '“ spielt laut unseren Daten in einer anderen Spielklasse als der für diesen Import ausgewählten — blockiert die automatische Erstellung')
+                          : 'Verein spielt in der ausgewählten Spielklasse (oder Spielklasse ist für diesen Verein noch nicht gepflegt)'
+                      "
+                    >
+                      <img
+                        class="status-icon-img"
+                        [src]="r.division_mismatch ? 'img/icons/error.png' : 'img/icons/check.png'"
+                        [alt]="r.division_mismatch ? 'Falsche Spielklasse' : 'OK'"
                       />
                     </span>
                     <span
@@ -307,9 +329,12 @@
                         Spieler ansehen ↗
                       </a>
                     }
+                    @if (r.division_mismatch) {
+                      <span>Verein spielt laut unseren Daten in einer anderen Spielklasse</span>
+                    }
                     <button
                       class="btn btn-primary btn-sm"
-                      [disabled]="creatingPlayers().has(r.kicker_id)"
+                      [disabled]="creatingPlayers().has(r.kicker_id) || r.division_mismatch"
                       (click)="createMissingPlayer(r)"
                     >
                       {{ creatingPlayers().has(r.kicker_id) ? '…' : 'Spieler anlegen' }}

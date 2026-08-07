@@ -222,9 +222,25 @@ trait PlayerInSeasonTrait
         )));
         $duplicateCandidateMap = $this->getPlayersByDisplaynames($unmatchedDisplaynames);
 
-        $rows = array_map(function ($r) use ($playerMap, $existingMap, $currentClubMap, $duplicateCandidateMap) {
+        // Resolve every distinct CSV club name once, then bulk-check which division each
+        // resolved club actually plays in this season — used to detect a CSV uploaded for
+        // the wrong Spielklasse (e.g. 2.-Liga CSV analysed as 1. Liga).
+        $clubByName = [];
+        foreach (array_unique(array_column($parsedRows, 'club_name')) as $clubName) {
+            $clubByName[$clubName] = $this->findClubByName($clubName);
+        }
+        $resolvedClubIds  = array_values(array_filter(array_map(fn($c) => $c['id'] ?? null, $clubByName)));
+        $clubDivisionMap  = $this->getClubDivisionMap($resolvedClubIds, $seasonId);
+
+        $resolvedClubCount = 0;
+        $divisionMismatchCount = 0;
+
+        $rows = array_map(function ($r) use (
+            $playerMap, $existingMap, $currentClubMap, $duplicateCandidateMap,
+            $clubByName, $clubDivisionMap, $divisionId, &$resolvedClubCount, &$divisionMismatchCount
+        ) {
             $player  = $playerMap[$r['kicker_id']] ?? null;
-            $club    = $this->findClubByName($r['club_name']);
+            $club    = $clubByName[$r['club_name']];
             $existing = $player ? ($existingMap[$player['id']] ?? null) : null;
             $currentClub = $player ? ($currentClubMap[$player['id']] ?? null) : null;
             $duplicateCandidate = $player ? null : ($duplicateCandidateMap[$r['displayname']] ?? null);
@@ -247,6 +263,17 @@ trait PlayerInSeasonTrait
             // different, possibly out-of-league club per our data) — block bulk-creation rather than
             // risk making the player wrongly purchasable under this league's price.
             $clubUnresolved = !$club;
+            // The resolved club plays in a *different* division this season than the one selected
+            // for this import — strong signal the wrong CSV/Spielklasse was picked. Unknown (no
+            // club_in_season entry yet, e.g. new season not fully set up) is NOT treated as a
+            // conflict, same convention as club_mismatch above.
+            $clubDivisionId  = $club ? ($clubDivisionMap[$club['id']] ?? null) : null;
+            $divisionMismatch = $clubDivisionId !== null && $clubDivisionId !== $divisionId;
+
+            if ($club) {
+                $resolvedClubCount++;
+                if ($divisionMismatch) $divisionMismatchCount++;
+            }
 
             return [
                 'kicker_id'                  => $r['kicker_id'],
@@ -261,7 +288,7 @@ trait PlayerInSeasonTrait
                 'matched_club_id'            => $club['id'] ?? null,
                 'club_logo_uploaded'         => $club ? (bool) $club['logo_uploaded'] : false,
                 'already_in_season'          => $alreadyInSeason,
-                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved),
+                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved && !$divisionMismatch),
                 'existing_player_in_season_id' => $existing['id'] ?? null,
                 'existing_position'          => $existing['position'] ?? null,
                 'existing_price'             => $existing !== null ? (int) $existing['price'] : null,
@@ -273,6 +300,7 @@ trait PlayerInSeasonTrait
                 'club_mismatch'              => $clubMismatch,
                 'club_confirmed'             => $clubConfirmed,
                 'club_unresolved'            => $clubUnresolved,
+                'division_mismatch'          => $divisionMismatch,
                 'duplicate_candidate_player_id' => $duplicateCandidate['id'] ?? null,
                 'duplicate_candidate_kicker_id' => $duplicateCandidate ? (int) $duplicateCandidate['kicker_id'] : null,
             ];
@@ -280,12 +308,19 @@ trait PlayerInSeasonTrait
 
         $missingPlayers = $this->getMissingClubMembers($seasonId, $divisionId, $matchedPlayerIds);
 
+        // Aggregate heads-up: if most resolved clubs don't belong to the selected division,
+        // the admin likely picked the wrong Spielklasse or uploaded the wrong CSV.
+        $divisionWarning = $resolvedClubCount > 0 && $divisionMismatchCount > $resolvedClubCount / 2;
+
         return [
-            'season_id'         => $seasonId,
-            'season_start_date' => $season['start_date'],
-            'division_id'       => $divisionId,
-            'rows'              => $rows,
-            'missing_players'   => $missingPlayers,
+            'season_id'                => $seasonId,
+            'season_start_date'        => $season['start_date'],
+            'division_id'              => $divisionId,
+            'rows'                     => $rows,
+            'missing_players'          => $missingPlayers,
+            'division_warning'         => $divisionWarning,
+            'division_mismatch_count'  => $divisionMismatchCount,
+            'resolved_club_count'      => $resolvedClubCount,
         ];
     }
 

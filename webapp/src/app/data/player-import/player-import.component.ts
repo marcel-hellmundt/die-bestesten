@@ -39,6 +39,9 @@ export class PlayerImportDataComponent {
   missingPlayers = signal<MissingClubMember[]>([]);
   seasonId = signal<string | null>(null);
   seasonStartDate = signal<string | null>(null);
+  divisionWarning = signal(false);
+  divisionMismatchCount = signal(0);
+  resolvedClubCount = signal(0);
 
   importing = signal(false);
   importResult = signal<ImportResult | null>(null);
@@ -48,9 +51,9 @@ export class PlayerImportDataComponent {
   creatingPlayers = signal<Set<number>>(new Set());
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
-  /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against CSV). */
+  /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against / doesn't belong to the CSV's division). */
   clubMismatchCount = computed(
-    () => this.matchedRows().filter((r) => r.club_mismatch || r.club_unresolved).length
+    () => this.matchedRows().filter((r) => r.club_mismatch || r.club_unresolved || r.division_mismatch).length
   );
 
   caseTab = signal<'matched' | 'unmatched' | 'missing'>('matched');
@@ -65,13 +68,13 @@ export class PlayerImportDataComponent {
   }
 
   isRowComplete(r: PlayerImportRow): boolean {
-    return !r.club_mismatch && r.already_in_season && !r.position_price_mismatch;
+    return !r.club_mismatch && !r.division_mismatch && r.already_in_season && !r.position_price_mismatch;
   }
 
   matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
   unmatchedRows = computed(() => this.rows().filter((r) => !r.isMatched));
   creatableUnmatchedRows = computed(() =>
-    this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate)
+    this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate && !r.division_mismatch)
   );
 
   filteredMatchedRows = computed(() =>
@@ -147,7 +150,7 @@ export class PlayerImportDataComponent {
   private rowGreenScore(r: PlayerImportRow): number {
     return (
       1 + // Spieler gefunden (immer wahr in dieser Tabelle)
-      (r.club_mismatch || r.club_unresolved ? 0 : 1) +
+      (r.club_mismatch || r.club_unresolved || r.division_mismatch ? 0 : 1) +
       (r.already_in_season ? 1 : 0) +
       (r.already_in_season && !r.position_price_mismatch ? 1 : 0)
     );
@@ -231,6 +234,9 @@ export class PlayerImportDataComponent {
         this.missingPlayers.set((res.missing_players ?? []).map((m: any) => MissingClubMember.from(m)));
         this.seasonId.set(res.season_id);
         this.seasonStartDate.set(res.season_start_date);
+        this.divisionWarning.set(!!res.division_warning);
+        this.divisionMismatchCount.set(res.division_mismatch_count ?? 0);
+        this.resolvedClubCount.set(res.resolved_club_count ?? 0);
         this.step.set('preview');
       },
       error: (err) => {
@@ -285,7 +291,7 @@ export class PlayerImportDataComponent {
               current_club_logo_uploaded: r.club_logo_uploaded,
               club_mismatch: false,
               club_confirmed: true,
-              importable: !r.already_in_season && !!r.csv_position && !!r.csv_price && r.csv_price > 0,
+              importable: !r.already_in_season && !!r.csv_position && !!r.csv_price && r.csv_price > 0 && !r.division_mismatch,
             })));
           },
           error: () => {
@@ -377,6 +383,9 @@ export class PlayerImportDataComponent {
     this.missingPlayers.set([]);
     this.seasonId.set(null);
     this.seasonStartDate.set(null);
+    this.divisionWarning.set(false);
+    this.divisionMismatchCount.set(0);
+    this.resolvedClubCount.set(0);
     this.importResult.set(null);
     this.caseTab.set('matched');
     this.searchQuery.set('');
