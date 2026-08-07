@@ -22,7 +22,7 @@ export class PlayerDataComponent {
   navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
   cache = inject(DataCacheService);
 
-  isAdmin = computed(() => this.auth.isAdmin());
+  isMaintainer = computed(() => this.auth.isMaintainer());
 
   private reload$ = new BehaviorSubject<void>(undefined);
 

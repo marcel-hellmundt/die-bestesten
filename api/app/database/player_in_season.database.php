@@ -167,8 +167,15 @@ trait PlayerInSeasonTrait
      * ID;Vorname;Nachname;Kurzname;Angezeigter Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt)
      * and matches every row against player (kicker_id) and club (name).
      * Writes nothing.
+     *
+     * $divisionId is optional: when omitted, the division is auto-detected from the plurality
+     * of CSV rows whose resolved club plays in a given division this season (division_candidates
+     * in the return value lets the caller show/confirm the pick). If no club in the CSV can be
+     * attributed to any division at all, division_id comes back null and rows/missing_players are
+     * left empty — the caller must re-submit with an explicit division_id before any row analysis
+     * (and therefore the division_mismatch safety block) is performed.
      */
-    public function previewCsvImport(string $filePath, string $divisionId): array
+    public function previewCsvImport(string $filePath, ?string $divisionId): array
     {
         $season = $this->getActiveSeason();
         if (!$season) {
@@ -231,6 +238,46 @@ trait PlayerInSeasonTrait
         }
         $resolvedClubIds  = array_values(array_filter(array_map(fn($c) => $c['id'] ?? null, $clubByName)));
         $clubDivisionMap  = $this->getClubDivisionMap($resolvedClubIds, $seasonId);
+
+        // Tally: for every CSV row, count which division its resolved club plays in this season.
+        // Used both to auto-detect the division (plurality vote) and to show the admin all
+        // candidates so a wrong auto-pick can be corrected.
+        $divisionTally = [];
+        foreach ($parsedRows as $r) {
+            $club = $clubByName[$r['club_name']] ?? null;
+            $rowDivisionId = $club ? ($clubDivisionMap[$club['id']] ?? null) : null;
+            if ($rowDivisionId !== null) {
+                $divisionTally[$rowDivisionId] = ($divisionTally[$rowDivisionId] ?? 0) + 1;
+            }
+        }
+        arsort($divisionTally);
+        $divisionCandidates = array_map(
+            fn($id, $count) => ['division_id' => $id, 'count' => $count],
+            array_keys($divisionTally), array_values($divisionTally)
+        );
+
+        $divisionAutoDetected = false;
+        if ($divisionId === null) {
+            $divisionAutoDetected = true;
+            $divisionId = $divisionCandidates[0]['division_id'] ?? null;
+        }
+
+        // No club in the CSV could be attributed to any division at all — nothing to safely
+        // analyse against, so bail out and let the caller ask the admin to pick manually.
+        if ($divisionId === null) {
+            return [
+                'season_id'            => $seasonId,
+                'season_start_date'    => $season['start_date'],
+                'division_id'          => null,
+                'division_auto_detected' => $divisionAutoDetected,
+                'division_candidates'  => $divisionCandidates,
+                'rows'                 => [],
+                'missing_players'      => [],
+                'division_warning'     => false,
+                'division_mismatch_count' => 0,
+                'resolved_club_count'  => 0,
+            ];
+        }
 
         $resolvedClubCount = 0;
         $divisionMismatchCount = 0;
@@ -316,6 +363,8 @@ trait PlayerInSeasonTrait
             'season_id'                => $seasonId,
             'season_start_date'        => $season['start_date'],
             'division_id'              => $divisionId,
+            'division_auto_detected'   => $divisionAutoDetected,
+            'division_candidates'      => $divisionCandidates,
             'rows'                     => $rows,
             'missing_players'          => $missingPlayers,
             'division_warning'         => $divisionWarning,

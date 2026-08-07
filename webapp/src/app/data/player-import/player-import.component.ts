@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { PlayerImportRow } from '../../core/models/player-import-row.model';
@@ -22,15 +22,25 @@ function todayIso(): string {
 })
 export class PlayerImportDataComponent {
   private api = inject(ApiService);
-  private cache = inject(DataCacheService);
+  cache = inject(DataCacheService);
 
   readonly POSITION_LABEL = POSITION_LABEL;
   readonly POSITION_COLOR = POSITION_COLOR;
 
   divisions = this.cache.divisions;
+  /** Dropdown display value on the confirm-division step (auto-detected, a fallback, or the user's pick). */
   divisionId = signal<string | null>(null);
+  /** Dropdown selection on the confirm-division step — may differ from divisionId until confirmed. */
+  pendingDivisionId = signal<string | null>(null);
+  /** Division the currently loaded rows/missingPlayers actually reflect — null until a real (non-fallback) analysis ran. */
+  private analyzedDivisionId = signal<string | null>(null);
+  divisionCandidates = signal<{ division_id: string; count: number }[]>([]);
+  divisionAutoDetected = signal(false);
+  selectedFile = signal<File | null>(null);
 
-  step = signal<'upload' | 'preview' | 'result'>('upload');
+  topCandidate = computed(() => this.divisionCandidates()[0] ?? null);
+
+  step = signal<'upload' | 'confirm-division' | 'preview' | 'result'>('upload');
 
   uploading = signal(false);
   uploadError = signal<string | null>(null);
@@ -211,20 +221,22 @@ export class PlayerImportDataComponent {
   constructor() {
     this.cache.ensureDivisions();
     this.cache.ensureLeague();
-
-    effect(() => {
-      const leagueDivisionId = this.cache.leagueDivisionId();
-      if (leagueDivisionId && this.divisionId() === null) {
-        this.divisionId.set(leagueDivisionId);
-      }
-    });
   }
 
   onCsvFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
-    const divisionId = this.divisionId();
-    if (!file || !divisionId) return;
+    if (!file) return;
+    this.selectedFile.set(file);
+    this.analyzeCsv(file, null, 'confirm-division');
+    (event.target as HTMLInputElement).value = '';
+  }
 
+  /**
+   * Runs the CSV analysis. With divisionId=null the backend auto-detects the division from
+   * the plurality of resolved CSV clubs; an explicit divisionId (from the confirm-division
+   * dropdown) re-analyses the same file against that division instead.
+   */
+  private analyzeCsv(file: File, divisionId: string | null, nextStepOnSuccess: 'confirm-division' | 'preview'): void {
     this.uploading.set(true);
     this.uploadError.set(null);
     this.api.previewPlayerSeasonImport(file, divisionId).subscribe({
@@ -237,14 +249,35 @@ export class PlayerImportDataComponent {
         this.divisionWarning.set(!!res.division_warning);
         this.divisionMismatchCount.set(res.division_mismatch_count ?? 0);
         this.resolvedClubCount.set(res.resolved_club_count ?? 0);
-        this.step.set('preview');
+        this.divisionCandidates.set(res.division_candidates ?? []);
+        this.divisionAutoDetected.set(!!res.division_auto_detected);
+
+        // res.division_id === null means nothing could be attributed to any division at all —
+        // fall back to the league's own division as a dropdown suggestion, but the admin still
+        // has to explicitly confirm before any rows (and the division_mismatch block) exist.
+        this.analyzedDivisionId.set(res.division_id ?? null);
+        const resolvedDivisionId: string | null = res.division_id ?? this.cache.leagueDivisionId();
+        this.divisionId.set(resolvedDivisionId);
+        this.pendingDivisionId.set(resolvedDivisionId);
+        this.step.set(res.division_id ? nextStepOnSuccess : 'confirm-division');
       },
       error: (err) => {
         this.uploading.set(false);
         this.uploadError.set(err?.error?.message ?? 'CSV konnte nicht verarbeitet werden');
       },
     });
-    (event.target as HTMLInputElement).value = '';
+  }
+
+  confirmDivision(): void {
+    const chosen = this.pendingDivisionId();
+    const file = this.selectedFile();
+    if (!chosen || !file) return;
+
+    if (chosen === this.analyzedDivisionId()) {
+      this.step.set('preview');
+      return;
+    }
+    this.analyzeCsv(file, chosen, 'preview');
   }
 
   fixPositionPrice(row: PlayerImportRow): void {
@@ -379,6 +412,12 @@ export class PlayerImportDataComponent {
   reset(): void {
     this.step.set('upload');
     this.uploadError.set(null);
+    this.selectedFile.set(null);
+    this.divisionId.set(null);
+    this.pendingDivisionId.set(null);
+    this.analyzedDivisionId.set(null);
+    this.divisionCandidates.set([]);
+    this.divisionAutoDetected.set(false);
     this.rows.set([]);
     this.missingPlayers.set([]);
     this.seasonId.set(null);

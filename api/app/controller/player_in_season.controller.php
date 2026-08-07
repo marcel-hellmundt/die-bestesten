@@ -60,20 +60,16 @@ class PlayerInSeasonController extends _BaseController
 
     private function previewCsv(): mixed
     {
-        if (!$this->isAdmin()) {
+        if (!$this->isMaintainer()) {
             http_response_code(403);
-            return ['status' => false, 'message' => 'Nur Admins dürfen CSV-Imports durchführen'];
+            return ['status' => false, 'message' => 'Nur Maintainer dürfen CSV-Imports durchführen'];
         }
 
         $file       = $_FILES['csv']['tmp_name'] ?? null;
-        $divisionId = $_POST['division_id'] ?? null;
+        $divisionId = $_POST['division_id'] ?? null; // optional — omitted triggers auto-detection
         if (!$file || !is_readable($file)) {
             http_response_code(400);
             return ['status' => false, 'message' => 'CSV-Datei fehlt'];
-        }
-        if (!$divisionId) {
-            http_response_code(400);
-            return ['status' => false, 'message' => 'division_id fehlt'];
         }
 
         try {
@@ -88,9 +84,9 @@ class PlayerInSeasonController extends _BaseController
 
     private function importCsv(): mixed
     {
-        if (!$this->isAdmin()) {
+        if (!$this->isMaintainer()) {
             http_response_code(403);
-            return ['status' => false, 'message' => 'Nur Admins dürfen CSV-Imports durchführen'];
+            return ['status' => false, 'message' => 'Nur Maintainer dürfen CSV-Imports durchführen'];
         }
 
         $rows = $this->body()['rows'] ?? null;

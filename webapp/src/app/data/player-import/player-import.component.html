@@ -6,27 +6,65 @@
     <div class="card import-upload-card">
       <p>
         CSV-Datei hochladen (Semikolon-getrennt: ID;Vorname;Nachname;Kurzname;Angezeigter
-        Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt). Eine CSV enthält immer nur Spieler
-        einer Spielklasse — bitte vorher auswählen.
+        Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt). Die Spielklasse wird nach dem
+        Hochladen anhand der enthaltenen Vereine automatisch erkannt und kann danach bestätigt oder
+        korrigiert werden.
       </p>
+      <input #csvInput type="file" accept=".csv" hidden (change)="onCsvFileSelected($event)" />
+      <button class="btn btn-primary" (click)="csvInput.click()" [disabled]="uploading()">
+        {{ uploading() ? 'Wird analysiert…' : 'CSV hochladen' }}
+      </button>
+      @if (uploadError()) {
+        <div class="warning-panel">{{ uploadError() }}</div>
+      }
+    </div>
+  }
+
+  @case ('confirm-division') {
+    <div class="card import-upload-card">
+      @if (topCandidate(); as top) {
+        <p>
+          Erkannte Spielklasse:
+          <strong>{{ cache.divisionName(pendingDivisionId() ?? top.division_id) }}</strong>
+          ({{ top.count }} von {{ resolvedClubCount() }} erkannten Vereinen in dieser CSV).
+        </p>
+        @if (divisionCandidates().length > 1) {
+          <p class="page-subtitle">
+            Weitere erkannte Spielklassen:
+            {{
+              divisionCandidates()
+                .slice(1)
+                .map(c => cache.divisionName(c.division_id) + ' (' + c.count + ')')
+                .join(', ')
+            }}
+          </p>
+        }
+      } @else {
+        <div class="warning-panel">
+          Es konnte keine Spielklasse anhand der Vereine in dieser CSV erkannt werden. Bitte manuell
+          auswählen.
+        </div>
+      }
       <select
         class="input input--sm"
-        [value]="divisionId() ?? ''"
-        (change)="divisionId.set($any($event.target).value || null)"
+        [value]="pendingDivisionId() ?? ''"
+        (change)="pendingDivisionId.set($any($event.target).value || null)"
       >
         <option value="" disabled>Spielklasse wählen…</option>
         @for (d of divisions(); track d.id) {
           <option [value]="d.id">{{ d.name }}</option>
         }
       </select>
-      <input #csvInput type="file" accept=".csv" hidden (change)="onCsvFileSelected($event)" />
-      <button
-        class="btn btn-primary"
-        (click)="csvInput.click()"
-        [disabled]="uploading() || !divisionId()"
-      >
-        {{ uploading() ? 'Wird geladen…' : 'CSV hochladen' }}
-      </button>
+      <div class="import-actions">
+        <button class="btn btn-secondary" (click)="reset()">Abbrechen</button>
+        <button
+          class="btn btn-primary"
+          (click)="confirmDivision()"
+          [disabled]="uploading() || !pendingDivisionId()"
+        >
+          {{ uploading() ? 'Wird analysiert…' : 'Weiter' }}
+        </button>
+      </div>
       @if (uploadError()) {
         <div class="warning-panel">{{ uploadError() }}</div>
       }
