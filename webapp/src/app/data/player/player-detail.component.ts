@@ -29,6 +29,7 @@ interface PlayerInSeason {
 }
 
 interface PlayerInClub {
+  id: string;
   club_id: string;
   club_name: string;
   logo_uploaded: number;
@@ -206,16 +207,20 @@ export class PlayerDetailComponent {
     });
   }
 
-  // Add-club form state
-  showAddClubForm = signal(false);
-  newClubId       = signal('');
-  newFromDate     = signal(new Date().toISOString().slice(0, 10));
-  newToDate       = signal('');
-  newOnLoan       = signal(false);
-  addingClub      = signal(false);
-  addClubError    = signal<string | null>(null);
+  // Add/edit-club form state — shared between "Verein hinzufügen" (editingClubEntryId=null)
+  // and "Verein bearbeiten" (editingClubEntryId=id des bearbeiteten player_in_club-Eintrags).
+  showAddClubForm    = signal(false);
+  editingClubEntryId = signal<string | null>(null);
+  newClubId          = signal('');
+  newFromDate        = signal(new Date().toISOString().slice(0, 10));
+  newToDate          = signal('');
+  newOnLoan          = signal(false);
+  addingClub         = signal(false);
+  deletingClub       = signal(false);
+  addClubError       = signal<string | null>(null);
 
   openAddClubForm(): void {
+    this.editingClubEntryId.set(null);
     this.newClubId.set(this.allClubs()[0]?.id ?? '');
     this.newFromDate.set(new Date().toISOString().slice(0, 10));
     this.newToDate.set('');
@@ -224,32 +229,70 @@ export class PlayerDetailComponent {
     this.showAddClubForm.set(true);
   }
 
+  openEditClubForm(c: PlayerInClub): void {
+    this.editingClubEntryId.set(c.id);
+    this.newClubId.set(c.club_id);
+    this.newFromDate.set(c.from_date);
+    this.newToDate.set(c.to_date ?? '');
+    this.newOnLoan.set(!!c.on_loan);
+    this.addClubError.set(null);
+    this.showAddClubForm.set(true);
+  }
+
   cancelAddClub(): void {
     this.showAddClubForm.set(false);
+    this.editingClubEntryId.set(null);
     this.addClubError.set(null);
   }
 
-  submitAddClub(): void {
+  submitClubForm(): void {
     const p = this.player();
     if (!p || !this.newClubId() || !this.newFromDate() || this.addingClub()) return;
 
-    this.addingClub.set(true);
-    this.addClubError.set(null);
-    this.api.post<{ id: string }>('player_in_club', {
-      player_id: p.id,
+    const editingId = this.editingClubEntryId();
+    const body = {
       club_id:   this.newClubId(),
       from_date: this.newFromDate(),
       to_date:   this.newToDate() || null,
       on_loan:   this.newOnLoan(),
-    }).subscribe({
+    };
+
+    this.addingClub.set(true);
+    this.addClubError.set(null);
+    const request = editingId
+      ? this.api.patch<unknown>(`player_in_club/${editingId}`, body)
+      : this.api.post<unknown>('player_in_club', { player_id: p.id, ...body });
+    request.subscribe({
       next: () => {
         this.addingClub.set(false);
         this.showAddClubForm.set(false);
+        this.editingClubEntryId.set(null);
         this.reloadPlayer$.next();
       },
       error: (err: any) => {
         this.addingClub.set(false);
         this.addClubError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
+
+  deleteClub(): void {
+    const editingId = this.editingClubEntryId();
+    if (!editingId || this.deletingClub()) return;
+    if (!confirm('Diesen Vereinseintrag wirklich löschen?')) return;
+
+    this.deletingClub.set(true);
+    this.addClubError.set(null);
+    this.api.delete<{ status: boolean }>(`player_in_club/${editingId}`).subscribe({
+      next: () => {
+        this.deletingClub.set(false);
+        this.showAddClubForm.set(false);
+        this.editingClubEntryId.set(null);
+        this.reloadPlayer$.next();
+      },
+      error: (err: any) => {
+        this.deletingClub.set(false);
+        this.addClubError.set(err?.error?.message ?? 'Fehler beim Löschen');
       },
     });
   }

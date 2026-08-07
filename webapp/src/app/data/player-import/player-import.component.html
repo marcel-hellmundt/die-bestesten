@@ -124,7 +124,7 @@
       </button>
       @if (caseTab() === 'matched' && clubMismatchCount() > 0) {
         <span class="mismatch-hint">
-          {{ clubMismatchCount() }} Spieler mit abweichendem/ungeklärtem Verein — nicht automatisch anlegbar
+          {{ clubMismatchCount() }} Spieler mit abweichendem/ungeklärtem Verein oder unrealistischem Marktwert — nicht automatisch anlegbar
         </span>
       }
     </div>
@@ -245,19 +245,23 @@
                     </span>
                     <span
                       class="status-icon"
-                      [class.status-icon--clickable]="r.position_price_mismatch"
-                      (click)="r.position_price_mismatch && fixPositionPrice(r)"
+                      [class.status-icon--clickable]="r.position_price_mismatch && !r.price_too_high"
+                      (click)="r.position_price_mismatch && !r.price_too_high && fixPositionPrice(r)"
                       [attr.data-tooltip]="
-                        !r.already_in_season
-                          ? 'Kein Saison-Eintrag vorhanden'
-                          : fixingMismatch().has(r.kicker_id)
-                            ? 'Wird aktualisiert…'
-                            : r.position_price_mismatch
-                              ? ('Abweichung: ' + (r.existing_position ? POSITION_LABEL[r.existing_position] : '—') + ' / ' + (r.existing_price | number) + ' € (DB) vs. ' + (r.csv_position ? POSITION_LABEL[r.csv_position] : '—') + ' / ' + (r.csv_price | number) + ' € (CSV) — klicken zum Übernehmen')
-                              : 'Position/Marktwert stimmen mit CSV überein'
+                        r.price_too_high
+                          ? ('Marktwert unrealistisch: ' + (r.csv_price | number) + ' € (CSV) — blockiert die automatische Erstellung/Übernahme (Grenze 50.000.000 €)')
+                          : !r.already_in_season
+                            ? 'Kein Saison-Eintrag vorhanden'
+                            : fixingMismatch().has(r.kicker_id)
+                              ? 'Wird aktualisiert…'
+                              : r.position_price_mismatch
+                                ? ('Abweichung: ' + (r.existing_position ? POSITION_LABEL[r.existing_position] : '—') + ' / ' + (r.existing_price | number) + ' € (DB) vs. ' + (r.csv_position ? POSITION_LABEL[r.csv_position] : '—') + ' / ' + (r.csv_price | number) + ' € (CSV) — klicken zum Übernehmen')
+                                : 'Position/Marktwert stimmen mit CSV überein'
                       "
                     >
-                      @if (!r.already_in_season) {
+                      @if (r.price_too_high) {
+                        <img class="status-icon-img" src="img/icons/error.png" alt="Marktwert unrealistisch" />
+                      } @else if (!r.already_in_season) {
                         <span class="status-icon__dash">—</span>
                       } @else {
                         <img
@@ -370,9 +374,12 @@
                     @if (r.division_mismatch) {
                       <span>Verein spielt laut unseren Daten in einer anderen Spielklasse</span>
                     }
+                    @if (r.price_too_high) {
+                      <span>Marktwert unrealistisch ({{ r.csv_price | number }} €)</span>
+                    }
                     <button
                       class="btn btn-primary btn-sm"
-                      [disabled]="creatingPlayers().has(r.kicker_id) || r.division_mismatch"
+                      [disabled]="creatingPlayers().has(r.kicker_id) || r.division_mismatch || r.price_too_high"
                       (click)="createMissingPlayer(r)"
                     >
                       {{ creatingPlayers().has(r.kicker_id) ? '…' : 'Spieler anlegen' }}

@@ -162,6 +162,12 @@ trait PlayerInSeasonTrait
 
     private const CSV_VALID_POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
+    // Sanity ceiling for a CSV market value — real prices never come close to this; catches
+    // CSV typos/garbage (e.g. a stray extra digit) before they can reach the DB. player_in_season.price
+    // is DECIMAL(10,2) and would throw on an out-of-range INSERT anyway, but relying on that error
+    // is unsafe: it aborts importCsvRows()'s whole loop, silently skipping every row after it.
+    private const PRICE_SANITY_MAX = 50_000_000;
+
     /**
      * Parses a bulk player-season-import CSV (semicolon-separated:
      * ID;Vorname;Nachname;Kurzname;Angezeigter Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt)
@@ -316,6 +322,9 @@ trait PlayerInSeasonTrait
             // conflict, same convention as club_mismatch above.
             $clubDivisionId  = $club ? ($clubDivisionMap[$club['id']] ?? null) : null;
             $divisionMismatch = $clubDivisionId !== null && $clubDivisionId !== $divisionId;
+            // Unrealistic CSV market value (e.g. a stray extra digit) — block bulk-creation instead
+            // of letting the DB throw on it, which would silently abort every row after it.
+            $priceTooHigh = $r['price'] !== null && $r['price'] > self::PRICE_SANITY_MAX;
 
             if ($club) {
                 $resolvedClubCount++;
@@ -335,7 +344,7 @@ trait PlayerInSeasonTrait
                 'matched_club_id'            => $club['id'] ?? null,
                 'club_logo_uploaded'         => $club ? (bool) $club['logo_uploaded'] : false,
                 'already_in_season'          => $alreadyInSeason,
-                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved && !$divisionMismatch),
+                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved && !$divisionMismatch && !$priceTooHigh),
                 'existing_player_in_season_id' => $existing['id'] ?? null,
                 'existing_position'          => $existing['position'] ?? null,
                 'existing_price'             => $existing !== null ? (int) $existing['price'] : null,
@@ -348,6 +357,7 @@ trait PlayerInSeasonTrait
                 'club_confirmed'             => $clubConfirmed,
                 'club_unresolved'            => $clubUnresolved,
                 'division_mismatch'          => $divisionMismatch,
+                'price_too_high'             => $priceTooHigh,
                 'duplicate_candidate_player_id' => $duplicateCandidate['id'] ?? null,
                 'duplicate_candidate_kicker_id' => $duplicateCandidate ? (int) $duplicateCandidate['kicker_id'] : null,
             ];
@@ -397,6 +407,12 @@ trait PlayerInSeasonTrait
 
             if (!$playerId || !in_array($position, self::CSV_VALID_POSITIONS, true) || !$price || $price <= 0) {
                 $skipped[] = ['player_id' => $playerId, 'reason' => 'invalid_row'];
+                continue;
+            }
+            if ($price > self::PRICE_SANITY_MAX) {
+                // Would also throw on INSERT (price is DECIMAL(10,2)) and abort every row after
+                // it in this loop — reject explicitly instead of relying on that.
+                $skipped[] = ['player_id' => $playerId, 'reason' => 'price_too_high'];
                 continue;
             }
             if (isset($existingSet[$playerId])) {

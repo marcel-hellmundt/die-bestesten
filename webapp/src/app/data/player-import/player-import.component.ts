@@ -61,9 +61,9 @@ export class PlayerImportDataComponent {
   creatingPlayers = signal<Set<number>>(new Set());
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
-  /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against / doesn't belong to the CSV's division). */
+  /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against / doesn't belong to the CSV's division, or Marktwert unrealistisch). */
   clubMismatchCount = computed(
-    () => this.matchedRows().filter((r) => r.club_mismatch || r.club_unresolved || r.division_mismatch).length
+    () => this.matchedRows().filter((r) => r.club_mismatch || r.club_unresolved || r.division_mismatch || r.price_too_high).length
   );
 
   caseTab = signal<'matched' | 'unmatched' | 'missing'>('matched');
@@ -78,13 +78,13 @@ export class PlayerImportDataComponent {
   }
 
   isRowComplete(r: PlayerImportRow): boolean {
-    return !r.club_mismatch && !r.division_mismatch && r.already_in_season && !r.position_price_mismatch;
+    return !r.club_mismatch && !r.division_mismatch && !r.price_too_high && r.already_in_season && !r.position_price_mismatch;
   }
 
   matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
   unmatchedRows = computed(() => this.rows().filter((r) => !r.isMatched));
   creatableUnmatchedRows = computed(() =>
-    this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate && !r.division_mismatch)
+    this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate && !r.division_mismatch && !r.price_too_high)
   );
 
   filteredMatchedRows = computed(() =>
@@ -160,7 +160,7 @@ export class PlayerImportDataComponent {
   private rowGreenScore(r: PlayerImportRow): number {
     return (
       1 + // Spieler gefunden (immer wahr in dieser Tabelle)
-      (r.club_mismatch || r.club_unresolved || r.division_mismatch ? 0 : 1) +
+      (r.club_mismatch || r.club_unresolved || r.division_mismatch || r.price_too_high ? 0 : 1) +
       (r.already_in_season ? 1 : 0) +
       (r.already_in_season && !r.position_price_mismatch ? 1 : 0)
     );

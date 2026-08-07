@@ -20,16 +20,51 @@ trait PlayerInClubTrait
         return ['id' => $id];
     }
 
-    /**
-     * Ends an active club membership (to_date = NULL) by setting to_date.
-     * Idempotent-safe: only touches rows that are still active.
-     */
-    public function endPlayerInClub(string $id, string $toDate): bool
+    public function getPlayerInClubById(string $id): array|false
     {
-        $q = $this->con->prepare(
-            "UPDATE player_in_club SET to_date = :to_date WHERE id = :id AND to_date IS NULL"
-        );
-        $q->execute([':to_date' => $toDate, ':id' => $id]);
+        $q = $this->con->prepare("SELECT * FROM player_in_club WHERE id = :id LIMIT 1");
+        $q->execute([':id' => $id]);
+        return $q->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * General-purpose row editor for a player_in_club entry — any combination of
+     * club_id/from_date/to_date/on_loan. to_date=null is a valid explicit value
+     * (reopens a previously ended membership); the caller distinguishes "not
+     * provided" (key absent from $fields) from "explicitly null" via array_key_exists.
+     */
+    public function updatePlayerInClub(string $id, array $fields): bool
+    {
+        $sets   = [];
+        $params = [':id' => $id];
+
+        if (array_key_exists('club_id', $fields)) {
+            $sets[] = 'club_id = :club_id';
+            $params[':club_id'] = $fields['club_id'];
+        }
+        if (array_key_exists('from_date', $fields)) {
+            $sets[] = 'from_date = :from_date';
+            $params[':from_date'] = $fields['from_date'];
+        }
+        if (array_key_exists('to_date', $fields)) {
+            $sets[] = 'to_date = :to_date';
+            $params[':to_date'] = $fields['to_date'];
+        }
+        if (array_key_exists('on_loan', $fields)) {
+            $sets[] = 'on_loan = :on_loan';
+            $params[':on_loan'] = (int) $fields['on_loan'];
+        }
+        if (empty($sets)) return false;
+
+        $q = $this->con->prepare('UPDATE player_in_club SET ' . implode(', ', $sets) . ' WHERE id = :id');
+        $q->execute($params);
+        return $q->rowCount() > 0;
+    }
+
+    public function deletePlayerInClub(string $id): bool
+    {
+        $q = $this->con->prepare("DELETE FROM player_in_club WHERE id = :id");
+        $q->execute([':id' => $id]);
         return $q->rowCount() > 0;
     }
 

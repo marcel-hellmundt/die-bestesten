@@ -256,6 +256,27 @@
 
 .col-logo { width: 36px; padding-inline: $space-2; }
 
+.col-actions { width: 32px; text-align: right; }
+
+.row-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    background: $color-surface-alt;
+  }
+}
+
 .team-history-cell {
   display: flex;
   align-items: center;
@@ -630,9 +651,40 @@
     margin: 0;
   }
 
+  &-title {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+    margin: 0;
+  }
+
   &-actions {
     display: flex;
+    align-items: center;
     gap: $space-2;
+
+    .btn-delete {
+      display: inline-flex;
+      align-items: center;
+      gap: $space-1;
+      height: 28px;
+      padding-inline: $space-3;
+      font-size: $font-sm;
+      border: 1px solid transparent;
+      border-radius: $radius-sm;
+      background: transparent;
+      color: #d63031;
+      cursor: pointer;
+      margin-left: auto;
+      transition: background $transition-fast;
+
+      &:hover { background: rgba(214, 48, 49, 0.08); }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
 
     .btn-save {
       height: 28px;

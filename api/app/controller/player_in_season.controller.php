@@ -33,9 +33,9 @@ class PlayerInSeasonController extends _BaseController
 
         $validPositions = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
-        if (!$playerId || !$seasonId || !$position || !$price || $price <= 0) {
+        if (!$playerId || !$seasonId || !$position || !$price || $price <= 0 || $price > 50_000_000) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'player_id, season_id, position and price (> 0) required'];
+            return ['status' => false, 'message' => 'player_id, season_id, position and price (0 < price <= 50.000.000) required'];
         }
 
         if (!in_array($position, $validPositions, true)) {
@@ -122,9 +122,9 @@ class PlayerInSeasonController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'Invalid position'];
         }
-        if ($price !== null && $price <= 0) {
+        if ($price !== null && ($price <= 0 || $price > 50_000_000)) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'price muss > 0 sein'];
+            return ['status' => false, 'message' => 'price muss zwischen 0 und 50.000.000 liegen'];
         }
 
         if (!$this->db->updatePlayerInSeason($this->id, $position, $price)) {

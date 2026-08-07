@@ -116,7 +116,7 @@ trait PlayerTrait
 
         // All club stints (sorted newest first)
         $q = $this->con->prepare("
-            SELECT pic.club_id, pic.from_date, pic.to_date, pic.on_loan,
+            SELECT pic.id, pic.club_id, pic.from_date, pic.to_date, pic.on_loan,
                    c.name AS club_name, c.logo_uploaded
             FROM player_in_club pic
             JOIN club c ON pic.club_id = c.id

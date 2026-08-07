@@ -25,6 +25,7 @@ export class PlayerImportRow {
     public club_confirmed: boolean,
     public club_unresolved: boolean,
     public division_mismatch: boolean,
+    public price_too_high: boolean,
     public duplicate_candidate_player_id: string | null,
     public duplicate_candidate_kicker_id: number | null
   ) {}
@@ -76,6 +77,7 @@ export class PlayerImportRow {
       !!data.club_confirmed,
       !!data.club_unresolved,
       !!data.division_mismatch,
+      !!data.price_too_high,
       data.duplicate_candidate_player_id ?? null,
       data.duplicate_candidate_kicker_id ?? null
     );
