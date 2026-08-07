@@ -47,12 +47,11 @@
       }
       <select
         class="input input--sm"
-        [value]="pendingDivisionId() ?? ''"
         (change)="pendingDivisionId.set($any($event.target).value || null)"
       >
-        <option value="" disabled>Spielklasse wählen…</option>
+        <option value="" disabled [selected]="!pendingDivisionId()">Spielklasse wählen…</option>
         @for (d of divisions(); track d.id) {
-          <option [value]="d.id">{{ d.name }}</option>
+          <option [value]="d.id" [selected]="d.id === pendingDivisionId()">{{ d.name }}</option>
         }
       </select>
       <div class="import-actions">
