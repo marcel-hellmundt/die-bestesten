@@ -60,22 +60,25 @@ export class PlayerImportDataComponent {
   fixingClub = signal<Set<number>>(new Set());
   creatingPlayers = signal<Set<number>>(new Set());
 
+  private isBlocked(r: PlayerImportRow): boolean {
+    return r.club_mismatch || r.club_unresolved || r.division_mismatch || r.price_too_high;
+  }
+
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
   /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against / doesn't belong to the CSV's division, or Marktwert unrealistisch). */
-  clubMismatchCount = computed(
-    () => this.matchedRows().filter((r) => r.club_mismatch || r.club_unresolved || r.division_mismatch || r.price_too_high).length
+  clubMismatchCount = computed(() => this.matchedRows().filter((r) => this.isBlocked(r)).length);
+  /** Existing player_in_season entries whose position/price don't match the CSV. */
+  positionPriceMismatchCount = computed(() => this.matchedRows().filter((r) => r.position_price_mismatch).length);
+  /** Same, minus rows blocked by an unrealistic Marktwert — those can't be bulk-corrected either. */
+  fixableMismatchCount = computed(
+    () => this.matchedRows().filter((r) => r.position_price_mismatch && !r.price_too_high).length
   );
 
-  caseTab = signal<'matched' | 'unmatched' | 'missing'>('matched');
-
-  searchQuery = signal('');
-  hideComplete = signal(false);
-
-  private matchesSearch(haystacks: (string | null | undefined)[]): boolean {
-    const q = this.searchQuery().trim().toLowerCase();
-    if (!q) return true;
-    return haystacks.some((h) => (h ?? '').toLowerCase().includes(q));
-  }
+  // Which of the 6 summary cards is currently selected — drives which table (and row subset) is shown below.
+  selectedCard = signal<'done' | 'importable' | 'mismatch' | 'blocked' | 'new' | 'missing'>('done');
+  isMatchedCardSelected = computed(() =>
+    ['done', 'importable', 'mismatch', 'blocked'].includes(this.selectedCard())
+  );
 
   isRowComplete(r: PlayerImportRow): boolean {
     return !r.club_mismatch && !r.division_mismatch && !r.price_too_high && r.already_in_season && !r.position_price_mismatch;
@@ -87,44 +90,20 @@ export class PlayerImportDataComponent {
     this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate && !r.division_mismatch && !r.price_too_high)
   );
 
-  // Summary tiles above the tabs — all percentages relative to the full CSV row count.
-  private percentOf(count: number): number {
-    const total = this.rows().length;
-    return total > 0 ? Math.round((count / total) * 100) : 0;
-  }
-
+  // Summary tiles above the tabs.
   doneCount = computed(() => this.rows().filter((r) => this.isRowComplete(r)).length);
-  donePercent = computed(() => this.percentOf(this.doneCount()));
-  importablePercent = computed(() => this.percentOf(this.importableCount()));
-  blockedPercent = computed(() => this.percentOf(this.clubMismatchCount()));
-  newInCsvPercent = computed(() => this.percentOf(this.unmatchedRows().length));
+  notDoneCount = computed(() => this.rows().length - this.doneCount());
 
-  filteredMatchedRows = computed(() =>
-    this.matchedRows().filter((r) => {
-      if (this.hideComplete() && this.isRowComplete(r)) return false;
-      return this.matchesSearch([
-        r.csv_first_name,
-        r.csv_last_name,
-        r.csv_club_name,
-        r.csv_position ? POSITION_LABEL[r.csv_position] : null,
-      ]);
-    })
-  );
-
-  filteredUnmatchedRows = computed(() =>
-    this.unmatchedRows().filter((r) =>
-      this.matchesSearch([
-        r.csv_first_name,
-        r.csv_last_name,
-        r.csv_club_name,
-        r.csv_position ? POSITION_LABEL[r.csv_position] : null,
-      ])
-    )
-  );
-
-  filteredMissingPlayers = computed(() =>
-    this.missingPlayers().filter((m) => this.matchesSearch([m.displayname, m.club_name]))
-  );
+  filteredMatchedRows = computed(() => {
+    const rows = this.matchedRows();
+    switch (this.selectedCard()) {
+      case 'done': return rows.filter((r) => this.isRowComplete(r));
+      case 'importable': return rows.filter((r) => r.importable);
+      case 'mismatch': return rows.filter((r) => r.position_price_mismatch);
+      case 'blocked': return rows.filter((r) => this.isBlocked(r));
+      default: return [];
+    }
+  });
 
   sortCol = signal<'name' | 'club' | 'position' | 'price'>('name');
   sortDir = signal<'asc' | 'desc'>('asc');
@@ -133,7 +112,7 @@ export class PlayerImportDataComponent {
     const col = this.sortCol();
     const dir = this.sortDir();
     const sign = dir === 'asc' ? 1 : -1;
-    return [...this.filteredUnmatchedRows()].sort((a, b) => sign * this.compareRows(a, b, col));
+    return [...this.unmatchedRows()].sort((a, b) => sign * this.compareRows(a, b, col));
   });
 
   private compareRows(a: PlayerImportRow, b: PlayerImportRow, col: 'name' | 'club' | 'position' | 'price'): number {
@@ -215,7 +194,7 @@ export class PlayerImportDataComponent {
     const col = this.missingSortCol();
     const dir = this.missingSortDir();
     const sign = dir === 'asc' ? 1 : -1;
-    return [...this.filteredMissingPlayers()].sort((a, b) => {
+    return [...this.missingPlayers()].sort((a, b) => {
       const cmp = col === 'name' ? a.displayname.localeCompare(b.displayname) : a.club_name.localeCompare(b.club_name);
       return sign * cmp;
     });
@@ -271,6 +250,11 @@ export class PlayerImportDataComponent {
         const resolvedDivisionId: string | null = res.division_id ?? this.cache.leagueDivisionId();
         this.divisionId.set(resolvedDivisionId);
         this.pendingDivisionId.set(resolvedDivisionId);
+
+        if (res.division_id && nextStepOnSuccess === 'preview') {
+          // Default to "Komplett fertig" unless that view would be empty, then show "Anlegbar" instead.
+          this.selectedCard.set(this.doneCount() === 0 ? 'importable' : 'done');
+        }
         this.step.set(res.division_id ? nextStepOnSuccess : 'confirm-division');
       },
       error: (err) => {
@@ -398,6 +382,12 @@ export class PlayerImportDataComponent {
       .forEach((r) => this.createMissingPlayer(r));
   }
 
+  confirmFixAll(): void {
+    this.matchedRows()
+      .filter((r) => r.position_price_mismatch && !r.price_too_high && !this.fixingMismatch().has(r.kicker_id))
+      .forEach((r) => this.fixPositionPrice(r));
+  }
+
   confirmImport(): void {
     const rows = this.rows()
       .filter((r) => r.importable)
@@ -438,9 +428,7 @@ export class PlayerImportDataComponent {
     this.divisionMismatchCount.set(0);
     this.resolvedClubCount.set(0);
     this.importResult.set(null);
-    this.caseTab.set('matched');
-    this.searchQuery.set('');
-    this.hideComplete.set(false);
+    this.selectedCard.set('done');
     this.sortCol.set('name');
     this.sortDir.set('asc');
     this.matchedSortCol.set('state');

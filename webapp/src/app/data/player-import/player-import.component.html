@@ -79,59 +79,10 @@
       </div>
     }
 
-    <div class="stat-grid">
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-emerald)">Komplett fertig</span>
-        <div class="stat-value">{{ donePercent() }}%</div>
-        <div class="stat-desc">{{ doneCount() }} von {{ rows().length }} Spielern</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-river)">Anlegbar</span>
-        <div class="stat-value">{{ importablePercent() }}%</div>
-        <div class="stat-desc">{{ importableCount() }} von {{ rows().length }} Spielern</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-alizarin)">Club-Zuweisung falsch</span>
-        <div class="stat-value">{{ blockedPercent() }}%</div>
-        <div class="stat-desc">{{ clubMismatchCount() }} von {{ rows().length }} Spielern</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-amethyst)">Neu in CSV</span>
-        <div class="stat-value">{{ newInCsvPercent() }}%</div>
-        <div class="stat-desc">{{ unmatchedRows().length }} von {{ rows().length }} Spielern</div>
-      </div>
-    </div>
-
-    <div class="case-tabs">
-      <button
-        class="case-tab"
-        [class.case-tab--active]="caseTab() === 'matched'"
-        (click)="caseTab.set('matched')"
-      >
-        In DB + CSV
-        <span class="case-tab__count">{{ matchedRows().length }}</span>
-      </button>
-      <button
-        class="case-tab"
-        [class.case-tab--active]="caseTab() === 'unmatched'"
-        (click)="caseTab.set('unmatched')"
-      >
-        Nur in CSV (neu)
-        <span class="case-tab__count">{{ unmatchedRows().length }}</span>
-      </button>
-      <button
-        class="case-tab"
-        [class.case-tab--active]="caseTab() === 'missing'"
-        (click)="caseTab.set('missing')"
-      >
-        Fehlt in CSV
-        <span class="case-tab__count">{{ missingPlayers().length }}</span>
-      </button>
-    </div>
-
-    <div class="import-actions">
-      <button class="btn btn-secondary" (click)="reset()">Abbrechen</button>
-      @if (caseTab() === 'matched') {
+    <div class="list-bar">
+      <button class="btn btn-secondary" (click)="reset()">Neue CSV hochladen</button>
+      <span class="spacer"></span>
+      @if (selectedCard() === 'importable') {
         <button
           class="btn btn-primary"
           (click)="confirmImport()"
@@ -140,40 +91,85 @@
           {{ importing() ? 'Wird erstellt…' : 'Spieler-Saison-Objekt erstellen (' + importableCount() + ')' }}
         </button>
       }
-      @if (caseTab() === 'unmatched') {
+      @if (selectedCard() === 'mismatch') {
+        <button
+          class="btn btn-primary"
+          (click)="confirmFixAll()"
+          [disabled]="fixableMismatchCount() === 0"
+        >
+          Spieler-Saison-Objekt korrigieren ({{ fixableMismatchCount() }})
+        </button>
+      }
+      @if (selectedCard() === 'new') {
         <button
           class="btn btn-primary"
           (click)="confirmCreateAll()"
           [disabled]="creatableUnmatchedRows().length === 0"
         >
-          Weiter ({{ creatableUnmatchedRows().length }} Spieler anlegen)
+          Neue Spieler erstellen ({{ creatableUnmatchedRows().length }})
         </button>
       }
     </div>
 
-    <div class="list-bar">
-      <input
-        class="input search-input"
-        type="search"
-        placeholder="Suchen nach Name, Verein oder Position…"
-        [value]="searchQuery()"
-        (input)="searchQuery.set($any($event.target).value)"
-      />
-      <button
-        class="btn btn-secondary btn-sm toggle-btn"
-        [class.toggle-btn--active]="hideComplete()"
-        (click)="hideComplete.set(!hideComplete())"
-      >
-        {{ hideComplete() ? 'Fertige einblenden' : 'Fertige ausblenden' }}
-      </button>
-      @if (caseTab() === 'matched' && clubMismatchCount() > 0) {
-        <span class="mismatch-hint">
-          {{ clubMismatchCount() }} Spieler mit abweichendem/ungeklärtem Verein oder unrealistischem Marktwert — nicht automatisch anlegbar
-        </span>
-      }
+    <div class="stat-grid">
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'done'" (click)="selectedCard.set('done')">
+        <img
+          class="stat-status-icon"
+          [src]="notDoneCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="notDoneCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-emerald)">Komplett fertig</span>
+        <div class="stat-value">{{ doneCount() }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'importable'" (click)="selectedCard.set('importable')">
+        <img
+          class="stat-status-icon"
+          [src]="importableCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="importableCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-river)">Anlegbar</span>
+        <div class="stat-value">{{ importableCount() }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'mismatch'" (click)="selectedCard.set('mismatch')">
+        <img
+          class="stat-status-icon"
+          [src]="positionPriceMismatchCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="positionPriceMismatchCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-sunflower)">Position/Marktwert falsch</span>
+        <div class="stat-value">{{ positionPriceMismatchCount() }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'blocked'" (click)="selectedCard.set('blocked')">
+        <img
+          class="stat-status-icon"
+          [src]="clubMismatchCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="clubMismatchCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-alizarin)">Club-Zuweisung falsch</span>
+        <div class="stat-value">{{ clubMismatchCount() }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'new'" (click)="selectedCard.set('new')">
+        <img
+          class="stat-status-icon"
+          [src]="unmatchedRows().length === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="unmatchedRows().length === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-amethyst)">Neu in CSV</span>
+        <div class="stat-value">{{ unmatchedRows().length }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card stat-card--muted" [class.stat-card--selected]="selectedCard() === 'missing'" (click)="selectedCard.set('missing')">
+        <span class="stat-label" style="color: #6b7280">Fehlt in CSV</span>
+        <div class="stat-value">{{ missingPlayers().length }}</div>
+        <div class="stat-desc">bei einem Verein dieser Spielklasse, aber nicht in der CSV</div>
+      </div>
     </div>
 
-    @if (caseTab() === 'matched') {
+    @if (isMatchedCardSelected()) {
       <div class="table-container">
         <table class="data-table data-table--compact">
           <thead>
@@ -334,7 +330,7 @@
       </div>
     }
 
-    @if (caseTab() === 'unmatched') {
+    @if (selectedCard() === 'new') {
       <div class="table-container">
         <table class="data-table data-table--compact">
           <thead>
@@ -437,7 +433,7 @@
       </div>
     }
 
-    @if (caseTab() === 'missing') {
+    @if (selectedCard() === 'missing') {
       <p class="page-subtitle">
         Diese Spieler sind laut unserer Datenbank noch einem Club dieser Spielklasse zugeordnet, tauchen
         aber nicht in der CSV auf — vermutlich veraltete Daten. Nicht kritisch, solange kein

@@ -1,5 +1,29 @@
 @use '../../../styles/variables' as *;
 
+.stat-card {
+  position: relative;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &--selected {
+    border-color: var(--flat-alizarin);
+    border-width: 2px;
+  }
+
+  &--muted {
+    background: $color-surface-alt;
+  }
+}
+
+.stat-status-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
 .import-upload-card {
   display: flex;
   flex-direction: column;
@@ -18,81 +42,6 @@
   display: flex;
   gap: $space-3;
   margin-top: $space-4;
-}
-
-// Underline tab bar — deliberately unlike a button (no fill, no border, no radius) so it
-// doesn't get visually confused with the filter toggle button below it.
-.case-tabs {
-  display: flex;
-  gap: $space-5;
-  border-bottom: 1px solid $color-border;
-  margin-bottom: $space-4;
-  flex-wrap: wrap;
-}
-
-.case-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  padding: $space-2 0 $space-3;
-  margin-bottom: -1px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: $color-text-muted;
-  font-size: $font-sm;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  transition:
-    color $transition-fast,
-    border-color $transition-fast;
-
-  &:hover {
-    color: $color-text;
-  }
-
-  &--active {
-    color: $color-text;
-    border-bottom-color: var(--flat-river);
-
-    .case-tab__count {
-      background: var(--flat-river);
-      color: #fff;
-    }
-  }
-}
-
-.case-tab__count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  padding: 0 6px;
-  border-radius: $radius-full;
-  background: $color-surface-alt;
-  color: $color-text-muted;
-  font-size: $font-xs;
-  font-weight: $font-weight-semibold;
-  transition: background $transition-fast, color $transition-fast;
-}
-
-.mismatch-hint {
-  display: inline-flex;
-  align-items: center;
-  font-size: $font-sm;
-  color: $color-warning;
-  white-space: nowrap;
-}
-
-.toggle-btn {
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &--active {
-    background: $color-text;
-    color: $color-surface;
-    border-color: $color-text;
-  }
 }
 
 .col-sortable {
