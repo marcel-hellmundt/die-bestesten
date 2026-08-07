@@ -79,6 +79,29 @@
       </div>
     }
 
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-emerald)">Komplett fertig</span>
+        <div class="stat-value">{{ donePercent() }}%</div>
+        <div class="stat-desc">{{ doneCount() }} von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-river)">Anlegbar</span>
+        <div class="stat-value">{{ importablePercent() }}%</div>
+        <div class="stat-desc">{{ importableCount() }} von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-alizarin)">Club-Zuweisung falsch</span>
+        <div class="stat-value">{{ blockedPercent() }}%</div>
+        <div class="stat-desc">{{ clubMismatchCount() }} von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-amethyst)">Neu in CSV</span>
+        <div class="stat-value">{{ newInCsvPercent() }}%</div>
+        <div class="stat-desc">{{ unmatchedRows().length }} von {{ rows().length }} Spielern</div>
+      </div>
+    </div>
+
     <div class="case-tabs">
       <button
         class="case-tab"
@@ -104,6 +127,28 @@
         Fehlt in CSV
         <span class="case-tab__count">{{ missingPlayers().length }}</span>
       </button>
+    </div>
+
+    <div class="import-actions">
+      <button class="btn btn-secondary" (click)="reset()">Abbrechen</button>
+      @if (caseTab() === 'matched') {
+        <button
+          class="btn btn-primary"
+          (click)="confirmImport()"
+          [disabled]="importing() || importableCount() === 0"
+        >
+          {{ importing() ? 'Wird erstellt…' : 'Spieler-Saison-Objekt erstellen (' + importableCount() + ')' }}
+        </button>
+      }
+      @if (caseTab() === 'unmatched') {
+        <button
+          class="btn btn-primary"
+          (click)="confirmCreateAll()"
+          [disabled]="creatableUnmatchedRows().length === 0"
+        >
+          Weiter ({{ creatableUnmatchedRows().length }} Spieler anlegen)
+        </button>
+      }
     </div>
 
     <div class="list-bar">
@@ -445,28 +490,6 @@
         </table>
       </div>
     }
-
-    <div class="import-actions">
-      <button class="btn btn-secondary" (click)="reset()">Abbrechen</button>
-      @if (caseTab() === 'matched') {
-        <button
-          class="btn btn-primary"
-          (click)="confirmImport()"
-          [disabled]="importing() || importableCount() === 0"
-        >
-          {{ importing() ? 'Wird erstellt…' : 'Spieler-Saison-Objekt erstellen (' + importableCount() + ')' }}
-        </button>
-      }
-      @if (caseTab() === 'unmatched') {
-        <button
-          class="btn btn-primary"
-          (click)="confirmCreateAll()"
-          [disabled]="creatableUnmatchedRows().length === 0"
-        >
-          Weiter ({{ creatableUnmatchedRows().length }} Spieler anlegen)
-        </button>
-      }
-    </div>
   }
 
   @case ('result') {

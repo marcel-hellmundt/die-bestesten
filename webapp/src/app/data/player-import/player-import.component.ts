@@ -87,6 +87,18 @@ export class PlayerImportDataComponent {
     this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate && !r.division_mismatch && !r.price_too_high)
   );
 
+  // Summary tiles above the tabs — all percentages relative to the full CSV row count.
+  private percentOf(count: number): number {
+    const total = this.rows().length;
+    return total > 0 ? Math.round((count / total) * 100) : 0;
+  }
+
+  doneCount = computed(() => this.rows().filter((r) => this.isRowComplete(r)).length);
+  donePercent = computed(() => this.percentOf(this.doneCount()));
+  importablePercent = computed(() => this.percentOf(this.importableCount()));
+  blockedPercent = computed(() => this.percentOf(this.clubMismatchCount()));
+  newInCsvPercent = computed(() => this.percentOf(this.unmatchedRows().length));
+
   filteredMatchedRows = computed(() =>
     this.matchedRows().filter((r) => {
       if (this.hideComplete() && this.isRowComplete(r)) return false;

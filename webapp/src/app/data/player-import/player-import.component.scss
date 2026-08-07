@@ -20,9 +20,12 @@
   margin-top: $space-4;
 }
 
+// Underline tab bar — deliberately unlike a button (no fill, no border, no radius) so it
+// doesn't get visually confused with the filter toggle button below it.
 .case-tabs {
   display: flex;
-  gap: $space-2;
+  gap: $space-5;
+  border-bottom: 1px solid $color-border;
   margin-bottom: $space-4;
   flex-wrap: wrap;
 }
@@ -31,31 +34,30 @@
   display: inline-flex;
   align-items: center;
   gap: $space-2;
-  padding: $space-2 $space-4;
-  border: 1px solid $color-border;
-  border-radius: $radius-full;
-  background: $color-surface;
-  color: $color-text;
+  padding: $space-2 0 $space-3;
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: $color-text-muted;
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   cursor: pointer;
   transition:
-    background 0.1s,
-    border-color 0.1s;
+    color $transition-fast,
+    border-color $transition-fast;
 
   &:hover {
-    background: $color-surface-alt;
-    border-color: $color-text-muted;
+    color: $color-text;
   }
 
   &--active {
-    background: $color-text;
-    color: $color-surface;
-    border-color: $color-text;
+    color: $color-text;
+    border-bottom-color: var(--flat-river);
 
     .case-tab__count {
-      background: $color-surface;
-      color: $color-text;
+      background: var(--flat-river);
+      color: #fff;
     }
   }
 }
@@ -71,6 +73,7 @@
   color: $color-text-muted;
   font-size: $font-xs;
   font-weight: $font-weight-semibold;
+  transition: background $transition-fast, color $transition-fast;
 }
 
 .mismatch-hint {
