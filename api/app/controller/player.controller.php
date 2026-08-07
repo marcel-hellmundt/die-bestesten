@@ -36,6 +36,10 @@ class PlayerController extends _BaseController
                     return ['message' => "$f fehlt"];
                 }
             }
+            if ((float) $body['price'] <= 0 || (float) $body['price'] > 50_000_000) {
+                http_response_code(400);
+                return ['message' => 'price muss zwischen 0 und 50.000.000 liegen'];
+            }
             return $this->db->createPlayer($body);
         }
 

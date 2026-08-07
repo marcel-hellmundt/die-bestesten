@@ -285,10 +285,13 @@
                   <th colspan="2">Verein</th>
                   <th>Von</th>
                   <th>Bis</th>
+                  @if (isMaintainer()) {
+                    <th></th>
+                  }
                 </tr>
               </thead>
               <tbody>
-                @for (c of p.clubs; track c.club_id + c.from_date) {
+                @for (c of p.clubs; track c.id) {
                   <tr class="row-link" (click)="navigateToClub(c.club_id)">
                     <td class="col-logo">
                       <img
@@ -306,6 +309,17 @@
                     </td>
                     <td class="col-date">{{ formatDate(c.from_date) }}</td>
                     <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
+                    @if (isMaintainer()) {
+                      <td class="col-actions">
+                        <button
+                          class="row-edit-btn"
+                          (click)="openEditClubForm(c); $event.stopPropagation()"
+                          title="Vereinseintrag bearbeiten"
+                        >
+                          <app-icon name="pencil" />
+                        </button>
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
@@ -313,7 +327,8 @@
           </div>
         }
         @if (showAddClubForm()) {
-          <div class="add-form" (keydown.enter)="!addingClub() && submitAddClub()">
+          <div class="add-form" (keydown.enter)="!addingClub() && submitClubForm()">
+            <p class="add-form-title">{{ editingClubEntryId() ? 'Verein bearbeiten' : 'Verein hinzufügen' }}</p>
             <div class="add-form-row">
               <div class="add-form-field">
                 <label class="add-form-label">Verein</label>
@@ -357,12 +372,23 @@
               <p class="add-form-error">{{ addClubError() }}</p>
             }
             <div class="add-form-actions">
-              <button class="btn-save" (click)="submitAddClub()" [disabled]="addingClub() || !newClubId()">
+              <button class="btn-save" (click)="submitClubForm()" [disabled]="addingClub() || !newClubId()">
                 {{ addingClub() ? 'Speichern…' : 'Speichern' }}
               </button>
-              <button class="btn-cancel" (click)="cancelAddClub()" [disabled]="addingClub()">
+              <button class="btn-cancel" (click)="cancelAddClub()" [disabled]="addingClub() || deletingClub()">
                 Abbrechen
               </button>
+              @if (editingClubEntryId()) {
+                <button
+                  class="btn-delete"
+                  (click)="deleteClub()"
+                  [disabled]="addingClub() || deletingClub()"
+                  title="Vereinseintrag löschen"
+                >
+                  <app-icon name="trash" />
+                  {{ deletingClub() ? 'Wird gelöscht…' : 'Löschen' }}
+                </button>
+              }
             </div>
           </div>
         }

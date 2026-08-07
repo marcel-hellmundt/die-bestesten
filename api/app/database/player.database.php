@@ -116,7 +116,7 @@ trait PlayerTrait
 
         // All club stints (sorted newest first)
         $q = $this->con->prepare("
-            SELECT pic.club_id, pic.from_date, pic.to_date, pic.on_loan,
+            SELECT pic.id, pic.club_id, pic.from_date, pic.to_date, pic.on_loan,
                    c.name AS club_name, c.logo_uploaded
             FROM player_in_club pic
             JOIN club c ON pic.club_id = c.id
@@ -134,6 +134,49 @@ trait PlayerTrait
         $query = $this->con->prepare("SELECT * FROM player WHERE id = :id LIMIT 1");
         $query->execute([':id' => $id]);
         return $query->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Bulk-lookup by kicker_id, indexed by (int) kicker_id for fast matching.
+     */
+    public function getPlayersByKickerIds(array $kickerIds): array
+    {
+        if (empty($kickerIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($kickerIds), '?'));
+        $query = $this->con->prepare(
+            "SELECT id, kicker_id, displayname FROM player WHERE kicker_id IN ($placeholders)"
+        );
+        $query->execute($kickerIds);
+
+        $out = [];
+        foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[(int) $row['kicker_id']] = $row;
+        }
+        return $out;
+    }
+
+    /**
+     * Bulk-lookup by exact displayname, indexed by displayname. Used as a second-pass check
+     * for kicker_id-matching CSV rows that found no player: if a player with the same
+     * displayname already exists under a different kicker_id, the CSV's kicker_id is likely
+     * wrong/changed rather than the player being genuinely new.
+     */
+    public function getPlayersByDisplaynames(array $displaynames): array
+    {
+        if (empty($displaynames)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($displaynames), '?'));
+        $query = $this->con->prepare(
+            "SELECT id, kicker_id, displayname FROM player WHERE displayname IN ($placeholders)"
+        );
+        $query->execute($displaynames);
+
+        $out = [];
+        foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[$row['displayname']] = $row;
+        }
+        return $out;
     }
 
     public function createPlayer(array $body): array

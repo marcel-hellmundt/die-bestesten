@@ -1,0 +1,502 @@
+<h1 class="page-title">Spieler-Import</h1>
+<p class="page-subtitle">Spieler-Saisondaten per CSV für die aktive Saison importieren</p>
+
+@switch (step()) {
+  @case ('upload') {
+    <div class="card import-upload-card">
+      <p>
+        CSV-Datei hochladen (Semikolon-getrennt: ID;Vorname;Nachname;Kurzname;Angezeigter
+        Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt). Die Spielklasse wird nach dem
+        Hochladen anhand der enthaltenen Vereine automatisch erkannt und kann danach bestätigt oder
+        korrigiert werden.
+      </p>
+      <input #csvInput type="file" accept=".csv" hidden (change)="onCsvFileSelected($event)" />
+      <button class="btn btn-primary" (click)="csvInput.click()" [disabled]="uploading()">
+        {{ uploading() ? 'Wird analysiert…' : 'CSV hochladen' }}
+      </button>
+      @if (uploadError()) {
+        <div class="warning-panel">{{ uploadError() }}</div>
+      }
+    </div>
+  }
+
+  @case ('confirm-division') {
+    <div class="card import-upload-card">
+      @if (topCandidate(); as top) {
+        <p>
+          Erkannte Spielklasse:
+          <strong>{{ cache.divisionName(pendingDivisionId() ?? top.division_id) }}</strong>
+          ({{ top.count }} von {{ resolvedClubCount() }} erkannten Vereinen in dieser CSV).
+        </p>
+        @if (divisionCandidates().length > 1) {
+          <p class="page-subtitle">
+            Weitere erkannte Spielklassen:
+            {{
+              divisionCandidates()
+                .slice(1)
+                .map(c => cache.divisionName(c.division_id) + ' (' + c.count + ')')
+                .join(', ')
+            }}
+          </p>
+        }
+      } @else {
+        <div class="warning-panel">
+          Es konnte keine Spielklasse anhand der Vereine in dieser CSV erkannt werden. Bitte manuell
+          auswählen.
+        </div>
+      }
+      <select
+        class="input input--sm"
+        (change)="pendingDivisionId.set($any($event.target).value || null)"
+      >
+        <option value="" disabled [selected]="!pendingDivisionId()">Spielklasse wählen…</option>
+        @for (d of divisions(); track d.id) {
+          <option [value]="d.id" [selected]="d.id === pendingDivisionId()">{{ d.name }}</option>
+        }
+      </select>
+      <div class="import-actions">
+        <button class="btn btn-secondary" (click)="reset()">Abbrechen</button>
+        <button
+          class="btn btn-primary"
+          (click)="confirmDivision()"
+          [disabled]="uploading() || !pendingDivisionId()"
+        >
+          {{ uploading() ? 'Wird analysiert…' : 'Weiter' }}
+        </button>
+      </div>
+      @if (uploadError()) {
+        <div class="warning-panel">{{ uploadError() }}</div>
+      }
+    </div>
+  }
+
+  @case ('preview') {
+    @if (divisionWarning()) {
+      <div class="warning-panel">
+        {{ divisionMismatchCount() }} von {{ resolvedClubCount() }} erkannten Vereinen in dieser CSV
+        gehören laut unseren Daten einer anderen Spielklasse an als der ausgewählten — evtl. wurde die
+        falsche Spielklasse oder die falsche CSV-Datei ausgewählt.
+      </div>
+    }
+
+    <div class="list-bar">
+      <button class="btn btn-secondary" (click)="reset()">Neue CSV hochladen</button>
+      <span class="spacer"></span>
+      @if (selectedCard() === 'importable') {
+        <button
+          class="btn btn-primary"
+          (click)="confirmImport()"
+          [disabled]="importing() || importableCount() === 0"
+        >
+          {{ importing() ? 'Wird erstellt…' : 'Spieler-Saison-Objekt erstellen (' + importableCount() + ')' }}
+        </button>
+      }
+      @if (selectedCard() === 'mismatch') {
+        <button
+          class="btn btn-primary"
+          (click)="confirmFixAll()"
+          [disabled]="fixableMismatchCount() === 0"
+        >
+          Spieler-Saison-Objekt korrigieren ({{ fixableMismatchCount() }})
+        </button>
+      }
+      @if (selectedCard() === 'new') {
+        <button
+          class="btn btn-primary"
+          (click)="confirmCreateAll()"
+          [disabled]="creatableUnmatchedRows().length === 0"
+        >
+          Neue Spieler erstellen ({{ creatableUnmatchedRows().length }})
+        </button>
+      }
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'done'" (click)="selectedCard.set('done')">
+        <img
+          class="stat-status-icon"
+          [src]="notDoneCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="notDoneCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-emerald)">Komplett fertig</span>
+        <div class="stat-value">{{ doneCount() }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'importable'" (click)="selectedCard.set('importable')">
+        <img
+          class="stat-status-icon"
+          [src]="importableCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="importableCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-river)">Anlegbar</span>
+        <div class="stat-value">{{ importableCount() }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'mismatch'" (click)="selectedCard.set('mismatch')">
+        <img
+          class="stat-status-icon"
+          [src]="positionPriceMismatchCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="positionPriceMismatchCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-sunflower)">Position/Marktwert falsch</span>
+        <div class="stat-value">{{ positionPriceMismatchCount() }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'blocked'" (click)="selectedCard.set('blocked')">
+        <img
+          class="stat-status-icon"
+          [src]="clubMismatchCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="clubMismatchCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-alizarin)">Club-Zuweisung falsch</span>
+        <div class="stat-value">{{ clubMismatchCount() }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'new'" (click)="selectedCard.set('new')">
+        <img
+          class="stat-status-icon"
+          [src]="unmatchedRows().length === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="unmatchedRows().length === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-amethyst)">Neu in CSV</span>
+        <div class="stat-value">{{ unmatchedRows().length }}</div>
+        <div class="stat-desc">von {{ rows().length }} Spielern</div>
+      </div>
+      <div class="stat-card stat-card--muted" [class.stat-card--selected]="selectedCard() === 'missing'" (click)="selectedCard.set('missing')">
+        <span class="stat-label" style="color: #6b7280">Fehlt in CSV</span>
+        <div class="stat-value">{{ missingPlayers().length }}</div>
+        <div class="stat-desc">bei einem Verein dieser Spielklasse, aber nicht in der CSV</div>
+      </div>
+    </div>
+
+    @if (isMatchedCardSelected()) {
+      <div class="table-container">
+        <table class="data-table data-table--compact">
+          <thead>
+            <tr>
+              <th class="col-sortable" (click)="matchedSort('firstName')">
+                Vorname
+                <span class="sort-indicator">{{ matchedSortCol() === 'firstName' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="matchedSort('lastName')">
+                Nachname
+                <span class="sort-indicator">{{ matchedSortCol() === 'lastName' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="matchedSort('club')">
+                Verein
+                <span class="sort-indicator">{{ matchedSortCol() === 'club' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="matchedSort('position')">
+                Position
+                <span class="sort-indicator">{{ matchedSortCol() === 'position' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="matchedSort('price')">
+                Marktwert
+                <span class="sort-indicator">{{ matchedSortCol() === 'price' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="matchedSort('state')">
+                Status
+                <span class="sort-indicator">{{ matchedSortCol() === 'state' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of sortedMatchedRows(); track r.kicker_id) {
+              <tr>
+                <td>{{ r.csv_first_name }}</td>
+                <td>{{ r.csv_last_name }}</td>
+                <td class="mismatch-club">
+                  @if (r.clubLogoUrl) {
+                    <img
+                      class="tbl-logo tbl-logo--sm"
+                      [src]="r.clubLogoUrl"
+                      [alt]="r.csv_club_name"
+                      (error)="$any($event.target).replaceWith(r.csv_club_name)"
+                    />
+                  } @else {
+                    {{ r.csv_club_name }}
+                  }
+                </td>
+                <td>
+                  @if (r.csv_position) {
+                    <span class="position-badge" [style.background-color]="POSITION_COLOR[r.csv_position]">
+                      {{ POSITION_LABEL[r.csv_position] }}
+                    </span>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>{{ r.csv_price != null ? (r.csv_price | number) + ' €' : '—' }}</td>
+                <td>
+                  <div class="status-icons">
+                    <span class="status-icon" data-tooltip="Spieler in Datenbank gefunden">
+                      <img class="status-icon-img" src="img/icons/check.png" alt="OK" />
+                    </span>
+                    <span
+                      class="status-icon"
+                      [class.status-icon--clickable]="r.club_mismatch"
+                      (click)="r.club_mismatch && fixClubMismatch(r)"
+                      [attr.data-tooltip]="
+                        fixingClub().has(r.kicker_id)
+                          ? 'Wird aktualisiert…'
+                          : r.club_mismatch
+                            ? ('Verein weicht ab: ' + (r.current_club_name ?? '—') + ' (DB) vs. ' + r.csv_club_name + ' (CSV) — klicken zum Übernehmen')
+                            : r.club_unresolved
+                              ? ('Verein „' + r.csv_club_name + '“ (CSV) konnte keinem Verein in der Datenbank zugeordnet werden — blockiert die automatische Erstellung, da der Spieler laut unseren Daten evtl. noch bei einem anderen Verein ist')
+                              : r.club_confirmed
+                                ? 'Verein in CSV identisch mit Datenbank'
+                                : 'Keine aktuelle Vereinszuordnung in der Datenbank hinterlegt — kein Widerspruch zur CSV, blockiert die Erstellung nicht'
+                      "
+                    >
+                      <img
+                        class="status-icon-img"
+                        [src]="r.club_mismatch || r.club_unresolved ? 'img/icons/warning.png' : 'img/icons/check.png'"
+                        [alt]="r.club_mismatch || r.club_unresolved ? 'Warnung' : 'OK'"
+                      />
+                    </span>
+                    <span
+                      class="status-icon"
+                      [attr.data-tooltip]="
+                        r.division_mismatch
+                          ? ('Verein „' + (r.current_club_name ?? r.csv_club_name) + '“ spielt laut unseren Daten in einer anderen Spielklasse als der für diesen Import ausgewählten — blockiert die automatische Erstellung')
+                          : 'Verein spielt in der ausgewählten Spielklasse (oder Spielklasse ist für diesen Verein noch nicht gepflegt)'
+                      "
+                    >
+                      <img
+                        class="status-icon-img"
+                        [src]="r.division_mismatch ? 'img/icons/error.png' : 'img/icons/check.png'"
+                        [alt]="r.division_mismatch ? 'Falsche Spielklasse' : 'OK'"
+                      />
+                    </span>
+                    <span
+                      class="status-icon"
+                      [attr.data-tooltip]="
+                        r.already_in_season
+                          ? 'Saison-Eintrag (player_in_season) vorhanden'
+                          : 'Kein Saison-Eintrag (player_in_season) vorhanden'
+                      "
+                    >
+                      <img
+                        class="status-icon-img"
+                        [src]="r.already_in_season ? 'img/icons/check.png' : 'img/icons/error.png'"
+                        [alt]="r.already_in_season ? 'OK' : 'Fehlt'"
+                      />
+                    </span>
+                    <span
+                      class="status-icon"
+                      [class.status-icon--clickable]="r.position_price_mismatch && !r.price_too_high"
+                      (click)="r.position_price_mismatch && !r.price_too_high && fixPositionPrice(r)"
+                      [attr.data-tooltip]="
+                        r.price_too_high
+                          ? ('Marktwert unrealistisch: ' + (r.csv_price | number) + ' € (CSV) — blockiert die automatische Erstellung/Übernahme (Grenze 50.000.000 €)')
+                          : !r.already_in_season
+                            ? 'Kein Saison-Eintrag vorhanden'
+                            : fixingMismatch().has(r.kicker_id)
+                              ? 'Wird aktualisiert…'
+                              : r.position_price_mismatch
+                                ? ('Abweichung: ' + (r.existing_position ? POSITION_LABEL[r.existing_position] : '—') + ' / ' + (r.existing_price | number) + ' € (DB) vs. ' + (r.csv_position ? POSITION_LABEL[r.csv_position] : '—') + ' / ' + (r.csv_price | number) + ' € (CSV) — klicken zum Übernehmen')
+                                : 'Position/Marktwert stimmen mit CSV überein'
+                      "
+                    >
+                      @if (r.price_too_high) {
+                        <img class="status-icon-img" src="img/icons/error.png" alt="Marktwert unrealistisch" />
+                      } @else if (!r.already_in_season) {
+                        <span class="status-icon__dash">—</span>
+                      } @else {
+                        <img
+                          class="status-icon-img"
+                          [src]="r.position_price_mismatch ? 'img/icons/warning.png' : 'img/icons/check.png'"
+                          [alt]="r.position_price_mismatch ? 'Warnung' : 'OK'"
+                        />
+                      }
+                    </span>
+                  </div>
+                </td>
+                <td class="col-link">
+                  <a
+                    class="row-detail-link"
+                    [href]="'/daten/player/' + r.matched_player_id"
+                    target="_blank"
+                    title="Spieler-Detailseite öffnen"
+                  >
+                    <app-icon name="external-link" />
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (selectedCard() === 'new') {
+      <div class="table-container">
+        <table class="data-table data-table--compact">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="col-sortable" (click)="sort('name')">
+                Spieler
+                <span class="sort-indicator">{{ sortCol() === 'name' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="sort('club')">
+                Verein (CSV)
+                <span class="sort-indicator">{{ sortCol() === 'club' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="sort('position')">
+                Position
+                <span class="sort-indicator">{{ sortCol() === 'position' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="sort('price')">
+                Marktwert
+                <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of sortedRows(); track r.kicker_id) {
+              <tr>
+                <td>
+                  <div class="status-icons">
+                    <span
+                      class="status-icon"
+                      [attr.data-tooltip]="
+                        r.hasDuplicateCandidate
+                          ? ('Kein Treffer über kicker-id ' + r.kicker_id + ', aber Spieler mit gleichem Namen existiert bereits unter kicker-id ' + r.duplicate_candidate_kicker_id + ' — evtl. falsche/geänderte kicker-id in der CSV')
+                          : 'Kein Spieler mit dieser Kicker-ID in der Datenbank gefunden'
+                      "
+                    >
+                      <img
+                        class="status-icon-img"
+                        [src]="r.hasDuplicateCandidate ? 'img/icons/warning.png' : 'img/icons/error.png'"
+                        [alt]="r.hasDuplicateCandidate ? 'Warnung' : 'Nicht gefunden'"
+                      />
+                    </span>
+                  </div>
+                </td>
+                <td>{{ r.csv_displayname }}</td>
+                <td class="mismatch-club">
+                  @if (r.clubLogoUrl) {
+                    <img
+                      class="tbl-logo tbl-logo--sm"
+                      [src]="r.clubLogoUrl"
+                      [alt]="r.csv_club_name"
+                      (error)="$any($event.target).replaceWith(r.csv_club_name)"
+                    />
+                  } @else {
+                    {{ r.csv_club_name }}
+                  }
+                </td>
+                <td>
+                  @if (r.csv_position) {
+                    <span class="position-badge" [style.background-color]="POSITION_COLOR[r.csv_position]">
+                      {{ POSITION_LABEL[r.csv_position] }}
+                    </span>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>{{ r.csv_price != null ? (r.csv_price | number) + ' €' : '—' }}</td>
+                <td class="mismatch-error">
+                  <div class="row-issues">
+                    @if (r.hasDuplicateCandidate) {
+                      <span>Evtl. bereits vorhanden (kicker-id {{ r.duplicate_candidate_kicker_id }})</span>
+                      <a
+                        class="btn btn-secondary btn-sm"
+                        [href]="'/daten/player/' + r.duplicate_candidate_player_id"
+                        target="_blank"
+                      >
+                        Spieler ansehen ↗
+                      </a>
+                    }
+                    @if (r.division_mismatch) {
+                      <span>Verein spielt laut unseren Daten in einer anderen Spielklasse</span>
+                    }
+                    @if (r.price_too_high) {
+                      <span>Marktwert unrealistisch ({{ r.csv_price | number }} €)</span>
+                    }
+                    <button
+                      class="btn btn-primary btn-sm"
+                      [disabled]="creatingPlayers().has(r.kicker_id) || r.division_mismatch || r.price_too_high"
+                      (click)="createMissingPlayer(r)"
+                    >
+                      {{ creatingPlayers().has(r.kicker_id) ? '…' : 'Spieler anlegen' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (selectedCard() === 'missing') {
+      <p class="page-subtitle">
+        Diese Spieler sind laut unserer Datenbank noch einem Club dieser Spielklasse zugeordnet, tauchen
+        aber nicht in der CSV auf — vermutlich veraltete Daten. Nicht kritisch, solange kein
+        Saison-Eintrag existiert.
+      </p>
+      <div class="table-container">
+        <table class="data-table data-table--compact">
+          <thead>
+            <tr>
+              <th class="col-sortable" (click)="sortMissing('name')">
+                Spieler
+                <span class="sort-indicator">{{ missingSortCol() === 'name' ? (missingSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-sortable" (click)="sortMissing('club')">
+                Aktueller Club
+                <span class="sort-indicator">{{ missingSortCol() === 'club' ? (missingSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of sortedMissingPlayers(); track m.player_id) {
+              <tr>
+                <td>{{ m.displayname }}</td>
+                <td class="mismatch-club">
+                  @if (m.clubLogoUrl) {
+                    <img
+                      class="tbl-logo tbl-logo--sm"
+                      [src]="m.clubLogoUrl"
+                      [alt]="m.club_name"
+                      (error)="$any($event.target).replaceWith(m.club_name)"
+                    />
+                  } @else {
+                    {{ m.club_name }}
+                  }
+                </td>
+                <td class="col-link">
+                  <a
+                    class="row-detail-link"
+                    [href]="'/daten/player/' + m.player_id"
+                    target="_blank"
+                    title="Spieler-Detailseite öffnen"
+                  >
+                    <app-icon name="external-link" />
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  @case ('result') {
+    <div class="completed-banner">{{ importResult()?.created_count }} Spieler importiert ✓</div>
+    @if (importResult() && importResult()!.skipped.length > 0) {
+      <div class="warning-panel">
+        {{ importResult()!.skipped.length }} Spieler übersprungen (bereits in dieser Saison vorhanden)
+      </div>
+    }
+    <div class="import-actions">
+      <button class="btn btn-primary" (click)="reset()">Weitere CSV importieren</button>
+    </div>
+  }
+}

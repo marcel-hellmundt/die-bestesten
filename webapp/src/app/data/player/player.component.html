@@ -31,6 +31,13 @@
     (input)="searchQuery.set($any($event.target).value)"
   />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
+  <span class="spacer"></span>
+  @if (isMaintainer()) {
+    <a class="btn btn-primary" routerLink="/daten/player-import">
+      <app-icon name="upload" />
+      CSV-Import
+    </a>
+  }
 </div>
 
 @if (loading()) {

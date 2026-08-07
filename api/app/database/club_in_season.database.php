@@ -98,6 +98,29 @@ trait ClubInSeasonTrait
         return (int) $q->fetchColumn() > 0;
     }
 
+    /**
+     * Bulk club_id => division_id for a season — used to verify a CSV-matched club
+     * actually plays in the division selected for a player_in_season import.
+     */
+    public function getClubDivisionMap(array $clubIds, string $seasonId): array
+    {
+        if (empty($clubIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($clubIds), '?'));
+        $q = $this->con->prepare(
+            "SELECT club_id, division_id
+             FROM club_in_season
+             WHERE season_id = ? AND club_id IN ($placeholders) AND division_id IS NOT NULL"
+        );
+        $q->execute(array_merge([$seasonId], $clubIds));
+
+        $out = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[$row['club_id']] = $row['division_id'];
+        }
+        return $out;
+    }
+
     public function createClubInSeason(string $id, string $clubId, string $seasonId, ?string $divisionId, ?int $position): void
     {
         $query = $this->con->prepare(

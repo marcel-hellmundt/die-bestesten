@@ -118,6 +118,330 @@ trait PlayerInSeasonTrait
     }
 
     /**
+     * player_in_season rows (id, position, price) for the given players/season,
+     * indexed by player_id. Doubles as an existence check via isset().
+     */
+    public function getExistingPlayerInSeasonMap(array $playerIds, string $seasonId): array
+    {
+        if (empty($playerIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+        $q = $this->con->prepare(
+            "SELECT id, player_id, position, price
+             FROM player_in_season
+             WHERE season_id = ? AND player_id IN ($placeholders)"
+        );
+        $q->execute(array_merge([$seasonId], $playerIds));
+
+        $out = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[$row['player_id']] = $row;
+        }
+        return $out;
+    }
+
+    public function updatePlayerInSeason(string $id, ?string $position, ?int $price): bool
+    {
+        $sets   = [];
+        $params = [':id' => $id];
+
+        if ($position !== null) {
+            $sets[] = 'position = :position';
+            $params[':position'] = $position;
+        }
+        if ($price !== null) {
+            $sets[] = 'price = :price';
+            $params[':price'] = $price;
+        }
+        if (empty($sets)) return false;
+
+        $q = $this->con->prepare('UPDATE player_in_season SET ' . implode(', ', $sets) . ' WHERE id = :id');
+        $q->execute($params);
+        return $q->rowCount() > 0;
+    }
+
+    private const CSV_VALID_POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+
+    // Sanity ceiling for a CSV market value — real prices never come close to this; catches
+    // CSV typos/garbage (e.g. a stray extra digit) before they can reach the DB. player_in_season.price
+    // is DECIMAL(10,2) and would throw on an out-of-range INSERT anyway, but relying on that error
+    // is unsafe: it aborts importCsvRows()'s whole loop, silently skipping every row after it.
+    private const PRICE_SANITY_MAX = 50_000_000;
+
+    /**
+     * Parses a bulk player-season-import CSV (semicolon-separated:
+     * ID;Vorname;Nachname;Kurzname;Angezeigter Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt)
+     * and matches every row against player (kicker_id) and club (name).
+     * Writes nothing.
+     *
+     * $divisionId is optional: when omitted, the division is auto-detected from the plurality
+     * of CSV rows whose resolved club plays in a given division this season (division_candidates
+     * in the return value lets the caller show/confirm the pick). If no club in the CSV can be
+     * attributed to any division at all, division_id comes back null and rows/missing_players are
+     * left empty — the caller must re-submit with an explicit division_id before any row analysis
+     * (and therefore the division_mismatch safety block) is performed.
+     */
+    public function previewCsvImport(string $filePath, ?string $divisionId): array
+    {
+        $season = $this->getActiveSeason();
+        if (!$season) {
+            throw new RuntimeException('Keine aktive Saison konfiguriert');
+        }
+        $seasonId = $season['id'];
+
+        $handle = fopen($filePath, 'r');
+        $parsedRows = [];
+        $firstLine  = true;
+        while (($line = fgets($handle)) !== false) {
+            $line = rtrim($line, "\r\n");
+            if ($firstLine) { $firstLine = false; continue; }
+            if (trim($line) === '') continue;
+
+            $cols = str_getcsv($line, ';');
+            if (count($cols) < 8) continue;
+
+            $kickerId = (int) substr($cols[0], 4);
+            $position = in_array($cols[6], self::CSV_VALID_POSITIONS, true) ? $cols[6] : null;
+            $price    = is_numeric($cols[7]) ? (int) $cols[7] : null;
+
+            $parsedRows[] = [
+                'kicker_id'   => $kickerId,
+                'first_name'  => $cols[1],
+                'last_name'   => $cols[2],
+                'displayname' => $cols[4],
+                'club_name'   => $cols[5],
+                'position'    => $position,
+                'price'       => $price,
+            ];
+        }
+        fclose($handle);
+
+        $kickerIds = array_column($parsedRows, 'kicker_id');
+        $playerMap = $this->getPlayersByKickerIds($kickerIds);
+
+        $matchedPlayerIds = array_values(array_filter(array_map(
+            fn($r) => $playerMap[$r['kicker_id']]['id'] ?? null,
+            $parsedRows
+        )));
+        $existingMap    = $this->getExistingPlayerInSeasonMap($matchedPlayerIds, $seasonId);
+        $currentClubMap = $this->getCurrentClubByPlayerIds($matchedPlayerIds);
+
+        // Second-pass check for rows with no kicker_id match: same displayname already in DB
+        // under a different kicker_id likely means the CSV's kicker_id is wrong/changed rather
+        // than the player being genuinely new.
+        $unmatchedDisplaynames = array_values(array_unique(array_map(
+            fn($r) => $r['displayname'],
+            array_filter($parsedRows, fn($r) => !isset($playerMap[$r['kicker_id']]))
+        )));
+        $duplicateCandidateMap = $this->getPlayersByDisplaynames($unmatchedDisplaynames);
+
+        // Resolve every distinct CSV club name once, then bulk-check which division each
+        // resolved club actually plays in this season — used to detect a CSV uploaded for
+        // the wrong Spielklasse (e.g. 2.-Liga CSV analysed as 1. Liga).
+        $clubByName = [];
+        foreach (array_unique(array_column($parsedRows, 'club_name')) as $clubName) {
+            $clubByName[$clubName] = $this->findClubByName($clubName);
+        }
+        $resolvedClubIds  = array_values(array_filter(array_map(fn($c) => $c['id'] ?? null, $clubByName)));
+        $clubDivisionMap  = $this->getClubDivisionMap($resolvedClubIds, $seasonId);
+
+        // Tally: for every CSV row, count which division its resolved club plays in this season.
+        // Used both to auto-detect the division (plurality vote) and to show the admin all
+        // candidates so a wrong auto-pick can be corrected.
+        $divisionTally = [];
+        foreach ($parsedRows as $r) {
+            $club = $clubByName[$r['club_name']] ?? null;
+            $rowDivisionId = $club ? ($clubDivisionMap[$club['id']] ?? null) : null;
+            if ($rowDivisionId !== null) {
+                $divisionTally[$rowDivisionId] = ($divisionTally[$rowDivisionId] ?? 0) + 1;
+            }
+        }
+        arsort($divisionTally);
+        $divisionCandidates = array_map(
+            fn($id, $count) => ['division_id' => $id, 'count' => $count],
+            array_keys($divisionTally), array_values($divisionTally)
+        );
+
+        $divisionAutoDetected = false;
+        if ($divisionId === null) {
+            $divisionAutoDetected = true;
+            $divisionId = $divisionCandidates[0]['division_id'] ?? null;
+        }
+
+        // No club in the CSV could be attributed to any division at all — nothing to safely
+        // analyse against, so bail out and let the caller ask the admin to pick manually.
+        if ($divisionId === null) {
+            return [
+                'season_id'            => $seasonId,
+                'season_start_date'    => $season['start_date'],
+                'division_id'          => null,
+                'division_auto_detected' => $divisionAutoDetected,
+                'division_candidates'  => $divisionCandidates,
+                'rows'                 => [],
+                'missing_players'      => [],
+                'division_warning'     => false,
+                'division_mismatch_count' => 0,
+                'resolved_club_count'  => 0,
+            ];
+        }
+
+        $resolvedClubCount = 0;
+        $divisionMismatchCount = 0;
+
+        $rows = array_map(function ($r) use (
+            $playerMap, $existingMap, $currentClubMap, $duplicateCandidateMap,
+            $clubByName, $clubDivisionMap, $divisionId, &$resolvedClubCount, &$divisionMismatchCount
+        ) {
+            $player  = $playerMap[$r['kicker_id']] ?? null;
+            $club    = $clubByName[$r['club_name']];
+            $existing = $player ? ($existingMap[$player['id']] ?? null) : null;
+            $currentClub = $player ? ($currentClubMap[$player['id']] ?? null) : null;
+            $duplicateCandidate = $player ? null : ($duplicateCandidateMap[$r['displayname']] ?? null);
+
+            $alreadyInSeason = $existing !== null;
+            $positionPriceMismatch = $existing !== null
+                && ($existing['position'] !== $r['position'] || (int) $existing['price'] !== $r['price']);
+            // Explicit conflict: both clubs known and different — the only case worth blocking
+            // bulk-creation for, since the player might actually be at a different (possibly
+            // out-of-league) club per our stale data and would become wrongly purchasable.
+            // Missing player_in_club data (no current club on file) is NOT treated as a conflict —
+            // that's the normal state for most players right before a new season's transfers have
+            // been entered, and blocking on it would defeat the point of this import.
+            $clubMismatch = $club && $currentClub && $currentClub['club_id'] !== $club['id'];
+            // Positive confirmation (both clubs known and identical) — informational only, shown in
+            // the UI tooltip; not required for importable.
+            $clubConfirmed = $club && $currentClub && $currentClub['club_id'] === $club['id'];
+            // CSV club name couldn't be resolved to a known club at all (no exact/unique fuzzy match).
+            // We can't verify it against the player's actual current club (which might be at a
+            // different, possibly out-of-league club per our data) — block bulk-creation rather than
+            // risk making the player wrongly purchasable under this league's price.
+            $clubUnresolved = !$club;
+            // The resolved club plays in a *different* division this season than the one selected
+            // for this import — strong signal the wrong CSV/Spielklasse was picked. Unknown (no
+            // club_in_season entry yet, e.g. new season not fully set up) is NOT treated as a
+            // conflict, same convention as club_mismatch above.
+            $clubDivisionId  = $club ? ($clubDivisionMap[$club['id']] ?? null) : null;
+            $divisionMismatch = $clubDivisionId !== null && $clubDivisionId !== $divisionId;
+            // Unrealistic CSV market value (e.g. a stray extra digit) — block bulk-creation instead
+            // of letting the DB throw on it, which would silently abort every row after it.
+            $priceTooHigh = $r['price'] !== null && $r['price'] > self::PRICE_SANITY_MAX;
+
+            if ($club) {
+                $resolvedClubCount++;
+                if ($divisionMismatch) $divisionMismatchCount++;
+            }
+
+            return [
+                'kicker_id'                  => $r['kicker_id'],
+                'csv_first_name'             => $r['first_name'],
+                'csv_last_name'              => $r['last_name'],
+                'csv_displayname'            => $r['displayname'],
+                'csv_club_name'              => $r['club_name'],
+                'csv_position'               => $r['position'],
+                'csv_price'                  => $r['price'],
+                'matched_player_id'          => $player['id'] ?? null,
+                'matched_displayname'        => $player['displayname'] ?? null,
+                'matched_club_id'            => $club['id'] ?? null,
+                'club_logo_uploaded'         => $club ? (bool) $club['logo_uploaded'] : false,
+                'already_in_season'          => $alreadyInSeason,
+                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved && !$divisionMismatch && !$priceTooHigh),
+                'existing_player_in_season_id' => $existing['id'] ?? null,
+                'existing_position'          => $existing['position'] ?? null,
+                'existing_price'             => $existing !== null ? (int) $existing['price'] : null,
+                'position_price_mismatch'    => $positionPriceMismatch,
+                'current_player_in_club_id'  => $currentClub['player_in_club_id'] ?? null,
+                'current_club_id'            => $currentClub['club_id'] ?? null,
+                'current_club_name'          => $currentClub['club_name'] ?? null,
+                'current_club_logo_uploaded' => $currentClub ? (bool) $currentClub['logo_uploaded'] : false,
+                'club_mismatch'              => $clubMismatch,
+                'club_confirmed'             => $clubConfirmed,
+                'club_unresolved'            => $clubUnresolved,
+                'division_mismatch'          => $divisionMismatch,
+                'price_too_high'             => $priceTooHigh,
+                'duplicate_candidate_player_id' => $duplicateCandidate['id'] ?? null,
+                'duplicate_candidate_kicker_id' => $duplicateCandidate ? (int) $duplicateCandidate['kicker_id'] : null,
+            ];
+        }, $parsedRows);
+
+        $missingPlayers = $this->getMissingClubMembers($seasonId, $divisionId, $matchedPlayerIds);
+
+        // Aggregate heads-up: if most resolved clubs don't belong to the selected division,
+        // the admin likely picked the wrong Spielklasse or uploaded the wrong CSV.
+        $divisionWarning = $resolvedClubCount > 0 && $divisionMismatchCount > $resolvedClubCount / 2;
+
+        return [
+            'season_id'                => $seasonId,
+            'season_start_date'        => $season['start_date'],
+            'division_id'              => $divisionId,
+            'division_auto_detected'   => $divisionAutoDetected,
+            'division_candidates'      => $divisionCandidates,
+            'rows'                     => $rows,
+            'missing_players'          => $missingPlayers,
+            'division_warning'         => $divisionWarning,
+            'division_mismatch_count'  => $divisionMismatchCount,
+            'resolved_club_count'      => $resolvedClubCount,
+        ];
+    }
+
+    /**
+     * Bulk-creates player_in_season rows for the active season from client-confirmed
+     * preview rows. Re-resolves the season server-side and re-checks duplicates for
+     * race-safety — duplicates/invalid rows are reported in skipped[], not thrown.
+     */
+    public function importCsvRows(array $rows): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) {
+            throw new RuntimeException('Keine aktive Saison konfiguriert');
+        }
+
+        $playerIds   = array_column($rows, 'player_id');
+        $existingSet = $this->getExistingPlayerInSeasonMap($playerIds, $seasonId);
+
+        $created = [];
+        $skipped = [];
+        foreach ($rows as $row) {
+            $playerId = $row['player_id'] ?? null;
+            $position = $row['position']  ?? null;
+            $price    = isset($row['price']) ? (int) $row['price'] : null;
+
+            if (!$playerId || !in_array($position, self::CSV_VALID_POSITIONS, true) || !$price || $price <= 0) {
+                $skipped[] = ['player_id' => $playerId, 'reason' => 'invalid_row'];
+                continue;
+            }
+            if ($price > self::PRICE_SANITY_MAX) {
+                // Would also throw on INSERT (price is DECIMAL(10,2)) and abort every row after
+                // it in this loop — reject explicitly instead of relying on that.
+                $skipped[] = ['player_id' => $playerId, 'reason' => 'price_too_high'];
+                continue;
+            }
+            if (isset($existingSet[$playerId])) {
+                $skipped[] = ['player_id' => $playerId, 'reason' => 'already_in_season'];
+                continue;
+            }
+
+            $id = $this->con->query("SELECT UUID() AS id")->fetchColumn();
+            try {
+                $this->createPlayerInSeason($id, $playerId, $seasonId, $position, $price);
+                $created[] = ['player_id' => $playerId, 'id' => $id];
+            } catch (PDOException $e) {
+                if ($e->getCode() === '23000') {
+                    $skipped[] = ['player_id' => $playerId, 'reason' => 'already_in_season'];
+                    continue;
+                }
+                throw $e;
+            }
+        }
+
+        return [
+            'season_id'     => $seasonId,
+            'created'       => $created,
+            'created_count' => count($created),
+            'skipped'       => $skipped,
+        ];
+    }
+
+    /**
      * Count of league-division players for a season.
      * Falls back to level 1 / DE if no division is configured.
      */

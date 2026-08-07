@@ -1,0 +1,165 @@
+@use '../../../styles/variables' as *;
+
+.stat-card {
+  position: relative;
+  cursor: pointer;
+  transition: border-color $transition-fast;
+
+  &--selected {
+    border-color: var(--flat-alizarin);
+    border-width: 2px;
+  }
+
+  &--muted {
+    background: $color-surface-alt;
+  }
+}
+
+.stat-status-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.import-upload-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-3;
+  max-width: 520px;
+
+  p {
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+}
+
+.import-actions {
+  display: flex;
+  gap: $space-3;
+  margin-top: $space-4;
+}
+
+.col-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--flat-river);
+  }
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  opacity: 0.5;
+  font-size: 11px;
+}
+
+.mismatch-club {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
+.mismatch-error {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+.row-issues {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+
+  span {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    white-space: nowrap;
+  }
+}
+
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  white-space: nowrap;
+}
+
+.status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  position: relative;
+
+  &--clickable {
+    cursor: pointer;
+    border-radius: $radius-sm;
+    transition: opacity $transition-fast;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+
+  &[data-tooltip]:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.3;
+    padding: 4px 8px;
+    border-radius: $radius-sm;
+    white-space: normal;
+    width: max-content;
+    max-width: 220px;
+    text-align: center;
+    z-index: 20;
+    pointer-events: none;
+  }
+}
+
+.status-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.status-icon__dash {
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.col-link {
+  width: 32px;
+  text-align: right;
+}
+
+.row-detail-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-sm;
+  color: $color-text-muted;
+  transition:
+    color $transition-fast,
+    background $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    background: $color-surface-alt;
+  }
+}

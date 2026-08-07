@@ -66,7 +66,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/league/mine',
-                        'description' => 'Aktuelle Liga des Deployments {id,slug,name,db_name,division_id}; 404 wenn nicht konfiguriert',
+                        'description' => 'Aktuelle Liga {id,slug,name,db_name,division_id} — bei vorhandenem JWT die Liga aus auth_league_id, sonst Fallback auf die per DB_NAME_LEAGUE konfigurierte Deployment-Liga; 404 wenn nicht gefunden',
                     ],
                     [
                         'method' => 'GET',
@@ -776,7 +776,26 @@ class Routing
                         'method' => 'POST',
                         'path' => '/player_in_season',
                         'description' => 'Neuen player_in_season Eintrag anlegen → {id}; 409 bei Duplikat (player_id + season_id) — Maintainer+',
-                        'body' => ['player_id' => 'UUID', 'season_id' => 'UUID', 'position' => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD', 'price' => 'int (€, > 0)'],
+                        'body' => ['player_id' => 'UUID', 'season_id' => 'UUID', 'position' => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD', 'price' => 'int (€, 0 < price <= 50.000.000)'],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/player_in_season/:id',
+                        'description' => 'Position und/oder Marktwert eines bestehenden Eintrags korrigieren; 404 wenn nicht gefunden — Maintainer+',
+                        'path_params' => [':id' => 'UUID des player_in_season-Eintrags'],
+                        'body' => ['position' => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD (optional)', 'price' => 'int (€, 0 < price <= 50.000.000, optional)', '_hinweis' => 'mind. eines der beiden Felder erforderlich'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/player_in_season/preview_csv',
+                        'description' => 'CSV parsen (;-getrennt: ID;Vorname;Nachname;Kurzname;Angezeigter Name;Verein;Position;Marktwert;Punkte;Notendurchschnitt) und gegen player (kicker_id) + club (Name, exakt mit Fuzzy-Fallback) abgleichen; division_id ist optional — bei fehlender division_id wird die Spielklasse per Mehrheitsentscheid aus den in der CSV enthaltenen, club_in_season-bekannten Vereinen automatisch erkannt (division_candidates[{division_id,count}] absteigend sortiert, division_auto_detected=true, division_id=null falls kein einziger Club einer Division zugeordnet werden konnte — dann bleiben rows/missing_players leer und der Aufruf muss mit einer explizit gewählten division_id wiederholt werden); erkennt zusätzlich Positions-/Marktwert-Abweichungen bei bestehenden player_in_season-Einträgen, Club-Abweichungen (aktueller player_in_club vs. CSV-Club), ob der gematchte Club laut club_in_season tatsächlich in der (übergebenen oder erkannten) Spielklasse spielt, und Spieler, die aktuell einem Club dieser Spielklasse zugeordnet sind aber in der CSV fehlen (missing_players); gibt {status,season_id,season_start_date,division_id,division_auto_detected,division_candidates,rows[{kicker_id,csv_*,matched_player_id,matched_displayname,matched_club_id,club_logo_uploaded,already_in_season,importable,existing_player_in_season_id,existing_position,existing_price,position_price_mismatch,current_player_in_club_id,current_club_id,current_club_name,current_club_logo_uploaded,club_mismatch,club_confirmed,club_unresolved,division_mismatch,price_too_high,duplicate_candidate_player_id,duplicate_candidate_kicker_id}],missing_players[{player_id,player_in_club_id,displayname,club_id,club_name,club_logo_uploaded}],division_warning,division_mismatch_count,resolved_club_count} zurück; importable ist nur true wenn zusätzlich weder club_mismatch noch club_unresolved noch division_mismatch noch price_too_high vorliegt — club_mismatch = expliziter Widerspruch (aktueller player_in_club-Club bekannt und abweichend vom CSV-Club), club_unresolved = CSV-Vereinsname konnte keinem Club zugeordnet werden (kein exakter/eindeutiger Fuzzy-Treffer), division_mismatch = gematchter Club spielt laut club_in_season der aktiven Saison nachweislich in einer anderen Division als der verwendeten (unbekannt/nicht gepflegt blockiert NICHT), price_too_high = CSV-Marktwert > 50.000.000 € (unrealistisch, würde beim Insert ohnehin an der DECIMAL(10,2)-Spaltengrenze scheitern) — alle vier verhindern player_in_season-Anlage, da der Spieler laut unseren Daten evtl. noch bei einem anderen (evtl. ligafremden) Club spielt und sonst fälschlich zum CSV-Marktwert kaufbar würde; fehlende player_in_club-Daten (kein aktueller Club auf Datenbankseite bekannt) blockieren dagegen NICHT (normal zu Saisonbeginn vor Transfer-Nachpflege); club_confirmed ist rein informativ (beide Clubs bekannt und identisch); division_warning = true wenn mehr als die Hälfte der aufgelösten CSV-Clubs (division_mismatch_count von resolved_club_count) nicht zur verwendeten Division gehören — relevant v.a. wenn der Client eine von der Erkennung abweichende division_id übergibt; für Zeilen ohne kicker_id-Treffer wird zusätzlich per exaktem Displaynamen nach einem evtl. bereits vorhandenen Spieler unter anderer kicker_id gesucht (duplicate_candidate_*) — Hinweis auf falsche/geänderte kicker_id in der CSV; schreibt nichts — Maintainer+',
+                        'body' => ['csv' => 'multipart/form-data Datei', 'division_id' => 'UUID der Spielklasse (optional — ohne wird sie aus der CSV automatisch erkannt)'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/player_in_season/import_csv',
+                        'description' => 'Erstellt player_in_season-Einträge für die aktive Saison aus bestätigten preview_csv-Zeilen; überspringt Zeilen mit bereits vorhandenem player_in_season (reason=already_in_season), ungültigen Daten (reason=invalid_row) oder unrealistischem Marktwert > 50.000.000 € (reason=price_too_high) statt 409/500 zu werfen — verhindert insbesondere, dass eine einzelne Zeile mit zu hohem Marktwert die gesamte Schleife per DB-Fehler abbricht und alle nachfolgenden Zeilen mit überspringt; gibt {status,season_id,created[{player_id,id}],created_count,skipped[{player_id,reason}]} zurück — Maintainer+',
+                        'body' => ['rows' => '[{player_id, position, price}]'],
                     ],
                 ],
             ]),
@@ -839,7 +858,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player/:id',
-                        'description' => 'Ein Spieler mit aktuellem Club, Saisondaten und allen Spieltagsbewertungen',
+                        'description' => 'Ein Spieler mit aktuellem Club, Saisondaten und allen Spieltagsbewertungen; clubs[] enthält je Eintrag zusätzlich die player_in_club-id',
                         'path_params' => [':id' => 'UUID des Spielers'],
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
                     ],
@@ -853,7 +872,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/player/create',
-                        'description' => 'Erstellt einen neuen Spieler mit Saison- und optional Club-Zuweisung — gibt {id} zurück — Maintainer+',
+                        'description' => 'Erstellt einen neuen Spieler mit Saison- und optional Club-Zuweisung — gibt {id} zurück; 400 wenn price außerhalb 0 < price <= 50.000.000 — Maintainer+',
                         'body' => [
                             'kicker_id'  => 'int — Kicker-ID (z.B. 30669)',
                             'first_name' => 'string',
@@ -861,7 +880,7 @@ class Routing
                             'displayname'=> 'string (muss UNIQUE sein)',
                             'season_id'  => 'UUID der Saison',
                             'position'   => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD',
-                            'price'      => 'int — Marktwert in €',
+                            'price'      => 'int — Marktwert in € (0 < price <= 50.000.000)',
                             'club_id'    => 'UUID des Clubs (optional) — erstellt player_in_club-Eintrag',
                             'from_date'  => 'DATE YYYY-MM-DD (optional, default: heute) — Vertragsbeginn',
                         ],
@@ -883,6 +902,24 @@ class Routing
                             'from_date' => 'DATE YYYY-MM-DD',
                             'on_loan'   => 'bool (optional, default false)',
                         ],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/player_in_club/:id',
+                        'description' => 'Aktualisiert einen bestehenden Vereinseintrag — beliebige Kombination aus {club_id, from_date, to_date, on_loan}, mind. eines erforderlich (400 sonst); to_date=null ist explizit erlaubt (öffnet eine beendete Zugehörigkeit wieder); 404 wenn nicht gefunden, 422 wenn resultierendes to_date vor from_date liegt — Maintainer+',
+                        'path_params' => [':id' => 'UUID des player_in_club-Eintrags'],
+                        'body' => [
+                            'club_id'   => 'UUID des Vereins (optional)',
+                            'from_date' => 'DATE YYYY-MM-DD (optional)',
+                            'to_date'   => 'DATE YYYY-MM-DD | null (optional)',
+                            'on_loan'   => 'bool (optional)',
+                        ],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/player_in_club/:id',
+                        'description' => 'Löscht einen Vereinseintrag; 404 wenn nicht gefunden — Maintainer+',
+                        'path_params' => [':id' => 'UUID des player_in_club-Eintrags'],
                     ],
                 ],
             ]),

@@ -19,6 +19,7 @@ import { LeagueDataComponent } from './league/league.component';
 import { LeagueDetailComponent } from './league/league-detail.component';
 import { AchievementsDataComponent } from './achievements/achievements-data.component';
 import { ManagerDataComponent } from './manager/manager-data.component';
+import { PlayerImportDataComponent } from './player-import/player-import.component';
 
 const M = [MaintainerGuard];
 
@@ -43,6 +44,7 @@ const routes: Routes = [
       { path: 'player/:id',    component: PlayerDetailComponent },
       { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
       { path: 'manager',       component: ManagerDataComponent,      canActivate: M },
+      { path: 'player-import', component: PlayerImportDataComponent, canActivate: M },
     ]
   }
 ];
@@ -64,6 +66,7 @@ const routes: Routes = [
     LeagueDetailComponent,
     AchievementsDataComponent,
     ManagerDataComponent,
+    PlayerImportDataComponent,
   ],
   imports: [
     CommonModule,

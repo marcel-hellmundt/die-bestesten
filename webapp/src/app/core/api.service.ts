@@ -63,6 +63,17 @@ export class ApiService {
     return this.post(`team/${teamId}/logo/takeover`);
   }
 
+  previewPlayerSeasonImport(csv: File, divisionId: string | null): Observable<any> {
+    const formData = new FormData();
+    formData.append('csv', csv);
+    if (divisionId) formData.append('division_id', divisionId);
+    return this.postForm('player_in_season/preview_csv', formData);
+  }
+
+  importPlayerSeasonRows(rows: { player_id: string; position: string; price: number }[]): Observable<any> {
+    return this.post('player_in_season/import_csv', { rows });
+  }
+
   delete<T>(path: string, body: unknown = {}): Observable<T> {
     const token = this.auth.getToken();
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;

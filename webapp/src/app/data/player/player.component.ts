@@ -5,6 +5,7 @@ import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs
 import { ApiService } from '../../core/api.service';
 import { Player } from '../../core/models/player.model';
 import { DataCacheService } from '../../core/data-cache.service';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-data-player',
@@ -16,9 +17,12 @@ export class PlayerDataComponent {
   private api    = inject(ApiService);
   private router = inject(Router);
   private route  = inject(ActivatedRoute);
+  private auth   = inject(AuthService);
 
   navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
   cache = inject(DataCacheService);
+
+  isMaintainer = computed(() => this.auth.isMaintainer());
 
   private reload$ = new BehaviorSubject<void>(undefined);
 
