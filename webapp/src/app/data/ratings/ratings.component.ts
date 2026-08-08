@@ -211,6 +211,7 @@ export class RatingsDataComponent {
     this.bulkInput.set('');
     this.bulkResult.set(null);
     this.csvResult.set(null);
+    this.csvFile.set(null);
     this.participationError.set(null);
     this.sdsError.set(null);
     this.refreshClubStatuses();
@@ -625,9 +626,24 @@ export class RatingsDataComponent {
     });
   }
 
+  csvFile = signal<File | null>(null);
+
   onCsvFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
+    (event.target as HTMLInputElement).value = '';
     if (!file) return;
+    this.csvFile.set(file);
+    this.runCsvValidation(file);
+  }
+
+  /** Re-runs validation against the already-selected file, e.g. after fixing a mismatch. */
+  revalidateCsv(): void {
+    const file = this.csvFile();
+    if (!file) return;
+    this.runCsvValidation(file);
+  }
+
+  private runCsvValidation(file: File): void {
     const md = this.selectedMatchday();
     if (!md) return;
     const formData = new FormData();
@@ -645,7 +661,6 @@ export class RatingsDataComponent {
         this.csvResult.set(null);
       },
     });
-    (event.target as HTMLInputElement).value = '';
   }
 
   // ── Matchday close ────────────────────────────────────────────────
@@ -659,6 +674,7 @@ export class RatingsDataComponent {
       next: () => {
         this.closingMatchday.set(false);
         this.csvResult.set(null);
+        this.csvFile.set(null);
         this.selectedMatchday.set({ ...md, completed: true } as Matchday);
         this.pageRefresh.update((v) => v + 1);
       },

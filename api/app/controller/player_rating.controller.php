@@ -68,7 +68,7 @@ class PlayerRatingController extends _BaseController
                 ];
             }
 
-            // Parse CSV: skip header, col 0 = id (pl-kXXXX → kicker_id), col 4 = displayname, col 8 = points
+            // Parse CSV: skip header, col 0 = id (pl-kXXXX → kicker_id), col 3 = displayname (kurz), col 8 = points
             $handle     = fopen($file, 'r');
             $mismatches = [];
             $checked    = 0;
@@ -79,7 +79,7 @@ class PlayerRatingController extends _BaseController
                 if (trim($line) === '') continue;
                 $cols        = str_getcsv($line, ';');
                 $kickerId    = isset($cols[0]) ? (int) substr($cols[0], 4) : null;
-                $displayname = $cols[4] ?? null;
+                $displayname = $cols[3] ?? null;
                 $csvPoints   = isset($cols[8]) ? (int) $cols[8] : null;
                 if ($kickerId === null || $displayname === null || $csvPoints === null) continue;
                 if (!array_key_exists($kickerId, $dbMap)) {

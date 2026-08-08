@@ -30,6 +30,11 @@
       <button class="btn btn-primary" (click)="csvInput.click()" [disabled]="csvValidating()">
         {{ csvValidating() ? 'Wird geprüft…' : 'Punktecheck' }}
       </button>
+      @if (csvResult() && csvFile()) {
+        <button class="btn btn-secondary" (click)="revalidateCsv()" [disabled]="csvValidating()">
+          {{ csvValidating() ? 'Wird geprüft…' : 'Erneut prüfen' }}
+        </button>
+      }
       @if (csvResult(); as res) {
         @if (res.ok) {
           <div class="completed-banner">Alle {{ res.checked }} Punkte stimmen überein ✓</div>

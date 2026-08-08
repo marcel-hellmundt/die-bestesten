@@ -208,7 +208,7 @@ trait PlayerInSeasonTrait
                 'kicker_id'   => $kickerId,
                 'first_name'  => $cols[1],
                 'last_name'   => $cols[2],
-                'displayname' => $cols[4],
+                'displayname' => $cols[3],
                 'club_name'   => $cols[5],
                 'position'    => $position,
                 'price'       => $price,
