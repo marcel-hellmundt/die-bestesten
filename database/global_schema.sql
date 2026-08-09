@@ -209,13 +209,15 @@ CREATE TABLE IF NOT EXISTS achievement (
 -- ── Manager (global) ────────────────────────────────────────────────────────────
 
 -- Tabelle: manager (global; ein Account kann in mehreren Ligen spielen)
+-- Produktions-Migration für status='invited' (kein Migrations-Runner in diesem Repo):
+-- ALTER TABLE manager MODIFY COLUMN status ENUM('active','blocked','deleted','invited') NOT NULL DEFAULT 'active';
 CREATE TABLE IF NOT EXISTS manager (
     id            CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
     manager_name  VARCHAR(64)  NOT NULL UNIQUE,
     first_name    VARCHAR(100) NULL DEFAULT NULL,
     alias         VARCHAR(64)  NULL DEFAULT NULL UNIQUE,
     password      VARCHAR(255) NOT NULL,
-    status        ENUM('active', 'blocked', 'deleted') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'active',
+    status        ENUM('active', 'blocked', 'deleted', 'invited') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'active', -- invited = von Admin per Einladung angelegt, wartet auf Erstpasswort
     email         VARCHAR(255) NULL UNIQUE,
     date_of_birth DATE         NULL,
     last_activity DATETIME     NULL DEFAULT NULL

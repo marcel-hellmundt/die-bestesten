@@ -152,7 +152,7 @@ PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed; Bod
 POST     /auth                 — JWT-Login; Response enthält token + leagues[] + league_id (null wenn keine Liga)
 POST     /auth/switch-league  — {league_id} → {token, league_id}; neues JWT mit geänderter league_id; 403 wenn kein Zugang — Auth
 POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)
-POST     /auth/password-reset — {token,new_password} — setzt Passwort zurück; 400 wenn Token ungültig/abgelaufen
+POST     /auth/password-reset — {token,new_password} — setzt Passwort zurück (Token aus Reset- oder Einladungslink); gibt {token,leagues,league_id} zurück (automatischer Login mit neuem JWT); 400 wenn Token ungültig/abgelaufen
 GET      /team_rating          — ?season_id → { matchday, ratings[], sds_player, max_matchday_number } letzter gestarteter Spieltag; bei nicht-abgeschlossenem Spieltag: Live-Punkte aus player_rating × team_lineup (fine = 0) — Auth
 GET      /team_rating/season   — ?season_id → aggregierte Saisontabelle aller Teams, sortiert nach Punkten — Auth
 GET      /team                 — ?season_id → [{id,team_name,color,color_secondary,season_id,manager_id,manager_name,alias}] sortiert nach Name — Auth
@@ -165,7 +165,9 @@ GET      /team/previous        — Letztes Team aus Vorsaison {id,team_name,colo
 GET      /team/check-name      — ?name= (min. 3 Zeichen) → {available: bool}; 400 wenn zu kurz — Auth
 POST     /team/:id/logo        — multipart/form-data, Feld "image" (PNG) — nur eigenes Team — Auth
 POST     /team/:id/logo/takeover — übernimmt Logo aus Vorsaison-Team desselben Managers — nur eigenes Team; 404 wenn kein Vorsaison-Team — Auth
-GET      /manager              — [{id,manager_name,alias,status,last_activity,roles[],leagues[{id,name}]}] alle Manager global — Admin
+GET      /manager              — [{id,manager_name,alias,status,email,last_activity,roles[],leagues[{id,name}]}] alle Manager global — Admin
+POST     /manager              — {manager_name,first_name?,email,league_id} → {id,invite_link}; legt Manager mit status=invited an (zufälliges Platzhalter-Passwort) und manager_league sofort status=active (Liga bereits zugewiesen); sendet Einladungs-Mail (Link zu /login/accept-invite, 7 Tage gültig) — nach Passwort-Setzen automatischer Login mit league_id im JWT; 400 fehlende/ungültige Felder, 404 Liga nicht gefunden, 409 manager_name/email bereits vergeben — Admin
+POST     /manager/:id/resend-invite — → {invite_link}; neuer Token (alter wird ungültig) — 409 wenn status != invited — Admin
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
 GET      /manager/birthdays   — [{id,manager_name}] — Manager mit heutigem Geburtstag (MONTH+DAY match) — Auth
 GET      /manager/leagues      — [{id,name,slug}] — alle Ligen des eingeloggten Managers — Auth
@@ -207,7 +209,7 @@ PATCH    /notification/preferences — {event_type: matchday_completed|achieveme
 
 *Seit Multi-Liga-Support sind Manager-Daten global — ein Account kann mehreren Ligen beitreten.*
 
-**manager**: id PK, manager_name UNIQUE (Anzeigename/Username), first_name VARCHAR(100)? (echter Vorname — für Achievement-Vergleiche), alias UNIQUE?, password, status ENUM(active/blocked/deleted) DEFAULT active, email UNIQUE?, date_of_birth?, last_activity DATETIME?
+**manager**: id PK, manager_name UNIQUE (Anzeigename/Username), first_name VARCHAR(100)? (echter Vorname — für Achievement-Vergleiche), alias UNIQUE?, password, status ENUM(active/blocked/deleted/invited) DEFAULT active (invited = von Admin per `POST /manager` angelegt, wartet auf Erstpasswort via Einladungslink; wechselt bei erfolgreichem `POST /auth/password-reset` automatisch zu active), email UNIQUE?, date_of_birth?, last_activity DATETIME?
 
 **manager_role**: id PK, manager_id FK, role ENUM(maintainer/admin) — UNIQUE(manager_id, role) — additiv; jeder Manager hat implizit 'manager'
 

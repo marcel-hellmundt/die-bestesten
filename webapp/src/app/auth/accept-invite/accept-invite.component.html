@@ -1,0 +1,31 @@
+<div class="password-reset-page">
+  <img class="login-logo squircle" src="/img/logos/die-bestesten.png" alt="die bestesten" />
+
+  @if (!token) {
+    <p class="reset-info reset-info--error">Ungültiger Link.</p>
+    <button class="btn btn-primary btn-full" (click)="goToLogin()">Zum Login</button>
+  } @else {
+    <p class="reset-info">Willkommen bei die bestesten — lege dein Passwort fest, um loszulegen.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="form-group">
+        <label for="new_password">Passwort</label>
+        <input
+          id="new_password"
+          type="password"
+          formControlName="new_password"
+          autocomplete="new-password"
+          placeholder="Mindestens 8 Zeichen"
+        />
+      </div>
+
+      @if (error) {
+        <div class="error-message">{{ error }}</div>
+      }
+
+      <button type="submit" class="btn btn-primary btn-full" [disabled]="form.invalid || loading">
+        {{ loading ? 'Wird gespeichert…' : 'Loslegen' }}
+      </button>
+    </form>
+  }
+</div>

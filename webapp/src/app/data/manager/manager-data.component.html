@@ -7,7 +7,78 @@
     (input)="searchQuery.set($any($event.target).value)"
   />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
+  @if (isAdmin()) {
+    <span class="spacer"></span>
+    <button class="btn btn-secondary btn-sm" (click)="showCreateForm() ? cancelCreateForm() : openCreateForm()">
+      {{ showCreateForm() ? 'Abbrechen' : '+ Neuer Manager' }}
+    </button>
+  }
 </div>
+
+@if (showCreateForm()) {
+  <div class="create-manager-form">
+    <div class="create-manager-form__row">
+      <div class="form-group">
+        <label>Anzeigename</label>
+        <input
+          class="input input--sm"
+          [value]="newManagerName()"
+          (input)="newManagerName.set($any($event.target).value)"
+          placeholder="Anzeigename"
+        />
+      </div>
+      <div class="form-group">
+        <label>Vorname</label>
+        <input
+          class="input input--sm"
+          [value]="newFirstName()"
+          (input)="newFirstName.set($any($event.target).value)"
+          placeholder="Vorname (optional)"
+        />
+      </div>
+      <div class="form-group">
+        <label>E-Mail</label>
+        <input
+          class="input input--sm"
+          type="email"
+          [value]="newEmail()"
+          (input)="newEmail.set($any($event.target).value)"
+          placeholder="E-Mail"
+        />
+      </div>
+      <div class="form-group">
+        <label>Liga</label>
+        <select class="input input--sm" (change)="newLeagueId.set($any($event.target).value)">
+          <option value="" disabled [selected]="!newLeagueId()">Liga wählen…</option>
+          @for (league of allLeagues(); track league.id) {
+            <option [value]="league.id" [selected]="league.id === newLeagueId()">{{ league.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    @if (createError()) {
+      <div class="create-manager-form__error">{{ createError() }}</div>
+    }
+
+    @if (createdInviteLink(); as link) {
+      <div class="invite-link-box">
+        <span>Einladungslink erstellt:</span>
+        <code>{{ link }}</code>
+        <button class="btn btn-secondary btn-sm" (click)="copyInviteLink(link)">
+          {{ copiedLink() ? 'Kopiert!' : 'Kopieren' }}
+        </button>
+      </div>
+    }
+
+    <div class="create-manager-form__actions">
+      <button class="btn btn-primary" [disabled]="creatingManager()" (click)="submitCreateManager()">
+        {{ creatingManager() ? 'Wird angelegt…' : 'Manager anlegen & einladen' }}
+      </button>
+      <button class="btn btn-secondary" (click)="cancelCreateForm()">Schließen</button>
+    </div>
+  </div>
+}
 
 @if (loading()) {
   <p class="state-msg">Laden…</p>
@@ -43,8 +114,25 @@
               </div>
             </td>
             <td class="col-muted">{{ m.alias ?? '—' }}</td>
-            <td>
+            <td class="col-status" (click)="$event.stopPropagation()">
               <span class="status-badge status-badge--{{ m.status }}">{{ m.status }}</span>
+              @if (m.status === 'invited' && isAdmin()) {
+                <button
+                  class="resend-invite-btn"
+                  [disabled]="isResendingInvite(m.id)"
+                  (click)="resendInvite(m)"
+                  title="Einladung erneut senden"
+                >↻</button>
+                @if (resentInviteLink()?.managerId === m.id) {
+                  <div class="invite-link-popup">
+                    <code>{{ resentInviteLink()!.link }}</code>
+                    <button class="btn btn-secondary btn-sm" (click)="copyInviteLink(resentInviteLink()!.link)">
+                      {{ copiedLink() ? 'Kopiert!' : 'Kopieren' }}
+                    </button>
+                    <button class="league-tag-btn league-tag-btn--deny" (click)="resentInviteLink.set(null)" title="Schließen">✕</button>
+                  </div>
+                }
+              }
             </td>
             <td class="col-muted hidden-mobile" [title]="lastActivityTitle(m.last_activity)">{{ formatLastActivity(m.last_activity) }}</td>
             <td class="col-roles" (click)="$event.stopPropagation()">

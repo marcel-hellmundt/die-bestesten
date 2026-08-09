@@ -18,14 +18,14 @@ trait ManagerTrait
     public function getAllManagers(): array
     {
         $q = $this->con->prepare(
-            "SELECT m.id, m.manager_name, m.alias, m.status, m.last_activity,
+            "SELECT m.id, m.manager_name, m.alias, m.status, m.email, m.last_activity,
                     GROUP_CONCAT(DISTINCT mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv,
                     GROUP_CONCAT(DISTINCT CONCAT(l.id, '~~', l.name, '~~', COALESCE(ml.status, 'active')) ORDER BY l.name SEPARATOR '|') AS league_data
              FROM manager m
              LEFT JOIN manager_role mr  ON mr.manager_id  = m.id
              LEFT JOIN manager_league ml ON ml.manager_id = m.id
              LEFT JOIN league l          ON l.id           = ml.league_id
-             GROUP BY m.id, m.manager_name, m.alias, m.status, m.last_activity
+             GROUP BY m.id, m.manager_name, m.alias, m.status, m.email, m.last_activity
              ORDER BY
                  CASE WHEN MAX(mr.role = 'admin')      = 1 THEN 0
                       WHEN MAX(mr.role = 'maintainer') = 1 THEN 1
@@ -57,6 +57,59 @@ trait ManagerTrait
         $manager = $q->fetch(PDO::FETCH_ASSOC);
         if ($manager) $manager['roles'] = $this->getManagerRoles($id);
         return $manager;
+    }
+
+    public function managerNameExists(string $managerName): bool
+    {
+        $q = $this->con->prepare("SELECT 1 FROM manager WHERE manager_name = :name LIMIT 1");
+        $q->execute([':name' => $managerName]);
+        return (bool) $q->fetch();
+    }
+
+    // Intentionally NOT status-filtered (unlike getManagerByEmail in password_reset.database.php,
+    // which only matches 'active') — email is UNIQUE globally regardless of status.
+    public function managerEmailExists(string $email): bool
+    {
+        $q = $this->con->prepare("SELECT 1 FROM manager WHERE email = :email LIMIT 1");
+        $q->execute([':email' => $email]);
+        return (bool) $q->fetch();
+    }
+
+    public function createInvitedManager(
+        string $id,
+        string $managerName,
+        ?string $firstName,
+        string $email,
+        string $passwordHash,
+        string $leagueId
+    ): void {
+        $this->con->beginTransaction();
+        try {
+            $q = $this->con->prepare(
+                "INSERT INTO manager (id, manager_name, first_name, email, password, status)
+                 VALUES (:id, :name, :first, :email, :pw, 'invited')"
+            );
+            $q->execute([
+                ':id'    => $id,
+                ':name'  => $managerName,
+                ':first' => $firstName,
+                ':email' => $email,
+                ':pw'    => $passwordHash,
+            ]);
+
+            // Directly 'active', not via inviteManagerToLeague() (hardcodes 'invited'): the admin
+            // creating the account IS the consent — there's no separate party who needs to accept.
+            // This also lets login's single-active-league check auto-populate the JWT's league_id.
+            $q = $this->con->prepare(
+                "INSERT INTO manager_league (manager_id, league_id, status) VALUES (:m, :l, 'active')"
+            );
+            $q->execute([':m' => $id, ':l' => $leagueId]);
+
+            $this->con->commit();
+        } catch (\Throwable $e) {
+            $this->con->rollBack();
+            throw $e;
+        }
     }
 
     public function updateManagerFirstName(string $id, ?string $firstName): void

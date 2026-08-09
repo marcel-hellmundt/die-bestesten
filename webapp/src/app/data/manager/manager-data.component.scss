@@ -69,6 +69,106 @@
     background: $color-surface-alt;
     color: $color-text-muted;
   }
+  &--invited {
+    background: color-mix(in srgb, $color-warning 15%, transparent);
+    color: color-mix(in srgb, $color-warning 80%, #000);
+  }
+}
+
+.col-status {
+  position: relative;
+  white-space: nowrap;
+}
+
+.resend-invite-btn {
+  margin-left: $space-2;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: $color-text-muted;
+  font-size: $font-sm;
+  cursor: pointer;
+  border-radius: $radius-sm;
+
+  &:hover:not(:disabled) {
+    background: $color-surface-alt;
+    color: $color-text;
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: wait;
+  }
+}
+
+.invite-link-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: $space-2 $space-3;
+  white-space: normal;
+
+  code {
+    font-size: $font-xs;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.create-manager-form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4;
+  margin-bottom: $space-4;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-3;
+
+    .form-group {
+      flex: 1 1 180px;
+    }
+  }
+
+  &__error {
+    color: $color-danger;
+    font-size: $font-sm;
+  }
+
+  &__actions {
+    display: flex;
+    gap: $space-2;
+  }
+}
+
+.invite-link-box {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+  font-size: $font-sm;
+  background: $color-surface-alt;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+
+  code {
+    font-size: $font-xs;
+    word-break: break-all;
+  }
 }
 
 .role-badges {

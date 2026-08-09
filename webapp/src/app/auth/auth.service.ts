@@ -30,10 +30,7 @@ export class AuthService {
 
   login(name: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${environment.apiUrl}/auth`, { name, password }).pipe(
-      tap(response => {
-        localStorage.setItem(this.TOKEN_KEY, response.token);
-        this._leagueId.set(response.league_id ?? null);
-      })
+      tap(response => this.setSession(response.token, response.league_id ?? null))
     );
   }
 
@@ -43,11 +40,13 @@ export class AuthService {
       { league_id: leagueId },
       { headers: { Authorization: `Bearer ${this.getToken()}` } }
     ).pipe(
-      tap(response => {
-        localStorage.setItem(this.TOKEN_KEY, response.token);
-        this._leagueId.set(response.league_id ?? null);
-      })
+      tap(response => this.setSession(response.token, response.league_id ?? null))
     );
+  }
+
+  setSession(token: string, leagueId: string | null): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    this._leagueId.set(leagueId);
   }
 
   logout(): void {

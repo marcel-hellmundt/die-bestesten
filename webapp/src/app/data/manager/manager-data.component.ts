@@ -134,12 +134,7 @@ export class ManagerDataComponent {
       return;
     }
     this.activeInvitePopup.set(managerId);
-    if (!this.allLeaguesLoaded()) {
-      this.api.get<any[]>('league').subscribe({
-        next: (data) => { this.allLeagues.set(data ?? []); this.allLeaguesLoaded.set(true); },
-        error: () => {},
-      });
-    }
+    this.ensureLeaguesLoaded();
   }
 
   isMembershipLoading(managerId: string, leagueId: string): boolean {
@@ -196,6 +191,114 @@ export class ManagerDataComponent {
         this.membershipLoading.update(s => { const n = { ...s }; delete n[key]; return n; });
       },
       error: () => this.membershipLoading.update(s => { const n = { ...s }; delete n[key]; return n; }),
+    });
+  }
+
+  // ── Neuen Manager einladen ────────────────────────────────────────
+  showCreateForm    = signal(false);
+  newManagerName    = signal('');
+  newFirstName      = signal('');
+  newEmail          = signal('');
+  newLeagueId       = signal('');
+  creatingManager   = signal(false);
+  createError       = signal<string | null>(null);
+  createdInviteLink = signal<string | null>(null);
+  copiedLink        = signal(false);
+  resendingInvite   = signal<Record<string, boolean>>({});
+  resentInviteLink  = signal<{ managerId: string; link: string } | null>(null);
+
+  private ensureLeaguesLoaded(): void {
+    if (this.allLeaguesLoaded()) return;
+    this.api.get<any[]>('league').subscribe({
+      next: (data) => { this.allLeagues.set(data ?? []); this.allLeaguesLoaded.set(true); },
+      error: () => {},
+    });
+  }
+
+  openCreateForm(): void {
+    this.showCreateForm.set(true);
+    this.createError.set(null);
+    this.createdInviteLink.set(null);
+    this.newManagerName.set('');
+    this.newFirstName.set('');
+    this.newEmail.set('');
+    this.newLeagueId.set('');
+    this.ensureLeaguesLoaded();
+  }
+
+  cancelCreateForm(): void {
+    this.showCreateForm.set(false);
+    this.createError.set(null);
+    this.createdInviteLink.set(null);
+  }
+
+  submitCreateManager(): void {
+    if (this.creatingManager()) return;
+
+    const managerName = this.newManagerName().trim();
+    const email       = this.newEmail().trim();
+    const leagueId    = this.newLeagueId();
+
+    if (!managerName || !email || !leagueId) {
+      this.createError.set('Anzeigename, E-Mail und Liga sind erforderlich');
+      return;
+    }
+
+    this.creatingManager.set(true);
+    this.createError.set(null);
+    this.api.post<any>('manager', {
+      manager_name: managerName,
+      first_name:   this.newFirstName().trim() || undefined,
+      email,
+      league_id:    leagueId,
+    }).subscribe({
+      next: (res) => {
+        this.creatingManager.set(false);
+        this.createdInviteLink.set(res.invite_link);
+        const leagueName = this.allLeagues().find(l => l.id === leagueId)?.name ?? leagueId;
+        this._managers.update(list => [
+          {
+            id: res.id,
+            manager_name: managerName,
+            alias: null,
+            status: 'invited',
+            email,
+            last_activity: null,
+            roles: [],
+            leagues: [{ id: leagueId, name: leagueName, status: 'active' }],
+          },
+          ...list,
+        ]);
+      },
+      error: (err) => {
+        this.creatingManager.set(false);
+        this.createError.set(err.error?.message ?? 'Fehler beim Anlegen');
+      },
+    });
+  }
+
+  copyInviteLink(link: string): void {
+    navigator.clipboard?.writeText(link);
+    this.copiedLink.set(true);
+    setTimeout(() => this.copiedLink.set(false), 2000);
+  }
+
+  isResendingInvite(managerId: string): boolean {
+    return this.resendingInvite()[managerId] ?? false;
+  }
+
+  resendInvite(manager: any): void {
+    if (this.resendingInvite()[manager.id]) return;
+    this.resendingInvite.update(s => ({ ...s, [manager.id]: true }));
+    this.resentInviteLink.set(null);
+    this.api.post<any>(`manager/${manager.id}/resend-invite`, {}).subscribe({
+      next: (res) => {
+        this.resendingInvite.update(s => { const n = { ...s }; delete n[manager.id]; return n; });
+        this.resentInviteLink.set({ managerId: manager.id, link: res.invite_link });
+      },
+      error: () => {
+        this.resendingInvite.update(s => { const n = { ...s }; delete n[manager.id]; return n; });
+      },
     });
   }
 }

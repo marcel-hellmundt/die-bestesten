@@ -58,10 +58,14 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Account wurde deaktiviert'];
         }
 
-        $leagues       = $this->db->getManagerLeagues($manager['id']);
-        $activeLeagues = array_values(array_filter($leagues, fn($l) => $l['status'] === 'active'));
-        $leagueId      = count($activeLeagues) === 1 ? $activeLeagues[0]['id'] : null;
+        $leagues  = $this->db->getManagerLeagues($manager['id']);
+        $leagueId = $this->autoLeagueId($leagues);
+        $token    = $this->buildJwt($manager, $leagueId);
+        return ['token' => $token, 'leagues' => $leagues, 'league_id' => $leagueId];
+    }
 
+    private function buildJwt(array $manager, ?string $leagueId): string
+    {
         $now = time();
         $payload = [
             'sub'          => $manager['id'],
@@ -72,9 +76,13 @@ class AuthController extends _BaseController
             'iat'          => $now,
             'exp'          => $now + (60 * 60 * 24 * 7),
         ];
+        return JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');
+    }
 
-        $token = JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');
-        return ['token' => $token, 'leagues' => $leagues, 'league_id' => $leagueId];
+    private function autoLeagueId(array $leagues): ?string
+    {
+        $activeLeagues = array_values(array_filter($leagues, fn($l) => $l['status'] === 'active'));
+        return count($activeLeagues) === 1 ? $activeLeagues[0]['id'] : null;
     }
 
     private function handleSwitchLeague(): array
@@ -108,19 +116,7 @@ class AuthController extends _BaseController
         }
 
         $manager = $this->db->getAuthManagerById($managerId);
-
-        $now = time();
-        $payload = [
-            'sub'          => $manager['id'],
-            'manager_name' => $manager['manager_name'],
-            'roles'        => $manager['roles'],
-            'status'       => $manager['status'],
-            'league_id'    => $leagueId,
-            'iat'          => $now,
-            'exp'          => $now + (60 * 60 * 24 * 7),
-        ];
-
-        $token = JWT::encode($payload, $_ENV['JWT_SECRET'], 'HS256');
+        $token   = $this->buildJwt($manager, $leagueId);
         return ['token' => $token, 'league_id' => $leagueId];
     }
 
@@ -169,13 +165,18 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Passwort muss mindestens 8 Zeichen lang sein'];
         }
 
-        $success = $this->db->consumePasswordResetToken($token, password_hash($newPassword, PASSWORD_DEFAULT));
+        $managerId = $this->db->consumePasswordResetToken($token, password_hash($newPassword, PASSWORD_DEFAULT));
 
-        if (!$success) {
+        if (!$managerId) {
             http_response_code(400);
             return ['status' => false, 'message' => 'Link ungültig oder abgelaufen'];
         }
 
-        return ['status' => true];
+        $manager  = $this->db->getAuthManagerById($managerId);
+        $leagues  = $this->db->getManagerLeagues($managerId);
+        $leagueId = $this->autoLeagueId($leagues);
+        $token    = $this->buildJwt($manager, $leagueId);
+
+        return ['status' => true, 'token' => $token, 'leagues' => $leagues, 'league_id' => $leagueId];
     }
 }

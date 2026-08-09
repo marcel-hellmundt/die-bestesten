@@ -43,7 +43,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/auth/password-reset',
-                        'description' => 'Passwort zurücksetzen — Body: { token, new_password } — Token aus dem Reset-Link; 400 wenn ungültig/abgelaufen',
+                        'description' => 'Passwort zurücksetzen — Body: { token, new_password } — Token aus Reset- oder Einladungslink; gibt {status,token,leagues,league_id} zurück (automatischer Login mit neuem JWT); 400 wenn ungültig/abgelaufen',
                     ],
                     [
                         'method' => 'POST',
@@ -697,12 +697,23 @@ class Routing
 
             new Route('manager', 'Manager', [
                 'title' => 'Manager',
-                'description' => 'Eigenes Manager-Konto verwalten (Profil, Passwort, Account löschen) — Rollenvergabe nur Admin',
+                'description' => 'Eigenes Manager-Konto verwalten (Profil, Passwort, Account löschen) — Rollenvergabe + Neuanlage/Einladung nur Admin',
                 'endpoints' => [
                     [
                         'method' => 'GET',
                         'path' => '/manager',
-                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, last_activity, roles[], leagues[{id,name}]}] — Admin',
+                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, email, last_activity, roles[], leagues[{id,name}]}] — Admin',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/manager',
+                        'description' => 'Neuen Manager per E-Mail-Einladung anlegen — Body: { manager_name, first_name?, email, league_id } → { id, invite_link }; status=invited (zufälliges, unbenutzbares Platzhalter-Passwort), manager_league sofort status=active (Liga bereits vom Admin zugewiesen, kein separater Einladungs-Schritt nötig); sendet Einladungs-Mail mit Link (7 Tage gültig) zu /login/accept-invite — nach Passwort-Setzen automatischer Login inkl. league_id im JWT; 400 bei fehlenden/ungültigen Feldern, 404 wenn league_id nicht existiert, 409 bei bereits vergebenem manager_name oder email — Admin',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/manager/:id/resend-invite',
+                        'description' => 'Einladungslink erneut senden (alter Token wird invalidiert, neuer 7 Tage gültig) → { invite_link } — 404 wenn Manager nicht existiert, 409 wenn status != invited — Admin',
+                        'path_params' => [':id' => 'UUID des Managers'],
                     ],
                     [
                         'method' => 'GET',

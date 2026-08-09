@@ -11,7 +11,7 @@ trait PasswordResetTrait
         return $q->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function createPasswordResetToken(string $managerId): string
+    public function createPasswordResetToken(string $managerId, int $ttlHours = 1): string
     {
         // Invalidate any existing unused tokens for this manager
         $q = $this->con->prepare(
@@ -21,7 +21,7 @@ trait PasswordResetTrait
 
         $plainToken = bin2hex(random_bytes(32));
         $tokenHash  = hash('sha256', $plainToken);
-        $expiresAt  = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        $expiresAt  = date('Y-m-d H:i:s', strtotime("+{$ttlHours} hour"));
 
         $q = $this->con->prepare(
             "INSERT INTO password_reset_token (manager_id, token_hash, expires_at)
@@ -36,7 +36,7 @@ trait PasswordResetTrait
         return $plainToken;
     }
 
-    public function consumePasswordResetToken(string $plainToken, string $newHashedPassword): bool
+    public function consumePasswordResetToken(string $plainToken, string $newHashedPassword): string|false
     {
         $tokenHash = hash('sha256', $plainToken);
 
@@ -56,6 +56,12 @@ trait PasswordResetTrait
 
         $this->updateManagerPassword($row['manager_id'], $newHashedPassword);
 
-        return true;
+        // No-op for ordinary forgot-password consumers; activates invited accounts on first set-password.
+        $q = $this->con->prepare(
+            "UPDATE manager SET status = 'active' WHERE id = :id AND status = 'invited'"
+        );
+        $q->execute([':id' => $row['manager_id']]);
+
+        return $row['manager_id'];
     }
 }
