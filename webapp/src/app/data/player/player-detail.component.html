@@ -274,58 +274,6 @@
             }
           </div>
         </div>
-        @if (p.clubs.length === 0 && !showAddClubForm()) {
-          <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
-        }
-        @if (p.clubs.length > 0) {
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th colspan="2">Verein</th>
-                  <th>Von</th>
-                  <th>Bis</th>
-                  @if (isMaintainer()) {
-                    <th></th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                @for (c of p.clubs; track c.id) {
-                  <tr class="row-link" (click)="navigateToClub(c.club_id)">
-                    <td class="col-logo">
-                      <img
-                        [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
-                        class="tbl-logo"
-                        [class.logo--placeholder]="!c.logo_uploaded"
-                        alt=""
-                      />
-                    </td>
-                    <td>
-                      {{ c.club_name }}
-                      @if (c.on_loan) {
-                        <span class="loan-badge">Leihe</span>
-                      }
-                    </td>
-                    <td class="col-date">{{ formatDate(c.from_date) }}</td>
-                    <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
-                    @if (isMaintainer()) {
-                      <td class="col-actions">
-                        <button
-                          class="row-edit-btn"
-                          (click)="openEditClubForm(c); $event.stopPropagation()"
-                          title="Vereinseintrag bearbeiten"
-                        >
-                          <app-icon name="pencil" />
-                        </button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
         @if (showAddClubForm()) {
           <div class="add-form" (keydown.enter)="!addingClub() && submitClubForm()">
             <p class="add-form-title">{{ editingClubEntryId() ? 'Verein bearbeiten' : 'Verein hinzufügen' }}</p>
@@ -390,6 +338,58 @@
                 </button>
               }
             </div>
+          </div>
+        }
+        @if (p.clubs.length === 0 && !showAddClubForm()) {
+          <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
+        }
+        @if (p.clubs.length > 0) {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th colspan="2">Verein</th>
+                  <th>Von</th>
+                  <th>Bis</th>
+                  @if (isMaintainer()) {
+                    <th></th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of p.clubs; track c.id) {
+                  <tr class="row-link" (click)="navigateToClub(c.club_id)">
+                    <td class="col-logo">
+                      <img
+                        [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
+                        class="tbl-logo"
+                        [class.logo--placeholder]="!c.logo_uploaded"
+                        alt=""
+                      />
+                    </td>
+                    <td>
+                      {{ c.club_name }}
+                      @if (c.on_loan) {
+                        <span class="loan-badge">Leihe</span>
+                      }
+                    </td>
+                    <td class="col-date">{{ formatDate(c.from_date) }}</td>
+                    <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
+                    @if (isMaintainer()) {
+                      <td class="col-actions">
+                        <button
+                          class="row-edit-btn"
+                          (click)="openEditClubForm(c); $event.stopPropagation()"
+                          title="Vereinseintrag bearbeiten"
+                        >
+                          <app-icon name="pencil" />
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
         }
       </section>
