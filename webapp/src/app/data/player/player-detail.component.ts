@@ -222,11 +222,20 @@ export class PlayerDetailComponent {
   openAddClubForm(): void {
     this.editingClubEntryId.set(null);
     this.newClubId.set(this.allClubs()[0]?.id ?? '');
-    this.newFromDate.set(new Date().toISOString().slice(0, 10));
+    this.newFromDate.set(this.nextClubFromDate());
     this.newToDate.set('');
     this.newOnLoan.set(false);
     this.addClubError.set(null);
     this.showAddClubForm.set(true);
+  }
+
+  /** Day after the newest player_in_club entry's to_date; today if there's no such entry (or it's still ongoing). */
+  private nextClubFromDate(): string {
+    const latestToDate = this.player()?.clubs[0]?.to_date;
+    if (!latestToDate) return new Date().toISOString().slice(0, 10);
+    const d = new Date(latestToDate + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10);
   }
 
   openEditClubForm(c: PlayerInClub): void {
