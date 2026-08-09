@@ -301,12 +301,9 @@ trait PlayerInSeasonTrait
             $alreadyInSeason = $existing !== null;
             $positionPriceMismatch = $existing !== null
                 && ($existing['position'] !== $r['position'] || (int) $existing['price'] !== $r['price']);
-            // Explicit conflict: both clubs known and different — the only case worth blocking
-            // bulk-creation for, since the player might actually be at a different (possibly
-            // out-of-league) club per our stale data and would become wrongly purchasable.
-            // Missing player_in_club data (no current club on file) is NOT treated as a conflict —
-            // that's the normal state for most players right before a new season's transfers have
-            // been entered, and blocking on it would defeat the point of this import.
+            // Explicit conflict: both clubs known and different — the player might actually be at a
+            // different (possibly out-of-league) club per our stale data and would become wrongly
+            // purchasable.
             $clubMismatch = $club && $currentClub && $currentClub['club_id'] !== $club['id'];
             // Positive confirmation (both clubs known and identical) — informational only, shown in
             // the UI tooltip; not required for importable.
@@ -316,6 +313,11 @@ trait PlayerInSeasonTrait
             // different, possibly out-of-league club per our data) — block bulk-creation rather than
             // risk making the player wrongly purchasable under this league's price.
             $clubUnresolved = !$club;
+            // CSV club resolved and the player is matched, but no current player_in_club is on file
+            // (never set, or closed without a successor entry). Blocks bulk-creation: the transfer
+            // market query requires a live player_in_club row (to_date IS NULL) to show a player at
+            // all, so creating player_in_season here would silently make the player unbuyable.
+            $clubMissing = $club && $player && !$currentClub;
             // The resolved club plays in a *different* division this season than the one selected
             // for this import — strong signal the wrong CSV/Spielklasse was picked. Unknown (no
             // club_in_season entry yet, e.g. new season not fully set up) is NOT treated as a
@@ -344,7 +346,7 @@ trait PlayerInSeasonTrait
                 'matched_club_id'            => $club['id'] ?? null,
                 'club_logo_uploaded'         => $club ? (bool) $club['logo_uploaded'] : false,
                 'already_in_season'          => $alreadyInSeason,
-                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved && !$divisionMismatch && !$priceTooHigh),
+                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved && !$clubMissing && !$divisionMismatch && !$priceTooHigh),
                 'existing_player_in_season_id' => $existing['id'] ?? null,
                 'existing_position'          => $existing['position'] ?? null,
                 'existing_price'             => $existing !== null ? (int) $existing['price'] : null,
@@ -356,6 +358,7 @@ trait PlayerInSeasonTrait
                 'club_mismatch'              => $clubMismatch,
                 'club_confirmed'             => $clubConfirmed,
                 'club_unresolved'            => $clubUnresolved,
+                'club_missing'               => $clubMissing,
                 'division_mismatch'          => $divisionMismatch,
                 'price_too_high'             => $priceTooHigh,
                 'duplicate_candidate_player_id' => $duplicateCandidate['id'] ?? null,

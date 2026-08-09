@@ -61,7 +61,7 @@ export class PlayerImportDataComponent {
   creatingPlayers = signal<Set<number>>(new Set());
 
   private isBlocked(r: PlayerImportRow): boolean {
-    return r.club_mismatch || r.club_unresolved || r.division_mismatch || r.price_too_high;
+    return r.club_mismatch || r.club_unresolved || r.club_missing || r.division_mismatch || r.price_too_high;
   }
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
@@ -81,7 +81,7 @@ export class PlayerImportDataComponent {
   );
 
   isRowComplete(r: PlayerImportRow): boolean {
-    return !r.club_mismatch && !r.division_mismatch && !r.price_too_high && r.already_in_season && !r.position_price_mismatch;
+    return !r.club_mismatch && !r.club_missing && !r.division_mismatch && !r.price_too_high && r.already_in_season && !r.position_price_mismatch;
   }
 
   matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
@@ -151,7 +151,7 @@ export class PlayerImportDataComponent {
   private rowGreenScore(r: PlayerImportRow): number {
     return (
       1 + // Spieler gefunden (immer wahr in dieser Tabelle)
-      (r.club_mismatch || r.club_unresolved || r.division_mismatch || r.price_too_high ? 0 : 1) +
+      (r.club_mismatch || r.club_unresolved || r.club_missing || r.division_mismatch || r.price_too_high ? 0 : 1) +
       (r.already_in_season ? 1 : 0) +
       (r.already_in_season && !r.position_price_mismatch ? 1 : 0)
     );
@@ -300,38 +300,46 @@ export class PlayerImportDataComponent {
   }
 
   fixClubMismatch(row: PlayerImportRow): void {
-    if (!row.current_player_in_club_id || !row.matched_player_id || !row.matched_club_id) return;
+    if (!row.matched_player_id || !row.matched_club_id) return;
+    if (!row.club_mismatch && !row.club_missing) return;
 
     this.fixingClub.update((s) => new Set([...s, row.kicker_id]));
     const today = todayIso();
-    this.api.patch(`player_in_club/${row.current_player_in_club_id}`, { to_date: today }).subscribe({
-      next: () => {
-        this.api.post('player_in_club', {
-          player_id: row.matched_player_id,
-          club_id: row.matched_club_id,
-          from_date: today,
-        }).subscribe({
-          next: () => {
-            this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
-            this.rows.update((list) => list.map((r) => r !== row ? r : PlayerImportRow.from({
-              ...r,
-              current_club_id: r.matched_club_id,
-              current_club_name: r.csv_club_name,
-              current_club_logo_uploaded: r.club_logo_uploaded,
-              club_mismatch: false,
-              club_confirmed: true,
-              importable: !r.already_in_season && !!r.csv_position && !!r.csv_price && r.csv_price > 0 && !r.division_mismatch,
-            })));
-          },
-          error: () => {
-            this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
-          },
-        });
-      },
-      error: () => {
-        this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
-      },
-    });
+    const linkNewClub = () => {
+      this.api.post('player_in_club', {
+        player_id: row.matched_player_id,
+        club_id: row.matched_club_id,
+        from_date: today,
+      }).subscribe({
+        next: () => {
+          this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+          this.rows.update((list) => list.map((r) => r !== row ? r : PlayerImportRow.from({
+            ...r,
+            current_club_id: r.matched_club_id,
+            current_club_name: r.csv_club_name,
+            current_club_logo_uploaded: r.club_logo_uploaded,
+            club_mismatch: false,
+            club_missing: false,
+            club_confirmed: true,
+            importable: !r.already_in_season && !!r.csv_position && !!r.csv_price && r.csv_price > 0 && !r.division_mismatch,
+          })));
+        },
+        error: () => {
+          this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+        },
+      });
+    };
+
+    if (row.current_player_in_club_id) {
+      this.api.patch(`player_in_club/${row.current_player_in_club_id}`, { to_date: today }).subscribe({
+        next: linkNewClub,
+        error: () => {
+          this.fixingClub.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+        },
+      });
+    } else {
+      linkNewClub();
+    }
   }
 
   createMissingPlayer(row: PlayerImportRow): void {

@@ -235,8 +235,8 @@
                     </span>
                     <span
                       class="status-icon"
-                      [class.status-icon--clickable]="r.club_mismatch"
-                      (click)="r.club_mismatch && fixClubMismatch(r)"
+                      [class.status-icon--clickable]="r.club_mismatch || r.club_missing"
+                      (click)="(r.club_mismatch || r.club_missing) && fixClubMismatch(r)"
                       [attr.data-tooltip]="
                         fixingClub().has(r.kicker_id)
                           ? 'Wird aktualisiert…'
@@ -244,15 +244,15 @@
                             ? ('Verein weicht ab: ' + (r.current_club_name ?? '—') + ' (DB) vs. ' + r.csv_club_name + ' (CSV) — klicken zum Übernehmen')
                             : r.club_unresolved
                               ? ('Verein „' + r.csv_club_name + '“ (CSV) konnte keinem Verein in der Datenbank zugeordnet werden — blockiert die automatische Erstellung, da der Spieler laut unseren Daten evtl. noch bei einem anderen Verein ist')
-                              : r.club_confirmed
-                                ? 'Verein in CSV identisch mit Datenbank'
-                                : 'Keine aktuelle Vereinszuordnung in der Datenbank hinterlegt — kein Widerspruch zur CSV, blockiert die Erstellung nicht'
+                              : r.club_missing
+                                ? ('Keine aktuelle Vereinszuordnung in der Datenbank hinterlegt — laut CSV aktuell bei „' + r.csv_club_name + '“ — blockiert die automatische Erstellung, da der Spieler sonst ohne Verein und damit unsichtbar auf dem Transfermarkt wäre — klicken zum Setzen')
+                                : 'Verein in CSV identisch mit Datenbank'
                       "
                     >
                       <img
                         class="status-icon-img"
-                        [src]="r.club_mismatch || r.club_unresolved ? 'img/icons/warning.png' : 'img/icons/check.png'"
-                        [alt]="r.club_mismatch || r.club_unresolved ? 'Warnung' : 'OK'"
+                        [src]="r.club_mismatch || r.club_unresolved || r.club_missing ? 'img/icons/warning.png' : 'img/icons/check.png'"
+                        [alt]="r.club_mismatch || r.club_unresolved || r.club_missing ? 'Warnung' : 'OK'"
                       />
                     </span>
                     <span
