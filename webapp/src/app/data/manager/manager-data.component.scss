@@ -9,6 +9,20 @@
   white-space: nowrap;
 }
 
+.col-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover { color: var(--flat-river); }
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  opacity: 0.5;
+  font-size: 11px;
+}
+
 .col-leagues {
   max-width: 260px;
   white-space: nowrap;

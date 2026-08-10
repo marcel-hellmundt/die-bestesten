@@ -34,6 +34,37 @@ export class ManagerDataComponent {
     );
   });
 
+  sortCol = signal<'roles' | 'last_activity'>('roles');
+  sortDir = signal<'asc' | 'desc'>('desc');
+
+  sort(col: 'roles' | 'last_activity'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('desc');
+    }
+  }
+
+  sortedItems = computed(() => {
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    const list = [...this.filteredItems()];
+    list.sort((a, b) => {
+      let cmp: number;
+      if (col === 'roles') {
+        cmp = (a.roles?.length ?? 0) - (b.roles?.length ?? 0);
+      } else {
+        const aTime = a.last_activity ? new Date(a.last_activity).getTime() : -Infinity;
+        const bTime = b.last_activity ? new Date(b.last_activity).getTime() : -Infinity;
+        cmp = aTime - bTime;
+      }
+      if (cmp === 0) cmp = a.manager_name.localeCompare(b.manager_name);
+      return dir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  });
+
   readonly roleOrder       = ROLE_ORDER;
   readonly roleLabel       = ROLE_LABEL;
   readonly assignableRoles = ['admin', 'maintainer'];

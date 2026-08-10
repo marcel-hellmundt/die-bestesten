@@ -92,13 +92,19 @@
           <th>Name</th>
           <th>Alias</th>
           <th>Status</th>
-          <th class="hidden-mobile">Zuletzt aktiv</th>
-          <th>Rollen</th>
+          <th class="col-sortable hidden-mobile" (click)="sort('last_activity')">
+            Zuletzt aktiv
+            <span class="sort-indicator">{{ sortCol() === 'last_activity' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="col-sortable" (click)="sort('roles')">
+            Rollen
+            <span class="sort-indicator">{{ sortCol() === 'roles' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
           <th>Ligen</th>
         </tr>
       </thead>
       <tbody>
-        @for (m of filteredItems(); track m.id) {
+        @for (m of sortedItems(); track m.id) {
           <tr>
             <td>
               <div class="manager-name-cell">
