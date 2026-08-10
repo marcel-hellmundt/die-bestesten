@@ -694,11 +694,14 @@ trait H2HTrait
             }
         }
 
+        // Tiebreak by team id (not name) so a tie — e.g. no previous season at all, or a new
+        // manager without prior-season points — doesn't systematically favor alphabetically
+        // early team names; a UUID has no human-visible ordering, so it reads as random seeding.
         usort($teams, function ($a, $b) use ($prevPoints) {
             $aP = $prevPoints[$a['manager_id']] ?? -1;
             $bP = $prevPoints[$b['manager_id']] ?? -1;
             if ($aP !== $bP) return $bP <=> $aP;
-            return strcmp($a['team_name'], $b['team_name']);
+            return strcmp($a['id'], $b['id']);
         });
 
         // Snake-seed: rank 1-N → A.. slot 0, rank N+1-2N → ..A slot 1, rank 2N+1-3N → A.. slot 2
