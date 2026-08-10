@@ -171,6 +171,12 @@
   color: $color-text-muted;
 }
 
+.col-squad-info {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
 // ── Draft-Zuweisung ──────────────────────────────────────────────────────────
 
 .col-draft-toggle {

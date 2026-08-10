@@ -348,6 +348,43 @@ trait LeagueTrait
                 $row['total_points'] = (int) $row['total_points'];
                 $row['color']        = $this->resolveColor($row['color'] ?? null);
             }
+
+            // Active squad size + market value per team (e.g. to show draft-assignment progress
+            // in the admin UI) — joined against the global player_in_season table since price
+            // isn't stored in the league DB.
+            $squadRows = $pdo->query(
+                "SELECT team_id, player_id FROM player_in_team WHERE to_matchday_id IS NULL"
+            )->fetchAll(\PDO::FETCH_ASSOC);
+
+            $playerIdsByTeam = [];
+            foreach ($squadRows as $sr) {
+                $playerIdsByTeam[$sr['team_id']][] = $sr['player_id'];
+            }
+
+            $priceMap = []; // "playerId:seasonId" => price
+            $allPlayerIds = array_values(array_unique(array_column($squadRows, 'player_id')));
+            if (!empty($allPlayerIds)) {
+                $ph = implode(',', array_fill(0, count($allPlayerIds), '?'));
+                $pq = $this->con->prepare(
+                    "SELECT player_id, season_id, COALESCE(price, 0) AS price
+                     FROM player_in_season WHERE player_id IN ($ph)"
+                );
+                $pq->execute($allPlayerIds);
+                foreach ($pq->fetchAll(\PDO::FETCH_ASSOC) as $pr) {
+                    $priceMap[$pr['player_id'] . ':' . $pr['season_id']] = (int) $pr['price'];
+                }
+            }
+
+            foreach ($rows as &$row) {
+                $teamPlayerIds = $playerIdsByTeam[$row['id']] ?? [];
+                $squadValue = 0;
+                foreach ($teamPlayerIds as $pid) {
+                    $squadValue += $priceMap[$pid . ':' . $row['season_id']] ?? 0;
+                }
+                $row['squad_count'] = count($teamPlayerIds);
+                $row['squad_value'] = $squadValue;
+            }
+
             return $rows;
         } catch (\PDOException) {
             return [];

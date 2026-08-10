@@ -71,7 +71,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/league/:id',
-                        'description' => 'Eine Liga per ID',
+                        'description' => 'Eine Liga per ID — teams[] enthält je Team zusätzlich squad_count und squad_value (aktiver Kader + Marktwertsumme)',
                         'path_params' => [':id' => 'UUID der Liga'],
                     ],
                     [

@@ -52,8 +52,20 @@ export class LeagueDetailComponent {
   loading = computed(() => this.state().loading);
   error   = computed(() => this.state().error);
 
+  // Overridden after a successful draft-assignment, so squad_count/squad_value update
+  // immediately without re-triggering the full loading/error pipeline (which would reset
+  // the expanded season/team UI state).
+  private teamsOverride = signal<any[] | null>(null);
+
+  private refreshTeams(): void {
+    this.api.get<any>(`league/${this.leagueId}`).subscribe({
+      next: data => this.teamsOverride.set(data.teams ?? []),
+      error: () => {},
+    });
+  }
+
   seasonGroups = computed(() => {
-    const teams = this.league()?.teams ?? [];
+    const teams = this.teamsOverride() ?? this.league()?.teams ?? [];
     const seasons = this.cache.seasons();
     const bySeasonId = new Map<string, any[]>();
     for (const t of teams) {
@@ -430,6 +442,7 @@ export class LeagueDetailComponent {
         this.expandedDraftTeamId.set(null);
         this.expandedDraftSeasonId.set(null);
         this.draftPools.update(s => { const n = { ...s }; delete n[seasonId]; return n; });
+        this.refreshTeams();
       },
       error: err => {
         this.draftAssignStates.update(s => ({ ...s, [seasonId]: 'error' }));

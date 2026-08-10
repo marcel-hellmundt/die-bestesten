@@ -56,6 +56,13 @@
                       </span>
                     </td>
                     <td class="col-muted">{{ team.manager_name }}</td>
+                    <td class="col-squad-info">
+                      @if (team.squad_count > 0) {
+                        {{ team.squad_count }} Spieler · {{ formatPrice(team.squad_value) }}
+                      } @else {
+                        <span class="col-muted">–</span>
+                      }
+                    </td>
                     @if (isAdmin()) {
                       <td class="col-draft-toggle">
                         <button
@@ -73,7 +80,7 @@
                   </tr>
                   @if (isAdmin() && expandedDraftTeamId() === team.id) {
                     <tr class="draft-row">
-                      <td colspan="3">
+                      <td colspan="4">
                         <div class="draft-picker">
                           <input
                             class="search-input"
