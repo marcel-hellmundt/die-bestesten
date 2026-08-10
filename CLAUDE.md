@@ -179,6 +179,7 @@ DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet st
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth
 GET      /h2h               ?season_id= (optional, default=aktiv) → {groups:[{id,name,sort_index,teams[],standings[],matches[]}], knockout_matches:[]} — Auth
+GET      /h2h/status        → {exists} — ob die Liga jemals ein H2H-Turnier generiert hat (beliebige Saison); für die Sichtbarkeit des H2H-Menüpunkts im Frontend — Auth
 GET      /h2h/:id            → Match-Detail {match,matchday,home_team,away_team,home_rating,away_rating,home_lineup[],home_bench[],away_lineup[],away_bench[]} mit Spieler-Einzelpunkten — Auth
 POST     /h2h               {season_id,phase,leg,home_team_id,away_team_id,matchday_id,group_id?,sort_index?} → {id} — Admin
 PATCH    /h2h/:id           {home_team_id?,away_team_id?,matchday_id?,group_id?,sort_index?} — Admin

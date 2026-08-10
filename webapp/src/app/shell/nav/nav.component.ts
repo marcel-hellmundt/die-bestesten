@@ -46,17 +46,17 @@ export class NavComponent {
     ];
   });
 
-  readonly ligaGroup: NavGroup = {
+  ligaGroup = computed<NavGroup>(() => ({
     label: 'Liga',
     icon: 'tabelle',
     items: [
       { label: 'Spieltag',    icon: 'spieltag',    route: '/liga/spieltag' },
       { label: 'Tabelle',     icon: 'tabelle',     route: '/liga/tabelle' },
-      { label: 'H2H',         icon: 'zap',         route: '/liga/h2h' },
+      ...(this.cache.h2hTournamentEverExisted() ? [{ label: 'H2H', icon: 'zap', route: '/liga/h2h' } as NavItem] : []),
       { label: 'Teams',       icon: 'kader',       route: '/liga/teams' },
       { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
     ]
-  };
+  }));
 
   readonly marktGroup: NavGroup = {
     label: 'Markt',
@@ -70,7 +70,7 @@ export class NavComponent {
   };
 
   topGroups = computed<NavGroup[]>(() => [
-    this.ligaGroup,
+    this.ligaGroup(),
     ...this.teamGroups(),
     this.marktGroup,
   ]);
@@ -95,6 +95,7 @@ export class NavComponent {
 
   constructor() {
     this.cache.ensureMyTeam();
+    this.cache.ensureH2HStatus();
     effect(() => {
       if (this.cache.myTeamId()) this.cache.ensureSquad();
     });

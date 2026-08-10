@@ -11,6 +11,10 @@ class H2HController extends _BaseController
 
     protected function get(): mixed
     {
+        if ($this->id === 'status') {
+            return ['exists' => $this->db->hasAnyH2HTournament()];
+        }
+
         if ($this->id) {
             $detail = $this->db->getH2HMatchDetail($this->id);
             if (!$detail) {

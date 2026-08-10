@@ -22,7 +22,7 @@
   >
     ›
   </button>
-  <a class="mode-link" routerLink="/liga/h2h/modus">
+  <a class="mode-link" routerLink="/liga/h2h/modus" [queryParams]="{ season_id: selectedSeason()!.id }">
     <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
       <line
