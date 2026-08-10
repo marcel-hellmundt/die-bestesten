@@ -56,7 +56,71 @@
                       </span>
                     </td>
                     <td class="col-muted">{{ team.manager_name }}</td>
+                    @if (isAdmin()) {
+                      <td class="col-draft-toggle">
+                        <button
+                          class="btn btn-sm btn-ghost draft-toggle-btn"
+                          (click)="toggleDraftTeam(sg.seasonId, team.id)"
+                        >
+                          @if (draftTeamSelection(sg.seasonId, team.id).length > 0) {
+                            Kader ({{ draftTeamSelection(sg.seasonId, team.id).length }})
+                          } @else {
+                            Kader zuweisen
+                          }
+                        </button>
+                      </td>
+                    }
                   </tr>
+                  @if (isAdmin() && expandedDraftTeamId() === team.id) {
+                    <tr class="draft-row">
+                      <td colspan="3">
+                        <div class="draft-picker">
+                          <input
+                            class="search-input"
+                            type="text"
+                            placeholder="Spieler suchen…"
+                            [value]="draftSearchQuery()"
+                            (input)="draftSearchQuery.set($any($event.target).value)"
+                          />
+                          @if (draftPoolIsLoading(sg.seasonId)) {
+                            <p class="state-msg">Lädt Spielerpool…</p>
+                          } @else {
+                            <div class="draft-results">
+                              @for (p of filteredDraftPlayers(); track p.id) {
+                                <button class="draft-result" (click)="addDraftPlayer(sg.seasonId, team.id, p)">
+                                  <span
+                                    class="position-badge"
+                                    [style.background-color]="'var(--position-' + p.position.toLowerCase() + ')'"
+                                  >{{ POS_LABEL[p.position] }}</span>
+                                  <span class="draft-result-name">{{ p.displayname }}</span>
+                                  <span class="draft-result-club">{{ p.club_short_name ?? p.club_name }}</span>
+                                  <span class="draft-result-price">{{ formatPrice(p.price) }}</span>
+                                </button>
+                              }
+                              @if (filteredDraftPlayers().length === 0) {
+                                <p class="state-msg">Keine Spieler gefunden</p>
+                              }
+                            </div>
+                          }
+
+                          @if (draftTeamSelection(sg.seasonId, team.id).length > 0) {
+                            <div class="draft-chips">
+                              @for (p of draftTeamSelection(sg.seasonId, team.id); track p.id) {
+                                <span class="draft-chip">
+                                  {{ p.displayname }}
+                                  <button
+                                    class="draft-chip-remove"
+                                    (click)="removeDraftPlayer(sg.seasonId, team.id, p.id)"
+                                  >×</button>
+                                </span>
+                              }
+                            </div>
+                            <p class="draft-team-sum">Summe: {{ formatPrice(draftTeamSum(sg.seasonId, team.id)) }}</p>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
                 }
               </tbody>
             </table>
@@ -120,6 +184,41 @@
               </div>
             }
           </div>
+
+          @if (isAdmin()) {
+            @let draftSummary = draftBatchSummary(sg.seasonId);
+            @if (draftSummary.playerCount > 0 || draftAssignState(sg.seasonId) !== 'idle') {
+              <div class="draft-batch-bar">
+                @if (draftSummary.playerCount > 0) {
+                  <span class="draft-batch-summary">
+                    {{ draftSummary.teamCount }} Team(s), {{ draftSummary.playerCount }} Spieler,
+                    Summe {{ formatPrice(draftSummary.totalPrice) }}
+                  </span>
+                  <button
+                    class="btn btn-sm btn-primary"
+                    [disabled]="draftAssignState(sg.seasonId) === 'loading'"
+                    (click)="generateDraftAssignments(sg.seasonId)"
+                  >{{ draftAssignState(sg.seasonId) === 'loading' ? 'Wird angelegt…' : 'Zuweisungen generieren' }}</button>
+                }
+                @if (draftAssignState(sg.seasonId) === 'done' && draftAssignResult(sg.seasonId); as dr) {
+                  <div class="draft-result-summary">
+                    <span class="h2h-done">✓ {{ dr.created_count }} Spieler zugewiesen ({{ formatPrice(dr.total_price) }})</span>
+                    @if (dr.skipped?.length > 0) {
+                      <ul class="draft-skipped-list">
+                        @for (sk of dr.skipped; track sk.team_id + sk.player_id) {
+                          <li>{{ DRAFT_SKIP_REASON_LABEL[sk.reason] }}</li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                } @else if (draftAssignState(sg.seasonId) === 'error') {
+                  <span class="h2h-msg h2h-msg--error h2h-msg--standalone">
+                    {{ draftAssignResult(sg.seasonId)?.message ?? 'Fehler' }}
+                  </span>
+                }
+              </div>
+            }
+          }
         </div>
       }
     }

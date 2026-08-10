@@ -443,6 +443,253 @@ trait LeagueTrait
         return ['status' => true, 'skipped' => false, 'granted' => $granted];
     }
 
+    /**
+     * League-division players of a season without an active team in THIS league — draft pool
+     * for admin-assigned pre-season squads. Unlike getAvailablePlayers(), this is scoped to an
+     * explicit $leagueId (not the JWT's auth_league_id), since /daten/league/:id lets an admin
+     * manage any league regardless of which one their own token is bound to.
+     */
+    public function getDraftPool(string $leagueId, string $seasonId): ?array
+    {
+        $lq = $this->con->prepare("SELECT db_name, division_id FROM league WHERE id = :id LIMIT 1");
+        $lq->execute([':id' => $leagueId]);
+        $league = $lq->fetch(PDO::FETCH_ASSOC);
+        if (!$league) return null;
+
+        $con = $this->openLeagueConnection($league['db_name']);
+        if (!$con) return ['players' => []];
+
+        $excludedIds = [];
+        try {
+            $ex = $con->prepare(
+                "SELECT DISTINCT pit.player_id
+                 FROM player_in_team pit
+                 JOIN team t ON t.id = pit.team_id
+                 WHERE t.season_id = ? AND pit.to_matchday_id IS NULL"
+            );
+            $ex->execute([$seasonId]);
+            $excludedIds = $ex->fetchAll(PDO::FETCH_COLUMN);
+        } catch (PDOException) {}
+
+        $exclusionClause = '';
+        $exclusionParams = [];
+        if (!empty($excludedIds)) {
+            $ph               = implode(',', array_fill(0, count($excludedIds), '?'));
+            $exclusionClause  = "AND p.id NOT IN ($ph)";
+            $exclusionParams  = $excludedIds;
+        }
+
+        // Division filter: use the league's configured division or fall back to level 1 / DE
+        $divisionId = $league['division_id'];
+        if ($divisionId !== null) {
+            $divisionWhere  = 'AND d.id = ?';
+            $divisionParams = [$divisionId];
+        } else {
+            $divisionWhere  = "AND d.level = 1 AND LOWER(d.country_id) = 'de'";
+            $divisionParams = [];
+        }
+
+        $stmt = $this->con->prepare(
+            "SELECT p.id, p.displayname,
+                    pis.position, pis.price, pis.photo_uploaded,
+                    pic.club_id,
+                    c.name AS club_name, c.short_name AS club_short_name,
+                    c.logo_uploaded AS club_logo_uploaded
+             FROM player_in_season pis
+             JOIN player p           ON p.id = pis.player_id
+             JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
+             JOIN club c             ON c.id = pic.club_id
+             JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+             JOIN division d         ON d.id = cis.division_id
+             WHERE pis.season_id = ?
+               $divisionWhere
+               AND pis.position IS NOT NULL
+               AND pis.price IS NOT NULL AND pis.price > 0
+               $exclusionClause
+             ORDER BY FIELD(pis.position, 'GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'), pis.price DESC"
+        );
+        $stmt->execute(array_merge([$seasonId], $divisionParams, $exclusionParams));
+
+        return ['players' => array_map(fn($r) => [
+            'id'                 => $r['id'],
+            'displayname'        => $r['displayname'],
+            'position'           => $r['position'],
+            'price'              => (int) $r['price'],
+            'photo_uploaded'     => (bool) $r['photo_uploaded'],
+            'club_id'            => $r['club_id'],
+            'club_name'          => $r['club_name'],
+            'club_short_name'    => $r['club_short_name'],
+            'club_logo_uploaded' => (bool) $r['club_logo_uploaded'],
+        ], $stmt->fetchAll(PDO::FETCH_ASSOC))];
+    }
+
+    /**
+     * Bulk pre-season draft assignment: assigns players to any number of teams of one league/season
+     * in a single request, replicating BuyTrait::buyPlayer()'s player_in_team + transaction writes
+     * (price = exact player_in_season.price) but without team-ownership/transferwindow checks, since
+     * an admin is assigning arbitrary teams before any transfer window exists. Squad-limit and
+     * duplicate-assignment violations are skipped with a reason instead of aborting the batch —
+     * same convention as PlayerInSeasonTrait::importCsvRows().
+     */
+    public function assignDraftPlayers(string $leagueId, string $seasonId, array $assignments): array
+    {
+        $lq = $this->con->prepare("SELECT db_name, division_id FROM league WHERE id = :id LIMIT 1");
+        $lq->execute([':id' => $leagueId]);
+        $league = $lq->fetch(PDO::FETCH_ASSOC);
+        if (!$league) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Liga nicht gefunden'];
+        }
+
+        $divisionId = $league['division_id'];
+        if ($divisionId !== null) {
+            $mdQ = $this->con->prepare(
+                "SELECT id FROM matchday WHERE season_id = ? AND division_id = ? AND number = 1 LIMIT 1"
+            );
+            $mdQ->execute([$seasonId, $divisionId]);
+        } else {
+            $mdQ = $this->con->prepare(
+                "SELECT md.id FROM matchday md
+                 JOIN division d ON d.id = md.division_id
+                 WHERE md.season_id = ? AND md.number = 1 AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                 LIMIT 1"
+            );
+            $mdQ->execute([$seasonId]);
+        }
+        $matchdayId = $mdQ->fetchColumn();
+        if (!$matchdayId) {
+            http_response_code(422);
+            return ['status' => false, 'message' => 'Spieltag 1 für diese Division/Saison ist noch nicht angelegt'];
+        }
+
+        $con = $this->openLeagueConnection($league['db_name']);
+        if (!$con) {
+            http_response_code(500);
+            return ['status' => false, 'message' => 'Verbindung zur Liga-DB fehlgeschlagen'];
+        }
+
+        // Players already active on any team this season — spans the whole league/season, not just
+        // the teams named in this request, since a player can only ever be on one team at a time.
+        $activeQ = $con->prepare(
+            "SELECT DISTINCT pit.player_id
+             FROM player_in_team pit
+             JOIN team t ON t.id = pit.team_id
+             WHERE t.season_id = ? AND pit.to_matchday_id IS NULL"
+        );
+        $activeQ->execute([$seasonId]);
+        $activeSet = array_flip($activeQ->fetchAll(PDO::FETCH_COLUMN));
+
+        $teamPositionCounts = []; // team_id => [position => count]
+        $seenInRequest      = []; // player_id => true, across all teams of this request
+
+        $insertPit = $con->prepare(
+            "INSERT INTO player_in_team (team_id, player_id, from_matchday_id) VALUES (:tid, :pid, :mid)"
+        );
+        $insertTx = $con->prepare(
+            "INSERT INTO transaction (team_id, amount, reason, matchday_id) VALUES (:tid, :amount, :reason, :mid)"
+        );
+        $priceQ = $this->con->prepare(
+            "SELECT COALESCE(pis.price, 0) AS price, pis.position, p.displayname
+             FROM player_in_season pis
+             JOIN player p ON p.id = pis.player_id
+             WHERE pis.player_id = ? AND pis.season_id = ? LIMIT 1"
+        );
+
+        $created    = [];
+        $skipped    = [];
+        $totalPrice = 0;
+
+        foreach ($assignments as $assignment) {
+            $teamId    = $assignment['team_id']    ?? null;
+            $playerIds = $assignment['player_ids'] ?? [];
+            if (!$teamId || !is_array($playerIds)) continue;
+
+            $tq = $con->prepare("SELECT id FROM team WHERE id = ? AND season_id = ? LIMIT 1");
+            $tq->execute([$teamId, $seasonId]);
+            if (!$tq->fetchColumn()) {
+                foreach ($playerIds as $playerId) {
+                    $skipped[] = ['team_id' => $teamId, 'player_id' => $playerId, 'reason' => 'team_not_found'];
+                }
+                continue;
+            }
+
+            if (!isset($teamPositionCounts[$teamId])) {
+                $cq = $con->prepare(
+                    "SELECT player_id FROM player_in_team WHERE team_id = ? AND to_matchday_id IS NULL"
+                );
+                $cq->execute([$teamId]);
+                $teamPositionCounts[$teamId] = $this->countPositionsForPlayers(
+                    $cq->fetchAll(PDO::FETCH_COLUMN), $seasonId
+                );
+            }
+
+            foreach ($playerIds as $playerId) {
+                if (isset($seenInRequest[$playerId])) {
+                    $skipped[] = ['team_id' => $teamId, 'player_id' => $playerId, 'reason' => 'duplicate_in_request'];
+                    continue;
+                }
+                if (isset($activeSet[$playerId])) {
+                    $skipped[] = ['team_id' => $teamId, 'player_id' => $playerId, 'reason' => 'already_in_team'];
+                    continue;
+                }
+
+                $priceQ->execute([$playerId, $seasonId]);
+                $ps = $priceQ->fetch(PDO::FETCH_ASSOC);
+                if (!$ps || !$ps['position'] || !$ps['price']) {
+                    $skipped[] = ['team_id' => $teamId, 'player_id' => $playerId, 'reason' => 'no_price_or_position'];
+                    continue;
+                }
+
+                $position     = $ps['position'];
+                $currentCount = $teamPositionCounts[$teamId][$position] ?? 0;
+                if (isset(self::SQUAD_MAX[$position]) && $currentCount >= self::SQUAD_MAX[$position]) {
+                    $skipped[] = ['team_id' => $teamId, 'player_id' => $playerId, 'reason' => 'position_limit'];
+                    continue;
+                }
+
+                $price       = (int) round((float) $ps['price']);
+                $displayname = $ps['displayname'];
+
+                $insertPit->execute([':tid' => $teamId, ':pid' => $playerId, ':mid' => $matchdayId]);
+                $insertTx->execute([
+                    ':tid'    => $teamId,
+                    ':amount' => -$price,
+                    ':reason' => "Draft-Zuweisung: $displayname",
+                    ':mid'    => $matchdayId,
+                ]);
+
+                $seenInRequest[$playerId] = true;
+                $teamPositionCounts[$teamId][$position] = $currentCount + 1;
+                $totalPrice += $price;
+                $created[] = ['team_id' => $teamId, 'player_id' => $playerId, 'price' => $price];
+            }
+        }
+
+        return [
+            'status'        => true,
+            'created_count' => count($created),
+            'total_price'   => $totalPrice,
+            'skipped'       => $skipped,
+        ];
+    }
+
+    private function countPositionsForPlayers(array $playerIds, string $seasonId): array
+    {
+        $counts = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
+        if (empty($playerIds)) return $counts;
+
+        $ph = implode(',', array_fill(0, count($playerIds), '?'));
+        $q  = $this->con->prepare(
+            "SELECT position, COUNT(*) AS cnt FROM player_in_season
+             WHERE player_id IN ($ph) AND season_id = ? GROUP BY position"
+        );
+        $q->execute(array_merge($playerIds, [$seasonId]));
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (isset($counts[$row['position']])) $counts[$row['position']] = (int) $row['cnt'];
+        }
+        return $counts;
+    }
+
     private function openLeagueConnection(string $dbName): ?\PDO
     {
         try {

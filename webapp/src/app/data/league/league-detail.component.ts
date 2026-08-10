@@ -7,6 +7,18 @@ import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { environment } from '../../../environments/environment';
 
+interface DraftPlayer {
+  id: string;
+  displayname: string;
+  position: string;
+  price: number;
+  photo_uploaded: boolean;
+  club_id: string;
+  club_name: string;
+  club_short_name: string | null;
+  club_logo_uploaded: boolean;
+}
+
 @Component({
   selector: 'app-league-detail',
   standalone: false,
@@ -285,6 +297,149 @@ export class LeagueDetailComponent {
         this.h2hMessages.update(s => ({ ...s, [key]: err?.error?.message ?? 'Fehler' }));
       },
     });
+  }
+
+  // ── Draft-Zuweisung ──────────────────────────────────────────────────────────
+
+  readonly POS_LABEL: Record<string, string> = {
+    GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU',
+  };
+
+  readonly DRAFT_SKIP_REASON_LABEL: Record<string, string> = {
+    team_not_found:        'Team nicht gefunden',
+    duplicate_in_request:  'Doppelt ausgewählt',
+    already_in_team:       'Bereits in einem Team',
+    no_price_or_position:  'Kein Marktwert/Position hinterlegt',
+    position_limit:        'Positionslimit erreicht',
+  };
+
+  private draftPools        = signal<Record<string, DraftPlayer[]>>({});
+  private draftPoolLoading  = signal<Record<string, boolean>>({});
+  draftSelections           = signal<Record<string, Record<string, DraftPlayer[]>>>({});
+  expandedDraftTeamId       = signal<string | null>(null);
+  expandedDraftSeasonId     = signal<string | null>(null);
+  draftSearchQuery          = signal<string>('');
+  draftAssignStates         = signal<Record<string, 'idle' | 'loading' | 'done' | 'error'>>({});
+  draftAssignResults        = signal<Record<string, any>>({});
+
+  private ensureDraftPool(seasonId: string): void {
+    if (this.draftPools()[seasonId] || this.draftPoolLoading()[seasonId]) return;
+    this.draftPoolLoading.update(s => ({ ...s, [seasonId]: true }));
+    this.api.get<{ players: DraftPlayer[] }>(`league/${this.leagueId}/draft_pool?season_id=${seasonId}`).subscribe({
+      next: res => {
+        this.draftPools.update(s => ({ ...s, [seasonId]: res.players }));
+        this.draftPoolLoading.update(s => { const n = { ...s }; delete n[seasonId]; return n; });
+      },
+      error: () => this.draftPoolLoading.update(s => { const n = { ...s }; delete n[seasonId]; return n; }),
+    });
+  }
+
+  draftPoolIsLoading(seasonId: string): boolean {
+    return this.draftPoolLoading()[seasonId] ?? false;
+  }
+
+  toggleDraftTeam(seasonId: string, teamId: string): void {
+    const opening = this.expandedDraftTeamId() !== teamId;
+    this.expandedDraftTeamId.set(opening ? teamId : null);
+    this.expandedDraftSeasonId.set(opening ? seasonId : null);
+    this.draftSearchQuery.set('');
+    if (opening) this.ensureDraftPool(seasonId);
+  }
+
+  // Ids selected for ANY team across all seasons — used to hide a player from the search
+  // results as soon as they're picked for one team, since a player can only join one team.
+  draftSelectedIds = computed(() => {
+    const ids = new Set<string>();
+    for (const bySeason of Object.values(this.draftSelections())) {
+      for (const players of Object.values(bySeason)) {
+        for (const p of players) ids.add(p.id);
+      }
+    }
+    return ids;
+  });
+
+  filteredDraftPlayers = computed(() => {
+    const seasonId = this.expandedDraftSeasonId();
+    if (!seasonId) return [];
+    const q             = this.draftSearchQuery().trim().toLowerCase();
+    const selectedIds   = this.draftSelectedIds();
+    const pool          = (this.draftPools()[seasonId] ?? []).filter(p => !selectedIds.has(p.id));
+    const matched       = q ? pool.filter(p => p.displayname.toLowerCase().includes(q)) : pool;
+    return matched.slice(0, 50);
+  });
+
+  draftTeamSelection(seasonId: string, teamId: string): DraftPlayer[] {
+    return this.draftSelections()[seasonId]?.[teamId] ?? [];
+  }
+
+  draftTeamSum(seasonId: string, teamId: string): number {
+    return this.draftTeamSelection(seasonId, teamId).reduce((sum, p) => sum + p.price, 0);
+  }
+
+  addDraftPlayer(seasonId: string, teamId: string, player: DraftPlayer): void {
+    this.draftSelections.update(s => {
+      const bySeason = { ...(s[seasonId] ?? {}) };
+      const current  = bySeason[teamId] ?? [];
+      if (current.some(p => p.id === player.id)) return s;
+      bySeason[teamId] = [...current, player];
+      return { ...s, [seasonId]: bySeason };
+    });
+  }
+
+  removeDraftPlayer(seasonId: string, teamId: string, playerId: string): void {
+    this.draftSelections.update(s => {
+      const bySeason = { ...(s[seasonId] ?? {}) };
+      bySeason[teamId] = (bySeason[teamId] ?? []).filter(p => p.id !== playerId);
+      return { ...s, [seasonId]: bySeason };
+    });
+  }
+
+  draftBatchSummary(seasonId: string): { teamCount: number; playerCount: number; totalPrice: number } {
+    const bySeason = this.draftSelections()[seasonId] ?? {};
+    let teamCount = 0, playerCount = 0, totalPrice = 0;
+    for (const players of Object.values(bySeason)) {
+      if (players.length === 0) continue;
+      teamCount++;
+      playerCount += players.length;
+      totalPrice  += players.reduce((sum, p) => sum + p.price, 0);
+    }
+    return { teamCount, playerCount, totalPrice };
+  }
+
+  draftAssignState(seasonId: string): 'idle' | 'loading' | 'done' | 'error' {
+    return this.draftAssignStates()[seasonId] ?? 'idle';
+  }
+
+  draftAssignResult(seasonId: string): any {
+    return this.draftAssignResults()[seasonId] ?? null;
+  }
+
+  generateDraftAssignments(seasonId: string): void {
+    const bySeason = this.draftSelections()[seasonId] ?? {};
+    const assignments = Object.entries(bySeason)
+      .filter(([, players]) => players.length > 0)
+      .map(([teamId, players]) => ({ team_id: teamId, player_ids: players.map(p => p.id) }));
+    if (assignments.length === 0) return;
+
+    this.draftAssignStates.update(s => ({ ...s, [seasonId]: 'loading' }));
+    this.api.post<any>(`league/${this.leagueId}/draft_assign`, { season_id: seasonId, assignments }).subscribe({
+      next: res => {
+        this.draftAssignStates.update(s => ({ ...s, [seasonId]: 'done' }));
+        this.draftAssignResults.update(s => ({ ...s, [seasonId]: res }));
+        this.draftSelections.update(s => ({ ...s, [seasonId]: {} }));
+        this.expandedDraftTeamId.set(null);
+        this.expandedDraftSeasonId.set(null);
+        this.draftPools.update(s => { const n = { ...s }; delete n[seasonId]; return n; });
+      },
+      error: err => {
+        this.draftAssignStates.update(s => ({ ...s, [seasonId]: 'error' }));
+        this.draftAssignResults.update(s => ({ ...s, [seasonId]: { message: err?.error?.message ?? 'Fehler' } }));
+      },
+    });
+  }
+
+  formatPrice(v: number): string {
+    return v.toLocaleString('de-DE') + ' €';
   }
 
   back(): void {

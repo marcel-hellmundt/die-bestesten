@@ -121,6 +121,19 @@ class Routing
                         'body' => ['manager_id' => 'UUID des Managers'],
                     ],
                     [
+                        'method' => 'GET',
+                        'path' => '/league/:id/draft_pool',
+                        'description' => 'Spieler der Liga-Division ohne aktives Team in der angegebenen Saison (Pool für die Draft-Zuweisung) — ?season_id erforderlich — Admin',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/league/:id/draft_assign',
+                        'description' => 'Weist mehreren Teams auf einmal Spieler zu (player_in_team + transaction, Preis = exakter Marktwert von player_in_season); prüft Positionslimits (GK≤2/DEF≤6/MID≤6/FWD≤4) und Doppelvergabe und überspringt Verstöße mit Grund statt abzubrechen (skipped[{team_id,player_id,reason}]); 422 wenn Spieltag 1 der Division/Saison noch nicht angelegt ist — Body: {season_id, assignments:[{team_id, player_ids:[...]}]} — Admin',
+                        'path_params' => [':id' => 'UUID der Liga'],
+                        'body' => ['season_id' => 'UUID der Saison', 'assignments' => '[{team_id: UUID, player_ids: [UUID, ...]}]'],
+                    ],
+                    [
                         'method' => 'POST',
                         'path' => '/league/conclude_season',
                         'description' => 'Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent — Body: { league_id, season_id } — Admin',

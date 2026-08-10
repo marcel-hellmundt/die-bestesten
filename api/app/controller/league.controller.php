@@ -15,6 +15,25 @@ class LeagueController extends _BaseController
             return $league;
         }
 
+        // GET /league/:id/draft_pool?season_id=... — Admin only (GET is otherwise 'guest')
+        if ($this->id && $this->sub === 'draft_pool') {
+            if (!$this->isAdmin()) {
+                http_response_code(403);
+                return ['status' => false, 'message' => 'Forbidden'];
+            }
+            $seasonId = $this->params['season_id'] ?? null;
+            if (!$seasonId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'season_id ist erforderlich'];
+            }
+            $pool = $this->db->getDraftPool($this->id, $seasonId);
+            if ($pool === null) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Liga nicht gefunden'];
+            }
+            return $pool;
+        }
+
         if ($this->id) {
             $league = $this->db->getLeagueById($this->id);
             if (!$league) {
@@ -151,6 +170,19 @@ class LeagueController extends _BaseController
                 );
             }
             return ['status' => true];
+        }
+
+        // POST /league/:id/draft_assign  { season_id, assignments:[{team_id, player_ids:[...]}] }
+        if ($this->sub === 'draft_assign') {
+            $leagueId    = $this->id;
+            $body        = $this->body();
+            $seasonId    = $body['season_id']   ?? null;
+            $assignments = $body['assignments'] ?? null;
+            if (!$leagueId || !$seasonId || !is_array($assignments)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'season_id und assignments sind erforderlich'];
+            }
+            return $this->db->assignDraftPlayers($leagueId, $seasonId, $assignments);
         }
 
         // POST /league/:id/deny  { manager_id }  — admin denies/cancels a membership

@@ -115,6 +115,8 @@ POST     /league/:id/decline   — Einladung ablehnen (invited→denied); 409 we
 POST     /league/:id/invite    — {manager_id} Manager einladen (status='invited'); benachrichtigt Manager — Admin
 POST     /league/:id/approve   — {manager_id} Anfrage genehmigen (requested→active); benachrichtigt Manager — Admin
 POST     /league/:id/deny      — {manager_id} Mitgliedschaft ablehnen (→denied) — Admin
+GET      /league/:id/draft_pool    — ?season_id erforderlich — Spieler der Liga-Division ohne aktives Team in dieser Saison (Pool für Draft-Zuweisung); ligenübergreifend nutzbar (nicht an auth_league_id gebunden) — Admin
+POST     /league/:id/draft_assign  — {season_id, assignments:[{team_id, player_ids:[...]}]} — weist mehreren Teams auf einmal Spieler zu; erstellt player_in_team + transaction je Spieler (Preis = exakter player_in_season.price), from_matchday_id = Spieltag 1 der Division/Saison; prüft Positionslimits (GK≤2/DEF≤6/MID≤6/FWD≤4) + Doppelvergabe und überspringt Verstöße mit Grund statt abzubrechen (skipped[{team_id,player_id,reason}]); 422 wenn Spieltag 1 fehlt — Admin
 POST     /league/validate_ratings  — {league_id} — prüft team_ratings ab 2020/21 gegen team_lineup + player_rating — Admin
 POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB) — Admin
 POST     /league/conclude_season   — {league_id, season_id} — Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent; wird auch automatisch bei Spieltag 34 ausgeführt — Admin
