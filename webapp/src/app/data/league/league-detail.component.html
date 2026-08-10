@@ -144,15 +144,20 @@
                         <span class="h2h-msg h2h-msg--error h2h-msg--standalone">
                           {{ h2hMessage(sg.seasonId, action.key) }}
                         </span>
+                      } @else if (action.key === 'generate' && h2hGenerateDisabled(sg.seasonId)) {
+                        <span
+                          class="h2h-tooltip-wrap"
+                          [attr.data-tooltip]="'Nur für 9 oder 12 Teams verfügbar (aktuell ' + sg.teams.length + ')'"
+                        >
+                          <button class="btn btn-sm btn-ghost" disabled>{{ action.label }}</button>
+                        </span>
                       } @else {
                         <button
                           class="btn btn-sm btn-ghost"
-                          [disabled]="h2hState(sg.seasonId, action.key) === 'loading' || (action.key === 'generate' && h2hGenerateDisabled(sg.seasonId))"
+                          [disabled]="h2hState(sg.seasonId, action.key) === 'loading'"
                           (click)="runH2H(sg.seasonId, action.key)"
                         >{{ h2hState(sg.seasonId, action.key) === 'loading' ? 'Läuft…' : action.label }}</button>
-                        @if (action.key === 'generate' && h2hGenerateDisabled(sg.seasonId)) {
-                          <span class="h2h-msg">Nur für 9 oder 12 Teams verfügbar (aktuell {{ sg.teams.length }})</span>
-                        } @else if (h2hMessage(sg.seasonId, action.key)) {
+                        @if (h2hMessage(sg.seasonId, action.key)) {
                           <span class="h2h-msg">{{ h2hMessage(sg.seasonId, action.key) }}</span>
                         }
                       }
