@@ -117,6 +117,25 @@ export class LeagueDetailComponent {
     return s[map[action]];
   }
 
+  // Implemented tournament formats — anything else can't be generated.
+  private readonly H2H_SUPPORTED_TEAM_COUNTS = [9, 12];
+
+  h2hTeamCount(seasonId: string): number {
+    return this.seasonGroups().find(sg => sg.seasonId === seasonId)?.teams.length ?? 0;
+  }
+
+  h2hGenerateDisabled(seasonId: string): boolean {
+    return !this.H2H_SUPPORTED_TEAM_COUNTS.includes(this.h2hTeamCount(seasonId));
+  }
+
+  // 9-team tournaments skip the quarterfinal stage (3 groups → semifinal directly).
+  h2hActionsFor(seasonId: string): typeof this.h2hActions {
+    if (this.h2hTeamCount(seasonId) === 9) {
+      return this.h2hActions.filter(a => a.key !== 'quarterfinals');
+    }
+    return this.h2hActions;
+  }
+
   teamLogoUrl(team: any): string {
     return `${environment.imageApiUrl}/team/${team.season_id}/${team.id}.png`;
   }

@@ -1009,19 +1009,19 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/h2h/generate',
-                        'description' => 'H2H-Gruppenphase nach festem Template generieren (Snake-Seeding nach Vorjahresrang, 4 Gruppen à 3, 24 Matches auf Spieltage 1–18) → {status,groups,matches}; sendet allgemeine Gruppen-Notification + individuelle Spiele-Notification an alle Manager — Admin',
+                        'description' => 'H2H-Gruppenphase nach festem Template generieren, abhängig von der Team-Zahl der Saison (nur 9 oder 12 Teams unterstützt): 12 Teams → 4 Gruppen à 3, 24 Matches; 9 Teams → 3 Gruppen à 3, 18 Matches; je Snake-Seeding nach Vorjahresrang, auf Spieltage 1–18 → {status,groups,matches}; sendet allgemeine Gruppen-Notification + individuelle Spiele-Notification an alle Manager — Admin',
                         'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/h2h/draw_quarterfinals',
-                        'description' => 'Viertelfinale auslosen aus Gruppenständen (Bed.: Spieltag 18 abgeschlossen) → {matches:8}; sendet Notification an alle Manager — Admin',
+                        'description' => 'Viertelfinale auslosen aus Gruppenständen (nur 12-Team-Format mit 4 Gruppen; Bed.: Spieltag 18 abgeschlossen) → {matches:8}; sendet Notification an alle Manager — Admin',
                         'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/h2h/draw_semifinals',
-                        'description' => 'Halbfinale auslosen aus VF-Siegern (Aggregat-Tore, Tiebreaker: Gesamtpunkte; Bed.: Spieltag 27 abgeschlossen) → {matches:4}; sendet Notification an alle Manager — Admin',
+                        'description' => 'Halbfinale auslosen; 12-Team-Format (4 Gruppen): aus VF-Siegern (Aggregat-Tore, Tiebreaker: Gesamtpunkte; Bed.: Spieltag 27 abgeschlossen); 9-Team-Format (3 Gruppen): direkt aus Gruppenständen (3 Gruppensieger + bester Gruppenzweiter nach Punkten/Tordifferenz/Toren, Bed.: Spieltag 18 abgeschlossen) → {matches:4}; sendet Notification an alle Manager — Admin',
                         'body' => ['league_id' => 'UUID', 'season_id' => 'UUID'],
                     ],
                     [

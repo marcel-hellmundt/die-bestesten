@@ -659,10 +659,12 @@ trait H2HTrait
         $teamsQ->execute([':s' => $seasonId]);
         $teams = $teamsQ->fetchAll(PDO::FETCH_ASSOC);
 
-        if (count($teams) !== 12) {
+        $teamCount = count($teams);
+        if (!in_array($teamCount, [9, 12], true)) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'Genau 12 Teams benötigt, gefunden: ' . count($teams)];
+            return ['status' => false, 'message' => 'Turnier nur für 9 oder 12 Teams verfügbar, gefunden: ' . $teamCount];
         }
+        $groupCount = $teamCount === 12 ? 4 : 3;
 
         $prevSeasonQ = $this->con->prepare(
             "SELECT id FROM season
@@ -692,13 +694,20 @@ trait H2HTrait
             return strcmp($a['team_name'], $b['team_name']);
         });
 
-        // Snake-seed: rank 1-4 → A-D slot 0, rank 5-8 → D-A slot 1, rank 9-12 → A-D slot 2
-        $snakeMap = [
-            [0, 0], [1, 0], [2, 0], [3, 0],
-            [3, 1], [2, 1], [1, 1], [0, 1],
-            [0, 2], [1, 2], [2, 2], [3, 2],
-        ];
-        $groupSlots = [[], [], [], []];
+        // Snake-seed: rank 1-N → A.. slot 0, rank N+1-2N → ..A slot 1, rank 2N+1-3N → A.. slot 2
+        // (N = group count: 4 groups for 12 teams, 3 groups for 9 teams)
+        $snakeMap = $groupCount === 4
+            ? [
+                [0, 0], [1, 0], [2, 0], [3, 0],
+                [3, 1], [2, 1], [1, 1], [0, 1],
+                [0, 2], [1, 2], [2, 2], [3, 2],
+            ]
+            : [
+                [0, 0], [1, 0], [2, 0],
+                [2, 1], [1, 1], [0, 1],
+                [0, 2], [1, 2], [2, 2],
+            ];
+        $groupSlots = array_fill(0, $groupCount, []);
         foreach ($teams as $i => $team) {
             [$gi, $si] = $snakeMap[$i];
             $groupSlots[$gi][$si] = $team['id'];
@@ -719,16 +728,29 @@ trait H2HTrait
         }
 
         // [matchday_number, group_index, leg, home_slot_index, away_slot_index]
-        $template = [
-            [1,  0, 1, 0, 1], [2,  1, 1, 0, 1], [2,  2, 1, 0, 1], [3,  3, 1, 0, 1],
-            [4,  1, 1, 1, 2], [5,  2, 1, 1, 2], [5,  3, 1, 1, 2], [6,  0, 1, 1, 2],
-            [7,  2, 1, 2, 0], [8,  3, 1, 2, 0], [8,  0, 1, 2, 0], [9,  1, 1, 2, 0],
-            [10, 3, 2, 1, 0], [11, 0, 2, 1, 0], [11, 1, 2, 1, 0], [12, 2, 2, 1, 0],
-            [13, 0, 2, 2, 1], [14, 1, 2, 2, 1], [14, 2, 2, 2, 1], [15, 3, 2, 2, 1],
-            [16, 1, 2, 0, 2], [17, 2, 2, 0, 2], [17, 3, 2, 0, 2], [18, 0, 2, 0, 2],
-        ];
+        $template = $groupCount === 4
+            ? [
+                [1,  0, 1, 0, 1], [2,  1, 1, 0, 1], [2,  2, 1, 0, 1], [3,  3, 1, 0, 1],
+                [4,  1, 1, 1, 2], [5,  2, 1, 1, 2], [5,  3, 1, 1, 2], [6,  0, 1, 1, 2],
+                [7,  2, 1, 2, 0], [8,  3, 1, 2, 0], [8,  0, 1, 2, 0], [9,  1, 1, 2, 0],
+                [10, 3, 2, 1, 0], [11, 0, 2, 1, 0], [11, 1, 2, 1, 0], [12, 2, 2, 1, 0],
+                [13, 0, 2, 2, 1], [14, 1, 2, 2, 1], [14, 2, 2, 2, 1], [15, 3, 2, 2, 1],
+                [16, 1, 2, 0, 2], [17, 2, 2, 0, 2], [17, 3, 2, 0, 2], [18, 0, 2, 0, 2],
+            ]
+            // 3 groups × 6 matches (round-robin, home+away), one match per matchday:
+            // group g plays on matchdays g+1, g+4, g+7, g+10, g+13, g+16
+            : [
+                [1,  0, 1, 0, 1], [2,  1, 1, 0, 1], [3,  2, 1, 0, 1],
+                [4,  0, 1, 0, 2], [5,  1, 1, 0, 2], [6,  2, 1, 0, 2],
+                [7,  0, 1, 1, 2], [8,  1, 1, 1, 2], [9,  2, 1, 1, 2],
+                [10, 0, 2, 1, 0], [11, 1, 2, 1, 0], [12, 2, 2, 1, 0],
+                [13, 0, 2, 2, 0], [14, 1, 2, 2, 0], [15, 2, 2, 2, 0],
+                [16, 0, 2, 2, 1], [17, 1, 2, 2, 1], [18, 2, 2, 2, 1],
+            ];
 
-        $groupNames = ['Gruppe A', 'Gruppe B', 'Gruppe C', 'Gruppe D'];
+        $groupNames = $groupCount === 4
+            ? ['Gruppe A', 'Gruppe B', 'Gruppe C', 'Gruppe D']
+            : ['Gruppe A', 'Gruppe B', 'Gruppe C'];
         $groupIds   = [];
         $stmtGroup  = $con->prepare(
             "INSERT INTO h2h_group (id, season_id, name, sort_index) VALUES (?, ?, ?, ?)"
@@ -736,7 +758,7 @@ trait H2HTrait
         $stmtGT = $con->prepare(
             "INSERT INTO h2h_group_team (id, group_id, team_id) VALUES (UUID(), ?, ?)"
         );
-        for ($gi = 0; $gi < 4; $gi++) {
+        for ($gi = 0; $gi < $groupCount; $gi++) {
             $gid = $con->query("SELECT UUID()")->fetchColumn();
             $groupIds[$gi] = $gid;
             $stmtGroup->execute([$gid, $seasonId, $groupNames[$gi], $gi]);
@@ -785,7 +807,7 @@ trait H2HTrait
         $staticHtml .= '</tr></thead><tbody>';
         for ($slot = 0; $slot < 3; $slot++) {
             $staticHtml .= '<tr>';
-            for ($gi = 0; $gi < 4; $gi++) {
+            for ($gi = 0; $gi < $groupCount; $gi++) {
                 $tid         = $groupSlots[$gi][$slot] ?? null;
                 $staticHtml .= '<td>' . ($tid ? $teamCell($tid) : '') . '</td>';
             }
@@ -843,7 +865,87 @@ trait H2HTrait
             $notifStmt->execute([$mid, 'H2H-Gruppenphase ausgelost', $msg]);
         }
 
-        return ['status' => true, 'groups' => 4, 'matches' => $created];
+        return ['status' => true, 'groups' => $groupCount, 'matches' => $created];
+    }
+
+    // Group standings (pts, goal diff, goals for) per group, sorted best-first.
+    // Shared by the 12-team quarterfinal draw and the 9-team direct-to-semifinal draw.
+    private function computeH2HGroupStandings(PDO $con, string $seasonId, array $groups): array
+    {
+        $groupIds = array_column($groups, 'id');
+        $ph  = implode(',', array_fill(0, count($groupIds), '?'));
+        $gtq = $con->prepare("SELECT group_id, team_id FROM h2h_group_team WHERE group_id IN ($ph)");
+        $gtq->execute($groupIds);
+        $groupTeamMap = [];
+        foreach ($gtq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $groupTeamMap[$row['group_id']][] = $row['team_id'];
+        }
+
+        $mq = $con->prepare(
+            "SELECT home_team_id, away_team_id, matchday_id, group_id
+             FROM h2h_match WHERE season_id = :s AND phase = 'group'"
+        );
+        $mq->execute([':s' => $seasonId]);
+        $groupMatches = $mq->fetchAll(PDO::FETCH_ASSOC);
+
+        $allTeamIds     = array_unique(array_merge(
+            array_column($groupMatches, 'home_team_id'),
+            array_column($groupMatches, 'away_team_id')
+        ));
+        $allMatchdayIds = array_values(array_unique(array_column($groupMatches, 'matchday_id')));
+        $ratingMap      = [];
+        if (!empty($allTeamIds) && !empty($allMatchdayIds)) {
+            $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
+            $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+            $rq  = $con->prepare(
+                "SELECT team_id, matchday_id, goals, assists, sds_defender
+                 FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
+            );
+            $rq->execute(array_merge(array_values($allTeamIds), $allMatchdayIds));
+            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $ratingMap[$r['team_id']][$r['matchday_id']] = [
+                    'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
+                    'assists'      => (int) ($r['assists'] ?? 0),
+                    'sds_defender' => (int) ($r['sds_defender'] ?? 0),
+                ];
+            }
+        }
+
+        $standingsByGroup = [];
+        foreach ($groups as $i => $g) {
+            $gid      = $g['id'];
+            $teamIds  = $groupTeamMap[$gid] ?? [];
+            $standing = [];
+            foreach ($teamIds as $tid) {
+                $standing[$tid] = ['team_id' => $tid, 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
+            }
+            foreach ($groupMatches as $m) {
+                if ($m['group_id'] !== $gid) continue;
+                $hR = $ratingMap[$m['home_team_id']][$m['matchday_id']] ?? null;
+                $aR = $ratingMap[$m['away_team_id']][$m['matchday_id']] ?? null;
+                if (!$hR || !$aR || $hR['goals'] === null || $aR['goals'] === null) continue;
+                $hp = max(0, $hR['goals'] + intdiv($hR['assists'], 3) - $aR['sds_defender']);
+                $ap = max(0, $aR['goals'] + intdiv($aR['assists'], 3) - $hR['sds_defender']);
+                if (!isset($standing[$m['home_team_id']])) $standing[$m['home_team_id']] = ['team_id' => $m['home_team_id'], 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
+                if (!isset($standing[$m['away_team_id']])) $standing[$m['away_team_id']] = ['team_id' => $m['away_team_id'], 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
+                $standing[$m['home_team_id']]['goals_for']     += $hp;
+                $standing[$m['home_team_id']]['goals_against'] += $ap;
+                $standing[$m['away_team_id']]['goals_for']     += $ap;
+                $standing[$m['away_team_id']]['goals_against'] += $hp;
+                if ($hp > $ap)       { $standing[$m['home_team_id']]['pts'] += 3; }
+                elseif ($hp === $ap) { $standing[$m['home_team_id']]['pts']++; $standing[$m['away_team_id']]['pts']++; }
+                else                 { $standing[$m['away_team_id']]['pts'] += 3; }
+            }
+            $list = array_values($standing);
+            usort($list, function ($a, $b) {
+                if ($a['pts'] !== $b['pts']) return $b['pts'] <=> $a['pts'];
+                $aDiff = $a['goals_for'] - $a['goals_against'];
+                $bDiff = $b['goals_for'] - $b['goals_against'];
+                return $bDiff <=> $aDiff ?: $b['goals_for'] <=> $a['goals_for'];
+            });
+            $standingsByGroup[$i] = $list;
+        }
+        return $standingsByGroup;
     }
 
     public function drawH2HQuarterfinals(string $leagueId, string $seasonId): array
@@ -892,86 +994,16 @@ trait H2HTrait
         );
         $gq->execute([':s' => $seasonId]);
         $groups = $gq->fetchAll(PDO::FETCH_ASSOC);
-        if (count($groups) < 4) {
+        if (count($groups) !== 4) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'Mindestens 4 Gruppen erforderlich'];
-        }
-
-        // Load group-team assignments
-        $groupIds = array_column($groups, 'id');
-        $ph = implode(',', array_fill(0, count($groupIds), '?'));
-        $gtq = $con->prepare("SELECT group_id, team_id FROM h2h_group_team WHERE group_id IN ($ph)");
-        $gtq->execute($groupIds);
-        $groupTeamMap = [];
-        foreach ($gtq->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $groupTeamMap[$row['group_id']][] = $row['team_id'];
-        }
-
-        // Load group-phase matches
-        $mq = $con->prepare(
-            "SELECT home_team_id, away_team_id, matchday_id, group_id
-             FROM h2h_match WHERE season_id = :s AND phase = 'group'"
-        );
-        $mq->execute([':s' => $seasonId]);
-        $groupMatches = $mq->fetchAll(PDO::FETCH_ASSOC);
-
-        // Load ratings
-        $allTeamIds     = array_unique(array_merge(
-            array_column($groupMatches, 'home_team_id'),
-            array_column($groupMatches, 'away_team_id')
-        ));
-        $allMatchdayIds = array_values(array_unique(array_column($groupMatches, 'matchday_id')));
-        $ratingMap      = [];
-        if (!empty($allTeamIds) && !empty($allMatchdayIds)) {
-            $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
-            $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
-            $rq  = $con->prepare(
-                "SELECT team_id, matchday_id, goals, assists, sds_defender
-                 FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
-            );
-            $rq->execute(array_merge(array_values($allTeamIds), $allMatchdayIds));
-            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                $ratingMap[$r['team_id']][$r['matchday_id']] = [
-                    'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
-                    'assists'      => (int) ($r['assists'] ?? 0),
-                    'sds_defender' => (int) ($r['sds_defender'] ?? 0),
-                ];
-            }
+            return ['status' => false, 'message' => 'Viertelfinale nur für das 12-Team-Turnierformat (4 Gruppen) verfügbar'];
         }
 
         // Compute standings per group
+        $standingsByGroup = $this->computeH2HGroupStandings($con, $seasonId, $groups);
         $slots = []; // indexed by group sort_index: 0=A, 1=B, 2=C, 3=D
         foreach ($groups as $i => $g) {
-            $gid      = $g['id'];
-            $teamIds  = $groupTeamMap[$gid] ?? [];
-            $standing = [];
-            foreach ($teamIds as $tid) {
-                $standing[$tid] = ['team_id' => $tid, 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
-            }
-            foreach ($groupMatches as $m) {
-                if ($m['group_id'] !== $gid) continue;
-                $hR = $ratingMap[$m['home_team_id']][$m['matchday_id']] ?? null;
-                $aR = $ratingMap[$m['away_team_id']][$m['matchday_id']] ?? null;
-                if (!$hR || !$aR || $hR['goals'] === null || $aR['goals'] === null) continue;
-                $hp = max(0, $hR['goals'] + intdiv($hR['assists'], 3) - $aR['sds_defender']);
-                $ap = max(0, $aR['goals'] + intdiv($aR['assists'], 3) - $hR['sds_defender']);
-                if (!isset($standing[$m['home_team_id']])) $standing[$m['home_team_id']] = ['team_id' => $m['home_team_id'], 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
-                if (!isset($standing[$m['away_team_id']])) $standing[$m['away_team_id']] = ['team_id' => $m['away_team_id'], 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
-                $standing[$m['home_team_id']]['goals_for']     += $hp;
-                $standing[$m['home_team_id']]['goals_against'] += $ap;
-                $standing[$m['away_team_id']]['goals_for']     += $ap;
-                $standing[$m['away_team_id']]['goals_against'] += $hp;
-                if ($hp > $ap)       { $standing[$m['home_team_id']]['pts'] += 3; }
-                elseif ($hp === $ap) { $standing[$m['home_team_id']]['pts']++; $standing[$m['away_team_id']]['pts']++; }
-                else                 { $standing[$m['away_team_id']]['pts'] += 3; }
-            }
-            $list = array_values($standing);
-            usort($list, function ($a, $b) {
-                if ($a['pts'] !== $b['pts']) return $b['pts'] <=> $a['pts'];
-                $aDiff = $a['goals_for'] - $a['goals_against'];
-                $bDiff = $b['goals_for'] - $b['goals_against'];
-                return $bDiff <=> $aDiff ?: $b['goals_for'] <=> $a['goals_for'];
-            });
+            $list = $standingsByGroup[$i];
             if (empty($list[0]) || empty($list[1])) {
                 http_response_code(400);
                 return ['status' => false, 'message' => "Gruppe {$g['name']}: unvollständige Standings"];
@@ -1068,16 +1100,6 @@ trait H2HTrait
 
     public function drawH2HSemifinals(string $leagueId, string $seasonId): array
     {
-        $md27q = $this->con->prepare(
-            "SELECT completed FROM matchday WHERE season_id = :s AND number = 27 LIMIT 1"
-        );
-        $md27q->execute([':s' => $seasonId]);
-        $md27 = $md27q->fetch(PDO::FETCH_ASSOC);
-        if (!$md27 || !$md27['completed']) {
-            http_response_code(400);
-            return ['status' => false, 'message' => 'Spieltag 27 ist noch nicht abgeschlossen'];
-        }
-
         $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
         $lq->execute([':id' => $leagueId]);
         $league = $lq->fetch(PDO::FETCH_ASSOC);
@@ -1103,85 +1125,146 @@ trait H2HTrait
             return ['status' => false, 'message' => 'Halbfinale bereits vorhanden'];
         }
 
-        $qfQ = $con->prepare(
-            "SELECT leg, home_team_id, away_team_id, matchday_id, sort_index
-             FROM h2h_match WHERE season_id = :s AND phase = 'quarterfinal'
-             ORDER BY sort_index ASC, leg ASC"
+        $gq = $con->prepare("SELECT id, name, sort_index FROM h2h_group WHERE season_id = :s ORDER BY sort_index ASC, name ASC");
+        $gq->execute([':s' => $seasonId]);
+        $groups     = $gq->fetchAll(PDO::FETCH_ASSOC);
+        $groupCount = count($groups);
+        if (!in_array($groupCount, [3, 4], true)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Kein unterstütztes H2H-Turnier für diese Saison gefunden'];
+        }
+
+        // 12-team format (4 groups): semifinal follows the quarterfinal stage — Spieltag 27.
+        // 9-team format (3 groups): no quarterfinal stage, semifinal follows the group stage directly — Spieltag 18.
+        $requiredMdNumber = $groupCount === 4 ? 27 : 18;
+        $mdCheckQ = $this->con->prepare(
+            "SELECT completed FROM matchday WHERE season_id = :s AND number = :n LIMIT 1"
         );
-        $qfQ->execute([':s' => $seasonId]);
-        $qfMatches = $qfQ->fetchAll(PDO::FETCH_ASSOC);
-
-        $qfPairs = [];
-        foreach ($qfMatches as $m) {
-            $si = (int) $m['sort_index'];
-            $qfPairs[$si][(int)$m['leg'] === 1 ? 'leg1' : 'leg2'] = $m;
+        $mdCheckQ->execute([':s' => $seasonId, ':n' => $requiredMdNumber]);
+        $mdCheck = $mdCheckQ->fetch(PDO::FETCH_ASSOC);
+        if (!$mdCheck || !$mdCheck['completed']) {
+            http_response_code(400);
+            return ['status' => false, 'message' => "Spieltag {$requiredMdNumber} ist noch nicht abgeschlossen"];
         }
 
-        $allTeamIds     = array_values(array_unique(array_merge(
-            array_column($qfMatches, 'home_team_id'),
-            array_column($qfMatches, 'away_team_id')
-        )));
-        $allMatchdayIds = array_values(array_unique(array_column($qfMatches, 'matchday_id')));
-
-        $ratingMap = [];
-        if (!empty($allTeamIds) && !empty($allMatchdayIds)) {
-            $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
-            $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
-            $rq  = $con->prepare(
-                "SELECT team_id, matchday_id, goals, assists, sds_defender, points
-                 FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
+        if ($groupCount === 4) {
+            $qfQ = $con->prepare(
+                "SELECT leg, home_team_id, away_team_id, matchday_id, sort_index
+                 FROM h2h_match WHERE season_id = :s AND phase = 'quarterfinal'
+                 ORDER BY sort_index ASC, leg ASC"
             );
-            $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
-            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                $ratingMap[$r['team_id']][$r['matchday_id']] = [
-                    'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
-                    'assists'      => (int) ($r['assists'] ?? 0),
-                    'sds_defender' => (int) ($r['sds_defender'] ?? 0),
-                    'points'       => (int) ($r['points'] ?? 0),
-                ];
-            }
-        }
+            $qfQ->execute([':s' => $seasonId]);
+            $qfMatches = $qfQ->fetchAll(PDO::FETCH_ASSOC);
 
-        $effectiveGoals = function (string $tid, string $oppId, string $mdId) use ($ratingMap): ?int {
-            $r   = $ratingMap[$tid][$mdId]   ?? null;
-            $opp = $ratingMap[$oppId][$mdId] ?? null;
-            if (!$r || $r['goals'] === null) return null;
-            return max(0, $r['goals'] + intdiv($r['assists'], 3) - ($opp['sds_defender'] ?? 0));
-        };
+            $qfPairs = [];
+            foreach ($qfMatches as $m) {
+                $si = (int) $m['sort_index'];
+                $qfPairs[$si][(int)$m['leg'] === 1 ? 'leg1' : 'leg2'] = $m;
+            }
 
-        $vfWinners = [];
-        for ($si = 0; $si <= 3; $si++) {
-            if (!isset($qfPairs[$si]['leg1']) || !isset($qfPairs[$si]['leg2'])) {
-                http_response_code(400);
-                return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . " unvollständig"];
-            }
-            $leg1  = $qfPairs[$si]['leg1'];
-            $leg2  = $qfPairs[$si]['leg2'];
-            $teamA = $leg1['home_team_id'];
-            $teamB = $leg1['away_team_id'];
-            $a1 = $effectiveGoals($teamA, $teamB, $leg1['matchday_id']);
-            $b1 = $effectiveGoals($teamB, $teamA, $leg1['matchday_id']);
-            $a2 = $effectiveGoals($teamA, $teamB, $leg2['matchday_id']);
-            $b2 = $effectiveGoals($teamB, $teamA, $leg2['matchday_id']);
-            if ($a1 === null || $b1 === null || $a2 === null || $b2 === null) {
-                http_response_code(400);
-                return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": fehlende Bewertungen"];
-            }
-            $aTotal = $a1 + $a2;
-            $bTotal = $b1 + $b2;
-            if ($aTotal === $bTotal) {
-                $aPoints = ($ratingMap[$teamA][$leg1['matchday_id']]['points'] ?? 0)
-                         + ($ratingMap[$teamA][$leg2['matchday_id']]['points'] ?? 0);
-                $bPoints = ($ratingMap[$teamB][$leg1['matchday_id']]['points'] ?? 0)
-                         + ($ratingMap[$teamB][$leg2['matchday_id']]['points'] ?? 0);
-                if ($aPoints === $bPoints) {
-                    http_response_code(400);
-                    return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": Gleichstand auch bei Gesamtpunkten — Admin muss manuell entscheiden"];
+            $allTeamIds     = array_values(array_unique(array_merge(
+                array_column($qfMatches, 'home_team_id'),
+                array_column($qfMatches, 'away_team_id')
+            )));
+            $allMatchdayIds = array_values(array_unique(array_column($qfMatches, 'matchday_id')));
+
+            $ratingMap = [];
+            if (!empty($allTeamIds) && !empty($allMatchdayIds)) {
+                $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
+                $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
+                $rq  = $con->prepare(
+                    "SELECT team_id, matchday_id, goals, assists, sds_defender, points
+                     FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
+                );
+                $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
+                foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $ratingMap[$r['team_id']][$r['matchday_id']] = [
+                        'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
+                        'assists'      => (int) ($r['assists'] ?? 0),
+                        'sds_defender' => (int) ($r['sds_defender'] ?? 0),
+                        'points'       => (int) ($r['points'] ?? 0),
+                    ];
                 }
-                $vfWinners[$si] = $aPoints > $bPoints ? $teamA : $teamB;
-            } else {
-                $vfWinners[$si] = $aTotal > $bTotal ? $teamA : $teamB;
             }
+
+            $effectiveGoals = function (string $tid, string $oppId, string $mdId) use ($ratingMap): ?int {
+                $r   = $ratingMap[$tid][$mdId]   ?? null;
+                $opp = $ratingMap[$oppId][$mdId] ?? null;
+                if (!$r || $r['goals'] === null) return null;
+                return max(0, $r['goals'] + intdiv($r['assists'], 3) - ($opp['sds_defender'] ?? 0));
+            };
+
+            $vfWinners = [];
+            for ($si = 0; $si <= 3; $si++) {
+                if (!isset($qfPairs[$si]['leg1']) || !isset($qfPairs[$si]['leg2'])) {
+                    http_response_code(400);
+                    return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . " unvollständig"];
+                }
+                $leg1  = $qfPairs[$si]['leg1'];
+                $leg2  = $qfPairs[$si]['leg2'];
+                $teamA = $leg1['home_team_id'];
+                $teamB = $leg1['away_team_id'];
+                $a1 = $effectiveGoals($teamA, $teamB, $leg1['matchday_id']);
+                $b1 = $effectiveGoals($teamB, $teamA, $leg1['matchday_id']);
+                $a2 = $effectiveGoals($teamA, $teamB, $leg2['matchday_id']);
+                $b2 = $effectiveGoals($teamB, $teamA, $leg2['matchday_id']);
+                if ($a1 === null || $b1 === null || $a2 === null || $b2 === null) {
+                    http_response_code(400);
+                    return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": fehlende Bewertungen"];
+                }
+                $aTotal = $a1 + $a2;
+                $bTotal = $b1 + $b2;
+                if ($aTotal === $bTotal) {
+                    $aPoints = ($ratingMap[$teamA][$leg1['matchday_id']]['points'] ?? 0)
+                             + ($ratingMap[$teamA][$leg2['matchday_id']]['points'] ?? 0);
+                    $bPoints = ($ratingMap[$teamB][$leg1['matchday_id']]['points'] ?? 0)
+                             + ($ratingMap[$teamB][$leg2['matchday_id']]['points'] ?? 0);
+                    if ($aPoints === $bPoints) {
+                        http_response_code(400);
+                        return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": Gleichstand auch bei Gesamtpunkten — Admin muss manuell entscheiden"];
+                    }
+                    $vfWinners[$si] = $aPoints > $bPoints ? $teamA : $teamB;
+                } else {
+                    $vfWinners[$si] = $aTotal > $bTotal ? $teamA : $teamB;
+                }
+            }
+
+            [$vf1, $vf2, $vf3, $vf4] = [$vfWinners[0], $vfWinners[1], $vfWinners[2], $vfWinners[3]];
+        } else {
+            // 9-team format: 3 group winners + best runner-up (pts → goal diff → goals for) go
+            // directly to the semifinal. The runner-up is paired against the winner of the next
+            // group (cyclically) so nobody meets a team they already played in the group stage.
+            $standingsByGroup = $this->computeH2HGroupStandings($con, $seasonId, $groups);
+            $winners   = [];
+            $runnerUps = [];
+            foreach ($groups as $i => $g) {
+                $list = $standingsByGroup[$i];
+                if (empty($list[0]) || empty($list[1])) {
+                    http_response_code(400);
+                    return ['status' => false, 'message' => "Gruppe {$g['name']}: unvollständige Standings"];
+                }
+                $winners[$i]   = $list[0]['team_id'];
+                $runnerUps[$i] = $list[1];
+            }
+
+            $bestRunnerUpGroup = 0;
+            foreach ($runnerUps as $i => $r) {
+                if ($i === 0) continue;
+                $best     = $runnerUps[$bestRunnerUpGroup];
+                $rDiff    = $r['goals_for'] - $r['goals_against'];
+                $bestDiff = $best['goals_for'] - $best['goals_against'];
+                $better   = $r['pts'] <=> $best['pts'] ?: $rDiff <=> $bestDiff ?: $r['goals_for'] <=> $best['goals_for'];
+                if ($better > 0) $bestRunnerUpGroup = $i;
+            }
+
+            $runnerUpTeamId = $runnerUps[$bestRunnerUpGroup]['team_id'];
+            $opponentGroup  = ($bestRunnerUpGroup + 1) % 3;
+            $thirdGroup     = ($bestRunnerUpGroup + 2) % 3;
+
+            $vf1 = $winners[$opponentGroup];
+            $vf2 = $winners[$bestRunnerUpGroup];
+            $vf3 = $runnerUpTeamId;
+            $vf4 = $winners[$thirdGroup];
         }
 
         $mdQ = $this->con->prepare(
@@ -1198,8 +1281,7 @@ trait H2HTrait
             return ['status' => false, 'message' => 'Fehlende Spieltage: ' . implode(', ', $missing)];
         }
 
-        [$vf1, $vf2, $vf3, $vf4] = [$vfWinners[0], $vfWinners[1], $vfWinners[2], $vfWinners[3]];
-        // True cross-bracket: VF1 vs VF3, VF2 vs VF4 (crosses A/B and C/D strands)
+        // Cross-bracket: VF1 vs VF3, VF2 vs VF4
         $bracket = [
             [1, $vf1, $vf3, 29, 0],
             [1, $vf2, $vf4, 30, 1],
