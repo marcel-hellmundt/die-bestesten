@@ -61,7 +61,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/league',
-                        'description' => 'Alle Ligen, alphabetisch sortiert — enthält manager_count aus der jeweiligen Liga-DB',
+                        'description' => 'Alle Ligen, alphabetisch sortiert — enthält manager_count (global) und team_count (Teams der aktiven Saison aus der jeweiligen Liga-DB; 0 ohne aktive Saison)',
                     ],
                     [
                         'method' => 'GET',
