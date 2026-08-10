@@ -5,6 +5,7 @@ export class League {
     public name: string,
     public db_name: string,
     public manager_count: number,
+    public team_count: number,
   ) {}
 
   static from(data: any): League {
@@ -14,6 +15,7 @@ export class League {
       data.name,
       data.db_name,
       data.manager_count ?? 0,
+      data.team_count ?? 0,
     );
   }
 }

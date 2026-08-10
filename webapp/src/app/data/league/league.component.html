@@ -21,7 +21,7 @@
           <th>Name</th>
           <th>Slug</th>
           <th>Datenbank</th>
-          <th class="col-num">Manager</th>
+          <th class="col-num">Teams / Manager</th>
         </tr>
       </thead>
       <tbody>
@@ -30,7 +30,7 @@
             <td>{{ item.name }}</td>
             <td class="col-slug">{{ item.slug }}</td>
             <td class="col-slug">{{ item.db_name }}</td>
-            <td class="col-num">{{ item.manager_count }}</td>
+            <td class="col-num">{{ item.team_count }} / {{ item.manager_count }}</td>
           </tr>
         }
       </tbody>

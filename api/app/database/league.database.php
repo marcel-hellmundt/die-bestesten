@@ -41,8 +41,11 @@ trait LeagueTrait
         $query->execute();
         $leagues = $query->fetchAll(PDO::FETCH_ASSOC);
 
+        $activeSeasonId = $this->getActiveSeasonId();
+
         foreach ($leagues as &$league) {
             $league['manager_count'] = $this->getLeagueManagerCount($league['id']);
+            $league['team_count']    = $activeSeasonId ? $this->getLeagueTeamCount($league['db_name'], $activeSeasonId) : 0;
         }
 
         return $leagues;
@@ -326,6 +329,15 @@ trait LeagueTrait
     {
         $q = $this->con->prepare("SELECT COUNT(*) FROM manager_league WHERE league_id = ?");
         $q->execute([$leagueId]);
+        return (int) $q->fetchColumn();
+    }
+
+    private function getLeagueTeamCount(string $dbName, string $seasonId): int
+    {
+        $pdo = $this->openLeagueConnection($dbName);
+        if (!$pdo) return 0;
+        $q = $pdo->prepare("SELECT COUNT(*) FROM team WHERE season_id = ?");
+        $q->execute([$seasonId]);
         return (int) $q->fetchColumn();
     }
 
