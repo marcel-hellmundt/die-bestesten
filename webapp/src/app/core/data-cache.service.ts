@@ -18,6 +18,7 @@ export class DataCacheService {
   private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string; color: string | null; color_secondary: string | null } | null; loaded: boolean }>({ data: null, loaded: false });
   private squadState     = signal<{ players: any[]; loaded: boolean }>({ players: [], loaded: false });
   private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, loaded: false });
+  private h2hStatusState = signal<{ exists: boolean; loaded: boolean }>({ exists: false, loaded: false });
 
   seasons        = computed(() => this.seasonsState().data);
   startedSeasons = computed(() => {
@@ -103,6 +104,16 @@ export class DataCacheService {
 
   invalidateLeague(): void {
     this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, loaded: false });
+  }
+
+  h2hTournamentEverExisted = computed(() => this.h2hStatusState().exists);
+
+  ensureH2HStatus(): void {
+    if (this.h2hStatusState().loaded) return;
+    this.api.get<{ exists: boolean }>('h2h/status').subscribe({
+      next: data => this.h2hStatusState.set({ exists: !!data.exists, loaded: true }),
+      error: () => this.h2hStatusState.set({ exists: false, loaded: true }),
+    });
   }
 
   seasonName(seasonId: string): string {

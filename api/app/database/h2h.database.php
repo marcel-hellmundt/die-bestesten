@@ -2,6 +2,13 @@
 
 trait H2HTrait
 {
+    // Whether this league has ever generated an H2H tournament (any season) — used by the
+    // frontend to decide whether the H2H nav entry should be shown at all.
+    public function hasAnyH2HTournament(): bool
+    {
+        return (bool) $this->con_league->query("SELECT EXISTS(SELECT 1 FROM h2h_group)")->fetchColumn();
+    }
+
     public function getH2HOverview(string $seasonId): array
     {
         // Load all groups for this season

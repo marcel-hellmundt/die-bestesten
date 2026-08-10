@@ -986,6 +986,11 @@ class Routing
                     ],
                     [
                         'method' => 'GET',
+                        'path' => '/h2h/status',
+                        'description' => 'Ob die Liga jemals ein H2H-Turnier generiert hat (beliebige Saison) → {exists} — für die Sichtbarkeit des H2H-Menüpunkts im Frontend — Auth',
+                    ],
+                    [
+                        'method' => 'GET',
                         'path' => '/h2h/:id',
                         'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten — Auth',
                     ],

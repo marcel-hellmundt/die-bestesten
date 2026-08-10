@@ -37,164 +37,207 @@
     </div>
   </section>
 
-  <!-- 2. Gruppenphase & Snake-Seeding -->
-  <section class="mode-section">
-    <h2 class="section-header">Gruppenphase &amp; Auslosung</h2>
-    <p>
-      Alle 12 Teams werden nach Abschluss der Vorsaison in
-      <strong>4 Gruppen zu je 3 Teams</strong> eingeteilt. Die Zuweisung erfolgt per
-      <strong>Snake-Seeding</strong> auf Basis der Vorjahres-Abschlusstabelle: die Teams werden nach
-      ihrem Rang sortiert und dann abwechselnd in die Gruppen verteilt.
-    </p>
-    <div class="snake-table">
-      <div class="snake-row snake-row--header">
-        <span>Runde</span>
-        <span>Gruppe A</span>
-        <span>Gruppe B</span>
-        <span>Gruppe C</span>
-        <span>Gruppe D</span>
+  @if (loading()) {
+    <p class="state-msg">Laden…</p>
+  } @else if (error()) {
+    <p class="state-msg state-msg--error">{{ error() }}</p>
+  } @else if (!tournamentExists()) {
+    <section class="mode-section">
+      <h2 class="section-header">Gruppenphase, K.o.-Runde &amp; Rahmenkalender</h2>
+      <p>
+        Für die Saison {{ seasonLabel() }} wurde noch kein H2H-Turnier generiert. Gruppeneinteilung,
+        K.o.-Runde und Rahmenkalender hängen von der Teilnehmerzahl ab und stehen deshalb erst fest,
+        sobald der Admin das Turnier startet.
+      </p>
+    </section>
+  } @else if (format() === 'unknown') {
+    <section class="mode-section">
+      <h2 class="section-header">Gruppenphase, K.o.-Runde &amp; Rahmenkalender</h2>
+      <p>
+        Für dieses Turnierformat ({{ teamCount() }} Teams) gibt es hier noch keine Beschreibung.
+      </p>
+    </section>
+  } @else {
+    <!-- 2. Gruppenphase & Snake-Seeding -->
+    <section class="mode-section">
+      <h2 class="section-header">Gruppenphase &amp; Auslosung</h2>
+      <p>
+        Alle {{ teamCount() }} Teams werden nach Abschluss der Vorsaison in
+        <strong>{{ groupLabels().length }} Gruppen zu je 3 Teams</strong> eingeteilt. Die Zuweisung
+        erfolgt per <strong>Snake-Seeding</strong> auf Basis der Vorjahres-Abschlusstabelle: die
+        Teams werden nach ihrem Rang sortiert und dann abwechselnd in die Gruppen verteilt.
+      </p>
+      <div class="snake-table">
+        <div
+          class="snake-row snake-row--header"
+          [style.grid-template-columns]="'60px repeat(' + groupLabels().length + ', 1fr)'"
+        >
+          <span>Runde</span>
+          @for (label of groupLabels(); track label) {
+            <span>{{ label }}</span>
+          }
+        </div>
+        @for (row of snakeRows(); track row.round) {
+          <div
+            class="snake-row"
+            [style.grid-template-columns]="'60px repeat(' + groupLabels().length + ', 1fr)'"
+          >
+            <span class="snake-round">{{ row.round }}</span>
+            @for (placement of row.placements; track placement) {
+              <span>Platz {{ placement }}</span>
+            }
+          </div>
+        }
       </div>
-      <div class="snake-row">
-        <span class="snake-round">1 →</span>
-        <span>Platz 1</span>
-        <span>Platz 2</span>
-        <span>Platz 3</span>
-        <span>Platz 4</span>
-      </div>
-      <div class="snake-row">
-        <span class="snake-round">2 ←</span>
-        <span>Platz 8</span>
-        <span>Platz 7</span>
-        <span>Platz 6</span>
-        <span>Platz 5</span>
-      </div>
-      <div class="snake-row">
-        <span class="snake-round">3 →</span>
-        <span>Platz 9</span>
-        <span>Platz 10</span>
-        <span>Platz 11</span>
-        <span>Platz 12</span>
-      </div>
-    </div>
-    <p>
-      Innerhalb jeder Gruppe spielt jedes Team einmal gegen jedes andere — insgesamt also je
-      <strong>2 Gruppenspiele</strong> pro Team. Der Gruppensieger und der Zweitplatzierte jeder
-      Gruppe ziehen in die K.o.-Runde ein.
-    </p>
-  </section>
+      <p>
+        Innerhalb jeder Gruppe spielt jedes Team zweimal (Hin- und Rückspiel) gegen jedes andere —
+        insgesamt also je <strong>4 Gruppenspiele</strong> pro Team. Der Gruppensieger und der
+        Zweitplatzierte jeder Gruppe qualifizieren sich für die K.o.-Runde.
+      </p>
+    </section>
 
-  <!-- 3. K.o.-Runde -->
-  <section class="mode-section">
-    <h2 class="section-header">K.o.-Runde</h2>
-    <p>
-      Nach der Gruppenphase folgen Viertelfinale, Halbfinale und Finale. Viertel- und Halbfinale
-      werden jeweils in <strong>Hin- und Rückspiel</strong> ausgetragen — das Weiterkommen
-      entscheidet sich über das <strong>Gesamt-Toreverhältnis</strong> beider Spiele. Das Finale
-      findet als <strong>Einzelspiel</strong> statt.
-    </p>
-    <p>
-      Bei Gleichstand im Toreverhältnis (über beide Legs) entscheiden die
-      <strong>Gesamtpunkte</strong> beider Spieltage. Im Finale entscheiden bei Tore-Gleichstand
-      ebenfalls die <strong>Gesamtpunkte</strong> des Spieltags. Besteht auch dann noch
-      Gleichstand, entscheidet der Admin manuell.
-    </p>
-    <p>
-      Die Viertelfinal-Paarungen folgen einem festen Bracket, das die Gruppensieger gegen die
-      Zweitplatzierten aus anderen Gruppen führt und dabei Gegner aus der eigenen Gruppenphase
-      vermeidet. Im Halbfinale werden die beiden VF-Stränge überkreuzt: Sieger VF1 und VF3
-      (Strang A/B × C/D) spielen in einem Halbfinale, Sieger VF2 und VF4 im anderen — so können
-      sich die stärksten Teams aus unterschiedlichen Gruppen-Paaren erst im Finale treffen:
-    </p>
-    <div class="bracket-table">
-      <div class="bracket-row bracket-row--header">
-        <span>Paarung</span>
-        <span>Hinspiel</span>
-        <span>Rückspiel</span>
-      </div>
-      <div class="bracket-row">
-        <span>VF 1: A1 – B2</span>
-        <span>ST 20</span>
-        <span>ST 24</span>
-      </div>
-      <div class="bracket-row">
-        <span>VF 2: B1 – A2</span>
-        <span>ST 21</span>
-        <span>ST 25</span>
-      </div>
-      <div class="bracket-row">
-        <span>VF 3: C1 – D2</span>
-        <span>ST 22</span>
-        <span>ST 26</span>
-      </div>
-      <div class="bracket-row">
-        <span>VF 4: D1 – C2</span>
-        <span>ST 23</span>
-        <span>ST 27</span>
-      </div>
-      <div class="bracket-row bracket-row--sep"></div>
-      <div class="bracket-row">
-        <span>HF 1: Sieger VF1 – Sieger VF3</span>
-        <span>ST 29</span>
-        <span>ST 31</span>
-      </div>
-      <div class="bracket-row">
-        <span>HF 2: Sieger VF2 – Sieger VF4</span>
-        <span>ST 30</span>
-        <span>ST 32</span>
-      </div>
-      <div class="bracket-row bracket-row--sep"></div>
-      <div class="bracket-row bracket-row--final">
-        <span>Finale: Sieger HF1 – Sieger HF2</span>
-        <span>ST 34</span>
-        <span>—</span>
-      </div>
-    </div>
-  </section>
+    <!-- 3. K.o.-Runde -->
+    @if (format() === '12') {
+      <section class="mode-section">
+        <h2 class="section-header">K.o.-Runde</h2>
+        <p>
+          Nach der Gruppenphase folgen Viertelfinale, Halbfinale und Finale. Viertel- und Halbfinale
+          werden jeweils in <strong>Hin- und Rückspiel</strong> ausgetragen — das Weiterkommen
+          entscheidet sich über das <strong>Gesamt-Toreverhältnis</strong> beider Spiele. Das Finale
+          findet als <strong>Einzelspiel</strong> statt.
+        </p>
+        <p>
+          Bei Gleichstand im Toreverhältnis (über beide Legs) entscheiden die
+          <strong>Gesamtpunkte</strong> beider Spieltage. Im Finale entscheiden bei Tore-Gleichstand
+          ebenfalls die <strong>Gesamtpunkte</strong> des Spieltags. Besteht auch dann noch
+          Gleichstand, entscheidet der Admin manuell.
+        </p>
+        <p>
+          Die Viertelfinal-Paarungen folgen einem festen Bracket, das die Gruppensieger gegen die
+          Zweitplatzierten aus anderen Gruppen führt und dabei Gegner aus der eigenen Gruppenphase
+          vermeidet. Im Halbfinale werden die beiden VF-Stränge überkreuzt: Sieger VF1 und VF3
+          (Strang A/B × C/D) spielen in einem Halbfinale, Sieger VF2 und VF4 im anderen — so können
+          sich die stärksten Teams aus unterschiedlichen Gruppen-Paaren erst im Finale treffen:
+        </p>
+        <div class="bracket-table">
+          <div class="bracket-row bracket-row--header">
+            <span>Paarung</span>
+            <span>Hinspiel</span>
+            <span>Rückspiel</span>
+          </div>
+          <div class="bracket-row">
+            <span>VF 1: A1 – B2</span>
+            <span>ST 20</span>
+            <span>ST 24</span>
+          </div>
+          <div class="bracket-row">
+            <span>VF 2: B1 – A2</span>
+            <span>ST 21</span>
+            <span>ST 25</span>
+          </div>
+          <div class="bracket-row">
+            <span>VF 3: C1 – D2</span>
+            <span>ST 22</span>
+            <span>ST 26</span>
+          </div>
+          <div class="bracket-row">
+            <span>VF 4: D1 – C2</span>
+            <span>ST 23</span>
+            <span>ST 27</span>
+          </div>
+          <div class="bracket-row bracket-row--sep"></div>
+          <div class="bracket-row">
+            <span>HF 1: Sieger VF1 – Sieger VF3</span>
+            <span>ST 29</span>
+            <span>ST 31</span>
+          </div>
+          <div class="bracket-row">
+            <span>HF 2: Sieger VF2 – Sieger VF4</span>
+            <span>ST 30</span>
+            <span>ST 32</span>
+          </div>
+          <div class="bracket-row bracket-row--sep"></div>
+          <div class="bracket-row bracket-row--final">
+            <span>Finale: Sieger HF1 – Sieger HF2</span>
+            <span>ST 34</span>
+            <span>—</span>
+          </div>
+        </div>
+      </section>
+    } @else {
+      <section class="mode-section">
+        <h2 class="section-header">K.o.-Runde</h2>
+        <p>
+          Bei {{ teamCount() }} Teams gibt es kein Viertelfinale: Die 3 Gruppensieger und der
+          <strong>beste Gruppenzweite</strong> (nach Punkten, bei Gleichstand Tordifferenz, dann
+          Toren — über alle Gruppen hinweg verglichen) ziehen direkt ins Halbfinale ein.
+        </p>
+        <p>
+          Damit niemand im Halbfinale auf ein Team trifft, gegen das er schon in der Gruppenphase
+          gespielt hat, bekommt der beste Zweitplatzierte den Sieger einer anderen Gruppe als
+          Gegner. Die beiden übrigen Gruppensieger spielen gegeneinander.
+        </p>
+        <p>
+          Halbfinale wird im <strong>Hin- und Rückspiel</strong> ausgetragen — das Weiterkommen
+          entscheidet sich über das <strong>Gesamt-Toreverhältnis</strong> beider Spiele, bei
+          Gleichstand die <strong>Gesamtpunkte</strong> beider Spieltage, danach entscheidet der
+          Admin manuell. Das Finale findet als <strong>Einzelspiel</strong> statt.
+        </p>
+      </section>
+    }
 
-  <!-- 4. Rahmenkalender -->
-  <section class="mode-section">
-    <h2 class="section-header">Rahmenkalender</h2>
-    <div class="calendar-table">
-      <div class="cal-row cal-row--header">
-        <span>Spieltage</span>
-        <span>Phase</span>
+    <!-- 4. Rahmenkalender -->
+    <section class="mode-section">
+      <h2 class="section-header">Rahmenkalender</h2>
+      <div class="calendar-table">
+        <div class="cal-row cal-row--header">
+          <span>Spieltage</span>
+          <span>Phase</span>
+        </div>
+        <div class="cal-row">
+          <span class="cal-md">ST 1 – 18</span>
+          <span>Gruppenphase</span>
+        </div>
+        @if (format() === '12') {
+          <div class="cal-row">
+            <span class="cal-md">ST 19</span>
+            <span class="cal-muted">Auswertung / Pause</span>
+          </div>
+          <div class="cal-row">
+            <span class="cal-md">ST 20 – 23</span>
+            <span>Viertelfinale Hinspiele</span>
+          </div>
+          <div class="cal-row">
+            <span class="cal-md">ST 24 – 27</span>
+            <span>Viertelfinale Rückspiele</span>
+          </div>
+          <div class="cal-row">
+            <span class="cal-md">ST 28</span>
+            <span class="cal-muted">Pause</span>
+          </div>
+        } @else {
+          <div class="cal-row">
+            <span class="cal-md">ST 19 – 28</span>
+            <span class="cal-muted">Kein Viertelfinale / Pause</span>
+          </div>
+        }
+        <div class="cal-row">
+          <span class="cal-md">ST 29 – 30</span>
+          <span>Halbfinale Hinspiele</span>
+        </div>
+        <div class="cal-row">
+          <span class="cal-md">ST 31 – 32</span>
+          <span>Halbfinale Rückspiele</span>
+        </div>
+        <div class="cal-row">
+          <span class="cal-md">ST 33</span>
+          <span class="cal-muted">Pause</span>
+        </div>
+        <div class="cal-row cal-row--highlight">
+          <span class="cal-md">ST 34</span>
+          <span>Finale</span>
+        </div>
       </div>
-      <div class="cal-row">
-        <span class="cal-md">ST 1 – 18</span>
-        <span>Gruppenphase</span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-md">ST 19</span>
-        <span class="cal-muted">Auswertung / Pause</span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-md">ST 20 – 23</span>
-        <span>Viertelfinale Hinspiele</span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-md">ST 24 – 27</span>
-        <span>Viertelfinale Rückspiele</span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-md">ST 28</span>
-        <span class="cal-muted">Pause</span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-md">ST 29 – 30</span>
-        <span>Halbfinale Hinspiele</span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-md">ST 31 – 32</span>
-        <span>Halbfinale Rückspiele</span>
-      </div>
-      <div class="cal-row">
-        <span class="cal-md">ST 33</span>
-        <span class="cal-muted">Pause</span>
-      </div>
-      <div class="cal-row cal-row--highlight">
-        <span class="cal-md">ST 34</span>
-        <span>Finale</span>
-      </div>
-    </div>
-  </section>
+    </section>
+  }
 </div>
