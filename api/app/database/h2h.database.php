@@ -632,9 +632,37 @@ trait H2HTrait
         return ['status' => true, 'matches_deleted' => $matchesDeleted, 'groups_deleted' => $groupsDeleted];
     }
 
+    // Resolves the league's configured division (falling back to the top-level German division
+    // when none is configured, same convention as elsewhere in the app) and returns that
+    // division's matchdays for the season, keyed by number. A league must never have H2H
+    // matches wired to — or "completed" checked against — a matchday from a division it
+    // doesn't actually play in, so every matchday lookup in this trait goes through here.
+    private function getDivisionMatchdaysByNumber(?string $divisionId, string $seasonId): array
+    {
+        if ($divisionId) {
+            $mdQ = $this->con->prepare(
+                "SELECT id, number, completed FROM matchday WHERE season_id = :s AND division_id = :d"
+            );
+            $mdQ->execute([':s' => $seasonId, ':d' => $divisionId]);
+        } else {
+            $mdQ = $this->con->prepare(
+                "SELECT m.id, m.number, m.completed FROM matchday m
+                 JOIN division d ON d.id = m.division_id
+                 WHERE m.season_id = :s AND d.level = 1 AND LOWER(d.country_id) = 'de'"
+            );
+            $mdQ->execute([':s' => $seasonId]);
+        }
+
+        $matchdays = [];
+        foreach ($mdQ->fetchAll(PDO::FETCH_ASSOC) as $md) {
+            $matchdays[(int) $md['number']] = ['id' => $md['id'], 'completed' => (bool) $md['completed']];
+        }
+        return $matchdays;
+    }
+
     public function generateH2HTournament(string $leagueId, string $seasonId): array
     {
-        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq = $this->con->prepare("SELECT db_name, division_id FROM league WHERE id = :id LIMIT 1");
         $lq->execute([':id' => $leagueId]);
         $league = $lq->fetch(PDO::FETCH_ASSOC);
         if (!$league) {
@@ -723,18 +751,12 @@ trait H2HTrait
             $groupSlots[$gi][$si] = $team['id'];
         }
 
-        $mdQ = $this->con->prepare(
-            "SELECT id, number FROM matchday WHERE season_id = :s ORDER BY number ASC"
-        );
-        $mdQ->execute([':s' => $seasonId]);
-        $matchdays = [];
-        foreach ($mdQ->fetchAll(PDO::FETCH_ASSOC) as $md) {
-            $matchdays[(int) $md['number']] = $md['id'];
-        }
+        $matchdays = $this->getDivisionMatchdaysByNumber($league['division_id'], $seasonId);
+        $missingMd = array_diff(range(1, 18), array_keys($matchdays));
 
-        if (count($matchdays) < 18) {
+        if (!empty($missingMd)) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'Mindestens 18 Spieltage benötigt, gefunden: ' . count($matchdays)];
+            return ['status' => false, 'message' => 'Fehlende Spieltage 1–18 in der Liga-Division: ' . implode(', ', $missingMd)];
         }
 
         // [matchday_number, group_index, leg, home_slot_index, away_slot_index]
@@ -783,7 +805,7 @@ trait H2HTrait
         );
         $created = 0;
         foreach ($template as $si => [$mdNum, $gi, $leg, $homeSlot, $awaySlot]) {
-            $matchdayId = $matchdays[$mdNum] ?? null;
+            $matchdayId = $matchdays[$mdNum]['id'] ?? null;
             if (!$matchdayId) continue;
             $stmtMatch->execute([
                 $seasonId, $leg,
@@ -960,25 +982,21 @@ trait H2HTrait
 
     public function drawH2HQuarterfinals(string $leagueId, string $seasonId): array
     {
-        // Check matchday 18 is completed
-        $md18q = $this->con->prepare(
-            "SELECT completed FROM matchday WHERE season_id = :s AND number = 18 LIMIT 1"
-        );
-        $md18q->execute([':s' => $seasonId]);
-        $md18 = $md18q->fetch(PDO::FETCH_ASSOC);
-        if (!$md18 || !$md18['completed']) {
-            http_response_code(400);
-            return ['status' => false, 'message' => 'Spieltag 18 ist noch nicht abgeschlossen'];
-        }
-
         // Open league connection
-        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq = $this->con->prepare("SELECT db_name, division_id FROM league WHERE id = :id LIMIT 1");
         $lq->execute([':id' => $leagueId]);
         $league = $lq->fetch(PDO::FETCH_ASSOC);
         if (!$league) {
             http_response_code(404);
             return ['status' => false, 'message' => 'Liga nicht gefunden'];
         }
+
+        $matchdays = $this->getDivisionMatchdaysByNumber($league['division_id'], $seasonId);
+        if (!isset($matchdays[18]) || !$matchdays[18]['completed']) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Spieltag 18 ist noch nicht abgeschlossen'];
+        }
+
         try {
             $con = new PDO(
                 "mysql:host={$_ENV['DB_HOST']};dbname={$league['db_name']};charset=utf8",
@@ -1026,19 +1044,11 @@ trait H2HTrait
         [$c1, $c2] = [$slots[2]['first'], $slots[2]['second']];
         [$d1, $d2] = [$slots[3]['first'], $slots[3]['second']];
 
-        // Load matchdays 20-27
-        $mdQ = $this->con->prepare(
-            "SELECT id, number FROM matchday WHERE season_id = :s AND number IN (20,21,22,23,24,25,26,27)"
-        );
-        $mdQ->execute([':s' => $seasonId]);
-        $matchdays = [];
-        foreach ($mdQ->fetchAll(PDO::FETCH_ASSOC) as $md) {
-            $matchdays[(int) $md['number']] = $md['id'];
-        }
+        // Matchdays 20-27 must exist in the league's own division
         $missing = array_diff([20, 21, 22, 23, 24, 25, 26, 27], array_keys($matchdays));
         if (!empty($missing)) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'Fehlende Spieltage: ' . implode(', ', $missing)];
+            return ['status' => false, 'message' => 'Fehlende Spieltage in der Liga-Division: ' . implode(', ', $missing)];
         }
 
         // Fixed bracket
@@ -1059,7 +1069,7 @@ trait H2HTrait
              VALUES (UUID(), ?, 'quarterfinal', ?, ?, ?, ?, NULL, ?)"
         );
         foreach ($bracket as [$leg, $home, $away, $mdNum, $si]) {
-            $stmt->execute([$seasonId, $leg, $home, $away, $matchdays[$mdNum], $si]);
+            $stmt->execute([$seasonId, $leg, $home, $away, $matchdays[$mdNum]['id'], $si]);
         }
 
         // ── Notifications ─────────────────────────────────────────────────────
@@ -1110,7 +1120,7 @@ trait H2HTrait
 
     public function drawH2HSemifinals(string $leagueId, string $seasonId): array
     {
-        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq = $this->con->prepare("SELECT db_name, division_id FROM league WHERE id = :id LIMIT 1");
         $lq->execute([':id' => $leagueId]);
         $league = $lq->fetch(PDO::FETCH_ASSOC);
         if (!$league) {
@@ -1144,15 +1154,12 @@ trait H2HTrait
             return ['status' => false, 'message' => 'Kein unterstütztes H2H-Turnier für diese Saison gefunden'];
         }
 
+        $matchdays = $this->getDivisionMatchdaysByNumber($league['division_id'], $seasonId);
+
         // 12-team format (4 groups): semifinal follows the quarterfinal stage — Spieltag 27.
         // 9-team format (3 groups): no quarterfinal stage, semifinal follows the group stage directly — Spieltag 18.
         $requiredMdNumber = $groupCount === 4 ? 27 : 18;
-        $mdCheckQ = $this->con->prepare(
-            "SELECT completed FROM matchday WHERE season_id = :s AND number = :n LIMIT 1"
-        );
-        $mdCheckQ->execute([':s' => $seasonId, ':n' => $requiredMdNumber]);
-        $mdCheck = $mdCheckQ->fetch(PDO::FETCH_ASSOC);
-        if (!$mdCheck || !$mdCheck['completed']) {
+        if (!isset($matchdays[$requiredMdNumber]) || !$matchdays[$requiredMdNumber]['completed']) {
             http_response_code(400);
             return ['status' => false, 'message' => "Spieltag {$requiredMdNumber} ist noch nicht abgeschlossen"];
         }
@@ -1277,18 +1284,11 @@ trait H2HTrait
             $vf4 = $winners[$thirdGroup];
         }
 
-        $mdQ = $this->con->prepare(
-            "SELECT id, number FROM matchday WHERE season_id = :s AND number IN (29,30,31,32)"
-        );
-        $mdQ->execute([':s' => $seasonId]);
-        $matchdays = [];
-        foreach ($mdQ->fetchAll(PDO::FETCH_ASSOC) as $md) {
-            $matchdays[(int) $md['number']] = $md['id'];
-        }
+        // Matchdays 29-32 must exist in the league's own division
         $missing = array_diff([29, 30, 31, 32], array_keys($matchdays));
         if (!empty($missing)) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'Fehlende Spieltage: ' . implode(', ', $missing)];
+            return ['status' => false, 'message' => 'Fehlende Spieltage in der Liga-Division: ' . implode(', ', $missing)];
         }
 
         // Cross-bracket: VF1 vs VF3, VF2 vs VF4
@@ -1304,7 +1304,7 @@ trait H2HTrait
              VALUES (UUID(), ?, 'semifinal', ?, ?, ?, ?, NULL, ?)"
         );
         foreach ($bracket as [$leg, $home, $away, $mdNum, $si]) {
-            $stmt->execute([$seasonId, $leg, $home, $away, $matchdays[$mdNum], $si]);
+            $stmt->execute([$seasonId, $leg, $home, $away, $matchdays[$mdNum]['id'], $si]);
         }
 
         // ── Notifications ─────────────────────────────────────────────────────
@@ -1355,23 +1355,20 @@ trait H2HTrait
 
     public function drawH2HFinal(string $leagueId, string $seasonId): array
     {
-        $md32q = $this->con->prepare(
-            "SELECT completed FROM matchday WHERE season_id = :s AND number = 32 LIMIT 1"
-        );
-        $md32q->execute([':s' => $seasonId]);
-        $md32 = $md32q->fetch(PDO::FETCH_ASSOC);
-        if (!$md32 || !$md32['completed']) {
-            http_response_code(400);
-            return ['status' => false, 'message' => 'Spieltag 32 ist noch nicht abgeschlossen'];
-        }
-
-        $lq = $this->con->prepare("SELECT db_name FROM league WHERE id = :id LIMIT 1");
+        $lq = $this->con->prepare("SELECT db_name, division_id FROM league WHERE id = :id LIMIT 1");
         $lq->execute([':id' => $leagueId]);
         $league = $lq->fetch(PDO::FETCH_ASSOC);
         if (!$league) {
             http_response_code(404);
             return ['status' => false, 'message' => 'Liga nicht gefunden'];
         }
+
+        $matchdays = $this->getDivisionMatchdaysByNumber($league['division_id'], $seasonId);
+        if (!isset($matchdays[32]) || !$matchdays[32]['completed']) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Spieltag 32 ist noch nicht abgeschlossen'];
+        }
+
         try {
             $con = new PDO(
                 "mysql:host={$_ENV['DB_HOST']};dbname={$league['db_name']};charset=utf8",
@@ -1471,15 +1468,11 @@ trait H2HTrait
             }
         }
 
-        $mdQ = $this->con->prepare(
-            "SELECT id FROM matchday WHERE season_id = :s AND number = 34 LIMIT 1"
-        );
-        $mdQ->execute([':s' => $seasonId]);
-        $md34 = $mdQ->fetchColumn();
-        if (!$md34) {
+        if (!isset($matchdays[34])) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'Spieltag 34 nicht gefunden'];
+            return ['status' => false, 'message' => 'Spieltag 34 nicht in der Liga-Division gefunden'];
         }
+        $md34 = $matchdays[34]['id'];
 
         $stmt = $con->prepare(
             "INSERT INTO h2h_match (id, season_id, phase, leg, home_team_id, away_team_id, matchday_id, group_id, sort_index)
