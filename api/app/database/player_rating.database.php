@@ -52,20 +52,25 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Creates empty player_ratings for all current players of a club on a matchday.
+     * Creates empty player_ratings for all current players of a club on a matchday, restricted
+     * to players with a valid player_in_season entry for that season (position + price set) —
+     * a player_in_club row alone can be stale (e.g. left the club but not yet marked to_date,
+     * or simply never added to this season's fantasy pool).
      * Uses INSERT IGNORE so existing ratings are not overwritten.
      * Returns: count of newly created ratings + IDs of existing ones.
      */
-    public function initPlayerRatingsForClub(string $matchdayId, string $clubId): array
+    public function initPlayerRatingsForClub(string $matchdayId, string $clubId, string $seasonId): array
     {
         $players = $this->con->prepare(
             "SELECT p.id AS player_id, p.displayname
              FROM player_in_club pic
              JOIN player p ON p.id = pic.player_id
+             JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
              WHERE pic.club_id = :club_id AND pic.to_date IS NULL
+               AND pis.position IS NOT NULL AND pis.price IS NOT NULL AND pis.price > 0
              ORDER BY p.last_name ASC"
         );
-        $players->execute([':club_id' => $clubId]);
+        $players->execute([':club_id' => $clubId, ':season_id' => $seasonId]);
         $playerRows = $players->fetchAll(PDO::FETCH_ASSOC);
 
         $insert = $this->con->prepare(

@@ -164,7 +164,7 @@ class PlayerRatingController extends _BaseController
             return ['status' => false, 'message' => 'Spieltag hat noch nicht begonnen'];
         }
 
-        return $this->db->initPlayerRatingsForClub($matchdayId, $clubId);
+        return $this->db->initPlayerRatingsForClub($matchdayId, $clubId, $matchday['season_id']);
     }
 
     protected function patch(): mixed
