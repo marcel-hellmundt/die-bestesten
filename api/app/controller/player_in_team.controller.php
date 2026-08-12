@@ -20,6 +20,11 @@ class PlayerInTeamController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'team_id or player_id required'];
         }
+        // TEMPORARY HOTFIX: transfer window results must stay secret — remove once reveal is handled properly
+        if (!$this->ownsTeam($teamId)) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Kader ist aktuell nur für das eigene Team einsehbar'];
+        }
         if (!empty($this->params['include_former'])) {
             return [
                 'current' => $this->db->getSquadByTeamId($teamId),

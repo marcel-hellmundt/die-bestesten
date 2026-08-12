@@ -490,15 +490,16 @@ trait OfferTrait
                     'bids'               => [],
                 ];
             }
-            $tm = $teamMap[$r['team_id']] ?? [];
+            $tm       = $teamMap[$r['team_id']] ?? [];
+            $isWinner = $r['status'] === 'success';
             $grouped[$pid]['bids'][] = [
                 'id'             => $r['id'],
                 'team_id'        => $r['team_id'],
                 'team_name'      => $tm['team_name']  ?? null,
                 'team_color'     => $tm['color']      ?? null,
                 'team_season_id' => $tm['season_id']  ?? null,
-                'offer_value'    => (int) $r['offer_value'],
-                'price_snapshot' => $r['price_snapshot'] !== null ? (int) $r['price_snapshot'] : null,
+                'offer_value'    => $isWinner ? (int) $r['offer_value'] : null,
+                'price_snapshot' => $isWinner && $r['price_snapshot'] !== null ? (int) $r['price_snapshot'] : null,
                 'status'         => $r['status'],
                 'created_at'     => $r['created_at'],
             ];

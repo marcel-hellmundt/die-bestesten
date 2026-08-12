@@ -62,7 +62,7 @@
               <div class="winner-bid__info">
                 <a class="winner-bid__team" [routerLink]="['/team', w.team_id]">{{ w.team_name }}</a>
                 <div class="winner-bid__price">
-                  <span class="winner-bid__amount">{{ formatPrice(w.offer_value) }}</span>
+                  <span class="winner-bid__amount">{{ formatPrice(w.offer_value!) }}</span>
                   @if (bidPct(w.offer_value, w.price_snapshot); as pct) {
                     <span class="winner-bid__pct" [ngClass]="bidPctClass(w.offer_value, w.price_snapshot)">{{ pct }}</span>
                   }
@@ -72,7 +72,7 @@
             @if (losers(entry).length) {
               <div class="loser-logos">
                 @for (l of losers(entry); track l.id) {
-                  <div class="loser-logo-wrap" [title]="(l.team_name ?? '') + (bidPct(l.offer_value, l.price_snapshot) ? ' · ' + bidPct(l.offer_value, l.price_snapshot) : '')">
+                  <div class="loser-logo-wrap" [title]="l.team_name ?? ''">
                     @if (!logoErrors.has(l.team_id)) {
                       <img
                         class="team-logo team-logo--sm"

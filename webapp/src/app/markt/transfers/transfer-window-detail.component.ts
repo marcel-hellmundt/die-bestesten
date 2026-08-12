@@ -17,7 +17,7 @@ interface Bid {
   team_name: string | null;
   team_color: string | null;
   team_season_id: string | null;
-  offer_value: number;
+  offer_value: number | null;
   price_snapshot: number | null;
   status: 'success' | 'lost' | 'cancelled' | 'pending';
   created_at: string;
@@ -67,8 +67,8 @@ export class TransferWindowDetailComponent {
 
   offers = computed(() =>
     [...(this.response()?.offers ?? [])].sort((a, b) => {
-      const maxA = Math.max(...a.bids.map(bid => bid.offer_value), 0);
-      const maxB = Math.max(...b.bids.map(bid => bid.offer_value), 0);
+      const maxA = Math.max(...a.bids.map(bid => bid.offer_value ?? 0), 0);
+      const maxB = Math.max(...b.bids.map(bid => bid.offer_value ?? 0), 0);
       return maxB - maxA;
     })
   );
@@ -111,16 +111,16 @@ export class TransferWindowDetailComponent {
   losers(entry: PlayerOffers): Bid[] {
     return entry.bids
       .filter(b => b.status === 'lost' || b.status === 'cancelled')
-      .sort((a, b) => b.offer_value - a.offer_value);
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
   }
 
-  bidPct(offerValue: number, priceSnapshot: number | null): string | null {
-    if (!priceSnapshot) return null;
+  bidPct(offerValue: number | null, priceSnapshot: number | null): string | null {
+    if (!priceSnapshot || offerValue === null) return null;
     return Math.round(offerValue / priceSnapshot * 100) + '%';
   }
 
-  bidPctClass(offerValue: number, priceSnapshot: number | null): string {
-    if (!priceSnapshot) return '';
+  bidPctClass(offerValue: number | null, priceSnapshot: number | null): string {
+    if (!priceSnapshot || offerValue === null) return '';
     const pct = offerValue / priceSnapshot * 100;
     if (pct >= 200) return 'winner-bid__pct--danger';
     if (pct > 100)  return 'winner-bid__pct--warning';
