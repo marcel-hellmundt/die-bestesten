@@ -78,15 +78,36 @@ export class BidsComponent {
 
   // Edit state
   editingId = signal<string | null>(null);
-  editPct   = signal(100);
   editBusy  = signal(false);
   editError = signal<string | null>(null);
 
-  editValue = computed(() => {
-    const offer = this.offers().find(o => o.id === this.editingId());
-    if (!offer) return 0;
-    return Math.round(offer.price_snapshot * this.editPct() / 100 / 10_000) * 10_000;
+  editingOffer = computed(() => this.allOffers().find(o => o.id === this.editingId()) ?? null);
+
+  // Digit spinner — 4 controllable digits (10M / 1M / 100K / 10K), granularity 10.000,
+  // same input pattern as the "Gebot abgeben" dialog (player-detail.component).
+  digitE10000000 = signal(0);
+  digitE1000000  = signal(0);
+  digitE100000   = signal(0);
+  digitE10000    = signal(0);
+
+  editValue = computed(() =>
+    this.digitE10000000() * 10_000_000 +
+    this.digitE1000000()  *  1_000_000 +
+    this.digitE100000()   *    100_000 +
+    this.digitE10000()    *     10_000
+  );
+
+  editPercentage = computed(() => {
+    const snapshot = this.editingOffer()?.price_snapshot;
+    if (!snapshot) return 0;
+    return Math.round(this.editValue() / snapshot * 100);
   });
+
+  sliderMin = computed(() => {
+    const snapshot = this.editingOffer()?.price_snapshot ?? 0;
+    return Math.ceil(snapshot / 10_000) * 10_000;
+  });
+  sliderMax = computed(() => this.sliderMin() * 2);
 
   constructor() {
     this.cache.ensureMyTeam();
@@ -95,9 +116,40 @@ export class BidsComponent {
     });
   }
 
+  private setDigitsFromValue(v: number): void {
+    const s = String(Math.max(0, Math.floor(v / 10_000) * 10_000)).padStart(8, '0');
+    this.digitE10000000.set(+s[s.length - 8] || 0);
+    this.digitE1000000.set( +s[s.length - 7] || 0);
+    this.digitE100000.set(  +s[s.length - 6] || 0);
+    this.digitE10000.set(   +s[s.length - 5] || 0);
+  }
+
+  updateDigit(prop: 'digitE10000000' | 'digitE1000000' | 'digitE100000' | 'digitE10000', delta: number): void {
+    const sigs: Record<string, ReturnType<typeof signal<number>>> = {
+      digitE10000000: this.digitE10000000,
+      digitE1000000:  this.digitE1000000,
+      digitE100000:   this.digitE100000,
+      digitE10000:    this.digitE10000,
+    };
+    sigs[prop].update(v => v + delta);
+
+    // Carry-over logic
+    if (this.digitE10000() > 9)  { this.digitE100000.update(v => v + 1);   this.digitE10000.set(0); }
+    if (this.digitE10000() < 0)  { this.digitE10000.set(0); }
+    if (this.digitE100000() > 9) { this.digitE1000000.update(v => v + 1);  this.digitE100000.set(0); }
+    if (this.digitE100000() < 0) { this.digitE100000.set(0); }
+    if (this.digitE1000000() > 9){ this.digitE10000000.update(v => v + 1); this.digitE1000000.set(0); }
+    if (this.digitE1000000() < 0){ this.digitE1000000.set(0); }
+    if (this.digitE10000000() > 9) { this.digitE10000000.set(9); }
+    if (this.digitE10000000() < 0) { this.digitE10000000.set(0); }
+  }
+
+  onSliderInput(value: number): void {
+    this.setDigitsFromValue(value);
+  }
+
   startEdit(offer: Offer): void {
-    const pct = Math.round(offer.offer_value / offer.price_snapshot * 100);
-    this.editPct.set(Math.min(200, Math.max(100, pct)));
+    this.setDigitsFromValue(offer.offer_value);
     this.editError.set(null);
     this.editingId.set(offer.id);
   }

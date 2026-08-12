@@ -203,6 +203,62 @@
     color: var(--flat-river);
   }
 
+  &__spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    margin: $space-3 0;
+
+    .digit-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      &--fixed { opacity: 0.35; pointer-events: none; }
+
+      input[type='number'] {
+        width: 36px;
+        height: 36px;
+        text-align: center;
+        font-size: $font-sm;
+        font-variant-numeric: tabular-nums;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        background: $color-bg;
+        color: $color-text;
+        padding: 0;
+        appearance: textfield;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        &:focus { outline: none; border-color: var(--flat-river); }
+      }
+    }
+
+    .digit-arrow {
+      height: 22px;
+      width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: $color-text-muted;
+      font-size: 10px;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+
+      &:hover { color: $color-text; }
+      &--disabled { opacity: 0; pointer-events: none; }
+    }
+
+    .digit-sep { font-size: $font-lg; color: $color-text-muted; padding: 0 2px; line-height: 80px; }
+  }
+
   &__error {
     font-size: $font-xs;
     color: $color-danger;
