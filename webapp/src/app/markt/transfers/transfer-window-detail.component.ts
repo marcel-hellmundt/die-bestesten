@@ -1,9 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../auth/auth.service';
 
 interface Transferwindow {
   id: string;
@@ -42,7 +42,6 @@ interface WindowOffersResponse {
 
 interface State {
   res: WindowOffersResponse | null;
-  hidden: boolean;
   loading: boolean;
 }
 
@@ -55,24 +54,28 @@ interface State {
 export class TransferWindowDetailComponent {
   private api   = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private auth  = inject(AuthService);
+
+  // TEMPORARY HOTFIX: transfer window results must stay secret for non-admins — remove once reveal is handled properly
+  isAdmin = this.auth.isAdmin();
 
   private response = toSignal(
     this.route.paramMap.pipe(
       map(p => p.get('id')),
-      switchMap(id => id
+      switchMap(id => id && this.isAdmin
         ? this.api.get<WindowOffersResponse>(`offer?transferwindow_id=${id}`).pipe(
-            map((res): State => ({ res, hidden: false, loading: false })),
-            catchError((err: HttpErrorResponse) => of<State>({ res: null, hidden: err.status === 403, loading: false }))
+            map((res): State => ({ res, loading: false })),
+            catchError(() => of<State>({ res: null, loading: false }))
           )
-        : of<State>({ res: null, hidden: false, loading: false })
+        : of<State>({ res: null, loading: false })
       )
     ),
-    { initialValue: { res: null, hidden: false, loading: true } as State }
+    { initialValue: { res: null, loading: true } as State }
   );
 
   window  = computed(() => this.response().res?.window ?? null);
   loading = computed(() => this.response().loading);
-  hidden  = computed(() => this.response().hidden);
+  hidden  = computed(() => !this.isAdmin);
 
   offers = computed(() =>
     [...(this.response().res?.offers ?? [])].sort((a, b) => {
