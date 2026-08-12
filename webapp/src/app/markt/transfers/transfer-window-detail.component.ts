@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 
@@ -39,6 +40,12 @@ interface WindowOffersResponse {
   offers: PlayerOffers[];
 }
 
+interface State {
+  res: WindowOffersResponse | null;
+  hidden: boolean;
+  loading: boolean;
+}
+
 @Component({
   selector: 'app-transfer-window-detail',
   standalone: false,
@@ -54,19 +61,21 @@ export class TransferWindowDetailComponent {
       map(p => p.get('id')),
       switchMap(id => id
         ? this.api.get<WindowOffersResponse>(`offer?transferwindow_id=${id}`).pipe(
-            catchError(() => of(null))
+            map((res): State => ({ res, hidden: false, loading: false })),
+            catchError((err: HttpErrorResponse) => of<State>({ res: null, hidden: err.status === 403, loading: false }))
           )
-        : of(null)
+        : of<State>({ res: null, hidden: false, loading: false })
       )
     ),
-    { initialValue: null as WindowOffersResponse | null }
+    { initialValue: { res: null, hidden: false, loading: true } as State }
   );
 
-  window  = computed(() => this.response()?.window ?? null);
-  loading = computed(() => this.response() === null);
+  window  = computed(() => this.response().res?.window ?? null);
+  loading = computed(() => this.response().loading);
+  hidden  = computed(() => this.response().hidden);
 
   offers = computed(() =>
-    [...(this.response()?.offers ?? [])].sort((a, b) => {
+    [...(this.response().res?.offers ?? [])].sort((a, b) => {
       const maxA = Math.max(...a.bids.map(bid => bid.offer_value ?? 0), 0);
       const maxB = Math.max(...b.bids.map(bid => bid.offer_value ?? 0), 0);
       return maxB - maxA;

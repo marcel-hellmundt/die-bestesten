@@ -1,5 +1,8 @@
 @if (loading()) {
   <p class="state-msg">Auswertung läuft…</p>
+} @else if (hidden()) {
+  <a class="back-link" routerLink="../">← Alle Transferphasen</a>
+  <p class="state-msg">Die Ergebnisse dieser Transferphase sind aktuell nicht einsehbar.</p>
 } @else if (window()) {
   <a class="back-link" routerLink="../">← Alle Transferphasen</a>
 
