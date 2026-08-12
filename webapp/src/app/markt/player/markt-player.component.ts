@@ -46,6 +46,7 @@ export class MarktPlayerComponent {
   constructor() {
     this.cache.ensureLeague();
     this.cache.ensureSeasons();
+    this.cache.ensureMyTeam();
 
     effect(() => {
       this.filteredPlayers();
@@ -68,6 +69,34 @@ export class MarktPlayerComponent {
 
   players = computed(() => this.data()?.players ?? []);
   loading = computed(() => this.data() === undefined);
+
+  // ── Remaining budget (echtes Budget - offene Gebote) ─────────────────────────
+  private budgetData = toSignal(
+    toObservable(this.cache.myTeamId).pipe(
+      switchMap(id => id
+        ? this.api.get<{ budget: number }>(`transaction?team_id=${id}`)
+        : of(null)
+      ),
+      catchError(() => of(null)),
+    ),
+  );
+
+  private offersData = toSignal(
+    toObservable(this.cache.myTeamId).pipe(
+      switchMap(id => id
+        ? this.api.get<{ pending_sum: number }>(`offer?team_id=${id}`)
+        : of(null)
+      ),
+      catchError(() => of(null)),
+    ),
+  );
+
+  remainingBudget = computed(() => {
+    const budget = this.budgetData()?.budget;
+    if (budget === undefined || budget === null) return null;
+    const pending = this.offersData()?.pending_sum ?? 0;
+    return budget - pending;
+  });
 
   private _saved = this.loadFilters();
   searchQuery    = signal<string>(this._saved.search    ?? '');
@@ -136,17 +165,39 @@ export class MarktPlayerComponent {
       .sort((a, b) => (prevPositionMap.get(a.id) ?? 999) - (prevPositionMap.get(b.id) ?? 999));
   });
 
+  sortCol = signal<'price' | 'points'>('points');
+  sortDir = signal<'asc' | 'desc'>('desc');
+
+  sort(col: 'price' | 'points'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('desc');
+    }
+  }
+
   filteredPlayers = computed(() => {
     const q    = this.searchQuery().trim().toLowerCase();
     const pos  = this.positionFilter();
     const club = this.clubFilter();
     const max  = this.maxPrice();
-    return this.players().filter(p =>
+    const col  = this.sortCol();
+    const dir  = this.sortDir();
+
+    const filtered = this.players().filter(p =>
       (!q    || p.displayname.toLowerCase().includes(q)) &&
       (!pos  || p.position === pos) &&
       (!club || p.club_id === club) &&
       (max === null || this.dynamicPrice(p) <= max)
     );
+
+    return [...filtered].sort((a, b) => {
+      const cmp = col === 'price'
+        ? this.dynamicPrice(a) - this.dynamicPrice(b)
+        : a.season_points - b.season_points;
+      return dir === 'asc' ? cmp : -cmp;
+    });
   });
 
   hasFilters = computed(() =>

@@ -1,5 +1,12 @@
 <div class="players-page">
   <aside class="players-filters">
+    @if (remainingBudget() !== null) {
+      <div class="budget-display">
+        <p class="filter-label">Budget übrig</p>
+        <p class="budget-value">{{ formatPrice(remainingBudget()!) }}</p>
+      </div>
+    }
+
     <div class="filter-section">
       <input type="text" placeholder="Spieler suchen…"
              [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
@@ -55,6 +62,12 @@
   </aside>
 
   <div class="players-list">
+    @if (remainingBudget() !== null) {
+      <p class="budget-display budget-display--mobile">
+        <span class="filter-label">Budget übrig</span>
+        <span class="budget-value">{{ formatPriceShort(remainingBudget()!) }}</span>
+      </p>
+    }
     <div class="mobile-bar">
       <input type="search" class="input" placeholder="Spieler suchen…"
              [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" />
@@ -76,8 +89,14 @@
               <th></th>
               <th></th>
               <th>Spieler</th>
-              <th class="col-num">Preis</th>
-              <th class="col-num">Punkte</th>
+              <th class="col-num col-sortable" (click)="sort('price')">
+                Preis
+                <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-num col-sortable" (click)="sort('points')">
+                Punkte
+                <span class="sort-indicator">{{ sortCol() === 'points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
