@@ -3,35 +3,45 @@
 trait PlayerInSeasonTrait
 {
     /**
-     * All league players not currently in any fantasy team — usable as a "free agent market".
+     * League players usable as a "market" listing. By default only free agents (not in any
+     * fantasy team); with $includeAll=true, every league player is returned and players
+     * currently owned by a team are annotated with that team instead of excluded.
      * Returns player info, position, price, cumulative season points, and club data.
      */
-    public function getAvailablePlayers(?string $seasonId): array
+    public function getAvailablePlayers(?string $seasonId, bool $includeAll = false): array
     {
         if (!$seasonId) {
             $seasonId = $this->getActiveSeasonId();
             if (!$seasonId) return ['players' => []];
         }
 
-        // Get player IDs already in a fantasy team this season (league DB)
-        $excludedIds = [];
+        // Players already in a fantasy team this season (league DB) — used to exclude them
+        // (default mode) or to annotate them with their current team ($includeAll).
+        $ownershipMap = [];
         try {
             $ex = $this->con_league->prepare(
-                "SELECT DISTINCT pit.player_id
+                "SELECT pit.player_id, t.id AS team_id, t.team_name, t.season_id AS team_season_id
                  FROM player_in_team pit
                  JOIN team t ON t.id = pit.team_id
                  WHERE t.season_id = ? AND pit.to_matchday_id IS NULL"
             );
             $ex->execute([$seasonId]);
-            $excludedIds = $ex->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($ex->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $ownershipMap[$row['player_id']] = [
+                    'team_id'         => $row['team_id'],
+                    'team_name'       => $row['team_name'],
+                    'team_season_id'  => $row['team_season_id'],
+                ];
+            }
         } catch (PDOException) {}
 
         $exclusionClause  = '';
         $exclusionParams  = [];
-        if (!empty($excludedIds)) {
-            $ph              = implode(',', array_fill(0, count($excludedIds), '?'));
+        if (!$includeAll && !empty($ownershipMap)) {
+            $ids             = array_keys($ownershipMap);
+            $ph              = implode(',', array_fill(0, count($ids), '?'));
             $exclusionClause = "AND p.id NOT IN ($ph)";
-            $exclusionParams = $excludedIds;
+            $exclusionParams = $ids;
         }
 
         // Division filter: use configured league division or fall back to level 1 / DE
@@ -83,20 +93,26 @@ trait PlayerInSeasonTrait
         );
         $stmt->execute(array_merge([$seasonId, $prevSeasonId, $seasonId], $divisionParams, $exclusionParams));
 
-        return ['players' => array_map(fn($r) => [
-            'id'                 => $r['id'],
-            'displayname'        => $r['displayname'],
-            'position'           => $r['position'],
-            'price'              => (int) $r['price'],
-            'season_points'      => (int) $r['season_points'],
-            'photo_uploaded'     => (bool) $r['photo_uploaded'],
-            'club_id'            => $r['club_id'],
-            'club_name'          => $r['club_name'],
-            'club_short_name'    => $r['club_short_name'],
-            'club_logo_uploaded'  => (bool) $r['club_logo_uploaded'],
-            'prev_club_position'  => $r['prev_club_position'] !== null ? (int) $r['prev_club_position'] : null,
-            'season_id'           => $seasonId,
-        ], $stmt->fetchAll(PDO::FETCH_ASSOC))];
+        return ['players' => array_map(function ($r) use ($ownershipMap, $seasonId) {
+            $owner = $ownershipMap[$r['id']] ?? null;
+            return [
+                'id'                    => $r['id'],
+                'displayname'           => $r['displayname'],
+                'position'              => $r['position'],
+                'price'                 => (int) $r['price'],
+                'season_points'         => (int) $r['season_points'],
+                'photo_uploaded'        => (bool) $r['photo_uploaded'],
+                'club_id'               => $r['club_id'],
+                'club_name'             => $r['club_name'],
+                'club_short_name'       => $r['club_short_name'],
+                'club_logo_uploaded'    => (bool) $r['club_logo_uploaded'],
+                'prev_club_position'    => $r['prev_club_position'] !== null ? (int) $r['prev_club_position'] : null,
+                'season_id'             => $seasonId,
+                'current_team_id'        => $owner['team_id']        ?? null,
+                'current_team_name'      => $owner['team_name']      ?? null,
+                'current_team_season_id' => $owner['team_season_id'] ?? null,
+            ];
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC))];
     }
 
     public function setPlayerPhotoUploaded(string $playerId, string $seasonId): bool

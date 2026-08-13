@@ -12,8 +12,9 @@ class PlayerInSeasonController extends _BaseController
         }
 
         if ($this->id === 'available_players') {
-            $seasonId = $this->params['season_id'] ?? null;
-            return $this->db->getAvailablePlayers($seasonId);
+            $seasonId   = $this->params['season_id'] ?? null;
+            $includeAll = !empty($this->params['include_all']);
+            return $this->db->getAvailablePlayers($seasonId, $includeAll);
         }
 
         http_response_code(400);

@@ -237,6 +237,20 @@
   line-height: 1;
 }
 
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-sm;
+  color: $color-text;
+  cursor: pointer;
+
+  input {
+    accent-color: $color-accent;
+    cursor: pointer;
+  }
+}
+
 .filter-reset {
   font-size: $font-xs;
   color: $color-text-muted;
