@@ -18,6 +18,9 @@ interface FreeAgent {
   club_logo_uploaded: boolean;
   prev_club_position: number | null;
   season_id: string;
+  current_team_id: string | null;
+  current_team_name: string | null;
+  current_team_season_id: string | null;
 }
 
 @Component({
@@ -59,12 +62,20 @@ export class MarktPlayerComponent {
         position: this.positionFilter(),
         club:     this.clubFilter(),
         maxPrice: this.maxPrice(),
+        showAll:  this.showAllPlayers(),
       }));
     });
   }
 
+  private _saved      = this.loadFilters();
+  showAllPlayers       = signal<boolean>(this._saved.showAll ?? false);
+
   private data = toSignal(
-    this.api.get<{ players: FreeAgent[] }>('player_in_season/available_players')
+    toObservable(this.showAllPlayers).pipe(
+      switchMap(showAll => this.api.get<{ players: FreeAgent[] }>(
+        `player_in_season/available_players${showAll ? '?include_all=1' : ''}`
+      )),
+    ),
   );
 
   players = computed(() => this.data()?.players ?? []);
@@ -98,7 +109,6 @@ export class MarktPlayerComponent {
     return budget - pending;
   });
 
-  private _saved = this.loadFilters();
   searchQuery    = signal<string>(this._saved.search    ?? '');
   positionFilter = signal<string | null>(this._saved.position ?? null);
   clubFilter     = signal<string | null>(this._saved.club     ?? null);
@@ -211,12 +221,19 @@ export class MarktPlayerComponent {
 
   photoErrors = new Set<string>();
   clubErrors  = new Set<string>();
+  teamErrors  = new Set<string>();
   onPhotoError(id: string): void { this.photoErrors.add(id); }
   onClubError(id: string): void  { this.clubErrors.add(id); }
+  onTeamError(id: string): void  { this.teamErrors.add(id); }
 
   photoUrl(p: FreeAgent): string | null {
     if (!p.photo_uploaded) return null;
     return `https://img.die-bestesten.de/player/${p.season_id}/${p.id}.png`;
+  }
+
+  teamLogoUrl(p: FreeAgent): string | null {
+    if (!p.current_team_id || !p.current_team_season_id) return null;
+    return `https://img.die-bestesten.de/team/${p.current_team_season_id}/${p.current_team_id}.png`;
   }
 
   clubLogoUrl(p: FreeAgent): string | null {
@@ -230,6 +247,10 @@ export class MarktPlayerComponent {
 
   toggleClub(id: string): void {
     this.clubFilter.set(this.clubFilter() === id ? null : id);
+  }
+
+  setShowAllPlayers(checked: boolean): void {
+    this.showAllPlayers.set(checked);
   }
 
   onPriceInput(event: Event): void {

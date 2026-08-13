@@ -56,6 +56,17 @@
       </div>
     </div>
 
+    <div class="filter-section">
+      <label class="filter-checkbox">
+        Alle Spieler anzeigen
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="showAllPlayers()"
+                 (change)="setShowAllPlayers($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+    </div>
+
     @if (hasFilters()) {
       <button class="filter-reset" (click)="resetFilters()">Filter zurücksetzen</button>
     }
@@ -79,7 +90,7 @@
     @if (loading()) {
       <p class="state-msg">Laden…</p>
     } @else if (!players().length) {
-      <p class="state-msg">Keine freien Spieler gefunden.</p>
+      <p class="state-msg">{{ showAllPlayers() ? 'Keine Spieler gefunden.' : 'Keine freien Spieler gefunden.' }}</p>
     } @else {
       <p class="players-count">{{ filteredPlayers().length }} von {{ players().length }} Spielern</p>
       <div class="table-container" #tableContainer>
@@ -89,6 +100,9 @@
               <th></th>
               <th></th>
               <th>Spieler</th>
+              @if (showAllPlayers()) {
+                <th>Team</th>
+              }
               <th class="col-num col-sortable" (click)="sort('price')">
                 Preis
                 <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
@@ -101,7 +115,7 @@
           </thead>
           <tbody>
             @if (!filteredPlayers().length) {
-              <tr><td colspan="5" class="players-empty">Keine Spieler mit diesen Filtern.</td></tr>
+              <tr><td [attr.colspan]="showAllPlayers() ? 6 : 5" class="players-empty">Keine Spieler mit diesen Filtern.</td></tr>
             }
             @for (p of filteredPlayers(); track p.id) {
               <tr>
@@ -126,6 +140,17 @@
                 <td>
                   <a class="player-link" [routerLink]="['/daten/player', p.id]">{{ p.displayname }}</a>
                 </td>
+                @if (showAllPlayers()) {
+                  <td class="col-media">
+                    @if (teamLogoUrl(p); as url) {
+                      <a [routerLink]="['/team', p.current_team_id]" [title]="p.current_team_name ?? ''">
+                        <img class="tbl-logo"
+                             [class.logo--placeholder]="teamErrors.has(p.id)"
+                             [src]="url" (error)="onTeamError(p.id)" alt="" />
+                      </a>
+                    }
+                  </td>
+                }
                 <td class="col-num">{{ formatPriceShort(dynamicPrice(p)) }}</td>
                 <td class="col-num">{{ p.season_points }}</td>
               </tr>
@@ -181,6 +206,17 @@
           </button>
         }
       </div>
+    </div>
+
+    <div class="filter-section">
+      <label class="filter-checkbox">
+        Alle Spieler anzeigen
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="showAllPlayers()"
+                 (change)="setShowAllPlayers($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
     </div>
 
     @if (hasFilters()) {

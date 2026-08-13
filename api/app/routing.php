@@ -793,8 +793,8 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_in_season/available_players',
-                        'description' => 'Alle Bundesliga-Spieler der aktiven Saison ohne Fantasy-Team — {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id}]}',
-                        'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
+                        'description' => 'Alle Bundesliga-Spieler der aktiven Saison ohne Fantasy-Team — {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id,current_team_id,current_team_name,current_team_season_id}]}; ?include_all=1 → auch Spieler mit Fantasy-Team, current_team_* dann gesetzt (sonst null)',
+                        'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)', 'include_all' => '1 → auch Spieler mit Fantasy-Team einschließen'],
                     ],
                     [
                         'method' => 'POST',
