@@ -9,6 +9,32 @@
     <div class="player-hero">
       @if (latestPhotoUrl(); as photoUrl) {
         <img [src]="photoUrl" class="player-photo" [alt]="p.displayname" />
+      } @else if (p.seasons.length > 0) {
+        <input
+          #playerPhotoInput
+          type="file"
+          accept="image/*"
+          class="hidden-input"
+          (change)="onPlayerPhotoSelected($event)"
+        />
+        <button
+          class="player-photo player-photo--empty"
+          [class.player-photo--uploadable]="isMaintainer()"
+          [class.player-photo--loading]="playerPhotoState() === 'loading'"
+          [disabled]="!isMaintainer() || playerPhotoState() === 'loading'"
+          (click)="triggerPlayerPhotoUpload()"
+          [title]="isMaintainer() ? 'Spielerfoto hochladen' : ''"
+        >
+          @if (isMaintainer()) {
+            <div class="player-photo__overlay">
+              @if (playerPhotoState() === 'loading') {
+                <span class="player-photo__spinner"></span>
+              } @else {
+                <span class="player-photo__icon">✎</span>
+              }
+            </div>
+          }
+        </button>
       }
       <div class="player-info">
         <h1 class="player-name">{{ p.displayname }}</h1>

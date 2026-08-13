@@ -1,5 +1,9 @@
 @use '../../../styles/variables' as *;
 
+@keyframes player-photo-spin {
+  to { transform: rotate(360deg); }
+}
+
 .detail-header {
   margin-bottom: $space-8;
 
@@ -37,6 +41,53 @@
       border: 1px solid #e5e7eb;
 
       @media (max-width: #{$mobile-breakpoint}) { width: 90px; height: 90px; }
+    }
+
+    .player-photo--empty {
+      position: relative;
+      display: block;
+      padding: 0;
+      background-color: $color-surface-alt;
+      cursor: default;
+    }
+
+    .player-photo--uploadable {
+      cursor: pointer;
+
+      &:hover .player-photo__overlay,
+      &.player-photo--loading .player-photo__overlay {
+        opacity: 1;
+      }
+    }
+
+    .player-photo__overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity $transition-fast;
+    }
+
+    .player-photo__icon {
+      font-size: $font-xl;
+      color: #fff;
+    }
+
+    .player-photo__spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: player-photo-spin 0.7s linear infinite;
+    }
+
+    .hidden-input {
+      display: none;
     }
 
     .player-info {

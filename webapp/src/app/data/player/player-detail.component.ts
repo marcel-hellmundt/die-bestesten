@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, TemplateRef, ViewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, combineLatest, distinctUntilChanged, map, merge, of, Subject, switchMap, startWith } from 'rxjs';
@@ -85,6 +85,7 @@ export class PlayerDetailComponent {
   bottomSheet    = inject(BottomSheetService);
 
   @ViewChild('offerSheet') offerSheet!: TemplateRef<any>;
+  @ViewChild('playerPhotoInput') playerPhotoInput!: ElementRef<HTMLInputElement>;
 
   navigateToTeam(teamId: string): void { this.router.navigate(['/team', teamId]); }
   navigateToClub(clubId: string): void { this.router.navigate(['../../club', clubId], { relativeTo: this.route }); }
@@ -636,6 +637,31 @@ export class PlayerDetailComponent {
     if (!latest?.photo_uploaded) return null;
     return `https://img.die-bestesten.de/player/${latest.season_id}/${p.id}.png`;
   });
+
+  // Photo upload — targets the same "latest season" latestPhotoUrl() reads from.
+  playerPhotoState = signal<'idle' | 'loading' | 'error'>('idle');
+
+  triggerPlayerPhotoUpload(): void {
+    if (!this.isMaintainer() || this.playerPhotoState() === 'loading') return;
+    this.playerPhotoInput.nativeElement.click();
+  }
+
+  onPlayerPhotoSelected(e: Event): void {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    (e.target as HTMLInputElement).value = '';
+    const p = this.player();
+    const seasonId = p?.seasons[0]?.season_id;
+    if (!file || !p || !seasonId) return;
+
+    this.playerPhotoState.set('loading');
+    this.api.uploadPlayerPhoto(p.id, seasonId, file).subscribe({
+      next: () => {
+        this.playerPhotoState.set('idle');
+        this.reloadPlayer$.next();
+      },
+      error: () => this.playerPhotoState.set('error'),
+    });
+  }
 
   positionColor(position: string): string {
     return POSITION_COLOR[position] ?? '#999';
