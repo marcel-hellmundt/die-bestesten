@@ -10,7 +10,9 @@ trait TeamLineupTrait
         $seasonId = $teamQ->fetchColumn();
         if (!$seasonId) return false;
 
-        // When no matchday requested, find current matchday and auto-init lineup if needed
+        // When no matchday requested, find current matchday and make sure this team's active
+        // squad all have a lineup entry for it (self-healing per team/request — catches players
+        // bought after another team's request already triggered the old one-shot init).
         if ($matchdayId === null) {
             $today = date('Y-m-d');
             $curQ  = $this->con->prepare(
@@ -22,17 +24,12 @@ trait TeamLineupTrait
             $currentMatchday = $curQ->fetch(PDO::FETCH_ASSOC);
 
             if ($currentMatchday) {
-                $existsQ = $this->con_league->prepare(
-                    "SELECT COUNT(*) FROM team_lineup WHERE matchday_id = :mid"
+                $this->ensureLineupEntriesForTeam(
+                    $teamId,
+                    $currentMatchday['id'],
+                    (int) $currentMatchday['number'],
+                    $seasonId
                 );
-                $existsQ->execute([':mid' => $currentMatchday['id']]);
-                if ($existsQ->fetchColumn() == 0) {
-                    $this->initLineupForMatchday(
-                        $currentMatchday['id'],
-                        (int) $currentMatchday['number'],
-                        $seasonId
-                    );
-                }
             }
         }
 
@@ -225,9 +222,29 @@ trait TeamLineupTrait
         return (bool) $q->fetchColumn();
     }
 
-    private function initLineupForMatchday(string $matchdayId, int $matchdayNumber, string $seasonId): void
+    // Idempotent: gives every active-squad player of this team a team_lineup row for the given
+    // matchday if they don't already have one (e.g. bought after the matchday's initial init, or
+    // the team's very first load for this matchday). Carried-over players keep their previous
+    // nominated/position_index; players with no previous entry (new buys) start on the bench.
+    private function ensureLineupEntriesForTeam(string $teamId, string $matchdayId, int $matchdayNumber, string $seasonId): void
     {
-        // Find previous matchday in global DB
+        $activeQ = $this->con_league->prepare(
+            "SELECT player_id FROM player_in_team WHERE team_id = :tid AND to_matchday_id IS NULL"
+        );
+        $activeQ->execute([':tid' => $teamId]);
+        $activePlayers = $activeQ->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($activePlayers)) return;
+
+        $existingQ = $this->con_league->prepare(
+            "SELECT player_id FROM team_lineup WHERE team_id = :tid AND matchday_id = :mid"
+        );
+        $existingQ->execute([':tid' => $teamId, ':mid' => $matchdayId]);
+        $existing = array_flip($existingQ->fetchAll(PDO::FETCH_COLUMN));
+
+        $missing = array_filter($activePlayers, fn($pid) => !isset($existing[$pid]));
+        if (empty($missing)) return;
+
         $prevQ = $this->con->prepare(
             "SELECT id FROM matchday
              WHERE season_id = :sid AND number < :num
@@ -236,51 +253,31 @@ trait TeamLineupTrait
         $prevQ->execute([':sid' => $seasonId, ':num' => $matchdayNumber]);
         $prevMatchdayId = $prevQ->fetchColumn() ?: null;
 
-        // Get all teams for this season
-        $teamsQ = $this->con_league->prepare("SELECT id FROM team WHERE season_id = :sid");
-        $teamsQ->execute([':sid' => $seasonId]);
-        $teamIds = $teamsQ->fetchAll(PDO::FETCH_COLUMN);
-
-        if (empty($teamIds)) return;
+        $prevLineup = [];
+        if ($prevMatchdayId) {
+            $prevLQ = $this->con_league->prepare(
+                "SELECT player_id, nominated, position_index
+                 FROM team_lineup WHERE team_id = :tid AND matchday_id = :mid"
+            );
+            $prevLQ->execute([':tid' => $teamId, ':mid' => $prevMatchdayId]);
+            foreach ($prevLQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $prevLineup[$row['player_id']] = $row;
+            }
+        }
 
         $insertQ = $this->con_league->prepare(
             "INSERT IGNORE INTO team_lineup (id, team_id, player_id, matchday_id, nominated, position_index)
              VALUES (UUID(), :tid, :pid, :mid, :nom, :pidx)"
         );
-
-        foreach ($teamIds as $teamId) {
-            // Active squad players
-            $activeQ = $this->con_league->prepare(
-                "SELECT player_id FROM player_in_team WHERE team_id = :tid AND to_matchday_id IS NULL"
-            );
-            $activeQ->execute([':tid' => $teamId]);
-            $activePlayers = $activeQ->fetchAll(PDO::FETCH_COLUMN);
-
-            if (empty($activePlayers)) continue;
-
-            // Previous lineup for this team (nominated + position_index)
-            $prevLineup = [];
-            if ($prevMatchdayId) {
-                $prevLQ = $this->con_league->prepare(
-                    "SELECT player_id, nominated, position_index
-                     FROM team_lineup WHERE team_id = :tid AND matchday_id = :mid"
-                );
-                $prevLQ->execute([':tid' => $teamId, ':mid' => $prevMatchdayId]);
-                foreach ($prevLQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                    $prevLineup[$row['player_id']] = $row;
-                }
-            }
-
-            foreach ($activePlayers as $playerId) {
-                $prev = $prevLineup[$playerId] ?? null;
-                $insertQ->execute([
-                    ':tid'  => $teamId,
-                    ':pid'  => $playerId,
-                    ':mid'  => $matchdayId,
-                    ':nom'  => $prev ? (int) $prev['nominated'] : 0,
-                    ':pidx' => $prev ? $prev['position_index'] : null,
-                ]);
-            }
+        foreach ($missing as $playerId) {
+            $prev = $prevLineup[$playerId] ?? null;
+            $insertQ->execute([
+                ':tid'  => $teamId,
+                ':pid'  => $playerId,
+                ':mid'  => $matchdayId,
+                ':nom'  => $prev ? (int) $prev['nominated'] : 0,
+                ':pidx' => $prev ? $prev['position_index'] : null,
+            ]);
         }
     }
 }
