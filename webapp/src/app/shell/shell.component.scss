@@ -60,6 +60,9 @@
 
     &-content {
       padding: $space-5 $space-4;
+      // Safety net: no single overflowing child (e.g. an unshrinkable nav row) should be able
+      // to force horizontal scrolling on the whole page.
+      overflow-x: hidden;
 
       &--full {
         padding: 0;

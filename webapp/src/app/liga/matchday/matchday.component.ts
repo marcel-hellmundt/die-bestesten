@@ -169,6 +169,9 @@ export class MatchdayComponent {
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
   range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
+  hasStats(r: any): boolean {
+    return !!(+r.sds || +r.goals || +r.assists || +r.yellow_red_cards || +r.red_cards || +r.clean_sheet);
+  }
   gradeVar(grade: string | null): string {
     if (!grade) return 'var(--grade-unset)';
     return `var(--grade-${grade.replace('.', '')})`;

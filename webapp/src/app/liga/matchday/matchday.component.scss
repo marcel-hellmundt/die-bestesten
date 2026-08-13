@@ -5,6 +5,28 @@
   align-items: center;
   gap: $space-3;
   margin-bottom: $space-6;
+
+  @media (max-width: $mobile-breakpoint) {
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
+}
+
+// Left arrow, matchday dropdown, right arrow — always one inseparable group, never wraps.
+.matchday-selector {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  flex-shrink: 0;
+
+  @media (max-width: $mobile-breakpoint) {
+    gap: $space-2;
+    flex-grow: 1;
+
+    .select {
+      flex-grow: 1;
+    }
+  }
 }
 
 .live-badge {
@@ -31,14 +53,19 @@
 
 .select {
   width: auto;
+  max-width: 100%;
   height: 36px;
   border: 1px solid $color-border;
   border-radius: $radius-md;
   color: $color-text;
   font-size: $font-sm;
   font-weight: $font-weight-semibold;
+  text-align: center;
+  text-align-last: center;
   cursor: pointer;
   transition: border-color $transition-fast;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:hover {
     border-color: $color-text-muted;
@@ -50,7 +77,17 @@
   &.season-select {
     margin-left: $space-8;
     min-width: 120px;
-    text-align: center;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    &.season-select {
+      order: -1;
+      margin-left: 0;
+      min-width: 140px;
+    }
   }
 }
 .nav-arrow {
@@ -350,6 +387,23 @@
   td {
     padding: 2px $space-3;
   }
+
+  @media (max-width: $mobile-breakpoint) {
+    th,
+    td {
+      padding-inline: $space-1;
+    }
+
+    th:first-child,
+    td:first-child {
+      padding-inline-start: $space-2;
+    }
+
+    th.col-points,
+    td.col-points {
+      padding-inline-end: $space-2;
+    }
+  }
 }
 
 .col-rank {
@@ -362,24 +416,46 @@
   width: 72px;
   text-align: right;
   font-weight: $font-weight-semibold;
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 44px;
+  }
 }
 
 .col-team {
+  vertical-align: middle;
+
   @media (max-width: $mobile-breakpoint) {
-    width: 1px;
     white-space: nowrap;
   }
 }
 
 .team-cell {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: $space-3;
+  min-width: 0;
+
+  @media (max-width: $mobile-breakpoint) {
+    gap: $space-2;
+
+    .tbl-logo {
+      width: 28px;
+      height: 28px;
+    }
+  }
 }
 
 .team-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+
   @media (max-width: $mobile-breakpoint) {
-    display: none;
+    max-width: 44vw;
+
+    .team-cell--compact & {
+      display: none;
+    }
   }
 }
 

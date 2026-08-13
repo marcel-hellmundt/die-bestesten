@@ -4,33 +4,35 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   <div class="matchday-nav">
-    <button
-      class="nav-arrow"
-      (click)="decrement()"
-      [disabled]="!canDecrement()"
-      aria-label="Vorheriger Spieltag"
-    >
-      ‹
-    </button>
-    <select
-      class="select"
-      (change)="onMatchdayChange(+$any($event.target).value)"
-    >
-      @for (m of matchdays(); track m.number) {
-        <option [value]="m.number" [selected]="m.number === currentNumber()">{{ m.number }}. Spieltag</option>
+    <div class="matchday-selector">
+      <button
+        class="nav-arrow"
+        (click)="decrement()"
+        [disabled]="!canDecrement()"
+        aria-label="Vorheriger Spieltag"
+      >
+        ‹
+      </button>
+      <select
+        class="select"
+        (change)="onMatchdayChange(+$any($event.target).value)"
+      >
+        @for (m of matchdays(); track m.number) {
+          <option [value]="m.number" [selected]="m.number === currentNumber()">{{ m.number }}. Spieltag</option>
+        }
+      </select>
+      @if (isLive()) {
+        <span class="live-badge">Live</span>
       }
-    </select>
-    @if (isLive()) {
-      <span class="live-badge">Live</span>
-    }
-    <button
-      class="nav-arrow"
-      (click)="increment()"
-      [disabled]="!canIncrement()"
-      aria-label="Nächster Spieltag"
-    >
-      ›
-    </button>
+      <button
+        class="nav-arrow"
+        (click)="increment()"
+        [disabled]="!canIncrement()"
+        aria-label="Nächster Spieltag"
+      >
+        ›
+      </button>
+    </div>
     @if (seasons().length > 1) {
       <select
         class="season-select select"
@@ -74,7 +76,7 @@
                 <tr class="row-link" (click)="navigateToTeam(r.team_id)">
                   <td class="col-rank">{{ r.points !== ratings()[i - 1]?.points ? i + 1 : '' }}</td>
                   <td class="col-team">
-                    <span class="team-cell">
+                    <span class="team-cell" [class.team-cell--compact]="hasStats(r)">
                       <img
                         class="tbl-logo"
                         [src]="
