@@ -124,6 +124,15 @@ trait PlayerInSeasonTrait
         return $q->rowCount() > 0;
     }
 
+    public function isPlayerPhotoUploaded(string $playerId, string $seasonId): bool
+    {
+        $q = $this->con->prepare(
+            "SELECT photo_uploaded FROM player_in_season WHERE player_id = :p AND season_id = :s LIMIT 1"
+        );
+        $q->execute([':p' => $playerId, ':s' => $seasonId]);
+        return (bool) $q->fetchColumn();
+    }
+
     public function createPlayerInSeason(string $id, string $playerId, string $seasonId, string $position, int $price): void
     {
         $q = $this->con->prepare(

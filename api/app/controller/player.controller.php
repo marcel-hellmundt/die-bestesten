@@ -54,6 +54,11 @@ class PlayerController extends _BaseController
             return ['status' => false, 'message' => 'season_id fehlt'];
         }
 
+        if ($this->db->isPlayerPhotoUploaded($this->id, $seasonId) && !$this->isAdmin()) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Vorhandenes Foto darf nur von Admins ersetzt werden'];
+        }
+
         $result = ImageUpload::store($_FILES['image'] ?? [], "player/{$seasonId}/{$this->id}.png", 'png');
         if (!$result['status']) {
             http_response_code($result['code']);

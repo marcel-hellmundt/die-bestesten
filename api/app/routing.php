@@ -889,7 +889,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/player/:id/photo',
-                        'description' => 'Spielerfoto hochladen (multipart/form-data, Feld "image", PNG; Body-Feld season_id) — setzt player_in_season.photo_uploaded für diese Saison — Maintainer+',
+                        'description' => 'Spielerfoto hochladen (multipart/form-data, Feld "image", PNG; Body-Feld season_id) — setzt player_in_season.photo_uploaded für diese Saison — Maintainer+; 403 wenn bereits ein Foto für diese Saison existiert und der Aufrufer kein Admin ist (Überschreiben nur Admin)',
                         'path_params' => [':id' => 'UUID des Spielers'],
                         'body' => ['season_id' => 'UUID der Saison'],
                     ],
