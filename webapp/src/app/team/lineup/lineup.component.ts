@@ -164,8 +164,11 @@ export class LineupComponent {
   // Baseline slot layout so the field always shows enough empty placeholders to build a
   // lineup from scratch (e.g. after a skipped matchday left everyone on the bench) — without
   // these, dropping a bench player would have nothing to swap with and silently do nothing.
+  // Uses the minimum per position across all 7 valid formations (not a fixed formation like
+  // 4-4-2) so a complete lineup never shows a stray empty slot just because it picked a
+  // formation with fewer players in some position (e.g. 4-3-3 has only 3 midfielders).
   private readonly defaultFormation: Record<string, number> = {
-    GOALKEEPER: 1, DEFENDER: 4, MIDFIELDER: 4, FORWARD: 2,
+    GOALKEEPER: 1, DEFENDER: 3, MIDFIELDER: 3, FORWARD: 1,
   };
 
   getPlayersByPosition(pos: string): LineupPlayer[] {
