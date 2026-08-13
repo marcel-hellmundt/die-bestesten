@@ -81,6 +81,16 @@
                 </div>
               </a>
             }
+            @if (isEditable()) {
+              @for (i of emptySlotIndices(pos); track i) {
+                <div class="field-player field-player--empty empty-slot"
+                     [attr.data-pos]="pos"
+                     [attr.data-index]="i"
+                     [class.field-player--hovered]="hoveredSlot()?.pos === pos && hoveredSlot()?.index === i">
+                  <div class="field-player__photo-wrap field-player__photo-wrap--empty"></div>
+                </div>
+              }
+            }
           </div>
         }
 

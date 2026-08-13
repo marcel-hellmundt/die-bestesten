@@ -161,8 +161,21 @@ export class LineupComponent {
 
   readonly pitchPositions = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER'];
 
+  // Baseline slot layout so the field always shows enough empty placeholders to build a
+  // lineup from scratch (e.g. after a skipped matchday left everyone on the bench) — without
+  // these, dropping a bench player would have nothing to swap with and silently do nothing.
+  private readonly defaultFormation: Record<string, number> = {
+    GOALKEEPER: 1, DEFENDER: 4, MIDFIELDER: 4, FORWARD: 2,
+  };
+
   getPlayersByPosition(pos: string): LineupPlayer[] {
     return this.nominated().filter(p => p.position === pos);
+  }
+
+  emptySlotIndices(pos: string): number[] {
+    const actual = this.getPlayersByPosition(pos).length;
+    const total  = Math.max(actual, this.defaultFormation[pos] ?? 0);
+    return this.range(total - actual).map((_, i) => actual + i);
   }
 
   formationLabel(f: number[]): string {
@@ -276,6 +289,8 @@ export class LineupComponent {
 
   // Drag & drop
 
+  hoveredSlot = signal<{ pos: string; index: number } | null>(null);
+
   onDragMove(event: CdkDragMove, currentPlayer: LineupPlayer): void {
     const { x, y } = event.pointerPosition;
     const hovered = this.lineupPlayers().find(p => {
@@ -286,14 +301,35 @@ export class LineupComponent {
       return x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
     });
     this.hoveredPlayer.set(hovered ?? null);
+
+    if (hovered) {
+      this.hoveredSlot.set(null);
+      return;
+    }
+
+    const slotEl = Array.from(document.querySelectorAll<HTMLElement>('.empty-slot')).find(el => {
+      const rect = el.getBoundingClientRect();
+      return x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
+    });
+    this.hoveredSlot.set(
+      slotEl ? { pos: slotEl.dataset['pos']!, index: Number(slotEl.dataset['index']) } : null
+    );
   }
 
   onDragReleased(event: any, playerType: 'nominated' | 'bench'): void {
     const draggedId = event.source.element.nativeElement.id as string;
     const dragged   = this.lineupPlayers().find(p => p.id === draggedId);
     const hovered   = this.hoveredPlayer();
+    const slot      = this.hoveredSlot();
 
-    if (dragged && hovered) {
+    if (dragged && !hovered && slot && dragged.position === slot.pos) {
+      // Dropped on an empty placeholder — fills it directly, nobody needs to move to the bench.
+      this.lineupPlayers.update(ps => ps.map(p =>
+        p.id === dragged.id ? { ...p, nominated: true, position_index: slot.index } : p
+      ));
+      this.normalizePositionIndexes();
+      this.saveLineup();
+    } else if (dragged && hovered) {
       if (dragged.position === hovered.position) {
         if (playerType === 'nominated') {
           // Reorder on field: swap position_index
@@ -335,11 +371,13 @@ export class LineupComponent {
       }
     }
 
+    this.hoveredSlot.set(null);
     (event.source as any)._dragRef.reset();
   }
 
   onDragEnd(): void {
     this.hoveredPlayer.set(null);
+    this.hoveredSlot.set(null);
   }
 
   private normalizePositionIndexes(): void {
