@@ -619,7 +619,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/offer',
-                        'description' => 'Eigene Gebote abrufen + pending_sum (?team_id) — oder alle Gebote einer geschlossenen Transferphase (?transferwindow_id); triggert Lazy Settlement falls noch pending-Gebote vorhanden (immer, unabhängig von der Rolle) — Auth; TEMPORÄR (Hotfix): ?transferwindow_id-Response nur für Admin, sonst 403 — Transferfenster-Ergebnisse müssen geheim bleiben, wird bald wieder entfernt',
+                        'description' => 'Eigene Gebote abrufen + pending_sum (?team_id) — oder alle Gebote einer geschlossenen Transferphase (?transferwindow_id); triggert Lazy Settlement falls noch pending-Gebote vorhanden — Auth',
                         'query_params' => [
                             'team_id' => 'UUID des Teams → eigene Gebote + pending_sum; jedes Gebot enthält displayname, position, photo_uploaded, club_id, club_logo_uploaded, season_id, losers (für success/lost: [{team_id,team_color,team_season_id,is_winner}])',
                             'transferwindow_id' => 'UUID der Transferphase → alle Gebote gruppiert nach Spieler; 422 wenn Fenster noch offen',
@@ -859,7 +859,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_in_team',
-                        'description' => 'Alle aktiven Spieler eines Teams (to_matchday_id IS NULL) mit Position, Preis, Saison-Punkten, aktuellem Club; ?include_former=1 → {current, former}; ?player_id → aktuelles Team oder null; ?player_id + ?season_id → Teamhistorie des Spielers in dieser Saison [{team_id,team_name,color,manager_name,alias,from_matchday_number,to_matchday_number}]; TEMPORÄR (Hotfix): ?team_id nur für eigenes Team, sonst 403 — Transferfenster-Ergebnisse müssen geheim bleiben, wird bald wieder entfernt',
+                        'description' => 'Alle aktiven Spieler eines Teams (to_matchday_id IS NULL) mit Position, Preis, Saison-Punkten, aktuellem Club; ?include_former=1 → {current, former}; ?player_id → aktuelles Team oder null; ?player_id + ?season_id → Teamhistorie des Spielers in dieser Saison [{team_id,team_name,color,manager_name,alias,from_matchday_number,to_matchday_number}]',
                         'query_params' => ['team_id' => 'UUID des Teams (erforderlich)', 'include_former' => '1 → gibt {current, former} zurück', 'player_id' => 'UUID des Spielers', 'season_id' => 'UUID der Saison — kombiniert mit player_id: gibt Teamhistorie zurück'],
                     ],
                 ],

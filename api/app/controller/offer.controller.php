@@ -28,11 +28,6 @@ class OfferController extends _BaseController
                 return ['status' => false, 'message' => 'Transferphase noch offen'];
             }
             $this->db->settleWindow($windowId);
-            // TEMPORARY HOTFIX: Transferfenster-Ergebnisse müssen geheim bleiben — remove once reveal is handled properly
-            if (!$this->isAdmin()) {
-                http_response_code(403);
-                return ['status' => false, 'message' => 'Ergebnisse sind aktuell nicht einsehbar'];
-            }
             return $this->db->getWindowOffers($windowId);
         }
 
