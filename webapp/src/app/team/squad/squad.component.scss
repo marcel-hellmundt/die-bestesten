@@ -298,12 +298,23 @@
     overflow-x: auto;
   }
 
-  .col-logo,
   .col-photo {
     display: none;
   }
 
   .player-price {
     display: none;
+  }
+
+  .squad-main .data-table td {
+    padding-inline: $space-1;
+  }
+
+  .squad-main .data-table td:first-child {
+    padding-inline-start: $space-2;
+  }
+
+  .player-name {
+    max-width: none;
   }
 }

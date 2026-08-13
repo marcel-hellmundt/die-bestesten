@@ -5,6 +5,10 @@
   top: 0;
   z-index: $z-sticky;
   display: block;
+  // Fix iOS Safari sticky repaint bug: without its own compositing layer, the sticky topbar
+  // isn't positioned correctly on first paint and overlaps the content below until a scroll
+  // event forces a relayout.
+  transform: translateZ(0);
 }
 
 .topbar {
