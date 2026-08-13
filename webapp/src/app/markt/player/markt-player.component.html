@@ -58,9 +58,12 @@
 
     <div class="filter-section">
       <label class="filter-checkbox">
-        <input type="checkbox" [checked]="showAllPlayers()"
-               (change)="setShowAllPlayers($any($event.target).checked)" />
         Alle Spieler anzeigen
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="showAllPlayers()"
+                 (change)="setShowAllPlayers($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
       </label>
     </div>
 
@@ -207,9 +210,12 @@
 
     <div class="filter-section">
       <label class="filter-checkbox">
-        <input type="checkbox" [checked]="showAllPlayers()"
-               (change)="setShowAllPlayers($any($event.target).checked)" />
         Alle Spieler anzeigen
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="showAllPlayers()"
+                 (change)="setShowAllPlayers($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
       </label>
     </div>
 
