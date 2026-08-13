@@ -126,7 +126,9 @@
               @if (photoUrl(p) && !photoErrors.has(p.id)) {
                 <img [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
               } @else {
-                <div class="mobile-bench__photo--placeholder"></div>
+                <div class="mobile-bench__photo--placeholder">
+                  <span class="mobile-bench__initials">{{ p.displayname }}</span>
+                </div>
               }
             </a>
           }
