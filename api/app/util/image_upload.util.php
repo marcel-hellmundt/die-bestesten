@@ -13,6 +13,7 @@ class ImageUpload
     private const READERS = [
         'image/jpeg' => 'imagecreatefromjpeg',
         'image/png'  => 'imagecreatefrompng',
+        'image/webp' => 'imagecreatefromwebp',
     ];
 
     /** @param string $targetFormat 'png' or 'jpeg' */
@@ -26,8 +27,12 @@ class ImageUpload
         }
 
         $detectedMime = mime_content_type($file['tmp_name']);
-        if (!isset(self::READERS[$detectedMime]) || getimagesize($file['tmp_name']) === false) {
-            return ['status' => false, 'code' => 415, 'message' => "Ungültiges Bildformat: '$detectedMime' (erlaubt: JPEG, PNG)"];
+        if (
+            !isset(self::READERS[$detectedMime]) ||
+            !function_exists(self::READERS[$detectedMime]) ||
+            getimagesize($file['tmp_name']) === false
+        ) {
+            return ['status' => false, 'code' => 415, 'message' => "Ungültiges Bildformat: '$detectedMime' (erlaubt: JPEG, PNG, WebP)"];
         }
 
         $converted = self::convert($file['tmp_name'], $detectedMime, $targetFormat);
