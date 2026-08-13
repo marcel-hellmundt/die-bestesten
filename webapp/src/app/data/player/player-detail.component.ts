@@ -639,10 +639,17 @@ export class PlayerDetailComponent {
   });
 
   // Photo upload — targets the same "latest season" latestPhotoUrl() reads from.
+  // Uploading a first photo needs Maintainer+; replacing an existing one needs Admin
+  // (mirrors the API's POST /player/:id/photo 403 rule).
+  isAdmin = computed(() => this.auth.isAdmin());
+  canEditPlayerPhoto = computed(() =>
+    this.latestPhotoUrl() ? this.isAdmin() : this.isMaintainer()
+  );
+
   playerPhotoState = signal<'idle' | 'loading' | 'error'>('idle');
 
   triggerPlayerPhotoUpload(): void {
-    if (!this.isMaintainer() || this.playerPhotoState() === 'loading') return;
+    if (!this.canEditPlayerPhoto() || this.playerPhotoState() === 'loading') return;
     this.playerPhotoInput.nativeElement.click();
   }
 
@@ -651,7 +658,7 @@ export class PlayerDetailComponent {
     (e.target as HTMLInputElement).value = '';
     const p = this.player();
     const seasonId = p?.seasons[0]?.season_id;
-    if (!file || !p || !seasonId) return;
+    if (!file || !p || !seasonId || !this.canEditPlayerPhoto()) return;
 
     this.playerPhotoState.set('loading');
     this.api.uploadPlayerPhoto(p.id, seasonId, file).subscribe({

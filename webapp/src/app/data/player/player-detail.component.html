@@ -8,7 +8,33 @@
 
     <div class="player-hero">
       @if (latestPhotoUrl(); as photoUrl) {
-        <img [src]="photoUrl" class="player-photo" [alt]="p.displayname" />
+        @if (isAdmin()) {
+          <input
+            #playerPhotoInput
+            type="file"
+            accept="image/*"
+            class="hidden-input"
+            (change)="onPlayerPhotoSelected($event)"
+          />
+          <button
+            class="player-photo player-photo--has-image player-photo--uploadable"
+            [class.player-photo--loading]="playerPhotoState() === 'loading'"
+            [disabled]="playerPhotoState() === 'loading'"
+            (click)="triggerPlayerPhotoUpload()"
+            title="Spielerfoto ersetzen"
+          >
+            <img [src]="photoUrl" class="player-photo__img" [alt]="p.displayname" />
+            <div class="player-photo__overlay">
+              @if (playerPhotoState() === 'loading') {
+                <span class="player-photo__spinner"></span>
+              } @else {
+                <span class="player-photo__icon">✎</span>
+              }
+            </div>
+          </button>
+        } @else {
+          <img [src]="photoUrl" class="player-photo" [alt]="p.displayname" />
+        }
       } @else if (p.seasons.length > 0) {
         <input
           #playerPhotoInput
