@@ -7,6 +7,14 @@ import { map } from 'rxjs';
 
 const SQUAD_MIN: Record<string, number> = { GOALKEEPER: 1, DEFENDER: 5, MIDFIELDER: 5, FORWARD: 3 };
 
+// Same 7 formations the lineup editor allows.
+const VALID_FORMATIONS = [
+  [1,3,4,3],[1,3,5,2],[1,4,3,3],[1,4,4,2],[1,4,5,1],[1,5,3,2],[1,5,4,1],
+];
+const LINEUP_POS_INDEX: Record<string, number> = {
+  GOALKEEPER: 0, DEFENDER: 1, MIDFIELDER: 2, FORWARD: 3,
+};
+
 export { Division } from './models/division.model';
 
 @Injectable({ providedIn: 'root' })
@@ -17,6 +25,7 @@ export class DataCacheService {
   private divisionsState = signal<{ data: Division[]; loaded: boolean }>({ data: [], loaded: false });
   private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string; color: string | null; color_secondary: string | null } | null; loaded: boolean }>({ data: null, loaded: false });
   private squadState     = signal<{ players: any[]; loaded: boolean }>({ players: [], loaded: false });
+  private lineupState    = signal<{ hasMatchday: boolean; nominated: any[]; loaded: boolean }>({ hasMatchday: false, nominated: [], loaded: false });
   private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, loaded: false });
   private h2hStatusState = signal<{ exists: boolean; loaded: boolean }>({ exists: false, loaded: false });
 
@@ -45,6 +54,17 @@ export class DataCacheService {
     const counts: Record<string, number> = { GOALKEEPER: 0, DEFENDER: 0, MIDFIELDER: 0, FORWARD: 0 };
     for (const p of this.squadState().players) if (counts[p.position] !== undefined) counts[p.position]++;
     return Object.entries(SQUAD_MIN).some(([pos, min]) => counts[pos] < min);
+  });
+
+  lineupInvalid = computed(() => {
+    if (!this.lineupState().loaded) return false;
+    if (!this.lineupState().hasMatchday) return true;
+    const counts = [0, 0, 0, 0];
+    for (const p of this.lineupState().nominated) {
+      const i = LINEUP_POS_INDEX[p.position];
+      if (i !== undefined) counts[i]++;
+    }
+    return !VALID_FORMATIONS.some(f => f.every((v, i) => v === counts[i]));
   });
 
   ensureSeasons(): void {
@@ -83,6 +103,20 @@ export class DataCacheService {
 
   invalidateSquad(): void {
     this.squadState.set({ players: [], loaded: false });
+  }
+
+  ensureLineup(): void {
+    if (this.lineupState().loaded) return;
+    const teamId = this.myTeamId();
+    if (!teamId) return;
+    this.api.get<any>(`team_lineup?team_id=${teamId}`).subscribe({
+      next: data => this.lineupState.set({ hasMatchday: !!data?.matchday, nominated: data?.nominated ?? [], loaded: true }),
+      error: ()   => this.lineupState.set({ hasMatchday: false, nominated: [], loaded: true }),
+    });
+  }
+
+  invalidateLineup(): void {
+    this.lineupState.set({ hasMatchday: false, nominated: [], loaded: false });
   }
 
   ensureDivisions(): void {

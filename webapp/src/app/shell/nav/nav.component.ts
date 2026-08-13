@@ -39,7 +39,7 @@ export class NavComponent {
         items: [
           { label: 'Übersicht',   icon: 'uebersicht',  route: id ? ['/team', id, 'uebersicht']  : null },
           { label: 'Kader',       icon: 'kader',       route: id ? ['/team', id, 'kader']       : null, warning: this.cache.squadInvalid() },
-          { label: 'Aufstellung', icon: 'aufstellung', route: id ? ['/team', id, 'aufstellung']  : null },
+          { label: 'Aufstellung', icon: 'aufstellung', route: id ? ['/team', id, 'aufstellung']  : null, warning: this.cache.lineupInvalid() },
           { label: 'Finanzen',    icon: 'finanzen',    route: id ? ['/team', id, 'finanzen']    : null },
         ]
       }
@@ -97,7 +97,10 @@ export class NavComponent {
     this.cache.ensureMyTeam();
     this.cache.ensureH2HStatus();
     effect(() => {
-      if (this.cache.myTeamId()) this.cache.ensureSquad();
+      if (this.cache.myTeamId()) {
+        this.cache.ensureSquad();
+        this.cache.ensureLineup();
+      }
     });
   }
 }
