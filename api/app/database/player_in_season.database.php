@@ -117,11 +117,21 @@ trait PlayerInSeasonTrait
 
     public function setPlayerPhotoUploaded(string $playerId, string $seasonId): bool
     {
+        // rowCount() on an UPDATE reports rows actually CHANGED, not rows MATCHED — if
+        // photo_uploaded is already 1 (overwriting an existing photo), the UPDATE matches
+        // but changes nothing, so rowCount() would be 0 even though the row exists. Check
+        // existence separately instead of relying on the UPDATE's rowCount().
+        $check = $this->con->prepare(
+            "SELECT 1 FROM player_in_season WHERE player_id = :p AND season_id = :s LIMIT 1"
+        );
+        $check->execute([':p' => $playerId, ':s' => $seasonId]);
+        if (!$check->fetchColumn()) return false;
+
         $q = $this->con->prepare(
             "UPDATE player_in_season SET photo_uploaded = 1 WHERE player_id = :p AND season_id = :s"
         );
         $q->execute([':p' => $playerId, ':s' => $seasonId]);
-        return $q->rowCount() > 0;
+        return true;
     }
 
     public function isPlayerPhotoUploaded(string $playerId, string $seasonId): bool
