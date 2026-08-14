@@ -171,7 +171,12 @@
         <h3 class="sidebar-title">Formation</h3>
         <div class="formations">
           @for (f of validFormations; track formationLabel(f)) {
-            <div class="formation-chip" [class.formation-chip--active]="isFormationActive(f)">
+            <div
+              class="formation-chip"
+              [class.formation-chip--active]="isFormationActive(f)"
+              [class.formation-chip--clickable]="nominated().length === 0 && isEditable()"
+              (click)="selectFormation(f)"
+            >
               {{ formationLabel(f) }}
             </div>
           }

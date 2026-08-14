@@ -166,18 +166,27 @@ export class LineupComponent {
   // position count.
   private readonly fallbackFormation = [1, 4, 4, 2];
 
+  // While nothing is nominated yet, a click on a formation chip (see selectFormation()) picks
+  // which empty-slot shape is scaffolded — otherwise the closest-to-4-4-2 default below applies.
+  private manualEmptyFormation = signal<number[] | null>(null);
+
   // Baseline slot layout so the field always shows enough empty placeholders to build a
   // complete, valid lineup from scratch (e.g. after a skipped matchday left everyone on the
   // bench) — without these, dropping a bench player would have nothing to swap with and
   // silently do nothing. Picks, among the 7 valid formations that are still reachable from
   // the current selection (i.e. >= the actually nominated count in every position), the one
-  // closest to the classic 4-4-2 default. A fully/validly nominated lineup always
-  // matches itself exactly (0 excess anywhere, e.g. 4-3-3 only ever shows 3 midfielder slots);
-  // an empty or partial lineup completes towards a coherent 11-player formation instead of the
-  // per-position minimum across all formations, which isn't itself a valid formation and used
-  // to show only 8 slots total (e.g. an invalid "3-3-1").
+  // closest to the classic 4-4-2 default (or the manually picked one, if nothing is nominated
+  // yet). A fully/validly nominated lineup always matches itself exactly (0 excess anywhere,
+  // e.g. 4-3-3 only ever shows 3 midfielder slots); an empty or partial lineup completes
+  // towards a coherent 11-player formation instead of the per-position minimum across all
+  // formations, which isn't itself a valid formation and used to show only 8 slots total
+  // (e.g. an invalid "3-3-1").
   private targetFormation = computed<number[]>(() => {
     const cur = this.formation();
+    if (cur.every(v => v === 0)) {
+      const manual = this.manualEmptyFormation();
+      if (manual) return manual;
+    }
     const compatible = this.validFormations.filter(f => f.every((v, i) => v >= cur[i]));
     if (compatible.length === 0) return cur;
     return compatible.reduce((best, f) =>
@@ -187,6 +196,14 @@ export class LineupComponent {
 
   private formationDistance(f: number[]): number {
     return f.reduce((sum, v, i) => sum + Math.abs(v - this.fallbackFormation[i]), 0);
+  }
+
+  // Only meaningful as long as nothing is nominated yet — picking a starting shape for an
+  // established lineup would just get silently overridden by the closest-match logic above,
+  // since a non-empty selection ignores manualEmptyFormation entirely.
+  selectFormation(f: number[]): void {
+    if (!this.isEditable() || this.nominated().length > 0) return;
+    this.manualEmptyFormation.set(f);
   }
 
   getPlayersByPosition(pos: string): LineupPlayer[] {
@@ -204,7 +221,9 @@ export class LineupComponent {
   }
 
   isFormationActive(f: number[]): boolean {
-    const cur = this.formation();
+    // While nothing is nominated, formation() is [0,0,0,0] — highlight the scaffolded
+    // baseline instead, so the chip the empty slots are currently shaped after stands out.
+    const cur = this.nominated().length === 0 ? this.targetFormation() : this.formation();
     return f[0] === cur[0] && f[1] === cur[1] && f[2] === cur[2] && f[3] === cur[3];
   }
 
