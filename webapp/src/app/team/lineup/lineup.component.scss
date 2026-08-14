@@ -451,6 +451,15 @@
     color: $color-accent;
     background: rgba(191, 29, 0, 0.06);
   }
+
+  &--clickable {
+    cursor: pointer;
+
+    &:hover {
+      border-color: $color-accent;
+      color: $color-accent;
+    }
+  }
 }
 
 .desktop-bench {
