@@ -539,7 +539,7 @@ trait LeagueTrait
         }
 
         $stmt = $this->con->prepare(
-            "SELECT p.id, p.displayname,
+            "SELECT p.id, p.kicker_id, p.displayname,
                     pis.position, pis.price, pis.photo_uploaded,
                     pic.club_id,
                     c.name AS club_name, c.short_name AS club_short_name,
@@ -561,6 +561,7 @@ trait LeagueTrait
 
         return ['players' => array_map(fn($r) => [
             'id'                 => $r['id'],
+            'kicker_id'          => $r['kicker_id'] !== null ? (int) $r['kicker_id'] : null,
             'displayname'        => $r['displayname'],
             'position'           => $r['position'],
             'price'              => (int) $r['price'],
