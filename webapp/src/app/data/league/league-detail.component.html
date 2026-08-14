@@ -200,6 +200,67 @@
           </div>
 
           @if (isAdmin()) {
+            <div class="draft-import">
+              <button class="btn btn-sm btn-ghost" (click)="toggleDraftImport(sg.seasonId)">
+                {{ draftImportOpenSeasonId() === sg.seasonId ? 'Import schließen' : 'JSON-Import' }}
+              </button>
+              @if (draftImportOpenSeasonId() === sg.seasonId) {
+                <div class="draft-import-panel">
+                  <div class="draft-import-actions">
+                    <input
+                      #draftImportFile
+                      type="file"
+                      accept=".json,application/json"
+                      hidden
+                      (change)="onDraftImportFileSelected($event)"
+                    />
+                    <button class="btn btn-sm btn-ghost" (click)="draftImportFile.click()">Datei wählen</button>
+                  </div>
+                  <textarea
+                    class="draft-import-textarea"
+                    rows="6"
+                    placeholder='[{"name":"Marcel","playerList":[{"id":"pl-k00066745"},{"id":"pl-k00066746"}]}]'
+                    [value]="draftImportText()"
+                    (input)="draftImportText.set($any($event.target).value)"
+                  ></textarea>
+                  <button
+                    class="btn btn-sm btn-primary"
+                    [disabled]="!draftImportText().trim() || draftPoolIsLoading(sg.seasonId)"
+                    (click)="runDraftImport(sg.seasonId)"
+                  >Importieren</button>
+
+                  @if (draftImportReport()[sg.seasonId]; as report) {
+                    <div class="draft-import-report">
+                      @if (report.parseError) {
+                        <p class="h2h-msg h2h-msg--error h2h-msg--standalone">JSON konnte nicht gelesen werden.</p>
+                      } @else {
+                        <p class="h2h-msg">
+                          {{ report.matchedTeams }} Team(s) zugeordnet, {{ report.matchedPlayers }} Spieler übernommen.
+                        </p>
+                        @if (report.unmatchedTeamNames.length > 0) {
+                          <p class="h2h-msg h2h-msg--error h2h-msg--standalone">
+                            Team(s) nicht gefunden: {{ report.unmatchedTeamNames.join(', ') }}
+                          </p>
+                        }
+                        @if (report.unmatchedPlayers.length > 0) {
+                          <ul class="draft-skipped-list">
+                            @for (u of report.unmatchedPlayers; track u.teamName + u.kickerId) {
+                              <li>{{ u.teamName }} — {{ u.kickerId }}: {{ DRAFT_IMPORT_SKIP_LABEL[u.reason] }}</li>
+                            }
+                          </ul>
+                        }
+                      }
+                    </div>
+                  }
+
+                  <p class="draft-import-hint">
+                    Importierte Spieler erscheinen als normale Kader-Auswahl je Team — bitte vor
+                    „Zuweisungen generieren“ prüfen.
+                  </p>
+                </div>
+              }
+            </div>
+
             @let draftSummary = draftBatchSummary(sg.seasonId);
             @if (draftSummary.playerCount > 0 || draftAssignState(sg.seasonId) !== 'idle') {
               <div class="draft-batch-bar">

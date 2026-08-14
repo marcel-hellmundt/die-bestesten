@@ -123,7 +123,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/league/:id/draft_pool',
-                        'description' => 'Spieler der Liga-Division ohne aktives Team in der angegebenen Saison (Pool für die Draft-Zuweisung) — ?season_id erforderlich — Admin',
+                        'description' => 'Spieler der Liga-Division ohne aktives Team in der angegebenen Saison (Pool für die Draft-Zuweisung); Spieler enthalten kicker_id (int, für Abgleich mit externen Draft-Exporten) — ?season_id erforderlich — Admin',
                         'path_params' => [':id' => 'UUID der Liga'],
                     ],
                     [

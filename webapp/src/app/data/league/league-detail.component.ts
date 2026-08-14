@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
 
 interface DraftPlayer {
   id: string;
+  kicker_id: number | null;
   displayname: string;
   position: string;
   price: number;
@@ -17,6 +18,14 @@ interface DraftPlayer {
   club_name: string;
   club_short_name: string | null;
   club_logo_uploaded: boolean;
+}
+
+interface DraftImportReport {
+  parseError: boolean;
+  matchedTeams: number;
+  unmatchedTeamNames: string[];
+  matchedPlayers: number;
+  unmatchedPlayers: { teamName: string; kickerId: string; reason: string }[];
 }
 
 @Component({
@@ -468,6 +477,104 @@ export class LeagueDetailComponent {
         this.draftAssignResults.update(s => ({ ...s, [seasonId]: { message: err?.error?.message ?? 'Fehler' } }));
       },
     });
+  }
+
+  // ── Draft-JSON-Import ────────────────────────────────────────────────────────
+
+  readonly DRAFT_IMPORT_SKIP_LABEL: Record<string, string> = {
+    invalid_id:        'Ungültige Spieler-ID',
+    not_in_pool:        'Nicht im Spielerpool (bereits vergeben/unbekannt)',
+    already_selected:  'Bereits in dieser Zuweisung ausgewählt',
+  };
+
+  draftImportOpenSeasonId = signal<string | null>(null);
+  draftImportText         = signal<string>('');
+  draftImportReport       = signal<Record<string, DraftImportReport>>({});
+
+  toggleDraftImport(seasonId: string): void {
+    const opening = this.draftImportOpenSeasonId() !== seasonId;
+    this.draftImportOpenSeasonId.set(opening ? seasonId : null);
+    this.draftImportText.set('');
+    if (opening) this.ensureDraftPool(seasonId);
+  }
+
+  onDraftImportFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => this.draftImportText.set((e.target?.result as string) ?? '');
+    reader.readAsText(file);
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  private parseDraftImportJson(text: string): { name: string; playerList: { id: string }[] }[] {
+    const trimmed = text.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      try {
+        const wrapped = '[' + trimmed.replace(/,\s*$/, '').replace(/}\s*\n\s*{/g, '},{') + ']';
+        const parsed = JSON.parse(wrapped);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [];
+      }
+    }
+  }
+
+  private parseKickerId(rawId: string): number | null {
+    if (!rawId?.startsWith('pl-k')) return null;
+    const n = parseInt(rawId.slice(4), 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  runDraftImport(seasonId: string): void {
+    const entries = this.parseDraftImportJson(this.draftImportText());
+    if (entries.length === 0) {
+      this.draftImportReport.update(s => ({
+        ...s,
+        [seasonId]: { parseError: true, matchedTeams: 0, unmatchedTeamNames: [], matchedPlayers: 0, unmatchedPlayers: [] },
+      }));
+      return;
+    }
+
+    const teams = this.seasonGroups().find(sg => sg.seasonId === seasonId)?.teams ?? [];
+    const pool  = this.draftPools()[seasonId] ?? [];
+    const report: DraftImportReport = { parseError: false, matchedTeams: 0, unmatchedTeamNames: [], matchedPlayers: 0, unmatchedPlayers: [] };
+
+    for (const entry of entries) {
+      const name = entry?.name ?? '';
+      const team = teams.find((t: any) => t.manager_name === name)
+        ?? teams.find((t: any) => t.manager_name?.trim().toLowerCase() === name?.trim?.().toLowerCase());
+      if (!team) {
+        report.unmatchedTeamNames.push(name || '(unbenannt)');
+        continue;
+      }
+      report.matchedTeams++;
+
+      for (const ref of entry?.playerList ?? []) {
+        const kickerId = this.parseKickerId(ref?.id ?? '');
+        if (kickerId === null) {
+          report.unmatchedPlayers.push({ teamName: name, kickerId: ref?.id ?? '?', reason: 'invalid_id' });
+          continue;
+        }
+        const player = pool.find(p => p.kicker_id === kickerId);
+        if (!player) {
+          report.unmatchedPlayers.push({ teamName: name, kickerId: ref.id, reason: 'not_in_pool' });
+          continue;
+        }
+        if (this.draftSelectedIds().has(player.id)) {
+          report.unmatchedPlayers.push({ teamName: name, kickerId: ref.id, reason: 'already_selected' });
+          continue;
+        }
+        this.addDraftPlayer(seasonId, team.id, player);
+        report.matchedPlayers++;
+      }
+    }
+
+    this.draftImportReport.update(s => ({ ...s, [seasonId]: report }));
   }
 
   formatPrice(v: number): string {
