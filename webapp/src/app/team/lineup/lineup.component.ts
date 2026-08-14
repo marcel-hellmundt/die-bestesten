@@ -161,15 +161,33 @@ export class LineupComponent {
 
   readonly pitchPositions = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER'];
 
+  // Classic shape used to complete a partial/empty lineup into a full valid XI — only used
+  // as a tie-breaker below, never shown as-is if it would conflict with an already-nominated
+  // position count.
+  private readonly fallbackFormation = [1, 4, 4, 2];
+
   // Baseline slot layout so the field always shows enough empty placeholders to build a
-  // lineup from scratch (e.g. after a skipped matchday left everyone on the bench) — without
-  // these, dropping a bench player would have nothing to swap with and silently do nothing.
-  // Uses the minimum per position across all 7 valid formations (not a fixed formation like
-  // 4-4-2) so a complete lineup never shows a stray empty slot just because it picked a
-  // formation with fewer players in some position (e.g. 4-3-3 has only 3 midfielders).
-  private readonly defaultFormation: Record<string, number> = {
-    GOALKEEPER: 1, DEFENDER: 3, MIDFIELDER: 3, FORWARD: 1,
-  };
+  // complete, valid lineup from scratch (e.g. after a skipped matchday left everyone on the
+  // bench) — without these, dropping a bench player would have nothing to swap with and
+  // silently do nothing. Picks, among the 7 valid formations that are still reachable from
+  // the current selection (i.e. >= the actually nominated count in every position), the one
+  // closest to the classic 4-4-2 default. A fully/validly nominated lineup always
+  // matches itself exactly (0 excess anywhere, e.g. 4-3-3 only ever shows 3 midfielder slots);
+  // an empty or partial lineup completes towards a coherent 11-player formation instead of the
+  // per-position minimum across all formations, which isn't itself a valid formation and used
+  // to show only 8 slots total (e.g. an invalid "3-3-1").
+  private targetFormation = computed<number[]>(() => {
+    const cur = this.formation();
+    const compatible = this.validFormations.filter(f => f.every((v, i) => v >= cur[i]));
+    if (compatible.length === 0) return cur;
+    return compatible.reduce((best, f) =>
+      this.formationDistance(f) < this.formationDistance(best) ? f : best
+    );
+  });
+
+  private formationDistance(f: number[]): number {
+    return f.reduce((sum, v, i) => sum + Math.abs(v - this.fallbackFormation[i]), 0);
+  }
 
   getPlayersByPosition(pos: string): LineupPlayer[] {
     return this.nominated().filter(p => p.position === pos);
@@ -177,7 +195,7 @@ export class LineupComponent {
 
   emptySlotIndices(pos: string): number[] {
     const actual = this.getPlayersByPosition(pos).length;
-    const total  = Math.max(actual, this.defaultFormation[pos] ?? 0);
+    const total  = Math.max(actual, this.targetFormation()[this.posOrder[pos] ?? -1] ?? 0);
     return this.range(total - actual).map((_, i) => actual + i);
   }
 
