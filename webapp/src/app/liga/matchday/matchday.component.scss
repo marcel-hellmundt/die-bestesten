@@ -427,6 +427,12 @@
 
   @media (max-width: $mobile-breakpoint) {
     white-space: nowrap;
+
+    // Once the team name is hidden (globally, see hasAnyStats), the column only needs to
+    // fit the logo — freeing up width for the now-horizontal stats column.
+    &--compact {
+      width: 1%;
+    }
   }
 }
 
@@ -566,13 +572,41 @@
 }
 
 .col-stats {
-  width: 48px;
+  // No fixed width — with the team-name column shrunk to just the logo (.col-team--compact),
+  // this column absorbs the freed-up space so the now-horizontal stat groups fit side by side.
+  width: auto;
 }
 
 .stats-compact {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: $space-2;
+
+  // Reserved slot at the very left for the SdS icon, empty when not present — keeps the
+  // middle (goals/assists) column starting at the same x-position across every row.
+  &__sds {
+    flex-shrink: 0;
+    min-width: 16px;
+    display: flex;
+    gap: 2px;
+  }
+
+  &__mid {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  // Reserved slot at the very right for the clean-sheet icon, empty when not present —
+  // keeps it aligned to the same right-hand x-position across every row.
+  &__cs {
+    flex-shrink: 0;
+    min-width: 16px;
+    display: flex;
+    justify-content: flex-end;
+  }
 
   &__row {
     display: flex;
