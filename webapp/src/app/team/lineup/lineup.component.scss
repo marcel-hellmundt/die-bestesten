@@ -456,6 +456,14 @@
   @media (max-width: $mobile-breakpoint) {
     display: none;
   }
+
+  // Grade + points stay side by side on desktop — only the mobile card stacks them to
+  // save width for long names.
+  .bench-player__score {
+    flex-direction: row;
+    align-items: center;
+    gap: $space-3;
+  }
 }
 
 .bench-list {
