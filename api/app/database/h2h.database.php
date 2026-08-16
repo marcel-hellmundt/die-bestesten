@@ -123,6 +123,82 @@ trait H2HTrait
             }
         }
 
+        // Live fallback: for matchdays that have started (kickoff passed) but aren't marked
+        // completed yet, no team_rating row exists (finalizeMatchday() only runs when an admin
+        // completes the matchday). Compute the same aggregation live from player_rating x
+        // team_lineup, mirroring matchday.database.php's finalizeMatchday() (minus the
+        // position-point breakdown / transactions this endpoint doesn't need).
+        $activeMatchdayIds = [];
+        $now = time();
+        foreach ($matchdayMap as $mdId => $md) {
+            if (!empty($md['kickoff_date']) && !$md['completed'] && strtotime($md['kickoff_date']) <= $now) {
+                $activeMatchdayIds[] = $mdId;
+            }
+        }
+
+        if (!empty($activeMatchdayIds)) {
+            $phAmd = implode(',', array_fill(0, count($activeMatchdayIds), '?'));
+            $lq = $this->con_league->prepare(
+                "SELECT team_id, matchday_id, player_id
+                 FROM team_lineup WHERE matchday_id IN ($phAmd) AND nominated = 1"
+            );
+            $lq->execute($activeMatchdayIds);
+            $liveLineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($liveLineupRows)) {
+                $livePlayerIds = array_values(array_unique(array_column($liveLineupRows, 'player_id')));
+                $phLp = implode(',', array_fill(0, count($livePlayerIds), '?'));
+                $lprq = $this->con->prepare(
+                    "SELECT pr.player_id, pr.matchday_id,
+                            COALESCE(pr.goals, 0)   AS goals,
+                            COALESCE(pr.assists, 0) AS assists,
+                            COALESCE(pr.sds, 0)     AS sds,
+                            pis.position
+                     FROM player_rating pr
+                     LEFT JOIN player_in_season pis
+                            ON pis.player_id = pr.player_id AND pis.season_id = ?
+                     WHERE pr.matchday_id IN ($phAmd) AND pr.player_id IN ($phLp)"
+                );
+                $lprq->execute(array_merge([$seasonId], $activeMatchdayIds, $livePlayerIds));
+                $liveRatingByPlayerMd = [];
+                foreach ($lprq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $liveRatingByPlayerMd[$r['player_id']][$r['matchday_id']] = $r;
+                }
+
+                // [team_id][matchday_id] => ['goals'=>, 'assists'=>, 'sds_defender'=>]
+                $liveAgg = [];
+                foreach ($liveLineupRows as $entry) {
+                    $pr = $liveRatingByPlayerMd[$entry['player_id']][$entry['matchday_id']] ?? null;
+                    if (!$pr) continue;
+                    $tId  = $entry['team_id'];
+                    $mdId = $entry['matchday_id'];
+                    if (!isset($liveAgg[$tId][$mdId])) {
+                        $liveAgg[$tId][$mdId] = ['goals' => 0, 'assists' => 0, 'sds_defender' => 0];
+                    }
+                    $liveAgg[$tId][$mdId]['goals']   += (int) $pr['goals'];
+                    $liveAgg[$tId][$mdId]['assists'] += (int) $pr['assists'];
+                    if ($pr['sds'] && in_array($pr['position'], ['GOALKEEPER', 'DEFENDER'])) {
+                        $liveAgg[$tId][$mdId]['sds_defender']++;
+                    }
+                }
+
+                foreach ($liveAgg as $tId => $byMatchday) {
+                    foreach ($byMatchday as $mdId => $agg) {
+                        // Only fills a gap — a genuine team_rating row (once the matchday is
+                        // finalized) always takes priority over the live estimate.
+                        if (!isset($ratingMap[$tId][$mdId])) {
+                            $ratingMap[$tId][$mdId] = [
+                                'goals'        => $agg['goals'],
+                                'assists'      => $agg['assists'],
+                                'sds_defender' => $agg['sds_defender'],
+                                'invalid'      => false,
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
         // Build previous-season rank map (manager_id → rank) as tiebreaker for standings
         // Teams are per-season, so summing team_rating for prev-season team IDs gives correct totals
         $prevRankByManager = [];
@@ -213,6 +289,10 @@ trait H2HTrait
             }
 
             foreach ($groupMatches as $m) {
+                // Live (kickoff passed, not yet completed) matches now carry a non-null
+                // live score for display on the match card — but must not count towards the
+                // table yet, only the final result should.
+                if (!$m['completed']) continue;
                 $hp = $m['home_goals'];
                 $ap = $m['away_goals'];
                 if ($hp === null || $ap === null) continue;
@@ -332,6 +412,74 @@ trait H2HTrait
         $ratingMap = [];
         foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $ratingMap[$r['team_id']] = $r;
+        }
+
+        // Live fallback: if the matchday has started (kickoff passed) but isn't completed
+        // yet, no team_rating row exists (finalizeMatchday() only runs when an admin completes
+        // the matchday). Compute the same aggregation live from player_rating x team_lineup,
+        // mirroring matchday.database.php's finalizeMatchday() / getH2HOverview() above.
+        if ($matchday && !empty($matchday['kickoff_date']) && !$matchday['completed']
+            && strtotime($matchday['kickoff_date']) <= time()
+        ) {
+            $liveTeamIds = array_values(array_diff(
+                [$match['home_team_id'], $match['away_team_id']],
+                array_keys($ratingMap)
+            ));
+            if (!empty($liveTeamIds)) {
+                $phT = implode(',', array_fill(0, count($liveTeamIds), '?'));
+                $llq = $this->con_league->prepare(
+                    "SELECT team_id, player_id FROM team_lineup
+                     WHERE team_id IN ($phT) AND matchday_id = ? AND nominated = 1"
+                );
+                $llq->execute(array_merge($liveTeamIds, [$match['matchday_id']]));
+                $liveLineupRows = $llq->fetchAll(PDO::FETCH_ASSOC);
+
+                if (!empty($liveLineupRows)) {
+                    $livePlayerIds = array_values(array_unique(array_column($liveLineupRows, 'player_id')));
+                    $phP = implode(',', array_fill(0, count($livePlayerIds), '?'));
+                    $lprq = $this->con->prepare(
+                        "SELECT pr.player_id,
+                                COALESCE(pr.points, 0)  AS points,
+                                COALESCE(pr.goals, 0)   AS goals,
+                                COALESCE(pr.assists, 0) AS assists,
+                                COALESCE(pr.sds, 0)     AS sds,
+                                pis.position
+                         FROM player_rating pr
+                         LEFT JOIN player_in_season pis
+                                ON pis.player_id = pr.player_id AND pis.season_id = ?
+                         WHERE pr.matchday_id = ? AND pr.player_id IN ($phP)"
+                    );
+                    $lprq->execute(array_merge([$match['season_id'], $match['matchday_id']], $livePlayerIds));
+                    $liveRatingByPlayer = array_column($lprq->fetchAll(PDO::FETCH_ASSOC), null, 'player_id');
+
+                    $liveAgg = [];
+                    foreach ($liveLineupRows as $entry) {
+                        $pr = $liveRatingByPlayer[$entry['player_id']] ?? null;
+                        if (!$pr) continue;
+                        $tId = $entry['team_id'];
+                        if (!isset($liveAgg[$tId])) {
+                            $liveAgg[$tId] = ['points' => 0, 'goals' => 0, 'assists' => 0, 'sds_defender' => 0];
+                        }
+                        $liveAgg[$tId]['points']  += (int) $pr['points'];
+                        $liveAgg[$tId]['goals']   += (int) $pr['goals'];
+                        $liveAgg[$tId]['assists'] += (int) $pr['assists'];
+                        if ($pr['sds'] && in_array($pr['position'], ['GOALKEEPER', 'DEFENDER'])) {
+                            $liveAgg[$tId]['sds_defender']++;
+                        }
+                    }
+
+                    foreach ($liveAgg as $tId => $agg) {
+                        $ratingMap[$tId] = [
+                            'team_id'      => $tId,
+                            'points'       => $agg['points'],
+                            'goals'        => $agg['goals'],
+                            'sds_defender' => $agg['sds_defender'],
+                            'assists'      => $agg['assists'],
+                            'invalid'      => 0,
+                        ];
+                    }
+                }
+            }
         }
 
         // Build lineup for each team
