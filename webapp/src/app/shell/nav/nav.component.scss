@@ -139,7 +139,10 @@
 
   @media (max-width: #{$mobile-breakpoint}) {
     flex-direction: row;
-    align-items: center;
+    // Stretch instead of center so .nav-mobile/li/.nav-item fill the bar's full height —
+    // with center, the active item's highlight only wraps its own (shorter) content height,
+    // leaving a small gap above/below instead of sitting flush within the bar.
+    align-items: stretch;
     padding: $space-2 $space-4;
     height: 64px;
 
