@@ -109,29 +109,11 @@
         </div>
       </div>
 
-      <!-- Mobile bench (horizontal strip below pitch) -->
+      <!-- Mobile bench (card list below pitch, same card as the desktop sidebar) -->
       <div class="mobile-bench">
         <span class="mobile-bench__label">Ersatzbank</span>
         <div class="mobile-bench__list">
-          @for (p of bench(); track p.id) {
-            <a class="mobile-bench__player"
-               [id]="p.id"
-               [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
-               [style.border-color]="positionColor(p.position)"
-               cdkDrag
-               [cdkDragDisabled]="!isEditable()"
-               (cdkDragMoved)="onDragMove($event, p)"
-               (cdkDragReleased)="onDragReleased($event, 'bench')"
-               (cdkDragEnded)="onDragEnd()">
-              @if (photoUrl(p) && !photoErrors.has(p.id)) {
-                <img [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
-              } @else {
-                <div class="mobile-bench__photo--placeholder">
-                  <span class="mobile-bench__initials">{{ p.displayname }}</span>
-                </div>
-              }
-            </a>
-          }
+          <ng-container *ngTemplateOutlet="benchList"></ng-container>
         </div>
       </div>
     </div>
@@ -186,45 +168,51 @@
       <div class="sidebar-block desktop-bench">
         <h3 class="sidebar-title">Ersatzbank</h3>
         <div class="bench-list">
-          @for (p of bench(); track p.id) {
-            <a class="bench-player"
-               [id]="p.id"
-               [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
-               [class.bench-player--draggable]="isEditable()"
-               cdkDrag
-               [cdkDragDisabled]="!isEditable()"
-               (cdkDragMoved)="onDragMove($event, p)"
-               (cdkDragReleased)="onDragReleased($event, 'bench')"
-               (cdkDragEnded)="onDragEnd()">
-              <div class="bench-player__pos" [style.background-color]="positionColor(p.position)"></div>
-              <div class="bench-player__photo-wrap">
-                @if (photoUrl(p) && !photoErrors.has(p.id)) {
-                  <img class="bench-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
-                } @else {
-                  <img class="bench-player__photo bench-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
-                }
-              </div>
-              <div class="bench-player__info">
-                <span class="bench-player__name">
-                  @if (p.sds) { <span class="bench-player__sds-star">★</span> }{{ p.displayname }}
-                </span>
-                <span class="bench-player__status" [ngClass]="participationClass(p.participation)">
-                  {{ participationLabel(p.participation) }}
-                </span>
-              </div>
-              @if (p.grade) {
-                <span class="bench-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
-              }
-              @if (p.points != null) {
-                <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
-              }
-            </a>
-          }
+          <ng-container *ngTemplateOutlet="benchList"></ng-container>
         </div>
       </div>
 
     </div>
   </div>
+
+  <!-- Shared bench-player card, rendered both in the mobile card list above the pitch
+       and in the desktop sidebar list. -->
+  <ng-template #benchList>
+    @for (p of bench(); track p.id) {
+      <a class="bench-player"
+         [id]="p.id"
+         [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
+         [class.bench-player--draggable]="isEditable()"
+         cdkDrag
+         [cdkDragDisabled]="!isEditable()"
+         (cdkDragMoved)="onDragMove($event, p)"
+         (cdkDragReleased)="onDragReleased($event, 'bench')"
+         (cdkDragEnded)="onDragEnd()">
+        <div class="bench-player__pos" [style.background-color]="positionColor(p.position)"></div>
+        <div class="bench-player__photo-wrap">
+          @if (photoUrl(p) && !photoErrors.has(p.id)) {
+            <img class="bench-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
+          } @else {
+            <img class="bench-player__photo bench-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
+          }
+        </div>
+        <div class="bench-player__info">
+          <span class="bench-player__name">
+            @if (p.sds) { <span class="bench-player__sds-star">★</span> }{{ p.displayname }}
+          </span>
+          <span class="bench-player__status" [ngClass]="participationClass(p.participation)">
+            {{ participationLabel(p.participation) }}
+          </span>
+        </div>
+        @if (p.grade) {
+          <span class="bench-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
+        }
+        @if (p.points != null) {
+          <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
+        }
+      </a>
+    }
+  </ng-template>
 
   @if (tooltipPlayer(); as tp) {
     <div class="player-breakdown"

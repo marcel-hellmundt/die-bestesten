@@ -328,47 +328,8 @@
 
   &__list {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: $space-2;
-  }
-
-  &__player {
-    flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid $color-border;
-    display: block;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-
-  &__photo--placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: $color-surface-alt;
-  }
-
-  &__initials {
-    font-size: 8px;
-    font-weight: $font-weight-semibold;
-    line-height: 1.15;
-    text-align: center;
-    color: $color-text;
-    padding: 2px;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    word-break: break-word;
   }
 }
 
