@@ -110,7 +110,12 @@
       }
 
       &--active {
-        width: 100%;
+        // flex:1 on the box itself instead of width:100% of .topbar-left — grows to fill
+        // whatever space .topbar-right leaves once its icons are hidden (see .topbar-right
+        // below), without depending on a percentage-of-parent resolving correctly.
+        flex: 1;
+        width: auto;
+        gap: $space-2;
         padding: 0 $space-3;
         cursor: text;
 
@@ -127,15 +132,39 @@
 
   &-left {
     @media (max-width: #{$mobile-breakpoint}) {
+      display: flex;
       flex: 1;
       min-width: 0;
+    }
+  }
+
+  // The global .spacer utility (styles/_layout.scss, flex-grow:1 — normally what pushes
+  // .topbar-right to the far edge on desktop) competes with .topbar-left's flex:1 above on
+  // mobile, splitting the free space roughly in half instead of giving it all to the search.
+  // Angular's component-scoped selector outranks the global one, so this override only
+  // applies inside the topbar, and only on mobile — desktop keeps the original behavior.
+  .spacer {
+    @media (max-width: #{$mobile-breakpoint}) {
+      flex-grow: 0;
     }
   }
 
   &-right {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     gap: $space-1;
+
+    // Mobile: while the search is expanded, hide the icon buttons (map/achievements/bell)
+    // so .topbar-left's flex:1 can grow the search box into that freed space — the profile
+    // avatar (.topbar-user, not .topbar-icon-btn) stays visible.
+    &--search-active {
+      @media (max-width: #{$mobile-breakpoint}) {
+        .topbar-icon-btn {
+          display: none;
+        }
+      }
+    }
   }
 
   &-icon-btn {

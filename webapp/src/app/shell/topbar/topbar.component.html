@@ -203,7 +203,7 @@
     </div>
   }
 
-  <div class="topbar-right">
+  <div class="topbar-right" [class.topbar-right--search-active]="isSearchOpen()">
     <a
       class="topbar-icon-btn topbar-bell"
       [class.active]="currentUrl().startsWith('/karte')"
