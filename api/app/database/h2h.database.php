@@ -918,14 +918,17 @@ trait H2HTrait
                 [16, 1, 2, 0, 2], [17, 2, 2, 0, 2], [17, 3, 2, 0, 2], [18, 0, 2, 0, 2],
             ]
             // 3 groups × 6 matches (round-robin, home+away), one match per matchday:
-            // group g plays on matchdays g+1, g+4, g+7, g+10, g+13, g+16
+            // group g plays on matchdays g+1, g+4, g+7, g+10, g+13, g+16.
+            // Slot sequence A:B, B:C, C:A, B:A, C:B, A:C (matching the 12-team format): the
+            // away team of each match hosts the not-yet-involved team next, instead of the
+            // same team hosting twice in a row (previously A:B, A:C, B:C, ...).
             : [
                 [1,  0, 1, 0, 1], [2,  1, 1, 0, 1], [3,  2, 1, 0, 1],
-                [4,  0, 1, 0, 2], [5,  1, 1, 0, 2], [6,  2, 1, 0, 2],
-                [7,  0, 1, 1, 2], [8,  1, 1, 1, 2], [9,  2, 1, 1, 2],
+                [4,  0, 1, 1, 2], [5,  1, 1, 1, 2], [6,  2, 1, 1, 2],
+                [7,  0, 1, 2, 0], [8,  1, 1, 2, 0], [9,  2, 1, 2, 0],
                 [10, 0, 2, 1, 0], [11, 1, 2, 1, 0], [12, 2, 2, 1, 0],
-                [13, 0, 2, 2, 0], [14, 1, 2, 2, 0], [15, 2, 2, 2, 0],
-                [16, 0, 2, 2, 1], [17, 1, 2, 2, 1], [18, 2, 2, 2, 1],
+                [13, 0, 2, 2, 1], [14, 1, 2, 2, 1], [15, 2, 2, 2, 1],
+                [16, 0, 2, 0, 2], [17, 1, 2, 0, 2], [18, 2, 2, 0, 2],
             ];
 
         $groupNames = $groupCount === 4
