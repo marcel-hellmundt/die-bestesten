@@ -327,9 +327,52 @@
   }
 
   &__list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: $space-2;
+  }
+
+  // Compact variant of .bench-player so two cards fit per row on mobile.
+  .bench-player {
+    gap: $space-2;
+    padding: $space-2;
+
+    &__photo-wrap {
+      width: 32px;
+      height: 32px;
+    }
+
+    &__photo {
+      width: 32px;
+      height: 32px;
+
+      &--placeholder {
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    &__name {
+      font-size: $font-xs;
+    }
+
+    &__status {
+      font-size: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &__grade {
+      width: 22px;
+      height: 22px;
+      line-height: 22px;
+    }
+
+    &__points {
+      width: 22px;
+      font-size: $font-sm;
+    }
   }
 }
 
