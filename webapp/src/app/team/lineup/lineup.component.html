@@ -205,9 +205,13 @@
           </span>
         </div>
         @if (p.grade) {
-          <span class="bench-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
-        }
-        @if (p.points != null) {
+          <div class="bench-player__score">
+            <span class="bench-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
+            @if (p.points != null) {
+              <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
+            }
+          </div>
+        } @else if (p.points != null) {
           <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
         }
       </a>
