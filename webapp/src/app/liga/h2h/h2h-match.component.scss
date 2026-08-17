@@ -35,12 +35,35 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: $space-4;
+
+  @media (max-width: $mobile-breakpoint) {
+    // Regroups each team's logo (normally inside .match-score, between the two names) with
+    // its own name into one stacked column — .match-score is unwrapped via display:contents
+    // so its children (the two logos + the score) become direct grid items here, placeable
+    // by area alongside .match-team--home/--away.
+    // score-mid only occupies the logo row so the score sits at the same height as the
+    // logos, instead of being vertically centered across the logo+name rows combined.
+    grid-template-areas:
+      "home-logo   score-mid  away-logo"
+      "home-name   .          away-name";
+    row-gap: $space-1;
+    column-gap: $space-2;
+
+    .match-score {
+      display: contents;
+    }
+
+    .score-logo--home { grid-area: home-logo; justify-self: center; }
+    .score-logo--away { grid-area: away-logo; justify-self: center; }
+    .score-values     { grid-area: score-mid; justify-self: center; }
+  }
 }
 
 .match-team {
   display: flex;
   flex-direction: column;
   gap: $space-1;
+  min-width: 0;
 
   &--home {
     align-items: flex-end;
@@ -50,6 +73,14 @@
     align-items: flex-start;
     text-align: left;
   }
+
+  @media (max-width: $mobile-breakpoint) {
+    align-items: center;
+    text-align: center;
+
+    &--home { grid-area: home-name; }
+    &--away { grid-area: away-name; }
+  }
 }
 
 .team-color-bar {
@@ -57,6 +88,10 @@
   width: 32px;
   height: 4px;
   border-radius: 2px;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
 }
 
 .match-team-name {
@@ -65,7 +100,8 @@
   line-height: 1.1;
 
   @media (max-width: $mobile-breakpoint) {
-    font-size: $font-lg;
+    font-size: $font-xs;
+    overflow-wrap: break-word;
   }
 }
 
@@ -83,8 +119,8 @@
   flex-shrink: 0;
 
   @media (max-width: $mobile-breakpoint) {
-    width: 40px;
-    height: 40px;
+    width: 52px;
+    height: 52px;
   }
 }
 

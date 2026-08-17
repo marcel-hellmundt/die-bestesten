@@ -30,7 +30,7 @@
       <div class="match-score">
         @if (homeLogoUrl()) {
           <img
-            class="score-logo"
+            class="score-logo score-logo--home"
             [src]="homeLogoUrl()!"
             (error)="$any($event.target).style.display = 'none'"
             alt=""
@@ -53,7 +53,7 @@
         </div>
         @if (awayLogoUrl()) {
           <img
-            class="score-logo"
+            class="score-logo score-logo--away"
             [src]="awayLogoUrl()!"
             (error)="$any($event.target).style.display = 'none'"
             alt=""
