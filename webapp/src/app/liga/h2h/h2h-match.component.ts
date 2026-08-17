@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
@@ -119,5 +119,23 @@ export class H2HMatchComponent {
 
   homePhotoUrl(p: any): string {
     return `https://img.die-bestesten.de/player/${p.photo_season_id}/${p.player_id}.png`;
+  }
+
+  gradeInt(grade: any): number {
+    return Math.round(+grade * 10);
+  }
+
+  // ── Mobile: pitch view of the selected team ──────────────────────────────────
+
+  readonly pitchPositions = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER'];
+
+  selectedSide = signal<'home' | 'away'>('home');
+
+  selectedTeam   = computed(() => (this.selectedSide() === 'home' ? this.homeTeam()   : this.awayTeam()));
+  selectedLineup = computed(() => (this.selectedSide() === 'home' ? this.homeLineup() : this.awayLineup()));
+  selectedBench  = computed(() => (this.selectedSide() === 'home' ? this.homeBench()  : this.awayBench()));
+
+  playersByPosition(pos: string): any[] {
+    return this.selectedLineup().filter(p => p.position === pos);
   }
 }

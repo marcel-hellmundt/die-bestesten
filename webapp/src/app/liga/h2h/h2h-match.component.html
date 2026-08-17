@@ -123,6 +123,82 @@
     }
   </div>
 
+  <!-- Mobile: team toggle + pitch view of the selected team (desktop keeps the two-column
+       table layout below, unaffected — see .lineup-grid's mobile display:none). -->
+  <div class="team-toggle">
+    <button
+      class="team-toggle__btn"
+      [class.team-toggle__btn--active]="selectedSide() === 'home'"
+      (click)="selectedSide.set('home')"
+    >{{ homeTeam()?.team_name }}</button>
+    <button
+      class="team-toggle__btn"
+      [class.team-toggle__btn--active]="selectedSide() === 'away'"
+      (click)="selectedSide.set('away')"
+    >{{ awayTeam()?.team_name }}</button>
+  </div>
+
+  <div class="mobile-pitch-wrap">
+    <div class="field">
+      @for (pos of pitchPositions; track pos) {
+        <div class="field-section">
+          @for (p of playersByPosition(pos); track p.player_id) {
+            <a class="field-player" [routerLink]="['/daten/player', p.player_id]">
+              <div class="field-player__photo-wrap">
+                @if (p.photo_uploaded && p.photo_season_id) {
+                  <img
+                    class="field-player__photo"
+                    [src]="homePhotoUrl(p)"
+                    [alt]="p.displayname"
+                    (error)="$any($event.target).style.display = 'none'"
+                  />
+                } @else {
+                  <img class="field-player__photo field-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
+                }
+              </div>
+              @if (p.sds || p.goals || p.assists) {
+                <div class="field-player__stats">
+                  @if (p.sds) {
+                    <img src="img/icons/sds.png" class="fp-icon" alt="SdS" />
+                  }
+                  @for (_ of [].constructor(p.goals ?? 0); track $index) {
+                    <img src="img/icons/goal.png" class="fp-icon" alt="Tor" />
+                  }
+                  @for (_ of [].constructor(p.assists ?? 0); track $index) {
+                    <img src="img/icons/assist.png" class="fp-icon" alt="Vorlage" />
+                  }
+                </div>
+              }
+              <div class="field-player__badge">
+                @if (p.grade) {
+                  <span class="field-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade }}</span>
+                }
+                <span class="field-player__name">{{ p.displayname }}</span>
+                @if (p.points != null) {
+                  <span class="field-player__points" [class.field-player__points--neg]="p.points < 0">{{ p.points }}</span>
+                }
+              </div>
+            </a>
+          }
+        </div>
+      }
+
+      <!-- Field markings -->
+      <div class="field-lines">
+        <div class="field-boundary">
+          <div class="field-halfway"></div>
+          <div class="field-circle"></div>
+          <div class="field-penalty field-penalty--top"></div>
+          <div class="field-penalty field-penalty--bottom"></div>
+          <div class="field-flag field-flag--tl"></div>
+          <div class="field-flag field-flag--tr"></div>
+          <div class="field-flag field-flag--bl"></div>
+          <div class="field-flag field-flag--br"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Lineups -->
   <div class="lineup-grid">
     <!-- Home lineup -->
@@ -281,6 +357,18 @@
     </button>
 
     @if (showBench) {
+      <!-- Mobile: bench of the selected team only (desktop keeps both teams side by side
+           below, see .lineup-grid's mobile display:none). -->
+      <div class="mobile-bench-list">
+        @for (p of selectedBench(); track p.player_id) {
+          <div class="mobile-bench-row">
+            <span class="mobile-bench-row__name">{{ p.displayname }}</span>
+            <span class="mobile-bench-row__pos">{{ p.position | slice: 0 : 3 }}</span>
+            <span class="mobile-bench-row__pts">{{ p.points ?? '—' }}</span>
+          </div>
+        }
+      </div>
+
       <div class="lineup-grid bench-grid">
         <section class="lineup-section">
           @if (homeBench().length > 0) {
