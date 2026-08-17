@@ -353,6 +353,20 @@
   }
 }
 
+// Grade color chips (school-grade scale 1.0-6.0, key = grade*10) — shared by
+// team/lineup's pitch/bench cards and h2h-match's pitch view
+.grade-10 { background-color: var(--grade-10); }
+.grade-15 { background-color: var(--grade-15); }
+.grade-20 { background-color: var(--grade-20); }
+.grade-25 { background-color: var(--grade-25); }
+.grade-30 { background-color: var(--grade-30); }
+.grade-35 { background-color: var(--grade-35); }
+.grade-40 { background-color: var(--grade-40); }
+.grade-45 { background-color: var(--grade-45); }
+.grade-50 { background-color: var(--grade-50); }
+.grade-55 { background-color: var(--grade-55); }
+.grade-60 { background-color: var(--grade-60); }
+
 // ID column — hidden on mobile, visible on desktop
 .col-id {
   @media (max-width: $mobile-breakpoint) {
