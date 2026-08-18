@@ -1,0 +1,108 @@
+@use '../../../styles/variables' as *;
+
+.empty-state {
+  color: $color-text-muted;
+  font-size: $font-sm;
+  margin-top: $space-4;
+}
+
+.col-pos {
+  width: 1px;
+  white-space: nowrap;
+  padding-right: $space-1;
+}
+
+.col-media {
+  width: 1px;
+  white-space: nowrap;
+  padding-right: $space-1;
+}
+
+.player-media {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.col-name {
+  font-weight: $font-weight-medium;
+}
+
+.col-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-num.col-points {
+  text-align: center;
+}
+
+.col-sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  opacity: 0.5;
+  font-size: 11px;
+}
+
+.muted {
+  color: $color-text-muted;
+}
+
+.col-actions,
+.col-actions-header {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.watch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 4px $space-3;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-sm;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  color: $color-text-muted;
+  border: 1px solid $color-border;
+  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+
+  &:hover:not(:disabled) {
+    color: $color-danger;
+    border-color: $color-danger;
+  }
+
+  &--active {
+    color: $color-accent;
+    border-color: $color-accent;
+    background: color-mix(in srgb, $color-accent 8%, transparent);
+
+    &:hover:not(:disabled) {
+      color: $color-danger;
+      border-color: $color-danger;
+      background: color-mix(in srgb, $color-danger 8%, transparent);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-label {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}

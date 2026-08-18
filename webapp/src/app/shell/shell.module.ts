@@ -25,7 +25,6 @@ const routes: Routes = [
       { path: 'karte',         loadChildren: () => import('../map/map.module').then(m => m.MapModule) },
       { path: 'einstellungen',  loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
       { path: 'achievements',    loadChildren: () => import('../achievements/achievements.module').then(m => m.AchievementsModule) },
-      { path: 'scouting',       loadChildren: () => import('../scouting/scouting.module').then(m => m.ScoutingModule) },
       { path: 'benachrichtigungen', loadChildren: () => import('../notifications/notifications.module').then(m => m.NotificationsModule) },
     ]
   }

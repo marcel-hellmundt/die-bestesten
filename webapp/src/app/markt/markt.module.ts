@@ -6,6 +6,7 @@ import { MarktPlayerComponent } from './player/markt-player.component';
 import { TransfersComponent } from './transfers/transfers.component';
 import { TransferWindowDetailComponent } from './transfers/transfer-window-detail.component';
 import { BidsComponent } from './bids/bids.component';
+import { ScoutingComponent } from './scouting/scouting.component';
 import { IconModule } from '../shared/icon/icon.module';
 
 const routes: Routes = [
@@ -17,12 +18,13 @@ const routes: Routes = [
       { path: 'transferphasen',      component: TransfersComponent },
       { path: 'transferphasen/:id',  component: TransferWindowDetailComponent },
       { path: 'gebote',              component: BidsComponent },
+      { path: 'scouting',            component: ScoutingComponent },
     ]
   }
 ];
 
 @NgModule({
-  declarations: [MarktComponent, MarktPlayerComponent, TransfersComponent, TransferWindowDetailComponent, BidsComponent],
+  declarations: [MarktComponent, MarktPlayerComponent, TransfersComponent, TransferWindowDetailComponent, BidsComponent, ScoutingComponent],
   imports: [CommonModule, RouterModule.forChild(routes), IconModule]
 })
 export class MarktModule {}

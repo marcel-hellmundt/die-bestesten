@@ -2,8 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, combineLatest, of, switchMap } from 'rxjs';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { ApiService } from '../core/api.service';
-import { DataCacheService } from '../core/data-cache.service';
+import { ApiService } from '../../core/api.service';
+import { DataCacheService } from '../../core/data-cache.service';
 
 interface WatchlistEntry {
   id: string;

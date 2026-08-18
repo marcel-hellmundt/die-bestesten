@@ -1,0 +1,88 @@
+<h1 class="page-title">Scouting</h1>
+
+@if (!hasTeam()) {
+  <p class="empty-state">Du hast noch kein Team in dieser Saison.</p>
+} @else if (entries().length === 0) {
+  <p class="empty-state">Noch keine Spieler beobachtet. Öffne eine Spielerseite und klicke auf "Beobachten".</p>
+} @else {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th></th>
+          <th>Spieler</th>
+          <th></th>
+          <th class="col-num col-sortable" (click)="sort('price')">
+            Preis
+            <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="col-num col-points col-sortable" (click)="sort('points')">
+            Punkte
+            <span class="sort-indicator">{{ sortCol() === 'points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="col-actions-header">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (entry of sortedEntries(); track entry.id) {
+          <tr class="row-link" (click)="navigateToPlayer(entry.player_id)">
+            <td class="col-pos">
+              @if (entry.position) {
+                <span class="position-badge" [style.background-color]="positionColors[entry.position]">
+                  {{ positionLabels[entry.position] }}
+                </span>
+              }
+            </td>
+            <td class="col-media">
+              <div class="player-media">
+                @if (entry.club_id && entry.club_logo_uploaded) {
+                  <img class="tbl-logo" [src]="clubLogoUrl(entry)" [alt]="entry.club_short_name ?? ''" />
+                }
+                @if (playerPhotoUrl(entry); as url) {
+                  <img class="tbl-photo" [src]="url" [alt]="entry.displayname" />
+                } @else {
+                  <img class="tbl-photo logo--placeholder" src="img/placeholders/player.png" alt="" />
+                }
+              </div>
+            </td>
+            <td class="col-name">{{ entry.displayname }}</td>
+            <td class="col-media">
+              @if (entry.current_team; as team) {
+                <a [routerLink]="['/team', team.team_id]" [title]="team.team_name" (click)="$event.stopPropagation()">
+                  @if (!teamLogoErrors.has(team.team_id)) {
+                    <img
+                      class="tbl-logo"
+                      [src]="teamLogoUrl(team.team_id, team.team_season_id)"
+                      [alt]="team.team_name"
+                      (error)="onTeamLogoError(team.team_id)"
+                    />
+                  }
+                </a>
+              }
+            </td>
+            <td class="col-num">
+              @if (currentPrice(entry); as price) {
+                {{ price | number: '1.0-0' }} €
+              } @else {
+                <span class="muted">–</span>
+              }
+            </td>
+            <td class="col-num col-points">{{ entry.season_points }}</td>
+            <td class="col-actions" (click)="$event.stopPropagation()">
+              <button
+                class="watch-btn watch-btn--active"
+                (click)="remove(entry)"
+                [disabled]="removing() === entry.id"
+                title="Beobachtet"
+              >
+                <app-icon name="eye" />
+                <span class="btn-label">Beobachtet</span>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
