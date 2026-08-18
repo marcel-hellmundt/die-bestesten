@@ -10,8 +10,21 @@
     </span>
   </h1>
 
+  @if (cache.myTeamId()) {
+    <label class="filter-checkbox">
+      Nur eigene Gebote
+      <span class="filter-toggle">
+        <input type="checkbox" [checked]="onlyOwnBids()"
+               (change)="setOnlyOwnBids($any($event.target).checked)" />
+        <span class="filter-toggle__track"></span>
+      </span>
+    </label>
+  }
+
   @if (!offers().length) {
-    <p class="state-msg">Keine Gebote für diese Transferphase.</p>
+    <p class="state-msg">
+      {{ onlyOwnBids() ? 'Keine eigenen Gebote für diese Transferphase.' : 'Keine Gebote für diese Transferphase.' }}
+    </p>
   } @else {
     <div class="player-list">
       @for (entry of offers(); track entry.player_id) {

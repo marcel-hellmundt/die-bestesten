@@ -1,8 +1,9 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { DataCacheService } from '../../core/data-cache.service';
 
 interface Transferwindow {
   id: string;
@@ -53,6 +54,7 @@ interface State {
 export class TransferWindowDetailComponent {
   private api   = inject(ApiService);
   private route = inject(ActivatedRoute);
+  cache = inject(DataCacheService);
 
   private response = toSignal(
     this.route.paramMap.pipe(
@@ -71,13 +73,23 @@ export class TransferWindowDetailComponent {
   window  = computed(() => this.response().res?.window ?? null);
   loading = computed(() => this.response().loading);
 
-  offers = computed(() =>
-    [...(this.response().res?.offers ?? [])].sort((a, b) => {
+  onlyOwnBids = signal(false);
+  setOnlyOwnBids(value: boolean): void { this.onlyOwnBids.set(value); }
+
+  private hasOwnBid(entry: PlayerOffers): boolean {
+    const teamId = this.cache.myTeamId();
+    if (!teamId) return false;
+    return entry.bids.some(b => b.team_id === teamId && b.status !== 'cancelled');
+  }
+
+  offers = computed(() => {
+    const sorted = [...(this.response().res?.offers ?? [])].sort((a, b) => {
       const maxA = Math.max(...a.bids.map(bid => bid.offer_value ?? 0), 0);
       const maxB = Math.max(...b.bids.map(bid => bid.offer_value ?? 0), 0);
       return maxB - maxA;
-    })
-  );
+    });
+    return this.onlyOwnBids() ? sorted.filter(entry => this.hasOwnBid(entry)) : sorted;
+  });
 
   readonly positionColors: Record<string, string> = {
     GOALKEEPER: 'var(--position-goalkeeper)',

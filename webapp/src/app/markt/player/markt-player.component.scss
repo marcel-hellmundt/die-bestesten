@@ -13,10 +13,6 @@
 
 .players-list {
   min-width: 0;
-
-  @media (max-width: $mobile-breakpoint) {
-    overflow-x: auto;
-  }
 }
 
 // ── Filter panel ─────────────────────────────────────────────────────────────
@@ -343,11 +339,51 @@
   gap: 4px;
 }
 
+// ── Mobile: kompakte Tabelle, die komplett ohne horizontales Scrollen passt ────
 @media (max-width: $mobile-breakpoint) {
-  .tbl-logo,
+  .table-container {
+    border: none;
+    border-radius: 0;
+    padding-inline: 0;
+    margin-inline: -$space-4;
+    overflow-x: hidden;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding-inline: 4px;
+  }
+
+  .data-table th {
+    font-size: 9px;
+    letter-spacing: 0.02em;
+  }
+
+  .position-badge {
+    width: 6px;
+  }
+
+  .tbl-logo {
+    width: 18px;
+    height: 18px;
+  }
+
   .tbl-photo {
-    width: 24px;
-    height: 24px;
+    display: none;
+  }
+
+  .col-num {
+    font-size: $font-xs;
+  }
+
+  .col-name {
+    overflow: hidden;
+  }
+
+  .player-link {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -368,6 +404,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+.col-num.col-points {
+  text-align: center;
+}
+
 .col-sortable {
   cursor: pointer;
   user-select: none;
@@ -375,6 +415,204 @@
   &:hover {
     color: $color-text;
   }
+}
+
+.th-label-short {
+  display: none;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .th-label-full { display: none; }
+  .th-label-short { display: inline; }
+}
+
+// ── Quick actions (Beobachten / Gebot abgeben) ─────────────────────────────────
+
+.col-actions,
+.col-actions-header {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.row-actions {
+  display: flex;
+  gap: $space-2;
+  justify-content: flex-end;
+
+  @media (max-width: $mobile-breakpoint) {
+    gap: 4px;
+  }
+}
+
+.watch-btn,
+.offer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 4px $space-3;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-sm;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: 6px;
+  }
+}
+
+.btn-label {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.watch-btn {
+  color: $color-text-muted;
+  border: 1px solid $color-border;
+  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+  &:hover:not(:disabled) { color: $color-accent; border-color: $color-accent; }
+  &--active { color: $color-accent; border-color: $color-accent; background: color-mix(in srgb, $color-accent 8%, transparent); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.offer-btn {
+  color: var(--flat-river);
+  border: 1px solid var(--flat-river);
+  &:hover:not(:disabled) { background: rgba(52, 152, 219, 0.08); }
+  &:disabled {
+    color: $color-text-muted;
+    border-color: $color-border;
+    cursor: not-allowed;
+    opacity: 0.6;
+    &:hover { background: transparent; }
+  }
+}
+
+// ── Gebot-abgeben Bottom-Sheet (gleiches Muster wie player-detail.component) ───
+
+.offer-panel {
+  &__info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-4;
+    font-size: $font-sm;
+    margin-bottom: $space-3;
+    align-items: center;
+  }
+
+  .offer-slider {
+    margin: $space-3 0 $space-1;
+
+    input[type='range'] { width: 100%; accent-color: var(--flat-river); cursor: pointer; }
+
+    &__labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: $font-xs;
+      color: $color-text-muted;
+      margin-top: 2px;
+    }
+
+    &__pct { font-weight: $font-weight-medium; color: var(--flat-river); }
+  }
+
+  .offer-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    margin: $space-3 0;
+
+    .digit-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      &--fixed { opacity: 0.35; pointer-events: none; }
+
+      input[type='number'] {
+        width: 36px;
+        height: 36px;
+        text-align: center;
+        font-size: $font-sm;
+        font-variant-numeric: tabular-nums;
+        border: 1px solid $color-border;
+        border-radius: $radius-sm;
+        background: $color-bg;
+        color: $color-text;
+        padding: 0;
+        appearance: textfield;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        &:focus { outline: none; border-color: var(--flat-river); }
+      }
+    }
+
+    .digit-arrow {
+      height: 22px;
+      width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: $color-text-muted;
+      font-size: 10px;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+
+      &:hover { color: $color-text; }
+      &--disabled { opacity: 0; pointer-events: none; }
+    }
+
+    .digit-sep { font-size: $font-lg; color: $color-text-muted; padding: 0 2px; line-height: 80px; }
+  }
+
+  &__actions { display: flex; gap: $space-2; margin-top: $space-3; flex-wrap: wrap; }
+
+  &__submit,
+  &__allin {
+    padding: $space-1 $space-4;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    border-radius: $radius-sm;
+    cursor: pointer;
+  }
+
+  &__submit {
+    background: var(--flat-river);
+    color: #fff;
+    border: none;
+    &:hover:not(:disabled) { opacity: 0.9; }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+
+  &__allin {
+    color: $color-text;
+    border: 1px solid $color-border;
+    background: transparent;
+    &:hover { border-color: $color-text; }
+  }
+
+  &__cancel {
+    padding: $space-1 $space-3;
+    font-size: $font-sm;
+    color: $color-text-muted;
+    background: none;
+    border: none;
+    cursor: pointer;
+    &:hover { color: $color-text; }
+  }
+
+  &__error { font-size: $font-xs; color: $color-danger; margin: $space-1 0 0; }
+
+  &__success { text-align: center; font-weight: $font-weight-medium; color: var(--flat-emerald); margin-bottom: $space-3; }
 }
 
 .sort-indicator {

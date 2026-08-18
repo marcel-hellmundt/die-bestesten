@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, TemplateRef, ViewChild, ElementRef, effect } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, map, of, startWith, Subject, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { DataCacheService } from '../../core/data-cache.service';
@@ -30,11 +30,12 @@ interface FreeAgent {
   styleUrl: './markt-player.component.scss',
 })
 export class MarktPlayerComponent {
-  private api         = inject(ApiService);
-  private bottomSheet = inject(BottomSheetService);
-  private cache       = inject(DataCacheService);
+  private api    = inject(ApiService);
+  bottomSheet    = inject(BottomSheetService);
+  cache          = inject(DataCacheService);
 
   @ViewChild('filterSheet') filterSheet!: TemplateRef<any>;
+  @ViewChild('offerSheet') offerSheet!: TemplateRef<any>;
   @ViewChild('tableContainer') tableContainer?: ElementRef<HTMLDivElement>;
 
   private readonly STORAGE_KEY = 'markt-player-filters';
@@ -81,24 +82,39 @@ export class MarktPlayerComponent {
   players = computed(() => this.data()?.players ?? []);
   loading = computed(() => this.data() === undefined);
 
+  // All clubs of the active season's league division — independent of whether they
+  // currently have any free-agent players, so the filter always shows the full set.
+  private activeSeasonId = toSignal(
+    this.api.get<any>('season/active').pipe(
+      map(data => data.id as string),
+      catchError(() => of(null as string | null)),
+    ),
+  );
+
   // ── Remaining budget (echtes Budget - offene Gebote) ─────────────────────────
+  private refreshOffers$ = new Subject<void>();
+
   private budgetData = toSignal(
     toObservable(this.cache.myTeamId).pipe(
-      switchMap(id => id
-        ? this.api.get<{ budget: number }>(`transaction?team_id=${id}`)
-        : of(null)
-      ),
-      catchError(() => of(null)),
+      switchMap(id => {
+        if (!id) return of(null);
+        return this.refreshOffers$.pipe(
+          startWith(null),
+          switchMap(() => this.api.get<{ budget: number }>(`transaction?team_id=${id}`).pipe(catchError(() => of(null)))),
+        );
+      }),
     ),
   );
 
   private offersData = toSignal(
     toObservable(this.cache.myTeamId).pipe(
-      switchMap(id => id
-        ? this.api.get<{ pending_sum: number }>(`offer?team_id=${id}`)
-        : of(null)
-      ),
-      catchError(() => of(null)),
+      switchMap(id => {
+        if (!id) return of(null);
+        return this.refreshOffers$.pipe(
+          startWith(null),
+          switchMap(() => this.api.get<{ pending_sum: number }>(`offer?team_id=${id}`).pipe(catchError(() => of(null)))),
+        );
+      }),
     ),
   );
 
@@ -109,6 +125,182 @@ export class MarktPlayerComponent {
     return budget - pending;
   });
 
+  // ── Offenes Transferfenster der aktiven Saison ────────────────────────────
+  openWindow = toSignal(
+    toObservable(this.activeSeasonId).pipe(
+      switchMap(seasonId => {
+        if (!seasonId) return of(null);
+        return this.api.get<any[]>(`transferwindow?season_id=${seasonId}`).pipe(
+          map(windows => {
+            const now = new Date();
+            return windows.find(w => new Date(w.start_date) <= now && new Date(w.end_date) > now) ?? null;
+          }),
+          catchError(() => of(null)),
+        );
+      }),
+    ),
+    { initialValue: null as any },
+  );
+
+  // ── Beobachtungsliste ──────────────────────────────────────────────────────
+  private refreshWatchlist$ = new Subject<void>();
+
+  private watchlistEntries = toSignal(
+    toObservable(this.cache.myTeamId).pipe(
+      switchMap(teamId => {
+        if (!teamId) return of([] as { id: string; player_id: string }[]);
+        return this.refreshWatchlist$.pipe(
+          startWith(null),
+          switchMap(() =>
+            this.api.get<{ id: string; player_id: string }[]>(`watchlist?team_id=${teamId}`).pipe(
+              catchError(() => of([] as { id: string; player_id: string }[])),
+            )
+          ),
+        );
+      }),
+    ),
+    { initialValue: [] as { id: string; player_id: string }[] },
+  );
+
+  private watchlistMap = computed(() => new Map(this.watchlistEntries().map(e => [e.player_id, e.id])));
+
+  isWatched(p: FreeAgent): boolean {
+    return this.watchlistMap().has(p.id);
+  }
+
+  watchToggling = new Set<string>();
+
+  toggleWatch(p: FreeAgent): void {
+    const teamId = this.cache.myTeamId();
+    if (!teamId || this.watchToggling.has(p.id)) return;
+    this.watchToggling.add(p.id);
+    const entryId = this.watchlistMap().get(p.id);
+    const done = () => { this.watchToggling.delete(p.id); this.refreshWatchlist$.next(); };
+    const fail = () => { this.watchToggling.delete(p.id); };
+    if (entryId) {
+      this.api.delete<null>(`watchlist/${entryId}`, { team_id: teamId }).subscribe({ next: done, error: fail });
+    } else {
+      this.api.post<{ id: string }>('watchlist', { team_id: teamId, player_id: p.id }).subscribe({ next: done, error: fail });
+    }
+  }
+
+  // ── Gebot abgeben (Quick-Action) ───────────────────────────────────────────
+  canBid(p: FreeAgent): boolean {
+    return !p.current_team_id && !!this.openWindow() && !!this.cache.myTeamId();
+  }
+
+  selectedOfferPlayer = signal<FreeAgent | null>(null);
+  offerSubmitting     = signal(false);
+  offerError          = signal<string | null>(null);
+  offerSuccess        = signal(false);
+
+  // Digit spinner — 4 controllable digits (10M / 1M / 100K / 10K), granularity 10.000,
+  // gleiches Eingabemuster wie im "Gebot abgeben"-Dialog der Spielerdetailseite.
+  digitE10000000 = signal(0);
+  digitE1000000  = signal(0);
+  digitE100000   = signal(0);
+  digitE10000    = signal(0);
+
+  offerValue = computed(() =>
+    this.digitE10000000() * 10_000_000 +
+    this.digitE1000000()  *  1_000_000 +
+    this.digitE100000()   *    100_000 +
+    this.digitE10000()    *     10_000
+  );
+
+  offerMarketValue = computed(() => {
+    const p = this.selectedOfferPlayer();
+    return p ? this.dynamicPrice(p) : 0;
+  });
+
+  offerPercentage = computed(() => {
+    const mv = this.offerMarketValue();
+    if (!mv) return 0;
+    return Math.round(this.offerValue() / mv * 100);
+  });
+
+  sliderPct = computed(() => Math.min(200, Math.max(100, this.offerPercentage())));
+
+  isValidOffer = computed(() => {
+    const mv     = this.offerMarketValue();
+    const budget = this.remainingBudget() ?? 0;
+    return mv > 0 && this.offerValue() >= mv && this.offerValue() <= budget;
+  });
+
+  private setDigitsFromValue(v: number): void {
+    const s = String(Math.max(0, Math.floor(v / 10_000) * 10_000)).padStart(8, '0');
+    this.digitE10000000.set(+s[s.length - 8] || 0);
+    this.digitE1000000.set( +s[s.length - 7] || 0);
+    this.digitE100000.set(  +s[s.length - 6] || 0);
+    this.digitE10000.set(   +s[s.length - 5] || 0);
+  }
+
+  openOffer(p: FreeAgent): void {
+    if (!this.canBid(p)) return;
+    this.selectedOfferPlayer.set(p);
+    this.offerSuccess.set(false);
+    this.offerError.set(null);
+    this.setDigitsFromValue(this.dynamicPrice(p));
+    this.bottomSheet.open(this.offerSheet, { title: 'Gebot abgeben' });
+  }
+
+  closeOfferSheet(): void {
+    this.bottomSheet.close();
+    this.offerSuccess.set(false);
+  }
+
+  updateDigit(prop: 'digitE10000000' | 'digitE1000000' | 'digitE100000' | 'digitE10000', delta: number): void {
+    const sigs: Record<string, ReturnType<typeof signal<number>>> = {
+      digitE10000000: this.digitE10000000,
+      digitE1000000:  this.digitE1000000,
+      digitE100000:   this.digitE100000,
+      digitE10000:    this.digitE10000,
+    };
+    sigs[prop].update(v => v + delta);
+
+    // Carry-over logic
+    if (this.digitE10000() > 9)  { this.digitE100000.update(v => v + 1);   this.digitE10000.set(0); }
+    if (this.digitE10000() < 0)  { this.digitE10000.set(0); }
+    if (this.digitE100000() > 9) { this.digitE1000000.update(v => v + 1);  this.digitE100000.set(0); }
+    if (this.digitE100000() < 0) { this.digitE100000.set(0); }
+    if (this.digitE1000000() > 9){ this.digitE10000000.update(v => v + 1); this.digitE1000000.set(0); }
+    if (this.digitE1000000() < 0){ this.digitE1000000.set(0); }
+    if (this.digitE10000000() > 9) { this.digitE10000000.set(9); }
+    if (this.digitE10000000() < 0) { this.digitE10000000.set(0); }
+  }
+
+  onSliderChange(pct: number): void {
+    const raw = Math.round(pct / 100 * this.offerMarketValue() / 10_000) * 10_000;
+    this.setDigitsFromValue(Math.min(raw, this.remainingBudget() ?? 0));
+  }
+
+  onAllIn(): void {
+    this.setDigitsFromValue(this.remainingBudget() ?? 0);
+  }
+
+  submitOffer(): void {
+    const teamId = this.cache.myTeamId();
+    const win    = this.openWindow();
+    const p      = this.selectedOfferPlayer();
+    if (!teamId || !win || !p || !this.isValidOffer()) return;
+    this.offerSubmitting.set(true);
+    this.offerError.set(null);
+    this.api.post<any>('offer', {
+      team_id: teamId, player_id: p.id,
+      transferwindow_id: win.id, offer_value: this.offerValue(),
+    }).subscribe({
+      next: () => {
+        this.offerSubmitting.set(false);
+        this.offerSuccess.set(true);
+        this.refreshOffers$.next();
+      },
+      error: (err: any) => {
+        this.offerSubmitting.set(false);
+        this.offerError.set(err?.error?.message ?? 'Fehler beim Abschicken');
+      },
+    });
+  }
+
   searchQuery    = signal<string>(this._saved.search    ?? '');
   positionFilter = signal<string | null>(this._saved.position ?? null);
   clubFilter     = signal<string | null>(this._saved.club     ?? null);
@@ -117,15 +309,6 @@ export class MarktPlayerComponent {
   dynamicPrice(p: FreeAgent): number { return p.price + 20_000 * p.season_points; }
 
   maxDataPrice = computed(() => Math.max(0, ...this.players().map(p => this.dynamicPrice(p))));
-
-  // All clubs of the active season's league division — independent of whether they
-  // currently have any free-agent players, so the filter always shows the full set.
-  private activeSeasonId = toSignal(
-    this.api.get<any>('season/active').pipe(
-      map(data => data.id as string),
-      catchError(() => of(null as string | null)),
-    ),
-  );
 
   private clubsPageData = toSignal(
     toObservable(this.activeSeasonId).pipe(
@@ -213,6 +396,8 @@ export class MarktPlayerComponent {
   hasFilters = computed(() =>
     !!this.searchQuery() || !!this.positionFilter() || !!this.clubFilter() || this.maxPrice() !== null
   );
+
+  columnCount = computed(() => (this.showAllPlayers() ? 6 : 5) + (this.cache.myTeamId() ? 1 : 0));
 
   readonly POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
   readonly POS_LABEL: Record<string, string> = {
