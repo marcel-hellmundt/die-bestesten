@@ -47,9 +47,9 @@ trait WatchlistTrait
              FROM player_in_team pit
              JOIN team t    ON t.id = pit.team_id
              JOIN manager m ON m.id = t.manager_id
-             WHERE pit.player_id IN ($ph) AND pit.to_matchday_id IS NULL"
+             WHERE pit.player_id IN ($ph) AND pit.to_matchday_id IS NULL AND t.season_id = ?"
         );
-        $currentTeamQ->execute($playerIds);
+        $currentTeamQ->execute([...$playerIds, $seasonId]);
         $teamMap = [];
         foreach ($currentTeamQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $teamMap[$row['player_id']] = $row;
