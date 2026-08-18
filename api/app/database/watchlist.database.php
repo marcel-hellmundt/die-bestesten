@@ -23,14 +23,19 @@ trait WatchlistTrait
             "SELECT p.id, p.displayname,
                     pis.position, pis.price, pis.season_id, pis.photo_uploaded,
                     pic.club_id,
-                    c.name AS club_name, c.short_name AS club_short_name, c.logo_uploaded AS club_logo_uploaded
+                    c.name AS club_name, c.short_name AS club_short_name, c.logo_uploaded AS club_logo_uploaded,
+                    COALESCE(SUM(pr.points), 0) AS season_points
              FROM player p
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
              LEFT JOIN player_in_club   pic ON pic.player_id = p.id AND pic.to_date IS NULL
              LEFT JOIN club             c   ON c.id = pic.club_id
-             WHERE p.id IN ($ph)"
+             LEFT JOIN player_rating    pr  ON pr.player_id = p.id
+                 AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
+             WHERE p.id IN ($ph)
+             GROUP BY p.id, p.displayname, pis.position, pis.price, pis.season_id, pis.photo_uploaded,
+                      pic.club_id, c.name, c.short_name, c.logo_uploaded"
         );
-        $pq->execute([$seasonId, ...$playerIds]);
+        $pq->execute([$seasonId, $seasonId, ...$playerIds]);
         $playerMap = [];
         foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $playerMap[$row['id']] = $row;
@@ -61,6 +66,7 @@ trait WatchlistTrait
                 'photo_uploaded'    => (bool) ($p['photo_uploaded'] ?? false),
                 'position'          => $p['position']           ?? null,
                 'price'             => $p['price'] !== null ? (int) $p['price'] : null,
+                'season_points'     => (int) ($p['season_points']    ?? 0),
                 'season_id'         => $p['season_id']          ?? null,
                 'club_id'           => $p['club_id']            ?? null,
                 'club_name'         => $p['club_name']          ?? null,

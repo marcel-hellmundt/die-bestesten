@@ -51,14 +51,29 @@
 .team-chip {
   display: flex;
   align-items: center;
-  gap: $space-1;
+  gap: $space-2;
 
-  &__dot {
-    width: 10px;
-    height: 10px;
-    border-radius: $radius-full;
+  &__logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
     flex-shrink: 0;
   }
+}
+
+.col-sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  opacity: 0.5;
+  font-size: 11px;
 }
 
 .muted {

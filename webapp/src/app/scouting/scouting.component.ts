@@ -12,6 +12,7 @@ interface WatchlistEntry {
   photo_uploaded: boolean;
   position: 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD' | null;
   price: number | null;
+  season_points: number;
   season_id: string | null;
   club_id: string | null;
   club_name: string | null;
@@ -67,6 +68,42 @@ export class ScoutingComponent {
     DEFENDER: 'var(--position-defender)', GOALKEEPER: 'var(--position-goalkeeper)',
   };
 
+  private readonly POSITION_ORDER: Record<string, number> = {
+    GOALKEEPER: 0, DEFENDER: 1, MIDFIELDER: 2, FORWARD: 3,
+  };
+
+  currentPrice(e: WatchlistEntry): number | null {
+    return e.price !== null ? e.price + 20_000 * e.season_points : null;
+  }
+
+  sortCol = signal<'points' | 'price' | 'position' | null>(null);
+  sortDir = signal<'asc' | 'desc'>('desc');
+
+  sort(col: 'points' | 'price' | 'position'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('desc');
+    }
+  }
+
+  sortedEntries = computed(() => {
+    const col = this.sortCol();
+    const all = this.entries();
+    if (!col) return all;
+    const dir = this.sortDir();
+    const value = (e: WatchlistEntry): number => {
+      if (col === 'points')   return e.season_points;
+      if (col === 'price')    return this.currentPrice(e) ?? -1;
+      return e.position ? (this.POSITION_ORDER[e.position] ?? 99) : 99;
+    };
+    return [...all].sort((a, b) => {
+      const cmp = value(a) - value(b);
+      return dir === 'asc' ? cmp : -cmp;
+    });
+  });
+
   playerPhotoUrl(e: WatchlistEntry): string | null {
     return e.photo_uploaded && e.season_id ? `https://img.die-bestesten.de/player/${e.season_id}/${e.player_id}.png` : null;
   }
@@ -78,6 +115,9 @@ export class ScoutingComponent {
   teamLogoUrl(teamId: string, seasonId: string): string {
     return `https://img.die-bestesten.de/team/${seasonId}/${teamId}.png`;
   }
+
+  teamLogoErrors = new Set<string>();
+  onTeamLogoError(teamId: string): void { this.teamLogoErrors.add(teamId); }
 
   navigateToPlayer(playerId: string): void {
     this.router.navigate(['/daten/player', playerId]);

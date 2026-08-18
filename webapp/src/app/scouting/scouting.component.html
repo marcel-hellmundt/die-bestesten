@@ -11,14 +11,24 @@
         <th></th>
         <th>Spieler</th>
         <th class="hide-mobile">Verein</th>
-        <th>Pos</th>
-        <th class="hide-mobile">MW</th>
+        <th class="col-sortable" (click)="sort('position')">
+          Pos
+          <span class="sort-indicator">{{ sortCol() === 'position' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+        </th>
+        <th class="hide-mobile col-sortable" (click)="sort('price')">
+          Preis
+          <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+        </th>
+        <th class="hide-mobile col-sortable" (click)="sort('points')">
+          Punkte
+          <span class="sort-indicator">{{ sortCol() === 'points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+        </th>
         <th>Team</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
-      @for (entry of entries(); track entry.id) {
+      @for (entry of sortedEntries(); track entry.id) {
         <tr class="row-link" (click)="navigateToPlayer(entry.player_id)">
           <td class="col-photo">
             @if (playerPhotoUrl(entry); as url) {
@@ -46,17 +56,25 @@
             }
           </td>
           <td class="hide-mobile">
-            @if (entry.price !== null) {
-              {{ entry.price | number: '1.0-0' }} €
+            @if (currentPrice(entry); as price) {
+              {{ price | number: '1.0-0' }} €
             } @else {
               <span class="muted">–</span>
             }
           </td>
+          <td class="hide-mobile">{{ entry.season_points }}</td>
           <td class="col-team">
-            @if (entry.current_team) {
+            @if (entry.current_team; as team) {
               <div class="team-chip">
-                <div class="team-chip__dot" [style.background-color]="entry.current_team.color ?? '#ccc'"></div>
-                <span>{{ entry.current_team.alias ?? entry.current_team.manager_name }}</span>
+                @if (!teamLogoErrors.has(team.team_id)) {
+                  <img
+                    class="team-chip__logo"
+                    [src]="teamLogoUrl(team.team_id, team.team_season_id)"
+                    [alt]="team.team_name"
+                    (error)="onTeamLogoError(team.team_id)"
+                  />
+                }
+                <span>{{ team.team_name }}</span>
               </div>
             } @else {
               <span class="muted">Vereinslos</span>

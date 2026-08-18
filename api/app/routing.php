@@ -955,7 +955,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/watchlist',
-                        'description' => 'Beobachtete Spieler des eigenen Teams mit Spieler- und Clubdaten sowie aktuellem Fantasy-Team — Auth',
+                        'description' => 'Beobachtete Spieler des eigenen Teams mit Spieler- und Clubdaten, season_points (Saisonpunkte) sowie aktuellem Fantasy-Team — Auth',
                         'query_params' => ['team_id' => 'UUID des eigenen Teams (erforderlich)'],
                     ],
                     [
