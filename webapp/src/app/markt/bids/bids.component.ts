@@ -60,7 +60,7 @@ export class BidsComponent {
     )
   );
 
-  allOffers = computed(() => this.offersData()?.offers ?? []);
+  allOffers = computed(() => (this.offersData()?.offers ?? []).filter(o => o.status !== 'cancelled'));
   pendingSum        = computed(() => this.offersData()?.pending_sum ?? 0);
   teamId            = computed(() => this.team()?.id ?? null);
 

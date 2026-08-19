@@ -6,7 +6,7 @@ trait OfferTrait
     {
         $q = $this->con_league->prepare(
             "SELECT id, player_id, transferwindow_id, offer_value, price_snapshot, status, created_at
-             FROM offer WHERE team_id = :tid ORDER BY created_at DESC"
+             FROM offer WHERE team_id = :tid AND status != 'cancelled' ORDER BY created_at DESC"
         );
         $q->execute([':tid' => $teamId]);
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
