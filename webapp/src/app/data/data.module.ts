@@ -20,6 +20,7 @@ import { LeagueDetailComponent } from './league/league-detail.component';
 import { AchievementsDataComponent } from './achievements/achievements-data.component';
 import { ManagerDataComponent } from './manager/manager-data.component';
 import { PlayerImportDataComponent } from './player-import/player-import.component';
+import { SessionHeatmapComponent } from './session/session-heatmap.component';
 
 const M = [MaintainerGuard];
 
@@ -45,6 +46,7 @@ const routes: Routes = [
       { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
       { path: 'manager',       component: ManagerDataComponent,      canActivate: M },
       { path: 'player-import', component: PlayerImportDataComponent, canActivate: M },
+      { path: 'session-heatmap', component: SessionHeatmapComponent, canActivate: M },
     ]
   }
 ];
@@ -67,6 +69,7 @@ const routes: Routes = [
     AchievementsDataComponent,
     ManagerDataComponent,
     PlayerImportDataComponent,
+    SessionHeatmapComponent,
   ],
   imports: [
     CommonModule,

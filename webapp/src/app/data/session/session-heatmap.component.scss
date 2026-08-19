@@ -1,0 +1,22 @@
+@use '../../../styles/variables' as *;
+
+.heatmap-table {
+  &__name {
+    font-weight: $font-weight-medium;
+    white-space: nowrap;
+  }
+
+  &__day {
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  &__cell {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    white-space: nowrap;
+    transition: background-color $transition-fast;
+  }
+}

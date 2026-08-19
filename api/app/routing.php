@@ -154,6 +154,19 @@ class Routing
                 ],
             ]),
 
+            new Route('session', 'Session', [
+                'title' => 'Session',
+                'description' => 'Näherungsweise Sitzungsdauer-Erfassung per Heartbeat (jeder authentifizierte Request verlängert/eröffnet eine manager_session) — Admin-Report',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/session',
+                        'description' => 'Tägliche Nutzungsdauer je Manager für die letzten N Tage (Heatmap-Rohdaten) — {days, managers[{manager_id,manager_name,alias,days:{"YYYY-MM-DD":Sekunden}}]} — Admin',
+                        'query_params' => ['days' => 'Anzahl Tage rückwirkend (optional, default 7, max 31)'],
+                    ],
+                ],
+            ]),
+
             new Route('country', 'Country', [
                 'title' => 'Country',
                 'description' => 'ISO Alpha-2 Ländercodes',

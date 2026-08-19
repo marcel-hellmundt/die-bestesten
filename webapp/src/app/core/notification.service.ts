@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Subscription, catchError, interval, of, switchMap } from 'rxjs';
+import { Subscription, catchError, interval, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from './api.service';
 
 export interface AppNotification {
@@ -29,11 +29,28 @@ export class NotificationService {
   unreadCount = this._unreadCount.asReadonly();
 
   private pollSub?: Subscription;
+  private visibilityListenerAdded = false;
+
+  // Läuft nur, während der Tab sichtbar ist — ein im Hintergrund offen gelassener Tab soll den
+  // Heartbeat (siehe api/app/guard.php touchSession()) nicht künstlich am Leben halten und damit
+  // eine "Session" vortäuschen, die niemand aktiv nutzt.
+  private onVisibilityChange = (): void => {
+    if (document.hidden) {
+      this.stopPolling();
+    } else {
+      this.startPolling();
+    }
+  };
 
   startPolling(): void {
-    if (this.pollSub) return;
+    if (!this.visibilityListenerAdded) {
+      document.addEventListener('visibilitychange', this.onVisibilityChange);
+      this.visibilityListenerAdded = true;
+    }
+    if (this.pollSub || document.hidden) return;
     this.pollSub = interval(4000)
       .pipe(
+        startWith(0), // beim (Wieder-)Start sofort abfragen, nicht erst nach 4s
         switchMap(() =>
           this.api
             .get<{ count: number }>('notification/unread_count')
