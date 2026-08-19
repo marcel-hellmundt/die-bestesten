@@ -41,6 +41,19 @@ const RANGE_LABELS: Record<RangeKey, string> = {
   day: 'Tag', week: 'Woche', month: 'Monat', year: 'Jahr',
 };
 
+// Grobe Obergrenze für die Tooltip-Breite, nur zum Clampen der Position genutzt (siehe
+// onCellHover) — muss nicht exakt sein, nur groß genug, damit der Tooltip nie über den
+// Viewport-Rand hinausragt (das erzeugte vorher bei Zellen ganz rechts eine Scrollbar + Flackern,
+// weil ein zentrierter CSS-::after-Tooltip nicht viewport-bewusst positioniert werden kann).
+const TOOLTIP_WIDTH_ESTIMATE = 240;
+const TOOLTIP_VIEWPORT_MARGIN = 8;
+
+interface TooltipState {
+  text: string;
+  x: number;
+  y: number;
+}
+
 @Component({
   selector: 'app-session-heatmap',
   standalone: false,
@@ -155,7 +168,23 @@ export class SessionHeatmapComponent {
     return LEVEL_COLORS[level];
   }
 
-  tooltip(m: HeatmapManager, col: BucketColumn): string {
+  private tooltipText(m: HeatmapManager, col: BucketColumn): string {
     return `${col.key} — ${this.formatDuration(this.seconds(m, col.key))}`;
+  }
+
+  hoveredTooltip = signal<TooltipState | null>(null);
+
+  onCellHover(event: MouseEvent, m: HeatmapManager, col: BucketColumn): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const half = TOOLTIP_WIDTH_ESTIMATE / 2;
+    const x = Math.min(
+      window.innerWidth - half - TOOLTIP_VIEWPORT_MARGIN,
+      Math.max(half + TOOLTIP_VIEWPORT_MARGIN, rect.left + rect.width / 2),
+    );
+    this.hoveredTooltip.set({ text: this.tooltipText(m, col), x, y: rect.top });
+  }
+
+  onCellLeave(): void {
+    this.hoveredTooltip.set(null);
   }
 }
