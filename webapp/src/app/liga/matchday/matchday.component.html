@@ -66,7 +66,7 @@
                 <th class="col-icons col-cs col-desktop">Zu Null</th>
                 <th class="col-stats col-mobile"></th>
                 <th class="col-points">Punkte</th>
-                @if (!isLive()) {
+                @if (!isLive() && cache.finesEnabled()) {
                   <th class="col-fine col-desktop">Strafe</th>
                 }
               </tr>
@@ -182,7 +182,7 @@
                     </span>
                   </td>
                   <td class="col-points">{{ r.points }}</td>
-                  @if (!isLive()) {
+                  @if (!isLive() && cache.finesEnabled()) {
                     <td class="col-fine col-desktop" [class.col-fine--active]="r.fine > 0">
                       @if (r.fine > 0) {
                         {{ r.fine | number: '1.2-2' }} €

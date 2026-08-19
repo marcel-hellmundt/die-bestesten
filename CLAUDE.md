@@ -68,7 +68,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 |---------|---------|
 | country | id PK, name |
 | season | id PK, start_date UNIQUE — aktiv = höchstes start_date |
-| league | id PK, slug UNIQUE, name, db_name, visibility ENUM('public','private') DEFAULT 'public' — public = Beitrittsanfragen erlaubt; private = nur Einladung |
+| league | id PK, slug UNIQUE, name, db_name, visibility ENUM('public','private') DEFAULT 'public' — public = Beitrittsanfragen erlaubt; private = nur Einladung; fine_ruleset ENUM('classic','none') DEFAULT 'classic' — classic = Spieltags-/Saisonstrafen (Kegelstrafen: 3€/2€/1,50€/1€ + 5€ Startgeld); none = keine Strafen |
 | club | id PK, country_id FK, name UNIQUE, short_name, logo_uploaded BOOL |
 | division | id PK, name, level INT, seats INT, country_id FK |
 | matchday | id PK, season_id FK, division_id FK, start_date DATE, kickoff_date DATETIME, number INT, completed BOOL — UNIQUE(season_id, division_id, number) — jede Division pflegt eigene Spieltage |
@@ -107,8 +107,8 @@ PATCH    /matchday/:id         — {completed:bool} — bei completed=true: team
 DELETE   /matchday/:id         — 409 wenn completed oder bereits in der Liga verwendet (team_lineup/team_rating/transaction/player_in_team/h2h_match) oder von Bewertungen/Transferfenstern referenziert — Admin
 GET      /all_time_standings   — { standings: [{id,manager_name,alias,total_points}], top_matchdays: [{points,matchday_number,team_name,season_id,manager_name}] } — Auth
 GET      /league[/:id]         — enthält manager_count (global) und team_count (Teams der aktiven Saison aus der jeweiligen Liga-DB; 0 ohne aktive Saison); /:id: teams[] zusätzlich mit squad_count + squad_value (aktiver Kader + Marktwertsumme) je Team
-GET      /league/mine          — Aktuelle Liga {id,slug,name,db_name,division_id} — bei JWT die Liga aus auth_league_id, sonst Fallback auf die per DB_NAME_LEAGUE konfigurierte Deployment-Liga
-PATCH    /league/:id           — {division_id: UUID|null} Spielerpool-Division setzen; oder {visibility: 'public'|'private'} Sichtbarkeit setzen — Admin
+GET      /league/mine          — Aktuelle Liga {id,slug,name,db_name,division_id,fine_ruleset} — bei JWT die Liga aus auth_league_id, sonst Fallback auf die per DB_NAME_LEAGUE konfigurierte Deployment-Liga
+PATCH    /league/:id           — {division_id: UUID|null} Spielerpool-Division setzen; oder {visibility: 'public'|'private'} Sichtbarkeit setzen; oder {fine_ruleset: 'classic'|'none'} Strafen-Regelsatz setzen (classic = Kegelstrafen, none = keine Strafen; steuert fine-Felder in /liga/matchday, /liga/table, /team_rating) — Admin
 POST     /league/:id/join      — Beitrittsanfrage stellen (status='requested'); benachrichtigt alle Admins; 403 wenn visibility='private' — Auth
 POST     /league/:id/accept    — Einladung annehmen (invited→active); benachrichtigt alle Admins per E-Mail; 409 wenn keine ausstehende Einladung — Auth
 POST     /league/:id/decline   — Einladung ablehnen (invited→denied); 409 wenn keine ausstehende Einladung — Auth
@@ -156,7 +156,7 @@ POST     /auth/switch-league  — {league_id} → {token, league_id}; neues JWT 
 POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)
 POST     /auth/password-reset — {token,new_password} — setzt Passwort zurück (Token aus Reset- oder Einladungslink); gibt {token,leagues,league_id} zurück (automatischer Login mit neuem JWT); 400 wenn Token ungültig/abgelaufen
 GET      /team_rating          — ?season_id → { matchday, ratings[], sds_player, max_matchday_number } letzter gestarteter Spieltag; bei nicht-abgeschlossenem Spieltag: Live-Punkte aus player_rating × team_lineup (fine = 0) — Auth
-GET      /team_rating/season   — ?season_id → aggregierte Saisontabelle aller Teams, sortiert nach Punkten — Auth
+GET      /team_rating/season   — ?season_id → aggregierte Saisontabelle aller Teams, sortiert nach Punkten; fine-Felder sowie luck.lucky/luck.unlucky (Glückspilze/Pechvögel) sind 0 bzw. leer, wenn league.fine_ruleset='none' (Goldene Bürste/Hölzerne Bank/Spieltagssiege bleiben davon unberührt) — Auth
 GET      /team                 — ?season_id → [{id,team_name,color,color_secondary,season_id,manager_id,manager_name,alias}] sortiert nach Name — Auth
 GET      /team/mine            — Eigenes Team der aktiven Saison {id, team_name, season_id, color}; 404 wenn kein Team — Auth
 GET      /team/:id             — Team per ID (manager_name, alias, total_points, matchdays_played) — Auth

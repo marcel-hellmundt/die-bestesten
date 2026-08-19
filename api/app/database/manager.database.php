@@ -632,11 +632,12 @@ trait ManagerTrait
 
         $ratings = array_values(array_filter($ratings, fn($r) => (bool)($matchdayMap[$r['matchday_id']]['completed'] ?? false)));
 
+        $fineRuleset = $this->getLeagueFineRuleset();
         foreach ($ratings as &$r) {
             $md = $matchdayMap[$r['matchday_id']] ?? null;
             $r['matchday_number'] = $md ? (int)$md['number'] : null;
             $r['kickoff_date']    = $md ? $md['kickoff_date'] : null;
-            $r['fine']            = (float)($r['fine'] ?? 0.0);
+            $r['fine']            = $fineRuleset === 'none' ? 0.0 : (float)($r['fine'] ?? 0.0);
             $r['placement']       = $r['placement'] !== null ? (int)$r['placement'] : null;
         }
         unset($r);

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, distinctUntilChanged, filter, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { DataCacheService } from '../../core/data-cache.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -15,6 +16,11 @@ export class TeamOverviewComponent {
   private api    = inject(ApiService);
   private route  = inject(ActivatedRoute);
   private router = inject(Router);
+  cache          = inject(DataCacheService);
+
+  constructor() {
+    this.cache.ensureLeague();
+  }
 
   private id$ = this.route.parent!.paramMap.pipe(map(p => p.get('id')!));
 

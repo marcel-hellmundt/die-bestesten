@@ -41,6 +41,18 @@
   margin-bottom: $space-5;
 }
 
+.fine-ruleset-toggle {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-left: $space-2;
+}
+
+.fine-ruleset-toggle__label {
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
 // ── Season list ──────────────────────────────────────────────────────────────
 
 .season-list {

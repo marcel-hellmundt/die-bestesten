@@ -179,6 +179,19 @@ class Database
         return $q->fetchColumn() ?: null;
     }
 
+    protected function getLeagueFineRuleset(): string
+    {
+        $leagueId = $GLOBALS['auth_league_id'] ?? null;
+        if ($leagueId) {
+            $q = $this->con->prepare("SELECT fine_ruleset FROM league WHERE id = :id LIMIT 1");
+            $q->execute([':id' => $leagueId]);
+        } else {
+            $q = $this->con->prepare("SELECT fine_ruleset FROM league WHERE db_name = :db_name LIMIT 1");
+            $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        }
+        return $q->fetchColumn() ?: 'classic';
+    }
+
     // Auth — uses global DB (manager table is in global schema)
     public function getAuthManagerById(string $id): array|false
     {

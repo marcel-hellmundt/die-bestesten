@@ -4,6 +4,12 @@ trait TeamRatingTrait
 {
     private function assignFines(array $rows, string $pointsKey): array
     {
+        if ($this->getLeagueFineRuleset() === 'none') {
+            foreach ($rows as &$row) { $row['fine'] = 0.0; }
+            unset($row);
+            return $rows;
+        }
+
         $hasInvalid = !empty(array_filter($rows, fn($r) => $r['invalid']));
         // If any invalid on this matchday: invalid=3€, valid rank 1→2€/2→1.50€/3→1€
         // Otherwise normal ranking: rank 1→3€/2→2€/3→1.50€/4→1€
@@ -124,8 +130,9 @@ trait TeamRatingTrait
                 'points' => (int) $r['points'],
             ];
         }
+        $fineRuleset = $this->getLeagueFineRuleset();
         foreach ($rows as &$row) {
-            $row['fine'] = ($fineByTeam[$row['team_id']] ?? 0.0) + 5.0;
+            $row['fine'] = $fineRuleset === 'none' ? 0.0 : (($fineByTeam[$row['team_id']] ?? 0.0) + 5.0);
         }
         unset($row);
 
@@ -234,10 +241,16 @@ trait TeamRatingTrait
         }
         usort($winsByTeam, fn($a, $b) => $b['wins'] <=> $a['wins']);
 
+        // Glückspilze/Pechvögel sind inhaltlich an Strafen gekoppelt ("hätte eine Strafe
+        // bekommen") und ergeben ohne Strafen keinen Sinn — im Gegensatz zu den übrigen hier
+        // mitgelieferten Auszeichnungen (Goldene Bürste/Hölzerne Bank/Spieltagssiege), die rein
+        // auf Punkten basieren und unabhängig vom fine_ruleset weiter befüllt werden.
+        $finesEnabled = $this->getLeagueFineRuleset() !== 'none';
+
         return [
             '_all' => $rows,
-            'lucky' => array_slice(array_values($lucky), 0, 3),
-            'unlucky' => array_slice(array_values($unlucky), 0, 3),
+            'lucky' => $finesEnabled ? array_slice(array_values($lucky), 0, 3) : [],
+            'unlucky' => $finesEnabled ? array_slice(array_values($unlucky), 0, 3) : [],
             'goldene_buerste' => $goldene_buerste,
             'hoelzerne_bank' => $hoelzerne_bank,
             'matchday_wins' => array_values($winsByTeam),

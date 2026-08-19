@@ -183,6 +183,7 @@ export class MatchdayComponent {
 
   constructor() {
     this.cache.ensureSeasons();
+    this.cache.ensureLeague();
     const n = inject(ActivatedRoute).snapshot.queryParamMap.get('number');
     if (n) this.selectedNumber.set(parseInt(n, 10));
   }
