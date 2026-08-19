@@ -22,6 +22,9 @@ interface FreeAgent {
   current_team_name: string | null;
   current_team_season_id: string | null;
   new_on_market: boolean;
+  sold_by_team_id: string | null;
+  sold_by_team_name: string | null;
+  sold_by_team_season_id: string | null;
 }
 
 @Component({
@@ -447,7 +450,9 @@ export class MarktPlayerComponent {
     || this.newOnMarketOnly()
   );
 
-  columnCount = computed(() => (this.showAllPlayers() ? 6 : 5) + (this.cache.myTeamId() ? 1 : 0));
+  columnCount = computed(() =>
+    (this.showAllPlayers() ? 6 : 5) + (this.cache.myTeamId() ? 1 : 0) + (this.newOnMarketOnly() ? 1 : 0)
+  );
 
   readonly POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
   readonly POS_LABEL: Record<string, string> = {
@@ -469,6 +474,11 @@ export class MarktPlayerComponent {
   teamLogoUrl(p: FreeAgent): string | null {
     if (!p.current_team_id || !p.current_team_season_id) return null;
     return `https://img.die-bestesten.de/team/${p.current_team_season_id}/${p.current_team_id}.png`;
+  }
+
+  sellerLogoUrl(p: FreeAgent): string | null {
+    if (!p.sold_by_team_id || !p.sold_by_team_season_id) return null;
+    return `https://img.die-bestesten.de/team/${p.sold_by_team_season_id}/${p.sold_by_team_id}.png`;
   }
 
   clubLogoUrl(p: FreeAgent): string | null {

@@ -45,8 +45,10 @@ trait PlayerInSeasonTrait
         }
 
         // Players sold by another team during the currently open transfer window — used to
-        // flag them as "new on market" (freed up just now, not free all season).
-        $soldThisWindowIds = [];
+        // flag them as "new on market" (freed up just now, not free all season) and to show
+        // who sold them. Ordered by created_at DESC so the first row per player is the most
+        // recent sale (relevant if a player was bought+sold more than once in the window).
+        $sellerMap = [];
         try {
             $windows      = $this->getTransferwindowList(null, $seasonId);
             $now          = date('Y-m-d H:i:s');
@@ -55,9 +57,20 @@ trait PlayerInSeasonTrait
                 if ($w['start_date'] <= $now && $now < $w['end_date']) { $currentWindow = $w; break; }
             }
             if ($currentWindow) {
-                $sq = $this->con_league->prepare("SELECT DISTINCT player_id FROM sell WHERE transferwindow_id = ?");
+                $sq = $this->con_league->prepare(
+                    "SELECT s.player_id, s.team_id AS seller_team_id, t.team_name AS seller_team_name,
+                            t.season_id AS seller_team_season_id
+                     FROM sell s
+                     JOIN team t ON t.id = s.team_id
+                     WHERE s.transferwindow_id = ?
+                     ORDER BY s.created_at DESC"
+                );
                 $sq->execute([$currentWindow['id']]);
-                $soldThisWindowIds = array_flip($sq->fetchAll(PDO::FETCH_COLUMN));
+                foreach ($sq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    if (!isset($sellerMap[$row['player_id']])) {
+                        $sellerMap[$row['player_id']] = $row;
+                    }
+                }
             }
         } catch (PDOException) {}
 
@@ -110,8 +123,10 @@ trait PlayerInSeasonTrait
         );
         $stmt->execute(array_merge([$seasonId, $prevSeasonId, $seasonId], $divisionParams, $exclusionParams));
 
-        return ['players' => array_map(function ($r) use ($ownershipMap, $seasonId, $soldThisWindowIds) {
-            $owner = $ownershipMap[$r['id']] ?? null;
+        return ['players' => array_map(function ($r) use ($ownershipMap, $seasonId, $sellerMap) {
+            $owner     = $ownershipMap[$r['id']] ?? null;
+            $seller    = $sellerMap[$r['id']] ?? null;
+            $isNewOnMarket = $owner === null && $seller !== null;
             return [
                 'id'                    => $r['id'],
                 'displayname'           => $r['displayname'],
@@ -128,7 +143,10 @@ trait PlayerInSeasonTrait
                 'current_team_id'        => $owner['team_id']        ?? null,
                 'current_team_name'      => $owner['team_name']      ?? null,
                 'current_team_season_id' => $owner['team_season_id'] ?? null,
-                'new_on_market'          => $owner === null && isset($soldThisWindowIds[$r['id']]),
+                'new_on_market'          => $isNewOnMarket,
+                'sold_by_team_id'         => $isNewOnMarket ? $seller['seller_team_id']         : null,
+                'sold_by_team_name'       => $isNewOnMarket ? $seller['seller_team_name']       : null,
+                'sold_by_team_season_id'  => $isNewOnMarket ? $seller['seller_team_season_id']  : null,
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC))];
     }
