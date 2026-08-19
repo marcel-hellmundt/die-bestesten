@@ -1,0 +1,125 @@
+@use '../../../styles/variables' as *;
+
+.range-toggle {
+  display: flex;
+  gap: $space-2;
+  margin-bottom: $space-4;
+}
+
+.range-toggle__btn {
+  padding: 4px $space-4;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: transparent;
+  color: $color-text-muted;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition:
+    background-color $transition-fast,
+    color $transition-fast,
+    border-color $transition-fast;
+
+  &:hover:not(.range-toggle__btn--active) {
+    color: $color-text;
+    border-color: $color-text-muted;
+  }
+
+  &--active {
+    background: $color-accent;
+    color: #fff;
+    border-color: $color-accent;
+  }
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: $space-4;
+}
+
+.heatmap-legend__label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  &:first-child {
+    margin-right: $space-1;
+  }
+  &:last-child {
+    margin-left: $space-1;
+  }
+}
+
+.heatmap-legend__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid $color-border;
+
+  &--empty {
+    background-color: transparent;
+  }
+}
+
+.heatmap {
+  display: grid;
+  grid-template-columns: 160px repeat(var(--col-count), minmax(0, 1fr));
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+  // Deckelt die Gesamtbreite auf "so viel wie N Spalten à 64px + Gaps brauchen" — dadurch
+  // strecken sich die 1fr-Spalten bei wenigen Boxen (z.B. "Woche" = 7) nicht über die
+  // Box-Größe hinaus (das erzeugte vorher großen Leerraum). Ist der verfügbare Platz kleiner
+  // als dieser Deckel (z.B. "Jahr" = 52 Spalten), greift width:100% und 1fr schrumpft normal,
+  // damit weiterhin alles auf den Screen passt. (fr-Einheiten sind in calc()/min() nicht
+  // erlaubt, daher der Umweg über max-width statt einer Deckelung pro Spalte.)
+  max-width: calc(160px + (var(--col-count) * 64px) + ((var(--col-count) - 1) * 4px));
+}
+
+.heatmap__corner {
+  // leere Ecke oben links
+}
+
+.heatmap__col-label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.heatmap__row-label {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: $space-2;
+}
+
+.heatmap__cell {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid $color-border;
+  cursor: default;
+}
+
+// Einzelner, viewport-positionierter Tooltip statt eines CSS-::after pro Zelle — eine relativ
+// zur Zelle zentrierte Position kann bei Zellen am rechten Bildschirmrand über den Viewport
+// hinausragen und dadurch eine horizontale Scrollbar samt Flackern erzeugen. Die x-Position wird
+// in onCellHover() gegen die Viewport-Breite geclampt, damit das nicht mehr passieren kann.
+.heatmap-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 6px));
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.3;
+  padding: 3px 7px;
+  border-radius: $radius-sm;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
+}

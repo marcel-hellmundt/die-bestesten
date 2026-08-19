@@ -154,6 +154,19 @@ class Routing
                 ],
             ]),
 
+            new Route('session', 'Session', [
+                'title' => 'Session',
+                'description' => 'Näherungsweise Sitzungsdauer-Erfassung per Heartbeat (jeder authentifizierte Request verlängert/eröffnet eine manager_session) — Admin-Report',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/session',
+                        'description' => 'Nutzungsdauer je Manager, gebucketed nach Zeitraum (Heatmap-Rohdaten) — {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden}}]}; buckets-Schlüssel je range: day="YYYY-MM-DDTHH:00:00" (Stunde), week/month="YYYY-MM-DD" (Tag), year="YYYY-MM-DD" (Montag der Woche) — Admin',
+                        'query_params' => ['range' => '"day" (letzte 24h, stündlich) | "week" (letzte 7 Tage, täglich, default) | "month" (letzte 30 Tage, täglich) | "year" (letzte 52 Wochen, wöchentlich)'],
+                    ],
+                ],
+            ]),
+
             new Route('country', 'Country', [
                 'title' => 'Country',
                 'description' => 'ISO Alpha-2 Ländercodes',

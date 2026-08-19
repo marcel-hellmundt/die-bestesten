@@ -255,6 +255,18 @@ CREATE TABLE IF NOT EXISTS manager_league (
     UNIQUE KEY uk_manager_league (manager_id, league_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: manager_session (naeherungsweise Sitzungsdauer per Heartbeat; jeder authentifizierte
+-- Request verlaengert die juengste offene Session oder eroeffnet eine neue, wenn die letzte
+-- laenger als 3 Minuten her ist — siehe Guard::authorize())
+CREATE TABLE IF NOT EXISTS manager_session (
+    id         CHAR(36) NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    manager_id CHAR(36) NOT NULL,
+    started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    INDEX idx_manager_session_lookup (manager_id, ended_at)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Tabelle: notification
 CREATE TABLE IF NOT EXISTS notification (
     id          CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,

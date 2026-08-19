@@ -76,6 +76,11 @@ class Guard
             }
 
             $this->db->touchLastActivity($manager['id']);
+            try {
+                $this->db->touchSession($manager['id']);
+            } catch (Throwable) {
+                // Session-Heartbeat darf einen Request nie zum Scheitern bringen.
+            }
 
             // 'manager' = any authenticated active manager; additional roles require explicit assignment
             if ($requiredRole !== 'manager' && !in_array($requiredRole, $manager['roles'])) {
