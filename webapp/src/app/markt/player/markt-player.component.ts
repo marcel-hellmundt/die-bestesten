@@ -21,6 +21,10 @@ interface FreeAgent {
   current_team_id: string | null;
   current_team_name: string | null;
   current_team_season_id: string | null;
+  new_on_market: boolean;
+  sold_by_team_id: string | null;
+  sold_by_team_name: string | null;
+  sold_by_team_season_id: string | null;
 }
 
 @Component({
@@ -38,13 +42,42 @@ export class MarktPlayerComponent {
   @ViewChild('offerSheet') offerSheet!: TemplateRef<any>;
   @ViewChild('tableContainer') tableContainer?: ElementRef<HTMLDivElement>;
 
+  // Gespeichert pro Liga (leagueId), da Vereins-/Positionsfilter nur für die Division der
+  // jeweiligen Liga sinnvoll sind — ein flacher, ligaübergreifender Speicher führte dazu, dass
+  // ein in Liga A gewählter Verein beim Wechsel zu Liga B (andere Division) keinen Spieler mehr
+  // matcht und die Liste dadurch leer erscheint.
   private readonly STORAGE_KEY = 'markt-player-filters';
 
-  private loadFilters() {
+  // Vor dem Liga-Umbau lagen die Filterfelder direkt auf der Wurzel des gespeicherten Objekts
+  // statt unter einem leagueId-Schlüssel. Bestehende localStorage-Einträge räumen wir beim
+  // nächsten Zugriff einmalig auf, statt sie als Datenleiche neben den Liga-Einträgen liegen
+  // zu lassen.
+  private static readonly LEGACY_ROOT_KEYS = ['search', 'position', 'club', 'maxPrice', 'showAll', 'newOnly'];
+
+  private readStore(): Record<string, any> {
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
+      if (!raw) return {};
+      const all = JSON.parse(raw);
+      const hasLegacyKeys = MarktPlayerComponent.LEGACY_ROOT_KEYS.some(k => k in all);
+      if (hasLegacyKeys) {
+        for (const k of MarktPlayerComponent.LEGACY_ROOT_KEYS) delete all[k];
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(all));
+      }
+      return all;
     } catch { return {}; }
+  }
+
+  private loadFiltersFor(leagueId: string): any {
+    return this.readStore()[leagueId] ?? {};
+  }
+
+  private saveFiltersFor(leagueId: string, filters: unknown): void {
+    try {
+      const all = this.readStore();
+      all[leagueId] = filters;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(all));
+    } catch { /* ignore */ }
   }
 
   constructor() {
@@ -52,24 +85,41 @@ export class MarktPlayerComponent {
     this.cache.ensureSeasons();
     this.cache.ensureMyTeam();
 
+    // leagueId ist beim Start noch nicht bekannt (async via /league/mine) — sobald es vorliegt,
+    // die für DIESE Liga gespeicherten Filter einmalig übernehmen.
+    effect(() => {
+      const leagueId = this.cache.leagueId();
+      if (!leagueId) return;
+      const saved = this.loadFiltersFor(leagueId);
+      this.searchQuery.set(saved.search ?? '');
+      this.positionFilter.set(saved.position ?? null);
+      this.clubFilter.set(saved.club ?? null);
+      this.maxPrice.set(saved.maxPrice ?? null);
+      this.showAllPlayers.set(saved.showAll ?? false);
+      this.newOnMarketOnly.set(saved.newOnly ?? false);
+    });
+
     effect(() => {
       this.filteredPlayers();
       setTimeout(() => { if (this.tableContainer) this.tableContainer.nativeElement.scrollLeft = 0; }, 0);
     });
 
     effect(() => {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+      const leagueId = this.cache.leagueId();
+      if (!leagueId) return;
+      this.saveFiltersFor(leagueId, {
         search:   this.searchQuery(),
         position: this.positionFilter(),
         club:     this.clubFilter(),
         maxPrice: this.maxPrice(),
         showAll:  this.showAllPlayers(),
-      }));
+        newOnly:  this.newOnMarketOnly(),
+      });
     });
   }
 
-  private _saved      = this.loadFilters();
-  showAllPlayers       = signal<boolean>(this._saved.showAll ?? false);
+  showAllPlayers  = signal<boolean>(false);
+  newOnMarketOnly = signal<boolean>(false);
 
   private data = toSignal(
     toObservable(this.showAllPlayers).pipe(
@@ -301,10 +351,10 @@ export class MarktPlayerComponent {
     });
   }
 
-  searchQuery    = signal<string>(this._saved.search    ?? '');
-  positionFilter = signal<string | null>(this._saved.position ?? null);
-  clubFilter     = signal<string | null>(this._saved.club     ?? null);
-  maxPrice       = signal<number | null>(this._saved.maxPrice ?? null);
+  searchQuery    = signal<string>('');
+  positionFilter = signal<string | null>(null);
+  clubFilter     = signal<string | null>(null);
+  maxPrice       = signal<number | null>(null);
 
   dynamicPrice(p: FreeAgent): number { return p.price + 20_000 * p.season_points; }
 
@@ -371,18 +421,20 @@ export class MarktPlayerComponent {
   }
 
   filteredPlayers = computed(() => {
-    const q    = this.searchQuery().trim().toLowerCase();
-    const pos  = this.positionFilter();
-    const club = this.clubFilter();
-    const max  = this.maxPrice();
-    const col  = this.sortCol();
-    const dir  = this.sortDir();
+    const q       = this.searchQuery().trim().toLowerCase();
+    const pos     = this.positionFilter();
+    const club    = this.clubFilter();
+    const max     = this.maxPrice();
+    const newOnly = this.newOnMarketOnly();
+    const col     = this.sortCol();
+    const dir     = this.sortDir();
 
     const filtered = this.players().filter(p =>
-      (!q    || p.displayname.toLowerCase().includes(q)) &&
-      (!pos  || p.position === pos) &&
-      (!club || p.club_id === club) &&
-      (max === null || this.dynamicPrice(p) <= max)
+      (!q       || p.displayname.toLowerCase().includes(q)) &&
+      (!pos     || p.position === pos) &&
+      (!club    || p.club_id === club) &&
+      (max === null || this.dynamicPrice(p) <= max) &&
+      (!newOnly || p.new_on_market)
     );
 
     return [...filtered].sort((a, b) => {
@@ -395,9 +447,12 @@ export class MarktPlayerComponent {
 
   hasFilters = computed(() =>
     !!this.searchQuery() || !!this.positionFilter() || !!this.clubFilter() || this.maxPrice() !== null
+    || this.newOnMarketOnly()
   );
 
-  columnCount = computed(() => (this.showAllPlayers() ? 6 : 5) + (this.cache.myTeamId() ? 1 : 0));
+  columnCount = computed(() =>
+    (this.showAllPlayers() ? 6 : 5) + (this.cache.myTeamId() ? 1 : 0) + (this.newOnMarketOnly() ? 1 : 0)
+  );
 
   readonly POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
   readonly POS_LABEL: Record<string, string> = {
@@ -421,6 +476,11 @@ export class MarktPlayerComponent {
     return `https://img.die-bestesten.de/team/${p.current_team_season_id}/${p.current_team_id}.png`;
   }
 
+  sellerLogoUrl(p: FreeAgent): string | null {
+    if (!p.sold_by_team_id || !p.sold_by_team_season_id) return null;
+    return `https://img.die-bestesten.de/team/${p.sold_by_team_season_id}/${p.sold_by_team_id}.png`;
+  }
+
   clubLogoUrl(p: FreeAgent): string | null {
     if (!p.club_logo_uploaded) return null;
     return `https://img.die-bestesten.de/club/${p.club_id}.png`;
@@ -438,6 +498,10 @@ export class MarktPlayerComponent {
     this.showAllPlayers.set(checked);
   }
 
+  setNewOnMarketOnly(checked: boolean): void {
+    this.newOnMarketOnly.set(checked);
+  }
+
   onPriceInput(event: Event): void {
     const val = +(event.target as HTMLInputElement).value;
     this.maxPrice.set(val >= this.maxDataPrice() ? null : val);
@@ -448,6 +512,7 @@ export class MarktPlayerComponent {
     this.positionFilter.set(null);
     this.clubFilter.set(null);
     this.maxPrice.set(null);
+    this.newOnMarketOnly.set(false);
   }
 
   openFilter(): void {

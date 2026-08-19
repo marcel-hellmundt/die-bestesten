@@ -67,6 +67,17 @@
       </label>
     </div>
 
+    <div class="filter-section">
+      <label class="filter-checkbox">
+        Neu verfügbare Spieler
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="newOnMarketOnly()"
+                 (change)="setNewOnMarketOnly($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+    </div>
+
     @if (hasFilters()) {
       <button class="filter-reset" (click)="resetFilters()">Filter zurücksetzen</button>
     }
@@ -102,6 +113,9 @@
               <th>Spieler</th>
               @if (showAllPlayers()) {
                 <th>Team</th>
+              }
+              @if (newOnMarketOnly()) {
+                <th>Verkauft von</th>
               }
               <th class="col-num col-sortable" (click)="sort('price')">
                 Preis
@@ -151,6 +165,17 @@
                         <img class="tbl-logo"
                              [class.logo--placeholder]="teamErrors.has(p.id)"
                              [src]="url" (error)="onTeamError(p.id)" alt="" />
+                      </a>
+                    }
+                  </td>
+                }
+                @if (newOnMarketOnly()) {
+                  <td class="col-media">
+                    @if (sellerLogoUrl(p); as url) {
+                      <a [routerLink]="['/team', p.sold_by_team_id]" [title]="p.sold_by_team_name ?? ''">
+                        <img class="tbl-logo"
+                             [class.logo--placeholder]="teamErrors.has('seller-' + p.id)"
+                             [src]="url" (error)="onTeamError('seller-' + p.id)" alt="" />
                       </a>
                     }
                   </td>
@@ -243,6 +268,17 @@
         <span class="filter-toggle">
           <input type="checkbox" [checked]="showAllPlayers()"
                  (change)="setShowAllPlayers($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+    </div>
+
+    <div class="filter-section">
+      <label class="filter-checkbox">
+        Neu verfügbare Spieler
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="newOnMarketOnly()"
+                 (change)="setNewOnMarketOnly($any($event.target).checked)" />
           <span class="filter-toggle__track"></span>
         </span>
       </label>

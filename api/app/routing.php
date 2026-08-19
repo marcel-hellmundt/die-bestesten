@@ -621,7 +621,7 @@ class Routing
                         'path' => '/offer',
                         'description' => 'Eigene Gebote abrufen + pending_sum (?team_id) — oder alle Gebote einer geschlossenen Transferphase (?transferwindow_id); triggert Lazy Settlement falls noch pending-Gebote vorhanden — Auth',
                         'query_params' => [
-                            'team_id' => 'UUID des Teams → eigene Gebote + pending_sum; jedes Gebot enthält displayname, position, photo_uploaded, club_id, club_logo_uploaded, season_id, losers (für success/lost: [{team_id,team_color,team_season_id,is_winner}])',
+                            'team_id' => 'UUID des Teams → eigene Gebote + pending_sum; jedes Gebot enthält displayname, position, photo_uploaded, club_id, club_logo_uploaded, season_id, losers (für success/lost: [{team_id,team_color,team_season_id,is_winner}]); stornierte Gebote (status=cancelled) werden nicht zurückgegeben',
                             'transferwindow_id' => 'UUID der Transferphase → alle Gebote gruppiert nach Spieler; 422 wenn Fenster noch offen',
                         ],
                     ],
@@ -793,7 +793,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_in_season/available_players',
-                        'description' => 'Alle Bundesliga-Spieler der aktiven Saison ohne Fantasy-Team — {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id,current_team_id,current_team_name,current_team_season_id}]}; ?include_all=1 → auch Spieler mit Fantasy-Team, current_team_* dann gesetzt (sonst null)',
+                        'description' => 'Alle Bundesliga-Spieler der aktiven Saison ohne Fantasy-Team — {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id,current_team_id,current_team_name,current_team_season_id,new_on_market,sold_by_team_id,sold_by_team_name,sold_by_team_season_id}]}; ?include_all=1 → auch Spieler mit Fantasy-Team, current_team_* dann gesetzt (sonst null); new_on_market=true wenn aktuell vereinslos und während des offenen Transferfensters von einem anderen Team verkauft (sell-Tabelle); sold_by_team_* (nur bei new_on_market=true, sonst null) = zuletzt verkaufendes Team',
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)', 'include_all' => '1 → auch Spieler mit Fantasy-Team einschließen'],
                     ],
                     [
