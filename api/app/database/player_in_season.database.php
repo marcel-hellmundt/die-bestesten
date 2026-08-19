@@ -44,6 +44,23 @@ trait PlayerInSeasonTrait
             $exclusionParams = $ids;
         }
 
+        // Players sold by another team during the currently open transfer window — used to
+        // flag them as "new on market" (freed up just now, not free all season).
+        $soldThisWindowIds = [];
+        try {
+            $windows      = $this->getTransferwindowList(null, $seasonId);
+            $now          = date('Y-m-d H:i:s');
+            $currentWindow = null;
+            foreach ($windows as $w) {
+                if ($w['start_date'] <= $now && $now < $w['end_date']) { $currentWindow = $w; break; }
+            }
+            if ($currentWindow) {
+                $sq = $this->con_league->prepare("SELECT DISTINCT player_id FROM sell WHERE transferwindow_id = ?");
+                $sq->execute([$currentWindow['id']]);
+                $soldThisWindowIds = array_flip($sq->fetchAll(PDO::FETCH_COLUMN));
+            }
+        } catch (PDOException) {}
+
         // Division filter: use configured league division or fall back to level 1 / DE
         $divisionId = $this->getLeagueDivisionId();
         if ($divisionId !== null) {
@@ -93,7 +110,7 @@ trait PlayerInSeasonTrait
         );
         $stmt->execute(array_merge([$seasonId, $prevSeasonId, $seasonId], $divisionParams, $exclusionParams));
 
-        return ['players' => array_map(function ($r) use ($ownershipMap, $seasonId) {
+        return ['players' => array_map(function ($r) use ($ownershipMap, $seasonId, $soldThisWindowIds) {
             $owner = $ownershipMap[$r['id']] ?? null;
             return [
                 'id'                    => $r['id'],
@@ -111,6 +128,7 @@ trait PlayerInSeasonTrait
                 'current_team_id'        => $owner['team_id']        ?? null,
                 'current_team_name'      => $owner['team_name']      ?? null,
                 'current_team_season_id' => $owner['team_season_id'] ?? null,
+                'new_on_market'          => $owner === null && isset($soldThisWindowIds[$r['id']]),
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC))];
     }

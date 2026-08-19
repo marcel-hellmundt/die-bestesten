@@ -21,6 +21,7 @@ interface FreeAgent {
   current_team_id: string | null;
   current_team_name: string | null;
   current_team_season_id: string | null;
+  new_on_market: boolean;
 }
 
 @Component({
@@ -64,12 +65,14 @@ export class MarktPlayerComponent {
         club:     this.clubFilter(),
         maxPrice: this.maxPrice(),
         showAll:  this.showAllPlayers(),
+        newOnly:  this.newOnMarketOnly(),
       }));
     });
   }
 
   private _saved      = this.loadFilters();
   showAllPlayers       = signal<boolean>(this._saved.showAll ?? false);
+  newOnMarketOnly       = signal<boolean>(this._saved.newOnly ?? false);
 
   private data = toSignal(
     toObservable(this.showAllPlayers).pipe(
@@ -371,18 +374,20 @@ export class MarktPlayerComponent {
   }
 
   filteredPlayers = computed(() => {
-    const q    = this.searchQuery().trim().toLowerCase();
-    const pos  = this.positionFilter();
-    const club = this.clubFilter();
-    const max  = this.maxPrice();
-    const col  = this.sortCol();
-    const dir  = this.sortDir();
+    const q       = this.searchQuery().trim().toLowerCase();
+    const pos     = this.positionFilter();
+    const club    = this.clubFilter();
+    const max     = this.maxPrice();
+    const newOnly = this.newOnMarketOnly();
+    const col     = this.sortCol();
+    const dir     = this.sortDir();
 
     const filtered = this.players().filter(p =>
-      (!q    || p.displayname.toLowerCase().includes(q)) &&
-      (!pos  || p.position === pos) &&
-      (!club || p.club_id === club) &&
-      (max === null || this.dynamicPrice(p) <= max)
+      (!q       || p.displayname.toLowerCase().includes(q)) &&
+      (!pos     || p.position === pos) &&
+      (!club    || p.club_id === club) &&
+      (max === null || this.dynamicPrice(p) <= max) &&
+      (!newOnly || p.new_on_market)
     );
 
     return [...filtered].sort((a, b) => {
@@ -395,6 +400,7 @@ export class MarktPlayerComponent {
 
   hasFilters = computed(() =>
     !!this.searchQuery() || !!this.positionFilter() || !!this.clubFilter() || this.maxPrice() !== null
+    || this.newOnMarketOnly()
   );
 
   columnCount = computed(() => (this.showAllPlayers() ? 6 : 5) + (this.cache.myTeamId() ? 1 : 0));
@@ -438,6 +444,10 @@ export class MarktPlayerComponent {
     this.showAllPlayers.set(checked);
   }
 
+  setNewOnMarketOnly(checked: boolean): void {
+    this.newOnMarketOnly.set(checked);
+  }
+
   onPriceInput(event: Event): void {
     const val = +(event.target as HTMLInputElement).value;
     this.maxPrice.set(val >= this.maxDataPrice() ? null : val);
@@ -448,6 +458,7 @@ export class MarktPlayerComponent {
     this.positionFilter.set(null);
     this.clubFilter.set(null);
     this.maxPrice.set(null);
+    this.newOnMarketOnly.set(false);
   }
 
   openFilter(): void {

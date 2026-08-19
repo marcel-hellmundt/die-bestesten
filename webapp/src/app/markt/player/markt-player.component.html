@@ -67,6 +67,17 @@
       </label>
     </div>
 
+    <div class="filter-section">
+      <label class="filter-checkbox">
+        Neue Spieler
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="newOnMarketOnly()"
+                 (change)="setNewOnMarketOnly($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+    </div>
+
     @if (hasFilters()) {
       <button class="filter-reset" (click)="resetFilters()">Filter zurücksetzen</button>
     }
@@ -243,6 +254,17 @@
         <span class="filter-toggle">
           <input type="checkbox" [checked]="showAllPlayers()"
                  (change)="setShowAllPlayers($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+    </div>
+
+    <div class="filter-section">
+      <label class="filter-checkbox">
+        Neue Spieler
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="newOnMarketOnly()"
+                 (change)="setNewOnMarketOnly($any($event.target).checked)" />
           <span class="filter-toggle__track"></span>
         </span>
       </label>
