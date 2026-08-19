@@ -34,7 +34,7 @@
       <div class="heatmap__col-label">{{ col.label }}</div>
     }
     @for (m of managers(); track m.manager_id) {
-      <div class="heatmap__row-label">{{ m.alias ?? m.manager_name }}</div>
+      <div class="heatmap__row-label">{{ m.manager_name }}</div>
       @for (col of columns(); track col.key) {
         <div
           class="heatmap__cell"
