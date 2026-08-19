@@ -39,13 +39,42 @@ export class MarktPlayerComponent {
   @ViewChild('offerSheet') offerSheet!: TemplateRef<any>;
   @ViewChild('tableContainer') tableContainer?: ElementRef<HTMLDivElement>;
 
+  // Gespeichert pro Liga (leagueId), da Vereins-/Positionsfilter nur für die Division der
+  // jeweiligen Liga sinnvoll sind — ein flacher, ligaübergreifender Speicher führte dazu, dass
+  // ein in Liga A gewählter Verein beim Wechsel zu Liga B (andere Division) keinen Spieler mehr
+  // matcht und die Liste dadurch leer erscheint.
   private readonly STORAGE_KEY = 'markt-player-filters';
 
-  private loadFilters() {
+  // Vor dem Liga-Umbau lagen die Filterfelder direkt auf der Wurzel des gespeicherten Objekts
+  // statt unter einem leagueId-Schlüssel. Bestehende localStorage-Einträge räumen wir beim
+  // nächsten Zugriff einmalig auf, statt sie als Datenleiche neben den Liga-Einträgen liegen
+  // zu lassen.
+  private static readonly LEGACY_ROOT_KEYS = ['search', 'position', 'club', 'maxPrice', 'showAll', 'newOnly'];
+
+  private readStore(): Record<string, any> {
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
+      if (!raw) return {};
+      const all = JSON.parse(raw);
+      const hasLegacyKeys = MarktPlayerComponent.LEGACY_ROOT_KEYS.some(k => k in all);
+      if (hasLegacyKeys) {
+        for (const k of MarktPlayerComponent.LEGACY_ROOT_KEYS) delete all[k];
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(all));
+      }
+      return all;
     } catch { return {}; }
+  }
+
+  private loadFiltersFor(leagueId: string): any {
+    return this.readStore()[leagueId] ?? {};
+  }
+
+  private saveFiltersFor(leagueId: string, filters: unknown): void {
+    try {
+      const all = this.readStore();
+      all[leagueId] = filters;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(all));
+    } catch { /* ignore */ }
   }
 
   constructor() {
@@ -53,26 +82,41 @@ export class MarktPlayerComponent {
     this.cache.ensureSeasons();
     this.cache.ensureMyTeam();
 
+    // leagueId ist beim Start noch nicht bekannt (async via /league/mine) — sobald es vorliegt,
+    // die für DIESE Liga gespeicherten Filter einmalig übernehmen.
+    effect(() => {
+      const leagueId = this.cache.leagueId();
+      if (!leagueId) return;
+      const saved = this.loadFiltersFor(leagueId);
+      this.searchQuery.set(saved.search ?? '');
+      this.positionFilter.set(saved.position ?? null);
+      this.clubFilter.set(saved.club ?? null);
+      this.maxPrice.set(saved.maxPrice ?? null);
+      this.showAllPlayers.set(saved.showAll ?? false);
+      this.newOnMarketOnly.set(saved.newOnly ?? false);
+    });
+
     effect(() => {
       this.filteredPlayers();
       setTimeout(() => { if (this.tableContainer) this.tableContainer.nativeElement.scrollLeft = 0; }, 0);
     });
 
     effect(() => {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+      const leagueId = this.cache.leagueId();
+      if (!leagueId) return;
+      this.saveFiltersFor(leagueId, {
         search:   this.searchQuery(),
         position: this.positionFilter(),
         club:     this.clubFilter(),
         maxPrice: this.maxPrice(),
         showAll:  this.showAllPlayers(),
         newOnly:  this.newOnMarketOnly(),
-      }));
+      });
     });
   }
 
-  private _saved      = this.loadFilters();
-  showAllPlayers       = signal<boolean>(this._saved.showAll ?? false);
-  newOnMarketOnly       = signal<boolean>(this._saved.newOnly ?? false);
+  showAllPlayers  = signal<boolean>(false);
+  newOnMarketOnly = signal<boolean>(false);
 
   private data = toSignal(
     toObservable(this.showAllPlayers).pipe(
@@ -304,10 +348,10 @@ export class MarktPlayerComponent {
     });
   }
 
-  searchQuery    = signal<string>(this._saved.search    ?? '');
-  positionFilter = signal<string | null>(this._saved.position ?? null);
-  clubFilter     = signal<string | null>(this._saved.club     ?? null);
-  maxPrice       = signal<number | null>(this._saved.maxPrice ?? null);
+  searchQuery    = signal<string>('');
+  positionFilter = signal<string | null>(null);
+  clubFilter     = signal<string | null>(null);
+  maxPrice       = signal<number | null>(null);
 
   dynamicPrice(p: FreeAgent): number { return p.price + 20_000 * p.season_points; }
 
