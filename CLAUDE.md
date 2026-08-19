@@ -206,7 +206,7 @@ PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen m
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
 GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool, h2h_draw: bool}; fehlende DB-Einträge = true (default ON) — Auth
 PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|h2h_draw, enabled: bool} — Auth
-GET      /session               — ?days (optional, default 7, max 31) → {days, managers[{manager_id,manager_name,alias,days:{"YYYY-MM-DD":Sekunden}}]} — tägliche Nutzungsdauer je Manager (Heatmap-Rohdaten) — Admin
+GET      /session               — ?range=day|week|month|year (optional, default week) → {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden}}]} — Nutzungsdauer je Manager gebucketed nach Zeitraum (Heatmap-Rohdaten); Bucket-Schlüssel: day=Stunde "YYYY-MM-DDTHH:00:00", week/month=Tag "YYYY-MM-DD", year=Montag der Woche "YYYY-MM-DD" — Admin
 ```
 
 ## Global-DB — Manager-Tabellen (`database/global_schema.sql`)

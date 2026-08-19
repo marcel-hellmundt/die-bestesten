@@ -1,22 +1,123 @@
 @use '../../../styles/variables' as *;
 
-.heatmap-table {
-  &__name {
-    font-weight: $font-weight-medium;
-    white-space: nowrap;
+.range-toggle {
+  display: flex;
+  gap: $space-2;
+  margin-bottom: $space-4;
+}
+
+.range-toggle__btn {
+  padding: 4px $space-4;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: transparent;
+  color: $color-text-muted;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition:
+    background-color $transition-fast,
+    color $transition-fast,
+    border-color $transition-fast;
+
+  &:hover:not(.range-toggle__btn--active) {
+    color: $color-text;
+    border-color: $color-text-muted;
   }
 
-  &__day {
-    text-align: center;
-    white-space: nowrap;
+  &--active {
+    background: $color-accent;
+    color: #fff;
+    border-color: $color-accent;
   }
+}
 
-  &__cell {
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    font-size: $font-xs;
-    color: $color-text-muted;
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: $space-4;
+}
+
+.heatmap-legend__label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  &:first-child {
+    margin-right: $space-1;
+  }
+  &:last-child {
+    margin-left: $space-1;
+  }
+}
+
+.heatmap-legend__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid $color-border;
+
+  &--empty {
+    background-color: transparent;
+  }
+}
+
+.heatmap-scroll {
+  overflow-x: auto;
+}
+
+.heatmap {
+  display: grid;
+  grid-template-columns: 160px repeat(var(--col-count), minmax(24px, 1fr));
+  gap: 4px;
+  align-items: center;
+  width: max-content;
+  min-width: 100%;
+}
+
+.heatmap__corner {
+  // leere Ecke oben links
+}
+
+.heatmap__col-label {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.heatmap__row-label {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: $space-2;
+}
+
+.heatmap__cell {
+  aspect-ratio: 1;
+  min-height: 28px;
+  border-radius: 4px;
+  border: 1px solid $color-border;
+  cursor: default;
+  position: relative;
+
+  &[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    font-size: 11px;
+    line-height: 1.3;
+    padding: 3px 7px;
+    border-radius: $radius-sm;
     white-space: nowrap;
-    transition: background-color $transition-fast;
+    z-index: 20;
+    pointer-events: none;
   }
 }

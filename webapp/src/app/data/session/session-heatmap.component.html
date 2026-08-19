@@ -1,40 +1,49 @@
 <h1 class="page-title">Nutzung</h1>
 <p class="page-subtitle">
-  Näherungsweise Anwesenheitsdauer pro Manager (letzte {{ dayColumns().length }} Tage) — basiert auf
-  aktiven Requests, misst also offen gehaltene Tabs, nicht zwingend aktive Nutzung.
+  Näherungsweise Anwesenheitsdauer pro Manager — basiert auf aktiven Requests, misst also offen
+  gehaltene Tabs, nicht zwingend aktive Nutzung.
 </p>
+
+<div class="range-toggle">
+  @for (r of RANGES; track r) {
+    <button
+      class="range-toggle__btn"
+      [class.range-toggle__btn--active]="range() === r"
+      (click)="setRange(r)"
+    >{{ rangeLabels[r] }}</button>
+  }
+</div>
 
 @if (loading()) {
   <p class="state-msg">Laden…</p>
 } @else if (!managers().length) {
   <p class="state-msg">Noch keine Nutzungsdaten vorhanden.</p>
 } @else {
-  <div class="table-container">
-    <table class="data-table heatmap-table">
-      <thead>
-        <tr>
-          <th>Manager</th>
-          @for (col of dayColumns(); track col.key) {
-            <th class="heatmap-table__day">{{ col.label }}</th>
-          }
-        </tr>
-      </thead>
-      <tbody>
-        @for (m of managers(); track m.manager_id) {
-          <tr>
-            <td class="heatmap-table__name">{{ m.alias ?? m.manager_name }}</td>
-            @for (col of dayColumns(); track col.key) {
-              <td
-                class="heatmap-table__cell"
-                [style.background-color]="cellBackground(seconds(m, col.key))"
-                [title]="col.label + ': ' + formatDuration(seconds(m, col.key))"
-              >
-                {{ formatDuration(seconds(m, col.key)) }}
-              </td>
-            }
-          </tr>
+  <div class="heatmap-legend">
+    <span class="heatmap-legend__label">Wenig</span>
+    <span class="heatmap-legend__swatch heatmap-legend__swatch--empty"></span>
+    @for (color of legendLevels; track color) {
+      <span class="heatmap-legend__swatch" [style.background-color]="color"></span>
+    }
+    <span class="heatmap-legend__label">Viel</span>
+  </div>
+
+  <div class="heatmap-scroll">
+    <div class="heatmap" [style.--col-count]="columns().length">
+      <div class="heatmap__corner"></div>
+      @for (col of columns(); track col.key) {
+        <div class="heatmap__col-label">{{ col.label }}</div>
+      }
+      @for (m of managers(); track m.manager_id) {
+        <div class="heatmap__row-label">{{ m.alias ?? m.manager_name }}</div>
+        @for (col of columns(); track col.key) {
+          <div
+            class="heatmap__cell"
+            [style.background-color]="cellColor(seconds(m, col.key))"
+            [attr.data-tooltip]="tooltip(m, col)"
+          ></div>
         }
-      </tbody>
-    </table>
+      }
+    </div>
   </div>
 }

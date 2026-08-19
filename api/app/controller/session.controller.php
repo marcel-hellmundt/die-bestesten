@@ -4,10 +4,15 @@ class SessionController extends _BaseController
 {
     public static array $methodRoles = ['GET' => 'admin'];
 
+    private const ALLOWED_RANGES = ['day', 'week', 'month', 'year'];
+
     protected function get(): mixed
     {
-        $days = isset($this->params['days']) ? max(1, min(31, (int) $this->params['days'])) : 7;
-        return $this->db->getSessionHeatmap($days);
+        $range = $this->params['range'] ?? 'week';
+        if (!in_array($range, self::ALLOWED_RANGES, true)) {
+            $range = 'week';
+        }
+        return $this->db->getSessionHeatmap($range);
     }
 
     protected function post(): mixed   { return $this->methodNotAllowed(); }

@@ -31,23 +31,49 @@ trait SessionTrait
     }
 
     /**
-     * Daily usage seconds per manager for the last $days days (heatmap raw data). Sessions are
-     * bucketed by their start day in server-local time.
+     * Usage seconds per manager, bucketed for the given range (heatmap raw data):
+     *  - 'day'   → letzte 24h, ein Bucket pro Stunde (Schlüssel "YYYY-MM-DDTHH:00:00")
+     *  - 'week'  → letzte 7 Tage, ein Bucket pro Tag (Schlüssel "YYYY-MM-DD")
+     *  - 'month' → letzte 30 Tage, ein Bucket pro Tag (Schlüssel "YYYY-MM-DD")
+     *  - 'year'  → letzte 52 Wochen, ein Bucket pro Woche (Schlüssel = Montag der Woche, "YYYY-MM-DD")
+     * $range ist auf diese vier festen Werte beschränkt (switch-Default 'week') und fließt nie
+     * ungeprüft in SQL ein — kein Injection-Vektor trotz String-Interpolation der Bucket-Ausdrücke.
      */
-    public function getSessionHeatmap(int $days = 7): array
+    public function getSessionHeatmap(string $range = 'week'): array
     {
+        switch ($range) {
+            case 'day':
+                $bucketExpr = "DATE_FORMAT(ms.started_at, '%Y-%m-%dT%H:00:00')";
+                $sinceExpr  = "(NOW() - INTERVAL 24 HOUR)";
+                break;
+            case 'month':
+                $bucketExpr = "DATE(ms.started_at)";
+                $sinceExpr  = "(CURDATE() - INTERVAL 29 DAY)";
+                break;
+            case 'year':
+                // Montag der jeweiligen Woche als Bucket-Schlüssel (WEEKDAY: 0=Montag..6=Sonntag)
+                $bucketExpr = "DATE_SUB(DATE(ms.started_at), INTERVAL WEEKDAY(ms.started_at) DAY)";
+                $sinceExpr  = "(CURDATE() - INTERVAL 51 WEEK)";
+                break;
+            case 'week':
+            default:
+                $range      = 'week';
+                $bucketExpr = "DATE(ms.started_at)";
+                $sinceExpr  = "(CURDATE() - INTERVAL 6 DAY)";
+                break;
+        }
+
         $q = $this->con->prepare(
             "SELECT ms.manager_id, m.manager_name, m.alias,
-                    DATE(ms.started_at) AS day,
+                    $bucketExpr AS bucket,
                     SUM(TIMESTAMPDIFF(SECOND, ms.started_at, ms.ended_at)) AS seconds
              FROM manager_session ms
              JOIN manager m ON m.id = ms.manager_id
-             WHERE ms.started_at >= (CURDATE() - INTERVAL :days DAY)
+             WHERE ms.started_at >= $sinceExpr
                AND m.status != 'deleted'
-             GROUP BY ms.manager_id, m.manager_name, m.alias, DATE(ms.started_at)
-             ORDER BY m.manager_name ASC, day ASC"
+             GROUP BY ms.manager_id, m.manager_name, m.alias, bucket
+             ORDER BY m.manager_name ASC, bucket ASC"
         );
-        $q->bindValue(':days', $days, PDO::PARAM_INT);
         $q->execute();
 
         $managers = [];
@@ -57,12 +83,12 @@ trait SessionTrait
                     'manager_id'   => $r['manager_id'],
                     'manager_name' => $r['manager_name'],
                     'alias'        => $r['alias'],
-                    'days'         => [],
+                    'buckets'      => [],
                 ];
             }
-            $managers[$r['manager_id']]['days'][$r['day']] = (int) $r['seconds'];
+            $managers[$r['manager_id']]['buckets'][$r['bucket']] = (int) $r['seconds'];
         }
 
-        return ['days' => $days, 'managers' => array_values($managers)];
+        return ['range' => $range, 'managers' => array_values($managers)];
     }
 }
