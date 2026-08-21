@@ -17,6 +17,7 @@ interface TeamHistoryEntry {
   alias: string | null;
   from_matchday_number: number | null;
   to_matchday_number: number | null;
+  price_paid: number | null;
 }
 
 interface PlayerInSeason {
