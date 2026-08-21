@@ -69,7 +69,7 @@
   align-items: center;
   width: 100%;
   // Deckelt die Gesamtbreite auf "so viel wie N Spalten à 64px + Gaps brauchen" — dadurch
-  // strecken sich die 1fr-Spalten bei wenigen Boxen (z.B. "Woche" = 7) nicht über die
+  // strecken sich die 1fr-Spalten bei wenigen Boxen (z.B. "Monat" = 30) nicht über die
   // Box-Größe hinaus (das erzeugte vorher großen Leerraum). Ist der verfügbare Platz kleiner
   // als dieser Deckel (z.B. "Jahr" = 52 Spalten), greift width:100% und 1fr schrumpft normal,
   // damit weiterhin alles auf den Screen passt. (fr-Einheiten sind in calc()/min() nicht

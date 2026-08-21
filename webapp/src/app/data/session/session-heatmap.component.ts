@@ -3,7 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 
-type RangeKey = 'day' | 'week' | 'month' | 'year';
+type RangeKey = 'day' | 'month' | 'year';
 
 interface HeatmapManager {
   manager_id: string;
@@ -32,13 +32,12 @@ const LEVEL_COLORS = ['#cde2fb', '#86b6ef', '#3987e5', '#184f95'] as const;
 // hellste Stufe zu zeigen.
 const RANGE_THRESHOLDS: Record<RangeKey, readonly [number, number, number]> = {
   day:   [5 * 60, 20 * 60, 40 * 60],
-  week:  [15 * 60, 60 * 60, 3 * 60 * 60],
   month: [15 * 60, 60 * 60, 3 * 60 * 60],
   year:  [60 * 60, 4 * 60 * 60, 12 * 60 * 60],
 };
 
 const RANGE_LABELS: Record<RangeKey, string> = {
-  day: 'Tag', week: 'Woche', month: 'Monat', year: 'Jahr',
+  day: 'Tag', month: 'Monat', year: 'Jahr',
 };
 
 // Grobe Obergrenze für die Tooltip-Breite, nur zum Clampen der Position genutzt (siehe
@@ -63,11 +62,11 @@ interface TooltipState {
 export class SessionHeatmapComponent {
   private api = inject(ApiService);
 
-  readonly RANGES: RangeKey[] = ['day', 'week', 'month', 'year'];
+  readonly RANGES: RangeKey[] = ['day', 'month', 'year'];
   readonly rangeLabels = RANGE_LABELS;
   readonly legendLevels = LEVEL_COLORS;
 
-  range = signal<RangeKey>('week');
+  range = signal<RangeKey>('day');
   setRange(r: RangeKey): void { this.range.set(r); }
 
   private data = toSignal(
@@ -117,14 +116,11 @@ export class SessionHeatmapComponent {
         const d = new Date(currentHour.getTime() - i * 60 * 60 * 1000);
         cols.push({ key: this.hourKey(d), label: `${String(d.getHours()).padStart(2, '0')}h` });
       }
-    } else if (range === 'week' || range === 'month') {
-      const n = range === 'week' ? 7 : 30;
-      for (let i = n - 1; i >= 0; i--) {
+    } else if (range === 'month') {
+      for (let i = 29; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(now.getDate() - i);
-        const label = range === 'week'
-          ? d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })
-          : d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+        const label = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
         cols.push({ key: this.localDateKey(d), label });
       }
     } else {

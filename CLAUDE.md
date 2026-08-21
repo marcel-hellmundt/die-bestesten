@@ -207,7 +207,7 @@ PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen m
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
 GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool, h2h_draw: bool}; fehlende DB-Einträge = true (default ON) — Auth
 PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|h2h_draw, enabled: bool} — Auth
-GET      /session               — ?range=day|week|month|year (optional, default week) → {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden}}]} — Nutzungsdauer je Manager gebucketed nach Zeitraum (Heatmap-Rohdaten); Bucket-Schlüssel: day=Stunde "YYYY-MM-DDTHH:00:00", week/month=Tag "YYYY-MM-DD", year=Montag der Woche "YYYY-MM-DD" — Admin
+GET      /session               — ?range=day|month|year (optional, default day) → {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden}}]} — Nutzungsdauer je Manager gebucketed nach Zeitraum (Heatmap-Rohdaten); Bucket-Schlüssel: day=Stunde "YYYY-MM-DDTHH:00:00", month=Tag "YYYY-MM-DD", year=Montag der Woche "YYYY-MM-DD" — Admin
 ```
 
 ## Global-DB — Manager-Tabellen (`database/global_schema.sql`)
@@ -230,7 +230,7 @@ GET      /session               — ?range=day|week|month|year (optional, defaul
 
 **manager_stadium**: id PK, manager_id FK, stadium_id FK → stadium (echtes FK, gleiche DB!), created_at — UNIQUE(manager_id, stadium_id) — vom Manager als besucht markierte Stadien; idempotent per INSERT IGNORE
 
-**manager_session**: id PK, manager_id FK, started_at DATETIME, ended_at DATETIME, device_type VARCHAR(10)? (mobile/tablet/desktop), os VARCHAR(20)? (iOS/Android/Windows/macOS/Linux), browser VARCHAR(20)? (Chrome/Safari/Firefox/Edge/Opera) — näherungsweise Sitzungsdauer per Heartbeat; Guard::authorize() verlängert bei jedem authentifizierten Request die jüngste Session mit ended_at ≥ jetzt−3min, sonst wird eine neue Zeile angelegt (device_type/os/browser dann aus User-Agent geparst, bleiben über die Verlängerungen hinweg unverändert); Grundlage für den Admin-Nutzungs-Heatmap-Report (GET /session)
+**manager_session**: id PK, manager_id FK, started_at DATETIME, ended_at DATETIME, device_type VARCHAR(10)? (mobile/tablet/desktop), os VARCHAR(20)? (iOS/Android/Windows/macOS/Linux), browser VARCHAR(20)? (Chrome/Safari/Firefox/Edge/Opera) — näherungsweise Sitzungsdauer per Heartbeat; Guard::authorize() verlängert bei jedem authentifizierten Request die jüngste Session mit ended_at ≥ jetzt−30s UND gleichem device_type/os/browser (aus User-Agent geparst), sonst wird eine neue Zeile angelegt — ein Geräte-/Browser-Wechsel beendet die vorherige Session immer, unabhängig vom Zeitabstand; Grundlage für den Admin-Nutzungs-Heatmap-Report (GET /session)
 
 **maintainer_contribution**: id PK, manager_id FK, player_rating_id (cross-DB auf global_schema.player_rating, kein FK), contribution_type ENUM(bulk_create/manual_create/grade), created_at — UNIQUE(player_rating_id, contribution_type) — trackt welcher Maintainer Aufstellung/Noten eingetragen hat; grade-Einträge werden per UPSERT ersetzt (letzter Setzer behält Credit)
 

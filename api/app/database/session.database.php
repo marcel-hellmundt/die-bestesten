@@ -5,29 +5,36 @@ trait SessionTrait
     /**
      * Approximate session-duration heartbeat. Called on every authenticated request
      * (Guard::authorize()). Extends the manager's most recent session if it ended less than
-     * 3 minutes ago, otherwise starts a new one. Uses SELECT-then-branch rather than relying on
-     * UPDATE's affected-row count, since ended_at can legitimately already equal NOW() (same
-     * second) — see setPlayerPhotoUploaded() for the same rowCount() pitfall elsewhere.
-     * Device-Infos (device_type/os/browser) werden nur beim Anlegen einer neuen Session aus dem
-     * User-Agent-Header geparst, nicht bei jeder Verlängerung — das Gerät ändert sich innerhalb
-     * einer Session nicht.
+     * 30 seconds ago AND the request comes from the same device (device_type/os/browser aus dem
+     * User-Agent), otherwise starts a new one. Verhindert, dass z.B. ein schneller Wechsel von
+     * Handy auf Desktop die mobile Session weiterführt, nur weil die Lücke < 30s war — ein
+     * Geräte-/Browser-Wechsel beendet die vorherige Session immer, unabhängig vom Zeitabstand.
+     * Uses SELECT-then-branch rather than relying on UPDATE's affected-row count, since ended_at
+     * can legitimately already equal NOW() (same second) — see setPlayerPhotoUploaded() for the
+     * same rowCount() pitfall elsewhere.
      */
     public function touchSession(string $managerId): void
     {
+        [$deviceType, $os, $browser] = $this->parseUserAgent($_SERVER['HTTP_USER_AGENT'] ?? '');
+
         $find = $this->con->prepare(
-            "SELECT id FROM manager_session
-             WHERE manager_id = :id AND ended_at >= (NOW() - INTERVAL 3 MINUTE)
+            "SELECT id, device_type, os, browser FROM manager_session
+             WHERE manager_id = :id AND ended_at >= (NOW() - INTERVAL 30 SECOND)
              ORDER BY ended_at DESC LIMIT 1"
         );
         $find->execute([':id' => $managerId]);
-        $openId = $find->fetchColumn();
+        $open = $find->fetch(PDO::FETCH_ASSOC);
 
-        if ($openId) {
+        $sameDevice = $open
+            && $open['device_type'] === $deviceType
+            && $open['os'] === $os
+            && $open['browser'] === $browser;
+
+        if ($sameDevice) {
             $this->con->prepare(
                 "UPDATE manager_session SET ended_at = NOW() WHERE id = :id"
-            )->execute([':id' => $openId]);
+            )->execute([':id' => $open['id']]);
         } else {
-            [$deviceType, $os, $browser] = $this->parseUserAgent($_SERVER['HTTP_USER_AGENT'] ?? '');
             $this->con->prepare(
                 "INSERT INTO manager_session (manager_id, device_type, os, browser)
                  VALUES (:id, :device_type, :os, :browser)"
@@ -83,32 +90,32 @@ trait SessionTrait
     /**
      * Usage seconds per manager, bucketed for the given range (heatmap raw data):
      *  - 'day'   → letzte 24h, ein Bucket pro Stunde (Schlüssel "YYYY-MM-DDTHH:00:00")
-     *  - 'week'  → letzte 7 Tage, ein Bucket pro Tag (Schlüssel "YYYY-MM-DD")
      *  - 'month' → letzte 30 Tage, ein Bucket pro Tag (Schlüssel "YYYY-MM-DD")
      *  - 'year'  → letzte 52 Wochen, ein Bucket pro Woche (Schlüssel = Montag der Woche, "YYYY-MM-DD")
-     * $range ist auf diese vier festen Werte beschränkt (switch-Default 'week') und fließt nie
+     * $range ist auf diese drei festen Werte beschränkt (switch-Default 'day') und fließt nie
      * ungeprüft in SQL ein — kein Injection-Vektor trotz String-Interpolation von $sinceExpr.
-     * Dauer wird pro Session in PHP auf die tatsächlich überspannten Bucket-Grenzen aufgeteilt
-     * (splitSessionIntoBuckets) statt komplett dem Bucket von started_at zugeschlagen — eine per
-     * Heartbeat über Stunden-/Tagesgrenzen hinweg verlängerte Session würde sonst ihre gesamte
-     * Dauer in einem einzigen Bucket zeigen (z. B. "1h12min" in einer Stunden-Spalte).
+     * Pro Manager werden die Session-Intervalle zunächst gemergt (mergeIntervals) — nutzt ein
+     * Manager z.B. gleichzeitig Handy und Desktop, entstehen zwei sich überlappende
+     * manager_session-Zeilen (device-Wechsel, siehe touchSession()); ohne Merge würde die
+     * überlappende Zeit doppelt gezählt (25min + 20min = 45min statt real 30min Wanduhrzeit).
+     * Erst die gemergten, nicht-überlappenden Intervalle werden auf die tatsächlich überspannten
+     * Bucket-Grenzen aufgeteilt (splitSessionIntoBuckets) statt komplett dem Bucket von
+     * started_at zugeschlagen — eine per Heartbeat über Stunden-/Tagesgrenzen hinweg verlängerte
+     * Session würde sonst ihre gesamte Dauer in einem einzigen Bucket zeigen.
      */
-    public function getSessionHeatmap(string $range = 'week'): array
+    public function getSessionHeatmap(string $range = 'day'): array
     {
         switch ($range) {
-            case 'day':
-                $sinceExpr = "(NOW() - INTERVAL 24 HOUR)";
-                break;
             case 'month':
                 $sinceExpr = "(CURDATE() - INTERVAL 29 DAY)";
                 break;
             case 'year':
                 $sinceExpr = "(CURDATE() - INTERVAL 51 WEEK)";
                 break;
-            case 'week':
+            case 'day':
             default:
-                $range     = 'week';
-                $sinceExpr = "(CURDATE() - INTERVAL 6 DAY)";
+                $range     = 'day';
+                $sinceExpr = "(NOW() - INTERVAL 24 HOUR)";
                 break;
         }
 
@@ -132,19 +139,57 @@ trait SessionTrait
                     'manager_id'   => $r['manager_id'],
                     'manager_name' => $r['manager_name'],
                     'alias'        => $r['alias'],
-                    'buckets'      => [],
+                    'intervals'    => [],
                 ];
             }
 
-            $start = new DateTime($r['started_at']);
-            $end   = new DateTime($r['ended_at']);
-            foreach ($this->splitSessionIntoBuckets($start, $end, $range) as $bucketKey => $seconds) {
-                $managers[$r['manager_id']]['buckets'][$bucketKey] =
-                    ($managers[$r['manager_id']]['buckets'][$bucketKey] ?? 0) + $seconds;
+            $managers[$r['manager_id']]['intervals'][] = [
+                new DateTime($r['started_at']),
+                new DateTime($r['ended_at']),
+            ];
+        }
+
+        $result = [];
+        foreach ($managers as $manager) {
+            $buckets = [];
+            foreach ($this->mergeIntervals($manager['intervals']) as [$start, $end]) {
+                foreach ($this->splitSessionIntoBuckets($start, $end, $range) as $bucketKey => $seconds) {
+                    $buckets[$bucketKey] = ($buckets[$bucketKey] ?? 0) + $seconds;
+                }
+            }
+            $result[] = [
+                'manager_id'   => $manager['manager_id'],
+                'manager_name' => $manager['manager_name'],
+                'alias'        => $manager['alias'],
+                'buckets'      => $buckets,
+            ];
+        }
+
+        return ['range' => $range, 'managers' => $result];
+    }
+
+    /**
+     * Merged überlappende/berührende [start, end]-Intervalle zu disjunkten Intervallen (klassischer
+     * Sweep nach Sortierung). Grundlage dafür, dass gleichzeitige Nutzung auf mehreren Geräten nur
+     * einmal gezählt wird.
+     */
+    private function mergeIntervals(array $intervals): array
+    {
+        usort($intervals, fn($a, $b) => $a[0] <=> $b[0]);
+
+        $merged = [];
+        foreach ($intervals as [$start, $end]) {
+            $last = count($merged) - 1;
+            if ($last >= 0 && $start <= $merged[$last][1]) {
+                if ($end > $merged[$last][1]) {
+                    $merged[$last][1] = $end;
+                }
+            } else {
+                $merged[] = [$start, $end];
             }
         }
 
-        return ['range' => $range, 'managers' => array_values($managers)];
+        return $merged;
     }
 
     /**
@@ -184,7 +229,6 @@ trait SessionTrait
                 $monday  = (clone $t)->setTime(0, 0, 0)->modify('-' . ($weekday - 1) . ' days');
                 $end     = (clone $monday)->modify('+1 week');
                 return [$monday->format('Y-m-d'), $end];
-            case 'week':
             case 'month':
             default:
                 $dayStart = (clone $t)->setTime(0, 0, 0);
