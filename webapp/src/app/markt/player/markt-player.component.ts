@@ -144,6 +144,11 @@ export class MarktPlayerComponent {
   });
   loading = computed(() => this.data() === undefined);
 
+  // Zählungen für die Bubbles an den beiden Toggle-Buttons — unabhängig von den Toggles selbst
+  // aus den Rohdaten berechnet, damit die Zahl beim Umschalten nicht mitspringt.
+  newOnMarketCount  = computed(() => (this.data()?.players ?? []).filter(p => p.new_on_market).length);
+  soonAvailableCount = computed(() => (this.data()?.players ?? []).filter(p => p.soon_available).length);
+
   // All clubs of the active season's league division — independent of whether they
   // currently have any free-agent players, so the filter always shows the full set.
   private activeSeasonId = toSignal(
