@@ -196,8 +196,8 @@ trait PlayerTrait
         ]);
 
         $stmt = $this->con->prepare("
-            INSERT INTO player_in_season (id, player_id, season_id, price, position, photo_uploaded)
-            VALUES (:id, :player_id, :season_id, :price, :position, 0)
+            INSERT INTO player_in_season (id, player_id, season_id, price, position, photo_uploaded, last_updated)
+            VALUES (:id, :player_id, :season_id, :price, :position, 0, NOW())
         ");
         $stmt->execute([
             ':id'        => $this->con->query("SELECT UUID() AS id")->fetchColumn(),

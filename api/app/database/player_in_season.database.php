@@ -186,8 +186,8 @@ trait PlayerInSeasonTrait
     public function createPlayerInSeason(string $id, string $playerId, string $seasonId, string $position, int $price): void
     {
         $q = $this->con->prepare(
-            "INSERT INTO player_in_season (id, player_id, season_id, position, price)
-             VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO player_in_season (id, player_id, season_id, position, price, last_updated)
+             VALUES (?, ?, ?, ?, ?, NOW())"
         );
         $q->execute([$id, $playerId, $seasonId, $position, $price]);
     }

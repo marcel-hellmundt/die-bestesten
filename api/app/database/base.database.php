@@ -234,7 +234,8 @@ class Database
 
         $q = $this->con->prepare(
             "SELECT 1 FROM player_in_season
-             WHERE player_id = :pid AND season_id = :sid AND last_updated < :start LIMIT 1"
+             WHERE player_id = :pid AND season_id = :sid
+               AND (last_updated IS NULL OR last_updated < :start) LIMIT 1"
         );
         $q->execute([':pid' => $playerId, ':sid' => $window['season_id'], ':start' => $window['start_date']]);
         return (bool) $q->fetchColumn();
