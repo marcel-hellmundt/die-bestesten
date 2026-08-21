@@ -48,13 +48,23 @@ trait PlayerInSeasonTrait
         // flag them as "new on market" (freed up just now, not free all season) and to show
         // who sold them. Ordered by created_at DESC so the first row per player is the most
         // recent sale (relevant if a player was bought+sold more than once in the window).
+        // $previousWindow (the window directly preceding $currentWindow by start_date) is used
+        // to also flag players whose player_in_season row was created/edited during that
+        // previous window — they were hidden as "soon_available" back then and are only now,
+        // in $currentWindow, unlocked for the first time, so they count as "new on market" too
+        // for exactly this one window (same one-window lifetime as a sale-based flag).
         $sellerMap = [];
         $currentWindow = null;
+        $previousWindow = null;
         try {
             $windows      = $this->getTransferwindowList(null, $seasonId);
             $now          = date('Y-m-d H:i:s');
-            foreach ($windows as $w) {
-                if ($w['start_date'] <= $now && $now < $w['end_date']) { $currentWindow = $w; break; }
+            foreach ($windows as $i => $w) {
+                if ($w['start_date'] <= $now && $now < $w['end_date']) {
+                    $currentWindow  = $w;
+                    $previousWindow = $windows[$i - 1] ?? null;
+                    break;
+                }
             }
             if ($currentWindow) {
                 $sq = $this->con_league->prepare(
@@ -123,10 +133,14 @@ trait PlayerInSeasonTrait
         );
         $stmt->execute(array_merge([$seasonId, $prevSeasonId, $seasonId], $divisionParams, $exclusionParams));
 
-        return ['players' => array_map(function ($r) use ($ownershipMap, $seasonId, $sellerMap, $currentWindow) {
+        return ['players' => array_map(function ($r) use ($ownershipMap, $seasonId, $sellerMap, $currentWindow, $previousWindow) {
             $owner     = $ownershipMap[$r['id']] ?? null;
             $seller    = $sellerMap[$r['id']] ?? null;
-            $isNewOnMarket = $owner === null && $seller !== null;
+            $isRecentlyUnlocked = $currentWindow !== null && $previousWindow !== null
+                && $r['last_updated'] !== null
+                && $r['last_updated'] < $currentWindow['start_date']
+                && $r['last_updated'] >= $previousWindow['start_date'];
+            $isNewOnMarket = $owner === null && ($seller !== null || $isRecentlyUnlocked);
             $isSoonAvailable = $currentWindow !== null
                 && $r['last_updated'] !== null
                 && $r['last_updated'] >= $currentWindow['start_date'];
@@ -147,9 +161,9 @@ trait PlayerInSeasonTrait
                 'current_team_name'      => $owner['team_name']      ?? null,
                 'current_team_season_id' => $owner['team_season_id'] ?? null,
                 'new_on_market'          => $isNewOnMarket,
-                'sold_by_team_id'         => $isNewOnMarket ? $seller['seller_team_id']         : null,
-                'sold_by_team_name'       => $isNewOnMarket ? $seller['seller_team_name']       : null,
-                'sold_by_team_season_id'  => $isNewOnMarket ? $seller['seller_team_season_id']  : null,
+                'sold_by_team_id'         => ($isNewOnMarket && $seller !== null) ? $seller['seller_team_id']         : null,
+                'sold_by_team_name'       => ($isNewOnMarket && $seller !== null) ? $seller['seller_team_name']       : null,
+                'sold_by_team_season_id'  => ($isNewOnMarket && $seller !== null) ? $seller['seller_team_season_id']  : null,
                 'soon_available'          => $isSoonAvailable,
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC))];
