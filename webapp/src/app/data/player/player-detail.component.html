@@ -280,6 +280,7 @@
                   <th>Team</th>
                   <th class="col-md">Von</th>
                   <th class="col-md">Bis</th>
+                  <th class="col-price">Kaufpreis</th>
                   <th class="col-points-season">Punkte</th>
                 </tr>
               </thead>
@@ -304,6 +305,7 @@
                       {{ t.from_matchday_number != null ? 'Sp. ' + t.from_matchday_number : '—' }}
                     </td>
                     <td class="col-md">{{ displayToMatchday(t) }}</td>
+                    <td class="col-price">{{ t.price_paid != null ? formatPrice(t.price_paid) : '—' }}</td>
                     <td class="col-points-season">
                       {{ teamPoints().get(t.team_id + '_' + t.from_matchday_number) ?? 0 }}
                     </td>

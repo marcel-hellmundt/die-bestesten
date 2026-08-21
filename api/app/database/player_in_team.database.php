@@ -76,17 +76,35 @@ trait PlayerInTeamTrait
 
     public function getTeamHistoryByPlayerId(string $playerId, string $seasonId): array
     {
+        $dnq = $this->con->prepare("SELECT displayname FROM player WHERE id = :id LIMIT 1");
+        $dnq->execute([':id' => $playerId]);
+        $displayname = $dnq->fetchColumn() ?: '';
+
         $q = $this->con_league->prepare(
             "SELECT pit.from_matchday_id, pit.to_matchday_id,
                     t.id AS team_id, t.season_id, t.team_name, t.color_primary AS color,
-                    m.manager_name, m.alias
+                    m.manager_name, m.alias, tr.amount AS price_paid_amount
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
              JOIN manager m ON m.id = t.manager_id
+             LEFT JOIN transaction tr
+                    ON tr.team_id = pit.team_id
+                   AND tr.matchday_id = pit.from_matchday_id
+                   AND tr.reason IN (
+                         CONCAT('Spielerkauf: ', :dn1),
+                         CONCAT('Spielerkauf (Gebot): ', :dn2),
+                         CONCAT('Draft-Zuweisung: ', :dn3)
+                       )
              WHERE pit.player_id = :player_id AND t.season_id = :season_id
              ORDER BY pit.from_matchday_id"
         );
-        $q->execute([':player_id' => $playerId, ':season_id' => $seasonId]);
+        $q->execute([
+            ':dn1'       => $displayname,
+            ':dn2'       => $displayname,
+            ':dn3'       => $displayname,
+            ':player_id' => $playerId,
+            ':season_id' => $seasonId,
+        ]);
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($rows)) return [];
@@ -118,6 +136,7 @@ trait PlayerInTeamTrait
             'alias'                => $row['alias'],
             'from_matchday_number' => $row['from_matchday_id'] ? ($numbers[$row['from_matchday_id']] ?? null) : null,
             'to_matchday_number'   => $row['to_matchday_id']   ? ($numbers[$row['to_matchday_id']]   ?? null) : null,
+            'price_paid'           => $row['price_paid_amount'] !== null ? abs((float) $row['price_paid_amount']) : null,
         ], $rows);
     }
 
