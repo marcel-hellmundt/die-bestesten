@@ -261,7 +261,7 @@ CREATE TABLE IF NOT EXISTS manager_league (
 
 -- Tabelle: manager_session (naeherungsweise Sitzungsdauer per Heartbeat; jeder authentifizierte
 -- Request verlaengert die juengste offene Session oder eroeffnet eine neue, wenn die letzte
--- laenger als 3 Minuten her ist — siehe Guard::authorize())
+-- laenger als 30 Sekunden her ist — siehe Guard::authorize())
 CREATE TABLE IF NOT EXISTS manager_session (
     id          CHAR(36)    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
     manager_id  CHAR(36)    NOT NULL,
