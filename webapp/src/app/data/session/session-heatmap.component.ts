@@ -64,7 +64,6 @@ export class SessionHeatmapComponent {
 
   readonly RANGES: RangeKey[] = ['day', 'month', 'year'];
   readonly rangeLabels = RANGE_LABELS;
-  readonly legendLevels = LEVEL_COLORS;
 
   range = signal<RangeKey>('day');
   setRange(r: RangeKey): void { this.range.set(r); }

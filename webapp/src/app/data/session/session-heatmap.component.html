@@ -19,15 +19,6 @@
 } @else if (!managers().length) {
   <p class="state-msg">Noch keine Nutzungsdaten vorhanden.</p>
 } @else {
-  <div class="heatmap-legend">
-    <span class="heatmap-legend__label">Wenig</span>
-    <span class="heatmap-legend__swatch heatmap-legend__swatch--empty"></span>
-    @for (color of legendLevels; track color) {
-      <span class="heatmap-legend__swatch" [style.background-color]="color"></span>
-    }
-    <span class="heatmap-legend__label">Viel</span>
-  </div>
-
   <div class="heatmap" [style.--col-count]="columns().length">
     <div class="heatmap__corner"></div>
     @for (col of columns(); track col.key) {
