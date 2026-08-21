@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS player_in_season (
     price DECIMAL(10,2) DEFAULT NULL,           -- Marktwert
     position ENUM('GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD') CHARACTER SET utf8mb4 DEFAULT NULL,  -- Position
     photo_uploaded BOOLEAN DEFAULT FALSE,       -- Gibt an, ob ein Foto für den Spieler in dieser Saison hochgeladen wurde
+    last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- Erstell-/Änderungszeitpunkt (Position/Preis) — steuert Markt-Sichtbarkeit während eines offenen Transferfensters
     FOREIGN KEY (player_id) REFERENCES player(id),
     FOREIGN KEY (season_id) REFERENCES season(id),
     UNIQUE KEY uk_player_season (player_id, season_id)

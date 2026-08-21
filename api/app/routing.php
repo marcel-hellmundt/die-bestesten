@@ -626,7 +626,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/buy',
-                        'description' => 'Spieler kaufen: erstellt player_in_team + transaction (negativ) — 409 wenn Spieler bereits in einem Team oder Positionslimit erreicht — Auth',
+                        'description' => 'Spieler kaufen: erstellt player_in_team + transaction (negativ) — 409 wenn Spieler bereits in einem Team, noch nicht verfügbar (soon_available, siehe /player_in_season/available_players) oder Positionslimit erreicht — Auth',
                         'body' => ['team_id' => 'UUID des Teams', 'player_id' => 'UUID des Spielers', 'transferwindow_id' => 'UUID des offenen Transferfensters'],
                     ],
                 ],
@@ -648,7 +648,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/offer',
-                        'description' => 'Gebot abgeben — 409 wenn Spieler in Team oder Positionslimit erreicht (inkl. offene Gebote; GK≤2, DEF≤6, MID≤6, FWD≤4), 422 wenn Fenster zu / Gebot < Marktwert / Budget überschritten — Auth',
+                        'description' => 'Gebot abgeben — 409 wenn Spieler in Team, noch nicht verfügbar (soon_available, siehe /player_in_season/available_players) oder Positionslimit erreicht (inkl. offene Gebote; GK≤2, DEF≤6, MID≤6, FWD≤4), 422 wenn Fenster zu / Gebot < Marktwert / Budget überschritten — Auth',
                         'body' => [
                             'team_id' => 'UUID des Teams',
                             'player_id' => 'UUID des Spielers',
@@ -813,7 +813,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_in_season/available_players',
-                        'description' => 'Alle Bundesliga-Spieler der aktiven Saison ohne Fantasy-Team — {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id,current_team_id,current_team_name,current_team_season_id,new_on_market,sold_by_team_id,sold_by_team_name,sold_by_team_season_id}]}; ?include_all=1 → auch Spieler mit Fantasy-Team, current_team_* dann gesetzt (sonst null); new_on_market=true wenn aktuell vereinslos und während des offenen Transferfensters von einem anderen Team verkauft (sell-Tabelle); sold_by_team_* (nur bei new_on_market=true, sonst null) = zuletzt verkaufendes Team',
+                        'description' => 'Alle Bundesliga-Spieler der aktiven Saison ohne Fantasy-Team — {players[{id,displayname,position,price,season_points,photo_uploaded,club_id,club_name,club_short_name,club_logo_uploaded,season_id,current_team_id,current_team_name,current_team_season_id,new_on_market,sold_by_team_id,sold_by_team_name,sold_by_team_season_id,soon_available}]}; ?include_all=1 → auch Spieler mit Fantasy-Team, current_team_* dann gesetzt (sonst null); new_on_market=true wenn aktuell vereinslos und während des offenen Transferfensters von einem anderen Team verkauft (sell-Tabelle); sold_by_team_* (nur bei new_on_market=true, sonst null) = zuletzt verkaufendes Team; soon_available=true wenn player_in_season.last_updated ≥ Beginn des offenen Transferfensters (Zeile erst seit Fensterbeginn erstellt/geändert) — bleibt in der Antwort enthalten, ist aber bis zum nächsten Fenster nicht kauf-/bietbar (POST /buy, POST /offer → 409)',
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)', 'include_all' => '1 → auch Spieler mit Fantasy-Team einschließen'],
                     ],
                     [

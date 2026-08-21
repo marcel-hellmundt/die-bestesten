@@ -25,6 +25,7 @@ interface FreeAgent {
   sold_by_team_id: string | null;
   sold_by_team_name: string | null;
   sold_by_team_season_id: string | null;
+  soon_available: boolean;
 }
 
 @Component({
@@ -98,6 +99,7 @@ export class MarktPlayerComponent {
       this.maxPrice.set(saved.maxPrice ?? null);
       this.showAllPlayers.set(saved.showAll ?? false);
       this.newOnMarketOnly.set(saved.newOnly ?? false);
+      this.soonAvailableOnly.set(saved.soonOnly ?? false);
     });
 
     effect(() => {
@@ -115,12 +117,14 @@ export class MarktPlayerComponent {
         maxPrice: this.maxPrice(),
         showAll:  this.showAllPlayers(),
         newOnly:  this.newOnMarketOnly(),
+        soonOnly: this.soonAvailableOnly(),
       });
     });
   }
 
-  showAllPlayers  = signal<boolean>(false);
-  newOnMarketOnly = signal<boolean>(false);
+  showAllPlayers   = signal<boolean>(false);
+  newOnMarketOnly  = signal<boolean>(false);
+  soonAvailableOnly = signal<boolean>(false);
 
   private data = toSignal(
     toObservable(this.showAllPlayers).pipe(
@@ -130,7 +134,14 @@ export class MarktPlayerComponent {
     ),
   );
 
-  players = computed(() => this.data()?.players ?? []);
+  // Spieler, deren player_in_season-Zeile erst nach Beginn des offenen Transferfensters erstellt/
+  // geändert wurde, sind standardmäßig ausgeblendet (nicht kauf-/bietbar) und nur über den
+  // "Bald verfügbar"-Toggle exklusiv sichtbar.
+  players = computed(() => {
+    const showSoon = this.soonAvailableOnly();
+    const all = this.data()?.players ?? [];
+    return all.filter(p => showSoon ? p.soon_available : !p.soon_available);
+  });
   loading = computed(() => this.data() === undefined);
 
   // All clubs of the active season's league division — independent of whether they
@@ -237,7 +248,7 @@ export class MarktPlayerComponent {
 
   // ── Gebot abgeben (Quick-Action) ───────────────────────────────────────────
   canBid(p: FreeAgent): boolean {
-    return !p.current_team_id && !!this.openWindow() && !!this.cache.myTeamId();
+    return !p.current_team_id && !!this.openWindow() && !!this.cache.myTeamId() && !p.soon_available;
   }
 
   selectedOfferPlayer = signal<FreeAgent | null>(null);
@@ -448,7 +459,7 @@ export class MarktPlayerComponent {
 
   hasFilters = computed(() =>
     !!this.searchQuery() || !!this.positionFilter() || !!this.clubFilter() || this.maxPrice() !== null
-    || this.newOnMarketOnly()
+    || this.newOnMarketOnly() || this.soonAvailableOnly()
   );
 
   columnCount = computed(() =>
@@ -503,6 +514,10 @@ export class MarktPlayerComponent {
     this.newOnMarketOnly.set(checked);
   }
 
+  setSoonAvailableOnly(checked: boolean): void {
+    this.soonAvailableOnly.set(checked);
+  }
+
   onPriceInput(event: Event): void {
     const val = +(event.target as HTMLInputElement).value;
     this.maxPrice.set(val >= this.maxDataPrice() ? null : val);
@@ -514,6 +529,7 @@ export class MarktPlayerComponent {
     this.clubFilter.set(null);
     this.maxPrice.set(null);
     this.newOnMarketOnly.set(false);
+    this.soonAvailableOnly.set(false);
   }
 
   openFilter(): void {

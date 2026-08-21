@@ -78,6 +78,17 @@
       </label>
     </div>
 
+    <div class="filter-section">
+      <label class="filter-checkbox">
+        Bald verfügbar
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="soonAvailableOnly()"
+                 (change)="setSoonAvailableOnly($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+    </div>
+
     @if (hasFilters()) {
       <button class="filter-reset" (click)="resetFilters()">Filter zurücksetzen</button>
     }
@@ -101,7 +112,9 @@
     @if (loading()) {
       <p class="state-msg">Laden…</p>
     } @else if (!players().length) {
-      <p class="state-msg">{{ showAllPlayers() ? 'Keine Spieler gefunden.' : 'Keine freien Spieler gefunden.' }}</p>
+      <p class="state-msg">
+        {{ soonAvailableOnly() ? 'Keine bald verfügbaren Spieler.' : (showAllPlayers() ? 'Keine Spieler gefunden.' : 'Keine freien Spieler gefunden.') }}
+      </p>
     } @else {
       <p class="players-count">{{ filteredPlayers().length }} von {{ players().length }} Spielern</p>
       <div class="table-container" #tableContainer>
@@ -198,7 +211,7 @@
                       <button
                         class="offer-btn"
                         [disabled]="!canBid(p)"
-                        [title]="p.current_team_id ? 'Spieler hat bereits ein Team' : 'Gebot abgeben'"
+                        [title]="p.soon_available ? 'Verfügbar ab der nächsten Transferphase' : (p.current_team_id ? 'Spieler hat bereits ein Team' : 'Gebot abgeben')"
                         (click)="openOffer(p)"
                       >
                         <app-icon name="gavel" />
@@ -279,6 +292,17 @@
         <span class="filter-toggle">
           <input type="checkbox" [checked]="newOnMarketOnly()"
                  (change)="setNewOnMarketOnly($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+    </div>
+
+    <div class="filter-section">
+      <label class="filter-checkbox">
+        Bald verfügbar
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="soonAvailableOnly()"
+                 (change)="setSoonAvailableOnly($any($event.target).checked)" />
           <span class="filter-toggle__track"></span>
         </span>
       </label>

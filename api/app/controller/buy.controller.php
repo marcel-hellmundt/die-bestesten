@@ -23,6 +23,10 @@ class BuyController extends _BaseController
             http_response_code(403);
             return ['status' => false, 'message' => 'Transferwindow not open'];
         }
+        if (!$this->db->isPlayerVisibleInWindow($playerId, $windowId)) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Player not yet available'];
+        }
         if ($this->db->isPlayerAlreadyInAnyTeam($playerId)) {
             http_response_code(409);
             return ['status' => false, 'message' => 'Player already in a team'];
