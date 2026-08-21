@@ -263,10 +263,13 @@ CREATE TABLE IF NOT EXISTS manager_league (
 -- Request verlaengert die juengste offene Session oder eroeffnet eine neue, wenn die letzte
 -- laenger als 3 Minuten her ist — siehe Guard::authorize())
 CREATE TABLE IF NOT EXISTS manager_session (
-    id         CHAR(36) NOT NULL DEFAULT (UUID()) PRIMARY KEY,
-    manager_id CHAR(36) NOT NULL,
-    started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ended_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id          CHAR(36)    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    manager_id  CHAR(36)    NOT NULL,
+    started_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    device_type VARCHAR(10) NULL DEFAULT NULL, -- 'mobile' | 'tablet' | 'desktop', aus User-Agent geparst; NULL = nicht erkennbar
+    os          VARCHAR(20) NULL DEFAULT NULL, -- z.B. 'iOS', 'Android', 'Windows', 'macOS', 'Linux'
+    browser     VARCHAR(20) NULL DEFAULT NULL, -- z.B. 'Chrome', 'Safari', 'Firefox', 'Edge', 'Opera'
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     INDEX idx_manager_session_lookup (manager_id, ended_at)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
