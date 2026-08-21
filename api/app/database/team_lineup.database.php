@@ -78,6 +78,33 @@ trait TeamLineupTrait
         $lineupQ->execute([':team_id' => $teamId, ':matchday_id' => $matchday['id']]);
         $entries = $lineupQ->fetchAll(PDO::FETCH_ASSOC);
 
+        // Defensive cleanup: a team_lineup row can outlive the player's active squad membership
+        // (e.g. sold via a different transfer window than the one already cleaning up its own
+        // matchday in sell.database.php, or any other write path). Only for not-yet-completed
+        // matchdays — team_lineup on a completed one is the played historical record and must
+        // never be touched, regardless of current ownership.
+        if (!$matchday['completed'] && !empty($entries)) {
+            $activeQ = $this->con_league->prepare(
+                "SELECT player_id FROM player_in_team WHERE team_id = :tid AND to_matchday_id IS NULL"
+            );
+            $activeQ->execute([':tid' => $teamId]);
+            $activePlayerIds = array_flip($activeQ->fetchAll(PDO::FETCH_COLUMN));
+
+            $staleIds = [];
+            $entries  = array_values(array_filter($entries, function ($e) use ($activePlayerIds, &$staleIds) {
+                if (isset($activePlayerIds[$e['player_id']])) return true;
+                $staleIds[] = $e['player_id'];
+                return false;
+            }));
+
+            if (!empty($staleIds)) {
+                $ph = implode(',', array_fill(0, count($staleIds), '?'));
+                $this->con_league->prepare(
+                    "DELETE FROM team_lineup WHERE team_id = ? AND matchday_id = ? AND player_id IN ($ph)"
+                )->execute(array_merge([$teamId, $matchday['id']], $staleIds));
+            }
+        }
+
         if (empty($entries)) {
             return ['matchday' => $matchday, 'matchdays' => $matchdays, 'nominated' => [], 'bench' => []];
         }

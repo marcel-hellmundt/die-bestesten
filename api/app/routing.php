@@ -851,7 +851,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team_lineup',
-                        'description' => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: aktueller Spieltag nach start_date; Auto-Init wenn noch keine Einträge). Alternativ: player_id + season_id → [{matchday_number, nominated}] für alle Spieltage eines Spielers',
+                        'description' => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: aktueller Spieltag nach start_date; Auto-Init wenn noch keine Einträge); bei nicht abgeschlossenem Spieltag werden team_lineup-Einträge von zwischenzeitlich nicht mehr aktiven Spielern (z. B. verkauft) automatisch gelöscht und nicht zurückgegeben — abgeschlossene Spieltage bleiben unangetastet. Alternativ: player_id + season_id → [{matchday_number, nominated}] für alle Spieltage eines Spielers',
                         'query_params' => [
                             'team_id' => 'UUID des Teams (erforderlich, außer bei player_id + season_id)',
                             'matchday_id' => 'UUID des Spieltags (optional)',
