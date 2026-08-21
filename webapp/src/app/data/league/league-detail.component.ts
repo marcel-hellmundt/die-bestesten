@@ -170,6 +170,24 @@ export class LeagueDetailComponent {
     });
   }
 
+  // Overridden nach erfolgreichem PATCH, damit die Auswahl sofort umschaltet ohne die ganze
+  // Detail-Pipeline (und damit den aufgeklappten Saison/Team-UI-State) neu zu laden.
+  private fineRulesetOverride = signal<'classic' | 'none' | null>(null);
+  fineRulesetSaving = signal(false);
+
+  fineRuleset = computed<'classic' | 'none'>(() =>
+    this.fineRulesetOverride() ?? (this.league()?.fine_ruleset === 'none' ? 'none' : 'classic')
+  );
+
+  setFineRuleset(value: 'classic' | 'none'): void {
+    if (this.fineRuleset() === value || this.fineRulesetSaving()) return;
+    this.fineRulesetSaving.set(true);
+    this.api.patch<any>(`league/${this.leagueId}`, { fine_ruleset: value }).subscribe({
+      next: () => { this.fineRulesetOverride.set(value); this.fineRulesetSaving.set(false); },
+      error: () => this.fineRulesetSaving.set(false),
+    });
+  }
+
   groupedMismatches(mismatches: any[]): { seasonId: string; matchdays: { matchdayNumber: number; items: any[] }[] }[] {
     const seasonMap = new Map<string, Map<number, any[]>>();
     for (const mm of mismatches) {

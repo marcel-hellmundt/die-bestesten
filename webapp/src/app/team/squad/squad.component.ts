@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { DataCacheService } from '../../core/data-cache.service';
 
 const CONSTRAINTS: Record<string, { min: number; max: number }> = {
   GOALKEEPER: { min: 1, max: 2 },
@@ -22,6 +23,12 @@ const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 export class SquadComponent {
   private api   = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private cache = inject(DataCacheService);
+
+  constructor() {
+    this.cache.ensureLeague();
+    this.cache.ensureDivisions();
+  }
 
   private id$ = this.route.parent!.paramMap.pipe(map(p => p.get('id')!));
 
@@ -116,7 +123,7 @@ export class SquadComponent {
   }
 
   marketValue(p: any): number {
-    return Number(p.price ?? 0) + Number(p.points ?? 0) * 20000;
+    return Number(p.price ?? 0) + Number(p.points ?? 0) * this.cache.pointsBonus();
   }
 
   photoUrl(p: any): string | null {

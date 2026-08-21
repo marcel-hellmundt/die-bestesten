@@ -85,11 +85,12 @@ class MatchdayController extends _BaseController
         $achievements = 0;
         $seasonAwards = null;
         if ($completed) {
-            $teamRatings = $this->db->finalizeMatchday($this->id);
+            $pointsBonus = $this->db->resolvePointsBonus();
+            $teamRatings = $this->db->finalizeMatchday($this->id, $pointsBonus);
             $achResult   = $this->db->evaluateAchievements(true);
             $achievements = $achResult['count'];
             $this->db->createMatchdayCompletedNotifications((int) $matchday['number']);
-            $this->db->sendMatchdayCompletedAdminEmail($this->id, $teamRatings, $achResult['new'], (int) $matchday['number']);
+            $this->db->sendMatchdayCompletedAdminEmail($this->id, $teamRatings, $achResult['new'], (int) $matchday['number'], $pointsBonus);
             if ((int) $matchday['number'] === 34) {
                 $leagueId = $GLOBALS['auth_league_id'] ?? null;
                 if ($leagueId) {

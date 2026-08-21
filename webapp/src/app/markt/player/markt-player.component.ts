@@ -82,6 +82,7 @@ export class MarktPlayerComponent {
 
   constructor() {
     this.cache.ensureLeague();
+    this.cache.ensureDivisions();
     this.cache.ensureSeasons();
     this.cache.ensureMyTeam();
 
@@ -356,7 +357,7 @@ export class MarktPlayerComponent {
   clubFilter     = signal<string | null>(null);
   maxPrice       = signal<number | null>(null);
 
-  dynamicPrice(p: FreeAgent): number { return p.price + 20_000 * p.season_points; }
+  dynamicPrice(p: FreeAgent): number { return p.price + this.cache.pointsBonus() * p.season_points; }
 
   maxDataPrice = computed(() => Math.max(0, ...this.players().map(p => this.dynamicPrice(p))));
 

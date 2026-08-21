@@ -66,7 +66,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/league/mine',
-                        'description' => 'Aktuelle Liga {id,slug,name,db_name,division_id} — bei vorhandenem JWT die Liga aus auth_league_id, sonst Fallback auf die per DB_NAME_LEAGUE konfigurierte Deployment-Liga; 404 wenn nicht gefunden',
+                        'description' => 'Aktuelle Liga {id,slug,name,db_name,division_id,fine_ruleset} — bei vorhandenem JWT die Liga aus auth_league_id, sonst Fallback auf die per DB_NAME_LEAGUE konfigurierte Deployment-Liga; 404 wenn nicht gefunden',
                     ],
                     [
                         'method' => 'GET',
@@ -77,9 +77,9 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/league/:id',
-                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) — Admin',
+                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) oder Strafen-Regelsatz setzen ({fine_ruleset: "classic"|"none"}) — Admin',
                         'path_params' => [':id' => 'UUID der Liga'],
-                        'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)', 'visibility' => '"public" oder "private"'],
+                        'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)', 'visibility' => '"public" oder "private"', 'fine_ruleset' => '"classic" (Kegelstrafen) oder "none" (keine Strafen)'],
                     ],
                     [
                         'method' => 'POST',
@@ -347,6 +347,13 @@ class Routing
                         'path' => '/division/:id',
                         'description' => 'Eine Division per ID',
                         'path_params' => [':id' => 'UUID der Division'],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '\division:id',
+                        'description' => 'Startbudget + Punkte-Bonus setzen — Admin',
+                        'path_params' => [':id' => 'UUID der Division'],
+                        'body' => ['starting_budget' => 'INT > 0 (Startbudget eines neuen Fantasy-Teams)', 'points_bonus' => 'INT > 0 (Marktwert-/Auszahlungs-Bonus pro Saisonpunkt)'],
                     ],
                 ],
             ]),

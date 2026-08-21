@@ -55,7 +55,9 @@
             <th class="col-rc col-rc--yr">Gelb-Rot</th>
             <th class="col-rc col-rc--red">Rot</th>
             <th class="col-points">Punkte</th>
-            <th class="col-fine">Strafe</th>
+            @if (cache.finesEnabled()) {
+              <th class="col-fine">Strafe</th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -88,9 +90,11 @@
               <td class="col-rc col-rc--yr">@if (+r.yellow_red_cards) { {{ r.yellow_red_cards }} }</td>
               <td class="col-rc col-rc--red">@if (+r.red_cards) { {{ r.red_cards }} }</td>
               <td class="col-points">{{ r.points }}</td>
-              <td class="col-fine" [class.col-fine--active]="r.fine > 0">
-                @if (r.fine > 0) { {{ r.fine | number:'1.2-2' }} € }
-              </td>
+              @if (cache.finesEnabled()) {
+                <td class="col-fine" [class.col-fine--active]="r.fine > 0">
+                  @if (r.fine > 0) { {{ r.fine | number:'1.2-2' }} € }
+                </td>
+              }
             </tr>
           }
         </tbody>
@@ -105,9 +109,11 @@
             <td class="col-rc col-rc--yr">{{ totalYellowRedCards() || '' }}</td>
             <td class="col-rc col-rc--red">{{ totalRedCards() || '' }}</td>
             <td class="col-points">{{ totalPoints() }}</td>
-            <td class="col-fine col-fine--active">
-              @if (totalFine() > 0) { {{ totalFine() | number:'1.2-2' }} € }
-            </td>
+            @if (cache.finesEnabled()) {
+              <td class="col-fine col-fine--active">
+                @if (totalFine() > 0) { {{ totalFine() | number:'1.2-2' }} € }
+              </td>
+            }
           </tr>
         </tfoot>
       </table>

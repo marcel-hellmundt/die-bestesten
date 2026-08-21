@@ -195,7 +195,7 @@ trait OfferTrait
             }
         }
 
-        // 3. Price snapshot = base price + points_in_season * 20000
+        // 3. Price snapshot = base price + points_in_season * points_bonus
         $pq = $this->con->prepare(
             "SELECT COALESCE(price, 0) FROM player_in_season
              WHERE player_id = :pid AND season_id = :sid LIMIT 1"
@@ -211,7 +211,7 @@ trait OfferTrait
         $ptq->execute([':pid' => $playerId, ':sid' => $seasonId]);
         $pointsInSeason = (int) $ptq->fetchColumn();
 
-        $priceSnapshot = $basePrice + $pointsInSeason * 20000;
+        $priceSnapshot = $basePrice + $pointsInSeason * $this->getDivisionConfig()['points_bonus'];
 
         // 4. Validate offer >= price
         if ($offerValue < $priceSnapshot) {

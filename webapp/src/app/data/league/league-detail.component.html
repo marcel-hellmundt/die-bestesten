@@ -20,6 +20,24 @@
         [disabled]="validateState() === 'loading'"
         (click)="validate()"
       >{{ validateState() === 'loading' ? 'Prüft…' : 'Prüfen' }}</button>
+
+      <span class="fine-ruleset-toggle">
+        <span class="fine-ruleset-toggle__label">Strafen:</span>
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="fineRuleset() === 'classic'"
+          [class.btn-ghost]="fineRuleset() !== 'classic'"
+          [disabled]="fineRulesetSaving()"
+          (click)="setFineRuleset('classic')"
+        >Classic</button>
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="fineRuleset() === 'none'"
+          [class.btn-ghost]="fineRuleset() !== 'none'"
+          [disabled]="fineRulesetSaving()"
+          (click)="setFineRuleset('none')"
+        >Keine Strafen</button>
+      </span>
     </div>
   }
 

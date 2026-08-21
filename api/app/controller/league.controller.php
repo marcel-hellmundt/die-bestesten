@@ -255,10 +255,20 @@ class LeagueController extends _BaseController
             return ['status' => true];
         }
 
+        if (array_key_exists('fine_ruleset', $body)) {
+            $fineRuleset = $body['fine_ruleset'];
+            if (!in_array($fineRuleset, ['classic', 'none'], true)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'fine_ruleset muss "classic" oder "none" sein'];
+            }
+            $this->db->updateLeagueFineRuleset($this->id, $fineRuleset);
+            return ['status' => true];
+        }
+
         $divisionId = array_key_exists('division_id', $body) ? ($body['division_id'] ?: null) : 'MISSING';
         if ($divisionId === 'MISSING') {
             http_response_code(400);
-            return ['status' => false, 'message' => 'division_id oder visibility erforderlich'];
+            return ['status' => false, 'message' => 'division_id, visibility oder fine_ruleset erforderlich'];
         }
 
         $this->db->updateLeagueDivision($this->id, $divisionId);

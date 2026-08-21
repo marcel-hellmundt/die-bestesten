@@ -26,7 +26,7 @@ export class DataCacheService {
   private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string; color: string | null; color_secondary: string | null } | null; loaded: boolean }>({ data: null, loaded: false });
   private squadState     = signal<{ players: any[]; loaded: boolean }>({ players: [], loaded: false });
   private lineupState    = signal<{ hasMatchday: boolean; nominated: any[]; loaded: boolean }>({ hasMatchday: false, nominated: [], loaded: false });
-  private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, loaded: false });
+  private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; fineRuleset: string | null; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, loaded: false });
   private h2hStatusState = signal<{ exists: boolean; loaded: boolean }>({ exists: false, loaded: false });
 
   seasons        = computed(() => this.seasonsState().data);
@@ -46,6 +46,16 @@ export class DataCacheService {
     const id = this.leagueDivisionId();
     return id ? (this.divisionsState().data.find(d => d.id === id) ?? null) : null;
   });
+  // Default true (Strafen an) solange nicht geladen — entspricht dem DB-Default 'classic'.
+  finesEnabled = computed(() => this.leagueState().fineRuleset !== 'none');
+
+  // Fallback wie im Backend (getDivisionConfig()): höchste deutsche Division, falls die Liga keine division_id konfiguriert hat.
+  private fallbackDivision = computed(() =>
+    this.divisionsState().data.find(d => d.level === 1 && d.country_id.toLowerCase() === 'de') ?? null
+  );
+  pointsBonus = computed(() =>
+    this.leagueDivision()?.points_bonus ?? this.fallbackDivision()?.points_bonus ?? 20_000
+  );
 
   squadCount   = computed(() => this.squadState().players.length);
 
@@ -131,13 +141,13 @@ export class DataCacheService {
   ensureLeague(): void {
     if (this.leagueState().loaded) return;
     this.api.get<any>('league/mine').subscribe({
-      next: data => this.leagueState.set({ id: data.id ?? null, slug: data.slug ?? null, name: data.name ?? null, divisionId: data.division_id ?? null, loaded: true }),
-      error: ()   => this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, loaded: true }),
+      next: data => this.leagueState.set({ id: data.id ?? null, slug: data.slug ?? null, name: data.name ?? null, divisionId: data.division_id ?? null, fineRuleset: data.fine_ruleset ?? null, loaded: true }),
+      error: ()   => this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, loaded: true }),
     });
   }
 
   invalidateLeague(): void {
-    this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, loaded: false });
+    this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, loaded: false });
   }
 
   h2hTournamentEverExisted = computed(() => this.h2hStatusState().exists);

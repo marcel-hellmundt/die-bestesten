@@ -4,7 +4,9 @@ export class Division {
     public name: string,
     public level: number,
     public seats: number,
-    public country_id: string
+    public country_id: string,
+    public starting_budget: number,
+    public points_bonus: number
   ) {}
 
   get flagUrl(): string {
@@ -17,7 +19,9 @@ export class Division {
       data.name,
       data.level,
       data.seats,
-      data.country_id
+      data.country_id,
+      data.starting_budget,
+      data.points_bonus
     );
   }
 }

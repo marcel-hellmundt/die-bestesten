@@ -181,5 +181,6 @@ export class TableComponent {
 
   constructor() {
     this.cache.ensureSeasons();
+    this.cache.ensureLeague();
   }
 }

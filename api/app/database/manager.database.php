@@ -495,11 +495,12 @@ trait ManagerTrait
             ':color_secondary' => $colorSecondary,
         ]);
 
+        $startingBudget = $this->getDivisionConfig()['starting_budget'];
         $tq = $this->con_league->prepare(
             "INSERT INTO transaction (team_id, amount, reason, matchday_id)
-             VALUES (:tid, 50000000, 'Startguthaben', NULL)"
+             VALUES (:tid, :amount, 'Startguthaben', NULL)"
         );
-        $tq->execute([':tid' => $id]);
+        $tq->execute([':tid' => $id, ':amount' => $startingBudget]);
     }
 
     public function sendTeamCreatedAdminEmail(string $teamId, string $managerId, string $teamName, ?string $colorPrimary, ?string $colorSecondary): void
@@ -632,11 +633,12 @@ trait ManagerTrait
 
         $ratings = array_values(array_filter($ratings, fn($r) => (bool)($matchdayMap[$r['matchday_id']]['completed'] ?? false)));
 
+        $fineRuleset = $this->getLeagueFineRuleset();
         foreach ($ratings as &$r) {
             $md = $matchdayMap[$r['matchday_id']] ?? null;
             $r['matchday_number'] = $md ? (int)$md['number'] : null;
             $r['kickoff_date']    = $md ? $md['kickoff_date'] : null;
-            $r['fine']            = (float)($r['fine'] ?? 0.0);
+            $r['fine']            = $fineRuleset === 'none' ? 0.0 : (float)($r['fine'] ?? 0.0);
             $r['placement']       = $r['placement'] !== null ? (int)$r['placement'] : null;
         }
         unset($r);

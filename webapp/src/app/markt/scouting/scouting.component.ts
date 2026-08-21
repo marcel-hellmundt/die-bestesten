@@ -73,7 +73,7 @@ export class ScoutingComponent {
   };
 
   currentPrice(e: WatchlistEntry): number | null {
-    return e.price !== null ? e.price + 20_000 * e.season_points : null;
+    return e.price !== null ? e.price + this.cache.pointsBonus() * e.season_points : null;
   }
 
   sortCol = signal<'points' | 'price' | 'position' | null>(null);
@@ -135,5 +135,7 @@ export class ScoutingComponent {
 
   constructor() {
     this.cache.ensureMyTeam();
+    this.cache.ensureLeague();
+    this.cache.ensureDivisions();
   }
 }

@@ -7,14 +7,14 @@ trait LeagueTrait
         $leagueId = $GLOBALS['auth_league_id'] ?? null;
         if ($leagueId) {
             $q = $this->con->prepare(
-                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id
+                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id, l.fine_ruleset
                  FROM league l
                  WHERE l.id = :id LIMIT 1"
             );
             $q->execute([':id' => $leagueId]);
         } else {
             $q = $this->con->prepare(
-                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id
+                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id, l.fine_ruleset
                  FROM league l
                  WHERE l.db_name = :db_name LIMIT 1"
             );
@@ -33,6 +33,12 @@ trait LeagueTrait
     {
         $q = $this->con->prepare("UPDATE league SET visibility = :visibility WHERE id = :id");
         $q->execute([':visibility' => $visibility, ':id' => $id]);
+    }
+
+    public function updateLeagueFineRuleset(string $id, string $ruleset): void
+    {
+        $q = $this->con->prepare("UPDATE league SET fine_ruleset = :fine_ruleset WHERE id = :id");
+        $q->execute([':fine_ruleset' => $ruleset, ':id' => $id]);
     }
 
     public function getLeagueList(): array
