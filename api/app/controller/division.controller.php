@@ -2,7 +2,7 @@
 
 class DivisionController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'guest'];
+    public static array $methodRoles = ['GET' => 'guest', 'PATCH' => 'admin'];
 
     protected function get(): mixed
     {
@@ -18,7 +18,28 @@ class DivisionController extends _BaseController
         return $this->db->getDivisionList();
     }
 
-    protected function post(): mixed   { return $this->methodNotAllowed(); }
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
+    protected function post(): mixed { return $this->methodNotAllowed(); }
+
+    protected function patch(): mixed
+    {
+        if (!$this->id) return $this->methodNotAllowed();
+
+        $body = $this->body();
+        if (!isset($body['starting_budget']) || !isset($body['points_bonus'])) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'starting_budget und points_bonus erforderlich'];
+        }
+
+        $startingBudget = (int) $body['starting_budget'];
+        $pointsBonus    = (int) $body['points_bonus'];
+        if ($startingBudget <= 0 || $pointsBonus <= 0) {
+            http_response_code(422);
+            return ['status' => false, 'message' => 'starting_budget und points_bonus müssen größer 0 sein'];
+        }
+
+        $this->db->updateDivisionConfig($this->id, $startingBudget, $pointsBonus);
+        return ['status' => true];
+    }
+
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

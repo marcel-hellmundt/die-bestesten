@@ -157,7 +157,12 @@ trait MatchdayTrait
         return ['status' => true];
     }
 
-    public function finalizeMatchday(string $matchdayId): int
+    public function resolvePointsBonus(): int
+    {
+        return $this->getDivisionConfig()['points_bonus'];
+    }
+
+    public function finalizeMatchday(string $matchdayId, int $pointsBonus): int
     {
         $updatedCount = 0;
         $matchday = $this->getMatchdayById($matchdayId);
@@ -305,14 +310,14 @@ trait MatchdayTrait
             if ($points > 0) {
                 $checkTx->execute([$teamId, $matchdayId]);
                 if ((int) $checkTx->fetchColumn() === 0) {
-                    $insertTx->execute([$teamId, $points * 20000, $matchdayId, $kickoffDate]);
+                    $insertTx->execute([$teamId, $points * $pointsBonus, $matchdayId, $kickoffDate]);
                 }
             }
         }
         return $updatedCount;
     }
 
-    public function sendMatchdayCompletedAdminEmail(string $matchdayId, int $teamRatingsCount, array $newAchievements, int $matchdayNumber): void
+    public function sendMatchdayCompletedAdminEmail(string $matchdayId, int $teamRatingsCount, array $newAchievements, int $matchdayNumber, int $pointsBonus): void
     {
         try {
             $adminEmails = $this->con_league->query(
@@ -335,7 +340,7 @@ trait MatchdayTrait
             $teamRatings = $ratingsQ->fetchAll(PDO::FETCH_ASSOC);
 
             $subject = "$matchdayNumber. Spieltag abgeschlossen — die bestesten";
-            $body    = $this->buildMatchdaySummaryEmail($matchdayNumber, $teamRatingsCount, $teamRatings, $newAchievements);
+            $body    = $this->buildMatchdaySummaryEmail($matchdayNumber, $teamRatingsCount, $teamRatings, $newAchievements, $pointsBonus);
             $headers = "From: noreply@die-bestesten.de\r\nContent-Type: text/html; charset=UTF-8";
 
             foreach ($adminEmails as $email) {
@@ -346,7 +351,7 @@ trait MatchdayTrait
         }
     }
 
-    private function buildMatchdaySummaryEmail(int $matchdayNumber, int $teamRatingsCount, array $teamRatings, array $newAchievements): string
+    private function buildMatchdaySummaryEmail(int $matchdayNumber, int $teamRatingsCount, array $teamRatings, array $newAchievements, int $pointsBonus): string
     {
         $levelLabel        = ['bronze' => 'Bronze', 'silver' => 'Silber', 'gold' => 'Gold'];
         $achievementsCount = count($newAchievements);
@@ -356,7 +361,7 @@ trait MatchdayTrait
             $invalid = (bool) ($r['invalid'] ?? false);
             $pts     = $invalid ? '—' : (int) $r['points'];
             $income  = (!$invalid && (int) $r['points'] > 0)
-                ? number_format((int) $r['points'] * 20000, 0, ',', '.') . ' €'
+                ? number_format((int) $r['points'] * $pointsBonus, 0, ',', '.') . ' €'
                 : '—';
             $cards   = (int) $r['yellow_red_cards'] . 'YR / ' . (int) $r['red_cards'] . 'R';
             $rank    = $i + 1;

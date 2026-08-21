@@ -45,6 +45,19 @@
   color: $color-text-muted;
 }
 
+.admin-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: $space-3;
+  margin-top: $space-4;
+}
+
+.division-config {
+  .form-group {
+    width: 160px;
+  }
+}
+
 .meta-sep {
   color: $color-border;
 }

@@ -17,6 +17,38 @@
         </div>
       </div>
     </div>
+
+    @if (isAdmin()) {
+      <div class="admin-actions division-config">
+        <div class="form-group">
+          <label for="starting-budget">Startbudget</label>
+          <input
+            id="starting-budget"
+            type="number"
+            min="1"
+            step="1"
+            [value]="startingBudgetDraft()"
+            (input)="startingBudgetDraft.set($any($event.target).valueAsNumber)"
+          />
+        </div>
+        <div class="form-group">
+          <label for="points-bonus">Punkte-Bonus</label>
+          <input
+            id="points-bonus"
+            type="number"
+            min="1"
+            step="1"
+            [value]="pointsBonusDraft()"
+            (input)="pointsBonusDraft.set($any($event.target).valueAsNumber)"
+          />
+        </div>
+        <button
+          class="btn btn-sm btn-primary"
+          [disabled]="!configDirty() || !configValid() || configSaving()"
+          (click)="saveConfig()"
+        >{{ configSaving() ? 'Speichert…' : 'Speichern' }}</button>
+      </div>
+    }
   </div>
 
   <section class="detail-section">

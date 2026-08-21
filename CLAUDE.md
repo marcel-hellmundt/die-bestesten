@@ -70,7 +70,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 | season | id PK, start_date UNIQUE — aktiv = höchstes start_date |
 | league | id PK, slug UNIQUE, name, db_name, visibility ENUM('public','private') DEFAULT 'public' — public = Beitrittsanfragen erlaubt; private = nur Einladung; fine_ruleset ENUM('classic','none') DEFAULT 'classic' — classic = Spieltags-/Saisonstrafen (Kegelstrafen: 3€/2€/1,50€/1€ + 5€ Startgeld); none = keine Strafen |
 | club | id PK, country_id FK, name UNIQUE, short_name, logo_uploaded BOOL |
-| division | id PK, name, level INT, seats INT, country_id FK |
+| division | id PK, name, level INT, seats INT, country_id FK, starting_budget INT DEFAULT 50000000 (Startbudget eines neuen Fantasy-Teams), points_bonus INT DEFAULT 20000 (Marktwert-/Auszahlungs-Bonus pro Saisonpunkt) |
 | matchday | id PK, season_id FK, division_id FK, start_date DATE, kickoff_date DATETIME, number INT, completed BOOL — UNIQUE(season_id, division_id, number) — jede Division pflegt eigene Spieltage |
 | player | id PK, kicker_id INT UNIQUE?, country_id FK?, first_name, last_name, displayname UNIQUE, birth_city, date_of_birth, height_cm, weight_kg |
 | club_in_season | id PK, club_id FK, season_id FK, division_id FK, position INT? — UNIQUE(club_id, season_id) |
@@ -90,6 +90,7 @@ Vollständige Doku: `api/schema.php`.
 GET/POST /club_in_season       — Saison-Zuordnungen; POST 409 bei Duplikat
 PATCH    /club_in_season/:id   — Division/Position aktualisieren
 GET      /division[/:id]
+PATCH    /division/:id           — {starting_budget: INT>0, points_bonus: INT>0} — Startbudget neuer Fantasy-Teams + Marktwert-/Auszahlungs-Bonus pro Saisonpunkt setzen — Admin
 GET      /club[/:id]           — enthält stadium-Objekt (aktuelles Stadion, to_date IS NULL) oder null — auch in der Liste
 POST     /club                 — {country_id, name, short_name?} → {id}; 409 bei Namensduplikat — Admin
 POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → setzt club.logo_uploaded — Maintainer+

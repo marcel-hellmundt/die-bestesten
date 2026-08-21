@@ -116,11 +116,13 @@ CREATE TABLE IF NOT EXISTS player_rating (
 
 -- Tabelle: division (reale Fußball-Spielklassen, z.B. 1. Bundesliga)
 CREATE TABLE IF NOT EXISTS division (
-    id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    name       VARCHAR(100) NOT NULL,           -- z.B. "1. Bundesliga"
-    level      INT          NOT NULL DEFAULT 1, -- Hierarchie-Ebene (1 = höchste Liga)
-    seats      INT          NOT NULL DEFAULT 18, -- Anzahl Clubs in dieser Liga
-    country_id CHAR(2)      NOT NULL,           -- FK zu country.id
+    id               CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    name             VARCHAR(100) NOT NULL,           -- z.B. "1. Bundesliga"
+    level            INT          NOT NULL DEFAULT 1, -- Hierarchie-Ebene (1 = höchste Liga)
+    seats            INT          NOT NULL DEFAULT 18, -- Anzahl Clubs in dieser Liga
+    country_id       CHAR(2)      NOT NULL,           -- FK zu country.id
+    starting_budget  INT          NOT NULL DEFAULT 50000000, -- Startbudget eines neuen Fantasy-Teams
+    points_bonus     INT          NOT NULL DEFAULT 20000,    -- Marktwert-/Auszahlungs-Bonus pro Saisonpunkt
     FOREIGN KEY (country_id) REFERENCES country(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

@@ -49,6 +49,14 @@ export class DataCacheService {
   // Default true (Strafen an) solange nicht geladen — entspricht dem DB-Default 'classic'.
   finesEnabled = computed(() => this.leagueState().fineRuleset !== 'none');
 
+  // Fallback wie im Backend (getDivisionConfig()): höchste deutsche Division, falls die Liga keine division_id konfiguriert hat.
+  private fallbackDivision = computed(() =>
+    this.divisionsState().data.find(d => d.level === 1 && d.country_id.toLowerCase() === 'de') ?? null
+  );
+  pointsBonus = computed(() =>
+    this.leagueDivision()?.points_bonus ?? this.fallbackDivision()?.points_bonus ?? 20_000
+  );
+
   squadCount   = computed(() => this.squadState().players.length);
 
   squadInvalid = computed(() => {

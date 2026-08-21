@@ -15,4 +15,16 @@ trait DivisionTrait
         $query->execute([':id' => $id]);
         return $query->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function updateDivisionConfig(string $id, int $startingBudget, int $pointsBonus): void
+    {
+        $q = $this->con->prepare(
+            "UPDATE division SET starting_budget = :starting_budget, points_bonus = :points_bonus WHERE id = :id"
+        );
+        $q->execute([
+            ':starting_budget' => $startingBudget,
+            ':points_bonus'    => $pointsBonus,
+            ':id'              => $id,
+        ]);
+    }
 }

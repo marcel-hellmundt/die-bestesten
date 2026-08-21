@@ -486,7 +486,7 @@ export class PlayerDetailComponent {
 
   marketValue = computed(() => {
     const price = +(this.player()?.seasons?.[0]?.price ?? 0);
-    return Math.round(price + this.totalPoints() * 20_000);
+    return Math.round(price + this.totalPoints() * this.cache.pointsBonus());
   });
 
   offerPercentage = computed(() => {
@@ -611,7 +611,7 @@ export class PlayerDetailComponent {
     const currentSeason = p.seasons.find(s => s.season_id === team.season_id) ?? p.seasons[0];
     const basePrice = currentSeason?.price ?? 0;
     const pts = this.totalPoints();
-    const sellPrice = Math.round(+basePrice + pts * 20000);
+    const sellPrice = Math.round(+basePrice + pts * this.cache.pointsBonus());
     const formatted = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(sellPrice);
 
     if (!confirm(`${p.displayname} für ${formatted} verkaufen?`)) return;

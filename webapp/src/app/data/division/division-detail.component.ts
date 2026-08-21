@@ -1,9 +1,10 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { AuthService } from '../../auth/auth.service';
 import { Division } from '../../core/models/division.model';
 import { Club } from '../../core/models/club.model';
 
@@ -16,8 +17,11 @@ import { Club } from '../../core/models/club.model';
 export class DivisionDetailComponent {
   private api    = inject(ApiService);
   private route  = inject(ActivatedRoute);
+  private auth   = inject(AuthService);
 
   cache = inject(DataCacheService);
+
+  isAdmin = computed(() => this.auth.isAdmin());
 
   private id$ = this.route.paramMap.pipe(map((p) => p.get('id')!));
 
@@ -106,7 +110,54 @@ export class DivisionDetailComponent {
 
   clubsLoading = computed(() => this.clubsInSeasonState()?.loading ?? true);
 
+  // Overridden nach erfolgreichem PATCH, damit die Anzeige sofort umschaltet ohne die Division neu zu laden.
+  private configOverride = signal<{ starting_budget: number; points_bonus: number } | null>(null);
+  configSaving = signal(false);
+
+  startingBudgetDraft = signal<number | null>(null);
+  pointsBonusDraft = signal<number | null>(null);
+  private configInitialized = false;
+
+  private effectiveConfig = computed(() => {
+    const override = this.configOverride();
+    if (override) return override;
+    const d = this.division();
+    return d ? { starting_budget: d.starting_budget, points_bonus: d.points_bonus } : null;
+  });
+
+  configDirty = computed(() => {
+    const base = this.effectiveConfig();
+    if (!base) return false;
+    return this.startingBudgetDraft() !== base.starting_budget || this.pointsBonusDraft() !== base.points_bonus;
+  });
+
+  configValid = computed(() => (this.startingBudgetDraft() ?? 0) > 0 && (this.pointsBonusDraft() ?? 0) > 0);
+
+  saveConfig(): void {
+    const d = this.division();
+    if (!d || !this.configValid() || !this.configDirty() || this.configSaving()) return;
+    const startingBudget = this.startingBudgetDraft()!;
+    const pointsBonus = this.pointsBonusDraft()!;
+    this.configSaving.set(true);
+    this.api.patch<any>(`division/${d.id}`, { starting_budget: startingBudget, points_bonus: pointsBonus }).subscribe({
+      next: () => {
+        this.configOverride.set({ starting_budget: startingBudget, points_bonus: pointsBonus });
+        this.configSaving.set(false);
+      },
+      error: () => this.configSaving.set(false),
+    });
+  }
+
   constructor() {
     this.cache.ensureSeasons();
+
+    effect(() => {
+      const config = this.effectiveConfig();
+      if (config && !this.configInitialized) {
+        this.configInitialized = true;
+        this.startingBudgetDraft.set(config.starting_budget);
+        this.pointsBonusDraft.set(config.points_bonus);
+      }
+    });
   }
 }

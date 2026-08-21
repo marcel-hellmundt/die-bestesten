@@ -58,7 +58,7 @@ trait SellTrait
         $ptq->execute([':pid' => $playerId, ':sid' => $seasonId]);
         $seasonPoints = (int) $ptq->fetchColumn();
 
-        $sellPrice = (int) round($basePrice + $seasonPoints * 20000);
+        $sellPrice = (int) round($basePrice + $seasonPoints * $this->getDivisionConfig()['points_bonus']);
 
         // 4. INSERT sell
         $sellId = $this->con_league->query("SELECT UUID()")->fetchColumn();

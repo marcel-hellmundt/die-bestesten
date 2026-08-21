@@ -495,11 +495,12 @@ trait ManagerTrait
             ':color_secondary' => $colorSecondary,
         ]);
 
+        $startingBudget = $this->getDivisionConfig()['starting_budget'];
         $tq = $this->con_league->prepare(
             "INSERT INTO transaction (team_id, amount, reason, matchday_id)
-             VALUES (:tid, 50000000, 'Startguthaben', NULL)"
+             VALUES (:tid, :amount, 'Startguthaben', NULL)"
         );
-        $tq->execute([':tid' => $id]);
+        $tq->execute([':tid' => $id, ':amount' => $startingBudget]);
     }
 
     public function sendTeamCreatedAdminEmail(string $teamId, string $managerId, string $teamName, ?string $colorPrimary, ?string $colorSecondary): void

@@ -348,6 +348,13 @@ class Routing
                         'description' => 'Eine Division per ID',
                         'path_params' => [':id' => 'UUID der Division'],
                     ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '\division:id',
+                        'description' => 'Startbudget + Punkte-Bonus setzen — Admin',
+                        'path_params' => [':id' => 'UUID der Division'],
+                        'body' => ['starting_budget' => 'INT > 0 (Startbudget eines neuen Fantasy-Teams)', 'points_bonus' => 'INT > 0 (Marktwert-/Auszahlungs-Bonus pro Saisonpunkt)'],
+                    ],
                 ],
             ]),
 

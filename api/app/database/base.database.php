@@ -192,6 +192,29 @@ class Database
         return $q->fetchColumn() ?: 'classic';
     }
 
+    /**
+     * Startbudget + Punkte-Bonus der Division, aus der sich die aktuelle Liga bedient (Fallback:
+     * höchste deutsche Division, falls die Liga keine division_id konfiguriert hat — dasselbe
+     * Fallback-Muster wie in player_in_season.database.php::getAvailablePlayers()). Zentral hier
+     * statt an jeder der fünf Aufrufstellen dupliziert, da die Auflösung nicht trivial ist.
+     */
+    protected function getDivisionConfig(): array
+    {
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $q = $this->con->prepare("SELECT starting_budget, points_bonus FROM division WHERE id = :id LIMIT 1");
+            $q->execute([':id' => $divisionId]);
+        } else {
+            $q = $this->con->prepare("SELECT starting_budget, points_bonus FROM division WHERE level = 1 AND LOWER(country_id) = 'de' LIMIT 1");
+            $q->execute();
+        }
+        $row = $q->fetch(PDO::FETCH_ASSOC);
+        return [
+            'starting_budget' => $row ? (int) $row['starting_budget'] : 50_000_000,
+            'points_bonus'    => $row ? (int) $row['points_bonus']    : 20_000,
+        ];
+    }
+
     // Auth — uses global DB (manager table is in global schema)
     public function getAuthManagerById(string $id): array|false
     {
