@@ -215,6 +215,49 @@ class Database
         ];
     }
 
+    /**
+     * True if a player's player_in_season row (position/price) already existed in its current
+     * form before the given transfer window's start_date — i.e. it was not created or edited
+     * while this window was open. Used to block buy/offer on players that are only visible under
+     * the "Bald verfügbar" market filter, independent of whether the caller already knows the
+     * player_id (e.g. via /search) rather than getting it from the available_players listing.
+     */
+    public function isPlayerVisibleInWindow(string $playerId, string $windowId): bool
+    {
+        $wq = $this->con->prepare(
+            "SELECT tw.start_date, m.season_id FROM transferwindow tw
+             JOIN matchday m ON m.id = tw.matchday_id WHERE tw.id = :id LIMIT 1"
+        );
+        $wq->execute([':id' => $windowId]);
+        $window = $wq->fetch(PDO::FETCH_ASSOC);
+        if (!$window) return false;
+
+        $q = $this->con->prepare(
+            "SELECT 1 FROM player_in_season
+             WHERE player_id = :pid AND season_id = :sid
+               AND (last_updated IS NULL OR last_updated < :start) LIMIT 1"
+        );
+        $q->execute([':pid' => $playerId, ':sid' => $window['season_id'], ':start' => $window['start_date']]);
+        return (bool) $q->fetchColumn();
+    }
+
+    /**
+     * The transfer window currently open for a season (start_date <= now < end_date), or null.
+     * Shared lookup for market-visibility checks (soon_available), used wherever a single
+     * player's row needs to be checked against "the window that's open right now" without also
+     * needing the previous window (getAvailablePlayers() needs both and keeps its own inline
+     * lookup for that reason).
+     */
+    protected function getCurrentTransferwindow(string $seasonId): ?array
+    {
+        $windows = $this->getTransferwindowList(null, $seasonId);
+        $now     = date('Y-m-d H:i:s');
+        foreach ($windows as $w) {
+            if ($w['start_date'] <= $now && $now < $w['end_date']) return $w;
+        }
+        return null;
+    }
+
     // Auth — uses global DB (manager table is in global schema)
     public function getAuthManagerById(string $id): array|false
     {

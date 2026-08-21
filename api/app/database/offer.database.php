@@ -131,6 +131,12 @@ trait OfferTrait
 
         $seasonId = $window['season_id'];
 
+        if (!$this->isPlayerVisibleInWindow($playerId, $windowId)) {
+            http_response_code(409);
+            echo json_encode(['status' => false, 'message' => 'Player not yet available']);
+            exit;
+        }
+
         // 2. Validate player is free (not in any active team this season)
         $activeSeasonId = $this->getActiveSeasonId();
         $aq = $this->con_league->prepare(

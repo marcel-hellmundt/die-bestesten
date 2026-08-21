@@ -243,6 +243,31 @@
   cursor: pointer;
 }
 
+.filter-checkbox__label {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.filter-count-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: $radius-full;
+  background: $color-danger;
+  color: #fff;
+  font-size: 10px;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+
+  &--zero {
+    background: $color-text-muted;
+  }
+}
+
 .filter-toggle {
   position: relative;
   flex-shrink: 0;

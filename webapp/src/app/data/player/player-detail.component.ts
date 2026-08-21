@@ -26,6 +26,7 @@ interface PlayerInSeason {
   photo_uploaded: number;
   season_start: string;
   total_points: string;
+  soon_available: boolean;
 }
 
 interface PlayerInClub {
@@ -421,6 +422,8 @@ export class PlayerDetailComponent {
     return squadCount + pendingCount >= max;
   });
 
+  isSoonAvailable = computed(() => !!this.player()?.seasons?.[0]?.soon_available);
+
   availableBudget = computed(() => this.myBudget() - (this.myOfferData().pending_sum ?? 0));
 
   myPendingOffer = computed(() => {
@@ -513,6 +516,7 @@ export class PlayerDetailComponent {
   }
 
   openOffer(): void {
+    if (this.isSoonAvailable()) return;
     this.offerSuccess.set(false);
     this.offerError.set(null);
     this.setDigitsFromValue(this.marketValue());
