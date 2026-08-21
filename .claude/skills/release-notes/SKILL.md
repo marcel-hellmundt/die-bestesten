@@ -12,22 +12,45 @@ keine technische Change-Liste, sondern eine kurze, verständliche Ankündigung.
 
 ## 1. Zeitraum bestimmen
 
+**Wichtig:** Maßgeblich ist, wann etwas auf `main` sichtbar wurde — bei einem Feature-Branch also
+das **Merge-Datum**, nicht das ursprüngliche Commit-/Autoren-Datum der einzelnen Commits im
+Branch. Ein am 17.08. committeter und gepushter Branch, der erst am 18.08. gemerged wird, zählt
+als 18.08.-Update. `git log` zeigt für jeden Commit sein eigenes, unverändertes Datum — dieses ist
+für Branch-Commits nach dem Merge nicht mehr das relevante Datum.
+
 - Falls `$ARGUMENTS` einen Zeitraum/Commit/Tag angibt, diesen verwenden.
-- Sonst: `git log --oneline --format="%ad %h %s" --date=short main | head -40` ansehen und die
-  letzten ~7 Tage aktiver Arbeit auf `main` als Standardzeitraum nehmen.
-- Bei Unklarheit (z.B. sehr viele oder sehr wenige Commits im Standardzeitraum) kurz beim Nutzer
+- Sonst: `git log --first-parent --format="%ad %h %s" --date=short main | head -40` ansehen —
+  `--first-parent` zeigt nur die Mainline (direkte main-Commits + Merge-Commits als jeweils ein
+  Eintrag, keine Branch-internen Zwischen-Commits einzeln), also genau die "Landungsereignisse"
+  auf main. Die letzten ~7 Tage aktiver Arbeit als Standardzeitraum nehmen.
+- Bei Unklarheit (z.B. sehr viele oder sehr wenige Einträge im Standardzeitraum) kurz beim Nutzer
   nachfragen, statt zu raten.
 
 ## 2. Commits laden
 
+Zuerst die Mainline-Einträge mit Datum und Parent-Hashes ermitteln:
+
 ```
-git log <range> --format="%H" main
+git log --first-parent --format="%H %ad %P" --date=short main
 ```
 
-Für jeden Commit die volle Message laden (`git log --format="%B" <hash>`), da dort oft die
-eigentliche Begründung/das "Warum" steht, das für die Einordnung wichtig ist. Bei größeren
-Änderungen zusätzlich `git show --stat <hash>` prüfen, um zu verstehen, welche Bereiche der App
-betroffen sind (Pfad wie `webapp/src/app/markt/...` zeigt sofort die betroffene Seite).
+Für jeden Eintrag im gewählten Zeitraum:
+
+- **Kein Merge** (nur ein Parent-Hash) — ein direkter main-Commit, sein eigenes Datum ist bereits
+  korrekt. Volle Message laden: `git log --format="%B" -1 <hash>`.
+- **Merge** (zwei Parent-Hashes `P1 P2`) — das Merge-Datum ist das für diesen Eintrag gültige
+  Datum, aber der Merge-Commit selbst hat meist nur eine uninteressante Message ("Merge branch
+  'x'"). Die eigentlichen Änderungen stecken in den Commits des Branches:
+  ```
+  git log P1..P2 --format="%H"
+  ```
+  Für jeden dieser Hashes die volle Message laden (`git log --format="%B" -1 <hash>`) — inhaltlich
+  gehören sie zum Merge-Datum, auch wenn ihr eigenes Autoren-Datum früher liegt.
+
+Volle Commit-Messages sind wichtig, da dort oft die eigentliche Begründung/das "Warum" steht, das
+für die Einordnung zählt. Bei größeren Änderungen zusätzlich `git show --stat <hash>` prüfen, um zu
+verstehen, welche Bereiche der App betroffen sind (Pfad wie `webapp/src/app/markt/...` zeigt sofort
+die betroffene Seite).
 
 ## 3. Relevanz filtern
 
