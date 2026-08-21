@@ -100,7 +100,7 @@ trait PlayerTrait
 
         // All seasons (sorted newest first) with aggregated points
         $q = $this->con->prepare("
-            SELECT pis.season_id, pis.price, pis.position, pis.photo_uploaded,
+            SELECT pis.season_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated,
                    s.start_date AS season_start,
                    COALESCE(SUM(pr.points), 0) AS total_points
             FROM player_in_season pis
@@ -108,11 +108,21 @@ trait PlayerTrait
             LEFT JOIN matchday m ON m.season_id = pis.season_id
             LEFT JOIN player_rating pr ON pr.player_id = pis.player_id AND pr.matchday_id = m.id
             WHERE pis.player_id = :player_id
-            GROUP BY pis.season_id, pis.price, pis.position, pis.photo_uploaded, s.start_date
+            GROUP BY pis.season_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated, s.start_date
             ORDER BY s.start_date DESC
         ");
         $q->execute([':player_id' => $id]);
-        $player['seasons'] = $q->fetchAll(PDO::FETCH_ASSOC);
+        $player['seasons'] = array_map(function ($row) {
+            // soon_available mirrors getAvailablePlayers(): only "hidden" while the same
+            // season's transfer window that saw this row created/edited is still open — old
+            // seasons never have a currently-open window, so this is naturally false for them.
+            $currentWindow = $this->getCurrentTransferwindow($row['season_id']);
+            $row['soon_available'] = $currentWindow !== null
+                && $row['last_updated'] !== null
+                && $row['last_updated'] >= $currentWindow['start_date'];
+            unset($row['last_updated']);
+            return $row;
+        }, $q->fetchAll(PDO::FETCH_ASSOC));
 
         // All club stints (sorted newest first)
         $q = $this->con->prepare("

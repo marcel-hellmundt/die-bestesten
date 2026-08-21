@@ -241,6 +241,23 @@ class Database
         return (bool) $q->fetchColumn();
     }
 
+    /**
+     * The transfer window currently open for a season (start_date <= now < end_date), or null.
+     * Shared lookup for market-visibility checks (soon_available), used wherever a single
+     * player's row needs to be checked against "the window that's open right now" without also
+     * needing the previous window (getAvailablePlayers() needs both and keeps its own inline
+     * lookup for that reason).
+     */
+    protected function getCurrentTransferwindow(string $seasonId): ?array
+    {
+        $windows = $this->getTransferwindowList(null, $seasonId);
+        $now     = date('Y-m-d H:i:s');
+        foreach ($windows as $w) {
+            if ($w['start_date'] <= $now && $now < $w['end_date']) return $w;
+        }
+        return null;
+    }
+
     // Auth — uses global DB (manager table is in global schema)
     public function getAuthManagerById(string $id): array|false
     {

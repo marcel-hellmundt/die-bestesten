@@ -145,8 +145,9 @@
             <button
               class="offer-btn"
               (click)="openOffer()"
-              [disabled]="positionLimitReached()"
-            >{{ positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben' }}</button>
+              [disabled]="positionLimitReached() || isSoonAvailable()"
+              [title]="isSoonAvailable() ? 'Verfügbar ab der nächsten Transferphase' : ''"
+            >{{ isSoonAvailable() ? 'Bald verfügbar' : (positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben') }}</button>
           }
           <button
             class="watch-btn"
