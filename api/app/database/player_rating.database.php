@@ -170,7 +170,7 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Returns the best valid XI for a matchday across all 5 formations (343/352/433/442/451).
+     * Returns the best valid XI for a matchday across all 7 formations (self::VALID_FORMATIONS).
      * If $freeAgentsOnly is true, excludes players currently in a fantasy team.
      */
     public function getBestXi(string $matchdayId, bool $freeAgentsOnly = false): array
@@ -235,20 +235,13 @@ trait PlayerRatingTrait
         }
         unset($group);
 
-        $formations = [
-            '343' => [1, 3, 4, 3],
-            '352' => [1, 3, 5, 2],
-            '433' => [1, 4, 3, 3],
-            '442' => [1, 4, 4, 2],
-            '451' => [1, 4, 5, 1],
-        ];
         $posKeys = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
         $bestTotal   = -1;
         $bestKey     = null;
         $bestPlayers = [];
 
-        foreach ($formations as $key => [$gk, $def, $mid, $fwd]) {
+        foreach (self::VALID_FORMATIONS as [$gk, $def, $mid, $fwd]) {
             $needs   = [$gk, $def, $mid, $fwd];
             $canFill = true;
             foreach ($posKeys as $i => $pos) {
@@ -265,7 +258,7 @@ trait PlayerRatingTrait
             }
             if ($total > $bestTotal) {
                 $bestTotal   = $total;
-                $bestKey     = $key;
+                $bestKey     = "{$def}{$mid}{$fwd}";
                 $bestPlayers = $players;
             }
         }

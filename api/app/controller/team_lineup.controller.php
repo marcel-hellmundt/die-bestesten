@@ -52,7 +52,12 @@ class TeamLineupController extends _BaseController
             return ['status' => false, 'message' => 'Matchday not open for lineup editing'];
         }
 
-        $this->db->updateTeamLineup($teamId, $matchdayId, $players);
+        $result = $this->db->updateTeamLineup($teamId, $matchdayId, $players);
+        if (!$result['ok']) {
+            http_response_code(422);
+            return ['status' => false, 'message' => 'Ungültige Formation', 'formation' => $result['formation']];
+        }
+
         return ['status' => true];
     }
 

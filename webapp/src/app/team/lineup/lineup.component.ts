@@ -220,6 +220,13 @@ export class LineupComponent {
     return `${f[1]}${f[2]}${f[3]}`;
   }
 
+  // True if some valid formation dominates the given per-position counts in every position —
+  // i.e. the counts are still reachable towards a full valid XI. Same predicate the backend
+  // applies as its own independent sanity check on save.
+  private isReachableFormation(counts: number[]): boolean {
+    return this.validFormations.some(f => f.every((v, i) => v >= counts[i]));
+  }
+
   isFormationActive(f: number[]): boolean {
     // While nothing is nominated, formation() is [0,0,0,0] — highlight the scaffolded
     // baseline instead, so the chip the empty slots are currently shaped after stands out.
@@ -333,7 +340,10 @@ export class LineupComponent {
 
   onDragMove(event: CdkDragMove, currentPlayer: LineupPlayer): void {
     const { x, y } = event.pointerPosition;
-    const hovered = this.lineupPlayers().find(p => {
+    // Only on-field (nominated) players are valid hover targets — a bench player must never
+    // register as "hovered" here, otherwise a bench→field swap can match another bench player
+    // and nominate the dragged player without benching anyone in return (see onDragReleased).
+    const hovered = this.lineupPlayers().filter(p => p.nominated).find(p => {
       if (p.id === currentPlayer.id) return false;
       const el = document.getElementById(p.id);
       if (!el) return false;
@@ -364,11 +374,22 @@ export class LineupComponent {
 
     if (dragged && !hovered && slot && dragged.position === slot.pos) {
       // Dropped on an empty placeholder — fills it directly, nobody needs to move to the bench.
-      this.lineupPlayers.update(ps => ps.map(p =>
-        p.id === dragged.id ? { ...p, nominated: true, position_index: slot.index } : p
-      ));
-      this.normalizePositionIndexes();
-      this.saveLineup();
+      // Guarded even though emptySlotIndices() is already bounded by targetFormation(): a
+      // last line of defense against ever writing an unreachable formation from here.
+      const posIdx: Record<string, number> = { GOALKEEPER: 0, DEFENDER: 1, MIDFIELDER: 2, FORWARD: 3 };
+      const newFormation = [...this.formation()];
+      if (!dragged.nominated) newFormation[posIdx[dragged.position]] += 1;
+
+      if (this.isReachableFormation(newFormation)) {
+        this.lineupPlayers.update(ps => ps.map(p =>
+          p.id === dragged.id ? { ...p, nominated: true, position_index: slot.index } : p
+        ));
+        this.normalizePositionIndexes();
+        this.saveLineup();
+      } else {
+        this.formationError.set('Keine gültige Formation mehr möglich');
+        setTimeout(() => this.formationError.set(null), 2500);
+      }
     } else if (dragged && hovered) {
       if (dragged.position === hovered.position) {
         if (playerType === 'nominated') {
@@ -450,7 +471,15 @@ export class LineupComponent {
       })),
     }).subscribe({
       next:  () => this.saving.set(false),
-      error: () => this.saving.set(false),
+      error: (err) => {
+        this.saving.set(false);
+        if (err?.status === 422) {
+          // Backend rejected an unreachable formation the client-side guards missed — surface it
+          // instead of failing silently; the field itself stays as-is until the next reload.
+          this.formationError.set('Ungültige Formation');
+          setTimeout(() => this.formationError.set(null), 2500);
+        }
+      },
     });
   }
 }

@@ -147,6 +147,13 @@ class Database
         'FORWARD'    => 4,
     ];
 
+    // [GOALKEEPER, DEFENDER, MIDFIELDER, FORWARD] — the 7 formations a team_lineup/best-XI is
+    // allowed to take; GK is always exactly 1. Single source of truth shared by team_lineup
+    // validation, best_xi, and the matchday payout calculation.
+    protected const VALID_FORMATIONS = [
+        [1, 3, 4, 3], [1, 3, 5, 2], [1, 4, 3, 3], [1, 4, 4, 2], [1, 4, 5, 1], [1, 5, 3, 2], [1, 5, 4, 1],
+    ];
+
     protected const STATS_SEASON_START = '2017-07-01';
 
     private static ?array $_colorMap = null;

@@ -243,8 +243,7 @@ trait MatchdayTrait
              VALUES (UUID(), ?, ?, 'Spieltagseinnahmen', ?, DATE_ADD(?, INTERVAL 3 DAY))"
         );
 
-        // formation: [gk, def, mid, fwd]
-        $formations = [[1,3,4,3],[1,3,5,2],[1,4,3,3],[1,4,4,2],[1,4,5,1]];
+        $formations = self::VALID_FORMATIONS;
 
         foreach ($teams as $team) {
             $teamId   = $team['id'];

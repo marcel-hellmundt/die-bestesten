@@ -451,7 +451,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_rating/best_xi',
-                        'description' => 'Beste valide 11 für einen Spieltag (Formationen 343/352/433/442/451, maximale Gesamtpunkte) — gibt {formation, players[{player_id,displayname,position,points,grade,club_id,club_name,club_short_name}], total_points} zurück; free_agents_only=1 schließt Spieler in Fantasy-Teams aus — Auth',
+                        'description' => 'Beste valide 11 für einen Spieltag (Formationen 343/352/433/442/451/532/541, maximale Gesamtpunkte) — gibt {formation, players[{player_id,displayname,position,points,grade,club_id,club_name,club_short_name}], total_points} zurück; free_agents_only=1 schließt Spieler in Fantasy-Teams aus — Auth',
                         'query_params' => [
                             'matchday_id'     => 'UUID des Spieltags (erforderlich)',
                             'free_agents_only' => '1 = nur vereinslose Spieler (optional, default 0)',
@@ -851,7 +851,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team_lineup',
-                        'description' => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: aktueller Spieltag nach start_date; Auto-Init wenn noch keine Einträge); bei nicht abgeschlossenem Spieltag werden team_lineup-Einträge von zwischenzeitlich nicht mehr aktiven Spielern (z. B. verkauft) automatisch gelöscht und nicht zurückgegeben — abgeschlossene Spieltage bleiben unangetastet. Alternativ: player_id + season_id → [{matchday_number, nominated}] für alle Spieltage eines Spielers',
+                        'description' => 'Aufstellung eines Teams — gibt { matchday, matchdays[], nominated[], bench[] } zurück; matchday_id optional (default: aktueller Spieltag nach start_date; Auto-Init wenn noch keine Einträge); bei nicht abgeschlossenem Spieltag werden team_lineup-Einträge von zwischenzeitlich nicht mehr aktiven Spielern (z. B. verkauft) automatisch gelöscht und nicht zurückgegeben, UND eine nicht mehr erreichbare Formation (Sanity-Check, siehe PATCH) automatisch auf Bank zurückgesetzt (nominated=0 für alle) — abgeschlossene Spieltage bleiben unangetastet. Alternativ: player_id + season_id → [{matchday_number, nominated}] für alle Spieltage eines Spielers',
                         'query_params' => [
                             'team_id' => 'UUID des Teams (erforderlich, außer bei player_id + season_id)',
                             'matchday_id' => 'UUID des Spieltags (optional)',
@@ -862,7 +862,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/team_lineup',
-                        'description' => 'Aufstellung speichern — nur eigenes Team, nur während Editierfenster (start_date ≤ now < kickoff_date)',
+                        'description' => 'Aufstellung speichern — nur eigenes Team, nur während Editierfenster (start_date ≤ now < kickoff_date); 422 wenn die resultierende Formation durch keine der 7 gültigen Formationen (343/352/433/442/451/532/541) mehr erreichbar ist (Sanity-Check, z.B. zu viele Spieler auf einer Position) — {status:false, message, formation: {GOALKEEPER,DEFENDER,MIDFIELDER,FORWARD}}',
                         'body' => [
                             'team_id' => 'UUID des Teams',
                             'matchday_id' => 'UUID des Spieltags',

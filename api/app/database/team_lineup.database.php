@@ -169,6 +169,31 @@ trait TeamLineupTrait
             ($posOrder[$a['position'] ?? ''] ?? 9) <=> ($posOrder[$b['position'] ?? ''] ?? 9)
             ?: ($a['position_index'] ?? 99) <=> ($b['position_index'] ?? 99);
 
+        // Sanity check: if the nominated formation is no longer reachable by any valid shape
+        // (legacy corrupted data, a race condition, or a bug that slipped an invalid save past
+        // updateTeamLineup() before this check existed), reset it back to the bench rather than
+        // serving/scoring an impossible lineup. Never for completed matchdays (historical record,
+        // same guard as the stale-player cleanup above).
+        if (!$matchday['completed'] && !empty($nominated)) {
+            $counts = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
+            foreach ($nominated as $p) {
+                if (isset($counts[$p['position']])) $counts[$p['position']]++;
+            }
+            if (!$this->isReachableFormation($counts)) {
+                $this->con_league->prepare(
+                    "UPDATE team_lineup SET nominated = 0, position_index = NULL
+                     WHERE team_id = :tid AND matchday_id = :mid"
+                )->execute([':tid' => $teamId, ':mid' => $matchday['id']]);
+
+                foreach ($nominated as &$p) {
+                    $p['position_index'] = null;
+                }
+                unset($p);
+                $bench     = array_merge($bench, $nominated);
+                $nominated = [];
+            }
+        }
+
         usort($nominated, $sort);
         usort($bench, $sort);
 
@@ -214,8 +239,13 @@ trait TeamLineupTrait
         return $result;
     }
 
-    public function updateTeamLineup(string $teamId, string $matchdayId, array $players): bool
+    // Applies the submitted nominated/position_index changes and validates the resulting
+    // formation before committing — never persists a formation that no valid shape can reach
+    // (see isReachableFormation()). Returns ['ok' => true] or ['ok' => false, 'formation' => counts].
+    public function updateTeamLineup(string $teamId, string $matchdayId, array $players): array
     {
+        $this->con_league->beginTransaction();
+
         $stmt = $this->con_league->prepare(
             "UPDATE team_lineup SET nominated = :nom, position_index = :pidx
              WHERE team_id = :tid AND matchday_id = :mid AND player_id = :pid"
@@ -229,7 +259,65 @@ trait TeamLineupTrait
                 ':pid'  => $p['player_id'],
             ]);
         }
-        return true;
+
+        $counts = $this->getNominatedFormationCounts($teamId, $matchdayId);
+        if (!$this->isReachableFormation($counts)) {
+            $this->con_league->rollBack();
+            return ['ok' => false, 'formation' => $counts];
+        }
+
+        $this->con_league->commit();
+        return ['ok' => true];
+    }
+
+    // Counts currently nominated=1 players per position for a team's lineup on a matchday.
+    private function getNominatedFormationCounts(string $teamId, string $matchdayId): array
+    {
+        $counts = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
+
+        $seasonQ = $this->con_league->prepare("SELECT season_id FROM team WHERE id = :id LIMIT 1");
+        $seasonQ->execute([':id' => $teamId]);
+        $seasonId = $seasonQ->fetchColumn();
+        if (!$seasonId) return $counts;
+
+        $playerQ = $this->con_league->prepare(
+            "SELECT player_id FROM team_lineup
+             WHERE team_id = :tid AND matchday_id = :mid AND nominated = 1"
+        );
+        $playerQ->execute([':tid' => $teamId, ':mid' => $matchdayId]);
+        $playerIds = $playerQ->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($playerIds)) return $counts;
+
+        $ph = implode(',', array_fill(0, count($playerIds), '?'));
+        $posQ = $this->con->prepare(
+            "SELECT position, COUNT(*) AS c FROM player_in_season
+             WHERE season_id = ? AND player_id IN ($ph) GROUP BY position"
+        );
+        $posQ->execute(array_merge([$seasonId], $playerIds));
+        foreach ($posQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            if (isset($counts[$row['position']])) $counts[$row['position']] = (int) $row['c'];
+        }
+        return $counts;
+    }
+
+    // True if at least one of the 7 valid formations dominates the given per-position counts
+    // in every position — i.e. the counts are still reachable towards a valid full XI. This is
+    // intentionally more permissive than "exactly one of the 7 formations" so an in-progress,
+    // partially built lineup (live-saved after every drag) isn't rejected mid-build; it only
+    // rejects states that are already impossible (a position count beyond any formation's max).
+    private function isReachableFormation(array $counts): bool
+    {
+        foreach (self::VALID_FORMATIONS as [$gk, $def, $mid, $fwd]) {
+            if (
+                $gk  >= $counts['GOALKEEPER'] &&
+                $def >= $counts['DEFENDER']   &&
+                $mid >= $counts['MIDFIELDER'] &&
+                $fwd >= $counts['FORWARD']
+            ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function getTeamOwner(string $teamId): ?string
