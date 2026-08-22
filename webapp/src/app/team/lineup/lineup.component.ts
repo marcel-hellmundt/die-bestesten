@@ -12,6 +12,8 @@ interface LineupPlayer {
   position_index: number | null;
   season_id: string;
   nominated: boolean;
+  price: number;
+  season_points: number;
   grade: any;
   points: any;
   goals: number;
@@ -95,7 +97,11 @@ export class LineupComponent {
   bench = computed(() =>
     this.lineupPlayers()
       .filter(p => !p.nominated)
-      .sort((a, b) => (this.posOrder[a.position] ?? 9) - (this.posOrder[b.position] ?? 9))
+      .sort((a, b) =>
+        (this.posOrder[a.position] ?? 9) - (this.posOrder[b.position] ?? 9) ||
+        (b.season_points ?? 0) - (a.season_points ?? 0) ||
+        (Number(b.price) || 0) - (Number(a.price) || 0)
+      )
   );
 
   points    = computed(() => {
