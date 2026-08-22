@@ -185,6 +185,7 @@
          [class.bench-player--draggable]="isEditable()"
          cdkDrag
          [cdkDragDisabled]="!isEditable()"
+         [cdkDragStartDelay]="{touch: 150, mouse: 0}"
          (cdkDragMoved)="onDragMove($event, p)"
          (cdkDragReleased)="onDragReleased($event, 'bench')"
          (cdkDragEnded)="onDragEnd()">
