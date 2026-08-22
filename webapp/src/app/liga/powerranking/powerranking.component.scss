@@ -1,0 +1,271 @@
+@use '../../../styles/variables' as *;
+
+// --- Stecktabelle: editierbares (Zustand A) und schreibgeschütztes (Zustand B) Board ---
+
+.pr-board {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  max-width: 520px;
+}
+
+.pr-slot {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+
+  &--readonly {
+    cursor: default;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    gap: $space-2;
+    padding: $space-2;
+  }
+}
+
+.pr-slot__number {
+  flex-shrink: 0;
+  width: 28px;
+  font-weight: $font-weight-bold;
+  color: $color-text-muted;
+  text-align: right;
+}
+
+.pr-slot__handle {
+  flex-shrink: 0;
+  cursor: grab;
+  color: $color-text-muted;
+  font-size: $font-lg;
+  line-height: 1;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.pr-slot__logo {
+  flex-shrink: 0;
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.pr-slot__color {
+  flex-shrink: 0;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.pr-slot__names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.pr-slot__team {
+  font-weight: $font-weight-semibold;
+  font-size: $font-sm;
+  color: $color-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pr-slot__manager {
+  font-size: $font-xs;
+  color: $color-text-muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pr-slot__arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.pr-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 20px;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: $color-surface;
+  color: $color-text;
+  font-size: 10px;
+  cursor: pointer;
+  transition: border-color $transition-fast, color $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $color-text-muted;
+  }
+  &:disabled {
+    color: $color-border;
+    cursor: default;
+  }
+}
+
+// Angular CDK drag-drop Feedback
+.cdk-drag-preview {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  border-radius: $radius-md;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drop-list-dragging .pr-slot:not(.cdk-drag-placeholder) {
+  transition: transform 200ms ease;
+}
+
+.pr-save-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-top: $space-4;
+}
+
+.pr-save-msg {
+  font-size: $font-sm;
+  color: $color-success;
+
+  &--error {
+    color: $color-danger;
+  }
+}
+
+// --- Zustand B: Rangliste + Tabelle + Boards aller Manager ---
+
+.data-table--compact {
+  th, td {
+    padding: 2px $space-3;
+  }
+}
+
+.col-rank {
+  width: 36px;
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+}
+
+.col-num {
+  width: 80px;
+  text-align: right;
+}
+
+.col-team {
+  vertical-align: middle;
+}
+
+.team-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.pr-alias {
+  color: $color-text-muted;
+  font-size: $font-xs;
+  margin-left: $space-1;
+}
+
+.pr-own-row {
+  background-color: color-mix(in srgb, $color-accent 6%, transparent);
+  font-weight: $font-weight-semibold;
+}
+
+.pr-entry-card {
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: $space-3;
+
+  &--own {
+    border-color: $color-accent;
+  }
+}
+
+.pr-entry-header {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  width: 100%;
+  padding: $space-4 $space-6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: $color-text;
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: $space-3 $space-4;
+  }
+}
+
+.pr-entry-header__name {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-weight: $font-weight-semibold;
+}
+
+.pr-own-badge {
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  background: $color-accent;
+  color: #fff;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+}
+
+.pr-entry-header__deviation {
+  margin-left: auto;
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.pr-entry-header__chevron {
+  color: $color-text-muted;
+  flex-shrink: 0;
+}
+
+.pr-board--readonly {
+  max-width: none;
+  padding: 0 $space-6 $space-4;
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: 0 $space-4 $space-3;
+  }
+}
+
+.pr-delta {
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: right;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+
+  &--up {
+    color: $color-success;
+  }
+  &--down {
+    color: $color-danger;
+  }
+}

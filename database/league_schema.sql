@@ -124,6 +124,20 @@ CREATE TABLE IF NOT EXISTS team_watchlist (
     UNIQUE KEY uk_team_player (team_id, player_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: powerranking_pick (Tabellenplatz-Tipp eines Managers für ein Team der Saison —
+-- "Kicker-Stecktabelle"; Tippphase bis Anpfiff von Spieltag 1, danach für alle sichtbar/gesperrt)
+CREATE TABLE IF NOT EXISTS powerranking_pick (
+    id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    season_id  CHAR(36) NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
+    manager_id CHAR(36) NOT NULL,             -- Referenz auf global_schema.manager.id (kein FK, cross-DB)
+    team_id    CHAR(36) NOT NULL,             -- getipptes Team
+    position   INT      NOT NULL,             -- getippter Tabellenplatz (1 = Meister)
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_powerranking_pick     (season_id, manager_id, team_id),
+    UNIQUE KEY uk_powerranking_position (season_id, manager_id, position)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- H2H-Turniermodus
 CREATE TABLE IF NOT EXISTS h2h_group (
     id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),

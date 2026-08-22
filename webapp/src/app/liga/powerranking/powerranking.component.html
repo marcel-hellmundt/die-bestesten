@@ -1,0 +1,162 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (!response()) {
+  <p class="state-msg">Keine aktive Saison.</p>
+} @else if (!locked()) {
+  <p class="page-subtitle">
+    Tippe die Reihenfolge, in der die Teams die Saison beenden werden. Bis zum Anpfiff von
+    Spieltag 1 kannst du deinen Tipp beliebig oft ändern — danach ist er gesperrt und für alle
+    anderen Manager sichtbar.
+  </p>
+
+  @if (teamsLoading() || order().length === 0) {
+    <p class="state-msg">Laden…</p>
+  } @else {
+    <div class="pr-board" cdkDropList (cdkDropListDropped)="drop($event)">
+      @for (t of order(); track t.id; let i = $index) {
+        <div class="pr-slot" cdkDrag>
+          <span class="pr-slot__number">{{ i + 1 }}.</span>
+          <span class="pr-slot__handle" cdkDragHandle>⠿</span>
+          <img
+            class="pr-slot__logo"
+            [src]="logoFailed(t.id) ? 'img/placeholders/club.png' : teamLogoUrl(t.season_id, t.id)"
+            (error)="onLogoError(t.id)"
+            alt=""
+          />
+          <span class="pr-slot__color" [style.background-color]="t.color ?? '#888'"></span>
+          <span class="pr-slot__names">
+            <span class="pr-slot__team">{{ t.team_name }}</span>
+            <span class="pr-slot__manager">{{ t.manager_name }}</span>
+          </span>
+          <span class="pr-slot__arrows">
+            <button type="button" class="pr-arrow" (click)="moveUp(i)" [disabled]="i === 0" aria-label="Nach oben">▲</button>
+            <button type="button" class="pr-arrow" (click)="moveDown(i)" [disabled]="i === order().length - 1" aria-label="Nach unten">▼</button>
+          </span>
+        </div>
+      }
+    </div>
+
+    <div class="pr-save-row">
+      <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Speichert…' : 'Tipp speichern' }}
+      </button>
+      @if (saveMessage()) {
+        <span class="pr-save-msg" [class.pr-save-msg--error]="saveError()">{{ saveMessage() }}</span>
+      }
+    </div>
+  }
+} @else {
+  <p class="page-subtitle">
+    Spieltag 1 hat angepfiffen — alle Tipps sind jetzt sichtbar. Die Tabelle entwickelt sich live
+    mit dem Saisonverlauf weiter.
+  </p>
+
+  <div class="table-section-title">Rangliste nach Tipp-Genauigkeit</div>
+  <div class="table-container">
+    <table class="data-table data-table--compact">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th>Manager</th>
+          <th class="col-num">Abweichung</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of entries(); track e.manager_id; let i = $index) {
+          <tr [class.pr-own-row]="e.manager_id === myManagerId">
+            <td class="col-rank">{{ i + 1 }}</td>
+            <td>
+              {{ e.manager_name }}
+              @if (e.alias) {
+                <span class="pr-alias">({{ e.alias }})</span>
+              }
+            </td>
+            <td class="col-num">{{ e.total_deviation }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-section-title">Aktuelle Tabelle</div>
+  <div class="table-container">
+    <table class="data-table data-table--compact">
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th>Team</th>
+          <th class="col-num">Punkte</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of standings(); track s.team_id) {
+          <tr>
+            <td class="col-rank">{{ s.actual_position }}</td>
+            <td class="col-team">
+              <span class="team-cell">
+                <img
+                  class="tbl-logo"
+                  [src]="logoFailed(s.team_id) ? 'img/placeholders/club.png' : teamLogoUrl(s.season_id, s.team_id)"
+                  (error)="onLogoError(s.team_id)"
+                  alt=""
+                />
+                <span class="team-name">{{ s.team_name }}</span>
+              </span>
+            </td>
+            <td class="col-num">{{ s.total_points }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-section-title">Tipps aller Manager</div>
+  @for (e of sortedEntries(); track e.manager_id) {
+    <div class="card pr-entry-card" [class.pr-entry-card--own]="e.manager_id === myManagerId">
+      <button type="button" class="pr-entry-header" (click)="toggleExpanded(e.manager_id)">
+        <span class="pr-entry-header__name">
+          {{ e.manager_name }}
+          @if (e.manager_id === myManagerId) {
+            <span class="pr-own-badge">Du</span>
+          }
+        </span>
+        <span class="pr-entry-header__deviation">Abweichung: {{ e.total_deviation }}</span>
+        <span class="pr-entry-header__chevron">{{ expandedManagerId() === e.manager_id ? '▾' : '▸' }}</span>
+      </button>
+
+      @if (expandedManagerId() === e.manager_id) {
+        <div class="pr-board pr-board--readonly">
+          @for (p of e.picks; track p.team_id) {
+            <div class="pr-slot pr-slot--readonly">
+              <span class="pr-slot__number">{{ p.position }}.</span>
+              @if (teamInfo(p.team_id); as info) {
+                <img
+                  class="pr-slot__logo"
+                  [src]="logoFailed(p.team_id) ? 'img/placeholders/club.png' : teamLogoUrl(info.season_id, p.team_id)"
+                  (error)="onLogoError(p.team_id)"
+                  alt=""
+                />
+                <span class="pr-slot__color" [style.background-color]="info.color ?? '#888'"></span>
+                <span class="pr-slot__names">
+                  <span class="pr-slot__team">{{ info.team_name }}</span>
+                </span>
+              }
+              <span
+                class="pr-delta"
+                [class.pr-delta--up]="deltaSymbol(p.position, p.actual_position) === '↑'"
+                [class.pr-delta--down]="deltaSymbol(p.position, p.actual_position) === '↓'"
+              >
+                {{ deltaSymbol(p.position, p.actual_position) }}
+                @if (p.deviation) {
+                  {{ p.deviation }}
+                }
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+}

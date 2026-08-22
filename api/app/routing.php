@@ -994,6 +994,25 @@ class Routing
                 ],
             ]),
 
+            new Route('powerranking', 'Powerranking', [
+                'title' => 'Powerranking',
+                'description' => 'Kicker-Stecktabelle: Manager tippen die Endreihenfolge der Fantasy-Teams der aktiven Saison — Auth',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/powerranking',
+                        'description' => 'Vor Anpfiff Spieltag 1: { locked:false, season_id, kickoff_date, my_picks:[{team_id,position}] } — eigener Tipp, andere Tipps unsichtbar. Nach Anpfiff Spieltag 1: { locked:true, season_id, kickoff_date, standings:[{team_id,team_name,color,manager_name,season_id,total_points,actual_position}], entries:[{manager_id,manager_name,alias,total_deviation,picks:[{team_id,predicted_position,actual_position,deviation}]}] } sortiert nach total_deviation ASC — standings = aktuelle Live-Saisontabelle wie /team_rating/season — Auth',
+                        'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/powerranking',
+                        'description' => 'Eigenen Tipp abgeben/überschreiben (ersetzt alle vorherigen Picks des Managers für diese Saison komplett) — nur vor Anpfiff Spieltag 1; 403 nach Anpfiff, 422 wenn picks nicht exakt eine 1..N-Permutation aller aktuellen Teams der Saison ist — Auth',
+                        'body' => ['season_id' => 'UUID der Saison', 'picks' => '[{team_id: UUID, position: INT (1..Teamanzahl, je einmal)}]'],
+                    ],
+                ],
+            ]),
+
             new Route('h2h', 'H2H', [
                 'title' => 'H2H',
                 'description' => 'Head-to-Head Turniermodus — Gruppenphase + K.o.-Runde — Auth',

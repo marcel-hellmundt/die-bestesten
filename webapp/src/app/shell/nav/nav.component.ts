@@ -50,8 +50,9 @@ export class NavComponent {
     label: 'Liga',
     icon: 'tabelle',
     items: [
-      { label: 'Spieltag',    icon: 'spieltag',    route: '/liga/spieltag' },
-      { label: 'Tabelle',     icon: 'tabelle',     route: '/liga/tabelle' },
+      { label: 'Spieltag',     icon: 'spieltag',     route: '/liga/spieltag' },
+      { label: 'Tabelle',      icon: 'tabelle',      route: '/liga/tabelle' },
+      { label: 'Powerranking', icon: 'powerranking', route: '/liga/powerranking' },
       ...(this.cache.h2hTournamentEverExisted() ? [{ label: 'H2H', icon: 'zap', route: '/liga/h2h' } as NavItem] : []),
       { label: 'Teams',       icon: 'kader',       route: '/liga/teams' },
       { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
