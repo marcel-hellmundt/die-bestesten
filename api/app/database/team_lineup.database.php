@@ -10,17 +10,35 @@ trait TeamLineupTrait
         $seasonId = $teamQ->fetchColumn();
         if (!$seasonId) return false;
 
+        $divisionId = $this->getLeagueDivisionId();
+
         // When no matchday requested, find current matchday and make sure this team's active
         // squad all have a lineup entry for it (self-healing per team/request — catches players
         // bought after another team's request already triggered the old one-shot init).
         if ($matchdayId === null) {
             $today = date('Y-m-d');
-            $curQ  = $this->con->prepare(
-                "SELECT id, number FROM matchday
-                 WHERE season_id = :sid AND start_date <= :today
-                 ORDER BY start_date DESC LIMIT 1"
-            );
-            $curQ->execute([':sid' => $seasonId, ':today' => $today]);
+
+            // matchday.number/start_date are only unique per (season_id, division_id) — each
+            // division runs its own schedule. Without scoping to the league's division here,
+            // a division with a later-started matchday in the same season would win the
+            // ORDER BY, handing this team a matchday_id that belongs to a foreign league.
+            if ($divisionId !== null) {
+                $curQ = $this->con->prepare(
+                    "SELECT id, number FROM matchday
+                     WHERE season_id = :sid AND division_id = :did AND start_date <= :today
+                     ORDER BY start_date DESC LIMIT 1"
+                );
+                $curQ->execute([':sid' => $seasonId, ':did' => $divisionId, ':today' => $today]);
+            } else {
+                $curQ = $this->con->prepare(
+                    "SELECT m.id, m.number FROM matchday m
+                     JOIN division d ON d.id = m.division_id
+                     WHERE m.season_id = :sid AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                       AND m.start_date <= :today
+                     ORDER BY m.start_date DESC LIMIT 1"
+                );
+                $curQ->execute([':sid' => $seasonId, ':today' => $today]);
+            }
             $currentMatchday = $curQ->fetch(PDO::FETCH_ASSOC);
 
             if ($currentMatchday) {
@@ -44,15 +62,29 @@ trait TeamLineupTrait
             return ['matchday' => null, 'matchdays' => [], 'nominated' => [], 'bench' => []];
         }
 
-        // Resolve matchday_ids to number + date (global DB), filter by season
+        // Resolve matchday_ids to number + date (global DB), filter by season AND division —
+        // team_lineup can still hold rows from a foreign division (legacy contamination from
+        // before the division scoping above existed, or any other write path); those must never
+        // surface as dropdown options here even though the row itself still exists.
         $ph = implode(',', array_fill(0, count($matchdayIds), '?'));
-        $mdListQ = $this->con->prepare(
-            "SELECT id, number, start_date, kickoff_date, completed
-             FROM matchday
-             WHERE season_id = ? AND id IN ($ph)
-             ORDER BY number ASC"
-        );
-        $mdListQ->execute(array_merge([$seasonId], $matchdayIds));
+        if ($divisionId !== null) {
+            $mdListQ = $this->con->prepare(
+                "SELECT id, number, start_date, kickoff_date, completed
+                 FROM matchday
+                 WHERE season_id = ? AND division_id = ? AND id IN ($ph)
+                 ORDER BY number ASC"
+            );
+            $mdListQ->execute(array_merge([$seasonId, $divisionId], $matchdayIds));
+        } else {
+            $mdListQ = $this->con->prepare(
+                "SELECT m.id, m.number, m.start_date, m.kickoff_date, m.completed
+                 FROM matchday m
+                 JOIN division d ON d.id = m.division_id
+                 WHERE m.season_id = ? AND d.level = 1 AND LOWER(d.country_id) = 'de' AND m.id IN ($ph)
+                 ORDER BY m.number ASC"
+            );
+            $mdListQ->execute(array_merge([$seasonId], $matchdayIds));
+        }
         $matchdays = $mdListQ->fetchAll(PDO::FETCH_ASSOC);
 
         // Resolve target matchday (given or current by start_date)
@@ -360,12 +392,19 @@ trait TeamLineupTrait
         $missing = array_filter($activePlayers, fn($pid) => !isset($existing[$pid]));
         if (empty($missing)) return;
 
+        // Scope to the same division as $matchdayId itself (not just season_id) — each division
+        // runs its own matchday numbering, so an unscoped lookup could pick a "number < X" match
+        // from a foreign division sharing this season.
+        $divisionQ = $this->con->prepare("SELECT division_id FROM matchday WHERE id = :id LIMIT 1");
+        $divisionQ->execute([':id' => $matchdayId]);
+        $divisionId = $divisionQ->fetchColumn();
+
         $prevQ = $this->con->prepare(
             "SELECT id FROM matchday
-             WHERE season_id = :sid AND number < :num
+             WHERE season_id = :sid AND division_id = :did AND number < :num
              ORDER BY number DESC LIMIT 1"
         );
-        $prevQ->execute([':sid' => $seasonId, ':num' => $matchdayNumber]);
+        $prevQ->execute([':sid' => $seasonId, ':did' => $divisionId, ':num' => $matchdayNumber]);
         $prevMatchdayId = $prevQ->fetchColumn() ?: null;
 
         $prevLineup = [];
