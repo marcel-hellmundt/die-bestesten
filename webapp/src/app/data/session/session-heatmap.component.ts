@@ -24,13 +24,12 @@ interface BucketColumn {
   label: string;
 }
 
-// Farbverlauf nach Gerätemix: 100% Desktop = Terracotta, 50/50 = Amber, 100% Mobile = Purple.
-// Reines RGB-Mischen der beiden Randfarben träfe nicht zuverlässig Amber, daher zwei
-// Interpolationsabschnitte (Desktop→Mixed, Mixed→Mobile) statt einer einzigen Mischung.
+// Farbverlauf nach Gerätemix: 100% Desktop = Tomato, 100% Mobile = Dodger Blue, direkt linear
+// gemischt dazwischen (kein eigener Anker für 50/50 nötig — der Mix ergibt bei diesen beiden
+// Randfarben einen unterscheidbaren Lavendel-Ton, kein trübes Grau wie bei Komplementärfarben).
 type Rgb = readonly [number, number, number];
-const DESKTOP_RGB: Rgb = [211, 72, 27];  // #d3481b terracotta
-const MIXED_RGB: Rgb   = [255, 162, 22]; // #ffa216 amber
-const MOBILE_RGB: Rgb  = [182, 76, 199]; // #b64cc7 purple
+const DESKTOP_RGB: Rgb = [255, 99, 72];  // #ff6348 tomato
+const MOBILE_RGB: Rgb  = [30, 144, 255]; // #1e90ff dodger blue
 
 // Gradient von 1s (10% Deckkraft) bis 60min (100%) — linear interpoliert, darüber hinaus
 // gedeckelt. Der hohe Startwert bei 1s sorgt dafür, dass "kurz online" sich klar von "gar nicht
@@ -190,9 +189,7 @@ export class SessionHeatmapComponent {
   }
 
   private hueForMobileFraction(fraction: number): Rgb {
-    return fraction <= 0.5
-      ? this.lerpRgb(DESKTOP_RGB, MIXED_RGB, fraction * 2)
-      : this.lerpRgb(MIXED_RGB, MOBILE_RGB, (fraction - 0.5) * 2);
+    return this.lerpRgb(DESKTOP_RGB, MOBILE_RGB, fraction);
   }
 
   cellColor(seconds: number, mobileFraction: number): string {
