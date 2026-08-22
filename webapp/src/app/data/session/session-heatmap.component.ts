@@ -139,8 +139,15 @@ export class SessionHeatmapComponent {
     return cols;
   });
 
+  private totalSeconds(m: HeatmapManager): number {
+    return Object.values(m.buckets).reduce((sum, s) => sum + s, 0);
+  }
+
+  // Absteigend nach Gesamtnutzung im Zeitraum, bei Gleichstand alphabetisch als stabiler Tiebreaker.
   managers = computed(() =>
-    [...(this.data()?.managers ?? [])].sort((a, b) => a.manager_name.localeCompare(b.manager_name)),
+    [...(this.data()?.managers ?? [])].sort((a, b) =>
+      this.totalSeconds(b) - this.totalSeconds(a) || a.manager_name.localeCompare(b.manager_name),
+    ),
   );
 
   seconds(m: HeatmapManager, bucketKey: string): number {

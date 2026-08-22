@@ -169,8 +169,15 @@ trait SessionTrait
                 'manager_name' => $manager['manager_name'],
                 'alias'        => $manager['alias'],
                 'buckets'      => $buckets,
+                '_total'       => array_sum($buckets),
             ];
         }
+
+        // Absteigend nach Gesamtnutzung im Zeitraum, bei Gleichstand alphabetisch als stabiler
+        // Tiebreaker (statt Zufallsreihenfolge durch array-Iteration).
+        usort($result, fn($a, $b) => $b['_total'] <=> $a['_total'] ?: strcmp($a['manager_name'], $b['manager_name']));
+        foreach ($result as &$r) unset($r['_total']);
+        unset($r);
 
         return ['range' => $range, 'managers' => $result];
     }
