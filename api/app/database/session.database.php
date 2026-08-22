@@ -15,6 +15,15 @@ trait SessionTrait
      * DISABLE_SESSION_TRACKING=true (nur im .env des jeweiligen Servers gesetzt, nicht committet)
      * schaltet das Tracking komplett ab — für den Dev-Server, damit Test-/Entwickler-Traffic nicht
      * in den Nutzungs-Heatmap-Report (GET /session) einfließt.
+     * Der SELECT-dann-INSERT/UPDATE-Ablauf ist nicht atomar — feuert das Frontend beim Laden
+     * mehrere authentifizierte Requests parallel ab (z.B. nav.component.ts's ensureMyTeam() /
+     * ensureH2HStatus() / ensureLeague() im selben Constructor), können zwei touchSession()-Aufrufe
+     * gleichzeitig in getrennten PHP-Prozessen den SELECT ausführen, bevor einer von beiden seinen
+     * INSERT geschrieben hat — Ergebnis: zwei Zeilen mit identischem started_at/ended_at (0s Dauer),
+     * die mergeIntervals() später zu einem einzigen Punkt zusammenfasst und dadurch die komplette
+     * Nutzungsdauer dieses Bursts verschluckt. Ein MySQL Advisory Lock pro Manager serialisiert
+     * konkurrierende Aufrufe für denselben Manager, ohne andere Manager oder den Rest des Requests
+     * zu blockieren.
      */
     public function touchSession(string $managerId): void
     {
@@ -22,35 +31,48 @@ trait SessionTrait
             return;
         }
 
-        [$deviceType, $os, $browser] = $this->parseUserAgent($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $lockName = 'manager_session_' . $managerId;
+        $lockQ = $this->con->prepare('SELECT GET_LOCK(?, 2)');
+        $lockQ->execute([$lockName]);
+        if (!$lockQ->fetchColumn()) {
+            // Lock nicht innerhalb 2s bekommen — Heartbeat für diesen Request überspringen statt
+            // die Anfrage zu blockieren; der nächste Request des Managers holt es nach.
+            return;
+        }
 
-        $find = $this->con->prepare(
-            "SELECT id, device_type, os, browser FROM manager_session
-             WHERE manager_id = :id AND ended_at >= (NOW() - INTERVAL 2 MINUTE)
-             ORDER BY ended_at DESC LIMIT 1"
-        );
-        $find->execute([':id' => $managerId]);
-        $open = $find->fetch(PDO::FETCH_ASSOC);
+        try {
+            [$deviceType, $os, $browser] = $this->parseUserAgent($_SERVER['HTTP_USER_AGENT'] ?? '');
 
-        $sameDevice = $open
-            && $open['device_type'] === $deviceType
-            && $open['os'] === $os
-            && $open['browser'] === $browser;
+            $find = $this->con->prepare(
+                "SELECT id, device_type, os, browser FROM manager_session
+                 WHERE manager_id = :id AND ended_at >= (NOW() - INTERVAL 2 MINUTE)
+                 ORDER BY ended_at DESC LIMIT 1"
+            );
+            $find->execute([':id' => $managerId]);
+            $open = $find->fetch(PDO::FETCH_ASSOC);
 
-        if ($sameDevice) {
-            $this->con->prepare(
-                "UPDATE manager_session SET ended_at = NOW() WHERE id = :id"
-            )->execute([':id' => $open['id']]);
-        } else {
-            $this->con->prepare(
-                "INSERT INTO manager_session (manager_id, device_type, os, browser)
-                 VALUES (:id, :device_type, :os, :browser)"
-            )->execute([
-                ':id'          => $managerId,
-                ':device_type' => $deviceType,
-                ':os'          => $os,
-                ':browser'     => $browser,
-            ]);
+            $sameDevice = $open
+                && $open['device_type'] === $deviceType
+                && $open['os'] === $os
+                && $open['browser'] === $browser;
+
+            if ($sameDevice) {
+                $this->con->prepare(
+                    "UPDATE manager_session SET ended_at = NOW() WHERE id = :id"
+                )->execute([':id' => $open['id']]);
+            } else {
+                $this->con->prepare(
+                    "INSERT INTO manager_session (manager_id, device_type, os, browser)
+                     VALUES (:id, :device_type, :os, :browser)"
+                )->execute([
+                    ':id'          => $managerId,
+                    ':device_type' => $deviceType,
+                    ':os'          => $os,
+                    ':browser'     => $browser,
+                ]);
+            }
+        } finally {
+            $this->con->prepare('SELECT RELEASE_LOCK(?)')->execute([$lockName]);
         }
     }
 

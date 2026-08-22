@@ -22,19 +22,17 @@ interface BucketColumn {
   label: string;
 }
 
-// Sequentielle Ein-Hue-Rampe (hell→dunkel = wenig→viel Nutzung), 4 feste Stufen statt eines
-// stetigen Verlaufs — leichter zu unterscheiden als ein kontinuierlicher Gradient.
-const LEVEL_COLORS = ['#cde2fb', '#86b6ef', '#3987e5', '#184f95'] as const;
+// Primärfarbe als Basis des Nutzungs-Gradienten — muss mit $color-accent in
+// styles/_variables.scss übereinstimmen (SCSS-Variablen sind hier nicht verfügbar).
+const HEATMAP_COLOR = '#bf1d00';
 
-// Absolute Sekunden-Schwellen je Zeitraum — an die maximal mögliche Bucket-Dauer angepasst
-// (eine Stunde kann max. 3600s enthalten, eine Wochen-Bucket im Jahresblick bis zu 7×86400s),
-// damit die Farbskala in jeder Ansicht tatsächlich ausgenutzt wird statt immer nur die
-// hellste Stufe zu zeigen.
-const RANGE_THRESHOLDS: Record<RangeKey, readonly [number, number, number]> = {
-  day:   [5 * 60, 20 * 60, 40 * 60],
-  month: [15 * 60, 60 * 60, 3 * 60 * 60],
-  year:  [60 * 60, 4 * 60 * 60, 12 * 60 * 60],
-};
+// Gradient von 1s (10% Deckkraft) bis 60min (100%, volle Primärfarbe) — linear interpoliert,
+// darüber hinaus gedeckelt. Der hohe Startwert bei 1s sorgt dafür, dass "kurz online" sich klar
+// von "gar nicht online" (0s, transparent) abhebt, statt in einer Farbskala fast unsichtbar zu sein.
+const GRADIENT_MIN_SECONDS = 1;
+const GRADIENT_MAX_SECONDS = 60 * 60;
+const GRADIENT_MIN_OPACITY = 0.1;
+const GRADIENT_MAX_OPACITY = 1;
 
 const RANGE_LABELS: Record<RangeKey, string> = {
   day: 'Tag', month: 'Monat', year: 'Jahr',
@@ -165,9 +163,10 @@ export class SessionHeatmapComponent {
 
   cellColor(seconds: number): string {
     if (seconds <= 0) return 'transparent';
-    const thresholds = RANGE_THRESHOLDS[this.range()];
-    const level = thresholds.filter(t => seconds >= t).length; // 0..3
-    return LEVEL_COLORS[level];
+    const clamped = Math.min(Math.max(seconds, GRADIENT_MIN_SECONDS), GRADIENT_MAX_SECONDS);
+    const t = (clamped - GRADIENT_MIN_SECONDS) / (GRADIENT_MAX_SECONDS - GRADIENT_MIN_SECONDS);
+    const opacity = GRADIENT_MIN_OPACITY + t * (GRADIENT_MAX_OPACITY - GRADIENT_MIN_OPACITY);
+    return `color-mix(in srgb, ${HEATMAP_COLOR} ${Math.round(opacity * 100)}%, transparent)`;
   }
 
   private tooltipText(m: HeatmapManager, col: BucketColumn): string {

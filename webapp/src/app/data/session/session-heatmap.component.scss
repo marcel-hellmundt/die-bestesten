@@ -91,6 +91,11 @@
   .heatmap__cell {
     aspect-ratio: unset;
     height: 32px;
+    border-radius: 0;
+    // Nur rechts/unten statt rundum — bei gap:0 grenzen sonst zwei 1px-Borders benachbarter
+    // Zellen aneinander und wirken wie ein 2px-Rand. Jede Zelle liefert die gemeinsame Linie zu
+    // ihrem rechten/unteren Nachbarn, wodurch überall nur 1px sichtbar ist.
+    border-width: 0 1px 1px 0;
   }
 }
 
