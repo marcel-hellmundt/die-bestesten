@@ -613,7 +613,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/sell',
-                        'description' => 'Spieler verkaufen: erstellt sell + transaction, schließt player_in_team, bereinigt team_lineup — Auth',
+                        'description' => 'Spieler verkaufen: erstellt sell + transaction, schließt player_in_team, bereinigt team_lineup des Spielers für alle noch nicht abgeschlossenen Spieltage (nicht nur den des Transferfensters) — Auth',
                         'body' => ['team_id' => 'UUID des Teams', 'player_id' => 'UUID des Spielers', 'transferwindow_id' => 'UUID des offenen Transferfensters'],
                     ],
                 ],
