@@ -77,7 +77,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/league/:id',
-                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) oder Strafen-Regelsatz setzen ({fine_ruleset: "classic"|"none"}) — Admin',
+                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) oder Strafen-Regelsatz setzen ({fine_ruleset: "classic"|"none"}) oder Powerranking an/aus schalten ({powerranking_enabled: bool}) — Admin',
                         'path_params' => [':id' => 'UUID der Liga'],
                         'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)', 'visibility' => '"public" oder "private"', 'fine_ruleset' => '"classic" (Kegelstrafen) oder "none" (keine Strafen)'],
                     ],
@@ -990,6 +990,25 @@ class Routing
                         'description' => 'Spieler von der Beobachtungsliste entfernen — Auth',
                         'path_params' => [':id' => 'UUID des Watchlist-Eintrags'],
                         'body' => ['team_id' => 'UUID des eigenen Teams'],
+                    ],
+                ],
+            ]),
+
+            new Route('powerranking', 'Powerranking', [
+                'title' => 'Powerranking',
+                'description' => 'Kicker-Stecktabelle: Manager tippen die Endreihenfolge der Fantasy-Teams der aktiven Saison — Auth; 403 wenn league.powerranking_enabled=false (siehe PATCH /league/:id)',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/powerranking',
+                        'description' => 'Vor Anpfiff Spieltag 1: { locked:false, season_id, kickoff_date, my_picks:[{team_id,position}] } — eigener Tipp, andere Tipps unsichtbar. Nach Anpfiff Spieltag 1 (oder mit ?preview=1 als Admin): { locked:bool, preview:bool, season_id, kickoff_date, standings:[{team_id,team_name,color,manager_name,season_id,total_points,actual_position}], entries:[{manager_id,manager_name,alias,total_deviation,picks:[{team_id,predicted_position,actual_position,deviation}]}] } sortiert nach total_deviation ASC — standings = aktuelle Live-Saisontabelle wie /team_rating/season; preview=true = Reveal-Ansicht wird nur wegen Admin-Vorschau vor dem eigentlichen Lock gezeigt (locked bleibt false); 403 wenn für die Liga deaktiviert — Auth',
+                        'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)', 'preview' => '"1" — Admin sieht die Reveal-Ansicht (alle Tipps + Tabelle) schon vor Anpfiff Spieltag 1; für Nicht-Admins wirkungslos'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/powerranking',
+                        'description' => 'Eigenen Tipp abgeben/überschreiben (ersetzt alle vorherigen Picks des Managers für diese Saison komplett) — nur vor Anpfiff Spieltag 1; 403 nach Anpfiff oder wenn für die Liga deaktiviert, 422 wenn picks nicht exakt eine 1..N-Permutation aller aktuellen Teams der Saison ist — Auth',
+                        'body' => ['season_id' => 'UUID der Saison', 'picks' => '[{team_id: UUID, position: INT (1..Teamanzahl, je einmal)}]'],
                     ],
                 ],
             ]),

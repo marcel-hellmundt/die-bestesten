@@ -26,7 +26,7 @@ export class DataCacheService {
   private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string; color: string | null; color_secondary: string | null } | null; loaded: boolean }>({ data: null, loaded: false });
   private squadState     = signal<{ players: any[]; loaded: boolean }>({ players: [], loaded: false });
   private lineupState    = signal<{ hasMatchday: boolean; nominated: any[]; loaded: boolean }>({ hasMatchday: false, nominated: [], loaded: false });
-  private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; fineRuleset: string | null; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, loaded: false });
+  private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; fineRuleset: string | null; powerrankingEnabled: boolean; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, loaded: false });
   private h2hStatusState = signal<{ exists: boolean; loaded: boolean }>({ exists: false, loaded: false });
 
   seasons        = computed(() => this.seasonsState().data);
@@ -48,6 +48,8 @@ export class DataCacheService {
   });
   // Default true (Strafen an) solange nicht geladen — entspricht dem DB-Default 'classic'.
   finesEnabled = computed(() => this.leagueState().fineRuleset !== 'none');
+  // Default true solange nicht geladen — entspricht dem DB-Default für league.powerranking_enabled.
+  powerrankingEnabled = computed(() => this.leagueState().powerrankingEnabled);
 
   // Fallback wie im Backend (getDivisionConfig()): höchste deutsche Division, falls die Liga keine division_id konfiguriert hat.
   private fallbackDivision = computed(() =>
@@ -141,13 +143,13 @@ export class DataCacheService {
   ensureLeague(): void {
     if (this.leagueState().loaded) return;
     this.api.get<any>('league/mine').subscribe({
-      next: data => this.leagueState.set({ id: data.id ?? null, slug: data.slug ?? null, name: data.name ?? null, divisionId: data.division_id ?? null, fineRuleset: data.fine_ruleset ?? null, loaded: true }),
-      error: ()   => this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, loaded: true }),
+      next: data => this.leagueState.set({ id: data.id ?? null, slug: data.slug ?? null, name: data.name ?? null, divisionId: data.division_id ?? null, fineRuleset: data.fine_ruleset ?? null, powerrankingEnabled: data.powerranking_enabled ?? true, loaded: true }),
+      error: ()   => this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, loaded: true }),
     });
   }
 
   invalidateLeague(): void {
-    this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, loaded: false });
+    this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, loaded: false });
   }
 
   h2hTournamentEverExisted = computed(() => this.h2hStatusState().exists);

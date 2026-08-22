@@ -31,6 +31,7 @@ require_once 'search.database.php';
 require_once 'notification.database.php';
 require_once 'watchlist.database.php';
 require_once 'h2h.database.php';
+require_once 'powerranking.database.php';
 require_once 'session.database.php';
 
 class Database
@@ -67,6 +68,7 @@ class Database
     use NotificationTrait;
     use WatchlistTrait;
     use H2HTrait;
+    use PowerrankingTrait;
     use SessionTrait;
 
     private $con;
@@ -190,6 +192,20 @@ class Database
             $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
         }
         return $q->fetchColumn() ?: 'classic';
+    }
+
+    protected function isPowerrankingEnabled(): bool
+    {
+        $leagueId = $GLOBALS['auth_league_id'] ?? null;
+        if ($leagueId) {
+            $q = $this->con->prepare("SELECT powerranking_enabled FROM league WHERE id = :id LIMIT 1");
+            $q->execute([':id' => $leagueId]);
+        } else {
+            $q = $this->con->prepare("SELECT powerranking_enabled FROM league WHERE db_name = :db_name LIMIT 1");
+            $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        }
+        $val = $q->fetchColumn();
+        return $val === false ? true : (bool) $val;
     }
 
     /**

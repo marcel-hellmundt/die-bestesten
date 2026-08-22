@@ -7,20 +7,22 @@ trait LeagueTrait
         $leagueId = $GLOBALS['auth_league_id'] ?? null;
         if ($leagueId) {
             $q = $this->con->prepare(
-                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id, l.fine_ruleset
+                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id, l.fine_ruleset, l.powerranking_enabled
                  FROM league l
                  WHERE l.id = :id LIMIT 1"
             );
             $q->execute([':id' => $leagueId]);
         } else {
             $q = $this->con->prepare(
-                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id, l.fine_ruleset
+                "SELECT l.id, l.slug, l.name, l.db_name, l.division_id, l.fine_ruleset, l.powerranking_enabled
                  FROM league l
                  WHERE l.db_name = :db_name LIMIT 1"
             );
             $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
         }
-        return $q->fetch(PDO::FETCH_ASSOC);
+        $league = $q->fetch(PDO::FETCH_ASSOC);
+        if ($league) $league['powerranking_enabled'] = (bool) $league['powerranking_enabled'];
+        return $league;
     }
 
     public function updateLeagueDivision(string $id, ?string $divisionId): void
@@ -41,6 +43,12 @@ trait LeagueTrait
         $q->execute([':fine_ruleset' => $ruleset, ':id' => $id]);
     }
 
+    public function updateLeaguePowerrankingEnabled(string $id, bool $enabled): void
+    {
+        $q = $this->con->prepare("UPDATE league SET powerranking_enabled = :enabled WHERE id = :id");
+        $q->execute([':enabled' => $enabled ? 1 : 0, ':id' => $id]);
+    }
+
     public function getLeagueList(): array
     {
         $query = $this->con->prepare("SELECT * FROM league ORDER BY name ASC");
@@ -50,8 +58,9 @@ trait LeagueTrait
         $activeSeasonId = $this->getActiveSeasonId();
 
         foreach ($leagues as &$league) {
-            $league['manager_count'] = $this->getLeagueManagerCount($league['id']);
-            $league['team_count']    = $activeSeasonId ? $this->getLeagueTeamCount($league['db_name'], $activeSeasonId) : 0;
+            $league['manager_count']        = $this->getLeagueManagerCount($league['id']);
+            $league['team_count']           = $activeSeasonId ? $this->getLeagueTeamCount($league['db_name'], $activeSeasonId) : 0;
+            $league['powerranking_enabled'] = (bool) $league['powerranking_enabled'];
         }
 
         return $leagues;
@@ -63,8 +72,9 @@ trait LeagueTrait
         $query->execute([':id' => $id]);
         $league = $query->fetch(PDO::FETCH_ASSOC);
         if ($league) {
-            $league['manager_count'] = $this->getLeagueManagerCount($id);
-            $league['teams']         = $this->getLeagueTeamList($league['db_name']);
+            $league['manager_count']        = $this->getLeagueManagerCount($id);
+            $league['teams']                = $this->getLeagueTeamList($league['db_name']);
+            $league['powerranking_enabled'] = (bool) $league['powerranking_enabled'];
         }
         return $league;
     }
