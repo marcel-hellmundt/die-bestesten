@@ -29,7 +29,7 @@
               }
             </select>
           } @else {
-            <div class="mobile-formation__box">{{ formationLabel(formation()) }}</div>
+            <div class="mobile-formation__box" [class.mobile-formation__box--valid]="isFormationValid()">{{ formationLabel(formation()) }}</div>
           }
         </div>
       </div>

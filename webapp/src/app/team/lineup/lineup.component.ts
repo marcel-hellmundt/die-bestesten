@@ -218,6 +218,13 @@ export class LineupComponent {
     if (f) this.selectFormation(f);
   }
 
+  // True once all slots of one of the 7 formations are actually filled (11 nominated), not
+  // just "reachable" mid-build — used to color the mobile formation box green vs. red.
+  isFormationValid(): boolean {
+    const cur = this.formation();
+    return this.validFormations.some(f => f.every((v, i) => v === cur[i]));
+  }
+
   getPlayersByPosition(pos: string): LineupPlayer[] {
     return this.nominated().filter(p => p.position === pos);
   }

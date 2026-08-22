@@ -710,7 +710,8 @@ $mobile-nav-height: 64px;
 
   // Shown once at least one player is nominated (formation is fixed, chips/select would no
   // longer do anything — see selectFormation()) — same visual language as .formation-chip
-  // in its active state, just not interactive.
+  // in its active state, just not interactive. Red by default (incomplete/invalid — not all
+  // 11 slots filled yet); green once isFormationValid() confirms a complete, valid shape.
   &__box {
     padding: 6px 12px;
     background: rgba(191, 29, 0, 0.06);
@@ -722,6 +723,12 @@ $mobile-nav-height: 64px;
     color: $color-accent;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+
+    &--valid {
+      background: rgba(22, 163, 74, 0.08);
+      border-color: $color-success;
+      color: $color-success;
+    }
   }
 }
 
