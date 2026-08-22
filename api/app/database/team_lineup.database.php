@@ -244,8 +244,21 @@ trait TeamLineupTrait
 
     public function getPlayerLineup(string $playerId, string $seasonId): array
     {
-        $mq = $this->con->prepare("SELECT id, number FROM matchday WHERE season_id = ?");
-        $mq->execute([$seasonId]);
+        // Same division scoping as getTeamLineup() — matchday.number is only unique per
+        // (season_id, division_id), so an unscoped lookup could resolve a foreign division's
+        // matchday to a colliding number, or (pre-cleanup) surface stale cross-division rows.
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $mq = $this->con->prepare("SELECT id, number FROM matchday WHERE season_id = ? AND division_id = ?");
+            $mq->execute([$seasonId, $divisionId]);
+        } else {
+            $mq = $this->con->prepare(
+                "SELECT m.id, m.number FROM matchday m
+                 JOIN division d ON d.id = m.division_id
+                 WHERE m.season_id = ? AND d.level = 1 AND LOWER(d.country_id) = 'de'"
+            );
+            $mq->execute([$seasonId]);
+        }
         $matchdays = $mq->fetchAll(PDO::FETCH_ASSOC);
         $mdMap = [];
         foreach ($matchdays as $m) $mdMap[$m['id']] = (int) $m['number'];
