@@ -4,12 +4,18 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else if (!response()) {
   <p class="state-msg">Keine aktive Saison.</p>
-} @else if (!locked()) {
+} @else if (!showReveal()) {
   <p class="page-subtitle">
     Tippe die Reihenfolge, in der die Teams die Saison beenden werden. Bis zum Anpfiff von
     Spieltag 1 kannst du deinen Tipp beliebig oft ändern — danach ist er gesperrt und für alle
     anderen Manager sichtbar.
   </p>
+
+  @if (isAdmin) {
+    <button type="button" class="btn btn-sm btn-ghost pr-preview-btn" (click)="openPreview()">
+      Bisherige Tipps aller Manager ansehen
+    </button>
+  }
 
   @if (teamsLoading() || order().length === 0) {
     <p class="state-msg">Laden…</p>
@@ -47,11 +53,23 @@
       }
     </div>
   }
+} @else if (!locked() && previewLoading()) {
+  <p class="state-msg">Laden…</p>
 } @else {
-  <p class="page-subtitle">
-    Spieltag 1 hat angepfiffen — alle Tipps sind jetzt sichtbar. Die Tabelle entwickelt sich live
-    mit dem Saisonverlauf weiter.
-  </p>
+  @if (!locked()) {
+    <div class="pr-preview-banner">
+      <span>
+        Admin-Vorschau — Spieltag 1 hat noch nicht angepfiffen, andere Manager sehen diese
+        Ansicht noch nicht.
+      </span>
+      <button type="button" class="btn btn-sm btn-ghost" (click)="closePreview()">Zurück zum eigenen Tipp</button>
+    </div>
+  } @else {
+    <p class="page-subtitle">
+      Spieltag 1 hat angepfiffen — alle Tipps sind jetzt sichtbar. Die Tabelle entwickelt sich live
+      mit dem Saisonverlauf weiter.
+    </p>
+  }
 
   <div class="table-section-title">Rangliste nach Tipp-Genauigkeit</div>
   <div class="table-container">

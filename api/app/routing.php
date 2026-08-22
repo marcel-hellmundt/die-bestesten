@@ -1001,8 +1001,8 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/powerranking',
-                        'description' => 'Vor Anpfiff Spieltag 1: { locked:false, season_id, kickoff_date, my_picks:[{team_id,position}] } — eigener Tipp, andere Tipps unsichtbar. Nach Anpfiff Spieltag 1: { locked:true, season_id, kickoff_date, standings:[{team_id,team_name,color,manager_name,season_id,total_points,actual_position}], entries:[{manager_id,manager_name,alias,total_deviation,picks:[{team_id,predicted_position,actual_position,deviation}]}] } sortiert nach total_deviation ASC — standings = aktuelle Live-Saisontabelle wie /team_rating/season; 403 wenn für die Liga deaktiviert — Auth',
-                        'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
+                        'description' => 'Vor Anpfiff Spieltag 1: { locked:false, season_id, kickoff_date, my_picks:[{team_id,position}] } — eigener Tipp, andere Tipps unsichtbar. Nach Anpfiff Spieltag 1 (oder mit ?preview=1 als Admin): { locked:bool, preview:bool, season_id, kickoff_date, standings:[{team_id,team_name,color,manager_name,season_id,total_points,actual_position}], entries:[{manager_id,manager_name,alias,total_deviation,picks:[{team_id,predicted_position,actual_position,deviation}]}] } sortiert nach total_deviation ASC — standings = aktuelle Live-Saisontabelle wie /team_rating/season; preview=true = Reveal-Ansicht wird nur wegen Admin-Vorschau vor dem eigentlichen Lock gezeigt (locked bleibt false); 403 wenn für die Liga deaktiviert — Auth',
+                        'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)', 'preview' => '"1" — Admin sieht die Reveal-Ansicht (alle Tipps + Tabelle) schon vor Anpfiff Spieltag 1; für Nicht-Admins wirkungslos'],
                     ],
                     [
                         'method' => 'POST',

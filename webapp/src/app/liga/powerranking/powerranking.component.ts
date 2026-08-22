@@ -35,6 +35,7 @@ interface PowerrankingEntry {
 
 interface PowerrankingResponse {
   locked: boolean;
+  preview?: boolean;
   season_id: string;
   kickoff_date: string | null;
   my_picks?: { team_id: string; position: number }[];
@@ -53,6 +54,7 @@ export class PowerrankingComponent {
   private auth = inject(AuthService);
 
   myManagerId = this.auth.getManagerId();
+  isAdmin = this.auth.isAdmin();
 
   private reloadTrigger = signal(0);
   reload(): void { this.reloadTrigger.update(v => v + 1); }
@@ -74,11 +76,37 @@ export class PowerrankingComponent {
   error    = computed(() => this.state().error);
   locked   = computed(() => this.response()?.locked ?? false);
 
+  // Admin-Vorschau der Reveal-Ansicht (Tabelle + alle bisherigen Tipps) schon während der
+  // laufenden Tippphase — eigener, separat geladener Zustand, der nichts an `response()`
+  // (dem echten Sperrstatus) ändert.
+  private previewData    = signal<PowerrankingResponse | null>(null);
+  previewLoading = signal(false);
+  showingPreview = signal(false);
+
+  openPreview(): void {
+    this.showingPreview.set(true);
+    if (this.previewData() || this.previewLoading()) return;
+    this.previewLoading.set(true);
+    this.api.get<PowerrankingResponse>('powerranking?preview=1').subscribe({
+      next: data => { this.previewData.set(data); this.previewLoading.set(false); },
+      error: () => { this.previewLoading.set(false); this.showingPreview.set(false); },
+    });
+  }
+
+  closePreview(): void {
+    this.showingPreview.set(false);
+  }
+
+  // Zeigt die Reveal-Ansicht entweder weil wirklich gesperrt, oder weil ein Admin sich die
+  // Vorschau angesehen hat; Quelle der Reveal-Daten entsprechend `response()` oder `previewData()`.
+  showReveal = computed(() => this.locked() || this.showingPreview());
+  private revealData = computed(() => this.locked() ? this.response() : this.previewData());
+
   // Team-Info-Map aus der Reveal-Antwort — genug, um Trikot/Name/Verein in jedem Tipp-Board
   // nachzuschlagen, ohne einen zweiten Request pro Board zu brauchen
   private teamInfoById = computed(() => {
     const map = new Map<string, PowerrankingStanding>();
-    for (const s of this.response()?.standings ?? []) map.set(s.team_id, s);
+    for (const s of this.revealData()?.standings ?? []) map.set(s.team_id, s);
     return map;
   });
 
@@ -86,10 +114,10 @@ export class PowerrankingComponent {
     return this.teamInfoById().get(teamId);
   }
 
-  standings = computed(() => this.response()?.standings ?? []);
+  standings = computed(() => this.revealData()?.standings ?? []);
 
   entries = computed(() =>
-    (this.response()?.entries ?? []).map(e => ({
+    (this.revealData()?.entries ?? []).map(e => ({
       ...e,
       picks: [...e.picks].sort((a, b) => a.predicted_position - b.predicted_position).map(PowerrankingPick.from),
     })),

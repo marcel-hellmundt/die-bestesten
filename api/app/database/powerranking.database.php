@@ -25,7 +25,14 @@ trait PowerrankingTrait
         return ['kickoff_date' => $row['kickoff_date'] ?? null, 'locked' => $row ? (bool) $row['locked'] : false];
     }
 
-    public function getPowerrankingState(string $seasonId, string $managerId): array
+    /**
+     * $preview (nur vom Controller für Admins gesetzt, siehe PowerrankingController::get()) zeigt
+     * die Reveal-Ansicht (Tabelle + alle Tipps) bereits vor Anpfiff Spieltag 1 an — für Admins, die
+     * während der laufenden Tippphase kontrollieren wollen, was Manager bisher abgegeben haben.
+     * `locked` im Response bleibt der echte Sperrstatus; `preview` markiert zusätzlich, dass die
+     * Reveal-Daten nur wegen des Admin-Previews gezeigt werden, obwohl noch nicht gesperrt ist.
+     */
+    public function getPowerrankingState(string $seasonId, string $managerId, bool $preview = false): array
     {
         if (!$this->isPowerrankingEnabled()) {
             http_response_code(403);
@@ -34,7 +41,7 @@ trait PowerrankingTrait
 
         $status = $this->getMatchday1LockStatus($seasonId);
 
-        if (!$status['locked']) {
+        if (!$status['locked'] && !$preview) {
             $q = $this->con_league->prepare(
                 "SELECT team_id, position FROM powerranking_pick
                  WHERE season_id = :sid AND manager_id = :mid ORDER BY position ASC"
@@ -87,7 +94,8 @@ trait PowerrankingTrait
             $a['total_deviation'] <=> $b['total_deviation'] ?: strcmp($a['manager_name'], $b['manager_name']));
 
         return [
-            'locked' => true, 'season_id' => $seasonId, 'kickoff_date' => $status['kickoff_date'],
+            'locked' => $status['locked'], 'preview' => !$status['locked'] && $preview,
+            'season_id' => $seasonId, 'kickoff_date' => $status['kickoff_date'],
             'standings' => $standings, 'entries' => $entries,
         ];
     }

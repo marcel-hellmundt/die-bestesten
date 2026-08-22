@@ -15,7 +15,9 @@ class PowerrankingController extends _BaseController
             http_response_code(404);
             return ['status' => false, 'message' => 'Keine aktive Saison'];
         }
-        return $this->db->getPowerrankingState($seasonId, $GLOBALS['auth_manager_id']);
+
+        $preview = ($this->params['preview'] ?? '') === '1' && $this->isAdmin();
+        return $this->db->getPowerrankingState($seasonId, $GLOBALS['auth_manager_id'], $preview);
     }
 
     protected function post(): mixed
