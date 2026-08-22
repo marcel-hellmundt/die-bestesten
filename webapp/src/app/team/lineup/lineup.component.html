@@ -9,15 +9,29 @@
 
     <!-- PITCH -->
     <div class="field-wrap">
-      <div class="matchday-select-wrap matchday-select-wrap--mobile">
-        <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
-          @for (md of matchdays(); track md.id) {
-            <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
+      <div class="mobile-top-row">
+        <div class="matchday-select-wrap matchday-select-wrap--mobile">
+          <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
+            @for (md of matchdays(); track md.id) {
+              <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
+            }
+          </select>
+          @if (saving()) {
+            <span class="saving-indicator">Speichern…</span>
           }
-        </select>
-        @if (saving()) {
-          <span class="saving-indicator">Speichern…</span>
-        }
+        </div>
+
+        <div class="mobile-formation">
+          @if (nominated().length === 0 && isEditable()) {
+            <select class="mobile-formation__select" (change)="onFormationSelect($any($event.target).value)">
+              @for (f of validFormations; track formationLabel(f)) {
+                <option [value]="formationLabel(f)" [selected]="isFormationActive(f)">{{ formationLabel(f) }}</option>
+              }
+            </select>
+          } @else {
+            <div class="mobile-formation__box">{{ formationLabel(formation()) }}</div>
+          }
+        </div>
       </div>
 
       <div class="field" [class.field--editable]="isEditable()">
@@ -149,7 +163,7 @@
         </div>
       }
 
-      <div class="sidebar-block">
+      <div class="sidebar-block desktop-formation">
         <h3 class="sidebar-title">Formation</h3>
         <div class="formations">
           @for (f of validFormations; track formationLabel(f)) {

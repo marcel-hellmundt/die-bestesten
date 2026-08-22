@@ -460,6 +460,13 @@ $mobile-nav-height: 64px;
   }
 }
 
+// Replaced on mobile by .mobile-formation next to the matchday select above the pitch.
+.desktop-formation {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
 .desktop-bench {
   @media (max-width: $mobile-breakpoint) {
     display: none;
@@ -653,7 +660,8 @@ $mobile-nav-height: 64px;
   gap: $space-3;
 
   &--mobile {
-    margin-bottom: $space-3;
+    flex: 1;
+    min-width: 0;
 
     @media (min-width: #{$mobile-breakpoint + 1px}) {
       display: none;
@@ -664,6 +672,53 @@ $mobile-nav-height: 64px;
     @media (max-width: $mobile-breakpoint) {
       display: none;
     }
+  }
+}
+
+// Matchday select + formation display side by side above the pitch, mobile only —
+// desktop keeps both in their usual spots (matchday select + .desktop-formation in the
+// sidebar).
+.mobile-top-row {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    margin-bottom: $space-3;
+  }
+}
+
+.mobile-formation {
+  flex-shrink: 0;
+
+  &__select {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+    padding: $space-1 $space-6 $space-1 $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    background-color: $color-surface;
+    color: $color-text;
+    cursor: pointer;
+  }
+
+  // Shown once at least one player is nominated (formation is fixed, chips/select would no
+  // longer do anything — see selectFormation()) — same visual language as .formation-chip
+  // in its active state, just not interactive.
+  &__box {
+    padding: 6px 12px;
+    background: rgba(191, 29, 0, 0.06);
+    border: 1px solid $color-accent;
+    border-radius: $radius-md;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    letter-spacing: 2px;
+    color: $color-accent;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 }
 

@@ -212,6 +212,12 @@ export class LineupComponent {
     this.manualEmptyFormation.set(f);
   }
 
+  // Mobile formation <select> only has the label string to work with (native <option value>).
+  onFormationSelect(label: string): void {
+    const f = this.validFormations.find(f => this.formationLabel(f) === label);
+    if (f) this.selectFormation(f);
+  }
+
   getPlayersByPosition(pos: string): LineupPlayer[] {
     return this.nominated().filter(p => p.position === pos);
   }
