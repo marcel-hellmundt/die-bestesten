@@ -5,21 +5,28 @@ trait SessionTrait
     /**
      * Approximate session-duration heartbeat. Called on every authenticated request
      * (Guard::authorize()). Extends the manager's most recent session if it ended less than
-     * 30 seconds ago AND the request comes from the same device (device_type/os/browser aus dem
+     * 2 minutes ago AND the request comes from the same device (device_type/os/browser aus dem
      * User-Agent), otherwise starts a new one. Verhindert, dass z.B. ein schneller Wechsel von
-     * Handy auf Desktop die mobile Session weiterführt, nur weil die Lücke < 30s war — ein
+     * Handy auf Desktop die mobile Session weiterführt, nur weil die Lücke klein war — ein
      * Geräte-/Browser-Wechsel beendet die vorherige Session immer, unabhängig vom Zeitabstand.
      * Uses SELECT-then-branch rather than relying on UPDATE's affected-row count, since ended_at
      * can legitimately already equal NOW() (same second) — see setPlayerPhotoUploaded() for the
      * same rowCount() pitfall elsewhere.
+     * DISABLE_SESSION_TRACKING=true (nur im .env des jeweiligen Servers gesetzt, nicht committet)
+     * schaltet das Tracking komplett ab — für den Dev-Server, damit Test-/Entwickler-Traffic nicht
+     * in den Nutzungs-Heatmap-Report (GET /session) einfließt.
      */
     public function touchSession(string $managerId): void
     {
+        if (($_ENV['DISABLE_SESSION_TRACKING'] ?? '') === 'true') {
+            return;
+        }
+
         [$deviceType, $os, $browser] = $this->parseUserAgent($_SERVER['HTTP_USER_AGENT'] ?? '');
 
         $find = $this->con->prepare(
             "SELECT id, device_type, os, browser FROM manager_session
-             WHERE manager_id = :id AND ended_at >= (NOW() - INTERVAL 30 SECOND)
+             WHERE manager_id = :id AND ended_at >= (NOW() - INTERVAL 2 MINUTE)
              ORDER BY ended_at DESC LIMIT 1"
         );
         $find->execute([':id' => $managerId]);
