@@ -132,10 +132,17 @@ trait SessionTrait
      * started_at zugeschlagen — eine per Heartbeat über Stunden-/Tagesgrenzen hinweg verlängerte
      * Session würde sonst ihre gesamte Dauer in einem einzigen Bucket zeigen.
      * Zusätzlich zu `buckets` (Gesamtsekunden, geräteübergreifend gemergt) liefert jeder Manager
-     * `mobile_seconds` — dieselbe Bucket-Aufteilung, aber nur für Intervalle mit device_type
-     * mobile/tablet, separat gemerged (Tablet zählt hier als Mobile). Frontend bildet daraus
-     * einen Mobile-Anteil (mobile_seconds / buckets) für die Färbung nach Gerätemix; Manager mit
-     * unbekanntem device_type (z.B. exotischer User-Agent) zählen als Desktop.
+     * `mobile_seconds` und `desktop_seconds` — dieselbe Bucket-Aufteilung, aber jeweils nur für
+     * Intervalle der einen Gerätekategorie, separat gemerged (Tablet zählt als Mobile; unbekannter
+     * device_type als Desktop). Frontend bildet daraus einen Mobile-Anteil
+     * mobile_seconds / (mobile_seconds + desktop_seconds) für die Färbung nach Gerätemix — bewusst
+     * NICHT gegen `buckets` (den geräteübergreifend deduplizierten Gesamtwert), da dieser bei
+     * gleichzeitiger Mehrgeräte-Nutzung kleiner ist als die Summe der Einzelgeräte-Zeiten und den
+     * Mobile-Anteil sonst künstlich auf bis zu 100% hochziehen würde, obwohl auch Desktop parallel
+     * lief (Beispiel: Mobile 10:00–10:30, zeitgleich Desktop 10:00–10:15 → buckets=30min,
+     * mobile_seconds=30min, desktop_seconds=15min; Anteil = 30/(30+15) = 66,7% statt fälschlich
+     * 30/30 = 100%). mobile_seconds + desktop_seconds ist dadurch immer ≥ buckets, nie kleiner —
+     * die Opacity/Dauer-Anzeige (die weiterhin `buckets` nutzt) bleibt davon unberührt.
      */
     public function getSessionHeatmap(string $range = 'day'): array
     {
@@ -170,11 +177,12 @@ trait SessionTrait
         foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
             if (!isset($managers[$r['manager_id']])) {
                 $managers[$r['manager_id']] = [
-                    'manager_id'      => $r['manager_id'],
-                    'manager_name'    => $r['manager_name'],
-                    'alias'           => $r['alias'],
-                    'intervals'       => [],
-                    'mobileIntervals' => [],
+                    'manager_id'       => $r['manager_id'],
+                    'manager_name'     => $r['manager_name'],
+                    'alias'            => $r['alias'],
+                    'intervals'        => [],
+                    'mobileIntervals'  => [],
+                    'desktopIntervals' => [],
                 ];
             }
 
@@ -182,32 +190,23 @@ trait SessionTrait
             $managers[$r['manager_id']]['intervals'][] = $interval;
             if (in_array($r['device_type'], ['mobile', 'tablet'], true)) {
                 $managers[$r['manager_id']]['mobileIntervals'][] = $interval;
+            } else {
+                $managers[$r['manager_id']]['desktopIntervals'][] = $interval;
             }
         }
 
         $result = [];
         foreach ($managers as $manager) {
-            $buckets = [];
-            foreach ($this->mergeIntervals($manager['intervals']) as [$start, $end]) {
-                foreach ($this->splitSessionIntoBuckets($start, $end, $range) as $bucketKey => $seconds) {
-                    $buckets[$bucketKey] = ($buckets[$bucketKey] ?? 0) + $seconds;
-                }
-            }
-
-            $mobileSeconds = [];
-            foreach ($this->mergeIntervals($manager['mobileIntervals']) as [$start, $end]) {
-                foreach ($this->splitSessionIntoBuckets($start, $end, $range) as $bucketKey => $seconds) {
-                    $mobileSeconds[$bucketKey] = ($mobileSeconds[$bucketKey] ?? 0) + $seconds;
-                }
-            }
+            $buckets = $this->bucketizeIntervals($manager['intervals'], $range);
 
             $result[] = [
-                'manager_id'     => $manager['manager_id'],
-                'manager_name'   => $manager['manager_name'],
-                'alias'          => $manager['alias'],
-                'buckets'        => $buckets,
-                'mobile_seconds' => $mobileSeconds,
-                '_total'         => array_sum($buckets),
+                'manager_id'      => $manager['manager_id'],
+                'manager_name'    => $manager['manager_name'],
+                'alias'           => $manager['alias'],
+                'buckets'         => $buckets,
+                'mobile_seconds'  => $this->bucketizeIntervals($manager['mobileIntervals'], $range),
+                'desktop_seconds' => $this->bucketizeIntervals($manager['desktopIntervals'], $range),
+                '_total'          => array_sum($buckets),
             ];
         }
 
@@ -218,6 +217,18 @@ trait SessionTrait
         unset($r);
 
         return ['range' => $range, 'managers' => $result];
+    }
+
+    /** Merged $intervals (siehe mergeIntervals) und summiert sie pro Bucket (siehe splitSessionIntoBuckets). */
+    private function bucketizeIntervals(array $intervals, string $range): array
+    {
+        $buckets = [];
+        foreach ($this->mergeIntervals($intervals) as [$start, $end]) {
+            foreach ($this->splitSessionIntoBuckets($start, $end, $range) as $bucketKey => $seconds) {
+                $buckets[$bucketKey] = ($buckets[$bucketKey] ?? 0) + $seconds;
+            }
+        }
+        return $buckets;
     }
 
     /**

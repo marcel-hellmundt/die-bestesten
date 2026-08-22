@@ -9,8 +9,9 @@ interface HeatmapManager {
   manager_id: string;
   manager_name: string;
   alias: string | null;
-  buckets: Record<string, number>; // Bucket-Schlüssel (siehe RANGE_CONFIG) -> Sekunden gesamt
-  mobile_seconds: Record<string, number>; // dieselben Buckets, nur Anteil mobile/tablet
+  buckets: Record<string, number>; // Bucket-Schlüssel (siehe RANGE_CONFIG) -> Sekunden gesamt (geräteübergreifend dedupliziert)
+  mobile_seconds: Record<string, number>; // dieselben Buckets, nur Intervalle mobile/tablet, separat dedupliziert
+  desktop_seconds: Record<string, number>; // dieselben Buckets, nur Intervalle desktop/unbekannt, separat dedupliziert
 }
 
 interface HeatmapResponse {
@@ -23,14 +24,13 @@ interface BucketColumn {
   label: string;
 }
 
-// Farbverlauf nach Gerätemix: 100% Desktop = Blau, 50/50 = Gelb, 100% Mobile = Rot (= bestehende
-// Primärfarbe $color-accent, hier hartkodiert da SCSS-Variablen in TS nicht verfügbar sind).
-// Reines RGB-Mischen von Blau und Rot ergäbe ein trübes Lila statt Gelb, daher zwei
-// Interpolationsabschnitte (Blau→Gelb, Gelb→Rot) statt einer einzigen Mischung.
+// Farbverlauf nach Gerätemix: 100% Desktop = Terracotta, 50/50 = Amber, 100% Mobile = Purple.
+// Reines RGB-Mischen der beiden Randfarben träfe nicht zuverlässig Amber, daher zwei
+// Interpolationsabschnitte (Desktop→Mixed, Mixed→Mobile) statt einer einzigen Mischung.
 type Rgb = readonly [number, number, number];
-const DESKTOP_RGB: Rgb = [37, 99, 235];
-const MIXED_RGB: Rgb   = [234, 179, 8];
-const MOBILE_RGB: Rgb  = [191, 29, 0];
+const DESKTOP_RGB: Rgb = [211, 72, 27];  // #d3481b terracotta
+const MIXED_RGB: Rgb   = [255, 162, 22]; // #ffa216 amber
+const MOBILE_RGB: Rgb  = [182, 76, 199]; // #b64cc7 purple
 
 // Gradient von 1s (10% Deckkraft) bis 60min (100%) — linear interpoliert, darüber hinaus
 // gedeckelt. Der hohe Startwert bei 1s sorgt dafür, dass "kurz online" sich klar von "gar nicht
@@ -158,14 +158,18 @@ export class SessionHeatmapComponent {
     return m.buckets[bucketKey] ?? 0;
   }
 
-  // Anteil mobile/tablet an der Gesamtnutzung dieses Buckets, geklemmt auf [0,1] — bei
-  // gleichzeitiger Mehrgeräte-Nutzung kann mobile_seconds > buckets liegen (siehe Backend-Doc),
-  // 0.5 (neutral/Gelb) als Fallback, falls total 0 ist (Farbe wird dann ohnehin nie benutzt).
+  // Anteil mobile/tablet an der Gerätenutzung dieses Buckets. Nenner ist bewusst
+  // mobile_seconds + desktop_seconds (Summe der pro Gerät unabhängig deduplizierten Zeiten), nicht
+  // buckets (der geräteübergreifend deduplizierte Gesamtwert) — bei gleichzeitiger
+  // Mehrgeräte-Nutzung wäre der Anteil sonst künstlich zu hoch (siehe Backend-Doc,
+  // SessionTrait::getSessionHeatmap). 0.5 (neutral/Gelb) als Fallback, falls beide 0 sind (Farbe
+  // wird dann ohnehin nie benutzt, da seconds() für diesen Bucket dann auch 0 ist).
   mobileFraction(m: HeatmapManager, bucketKey: string): number {
-    const total = m.buckets[bucketKey] ?? 0;
-    if (total <= 0) return 0.5;
     const mobile = m.mobile_seconds[bucketKey] ?? 0;
-    return Math.min(1, Math.max(0, mobile / total));
+    const desktop = m.desktop_seconds[bucketKey] ?? 0;
+    const denom = mobile + desktop;
+    if (denom <= 0) return 0.5;
+    return Math.min(1, Math.max(0, mobile / denom));
   }
 
   formatDuration(seconds: number): string {
