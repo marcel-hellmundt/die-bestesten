@@ -209,7 +209,7 @@ PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen m
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
 GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool, h2h_draw: bool}; fehlende DB-Einträge = true (default ON) — Auth
 PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|h2h_draw, enabled: bool} — Auth
-GET      /session               — ?range=day|month|year (optional, default day) → {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden}}]} — Nutzungsdauer je Manager gebucketed nach Zeitraum (Heatmap-Rohdaten); Bucket-Schlüssel: day=Stunde "YYYY-MM-DDTHH:00:00", month=Tag "YYYY-MM-DD", year=Montag der Woche "YYYY-MM-DD" — Admin
+GET      /session               — ?range=day|month|year (optional, default day) → {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden},mobile_seconds:{key:Sekunden},desktop_seconds:{key:Sekunden}}]} sortiert nach Gesamtnutzung DESC — Nutzungsdauer je Manager gebucketed nach Zeitraum (Heatmap-Rohdaten); Bucket-Schlüssel: day=Stunde "YYYY-MM-DDTHH:00:00", month=Tag "YYYY-MM-DD", year=Montag der Woche "YYYY-MM-DD"; mobile_seconds/desktop_seconds = dieselben Buckets, aber nur je eine Gerätekategorie (device_type mobile/tablet bzw. desktop/unbekannt), unabhängig voneinander dedupliziert — Mobile-Anteil für die Heatmap-Färbung ist mobile_seconds/(mobile_seconds+desktop_seconds), nicht gegen buckets (kann bei gleichzeitiger Mehrgeräte-Nutzung > buckets-Wert liegen) — Admin
 ```
 
 ## Global-DB — Manager-Tabellen (`database/global_schema.sql`)

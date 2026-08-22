@@ -161,7 +161,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/session',
-                        'description' => 'Nutzungsdauer je Manager, gebucketed nach Zeitraum (Heatmap-Rohdaten) — {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden}}]}; buckets-Schlüssel je range: day="YYYY-MM-DDTHH:00:00" (Stunde), month="YYYY-MM-DD" (Tag), year="YYYY-MM-DD" (Montag der Woche) — Admin',
+                        'description' => 'Nutzungsdauer je Manager, gebucketed nach Zeitraum (Heatmap-Rohdaten) — {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden},mobile_seconds:{key:Sekunden},desktop_seconds:{key:Sekunden}}]} sortiert nach Gesamtnutzung DESC; buckets-Schlüssel je range: day="YYYY-MM-DDTHH:00:00" (Stunde), month="YYYY-MM-DD" (Tag), year="YYYY-MM-DD" (Montag der Woche); mobile_seconds/desktop_seconds = dieselben Buckets, aber je nur eine Gerätekategorie (device_type mobile/tablet bzw. desktop/unbekannt), unabhängig voneinander dedupliziert; Mobile-Anteil für Färbung = mobile_seconds/(mobile_seconds+desktop_seconds), nicht gegen buckets (kann bei gleichzeitiger Mehrgeräte-Nutzung > buckets-Wert liegen) — Admin',
                         'query_params' => ['range' => '"day" (letzte 24h, stündlich, default) | "month" (letzte 30 Tage, täglich) | "year" (letzte 52 Wochen, wöchentlich)'],
                     ],
                 ],

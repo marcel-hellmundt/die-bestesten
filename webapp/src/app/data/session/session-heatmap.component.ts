@@ -9,7 +9,9 @@ interface HeatmapManager {
   manager_id: string;
   manager_name: string;
   alias: string | null;
-  buckets: Record<string, number>; // Bucket-Schlüssel (siehe RANGE_CONFIG) -> Sekunden
+  buckets: Record<string, number>; // Bucket-Schlüssel (siehe RANGE_CONFIG) -> Sekunden gesamt (geräteübergreifend dedupliziert)
+  mobile_seconds: Record<string, number>; // dieselben Buckets, nur Intervalle mobile/tablet, separat dedupliziert
+  desktop_seconds: Record<string, number>; // dieselben Buckets, nur Intervalle desktop/unbekannt, separat dedupliziert
 }
 
 interface HeatmapResponse {
@@ -22,19 +24,20 @@ interface BucketColumn {
   label: string;
 }
 
-// Sequentielle Ein-Hue-Rampe (hell→dunkel = wenig→viel Nutzung), 4 feste Stufen statt eines
-// stetigen Verlaufs — leichter zu unterscheiden als ein kontinuierlicher Gradient.
-const LEVEL_COLORS = ['#cde2fb', '#86b6ef', '#3987e5', '#184f95'] as const;
+// Farbverlauf nach Gerätemix: 100% Desktop = Tomato, 100% Mobile = Dodger Blue, direkt linear
+// gemischt dazwischen (kein eigener Anker für 50/50 nötig — der Mix ergibt bei diesen beiden
+// Randfarben einen unterscheidbaren Lavendel-Ton, kein trübes Grau wie bei Komplementärfarben).
+type Rgb = readonly [number, number, number];
+const DESKTOP_RGB: Rgb = [255, 99, 72];  // #ff6348 tomato
+const MOBILE_RGB: Rgb  = [30, 144, 255]; // #1e90ff dodger blue
 
-// Absolute Sekunden-Schwellen je Zeitraum — an die maximal mögliche Bucket-Dauer angepasst
-// (eine Stunde kann max. 3600s enthalten, eine Wochen-Bucket im Jahresblick bis zu 7×86400s),
-// damit die Farbskala in jeder Ansicht tatsächlich ausgenutzt wird statt immer nur die
-// hellste Stufe zu zeigen.
-const RANGE_THRESHOLDS: Record<RangeKey, readonly [number, number, number]> = {
-  day:   [5 * 60, 20 * 60, 40 * 60],
-  month: [15 * 60, 60 * 60, 3 * 60 * 60],
-  year:  [60 * 60, 4 * 60 * 60, 12 * 60 * 60],
-};
+// Gradient von 1s (10% Deckkraft) bis 60min (100%) — linear interpoliert, darüber hinaus
+// gedeckelt. Der hohe Startwert bei 1s sorgt dafür, dass "kurz online" sich klar von "gar nicht
+// online" (0s, transparent) abhebt, statt in einer Farbskala fast unsichtbar zu sein.
+const GRADIENT_MIN_SECONDS = 1;
+const GRADIENT_MAX_SECONDS = 60 * 60;
+const GRADIENT_MIN_OPACITY = 0.1;
+const GRADIENT_MAX_OPACITY = 1;
 
 const RANGE_LABELS: Record<RangeKey, string> = {
   day: 'Tag', month: 'Monat', year: 'Jahr',
@@ -139,12 +142,33 @@ export class SessionHeatmapComponent {
     return cols;
   });
 
+  private totalSeconds(m: HeatmapManager): number {
+    return Object.values(m.buckets).reduce((sum, s) => sum + s, 0);
+  }
+
+  // Absteigend nach Gesamtnutzung im Zeitraum, bei Gleichstand alphabetisch als stabiler Tiebreaker.
   managers = computed(() =>
-    [...(this.data()?.managers ?? [])].sort((a, b) => a.manager_name.localeCompare(b.manager_name)),
+    [...(this.data()?.managers ?? [])].sort((a, b) =>
+      this.totalSeconds(b) - this.totalSeconds(a) || a.manager_name.localeCompare(b.manager_name),
+    ),
   );
 
   seconds(m: HeatmapManager, bucketKey: string): number {
     return m.buckets[bucketKey] ?? 0;
+  }
+
+  // Anteil mobile/tablet an der Gerätenutzung dieses Buckets. Nenner ist bewusst
+  // mobile_seconds + desktop_seconds (Summe der pro Gerät unabhängig deduplizierten Zeiten), nicht
+  // buckets (der geräteübergreifend deduplizierte Gesamtwert) — bei gleichzeitiger
+  // Mehrgeräte-Nutzung wäre der Anteil sonst künstlich zu hoch (siehe Backend-Doc,
+  // SessionTrait::getSessionHeatmap). 0.5 (neutral/Gelb) als Fallback, falls beide 0 sind (Farbe
+  // wird dann ohnehin nie benutzt, da seconds() für diesen Bucket dann auch 0 ist).
+  mobileFraction(m: HeatmapManager, bucketKey: string): number {
+    const mobile = m.mobile_seconds[bucketKey] ?? 0;
+    const desktop = m.desktop_seconds[bucketKey] ?? 0;
+    const denom = mobile + desktop;
+    if (denom <= 0) return 0.5;
+    return Math.min(1, Math.max(0, mobile / denom));
   }
 
   formatDuration(seconds: number): string {
@@ -156,15 +180,32 @@ export class SessionHeatmapComponent {
     return `${min}min`;
   }
 
-  cellColor(seconds: number): string {
+  private lerpRgb(a: Rgb, b: Rgb, t: number): Rgb {
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * t),
+      Math.round(a[1] + (b[1] - a[1]) * t),
+      Math.round(a[2] + (b[2] - a[2]) * t),
+    ];
+  }
+
+  private hueForMobileFraction(fraction: number): Rgb {
+    return this.lerpRgb(DESKTOP_RGB, MOBILE_RGB, fraction);
+  }
+
+  cellColor(seconds: number, mobileFraction: number): string {
     if (seconds <= 0) return 'transparent';
-    const thresholds = RANGE_THRESHOLDS[this.range()];
-    const level = thresholds.filter(t => seconds >= t).length; // 0..3
-    return LEVEL_COLORS[level];
+    const clamped = Math.min(Math.max(seconds, GRADIENT_MIN_SECONDS), GRADIENT_MAX_SECONDS);
+    const t = (clamped - GRADIENT_MIN_SECONDS) / (GRADIENT_MAX_SECONDS - GRADIENT_MIN_SECONDS);
+    const opacity = GRADIENT_MIN_OPACITY + t * (GRADIENT_MAX_OPACITY - GRADIENT_MIN_OPACITY);
+    const [r, g, b] = this.hueForMobileFraction(mobileFraction);
+    return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(2)})`;
   }
 
   private tooltipText(m: HeatmapManager, col: BucketColumn): string {
-    return `${col.key} — ${this.formatDuration(this.seconds(m, col.key))}`;
+    const seconds = this.seconds(m, col.key);
+    if (seconds <= 0) return `${col.key} — Keine Nutzung`;
+    const mobilePct = Math.round(this.mobileFraction(m, col.key) * 100);
+    return `${col.key} — ${this.formatDuration(seconds)} (${mobilePct}% mobil)`;
   }
 
   hoveredTooltip = signal<TooltipState | null>(null);
