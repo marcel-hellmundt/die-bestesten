@@ -38,6 +38,24 @@
           (click)="setFineRuleset('none')"
         >Keine Strafen</button>
       </span>
+
+      <span class="fine-ruleset-toggle">
+        <span class="fine-ruleset-toggle__label">Powerranking:</span>
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="powerrankingEnabled()"
+          [class.btn-ghost]="!powerrankingEnabled()"
+          [disabled]="powerrankingSaving()"
+          (click)="setPowerrankingEnabled(true)"
+        >An</button>
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="!powerrankingEnabled()"
+          [class.btn-ghost]="powerrankingEnabled()"
+          [disabled]="powerrankingSaving()"
+          (click)="setPowerrankingEnabled(false)"
+        >Aus</button>
+      </span>
     </div>
   }
 

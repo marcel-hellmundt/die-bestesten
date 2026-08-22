@@ -27,6 +27,11 @@ trait PowerrankingTrait
 
     public function getPowerrankingState(string $seasonId, string $managerId): array
     {
+        if (!$this->isPowerrankingEnabled()) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Powerranking ist für diese Liga deaktiviert'];
+        }
+
         $status = $this->getMatchday1LockStatus($seasonId);
 
         if (!$status['locked']) {
@@ -94,6 +99,11 @@ trait PowerrankingTrait
      */
     public function replacePowerrankingPicks(string $seasonId, string $managerId, array $picks): array
     {
+        if (!$this->isPowerrankingEnabled()) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Powerranking ist für diese Liga deaktiviert'];
+        }
+
         if ($this->getMatchday1LockStatus($seasonId)['locked']) {
             http_response_code(403);
             return ['status' => false, 'message' => 'Tippphase beendet — Spieltag 1 hat bereits angepfiffen'];

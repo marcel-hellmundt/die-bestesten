@@ -194,6 +194,20 @@ class Database
         return $q->fetchColumn() ?: 'classic';
     }
 
+    protected function isPowerrankingEnabled(): bool
+    {
+        $leagueId = $GLOBALS['auth_league_id'] ?? null;
+        if ($leagueId) {
+            $q = $this->con->prepare("SELECT powerranking_enabled FROM league WHERE id = :id LIMIT 1");
+            $q->execute([':id' => $leagueId]);
+        } else {
+            $q = $this->con->prepare("SELECT powerranking_enabled FROM league WHERE db_name = :db_name LIMIT 1");
+            $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+        }
+        $val = $q->fetchColumn();
+        return $val === false ? true : (bool) $val;
+    }
+
     /**
      * Startbudget + Punkte-Bonus der Division, aus der sich die aktuelle Liga bedient (Fallback:
      * höchste deutsche Division, falls die Liga keine division_id konfiguriert hat — dasselbe

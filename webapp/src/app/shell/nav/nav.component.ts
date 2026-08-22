@@ -52,7 +52,7 @@ export class NavComponent {
     items: [
       { label: 'Spieltag',     icon: 'spieltag',     route: '/liga/spieltag' },
       { label: 'Tabelle',      icon: 'tabelle',      route: '/liga/tabelle' },
-      { label: 'Powerranking', icon: 'powerranking', route: '/liga/powerranking' },
+      ...(this.cache.powerrankingEnabled() ? [{ label: 'Powerranking', icon: 'powerranking', route: '/liga/powerranking' } as NavItem] : []),
       ...(this.cache.h2hTournamentEverExisted() ? [{ label: 'H2H', icon: 'zap', route: '/liga/h2h' } as NavItem] : []),
       { label: 'Teams',       icon: 'kader',       route: '/liga/teams' },
       { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
@@ -97,6 +97,7 @@ export class NavComponent {
   constructor() {
     this.cache.ensureMyTeam();
     this.cache.ensureH2HStatus();
+    this.cache.ensureLeague();
     effect(() => {
       if (this.cache.myTeamId()) {
         this.cache.ensureSquad();

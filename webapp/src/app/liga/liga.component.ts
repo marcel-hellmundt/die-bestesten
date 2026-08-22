@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { DataCacheService } from '../core/data-cache.service';
 
 @Component({
   selector: 'app-liga',
@@ -6,4 +7,10 @@ import { Component } from '@angular/core';
   templateUrl: './liga.component.html',
   styleUrl: './liga.component.scss'
 })
-export class LigaComponent {}
+export class LigaComponent {
+  cache = inject(DataCacheService);
+
+  constructor() {
+    this.cache.ensureLeague();
+  }
+}

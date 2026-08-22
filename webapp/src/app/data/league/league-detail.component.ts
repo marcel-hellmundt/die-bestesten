@@ -188,6 +188,22 @@ export class LeagueDetailComponent {
     });
   }
 
+  private powerrankingOverride = signal<boolean | null>(null);
+  powerrankingSaving = signal(false);
+
+  powerrankingEnabled = computed<boolean>(() =>
+    this.powerrankingOverride() ?? (this.league()?.powerranking_enabled ?? true)
+  );
+
+  setPowerrankingEnabled(value: boolean): void {
+    if (this.powerrankingEnabled() === value || this.powerrankingSaving()) return;
+    this.powerrankingSaving.set(true);
+    this.api.patch<any>(`league/${this.leagueId}`, { powerranking_enabled: value }).subscribe({
+      next: () => { this.powerrankingOverride.set(value); this.powerrankingSaving.set(false); },
+      error: () => this.powerrankingSaving.set(false),
+    });
+  }
+
   groupedMismatches(mismatches: any[]): { seasonId: string; matchdays: { matchdayNumber: number; items: any[] }[] }[] {
     const seasonMap = new Map<string, Map<number, any[]>>();
     for (const mm of mismatches) {
