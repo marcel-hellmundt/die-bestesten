@@ -87,26 +87,45 @@ trait SellTrait
         );
         $uq->execute([':mid' => $matchdayId, ':sid' => $sellId, ':tid' => $teamId, ':pid' => $playerId]);
 
-        // 7. Cleanup team_lineup for this matchday
+        // 7. Cleanup team_lineup: remove the sold player's entries for every not-yet-completed
+        // matchday, not just the one tied to this transfer window — a row for a later matchday
+        // (e.g. carried over by ensureLineupEntriesForTeam()) would otherwise stay nominated and
+        // could still get scored if that matchday completes before anyone happens to open the
+        // lineup page (the only place that would lazily clean it up otherwise, see
+        // getTeamLineup()'s stale-player cleanup, kept as a secondary safety net).
         $lq = $this->con_league->prepare(
-            "SELECT id, nominated FROM team_lineup
-             WHERE team_id = :tid AND player_id = :pid AND matchday_id = :mid LIMIT 1"
+            "SELECT id, matchday_id, nominated FROM team_lineup
+             WHERE team_id = :tid AND player_id = :pid"
         );
-        $lq->execute([':tid' => $teamId, ':pid' => $playerId, ':mid' => $matchdayId]);
-        $lineupEntry = $lq->fetch(PDO::FETCH_ASSOC);
+        $lq->execute([':tid' => $teamId, ':pid' => $playerId]);
+        $lineupEntries = $lq->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($lineupEntry) {
-            // Always remove the sold player's entry
-            $dq = $this->con_league->prepare("DELETE FROM team_lineup WHERE id = :id");
-            $dq->execute([':id' => $lineupEntry['id']]);
+        if (!empty($lineupEntries)) {
+            $mdIds = array_unique(array_column($lineupEntries, 'matchday_id'));
+            $ph2   = implode(',', array_fill(0, count($mdIds), '?'));
+            $cq    = $this->con->prepare("SELECT id FROM matchday WHERE id IN ($ph2) AND completed = 0");
+            $cq->execute(array_values($mdIds));
+            $openMatchdayIds = array_flip($cq->fetchAll(PDO::FETCH_COLUMN));
 
-            if ($lineupEntry['nominated']) {
-                // Nominated → move remaining nominated players to bench
+            $toDelete           = [];
+            $nominatedMatchdays = [];
+            foreach ($lineupEntries as $e) {
+                if (!isset($openMatchdayIds[$e['matchday_id']])) continue; // completed → historical, never touch
+                $toDelete[] = $e['id'];
+                if ($e['nominated']) $nominatedMatchdays[] = $e['matchday_id'];
+            }
+
+            if (!empty($toDelete)) {
+                $ph3 = implode(',', array_fill(0, count($toDelete), '?'));
+                $this->con_league->prepare("DELETE FROM team_lineup WHERE id IN ($ph3)")->execute($toDelete);
+            }
+            foreach (array_unique($nominatedMatchdays) as $mdId) {
+                // Nominated → move remaining nominated players of that matchday to bench
                 $bq = $this->con_league->prepare(
                     "UPDATE team_lineup SET nominated = 0, position_index = NULL
                      WHERE team_id = :tid AND matchday_id = :mid AND nominated = 1"
                 );
-                $bq->execute([':tid' => $teamId, ':mid' => $matchdayId]);
+                $bq->execute([':tid' => $teamId, ':mid' => $mdId]);
             }
         }
 
