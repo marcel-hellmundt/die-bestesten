@@ -12,9 +12,16 @@ trait SessionTrait
      * Uses SELECT-then-branch rather than relying on UPDATE's affected-row count, since ended_at
      * can legitimately already equal NOW() (same second) — see setPlayerPhotoUploaded() for the
      * same rowCount() pitfall elsewhere.
+     * DISABLE_SESSION_TRACKING=true (nur im .env des jeweiligen Servers gesetzt, nicht committet)
+     * schaltet das Tracking komplett ab — für den Dev-Server, damit Test-/Entwickler-Traffic nicht
+     * in den Nutzungs-Heatmap-Report (GET /session) einfließt.
      */
     public function touchSession(string $managerId): void
     {
+        if (($_ENV['DISABLE_SESSION_TRACKING'] ?? '') === 'true') {
+            return;
+        }
+
         [$deviceType, $os, $browser] = $this->parseUserAgent($_SERVER['HTTP_USER_AGENT'] ?? '');
 
         $find = $this->con->prepare(
