@@ -5,9 +5,9 @@ trait SessionTrait
     /**
      * Approximate session-duration heartbeat. Called on every authenticated request
      * (Guard::authorize()). Extends the manager's most recent session if it ended less than
-     * 30 seconds ago AND the request comes from the same device (device_type/os/browser aus dem
+     * 2 minutes ago AND the request comes from the same device (device_type/os/browser aus dem
      * User-Agent), otherwise starts a new one. Verhindert, dass z.B. ein schneller Wechsel von
-     * Handy auf Desktop die mobile Session weiterführt, nur weil die Lücke < 30s war — ein
+     * Handy auf Desktop die mobile Session weiterführt, nur weil die Lücke klein war — ein
      * Geräte-/Browser-Wechsel beendet die vorherige Session immer, unabhängig vom Zeitabstand.
      * Uses SELECT-then-branch rather than relying on UPDATE's affected-row count, since ended_at
      * can legitimately already equal NOW() (same second) — see setPlayerPhotoUploaded() for the
@@ -26,7 +26,7 @@ trait SessionTrait
 
         $find = $this->con->prepare(
             "SELECT id, device_type, os, browser FROM manager_session
-             WHERE manager_id = :id AND ended_at >= (NOW() - INTERVAL 30 SECOND)
+             WHERE manager_id = :id AND ended_at >= (NOW() - INTERVAL 2 MINUTE)
              ORDER BY ended_at DESC LIMIT 1"
         );
         $find->execute([':id' => $managerId]);
