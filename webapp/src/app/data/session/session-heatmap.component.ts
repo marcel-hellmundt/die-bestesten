@@ -9,7 +9,8 @@ interface HeatmapManager {
   manager_id: string;
   manager_name: string;
   alias: string | null;
-  buckets: Record<string, number>; // Bucket-Schlüssel (siehe RANGE_CONFIG) -> Sekunden
+  buckets: Record<string, number>; // Bucket-Schlüssel (siehe RANGE_CONFIG) -> Sekunden gesamt
+  mobile_seconds: Record<string, number>; // dieselben Buckets, nur Anteil mobile/tablet
 }
 
 interface HeatmapResponse {
@@ -22,13 +23,18 @@ interface BucketColumn {
   label: string;
 }
 
-// Primärfarbe als Basis des Nutzungs-Gradienten — muss mit $color-accent in
-// styles/_variables.scss übereinstimmen (SCSS-Variablen sind hier nicht verfügbar).
-const HEATMAP_COLOR = '#bf1d00';
+// Farbverlauf nach Gerätemix: 100% Desktop = Blau, 50/50 = Gelb, 100% Mobile = Rot (= bestehende
+// Primärfarbe $color-accent, hier hartkodiert da SCSS-Variablen in TS nicht verfügbar sind).
+// Reines RGB-Mischen von Blau und Rot ergäbe ein trübes Lila statt Gelb, daher zwei
+// Interpolationsabschnitte (Blau→Gelb, Gelb→Rot) statt einer einzigen Mischung.
+type Rgb = readonly [number, number, number];
+const DESKTOP_RGB: Rgb = [37, 99, 235];
+const MIXED_RGB: Rgb   = [234, 179, 8];
+const MOBILE_RGB: Rgb  = [191, 29, 0];
 
-// Gradient von 1s (10% Deckkraft) bis 60min (100%, volle Primärfarbe) — linear interpoliert,
-// darüber hinaus gedeckelt. Der hohe Startwert bei 1s sorgt dafür, dass "kurz online" sich klar
-// von "gar nicht online" (0s, transparent) abhebt, statt in einer Farbskala fast unsichtbar zu sein.
+// Gradient von 1s (10% Deckkraft) bis 60min (100%) — linear interpoliert, darüber hinaus
+// gedeckelt. Der hohe Startwert bei 1s sorgt dafür, dass "kurz online" sich klar von "gar nicht
+// online" (0s, transparent) abhebt, statt in einer Farbskala fast unsichtbar zu sein.
 const GRADIENT_MIN_SECONDS = 1;
 const GRADIENT_MAX_SECONDS = 60 * 60;
 const GRADIENT_MIN_OPACITY = 0.1;
@@ -152,6 +158,16 @@ export class SessionHeatmapComponent {
     return m.buckets[bucketKey] ?? 0;
   }
 
+  // Anteil mobile/tablet an der Gesamtnutzung dieses Buckets, geklemmt auf [0,1] — bei
+  // gleichzeitiger Mehrgeräte-Nutzung kann mobile_seconds > buckets liegen (siehe Backend-Doc),
+  // 0.5 (neutral/Gelb) als Fallback, falls total 0 ist (Farbe wird dann ohnehin nie benutzt).
+  mobileFraction(m: HeatmapManager, bucketKey: string): number {
+    const total = m.buckets[bucketKey] ?? 0;
+    if (total <= 0) return 0.5;
+    const mobile = m.mobile_seconds[bucketKey] ?? 0;
+    return Math.min(1, Math.max(0, mobile / total));
+  }
+
   formatDuration(seconds: number): string {
     if (seconds <= 0) return 'Keine Nutzung';
     const totalMinutes = Math.round(seconds / 60);
@@ -161,16 +177,34 @@ export class SessionHeatmapComponent {
     return `${min}min`;
   }
 
-  cellColor(seconds: number): string {
+  private lerpRgb(a: Rgb, b: Rgb, t: number): Rgb {
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * t),
+      Math.round(a[1] + (b[1] - a[1]) * t),
+      Math.round(a[2] + (b[2] - a[2]) * t),
+    ];
+  }
+
+  private hueForMobileFraction(fraction: number): Rgb {
+    return fraction <= 0.5
+      ? this.lerpRgb(DESKTOP_RGB, MIXED_RGB, fraction * 2)
+      : this.lerpRgb(MIXED_RGB, MOBILE_RGB, (fraction - 0.5) * 2);
+  }
+
+  cellColor(seconds: number, mobileFraction: number): string {
     if (seconds <= 0) return 'transparent';
     const clamped = Math.min(Math.max(seconds, GRADIENT_MIN_SECONDS), GRADIENT_MAX_SECONDS);
     const t = (clamped - GRADIENT_MIN_SECONDS) / (GRADIENT_MAX_SECONDS - GRADIENT_MIN_SECONDS);
     const opacity = GRADIENT_MIN_OPACITY + t * (GRADIENT_MAX_OPACITY - GRADIENT_MIN_OPACITY);
-    return `color-mix(in srgb, ${HEATMAP_COLOR} ${Math.round(opacity * 100)}%, transparent)`;
+    const [r, g, b] = this.hueForMobileFraction(mobileFraction);
+    return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(2)})`;
   }
 
   private tooltipText(m: HeatmapManager, col: BucketColumn): string {
-    return `${col.key} — ${this.formatDuration(this.seconds(m, col.key))}`;
+    const seconds = this.seconds(m, col.key);
+    if (seconds <= 0) return `${col.key} — Keine Nutzung`;
+    const mobilePct = Math.round(this.mobileFraction(m, col.key) * 100);
+    return `${col.key} — ${this.formatDuration(seconds)} (${mobilePct}% mobil)`;
   }
 
   hoveredTooltip = signal<TooltipState | null>(null);

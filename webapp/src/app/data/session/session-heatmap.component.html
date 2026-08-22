@@ -29,7 +29,7 @@
       @for (col of columns(); track col.key) {
         <div
           class="heatmap__cell"
-          [style.background-color]="cellColor(seconds(m, col.key))"
+          [style.background-color]="cellColor(seconds(m, col.key), mobileFraction(m, col.key))"
           (mouseenter)="onCellHover($event, m, col)"
           (mouseleave)="onCellLeave()"
         ></div>
