@@ -1,5 +1,12 @@
 @use '../../../styles/variables' as *;
 
+// Height of the always-visible mobile bench bar (label row + one row of chips) — reserved
+// as bottom padding on .lineup-layout (mobile) so it never covers the last bit of real page
+// content, and the offset that clears the fixed bottom nav bar (see shell.component.scss,
+// same 64px).
+$mobile-bench-height: 104px;
+$mobile-nav-height: 64px;
+
 .matchday-select {
   width: 100%;
   font-size: $font-sm;
@@ -21,15 +28,12 @@
     flex-direction: column;
     gap: $space-4;
     padding: 0;
+    // Reserves space for the fixed mobile bench bar at the very end of the page content
+    // (not right under the pitch — the sidebar's remaining mobile content, e.g. the kickoff
+    // countdown, still renders between the two).
+    padding-bottom: $mobile-bench-height;
   }
 }
-
-// Height of the always-visible mobile bench bar (label row + one row of chips) — shared
-// between .mobile-bench itself and .field-wrap's bottom padding so the fixed bar never
-// covers the bottom of the pitch, and the offset that clears the fixed bottom nav bar
-// (see shell.component.scss, same 64px).
-$mobile-bench-height: 104px;
-$mobile-nav-height: 64px;
 
 .field-wrap {
   flex: 1 1 0;
@@ -40,7 +44,6 @@ $mobile-nav-height: 64px;
     flex: none;
     width: 100%;
     max-width: 100%;
-    padding-bottom: $mobile-bench-height;
   }
 }
 
