@@ -49,6 +49,7 @@
                  [class.field-player--dim]="hoveredPlayer() !== null && hoveredPlayer()?.id !== p.id"
                  [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
                  cdkDrag
+                 cdkDragPreviewContainer="global"
                  [cdkDragDisabled]="!isEditable()"
                  (cdkDragMoved)="onDragMove($event, p)"
                  (cdkDragReleased)="onDragReleased($event, 'nominated')"
@@ -214,6 +215,7 @@
          [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
          [class.bench-player--draggable]="isEditable()"
          cdkDrag
+         cdkDragPreviewContainer="global"
          [cdkDragDisabled]="!isEditable()"
          (cdkDragMoved)="onDragMove($event, p)"
          (cdkDragReleased)="onDragReleased($event, 'bench')"
