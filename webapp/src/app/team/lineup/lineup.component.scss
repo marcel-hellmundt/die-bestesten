@@ -310,7 +310,7 @@ $mobile-nav-height: 64px;
   &__label {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
-    font-size: $font-xs;
+    font-size: $font-2xs;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
     text-transform: uppercase;
@@ -659,8 +659,12 @@ $mobile-nav-height: 64px;
 
   &--draggable {
     cursor: grab;
-    &:active { cursor: grabbing; }
-    &:hover { border-color: $color-accent; }
+    &:active {
+      cursor: grabbing;
+    }
+    &:hover {
+      border-color: $color-accent;
+    }
   }
 }
 
@@ -792,12 +796,18 @@ $mobile-nav-height: 64px;
 .field--editable {
   .field-player {
     cursor: grab;
-    transition: opacity 0.15s, transform 0.15s;
-    &:active { cursor: grabbing; }
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+    &:active {
+      cursor: grabbing;
+    }
 
     &--hovered {
       opacity: 1 !important;
-      .field-player__photo-wrap { transform: scale(1.18); }
+      .field-player__photo-wrap {
+        transform: scale(1.18);
+      }
     }
 
     &--dim {
@@ -879,7 +889,9 @@ $mobile-nav-height: 64px;
     margin-top: $space-1;
     border-top: 1px solid $color-border;
 
-    &--neg { color: $color-danger; }
+    &--neg {
+      color: $color-danger;
+    }
   }
 
   &__val--neg {
@@ -888,18 +900,21 @@ $mobile-nav-height: 64px;
 }
 
 @keyframes breakdown-in {
-  from { opacity: 0; transform: translate(-50%, calc(-100% - 4px)); }
-  to   { opacity: 1; transform: translate(-50%, calc(-100% - 8px)); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 8px));
+  }
 }
 
 .fp-icon {
   width: 18px;
   height: 18px;
   object-fit: contain;
-  filter:
-    drop-shadow(1px 0 0 #fff)
-    drop-shadow(-1px 0 0 #fff)
-    drop-shadow(0 1px 0 #fff)
+  filter: drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff)
     drop-shadow(0 -1px 0 #fff);
 
   @media (max-width: $mobile-breakpoint) {
@@ -956,8 +971,15 @@ $mobile-nav-height: 64px;
       width: calc(8px + 3px);
       height: calc(11px + 3px);
 
-      &::before { left: 3px; width: 8px; height: 11px; }
-      &::after  { width: 8px; height: 11px; }
+      &::before {
+        left: 3px;
+        width: 8px;
+        height: 11px;
+      }
+      &::after {
+        width: 8px;
+        height: 11px;
+      }
     }
   }
 }
