@@ -137,7 +137,7 @@
           aria-label="Vorherige Bank-Spieler"
         >‹</button>
         <div class="mobile-bench__list" #benchListEl (scroll)="onBenchScroll()">
-          <ng-container *ngTemplateOutlet="benchList"></ng-container>
+          <ng-container *ngTemplateOutlet="benchList; context: { compact: true }"></ng-container>
         </div>
         <button
           class="mobile-bench__arrow"
@@ -206,12 +206,16 @@
     </div>
   </div>
 
-  <!-- Shared bench-player card, rendered both in the mobile card list above the pitch
-       and in the desktop sidebar list. -->
-  <ng-template #benchList>
+  <!-- Shared bench-player card, rendered both in the mobile card row above the pitch
+       (compact=true) and in the desktop sidebar list (full card). compact is applied as its
+       own class (not scoped via a .mobile-bench ancestor selector) because CDK clones this
+       element into a global drag preview outside any local DOM ancestry — an ancestor-scoped
+       class would silently stop applying to the preview and fall back to the full card look. -->
+  <ng-template #benchList let-compact="compact">
     @for (p of bench(); track p.id) {
       <a class="bench-player"
          [id]="p.id"
+         [class.bench-player--chip]="compact"
          [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
          [class.bench-player--draggable]="isEditable()"
          cdkDrag

@@ -359,51 +359,6 @@ $mobile-nav-height: 64px;
       display: none;
     }
   }
-
-  // Compact chip variant of .bench-player for the horizontal strip — photo on top, name
-  // below, no room for status/grade/points here (still shown on the desktop sidebar card).
-  .bench-player {
-    flex: 0 0 auto;
-    width: 56px;
-    max-height: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: $space-1;
-
-    &__pos {
-      position: static;
-      width: 20px;
-      height: 3px;
-      border-radius: $radius-full;
-      transform: none;
-    }
-
-    &__photo-wrap {
-      position: static;
-      width: 40px;
-      height: 40px;
-    }
-
-    &__info {
-      align-items: center;
-      width: 100%;
-    }
-
-    &__name {
-      font-size: 9px;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-    }
-
-    &__status,
-    &__score {
-      display: none;
-    }
-  }
 }
 
 .lineup-sidebar {
@@ -664,6 +619,55 @@ $mobile-nav-height: 64px;
     }
     &:hover {
       border-color: $color-accent;
+    }
+  }
+
+  // Compact chip variant for the mobile bench row — photo on top, name below, no room for
+  // status/grade/points. Applied as its own class rather than scoped via a .mobile-bench
+  // ancestor selector: CDK clones this element into a global drag preview outside any local
+  // DOM ancestry, so an ancestor-scoped rule would silently stop applying to the preview and
+  // fall back to this full card's layout (bleeding absolutely-positioned photo, overflow:
+  // hidden) — which renders as a near-empty box while dragging.
+  &--chip {
+    flex: 0 0 auto;
+    width: 56px;
+    max-height: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: $space-1;
+
+    .bench-player__pos {
+      position: static;
+      width: 20px;
+      height: 3px;
+      border-radius: $radius-full;
+      transform: none;
+    }
+
+    .bench-player__photo-wrap {
+      position: static;
+      width: 40px;
+      height: 40px;
+    }
+
+    .bench-player__info {
+      align-items: center;
+      width: 100%;
+    }
+
+    .bench-player__name {
+      font-size: 9px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .bench-player__status,
+    .bench-player__score {
+      display: none;
     }
   }
 }
