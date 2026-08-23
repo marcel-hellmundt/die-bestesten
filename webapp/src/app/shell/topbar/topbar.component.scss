@@ -93,6 +93,9 @@
 
     @media (max-width: #{$mobile-breakpoint}) {
       width: $control-height;
+      // Never smaller than the collapsed icon, even if .topbar-left itself gets tight —
+      // .topbar-league is the one that grows/shrinks with the leftover space (see .topbar-left).
+      flex-shrink: 0;
       padding: 0;
       justify-content: center;
       cursor: pointer;
@@ -110,9 +113,8 @@
       }
 
       &--active {
-        // flex:1 on the box itself instead of width:100% of .topbar-left — grows to fill
-        // whatever space .topbar-right leaves once its icons are hidden (see .topbar-right
-        // below), without depending on a percentage-of-parent resolving correctly.
+        // flex:1 on the box itself, plus .topbar-left--search-active reclaiming its own flex:1
+        // (see .topbar-left) so the growth actually has room to expand into.
         flex: 1;
         width: auto;
         gap: $space-2;
@@ -133,8 +135,16 @@
   &-left {
     @media (max-width: #{$mobile-breakpoint}) {
       display: flex;
-      flex: 1;
+      // Shrinks to its collapsed-icon content by default so the growth below goes to
+      // .topbar-league instead (as wide as possible without touching the search icon or the
+      // profile photo) — only reclaims flex:1 while the search box itself is expanded and
+      // actually needs the room.
+      flex: 0 1 auto;
       min-width: 0;
+
+      &--search-active {
+        flex: 1;
+      }
     }
   }
 
@@ -454,6 +464,14 @@
 .topbar-league {
   position: relative;
 
+  @media (max-width: #{$mobile-breakpoint}) {
+    // Takes all the space .topbar-left leaves (see its flex:0 default there) instead of just
+    // sizing to its own content — as wide as possible without shrinking the collapsed search
+    // icon or the profile photo, both of which stay at their fixed size regardless.
+    flex: 1;
+    min-width: 0;
+  }
+
   .league-btn {
     display: flex;
     align-items: center;
@@ -499,8 +517,9 @@
     }
 
     @media (max-width: #{$mobile-breakpoint}) {
-      max-width: 120px;
-      padding: 0 $space-2;
+      // No cap — fills the now flex:1 .topbar-league container (see above).
+      max-width: none;
+      width: 100%;
     }
   }
 
