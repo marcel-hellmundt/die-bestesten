@@ -250,6 +250,39 @@ trait ManagerTrait
                 $mdNumbers = array_column($mdQ2->fetchAll(PDO::FETCH_ASSOC), 'number', 'id');
             }
 
+            // For still-active ownership (to_matchday_id IS NULL), "today" only counts
+            // matchdays that have actually completed so far — the season's eventual full
+            // length would otherwise count matchdays that haven't been played yet as if the
+            // player had already been fielded for them (e.g. re-bought on matchday 1 of a new
+            // season, which hasn't kicked off yet: 0 matchdays this season so far, not 34).
+            $activeSeasonIds = array_values(array_unique(array_column(
+                array_filter($pitRows, fn($r) => $r['to_matchday_id'] === null),
+                'season_id'
+            )));
+            $latestCompletedBySeason = [];
+            if (!empty($activeSeasonIds)) {
+                $divisionId = $this->getLeagueDivisionId();
+                $ph3 = implode(',', array_fill(0, count($activeSeasonIds), '?'));
+                if ($divisionId !== null) {
+                    $lcQ = $this->con->prepare(
+                        "SELECT season_id, MAX(number) AS latest FROM matchday
+                         WHERE season_id IN ($ph3) AND division_id = ? AND completed = 1
+                         GROUP BY season_id"
+                    );
+                    $lcQ->execute(array_merge($activeSeasonIds, [$divisionId]));
+                } else {
+                    $lcQ = $this->con->prepare(
+                        "SELECT m.season_id, MAX(m.number) AS latest FROM matchday m
+                         JOIN division d ON d.id = m.division_id
+                         WHERE m.season_id IN ($ph3) AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                           AND m.completed = 1
+                         GROUP BY m.season_id"
+                    );
+                    $lcQ->execute($activeSeasonIds);
+                }
+                $latestCompletedBySeason = array_column($lcQ->fetchAll(PDO::FETCH_ASSOC), 'latest', 'season_id');
+            }
+
             // Aggregate per player
             $playerAgg = [];
             foreach ($pitRows as $r) {
@@ -258,8 +291,10 @@ trait ManagerTrait
                 if ($r['to_matchday_id'] !== null) {
                     $toNum = isset($mdNumbers[$r['to_matchday_id']]) ? (int)$mdNumbers[$r['to_matchday_id']] : 34;
                 } else {
-                    // NULL to_matchday: still active — use 34 if not current season
-                    $toNum = 34;
+                    // Still active — cap at the latest completed matchday of that season, not
+                    // its eventual full length (see comment above); no completed matchday yet
+                    // -> fromNum - 1, so duration clamps to 0 below.
+                    $toNum = (int)($latestCompletedBySeason[$r['season_id']] ?? ($fromNum - 1));
                 }
                 $duration = max(0, $toNum - $fromNum + 1);
 
