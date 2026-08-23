@@ -29,7 +29,7 @@
         </div>
 
         <div class="mobile-formation">
-          @if (nominated().length === 0 && isEditable()) {
+          @if (nominated().length === 0 && canEdit()) {
             <select class="mobile-formation__select" (change)="onFormationSelect($any($event.target).value)">
               @for (f of validFormations; track formationLabel(f)) {
                 <option [value]="formationLabel(f)" [selected]="isFormationActive(f)">{{ formationLabel(f) }}</option>
@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <div class="field" [class.field--editable]="isEditable()">
+      <div class="field" [class.field--editable]="canEdit()">
 
         @if (formationError()) {
           <div class="formation-error">{{ formationError() }}</div>
@@ -54,10 +54,10 @@
                  [id]="p.id"
                  [class.field-player--hovered]="hoveredPlayer()?.id === p.id"
                  [class.field-player--dim]="hoveredPlayer() !== null && hoveredPlayer()?.id !== p.id"
-                 [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
+                 [routerLink]="canEdit() ? null : ['/daten/player', p.id]"
                  cdkDrag
                  cdkDragPreviewContainer="global"
-                 [cdkDragDisabled]="!isEditable()"
+                 [cdkDragDisabled]="!canEdit()"
                  (cdkDragMoved)="onDragMove($event, p)"
                  (cdkDragReleased)="onDragReleased($event, 'nominated')"
                  (cdkDragEnded)="onDragEnd()">
@@ -103,7 +103,7 @@
                 </div>
               </a>
             }
-            @if (isEditable()) {
+            @if (canEdit()) {
               @for (i of emptySlotIndices(pos); track i) {
                 <div class="field-player field-player--empty empty-slot"
                      [attr.data-pos]="pos"
@@ -199,7 +199,7 @@
             <div
               class="formation-chip"
               [class.formation-chip--active]="isFormationActive(f)"
-              [class.formation-chip--clickable]="nominated().length === 0 && isEditable()"
+              [class.formation-chip--clickable]="nominated().length === 0 && canEdit()"
               (click)="selectFormation(f)"
             >
               {{ formationLabel(f) }}
@@ -228,11 +228,11 @@
       <a class="bench-player"
          [id]="p.id"
          [class.bench-player--chip]="compact"
-         [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
-         [class.bench-player--draggable]="isEditable()"
+         [routerLink]="canEdit() ? null : ['/daten/player', p.id]"
+         [class.bench-player--draggable]="canEdit()"
          cdkDrag
          cdkDragPreviewContainer="global"
-         [cdkDragDisabled]="!isEditable()"
+         [cdkDragDisabled]="!canEdit()"
          (cdkDragMoved)="onDragMove($event, p)"
          (cdkDragReleased)="onDragReleased($event, 'bench')"
          (cdkDragEnded)="onDragEnd()">
