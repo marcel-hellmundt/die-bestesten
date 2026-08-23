@@ -1,5 +1,12 @@
 @use '../../../styles/variables' as *;
 
+// Height of the always-visible mobile bench bar (single row: label + arrows + chips) —
+// reserved as bottom padding on .lineup-layout (mobile) so it never covers the last bit of
+// real page content, and the offset that clears the fixed bottom nav bar (see
+// shell.component.scss, same 64px).
+$mobile-bench-height: 84px;
+$mobile-nav-height: 64px;
+
 .matchday-select {
   width: 100%;
   font-size: $font-sm;
@@ -21,6 +28,10 @@
     flex-direction: column;
     gap: $space-4;
     padding: 0;
+    // Reserves space for the fixed mobile bench bar at the very end of the page content
+    // (not right under the pitch — the sidebar's remaining mobile content, e.g. the kickoff
+    // countdown, still renders between the two).
+    padding-bottom: $mobile-bench-height;
   }
 }
 
@@ -276,54 +287,91 @@
 
 .mobile-bench {
   display: none;
-  flex-direction: column;
-  gap: $space-2;
-  margin-top: $space-3;
 
   @media (max-width: $mobile-breakpoint) {
     display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: $space-1;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: $mobile-nav-height;
+    height: $mobile-bench-height;
+    z-index: $z-sticky;
+    background: $color-surface;
+    border-top: 1px solid $color-border;
+    padding: $space-2 $space-1 $space-2 0;
+    box-sizing: border-box;
   }
 
+  // Rotated 90° counter-clockwise (reads bottom-to-top) so it sits as a narrow strip to the
+  // left of the players instead of its own row above them — no whitespace above the chips.
   &__label {
-    font-size: $font-xs;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: $font-2xs;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin: 0 -4px 0 4px;
   }
 
+  &__arrow {
+    flex-shrink: 0;
+    width: 24px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: $color-text-muted;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+
+    &:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
+  }
+
+  // Single horizontal row, same GOALKEEPER -> DEFENDER -> MIDFIELDER -> FORWARD order as
+  // bench() already sorts by. touch-action:none blocks finger-drag panning (it would fight
+  // with dragging a chip onto the field) — stepped via the arrow buttons' scrollBy() instead,
+  // which isn't affected by touch-action.
   &__list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-direction: row;
     gap: $space-2;
-  }
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: none;
+    scrollbar-width: none;
+    flex: 1;
+    min-height: 0;
+    position: relative;
 
-  // Compact variant of .bench-player so two cards fit per row on mobile.
-  // Photo-wrap keeps the base .bench-player__photo-wrap size/position (80px bleed).
-  .bench-player {
-    gap: $space-2;
-    padding: $space-2 $space-2 $space-2 60px;
-
-    &__name {
-      font-size: $font-xs;
+    &::-webkit-scrollbar {
+      display: none;
     }
 
-    &__status {
-      font-size: 10px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    &__grade {
-      width: 22px;
-      height: 22px;
-      line-height: 22px;
-    }
-
-    &__points {
-      width: 22px;
-      font-size: $font-sm;
+    // Fades the last visible chip into white on the right edge — a hint that the row
+    // continues and more players are scrolled out of view. mask-image fades the container's
+    // own rendered pixels (cards, photos) directly, rather than layering a separate
+    // absolutely-positioned overlay on top — avoids depending on paint/stacking order versus
+    // the chips entirely. Only applied while benchCanScrollRight() is true: this flex item
+    // can be wider than its chip content (e.g. a short bench that fits without scrolling), in
+    // which case the fade would otherwise land in the trailing blank space next to the arrow
+    // button instead of over an actual player.
+    &--fade {
+      mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
     }
   }
 }
@@ -415,6 +463,13 @@
       border-color: $color-accent;
       color: $color-accent;
     }
+  }
+}
+
+// Replaced on mobile by .mobile-formation next to the matchday select above the pitch.
+.desktop-formation {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
   }
 }
 
@@ -574,8 +629,71 @@
 
   &--draggable {
     cursor: grab;
-    &:active { cursor: grabbing; }
-    &:hover { border-color: $color-accent; }
+    &:active {
+      cursor: grabbing;
+    }
+    &:hover {
+      border-color: $color-accent;
+    }
+  }
+
+  // Compact chip variant for the mobile bench row — photo on top, name below, no room for
+  // status/grade/points. Applied as its own class rather than scoped via a .mobile-bench
+  // ancestor selector: CDK clones this element into a global drag preview outside any local
+  // DOM ancestry, so an ancestor-scoped rule would silently stop applying to the preview and
+  // fall back to this full card's layout (bleeding absolutely-positioned photo, overflow:
+  // hidden) — which renders as a near-empty box while dragging.
+  &--chip {
+    flex: 0 0 auto;
+    width: 56px;
+    max-height: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: $space-1;
+    // Explicit (not just inherited) so it's unmistakably visible against the green pitch
+    // while being dragged — that's the state where it actually needs to stand out.
+    background: $color-surface;
+
+    // Same rotated ribbon as the desktop card, scaled down (~70%, same aspect ratio and
+    // offset ratios) to match this much smaller card.
+    .bench-player__pos {
+      width: 70px;
+      height: 35px;
+      top: -20px;
+      left: -35px;
+    }
+
+    .bench-player__photo-wrap {
+      // position:relative (not static) so the inherited z-index:1 from the base rule still
+      // takes effect and keeps the photo stacked above the ribbon, like on desktop. top/left
+      // reset to 0 — relative positioning still applies the base rule's absolute-positioning
+      // offset (top:8px; left:-8px) otherwise, which would push the photo off-center here.
+      position: relative;
+      top: 0;
+      left: 0;
+      width: 40px;
+      height: 40px;
+    }
+
+    .bench-player__info {
+      align-items: center;
+      width: 100%;
+    }
+
+    .bench-player__name {
+      font-size: 9px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .bench-player__status,
+    .bench-player__score {
+      display: none;
+    }
   }
 }
 
@@ -590,6 +708,13 @@
   border: 1px solid $color-border;
   border-radius: $radius-md;
   text-align: center;
+}
+
+// Replaced on mobile by the compact single-line .mobile-countdown above the pitch.
+.desktop-countdown {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
 }
 
 .countdown__time {
@@ -611,7 +736,8 @@
   gap: $space-3;
 
   &--mobile {
-    margin-bottom: $space-3;
+    flex: 1;
+    min-width: 0;
 
     @media (min-width: #{$mobile-breakpoint + 1px}) {
       display: none;
@@ -621,6 +747,92 @@
   &--desktop {
     @media (max-width: $mobile-breakpoint) {
       display: none;
+    }
+  }
+}
+
+// Kickoff countdown, mobile only — condensed onto a single line at the very top of the
+// pitch, roughly matching .mobile-top-row's height below it (desktop keeps the larger
+// stacked .kickoff-countdown in the sidebar instead, see .desktop-countdown).
+.mobile-countdown {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: $space-1;
+    padding: $space-1 $space-3;
+    background: $color-surface-alt;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    margin-bottom: $space-3;
+  }
+
+  &__time {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+
+  &__label {
+    font-size: $font-2xs;
+    color: $color-text-muted;
+  }
+}
+
+// Matchday select + formation display side by side above the pitch, mobile only —
+// desktop keeps both in their usual spots (matchday select + .desktop-formation in the
+// sidebar).
+.mobile-top-row {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    margin-bottom: $space-3;
+  }
+}
+
+.mobile-formation {
+  flex-shrink: 0;
+
+  &__select {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+    padding: $space-1 $space-6 $space-1 $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    background-color: $color-surface;
+    color: $color-text;
+    cursor: pointer;
+  }
+
+  // Shown once at least one player is nominated (formation is fixed, chips/select would no
+  // longer do anything — see selectFormation()) — same visual language as .formation-chip
+  // in its active state, just not interactive. Red by default (incomplete/invalid — not all
+  // 11 slots filled yet); green once isFormationValid() confirms a complete, valid shape.
+  &__box {
+    padding: 6px 12px;
+    background: rgba(191, 29, 0, 0.06);
+    border: 1px solid $color-accent;
+    border-radius: $radius-md;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    letter-spacing: 2px;
+    color: $color-accent;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    &--valid {
+      background: rgba(22, 163, 74, 0.08);
+      border-color: $color-success;
+      color: $color-success;
     }
   }
 }
@@ -652,12 +864,18 @@
 .field--editable {
   .field-player {
     cursor: grab;
-    transition: opacity 0.15s, transform 0.15s;
-    &:active { cursor: grabbing; }
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+    &:active {
+      cursor: grabbing;
+    }
 
     &--hovered {
       opacity: 1 !important;
-      .field-player__photo-wrap { transform: scale(1.18); }
+      .field-player__photo-wrap {
+        transform: scale(1.18);
+      }
     }
 
     &--dim {
@@ -739,7 +957,9 @@
     margin-top: $space-1;
     border-top: 1px solid $color-border;
 
-    &--neg { color: $color-danger; }
+    &--neg {
+      color: $color-danger;
+    }
   }
 
   &__val--neg {
@@ -748,18 +968,21 @@
 }
 
 @keyframes breakdown-in {
-  from { opacity: 0; transform: translate(-50%, calc(-100% - 4px)); }
-  to   { opacity: 1; transform: translate(-50%, calc(-100% - 8px)); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 8px));
+  }
 }
 
 .fp-icon {
   width: 18px;
   height: 18px;
   object-fit: contain;
-  filter:
-    drop-shadow(1px 0 0 #fff)
-    drop-shadow(-1px 0 0 #fff)
-    drop-shadow(0 1px 0 #fff)
+  filter: drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff)
     drop-shadow(0 -1px 0 #fff);
 
   @media (max-width: $mobile-breakpoint) {
@@ -816,8 +1039,15 @@
       width: calc(8px + 3px);
       height: calc(11px + 3px);
 
-      &::before { left: 3px; width: 8px; height: 11px; }
-      &::after  { width: 8px; height: 11px; }
+      &::before {
+        left: 3px;
+        width: 8px;
+        height: 11px;
+      }
+      &::after {
+        width: 8px;
+        height: 11px;
+      }
     }
   }
 }

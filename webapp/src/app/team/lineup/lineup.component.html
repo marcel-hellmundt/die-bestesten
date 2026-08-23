@@ -9,15 +9,36 @@
 
     <!-- PITCH -->
     <div class="field-wrap">
-      <div class="matchday-select-wrap matchday-select-wrap--mobile">
-        <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
-          @for (md of matchdays(); track md.id) {
-            <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
+      @if (countdown()) {
+        <div class="mobile-countdown">
+          <span class="mobile-countdown__time">{{ countdown() }}</span>
+          <span class="mobile-countdown__label">bis Anstoß</span>
+        </div>
+      }
+
+      <div class="mobile-top-row">
+        <div class="matchday-select-wrap matchday-select-wrap--mobile">
+          <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
+            @for (md of matchdays(); track md.id) {
+              <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
+            }
+          </select>
+          @if (saving()) {
+            <span class="saving-indicator">Speichern…</span>
           }
-        </select>
-        @if (saving()) {
-          <span class="saving-indicator">Speichern…</span>
-        }
+        </div>
+
+        <div class="mobile-formation">
+          @if (nominated().length === 0 && isEditable()) {
+            <select class="mobile-formation__select" (change)="onFormationSelect($any($event.target).value)">
+              @for (f of validFormations; track formationLabel(f)) {
+                <option [value]="formationLabel(f)" [selected]="isFormationActive(f)">{{ formationLabel(f) }}</option>
+              }
+            </select>
+          } @else {
+            <div class="mobile-formation__box" [class.mobile-formation__box--valid]="isFormationValid()">{{ formationLabel(formation()) }}</div>
+          }
+        </div>
       </div>
 
       <div class="field" [class.field--editable]="isEditable()">
@@ -35,6 +56,7 @@
                  [class.field-player--dim]="hoveredPlayer() !== null && hoveredPlayer()?.id !== p.id"
                  [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
                  cdkDrag
+                 cdkDragPreviewContainer="global"
                  [cdkDragDisabled]="!isEditable()"
                  (cdkDragMoved)="onDragMove($event, p)"
                  (cdkDragReleased)="onDragReleased($event, 'nominated')"
@@ -109,12 +131,33 @@
         </div>
       </div>
 
-      <!-- Mobile bench (card list below pitch, same card as the desktop sidebar) -->
+      <!-- Mobile bench (card row below pitch, same card as the desktop sidebar) — stepped
+           via the arrow buttons instead of finger-scrollable, so it doesn't fight with
+           dragging a chip onto the field. -->
       <div class="mobile-bench">
         <span class="mobile-bench__label">Ersatzbank</span>
-        <div class="mobile-bench__list">
-          <ng-container *ngTemplateOutlet="benchList"></ng-container>
+        <button
+          class="mobile-bench__arrow"
+          type="button"
+          [disabled]="!benchCanScrollLeft()"
+          (click)="shiftBench(-1)"
+          aria-label="Vorherige Bank-Spieler"
+        >‹</button>
+        <div
+          class="mobile-bench__list"
+          [class.mobile-bench__list--fade]="benchCanScrollRight()"
+          #benchListEl
+          (scroll)="onBenchScroll()"
+        >
+          <ng-container *ngTemplateOutlet="benchList; context: { compact: true }"></ng-container>
         </div>
+        <button
+          class="mobile-bench__arrow"
+          type="button"
+          [disabled]="!benchCanScrollRight()"
+          (click)="shiftBench(1)"
+          aria-label="Weitere Bank-Spieler"
+        >›</button>
       </div>
     </div>
 
@@ -122,7 +165,7 @@
     <div class="lineup-sidebar">
 
       @if (countdown()) {
-        <div class="kickoff-countdown">
+        <div class="kickoff-countdown desktop-countdown">
           <span class="countdown__time">{{ countdown() }}</span>
           <span class="countdown__label">bis Anstoß</span>
         </div>
@@ -149,7 +192,7 @@
         </div>
       }
 
-      <div class="sidebar-block">
+      <div class="sidebar-block desktop-formation">
         <h3 class="sidebar-title">Formation</h3>
         <div class="formations">
           @for (f of validFormations; track formationLabel(f)) {
@@ -175,15 +218,20 @@
     </div>
   </div>
 
-  <!-- Shared bench-player card, rendered both in the mobile card list above the pitch
-       and in the desktop sidebar list. -->
-  <ng-template #benchList>
+  <!-- Shared bench-player card, rendered both in the mobile card row above the pitch
+       (compact=true) and in the desktop sidebar list (full card). compact is applied as its
+       own class (not scoped via a .mobile-bench ancestor selector) because CDK clones this
+       element into a global drag preview outside any local DOM ancestry — an ancestor-scoped
+       class would silently stop applying to the preview and fall back to the full card look. -->
+  <ng-template #benchList let-compact="compact">
     @for (p of bench(); track p.id) {
       <a class="bench-player"
          [id]="p.id"
+         [class.bench-player--chip]="compact"
          [routerLink]="isEditable() ? null : ['/daten/player', p.id]"
          [class.bench-player--draggable]="isEditable()"
          cdkDrag
+         cdkDragPreviewContainer="global"
          [cdkDragDisabled]="!isEditable()"
          (cdkDragMoved)="onDragMove($event, p)"
          (cdkDragReleased)="onDragReleased($event, 'bench')"

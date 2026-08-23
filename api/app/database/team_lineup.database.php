@@ -170,6 +170,19 @@ trait TeamLineupTrait
             $ratingMap[$r['player_id']] = $r;
         }
 
+        // Season-cumulative points per player — used to order the bench within a position
+        // (this matchday's own `points` above is null for everyone before kickoff, which is
+        // exactly when bench ordering matters most, so it's useless as a tiebreaker there)
+        $seasonPtsQ = $this->con->prepare(
+            "SELECT pr.player_id, COALESCE(SUM(pr.points), 0) AS season_points
+             FROM player_rating pr
+             JOIN matchday m ON m.id = pr.matchday_id
+             WHERE m.season_id = ? AND pr.player_id IN ($ph)
+             GROUP BY pr.player_id"
+        );
+        $seasonPtsQ->execute(array_merge([$seasonId], $playerIds));
+        $seasonPointsMap = array_column($seasonPtsQ->fetchAll(PDO::FETCH_ASSOC), 'season_points', 'player_id');
+
         // Merge lineup meta + ratings into player data
         $posOrder = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
         $nominated = [];
@@ -180,6 +193,7 @@ trait TeamLineupTrait
             $rating  = $ratingMap[$e['player_id']] ?? [];
             $player['position_index'] = $e['position_index'];
             $player['season_id']      = $seasonId;
+            $player['season_points']  = (int) ($seasonPointsMap[$e['player_id']] ?? 0);
             $player['grade']          = $rating['grade'] ?? null;
             $player['points']         = isset($rating['points']) ? (int)$rating['points'] : null;
             $player['goals']          = (int)($rating['goals'] ?? 0);
@@ -197,9 +211,17 @@ trait TeamLineupTrait
             }
         }
 
-        $sort = fn($a, $b) =>
+        // Nominated: position, then the visual left-to-right slot order the manager set.
+        $sortNominated = fn($a, $b) =>
             ($posOrder[$a['position'] ?? ''] ?? 9) <=> ($posOrder[$b['position'] ?? ''] ?? 9)
             ?: ($a['position_index'] ?? 99) <=> ($b['position_index'] ?? 99);
+
+        // Bench: position, then season points (best first), then price as tiebreaker —
+        // position_index is always null on the bench so it can't serve as a tiebreaker there.
+        $sortBench = fn($a, $b) =>
+            ($posOrder[$a['position'] ?? ''] ?? 9) <=> ($posOrder[$b['position'] ?? ''] ?? 9)
+            ?: ($b['season_points'] ?? 0) <=> ($a['season_points'] ?? 0)
+            ?: (float) ($b['price'] ?? 0) <=> (float) ($a['price'] ?? 0);
 
         // Sanity check: if the nominated formation is no longer reachable by any valid shape
         // (legacy corrupted data, a race condition, or a bug that slipped an invalid save past
@@ -226,8 +248,8 @@ trait TeamLineupTrait
             }
         }
 
-        usort($nominated, $sort);
-        usort($bench, $sort);
+        usort($nominated, $sortNominated);
+        usort($bench, $sortBench);
 
         $nominatedPoints = array_sum(array_map(fn($p) => $p['points'] ?? 0, $nominated));
         $maxPoints       = array_sum(array_map(fn($p) => $p['points'] ?? 0, array_merge($nominated, $bench)));

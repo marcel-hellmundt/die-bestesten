@@ -594,3 +594,70 @@
 .spacer {
   flex-grow: 1;
 }
+
+// Pill-shaped sub-navigation (e.g. Liga/Team/Markt sub-pages) — muted pills, no background
+// until hovered/active. Shared so every page using it looks identical instead of each page
+// carrying its own near-duplicate nav styling.
+.pill-nav {
+  display: flex;
+  gap: $space-1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  // Space before the routed sub-page content. On team-detail this collapses with
+  // .team-header's own margin-bottom:$space-6 (same value, standard block margin
+  // collapsing) instead of stacking — so the gap stays 24px everywhere either way.
+  margin-bottom: $space-6;
+  // Establishes a stacking context above content that follows in the DOM (e.g. .row-link
+  // anchors with position:absolute; inset:0 in a table below) — without this, such an
+  // overlay can end up covering the pills and make them unclickable.
+  position: relative;
+  z-index: 1;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.pill {
+  padding: $space-1 $space-4;
+  height: $control-height;
+  display: inline-flex;
+  align-items: center;
+  // .pill-nav scrolls horizontally when it doesn't fit (overflow-x:auto) — without this,
+  // flex's default shrink:1 compresses pills instead on a narrow-enough viewport, and
+  // unevenly at that (shrink is distributed by each item's flex-basis, so a wider pill,
+  // e.g. one carrying a warning icon, gets compressed by more absolute pixels than a
+  // plain-text one) — text then overflows its own padding since white-space:nowrap can't
+  // wrap to compensate.
+  flex-shrink: 0;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  text-decoration: none;
+  border-radius: $radius-full;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition:
+    color $transition-fast,
+    background-color $transition-fast,
+    border-color $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    background-color: $color-surface-alt;
+  }
+
+  &--active {
+    color: $color-text;
+    background-color: $color-surface-alt;
+    border-color: $color-border;
+  }
+
+  &__warn-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    margin-right: $space-1;
+    flex-shrink: 0;
+  }
+}

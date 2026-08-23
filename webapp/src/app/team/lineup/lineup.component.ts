@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal, toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragMove } from '@angular/cdk/drag-drop';
@@ -12,6 +12,8 @@ interface LineupPlayer {
   position_index: number | null;
   season_id: string;
   nominated: boolean;
+  price: number;
+  season_points: number;
   grade: any;
   points: any;
   goals: number;
@@ -61,6 +63,10 @@ export class LineupComponent {
 
   lineupPlayers = signal<LineupPlayer[]>([]);
 
+  @ViewChild('benchListEl') benchListEl?: ElementRef<HTMLElement>;
+  benchCanScrollLeft  = signal(false);
+  benchCanScrollRight = signal(false);
+
   constructor() {
     toObservable(this.state).pipe(
       filter(s => !s.loading),
@@ -73,6 +79,13 @@ export class LineupComponent {
       } else {
         this.lineupPlayers.set([]);
       }
+    });
+
+    // Re-check the arrow states whenever the bench contents change (bought/sold players,
+    // a bench<->field swap) — queued so the list's scrollWidth reflects the updated DOM.
+    effect(() => {
+      this.bench();
+      queueMicrotask(() => this.onBenchScroll());
     });
   }
 
@@ -95,8 +108,32 @@ export class LineupComponent {
   bench = computed(() =>
     this.lineupPlayers()
       .filter(p => !p.nominated)
-      .sort((a, b) => (this.posOrder[a.position] ?? 9) - (this.posOrder[b.position] ?? 9))
+      .sort((a, b) =>
+        (this.posOrder[a.position] ?? 9) - (this.posOrder[b.position] ?? 9) ||
+        (b.season_points ?? 0) - (a.season_points ?? 0) ||
+        (Number(b.price) || 0) - (Number(a.price) || 0)
+      )
   );
+
+  // Mobile bench row: stepped via arrow buttons instead of a finger-drag scroll, which would
+  // otherwise fight with dragging a chip onto the field. Step size mirrors .bench-player's
+  // mobile width (56px) + .mobile-bench__list gap (8px) in lineup.component.scss.
+  private readonly benchStepPlayers = 3;
+  private readonly benchChipStep = 64;
+
+  shiftBench(direction: 1 | -1): void {
+    this.benchListEl?.nativeElement.scrollBy({
+      left: direction * this.benchStepPlayers * this.benchChipStep,
+      behavior: 'smooth',
+    });
+  }
+
+  onBenchScroll(): void {
+    const el = this.benchListEl?.nativeElement;
+    if (!el) return;
+    this.benchCanScrollLeft.set(el.scrollLeft > 4);
+    this.benchCanScrollRight.set(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }
 
   points    = computed(() => {
     const lp = this.lineupPlayers();
@@ -204,6 +241,19 @@ export class LineupComponent {
   selectFormation(f: number[]): void {
     if (!this.isEditable() || this.nominated().length > 0) return;
     this.manualEmptyFormation.set(f);
+  }
+
+  // Mobile formation <select> only has the label string to work with (native <option value>).
+  onFormationSelect(label: string): void {
+    const f = this.validFormations.find(f => this.formationLabel(f) === label);
+    if (f) this.selectFormation(f);
+  }
+
+  // True once all slots of one of the 7 formations are actually filled (11 nominated), not
+  // just "reachable" mid-build — used to color the mobile formation box green vs. red.
+  isFormationValid(): boolean {
+    const cur = this.formation();
+    return this.validFormations.some(f => f.every((v, i) => v === cur[i]));
   }
 
   getPlayersByPosition(pos: string): LineupPlayer[] {

@@ -4,8 +4,7 @@ import { DataCacheService } from '../core/data-cache.service';
 @Component({
   selector: 'app-liga',
   standalone: false,
-  templateUrl: './liga.component.html',
-  styleUrl: './liga.component.scss'
+  templateUrl: './liga.component.html'
 })
 export class LigaComponent {
   cache = inject(DataCacheService);
