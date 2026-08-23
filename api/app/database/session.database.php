@@ -61,6 +61,18 @@ trait SessionTrait
                     "UPDATE manager_session SET ended_at = NOW() WHERE id = :id"
                 )->execute([':id' => $open['id']]);
             } else {
+                // Eine neue Session wird eröffnet — der ideale Zeitpunkt, um alte 0s-Zeilen
+                // (started_at = ended_at) desselben Managers zu entsorgen, die außerhalb des
+                // 2-Minuten-Fensters liegen: sie können laut obiger $find-Query nie wieder
+                // verlängert werden, sind also endgültig tot. So bleibt die Tabelle ohne
+                // separaten Cron-Job sauber — jeder wiederkehrende Manager räumt beim nächsten
+                // Besuch automatisch seinen eigenen alten Leerlauf-Müll weg.
+                $this->con->prepare(
+                    "DELETE FROM manager_session
+                     WHERE manager_id = :id AND started_at = ended_at
+                       AND ended_at < (NOW() - INTERVAL 2 MINUTE)"
+                )->execute([':id' => $managerId]);
+
                 $this->con->prepare(
                     "INSERT INTO manager_session (manager_id, device_type, os, browser)
                      VALUES (:id, :device_type, :os, :browser)"
