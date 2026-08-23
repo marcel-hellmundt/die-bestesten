@@ -362,18 +362,16 @@ $mobile-nav-height: 64px;
     }
 
     // Fades the last visible chip into white on the right edge — a hint that the row
-    // continues and more players are scrolled out of view. Absolutely positioned against
-    // the scroll container itself, so it stays pinned to that edge instead of scrolling
-    // away with the chips.
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 20px;
-      background: linear-gradient(to right, rgba(255, 255, 255, 0), $color-surface);
-      pointer-events: none;
+    // continues and more players are scrolled out of view. mask-image fades the container's
+    // own rendered pixels (cards, photos) directly, rather than layering a separate
+    // absolutely-positioned overlay on top — avoids depending on paint/stacking order versus
+    // the chips entirely. Only applied while benchCanScrollRight() is true: this flex item
+    // can be wider than its chip content (e.g. a short bench that fits without scrolling), in
+    // which case the fade would otherwise land in the trailing blank space next to the arrow
+    // button instead of over an actual player.
+    &--fade {
+      mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent 100%);
     }
   }
 }

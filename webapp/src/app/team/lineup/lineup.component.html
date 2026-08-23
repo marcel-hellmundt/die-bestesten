@@ -143,7 +143,12 @@
           (click)="shiftBench(-1)"
           aria-label="Vorherige Bank-Spieler"
         >‹</button>
-        <div class="mobile-bench__list" #benchListEl (scroll)="onBenchScroll()">
+        <div
+          class="mobile-bench__list"
+          [class.mobile-bench__list--fade]="benchCanScrollRight()"
+          #benchListEl
+          (scroll)="onBenchScroll()"
+        >
           <ng-container *ngTemplateOutlet="benchList; context: { compact: true }"></ng-container>
         </div>
         <button
