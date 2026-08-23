@@ -86,8 +86,10 @@
 
 @if (tooltipTeam(); as tt) {
   <div class="squad-validity-tooltip"
+       [class.squad-validity-tooltip--below]="tooltipBelow()"
        [style.top.px]="tooltipPos()!.top"
-       [style.left.px]="tooltipPos()!.left">
+       [style.left.px]="tooltipPos()!.left"
+       #validityTooltipEl>
     @for (stat of positionStats(tt); track stat.position) {
       <div class="pos-stat" [style.--pos-color]="positionColor(stat.position)">
         <div class="pos-stat__header">

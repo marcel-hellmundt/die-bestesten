@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
@@ -105,13 +105,28 @@ export class LigaTeamsComponent {
   // Squad-validity tooltip (desktop hover only, see .squad-validity-tooltip media query) —
   // mirrors squad.component.ts's positionStats(), just without the pending-offer bubble state
   // since that's specific to viewing your own team's open bids.
-  tooltipTeam = signal<LigaTeam | null>(null);
-  tooltipPos  = signal<{ top: number; left: number } | null>(null);
+  @ViewChild('validityTooltipEl') validityTooltipEl?: ElementRef<HTMLElement>;
+  tooltipTeam  = signal<LigaTeam | null>(null);
+  tooltipPos   = signal<{ top: number; left: number } | null>(null);
+  tooltipBelow = signal(false);
 
   onValidityEnter(event: MouseEvent, t: LigaTeam): void {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     this.tooltipTeam.set(t);
+    this.tooltipBelow.set(false);
     this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+
+    // Top-row badges don't leave enough room above for the tooltip (its height depends on
+    // content, so this can only be checked after Angular has actually rendered it) — flip it
+    // below the badge instead of letting it run off the top of the viewport, unreadable.
+    queueMicrotask(() => {
+      const el = this.validityTooltipEl?.nativeElement;
+      if (!el || this.tooltipTeam() !== t) return;
+      if (el.getBoundingClientRect().top < 0) {
+        this.tooltipBelow.set(true);
+        this.tooltipPos.set({ top: rect.bottom, left: rect.left + rect.width / 2 });
+      }
+    });
   }
 
   onValidityLeave(): void {

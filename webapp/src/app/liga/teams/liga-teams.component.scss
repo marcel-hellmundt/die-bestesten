@@ -86,8 +86,15 @@
 // in lineup.component.scss.
 .squad-validity-tooltip {
   position: fixed;
-  transform: translate(-50%, calc(-100% - 8px));
-  z-index: $z-dropdown;
+  // scale() shrinks the whole thing (bubbles/labels included) without needing a separate
+  // compact variant of the shared .pos-stat/.bubble classes, which stay full-size on the
+  // squad page. transform-origin anchors the scale to the tip nearest the badge, so shrinking
+  // doesn't visibly pull the tooltip away from it.
+  transform: translate(-50%, calc(-100% - 8px)) scale(0.82);
+  transform-origin: bottom center;
+  // Above the sticky topbar ($z-sticky) — top-row badges sit close enough to it that the
+  // tooltip would otherwise render underneath it.
+  z-index: $z-overlay;
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-md;
@@ -95,6 +102,13 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
   pointer-events: none;
   min-width: 140px;
+
+  // Flipped below the badge when there isn't enough room above (top grid rows) — set once
+  // JS measures the rendered tooltip running off the top of the viewport.
+  &--below {
+    transform: translate(-50%, 8px) scale(0.82);
+    transform-origin: top center;
+  }
 
   @media (max-width: $mobile-breakpoint) {
     display: none;
