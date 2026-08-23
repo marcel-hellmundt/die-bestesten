@@ -204,7 +204,7 @@
     </div>
   }
 
-  <div class="topbar-right" [class.topbar-right--search-active]="isSearchOpen()">
+  <div class="topbar-right">
     <a
       class="topbar-icon-btn topbar-bell"
       [class.active]="currentUrl().startsWith('/karte')"
@@ -268,6 +268,31 @@
             </div>
           </a>
           <hr class="dropdown-divider" />
+          <!-- Mobile-only: Karte/Achievements/Benachrichtigungen sitzen dort auf Desktop als
+               eigene Icon-Buttons in der Topbar; auf Mobile ist dieser Platz jetzt für die immer
+               sichtbare Liga-Auswahl (.topbar-league) reserviert, siehe dort. -->
+          <a class="dropdown-item dropdown-item--mobile-only"
+             [class.dropdown-item--active]="currentUrl().startsWith('/karte')"
+             routerLink="/karte" (click)="closeDropdown()">
+            <app-icon name="map"></app-icon>
+            Karte
+          </a>
+          <a class="dropdown-item dropdown-item--mobile-only"
+             [class.dropdown-item--active]="currentUrl().startsWith('/achievements')"
+             routerLink="/achievements" (click)="closeDropdown()">
+            <app-icon name="award"></app-icon>
+            Achievements
+          </a>
+          <a class="dropdown-item dropdown-item--mobile-only"
+             [class.dropdown-item--active]="currentUrl().startsWith('/benachrichtigungen')"
+             routerLink="/benachrichtigungen" (click)="closeDropdown()">
+            <app-icon name="bell"></app-icon>
+            Benachrichtigungen
+            @if (notifService.unreadCount() > 0) {
+              <span class="dropdown-item-badge">{{ notifService.unreadCount() }}</span>
+            }
+          </a>
+          <hr class="dropdown-divider dropdown-divider--mobile-only" />
           @if (isMaintainer()) {
             <a class="dropdown-item" routerLink="/daten" (click)="closeDropdown()">
               <app-icon name="data"></app-icon>
@@ -279,52 +304,6 @@
             <app-icon name="settings"></app-icon>
             Einstellungen
           </a>
-          @if (showLeagueSwitcher()) {
-            <hr class="dropdown-divider dropdown-divider--mobile-league" />
-            <div class="dropdown-league-section">
-              <div class="dropdown-league-label">Liga</div>
-              @for (league of activeLeagues(); track league.id) {
-                <button
-                  class="dropdown-item"
-                  [class.dropdown-item--active]="league.id === activeLeagueId()"
-                  (click)="switchLeague(league.id); closeDropdown()"
-                >
-                  <app-icon name="globe"></app-icon>
-                  <span class="dropdown-league-item-name">{{ league.name }}</span>
-                  @if (league.id === activeLeagueId()) {
-                    <app-icon name="check" class="dropdown-league-check"></app-icon>
-                  }
-                </button>
-              }
-              @if (invitedLeagues().length > 0) {
-                <hr class="dropdown-divider" />
-                <div class="dropdown-league-label">Einladungen</div>
-                @for (league of invitedLeagues(); track league.id) {
-                  <div class="dropdown-item dropdown-item--invited">
-                    <span class="dropdown-league-item-name">{{ league.name }}</span>
-                    <div class="invite-actions">
-                      <button
-                        class="invite-btn invite-btn--accept"
-                        [disabled]="leagueActionState()[league.id] === 'loading'"
-                        (click)="acceptInvite(league.id)"
-                        title="Annehmen"
-                      >
-                        <app-icon name="check"></app-icon>
-                      </button>
-                      <button
-                        class="invite-btn invite-btn--decline"
-                        [disabled]="leagueActionState()[league.id] === 'loading'"
-                        (click)="declineInvite(league.id)"
-                        title="Ablehnen"
-                      >
-                        <app-icon name="x"></app-icon>
-                      </button>
-                    </div>
-                  </div>
-                }
-              }
-            </div>
-          }
           <hr class="dropdown-divider" />
           <button class="dropdown-item dropdown-item--danger" (click)="logout()">
             <app-icon name="logout"></app-icon>

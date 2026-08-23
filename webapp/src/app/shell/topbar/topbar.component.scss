@@ -154,17 +154,6 @@
     align-items: center;
     flex-shrink: 0;
     gap: $space-1;
-
-    // Mobile: while the search is expanded, hide the icon buttons (map/achievements/bell)
-    // so .topbar-left's flex:1 can grow the search box into that freed space — the profile
-    // avatar (.topbar-user, not .topbar-icon-btn) stays visible.
-    &--search-active {
-      @media (max-width: #{$mobile-breakpoint}) {
-        .topbar-icon-btn {
-          display: none;
-        }
-      }
-    }
   }
 
   &-icon-btn {
@@ -207,6 +196,13 @@
       white-space: nowrap;
       z-index: 20;
       pointer-events: none;
+    }
+
+    // Mobile: Karte/Achievements/Benachrichtigungen leben dort im Nutzer-Dropdown (siehe
+    // .dropdown-item--mobile-only), damit im Topbar-Streifen Platz für die immer sichtbare
+    // Liga-Auswahl (.topbar-league) ist.
+    @media (max-width: #{$mobile-breakpoint}) {
+      display: none;
     }
   }
 
@@ -315,7 +311,7 @@
         border-top: 1px solid $color-border;
         margin: $space-1 0;
 
-        &--mobile-league {
+        &--mobile-only {
           display: none;
 
           @media (max-width: #{$mobile-breakpoint}) {
@@ -373,38 +369,33 @@
             background: none;
           }
         }
-      }
 
-      .dropdown-league-section {
-        display: none;
+        // Karte/Achievements/Benachrichtigungen: auf Desktop eigene Icon-Buttons in der Topbar
+        // (siehe .topbar-icon-btn), auf Mobile stattdessen hier — der Platz in der Topbar ist
+        // dort für die immer sichtbare Liga-Auswahl reserviert.
+        &--mobile-only {
+          display: none;
 
-        @media (max-width: #{$mobile-breakpoint}) {
-          display: block;
+          @media (max-width: #{$mobile-breakpoint}) {
+            display: flex;
+          }
         }
       }
 
-      .dropdown-league-label {
-        padding: $space-1 $space-3;
-        font-size: $font-xs;
+      .dropdown-item-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        margin-left: auto;
+        border-radius: 99px;
+        background: $color-accent;
+        color: #fff;
+        font-size: 10px;
         font-weight: $font-weight-semibold;
-        color: $color-text-muted;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      .dropdown-league-item-name {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .dropdown-league-check {
-        width: 14px;
-        height: 14px;
-        color: $color-accent;
-        flex-shrink: 0;
+        line-height: 1;
       }
     }
 
@@ -457,14 +448,11 @@
   }
 }
 
-// Liga-Switcher (Desktop only)
+// Liga-Switcher — auf Mobile direkt im Topbar-Streifen sichtbar (statt nur versteckt im
+// Nutzer-Dropdown), damit die ausgewählte Liga immer auf einen Blick erkennbar ist.
 
 .topbar-league {
   position: relative;
-
-  @media (max-width: #{$mobile-breakpoint}) {
-    display: none;
-  }
 
   .league-btn {
     display: flex;
@@ -543,6 +531,14 @@
     padding: $space-2;
     z-index: $z-dropdown;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+    // .topbar-league sitzt auf Mobile am rechten Rand des Topbar-Streifens (direkt vor dem
+    // Avatar) — links ausgerichtet würde die Dropdown-Box über den Viewport-Rand hinausragen.
+    @media (max-width: #{$mobile-breakpoint}) {
+      left: auto;
+      right: 0;
+      max-width: calc(100vw - #{$space-4} * 2);
+    }
 
     .league-section-label {
       padding: $space-1 $space-3;
