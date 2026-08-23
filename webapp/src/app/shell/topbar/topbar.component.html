@@ -1,6 +1,7 @@
 <div class="topbar">
   <div class="topbar-left">
     <div
+      #searchContainer
       class="topbar-search"
       [class.topbar-search--active]="isSearchOpen()"
       [class.topbar-search--panel-open]="isSearchOpen() && searchQuery().length >= 3"
@@ -341,8 +342,4 @@
 
 @if (isLeagueDropdownOpen()) {
   <div class="dropdown-backdrop" (click)="closeLeagueDropdown()"></div>
-}
-
-@if (isSearchOpen()) {
-  <div class="dropdown-backdrop" (click)="closeSearch()"></div>
 }
