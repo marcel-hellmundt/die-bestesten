@@ -623,6 +623,13 @@
   height: $control-height;
   display: inline-flex;
   align-items: center;
+  // .pill-nav scrolls horizontally when it doesn't fit (overflow-x:auto) — without this,
+  // flex's default shrink:1 compresses pills instead on a narrow-enough viewport, and
+  // unevenly at that (shrink is distributed by each item's flex-basis, so a wider pill,
+  // e.g. one carrying a warning icon, gets compressed by more absolute pixels than a
+  // plain-text one) — text then overflows its own padding since white-space:nowrap can't
+  // wrap to compensate.
+  flex-shrink: 0;
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   color: $color-text-muted;
