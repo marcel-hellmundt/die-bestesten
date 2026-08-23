@@ -355,9 +355,25 @@ $mobile-nav-height: 64px;
     scrollbar-width: none;
     flex: 1;
     min-height: 0;
+    position: relative;
 
     &::-webkit-scrollbar {
       display: none;
+    }
+
+    // Fades the last visible chip into white on the right edge — a hint that the row
+    // continues and more players are scrolled out of view. Absolutely positioned against
+    // the scroll container itself, so it stays pinned to that edge instead of scrolling
+    // away with the chips.
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 20px;
+      background: linear-gradient(to right, rgba(255, 255, 255, 0), $color-surface);
+      pointer-events: none;
     }
   }
 }
