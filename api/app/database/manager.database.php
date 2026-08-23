@@ -476,8 +476,9 @@ trait ManagerTrait
             foreach ($sqMin as $pos => $min) {
                 if ($counts[$pos] < $min) { $valid = false; break; }
             }
-            $team['squad_valid'] = $valid;
-            $team['total_value'] = $totalValue;
+            $team['squad_valid']      = $valid;
+            $team['total_value']      = $totalValue;
+            $team['position_counts']  = $counts;
         }
         unset($team);
 

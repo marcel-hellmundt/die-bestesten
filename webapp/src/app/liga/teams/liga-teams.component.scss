@@ -81,6 +81,69 @@
   &--invalid { background: $color-danger; }
 }
 
+// Mobile-only stand-in for the desktop hover tooltip (no hover on touch) — vorhanden/min per
+// position, stacked right under the badge, each pair colored in that position's color.
+.mobile-position-summary {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    position: absolute;
+    top: calc(#{$space-2} + 20px + 4px);
+    // Badge is `right: $space-2; width: 20px`, so its horizontal center sits at
+    // $space-2 + 10px from the container's right edge. Position this block's right edge
+    // there, then shift it right by half its own (auto) width — the standard trick to center
+    // an element on a fixed point without knowing its width up front.
+    right: calc(#{$space-2} + 10px);
+    transform: translateX(50%);
+  }
+
+  &__row {
+    font-size: 11px;
+    font-weight: $font-weight-semibold;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+}
+
+// Squad-validity tooltip — desktop hover only for now (mobile has no hover; a tap-based
+// variant follows separately). Mirrors .player-breakdown's fixed-position-near-cursor pattern
+// in lineup.component.scss.
+.squad-validity-tooltip {
+  position: fixed;
+  // scale() shrinks the whole thing (bubbles/labels included) without needing a separate
+  // compact variant of the shared .pos-stat/.bubble classes, which stay full-size on the
+  // squad page. transform-origin anchors the scale to the tip nearest the badge, so shrinking
+  // doesn't visibly pull the tooltip away from it.
+  transform: translate(-50%, calc(-100% - 8px)) scale(0.82);
+  transform-origin: bottom center;
+  // Above the sticky topbar ($z-sticky) — top-row badges sit close enough to it that the
+  // tooltip would otherwise render underneath it.
+  z-index: $z-overlay;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-4;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  min-width: 140px;
+
+  // Flipped below the badge when there isn't enough room above (top grid rows) — set once
+  // JS measures the rendered tooltip running off the top of the viewport.
+  &--below {
+    transform: translate(-50%, 8px) scale(0.82);
+    transform-origin: top center;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
 .team-card__logo-wrap {
   width: 72px;
   height: 72px;
