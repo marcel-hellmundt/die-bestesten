@@ -93,6 +93,9 @@
 
     @media (max-width: #{$mobile-breakpoint}) {
       width: $control-height;
+      // Never smaller than the collapsed icon, even if .topbar-left itself gets tight —
+      // .topbar-league is the one that grows/shrinks with the leftover space (see .topbar-left).
+      flex-shrink: 0;
       padding: 0;
       justify-content: center;
       cursor: pointer;
@@ -110,9 +113,8 @@
       }
 
       &--active {
-        // flex:1 on the box itself instead of width:100% of .topbar-left — grows to fill
-        // whatever space .topbar-right leaves once its icons are hidden (see .topbar-right
-        // below), without depending on a percentage-of-parent resolving correctly.
+        // flex:1 on the box itself, plus .topbar-left--search-active reclaiming its own flex:1
+        // (see .topbar-left) so the growth actually has room to expand into.
         flex: 1;
         width: auto;
         gap: $space-2;
@@ -133,8 +135,16 @@
   &-left {
     @media (max-width: #{$mobile-breakpoint}) {
       display: flex;
-      flex: 1;
+      // Shrinks to its collapsed-icon content by default so the growth below goes to
+      // .topbar-league instead (as wide as possible without touching the search icon or the
+      // profile photo) — only reclaims flex:1 while the search box itself is expanded and
+      // actually needs the room.
+      flex: 0 1 auto;
       min-width: 0;
+
+      &--search-active {
+        flex: 1;
+      }
     }
   }
 
@@ -154,17 +164,6 @@
     align-items: center;
     flex-shrink: 0;
     gap: $space-1;
-
-    // Mobile: while the search is expanded, hide the icon buttons (map/achievements/bell)
-    // so .topbar-left's flex:1 can grow the search box into that freed space — the profile
-    // avatar (.topbar-user, not .topbar-icon-btn) stays visible.
-    &--search-active {
-      @media (max-width: #{$mobile-breakpoint}) {
-        .topbar-icon-btn {
-          display: none;
-        }
-      }
-    }
   }
 
   &-icon-btn {
@@ -207,6 +206,13 @@
       white-space: nowrap;
       z-index: 20;
       pointer-events: none;
+    }
+
+    // Mobile: Karte/Achievements/Benachrichtigungen leben dort im Nutzer-Dropdown (siehe
+    // .dropdown-item--mobile-only), damit im Topbar-Streifen Platz für die immer sichtbare
+    // Liga-Auswahl (.topbar-league) ist.
+    @media (max-width: #{$mobile-breakpoint}) {
+      display: none;
     }
   }
 
@@ -315,7 +321,7 @@
         border-top: 1px solid $color-border;
         margin: $space-1 0;
 
-        &--mobile-league {
+        &--mobile-only {
           display: none;
 
           @media (max-width: #{$mobile-breakpoint}) {
@@ -373,38 +379,33 @@
             background: none;
           }
         }
-      }
 
-      .dropdown-league-section {
-        display: none;
+        // Karte/Achievements/Benachrichtigungen: auf Desktop eigene Icon-Buttons in der Topbar
+        // (siehe .topbar-icon-btn), auf Mobile stattdessen hier — der Platz in der Topbar ist
+        // dort für die immer sichtbare Liga-Auswahl reserviert.
+        &--mobile-only {
+          display: none;
 
-        @media (max-width: #{$mobile-breakpoint}) {
-          display: block;
+          @media (max-width: #{$mobile-breakpoint}) {
+            display: flex;
+          }
         }
       }
 
-      .dropdown-league-label {
-        padding: $space-1 $space-3;
-        font-size: $font-xs;
+      .dropdown-item-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        margin-left: auto;
+        border-radius: 99px;
+        background: $color-accent;
+        color: #fff;
+        font-size: 10px;
         font-weight: $font-weight-semibold;
-        color: $color-text-muted;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      .dropdown-league-item-name {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .dropdown-league-check {
-        width: 14px;
-        height: 14px;
-        color: $color-accent;
-        flex-shrink: 0;
+        line-height: 1;
       }
     }
 
@@ -457,13 +458,18 @@
   }
 }
 
-// Liga-Switcher (Desktop only)
+// Liga-Switcher — auf Mobile direkt im Topbar-Streifen sichtbar (statt nur versteckt im
+// Nutzer-Dropdown), damit die ausgewählte Liga immer auf einen Blick erkennbar ist.
 
 .topbar-league {
   position: relative;
 
   @media (max-width: #{$mobile-breakpoint}) {
-    display: none;
+    // Takes all the space .topbar-left leaves (see its flex:0 default there) instead of just
+    // sizing to its own content — as wide as possible without shrinking the collapsed search
+    // icon or the profile photo, both of which stay at their fixed size regardless.
+    flex: 1;
+    min-width: 0;
   }
 
   .league-btn {
@@ -499,6 +505,12 @@
     }
 
     .league-name {
+      // Absorbs all the leftover space in the row — which as a side effect pushes the badge/
+      // chevron that follow it flush to the button's right edge, and centers the text within
+      // that grown box.
+      flex: 1;
+      min-width: 0;
+      text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
     }
@@ -511,8 +523,9 @@
     }
 
     @media (max-width: #{$mobile-breakpoint}) {
-      max-width: 120px;
-      padding: 0 $space-2;
+      // No cap — fills the now flex:1 .topbar-league container (see above).
+      max-width: none;
+      width: 100%;
     }
   }
 
@@ -543,6 +556,14 @@
     padding: $space-2;
     z-index: $z-dropdown;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+    // .topbar-league sitzt auf Mobile am rechten Rand des Topbar-Streifens (direkt vor dem
+    // Avatar) — links ausgerichtet würde die Dropdown-Box über den Viewport-Rand hinausragen.
+    @media (max-width: #{$mobile-breakpoint}) {
+      left: auto;
+      right: 0;
+      max-width: calc(100vw - #{$space-4} * 2);
+    }
 
     .league-section-label {
       padding: $space-1 $space-3;

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, computed, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { Subject, Subscription } from 'rxjs';
@@ -91,6 +91,7 @@ export class TopbarComponent implements OnDestroy {
   });
 
   @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('searchContainer') searchContainerRef?: ElementRef<HTMLElement>;
 
   failedImageIds = signal<Set<string>>(new Set());
 
@@ -176,6 +177,22 @@ export class TopbarComponent implements OnDestroy {
 
   closeSearch(): void {
     this.isSearchOpen.set(false);
+    this.searchInputRef?.nativeElement.blur();
+  }
+
+  // Der bestehende Backdrop (Sibling nach .topbar) reicht auf Mobile nicht: .topbar selbst hat
+  // per sticky-Positionierung ein höheres z-index als der Backdrop und fängt daher jeden Klick
+  // innerhalb des Topbar-Streifens (z.B. auf die restliche freie Fläche) ab, bevor er den
+  // Backdrop erreicht — die Suche blieb dann geöffnet+breit und die (per --search-active
+  // ausgeblendeten) Icon-Buttons unerreichbar. Ein document-weiter Klick-Listener schließt
+  // stattdessen bei jedem Klick außerhalb von .topbar-search, unabhängig von Stacking-Kontexten.
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.isSearchOpen()) return;
+    const target = event.target as Node;
+    if (!this.searchContainerRef?.nativeElement.contains(target)) {
+      this.closeSearch();
+    }
   }
 
   playerPhotoUrl(p: any): string | null {

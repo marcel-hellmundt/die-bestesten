@@ -4,6 +4,7 @@ import { toSignal, toObservable, takeUntilDestroyed } from '@angular/core/rxjs-i
 import { CdkDragMove } from '@angular/cdk/drag-drop';
 import { catchError, combineLatest, filter, interval, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../auth/auth.service';
 
 interface LineupPlayer {
   id: string;
@@ -34,12 +35,24 @@ interface LineupPlayer {
 })
 export class LineupComponent {
   private api   = inject(ApiService);
+  private auth  = inject(AuthService);
   private route = inject(ActivatedRoute);
 
   private teamId$ = this.route.parent!.paramMap.pipe(map(p => p.get('id')!));
 
   selectedMatchdayId = signal<string | null>(
     this.route.snapshot.queryParamMap.get('matchday_id')
+  );
+
+  // Whose team this is — a foreign team's lineup is viewable (e.g. via /liga/teams), but never
+  // editable: the API already rejects a PATCH with "Not your team", this just keeps the UI from
+  // suggesting otherwise (drag&drop that silently gets rejected on save is confusing).
+  private isOwnTeam = toSignal(
+    this.teamId$.pipe(
+      switchMap(id => this.api.get<any>(`team/${id}`).pipe(catchError(() => of(null)))),
+      map(team => team?.manager_id === this.auth.getManagerId())
+    ),
+    { initialValue: false }
   );
 
   private state = toSignal(
@@ -163,6 +176,11 @@ export class LineupComponent {
     return now.toISOString().slice(0, 10) >= md.start_date && now < new Date(md.kickoff_date);
   });
 
+  // Gates all actual editing UI (drag&drop, formation picker, empty slots) — isEditable() alone
+  // only checks the matchday's time window and stays true for a foreign team's lineup, which
+  // used to make players there draggable even though the API always rejects the save.
+  canEdit = computed(() => this.isEditable() && this.isOwnTeam());
+
   private tick = toSignal(interval(1000), { initialValue: 0 });
 
   countdown = computed((): string | null => {
@@ -239,7 +257,7 @@ export class LineupComponent {
   // established lineup would just get silently overridden by the closest-match logic above,
   // since a non-empty selection ignores manualEmptyFormation entirely.
   selectFormation(f: number[]): void {
-    if (!this.isEditable() || this.nominated().length > 0) return;
+    if (!this.canEdit() || this.nominated().length > 0) return;
     this.manualEmptyFormation.set(f);
   }
 
