@@ -168,7 +168,7 @@ GET      /team/previous        — Letztes Team aus Vorsaison {id,team_name,colo
 GET      /team/check-name      — ?name= (min. 3 Zeichen) → {available: bool}; 400 wenn zu kurz — Auth
 POST     /team/:id/logo        — multipart/form-data, Feld "image" (PNG) — nur eigenes Team — Auth
 POST     /team/:id/logo/takeover — übernimmt Logo aus Vorsaison-Team desselben Managers — nur eigenes Team; 404 wenn kein Vorsaison-Team — Auth
-GET      /manager              — [{id,manager_name,alias,status,email,last_activity,roles[],leagues[{id,name}]}] alle Manager global — Admin
+GET      /manager              — [{id,manager_name,alias,status,email,last_activity,stadiums_visited,roles[],leagues[{id,name}]}] alle Manager global — stadiums_visited = Anzahl per manager_stadium als besucht markierter Stadien — Admin
 POST     /manager              — {manager_name,first_name?,email,league_id} → {id,invite_link}; legt Manager mit status=invited an (zufälliges Platzhalter-Passwort) und manager_league sofort status=active (Liga bereits zugewiesen); sendet Einladungs-Mail (Link zu /login/accept-invite, 7 Tage gültig) — nach Passwort-Setzen automatischer Login mit league_id im JWT; 400 fehlende/ungültige Felder, 404 Liga nicht gefunden, 409 manager_name/email bereits vergeben — Admin
 POST     /manager/:id/resend-invite — → {invite_link}; neuer Token (alter wird ungültig) — 409 wenn status != invited — Admin
 GET      /manager/me           — {id,manager_name,alias,role,status} — Auth

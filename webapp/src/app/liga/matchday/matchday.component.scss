@@ -465,6 +465,17 @@
   }
 }
 
+.invalid-label {
+  flex-shrink: 0;
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
 .col-icons {
   white-space: nowrap;
   text-align: left;

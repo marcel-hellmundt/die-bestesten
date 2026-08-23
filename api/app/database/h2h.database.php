@@ -9,6 +9,35 @@ trait H2HTrait
         return (bool) $this->con_league->query("SELECT EXISTS(SELECT 1 FROM h2h_group)")->fetchColumn();
     }
 
+    /**
+     * H2H-Ergebnis für ein Team-Paar, inkl. Forfeit-Regel: ist genau ein Team invalid (ungültige
+     * Formation beim Spieltagsabschluss), gewinnt der Gegner automatisch 2:0 - unabhängig von den
+     * tatsächlichen Tor-Stats. Sind beide Teams invalid, endet es 0:0. Nur wenn keines der beiden
+     * invalid ist, zählt die reguläre Formel (goals + assists/3 - gegnerische sds_defender, min. 0).
+     * $home/$away sind team_rating-Zeilen (oder null, falls (noch) keine vorhanden) mit den Keys
+     * goals, assists, sds_defender, invalid — Null-Sicherheit pro Seite bleibt erhalten, damit eine
+     * fehlende Bewertung einer Seite die andere weiterhin nicht blockiert.
+     */
+    private function h2hGoals(?array $home, ?array $away): array
+    {
+        $homeInvalid = $home !== null && (bool) $home['invalid'];
+        $awayInvalid = $away !== null && (bool) $away['invalid'];
+
+        if ($homeInvalid || $awayInvalid) {
+            if ($homeInvalid && $awayInvalid) return ['home' => 0, 'away' => 0];
+            return $homeInvalid ? ['home' => 0, 'away' => 2] : ['home' => 2, 'away' => 0];
+        }
+
+        $homeGoals = ($home !== null && $home['goals'] !== null)
+            ? max(0, (int) $home['goals'] + intdiv((int) ($home['assists'] ?? 0), 3) - (int) ($away['sds_defender'] ?? 0))
+            : null;
+        $awayGoals = ($away !== null && $away['goals'] !== null)
+            ? max(0, (int) $away['goals'] + intdiv((int) ($away['assists'] ?? 0), 3) - (int) ($home['sds_defender'] ?? 0))
+            : null;
+
+        return ['home' => $homeGoals, 'away' => $awayGoals];
+    }
+
     public function getH2HOverview(string $seasonId): array
     {
         // Load all groups for this season
@@ -236,6 +265,7 @@ trait H2HTrait
             $md         = $matchdayMap[$m['matchday_id']] ?? null;
             $homeTeam   = $teamMap[$m['home_team_id']] ?? null;
             $awayTeam   = $teamMap[$m['away_team_id']] ?? null;
+            $goals      = $this->h2hGoals($homeRating, $awayRating);
             return [
                 'id'              => $m['id'],
                 'phase'           => $m['phase'],
@@ -254,10 +284,8 @@ trait H2HTrait
                 'matchday_number' => $md ? (int) $md['number'] : null,
                 'kickoff_date'    => $md['kickoff_date'] ?? null,
                 'completed'       => isset($md['completed']) ? (bool) $md['completed'] : false,
-                'home_goals'        => $homeRating !== null && $homeRating['goals'] !== null
-                                        ? max(0, $homeRating['goals'] + intdiv((int)($homeRating['assists'] ?? 0), 3) - ($awayRating['sds_defender'] ?? 0)) : null,
-                'away_goals'        => $awayRating !== null && $awayRating['goals'] !== null
-                                        ? max(0, $awayRating['goals'] + intdiv((int)($awayRating['assists'] ?? 0), 3) - ($homeRating['sds_defender'] ?? 0)) : null,
+                'home_goals'        => $goals['home'],
+                'away_goals'        => $goals['away'],
                 'home_assists'      => (int) ($homeRating['assists'] ?? 0),
                 'away_assists'      => (int) ($awayRating['assists'] ?? 0),
                 'home_sds_defender' => (int) ($homeRating['sds_defender'] ?? 0),
@@ -588,6 +616,7 @@ trait H2HTrait
         $awayTeam   = $teamMap[$match['away_team_id']] ?? null;
         $homeRating = $ratingMap[$match['home_team_id']] ?? null;
         $awayRating = $ratingMap[$match['away_team_id']] ?? null;
+        $goals      = $this->h2hGoals($homeRating, $awayRating);
 
         return [
             'match'        => [
@@ -602,13 +631,13 @@ trait H2HTrait
             'away_team'    => $awayTeam,
             'home_rating'  => $homeRating ? [
                 'points'        => (int) $homeRating['points'],
-                'goals'         => max(0, (int) $homeRating['goals'] + intdiv((int) $homeRating['assists'], 3) - (int) ($awayRating['sds_defender'] ?? 0)),
+                'goals'         => $goals['home'] ?? 0,
                 'assists'       => (int) $homeRating['assists'],
                 'sds_defender'  => (int) ($homeRating['sds_defender'] ?? 0),
             ] : null,
             'away_rating'  => $awayRating ? [
                 'points'        => (int) $awayRating['points'],
-                'goals'         => max(0, (int) $awayRating['goals'] + intdiv((int) $awayRating['assists'], 3) - (int) ($homeRating['sds_defender'] ?? 0)),
+                'goals'         => $goals['away'] ?? 0,
                 'assists'       => (int) $awayRating['assists'],
                 'sds_defender'  => (int) ($awayRating['sds_defender'] ?? 0),
             ] : null,
@@ -1081,7 +1110,7 @@ trait H2HTrait
             $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
             $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
             $rq  = $con->prepare(
-                "SELECT team_id, matchday_id, goals, assists, sds_defender
+                "SELECT team_id, matchday_id, goals, assists, sds_defender, invalid
                  FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
             );
             $rq->execute(array_merge(array_values($allTeamIds), $allMatchdayIds));
@@ -1090,6 +1119,7 @@ trait H2HTrait
                     'goals'        => $r['goals'] !== null ? (int) $r['goals'] : null,
                     'assists'      => (int) ($r['assists'] ?? 0),
                     'sds_defender' => (int) ($r['sds_defender'] ?? 0),
+                    'invalid'      => (bool) $r['invalid'],
                 ];
             }
         }
@@ -1107,8 +1137,9 @@ trait H2HTrait
                 $hR = $ratingMap[$m['home_team_id']][$m['matchday_id']] ?? null;
                 $aR = $ratingMap[$m['away_team_id']][$m['matchday_id']] ?? null;
                 if (!$hR || !$aR || $hR['goals'] === null || $aR['goals'] === null) continue;
-                $hp = max(0, $hR['goals'] + intdiv($hR['assists'], 3) - $aR['sds_defender']);
-                $ap = max(0, $aR['goals'] + intdiv($aR['assists'], 3) - $hR['sds_defender']);
+                $goals = $this->h2hGoals($hR, $aR);
+                $hp = $goals['home'];
+                $ap = $goals['away'];
                 if (!isset($standing[$m['home_team_id']])) $standing[$m['home_team_id']] = ['team_id' => $m['home_team_id'], 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
                 if (!isset($standing[$m['away_team_id']])) $standing[$m['away_team_id']] = ['team_id' => $m['away_team_id'], 'pts' => 0, 'goals_for' => 0, 'goals_against' => 0];
                 $standing[$m['home_team_id']]['goals_for']     += $hp;
@@ -1341,7 +1372,7 @@ trait H2HTrait
                 $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
                 $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
                 $rq  = $con->prepare(
-                    "SELECT team_id, matchday_id, goals, assists, sds_defender, points
+                    "SELECT team_id, matchday_id, goals, assists, sds_defender, points, invalid
                      FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
                 );
                 $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
@@ -1351,15 +1382,13 @@ trait H2HTrait
                         'assists'      => (int) ($r['assists'] ?? 0),
                         'sds_defender' => (int) ($r['sds_defender'] ?? 0),
                         'points'       => (int) ($r['points'] ?? 0),
+                        'invalid'      => (bool) $r['invalid'],
                     ];
                 }
             }
 
-            $effectiveGoals = function (string $tid, string $oppId, string $mdId) use ($ratingMap): ?int {
-                $r   = $ratingMap[$tid][$mdId]   ?? null;
-                $opp = $ratingMap[$oppId][$mdId] ?? null;
-                if (!$r || $r['goals'] === null) return null;
-                return max(0, $r['goals'] + intdiv($r['assists'], 3) - ($opp['sds_defender'] ?? 0));
+            $legGoals = function (string $tid, string $oppId, string $mdId) use ($ratingMap): array {
+                return $this->h2hGoals($ratingMap[$tid][$mdId] ?? null, $ratingMap[$oppId][$mdId] ?? null);
             };
 
             $vfWinners = [];
@@ -1372,10 +1401,10 @@ trait H2HTrait
                 $leg2  = $qfPairs[$si]['leg2'];
                 $teamA = $leg1['home_team_id'];
                 $teamB = $leg1['away_team_id'];
-                $a1 = $effectiveGoals($teamA, $teamB, $leg1['matchday_id']);
-                $b1 = $effectiveGoals($teamB, $teamA, $leg1['matchday_id']);
-                $a2 = $effectiveGoals($teamA, $teamB, $leg2['matchday_id']);
-                $b2 = $effectiveGoals($teamB, $teamA, $leg2['matchday_id']);
+                $g1 = $legGoals($teamA, $teamB, $leg1['matchday_id']);
+                $g2 = $legGoals($teamA, $teamB, $leg2['matchday_id']);
+                $a1 = $g1['home']; $b1 = $g1['away'];
+                $a2 = $g2['home']; $b2 = $g2['away'];
                 if ($a1 === null || $b1 === null || $a2 === null || $b2 === null) {
                     http_response_code(400);
                     return ['status' => false, 'message' => "Viertelfinale " . ($si + 1) . ": fehlende Bewertungen"];
@@ -1563,7 +1592,7 @@ trait H2HTrait
             $phT = implode(',', array_fill(0, count($allTeamIds), '?'));
             $phM = implode(',', array_fill(0, count($allMatchdayIds), '?'));
             $rq  = $con->prepare(
-                "SELECT team_id, matchday_id, goals, assists, sds_defender, points
+                "SELECT team_id, matchday_id, goals, assists, sds_defender, points, invalid
                  FROM team_rating WHERE team_id IN ($phT) AND matchday_id IN ($phM)"
             );
             $rq->execute(array_merge($allTeamIds, $allMatchdayIds));
@@ -1573,15 +1602,13 @@ trait H2HTrait
                     'assists'      => (int) ($r['assists'] ?? 0),
                     'sds_defender' => (int) ($r['sds_defender'] ?? 0),
                     'points'       => (int) ($r['points'] ?? 0),
+                    'invalid'      => (bool) $r['invalid'],
                 ];
             }
         }
 
-        $effectiveGoals = function (string $tid, string $oppId, string $mdId) use ($ratingMap): ?int {
-            $r   = $ratingMap[$tid][$mdId]   ?? null;
-            $opp = $ratingMap[$oppId][$mdId] ?? null;
-            if (!$r || $r['goals'] === null) return null;
-            return max(0, $r['goals'] + intdiv($r['assists'], 3) - ($opp['sds_defender'] ?? 0));
+        $legGoals = function (string $tid, string $oppId, string $mdId) use ($ratingMap): array {
+            return $this->h2hGoals($ratingMap[$tid][$mdId] ?? null, $ratingMap[$oppId][$mdId] ?? null);
         };
 
         $sfWinners = [];
@@ -1594,10 +1621,10 @@ trait H2HTrait
             $leg2  = $sfPairs[$si]['leg2'];
             $teamA = $leg1['home_team_id'];
             $teamB = $leg1['away_team_id'];
-            $a1 = $effectiveGoals($teamA, $teamB, $leg1['matchday_id']);
-            $b1 = $effectiveGoals($teamB, $teamA, $leg1['matchday_id']);
-            $a2 = $effectiveGoals($teamA, $teamB, $leg2['matchday_id']);
-            $b2 = $effectiveGoals($teamB, $teamA, $leg2['matchday_id']);
+            $g1 = $legGoals($teamA, $teamB, $leg1['matchday_id']);
+            $g2 = $legGoals($teamA, $teamB, $leg2['matchday_id']);
+            $a1 = $g1['home']; $b1 = $g1['away'];
+            $a2 = $g2['home']; $b2 = $g2['away'];
             if ($a1 === null || $b1 === null || $a2 === null || $b2 === null) {
                 http_response_code(400);
                 return ['status' => false, 'message' => "Halbfinale " . ($si + 1) . ": fehlende Bewertungen"];

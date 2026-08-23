@@ -101,6 +101,10 @@
             <span class="sort-indicator">{{ sortCol() === 'roles' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
           </th>
           <th>Ligen</th>
+          <th class="col-stadiums col-sortable hidden-mobile" (click)="sort('stadiums_visited')">
+            Stadien
+            <span class="sort-indicator">{{ sortCol() === 'stadiums_visited' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -207,6 +211,7 @@
                 <span class="col-muted">—</span>
               }
             </td>
+            <td class="col-stadiums col-muted hidden-mobile">{{ m.stadiums_visited }}</td>
           </tr>
         }
       </tbody>

@@ -93,6 +93,9 @@
                         (error)="onLogoError(r.team_id)"
                       />
                       <span class="team-name">{{ r.team_name }}</span>
+                      @if (+r.invalid) {
+                        <span class="invalid-label">Ungültig</span>
+                      }
                     </span>
                   </td>
                   <td class="col-icons col-desktop">

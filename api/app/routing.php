@@ -735,7 +735,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/manager',
-                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, email, last_activity, roles[], leagues[{id,name}]}] — Admin',
+                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, email, last_activity, stadiums_visited, roles[], leagues[{id,name}]}] — stadiums_visited = Anzahl per manager_stadium als besucht markierter Stadien — Admin',
                     ],
                     [
                         'method' => 'POST',
