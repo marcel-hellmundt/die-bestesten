@@ -595,62 +595,55 @@
   flex-grow: 1;
 }
 
-// Pill-shaped sub-navigation (e.g. Liga/Team/Markt sub-pages) — white background pills,
-// active = red accent fill. Shared so every page using it looks identical instead of each
-// page carrying its own near-duplicate nav styling.
+// Pill-shaped sub-navigation (e.g. Liga/Team/Markt sub-pages) — muted pills, no background
+// until hovered/active. Shared so every page using it looks identical instead of each page
+// carrying its own near-duplicate nav styling.
 .pill-nav {
   display: flex;
-  gap: $space-2;
+  gap: $space-1;
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: $space-1;
   // Space before the routed sub-page content. On team-detail this collapses with
   // .team-header's own margin-bottom:$space-6 (same value, standard block margin
   // collapsing) instead of stacking — so the gap stays 24px everywhere either way.
   margin-bottom: $space-6;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
   // Establishes a stacking context above content that follows in the DOM (e.g. .row-link
   // anchors with position:absolute; inset:0 in a table below) — without this, such an
   // overlay can end up covering the pills and make them unclickable.
   position: relative;
   z-index: 1;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .pill {
+  padding: $space-1 $space-4;
+  height: $control-height;
   display: inline-flex;
   align-items: center;
-  padding: 6px $space-4;
-  border-radius: $radius-full;
-  border: 1px solid $color-border;
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   color: $color-text-muted;
   text-decoration: none;
+  border-radius: $radius-full;
+  border: 1px solid transparent;
   white-space: nowrap;
-  background: $color-surface;
   transition:
     color $transition-fast,
-    border-color $transition-fast,
-    background $transition-fast;
+    background-color $transition-fast,
+    border-color $transition-fast;
 
   &:hover {
     color: $color-text;
-    border-color: $color-text-muted;
+    background-color: $color-surface-alt;
   }
 
   &--active {
-    background: $color-accent;
-    color: #fff;
-    border-color: $color-accent;
-
-    &:hover {
-      color: #fff;
-      background: $color-accent;
-      border-color: $color-accent;
-    }
+    color: $color-text;
+    background-color: $color-surface-alt;
+    border-color: $color-border;
   }
 
   &__warn-icon {
