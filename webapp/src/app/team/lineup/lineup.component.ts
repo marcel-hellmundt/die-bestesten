@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal, toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CdkDragMove } from '@angular/cdk/drag-drop';
@@ -63,6 +63,10 @@ export class LineupComponent {
 
   lineupPlayers = signal<LineupPlayer[]>([]);
 
+  @ViewChild('benchListEl') benchListEl?: ElementRef<HTMLElement>;
+  benchCanScrollLeft  = signal(false);
+  benchCanScrollRight = signal(false);
+
   constructor() {
     toObservable(this.state).pipe(
       filter(s => !s.loading),
@@ -75,6 +79,13 @@ export class LineupComponent {
       } else {
         this.lineupPlayers.set([]);
       }
+    });
+
+    // Re-check the arrow states whenever the bench contents change (bought/sold players,
+    // a bench<->field swap) — queued so the list's scrollWidth reflects the updated DOM.
+    effect(() => {
+      this.bench();
+      queueMicrotask(() => this.onBenchScroll());
     });
   }
 
@@ -103,6 +114,26 @@ export class LineupComponent {
         (Number(b.price) || 0) - (Number(a.price) || 0)
       )
   );
+
+  // Mobile bench row: stepped via arrow buttons instead of a finger-drag scroll, which would
+  // otherwise fight with dragging a chip onto the field. Step size mirrors .bench-player's
+  // mobile width (56px) + .mobile-bench__list gap (8px) in lineup.component.scss.
+  private readonly benchStepPlayers = 3;
+  private readonly benchChipStep = 64;
+
+  shiftBench(direction: 1 | -1): void {
+    this.benchListEl?.nativeElement.scrollBy({
+      left: direction * this.benchStepPlayers * this.benchChipStep,
+      behavior: 'smooth',
+    });
+  }
+
+  onBenchScroll(): void {
+    const el = this.benchListEl?.nativeElement;
+    if (!el) return;
+    this.benchCanScrollLeft.set(el.scrollLeft > 4);
+    this.benchCanScrollRight.set(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }
 
   points    = computed(() => {
     const lp = this.lineupPlayers();

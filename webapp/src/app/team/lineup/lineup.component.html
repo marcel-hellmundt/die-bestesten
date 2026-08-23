@@ -123,12 +123,28 @@
         </div>
       </div>
 
-      <!-- Mobile bench (card list below pitch, same card as the desktop sidebar) -->
+      <!-- Mobile bench (card row below pitch, same card as the desktop sidebar) — stepped
+           via the arrow buttons instead of finger-scrollable, so it doesn't fight with
+           dragging a chip onto the field. -->
       <div class="mobile-bench">
         <span class="mobile-bench__label">Ersatzbank</span>
-        <div class="mobile-bench__list">
+        <button
+          class="mobile-bench__arrow"
+          type="button"
+          [disabled]="!benchCanScrollLeft()"
+          (click)="shiftBench(-1)"
+          aria-label="Vorherige Bank-Spieler"
+        >‹</button>
+        <div class="mobile-bench__list" #benchListEl (scroll)="onBenchScroll()">
           <ng-container *ngTemplateOutlet="benchList"></ng-container>
         </div>
+        <button
+          class="mobile-bench__arrow"
+          type="button"
+          [disabled]="!benchCanScrollRight()"
+          (click)="shiftBench(1)"
+          aria-label="Weitere Bank-Spieler"
+        >›</button>
       </div>
     </div>
 
@@ -199,7 +215,6 @@
          [class.bench-player--draggable]="isEditable()"
          cdkDrag
          [cdkDragDisabled]="!isEditable()"
-         [cdkDragStartDelay]="{touch: 150, mouse: 0}"
          (cdkDragMoved)="onDragMove($event, p)"
          (cdkDragReleased)="onDragReleased($event, 'bench')"
          (cdkDragEnded)="onDragEnd()">

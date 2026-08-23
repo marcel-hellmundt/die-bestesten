@@ -1,10 +1,10 @@
 @use '../../../styles/variables' as *;
 
-// Height of the always-visible mobile bench bar (label row + one row of chips) — reserved
-// as bottom padding on .lineup-layout (mobile) so it never covers the last bit of real page
-// content, and the offset that clears the fixed bottom nav bar (see shell.component.scss,
-// same 64px).
-$mobile-bench-height: 104px;
+// Height of the always-visible mobile bench bar (single row: label + arrows + chips) —
+// reserved as bottom padding on .lineup-layout (mobile) so it never covers the last bit of
+// real page content, and the offset that clears the fixed bottom nav bar (see
+// shell.component.scss, same 64px).
+$mobile-bench-height: 84px;
 $mobile-nav-height: 64px;
 
 .matchday-select {
@@ -290,7 +290,8 @@ $mobile-nav-height: 64px;
 
   @media (max-width: $mobile-breakpoint) {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
     gap: $space-1;
     position: fixed;
     left: 0;
@@ -300,31 +301,63 @@ $mobile-nav-height: 64px;
     z-index: $z-sticky;
     background: $color-surface;
     border-top: 1px solid $color-border;
-    padding: $space-2 $space-3;
+    padding: $space-2 $space-1 $space-2 0;
     box-sizing: border-box;
   }
 
+  // Rotated 90° counter-clockwise (reads bottom-to-top) so it sits as a narrow strip to the
+  // left of the players instead of its own row above them — no whitespace above the chips.
   &__label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
     font-size: $font-xs;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  &__arrow {
+    flex-shrink: 0;
+    width: 24px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: $color-text-muted;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+
+    &:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
   }
 
   // Single horizontal row, same GOALKEEPER -> DEFENDER -> MIDFIELDER -> FORWARD order as
-  // bench() already sorts by — scrollable so the full bank stays reachable without ever
-  // needing to scroll the page itself away from the pitch.
+  // bench() already sorts by. touch-action:none blocks finger-drag panning (it would fight
+  // with dragging a chip onto the field) — stepped via the arrow buttons' scrollBy() instead,
+  // which isn't affected by touch-action.
   &__list {
     display: flex;
     flex-direction: row;
     gap: $space-2;
     overflow-x: auto;
     overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
+    touch-action: none;
+    scrollbar-width: none;
     flex: 1;
     min-height: 0;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   // Compact chip variant of .bench-player for the horizontal strip — photo on top, name
