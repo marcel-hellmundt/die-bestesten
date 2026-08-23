@@ -505,6 +505,12 @@
     }
 
     .league-name {
+      // Absorbs all the leftover space in the row — which as a side effect pushes the badge/
+      // chevron that follow it flush to the button's right edge, and centers the text within
+      // that grown box.
+      flex: 1;
+      min-width: 0;
+      text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
     }
