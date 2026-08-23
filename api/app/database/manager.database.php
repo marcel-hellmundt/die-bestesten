@@ -19,12 +19,14 @@ trait ManagerTrait
     {
         $q = $this->con->prepare(
             "SELECT m.id, m.manager_name, m.alias, m.status, m.email, m.last_activity,
+                    COUNT(DISTINCT ms.stadium_id) AS stadiums_visited,
                     GROUP_CONCAT(DISTINCT mr.role ORDER BY mr.role SEPARATOR ',') AS roles_csv,
                     GROUP_CONCAT(DISTINCT CONCAT(l.id, '~~', l.name, '~~', COALESCE(ml.status, 'active')) ORDER BY l.name SEPARATOR '|') AS league_data
              FROM manager m
-             LEFT JOIN manager_role mr  ON mr.manager_id  = m.id
-             LEFT JOIN manager_league ml ON ml.manager_id = m.id
-             LEFT JOIN league l          ON l.id           = ml.league_id
+             LEFT JOIN manager_role mr    ON mr.manager_id  = m.id
+             LEFT JOIN manager_league ml  ON ml.manager_id = m.id
+             LEFT JOIN league l           ON l.id           = ml.league_id
+             LEFT JOIN manager_stadium ms ON ms.manager_id  = m.id
              GROUP BY m.id, m.manager_name, m.alias, m.status, m.email, m.last_activity
              ORDER BY
                  CASE WHEN MAX(mr.role = 'admin')      = 1 THEN 0
@@ -35,6 +37,7 @@ trait ManagerTrait
         $q->execute();
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
+            $row['stadiums_visited'] = (int) $row['stadiums_visited'];
             $row['roles']   = $row['roles_csv'] ? explode(',', $row['roles_csv']) : [];
             $row['leagues'] = [];
             if ($row['league_data']) {

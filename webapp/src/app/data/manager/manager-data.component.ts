@@ -34,10 +34,10 @@ export class ManagerDataComponent {
     );
   });
 
-  sortCol = signal<'roles' | 'last_activity'>('roles');
+  sortCol = signal<'roles' | 'last_activity' | 'stadiums_visited'>('roles');
   sortDir = signal<'asc' | 'desc'>('desc');
 
-  sort(col: 'roles' | 'last_activity'): void {
+  sort(col: 'roles' | 'last_activity' | 'stadiums_visited'): void {
     if (this.sortCol() === col) {
       this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -54,6 +54,8 @@ export class ManagerDataComponent {
       let cmp: number;
       if (col === 'roles') {
         cmp = (a.roles?.length ?? 0) - (b.roles?.length ?? 0);
+      } else if (col === 'stadiums_visited') {
+        cmp = (a.stadiums_visited ?? 0) - (b.stadiums_visited ?? 0);
       } else {
         const aTime = a.last_activity ? new Date(a.last_activity).getTime() : -Infinity;
         const bTime = b.last_activity ? new Date(b.last_activity).getTime() : -Infinity;
@@ -295,6 +297,7 @@ export class ManagerDataComponent {
             status: 'invited',
             email,
             last_activity: null,
+            stadiums_visited: 0,
             roles: [],
             leagues: [{ id: leagueId, name: leagueName, status: 'active' }],
           },
