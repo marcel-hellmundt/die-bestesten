@@ -50,6 +50,16 @@
           </span>
         }
 
+        <!-- Mobile-only: no hover there, so the position breakdown behind the badge (see
+             .squad-validity-tooltip, desktop-only) shows directly as vorhanden/min per Position. -->
+        <div class="mobile-position-summary">
+          @for (stat of positionCounts(t); track stat.position) {
+            <span class="mobile-position-summary__row" [style.color]="positionColor(stat.position)">
+              {{ stat.count }}/{{ stat.min }}
+            </span>
+          }
+        </div>
+
         <div class="team-card__logo-wrap">
           @if (!logoFailed(t.id)) {
             <img class="team-card__logo" [src]="teamLogoUrl(t)" (error)="onLogoError(t.id)" alt="" />

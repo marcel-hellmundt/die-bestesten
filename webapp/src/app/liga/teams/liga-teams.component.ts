@@ -134,6 +134,16 @@ export class LigaTeamsComponent {
     this.tooltipPos.set(null);
   }
 
+  // Mobile equivalent of positionStats() below — no hover there for the tooltip, so the
+  // count/min per position is shown directly as compact colored text instead of bubbles.
+  positionCounts(t: LigaTeam) {
+    return POSITIONS.map(pos => ({
+      position: pos,
+      count: t.position_counts?.[pos] ?? 0,
+      min: CONSTRAINTS[pos].min,
+    }));
+  }
+
   positionStats(t: LigaTeam) {
     return POSITIONS.map(pos => {
       const { min, max } = CONSTRAINTS[pos];

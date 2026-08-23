@@ -81,6 +81,35 @@
   &--invalid { background: $color-danger; }
 }
 
+// Mobile-only stand-in for the desktop hover tooltip (no hover on touch) — vorhanden/min per
+// position, stacked right under the badge, each pair colored in that position's color.
+.mobile-position-summary {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    position: absolute;
+    top: calc(#{$space-2} + 20px + 4px);
+    // Badge is `right: $space-2; width: 20px`, so its horizontal center sits at
+    // $space-2 + 10px from the container's right edge. Position this block's right edge
+    // there, then shift it right by half its own (auto) width — the standard trick to center
+    // an element on a fixed point without knowing its width up front.
+    right: calc(#{$space-2} + 10px);
+    transform: translateX(50%);
+  }
+
+  &__row {
+    font-size: 11px;
+    font-weight: $font-weight-semibold;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+}
+
 // Squad-validity tooltip — desktop hover only for now (mobile has no hover; a tap-based
 // variant follows separately). Mirrors .player-breakdown's fixed-position-near-cursor pattern
 // in lineup.component.scss.
