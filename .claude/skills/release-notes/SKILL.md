@@ -104,15 +104,37 @@ und sofortige Aufmerksamkeit verdiente; ein Bugfix ist eine normale, nicht-dring
 
 ## 6. Ausgabe
 
-Gib das Ergebnis direkt als Chat-Antwort aus (Markdown-Überschriften pro Kategorie, Bulletpoints
-darunter) — kein Artifact, keine Datei, sofern der Nutzer nicht ausdrücklich danach fragt. Wenn der
-Nutzer erkennbar etwas Teilbares für die Liga-Mitglieder möchte (z.B. "schön aufbereitet",
-"zum Teilen"), biete an, daraus zusätzlich ein Artifact zu bauen — lade dafür vorher die
-`artifact-design`-Skill, bevor du irgendetwas schreibst.
+**Titel:** Jede Ausgabe bekommt zuerst eine individuelle Überschrift statt schlicht "Release
+Notes" — nach dem Muster `{Wochentag}s{Speise}`: der Wochentag des heutigen Tages (aktuelles
+Datum ermitteln, nicht das Datum des Zeitraum-Endes), gefolgt von einer leckeren Speise, deren
+Anfangsbuchstabe mit dem Anfangsbuchstaben des Wochentags übereinstimmt. Ist heute z.B. Sonntag,
+passt "Sorbet" → **Sonntagssorbet**. Die Speise frei wählen (muss nur zum Buchstaben passen und
+appetitlich klingen), zur Orientierung je ein Beispiel pro Wochentag:
+
+| Wochentag | Speise | Titel |
+|---|---|---|
+| Montag | Muffin | Montagsmuffin |
+| Dienstag | Donut | Dienstagsdonut |
+| Mittwoch | Milchreis | Mittwochsmilchreis |
+| Donnerstag | Dampfnudel | Donnerstagsdampfnudel |
+| Freitag | Falafel | Freitagsfalafel |
+| Samstag | Schnitzel | Samstagsschnitzel |
+| Sonntag | Sorbet | Sonntagssorbet |
+
+Als `#`-Überschrift ganz oben, vor den Kategorien. Wird zusätzlich ein Artifact gebaut (siehe
+unten), denselben Titel dafür verwenden.
+
+Gib das Ergebnis direkt als Chat-Antwort aus (Titel, dann Markdown-Überschriften pro Kategorie,
+Bulletpoints darunter) — kein Artifact, keine Datei, sofern der Nutzer nicht ausdrücklich danach
+fragt. Wenn der Nutzer erkennbar etwas Teilbares für die Liga-Mitglieder möchte (z.B. "schön
+aufbereitet", "zum Teilen"), biete an, daraus zusätzlich ein Artifact zu bauen — lade dafür vorher
+die `artifact-design`-Skill, bevor du irgendetwas schreibst.
 
 Beispielstruktur:
 
 ```
+# Sonntagssorbet
+
 ## 🚨 Hotfixes
 - 💰 [Kurzbeschreibung]
 
