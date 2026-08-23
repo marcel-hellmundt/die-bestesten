@@ -317,6 +317,7 @@ $mobile-nav-height: 64px;
     letter-spacing: 0.06em;
     flex-shrink: 0;
     white-space: nowrap;
+    margin: 0 -4px 0 4px;
   }
 
   &__arrow {
@@ -636,6 +637,9 @@ $mobile-nav-height: 64px;
     align-items: center;
     gap: 2px;
     padding: $space-1;
+    // Explicit (not just inherited) so it's unmistakably visible against the green pitch
+    // while being dragged — that's the state where it actually needs to stand out.
+    background: $color-surface;
 
     // Same rotated ribbon as the desktop card, scaled down (~70%, same aspect ratio and
     // offset ratios) to match this much smaller card.
