@@ -681,7 +681,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team',
-                        'description' => 'Alle Teams einer Saison — gibt [{id,team_name,color,color_secondary,season_id,manager_id,manager_name,alias}] sortiert nach team_name zurück — Auth',
+                        'description' => 'Alle Teams einer Saison — gibt [{id,team_name,color,color_secondary,season_id,manager_id,manager_name,alias,squad_valid,total_value,position_counts:{GOALKEEPER,DEFENDER,MIDFIELDER,FORWARD}}] sortiert nach team_name zurück; squad_valid = Mindestanforderungen erfüllt (GK≥1/DEF≥5/MID≥5/FWD≥3), position_counts = aktuelle Kaderbesetzung je Position — Auth',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                     [

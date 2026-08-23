@@ -661,3 +661,78 @@
     flex-shrink: 0;
   }
 }
+
+// Position-count bubbles (min/max squad requirements per position, colored fill = present,
+// outline = within the required minimum, plain grey = optional/empty). Used on the squad page
+// and the league teams overview's squad-validity tooltip.
+.pos-stat {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  & + & {
+    margin-top: $space-4;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--pos-color);
+    flex: 1;
+  }
+
+  &__meta {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+.pos-stat__bubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bubble {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: $color-border;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &--filled {
+    background: var(--pos-color);
+    border-color: transparent;
+  }
+
+  &--pending {
+    background: color-mix(in srgb, #f59e0b 20%, transparent);
+    border-color: #f59e0b;
+    color: #92400e;
+    font-size: 11px;
+    font-weight: $font-weight-semibold;
+    line-height: 1;
+  }
+
+  &--required {
+    background: $color-border;
+    border: 2.5px solid var(--pos-color);
+    opacity: 0.5;
+  }
+
+  &--min {
+    outline: 4px solid color-mix(in srgb, var(--pos-color) 40%, transparent);
+  }
+}

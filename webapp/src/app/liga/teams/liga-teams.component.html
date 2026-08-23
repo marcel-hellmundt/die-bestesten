@@ -35,13 +35,15 @@
     @for (t of teams(); track t.id) {
       <div class="team-card row-link" (click)="navigate(t.id)">
         @if (t.squad_valid) {
-          <span class="squad-badge squad-badge--valid">
+          <span class="squad-badge squad-badge--valid"
+                (mouseenter)="onValidityEnter($event, t)" (mouseleave)="onValidityLeave()">
             <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 8.5L6.5 12L13 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
         } @else {
-          <span class="squad-badge squad-badge--invalid">
+          <span class="squad-badge squad-badge--invalid"
+                (mouseenter)="onValidityEnter($event, t)" (mouseleave)="onValidityLeave()">
             <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M4 4L12 12M12 4L4 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
             </svg>
@@ -77,6 +79,25 @@
         </div>
 
         <span class="team-card__value">{{ formatValue(t.total_value) }}</span>
+      </div>
+    }
+  </div>
+}
+
+@if (tooltipTeam(); as tt) {
+  <div class="squad-validity-tooltip"
+       [style.top.px]="tooltipPos()!.top"
+       [style.left.px]="tooltipPos()!.left">
+    @for (stat of positionStats(tt); track stat.position) {
+      <div class="pos-stat" [style.--pos-color]="positionColor(stat.position)">
+        <div class="pos-stat__header">
+          <span class="pos-stat__label">{{ positionLabel(stat.position) }}</span>
+        </div>
+        <div class="pos-stat__bubbles">
+          @for (bubble of stat.bubbles; track $index) {
+            <span class="bubble" [class.bubble--filled]="bubble.filled" [class.bubble--min]="bubble.isMin"></span>
+          }
+        </div>
       </div>
     }
   </div>

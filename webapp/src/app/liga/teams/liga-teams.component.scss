@@ -81,6 +81,26 @@
   &--invalid { background: $color-danger; }
 }
 
+// Squad-validity tooltip — desktop hover only for now (mobile has no hover; a tap-based
+// variant follows separately). Mirrors .player-breakdown's fixed-position-near-cursor pattern
+// in lineup.component.scss.
+.squad-validity-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: $z-dropdown;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-4;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  min-width: 140px;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
 .team-card__logo-wrap {
   width: 72px;
   height: 72px;

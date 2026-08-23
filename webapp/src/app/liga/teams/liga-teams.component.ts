@@ -17,7 +17,18 @@ interface LigaTeam {
   alias: string | null;
   squad_valid: boolean;
   total_value: number;
+  position_counts: Record<string, number>;
 }
+
+// Mirrors squad.component.ts's CONSTRAINTS — same min/max squad requirements per position.
+const CONSTRAINTS: Record<string, { min: number; max: number }> = {
+  GOALKEEPER: { min: 1, max: 2 },
+  DEFENDER:   { min: 5, max: 6 },
+  MIDFIELDER: { min: 5, max: 6 },
+  FORWARD:    { min: 3, max: 4 },
+};
+
+const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
 @Component({
   selector: 'app-liga-teams',
@@ -89,6 +100,57 @@ export class LigaTeamsComponent {
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.', ',') + ' Mio. €';
     if (v >= 1_000)     return (v / 1_000).toFixed(0) + ' Tsd. €';
     return v.toLocaleString('de-DE') + ' €';
+  }
+
+  // Squad-validity tooltip (desktop hover only, see .squad-validity-tooltip media query) —
+  // mirrors squad.component.ts's positionStats(), just without the pending-offer bubble state
+  // since that's specific to viewing your own team's open bids.
+  tooltipTeam = signal<LigaTeam | null>(null);
+  tooltipPos  = signal<{ top: number; left: number } | null>(null);
+
+  onValidityEnter(event: MouseEvent, t: LigaTeam): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.tooltipTeam.set(t);
+    this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+  }
+
+  onValidityLeave(): void {
+    this.tooltipTeam.set(null);
+    this.tooltipPos.set(null);
+  }
+
+  positionStats(t: LigaTeam) {
+    return POSITIONS.map(pos => {
+      const { min, max } = CONSTRAINTS[pos];
+      const count = t.position_counts?.[pos] ?? 0;
+      return {
+        position: pos,
+        bubbles: Array.from({ length: max }, (_, i) => ({
+          filled: i < count,
+          isMin:  i < min,
+        })),
+      };
+    });
+  }
+
+  positionLabel(pos: string): string {
+    const map: Record<string, string> = {
+      GOALKEEPER: 'TOR',
+      DEFENDER:   'ABW',
+      MIDFIELDER: 'MIT',
+      FORWARD:    'STU',
+    };
+    return map[pos] ?? pos;
+  }
+
+  positionColor(pos: string): string {
+    const map: Record<string, string> = {
+      GOALKEEPER: 'var(--position-goalkeeper)',
+      DEFENDER:   'var(--position-defender)',
+      MIDFIELDER: 'var(--position-midfielder)',
+      FORWARD:    'var(--position-forward)',
+    };
+    return map[pos] ?? 'transparent';
   }
 
   navigate(teamId: string): void {
