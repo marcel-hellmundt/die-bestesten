@@ -637,16 +637,23 @@ $mobile-nav-height: 64px;
     gap: 2px;
     padding: $space-1;
 
+    // Same rotated ribbon as the desktop card, scaled down (~70%, same aspect ratio and
+    // offset ratios) to match this much smaller card.
     .bench-player__pos {
-      position: static;
-      width: 20px;
-      height: 3px;
-      border-radius: $radius-full;
-      transform: none;
+      width: 70px;
+      height: 35px;
+      top: -20px;
+      left: -35px;
     }
 
     .bench-player__photo-wrap {
-      position: static;
+      // position:relative (not static) so the inherited z-index:1 from the base rule still
+      // takes effect and keeps the photo stacked above the ribbon, like on desktop. top/left
+      // reset to 0 — relative positioning still applies the base rule's absolute-positioning
+      // offset (top:8px; left:-8px) otherwise, which would push the photo off-center here.
+      position: relative;
+      top: 0;
+      left: 0;
       width: 40px;
       height: 40px;
     }
