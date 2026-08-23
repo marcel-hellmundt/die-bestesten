@@ -9,6 +9,13 @@
 
     <!-- PITCH -->
     <div class="field-wrap">
+      @if (countdown()) {
+        <div class="mobile-countdown">
+          <span class="mobile-countdown__time">{{ countdown() }}</span>
+          <span class="mobile-countdown__label">bis Anstoß</span>
+        </div>
+      }
+
       <div class="mobile-top-row">
         <div class="matchday-select-wrap matchday-select-wrap--mobile">
           <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
@@ -153,7 +160,7 @@
     <div class="lineup-sidebar">
 
       @if (countdown()) {
-        <div class="kickoff-countdown">
+        <div class="kickoff-countdown desktop-countdown">
           <span class="countdown__time">{{ countdown() }}</span>
           <span class="countdown__label">bis Anstoß</span>
         </div>

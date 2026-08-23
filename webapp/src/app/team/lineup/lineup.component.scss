@@ -685,6 +685,13 @@ $mobile-nav-height: 64px;
   text-align: center;
 }
 
+// Replaced on mobile by the compact single-line .mobile-countdown above the pitch.
+.desktop-countdown {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
 .countdown__time {
   font-size: $font-lg;
   font-weight: $font-weight-bold;
@@ -716,6 +723,38 @@ $mobile-nav-height: 64px;
     @media (max-width: $mobile-breakpoint) {
       display: none;
     }
+  }
+}
+
+// Kickoff countdown, mobile only — condensed onto a single line at the very top of the
+// pitch, roughly matching .mobile-top-row's height below it (desktop keeps the larger
+// stacked .kickoff-countdown in the sidebar instead, see .desktop-countdown).
+.mobile-countdown {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: $space-1;
+    padding: $space-1 $space-3;
+    background: $color-surface-alt;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    margin-bottom: $space-3;
+  }
+
+  &__time {
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+
+  &__label {
+    font-size: $font-2xs;
+    color: $color-text-muted;
   }
 }
 
