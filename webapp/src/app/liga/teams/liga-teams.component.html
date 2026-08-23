@@ -97,6 +97,7 @@
 @if (tooltipTeam(); as tt) {
   <div class="squad-validity-tooltip"
        [class.squad-validity-tooltip--below]="tooltipBelow()"
+       [class.squad-validity-tooltip--ready]="tooltipReady()"
        [style.top.px]="tooltipPos()!.top"
        [style.left.px]="tooltipPos()!.left"
        #validityTooltipEl>

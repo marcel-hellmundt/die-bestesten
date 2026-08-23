@@ -130,7 +130,19 @@
   padding: $space-4;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
   pointer-events: none;
-  min-width: 140px;
+  // Fixed (not min-width/auto) so the box never shrink-to-fits based on how much room is left
+  // between the badge and the viewport edge — with only `left` set (no `right`), an auto-width
+  // fixed-position box's shrink-to-fit sizing is constrained by that remaining space, which
+  // made the tooltip visibly narrower for badges near the right edge of the screen.
+  width: 210px;
+  // Invisible until JS has measured it and corrected its position (edge clamping, below-flip)
+  // — still laid out and measurable while hidden this way (unlike display:none), it just isn't
+  // painted, so the naive placement never flashes on screen before snapping to its final spot.
+  visibility: hidden;
+
+  &--ready {
+    visibility: visible;
+  }
 
   // Flipped below the badge when there isn't enough room above (top grid rows) — set once
   // JS measures the rendered tooltip running off the top of the viewport.

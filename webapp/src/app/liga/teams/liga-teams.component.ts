@@ -109,29 +109,60 @@ export class LigaTeamsComponent {
   tooltipTeam  = signal<LigaTeam | null>(null);
   tooltipPos   = signal<{ top: number; left: number } | null>(null);
   tooltipBelow = signal(false);
+  // Stays false until the edge-clamped position below is known — the tooltip renders
+  // invisible (but still laid out/measurable, see .squad-validity-tooltip's `visibility`) in
+  // the meantime, so the naive placement never flashes on screen before snapping to its
+  // final spot.
+  tooltipReady = signal(false);
+
+  private static readonly TOOLTIP_EDGE_MARGIN = 24;
 
   onValidityEnter(event: MouseEvent, t: LigaTeam): void {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     this.tooltipTeam.set(t);
     this.tooltipBelow.set(false);
+    this.tooltipReady.set(false);
     this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
 
-    // Top-row badges don't leave enough room above for the tooltip (its height depends on
-    // content, so this can only be checked after Angular has actually rendered it) — flip it
-    // below the badge instead of letting it run off the top of the viewport, unreadable.
-    queueMicrotask(() => {
+    // Top-row / near-the-right-edge badges don't leave enough room for the tooltip on that
+    // side — its rendered size only exists once Angular has actually painted it, so this can
+    // only be corrected in a follow-up pass. The tooltip has a fixed (not shrink-to-fit) width
+    // precisely so this measurement is stable regardless of how close to the edge it started.
+    // requestAnimationFrame (not queueMicrotask): the browser only paints once all pending
+    // microtasks — including Angular's own change-detection flush from the .set() above — have
+    // drained, so this is guaranteed to see the DOM after Angular actually patched it in.
+    requestAnimationFrame(() => {
       const el = this.validityTooltipEl?.nativeElement;
       if (!el || this.tooltipTeam() !== t) return;
-      if (el.getBoundingClientRect().top < 0) {
-        this.tooltipBelow.set(true);
-        this.tooltipPos.set({ top: rect.bottom, left: rect.left + rect.width / 2 });
+
+      const margin = LigaTeamsComponent.TOOLTIP_EDGE_MARGIN;
+      let top   = rect.top;
+      let left  = rect.left + rect.width / 2;
+      let below = false;
+
+      const tipRect = el.getBoundingClientRect();
+
+      if (tipRect.top < margin) {
+        below = true;
+        top = rect.bottom;
       }
+
+      const halfWidth = tipRect.width / 2;
+      const maxLeft   = window.innerWidth - margin - halfWidth;
+      const minLeft   = margin + halfWidth;
+      if (left > maxLeft) left = maxLeft;
+      if (left < minLeft) left = minLeft;
+
+      this.tooltipBelow.set(below);
+      this.tooltipPos.set({ top, left });
+      this.tooltipReady.set(true);
     });
   }
 
   onValidityLeave(): void {
     this.tooltipTeam.set(null);
     this.tooltipPos.set(null);
+    this.tooltipReady.set(false);
   }
 
   // Mobile equivalent of positionStats() below — no hover there for the tooltip, so the
