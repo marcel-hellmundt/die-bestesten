@@ -7,6 +7,7 @@ interface NavItem {
   icon: string;
   route: string | any[] | null;
   warning?: boolean;
+  isNew?: boolean;
 }
 
 interface NavGroup {
@@ -64,6 +65,7 @@ export class NavComponent {
     label: 'Liga',
     icon: 'tabelle',
     items: [
+      { label: 'Saisonvorschau', icon: 'eye', route: '/liga/saisonvorschau', isNew: true },
       { label: 'Spieltag', icon: 'spieltag', route: '/liga/spieltag' },
       { label: 'Tabelle', icon: 'tabelle', route: '/liga/tabelle' },
 

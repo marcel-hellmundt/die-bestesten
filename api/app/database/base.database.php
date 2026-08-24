@@ -33,6 +33,7 @@ require_once 'watchlist.database.php';
 require_once 'h2h.database.php';
 require_once 'powerranking.database.php';
 require_once 'session.database.php';
+require_once 'saisonvorschau.database.php';
 
 class Database
 {
@@ -70,6 +71,7 @@ class Database
     use H2HTrait;
     use PowerrankingTrait;
     use SessionTrait;
+    use SaisonvorschauTrait;
 
     private $con;
     private $con_league;

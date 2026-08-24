@@ -1,0 +1,100 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (error()) {
+  <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (teams().length === 0) {
+  <p class="state-msg">Noch keine Teams in dieser Saison.</p>
+} @else {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th class="col-valid">Gültig</th>
+          <th class="col-squad">Kader</th>
+          <th class="col-num">Punkte Vorsaison</th>
+          <th class="col-num">Neuzugänge</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of teams(); track t.id) {
+          <tr class="row-link" (click)="navigate(t.id)">
+            <td class="col-team">
+              <span class="team-cell">
+                <img
+                  class="tbl-logo"
+                  [class.logo--placeholder]="logoFailed(t.id)"
+                  [src]="logoFailed(t.id) ? 'img/placeholders/club.png' : teamLogoUrl(t.id)"
+                  [alt]="t.team_name"
+                  (error)="onLogoError(t.id)"
+                />
+                <span class="team-name">{{ t.team_name }}</span>
+              </span>
+            </td>
+            <td class="col-valid">
+              @if (t.squad_valid) {
+                <span class="valid-icon valid-icon--valid">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 8.5L6.5 12L13 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              } @else {
+                <span class="valid-icon valid-icon--invalid">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 4L12 12M12 4L4 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </span>
+              }
+            </td>
+            <td class="col-squad">
+              <div class="squad-summary">
+                @for (stat of positionCounts(t); track stat.position) {
+                  <span class="squad-summary__pos" [style.color]="stat.color">{{ stat.label }} {{ stat.count }}/{{ stat.min }}</span>
+                }
+              </div>
+            </td>
+            <td class="col-num col-points">{{ t.previous_season_points | number }}</td>
+            <td class="col-num" [class.col-muted]="!t.newcomer_count">{{ t.newcomer_count }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-row">
+    <div class="card preview-card">
+      <span class="preview-card__title">Aufsteiger</span>
+      <span class="preview-card__subtitle">{{ promotedClubsLabel() }}</span>
+      @if (promotedClubTeams().length === 0) {
+        <p class="state-msg">Keine Teams mit Spielern von Aufsteigern.</p>
+      } @else {
+        <div class="club-team-list">
+          @for (r of promotedClubTeams(); track r.team_id) {
+            <a class="club-team-list__item" [routerLink]="['/team', r.team_id]">
+              <span class="club-team-list__name">{{ r.team_name }}</span>
+              <span class="club-team-list__count">{{ r.count }}</span>
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    @if (specialClubs().length > 0) {
+      <div class="card preview-card">
+        <span class="preview-card__title">{{ specialClubsLabel() }}</span>
+        @if (specialClubTeams().length === 0) {
+          <p class="state-msg">Keine Teams mit Spielern dieser Vereine.</p>
+        } @else {
+          <div class="club-team-list">
+            @for (r of specialClubTeams(); track r.team_id) {
+              <a class="club-team-list__item" [routerLink]="['/team', r.team_id]">
+                <span class="club-team-list__name">{{ r.team_name }}</span>
+                <span class="club-team-list__count">{{ r.count }}</span>
+              </a>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

@@ -728,6 +728,18 @@ class Routing
                 ],
             ]),
 
+            new Route('saisonvorschau', 'Saisonvorschau', [
+                'title' => 'Saisonvorschau',
+                'description' => 'Kader-Übersicht vor/während Saisonstart im Vergleich zur Vorsaison',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/saisonvorschau',
+                        'description' => 'Alle Teams der aktiven Saison mit Kaderzusammensetzung — gibt { season_id, previous_season_id, teams:[{id,team_name,color,color_secondary,manager_id,manager_name,alias,squad_valid,position_counts:{GOALKEEPER,DEFENDER,MIDFIELDER,FORWARD},previous_season_points,newcomer_count}], promoted_clubs:[{id,name,short_name,logo_uploaded}], promoted_club_teams:[{team_id,team_name,color,color_secondary,count}], special_clubs:[{id,name,logo_uploaded}], special_club_teams:[{team_id,team_name,color,color_secondary,count}] } zurück; previous_season_points = Summe der Vorsaison-Punkte aller aktuellen Kaderspieler, newcomer_count = Anzahl Kaderspieler ohne ein einziges player_rating in der Vorsaison; promoted_clubs = Vereine der Liga-Division, die in der Vorsaison genau eine Division tiefer (level+1) spielten, promoted_club_teams/special_club_teams = Teams mit Kaderspielern dieser bzw. der fest gewählten Vereine "RB Leipzig"/"TSG Hoffenheim"/"VfL Wolfsburg", absteigend nach count sortiert (nur count>0); leere Struktur ohne aktive Saison — Auth',
+                    ],
+                ],
+            ]),
+
             new Route('manager', 'Manager', [
                 'title' => 'Manager',
                 'description' => 'Eigenes Manager-Konto verwalten (Profil, Passwort, Account löschen) — Rollenvergabe + Neuanlage/Einladung nur Admin',

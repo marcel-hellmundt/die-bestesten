@@ -1,0 +1,141 @@
+@use '../../../styles/variables' as *;
+
+.col-valid {
+  width: 60px;
+  text-align: center;
+}
+
+.col-squad {
+  min-width: 220px;
+}
+
+.col-num {
+  width: 120px;
+  text-align: right;
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 80px;
+  }
+}
+
+.col-points {
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-muted {
+  color: $color-border;
+}
+
+.col-team {
+  vertical-align: middle;
+}
+
+.team-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+
+  @media (max-width: $mobile-breakpoint) {
+    gap: $space-2;
+
+    .tbl-logo {
+      width: 28px;
+      height: 28px;
+    }
+  }
+}
+
+.valid-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+
+  svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  &--valid   { background: $color-success; }
+  &--invalid { background: $color-danger; }
+}
+
+.squad-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1 $space-3;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+
+  &__pos {
+    white-space: nowrap;
+  }
+}
+
+.chart-row {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-4;
+  margin-top: $space-6;
+
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+  }
+}
+
+.preview-card {
+  flex: 1;
+  min-width: 0;
+
+  &__title {
+    display: block;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    margin-bottom: $space-1;
+  }
+
+  &__subtitle {
+    display: block;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    margin-bottom: $space-4;
+  }
+}
+
+.club-team-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.club-team-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-sm;
+  color: $color-text;
+  text-decoration: none;
+
+  &:hover .club-team-list__name {
+    color: $color-accent;
+  }
+}
+
+.club-team-list__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color $transition-fast;
+}
+
+.club-team-list__count {
+  flex-shrink: 0;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+}
