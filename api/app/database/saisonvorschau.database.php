@@ -59,19 +59,28 @@ trait SaisonvorschauTrait
         $allPlayerIds = array_values(array_unique($allPlayerIds));
 
         $positions       = [];
+        $prices          = [];
         $currentClub     = [];
         $prevPoints      = [];
         $prevRatingCount = [];
+        $displayNames    = [];
 
         if (!empty($allPlayerIds)) {
             $pp = implode(',', array_fill(0, count($allPlayerIds), '?'));
 
             $posQ = $this->con->prepare(
-                "SELECT player_id, position FROM player_in_season WHERE player_id IN ($pp) AND season_id = ?"
+                "SELECT player_id, position, price FROM player_in_season WHERE player_id IN ($pp) AND season_id = ?"
             );
             $posQ->execute([...$allPlayerIds, $seasonId]);
             foreach ($posQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
                 $positions[$r['player_id']] = $r['position'];
+                $prices[$r['player_id']]    = (float) $r['price'];
+            }
+
+            $nameQ = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($pp)");
+            $nameQ->execute($allPlayerIds);
+            foreach ($nameQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $displayNames[$r['id']] = $r['displayname'];
             }
 
             $clubQ = $this->con->prepare(
@@ -99,15 +108,16 @@ trait SaisonvorschauTrait
 
         $sqMin = ['GOALKEEPER' => 1, 'DEFENDER' => 5, 'MIDFIELDER' => 5, 'FORWARD' => 3];
         foreach ($teams as &$team) {
-            $counts    = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
-            $points    = 0;
-            $newcomers = 0;
+            $counts          = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
+            $points          = 0;
+            $newcomerNames   = [];
             foreach ($teamPlayerIds[$team['id']] as $pid) {
                 $pos = $positions[$pid] ?? null;
                 if ($pos && isset($counts[$pos])) $counts[$pos]++;
                 $points += $prevPoints[$pid] ?? 0;
-                if (($prevRatingCount[$pid] ?? 0) === 0) $newcomers++;
+                if (($prevRatingCount[$pid] ?? 0) === 0) $newcomerNames[] = $displayNames[$pid] ?? '?';
             }
+            sort($newcomerNames, SORT_STRING | SORT_FLAG_CASE);
             $valid = true;
             foreach ($sqMin as $pos => $min) {
                 if ($counts[$pos] < $min) { $valid = false; break; }
@@ -115,11 +125,13 @@ trait SaisonvorschauTrait
             $team['squad_valid']             = $valid;
             $team['position_counts']         = $counts;
             $team['previous_season_points']  = $points;
-            $team['newcomer_count']          = $newcomers;
+            $team['newcomer_count']          = count($newcomerNames);
+            $team['newcomer_players']        = $newcomerNames;
         }
         unset($team);
 
         $promotedClubs = [];
+        $fillerPrice   = null;
         if ($prevSeasonId) {
             $divisionId = $this->getLeagueDivisionId();
             if (!$divisionId) {
@@ -132,6 +144,12 @@ trait SaisonvorschauTrait
                 $lvlQ->execute([':id' => $divisionId]);
                 $curLevel = $lvlQ->fetchColumn();
                 if ($curLevel !== false) {
+                    // "Lückenfüller"-Marktwert: Aufsteiger-Spieler ohne echte Bewertung bekommen
+                    // beim Import einen pauschalen Mindestpreis statt einer echten Einschätzung —
+                    // 0,5 Mio in der 1. Liga, 0,1 Mio (100.000 €) in der 2. Liga. Solche Spieler
+                    // zählen nicht als "Vertrauen" für die Karte, siehe countTeamsByClubIds().
+                    if ((int) $curLevel === 1)      $fillerPrice = 500_000.0;
+                    elseif ((int) $curLevel === 2)  $fillerPrice = 100_000.0;
                     $pcQ = $this->con->prepare(
                         "SELECT c.id, c.name, c.short_name, c.logo_uploaded
                          FROM club_in_season cis_cur
@@ -159,7 +177,7 @@ trait SaisonvorschauTrait
         }
 
         $specialClubs = [];
-        foreach (['RB Leipzig', 'TSG Hoffenheim', 'VfL Wolfsburg'] as $name) {
+        foreach (['RB Leipzig', 'TSG Hoffenheim'] as $name) {
             $c = $this->findClubByName($name);
             if ($c) {
                 $specialClubs[] = [
@@ -175,9 +193,9 @@ trait SaisonvorschauTrait
             'previous_season_id'   => $prevSeasonId,
             'teams'                => $teams,
             'promoted_clubs'       => $promotedClubs,
-            'promoted_club_teams'  => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, array_column($promotedClubs, 'id')),
+            'promoted_club_teams'  => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, $displayNames, array_column($promotedClubs, 'id'), $prices, $fillerPrice),
             'special_clubs'        => $specialClubs,
-            'special_club_teams'   => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, array_column($specialClubs, 'id')),
+            'special_club_teams'   => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, $displayNames, array_column($specialClubs, 'id')),
         ];
     }
 
@@ -185,26 +203,31 @@ trait SaisonvorschauTrait
      * Pro Team zählen, wie viele seiner (bereits geladenen) Kaderspieler aktuell einem der
      * übergebenen Vereine angehören. Nur Teams mit Treffern werden zurückgegeben, absteigend
      * sortiert. Gemeinsame Hilfsfunktion für Aufsteiger- und Fest-Vereine-Karte in
-     * getSaisonvorschau().
+     * getSaisonvorschau(). $fillerPrice (falls gesetzt) blendet Lückenfüller-Spieler mit exakt
+     * diesem Marktwert aus — nur von der Aufsteiger-Karte genutzt.
      */
-    private function countTeamsByClubIds(array $teams, array $teamPlayerIds, array $currentClub, array $clubIds): array
+    private function countTeamsByClubIds(array $teams, array $teamPlayerIds, array $currentClub, array $displayNames, array $clubIds, array $prices = [], ?float $fillerPrice = null): array
     {
         if (empty($clubIds)) return [];
         $clubIdSet = array_flip($clubIds);
 
         $result = [];
         foreach ($teams as $team) {
-            $count = 0;
+            $players = [];
             foreach ($teamPlayerIds[$team['id']] as $pid) {
-                if (isset($clubIdSet[$currentClub[$pid] ?? null])) $count++;
+                if (!isset($clubIdSet[$currentClub[$pid] ?? null])) continue;
+                if ($fillerPrice !== null && abs(($prices[$pid] ?? -1.0) - $fillerPrice) < 0.01) continue;
+                $players[] = $displayNames[$pid] ?? '?';
             }
-            if ($count > 0) {
+            if (!empty($players)) {
+                sort($players, SORT_STRING | SORT_FLAG_CASE);
                 $result[] = [
                     'team_id'         => $team['id'],
                     'team_name'       => $team['team_name'],
                     'color'           => $team['color'],
                     'color_secondary' => $team['color_secondary'],
-                    'count'           => $count,
+                    'count'           => count($players),
+                    'players'         => $players,
                 ];
             }
         }

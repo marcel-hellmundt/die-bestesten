@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
@@ -17,6 +17,7 @@ interface SaisonvorschauTeam {
   position_counts: Record<string, number>;
   previous_season_points: number;
   newcomer_count: number;
+  newcomer_players: string[];
 }
 
 interface ClubRef {
@@ -32,6 +33,7 @@ interface ClubTeamCount {
   color: string | null;
   color_secondary: string | null;
   count: number;
+  players: string[];
 }
 
 interface SaisonvorschauResponse {
@@ -43,6 +45,8 @@ interface SaisonvorschauResponse {
   special_clubs: ClubRef[];
   special_club_teams: ClubTeamCount[];
 }
+
+type SortField = 'previous_season_points' | 'newcomer_count';
 
 const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 const SQUAD_MIN: Record<string, number> = { GOALKEEPER: 1, DEFENDER: 5, MIDFIELDER: 5, FORWARD: 3 };
@@ -83,6 +87,24 @@ export class SaisonvorschauComponent {
     this.specialClubs().map(c => c.name).join(', ')
   );
 
+  sortField = signal<SortField>('previous_season_points');
+  sortDir   = signal<'asc' | 'desc'>('desc');
+
+  sortedTeams = computed(() => {
+    const field = this.sortField();
+    const dir   = this.sortDir() === 'asc' ? 1 : -1;
+    return [...this.teams()].sort((a, b) => (a[field] - b[field]) * dir);
+  });
+
+  toggleSort(field: SortField): void {
+    if (this.sortField() === field) {
+      this.sortDir.update(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortField.set(field);
+      this.sortDir.set('desc');
+    }
+  }
+
   private logoErrors = new Set<string>();
   logoFailed(teamId: string): boolean { return this.logoErrors.has(teamId); }
   onLogoError(teamId: string): void   { this.logoErrors.add(teamId); }
@@ -92,13 +114,18 @@ export class SaisonvorschauComponent {
   }
 
   positionCounts(t: SaisonvorschauTeam) {
-    return POSITIONS.map(pos => ({
-      position: pos,
-      label: this.positionLabel(pos),
-      count: t.position_counts?.[pos] ?? 0,
-      min: SQUAD_MIN[pos],
-      color: this.positionColor(pos),
-    }));
+    return POSITIONS.map(pos => {
+      const count = t.position_counts?.[pos] ?? 0;
+      const min   = SQUAD_MIN[pos];
+      return {
+        position: pos,
+        label: this.positionLabel(pos),
+        count,
+        min,
+        color: this.positionColor(pos),
+        opacity: count < min ? 0.3 : 1,
+      };
+    });
   }
 
   positionLabel(pos: string): string {
@@ -118,5 +145,62 @@ export class SaisonvorschauComponent {
 
   navigate(teamId: string): void {
     this.router.navigate(['/team', teamId]);
+  }
+
+  // Spielerlisten-Tooltip — gleiches Positionier-/Edge-Clamp-Muster wie die Kader-Gültigkeit-
+  // Tooltip auf /liga/teams (liga-teams.component.ts), nur mit einer kompakten Namensliste statt
+  // Bubbles. Ein einziger Tooltip wird von allen drei Hover-Zielen geteilt (Neuzugänge-Spalte in
+  // der Tabelle, sowie die Anzahl in beiden Vereins-Karten) — jeweils mit eigenem Titel/Liste.
+  @ViewChild('countTooltipEl') countTooltipEl?: ElementRef<HTMLElement>;
+  tooltipData  = signal<{ title: string; players: string[] } | null>(null);
+  tooltipPos   = signal<{ top: number; left: number } | null>(null);
+  tooltipBelow = signal(false);
+  tooltipReady = signal(false);
+
+  private static readonly TOOLTIP_EDGE_MARGIN = 24;
+  private hoverSeq = 0;
+
+  onCountHover(event: MouseEvent, title: string, players: string[]): void {
+    if (!players.length) return;
+    const seq = ++this.hoverSeq;
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.tooltipData.set({ title, players });
+    this.tooltipBelow.set(false);
+    this.tooltipReady.set(false);
+    this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+
+    requestAnimationFrame(() => {
+      const el = this.countTooltipEl?.nativeElement;
+      if (!el || seq !== this.hoverSeq) return;
+
+      const margin = SaisonvorschauComponent.TOOLTIP_EDGE_MARGIN;
+      let top   = rect.top;
+      let left  = rect.left + rect.width / 2;
+      let below = false;
+
+      const tipRect = el.getBoundingClientRect();
+
+      if (tipRect.top < margin) {
+        below = true;
+        top = rect.bottom;
+      }
+
+      const halfWidth = tipRect.width / 2;
+      const maxLeft   = window.innerWidth - margin - halfWidth;
+      const minLeft   = margin + halfWidth;
+      if (left > maxLeft) left = maxLeft;
+      if (left < minLeft) left = minLeft;
+
+      this.tooltipBelow.set(below);
+      this.tooltipPos.set({ top, left });
+      this.tooltipReady.set(true);
+    });
+  }
+
+  onCountLeave(): void {
+    this.hoverSeq++;
+    this.tooltipData.set(null);
+    this.tooltipPos.set(null);
+    this.tooltipReady.set(false);
   }
 }

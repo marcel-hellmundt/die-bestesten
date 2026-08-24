@@ -27,6 +27,31 @@
   color: $color-border;
 }
 
+.col-hoverable {
+  cursor: default;
+
+  &:hover {
+    color: $color-text;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+  }
+}
+
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: $color-text;
+  }
+}
+
+.sort-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 8px;
+}
+
 .col-team {
   vertical-align: middle;
 }
@@ -138,4 +163,60 @@
   flex-shrink: 0;
   font-weight: $font-weight-semibold;
   color: $color-text-muted;
+}
+
+// Spielerlisten-Tooltip beim Hover über eine Zahl (Neuzugänge-Spalte oder Vereins-Karten) —
+// gleiches Positionier-/Edge-Clamp-Muster wie .squad-validity-tooltip auf /liga/teams
+// (liga-teams.component.scss).
+.count-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  transform-origin: bottom center;
+  z-index: $z-overlay;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-3 $space-4;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  max-width: 220px;
+  visibility: hidden;
+
+  &--ready {
+    visibility: visible;
+  }
+
+  &--below {
+    transform: translate(-50%, 8px);
+    transform-origin: top center;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+
+  &__title {
+    display: block;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+    margin-bottom: $space-2;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    li {
+      font-size: $font-sm;
+      color: $color-text;
+      white-space: nowrap;
+    }
+  }
 }

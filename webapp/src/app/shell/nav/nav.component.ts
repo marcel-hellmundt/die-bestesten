@@ -74,7 +74,7 @@ export class NavComponent {
         : []),
       { label: 'Teams', icon: 'kader', route: '/liga/teams' },
       ...(this.cache.powerrankingEnabled()
-        ? [{ label: 'Powerranking', icon: 'powerranking', route: '/liga/powerranking' } as NavItem]
+        ? [{ label: 'Powerranking', icon: 'powerranking', route: '/liga/powerranking', isNew: true } as NavItem]
         : []),
       { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
     ],

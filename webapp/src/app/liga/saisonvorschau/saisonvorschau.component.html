@@ -12,12 +12,22 @@
           <th>Team</th>
           <th class="col-valid">Gültig</th>
           <th class="col-squad">Kader</th>
-          <th class="col-num">Punkte Vorsaison</th>
-          <th class="col-num">Neuzugänge</th>
+          <th class="col-num sortable-th" (click)="toggleSort('previous_season_points')">
+            Punkte Vorsaison
+            @if (sortField() === 'previous_season_points') {
+              <span class="sort-arrow">{{ sortDir() === 'desc' ? '▼' : '▲' }}</span>
+            }
+          </th>
+          <th class="col-num sortable-th" (click)="toggleSort('newcomer_count')">
+            Neuzugänge
+            @if (sortField() === 'newcomer_count') {
+              <span class="sort-arrow">{{ sortDir() === 'desc' ? '▼' : '▲' }}</span>
+            }
+          </th>
         </tr>
       </thead>
       <tbody>
-        @for (t of teams(); track t.id) {
+        @for (t of sortedTeams(); track t.id) {
           <tr class="row-link" (click)="navigate(t.id)">
             <td class="col-team">
               <span class="team-cell">
@@ -49,12 +59,21 @@
             <td class="col-squad">
               <div class="squad-summary">
                 @for (stat of positionCounts(t); track stat.position) {
-                  <span class="squad-summary__pos" [style.color]="stat.color">{{ stat.label }} {{ stat.count }}/{{ stat.min }}</span>
+                  <span class="squad-summary__pos" [style.color]="stat.color" [style.opacity]="stat.opacity">{{ stat.label }} {{ stat.count }}/{{ stat.min }}</span>
                 }
               </div>
             </td>
             <td class="col-num col-points">{{ t.previous_season_points | number }}</td>
-            <td class="col-num" [class.col-muted]="!t.newcomer_count">{{ t.newcomer_count }}</td>
+            <td
+              class="col-num"
+              [class.col-muted]="!t.newcomer_count"
+              [class.col-hoverable]="t.newcomer_count > 0"
+              (mouseenter)="onCountHover($event, 'Neuzugänge', t.newcomer_players)"
+              (mouseleave)="onCountLeave()"
+              (click)="$event.stopPropagation()"
+            >
+              {{ t.newcomer_count }}
+            </td>
           </tr>
         }
       </tbody>
@@ -63,7 +82,7 @@
 
   <div class="chart-row">
     <div class="card preview-card">
-      <span class="preview-card__title">Aufsteiger</span>
+      <span class="preview-card__title">Vertrauen in Aufsteiger</span>
       <span class="preview-card__subtitle">{{ promotedClubsLabel() }}</span>
       @if (promotedClubTeams().length === 0) {
         <p class="state-msg">Keine Teams mit Spielern von Aufsteigern.</p>
@@ -72,7 +91,12 @@
           @for (r of promotedClubTeams(); track r.team_id) {
             <a class="club-team-list__item" [routerLink]="['/team', r.team_id]">
               <span class="club-team-list__name">{{ r.team_name }}</span>
-              <span class="club-team-list__count">{{ r.count }}</span>
+              <span
+                class="club-team-list__count col-hoverable"
+                (mouseenter)="onCountHover($event, r.team_name, r.players)"
+                (mouseleave)="onCountLeave()"
+                (click)="$event.stopPropagation(); $event.preventDefault()"
+              >{{ r.count }}</span>
             </a>
           }
         </div>
@@ -81,7 +105,8 @@
 
     @if (specialClubs().length > 0) {
       <div class="card preview-card">
-        <span class="preview-card__title">{{ specialClubsLabel() }}</span>
+        <span class="preview-card__title">Dosenwerfen</span>
+        <span class="preview-card__subtitle">{{ specialClubsLabel() }}</span>
         @if (specialClubTeams().length === 0) {
           <p class="state-msg">Keine Teams mit Spielern dieser Vereine.</p>
         } @else {
@@ -89,7 +114,12 @@
             @for (r of specialClubTeams(); track r.team_id) {
               <a class="club-team-list__item" [routerLink]="['/team', r.team_id]">
                 <span class="club-team-list__name">{{ r.team_name }}</span>
-                <span class="club-team-list__count">{{ r.count }}</span>
+                <span
+                  class="club-team-list__count col-hoverable"
+                  (mouseenter)="onCountHover($event, r.team_name, r.players)"
+                  (mouseleave)="onCountLeave()"
+                  (click)="$event.stopPropagation(); $event.preventDefault()"
+                >{{ r.count }}</span>
               </a>
             }
           </div>
@@ -97,4 +127,20 @@
       </div>
     }
   </div>
+
+  @if (tooltipData(); as td) {
+    <div class="count-tooltip"
+         [class.count-tooltip--below]="tooltipBelow()"
+         [class.count-tooltip--ready]="tooltipReady()"
+         [style.top.px]="tooltipPos()!.top"
+         [style.left.px]="tooltipPos()!.left"
+         #countTooltipEl>
+      <span class="count-tooltip__title">{{ td.title }}</span>
+      <ul class="count-tooltip__list">
+        @for (name of td.players; track name) {
+          <li>{{ name }}</li>
+        }
+      </ul>
+    </div>
+  }
 }
