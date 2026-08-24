@@ -73,10 +73,15 @@
 .col-hoverable {
   cursor: default;
 
-  &:hover {
-    color: $color-text;
-    text-decoration: underline dotted;
-    text-underline-offset: 3px;
+  // (hover: hover) statt einer Breakpoint-Media-Query — Touch-Geräte "hovern" beim Tap kurz
+  // synthetisch (bis zum nächsten Tap woanders), was hier sonst als kurzes Aufblitzen sichtbar
+  // wird, wie ein Link. Echte Maus-/Trackpad-Geräte bekommen den Hover-Effekt weiterhin.
+  @media (hover: hover) {
+    &:hover {
+      color: $color-text;
+      text-decoration: underline dotted;
+      text-underline-offset: 3px;
+    }
   }
 }
 
