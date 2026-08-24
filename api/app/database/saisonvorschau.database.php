@@ -148,9 +148,13 @@ trait SaisonvorschauTrait
             $counts          = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
             $points          = 0;
             $newcomerPlayers = [];
+            $byPos           = ['GOALKEEPER' => [], 'DEFENDER' => [], 'MIDFIELDER' => [], 'FORWARD' => []];
             foreach ($teamPlayerIds[$team['id']] as $pid) {
                 $pos = $positions[$pid] ?? null;
-                if ($pos && isset($counts[$pos])) $counts[$pos]++;
+                if ($pos && isset($counts[$pos])) {
+                    $counts[$pos]++;
+                    $byPos[$pos][] = ['id' => $pid, 'price' => $prices[$pid] ?? 0.0, 'points' => $prevPoints[$pid] ?? 0];
+                }
                 $points += $prevPoints[$pid] ?? 0;
                 if (($prevRatingCount[$pid] ?? 0) === 0) $newcomerPlayers[] = $this->buildPlayerRef($pid, $displayNames, $currentClub, $clubLogoUploaded);
             }
@@ -159,11 +163,25 @@ trait SaisonvorschauTrait
             foreach ($sqMin as $pos => $min) {
                 if ($counts[$pos] < $min) { $valid = false; break; }
             }
-            $team['squad_valid']             = $valid;
-            $team['position_counts']         = $counts;
-            $team['previous_season_points']  = $points;
-            $team['newcomer_count']          = count($newcomerPlayers);
-            $team['newcomer_players']        = $newcomerPlayers;
+
+            // Modus 2 ("Teuerste 11"): Formation, die den Marktwert maximiert — dann Punkte
+            // dieser Elf summieren. Modus 3 ("Beste 11"): Formation, die die Vorsaison-Punkte
+            // direkt maximiert. Beide null, wenn keine der 7 Formationen mit dem Kader
+            // erreichbar ist (kommt bei squad_valid=true nie vor, siehe pickBestFormationIds()).
+            $value11Ids = $this->pickBestFormationIds($byPos, 'price');
+            $best11Ids  = $this->pickBestFormationIds($byPos, 'points');
+
+            $team['squad_valid']                      = $valid;
+            $team['position_counts']                  = $counts;
+            $team['previous_season_points']           = $points;
+            $team['previous_season_points_value11']   = $value11Ids !== null
+                ? array_sum(array_map(fn($pid) => $prevPoints[$pid] ?? 0, $value11Ids))
+                : null;
+            $team['previous_season_points_best11']    = $best11Ids !== null
+                ? array_sum(array_map(fn($pid) => $prevPoints[$pid] ?? 0, $best11Ids))
+                : null;
+            $team['newcomer_count']                   = count($newcomerPlayers);
+            $team['newcomer_players']                 = $newcomerPlayers;
         }
         unset($team);
 
@@ -287,5 +305,44 @@ trait SaisonvorschauTrait
             'club_id'         => $clubId,
             'club_logo_uploaded' => $clubId !== null ? ($clubLogoUploaded[$clubId] ?? false) : false,
         ];
+    }
+
+    /**
+     * Wählt aus $byPos (pos => [{id,price,points},...], eine Formation aus
+     * Database::VALID_FORMATIONS, die die Summe von $metricKey ('price' oder 'points') über die
+     * gewählten 11 Spieler maximiert — pro Formation sind das schlicht die jeweils Top-N Spieler
+     * je Position nach $metricKey, das Maximum über alle 7 Formationen ist damit automatisch das
+     * globale Optimum. Gibt die 11 Spieler-IDs zurück, oder null, wenn keine der Formationen mit
+     * dem Kader erreichbar ist (zu wenige Spieler in einer Position).
+     */
+    private function pickBestFormationIds(array $byPos, string $metricKey): ?array
+    {
+        $sorted = [];
+        foreach ($byPos as $pos => $list) {
+            usort($list, fn($a, $b) => $b[$metricKey] <=> $a[$metricKey]);
+            $sorted[$pos] = $list;
+        }
+
+        $bestIds   = null;
+        $bestTotal = -INF;
+        foreach (self::VALID_FORMATIONS as [$gk, $def, $mid, $fwd]) {
+            $need = ['GOALKEEPER' => $gk, 'DEFENDER' => $def, 'MIDFIELDER' => $mid, 'FORWARD' => $fwd];
+            $ids   = [];
+            $total = 0;
+            $ok    = true;
+            foreach ($need as $pos => $count) {
+                if (count($sorted[$pos]) < $count) { $ok = false; break; }
+                for ($i = 0; $i < $count; $i++) {
+                    $ids[]  = $sorted[$pos][$i]['id'];
+                    $total += $sorted[$pos][$i][$metricKey];
+                }
+            }
+            if (!$ok) continue;
+            if ($total > $bestTotal) {
+                $bestTotal = $total;
+                $bestIds   = $ids;
+            }
+        }
+        return $bestIds;
     }
 }

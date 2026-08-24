@@ -7,13 +7,19 @@
 } @else if (teams().length === 0) {
   <p class="state-msg">Noch keine Teams in dieser Saison.</p>
 } @else {
+  <div class="points-mode-toggle">
+    <button class="points-mode-toggle__btn" [class.points-mode-toggle__btn--active]="pointsMode() === 'all'" (click)="pointsMode.set('all')">Alle Spieler</button>
+    <button class="points-mode-toggle__btn" [class.points-mode-toggle__btn--active]="pointsMode() === 'value11'" (click)="pointsMode.set('value11')">Teuerste 11</button>
+    <button class="points-mode-toggle__btn" [class.points-mode-toggle__btn--active]="pointsMode() === 'best11'" (click)="pointsMode.set('best11')">Beste 11</button>
+  </div>
+
   <div class="table-container">
     <table class="data-table">
       <thead>
         <tr>
-          <th>Team</th>
-          <th class="col-valid">Gültig</th>
-          <th class="col-squad">Kader</th>
+          <th class="col-team">Team</th>
+          <th class="col-valid"></th>
+          <th class="col-squad"></th>
           <th class="col-num sortable-th" (click)="toggleSort('previous_season_points')">
             Punkte Vorsaison
             @if (sortField() === 'previous_season_points') {
@@ -65,7 +71,7 @@
                 }
               </div>
             </td>
-            <td class="col-num col-points">{{ t.previous_season_points | number }}</td>
+            <td class="col-num col-points">{{ pointsValue(t) !== null ? (pointsValue(t) | number) : '–' }}</td>
             <td
               class="col-num"
               [class.col-muted]="!t.newcomer_count"
@@ -84,8 +90,16 @@
 
   <div class="chart-row">
     <div class="card preview-card">
-      <span class="preview-card__title">Vertrauen in Aufsteiger</span>
-      <span class="preview-card__subtitle">{{ promotedClubsLabel() }}</span>
+      <div class="preview-card__header">
+        <span class="preview-card__title">Vertrauen in Aufsteiger</span>
+        <div class="preview-card__logos">
+          @for (c of promotedClubs(); track c.id) {
+            @if (clubLogoUrl(c); as url) {
+              <img class="preview-card__logo" [src]="url" [alt]="c.name" [title]="c.name" />
+            }
+          }
+        </div>
+      </div>
       @if (promotedClubTeams().length === 0) {
         <p class="state-msg">Keine Teams mit Spielern von Aufsteigern.</p>
       } @else {
@@ -107,8 +121,16 @@
 
     @if (specialClubs().length > 0) {
       <div class="card preview-card">
-        <span class="preview-card__title">Dosenwerfen</span>
-        <span class="preview-card__subtitle">{{ specialClubsLabel() }}</span>
+        <div class="preview-card__header">
+          <span class="preview-card__title">Dosenwerfen</span>
+          <div class="preview-card__logos">
+            @for (c of specialClubs(); track c.id) {
+              @if (clubLogoUrl(c); as url) {
+                <img class="preview-card__logo" [src]="url" [alt]="c.name" [title]="c.name" />
+              }
+            }
+          </div>
+        </div>
         @if (specialClubTeams().length === 0) {
           <p class="state-msg">Keine Teams mit Spielern dieser Vereine.</p>
         } @else {
@@ -128,6 +150,31 @@
         }
       </div>
     }
+  </div>
+
+  <div class="interview">
+    <span class="interview__title">Sommer-Interview</span>
+    <div class="interview__chat">
+      @for (m of interviewMessages; track $index) {
+        <div class="chat-msg" [class.chat-msg--manager]="m.sender === 'manager'">
+          <div class="chat-msg__avatar">
+            @if (m.sender === 'diebestesten') {
+              <img src="img/logos/die-bestesten.png" class="chat-msg__avatar-logo" alt="" />
+            } @else if (!interviewPhotoFailed()) {
+              <img [src]="interviewManagerPhotoUrl" (error)="interviewPhotoFailed.set(true)" alt="" />
+            } @else {
+              <span>{{ interviewManagerName.charAt(0) }}</span>
+            }
+          </div>
+          <div class="chat-msg__bubble">
+            <span class="chat-msg__sender">{{ m.sender === 'diebestesten' ? 'DieBestesten' : interviewManagerName }}</span>
+            @for (p of m.paragraphs; track p) {
+              <p>{{ p }}</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
   </div>
 
   @if (tooltipData(); as td) {

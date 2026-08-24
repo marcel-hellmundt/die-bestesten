@@ -22,6 +22,8 @@ interface SaisonvorschauTeam {
   squad_valid: boolean;
   position_counts: Record<string, number>;
   previous_season_points: number;
+  previous_season_points_value11: number | null;
+  previous_season_points_best11: number | null;
   newcomer_count: number;
   newcomer_players: TooltipPlayer[];
 }
@@ -54,7 +56,13 @@ interface SaisonvorschauResponse {
   special_club_teams: ClubTeamCount[];
 }
 
+interface InterviewMessage {
+  sender: 'diebestesten' | 'manager';
+  paragraphs: string[];
+}
+
 type SortField = 'previous_season_points' | 'newcomer_count';
+type PointsMode = 'all' | 'value11' | 'best11';
 
 const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 const SQUAD_MIN: Record<string, number> = { GOALKEEPER: 1, DEFENDER: 5, MIDFIELDER: 5, FORWARD: 3 };
@@ -84,25 +92,61 @@ export class SaisonvorschauComponent {
   seasonId  = computed(() => this.state().data?.season_id ?? null);
   teams     = computed(() => this.state().data?.teams ?? []);
 
+  // Redaktioneller Sommer-Interview-Block unter den Karten — statischer Inhalt, kein API-Feld.
+  readonly interviewManagerName = 'Thommy';
+  readonly interviewManagerId = '46b65ef1-2df1-4956-be67-0e16a16a51a2';
+  readonly interviewManagerPhotoUrl = `${environment.imageApiUrl}/manager/${this.interviewManagerId}.jpg`;
+  interviewPhotoFailed = signal(false);
+
+  readonly interviewMessages: InterviewMessage[] = [
+    {
+      sender: 'diebestesten',
+      paragraphs: [
+        'Servus Thommy, Glückwunsch nochmal zum Pokal! Aber lassen wir die Jubelbilder im Archiv: Die Konkurrenz in DieBestesten hat über den Sommer aufgerüstet und jagt dich jetzt.',
+        'Erste Frage: Titel verteidigen ist bekanntlich schwerer als ihn zu holen – wo hat dein Kader aktuell noch eine Baustelle, und schläfst du vor dem Saisonstart wirklich so ruhig, wie du tust?',
+      ],
+    },
+    {
+      sender: 'manager',
+      paragraphs: [
+        'Naja, aktuell ist der Kader ungefähr so fertig wie das Kreuz Leverkusen. Trotzdem bin ich tatsächlich so entspannt wie Nils nach einem Zug aus der Elfbar Traube. Das ist zwar nicht optimal, aber auch ein Stück weit einkalkuliert. Das ganze lebt davon, die Ruhe zu bewahren. In der zweiten Phase war es nach dem Totalausfall in der ersten mal kurz davor, dass das nicht gelingt. Aber das hat sich dann auch schnell wieder gelegt. Insgesamt gibt auch der dritte Titel Ruhe, der hat ja nun doch lange auf sich warten lassen.',
+      ],
+    },
+  ];
+
   promotedClubs      = computed(() => this.state().data?.promoted_clubs ?? []);
   promotedClubTeams  = computed(() => this.state().data?.promoted_club_teams ?? []);
   specialClubs       = computed(() => this.state().data?.special_clubs ?? []);
   specialClubTeams   = computed(() => this.state().data?.special_club_teams ?? []);
 
-  promotedClubsLabel = computed(() =>
-    this.promotedClubs().map(c => c.name).join(', ') || 'Keine Aufsteiger in dieser Saison'
-  );
-  specialClubsLabel = computed(() =>
-    this.specialClubs().map(c => c.name).join(', ')
-  );
-
   sortField = signal<SortField>('previous_season_points');
   sortDir   = signal<'asc' | 'desc'>('desc');
+
+  // "Punkte Vorsaison" hat drei Berechnungsmodi (Toggle über der Tabelle) — welche Spieler
+  // eines Kaders in die Summe einfließen. Reiner Anzeige-/Sortier-Switch, kein Refetch: das
+  // Backend liefert alle drei Werte immer mit.
+  pointsMode = signal<PointsMode>('all');
+
+  pointsValue(t: SaisonvorschauTeam): number | null {
+    switch (this.pointsMode()) {
+      case 'value11': return t.previous_season_points_value11;
+      case 'best11':  return t.previous_season_points_best11;
+      default:        return t.previous_season_points;
+    }
+  }
 
   sortedTeams = computed(() => {
     const field = this.sortField();
     const dir   = this.sortDir() === 'asc' ? 1 : -1;
-    return [...this.teams()].sort((a, b) => (a[field] - b[field]) * dir);
+    return [...this.teams()].sort((a, b) => {
+      const av = field === 'previous_season_points' ? this.pointsValue(a) : a.newcomer_count;
+      const bv = field === 'previous_season_points' ? this.pointsValue(b) : b.newcomer_count;
+      // Teams ohne erreichbare Formation (null) immer ans Ende, unabhängig von der Sortierrichtung.
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      return (av - bv) * dir;
+    });
   });
 
   toggleSort(field: SortField): void {
@@ -125,6 +169,11 @@ export class SaisonvorschauComponent {
   playerClubLogoUrl(p: TooltipPlayer): string | null {
     if (!p.club_id || !p.club_logo_uploaded) return null;
     return `${environment.imageApiUrl}/club/${p.club_id}.png`;
+  }
+
+  clubLogoUrl(c: ClubRef): string | null {
+    if (!c.logo_uploaded) return null;
+    return `${environment.imageApiUrl}/club/${c.id}.png`;
   }
 
   positionCounts(t: SaisonvorschauTeam) {
