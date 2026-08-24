@@ -258,7 +258,7 @@
       position: absolute;
       top: calc(100% + $space-2);
       right: 0;
-      min-width: 200px;
+      min-width: 240px;
       background-color: $color-surface;
       border: 1px solid $color-border;
       border-radius: $radius-lg;
@@ -409,14 +409,41 @@
       }
     }
 
-    // Badge auf dem Avatar (Mobile: zeigt ausstehende Liga-Einladungen)
+    // Badge auf dem Avatar (Mobile: zeigt ungelesene Benachrichtigungen — auf Desktop steht das
+    // schon auf dem Glocken-Icon, das dort aber ausgeblendet ist, siehe .topbar-icon-btn). Oben
+    // rechts, damit es sofort sichtbar ist statt erst im aufgeklappten Dropdown.
+    .avatar-notif-badge {
+      display: none;
+
+      @media (max-width: #{$mobile-breakpoint}) {
+        display: flex;
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        align-items: center;
+        justify-content: center;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 3px;
+        border-radius: 99px;
+        background: $color-danger;
+        color: #fff;
+        font-size: 10px;
+        font-weight: $font-weight-semibold;
+        line-height: 1;
+        pointer-events: none;
+      }
+    }
+
+    // Badge auf dem Avatar (Mobile: zeigt ausstehende Liga-Einladungen) — unten rechts, damit es
+    // sich nicht mit .avatar-notif-badge oben rechts überlappt, falls beides gleichzeitig ansteht.
     .avatar-league-badge {
       display: none;
 
       @media (max-width: #{$mobile-breakpoint}) {
         display: flex;
         position: absolute;
-        top: -3px;
+        bottom: -3px;
         right: -3px;
         align-items: center;
         justify-content: center;

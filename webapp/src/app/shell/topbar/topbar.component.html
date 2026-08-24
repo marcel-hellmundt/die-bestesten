@@ -248,6 +248,9 @@
         } @else {
           {{ initials() }}
         }
+        @if (notifService.unreadCount() > 0) {
+          <span class="avatar-notif-badge">{{ notifService.unreadCount() }}</span>
+        }
         @if (invitedLeagues().length > 0) {
           <span class="avatar-league-badge">{{ invitedLeagues().length }}</span>
         }
