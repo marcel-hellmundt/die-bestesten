@@ -6,6 +6,10 @@ class SaisonvorschauController extends _BaseController
 
     protected function get(): mixed
     {
+        if ($this->id === 'status') {
+            return $this->db->getSaisonvorschauAvailability();
+        }
+
         return $this->db->getSaisonvorschau();
     }
 

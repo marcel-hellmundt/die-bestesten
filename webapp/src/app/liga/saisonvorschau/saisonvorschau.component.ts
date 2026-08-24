@@ -45,6 +45,8 @@ interface ClubTeamCount {
 interface SaisonvorschauResponse {
   season_id: string | null;
   previous_season_id: string | null;
+  available: boolean;
+  kickoff_date: string | null;
   teams: SaisonvorschauTeam[];
   promoted_clubs: ClubRef[];
   promoted_club_teams: ClubTeamCount[];
@@ -76,10 +78,11 @@ export class SaisonvorschauComponent {
     { initialValue: { data: null as SaisonvorschauResponse | null, loading: true, error: null as string | null } }
   );
 
-  loading = computed(() => this.state().loading);
-  error   = computed(() => this.state().error);
-  seasonId = computed(() => this.state().data?.season_id ?? null);
-  teams    = computed(() => this.state().data?.teams ?? []);
+  loading   = computed(() => this.state().loading);
+  error     = computed(() => this.state().error);
+  available = computed(() => this.state().data?.available ?? true);
+  seasonId  = computed(() => this.state().data?.season_id ?? null);
+  teams     = computed(() => this.state().data?.teams ?? []);
 
   promotedClubs      = computed(() => this.state().data?.promoted_clubs ?? []);
   promotedClubTeams  = computed(() => this.state().data?.promoted_club_teams ?? []);

@@ -2,6 +2,8 @@
   <p class="state-msg">Laden…</p>
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
+} @else if (!available()) {
+  <p class="state-msg">Die Saisonvorschau ist nur bis zum Anpfiff des 1. Spieltags verfügbar.</p>
 } @else if (teams().length === 0) {
   <p class="state-msg">Noch keine Teams in dieser Saison.</p>
 } @else {

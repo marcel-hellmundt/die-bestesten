@@ -71,7 +71,9 @@ export class NavComponent {
     icon: 'tabelle',
     mobileRoute: '/liga/spieltag',
     items: [
-      { label: 'Saisonvorschau', icon: 'eye', route: '/liga/saisonvorschau', isNew: true },
+      ...(this.cache.saisonvorschauAvailable()
+        ? [{ label: 'Saisonvorschau', icon: 'eye', route: '/liga/saisonvorschau', isNew: true } as NavItem]
+        : []),
       { label: 'Spieltag', icon: 'spieltag', route: '/liga/spieltag' },
       { label: 'Tabelle', icon: 'tabelle', route: '/liga/tabelle' },
 
@@ -110,6 +112,7 @@ export class NavComponent {
   constructor() {
     this.cache.ensureMyTeam();
     this.cache.ensureH2HStatus();
+    this.cache.ensureSaisonvorschauStatus();
     this.cache.ensureLeague();
     effect(() => {
       if (this.cache.myTeamId()) {

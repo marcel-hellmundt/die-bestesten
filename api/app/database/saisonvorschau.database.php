@@ -2,11 +2,26 @@
 
 trait SaisonvorschauTrait
 {
+    /**
+     * Nur für die Menü-Sichtbarkeit (analog GET /h2h/status) — ob die Saisonvorschau aktuell
+     * verfügbar ist, ohne die komplette Kaderberechnung auszuführen.
+     */
+    public function getSaisonvorschauAvailability(): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) return ['available' => true, 'kickoff_date' => null];
+
+        $lock = $this->getMatchday1LockStatus($seasonId);
+        return ['available' => !$lock['locked'], 'kickoff_date' => $lock['kickoff_date']];
+    }
+
     public function getSaisonvorschau(): array
     {
         $empty = [
             'season_id' => null,
             'previous_season_id' => null,
+            'available' => true,
+            'kickoff_date' => null,
             'teams' => [],
             'promoted_clubs' => [],
             'promoted_club_teams' => [],
@@ -16,6 +31,17 @@ trait SaisonvorschauTrait
 
         $seasonId = $this->getActiveSeasonId();
         if (!$seasonId) return $empty;
+
+        // Saisonvorschau ist nur bis zum Anpfiff des 1. Spieltags sinnvoll — danach laufen echte
+        // Punkte statt der Vorsaison-Prognose. Bricht früh ab statt nur die Anzeige zu verstecken.
+        $lock = $this->getMatchday1LockStatus($seasonId);
+        if ($lock['locked']) {
+            $empty['season_id']    = $seasonId;
+            $empty['available']    = false;
+            $empty['kickoff_date'] = $lock['kickoff_date'];
+            return $empty;
+        }
+        $empty['kickoff_date'] = $lock['kickoff_date'];
 
         $pq = $this->con->prepare(
             "SELECT id FROM season WHERE start_date < (SELECT start_date FROM season WHERE id = :id) ORDER BY start_date DESC LIMIT 1"
@@ -202,6 +228,8 @@ trait SaisonvorschauTrait
         return [
             'season_id'            => $seasonId,
             'previous_season_id'   => $prevSeasonId,
+            'available'            => true,
+            'kickoff_date'         => $lock['kickoff_date'],
             'teams'                => $teams,
             'promoted_clubs'       => $promotedClubs,
             'promoted_club_teams'  => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, $displayNames, $clubLogoUploaded, array_column($promotedClubs, 'id'), $prices, $fillerPrice),
