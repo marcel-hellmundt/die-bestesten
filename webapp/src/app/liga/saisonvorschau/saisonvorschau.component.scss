@@ -445,4 +445,27 @@
     object-fit: contain;
     flex-shrink: 0;
   }
+
+  &__name {
+    flex: 1;
+  }
+
+  &__points {
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+    color: $color-text-muted;
+  }
+
+  &__sum {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $space-3;
+    margin-top: $space-2;
+    padding-top: $space-2;
+    border-top: 1px solid $color-border;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
 }

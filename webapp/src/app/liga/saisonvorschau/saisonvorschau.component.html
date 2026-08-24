@@ -71,7 +71,13 @@
                 }
               </div>
             </td>
-            <td class="col-num col-points">{{ pointsValue(t) !== null ? (pointsValue(t) | number) : '–' }}</td>
+            <td
+              class="col-num col-points"
+              [class.col-hoverable]="pointsBreakdown(t).length > 0"
+              (mouseenter)="onCountHover($event, pointsModeLabel(), pointsBreakdown(t), pointsValue(t) ?? undefined)"
+              (mouseleave)="onCountLeave()"
+              (click)="$event.stopPropagation()"
+            >{{ pointsValue(t) !== null ? (pointsValue(t) | number) : '–' }}</td>
             <td
               class="col-num"
               [class.col-muted]="!t.newcomer_count"
@@ -191,10 +197,19 @@
             @if (playerClubLogoUrl(p); as logoUrl) {
               <img class="count-tooltip__club-logo" [src]="logoUrl" alt="" />
             }
-            <span>{{ p.name }}</span>
+            <span class="count-tooltip__name">{{ p.name }}</span>
+            @if (p.points !== undefined) {
+              <span class="count-tooltip__points">{{ p.points }}</span>
+            }
           </li>
         }
       </ul>
+      @if (td.total !== undefined) {
+        <div class="count-tooltip__sum">
+          <span>Summe</span>
+          <span>{{ td.total | number }}</span>
+        </div>
+      }
     </div>
   }
 }

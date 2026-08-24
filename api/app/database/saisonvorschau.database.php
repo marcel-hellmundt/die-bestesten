@@ -171,6 +171,33 @@ trait SaisonvorschauTrait
             $value11Ids = $this->pickBestFormationIds($byPos, 'price');
             $best11Ids  = $this->pickBestFormationIds($byPos, 'points');
 
+            // Tooltip-Aufschlüsselung je Modus beim Hover über die Punkte-Zahl im Frontend.
+            // "all" nach Punkten absteigend, "value11" nach Marktwert absteigend, "best11" in der
+            // Reihenfolge, in der pickBestFormationIds() die Positionen abgearbeitet hat
+            // (GOALKEEPER→DEFENDER→MIDFIELDER→FORWARD, siehe dortiges $need-Array).
+            $allBreakdown = [];
+            foreach ($teamPlayerIds[$team['id']] as $pid) {
+                if (!isset($positions[$pid])) continue;
+                $allBreakdown[] = $this->buildPlayerRef($pid, $displayNames, $currentClub, $clubLogoUploaded, $prevPoints[$pid] ?? 0, $positions[$pid]);
+            }
+            usort($allBreakdown, fn($a, $b) => $b['points'] <=> $a['points']);
+
+            $value11Breakdown = [];
+            if ($value11Ids !== null) {
+                $sortedByPrice = $value11Ids;
+                usort($sortedByPrice, fn($a, $b) => ($prices[$b] ?? 0.0) <=> ($prices[$a] ?? 0.0));
+                foreach ($sortedByPrice as $pid) {
+                    $value11Breakdown[] = $this->buildPlayerRef($pid, $displayNames, $currentClub, $clubLogoUploaded, $prevPoints[$pid] ?? 0, $positions[$pid] ?? null);
+                }
+            }
+
+            $best11Breakdown = [];
+            if ($best11Ids !== null) {
+                foreach ($best11Ids as $pid) {
+                    $best11Breakdown[] = $this->buildPlayerRef($pid, $displayNames, $currentClub, $clubLogoUploaded, $prevPoints[$pid] ?? 0, $positions[$pid] ?? null);
+                }
+            }
+
             $team['squad_valid']                      = $valid;
             $team['position_counts']                  = $counts;
             $team['previous_season_points']           = $points;
@@ -180,6 +207,11 @@ trait SaisonvorschauTrait
             $team['previous_season_points_best11']    = $best11Ids !== null
                 ? array_sum(array_map(fn($pid) => $prevPoints[$pid] ?? 0, $best11Ids))
                 : null;
+            $team['points_breakdown']                 = [
+                'all'     => $allBreakdown,
+                'value11' => $value11Breakdown,
+                'best11'  => $best11Breakdown,
+            ];
             $team['newcomer_count']                   = count($newcomerPlayers);
             $team['newcomer_players']                 = $newcomerPlayers;
         }
@@ -295,16 +327,20 @@ trait SaisonvorschauTrait
 
     /**
      * Ein Spieler für eine Tooltip-Spielerliste — Name plus aktueller Verein (für das kleine
-     * Vereinslogo vor dem Namen im Frontend-Tooltip).
+     * Vereinslogo vor dem Namen im Frontend-Tooltip). $points/$position optional — nur die
+     * "Punkte Vorsaison"-Aufschlüsselung (points_breakdown) braucht sie.
      */
-    private function buildPlayerRef(string $playerId, array $displayNames, array $currentClub, array $clubLogoUploaded): array
+    private function buildPlayerRef(string $playerId, array $displayNames, array $currentClub, array $clubLogoUploaded, ?int $points = null, ?string $position = null): array
     {
         $clubId = $currentClub[$playerId] ?? null;
-        return [
+        $ref = [
             'name'            => $displayNames[$playerId] ?? '?',
             'club_id'         => $clubId,
             'club_logo_uploaded' => $clubId !== null ? ($clubLogoUploaded[$clubId] ?? false) : false,
         ];
+        if ($points !== null)   $ref['points']   = $points;
+        if ($position !== null) $ref['position'] = $position;
+        return $ref;
     }
 
     /**

@@ -9,6 +9,14 @@ interface TooltipPlayer {
   name: string;
   club_id: string | null;
   club_logo_uploaded: boolean;
+  points?: number;
+  position?: string;
+}
+
+interface PointsBreakdown {
+  all: TooltipPlayer[];
+  value11: TooltipPlayer[];
+  best11: TooltipPlayer[];
 }
 
 interface SaisonvorschauTeam {
@@ -24,6 +32,7 @@ interface SaisonvorschauTeam {
   previous_season_points: number;
   previous_season_points_value11: number | null;
   previous_season_points_best11: number | null;
+  points_breakdown: PointsBreakdown;
   newcomer_count: number;
   newcomer_players: TooltipPlayer[];
 }
@@ -112,6 +121,18 @@ export class SaisonvorschauComponent {
         'Naja, aktuell ist der Kader ungefähr so fertig wie das Kreuz Leverkusen. Trotzdem bin ich tatsächlich so entspannt wie Nils nach einem Zug aus der Elfbar Traube. Das ist zwar nicht optimal, aber auch ein Stück weit einkalkuliert. Das ganze lebt davon, die Ruhe zu bewahren. In der zweiten Phase war es nach dem Totalausfall in der ersten mal kurz davor, dass das nicht gelingt. Aber das hat sich dann auch schnell wieder gelegt. Insgesamt gibt auch der dritte Titel Ruhe, der hat ja nun doch lange auf sich warten lassen.',
       ],
     },
+    {
+      sender: 'diebestesten',
+      paragraphs: [
+        'Nach dem Titel ist vor der Kaderplanung: Wie läuft dein Sommertransferfenster bisher ab? Hast du ein klares System aus knallharten Daten und Scouting, oder verlässt du dich beim Teamaufbau auf dein bewährtes Bauchgefühl?',
+      ],
+    },
+    {
+      sender: 'manager',
+      paragraphs: [
+        'Ich möchte da natürlich nicht zu viel verraten. Nur so viel: Ich habe mir keine Kloppo-Shortlist mit 56 Spielern gemacht. Vorbereitungszeit war sehr gering. Ich gehe das eher strategisch auf die Phasen an - was letzte Saison hervorragend geklappt hat, in dieser aber zunächst nicht ganz. Alles andere ist überwiegend Bauchgefühl und das, was ich vermehrt in der Saisonvorbereitung aufgenommen habe. Ich mache da im Vorfeld nicht mehr so ein riesen Fass auf.',
+      ],
+    },
   ];
 
   promotedClubs      = computed(() => this.state().data?.promoted_clubs ?? []);
@@ -132,6 +153,18 @@ export class SaisonvorschauComponent {
       case 'value11': return t.previous_season_points_value11;
       case 'best11':  return t.previous_season_points_best11;
       default:        return t.previous_season_points;
+    }
+  }
+
+  pointsBreakdown(t: SaisonvorschauTeam): TooltipPlayer[] {
+    return t.points_breakdown[this.pointsMode()];
+  }
+
+  pointsModeLabel(): string {
+    switch (this.pointsMode()) {
+      case 'value11': return 'Teuerste 11';
+      case 'best11':  return 'Beste 11';
+      default:        return 'Alle Spieler';
     }
   }
 
@@ -212,10 +245,11 @@ export class SaisonvorschauComponent {
 
   // Spielerlisten-Tooltip — gleiches Positionier-/Edge-Clamp-Muster wie die Kader-Gültigkeit-
   // Tooltip auf /liga/teams (liga-teams.component.ts), nur mit einer kompakten Namensliste statt
-  // Bubbles. Ein einziger Tooltip wird von allen drei Hover-Zielen geteilt (Neuzugänge-Spalte in
-  // der Tabelle, sowie die Anzahl in beiden Vereins-Karten) — jeweils mit eigenem Titel/Liste.
+  // Bubbles. Ein einziger Tooltip wird von allen vier Hover-Zielen geteilt (Neuzugänge-Spalte,
+  // Punkte-Vorsaison-Spalte, sowie die Anzahl in beiden Vereins-Karten) — jeweils mit eigenem
+  // Titel/Liste; total (Summe-Fußzeile) nur bei der Punkte-Vorsaison-Aufschlüsselung gesetzt.
   @ViewChild('countTooltipEl') countTooltipEl?: ElementRef<HTMLElement>;
-  tooltipData  = signal<{ title: string; players: TooltipPlayer[] } | null>(null);
+  tooltipData  = signal<{ title: string; players: TooltipPlayer[]; total?: number } | null>(null);
   tooltipPos   = signal<{ top: number; left: number } | null>(null);
   tooltipBelow = signal(false);
   tooltipReady = signal(false);
@@ -223,11 +257,11 @@ export class SaisonvorschauComponent {
   private static readonly TOOLTIP_EDGE_MARGIN = 24;
   private hoverSeq = 0;
 
-  onCountHover(event: MouseEvent, title: string, players: TooltipPlayer[]): void {
+  onCountHover(event: MouseEvent, title: string, players: TooltipPlayer[], total?: number): void {
     if (!players.length) return;
     const seq = ++this.hoverSeq;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.tooltipData.set({ title, players });
+    this.tooltipData.set({ title, players, total });
     this.tooltipBelow.set(false);
     this.tooltipReady.set(false);
     this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
