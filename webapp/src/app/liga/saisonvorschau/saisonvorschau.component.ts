@@ -1,4 +1,12 @@
-import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
@@ -83,23 +91,33 @@ const SQUAD_MIN: Record<string, number> = { GOALKEEPER: 1, DEFENDER: 5, MIDFIELD
   styleUrl: './saisonvorschau.component.scss',
 })
 export class SaisonvorschauComponent {
-  private api    = inject(ApiService);
+  private api = inject(ApiService);
   private router = inject(Router);
 
   private state = toSignal(
     this.api.get<SaisonvorschauResponse>('saisonvorschau').pipe(
-      map(data => ({ data, loading: false, error: null as string | null })),
-      startWith({ data: null as SaisonvorschauResponse | null, loading: true, error: null as string | null }),
-      catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' }))
+      map((data) => ({ data, loading: false, error: null as string | null })),
+      startWith({
+        data: null as SaisonvorschauResponse | null,
+        loading: true,
+        error: null as string | null,
+      }),
+      catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' })),
     ),
-    { initialValue: { data: null as SaisonvorschauResponse | null, loading: true, error: null as string | null } }
+    {
+      initialValue: {
+        data: null as SaisonvorschauResponse | null,
+        loading: true,
+        error: null as string | null,
+      },
+    },
   );
 
-  loading   = computed(() => this.state().loading);
-  error     = computed(() => this.state().error);
+  loading = computed(() => this.state().loading);
+  error = computed(() => this.state().error);
   available = computed(() => this.state().data?.available ?? true);
-  seasonId  = computed(() => this.state().data?.season_id ?? null);
-  teams     = computed(() => this.state().data?.teams ?? []);
+  seasonId = computed(() => this.state().data?.season_id ?? null);
+  teams = computed(() => this.state().data?.teams ?? []);
 
   // Redaktioneller Sommer-Interview-Block unter den Karten — statischer Inhalt, kein API-Feld.
   readonly interviewManagerName = 'Thommy';
@@ -130,18 +148,30 @@ export class SaisonvorschauComponent {
     {
       sender: 'manager',
       paragraphs: [
-        'Ich möchte da natürlich nicht zu viel verraten. Nur so viel: Ich habe mir keine Kloppo-Shortlist mit 56 Spielern gemacht. Vorbereitungszeit war sehr gering. Ich gehe das eher strategisch auf die Phasen an - was letzte Saison hervorragend geklappt hat, in dieser aber zunächst nicht ganz. Alles andere ist überwiegend Bauchgefühl und das, was ich vermehrt in der Saisonvorbereitung aufgenommen habe. Ich mache da im Vorfeld nicht mehr so ein riesen Fass auf.',
+        'Ich möchte da natürlich nicht zu viel verraten. Nur so viel: Ich habe mir keine Kloppo-Shortlist mit 56 Spielern gemacht. Vorbereitungszeit war sehr gering. Ich gehe das eher strategisch auf die Phasen an - was letzte Saison hervorragend geklappt hat, in dieser aber zunächst nicht ganz. Alles andere ist überwiegend Bauchgefühl und das, was ich vermehrt in der Saisonvorbereitung aufgenommen habe. Ich mache da im Vorfeld nicht mehr so ein riesen Fass auf. Das Wichtigste ist, dass das Menschliche stimmt. Ein Spieler muss charakterlich zur Mannschaft passen.',
+      ],
+    },
+    {
+      sender: 'diebestesten',
+      paragraphs: [
+        'Und zum Abschluss kommen wir zu einem echten Highlight der neuen Saison: Der H2H-Modus feiert Premiere! Freust du dich schon auf die direkten Duelle – und hast du vor, die Chance zu nutzen, dem Präsidenten im direkten Duell zu zeigen, was es heißt Managerskills zu haben - oder eben nicht?',
+      ],
+    },
+    {
+      sender: 'manager',
+      paragraphs: [
+        'Dieses Beweises ist in diesem Duell auf lange Zeit erstmal nur einer schuldig. Und der dreht nach 10 Halben gern mal an der imaginären Schraube. Der H2H-Modus begeistert aber natürlich dennoch auf ganzer Linie. Er ist die Kirsche auf der Sahne, das Salz in der Suppe und ganz besondere Kick aus der Whatsapp-Gruppe. Ich freue mich auf die Duelle.',
       ],
     },
   ];
 
-  promotedClubs      = computed(() => this.state().data?.promoted_clubs ?? []);
-  promotedClubTeams  = computed(() => this.state().data?.promoted_club_teams ?? []);
-  specialClubs       = computed(() => this.state().data?.special_clubs ?? []);
-  specialClubTeams   = computed(() => this.state().data?.special_club_teams ?? []);
+  promotedClubs = computed(() => this.state().data?.promoted_clubs ?? []);
+  promotedClubTeams = computed(() => this.state().data?.promoted_club_teams ?? []);
+  specialClubs = computed(() => this.state().data?.special_clubs ?? []);
+  specialClubTeams = computed(() => this.state().data?.special_club_teams ?? []);
 
   sortField = signal<SortField>('previous_season_points');
-  sortDir   = signal<'asc' | 'desc'>('desc');
+  sortDir = signal<'asc' | 'desc'>('desc');
 
   // "Punkte Vorsaison" hat drei Berechnungsmodi (Toggle über der Tabelle) — welche Spieler
   // eines Kaders in die Summe einfließen. Reiner Anzeige-/Sortier-Switch, kein Refetch: das
@@ -150,9 +180,12 @@ export class SaisonvorschauComponent {
 
   pointsValue(t: SaisonvorschauTeam): number | null {
     switch (this.pointsMode()) {
-      case 'value11': return t.previous_season_points_value11;
-      case 'best11':  return t.previous_season_points_best11;
-      default:        return t.previous_season_points;
+      case 'value11':
+        return t.previous_season_points_value11;
+      case 'best11':
+        return t.previous_season_points_best11;
+      default:
+        return t.previous_season_points;
     }
   }
 
@@ -162,15 +195,18 @@ export class SaisonvorschauComponent {
 
   pointsModeLabel(): string {
     switch (this.pointsMode()) {
-      case 'value11': return 'Teuerste 11';
-      case 'best11':  return 'Beste 11';
-      default:        return 'Alle Spieler';
+      case 'value11':
+        return 'Teuerste 11';
+      case 'best11':
+        return 'Beste 11';
+      default:
+        return 'Alle Spieler';
     }
   }
 
   sortedTeams = computed(() => {
     const field = this.sortField();
-    const dir   = this.sortDir() === 'asc' ? 1 : -1;
+    const dir = this.sortDir() === 'asc' ? 1 : -1;
     return [...this.teams()].sort((a, b) => {
       const av = field === 'previous_season_points' ? this.pointsValue(a) : a.newcomer_count;
       const bv = field === 'previous_season_points' ? this.pointsValue(b) : b.newcomer_count;
@@ -184,7 +220,7 @@ export class SaisonvorschauComponent {
 
   toggleSort(field: SortField): void {
     if (this.sortField() === field) {
-      this.sortDir.update(d => (d === 'asc' ? 'desc' : 'asc'));
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       this.sortField.set(field);
       this.sortDir.set('desc');
@@ -192,8 +228,12 @@ export class SaisonvorschauComponent {
   }
 
   private logoErrors = new Set<string>();
-  logoFailed(teamId: string): boolean { return this.logoErrors.has(teamId); }
-  onLogoError(teamId: string): void   { this.logoErrors.add(teamId); }
+  logoFailed(teamId: string): boolean {
+    return this.logoErrors.has(teamId);
+  }
+  onLogoError(teamId: string): void {
+    this.logoErrors.add(teamId);
+  }
 
   teamLogoUrl(teamId: string): string {
     return `${environment.imageApiUrl}/team/${this.seasonId()}/${teamId}.png`;
@@ -210,9 +250,9 @@ export class SaisonvorschauComponent {
   }
 
   positionCounts(t: SaisonvorschauTeam) {
-    return POSITIONS.map(pos => {
+    return POSITIONS.map((pos) => {
       const count = t.position_counts?.[pos] ?? 0;
-      const min   = SQUAD_MIN[pos];
+      const min = SQUAD_MIN[pos];
       return {
         position: pos,
         label: this.positionLabel(pos),
@@ -225,16 +265,21 @@ export class SaisonvorschauComponent {
   }
 
   positionLabel(pos: string): string {
-    const map: Record<string, string> = { GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU' };
+    const map: Record<string, string> = {
+      GOALKEEPER: 'TOR',
+      DEFENDER: 'ABW',
+      MIDFIELDER: 'MIT',
+      FORWARD: 'STU',
+    };
     return map[pos] ?? pos;
   }
 
   positionColor(pos: string): string {
     const map: Record<string, string> = {
       GOALKEEPER: 'var(--position-goalkeeper)',
-      DEFENDER:   'var(--position-defender)',
+      DEFENDER: 'var(--position-defender)',
       MIDFIELDER: 'var(--position-midfielder)',
-      FORWARD:    'var(--position-forward)',
+      FORWARD: 'var(--position-forward)',
     };
     return map[pos] ?? 'transparent';
   }
@@ -243,14 +288,45 @@ export class SaisonvorschauComponent {
     this.router.navigate(['/team', teamId]);
   }
 
+  // Muss mit $mobile-breakpoint in _variables.scss (768px) übereinstimmen.
+  private static readonly MOBILE_BREAKPOINT_PX = 768;
+  isMobile = signal(window.innerWidth <= SaisonvorschauComponent.MOBILE_BREAKPOINT_PX);
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.isMobile.set(window.innerWidth <= SaisonvorschauComponent.MOBILE_BREAKPOINT_PX);
+  }
+
+  // Mobile: die Tabellenzeile ist kein Link zum Team, sondern klappt stattdessen einen Bereich
+  // mit denselben Infos wie der Desktop-Hover-Tooltip auf (Punkte-Berechnung + Neuzugänge) — auf
+  // Touch-Geräten gibt es kein Hover, dafür Platz für eine ausklappbare Zeile.
+  expandedTeamId = signal<string | null>(null);
+
+  onRowClick(teamId: string): void {
+    if (this.isMobile()) {
+      this.expandedTeamId.update((id) => (id === teamId ? null : teamId));
+    } else {
+      this.navigate(teamId);
+    }
+  }
+
+  // Die Punkte-/Neuzugänge-Zellen stoppen die Klick-Propagation auf Desktop (damit ein Klick
+  // dort — z.B. während man den Hover-Tooltip inspiziert — nicht versehentlich zum Team
+  // navigiert). Auf Mobile gibt es diese Navigation gar nicht (onRowClick expanded stattdessen),
+  // deshalb muss der Klick dort ungehindert zur Zeile durchgereicht werden, sonst lässt sich die
+  // Zeile über genau diese Zellen nicht aufklappen.
+  onCellClick(event: MouseEvent): void {
+    if (!this.isMobile()) event.stopPropagation();
+  }
+
   // Spielerlisten-Tooltip — gleiches Positionier-/Edge-Clamp-Muster wie die Kader-Gültigkeit-
   // Tooltip auf /liga/teams (liga-teams.component.ts), nur mit einer kompakten Namensliste statt
   // Bubbles. Ein einziger Tooltip wird von allen vier Hover-Zielen geteilt (Neuzugänge-Spalte,
   // Punkte-Vorsaison-Spalte, sowie die Anzahl in beiden Vereins-Karten) — jeweils mit eigenem
   // Titel/Liste; total (Summe-Fußzeile) nur bei der Punkte-Vorsaison-Aufschlüsselung gesetzt.
   @ViewChild('countTooltipEl') countTooltipEl?: ElementRef<HTMLElement>;
-  tooltipData  = signal<{ title: string; players: TooltipPlayer[]; total?: number } | null>(null);
-  tooltipPos   = signal<{ top: number; left: number } | null>(null);
+  tooltipData = signal<{ title: string; players: TooltipPlayer[]; total?: number } | null>(null);
+  tooltipPos = signal<{ top: number; left: number } | null>(null);
   tooltipBelow = signal(false);
   tooltipReady = signal(false);
 
@@ -271,8 +347,8 @@ export class SaisonvorschauComponent {
       if (!el || seq !== this.hoverSeq) return;
 
       const margin = SaisonvorschauComponent.TOOLTIP_EDGE_MARGIN;
-      let top   = rect.top;
-      let left  = rect.left + rect.width / 2;
+      let top = rect.top;
+      let left = rect.left + rect.width / 2;
       let below = false;
 
       const tipRect = el.getBoundingClientRect();
@@ -283,8 +359,8 @@ export class SaisonvorschauComponent {
       }
 
       const halfWidth = tipRect.width / 2;
-      const maxLeft   = window.innerWidth - margin - halfWidth;
-      const minLeft   = margin + halfWidth;
+      const maxLeft = window.innerWidth - margin - halfWidth;
+      const minLeft = margin + halfWidth;
       if (left > maxLeft) left = maxLeft;
       if (left < minLeft) left = minLeft;
 

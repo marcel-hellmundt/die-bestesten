@@ -36,7 +36,7 @@
       </thead>
       <tbody>
         @for (t of sortedTeams(); track t.id) {
-          <tr class="row-link" (click)="navigate(t.id)">
+          <tr class="row-link" (click)="onRowClick(t.id)">
             <td class="col-team">
               <span class="team-cell">
                 <img
@@ -76,7 +76,7 @@
               [class.col-hoverable]="pointsBreakdown(t).length > 0"
               (mouseenter)="onCountHover($event, pointsModeLabel(), pointsBreakdown(t), pointsValue(t) ?? undefined)"
               (mouseleave)="onCountLeave()"
-              (click)="$event.stopPropagation()"
+              (click)="onCellClick($event)"
             >{{ pointsValue(t) !== null ? (pointsValue(t) | number) : '–' }}</td>
             <td
               class="col-num"
@@ -84,11 +84,63 @@
               [class.col-hoverable]="t.newcomer_count > 0"
               (mouseenter)="onCountHover($event, 'Neuzugänge', t.newcomer_players)"
               (mouseleave)="onCountLeave()"
-              (click)="$event.stopPropagation()"
+              (click)="onCellClick($event)"
             >
               {{ t.newcomer_count }}
             </td>
           </tr>
+          @if (expandedTeamId() === t.id) {
+            <tr class="expand-row">
+              <td colspan="5">
+                <div class="expand-panel">
+                  <div class="expand-panel__section">
+                    <span class="expand-panel__title">{{ pointsModeLabel() }}</span>
+                    @if (pointsBreakdown(t).length === 0) {
+                      <p class="state-msg">Keine Formation erreichbar.</p>
+                    } @else {
+                      <ul class="expand-panel__list">
+                        @for (p of pointsBreakdown(t); track p.name) {
+                          <li>
+                            @if (playerClubLogoUrl(p); as logoUrl) {
+                              <img class="expand-panel__club-logo" [src]="logoUrl" alt="" />
+                            }
+                            <span class="expand-panel__name">{{ p.name }}</span>
+                            @if (p.points !== undefined) {
+                              <span class="expand-panel__points">{{ p.points }}</span>
+                            }
+                          </li>
+                        }
+                      </ul>
+                      @if (pointsValue(t) !== null) {
+                        <div class="expand-panel__sum">
+                          <span>Summe</span>
+                          <span>{{ pointsValue(t) | number }}</span>
+                        </div>
+                      }
+                    }
+                  </div>
+
+                  <div class="expand-panel__section">
+                    <span class="expand-panel__title">Neuzugänge</span>
+                    @if (t.newcomer_players.length === 0) {
+                      <p class="state-msg">Keine Neuzugänge.</p>
+                    } @else {
+                      <ul class="expand-panel__list">
+                        @for (p of t.newcomer_players; track p.name) {
+                          <li>
+                            @if (playerClubLogoUrl(p); as logoUrl) {
+                              <img class="expand-panel__club-logo" [src]="logoUrl" alt="" />
+                            }
+                            <span class="expand-panel__name">{{ p.name }}</span>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
         }
       </tbody>
     </table>
@@ -182,6 +234,11 @@
       }
     </div>
   </div>
+
+  <figure class="interview-photo">
+    <img src="https://i.imgur.com/4vvC6l5.jpeg" alt="Neues Trikot von US Töfte Calcio in der Saison 26/27" />
+    <figcaption>Neues Trikot von US Töfte Calcio in der Saison 26/27</figcaption>
+  </figure>
 
   @if (tooltipData(); as td) {
     <div class="count-tooltip"
