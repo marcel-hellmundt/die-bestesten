@@ -78,6 +78,11 @@ interface InterviewMessage {
   paragraphs: string[];
 }
 
+interface GalleryPhoto {
+  url: string;
+  caption: string;
+}
+
 type SortField = 'previous_season_points' | 'newcomer_count';
 type PointsMode = 'all' | 'value11' | 'best11';
 
@@ -164,6 +169,25 @@ export class SaisonvorschauComponent {
       ],
     },
   ];
+
+  readonly galleryPhotos: GalleryPhoto[] = [
+    {
+      url: 'https://i.imgur.com/4vvC6l5.jpeg',
+      caption: 'Neues Trikot von US Töfte Calcio in der Saison 26/27',
+    },
+    { url: 'https://i.imgur.com/5mqFoxD.jpeg', caption: 'Titelverteidigung möglich?' },
+  ];
+  galleryIndex = signal(0);
+
+  galleryPrev(): void {
+    this.galleryIndex.update(
+      (i) => (i - 1 + this.galleryPhotos.length) % this.galleryPhotos.length,
+    );
+  }
+
+  galleryNext(): void {
+    this.galleryIndex.update((i) => (i + 1) % this.galleryPhotos.length);
+  }
 
   promotedClubs = computed(() => this.state().data?.promoted_clubs ?? []);
   promotedClubTeams = computed(() => this.state().data?.promoted_club_teams ?? []);
