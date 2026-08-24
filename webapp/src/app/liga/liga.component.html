@@ -1,13 +1,17 @@
 <nav class="pill-nav">
-  <a class="pill" routerLink="saisonvorschau" routerLinkActive="pill--active">Saisonvorschau</a>
+  <a class="pill" routerLink="saisonvorschau" routerLinkActive="pill--active">
+    Saisonvorschau
+    <span class="pill__badge">Neu</span>
+  </a>
   <a class="pill" routerLink="spieltag" routerLinkActive="pill--active">Spieltag</a>
   <a class="pill" routerLink="tabelle" routerLinkActive="pill--active">Tabelle</a>
   <a class="pill" routerLink="h2h" routerLinkActive="pill--active">H2H</a>
   <a class="pill" routerLink="teams" routerLinkActive="pill--active">Teams</a>
   @if (cache.powerrankingEnabled()) {
-    <a class="pill" routerLink="powerranking" routerLinkActive="pill--active"
-      >Powerranking</a
-    >
+    <a class="pill" routerLink="powerranking" routerLinkActive="pill--active">
+      Powerranking
+      <span class="pill__badge">Neu</span>
+    </a>
   }
   <a class="pill" routerLink="ruhmeshalle" routerLinkActive="pill--active"
     >Ruhmeshalle</a

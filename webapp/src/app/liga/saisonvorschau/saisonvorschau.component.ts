@@ -5,6 +5,12 @@ import { catchError, map, of, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { environment } from '../../../environments/environment';
 
+interface TooltipPlayer {
+  name: string;
+  club_id: string | null;
+  club_logo_uploaded: boolean;
+}
+
 interface SaisonvorschauTeam {
   id: string;
   team_name: string;
@@ -17,7 +23,7 @@ interface SaisonvorschauTeam {
   position_counts: Record<string, number>;
   previous_season_points: number;
   newcomer_count: number;
-  newcomer_players: string[];
+  newcomer_players: TooltipPlayer[];
 }
 
 interface ClubRef {
@@ -33,7 +39,7 @@ interface ClubTeamCount {
   color: string | null;
   color_secondary: string | null;
   count: number;
-  players: string[];
+  players: TooltipPlayer[];
 }
 
 interface SaisonvorschauResponse {
@@ -113,6 +119,11 @@ export class SaisonvorschauComponent {
     return `${environment.imageApiUrl}/team/${this.seasonId()}/${teamId}.png`;
   }
 
+  playerClubLogoUrl(p: TooltipPlayer): string | null {
+    if (!p.club_id || !p.club_logo_uploaded) return null;
+    return `${environment.imageApiUrl}/club/${p.club_id}.png`;
+  }
+
   positionCounts(t: SaisonvorschauTeam) {
     return POSITIONS.map(pos => {
       const count = t.position_counts?.[pos] ?? 0;
@@ -152,7 +163,7 @@ export class SaisonvorschauComponent {
   // Bubbles. Ein einziger Tooltip wird von allen drei Hover-Zielen geteilt (Neuzugänge-Spalte in
   // der Tabelle, sowie die Anzahl in beiden Vereins-Karten) — jeweils mit eigenem Titel/Liste.
   @ViewChild('countTooltipEl') countTooltipEl?: ElementRef<HTMLElement>;
-  tooltipData  = signal<{ title: string; players: string[] } | null>(null);
+  tooltipData  = signal<{ title: string; players: TooltipPlayer[] } | null>(null);
   tooltipPos   = signal<{ top: number; left: number } | null>(null);
   tooltipBelow = signal(false);
   tooltipReady = signal(false);
@@ -160,7 +171,7 @@ export class SaisonvorschauComponent {
   private static readonly TOOLTIP_EDGE_MARGIN = 24;
   private hoverSeq = 0;
 
-  onCountHover(event: MouseEvent, title: string, players: string[]): void {
+  onCountHover(event: MouseEvent, title: string, players: TooltipPlayer[]): void {
     if (!players.length) return;
     const seq = ++this.hoverSeq;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();

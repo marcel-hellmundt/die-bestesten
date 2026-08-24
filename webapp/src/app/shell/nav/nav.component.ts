@@ -13,6 +13,11 @@ interface NavItem {
 interface NavGroup {
   label: string;
   icon?: string;
+  // Route für den mobilen Bottom-Bar-Tab dieser Gruppe — fällt sonst auf items[0].route zurück.
+  // Nötig, weil die Reihenfolge in items[] rein für die Desktop-Sidebar/Pill-Nav-Anzeige gilt und
+  // nicht zwingend die gewünschte Mobile-Standardseite widerspiegelt (z.B. Liga: Saisonvorschau
+  // steht zwar an erster Stelle, der Liga-Tab soll aber weiterhin auf Spieltag öffnen).
+  mobileRoute?: string | any[];
   items: NavItem[];
 }
 
@@ -64,6 +69,7 @@ export class NavComponent {
   ligaGroup = computed<NavGroup>(() => ({
     label: 'Liga',
     icon: 'tabelle',
+    mobileRoute: '/liga/spieltag',
     items: [
       { label: 'Saisonvorschau', icon: 'eye', route: '/liga/saisonvorschau', isNew: true },
       { label: 'Spieltag', icon: 'spieltag', route: '/liga/spieltag' },
@@ -93,23 +99,11 @@ export class NavComponent {
 
   topGroups = computed<NavGroup[]>(() => [this.ligaGroup(), ...this.teamGroups(), this.marktGroup]);
 
-  bottomGroups = computed<NavGroup[]>(() => [
-    {
-      label: '',
-      items: [
-        ...(this.auth.isMaintainer()
-          ? [{ label: 'Datenbank', icon: 'data', route: '/daten' } as NavItem]
-          : []),
-        { label: 'Einstellungen', icon: 'settings', route: '/einstellungen' },
-      ],
-    },
-  ]);
-
   mobileNavItems = computed<NavItem[]>(() =>
     this.topGroups().map((g) => ({
       label: g.label,
       icon: g.icon ?? g.items[0].icon,
-      route: g.items[0].route,
+      route: g.mobileRoute ?? g.items[0].route,
     })),
   );
 

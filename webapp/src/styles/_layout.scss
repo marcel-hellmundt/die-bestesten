@@ -603,6 +603,10 @@
   gap: $space-1;
   overflow-x: auto;
   scrollbar-width: none;
+  // overflow-x:auto implicitly computes overflow-y as auto too (per spec, since it's not left
+  // as visible on both axes) — without this padding, a .pill__badge's negative top offset would
+  // get clipped by that implicit vertical clipping instead of poking above the pill as intended.
+  padding-top: $space-2;
   // Space before the routed sub-page content. On team-detail this collapses with
   // .team-header's own margin-bottom:$space-6 (same value, standard block margin
   // collapsing) instead of stacking — so the gap stays 24px everywhere either way.
@@ -619,6 +623,7 @@
 }
 
 .pill {
+  position: relative;
   padding: $space-1 $space-4;
   height: $control-height;
   display: inline-flex;
@@ -659,6 +664,32 @@
     object-fit: contain;
     margin-right: $space-1;
     flex-shrink: 0;
+  }
+
+  // Kleines "Neu"-Label, oben rechts zur Hälfte über die Pille ragend — Pendant zum
+  // Sidebar-Badge (.nav-badge in nav.component.scss), nur als Eckbadge statt Inline-Label,
+  // da in der Pille selbst kein Platz für zusätzlichen Text ist. Nur mobile sichtbar: auf
+  // Desktop steht das "Neu" bereits in der linken Sidebar, hier wäre es doppelt.
+  &__badge {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 8px;
+    transform: translate(35%, -50%);
+    padding: 1px 5px;
+    border-radius: $radius-full;
+    background-color: $color-danger;
+    color: #fff;
+    font-size: 9px;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    pointer-events: none;
+
+    @media (max-width: $mobile-breakpoint) {
+      display: block;
+    }
   }
 }
 

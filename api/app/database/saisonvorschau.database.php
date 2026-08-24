@@ -61,6 +61,7 @@ trait SaisonvorschauTrait
         $positions       = [];
         $prices          = [];
         $currentClub     = [];
+        $clubLogoUploaded = [];
         $prevPoints      = [];
         $prevRatingCount = [];
         $displayNames    = [];
@@ -91,6 +92,16 @@ trait SaisonvorschauTrait
                 $currentClub[$r['player_id']] = $r['club_id'];
             }
 
+            $clubIdsForLogos = array_values(array_unique(array_filter($currentClub)));
+            if (!empty($clubIdsForLogos)) {
+                $cp = implode(',', array_fill(0, count($clubIdsForLogos), '?'));
+                $logoQ = $this->con->prepare("SELECT id, logo_uploaded FROM club WHERE id IN ($cp)");
+                $logoQ->execute($clubIdsForLogos);
+                foreach ($logoQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $clubLogoUploaded[$r['id']] = (bool) $r['logo_uploaded'];
+                }
+            }
+
             if ($prevSeasonId) {
                 $prQ = $this->con->prepare(
                     "SELECT pr.player_id, COALESCE(SUM(pr.points),0) AS pts, COUNT(pr.id) AS cnt
@@ -110,14 +121,14 @@ trait SaisonvorschauTrait
         foreach ($teams as &$team) {
             $counts          = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
             $points          = 0;
-            $newcomerNames   = [];
+            $newcomerPlayers = [];
             foreach ($teamPlayerIds[$team['id']] as $pid) {
                 $pos = $positions[$pid] ?? null;
                 if ($pos && isset($counts[$pos])) $counts[$pos]++;
                 $points += $prevPoints[$pid] ?? 0;
-                if (($prevRatingCount[$pid] ?? 0) === 0) $newcomerNames[] = $displayNames[$pid] ?? '?';
+                if (($prevRatingCount[$pid] ?? 0) === 0) $newcomerPlayers[] = $this->buildPlayerRef($pid, $displayNames, $currentClub, $clubLogoUploaded);
             }
-            sort($newcomerNames, SORT_STRING | SORT_FLAG_CASE);
+            usort($newcomerPlayers, fn($a, $b) => strcasecmp($a['name'], $b['name']));
             $valid = true;
             foreach ($sqMin as $pos => $min) {
                 if ($counts[$pos] < $min) { $valid = false; break; }
@@ -125,8 +136,8 @@ trait SaisonvorschauTrait
             $team['squad_valid']             = $valid;
             $team['position_counts']         = $counts;
             $team['previous_season_points']  = $points;
-            $team['newcomer_count']          = count($newcomerNames);
-            $team['newcomer_players']        = $newcomerNames;
+            $team['newcomer_count']          = count($newcomerPlayers);
+            $team['newcomer_players']        = $newcomerPlayers;
         }
         unset($team);
 
@@ -193,9 +204,9 @@ trait SaisonvorschauTrait
             'previous_season_id'   => $prevSeasonId,
             'teams'                => $teams,
             'promoted_clubs'       => $promotedClubs,
-            'promoted_club_teams'  => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, $displayNames, array_column($promotedClubs, 'id'), $prices, $fillerPrice),
+            'promoted_club_teams'  => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, $displayNames, $clubLogoUploaded, array_column($promotedClubs, 'id'), $prices, $fillerPrice),
             'special_clubs'        => $specialClubs,
-            'special_club_teams'   => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, $displayNames, array_column($specialClubs, 'id')),
+            'special_club_teams'   => $this->countTeamsByClubIds($teams, $teamPlayerIds, $currentClub, $displayNames, $clubLogoUploaded, array_column($specialClubs, 'id')),
         ];
     }
 
@@ -206,7 +217,7 @@ trait SaisonvorschauTrait
      * getSaisonvorschau(). $fillerPrice (falls gesetzt) blendet Lückenfüller-Spieler mit exakt
      * diesem Marktwert aus — nur von der Aufsteiger-Karte genutzt.
      */
-    private function countTeamsByClubIds(array $teams, array $teamPlayerIds, array $currentClub, array $displayNames, array $clubIds, array $prices = [], ?float $fillerPrice = null): array
+    private function countTeamsByClubIds(array $teams, array $teamPlayerIds, array $currentClub, array $displayNames, array $clubLogoUploaded, array $clubIds, array $prices = [], ?float $fillerPrice = null): array
     {
         if (empty($clubIds)) return [];
         $clubIdSet = array_flip($clubIds);
@@ -217,10 +228,10 @@ trait SaisonvorschauTrait
             foreach ($teamPlayerIds[$team['id']] as $pid) {
                 if (!isset($clubIdSet[$currentClub[$pid] ?? null])) continue;
                 if ($fillerPrice !== null && abs(($prices[$pid] ?? -1.0) - $fillerPrice) < 0.01) continue;
-                $players[] = $displayNames[$pid] ?? '?';
+                $players[] = $this->buildPlayerRef($pid, $displayNames, $currentClub, $clubLogoUploaded);
             }
             if (!empty($players)) {
-                sort($players, SORT_STRING | SORT_FLAG_CASE);
+                usort($players, fn($a, $b) => strcasecmp($a['name'], $b['name']));
                 $result[] = [
                     'team_id'         => $team['id'],
                     'team_name'       => $team['team_name'],
@@ -234,5 +245,19 @@ trait SaisonvorschauTrait
 
         usort($result, fn($a, $b) => $b['count'] <=> $a['count']);
         return $result;
+    }
+
+    /**
+     * Ein Spieler für eine Tooltip-Spielerliste — Name plus aktueller Verein (für das kleine
+     * Vereinslogo vor dem Namen im Frontend-Tooltip).
+     */
+    private function buildPlayerRef(string $playerId, array $displayNames, array $currentClub, array $clubLogoUploaded): array
+    {
+        $clubId = $currentClub[$playerId] ?? null;
+        return [
+            'name'            => $displayNames[$playerId] ?? '?',
+            'club_id'         => $clubId,
+            'club_logo_uploaded' => $clubId !== null ? ($clubLogoUploaded[$clubId] ?? false) : false,
+        ];
     }
 }

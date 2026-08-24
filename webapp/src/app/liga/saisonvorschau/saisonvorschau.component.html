@@ -137,8 +137,13 @@
          #countTooltipEl>
       <span class="count-tooltip__title">{{ td.title }}</span>
       <ul class="count-tooltip__list">
-        @for (name of td.players; track name) {
-          <li>{{ name }}</li>
+        @for (p of td.players; track p.name) {
+          <li>
+            @if (playerClubLogoUrl(p); as logoUrl) {
+              <img class="count-tooltip__club-logo" [src]="logoUrl" alt="" />
+            }
+            <span>{{ p.name }}</span>
+          </li>
         }
       </ul>
     </div>

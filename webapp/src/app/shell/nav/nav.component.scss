@@ -62,13 +62,6 @@
     gap: $space-5;
   }
 
-  &-groups-bottom {
-    display: flex;
-    flex-direction: column;
-    gap: $space-5;
-    margin-top: auto;
-  }
-
   &-group-label {
     display: block;
     font-family: $font-display;
@@ -163,7 +156,6 @@
     &-divider,
     &-group-label,
     &-logout,
-    &-groups-bottom,
     &-groups-top {
       display: none;
     }
