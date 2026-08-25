@@ -42,6 +42,9 @@
   </div>
 
   <div class="overview-row">
+    @if (ratings().length === 0) {
+      <p class="state-msg overview-empty">Noch keine Spieltagsergebnisse vorhanden.</p>
+    } @else {
     <div class="table-container">
       <table class="data-table data-table--compact">
         <thead>
@@ -118,6 +121,7 @@
         </tfoot>
       </table>
     </div>
+    }
 
     @if (h2hByPhase().length > 0) {
       <div class="card h2h-panel">
