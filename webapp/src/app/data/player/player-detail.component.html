@@ -23,7 +23,12 @@
             (click)="triggerPlayerPhotoUpload()"
             title="Spielerfoto ersetzen"
           >
-            <img [src]="photoUrl" class="player-photo__img" [alt]="p.displayname" />
+            <img
+              [src]="photoUrl"
+              class="player-photo__img"
+              [class.player-photo__img--nudge]="photoNudge()"
+              [alt]="p.displayname"
+            />
             <div class="player-photo__overlay">
               @if (playerPhotoState() === 'loading') {
                 <span class="player-photo__spinner"></span>

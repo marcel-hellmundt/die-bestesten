@@ -47,9 +47,20 @@ trait PowerrankingTrait
                  WHERE season_id = :sid AND manager_id = :mid ORDER BY position ASC"
             );
             $q->execute([':sid' => $seasonId, ':mid' => $managerId]);
+
+            $submittedQ = $this->con_league->prepare(
+                "SELECT COUNT(DISTINCT manager_id) FROM powerranking_pick WHERE season_id = :sid"
+            );
+            $submittedQ->execute([':sid' => $seasonId]);
+
+            $totalQ = $this->con_league->prepare("SELECT COUNT(*) FROM team WHERE season_id = :sid");
+            $totalQ->execute([':sid' => $seasonId]);
+
             return [
                 'locked' => false, 'season_id' => $seasonId, 'kickoff_date' => $status['kickoff_date'],
                 'my_picks' => $q->fetchAll(PDO::FETCH_ASSOC),
+                'submitted_count' => (int) $submittedQ->fetchColumn(),
+                'total_managers' => (int) $totalQ->fetchColumn(),
             ];
         }
 

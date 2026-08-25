@@ -11,6 +11,13 @@
     anderen Manager sichtbar.
   </p>
 
+  @if (response()?.total_managers) {
+    <p class="pr-submitted-info">
+      {{ response()!.submitted_count }} von {{ response()!.total_managers }} Managern haben
+      bereits getippt.
+    </p>
+  }
+
   @if (isAdmin) {
     <button type="button" class="btn btn-sm btn-ghost pr-preview-btn" (click)="openPreview()">
       Bisherige Tipps aller Manager ansehen

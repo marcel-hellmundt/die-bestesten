@@ -108,6 +108,10 @@
   &--placeholder {
     opacity: 0.25;
   }
+
+  &--nudge {
+    object-position: 0px -6px;
+  }
 }
 
 .player-name {
