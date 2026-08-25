@@ -1,5 +1,55 @@
 @use '../../../styles/variables' as *;
 
+// ── Mobile/Desktop-Piechart ──────────────────────────────────────────────────
+
+.device-pie-card {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-4;
+  margin-bottom: $space-4;
+  width: fit-content;
+}
+
+.device-pie {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+
+.device-pie__legend {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.device-pie__legend-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-sm;
+  white-space: nowrap;
+}
+
+.device-pie__dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.device-pie__legend-label {
+  color: $color-text-muted;
+  min-width: 56px;
+}
+
+.device-pie__legend-value {
+  font-weight: $font-weight-medium;
+  font-variant-numeric: tabular-nums;
+  color: $color-text;
+}
+
 .range-toggle {
   display: flex;
   gap: $space-2;
@@ -69,6 +119,32 @@
   padding-right: $space-2;
 }
 
+// ── Gesamtnutzungs-Chart-Zeile ───────────────────────────────────────────────
+// Statt eines eigenständigen Chart-Cards eine zusätzliche Zeile im selben Grid wie die Heatmap
+// darunter — dadurch teilen sich Chart und Heatmap exakt dieselben Spalten-Tracks statt nur
+// ungefähr gleich breit zu sein (siehe usageChart()-Kommentar in session-heatmap.component.ts).
+
+.heatmap__row-label--chart {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.usage-chart-peak {
+  font-size: $font-xs;
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
+}
+
+.usage-chart-svg {
+  display: block;
+  grid-column: 2 / -1;
+  width: 100%;
+  height: 56px;
+  overflow: visible;
+}
+
 .heatmap__cell {
   aspect-ratio: 1;
   width: 100%;
@@ -97,6 +173,10 @@
     // ihrem rechten/unteren Nachbarn, wodurch überall nur 1px sichtbar ist.
     border-width: 0 1px 1px 0;
   }
+
+  .usage-chart-svg {
+    height: 40px;
+  }
 }
 
 // Einzelner, viewport-positionierter Tooltip statt eines CSS-::after pro Zelle — eine relativ
@@ -105,14 +185,47 @@
 // in onCellHover() gegen die Viewport-Breite geclampt, damit das nicht mehr passieren kann.
 .heatmap-tooltip {
   position: fixed;
-  transform: translate(-50%, calc(-100% - 6px));
-  background: rgba(0, 0, 0, 0.78);
-  color: #fff;
-  font-size: 11px;
-  line-height: 1.3;
-  padding: 3px 7px;
-  border-radius: $radius-sm;
-  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 8px));
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
   z-index: 20;
   pointer-events: none;
+  min-width: 160px;
+
+  &__title {
+    display: block;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    margin-bottom: $space-1;
+    white-space: nowrap;
+  }
+
+  &__empty {
+    display: block;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    gap: $space-3;
+    font-size: $font-sm;
+    color: $color-text;
+    white-space: nowrap;
+
+    & + & {
+      margin-top: 2px;
+    }
+  }
+
+  &__value {
+    font-weight: $font-weight-medium;
+    font-variant-numeric: tabular-nums;
+    color: $color-text-muted;
+  }
 }

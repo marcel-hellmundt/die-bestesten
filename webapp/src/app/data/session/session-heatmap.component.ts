@@ -43,6 +43,12 @@ const RANGE_LABELS: Record<RangeKey, string> = {
   day: 'Tag', month: 'Monat', year: 'Jahr',
 };
 
+// Beschreibung des gesamten abgedeckten Zeitraums für den Manager-Zeilen-Tooltip (aggregiert über
+// alle aktuell angezeigten Buckets) — Fenstergrößen wie in SessionTrait::getSessionHeatmap.
+const RANGE_PERIOD_LABELS: Record<RangeKey, string> = {
+  day: 'Letzte 24 Stunden', month: 'Letzte 30 Tage', year: 'Letzte 52 Wochen',
+};
+
 // Grobe Obergrenze für die Tooltip-Breite, nur zum Clampen der Position genutzt (siehe
 // onCellHover) — muss nicht exakt sein, nur groß genug, damit der Tooltip nie über den
 // Viewport-Rand hinausragt (das erzeugte vorher bei Zellen ganz rechts eine Scrollbar + Flackern,
@@ -51,9 +57,15 @@ const TOOLTIP_WIDTH_ESTIMATE = 240;
 const TOOLTIP_VIEWPORT_MARGIN = 8;
 
 interface TooltipState {
-  text: string;
   x: number;
   y: number;
+  timeLabel: string;
+  hasUsage: boolean;
+  totalLabel: string;
+  mobileLabel: string;
+  mobilePct: number;
+  desktopLabel: string;
+  desktopPct: number;
 }
 
 @Component({
@@ -80,6 +92,24 @@ export class SessionHeatmapComponent {
       ),
     ),
   );
+
+  // Sortierung der Manager-Zeilen soll unabhängig vom gewählten Intervall (Tag/Monat/Jahr) immer
+  // dieselbe Reihenfolge zeigen, statt bei jedem Range-Wechsel neu nach der Nutzung NUR dieses
+  // Zeitraums zu sortieren. 'year' (letzte 51 Wochen) ist der breiteste verfügbare Zeitraum und
+  // dient hier als globaler Referenzwert — einmalig geladen, unabhängig vom range-Signal.
+  private globalTotals = toSignal(
+    this.api.get<HeatmapResponse>('session?range=year').pipe(
+      catchError(() => of({ range: 'year', managers: [] } as HeatmapResponse)),
+    ),
+  );
+
+  private globalTotalSeconds = computed(() => {
+    const map = new Map<string, number>();
+    for (const m of this.globalTotals()?.managers ?? []) {
+      map.set(m.manager_id, this.totalSeconds(m));
+    }
+    return map;
+  });
 
   loading = computed(() => this.data() === undefined);
 
@@ -142,16 +172,104 @@ export class SessionHeatmapComponent {
     return cols;
   });
 
-  private totalSeconds(m: HeatmapManager): number {
-    return Object.values(m.buckets).reduce((sum, s) => sum + s, 0);
+  private sumValues(record: Record<string, number>): number {
+    return Object.values(record).reduce((sum, s) => sum + s, 0);
   }
 
-  // Absteigend nach Gesamtnutzung im Zeitraum, bei Gleichstand alphabetisch als stabiler Tiebreaker.
-  managers = computed(() =>
-    [...(this.data()?.managers ?? [])].sort((a, b) =>
-      this.totalSeconds(b) - this.totalSeconds(a) || a.manager_name.localeCompare(b.manager_name),
-    ),
-  );
+  private totalSeconds(m: HeatmapManager): number {
+    return this.sumValues(m.buckets);
+  }
+
+  // ── Mobile/Desktop-Piechart ──────────────────────────────────────────────────
+  // Reiner CSS-conic-gradient-Kreis statt SVG-Arc-Pfaden — bei nur 2 Segmenten deutlich simpler
+  // (keine Trigonometrie für Bogen-Koordinaten nötig) und genauso abhängigkeitsfrei. Gleiche
+  // Farben wie der Geräte-Farbverlauf der Heatmap-Zellen (DESKTOP_RGB/MOBILE_RGB), damit die
+  // Farbsprache über die ganze Seite konsistent bleibt.
+  readonly mobileColor  = `rgb(${MOBILE_RGB.join(', ')})`;
+  readonly desktopColor = `rgb(${DESKTOP_RGB.join(', ')})`;
+
+  // Summe Mobile-/Desktop-Sekunden über alle Manager, für den aktuell gewählten Zeitraum (gleicher
+  // Scope wie usageChart darunter — nicht global wie globalTotalSeconds für die Zeilen-Sortierung).
+  private deviceTotals = computed(() => {
+    let mobile = 0, desktop = 0;
+    for (const m of this.data()?.managers ?? []) {
+      mobile  += this.sumValues(m.mobile_seconds);
+      desktop += this.sumValues(m.desktop_seconds);
+    }
+    return { mobile, desktop };
+  });
+
+  devicePie = computed(() => {
+    const { mobile, desktop } = this.deviceTotals();
+    const total = mobile + desktop;
+    if (total <= 0) return null;
+
+    const mobilePct = Math.round(mobile / total * 100);
+    return {
+      mobilePct,
+      desktopPct:   100 - mobilePct,
+      mobileLabel:  this.formatDuration(mobile),
+      desktopLabel: this.formatDuration(desktop),
+      // CSS conic-gradient: erstes Segment 0%..mobilePct%, Rest Desktop — direkt als fertiger
+      // background-Wert, damit das Template nur noch [style.background] binden muss.
+      gradient: `conic-gradient(${this.mobileColor} 0% ${mobilePct}%, ${this.desktopColor} ${mobilePct}% 100%)`,
+    };
+  });
+
+  // ── Gesamtnutzungs-Chart (Linechart über der Heatmap) ───────────────────────
+  // Damit die Zeitspalten exakt über den Heatmap-Spalten liegen (nicht nur ungefähr, wie bei einem
+  // eigenständigen Chart mit fixem Seitenverhältnis), ist das SVG kein eigenes Chart-Card, sondern
+  // eine zusätzliche Zeile IM SELBEN .heatmap-Grid — per grid-column über exakt dieselben
+  // Daten-Spalten-Tracks gelegt (siehe .usage-chart-svg in session-heatmap.component.scss). Das
+  // ViewBox ist in Spalten-Einheiten (0..Spaltenzahl) mit preserveAspectRatio="none", wodurch
+  // Spalte i im Chart deckungsgleich mit Heatmap-Spalte i skaliert — unabhängig von Fensterbreite
+  // und Spaltenzahl (24/30/52). Text (Achsenbeschriftung) gehört bewusst NICHT ins SVG, da es unter
+  // dieser nicht-uniformen Skalierung verzerrt würde — daher "Gesamt" + Spitzenwert als normales
+  // HTML-Label in der Row-Label-Spalte statt SVG-<text>.
+  readonly chartColor = '#bf1d00'; // == $color-accent; kein Team-Kontext hier wie in team-overview
+  private readonly USAGE_CHART_PAD = 12; // ViewBox-Einheiten Rand oben/unten (ViewBox-Höhe fix 100)
+
+  // Summe der Sekunden aller Manager, je Bucket-Key — transponiert zu totalSeconds() (das pro
+  // Manager über alle Buckets summiert statt pro Bucket über alle Manager).
+  private totalsByBucket = computed(() => {
+    const map = new Map<string, number>();
+    for (const m of this.data()?.managers ?? []) {
+      for (const [key, secs] of Object.entries(m.buckets)) {
+        map.set(key, (map.get(key) ?? 0) + secs);
+      }
+    }
+    return map;
+  });
+
+  usageChart = computed(() => {
+    const cols = this.columns();
+    if (cols.length === 0) return null;
+
+    const totals   = this.totalsByBucket();
+    const values   = cols.map(c => totals.get(c.key) ?? 0);
+    const maxValue = Math.max(...values, 1);
+
+    const top    = this.USAGE_CHART_PAD;
+    const bottom = 100 - this.USAGE_CHART_PAD;
+    const h      = bottom - top;
+
+    // x in Spalten-Einheiten (Mitte von Spalte i = i + 0.5) — passend zum ViewBox "0 0 N 100".
+    const dots = values.map((v, i) => ({ x: i + 0.5, y: bottom - (v / maxValue) * h }));
+    const line = dots.map((d, i) => `${i === 0 ? 'M' : 'L'}${d.x.toFixed(3)},${d.y.toFixed(1)}`).join(' ');
+
+    return { line, maxValue, columnCount: cols.length };
+  });
+
+  // Absteigend nach globaler Gesamtnutzung (siehe globalTotalSeconds — unabhängig vom gewählten
+  // Intervall, damit die Reihenfolge beim Wechsel zwischen Tag/Monat/Jahr stabil bleibt), bei
+  // Gleichstand alphabetisch als stabiler Tiebreaker.
+  managers = computed(() => {
+    const totals = this.globalTotalSeconds();
+    return [...(this.data()?.managers ?? [])].sort((a, b) =>
+      (totals.get(b.manager_id) ?? 0) - (totals.get(a.manager_id) ?? 0)
+        || a.manager_name.localeCompare(b.manager_name),
+    );
+  });
 
   seconds(m: HeatmapManager, bucketKey: string): number {
     return m.buckets[bucketKey] ?? 0;
@@ -201,23 +319,73 @@ export class SessionHeatmapComponent {
     return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(2)})`;
   }
 
-  private tooltipText(m: HeatmapManager, col: BucketColumn): string {
-    const seconds = this.seconds(m, col.key);
-    if (seconds <= 0) return `${col.key} — Keine Nutzung`;
-    const mobilePct = Math.round(this.mobileFraction(m, col.key) * 100);
-    return `${col.key} — ${this.formatDuration(seconds)} (${mobilePct}% mobil)`;
+  // Formatierte Zeitangabe für den Tooltip-Titel — abhängig vom gewählten Intervall, da die
+  // Bucket-Keys je nach range unterschiedlich aufgebaut sind (siehe SessionTrait::getSessionHeatmap):
+  // 'day' → "YYYY-MM-DDTHH:00:00" (Stunde), 'month'/'year' → "YYYY-MM-DD" (year: Montag der Woche).
+  // Datumsangaben ohne Uhrzeit werden explizit mit "T00:00:00" geparst, da new Date("YYYY-MM-DD")
+  // sonst als UTC-Mitternacht statt Lokalzeit interpretiert wird (JS-Falle) und je nach Zeitzone
+  // auf den Vortag verschieben könnte.
+  private formatBucketLabel(col: BucketColumn): string {
+    if (this.range() === 'day') {
+      const d = new Date(col.key);
+      const day = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+      return `${day}, ${String(d.getHours()).padStart(2, '0')}:00 Uhr`;
+    }
+    const d = new Date(`${col.key}T00:00:00`);
+    const dateLabel = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    return this.range() === 'year' ? `Woche ab ${dateLabel}` : dateLabel;
+  }
+
+  private formatDurationOrZero(seconds: number): string {
+    return seconds > 0 ? this.formatDuration(seconds) : '0min';
   }
 
   hoveredTooltip = signal<TooltipState | null>(null);
 
-  onCellHover(event: MouseEvent, m: HeatmapManager, col: BucketColumn): void {
+  private tooltipPosition(event: MouseEvent): { x: number; y: number } {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const half = TOOLTIP_WIDTH_ESTIMATE / 2;
     const x = Math.min(
       window.innerWidth - half - TOOLTIP_VIEWPORT_MARGIN,
       Math.max(half + TOOLTIP_VIEWPORT_MARGIN, rect.left + rect.width / 2),
     );
-    this.hoveredTooltip.set({ text: this.tooltipText(m, col), x, y: rect.top });
+    return { x, y: rect.top };
+  }
+
+  private buildTooltip(
+    timeLabel: string, total: number, mobile: number, desktop: number, pos: { x: number; y: number },
+  ): TooltipState {
+    const deviceSum = mobile + desktop;
+    return {
+      ...pos,
+      timeLabel,
+      hasUsage:     total > 0,
+      totalLabel:   this.formatDuration(total),
+      mobileLabel:  this.formatDurationOrZero(mobile),
+      mobilePct:    deviceSum > 0 ? Math.round(mobile / deviceSum * 100) : 0,
+      desktopLabel: this.formatDurationOrZero(desktop),
+      desktopPct:   deviceSum > 0 ? Math.round(desktop / deviceSum * 100) : 0,
+    };
+  }
+
+  onCellHover(event: MouseEvent, m: HeatmapManager, col: BucketColumn): void {
+    const total   = this.seconds(m, col.key);
+    const mobile  = m.mobile_seconds[col.key] ?? 0;
+    const desktop = m.desktop_seconds[col.key] ?? 0;
+    this.hoveredTooltip.set(
+      this.buildTooltip(this.formatBucketLabel(col), total, mobile, desktop, this.tooltipPosition(event)),
+    );
+  }
+
+  // Gleicher Tooltip wie onCellHover, aber aggregiert über alle aktuell angezeigten Buckets dieses
+  // Managers (== die komplette Zeile) statt nur einer einzelnen Zelle.
+  onRowLabelHover(event: MouseEvent, m: HeatmapManager): void {
+    const total   = this.totalSeconds(m);
+    const mobile  = this.sumValues(m.mobile_seconds);
+    const desktop = this.sumValues(m.desktop_seconds);
+    this.hoveredTooltip.set(
+      this.buildTooltip(RANGE_PERIOD_LABELS[this.range()], total, mobile, desktop, this.tooltipPosition(event)),
+    );
   }
 
   onCellLeave(): void {

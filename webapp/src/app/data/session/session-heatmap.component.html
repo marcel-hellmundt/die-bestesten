@@ -19,13 +19,58 @@
 } @else if (!managers().length) {
   <p class="state-msg">Noch keine Nutzungsdaten vorhanden.</p>
 } @else {
+  @if (devicePie(); as pie) {
+    <div class="card device-pie-card">
+      <div class="device-pie" [style.background]="pie.gradient"></div>
+      <div class="device-pie__legend">
+        <div class="device-pie__legend-row">
+          <span class="device-pie__dot" [style.background-color]="mobileColor"></span>
+          <span class="device-pie__legend-label">Mobil</span>
+          <span class="device-pie__legend-value">{{ pie.mobileLabel }} ({{ pie.mobilePct }}%)</span>
+        </div>
+        <div class="device-pie__legend-row">
+          <span class="device-pie__dot" [style.background-color]="desktopColor"></span>
+          <span class="device-pie__legend-label">Desktop</span>
+          <span class="device-pie__legend-value">{{ pie.desktopLabel }} ({{ pie.desktopPct }}%)</span>
+        </div>
+      </div>
+    </div>
+  }
+
   <div class="heatmap" [style.--col-count]="columns().length">
+    @if (usageChart(); as chart) {
+      <div class="heatmap__row-label heatmap__row-label--chart">
+        Gesamt
+        <span class="usage-chart-peak">Spitze: {{ formatDuration(chart.maxValue) }}</span>
+      </div>
+      <svg
+        class="usage-chart-svg"
+        [attr.viewBox]="'0 0 ' + chart.columnCount + ' 100'"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          [attr.d]="chart.line"
+          fill="none"
+          [attr.stroke]="chartColor"
+          stroke-width="2"
+          vector-effect="non-scaling-stroke"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+        />
+      </svg>
+    }
+
     <div class="heatmap__corner"></div>
     @for (col of columns(); track col.key) {
       <div class="heatmap__col-label">{{ col.label }}</div>
     }
     @for (m of managers(); track m.manager_id) {
-      <div class="heatmap__row-label">{{ m.manager_name }}</div>
+      <div
+        class="heatmap__row-label"
+        (mouseenter)="onRowLabelHover($event, m)"
+        (mouseleave)="onCellLeave()"
+      >{{ m.manager_name }}</div>
       @for (col of columns(); track col.key) {
         <div
           class="heatmap__cell"
@@ -38,6 +83,24 @@
   </div>
 
   @if (hoveredTooltip(); as tip) {
-    <div class="heatmap-tooltip" [style.left.px]="tip.x" [style.top.px]="tip.y">{{ tip.text }}</div>
+    <div class="heatmap-tooltip" [style.left.px]="tip.x" [style.top.px]="tip.y">
+      <span class="heatmap-tooltip__title">{{ tip.timeLabel }}</span>
+      @if (!tip.hasUsage) {
+        <span class="heatmap-tooltip__empty">Keine Nutzung</span>
+      } @else {
+        <div class="heatmap-tooltip__row">
+          <span>Gesamt</span>
+          <span class="heatmap-tooltip__value">{{ tip.totalLabel }}</span>
+        </div>
+        <div class="heatmap-tooltip__row">
+          <span>Mobil</span>
+          <span class="heatmap-tooltip__value">{{ tip.mobileLabel }} ({{ tip.mobilePct }}%)</span>
+        </div>
+        <div class="heatmap-tooltip__row">
+          <span>Desktop</span>
+          <span class="heatmap-tooltip__value">{{ tip.desktopLabel }} ({{ tip.desktopPct }}%)</span>
+        </div>
+      }
+    </div>
   }
 }
