@@ -309,7 +309,7 @@ export class SaisonvorschauComponent {
   }
 
   navigate(teamId: string): void {
-    this.router.navigate(['/team', teamId]);
+    this.router.navigate(['/team', teamId, 'kader']);
   }
 
   // Muss mit $mobile-breakpoint in _variables.scss (768px) übereinstimmen.
@@ -331,6 +331,17 @@ export class SaisonvorschauComponent {
       this.expandedTeamId.update((id) => (id === teamId ? null : teamId));
     } else {
       this.navigate(teamId);
+    }
+  }
+
+  // Desktop: die Zeile ist per row-link__anchor jetzt ein echtes <a> (Rechtsklick "In neuem Tab
+  // öffnen" / Strg-Klick funktioniert nativ) — stopPropagation verhindert nur, dass der Klick
+  // zusätzlich onRowClick auslöst und ein zweites Mal navigiert. Auf Mobile ist [routerLink] auf
+  // null gesetzt (kein href, keine Navigation), der Klick bubbelt unverändert zu onRowClick durch,
+  // das dort stattdessen die Ausklapp-Zeile umschaltet.
+  onTeamLinkClick(event: MouseEvent): void {
+    if (!this.isMobile()) {
+      event.stopPropagation();
     }
   }
 

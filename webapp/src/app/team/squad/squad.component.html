@@ -117,24 +117,43 @@
       }
     </div>
 
-    <!-- Former players -->
-    <aside class="squad-former card">
-      <h3 class="section-title">Ehemalige</h3>
-      @if (former().length === 0) {
-        <p class="state-msg">Keine ehemaligen Spieler.</p>
-      } @else {
-        <div class="former-list">
-          @for (p of former(); track p.id) {
-            <a class="former-row row-link" [routerLink]="['/daten/player', p.id]">
-              <span class="position-badge" [style.background-color]="positionColor(p.position)">
-                {{ positionLabel(p.position) }}
-              </span>
-              <span class="former-name">{{ p.displayname }}</span>
-              <span class="former-points">{{ p.points }}</span>
-            </a>
-          }
-        </div>
-      }
+    <!-- Former players + notes -->
+    <aside class="squad-right">
+      <div class="squad-former card">
+        <h3 class="section-title">Ehemalige</h3>
+        @if (former().length === 0) {
+          <p class="state-msg">Keine ehemaligen Spieler.</p>
+        } @else {
+          <div class="former-list">
+            @for (p of former(); track p.id) {
+              <a class="former-row row-link" [routerLink]="['/daten/player', p.id]">
+                <span class="position-badge" [style.background-color]="positionColor(p.position)">
+                  {{ positionLabel(p.position) }}
+                </span>
+                <span class="former-name">{{ p.displayname }}</span>
+                <span class="former-points">{{ p.points }}</span>
+              </a>
+            }
+          </div>
+        }
+      </div>
+
+      <textarea
+        class="squad-notes card"
+        placeholder="Persönliche Notizen zu diesem Kader…"
+        [value]="note()"
+        (input)="onNoteInput($any($event.target).value)"
+      ></textarea>
+      <div class="squad-notes__actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="!hasUnsavedChanges()"
+          (click)="onNoteSaveClick()"
+        >
+          Notiz speichern
+        </button>
+      </div>
     </aside>
   </div>
 }

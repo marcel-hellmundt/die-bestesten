@@ -130,7 +130,13 @@
   white-space: nowrap;
 }
 
-// ── Former players ────────────────────────────────────────────────────────────
+// ── Former players + notes ───────────────────────────────────────────────────
+
+.squad-right {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
 
 .squad-former {
 }
@@ -185,6 +191,16 @@
   }
 }
 
+.squad-notes {
+  min-height: 160px;
+  border-radius: $radius-lg;
+}
+
+.squad-notes__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 // ── Mobile ────────────────────────────────────────────────────────────────────
 
 @media (max-width: $mobile-breakpoint) {
@@ -219,8 +235,8 @@
   }
 
   .squad-main,
-  .squad-former {
-    border-radius: 0;
+  .squad-former,
+  .squad-notes {
     width: 100%;
     overflow-x: auto;
   }
