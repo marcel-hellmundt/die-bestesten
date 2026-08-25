@@ -134,6 +134,17 @@
   transition: transform 200ms ease;
 }
 
+.pr-submitted-info {
+  display: inline-flex;
+  align-items: center;
+  padding: $space-2 $space-4;
+  margin-bottom: $space-4;
+  background: $color-surface-alt;
+  border-radius: $radius-full;
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
 .pr-preview-btn {
   margin-bottom: $space-4;
 }

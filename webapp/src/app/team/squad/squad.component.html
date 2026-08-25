@@ -97,7 +97,12 @@
               <td class="col-photo">
                 <div class="player-photo-wrap">
                   @if (photoUrl(p); as url) {
-                    <img class="player-photo" [src]="url" [alt]="p.displayname" />
+                    <img
+                      class="player-photo"
+                      [class.player-photo--nudge]="photoNudge()"
+                      [src]="url"
+                      [alt]="p.displayname"
+                    />
                   } @else {
                     <img
                       class="player-photo player-photo--placeholder"

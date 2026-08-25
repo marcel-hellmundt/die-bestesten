@@ -40,6 +40,9 @@ export class SquadComponent {
   private id$ = this.route.parent!.paramMap.pipe(map(p => p.get('id')!));
   private teamId = toSignal(this.route.parent!.paramMap.pipe(map(p => p.get('id'))), { initialValue: null as string | null });
 
+  // Ausnahme für dieses eine Team, dessen Spielerfotos sonst zu weit oben abgeschnitten wirken.
+  photoNudge = computed(() => this.teamId() === '81123688-0f53-47b6-a92e-b64628c635e5');
+
   private state = toSignal(
     this.id$.pipe(
       switchMap(id =>

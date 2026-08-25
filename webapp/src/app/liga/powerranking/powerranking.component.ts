@@ -39,6 +39,8 @@ interface PowerrankingResponse {
   season_id: string;
   kickoff_date: string | null;
   my_picks?: { team_id: string; position: number }[];
+  submitted_count?: number;
+  total_managers?: number;
   standings?: PowerrankingStanding[];
   entries?: PowerrankingEntry[];
 }
