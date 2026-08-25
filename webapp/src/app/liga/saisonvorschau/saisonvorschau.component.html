@@ -56,6 +56,11 @@
         @for (t of sortedTeams(); track t.id) {
           <tr class="row-link" (click)="onRowClick(t.id)">
             <td class="col-team">
+              <a
+                class="row-link__anchor"
+                [routerLink]="isMobile() ? null : ['/team', t.id, 'kader']"
+                (click)="onTeamLinkClick($event)"
+              ></a>
               <span class="team-cell">
                 <img
                   class="tbl-logo"

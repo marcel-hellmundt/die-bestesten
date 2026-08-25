@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, map, of, startWith, switchMap } from 'rxjs';
@@ -28,9 +28,17 @@ export class SquadComponent {
   constructor() {
     this.cache.ensureLeague();
     this.cache.ensureDivisions();
+
+    effect(() => {
+      const id = this.teamId();
+      const stored = id ? this.readNotesStore()[id] ?? '' : '';
+      this.note.set(stored);
+      this.savedNote.set(stored);
+    });
   }
 
   private id$ = this.route.parent!.paramMap.pipe(map(p => p.get('id')!));
+  private teamId = toSignal(this.route.parent!.paramMap.pipe(map(p => p.get('id'))), { initialValue: null as string | null });
 
   private state = toSignal(
     this.id$.pipe(
@@ -141,5 +149,37 @@ export class SquadComponent {
     if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + ' Mio. €';
     if (price >= 1_000)     return (price / 1_000).toFixed(0) + ' Tsd. €';
     return price.toLocaleString('de-DE') + ' €';
+  }
+
+  private readonly NOTES_STORAGE_KEY = 'team-notes';
+
+  note = signal('');
+  private savedNote = signal('');
+  hasUnsavedChanges = computed(() => this.note() !== this.savedNote());
+
+  private readNotesStore(): Record<string, string> {
+    try {
+      const raw = localStorage.getItem(this.NOTES_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+
+  private writeNotesStore(store: Record<string, string>): void {
+    try { localStorage.setItem(this.NOTES_STORAGE_KEY, JSON.stringify(store)); }
+    catch { /* ignore */ }
+  }
+
+  onNoteInput(value: string): void {
+    this.note.set(value);
+  }
+
+  onNoteSaveClick(): void {
+    const id = this.teamId();
+    if (!id) return;
+    const value = this.note();
+    const store = this.readNotesStore();
+    if (value.trim() === '') delete store[id]; else store[id] = value;
+    this.writeNotesStore(store);
+    this.savedNote.set(value);
   }
 }

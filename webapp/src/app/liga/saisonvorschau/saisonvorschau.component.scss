@@ -72,6 +72,10 @@
 
 .col-hoverable {
   cursor: default;
+  // Über dem row-link__anchor (position:absolute; inset:0 relativ zur tr), damit Hover-Tooltip
+  // und eigener Klick-Handler dieser Zelle nicht vom gestreckten Team-Link überdeckt werden.
+  position: relative;
+  z-index: 1;
 
   // (hover: hover) statt einer Breakpoint-Media-Query — Touch-Geräte "hovern" beim Tap kurz
   // synthetisch (bis zum nächsten Tap woanders), was hier sonst als kurzes Aufblitzen sichtbar
