@@ -170,6 +170,11 @@
   flex: 1 1 0;
   height: 100%;
   cursor: default;
+  transition: background-color $transition-fast;
+
+  &:hover {
+    background-color: $color-surface-alt;
+  }
 }
 
 .heatmap__cell {
