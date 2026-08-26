@@ -172,6 +172,11 @@
         <div class="stat-value">{{ unmatchedRows().length }}</div>
         <div class="stat-desc">von {{ rows().length }} Spielern</div>
       </div>
+      <div class="stat-card stat-card--muted" [class.stat-card--selected]="selectedCard() === 'noAction'" (click)="selectedCard.set('noAction')">
+        <span class="stat-label" style="color: var(--flat-concrete)">Keine Aktion möglich</span>
+        <div class="stat-value">{{ noActionCount() }}</div>
+        <div class="stat-desc">Marktwert unrealistisch — erst mit korrigierter CSV lösbar</div>
+      </div>
       <div class="stat-card stat-card--muted" [class.stat-card--selected]="selectedCard() === 'missing'" (click)="selectedCard.set('missing')">
         <span class="stat-label" style="color: #6b7280">Fehlt in CSV</span>
         <div class="stat-value">{{ missingPlayers().length }}</div>

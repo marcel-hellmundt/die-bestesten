@@ -60,13 +60,22 @@ export class PlayerImportDataComponent {
   fixingClub = signal<Set<number>>(new Set());
   creatingPlayers = signal<Set<number>>(new Set());
 
+  /** Club-/Spielklassen-bezogene Blocker — lassen sich per Klick ("übernehmen") beheben. */
   private isBlocked(r: PlayerImportRow): boolean {
-    return r.club_mismatch || r.club_unresolved || r.club_missing || r.division_mismatch || r.price_too_high;
+    return r.club_mismatch || r.club_unresolved || r.club_missing || r.division_mismatch;
+  }
+
+  /** Einziger Blocker ist ein unrealistischer Marktwert (kein Club-/Spielklassen-Problem) — dafür gibt es
+   * keine Aktion in der App, nur eine neue CSV mit korrigiertem Marktwert kann das beheben. */
+  private isNoActionPossible(r: PlayerImportRow): boolean {
+    return r.price_too_high && !this.isBlocked(r);
   }
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
-  /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against / doesn't belong to the CSV's division, or Marktwert unrealistisch). */
+  /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against / doesn't belong to the CSV's division). */
   clubMismatchCount = computed(() => this.matchedRows().filter((r) => this.isBlocked(r)).length);
+  /** Matched rows blocked solely by an unrealistic CSV-Marktwert — waiting on a corrected CSV. */
+  noActionCount = computed(() => this.matchedRows().filter((r) => this.isNoActionPossible(r)).length);
   /** Existing player_in_season entries whose position/price don't match the CSV. */
   positionPriceMismatchCount = computed(() => this.matchedRows().filter((r) => r.position_price_mismatch).length);
   /** Same, minus rows blocked by an unrealistic Marktwert — those can't be bulk-corrected either. */
@@ -74,10 +83,10 @@ export class PlayerImportDataComponent {
     () => this.matchedRows().filter((r) => r.position_price_mismatch && !r.price_too_high).length
   );
 
-  // Which of the 7 summary cards is currently selected — drives which table (and row subset) is shown below.
-  selectedCard = signal<'done' | 'almost' | 'importable' | 'mismatch' | 'blocked' | 'new' | 'missing'>('done');
+  // Which of the 8 summary cards is currently selected — drives which table (and row subset) is shown below.
+  selectedCard = signal<'done' | 'almost' | 'importable' | 'mismatch' | 'blocked' | 'new' | 'noAction' | 'missing'>('done');
   isMatchedCardSelected = computed(() =>
-    ['done', 'almost', 'importable', 'mismatch', 'blocked'].includes(this.selectedCard())
+    ['done', 'almost', 'importable', 'mismatch', 'blocked', 'noAction'].includes(this.selectedCard())
   );
 
   /** player_in_season/Club/Position/Marktwert stimmen — unabhängig von Stammdaten/Foto (siehe isFullyComplete). */
@@ -114,6 +123,7 @@ export class PlayerImportDataComponent {
       case 'importable': return rows.filter((r) => r.importable);
       case 'mismatch': return rows.filter((r) => r.position_price_mismatch);
       case 'blocked': return rows.filter((r) => this.isBlocked(r));
+      case 'noAction': return rows.filter((r) => this.isNoActionPossible(r));
       default: return [];
     }
   });
