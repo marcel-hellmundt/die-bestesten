@@ -137,21 +137,38 @@
   color: $color-text-muted;
 }
 
-.usage-chart-svg {
-  display: block;
+// Wrapper als EINZIGES Grid-Item über alle Datenspalten hinweg (siehe usageChart()-Kommentar in
+// session-heatmap.component.ts) — SVG und Hover-Ziele liegen darin per position:absolute exakt
+// deckungsgleich übereinander, statt als separate Grid-Items mit derselben grid-row/-column zu
+// überlappen (das führte dazu, dass die Hover-Ziele die SVG nicht zuverlässig überdeckten).
+.usage-chart {
+  position: relative;
   grid-column: 2 / -1;
   width: 100%;
-  height: 56px;
-  overflow: visible;
+  height: 100px;
 }
 
-// Unsichtbare Hover-Ziele, ein Div je Datenspalte, exakt über der SVG-Zeile platziert (gleiche
-// Grid-Row wie usage-chart-svg, per grid-column einzeln der jeweiligen Spalte zugeordnet) — die
-// SVG selbst ist EIN Grid-Item über alle Spalten hinweg (siehe Kommentar bei usageChart() in
-// session-heatmap.component.ts), kann also nicht direkt spaltenweise hovern.
+.usage-chart-svg {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+// Unsichtbare Hover-Ziele, ein Div je Datenspalte, als gleich breite Flex-Kinder exakt über der
+// SVG platziert.
+.usage-chart-hover-row {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
 .usage-chart-hover-target {
-  grid-row: 1;
-  height: 56px;
+  flex: 1 1 0;
+  height: 100%;
   cursor: default;
 }
 
@@ -184,12 +201,8 @@
     border-width: 0 1px 1px 0;
   }
 
-  .usage-chart-svg {
-    height: 40px;
-  }
-
-  .usage-chart-hover-target {
-    height: 40px;
+  .usage-chart {
+    height: 70px;
   }
 }
 

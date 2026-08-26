@@ -43,30 +43,33 @@
         Gesamt
         <span class="usage-chart-peak">Spitze: {{ formatDuration(chart.maxValue) }}</span>
       </div>
-      <svg
-        class="usage-chart-svg"
-        [attr.viewBox]="'0 0 ' + chart.columnCount + ' 100'"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <path
-          [attr.d]="chart.line"
-          fill="none"
-          [attr.stroke]="chartColor"
-          stroke-width="2"
-          vector-effect="non-scaling-stroke"
-          stroke-linejoin="round"
-          stroke-linecap="round"
-        />
-      </svg>
-      @for (col of columns(); track col.key; let i = $index) {
-        <div
-          class="usage-chart-hover-target"
-          [style.grid-column]="i + 2"
-          (mouseenter)="onChartColumnHover($event, col)"
-          (mouseleave)="onCellLeave()"
-        ></div>
-      }
+      <div class="usage-chart">
+        <svg
+          class="usage-chart-svg"
+          [attr.viewBox]="'0 0 ' + chart.columnCount + ' 100'"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            [attr.d]="chart.line"
+            fill="none"
+            [attr.stroke]="chartColor"
+            stroke-width="2"
+            vector-effect="non-scaling-stroke"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+        </svg>
+        <div class="usage-chart-hover-row">
+          @for (col of columns(); track col.key) {
+            <div
+              class="usage-chart-hover-target"
+              (mouseenter)="onChartColumnHover($event, col)"
+              (mouseleave)="onCellLeave()"
+            ></div>
+          }
+        </div>
+      </div>
     }
 
     <div class="heatmap__corner"></div>
