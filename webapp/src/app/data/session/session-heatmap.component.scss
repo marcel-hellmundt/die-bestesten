@@ -1,13 +1,41 @@
 @use '../../../styles/variables' as *;
 
-// ── Mobile/Desktop-Piechart ──────────────────────────────────────────────────
+// ── Zusammenfassungs-Karten (Gesamtzeit + Mobile/Desktop-Piechart + Poweruser) ──
+
+.usage-summary-row {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: $space-4;
+  margin-bottom: $space-4;
+}
+
+.usage-total-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: $space-1;
+  padding: $space-4 $space-6;
+  width: fit-content;
+
+  &__label {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-muted;
+  }
+
+  &__value {
+    font-size: $font-2xl;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+  }
+}
 
 .device-pie-card {
   display: flex;
   align-items: center;
   gap: $space-4;
   padding: $space-4;
-  margin-bottom: $space-4;
   width: fit-content;
 }
 
@@ -48,6 +76,69 @@
   font-weight: $font-weight-medium;
   font-variant-numeric: tabular-nums;
   color: $color-text;
+}
+
+.power-user-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-4 $space-6;
+  width: fit-content;
+
+  &__label {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-muted;
+  }
+
+  &__body {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__avatar {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: $color-surface-alt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__avatar-initial {
+    font-size: $font-md;
+    font-weight: $font-weight-bold;
+    color: $color-text-muted;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__time {
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
 }
 
 .range-toggle {
@@ -95,7 +186,9 @@
   // als dieser Deckel (z.B. "Jahr" = 52 Spalten), greift width:100% und 1fr schrumpft normal,
   // damit weiterhin alles auf den Screen passt. (fr-Einheiten sind in calc()/min() nicht
   // erlaubt, daher der Umweg über max-width statt einer Deckelung pro Spalte.)
-  max-width: calc(var(--row-label-width) + (var(--col-count) * 64px) + ((var(--col-count) - 1) * 4px));
+  max-width: calc(
+    var(--row-label-width) + (var(--col-count) * 64px) + ((var(--col-count) - 1) * 4px)
+  );
 }
 
 .heatmap__corner {
@@ -110,6 +203,12 @@
 }
 
 .heatmap__row-label {
+  display: flex;
+  align-items: center;
+  // Grid-Item wächst sonst nur auf Text-Höhe (.heatmap nutzt align-items:center) — stretch sorgt
+  // dafür, dass die Box (und damit auch der Hover-Hintergrund) genauso hoch wird wie die
+  // Heatmap-Zellen derselben Zeile, statt nur eng um den Text zu liegen.
+  align-self: stretch;
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   color: $color-text;
@@ -117,25 +216,24 @@
   overflow: hidden;
   text-overflow: ellipsis;
   padding-right: $space-2;
+  padding-left: $space-2;
+  cursor: default;
+
+  // Gleicher Hover-Effekt wie .usage-chart-hover-target (Konsistenz).
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background-color $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background-color: $color-border;
+    border-color: color-mix(in srgb, $color-text-muted 40%, transparent);
+  }
 }
 
 // ── Gesamtnutzungs-Chart-Zeile ───────────────────────────────────────────────
 // Statt eines eigenständigen Chart-Cards eine zusätzliche Zeile im selben Grid wie die Heatmap
 // darunter — dadurch teilen sich Chart und Heatmap exakt dieselben Spalten-Tracks statt nur
 // ungefähr gleich breit zu sein (siehe usageChart()-Kommentar in session-heatmap.component.ts).
-
-.heatmap__row-label--chart {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-}
-
-.usage-chart-peak {
-  font-size: $font-xs;
-  font-weight: $font-weight-normal;
-  color: $color-text-muted;
-}
 
 // Wrapper als EINZIGES Grid-Item über alle Datenspalten hinweg (siehe usageChart()-Kommentar in
 // session-heatmap.component.ts) — SVG und Hover-Ziele liegen darin per position:absolute exakt
@@ -170,10 +268,13 @@
   flex: 1 1 0;
   height: 100%;
   cursor: default;
-  transition: background-color $transition-fast;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background-color $transition-fast, border-color $transition-fast;
 
   &:hover {
-    background-color: $color-surface-alt;
+    background-color: $color-border;
+    border-color: color-mix(in srgb, $color-text-muted 40%, transparent);
   }
 }
 

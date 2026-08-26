@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { DataCacheService } from '../../core/data-cache.service';
 
 type RangeKey = 'day' | 'month' | 'year';
 
@@ -76,6 +77,7 @@ interface TooltipState {
 })
 export class SessionHeatmapComponent {
   private api = inject(ApiService);
+  cache        = inject(DataCacheService);
 
   readonly RANGES: RangeKey[] = ['day', 'month', 'year'];
   readonly rangeLabels = RANGE_LABELS;
@@ -199,6 +201,13 @@ export class SessionHeatmapComponent {
     return { mobile, desktop };
   });
 
+  // Gesamtnutzung (Mobil + Desktop) über alle Manager im aktuell gewählten Zeitraum — gleicher
+  // Scope wie devicePie/deviceTotals, nur als einzelne formatierte Summe statt Kreisdiagramm.
+  totalUsageLabel = computed(() => {
+    const { mobile, desktop } = this.deviceTotals();
+    return this.formatDuration(mobile + desktop);
+  });
+
   devicePie = computed(() => {
     const { mobile, desktop } = this.deviceTotals();
     const total = mobile + desktop;
@@ -216,6 +225,25 @@ export class SessionHeatmapComponent {
     };
   });
 
+  // ── Poweruser-Karte ──────────────────────────────────────────────────────────
+  // Manager mit der höchsten Nutzung im aktuell gewählten Zeitraum (gleicher Scope wie
+  // devicePie/totalUsageLabel) — nicht zu verwechseln mit managers()' Sortierung, die absichtlich
+  // an der globalen (Jahres-)Summe hängt, damit die Zeilenreihenfolge beim Range-Wechsel stabil bleibt.
+  powerUser = computed(() => {
+    const list = this.data()?.managers ?? [];
+    if (list.length === 0) return null;
+    const top = list.reduce((best, m) => this.totalSeconds(m) > this.totalSeconds(best) ? m : best, list[0]);
+    if (this.totalSeconds(top) <= 0) return null;
+    return {
+      managerId:   top.manager_id,
+      managerName: top.manager_name,
+      timeLabel:   this.formatDuration(this.totalSeconds(top)),
+    };
+  });
+
+  avatarFailed = new Set<string>();
+  onAvatarError(managerId: string): void { this.avatarFailed.add(managerId); }
+
   // ── Gesamtnutzungs-Chart (Linechart über der Heatmap) ───────────────────────
   // Damit die Zeitspalten exakt über den Heatmap-Spalten liegen (nicht nur ungefähr, wie bei einem
   // eigenständigen Chart mit fixem Seitenverhältnis), ist das SVG kein eigenes Chart-Card, sondern
@@ -223,9 +251,7 @@ export class SessionHeatmapComponent {
   // Daten-Spalten-Tracks gelegt (siehe .usage-chart-svg in session-heatmap.component.scss). Das
   // ViewBox ist in Spalten-Einheiten (0..Spaltenzahl) mit preserveAspectRatio="none", wodurch
   // Spalte i im Chart deckungsgleich mit Heatmap-Spalte i skaliert — unabhängig von Fensterbreite
-  // und Spaltenzahl (24/30/52). Text (Achsenbeschriftung) gehört bewusst NICHT ins SVG, da es unter
-  // dieser nicht-uniformen Skalierung verzerrt würde — daher "Gesamt" + Spitzenwert als normales
-  // HTML-Label in der Row-Label-Spalte statt SVG-<text>.
+  // und Spaltenzahl (24/30/52).
   readonly chartColor = '#bf1d00'; // == $color-accent; kein Team-Kontext hier wie in team-overview
   private readonly USAGE_CHART_PAD = 12; // ViewBox-Einheiten Rand oben/unten (ViewBox-Höhe fix 100)
 
@@ -276,7 +302,7 @@ export class SessionHeatmapComponent {
     const dots = values.map((v, i) => ({ x: i + 0.5, y: bottom - (v / maxValue) * h }));
     const line = dots.map((d, i) => `${i === 0 ? 'M' : 'L'}${d.x.toFixed(3)},${d.y.toFixed(1)}`).join(' ');
 
-    return { line, maxValue, columnCount: cols.length };
+    return { line, columnCount: cols.length };
   });
 
   // Absteigend nach globaler Gesamtnutzung (siehe globalTotalSeconds — unabhängig vom gewählten

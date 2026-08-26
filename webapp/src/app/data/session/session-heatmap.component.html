@@ -19,31 +19,62 @@
 } @else if (!managers().length) {
   <p class="state-msg">Noch keine Nutzungsdaten vorhanden.</p>
 } @else {
-  @if (devicePie(); as pie) {
-    <div class="card device-pie-card">
-      <div class="device-pie" [style.background]="pie.gradient"></div>
-      <div class="device-pie__legend">
-        <div class="device-pie__legend-row">
-          <span class="device-pie__dot" [style.background-color]="mobileColor"></span>
-          <span class="device-pie__legend-label">Mobil</span>
-          <span class="device-pie__legend-value">{{ pie.mobileLabel }} ({{ pie.mobilePct }}%)</span>
-        </div>
-        <div class="device-pie__legend-row">
-          <span class="device-pie__dot" [style.background-color]="desktopColor"></span>
-          <span class="device-pie__legend-label">Desktop</span>
-          <span class="device-pie__legend-value">{{ pie.desktopLabel }} ({{ pie.desktopPct }}%)</span>
+  <div class="usage-summary-row">
+    <div class="card usage-total-card">
+      <span class="usage-total-card__label">Gesamtzeit</span>
+      <span class="usage-total-card__value">{{ totalUsageLabel() }}</span>
+    </div>
+
+    @if (devicePie(); as pie) {
+      <div class="card device-pie-card">
+        <div class="device-pie" [style.background]="pie.gradient"></div>
+        <div class="device-pie__legend">
+          <div class="device-pie__legend-row">
+            <span class="device-pie__dot" [style.background-color]="mobileColor"></span>
+            <span class="device-pie__legend-label">Mobil</span>
+            <span class="device-pie__legend-value">{{ pie.mobileLabel }} ({{ pie.mobilePct }}%)</span>
+          </div>
+          <div class="device-pie__legend-row">
+            <span class="device-pie__dot" [style.background-color]="desktopColor"></span>
+            <span class="device-pie__legend-label">Desktop</span>
+            <span class="device-pie__legend-value">{{ pie.desktopLabel }} ({{ pie.desktopPct }}%)</span>
+          </div>
         </div>
       </div>
-    </div>
-  }
+    }
+
+    @if (powerUser(); as pu) {
+      <div class="card power-user-card">
+        <span class="power-user-card__label">Poweruser</span>
+        <div class="power-user-card__body">
+          <div class="power-user-card__avatar">
+            @if (!avatarFailed.has(pu.managerId)) {
+              <img [src]="cache.managerPhotoUrl(pu.managerId)" [alt]="pu.managerName" (error)="onAvatarError(pu.managerId)" />
+            } @else {
+              <span class="power-user-card__avatar-initial">{{ pu.managerName[0].toUpperCase() }}</span>
+            }
+          </div>
+          <div class="power-user-card__info">
+            <span class="power-user-card__name">{{ pu.managerName }}</span>
+            <span class="power-user-card__time">{{ pu.timeLabel }}</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
 
   <div class="heatmap" [style.--col-count]="columns().length">
     @if (usageChart(); as chart) {
-      <div class="heatmap__row-label heatmap__row-label--chart">
-        Gesamt
-        <span class="usage-chart-peak">Spitze: {{ formatDuration(chart.maxValue) }}</span>
-      </div>
       <div class="usage-chart">
+        <div class="usage-chart-hover-row">
+          @for (col of columns(); track col.key) {
+            <div
+              class="usage-chart-hover-target"
+              (mouseenter)="onChartColumnHover($event, col)"
+              (mouseleave)="onCellLeave()"
+            ></div>
+          }
+        </div>
         <svg
           class="usage-chart-svg"
           [attr.viewBox]="'0 0 ' + chart.columnCount + ' 100'"
@@ -60,15 +91,6 @@
             stroke-linecap="round"
           />
         </svg>
-        <div class="usage-chart-hover-row">
-          @for (col of columns(); track col.key) {
-            <div
-              class="usage-chart-hover-target"
-              (mouseenter)="onChartColumnHover($event, col)"
-              (mouseleave)="onCellLeave()"
-            ></div>
-          }
-        </div>
       </div>
     }
 
