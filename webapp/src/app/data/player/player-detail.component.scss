@@ -372,6 +372,19 @@
   text-transform: uppercase;
 }
 
+.drafted-badge {
+  display: inline-block;
+  font-size: $font-2xs;
+  color: #fff;
+  background: $color-success;
+  border-radius: $radius-full;
+  padding: 2px 8px;
+  margin-left: $space-2;
+  vertical-align: middle;
+  font-weight: $font-weight-bold;
+  line-height: 1.4;
+}
+
 .rating-stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

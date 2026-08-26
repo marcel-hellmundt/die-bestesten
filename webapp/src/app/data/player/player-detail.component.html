@@ -364,7 +364,12 @@
                           (error)="$any($event.target).style.display = 'none'"
                         />
                         <span>
-                          <span class="team-history__name">{{ t.team_name }}</span>
+                          <span class="team-history__name">
+                            {{ t.team_name }}
+                            @if (t.is_drafted) {
+                              <span class="drafted-badge">Zugelost</span>
+                            }
+                          </span>
                           <span class="team-history__manager">{{ t.manager_name }}</span>
                         </span>
                       </span>

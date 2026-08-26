@@ -112,7 +112,7 @@ trait PlayerInTeamTrait
         $q = $this->con_league->prepare(
             "SELECT pit.from_matchday_id, pit.to_matchday_id,
                     t.id AS team_id, t.season_id, t.team_name, t.color_primary AS color,
-                    m.manager_name, m.alias, tr.amount AS price_paid_amount
+                    m.manager_name, m.alias, tr.amount AS price_paid_amount, tr.reason AS matched_reason
              FROM player_in_team pit
              JOIN team t ON t.id = pit.team_id
              JOIN manager m ON m.id = t.manager_id
@@ -166,6 +166,7 @@ trait PlayerInTeamTrait
             'from_matchday_number' => $row['from_matchday_id'] ? ($numbers[$row['from_matchday_id']] ?? null) : null,
             'to_matchday_number'   => $row['to_matchday_id']   ? ($numbers[$row['to_matchday_id']]   ?? null) : null,
             'price_paid'           => $row['price_paid_amount'] !== null ? abs((float) $row['price_paid_amount']) : null,
+            'is_drafted'           => $row['matched_reason'] === "Draft-Zuweisung: $displayname",
         ], $rows);
     }
 
