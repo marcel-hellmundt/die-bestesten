@@ -40,7 +40,13 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
   { authorManagerId: LUKAS_ID,    takes: [] },
   { authorManagerId: SCHLAGGY_ID, takes: [] },
 ];
-const BETS: Bet[] = [];
+const BETS: Bet[] = [
+  {
+    managerAId: SCHLAGGY_ID,
+    managerBId: LUKAS_ID,
+    condition: 'Rocco porno Reiz\n>124 Punkte: Sieg Lukas\n<125 Punkte: Sieg Schlaggy',
+  },
+];
 
 @Component({
   selector: 'app-hot-takes',
