@@ -170,6 +170,28 @@ trait PlayerTrait
         return (bool) $query->fetchColumn();
     }
 
+    /**
+     * Bulk-lookup der Stammdatenfelder (für die CSV-Import-Vorschau: "fast fertig" vs.
+     * "komplett fertig" hängt u.a. davon ab, ob diese Felder gepflegt sind), indexed by player_id.
+     */
+    public function getPlayerMasterDataByIds(array $playerIds): array
+    {
+        if (empty($playerIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+        $query = $this->con->prepare(
+            "SELECT id, country_id, birth_city, date_of_birth, height_cm, weight_kg
+             FROM player WHERE id IN ($placeholders)"
+        );
+        $query->execute($playerIds);
+
+        $out = [];
+        foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[$row['id']] = $row;
+        }
+        return $out;
+    }
+
     public function updatePlayer(string $id, array $fields): void
     {
         $sets   = [];

@@ -216,7 +216,7 @@ trait PlayerInSeasonTrait
 
         $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
         $q = $this->con->prepare(
-            "SELECT id, player_id, position, price
+            "SELECT id, player_id, position, price, photo_uploaded
              FROM player_in_season
              WHERE season_id = ? AND player_id IN ($placeholders)"
         );
@@ -316,6 +316,7 @@ trait PlayerInSeasonTrait
         )));
         $existingMap    = $this->getExistingPlayerInSeasonMap($matchedPlayerIds, $seasonId);
         $currentClubMap = $this->getCurrentClubByPlayerIds($matchedPlayerIds);
+        $masterDataMap  = $this->getPlayerMasterDataByIds($matchedPlayerIds);
 
         // Second-pass check for rows with no kicker_id match: same displayname already in DB
         // under a different kicker_id likely means the CSV's kicker_id is wrong/changed rather
@@ -380,7 +381,7 @@ trait PlayerInSeasonTrait
         $divisionMismatchCount = 0;
 
         $rows = array_map(function ($r) use (
-            $playerMap, $existingMap, $currentClubMap, $duplicateCandidateMap,
+            $playerMap, $existingMap, $currentClubMap, $duplicateCandidateMap, $masterDataMap,
             $clubByName, $clubDivisionMap, $divisionId, &$resolvedClubCount, &$divisionMismatchCount
         ) {
             $player  = $playerMap[$r['kicker_id']] ?? null;
@@ -388,6 +389,7 @@ trait PlayerInSeasonTrait
             $existing = $player ? ($existingMap[$player['id']] ?? null) : null;
             $currentClub = $player ? ($currentClubMap[$player['id']] ?? null) : null;
             $duplicateCandidate = $player ? null : ($duplicateCandidateMap[$r['displayname']] ?? null);
+            $masterData = $player ? ($masterDataMap[$player['id']] ?? null) : null;
 
             $alreadyInSeason = $existing !== null;
             $positionPriceMismatch = $existing !== null
@@ -454,6 +456,12 @@ trait PlayerInSeasonTrait
                 'price_too_high'             => $priceTooHigh,
                 'duplicate_candidate_player_id' => $duplicateCandidate['id'] ?? null,
                 'duplicate_candidate_kicker_id' => $duplicateCandidate ? (int) $duplicateCandidate['kicker_id'] : null,
+                'country_id'                 => $masterData['country_id'] ?? null,
+                'birth_city'                 => $masterData['birth_city'] ?? null,
+                'date_of_birth'              => $masterData['date_of_birth'] ?? null,
+                'height_cm'                  => isset($masterData['height_cm']) ? (int) $masterData['height_cm'] : null,
+                'weight_kg'                  => isset($masterData['weight_kg']) ? (int) $masterData['weight_kg'] : null,
+                'has_current_photo'          => $existing !== null && (bool) $existing['photo_uploaded'],
             ];
         }, $parsedRows);
 

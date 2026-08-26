@@ -74,14 +74,25 @@ export class PlayerImportDataComponent {
     () => this.matchedRows().filter((r) => r.position_price_mismatch && !r.price_too_high).length
   );
 
-  // Which of the 6 summary cards is currently selected — drives which table (and row subset) is shown below.
-  selectedCard = signal<'done' | 'importable' | 'mismatch' | 'blocked' | 'new' | 'missing'>('done');
+  // Which of the 7 summary cards is currently selected — drives which table (and row subset) is shown below.
+  selectedCard = signal<'done' | 'almost' | 'importable' | 'mismatch' | 'blocked' | 'new' | 'missing'>('done');
   isMatchedCardSelected = computed(() =>
-    ['done', 'importable', 'mismatch', 'blocked'].includes(this.selectedCard())
+    ['done', 'almost', 'importable', 'mismatch', 'blocked'].includes(this.selectedCard())
   );
 
+  /** player_in_season/Club/Position/Marktwert stimmen — unabhängig von Stammdaten/Foto (siehe isFullyComplete). */
   isRowComplete(r: PlayerImportRow): boolean {
     return !r.club_mismatch && !r.club_missing && !r.division_mismatch && !r.price_too_high && r.already_in_season && !r.position_price_mismatch;
+  }
+
+  /** "Komplett fertig": zusätzlich zu isRowComplete auch alle Stammdaten UND ein Foto der laufenden Saison vorhanden. */
+  isFullyComplete(r: PlayerImportRow): boolean {
+    return this.isRowComplete(r) && r.hasMasterData && r.has_current_photo;
+  }
+
+  /** "Fast fertig": player_in_season/Club/Position/Marktwert korrekt, aber Stammdatum(en) und/oder Foto fehlen. */
+  isAlmostComplete(r: PlayerImportRow): boolean {
+    return this.isRowComplete(r) && !this.isFullyComplete(r);
   }
 
   matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
@@ -91,13 +102,15 @@ export class PlayerImportDataComponent {
   );
 
   // Summary tiles above the tabs.
-  doneCount = computed(() => this.rows().filter((r) => this.isRowComplete(r)).length);
+  doneCount = computed(() => this.rows().filter((r) => this.isFullyComplete(r)).length);
+  almostDoneCount = computed(() => this.rows().filter((r) => this.isAlmostComplete(r)).length);
   notDoneCount = computed(() => this.rows().length - this.doneCount());
 
   filteredMatchedRows = computed(() => {
     const rows = this.matchedRows();
     switch (this.selectedCard()) {
-      case 'done': return rows.filter((r) => this.isRowComplete(r));
+      case 'done': return rows.filter((r) => this.isFullyComplete(r));
+      case 'almost': return rows.filter((r) => this.isAlmostComplete(r));
       case 'importable': return rows.filter((r) => r.importable);
       case 'mismatch': return rows.filter((r) => r.position_price_mismatch);
       case 'blocked': return rows.filter((r) => this.isBlocked(r));
@@ -252,8 +265,11 @@ export class PlayerImportDataComponent {
         this.pendingDivisionId.set(resolvedDivisionId);
 
         if (res.division_id && nextStepOnSuccess === 'preview') {
-          // Default to "Komplett fertig" unless that view would be empty, then show "Anlegbar" instead.
-          this.selectedCard.set(this.doneCount() === 0 ? 'importable' : 'done');
+          // Default to "Komplett fertig", then "Fast fertig", then "Anlegbar" — whichever is
+          // the first non-empty view.
+          this.selectedCard.set(
+            this.doneCount() > 0 ? 'done' : this.almostDoneCount() > 0 ? 'almost' : 'importable'
+          );
         }
         this.step.set(res.division_id ? nextStepOnSuccess : 'confirm-division');
       },

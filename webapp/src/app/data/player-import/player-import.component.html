@@ -122,6 +122,16 @@
         <div class="stat-value">{{ doneCount() }}</div>
         <div class="stat-desc">von {{ rows().length }} Spielern</div>
       </div>
+      <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'almost'" (click)="selectedCard.set('almost')">
+        <img
+          class="stat-status-icon"
+          [src]="almostDoneCount() === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="almostDoneCount() === 0 ? 'OK' : 'Warnung'"
+        />
+        <span class="stat-label" style="color: var(--flat-carrot)">Fast fertig</span>
+        <div class="stat-value">{{ almostDoneCount() }}</div>
+        <div class="stat-desc">Saison-Eintrag korrekt, Stammdaten/Foto fehlen</div>
+      </div>
       <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'importable'" (click)="selectedCard.set('importable')">
         <img
           class="stat-status-icon"
@@ -198,6 +208,9 @@
                 Status
                 <span class="sort-indicator">{{ matchedSortCol() === 'state' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
               </th>
+              @if (selectedCard() === 'almost') {
+                <th>Fehlt</th>
+              }
               <th></th>
             </tr>
           </thead>
@@ -313,6 +326,15 @@
                     </span>
                   </div>
                 </td>
+                @if (selectedCard() === 'almost') {
+                  <td class="mismatch-error">
+                    <div class="row-issues">
+                      @for (item of r.missingItems; track item) {
+                        <span>{{ item }}</span>
+                      }
+                    </div>
+                  </td>
+                }
                 <td class="col-link">
                   <a
                     class="row-detail-link"
