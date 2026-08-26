@@ -4,6 +4,7 @@ import { catchError, map, of, switchMap } from 'rxjs';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { DataCacheService } from '../../core/data-cache.service';
 import { environment } from '../../../environments/environment';
 import { PowerrankingPick } from '../../core/models/powerranking-pick.model';
 
@@ -54,6 +55,7 @@ interface PowerrankingResponse {
 export class PowerrankingComponent {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
+  cache        = inject(DataCacheService);
 
   myManagerId = this.auth.getManagerId();
   isAdmin = this.auth.isAdmin();
@@ -116,7 +118,13 @@ export class PowerrankingComponent {
     return this.teamInfoById().get(teamId);
   }
 
-  standings = computed(() => this.revealData()?.standings ?? []);
+  private standings = computed(() => this.revealData()?.standings ?? []);
+
+  // Für die Logo-Übersicht: reale Tabelle strikt nach Platzierung aufsteigend
+  realTable = computed(() => [...this.standings()].sort((a, b) => a.actual_position - b.actual_position));
+
+  avatarFailed = new Set<string>();
+  onAvatarError(managerId: string): void { this.avatarFailed.add(managerId); }
 
   entries = computed(() =>
     (this.revealData()?.entries ?? []).map(e => ({
@@ -124,20 +132,6 @@ export class PowerrankingComponent {
       picks: [...e.picks].sort((a, b) => a.predicted_position - b.predicted_position).map(PowerrankingPick.from),
     })),
   );
-
-  // Eigener Eintrag zuerst, Rest in der vom Server gelieferten Reihenfolge (nach total_deviation)
-  sortedEntries = computed(() => {
-    const list = this.entries();
-    const ownIndex = list.findIndex(e => e.manager_id === this.myManagerId);
-    if (ownIndex <= 0) return list;
-    const own = list[ownIndex];
-    return [own, ...list.slice(0, ownIndex), ...list.slice(ownIndex + 1)];
-  });
-
-  expandedManagerId = signal<string | null>(null);
-  toggleExpanded(managerId: string): void {
-    this.expandedManagerId.set(this.expandedManagerId() === managerId ? null : managerId);
-  }
 
   // Zustand A: eigener editierbarer Tipp — Team-Roster nur laden, solange ungesperrt
   private teamsState = toSignal(
@@ -159,12 +153,6 @@ export class PowerrankingComponent {
   private orderInitialized = false;
 
   constructor() {
-    // Eigenes Board standardmäßig aufgeklappt, sobald die Reveal-Daten da sind
-    effect(() => {
-      const own = this.entries().find(e => e.manager_id === this.myManagerId);
-      if (own && this.expandedManagerId() === null) this.expandedManagerId.set(own.manager_id);
-    });
-
     // Editierbare Reihenfolge einmalig aus my_picks (oder Team-Roster als Default) aufbauen —
     // orderInitialized verhindert, dass ein Refetch (z.B. nach fehlgeschlagenem Save) den
     // laufenden Umsortier-Stand des Nutzers überschreibt
@@ -245,10 +233,4 @@ export class PowerrankingComponent {
   private logoErrors = new Set<string>();
   logoFailed(teamId: string): boolean { return this.logoErrors.has(teamId); }
   onLogoError(teamId: string): void   { this.logoErrors.add(teamId); }
-
-  deltaSymbol(predicted: number, actual: number | null): string {
-    if (actual === null) return '';
-    if (actual === predicted) return '=';
-    return actual < predicted ? '↑' : '↓';
-  }
 }

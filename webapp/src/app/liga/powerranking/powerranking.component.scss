@@ -18,10 +18,6 @@
   border: 1px solid $color-border;
   border-radius: $radius-md;
 
-  &--readonly {
-    cursor: default;
-  }
-
   @media (max-width: $mobile-breakpoint) {
     gap: $space-2;
     padding: $space-2;
@@ -184,122 +180,123 @@
   }
 }
 
-// --- Zustand B: Rangliste + Tabelle + Boards aller Manager ---
+// --- Tipp-Übersicht: kompaktes Logo-Grid (reale Tabelle + alle Tipps nebeneinander) ---
 
-.data-table--compact {
-  th, td {
-    padding: 2px $space-3;
-  }
+.pr-overview-wrap {
+  overflow-x: auto;
 }
 
-.col-rank {
-  width: 36px;
-  color: $color-text-muted;
-  font-weight: $font-weight-medium;
+.pr-overview {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 2px;
 }
 
-.col-num {
-  width: 80px;
-  text-align: right;
-}
-
-.col-team {
-  vertical-align: middle;
-}
-
-.team-cell {
+.pr-overview__col {
   display: flex;
-  align-items: center;
-  gap: $space-3;
-}
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 48px;
 
-.pr-alias {
-  color: $color-text-muted;
-  font-size: $font-xs;
-  margin-left: $space-1;
-}
-
-.pr-own-row {
-  background-color: color-mix(in srgb, $color-accent 6%, transparent);
-  font-weight: $font-weight-semibold;
-}
-
-.pr-entry-card {
-  padding: 0;
-  overflow: hidden;
-  margin-bottom: $space-3;
+  &--table {
+    width: 52px;
+    position: sticky;
+    left: 0;
+    z-index: $z-raised;
+    background: $color-surface;
+  }
 
   &--own {
-    border-color: $color-accent;
+    background-color: color-mix(in srgb, $color-accent 6%, transparent);
+    border-radius: $radius-sm;
   }
 }
 
-.pr-entry-header {
+.pr-overview__header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: $space-3;
-  width: 100%;
-  padding: $space-4 $space-6;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  color: $color-text;
-
-  @media (max-width: $mobile-breakpoint) {
-    padding: $space-3 $space-4;
-  }
+  justify-content: flex-end;
+  gap: 4px;
+  height: 64px;
+  padding-bottom: $space-2;
+  border-bottom: 1px solid $color-border;
 }
 
-.pr-entry-header__name {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
+.pr-overview__table-label {
+  font-size: $font-2xs;
   font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
 }
 
-.pr-own-badge {
-  padding: 2px 8px;
+.pr-overview__sum {
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: $color-text-muted;
+}
+
+.pr-overview__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: $color-surface-alt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.pr-overview__avatar-initial {
+  font-size: $font-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-muted;
+}
+
+.pr-overview__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  border-bottom: 1px solid $color-border;
+}
+
+.pr-overview__logo {
+  display: block;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.pr-overview__logo-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.pr-overview__badge {
+  position: absolute;
+  bottom: -4px;
+  right: -6px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
   border-radius: $radius-full;
   background: $color-accent;
   color: #fff;
-  font-size: $font-xs;
+  font-size: 9px;
   font-weight: $font-weight-bold;
-}
+  line-height: 14px;
+  text-align: center;
+  box-shadow: 0 0 0 2px $color-surface;
 
-.pr-entry-header__deviation {
-  margin-left: auto;
-  font-size: $font-sm;
-  color: $color-text-muted;
-}
-
-.pr-entry-header__chevron {
-  color: $color-text-muted;
-  flex-shrink: 0;
-}
-
-.pr-board--readonly {
-  max-width: none;
-  padding: 0 $space-6 $space-4;
-
-  @media (max-width: $mobile-breakpoint) {
-    padding: 0 $space-4 $space-3;
-  }
-}
-
-.pr-delta {
-  flex-shrink: 0;
-  min-width: 32px;
-  text-align: right;
-  font-size: $font-sm;
-  font-weight: $font-weight-semibold;
-  color: $color-text-muted;
-
-  &--up {
-    color: $color-success;
-  }
-  &--down {
-    color: $color-danger;
+  &--exact {
+    background: $color-success;
   }
 }
