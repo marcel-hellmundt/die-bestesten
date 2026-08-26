@@ -31,7 +31,7 @@ interface Bet {
 }
 
 const LUKAS_ID    = '36caa3ac-2f9b-4994-833b-8b647d4fc445';
-const SCHLAGGY_ID = '31c26702-9842-471c-a5bb-7b57a9561c87';
+const SCHLAGGY_ID = 'ab59bee2-aaa2-4292-a6df-e1dfc7e296f6';
 
 // Rein hartkodierter, saisonaler Inhalt (siehe DataCacheService.isHotTakesLeague) — kein
 // Datenbank-Modell, wird nach der Saison einfach wieder aus dem Quellcode entfernt. Wird in
