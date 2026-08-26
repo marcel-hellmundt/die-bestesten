@@ -37,7 +37,13 @@ const SCHLAGGY_ID = 'ab59bee2-aaa2-4292-a6df-e1dfc7e296f6';
 // Datenbank-Modell, wird nach der Saison einfach wieder aus dem Quellcode entfernt. Wird in
 // Folge-Turns befüllt.
 const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
-  { authorManagerId: LUKAS_ID,    takes: [] },
+  {
+    authorManagerId: LUKAS_ID,
+    takes: [
+      { targetManagerId: '129c1cf4-5ec6-4947-8c2c-50df149be9d4', text: 'Ich habe am Ende 3 150Pkt Spieler', status: 'pending' }, // Sackflanke
+      { targetManagerId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Petkov bester Mittelfeldspieler bei Eike', status: 'pending' }, // Kackbratzen
+    ],
+  },
   { authorManagerId: SCHLAGGY_ID, takes: [] },
 ];
 const BETS: Bet[] = [
