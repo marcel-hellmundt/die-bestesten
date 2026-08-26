@@ -111,7 +111,12 @@
                   }
                 </div>
               </td>
-              <td class="player-name">{{ p.displayname }}</td>
+              <td class="player-name">
+                <span class="player-name__text">{{ p.displayname }}</span>
+                @if (p.is_drafted) {
+                  <span class="drafted-badge">Zugelost</span>
+                }
+              </td>
               <td class="col-right player-price">{{ formatPrice(marketValue(p)) }}</td>
               <td class="col-right player-points">{{ p.points }} Pkt</td>
             </tr>
@@ -134,7 +139,12 @@
                 <span class="position-badge" [style.background-color]="positionColor(p.position)">
                   {{ positionLabel(p.position) }}
                 </span>
-                <span class="former-name">{{ p.displayname }}</span>
+                <span class="former-name">
+                  <span class="former-name__text">{{ p.displayname }}</span>
+                  @if (p.is_drafted) {
+                    <span class="drafted-badge">Zugelost</span>
+                  }
+                </span>
                 <span class="former-points">{{ p.points }}</span>
               </a>
             }

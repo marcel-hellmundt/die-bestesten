@@ -19,7 +19,36 @@ trait PlayerInTeamTrait
         $seasonId  = $rows[0]['season_id'];
         $playerIds = array_column($rows, 'player_id');
 
-        return $this->fetchPlayerDetails($playerIds, $seasonId);
+        return $this->markDrafted($this->fetchPlayerDetails($playerIds, $seasonId), $teamId);
+    }
+
+    /**
+     * transaction hat keine player_id-Spalte — Zuordnung zu einem Spieler läuft im ganzen Codebase
+     * über reason-Text + team_id (+ matchday_id, siehe getTeamHistoryByPlayerId's price_paid).
+     * Für die Zulosung (seit Saison 2026/27, siehe assignDraftPlayers) reicht ein reiner
+     * displayname-Abgleich auf reason='Draft-Zuweisung: {displayname}' — daher hier ohne
+     * matchday_id-Filter, um Zulosung auch im ehemaligen Kader (former squad) markieren zu können.
+     * Wie bei price_paid gilt: wird ein Spieler nachträglich umbenannt (PATCH /player/:id), erkennt
+     * dieser reason-Text-Abgleich ihn nicht mehr — bekannte, im Codebase bereits existierende
+     * Einschränkung dieses Musters, keine neue.
+     */
+    private function markDrafted(array $players, string $teamId): array
+    {
+        if (empty($players)) return $players;
+
+        $q = $this->con_league->prepare(
+            "SELECT DISTINCT SUBSTRING(reason, LENGTH('Draft-Zuweisung: ') + 1) AS displayname
+             FROM transaction
+             WHERE team_id = :team_id AND reason LIKE 'Draft-Zuweisung: %'"
+        );
+        $q->execute([':team_id' => $teamId]);
+        $draftedNames = array_flip($q->fetchAll(PDO::FETCH_COLUMN));
+
+        foreach ($players as &$p) {
+            $p['is_drafted'] = isset($draftedNames[$p['displayname']]);
+        }
+        unset($p);
+        return $players;
     }
 
     public function getFormerSquadByTeamId(string $teamId): array
@@ -50,7 +79,7 @@ trait PlayerInTeamTrait
         $formerIds = array_values(array_diff($formerIds, $activeIds));
         if (empty($formerIds)) return [];
 
-        return $this->fetchPlayerDetails($formerIds, $seasonId);
+        return $this->markDrafted($this->fetchPlayerDetails($formerIds, $seasonId), $teamId);
     }
 
     public function getTeamByPlayerId(string $playerId): ?array

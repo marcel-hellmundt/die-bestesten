@@ -111,11 +111,29 @@
 }
 
 .player-name {
-  font-weight: $font-weight-medium;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
   max-width: 160px;
+
+  &__text {
+    font-weight: $font-weight-medium;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.drafted-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  background: $color-success;
+  color: #fff;
+  font-size: $font-2xs;
+  font-weight: $font-weight-bold;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .player-price {
@@ -173,10 +191,18 @@
 
 .former-name {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  min-width: 0;
   font-size: $font-xs;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+
+  &__text {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .former-points {
