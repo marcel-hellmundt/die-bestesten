@@ -65,15 +65,24 @@ trait PowerrankingTrait
         }
 
         // Reveal-Phase: reale aktuelle Tabelle + alle Tipps + Abweichungen
+        // Standard-Wettkampf-Rang (1224): punktgleiche Teams (z.B. alle 0 Punkte vor Saisonstart)
+        // teilen sich denselben Platz, statt per SQL-Zeilenreihenfolge willkürlich durchnummeriert
+        // zu werden — sonst würden Tipper bei Punktgleichstand unfair unterschiedliche Diffs erhalten.
         $standingsRows = $this->getSeasonStandings($seasonId)['standings'];
         $actualPosByTeam = [];
         $standings = [];
+        $prevPoints = null;
+        $rank = 0;
         foreach ($standingsRows as $i => $row) {
-            $actualPosByTeam[$row['team_id']] = $i + 1;
+            $points = (int) $row['total_points'];
+            if ($prevPoints === null || $points !== $prevPoints) $rank = $i + 1;
+            $prevPoints = $points;
+
+            $actualPosByTeam[$row['team_id']] = $rank;
             $standings[] = [
                 'team_id' => $row['team_id'], 'team_name' => $row['team_name'], 'color' => $row['color'],
                 'manager_name' => $row['manager_name'], 'season_id' => $row['season_id'],
-                'total_points' => (int) $row['total_points'], 'actual_position' => $i + 1,
+                'total_points' => $points, 'actual_position' => $rank,
             ];
         }
 
