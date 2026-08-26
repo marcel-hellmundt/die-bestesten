@@ -146,6 +146,46 @@ trait PlayerTrait
         return $query->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function playerExists(string $id): bool
+    {
+        $query = $this->con->prepare("SELECT 1 FROM player WHERE id = :id LIMIT 1");
+        $query->execute([':id' => $id]);
+        return (bool) $query->fetchColumn();
+    }
+
+    /**
+     * $excludeId schließt den eigenen Datensatz aus der Prüfung aus (für PATCH — ansonsten würde
+     * ein unveränderter displayname immer als Duplikat erkannt).
+     */
+    public function playerDisplaynameExists(string $displayname, ?string $excludeId = null): bool
+    {
+        $sql    = "SELECT 1 FROM player WHERE displayname = :displayname";
+        $params = [':displayname' => $displayname];
+        if ($excludeId !== null) {
+            $sql .= " AND id != :exclude_id";
+            $params[':exclude_id'] = $excludeId;
+        }
+        $query = $this->con->prepare($sql . " LIMIT 1");
+        $query->execute($params);
+        return (bool) $query->fetchColumn();
+    }
+
+    public function updatePlayer(string $id, array $fields): void
+    {
+        $sets   = [];
+        $params = [':id' => $id];
+        foreach (['first_name', 'last_name', 'displayname', 'country_id', 'birth_city', 'date_of_birth', 'height_cm', 'weight_kg'] as $f) {
+            if (array_key_exists($f, $fields)) {
+                $sets[]        = "$f = :$f";
+                $params[":$f"] = $fields[$f];
+            }
+        }
+        if (empty($sets)) return;
+
+        $query = $this->con->prepare('UPDATE player SET ' . implode(', ', $sets) . ' WHERE id = :id');
+        $query->execute($params);
+    }
+
     /**
      * Bulk-lookup by kicker_id, indexed by (int) kicker_id for fast matching.
      */

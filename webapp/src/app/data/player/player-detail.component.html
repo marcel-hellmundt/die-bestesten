@@ -94,7 +94,71 @@
               ><span>{{ p.weight_kg }}</span> kg</span
             >
           }
+          @if (isMaintainer() && !showEditMasterDataForm()) {
+            <button class="btn-edit" (click)="openEditMasterDataForm()" title="Stammdaten bearbeiten">
+              <app-icon name="pencil" />
+            </button>
+          }
         </div>
+
+        @if (showEditMasterDataForm()) {
+          <div class="add-form" (keydown.enter)="!savingMasterData() && submitEditMasterData()">
+            <p class="add-form-title">Stammdaten bearbeiten</p>
+            <div class="add-form-row">
+              <div class="add-form-field">
+                <label class="add-form-label">Vorname</label>
+                <input class="input input--sm" type="text" [value]="editFirstName()" (input)="editFirstName.set($any($event.target).value)" />
+              </div>
+              <div class="add-form-field">
+                <label class="add-form-label">Nachname</label>
+                <input class="input input--sm" type="text" [value]="editLastName()" (input)="editLastName.set($any($event.target).value)" />
+              </div>
+              <div class="add-form-field">
+                <label class="add-form-label">Anzeigename</label>
+                <input class="input input--sm" type="text" [value]="editDisplayname()" (input)="editDisplayname.set($any($event.target).value)" />
+              </div>
+            </div>
+            <div class="add-form-row">
+              <div class="add-form-field">
+                <label class="add-form-label">Nationalität</label>
+                <select class="input input--sm" (change)="editCountryId.set($any($event.target).value)">
+                  <option value="" [selected]="editCountryId() === ''">—</option>
+                  @for (c of countries(); track c.id) {
+                    <option [value]="c.id" [selected]="c.id === editCountryId()">{{ c.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="add-form-field">
+                <label class="add-form-label">Geburtsort</label>
+                <input class="input input--sm" type="text" [value]="editBirthCity()" (input)="editBirthCity.set($any($event.target).value)" />
+              </div>
+              <div class="add-form-field add-form-field--sm">
+                <label class="add-form-label">Geburtsdatum</label>
+                <input class="input input--sm" type="date" [value]="editDateOfBirth()" (input)="editDateOfBirth.set($any($event.target).value)" />
+              </div>
+              <div class="add-form-field add-form-field--sm">
+                <label class="add-form-label">Größe (cm)</label>
+                <input class="input input--sm" type="number" min="1" [value]="editHeightCm()" (input)="editHeightCm.set($any($event.target).value ? +$any($event.target).value : null)" />
+              </div>
+              <div class="add-form-field add-form-field--sm">
+                <label class="add-form-label">Gewicht (kg)</label>
+                <input class="input input--sm" type="number" min="1" [value]="editWeightKg()" (input)="editWeightKg.set($any($event.target).value ? +$any($event.target).value : null)" />
+              </div>
+            </div>
+            @if (editMasterDataError()) {
+              <p class="add-form-error">{{ editMasterDataError() }}</p>
+            }
+            <div class="add-form-actions">
+              <button class="btn-save" (click)="submitEditMasterData()" [disabled]="savingMasterData()">
+                {{ savingMasterData() ? 'Speichert…' : 'Speichern' }}
+              </button>
+              <button class="btn-cancel" (click)="cancelEditMasterData()" [disabled]="savingMasterData()">
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        }
+
         <button class="id-copy-btn" (click)="copyId(p.id)" title="ID kopieren">
           {{ idCopied() ? 'Kopiert!' : p.id }}
         </button>

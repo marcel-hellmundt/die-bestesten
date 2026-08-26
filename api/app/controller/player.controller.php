@@ -2,7 +2,7 @@
 
 class PlayerController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'maintainer'];
+    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'maintainer', 'PATCH' => 'maintainer'];
 
     protected function get(): mixed
     {
@@ -73,6 +73,46 @@ class PlayerController extends _BaseController
         return ['status' => true];
     }
 
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
+    protected function patch(): mixed
+    {
+        $body   = $this->body();
+        $fields = [];
+        foreach (['first_name', 'last_name', 'displayname', 'country_id', 'birth_city', 'date_of_birth', 'height_cm', 'weight_kg'] as $f) {
+            if (array_key_exists($f, $body)) $fields[$f] = $body[$f];
+        }
+
+        if (empty($fields)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Keine Felder zum Aktualisieren'];
+        }
+
+        if (array_key_exists('displayname', $fields)) {
+            $fields['displayname'] = trim((string) $fields['displayname']);
+            if ($fields['displayname'] === '') {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'displayname darf nicht leer sein'];
+            }
+            if ($this->db->playerDisplaynameExists($fields['displayname'], $this->id)) {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Ein Spieler mit diesem Namen existiert bereits'];
+            }
+        }
+
+        foreach (['height_cm', 'weight_kg'] as $f) {
+            if (array_key_exists($f, $fields) && $fields[$f] !== null && (int) $fields[$f] <= 0) {
+                http_response_code(422);
+                return ['status' => false, 'message' => "$f muss positiv sein"];
+            }
+        }
+
+        if (!$this->db->playerExists($this->id)) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Player not found'];
+        }
+
+        $this->db->updatePlayer($this->id, $fields);
+        return ['status' => true];
+    }
+
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

@@ -924,6 +924,22 @@ class Routing
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
                     ],
                     [
+                        'method' => 'PATCH',
+                        'path' => '/player/:id',
+                        'description' => 'Stammdaten eines bestehenden Spielers korrigieren — beliebige Kombination aus first_name, last_name, displayname, country_id, birth_city, date_of_birth, height_cm, weight_kg (mind. eines erforderlich); erstellt keine neuen Spieler (dafür weiterhin nur der CSV-Import bzw. POST /player/create); 400 wenn keine Felder oder displayname leer, 409 bei displayname-Duplikat, 404 wenn Spieler nicht gefunden, 422 wenn height_cm/weight_kg <= 0 — Maintainer+',
+                        'path_params' => [':id' => 'UUID des Spielers'],
+                        'body' => [
+                            'first_name'    => 'string (optional)',
+                            'last_name'     => 'string (optional)',
+                            'displayname'   => 'string (optional, muss UNIQUE sein)',
+                            'country_id'    => 'ISO Alpha-2 Code oder null (optional)',
+                            'birth_city'    => 'string oder null (optional)',
+                            'date_of_birth' => 'YYYY-MM-DD oder null (optional)',
+                            'height_cm'     => 'int > 0 oder null (optional)',
+                            'weight_kg'     => 'int > 0 oder null (optional)',
+                        ],
+                    ],
+                    [
                         'method' => 'POST',
                         'path' => '/player/:id/photo',
                         'description' => 'Spielerfoto hochladen (multipart/form-data, Feld "image", PNG; Body-Feld season_id) — setzt player_in_season.photo_uploaded für diese Saison — Maintainer+; 403 wenn bereits ein Foto für diese Saison existiert und der Aufrufer kein Admin ist (Überschreiben nur Admin)',

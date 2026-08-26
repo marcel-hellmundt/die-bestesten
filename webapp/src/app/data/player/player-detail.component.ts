@@ -118,6 +118,77 @@ export class PlayerDetailComponent {
 
   isMaintainer = computed(() => this.auth.isMaintainer());
 
+  countries = toSignal(
+    this.api.get<{ id: string; name: string }[]>('country').pipe(
+      catchError(() => of([] as { id: string; name: string }[]))
+    ),
+    { initialValue: [] as { id: string; name: string }[] }
+  );
+
+  // Stammdaten-Bearbeitungsformular (Maintainer+) — bearbeitet nur bestehende Spieler, legt keine
+  // neuen an (Neuanlage bleibt CSV-Import bzw. POST /player/create vorbehalten).
+  showEditMasterDataForm = signal(false);
+  editFirstName    = signal('');
+  editLastName     = signal('');
+  editDisplayname  = signal('');
+  editCountryId    = signal('');
+  editBirthCity    = signal('');
+  editDateOfBirth  = signal('');
+  editHeightCm     = signal<number | null>(null);
+  editWeightKg     = signal<number | null>(null);
+  savingMasterData = signal(false);
+  editMasterDataError = signal<string | null>(null);
+
+  openEditMasterDataForm(): void {
+    const p = this.player();
+    if (!p) return;
+    this.editFirstName.set(p.first_name ?? '');
+    this.editLastName.set(p.last_name ?? '');
+    this.editDisplayname.set(p.displayname);
+    this.editCountryId.set(p.country_id ?? '');
+    this.editBirthCity.set(p.birth_city ?? '');
+    this.editDateOfBirth.set(p.date_of_birth ?? '');
+    this.editHeightCm.set(p.height_cm);
+    this.editWeightKg.set(p.weight_kg);
+    this.editMasterDataError.set(null);
+    this.showEditMasterDataForm.set(true);
+  }
+
+  cancelEditMasterData(): void {
+    this.showEditMasterDataForm.set(false);
+    this.editMasterDataError.set(null);
+  }
+
+  submitEditMasterData(): void {
+    const p = this.player();
+    const displayname = this.editDisplayname().trim();
+    if (!p || this.savingMasterData()) return;
+    if (!displayname) { this.editMasterDataError.set('Anzeigename darf nicht leer sein'); return; }
+
+    this.savingMasterData.set(true);
+    this.editMasterDataError.set(null);
+    this.api.patch<{ status: boolean }>(`player/${p.id}`, {
+      first_name:    this.editFirstName().trim() || null,
+      last_name:     this.editLastName().trim() || null,
+      displayname,
+      country_id:    this.editCountryId() || null,
+      birth_city:    this.editBirthCity().trim() || null,
+      date_of_birth: this.editDateOfBirth() || null,
+      height_cm:     this.editHeightCm(),
+      weight_kg:     this.editWeightKg(),
+    }).subscribe({
+      next: () => {
+        this.savingMasterData.set(false);
+        this.showEditMasterDataForm.set(false);
+        this.reloadPlayer$.next();
+      },
+      error: (err: any) => {
+        this.savingMasterData.set(false);
+        this.editMasterDataError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
+
   private allClubsRaw = toSignal(
     this.api.get<{ id: string; name: string }[]>('club').pipe(
       catchError(() => of([] as { id: string; name: string }[]))
