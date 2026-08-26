@@ -334,6 +334,18 @@ export class SessionHeatmapComponent {
     return Math.min(1, Math.max(0, mobile / denom));
   }
 
+  // Geräte-Mix-Kachel links vom Namen — gleiche Farblogik wie mobileFraction()/hueForMobileFraction,
+  // aber über die Summe ALLER aktuell angezeigten Buckets (nicht nur eine einzelne Zelle) und ohne
+  // Deckkraft-Skalierung nach Nutzungsdauer, da hier nur das Verhältnis gezeigt werden soll.
+  managerColor(m: HeatmapManager): string {
+    const mobile = this.sumValues(m.mobile_seconds);
+    const desktop = this.sumValues(m.desktop_seconds);
+    const denom = mobile + desktop;
+    const fraction = denom > 0 ? Math.min(1, Math.max(0, mobile / denom)) : 0.5;
+    const [r, g, b] = this.hueForMobileFraction(fraction);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
   formatDuration(seconds: number): string {
     if (seconds <= 0) return 'Keine Nutzung';
     const totalMinutes = Math.round(seconds / 60);

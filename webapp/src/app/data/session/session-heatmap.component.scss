@@ -205,6 +205,7 @@
 .heatmap__row-label {
   display: flex;
   align-items: center;
+  gap: $space-2;
   // Grid-Item wächst sonst nur auf Text-Höhe (.heatmap nutzt align-items:center) — stretch sorgt
   // dafür, dass die Box (und damit auch der Hover-Hintergrund) genauso hoch wird wie die
   // Heatmap-Zellen derselben Zeile, statt nur eng um den Text zu liegen.
@@ -212,9 +213,6 @@
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   color: $color-text;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   padding-right: $space-2;
   padding-left: $space-2;
   cursor: default;
@@ -228,6 +226,26 @@
     background-color: $color-border;
     border-color: color-mix(in srgb, $color-text-muted 40%, transparent);
   }
+}
+
+// Geräte-Mix-Kachel links vom Namen — gleiche Farblogik wie die Heatmap-Zellen (cellColor/
+// hueForMobileFraction), aber über die Summe ALLER aktuell angezeigten Buckets statt einer
+// einzelnen Zelle, und ohne die Deckkraft-Skalierung nach Nutzungsdauer (siehe managerColor()) —
+// hier geht es nur um das Mobil/Desktop-Verhältnis auf einen Blick, nicht um die Menge.
+.heatmap__device-swatch {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  max-width: 24px;
+  max-height: 24px;
+  border-radius: $radius-sm;
+}
+
+.heatmap__row-label-text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 // ── Gesamtnutzungs-Chart-Zeile ───────────────────────────────────────────────

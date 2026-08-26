@@ -103,7 +103,10 @@
         class="heatmap__row-label"
         (mouseenter)="onRowLabelHover($event, m)"
         (mouseleave)="onCellLeave()"
-      >{{ m.manager_name }}</div>
+      >
+        <span class="heatmap__device-swatch" [style.background-color]="managerColor(m)"></span>
+        <span class="heatmap__row-label-text">{{ m.manager_name }}</span>
+      </div>
       @for (col of columns(); track col.key) {
         <div
           class="heatmap__cell"
