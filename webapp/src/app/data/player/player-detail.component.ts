@@ -327,9 +327,6 @@ export class PlayerDetailComponent {
 
   isOwnTeam = computed(() => !!this.currentTeam() && this.currentTeam()!.manager_id === this.auth.getManagerId());
 
-  // Ausnahme für dieses eine Team, dessen Spielerfotos sonst zu weit oben abgeschnitten wirken.
-  photoNudge = computed(() => this.currentTeam()?.id === '81123688-0f53-47b6-a92e-b64628c635e5');
-
   myTeam = toSignal(
     this.api.get<{ id: string; team_name: string; season_id: string; color: string | null } | null>('team/mine').pipe(
       catchError(() => of(null))
