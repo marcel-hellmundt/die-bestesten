@@ -112,10 +112,12 @@
                 </div>
               </td>
               <td class="player-name">
-                <span class="player-name__text">{{ p.displayname }}</span>
-                @if (p.is_drafted) {
-                  <span class="drafted-badge">Zugelost</span>
-                }
+                <div class="player-name__inner">
+                  <span class="player-name__text">{{ p.displayname }}</span>
+                  @if (p.is_drafted) {
+                    <span class="drafted-badge">Zugelost</span>
+                  }
+                </div>
               </td>
               <td class="col-right player-price">{{ formatPrice(marketValue(p)) }}</td>
               <td class="col-right player-points">{{ p.points }} Pkt</td>

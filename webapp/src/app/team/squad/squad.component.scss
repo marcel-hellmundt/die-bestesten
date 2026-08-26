@@ -111,10 +111,17 @@
 }
 
 .player-name {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
+  // td bleibt table-cell (display:flex direkt auf einer td bricht die Höhen-Synchronisation der
+  // Zeile mit den übrigen Zellen — die Zeile richtet sich sonst nicht mehr einheitlich am 36px
+  // hohen Spielerfoto aus, siehe __inner unten für den eigentlichen Flex-Wrapper).
   max-width: 160px;
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    min-width: 0;
+  }
 
   &__text {
     font-weight: $font-weight-medium;
@@ -133,6 +140,7 @@
   color: #fff;
   font-size: $font-2xs;
   font-weight: $font-weight-bold;
+  line-height: 1.4;
   white-space: nowrap;
 }
 
