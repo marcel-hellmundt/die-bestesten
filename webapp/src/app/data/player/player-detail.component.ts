@@ -542,6 +542,25 @@ export class PlayerDetailComponent {
     { initialValue: new Map<number, boolean>() }
   );
 
+  // Letzter abgeschlossener Spieltag der gerade angezeigten Saison — für displayToMatchday():
+  // ein Team-Stint ohne to_matchday_number bedeutet in einer VERGANGENEN Saison nicht "heute"
+  // (die Saison ist ja vorbei), sondern lief bis zu deren letztem Spieltag.
+  private lastMatchdayOfSeason = toSignal(
+    this.effectiveSeasonId$.pipe(
+      switchMap(seasonId => {
+        if (!seasonId) return of(null as number | null);
+        return this.api.get<{ number: number; completed: boolean }[]>(`matchday?season_id=${seasonId}`).pipe(
+          map(list => {
+            const completed = list.filter(m => m.completed).map(m => m.number);
+            return completed.length ? Math.max(...completed) : null;
+          }),
+          catchError(() => of(null as number | null))
+        );
+      })
+    ),
+    { initialValue: null as number | null }
+  );
+
   // Offer panel
   offerSubmitting = signal(false);
   offerError      = signal<string | null>(null);
@@ -841,7 +860,11 @@ export class PlayerDetailComponent {
   });
 
   displayToMatchday(t: TeamHistoryEntry): string {
-    if (t.to_matchday_number == null) return 'heute';
+    if (t.to_matchday_number == null) {
+      if (t.season_id === this.activeSeasonId()) return 'heute';
+      const last = this.lastMatchdayOfSeason();
+      return last != null ? 'Sp. ' + last : 'Saisonende';
+    }
     if (t.from_matchday_number === t.to_matchday_number) return 'Sp. ' + t.to_matchday_number;
     return 'Sp. ' + (t.to_matchday_number - 1);
   }
