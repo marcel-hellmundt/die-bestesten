@@ -74,8 +74,10 @@ export class PlayerImportDataComponent {
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
   /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against / doesn't belong to the CSV's division). */
   clubMismatchCount = computed(() => this.matchedRows().filter((r) => this.isBlocked(r)).length);
-  /** Matched rows blocked solely by an unrealistic CSV-Marktwert — waiting on a corrected CSV. */
-  noActionCount = computed(() => this.matchedRows().filter((r) => this.isNoActionPossible(r)).length);
+  /** Matched OR brand-new (unmatched) rows blocked solely by an unrealistic CSV-Marktwert — waiting on a corrected CSV. */
+  noActionCount = computed(
+    () => this.matchedRows().filter((r) => this.isNoActionPossible(r)).length + this.noActionUnmatchedRows().length
+  );
   /** Existing player_in_season entries whose position/price don't match the CSV. */
   positionPriceMismatchCount = computed(() => this.matchedRows().filter((r) => r.position_price_mismatch).length);
   /** Same, minus rows blocked by an unrealistic Marktwert — those can't be bulk-corrected either. */
@@ -106,6 +108,10 @@ export class PlayerImportDataComponent {
 
   matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
   unmatchedRows = computed(() => this.rows().filter((r) => !r.isMatched));
+  /** Unmatched rows shown under "Neu in CSV" — excludes rows whose only issue is Marktwert (those go to "Keine Aktion möglich"). */
+  newRows = computed(() => this.unmatchedRows().filter((r) => !r.price_too_high));
+  /** Unmatched rows shown under "Keine Aktion möglich" — brand-new player candidates blocked solely by unrealistic Marktwert. */
+  noActionUnmatchedRows = computed(() => this.unmatchedRows().filter((r) => r.price_too_high));
   creatableUnmatchedRows = computed(() =>
     this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate && !r.division_mismatch && !r.price_too_high)
   );
@@ -135,7 +141,8 @@ export class PlayerImportDataComponent {
     const col = this.sortCol();
     const dir = this.sortDir();
     const sign = dir === 'asc' ? 1 : -1;
-    return [...this.unmatchedRows()].sort((a, b) => sign * this.compareRows(a, b, col));
+    const source = this.selectedCard() === 'noAction' ? this.noActionUnmatchedRows() : this.newRows();
+    return [...source].sort((a, b) => sign * this.compareRows(a, b, col));
   });
 
   private compareRows(a: PlayerImportRow, b: PlayerImportRow, col: 'name' | 'club' | 'position' | 'price'): number {

@@ -165,11 +165,11 @@
       <div class="stat-card" [class.stat-card--selected]="selectedCard() === 'new'" (click)="selectedCard.set('new')">
         <img
           class="stat-status-icon"
-          [src]="unmatchedRows().length === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
-          [alt]="unmatchedRows().length === 0 ? 'OK' : 'Warnung'"
+          [src]="newRows().length === 0 ? 'img/icons/check.png' : 'img/icons/warning.png'"
+          [alt]="newRows().length === 0 ? 'OK' : 'Warnung'"
         />
         <span class="stat-label" style="color: var(--flat-amethyst)">Neu in CSV</span>
-        <div class="stat-value">{{ unmatchedRows().length }}</div>
+        <div class="stat-value">{{ newRows().length }}</div>
         <div class="stat-desc">von {{ rows().length }} Spielern</div>
       </div>
       <div class="stat-card stat-card--muted" [class.stat-card--selected]="selectedCard() === 'noAction'" (click)="selectedCard.set('noAction')">
@@ -357,7 +357,7 @@
       </div>
     }
 
-    @if (selectedCard() === 'new') {
+    @if (selectedCard() === 'new' || selectedCard() === 'noAction') {
       <div class="table-container">
         <table class="data-table data-table--compact">
           <thead>
