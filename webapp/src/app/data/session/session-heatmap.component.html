@@ -59,6 +59,14 @@
           stroke-linecap="round"
         />
       </svg>
+      @for (col of columns(); track col.key; let i = $index) {
+        <div
+          class="usage-chart-hover-target"
+          [style.grid-column]="i + 2"
+          (mouseenter)="onChartColumnHover($event, col)"
+          (mouseleave)="onCellLeave()"
+        ></div>
+      }
     }
 
     <div class="heatmap__corner"></div>

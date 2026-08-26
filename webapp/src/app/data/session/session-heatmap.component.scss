@@ -145,6 +145,16 @@
   overflow: visible;
 }
 
+// Unsichtbare Hover-Ziele, ein Div je Datenspalte, exakt über der SVG-Zeile platziert (gleiche
+// Grid-Row wie usage-chart-svg, per grid-column einzeln der jeweiligen Spalte zugeordnet) — die
+// SVG selbst ist EIN Grid-Item über alle Spalten hinweg (siehe Kommentar bei usageChart() in
+// session-heatmap.component.ts), kann also nicht direkt spaltenweise hovern.
+.usage-chart-hover-target {
+  grid-row: 1;
+  height: 56px;
+  cursor: default;
+}
+
 .heatmap__cell {
   aspect-ratio: 1;
   width: 100%;
@@ -175,6 +185,10 @@
   }
 
   .usage-chart-svg {
+    height: 40px;
+  }
+
+  .usage-chart-hover-target {
     height: 40px;
   }
 }

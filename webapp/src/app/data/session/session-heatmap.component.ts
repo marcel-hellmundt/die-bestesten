@@ -241,6 +241,25 @@ export class SessionHeatmapComponent {
     return map;
   });
 
+  // Mobile-/Desktop-Aufschlüsselung derselben Summe, je Bucket-Key — für den Linechart-Tooltip
+  // (analog zu deviceTotals oben, aber pro Spalte statt über den gesamten Zeitraum aggregiert).
+  private deviceTotalsByBucket = computed(() => {
+    const map = new Map<string, { mobile: number; desktop: number }>();
+    for (const m of this.data()?.managers ?? []) {
+      for (const [key, secs] of Object.entries(m.mobile_seconds)) {
+        const entry = map.get(key) ?? { mobile: 0, desktop: 0 };
+        entry.mobile += secs;
+        map.set(key, entry);
+      }
+      for (const [key, secs] of Object.entries(m.desktop_seconds)) {
+        const entry = map.get(key) ?? { mobile: 0, desktop: 0 };
+        entry.desktop += secs;
+        map.set(key, entry);
+      }
+    }
+    return map;
+  });
+
   usageChart = computed(() => {
     const cols = this.columns();
     if (cols.length === 0) return null;
@@ -385,6 +404,16 @@ export class SessionHeatmapComponent {
     const desktop = this.sumValues(m.desktop_seconds);
     this.hoveredTooltip.set(
       this.buildTooltip(RANGE_PERIOD_LABELS[this.range()], total, mobile, desktop, this.tooltipPosition(event)),
+    );
+  }
+
+  // Gleicher Tooltip wie onCellHover, aber aggregiert über alle Manager dieses Zeitslots (== eine
+  // Spalte im Linechart) statt einer einzelnen Manager-Zelle.
+  onChartColumnHover(event: MouseEvent, col: BucketColumn): void {
+    const total  = this.totalsByBucket().get(col.key) ?? 0;
+    const device = this.deviceTotalsByBucket().get(col.key);
+    this.hoveredTooltip.set(
+      this.buildTooltip(this.formatBucketLabel(col), total, device?.mobile ?? 0, device?.desktop ?? 0, this.tooltipPosition(event)),
     );
   }
 
