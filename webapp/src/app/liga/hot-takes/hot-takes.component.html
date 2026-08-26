@@ -1,0 +1,104 @@
+@if (cache.isHotTakesLeague()) {
+  <h1 class="page-title">Hot-Takes &amp; Wetten</h1>
+  <p class="page-subtitle">Vor Saisonbeginn abgegebene Einschätzungen und Wetten — rein zur Unterhaltung.</p>
+
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Team</th>
+          @for (authorId of authors; track authorId) {
+            <th>
+              <span class="hot-takes__author">
+                <span class="hot-takes__avatar" [title]="authorInfo(authorId).manager_name">
+                  @if (!avatarFailed.has(authorId)) {
+                    <img
+                      [src]="cache.managerPhotoUrl(authorId)"
+                      [alt]="authorInfo(authorId).manager_name"
+                      (error)="onAvatarError(authorId)"
+                    />
+                  } @else {
+                    <span class="hot-takes__avatar-initial">{{ authorInfo(authorId).manager_name[0].toUpperCase() }}</span>
+                  }
+                </span>
+                <span class="hot-takes__author-name">{{ authorInfo(authorId).manager_name }}</span>
+              </span>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of teams(); track t.id) {
+          <tr>
+            <td>
+              <span class="hot-takes__team">
+                <img
+                  class="tbl-logo"
+                  [src]="logoFailed(t.id) ? 'img/placeholders/club.png' : teamLogoUrl(t.season_id, t.id)"
+                  (error)="onLogoError(t.id)"
+                  alt=""
+                />
+                <span>{{ t.team_name }}</span>
+              </span>
+            </td>
+            @for (authorId of authors; track authorId) {
+              <td>
+                @if (takeFor(authorId, t.manager_id); as take) {
+                  <span class="hot-takes__take">
+                    <span>{{ take.text }}</span>
+                    <img class="hot-takes__status-icon" [src]="statusIcon(take.status)" alt="" />
+                  </span>
+                } @else {
+                  <span class="hot-takes__take-empty">—</span>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-subtitle">Wetten</h2>
+  <div class="hot-takes__bets">
+    @for (b of bets(); track $index) {
+      <div class="card hot-takes__bet-card">
+        <div class="hot-takes__bet-header">
+          <span class="hot-takes__bet-side">
+            <span class="hot-takes__avatar" [title]="managerInfo(b.managerAId).manager_name">
+              @if (!avatarFailed.has(b.managerAId)) {
+                <img
+                  [src]="cache.managerPhotoUrl(b.managerAId)"
+                  [alt]="managerInfo(b.managerAId).manager_name"
+                  (error)="onAvatarError(b.managerAId)"
+                />
+              } @else {
+                <span class="hot-takes__avatar-initial">{{ managerInfo(b.managerAId).manager_name[0].toUpperCase() }}</span>
+              }
+            </span>
+            <span class="hot-takes__author-name">{{ managerInfo(b.managerAId).manager_name }}</span>
+          </span>
+          <span class="hot-takes__bet-vs">vs.</span>
+          <span class="hot-takes__bet-side">
+            <span class="hot-takes__avatar" [title]="managerInfo(b.managerBId).manager_name">
+              @if (!avatarFailed.has(b.managerBId)) {
+                <img
+                  [src]="cache.managerPhotoUrl(b.managerBId)"
+                  [alt]="managerInfo(b.managerBId).manager_name"
+                  (error)="onAvatarError(b.managerBId)"
+                />
+              } @else {
+                <span class="hot-takes__avatar-initial">{{ managerInfo(b.managerBId).manager_name[0].toUpperCase() }}</span>
+              }
+            </span>
+            <span class="hot-takes__author-name">{{ managerInfo(b.managerBId).manager_name }}</span>
+          </span>
+        </div>
+        <p class="hot-takes__bet-condition">{{ b.condition }}</p>
+      </div>
+    }
+    @if (bets().length === 0) {
+      <p class="state-msg">Noch keine Wetten hinterlegt.</p>
+    }
+  </div>
+}

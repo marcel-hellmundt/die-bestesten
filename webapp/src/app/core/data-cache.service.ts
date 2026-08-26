@@ -52,6 +52,11 @@ export class DataCacheService {
   // Default true solange nicht geladen — entspricht dem DB-Default für league.powerranking_enabled.
   powerrankingEnabled = computed(() => this.leagueState().powerrankingEnabled);
 
+  // "Hot-Takes & Wetten" ist rein hartkodierter, saisonaler Inhalt für die eigene Liga — andere
+  // Ligen, die diese Webapp nutzen, sollen weder den Menüpunkt noch die Seite sehen.
+  private static readonly HOT_TAKES_LEAGUE_SLUG = 'die-bestesten';
+  isHotTakesLeague = computed(() => this.leagueState().slug === DataCacheService.HOT_TAKES_LEAGUE_SLUG);
+
   // Fallback wie im Backend (getDivisionConfig()): höchste deutsche Division, falls die Liga keine division_id konfiguriert hat.
   private fallbackDivision = computed(() =>
     this.divisionsState().data.find(d => d.level === 1 && d.country_id.toLowerCase() === 'de') ?? null

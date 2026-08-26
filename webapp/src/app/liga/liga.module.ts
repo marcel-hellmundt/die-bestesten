@@ -12,6 +12,7 @@ import { H2HComponent } from './h2h/h2h.component';
 import { H2HMatchComponent } from './h2h/h2h-match.component';
 import { H2HModeComponent } from './h2h/h2h-mode.component';
 import { PowerrankingComponent } from './powerranking/powerranking.component';
+import { HotTakesComponent } from './hot-takes/hot-takes.component';
 
 const routes: Routes = [
   {
@@ -28,12 +29,13 @@ const routes: Routes = [
       { path: 'h2h/:id',      component: H2HMatchComponent },
       { path: 'teams',        component: LigaTeamsComponent },
       { path: 'ruhmeshalle',  component: HallOfFameComponent },
+      { path: 'hot-takes',    component: HotTakesComponent },
     ]
   }
 ];
 
 @NgModule({
-  declarations: [LigaComponent, SaisonvorschauComponent, MatchdayComponent, TableComponent, LigaTeamsComponent, HallOfFameComponent, H2HComponent, H2HMatchComponent, H2HModeComponent, PowerrankingComponent],
+  declarations: [LigaComponent, SaisonvorschauComponent, MatchdayComponent, TableComponent, LigaTeamsComponent, HallOfFameComponent, H2HComponent, H2HMatchComponent, H2HModeComponent, PowerrankingComponent, HotTakesComponent],
   imports: [CommonModule, RouterModule.forChild(routes), DragDropModule]
 })
 export class LigaModule {}

@@ -18,6 +18,9 @@
   <a class="pill" routerLink="ruhmeshalle" routerLinkActive="pill--active"
     >Ruhmeshalle</a
   >
+  @if (cache.isHotTakesLeague()) {
+    <a class="pill" routerLink="hot-takes" routerLinkActive="pill--active">Hot-Takes &amp; Wetten</a>
+  }
 </nav>
 
 <router-outlet />

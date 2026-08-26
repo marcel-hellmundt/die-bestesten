@@ -85,6 +85,9 @@ export class NavComponent {
         ? [{ label: 'Powerranking', icon: 'powerranking', route: '/liga/powerranking', isNew: true } as NavItem]
         : []),
       { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
+      ...(this.cache.isHotTakesLeague()
+        ? [{ label: 'Hot-Takes & Wetten', icon: 'statistiken', route: '/liga/hot-takes' } as NavItem]
+        : []),
     ],
   }));
 

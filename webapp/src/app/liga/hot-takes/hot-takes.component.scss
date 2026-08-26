@@ -1,0 +1,101 @@
+@use '../../../styles/variables' as *;
+
+.hot-takes__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: $color-surface-alt;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.hot-takes__avatar-initial {
+  font-size: $font-sm;
+  font-weight: $font-weight-bold;
+  color: $color-text-muted;
+}
+
+.hot-takes__author {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-weight: $font-weight-medium;
+}
+
+.hot-takes__author-name {
+  white-space: nowrap;
+}
+
+.hot-takes__team {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
+.hot-takes__take {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+}
+
+.hot-takes__status-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.hot-takes__take-empty {
+  color: $color-text-muted;
+}
+
+.hot-takes__bets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: $space-4;
+}
+
+.hot-takes__bet-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.hot-takes__bet-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-3;
+}
+
+.hot-takes__bet-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+  text-align: center;
+}
+
+.hot-takes__bet-vs {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  flex-shrink: 0;
+}
+
+.hot-takes__bet-condition {
+  font-size: $font-sm;
+  color: $color-text;
+  text-align: center;
+}
