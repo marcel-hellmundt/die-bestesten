@@ -65,6 +65,14 @@ export class TopbarComponent implements OnDestroy {
   searchResults = signal<SearchResults | null>(null);
   searchLoading = signal(false);
   isSearchOpen  = signal(false);
+  // Bleibt beim Schließen noch true, bis die 0.25s-Breiten-Transition der Suchbox durchgelaufen
+  // ist (siehe onSearchTransitionEnd) — .topbar-search muss so lange position:absolute behalten
+  // (siehe SCSS &--has-league), sonst ist sie beim Zuklappen sofort wieder normales Flex-Element
+  // und zieht .topbar-league live mit, während sie sich zurück auf Icon-Breite verkleinert.
+  isSearchClosing = signal(false);
+  // "Aktiv" für die Layout-Zwecke (Klassen/Breite) — schließt die Ausklingphase mit ein, im
+  // Unterschied zu isSearchOpen() (steuert Fokus/Ergebnisse/Sichtbarkeit des Inputs selbst).
+  isSearchExpanded = computed(() => this.isSearchOpen() || this.isSearchClosing());
 
   managerName        = computed(() => this.auth.getManagerName() ?? '');
   managerId          = computed(() => this.auth.getManagerId());
@@ -201,6 +209,21 @@ export class TopbarComponent implements OnDestroy {
   closeSearch(): void {
     this.isSearchOpen.set(false);
     this.searchInputRef?.nativeElement.blur();
+    if (this.showLeagueSwitcher()) {
+      this.isSearchClosing.set(true);
+      // Fallback, falls transitionend aus irgendeinem Grund nie feuert (z.B. schnelles
+      // Auf/Zu-Klicken unterbricht die Transition) — verhindert, dass isSearchClosing dauerhaft
+      // hängen bleibt. Etwas länger als die 0.25s-CSS-Transition.
+      window.setTimeout(() => this.isSearchClosing.set(false), 300);
+    }
+  }
+
+  // Feuert u.a. beim width-Übergang der Suchbox (siehe .topbar-search transition) — erst wenn der
+  // beim Schließen fertig durchgelaufen ist, darf .topbar-search wieder normales Flex-Element
+  // werden (siehe isSearchExpanded()/isSearchClosing oben).
+  onSearchTransitionEnd(event: TransitionEvent): void {
+    if (event.propertyName !== 'width') return;
+    if (!this.isSearchOpen()) this.isSearchClosing.set(false);
   }
 
   // Der bestehende Backdrop (Sibling nach .topbar) reicht auf Mobile nicht: .topbar selbst hat

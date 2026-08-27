@@ -1,7 +1,7 @@
 <div class="topbar">
   <div
     class="topbar-left"
-    [class.topbar-left--search-active]="isSearchOpen()"
+    [class.topbar-left--search-active]="isSearchExpanded()"
     [class.topbar-left--has-league]="showLeagueSwitcher()"
   >
     <div
@@ -11,6 +11,7 @@
       [class.topbar-search--panel-open]="isSearchOpen() && searchQuery().length >= 3"
       [style.width.px]="isSearchOpen() && showLeagueSwitcher() ? searchExpandWidth() : null"
       (click)="onSearchContainerClick()"
+      (transitionend)="onSearchTransitionEnd($event)"
     >
       <app-icon name="search" class="search-icon"></app-icon>
       <input
