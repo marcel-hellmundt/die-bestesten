@@ -27,6 +27,10 @@
 
   &-search {
     position: relative;
+    // Ohne eigenen z-index verliert die wachsende Such-Box beim mobilen Aufklappen gegen
+    // .topbar-league (später im DOM, gewinnt bei gleichem/keinem z-index automatisch) — die Box
+    // wächst optisch über die Liga-Auswahl hinweg, lag aber bislang optisch darunter.
+    z-index: $z-raised;
     display: flex;
     align-items: center;
     gap: $space-2;
