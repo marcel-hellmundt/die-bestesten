@@ -162,7 +162,12 @@
       // gemessenen Bereich bis zum rechten Rand von .topbar-league (searchExpandWidth(), siehe
       // Component), die dadurch währenddessen komplett unverändert/unbeeinflusst bleibt.
       &--has-league.topbar-left--search-active {
-        flex: 0 1 auto;
+        // .topbar-left selbst darf dabei nicht auf 0 schrumpfen: sobald ihr einziges Kind
+        // position:absolute bekommt, trägt es nicht mehr zur Auto-Breite bei — ohne diese feste
+        // Breite gäbe .topbar-left seinen bisherigen Platz frei, .topbar-league (weiterhin
+        // flex:1) würde ihn sich schnappen und dadurch selbst sichtbar breiter werden.
+        flex: 0 0 $control-height;
+        width: $control-height;
 
         .topbar-search {
           position: absolute;
