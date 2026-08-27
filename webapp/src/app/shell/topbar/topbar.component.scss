@@ -184,9 +184,12 @@
   // mobile, splitting the free space roughly in half instead of giving it all to the search.
   // Angular's component-scoped selector outranks the global one, so this override only
   // applies inside the topbar, and only on mobile — desktop keeps the original behavior.
+  // display:none (statt nur flex-grow:0) entfernt es komplett aus dem Flex-Layout, sonst zählt
+  // .topbar's eigener gap trotz 0 Eigenbreite auf BEIDEN Seiten — der Abstand zwischen Such-Icon
+  // und Liga-Auswahl wäre sonst doppelt so groß wie der Rand-Abstand der Topbar.
   .spacer {
     @media (max-width: #{$mobile-breakpoint}) {
-      flex-grow: 0;
+      display: none;
     }
   }
 
@@ -254,6 +257,14 @@
   &-user {
     position: relative;
     margin-left: 24px;
+
+    // Auf Mobile bleiben von .topbar-right nur der Avatar übrig (Icon-Buttons sind dort
+    // ausgeblendet, siehe .topbar-icon-btn) — die zusätzlichen 24px Abstand (gedacht als Trenner
+    // zum vorherigen Icon-Button) summieren sich dort mit dem normalen .topbar-gap zu 40px statt
+    // der einheitlichen $space-4, die überall sonst gelten sollen.
+    @media (max-width: #{$mobile-breakpoint}) {
+      margin-left: 0;
+    }
 
     .user-avatar {
       position: relative;
