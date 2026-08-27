@@ -138,16 +138,38 @@
 
   &-left {
     @media (max-width: #{$mobile-breakpoint}) {
+      position: relative; // Anker für .topbar-search bei --has-league (siehe unten)
+      // Verhindert, dass die Box auf 0 Höhe kollabiert, sobald ihr einziges Kind (.topbar-search)
+      // bei --has-league auf position:absolute wechselt und damit nicht mehr zur Auto-Höhe
+      // beiträgt — dessen height:100% braucht sonst nichts zum Auflösen.
+      height: $control-height;
       display: flex;
       // Shrinks to its collapsed-icon content by default so the growth below goes to
       // .topbar-league instead (as wide as possible without touching the search icon or the
       // profile photo) — only reclaims flex:1 while the search box itself is expanded and
-      // actually needs the room.
+      // actually needs the room. Gilt nur, wenn es keine Liga-Auswahl gibt (--has-league fehlt) —
+      // sonst übernimmt die Absolute-Positionierung unten, siehe deren Kommentar.
       flex: 0 1 auto;
       min-width: 0;
 
       &--search-active {
         flex: 1;
+      }
+
+      // Existiert eine Liga-Auswahl, wächst die Suche NICHT mehr per Flex (das verschob sonst
+      // .topbar-league beim Aufklappen mit, obwohl deren Breite unabhängig bleiben soll) —
+      // stattdessen legt sich .topbar-search per position:absolute exakt über den vorher
+      // gemessenen Bereich bis zum rechten Rand von .topbar-league (searchExpandWidth(), siehe
+      // Component), die dadurch währenddessen komplett unverändert/unbeeinflusst bleibt.
+      &--has-league.topbar-left--search-active {
+        flex: 0 1 auto;
+
+        .topbar-search {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+        }
       }
     }
   }

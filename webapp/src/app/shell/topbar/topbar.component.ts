@@ -92,6 +92,27 @@ export class TopbarComponent implements OnDestroy {
 
   @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('searchContainer') searchContainerRef?: ElementRef<HTMLElement>;
+  @ViewChild('leagueEl') leagueRef?: ElementRef<HTMLElement>;
+
+  // Mobil, wenn eine Liga-Auswahl existiert: die aufklappende Suche legt sich per
+  // position:absolute exakt bis zum rechten Rand von .topbar-league (siehe Template/SCSS) —
+  // dieser Wert wird VOR dem Öffnen gemessen, damit .topbar-league dabei nie ihre eigene Breite
+  // ändert (sie bliebe sonst über normales Flex-Wachstum mit der Suche gekoppelt).
+  searchExpandWidth = signal<number | null>(null);
+
+  private measureSearchExpandWidth(): void {
+    const searchEl = this.searchContainerRef?.nativeElement;
+    const leagueEl = this.leagueRef?.nativeElement;
+    if (!searchEl || !leagueEl) { this.searchExpandWidth.set(null); return; }
+    const searchLeft  = searchEl.getBoundingClientRect().left;
+    const leagueRight = leagueEl.getBoundingClientRect().right;
+    this.searchExpandWidth.set(Math.max(0, leagueRight - searchLeft));
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.isSearchOpen()) this.measureSearchExpandWidth();
+  }
 
   failedImageIds = signal<Set<string>>(new Set());
 
@@ -166,12 +187,14 @@ export class TopbarComponent implements OnDestroy {
 
   onSearchContainerClick(): void {
     if (!this.isSearchOpen()) {
+      this.measureSearchExpandWidth();
       this.isSearchOpen.set(true);
       this.searchInputRef?.nativeElement.focus();
     }
   }
 
   onSearchFocus(): void {
+    this.measureSearchExpandWidth();
     this.isSearchOpen.set(true);
   }
 

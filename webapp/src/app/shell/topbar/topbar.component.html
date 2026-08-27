@@ -1,10 +1,15 @@
 <div class="topbar">
-  <div class="topbar-left" [class.topbar-left--search-active]="isSearchOpen()">
+  <div
+    class="topbar-left"
+    [class.topbar-left--search-active]="isSearchOpen()"
+    [class.topbar-left--has-league]="showLeagueSwitcher()"
+  >
     <div
       #searchContainer
       class="topbar-search"
       [class.topbar-search--active]="isSearchOpen()"
       [class.topbar-search--panel-open]="isSearchOpen() && searchQuery().length >= 3"
+      [style.width.px]="isSearchOpen() && showLeagueSwitcher() ? searchExpandWidth() : null"
       (click)="onSearchContainerClick()"
     >
       <app-icon name="search" class="search-icon"></app-icon>
@@ -137,7 +142,7 @@
   <div class="spacer"></div>
 
   @if (showLeagueSwitcher()) {
-    <div class="topbar-league">
+    <div class="topbar-league" #leagueEl>
       <button
         class="league-btn"
         [class.league-btn--open]="isLeagueDropdownOpen()"
