@@ -51,6 +51,7 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
     takes: [
       { targetTeamId: 'f30e89d4-11f0-4fad-b98a-ac7970f11363', text: 'Olise knack den All-Time Rekord', status: 'pending' }, // SV Spielabbruch
       { targetTeamId: '37d712d3-4c34-472f-a46f-72f2cc99f1c3', text: 'Er hat immer einen zweistelligen Tabellenplatz', status: 'pending' }, // ZSG Fortschritt Achmer
+      { targetTeamId: '129c1cf4-5ec6-4947-8c2c-50df149be9d4', text: 'Guirassy macht keine 100 Punkte', status: 'pending' }, // Sackflanke
     ],
   },
 ];
