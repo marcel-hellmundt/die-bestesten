@@ -44,6 +44,7 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
       { targetTeamId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Petkov bester Mittelfeldspieler bei Eike', status: 'pending' }, // Kackbratzen
       { targetTeamId: '9153be2f-37b1-42c1-9103-167717e78ce7', text: 'Die meisten Kaderrotationen', status: 'pending' }, // US Töfte Calcio
       { targetTeamId: '37d712d3-4c34-472f-a46f-72f2cc99f1c3', text: 'Mohya wird Nationalspieler', status: 'pending' }, // ZSG Fortschritt Achmer
+      { targetTeamId: '863867f0-9691-4808-b411-a15bb25bbd9b', text: 'Kein Stürmer macht mehr als 50 Punkte', status: 'pending' }, // Bonn 17
     ],
   },
   {
