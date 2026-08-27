@@ -4,7 +4,7 @@ import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
-type RangeKey = 'day' | 'month' | 'year';
+type RangeKey = 'day' | 'month' | 'year' | 'all';
 
 interface HeatmapManager {
   manager_id: string;
@@ -41,13 +41,13 @@ const GRADIENT_MIN_OPACITY = 0.1;
 const GRADIENT_MAX_OPACITY = 1;
 
 const RANGE_LABELS: Record<RangeKey, string> = {
-  day: 'Tag', month: 'Monat', year: 'Jahr',
+  day: 'Tag', month: 'Monat', year: 'Jahr', all: 'Insgesamt',
 };
 
 // Beschreibung des gesamten abgedeckten Zeitraums für den Manager-Zeilen-Tooltip (aggregiert über
 // alle aktuell angezeigten Buckets) — Fenstergrößen wie in SessionTrait::getSessionHeatmap.
 const RANGE_PERIOD_LABELS: Record<RangeKey, string> = {
-  day: 'Letzte 24 Stunden', month: 'Letzte 30 Tage', year: 'Letzte 52 Wochen',
+  day: 'Letzte 24 Stunden', month: 'Letzte 30 Tage', year: 'Letzte 52 Wochen', all: 'Seit der ersten Session',
 };
 
 // Grobe Obergrenze für die Tooltip-Breite, nur zum Clampen der Position genutzt (siehe
@@ -79,7 +79,7 @@ export class SessionHeatmapComponent {
   private api = inject(ApiService);
   cache        = inject(DataCacheService);
 
-  readonly RANGES: RangeKey[] = ['day', 'month', 'year'];
+  readonly RANGES: RangeKey[] = ['day', 'month', 'year', 'all'];
   readonly rangeLabels = RANGE_LABELS;
 
   range = signal<RangeKey>('day');
@@ -95,13 +95,13 @@ export class SessionHeatmapComponent {
     ),
   );
 
-  // Sortierung der Manager-Zeilen soll unabhängig vom gewählten Intervall (Tag/Monat/Jahr) immer
-  // dieselbe Reihenfolge zeigen, statt bei jedem Range-Wechsel neu nach der Nutzung NUR dieses
-  // Zeitraums zu sortieren. 'year' (letzte 51 Wochen) ist der breiteste verfügbare Zeitraum und
-  // dient hier als globaler Referenzwert — einmalig geladen, unabhängig vom range-Signal.
+  // Sortierung der Manager-Zeilen soll unabhängig vom gewählten Intervall (Tag/Monat/Jahr/Insgesamt)
+  // immer dieselbe Reihenfolge zeigen, statt bei jedem Range-Wechsel neu nach der Nutzung NUR dieses
+  // Zeitraums zu sortieren. 'all' (seit der ersten Session) ist der breiteste verfügbare Zeitraum
+  // und dient hier als globaler Referenzwert — einmalig geladen, unabhängig vom range-Signal.
   private globalTotals = toSignal(
-    this.api.get<HeatmapResponse>('session?range=year').pipe(
-      catchError(() => of({ range: 'year', managers: [] } as HeatmapResponse)),
+    this.api.get<HeatmapResponse>('session?range=all').pipe(
+      catchError(() => of({ range: 'all', managers: [] } as HeatmapResponse)),
     ),
   );
 
@@ -157,7 +157,7 @@ export class SessionHeatmapComponent {
         const label = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
         cols.push({ key: this.localDateKey(d), label });
       }
-    } else {
+    } else if (range === 'year') {
       const thisMonday = this.mondayOf(now);
       let lastMonth = -1;
       for (let i = 51; i >= 0; i--) {
@@ -168,6 +168,30 @@ export class SessionHeatmapComponent {
           key: this.localDateKey(d),
           label: showLabel ? d.toLocaleDateString('de-DE', { month: 'short' }) : '',
         });
+      }
+    } else {
+      // 'all' hat kein festes Fenster (im Unterschied zu day/month/year, die eine feste Anzahl
+      // Buckets rückwärts ab jetzt erzeugen) — die Spalten ergeben sich erst aus dem frühesten
+      // tatsächlich vorhandenen Bucket-Schlüssel in den geladenen Daten, ein Bucket pro Monat bis
+      // zum aktuellen Monat. Ohne Daten (noch am Laden) bleibt die Spaltenliste leer.
+      let minKey: string | null = null;
+      for (const m of this.data()?.managers ?? []) {
+        for (const key of Object.keys(m.buckets)) {
+          if (minKey === null || key < minKey) minKey = key;
+        }
+      }
+      if (minKey !== null) {
+        const start = new Date(`${minKey}T00:00:00`);
+        let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth(), 1);
+        let lastYear = -1;
+        while (cursor <= end) {
+          const showYear = cursor.getFullYear() !== lastYear;
+          lastYear = cursor.getFullYear();
+          const label = cursor.toLocaleDateString('de-DE', showYear ? { month: 'short', year: '2-digit' } : { month: 'short' });
+          cols.push({ key: this.localDateKey(cursor), label });
+          cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        }
       }
     }
 
@@ -378,10 +402,10 @@ export class SessionHeatmapComponent {
 
   // Formatierte Zeitangabe für den Tooltip-Titel — abhängig vom gewählten Intervall, da die
   // Bucket-Keys je nach range unterschiedlich aufgebaut sind (siehe SessionTrait::getSessionHeatmap):
-  // 'day' → "YYYY-MM-DDTHH:00:00" (Stunde), 'month'/'year' → "YYYY-MM-DD" (year: Montag der Woche).
-  // Datumsangaben ohne Uhrzeit werden explizit mit "T00:00:00" geparst, da new Date("YYYY-MM-DD")
-  // sonst als UTC-Mitternacht statt Lokalzeit interpretiert wird (JS-Falle) und je nach Zeitzone
-  // auf den Vortag verschieben könnte.
+  // 'day' → "YYYY-MM-DDTHH:00:00" (Stunde), 'month'/'year'/'all' → "YYYY-MM-DD" (year: Montag der
+  // Woche, all: 1. des Monats). Datumsangaben ohne Uhrzeit werden explizit mit "T00:00:00" geparst,
+  // da new Date("YYYY-MM-DD") sonst als UTC-Mitternacht statt Lokalzeit interpretiert wird
+  // (JS-Falle) und je nach Zeitzone auf den Vortag verschieben könnte.
   private formatBucketLabel(col: BucketColumn): string {
     if (this.range() === 'day') {
       const d = new Date(col.key);
@@ -389,6 +413,9 @@ export class SessionHeatmapComponent {
       return `${day}, ${String(d.getHours()).padStart(2, '0')}:00 Uhr`;
     }
     const d = new Date(`${col.key}T00:00:00`);
+    if (this.range() === 'all') {
+      return d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    }
     const dateLabel = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
     return this.range() === 'year' ? `Woche ab ${dateLabel}` : dateLabel;
   }

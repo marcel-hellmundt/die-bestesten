@@ -133,7 +133,9 @@ trait SessionTrait
      *  - 'day'   → letzte 24h, ein Bucket pro Stunde (Schlüssel "YYYY-MM-DDTHH:00:00")
      *  - 'month' → letzte 30 Tage, ein Bucket pro Tag (Schlüssel "YYYY-MM-DD")
      *  - 'year'  → letzte 52 Wochen, ein Bucket pro Woche (Schlüssel = Montag der Woche, "YYYY-MM-DD")
-     * $range ist auf diese drei festen Werte beschränkt (switch-Default 'day') und fließt nie
+     *  - 'all'   → seit der allerersten Session (kein $sinceExpr), ein Bucket pro Monat
+     *              (Schlüssel = 1. des Monats, "YYYY-MM-DD")
+     * $range ist auf diese vier festen Werte beschränkt (switch-Default 'day') und fließt nie
      * ungeprüft in SQL ein — kein Injection-Vektor trotz String-Interpolation von $sinceExpr.
      * Pro Manager werden die Session-Intervalle zunächst gemergt (mergeIntervals) — nutzt ein
      * Manager z.B. gleichzeitig Handy und Desktop, entstehen zwei sich überlappende
@@ -165,6 +167,9 @@ trait SessionTrait
             case 'year':
                 $sinceExpr = "(CURDATE() - INTERVAL 51 WEEK)";
                 break;
+            case 'all':
+                $sinceExpr = null; // kein unteres Limit — seit der allerersten Session
+                break;
             case 'day':
             default:
                 $range     = 'day';
@@ -175,12 +180,16 @@ trait SessionTrait
         // Filter auf ended_at statt started_at, damit Sessions, die vor dem Fenster begonnen
         // haben und hineinragen, nicht komplett verloren gehen (ihr Anteil im Fenster wird beim
         // Splitten unten ohnehin auf die passenden Buckets begrenzt).
+        $whereSql = "m.status != 'deleted'";
+        if ($sinceExpr !== null) {
+            $whereSql .= " AND ms.ended_at >= $sinceExpr";
+        }
+
         $q = $this->con->prepare(
             "SELECT ms.manager_id, m.manager_name, m.alias, ms.device_type, ms.started_at, ms.ended_at
              FROM manager_session ms
              JOIN manager m ON m.id = ms.manager_id
-             WHERE ms.ended_at >= $sinceExpr
-               AND m.status != 'deleted'
+             WHERE $whereSql
              ORDER BY m.manager_name ASC"
         );
         $q->execute();
@@ -304,6 +313,10 @@ trait SessionTrait
                 $monday  = (clone $t)->setTime(0, 0, 0)->modify('-' . ($weekday - 1) . ' days');
                 $end     = (clone $monday)->modify('+1 week');
                 return [$monday->format('Y-m-d'), $end];
+            case 'all':
+                $monthStart = (clone $t)->setDate((int) $t->format('Y'), (int) $t->format('n'), 1)->setTime(0, 0, 0);
+                $end        = (clone $monthStart)->modify('+1 month');
+                return [$monthStart->format('Y-m-d'), $end];
             case 'month':
             default:
                 $dayStart = (clone $t)->setTime(0, 0, 0);
