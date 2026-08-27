@@ -19,7 +19,7 @@ interface LigaTeamLite {
 type HotTakeStatus = 'pending' | 'true' | 'false';
 
 interface HotTake {
-  targetManagerId: string; // Team, um das es geht — via manager_id identifiziert, stabil über Saisons hinweg
+  targetTeamId: string; // team.id des betroffenen Teams — reicht, da dieser Inhalt ohnehin nur für die aktuelle Saison gilt
   text: string;
   status: HotTakeStatus;
 }
@@ -40,14 +40,14 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
   {
     authorManagerId: LUKAS_ID,
     takes: [
-      { targetManagerId: '129c1cf4-5ec6-4947-8c2c-50df149be9d4', text: 'Ich habe am Ende 3 150Pkt Spieler', status: 'pending' }, // Sackflanke
-      { targetManagerId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Petkov bester Mittelfeldspieler bei Eike', status: 'pending' }, // Kackbratzen
+      { targetTeamId: '129c1cf4-5ec6-4947-8c2c-50df149be9d4', text: 'Ich habe am Ende 3 150Pkt Spieler', status: 'pending' }, // Sackflanke
+      { targetTeamId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Petkov bester Mittelfeldspieler bei Eike', status: 'pending' }, // Kackbratzen
     ],
   },
   {
     authorManagerId: SCHLAGGY_ID,
     takes: [
-      { targetManagerId: 'f30e89d4-11f0-4fad-b98a-ac7970f11363', text: 'Olise knack den All-Time Rekord', status: 'pending' }, // SV Spielabbruch
+      { targetTeamId: 'f30e89d4-11f0-4fad-b98a-ac7970f11363', text: 'Olise knack den All-Time Rekord', status: 'pending' }, // SV Spielabbruch
     ],
   },
 ];
@@ -118,10 +118,10 @@ export class HotTakesComponent {
     return this.authorInfo(managerId);
   }
 
-  takeFor(authorManagerId: string, targetManagerId: string): HotTake | undefined {
+  takeFor(authorManagerId: string, targetTeamId: string): HotTake | undefined {
     return HOT_TAKES
       .find(a => a.authorManagerId === authorManagerId)
-      ?.takes.find(t => t.targetManagerId === targetManagerId);
+      ?.takes.find(t => t.targetTeamId === targetTeamId);
   }
 
   statusIcon(status: HotTakeStatus | undefined): string {
