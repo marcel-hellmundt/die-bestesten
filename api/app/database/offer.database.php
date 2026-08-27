@@ -309,7 +309,7 @@ trait OfferTrait
         if ($newValue > ($budget - $otherPending)) return ['error' => 'budget_exceeded'];
 
         $uq = $this->con_league->prepare(
-            "UPDATE offer SET offer_value = :val WHERE id = :id AND team_id = :tid AND status = 'pending'"
+            "UPDATE offer SET offer_value = :val, updated_at = NOW() WHERE id = :id AND team_id = :tid AND status = 'pending'"
         );
         $uq->execute([':val' => $newValue, ':id' => $offerId, ':tid' => $teamId]);
         return ['success' => true];

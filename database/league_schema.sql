@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS offer (
     price_snapshot      INT         DEFAULT NULL,         -- Marktwert zum Zeitpunkt des Gebots (denormalisiert für Performance)
     status              ENUM('pending', 'success', 'lost', 'cancelled') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'pending',
     created_at          DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME    DEFAULT NULL,           -- Zeitpunkt der letzten Gebotsänderung (PATCH /offer/:id); NULL = noch nie bearbeitet
     FOREIGN KEY (team_id) REFERENCES team(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

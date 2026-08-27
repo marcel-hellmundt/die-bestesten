@@ -659,7 +659,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/offer/:id',
-                        'description' => 'Gebotswert eines pending-Gebots ändern — 422 wenn < Marktwert oder Budget überschritten — nur eigenes Team — Auth',
+                        'description' => 'Gebotswert eines pending-Gebots ändern — setzt offer.updated_at auf den aktuellen Zeitpunkt (NULL solange ein Gebot noch nie bearbeitet wurde) — 422 wenn < Marktwert oder Budget überschritten — nur eigenes Team — Auth',
                         'body' => [
                             'team_id' => 'UUID des Teams',
                             'offer_value' => 'Neuer Gebotswert (INT, min. Marktwert)',
