@@ -356,6 +356,15 @@
     font-size: $font-xs;
     color: $color-text-muted;
   }
+
+  // Team-/Managername ausgeblendet (nur Logo bleibt), damit die Liga-Teams-Tabelle auf schmalen
+  // Screens ohne horizontales Scrollen komplett passt.
+  @media (max-width: #{$mobile-breakpoint}) {
+    .team-history__name,
+    .team-history__manager {
+      display: none;
+    }
+  }
 }
 
 .loan-badge {
