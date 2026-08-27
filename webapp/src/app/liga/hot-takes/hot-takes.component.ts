@@ -46,6 +46,8 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
       { targetTeamId: '37d712d3-4c34-472f-a46f-72f2cc99f1c3', text: 'Mohya wird Nationalspieler', status: 'pending' }, // ZSG Fortschritt Achmer
       { targetTeamId: '863867f0-9691-4808-b411-a15bb25bbd9b', text: 'Kein Stürmer macht mehr als 50 Punkte', status: 'pending' }, // Bonn 17
       { targetTeamId: '81123688-0f53-47b6-a92e-b64628c635e5', text: "Nils' beste Saison ever", status: 'pending' }, // Blutgrätsche 69
+      { targetTeamId: '80778c37-a22a-40a3-acd7-b52c1845bb22', text: 'Fab macht seinen ersten Transfer erst wieder im Winter', status: 'pending' }, // Fab
+      { targetTeamId: 'da221851-6aca-4499-b830-d47adaf5f07c', text: 'Von den 4 Stürmern spielen nie 3 gleichzeitig in der S11', status: 'pending' }, // Fiasko Fantasto
     ],
   },
   {
