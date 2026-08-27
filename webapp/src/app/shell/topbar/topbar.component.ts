@@ -101,6 +101,7 @@ export class TopbarComponent implements OnDestroy {
   @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('searchContainer') searchContainerRef?: ElementRef<HTMLElement>;
   @ViewChild('leagueEl') leagueRef?: ElementRef<HTMLElement>;
+  @ViewChild('userMenuEl') userMenuRef?: ElementRef<HTMLElement>;
 
   // Mobil, wenn eine Liga-Auswahl existiert: die aufklappende Suche legt sich per
   // position:absolute exakt bis zum rechten Rand von .topbar-league (siehe Template/SCSS) —
@@ -226,18 +227,25 @@ export class TopbarComponent implements OnDestroy {
     if (!this.isSearchOpen()) this.isSearchClosing.set(false);
   }
 
-  // Der bestehende Backdrop (Sibling nach .topbar) reicht auf Mobile nicht: .topbar selbst hat
-  // per sticky-Positionierung ein höheres z-index als der Backdrop und fängt daher jeden Klick
-  // innerhalb des Topbar-Streifens (z.B. auf die restliche freie Fläche) ab, bevor er den
-  // Backdrop erreicht — die Suche blieb dann geöffnet+breit und die (per --search-active
-  // ausgeblendeten) Icon-Buttons unerreichbar. Ein document-weiter Klick-Listener schließt
-  // stattdessen bei jedem Klick außerhalb von .topbar-search, unabhängig von Stacking-Kontexten.
+  // Der bestehende Backdrop (Sibling nach .topbar, für User-/Liga-Dropdown) reicht auf Mobile
+  // nicht: .topbar selbst hat per sticky-Positionierung ein höheres z-index als der Backdrop und
+  // fängt daher jeden Klick innerhalb des Topbar-Streifens (z.B. auf die restliche freie Fläche
+  // oder ein anderes Icon) ab, bevor er den Backdrop erreicht — ein Dropdown blieb dann offen,
+  // bis man exakt den eigenen Toggle-Button erneut traf oder außerhalb der ganzen Topbar klickte.
+  // Ein document-weiter Klick-Listener schließt stattdessen bei jedem Klick außerhalb der
+  // jeweiligen Box, unabhängig von Stacking-Kontexten — für Suche, User- und Liga-Dropdown gleichermaßen.
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (!this.isSearchOpen()) return;
     const target = event.target as Node;
-    if (!this.searchContainerRef?.nativeElement.contains(target)) {
+
+    if (this.isSearchOpen() && !this.searchContainerRef?.nativeElement.contains(target)) {
       this.closeSearch();
+    }
+    if (this.isDropdownOpen() && !this.userMenuRef?.nativeElement.contains(target)) {
+      this.closeDropdown();
+    }
+    if (this.isLeagueDropdownOpen() && !this.leagueRef?.nativeElement.contains(target)) {
+      this.closeLeagueDropdown();
     }
   }
 

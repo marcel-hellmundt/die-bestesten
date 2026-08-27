@@ -247,7 +247,7 @@
       }
     </a>
 
-    <div class="topbar-user">
+    <div class="topbar-user" #userMenuEl>
       <button class="user-avatar" (click)="toggleDropdown($event)" aria-label="Benutzermenü">
         @if (avatarUrl() && !avatarImgFailed()) {
           <img [src]="avatarUrl()!" class="avatar-img" (error)="onAvatarError()" alt="" />
