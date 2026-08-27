@@ -88,12 +88,6 @@ export class H2HMatchComponent {
     Math.min(this.awaySdsDefenders().length, this.homeGoalEvents().length)
   );
 
-  positionLabel(pos: string): string {
-    return ({ GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU' } as any)[pos] ?? pos;
-  }
-  positionColor(pos: string): string {
-    return ({ GOALKEEPER: 'var(--position-goalkeeper)', DEFENDER: 'var(--position-defender)', MIDFIELDER: 'var(--position-midfielder)', FORWARD: 'var(--position-forward)' } as any)[pos] ?? 'transparent';
-  }
   managerPhotoUrl(managerId: string): string {
     return `https://img.die-bestesten.de/manager/${managerId}.jpg`;
   }
@@ -136,6 +130,17 @@ export class H2HMatchComponent {
   selectedBench  = computed(() => (this.selectedSide() === 'home' ? this.homeBench()  : this.awayBench()));
 
   playersByPosition(pos: string): any[] {
-    return this.selectedLineup().filter(p => p.position === pos);
+    return this.positionPlayers(this.selectedLineup(), pos);
+  }
+
+  // ── Desktop: combined field for both teams ────────────────────────────────────
+  // Home läuft links GK→FWD, Away gespiegelt FWD→GK, sodass beide Stürmerreihen in der
+  // Mitte an der Mittellinie aufeinandertreffen (siehe h2h-match.component.scss .h2h-field).
+
+  readonly homeFieldPositions = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+  readonly awayFieldPositions = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER'];
+
+  positionPlayers(lineup: any[], pos: string): any[] {
+    return lineup.filter(p => p.position === pos);
   }
 }

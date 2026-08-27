@@ -215,77 +215,6 @@
   font-weight: $font-weight-medium;
 }
 
-// ── Lineup grid ───────────────────────────────────────────────────────────────
-
-.lineup-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: $space-6;
-  margin-bottom: $space-6;
-
-  // Replaced on mobile by the team-toggle + pitch view above, and by .mobile-bench-list
-  // for the bench — desktop keeps this two-column table layout unchanged.
-  @media (max-width: $mobile-breakpoint) {
-    display: none;
-  }
-}
-
-.lineup-section {
-  min-width: 0;
-  position: relative;
-  .section-header-row {
-    .section-header {
-      transform: translateY(16px);
-    }
-    &.home {
-      justify-content: flex-end;
-    }
-    &.away {
-      justify-content: flex-start;
-    }
-
-    @media (min-width: calc($mobile-breakpoint + 1px)) {
-      display: none;
-    }
-  }
-  .manager {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-    position: absolute;
-    top: 0;
-    &.home {
-      left: 8px;
-    }
-    &.away {
-      flex-direction: row-reverse;
-      right: 8px;
-    }
-    img {
-      height: 64px;
-      width: 64px;
-    }
-    .manager-name {
-      font-size: 32px;
-      font-weight: 500;
-      font-family: bridge;
-      text-transform: uppercase;
-      line-height: 64px;
-    }
-  }
-  .table-container {
-    z-index: 1;
-    position: relative;
-    margin-top: 54px;
-  }
-}
-
-.player-cell {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-}
-
 .player-avatar-sm {
   width: 24px;
   height: 24px;
@@ -294,50 +223,8 @@
   flex-shrink: 0;
 }
 
-.col-pos {
-  width: 36px;
-  font-size: $font-xs;
-  color: $color-text-muted;
-  font-weight: $font-weight-medium;
-  text-transform: uppercase;
-}
-
-.col-grade {
-  width: 44px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.player-events {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  .event-icon {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-    vertical-align: middle;
-  }
-}
-
-.col-pts {
-  width: 44px;
-  text-align: right;
-  font-weight: $font-weight-semibold;
-  font-variant-numeric: tabular-nums;
-}
-
 .bench-toggle {
   margin-bottom: $space-4;
-}
-
-.bench-grid {
-  opacity: 0.7;
-}
-
-.bench-row td {
-  color: $color-text-muted;
 }
 
 // ── Mobile: team toggle ──────────────────────────────────────────────────────
@@ -584,6 +471,212 @@
     drop-shadow(-1px 0 0 #fff)
     drop-shadow(0 1px 0 #fff)
     drop-shadow(0 -1px 0 #fff);
+}
+
+// ── Desktop: combined field for both teams ────────────────────────────────────
+// Horizontal counterpart to the mobile .field above (own DOM/CSS since the axis flips:
+// mobile stacks position rows top-to-bottom for one team, desktop places position columns
+// left-to-right for both teams at once — home GK→FWD, away mirrored FWD→GK). Player cards
+// reuse the .field-player styles above via the shared #fieldPlayer ng-template.
+
+.h2h-field-managers {
+  display: none;
+
+  @media (min-width: calc($mobile-breakpoint + 1px)) {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: $space-3;
+  }
+}
+
+.h2h-field-manager {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+
+  &--away {
+    flex-direction: row-reverse;
+  }
+}
+
+// Beide Bänke (optional, siehe .h2h-bench) und das Feld liegen in derselben Flex-Row, damit
+// das Feld beim Ein-/Ausblenden der Bänke horizontal zentriert bleibt (justify-content:center
+// auf die ganze Gruppe statt margin:auto nur aufs Feld) statt sich zu verschieben.
+.h2h-field-wrap {
+  display: none;
+
+  @media (min-width: calc($mobile-breakpoint + 1px)) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-4;
+    margin-bottom: $space-6;
+  }
+}
+
+.h2h-field {
+  container-type: inline-size;
+  background-color: #05c46b;
+  border-radius: $radius-lg;
+  aspect-ratio: 16 / 9;
+  width: 75%;
+  max-width: 900px;
+  flex: 0 1 auto;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+// ── Desktop: Bänke links/rechts vom Feld ─────────────────────────────────────
+
+.h2h-bench {
+  flex: 0 0 120px;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.h2h-bench-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  color: $color-text;
+  padding: $space-2;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  transition: border-color $transition-fast;
+
+  &:hover {
+    border-color: $color-accent;
+  }
+
+  &__photo-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: $color-surface-alt;
+    flex-shrink: 0;
+  }
+
+  &__photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+
+    &--placeholder {
+      opacity: 0.3;
+    }
+  }
+
+  &__name {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  &__pos {
+    font-size: 10px;
+    color: $color-text-muted;
+    text-transform: uppercase;
+  }
+}
+
+.h2h-field__half {
+  flex: 1;
+  display: flex;
+  z-index: 2;
+}
+
+.h2h-field__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  gap: $space-1;
+  padding: $space-3 0;
+
+  .field-player {
+    max-width: 92%;
+  }
+}
+
+.h2h-field__lines {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.h2h-field__boundary {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border: 3px solid #fff;
+  overflow: hidden;
+}
+
+.h2h-field__halfway-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  transform: translateX(-1px);
+  background: #fff;
+}
+
+.h2h-field__circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 22%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid #fff;
+}
+
+.h2h-field__penalty {
+  position: absolute;
+  top: 50%;
+  width: 10%;
+  aspect-ratio: 1 / 2.5;
+  border: 3px solid #fff;
+  transform: translateY(-50%);
+
+  &--left {
+    left: 0;
+    transform: translate(-3px, -50%);
+  }
+  &--right {
+    right: 0;
+    transform: translate(3px, -50%);
+  }
+}
+
+.h2h-field__flag {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+
+  &--tl { top: -12px; left: -12px; }
+  &--tr { top: -12px; right: -12px; }
+  &--bl { bottom: -12px; left: -12px; }
+  &--br { bottom: -12px; right: -12px; }
 }
 
 // ── Mobile: bench list of the selected team ──────────────────────────────────

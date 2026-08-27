@@ -123,8 +123,8 @@
     }
   </div>
 
-  <!-- Mobile: team toggle + pitch view of the selected team (desktop keeps the two-column
-       table layout below, unaffected — see .lineup-grid's mobile display:none). -->
+  <!-- Mobile: team toggle + pitch view of the selected team; desktop shows both teams at
+       once on one combined field instead (.h2h-field-wrap below, mobile display:none). -->
   <div class="team-toggle">
     <button
       class="team-toggle__btn"
@@ -143,42 +143,7 @@
       @for (pos of pitchPositions; track pos) {
         <div class="field-section">
           @for (p of playersByPosition(pos); track p.player_id) {
-            <a class="field-player" [routerLink]="['/daten/player', p.player_id]">
-              <div class="field-player__photo-wrap">
-                @if (p.photo_uploaded && p.photo_season_id) {
-                  <img
-                    class="field-player__photo"
-                    [src]="homePhotoUrl(p)"
-                    [alt]="p.displayname"
-                    (error)="$any($event.target).style.display = 'none'"
-                  />
-                } @else {
-                  <img class="field-player__photo field-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
-                }
-              </div>
-              @if (p.sds || p.goals || p.assists) {
-                <div class="field-player__stats">
-                  @if (p.sds) {
-                    <img src="img/icons/sds.png" class="fp-icon" alt="SdS" />
-                  }
-                  @for (_ of [].constructor(p.goals ?? 0); track $index) {
-                    <img src="img/icons/goal.png" class="fp-icon" alt="Tor" />
-                  }
-                  @for (_ of [].constructor(p.assists ?? 0); track $index) {
-                    <img src="img/icons/assist.png" class="fp-icon" alt="Vorlage" />
-                  }
-                </div>
-              }
-              <div class="field-player__badge">
-                @if (p.grade) {
-                  <span class="field-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade }}</span>
-                }
-                <span class="field-player__name">{{ p.displayname }}</span>
-                @if (p.points != null) {
-                  <span class="field-player__points" [class.field-player__points--neg]="p.points < 0">{{ p.points }}</span>
-                }
-              </div>
-            </a>
+            <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
           }
         </div>
       }
@@ -199,156 +164,144 @@
     </div>
   </div>
 
-  <!-- Lineups -->
-  <div class="lineup-grid">
-    <!-- Home lineup -->
-    <section class="lineup-section">
-      <div class="section-header-row home">
-        <h2 class="section-header">{{ homeTeam()?.team_name }}</h2>
+  <!-- Desktop: one combined field for both teams — home GK→FWD left→right, away mirrored
+       FWD→GK, so both teams' forwards meet at the halfway line. Replaces the old two-column
+       table layout (see .h2h-field-wrap's mobile display:none / .lineup-grid removal). -->
+  <div class="h2h-field-managers">
+    @if (homeTeam()?.manager_id) {
+      <div class="h2h-field-manager h2h-field-manager--home">
+        <img
+          class="player-avatar-sm"
+          [src]="managerPhotoUrl(homeTeam().manager_id)"
+          (error)="$any($event.target).style.display = 'none'"
+          alt=""
+        />
+        <span class="manager-name">{{ homeTeam().manager_name }}</span>
       </div>
-      @if (homeTeam()?.manager_id) {
-        <div class="manager home">
-          <img
-            class="player-avatar-sm"
-            [src]="managerPhotoUrl(homeTeam().manager_id)"
-            (error)="$any($event.target).style.display = 'none'"
-            alt=""
-          />
-          <span class="manager-name">{{ homeTeam().manager_name }}</span>
-        </div>
-      }
-      @if (homeLineup().length > 0) {
-        <div class="table-container">
-          <table class="data-table data-table--compact">
-            <thead>
-              <tr>
-                <th>Spieler</th>
-                <th class="col-grade">Note</th>
-                <th class="col-pts">Pkt</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (p of homeLineup(); track p.player_id) {
-                <tr>
-                  <td class="player-cell">
-                    <span
-                      class="position-badge"
-                      [style.background-color]="positionColor(p.position)"
-                    >
-                      {{ positionLabel(p.position) }}
-                    </span>
-                    @if (p.photo_uploaded && p.photo_season_id) {
-                      <img
-                        class="player-avatar-sm"
-                        [src]="homePhotoUrl(p)"
-                        [alt]="p.displayname"
-                        (error)="$any($event.target).style.display = 'none'"
-                      />
-                    }
-                    <span>{{ p.displayname }}</span>
-                    <span class="player-events">
-                      @if (p.sds) {
-                        <img class="event-icon" src="img/icons/shield.png" alt="SdS" title="SdS" />
-                      }
-                      @for (_ of [].constructor(p.goals ?? 0); track $index) {
-                        <img class="event-icon" src="img/icons/goal.png" alt="Tor" title="Tor" />
-                      }
-                      @for (_ of [].constructor(p.assists ?? 0); track $index) {
-                        <img
-                          class="event-icon"
-                          src="img/icons/assist.png"
-                          alt="Vorlage"
-                          title="Vorlage"
-                        />
-                      }
-                    </span>
-                  </td>
-                  <td class="col-grade">{{ p.grade ?? '—' }}</td>
-                  <td class="col-pts">{{ p.points ?? '—' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      } @else {
-        <p class="state-msg">Keine Aufstellung vorhanden.</p>
-      }
-    </section>
-
-    <!-- Away lineup -->
-    <section class="lineup-section">
-      <div class="section-header-row away">
-        <h2 class="section-header">{{ awayTeam()?.team_name }}</h2>
+    }
+    @if (awayTeam()?.manager_id) {
+      <div class="h2h-field-manager h2h-field-manager--away">
+        <span class="manager-name">{{ awayTeam().manager_name }}</span>
+        <img
+          class="player-avatar-sm"
+          [src]="managerPhotoUrl(awayTeam().manager_id)"
+          (error)="$any($event.target).style.display = 'none'"
+          alt=""
+        />
       </div>
-      @if (awayTeam()?.manager_id) {
-        <div class="manager away">
-          <img
-            class="player-avatar-sm"
-            [src]="managerPhotoUrl(awayTeam().manager_id)"
-            (error)="$any($event.target).style.display = 'none'"
-            alt=""
-          />
-          <span class="manager-name">{{ awayTeam().manager_name }}</span>
-        </div>
-      }
-      @if (awayLineup().length > 0) {
-        <div class="table-container">
-          <table class="data-table data-table--compact">
-            <thead>
-              <tr>
-                <th>Spieler</th>
-                <th class="col-grade">Note</th>
-                <th class="col-pts">Pkt</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (p of awayLineup(); track p.player_id) {
-                <tr>
-                  <td class="player-cell">
-                    <span
-                      class="position-badge"
-                      [style.background-color]="positionColor(p.position)"
-                    >
-                      {{ positionLabel(p.position) }}
-                    </span>
-                    @if (p.photo_uploaded && p.photo_season_id) {
-                      <img
-                        class="player-avatar-sm"
-                        [src]="homePhotoUrl(p)"
-                        [alt]="p.displayname"
-                        (error)="$any($event.target).style.display = 'none'"
-                      />
-                    }
-                    <span>{{ p.displayname }}</span>
-                    <span class="player-events">
-                      @if (p.sds) {
-                        <img class="event-icon" src="img/icons/shield.png" alt="SdS" title="SdS" />
-                      }
-                      @for (_ of [].constructor(p.goals ?? 0); track $index) {
-                        <img class="event-icon" src="img/icons/goal.png" alt="Tor" title="Tor" />
-                      }
-                      @for (_ of [].constructor(p.assists ?? 0); track $index) {
-                        <img
-                          class="event-icon"
-                          src="img/icons/assist.png"
-                          alt="Vorlage"
-                          title="Vorlage"
-                        />
-                      }
-                    </span>
-                  </td>
-                  <td class="col-grade">{{ p.grade ?? '—' }}</td>
-                  <td class="col-pts">{{ p.points ?? '—' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      } @else {
-        <p class="state-msg">Keine Aufstellung vorhanden.</p>
-      }
-    </section>
+    }
   </div>
+
+  <div class="h2h-field-wrap">
+    @if (showBench && homeBench().length > 0) {
+      <div class="h2h-bench h2h-bench--home">
+        @for (p of homeBench(); track p.player_id) {
+          <ng-container *ngTemplateOutlet="benchCard; context: { p: p }"></ng-container>
+        }
+      </div>
+    }
+
+    <div class="h2h-field">
+      <div class="h2h-field__half h2h-field__half--home">
+        @for (pos of homeFieldPositions; track pos) {
+          <div class="h2h-field__col">
+            @for (p of positionPlayers(homeLineup(), pos); track p.player_id) {
+              <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
+            }
+          </div>
+        }
+      </div>
+      <div class="h2h-field__half h2h-field__half--away">
+        @for (pos of awayFieldPositions; track pos) {
+          <div class="h2h-field__col">
+            @for (p of positionPlayers(awayLineup(), pos); track p.player_id) {
+              <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Field markings -->
+      <div class="h2h-field__lines">
+        <div class="h2h-field__boundary">
+          <div class="h2h-field__halfway-line"></div>
+          <div class="h2h-field__circle"></div>
+          <div class="h2h-field__penalty h2h-field__penalty--left"></div>
+          <div class="h2h-field__penalty h2h-field__penalty--right"></div>
+          <div class="h2h-field__flag h2h-field__flag--tl"></div>
+          <div class="h2h-field__flag h2h-field__flag--tr"></div>
+          <div class="h2h-field__flag h2h-field__flag--bl"></div>
+          <div class="h2h-field__flag h2h-field__flag--br"></div>
+        </div>
+      </div>
+    </div>
+
+    @if (showBench && awayBench().length > 0) {
+      <div class="h2h-bench h2h-bench--away">
+        @for (p of awayBench(); track p.player_id) {
+          <ng-container *ngTemplateOutlet="benchCard; context: { p: p }"></ng-container>
+        }
+      </div>
+    }
+  </div>
+
+  <ng-template #fieldPlayer let-p="p">
+    <a class="field-player" [routerLink]="['/daten/player', p.player_id]">
+      <div class="field-player__photo-wrap">
+        @if (p.photo_uploaded && p.photo_season_id) {
+          <img
+            class="field-player__photo"
+            [src]="homePhotoUrl(p)"
+            [alt]="p.displayname"
+            (error)="$any($event.target).style.display = 'none'"
+          />
+        } @else {
+          <img class="field-player__photo field-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
+        }
+      </div>
+      @if (p.sds || p.goals || p.assists) {
+        <div class="field-player__stats">
+          @if (p.sds) {
+            <img src="img/icons/sds.png" class="fp-icon" alt="SdS" />
+          }
+          @for (_ of [].constructor(p.goals ?? 0); track $index) {
+            <img src="img/icons/goal.png" class="fp-icon" alt="Tor" />
+          }
+          @for (_ of [].constructor(p.assists ?? 0); track $index) {
+            <img src="img/icons/assist.png" class="fp-icon" alt="Vorlage" />
+          }
+        </div>
+      }
+      <div class="field-player__badge">
+        @if (p.grade) {
+          <span class="field-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade }}</span>
+        }
+        <span class="field-player__name">{{ p.displayname }}</span>
+        @if (p.points != null) {
+          <span class="field-player__points" [class.field-player__points--neg]="p.points < 0">{{ p.points }}</span>
+        }
+      </div>
+    </a>
+  </ng-template>
+
+  <ng-template #benchCard let-p="p">
+    <a class="h2h-bench-card" [routerLink]="['/daten/player', p.player_id]">
+      <div class="h2h-bench-card__photo-wrap">
+        @if (p.photo_uploaded && p.photo_season_id) {
+          <img
+            class="h2h-bench-card__photo"
+            [src]="homePhotoUrl(p)"
+            [alt]="p.displayname"
+            (error)="$any($event.target).style.display = 'none'"
+          />
+        } @else {
+          <img class="h2h-bench-card__photo h2h-bench-card__photo--placeholder" src="img/placeholders/player.png" alt="" />
+        }
+      </div>
+      <span class="h2h-bench-card__name">{{ p.displayname }}</span>
+      <span class="h2h-bench-card__pos">{{ p.position | slice: 0 : 3 }}</span>
+    </a>
+  </ng-template>
 
   <!-- Bank (toggle) -->
   @if (homeBench().length > 0 || awayBench().length > 0) {
@@ -357,8 +310,8 @@
     </button>
 
     @if (showBench) {
-      <!-- Mobile: bench of the selected team only (desktop keeps both teams side by side
-           below, see .lineup-grid's mobile display:none). -->
+      <!-- Mobile: bench of the selected team only (desktop shows both teams' benches as
+           player-cards left/right of .h2h-field instead, see .h2h-bench above). -->
       <div class="mobile-bench-list">
         @for (p of selectedBench(); track p.player_id) {
           <div class="mobile-bench-row">
@@ -367,57 +320,6 @@
             <span class="mobile-bench-row__pts">{{ p.points ?? '—' }}</span>
           </div>
         }
-      </div>
-
-      <div class="lineup-grid bench-grid">
-        <section class="lineup-section">
-          @if (homeBench().length > 0) {
-            <div class="table-container">
-              <table class="data-table data-table--compact">
-                <thead>
-                  <tr>
-                    <th>Bank</th>
-                    <th class="col-pos">Pos</th>
-                    <th class="col-pts">Pkt</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (p of homeBench(); track p.player_id) {
-                    <tr class="bench-row">
-                      <td>{{ p.displayname }}</td>
-                      <td class="col-pos">{{ p.position | slice: 0 : 3 }}</td>
-                      <td class="col-pts">{{ p.points ?? '—' }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        </section>
-        <section class="lineup-section">
-          @if (awayBench().length > 0) {
-            <div class="table-container">
-              <table class="data-table data-table--compact">
-                <thead>
-                  <tr>
-                    <th>Bank</th>
-                    <th class="col-pos">Pos</th>
-                    <th class="col-pts">Pkt</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (p of awayBench(); track p.player_id) {
-                    <tr class="bench-row">
-                      <td>{{ p.displayname }}</td>
-                      <td class="col-pos">{{ p.position | slice: 0 : 3 }}</td>
-                      <td class="col-pts">{{ p.points ?? '—' }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        </section>
       </div>
     }
   }
