@@ -44,7 +44,12 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
       { targetManagerId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Petkov bester Mittelfeldspieler bei Eike', status: 'pending' }, // Kackbratzen
     ],
   },
-  { authorManagerId: SCHLAGGY_ID, takes: [] },
+  {
+    authorManagerId: SCHLAGGY_ID,
+    takes: [
+      { targetManagerId: 'f30e89d4-11f0-4fad-b98a-ac7970f11363', text: 'Olise knack den All-Time Rekord', status: 'pending' }, // SV Spielabbruch
+    ],
+  },
 ];
 const BETS: Bet[] = [
   {
