@@ -329,10 +329,11 @@ trait OfferTrait
         // GET /offer triggert dies bei jedem Aufruf für ein geschlossenes Fenster (Lazy
         // Settlement) — mehrere Manager, die gleichzeitig die Ergebnisse abrufen, könnten sonst
         // parallel dieselben pending-Gebote auswerten, denselben Gewinner ermitteln und zweimal
-        // denselben player_in_team-Eintrag anlegen (Unique-Key-Verletzung auf uk_player_from,
-        // player_id+team_id+from_matchday_id). Ein MySQL-Named-Lock serialisiert das pro Fenster;
-        // kommt die Sperre nicht rechtzeitig zustande, wertet offensichtlich schon ein anderer
-        // Request dasselbe Fenster aus — dann einfach abbrechen, dessen Ergebnis reicht.
+        // denselben player_in_team-Eintrag anlegen (Unique-Key-Verletzung auf uk_player_team_active,
+        // team_id+active_flag — max. 1 aktiver Eintrag pro Team+Spieler). Ein MySQL-Named-Lock
+        // serialisiert das pro Fenster; kommt die Sperre nicht rechtzeitig zustande, wertet
+        // offensichtlich schon ein anderer Request dasselbe Fenster aus — dann einfach abbrechen,
+        // dessen Ergebnis reicht.
         $lockName = 'settle_window_' . $windowId;
         $lockStmt = $this->con_league->prepare('SELECT GET_LOCK(?, 10)');
         $lockStmt->execute([$lockName]);

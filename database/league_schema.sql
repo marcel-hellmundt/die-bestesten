@@ -91,7 +91,11 @@ CREATE TABLE IF NOT EXISTS sell (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: player_in_team (Spieler-Zugehörigkeit zu einem Team pro Transferphase)
--- Applikationsebene stellt sicher: pro Spieler max. 1 aktiver Eintrag (to_matchday_id IS NULL)
+-- Ein Team kann denselben Spieler mehrfach in derselben Transferphase kaufen/verkaufen (ein
+-- Spieltag hat 2–4 Transferfenster, alle mit demselben from_matchday_id bei Rückkauf) — daher
+-- KEIN Unique auf (player_id, team_id, from_matchday_id) mehr (führte zu SQLSTATE[23000] beim
+-- Rückkauf). Stattdessen erzwingt active_flag (generated column, NULL solange nicht aktiv) über
+-- uk_player_team_active: höchstens 1 aktiver Eintrag (to_matchday_id IS NULL) pro Team+Spieler.
 CREATE TABLE IF NOT EXISTS player_in_team (
     id               CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     team_id          CHAR(36) NOT NULL,
@@ -100,10 +104,11 @@ CREATE TABLE IF NOT EXISTS player_in_team (
     to_matchday_id   CHAR(36) NULL DEFAULT NULL,    -- Transferphase Verkauf — NULL = aktuell aktiv
     offer_id         CHAR(36) NULL DEFAULT NULL,    -- Referenz auf das Kaufangebot
     sell_id          CHAR(36) NULL DEFAULT NULL,    -- Referenz auf den Verkauf
+    active_flag      CHAR(36) GENERATED ALWAYS AS (IF(to_matchday_id IS NULL, player_id, NULL)) STORED,
     FOREIGN KEY (team_id) REFERENCES team(id),
     FOREIGN KEY (offer_id) REFERENCES offer(id),
     FOREIGN KEY (sell_id) REFERENCES sell(id),
-    UNIQUE KEY uk_player_from (player_id, team_id, from_matchday_id)  -- kein Doppelkauf desselben Teams in derselben Transferphase
+    UNIQUE KEY uk_player_team_active (team_id, active_flag)  -- max. 1 aktiver Eintrag pro Team+Spieler
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: team_award (welches Team hat welchen Award in welcher Saison gewonnen)

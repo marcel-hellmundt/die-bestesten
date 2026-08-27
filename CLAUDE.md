@@ -253,7 +253,7 @@ GET      /session               — ?range=day|month|year (optional, default day
 
 **sell**: id PK, player_id (cross-DB), team_id FK (Verkäufer), transferwindow_id (cross-DB), price INT, created_at
 
-**player_in_team**: id PK, team_id FK, player_id (cross-DB), from_matchday_id (cross-DB, Kauf), to_matchday_id (cross-DB, Verkauf; NULL = aktiv), offer_id FK?, sell_id FK? — UNIQUE(player_id, team_id, from_matchday_id) — max. 1 aktives Team pro Spieler wird auf Applikationsebene geprüft
+**player_in_team**: id PK, team_id FK, player_id (cross-DB), from_matchday_id (cross-DB, Kauf), to_matchday_id (cross-DB, Verkauf; NULL = aktiv), offer_id FK?, sell_id FK?, active_flag (generated, = player_id falls to_matchday_id NULL sonst NULL) — UNIQUE(team_id, active_flag) — max. 1 aktiver Eintrag pro Team+Spieler (DB-Constraint); erlaubt mehrere Stints desselben Spielers im selben Team mit identischem from_matchday_id (Rückkauf innerhalb derselben Transferphase, da ein Spieltag 2–4 Transferfenster hat) — max. 1 aktives Team pro Spieler (übergreifend) wird auf Applikationsebene geprüft
 
 **team_lineup**: id PK, team_id FK, player_id (cross-DB), matchday_id (cross-DB), nominated BOOL, position_index INT? — UNIQUE(team_id, player_id, matchday_id) — alle Kader-Spieler des Spieltags; nominated=1 = aufgestellt
 
