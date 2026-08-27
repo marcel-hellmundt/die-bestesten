@@ -43,12 +43,14 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
       { targetTeamId: '129c1cf4-5ec6-4947-8c2c-50df149be9d4', text: 'Ich habe am Ende 3 150Pkt Spieler', status: 'pending' }, // Sackflanke
       { targetTeamId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Petkov bester Mittelfeldspieler bei Eike', status: 'pending' }, // Kackbratzen
       { targetTeamId: '9153be2f-37b1-42c1-9103-167717e78ce7', text: 'Die meisten Kaderrotationen', status: 'pending' }, // US Töfte Calcio
+      { targetTeamId: '37d712d3-4c34-472f-a46f-72f2cc99f1c3', text: 'Mohya wird Nationalspieler', status: 'pending' }, // ZSG Fortschritt Achmer
     ],
   },
   {
     authorManagerId: SCHLAGGY_ID,
     takes: [
       { targetTeamId: 'f30e89d4-11f0-4fad-b98a-ac7970f11363', text: 'Olise knack den All-Time Rekord', status: 'pending' }, // SV Spielabbruch
+      { targetTeamId: '37d712d3-4c34-472f-a46f-72f2cc99f1c3', text: 'Er hat immer einen zweistelligen Tabellenplatz', status: 'pending' }, // ZSG Fortschritt Achmer
     ],
   },
 ];
