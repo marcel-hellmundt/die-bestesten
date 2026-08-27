@@ -49,9 +49,17 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
   {
     authorManagerId: SCHLAGGY_ID,
     takes: [
-      { targetTeamId: 'f30e89d4-11f0-4fad-b98a-ac7970f11363', text: 'Olise knack den All-Time Rekord', status: 'pending' }, // SV Spielabbruch
+      { targetTeamId: 'f30e89d4-11f0-4fad-b98a-ac7970f11363', text: 'Olise wird punktbester Spieler mit >300', status: 'pending' }, // SV Spielabbruch
       { targetTeamId: '37d712d3-4c34-472f-a46f-72f2cc99f1c3', text: 'Er hat immer einen zweistelligen Tabellenplatz', status: 'pending' }, // ZSG Fortschritt Achmer
       { targetTeamId: '129c1cf4-5ec6-4947-8c2c-50df149be9d4', text: 'Guirassy macht keine 100 Punkte', status: 'pending' }, // Sackflanke
+      { targetTeamId: '0bdd048d-973e-4593-9fbf-96d2476c5771', text: 'Keine 25 Punkte Unterschied zu Nils', status: 'pending' }, // Rosamunde Pilsner
+      { targetTeamId: '81123688-0f53-47b6-a92e-b64628c635e5', text: 'Sturm macht mehr als MF + Abwehr zusammen', status: 'pending' }, // Blutgrätsche 69
+      { targetTeamId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Verteidigt die Bürste - und Königsdörffer ist aufgestellt', status: 'pending' }, // Kackbratzen
+      { targetTeamId: 'cd3e7c38-b50b-4388-8e58-e0363ecdf990', text: 'Punktbeste Abwehr der Liga (nur die drei - Upamecano, Tapsoba & Miguel)', status: 'pending' }, // Concordia Hachmannsfeld
+      { targetTeamId: '863867f0-9691-4808-b411-a15bb25bbd9b', text: 'Unter den drei, die am wenigsten zahlen', status: 'pending' }, // Bonn 17
+      { targetTeamId: '9153be2f-37b1-42c1-9103-167717e78ce7', text: 'Kauft noch Grifo, und der wird hinter Pejcinovic sein punktbester Spieler', status: 'pending' }, // US Töfte Calcio
+      { targetTeamId: '80778c37-a22a-40a3-acd7-b52c1845bb22', text: 'Beide Bayern-Spieler machen >33% der Punkte', status: 'pending' }, // Fab
+      { targetTeamId: 'da221851-6aca-4499-b830-d47adaf5f07c', text: 'Wir sehen noch die höchste Ablöse der Saison', status: 'pending' }, // Fiasko Fantasto
     ],
   },
 ];
