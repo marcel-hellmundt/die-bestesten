@@ -100,3 +100,11 @@
   text-align: center;
   white-space: pre-line;
 }
+
+// Teamnamen ausblenden, damit die Hot-Takes-Tabelle (Team-Spalte + 2 Autoren-Spalten) auf
+// schmalen Screens ohne horizontales Scrollen komplett passt — Logo genügt zur Zuordnung.
+@media (max-width: $mobile-breakpoint) {
+  .hot-takes__team-name {
+    display: none;
+  }
+}
