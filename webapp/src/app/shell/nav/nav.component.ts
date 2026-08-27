@@ -72,7 +72,7 @@ export class NavComponent {
     mobileRoute: '/liga/spieltag',
     items: [
       ...(this.cache.saisonvorschauAvailable()
-        ? [{ label: 'Saisonvorschau', icon: 'eye', route: '/liga/saisonvorschau', isNew: true } as NavItem]
+        ? [{ label: 'Saisonvorschau', icon: 'eye', route: '/liga/saisonvorschau' } as NavItem]
         : []),
       { label: 'Spieltag', icon: 'spieltag', route: '/liga/spieltag' },
       { label: 'Tabelle', icon: 'tabelle', route: '/liga/tabelle' },
@@ -82,11 +82,11 @@ export class NavComponent {
         : []),
       { label: 'Teams', icon: 'kader', route: '/liga/teams' },
       ...(this.cache.powerrankingEnabled()
-        ? [{ label: 'Powerranking', icon: 'powerranking', route: '/liga/powerranking', isNew: true } as NavItem]
+        ? [{ label: 'Powerranking', icon: 'powerranking', route: '/liga/powerranking' } as NavItem]
         : []),
       { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
       ...(this.cache.isHotTakesLeague()
-        ? [{ label: 'Hot-Takes & Wetten', icon: 'statistiken', route: '/liga/hot-takes' } as NavItem]
+        ? [{ label: 'Hot-Takes & Wetten', icon: 'statistiken', route: '/liga/hot-takes', isNew: true } as NavItem]
         : []),
     ],
   }));
