@@ -42,6 +42,7 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
     takes: [
       { targetTeamId: '129c1cf4-5ec6-4947-8c2c-50df149be9d4', text: 'Ich habe am Ende 3 150Pkt Spieler', status: 'pending' }, // Sackflanke
       { targetTeamId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Petkov bester Mittelfeldspieler bei Eike', status: 'pending' }, // Kackbratzen
+      { targetTeamId: '9153be2f-37b1-42c1-9103-167717e78ce7', text: 'Die meisten Kaderrotationen', status: 'pending' }, // US Töfte Calcio
     ],
   },
   {
