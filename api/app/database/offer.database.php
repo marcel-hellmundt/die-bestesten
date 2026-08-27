@@ -326,102 +326,118 @@ trait OfferTrait
         $window = $wq->fetch(PDO::FETCH_ASSOC);
         if (!$window || strtotime($window['end_date']) >= time()) return;
 
-        $chk = $this->con_league->prepare(
-            "SELECT COUNT(*) FROM offer WHERE transferwindow_id = :wid AND status = 'pending'"
-        );
-        $chk->execute([':wid' => $windowId]);
-        if ((int) $chk->fetchColumn() === 0) return;
+        // GET /offer triggert dies bei jedem Aufruf für ein geschlossenes Fenster (Lazy
+        // Settlement) — mehrere Manager, die gleichzeitig die Ergebnisse abrufen, könnten sonst
+        // parallel dieselben pending-Gebote auswerten, denselben Gewinner ermitteln und zweimal
+        // denselben player_in_team-Eintrag anlegen (Unique-Key-Verletzung auf uk_player_from,
+        // player_id+team_id+from_matchday_id). Ein MySQL-Named-Lock serialisiert das pro Fenster;
+        // kommt die Sperre nicht rechtzeitig zustande, wertet offensichtlich schon ein anderer
+        // Request dasselbe Fenster aus — dann einfach abbrechen, dessen Ergebnis reicht.
+        $lockName = 'settle_window_' . $windowId;
+        $lockStmt = $this->con_league->prepare('SELECT GET_LOCK(?, 10)');
+        $lockStmt->execute([$lockName]);
+        if (!$lockStmt->fetchColumn()) return;
 
-        $matchdayId = $window['matchday_id'];
-
-        $pq = $this->con_league->prepare(
-            "SELECT DISTINCT player_id FROM offer WHERE transferwindow_id = :wid AND status = 'pending'"
-        );
-        $pq->execute([':wid' => $windowId]);
-        $playerIds = $pq->fetchAll(PDO::FETCH_COLUMN);
-
-        $ph  = implode(',', array_fill(0, count($playerIds), '?'));
-        $dnq = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($ph)");
-        $dnq->execute($playerIds);
-        $displaynames = [];
-        foreach ($dnq->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $displaynames[$row['id']] = $row['displayname'];
-        }
-
-        $this->con_league->beginTransaction();
         try {
-            foreach ($playerIds as $playerId) {
-                $bq = $this->con_league->prepare(
-                    "SELECT id, team_id, offer_value FROM offer
-                     WHERE transferwindow_id = :wid AND player_id = :pid AND status = 'pending'
-                     ORDER BY offer_value DESC, created_at ASC"
-                );
-                $bq->execute([':wid' => $windowId, ':pid' => $playerId]);
-                $bids = $bq->fetchAll(PDO::FETCH_ASSOC);
+            $chk = $this->con_league->prepare(
+                "SELECT COUNT(*) FROM offer WHERE transferwindow_id = :wid AND status = 'pending'"
+            );
+            $chk->execute([':wid' => $windowId]);
+            if ((int) $chk->fetchColumn() === 0) return;
 
-                $winnerId     = null;
-                $winnerTeamId = null;
-                $winnerValue  = null;
+            $matchdayId = $window['matchday_id'];
 
-                foreach ($bids as $bid) {
-                    if ($this->isPlayerAlreadyInAnyTeam($playerId)) break;
-                    if ($this->isPositionFull($bid['team_id'], $playerId)) continue;
-                    $winnerId     = $bid['id'];
-                    $winnerTeamId = $bid['team_id'];
-                    $winnerValue  = (int) $bid['offer_value'];
-                    break;
-                }
+            $pq = $this->con_league->prepare(
+                "SELECT DISTINCT player_id FROM offer WHERE transferwindow_id = :wid AND status = 'pending'"
+            );
+            $pq->execute([':wid' => $windowId]);
+            $playerIds = $pq->fetchAll(PDO::FETCH_COLUMN);
 
-                $allBidIds = array_column($bids, 'id');
-
-                if ($winnerId !== null) {
-                    $this->con_league->prepare(
-                        "UPDATE offer SET status = 'success' WHERE id = :id"
-                    )->execute([':id' => $winnerId]);
-
-                    $this->con_league->prepare(
-                        "INSERT INTO player_in_team (team_id, player_id, from_matchday_id, offer_id)
-                         VALUES (:tid, :pid, :mid, :oid)"
-                    )->execute([
-                        ':tid' => $winnerTeamId,
-                        ':pid' => $playerId,
-                        ':mid' => $matchdayId,
-                        ':oid' => $winnerId,
-                    ]);
-
-                    $displayname = $displaynames[$playerId] ?? 'Spieler';
-                    $this->con_league->prepare(
-                        "INSERT INTO transaction (team_id, amount, reason, matchday_id)
-                         VALUES (:tid, :amount, :reason, :mid)"
-                    )->execute([
-                        ':tid'    => $winnerTeamId,
-                        ':amount' => -$winnerValue,
-                        ':reason' => "Spielerkauf (Gebot): $displayname",
-                        ':mid'    => $matchdayId,
-                    ]);
-
-                    $tnq = $this->con_league->prepare("SELECT team_name FROM team WHERE id = ? LIMIT 1");
-                    $tnq->execute([$winnerTeamId]);
-                    $winnerTeamName = $tnq->fetchColumn() ?: 'Unbekanntes Team';
-                    $this->notifyWatchersPlayerBought($playerId, $winnerTeamId, $displayname, $winnerTeamName);
-
-                    $loserIds = array_values(array_filter($allBidIds, fn($id) => $id !== $winnerId));
-                } else {
-                    $loserIds = $allBidIds;
-                }
-
-                if (!empty($loserIds)) {
-                    $lph = implode(',', array_fill(0, count($loserIds), '?'));
-                    $this->con_league->prepare(
-                        "UPDATE offer SET status = 'lost' WHERE id IN ($lph)"
-                    )->execute($loserIds);
-                }
+            $ph  = implode(',', array_fill(0, count($playerIds), '?'));
+            $dnq = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($ph)");
+            $dnq->execute($playerIds);
+            $displaynames = [];
+            foreach ($dnq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $displaynames[$row['id']] = $row['displayname'];
             }
 
-            $this->con_league->commit();
-        } catch (\Exception $e) {
-            $this->con_league->rollBack();
-            throw $e;
+            $this->con_league->beginTransaction();
+            try {
+                foreach ($playerIds as $playerId) {
+                    $bq = $this->con_league->prepare(
+                        "SELECT id, team_id, offer_value FROM offer
+                         WHERE transferwindow_id = :wid AND player_id = :pid AND status = 'pending'
+                         ORDER BY offer_value DESC, created_at ASC"
+                    );
+                    $bq->execute([':wid' => $windowId, ':pid' => $playerId]);
+                    $bids = $bq->fetchAll(PDO::FETCH_ASSOC);
+
+                    $winnerId     = null;
+                    $winnerTeamId = null;
+                    $winnerValue  = null;
+
+                    foreach ($bids as $bid) {
+                        if ($this->isPlayerAlreadyInAnyTeam($playerId)) break;
+                        if ($this->isPositionFull($bid['team_id'], $playerId)) continue;
+                        $winnerId     = $bid['id'];
+                        $winnerTeamId = $bid['team_id'];
+                        $winnerValue  = (int) $bid['offer_value'];
+                        break;
+                    }
+
+                    $allBidIds = array_column($bids, 'id');
+
+                    if ($winnerId !== null) {
+                        $this->con_league->prepare(
+                            "UPDATE offer SET status = 'success' WHERE id = :id"
+                        )->execute([':id' => $winnerId]);
+
+                        $this->con_league->prepare(
+                            "INSERT INTO player_in_team (team_id, player_id, from_matchday_id, offer_id)
+                             VALUES (:tid, :pid, :mid, :oid)"
+                        )->execute([
+                            ':tid' => $winnerTeamId,
+                            ':pid' => $playerId,
+                            ':mid' => $matchdayId,
+                            ':oid' => $winnerId,
+                        ]);
+
+                        $displayname = $displaynames[$playerId] ?? 'Spieler';
+                        $this->con_league->prepare(
+                            "INSERT INTO transaction (team_id, amount, reason, matchday_id)
+                             VALUES (:tid, :amount, :reason, :mid)"
+                        )->execute([
+                            ':tid'    => $winnerTeamId,
+                            ':amount' => -$winnerValue,
+                            ':reason' => "Spielerkauf (Gebot): $displayname",
+                            ':mid'    => $matchdayId,
+                        ]);
+
+                        $tnq = $this->con_league->prepare("SELECT team_name FROM team WHERE id = ? LIMIT 1");
+                        $tnq->execute([$winnerTeamId]);
+                        $winnerTeamName = $tnq->fetchColumn() ?: 'Unbekanntes Team';
+                        $this->notifyWatchersPlayerBought($playerId, $winnerTeamId, $displayname, $winnerTeamName);
+
+                        $loserIds = array_values(array_filter($allBidIds, fn($id) => $id !== $winnerId));
+                    } else {
+                        $loserIds = $allBidIds;
+                    }
+
+                    if (!empty($loserIds)) {
+                        $lph = implode(',', array_fill(0, count($loserIds), '?'));
+                        $this->con_league->prepare(
+                            "UPDATE offer SET status = 'lost' WHERE id IN ($lph)"
+                        )->execute($loserIds);
+                    }
+                }
+
+                $this->con_league->commit();
+            } catch (\Exception $e) {
+                $this->con_league->rollBack();
+                throw $e;
+            }
+        } finally {
+            $this->con_league->prepare('SELECT RELEASE_LOCK(?)')->execute([$lockName]);
         }
     }
 
