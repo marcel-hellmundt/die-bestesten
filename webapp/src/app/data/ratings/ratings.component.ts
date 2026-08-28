@@ -322,7 +322,12 @@ export class RatingsDataComponent {
     });
   }
 
-  clubPlayers = signal<{ id: string; displayname: string; position: string | null }[]>([]);
+  // season_position (nicht "position", siehe player.database.php's "pis.position AS
+  // season_position") ist null, wenn der Spieler kein player_in_season für die aktive Saison
+  // hat — z.B. noch nicht per CSV-Import ins Spieler-Pool aufgenommen. POST /player_rating/init
+  // erstellt ohnehin nur für Spieler MIT player_in_season Ratings (siehe
+  // initPlayerRatingsForClub()), daher darf missingPlayers() unten auch nur diese anzeigen.
+  clubPlayers = signal<{ id: string; displayname: string; season_position: string | null }[]>([]);
 
   private loadClubPlayers(clubId: string): void {
     this.api.get<any[]>(`player?club_id=${clubId}`).pipe(
@@ -333,7 +338,7 @@ export class RatingsDataComponent {
   missingPlayers = computed(() => {
     if (this.selectedMatchday()?.completed) return [];
     const existingIds = new Set(this.ratings().map(r => r.player_id));
-    return this.clubPlayers().filter(p => !existingIds.has(p.id));
+    return this.clubPlayers().filter(p => p.season_position != null && !existingIds.has(p.id));
   });
 
   addingMissing = signal(false);
