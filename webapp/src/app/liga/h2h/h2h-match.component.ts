@@ -117,7 +117,7 @@ export class H2HMatchComponent implements OnDestroy {
   // ── Tipp-Verteilung als Kreisdiagramm (rein CSS conic-gradient, gleiches Muster wie
   // session-heatmap.component.ts's devicePie) — für die echte Auswertung (predictionEntries)
   // und die separate Admin-Vorschau (previewEntries) gleichermaßen nutzbar.
-  readonly drawColor = '#6b7280'; // == $color-text-muted, matcht den grauen Unentschieden-Button
+  readonly drawColor = '#a4b0be'; // matcht den grauen Unentschieden-Button (--pick-color default)
 
   private buildPickPie(entries: any[] | null | undefined): {
     gradient: string;
@@ -153,30 +153,26 @@ export class H2HMatchComponent implements OnDestroy {
 
   // ── Admin-Vorschau: Auswertung testweise schon vor Anpfiff sichtbar, als eigene, separat
   // geladene Karte (eigener Zustand statt predictions(), damit locked/my_pick unangetastet
-  // bleiben — normale Manager sehen davon nichts, siehe H2HPredictionTrait::getH2HPredictionState). ─
+  // bleiben — normale Manager sehen davon nichts, siehe H2HPredictionTrait::getH2HPredictionState).
+  // Wird automatisch geladen (siehe constructor-Effect), kein Klick nötig.
 
   isAdmin = computed(() => this.auth.isAdmin());
 
-  private previewData   = signal<any>(null);
-  previewLoading         = signal(false);
-  showingPreview         = signal(false);
-  previewEntries         = computed(() => (this.previewData()?.preview_entries ?? []) as any[]);
-  previewPie             = computed(() => this.buildPickPie(this.previewEntries()));
+  private previewData    = signal<any>(null);
+  previewEntries          = computed(() => (this.previewData()?.preview_entries ?? []) as any[]);
+  previewPie              = computed(() => this.buildPickPie(this.previewEntries()));
 
-  openPreview(): void {
+  private previewFetchTriggered = false;
+
+  private loadPreview(): void {
+    if (this.previewFetchTriggered) return;
     const matchId = this.match()?.id;
     if (!matchId) return;
-    this.showingPreview.set(true);
-    if (this.previewData() || this.previewLoading()) return;
-    this.previewLoading.set(true);
+    this.previewFetchTriggered = true;
     this.api.get<any>(`h2h/${matchId}?preview=1`).subscribe({
-      next: full => { this.previewData.set(full?.predictions ?? null); this.previewLoading.set(false); },
-      error: () => { this.previewLoading.set(false); this.showingPreview.set(false); },
+      next: full => this.previewData.set(full?.predictions ?? null),
+      error: () => { this.previewFetchTriggered = false; },
     });
-  }
-
-  closePreview(): void {
-    this.showingPreview.set(false);
   }
 
   homeSdsDefenders = computed(() => {
@@ -298,6 +294,11 @@ export class H2HMatchComponent implements OnDestroy {
     effect(() => {
       if (this.isRevealed() && !(this.predictions()?.locked ?? false)) {
         this.refetchPredictionsAfterKickoff();
+      }
+    });
+    effect(() => {
+      if (this.isAdmin() && !this.isRevealed() && this.match()?.id) {
+        this.loadPreview();
       }
     });
   }

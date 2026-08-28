@@ -15,7 +15,9 @@
 }
 
 // ── Desktop: 2-Spalten-Layout ──────────────────────────────────────────────────
-// Links (breit): Header + Feld/Bänke; rechts (schmal): Tipp-Karte. Alle drei Kinder sind
+// Links (breit): Header + Feld/Bänke; rechts (schmal): Sidebar-Slot mit Tipp-Karte + (nur
+// Admins, nur vor Anpfiff) derselben Auswertungs-Card darunter, siehe .h2h-detail-layout__side.
+// Alle drei direkten Kinder (.match-header/.h2h-field-wrap/.h2h-detail-layout__side) sind
 // bereits direkte Kinder dieses Wrappers (weder @if noch @for erzeugen ein eigenes
 // Hüll-Element) — auf Mobile bleibt der Wrapper ein normaler Block, die Kinder stapeln sich
 // also unverändert in Dokumentreihenfolge (kein Grid unterhalb des Breakpoints).
@@ -39,9 +41,16 @@
       grid-area: field;
       margin-bottom: 0;
     }
-    .h2h-predict-card {
+
+    .h2h-detail-layout__side {
       grid-area: side;
-      margin-bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: $space-6;
+
+      .h2h-predict-card {
+        margin-bottom: 0;
+      }
     }
   }
 }
@@ -269,13 +278,6 @@
     color: $color-danger;
   }
 
-  &--preview {
-    border-style: dashed;
-  }
-
-  &__close {
-    margin-top: $space-2;
-  }
 }
 
 // Kreisdiagramm der Tipp-Verteilung — gleiches Muster wie session-heatmap.component.scss's
@@ -331,9 +333,9 @@
 }
 
 // --pick-color: Team-Farbe (Home/Away, per [style] gesetzt) bzw. Mittelgrau bei Unentschieden
-// (--draw-Modifier) — treibt sowohl den Hover-Rahmen als auch die vollflächige aktive Füllung.
+// (Default-Wert unten) — treibt sowohl den Hover-Rahmen als auch die vollflächige aktive Füllung.
 .h2h-predict-btn {
-  --pick-color: #{$color-text-muted};
+  --pick-color: #a4b0be;
 
   flex: 1 1 0;
   min-width: 0;
