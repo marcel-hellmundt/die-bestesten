@@ -80,6 +80,16 @@ export class H2HMatchComponent implements OnDestroy {
     this.isRevealed() && (this.predictions()?.locked ?? false) && this.predictionEntries().length === 0
   );
 
+  // Tippen ist nur für Matches des aktuellen Spieltags möglich (siehe Backend
+  // H2HPredictionTrait::isCurrentH2HMatchday) — nur vor Anpfiff im Response enthalten, siehe
+  // getH2HPredictionState(). Bei einem bereits geplanten zukünftigen Spieltag bleibt die
+  // gesamte Tipp-Karte unsichtbar statt nur die Buttons zu deaktivieren.
+  canTipThisMatchday = computed(() => this.predictions()?.is_current_matchday ?? false);
+
+  hideCard = computed(() =>
+    this.hideEmptyResult() || (!this.isRevealed() && !this.canTipThisMatchday())
+  );
+
   private refetchedAfterKickoff = false;
 
   private refetchPredictionsAfterKickoff(): void {
@@ -109,7 +119,7 @@ export class H2HMatchComponent implements OnDestroy {
 
   submitPrediction(pick: 'home' | 'draw' | 'away'): void {
     const matchId = this.match()?.id;
-    if (!matchId || this.submittingPick() || this.isRevealed()) return;
+    if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday()) return;
 
     const previous = this.optimisticPick();
     this.optimisticPick.set(pick);

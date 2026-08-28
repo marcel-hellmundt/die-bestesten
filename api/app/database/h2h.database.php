@@ -463,9 +463,10 @@ trait H2HTrait
             $teamMap[$t['id']]    = $t;
         }
 
-        // Load matchday (global DB)
+        // Load matchday (global DB) — division_id wird für getH2HPredictionState()'s
+        // isCurrentH2HMatchday()-Check gebraucht (nur aktueller Spieltag ist tippbar)
         $mdq = $this->con->prepare(
-            "SELECT id, number, kickoff_date, start_date, completed FROM matchday WHERE id = :id LIMIT 1"
+            "SELECT id, number, kickoff_date, start_date, completed, division_id FROM matchday WHERE id = :id LIMIT 1"
         );
         $mdq->execute([':id' => $match['matchday_id']]);
         $matchday = $mdq->fetch(PDO::FETCH_ASSOC);
@@ -699,7 +700,7 @@ trait H2HTrait
             'away_lineup'  => $awayLineup['nominated'],
             'away_bench'   => $awayLineup['bench'],
             'odds'         => $this->calculateH2HOdds($homeLineup['nominated'], $awayLineup['nominated']),
-            'predictions'  => $this->getH2HPredictionState($match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $predictionsPreview),
+            'predictions'  => $this->getH2HPredictionState($match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $match['season_id'], $predictionsPreview),
         ];
     }
 

@@ -1064,7 +1064,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h/:id',
-                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten (inkl. price/season_points je Spieler), odds (deterministische Pseudo-Quote Heim/Unentschieden/Auswärts aus Marktwert+Saisonpunkten der jeweils aufgestellten Spieler, keine echten Einsätze), predictions (Tipp-Status, siehe POST /h2h_prediction) — Auth; ?preview=1 (nur Admin) liefert predictions.preview_entries testweise schon vor Anpfiff mit, ohne locked/my_pick zu verändern',
+                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten (inkl. price/season_points je Spieler), odds (deterministische Pseudo-Quote Heim/Unentschieden/Auswärts aus Marktwert+Saisonpunkten der jeweils aufgestellten Spieler, keine echten Einsätze), predictions (Tipp-Status, siehe POST /h2h_prediction) — Auth; predictions enthält vor Anpfiff zusätzlich is_current_matchday (bool) — nur bei true ist Tippen möglich, bei zukünftigen Spieltagen bleibt die Tipp-Karte im Frontend komplett unsichtbar; ?preview=1 (nur Admin) liefert predictions.preview_entries testweise schon vor Anpfiff mit, ohne locked/my_pick zu verändern',
                         'query_params' => ['preview' => '"1" — Admin-Vorschau der Tipp-Auswertung vor Anpfiff (optional)'],
                     ],
                     [
@@ -1148,7 +1148,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/h2h_prediction',
-                        'description' => 'Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist — Auth',
+                        'description' => 'Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist oder die Matchday nicht die aktuelle ist (kleinste noch nicht abgeschlossene number in Saison+Division) — Auth',
                         'body' => ['match_id' => 'UUID des H2H-Matches', 'pick' => 'home|draw|away'],
                     ],
                 ],

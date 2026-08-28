@@ -134,7 +134,7 @@
          isRevealed() — sperrt entweder weil der Server es meldet, oder weil die lokale Uhr den
          Anpfiff erkennt, während die Seite offen bleibt). -->
     @if (predictions(); as pred) {
-      @if (!hideEmptyResult()) {
+      @if (!hideCard()) {
         <div class="card h2h-predict-card">
           @if (!isRevealed()) {
             <div class="h2h-predict-card__label">Dein Tipp</div>
