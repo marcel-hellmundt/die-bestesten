@@ -48,7 +48,8 @@
       flex-direction: column;
       gap: $space-6;
 
-      .h2h-predict-card {
+      .h2h-predict-card,
+      .h2h-history-card {
         margin-bottom: 0;
       }
     }
@@ -449,6 +450,79 @@
     color: $color-text-muted;
     font-weight: $font-weight-medium;
     text-align: right;
+  }
+}
+
+// ── Bisherige Begegnungen ────────────────────────────────────────────────────
+
+.h2h-history-card {
+  padding: $space-4 $space-6;
+  margin-bottom: $space-6;
+}
+
+.h2h-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.h2h-history-row {
+  padding-bottom: $space-3;
+  border-bottom: 1px solid $color-border;
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  &__teams {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__team {
+    display: flex;
+    align-items: center;
+    gap: $space-1;
+    min-width: 0;
+    flex: 1 1 0;
+
+    &--away {
+      flex-direction: row-reverse;
+      text-align: right;
+    }
+  }
+
+  &__logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: $font-xs;
+    color: $color-text;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__score {
+    flex-shrink: 0;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    padding: 0 $space-2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__meta {
+    margin-top: 2px;
+    font-size: $font-2xs;
+    color: $color-text-muted;
+    text-align: center;
   }
 }
 

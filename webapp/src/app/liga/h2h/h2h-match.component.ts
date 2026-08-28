@@ -49,6 +49,10 @@ export class H2HMatchComponent implements OnDestroy {
   // H2HTrait::calculateH2HOdds() im Backend für die Berechnung.
   odds = computed(() => this.data()?.odds ?? null);
 
+  // Alle bisherigen (abgeschlossenen) H2H-Begegnungen zwischen genau diesen beiden Managern,
+  // liga- und saisonübergreifend — siehe H2HTrait::getH2HHeadToHeadHistory() im Backend.
+  headToHead = computed(() => (this.data()?.head_to_head ?? []) as any[]);
+
   // ── Tipp abgeben (bis Anpfiff privat/änderbar, danach für alle sichtbar) ───────
 
   // predictionsOverride greift, sobald der clientseitige Anpfiff-Check (kickoffPassed) zuschlägt,
@@ -273,12 +277,15 @@ export class H2HMatchComponent implements OnDestroy {
     return map[pos] ?? 'transparent';
   }
 
-  phaseLabel = computed(() => {
-    const map: Record<string, string> = {
-      group: 'Gruppenphase', quarterfinal: 'Viertelfinale', semifinal: 'Halbfinale', final: 'Finale',
-    };
-    return map[this.match()?.phase ?? ''] ?? '';
-  });
+  private readonly phaseLabels: Record<string, string> = {
+    group: 'Gruppenphase', quarterfinal: 'Viertelfinale', semifinal: 'Halbfinale', final: 'Finale',
+  };
+  phaseLabel = computed(() => this.phaseLabels[this.match()?.phase ?? ''] ?? '');
+  phaseLabelFor(phase: string): string { return this.phaseLabels[phase] ?? ''; }
+
+  teamLogoUrl(seasonId: string, teamId: string): string {
+    return `https://img.die-bestesten.de/team/${seasonId}/${teamId}.png`;
+  }
 
   showBench = false;
 

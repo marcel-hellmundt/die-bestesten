@@ -704,7 +704,100 @@ trait H2HTrait
                 $match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $match['season_id'],
                 $homeTeam['manager_id'] ?? null, $awayTeam['manager_id'] ?? null, $predictionsPreview
             ),
+            'head_to_head' => ($homeTeam['manager_id'] ?? null) && ($awayTeam['manager_id'] ?? null)
+                ? $this->getH2HHeadToHeadHistory($homeTeam['manager_id'], $awayTeam['manager_id'], $match['id'])
+                : [],
         ];
+    }
+
+    /**
+     * Alle abgeschlossenen H2H-Matches zwischen genau diesen beiden Managern (unabhängig davon,
+     * wer Heim/Auswärts war) — liga- und saisonübergreifend, da manager_id (team.manager_id) über
+     * alle Liga-DBs hinweg dieselbe globale ID ist. Iteriert dafür über jede Liga aus der globalen
+     * league-Tabelle und verbindet sich einzeln (siehe LeagueTrait::openLeagueConnection(), gleiches
+     * Muster wie LeagueTrait::getDraftPool()), statt sich auf con_league (nur die aktuelle Liga des
+     * JWT) zu verlassen. $excludeMatchId blendet das gerade betrachtete Match selbst aus der Liste
+     * aus ("bisherige" Begegnungen, nicht die aktuelle). Neueste zuerst (kickoff_date DESC).
+     */
+    private function getH2HHeadToHeadHistory(string $managerAId, string $managerBId, string $excludeMatchId): array
+    {
+        $leagues = $this->con->query("SELECT id, name, db_name FROM league")->fetchAll(PDO::FETCH_ASSOC);
+
+        $rawMatches = [];
+        foreach ($leagues as $league) {
+            $con = $this->openLeagueConnection($league['db_name']);
+            if (!$con) continue;
+
+            try {
+                $mq = $con->prepare(
+                    "SELECT hm.id, hm.season_id, hm.phase, hm.leg, hm.matchday_id,
+                            th.id AS home_team_id, th.team_name AS home_team_name, th.color_primary AS home_color, th.manager_id AS home_manager_id,
+                            ta.id AS away_team_id, ta.team_name AS away_team_name, ta.color_primary AS away_color, ta.manager_id AS away_manager_id,
+                            tr_h.goals AS home_goals_raw, tr_h.assists AS home_assists, tr_h.sds_defender AS home_sds_defender, tr_h.invalid AS home_invalid,
+                            tr_a.goals AS away_goals_raw, tr_a.assists AS away_assists, tr_a.sds_defender AS away_sds_defender, tr_a.invalid AS away_invalid
+                     FROM h2h_match hm
+                     JOIN team th ON th.id = hm.home_team_id
+                     JOIN team ta ON ta.id = hm.away_team_id
+                     LEFT JOIN team_rating tr_h ON tr_h.team_id = th.id AND tr_h.matchday_id = hm.matchday_id
+                     LEFT JOIN team_rating tr_a ON tr_a.team_id = ta.id AND tr_a.matchday_id = hm.matchday_id
+                     WHERE hm.id != :exclude
+                       AND ((th.manager_id = :a AND ta.manager_id = :b) OR (th.manager_id = :b AND ta.manager_id = :a))"
+                );
+                $mq->execute([':exclude' => $excludeMatchId, ':a' => $managerAId, ':b' => $managerBId]);
+                foreach ($mq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $row['league_id']   = $league['id'];
+                    $row['league_name'] = $league['name'];
+                    $rawMatches[]       = $row;
+                }
+            } catch (PDOException) {
+                continue;
+            }
+        }
+
+        if (empty($rawMatches)) return [];
+
+        // matchday ist eine globale Tabelle — jede Liga-DB verweist per matchday_id auf dieselbe Zeile
+        $matchdayIds = array_values(array_unique(array_column($rawMatches, 'matchday_id')));
+        $ph          = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $mdQ         = $this->con->prepare("SELECT id, number, kickoff_date, completed FROM matchday WHERE id IN ($ph)");
+        $mdQ->execute($matchdayIds);
+        $matchdayMap = array_column($mdQ->fetchAll(PDO::FETCH_ASSOC), null, 'id');
+
+        $history = [];
+        foreach ($rawMatches as $m) {
+            $md = $matchdayMap[$m['matchday_id']] ?? null;
+            if (!$md || !$md['completed']) continue; // nur tatsächlich gespielte Begegnungen zählen
+
+            $goals = $this->h2hGoals(
+                ['goals' => $m['home_goals_raw'], 'assists' => $m['home_assists'], 'sds_defender' => $m['home_sds_defender'], 'invalid' => $m['home_invalid']],
+                ['goals' => $m['away_goals_raw'], 'assists' => $m['away_assists'], 'sds_defender' => $m['away_sds_defender'], 'invalid' => $m['away_invalid']],
+            );
+
+            $history[] = [
+                'id'              => $m['id'],
+                'league_id'       => $m['league_id'],
+                'league_name'     => $m['league_name'],
+                'season_id'       => $m['season_id'],
+                'matchday_number' => (int) $md['number'],
+                'kickoff_date'    => $md['kickoff_date'],
+                'phase'           => $m['phase'],
+                'leg'             => (int) $m['leg'],
+                'home_team_id'    => $m['home_team_id'],
+                'home_team_name'  => $m['home_team_name'],
+                'home_color'      => $this->resolveColor($m['home_color']),
+                'home_manager_id' => $m['home_manager_id'],
+                'away_team_id'    => $m['away_team_id'],
+                'away_team_name'  => $m['away_team_name'],
+                'away_color'      => $this->resolveColor($m['away_color']),
+                'away_manager_id' => $m['away_manager_id'],
+                'home_goals'      => $goals['home'],
+                'away_goals'      => $goals['away'],
+            ];
+        }
+
+        usort($history, fn($a, $b) => strcmp($b['kickoff_date'] ?? '', $a['kickoff_date'] ?? ''));
+
+        return $history;
     }
 
     // --- Group CRUD ---

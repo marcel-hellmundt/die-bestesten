@@ -218,6 +218,50 @@
         <ng-container *ngTemplateOutlet="pieResult; context: { pie: previewPie(), entries: previewEntries() }"></ng-container>
       </div>
     }
+
+    <!-- Alle bisherigen Begegnungen dieser beiden Manager, liga- und saisonübergreifend,
+         neueste oben (siehe H2HTrait::getH2HHeadToHeadHistory()). -->
+    @if (headToHead().length > 0) {
+      <div class="card h2h-history-card">
+        <div class="h2h-predict-card__label">Bisherige Begegnungen</div>
+        <div class="h2h-history-list">
+          @for (m of headToHead(); track m.id) {
+            <div class="h2h-history-row">
+              <div class="h2h-history-row__teams">
+                <div class="h2h-history-row__team h2h-history-row__team--home">
+                  <img
+                    class="h2h-history-row__logo"
+                    [src]="teamLogoUrl(m.season_id, m.home_team_id)"
+                    (error)="$any($event.target).style.display = 'none'"
+                    alt=""
+                  />
+                  <span class="h2h-history-row__name">{{ m.home_team_name }}</span>
+                </div>
+                <div class="h2h-history-row__score">
+                  @if (m.home_goals != null && m.away_goals != null) {
+                    {{ m.home_goals }}:{{ m.away_goals }}
+                  } @else {
+                    –:–
+                  }
+                </div>
+                <div class="h2h-history-row__team h2h-history-row__team--away">
+                  <span class="h2h-history-row__name">{{ m.away_team_name }}</span>
+                  <img
+                    class="h2h-history-row__logo"
+                    [src]="teamLogoUrl(m.season_id, m.away_team_id)"
+                    (error)="$any($event.target).style.display = 'none'"
+                    alt=""
+                  />
+                </div>
+              </div>
+              <div class="h2h-history-row__meta">
+                {{ m.league_name }} · {{ phaseLabelFor(m.phase) }} · Spieltag {{ m.matchday_number }}
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
   </div>
 
   <!-- Mobile: team toggle + pitch view of the selected team; desktop shows both teams at
