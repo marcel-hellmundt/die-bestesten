@@ -68,6 +68,13 @@ export class H2HMatchComponent implements OnDestroy {
   // erkennt, bevor ein Refetch die serverseitige Bestätigung nachgeliefert hat.
   isRevealed = computed(() => (this.predictions()?.locked ?? false) || this.kickoffPassed());
 
+  // Gibt es nach Anpfiff keinen einzigen Tipp, wird die ganze Auswertungs-Card ausgeblendet
+  // statt nur "Niemand hat getippt." darin anzuzeigen. Der kurze Übergangszustand ("Wird
+  // ausgewertet…", locked noch nicht bestätigt) bleibt davon unberührt.
+  hideEmptyResult = computed(() =>
+    this.isRevealed() && (this.predictions()?.locked ?? false) && this.predictionEntries().length === 0
+  );
+
   private refetchedAfterKickoff = false;
 
   private refetchPredictionsAfterKickoff(): void {
