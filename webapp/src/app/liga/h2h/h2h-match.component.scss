@@ -14,6 +14,38 @@
   }
 }
 
+// ── Desktop: 2-Spalten-Layout ──────────────────────────────────────────────────
+// Links (breit): Header + Feld/Bänke; rechts (schmal): Tipp-Karte. Alle drei Kinder sind
+// bereits direkte Kinder dieses Wrappers (weder @if noch @for erzeugen ein eigenes
+// Hüll-Element) — auf Mobile bleibt der Wrapper ein normaler Block, die Kinder stapeln sich
+// also unverändert in Dokumentreihenfolge (kein Grid unterhalb des Breakpoints).
+
+.h2h-detail-layout {
+  @media (min-width: calc($mobile-breakpoint + 1px)) {
+    display: grid;
+    grid-template-columns: 1fr minmax(240px, 300px);
+    grid-template-areas:
+      "header side"
+      "field  side";
+    align-items: start;
+    gap: $space-6;
+    margin-bottom: $space-6;
+
+    .match-header {
+      grid-area: header;
+      margin-bottom: 0;
+    }
+    .h2h-field-wrap {
+      grid-area: field;
+      margin-bottom: 0;
+    }
+    .h2h-predict-card {
+      grid-area: side;
+      margin-bottom: 0;
+    }
+  }
+}
+
 // ── Header / Scoreboard ───────────────────────────────────────────────────────
 
 .match-header {

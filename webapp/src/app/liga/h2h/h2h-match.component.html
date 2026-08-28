@@ -5,6 +5,9 @@
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else if (data()) {
+  <!-- Desktop: 2-Spalten-Layout — links (breit) Header+Feld+Bänke, rechts (schmal) Tipp-Karte.
+       Auf Mobile ohne Wirkung (kein Grid dort) — Reihenfolge bleibt die normale Dokumentreihenfolge. -->
+  <div class="h2h-detail-layout">
   <!-- Header -->
   <div class="match-header card">
     <div class="match-meta">
@@ -295,6 +298,7 @@
         }
       </div>
     }
+  </div>
   </div>
 
   <ng-template #fieldPlayer let-p="p">
