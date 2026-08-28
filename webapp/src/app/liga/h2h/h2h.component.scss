@@ -304,6 +304,17 @@
 .h2h-pending {
   font-size: $font-xs;
   color: $color-text-muted;
+
+  // Match des aktuellen Spieltags, noch ohne Rating/Tore (egal ob vor oder nach Anpfiff) —
+  // blinkt statt statisch grau, um auf die anstehende/laufende Partie aufmerksam zu machen.
+  &--current {
+    animation: h2h-pending-blink 1.6s ease infinite;
+  }
+}
+
+@keyframes h2h-pending-blink {
+  0%, 100% { color: #fff; }
+  50%      { color: #f3f053; }
 }
 
 // ── Knockout ──────────────────────────────────────────────────────────────────
