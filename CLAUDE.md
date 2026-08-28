@@ -234,7 +234,7 @@ GET      /session               — ?range=day|month|year|all (optional, default
 
 **notification_preference**: manager_id FK + channel ENUM(in_app/push) DEFAULT in_app + event_type VARCHAR(50) PK (zusammen) — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; je ein Toggle pro (channel, event_type); nicht jedes event_type unterstützt beide Channels — event_types: matchday_completed (nur in_app), achievement_earned (in_app+push), h2h_draw (nur in_app), scouted_player_update (in_app+push), lineup_player_goal (in_app+push), siehe NotificationTrait::NOTIFICATION_CHANNELS
 
-**push_subscription**: id PK, manager_id FK, endpoint VARCHAR(500) UNIQUE (vom Browser vergebene Push-Service-URL), p256dh VARCHAR(255), auth VARCHAR(255) (Verschlüsselungs-Keys des Browser-Abos), created_at — Web-Push-Abo eines Browsers/Geräts (siehe PushSubscriptionTrait, POST/DELETE /push_subscription); ein Manager kann mehrere Abos haben (mehrere Geräte/Browser)
+**notification_push_subscription**: id PK, manager_id FK, endpoint VARCHAR(500) UNIQUE (vom Browser vergebene Push-Service-URL), p256dh VARCHAR(255), auth VARCHAR(255) (Verschlüsselungs-Keys des Browser-Abos), created_at — Web-Push-Abo eines Browsers/Geräts (siehe PushSubscriptionTrait, POST/DELETE /push_subscription); ein Manager kann mehrere Abos haben (mehrere Geräte/Browser)
 
 **manager_achievement**: id PK, manager_id FK, achievement_id FK → achievement (echtes FK, gleiche DB!), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen
 

@@ -11,7 +11,7 @@ trait PushSubscriptionTrait
     public function savePushSubscription(string $managerId, string $endpoint, string $p256dh, string $auth): void
     {
         $this->con->prepare(
-            "INSERT INTO push_subscription (id, manager_id, endpoint, p256dh, auth)
+            "INSERT INTO notification_push_subscription (id, manager_id, endpoint, p256dh, auth)
              VALUES (UUID(), :manager_id, :endpoint, :p256dh, :auth)
              ON DUPLICATE KEY UPDATE manager_id = VALUES(manager_id), p256dh = VALUES(p256dh), auth = VALUES(auth)"
         )->execute([
@@ -25,14 +25,14 @@ trait PushSubscriptionTrait
     public function deletePushSubscription(string $managerId, string $endpoint): void
     {
         $this->con->prepare(
-            "DELETE FROM push_subscription WHERE manager_id = :manager_id AND endpoint = :endpoint"
+            "DELETE FROM notification_push_subscription WHERE manager_id = :manager_id AND endpoint = :endpoint"
         )->execute([':manager_id' => $managerId, ':endpoint' => $endpoint]);
     }
 
     private function deletePushSubscriptionByEndpoint(string $endpoint): void
     {
         $this->con->prepare(
-            "DELETE FROM push_subscription WHERE endpoint = :endpoint"
+            "DELETE FROM notification_push_subscription WHERE endpoint = :endpoint"
         )->execute([':endpoint' => $endpoint]);
     }
 
@@ -52,7 +52,7 @@ trait PushSubscriptionTrait
         }
 
         $ph = implode(',', array_fill(0, count($managerIds), '?'));
-        $q  = $this->con->prepare("SELECT endpoint, p256dh, auth FROM push_subscription WHERE manager_id IN ($ph)");
+        $q  = $this->con->prepare("SELECT endpoint, p256dh, auth FROM notification_push_subscription WHERE manager_id IN ($ph)");
         $q->execute(array_values($managerIds));
         $subscriptions = $q->fetchAll(PDO::FETCH_ASSOC);
         if (empty($subscriptions)) return;
