@@ -86,7 +86,8 @@
           <span class="pr-overview__table-label">Tabelle</span>
         </div>
         @for (s of realTable(); track s.team_id) {
-          <div class="pr-overview__row">
+          <div class="pr-overview__row pr-overview__row--table">
+            <span class="pr-overview__position">{{ s.actual_position }}.</span>
             <img
               class="pr-overview__logo"
               [src]="logoFailed(s.team_id) ? 'img/placeholders/club.png' : teamLogoUrl(s.season_id, s.team_id)"

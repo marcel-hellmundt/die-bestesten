@@ -199,7 +199,7 @@
   width: 48px;
 
   &--table {
-    width: 52px;
+    width: 72px;
     position: sticky;
     left: 0;
     z-index: $z-raised;
@@ -266,6 +266,20 @@
   justify-content: center;
   height: 44px;
   border-bottom: 1px solid $color-border;
+
+  &--table {
+    justify-content: flex-start;
+    gap: 4px;
+  }
+}
+
+.pr-overview__position {
+  flex-shrink: 0;
+  width: 20px;
+  text-align: right;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
 }
 
 .pr-overview__logo {
