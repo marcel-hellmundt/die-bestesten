@@ -397,7 +397,7 @@ trait H2HTrait
         return $result;
     }
 
-    public function getH2HMatchDetail(string $matchId): array|false
+    public function getH2HMatchDetail(string $matchId, bool $predictionsPreview = false): array|false
     {
         // Load match
         $mq = $this->con_league->prepare(
@@ -645,7 +645,7 @@ trait H2HTrait
             'home_bench'   => $homeLineup['bench'],
             'away_lineup'  => $awayLineup['nominated'],
             'away_bench'   => $awayLineup['bench'],
-            'predictions'  => $this->getH2HPredictionState($match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday),
+            'predictions'  => $this->getH2HPredictionState($match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $predictionsPreview),
         ];
     }
 

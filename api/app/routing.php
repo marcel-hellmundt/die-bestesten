@@ -1064,7 +1064,8 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h/:id',
-                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten, predictions (Tipp-Status, siehe POST /h2h_prediction) — Auth',
+                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten, predictions (Tipp-Status, siehe POST /h2h_prediction) — Auth; ?preview=1 (nur Admin) liefert predictions.preview_entries testweise schon vor Anpfiff mit, ohne locked/my_pick zu verändern',
+                        'query_params' => ['preview' => '"1" — Admin-Vorschau der Tipp-Auswertung vor Anpfiff (optional)'],
                     ],
                     [
                         'method' => 'POST',

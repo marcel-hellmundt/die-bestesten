@@ -268,6 +268,66 @@
   &__error {
     color: $color-danger;
   }
+
+  &--preview {
+    border-style: dashed;
+  }
+
+  &__close {
+    margin-top: $space-2;
+  }
+}
+
+// Kreisdiagramm der Tipp-Verteilung — gleiches Muster wie session-heatmap.component.scss's
+// .device-pie (reiner CSS conic-gradient statt SVG), nur mit 3 statt 2 Segmenten.
+.h2h-predict-pie {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-3;
+
+  &__circle {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+  }
+
+  &__legend {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    min-width: 0;
+  }
+
+  &__legend-row {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    font-size: $font-xs;
+  }
+
+  &__dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  &__legend-label {
+    color: $color-text-muted;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__legend-value {
+    flex-shrink: 0;
+    margin-left: auto;
+    font-weight: $font-weight-medium;
+    font-variant-numeric: tabular-nums;
+    color: $color-text;
+  }
 }
 
 // --pick-color: Team-Farbe (Home/Away, per [style] gesetzt) bzw. Mittelgrau bei Unentschieden

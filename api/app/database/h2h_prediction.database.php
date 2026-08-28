@@ -8,37 +8,46 @@ trait H2HPredictionTrait
      * Tipps anderer Manager bleiben geheim, bis der Anpfiff sie sperrt; danach alle Tipps offen.
      * $matchday kommt bereits geladen vom Aufrufer (getH2HMatchDetail hat es ohnehin schon per
      * matchday_id nachgeschlagen), um hier keine zweite Abfrage für den Sperrstatus zu brauchen.
+     *
+     * $preview (nur vom Controller für Admins gesetzt, siehe H2HController::get()) liefert die
+     * Auswertung testweise schon vor Anpfiff mit — unter dem separaten Feld preview_entries statt
+     * entries, damit locked für alle anderen (nicht-preview) Aufrufer korrekt false bleibt und
+     * normale Manager davon nichts sehen; my_pick bleibt parallel verfügbar, der Admin kann also
+     * weiterhin normal tippen, während er sich die Vorschau ansieht.
      */
-    public function getH2HPredictionState(string $matchId, string $managerId, ?array $matchday): array
+    public function getH2HPredictionState(string $matchId, string $managerId, ?array $matchday, bool $preview = false): array
     {
         $kickoffDate = $matchday['kickoff_date'] ?? null;
         $locked      = $kickoffDate !== null && strtotime($kickoffDate) <= time();
+
+        $result = ['locked' => $locked, 'kickoff_date' => $kickoffDate];
 
         if (!$locked) {
             $mine = $this->con_league->prepare(
                 "SELECT pick FROM h2h_prediction WHERE match_id = :mid AND manager_id = :man LIMIT 1"
             );
             $mine->execute([':mid' => $matchId, ':man' => $managerId]);
-
-            return [
-                'locked'       => false,
-                'kickoff_date' => $kickoffDate,
-                'my_pick'      => $mine->fetchColumn() ?: null,
-            ];
+            $result['my_pick'] = $mine->fetchColumn() ?: null;
         }
 
-        $allQ = $this->con_league->prepare(
-            "SELECT hp.manager_id, m.manager_name, m.alias, hp.pick
-             FROM h2h_prediction hp JOIN manager m ON m.id = hp.manager_id
-             WHERE hp.match_id = :mid ORDER BY m.manager_name ASC"
-        );
-        $allQ->execute([':mid' => $matchId]);
+        if ($locked || $preview) {
+            $allQ = $this->con_league->prepare(
+                "SELECT hp.manager_id, m.manager_name, m.alias, hp.pick
+                 FROM h2h_prediction hp JOIN manager m ON m.id = hp.manager_id
+                 WHERE hp.match_id = :mid ORDER BY m.manager_name ASC"
+            );
+            $allQ->execute([':mid' => $matchId]);
+            $entries = $allQ->fetchAll(PDO::FETCH_ASSOC);
 
-        return [
-            'locked'       => true,
-            'kickoff_date' => $kickoffDate,
-            'entries'      => $allQ->fetchAll(PDO::FETCH_ASSOC),
-        ];
+            if ($locked) {
+                $result['entries'] = $entries;
+            } else {
+                $result['preview']         = true;
+                $result['preview_entries'] = $entries;
+            }
+        }
+
+        return $result;
     }
 
     /**

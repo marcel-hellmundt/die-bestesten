@@ -126,10 +126,12 @@
     }
   </div>
 
-  <!-- Tipp abgeben: bis Anpfiff der eigene, änderbare Tipp; danach die Tipps aller Manager. -->
+  <!-- Tipp abgeben: bis Anpfiff der eigene, änderbare Tipp; danach die Tipps aller Manager (siehe
+       isRevealed() — sperrt entweder weil der Server es meldet, oder weil die lokale Uhr den
+       Anpfiff erkennt, während die Seite offen bleibt). -->
   @if (predictions(); as pred) {
     <div class="card h2h-predict-card">
-      @if (!pred.locked) {
+      @if (!isRevealed()) {
         <div class="h2h-predict-card__label">Dein Tipp</div>
         <div class="h2h-predict-card__options">
           <button
@@ -173,20 +175,12 @@
         } @else {
           <p class="h2h-predict-card__hint">Tipp änderbar bis Anpfiff.</p>
         }
+      } @else if (pred.locked) {
+        <div class="h2h-predict-card__label">Tipps</div>
+        <ng-container *ngTemplateOutlet="pieResult; context: { pie: resultPie(), entries: predictionEntries() }"></ng-container>
       } @else {
         <div class="h2h-predict-card__label">Tipps</div>
-        @if (predictionEntries().length > 0) {
-          <div class="h2h-predict-list">
-            @for (e of predictionEntries(); track e.manager_id) {
-              <div class="h2h-predict-row">
-                <span class="h2h-predict-row__name">{{ e.manager_name }}</span>
-                <span class="h2h-predict-row__pick">{{ pickLabel(e.pick) }}</span>
-              </div>
-            }
-          </div>
-        } @else {
-          <p class="state-msg">Niemand hat getippt.</p>
-        }
+        <p class="state-msg">Wird ausgewertet…</p>
       }
     </div>
   }
@@ -317,6 +311,55 @@
     }
   </div>
   </div>
+
+  @if (isAdmin() && !isRevealed()) {
+    <div class="card h2h-predict-card h2h-predict-card--preview">
+      <div class="h2h-predict-card__label">Admin-Vorschau (Auswertung)</div>
+      @if (!showingPreview()) {
+        <button class="btn btn--ghost btn--sm" (click)="openPreview()">Vorschau anzeigen</button>
+      } @else if (previewLoading()) {
+        <p class="state-msg">Laden…</p>
+      } @else {
+        <ng-container *ngTemplateOutlet="pieResult; context: { pie: previewPie(), entries: previewEntries() }"></ng-container>
+        <button class="btn btn--ghost btn--sm h2h-predict-card__close" (click)="closePreview()">Vorschau schließen</button>
+      }
+    </div>
+  }
+
+  <ng-template #pieResult let-pie="pie" let-entries="entries">
+    @if (pie) {
+      <div class="h2h-predict-pie">
+        <div class="h2h-predict-pie__circle" [style.background]="pie.gradient"></div>
+        <div class="h2h-predict-pie__legend">
+          <div class="h2h-predict-pie__legend-row">
+            <span class="h2h-predict-pie__dot" [style.background-color]="homeTeam()?.color"></span>
+            <span class="h2h-predict-pie__legend-label">{{ homeTeam()?.team_name }}</span>
+            <span class="h2h-predict-pie__legend-value">{{ pie.homeCount }} ({{ pie.homePct }}%)</span>
+          </div>
+          <div class="h2h-predict-pie__legend-row">
+            <span class="h2h-predict-pie__dot" [style.background-color]="drawColor"></span>
+            <span class="h2h-predict-pie__legend-label">Unentschieden</span>
+            <span class="h2h-predict-pie__legend-value">{{ pie.drawCount }} ({{ pie.drawPct }}%)</span>
+          </div>
+          <div class="h2h-predict-pie__legend-row">
+            <span class="h2h-predict-pie__dot" [style.background-color]="awayTeam()?.color"></span>
+            <span class="h2h-predict-pie__legend-label">{{ awayTeam()?.team_name }}</span>
+            <span class="h2h-predict-pie__legend-value">{{ pie.awayCount }} ({{ pie.awayPct }}%)</span>
+          </div>
+        </div>
+      </div>
+      <div class="h2h-predict-list">
+        @for (e of entries; track e.manager_id) {
+          <div class="h2h-predict-row">
+            <span class="h2h-predict-row__name">{{ e.manager_name }}</span>
+            <span class="h2h-predict-row__pick">{{ pickLabel(e.pick) }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="state-msg">Niemand hat getippt.</p>
+    }
+  </ng-template>
 
   <ng-template #fieldPlayer let-p="p">
     <a class="field-player" [routerLink]="['/daten/player', p.player_id]">

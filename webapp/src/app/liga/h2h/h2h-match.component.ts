@@ -1,8 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-h2h-match',
@@ -10,8 +11,9 @@ import { ApiService } from '../../core/api.service';
   templateUrl: './h2h-match.component.html',
   styleUrl: './h2h-match.component.scss',
 })
-export class H2HMatchComponent {
-  private api = inject(ApiService);
+export class H2HMatchComponent implements OnDestroy {
+  private api  = inject(ApiService);
+  private auth = inject(AuthService);
 
   private id$ = inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id')!));
 
@@ -44,9 +46,40 @@ export class H2HMatchComponent {
 
   // ── Tipp abgeben (bis Anpfiff privat/änderbar, danach für alle sichtbar) ───────
 
-  predictions        = computed(() => this.data()?.predictions ?? null);
-  predictionsLocked  = computed(() => this.predictions()?.locked ?? false);
-  predictionEntries  = computed(() => (this.predictions()?.entries ?? []) as any[]);
+  // predictionsOverride greift, sobald der clientseitige Anpfiff-Check (kickoffPassed) zuschlägt,
+  // bevor die ursprünglich geladene Antwort das noch weiß (siehe refetchPredictionsAfterKickoff) —
+  // so verschwindet die Tipp-Karte exakt am Anpfiff, auch wenn die Seite seit vorher offen ist,
+  // statt erst beim nächsten manuellen Neuladen.
+  private predictionsOverride = signal<any>(null);
+  predictions       = computed(() => this.predictionsOverride() ?? this.data()?.predictions ?? null);
+  predictionEntries = computed(() => (this.predictions()?.entries ?? []) as any[]);
+
+  // Tickt alle 15s, damit kickoffPassed() auch ohne Nutzerinteraktion irgendwann auf true kippt,
+  // wenn die Seite über den tatsächlichen Anpfiff hinaus offen bleibt.
+  private now = signal(Date.now());
+  private tickHandle?: ReturnType<typeof setInterval>;
+
+  kickoffPassed = computed(() => {
+    const kd = this.predictions()?.kickoff_date;
+    return kd ? this.now() >= new Date(kd).getTime() : false;
+  });
+
+  // "Gesperrt" entweder weil der Server es schon so meldet, oder weil die lokale Uhr den Anpfiff
+  // erkennt, bevor ein Refetch die serverseitige Bestätigung nachgeliefert hat.
+  isRevealed = computed(() => (this.predictions()?.locked ?? false) || this.kickoffPassed());
+
+  private refetchedAfterKickoff = false;
+
+  private refetchPredictionsAfterKickoff(): void {
+    if (this.refetchedAfterKickoff) return;
+    const matchId = this.match()?.id;
+    if (!matchId) return;
+    this.refetchedAfterKickoff = true;
+    this.api.get<any>(`h2h/${matchId}`).subscribe({
+      next: full => this.predictionsOverride.set(full?.predictions ?? null),
+      error: () => { this.refetchedAfterKickoff = false; },
+    });
+  }
 
   // Optimistisches Update, damit der Klick sofort im UI ankommt statt auf den nächsten
   // Server-Roundtrip zu warten — bei Fehlschlag (z.B. Anpfiff inzwischen erfolgt) wird die
@@ -64,7 +97,7 @@ export class H2HMatchComponent {
 
   submitPrediction(pick: 'home' | 'draw' | 'away'): void {
     const matchId = this.match()?.id;
-    if (!matchId || this.submittingPick()) return;
+    if (!matchId || this.submittingPick() || this.isRevealed()) return;
 
     const previous = this.optimisticPick();
     this.optimisticPick.set(pick);
@@ -79,6 +112,71 @@ export class H2HMatchComponent {
         this.predictionError.set(err?.error?.message ?? 'Tipp konnte nicht gespeichert werden.');
       },
     });
+  }
+
+  // ── Tipp-Verteilung als Kreisdiagramm (rein CSS conic-gradient, gleiches Muster wie
+  // session-heatmap.component.ts's devicePie) — für die echte Auswertung (predictionEntries)
+  // und die separate Admin-Vorschau (previewEntries) gleichermaßen nutzbar.
+  readonly drawColor = '#6b7280'; // == $color-text-muted, matcht den grauen Unentschieden-Button
+
+  private buildPickPie(entries: any[] | null | undefined): {
+    gradient: string;
+    homeCount: number; drawCount: number; awayCount: number;
+    homePct: number; drawPct: number; awayPct: number;
+  } | null {
+    if (!entries || entries.length === 0) return null;
+
+    let homeCount = 0, drawCount = 0, awayCount = 0;
+    for (const e of entries) {
+      if (e.pick === 'home') homeCount++;
+      else if (e.pick === 'away') awayCount++;
+      else drawCount++;
+    }
+
+    const total    = entries.length;
+    const homePct  = Math.round(homeCount / total * 100);
+    const drawPct  = Math.round(drawCount / total * 100);
+    const awayPct  = 100 - homePct - drawPct;
+    const homeEnd  = homePct;
+    const drawEnd  = homePct + drawPct;
+
+    const homeColor = this.homeTeam()?.color ?? this.drawColor;
+    const awayColor = this.awayTeam()?.color ?? this.drawColor;
+
+    return {
+      gradient: `conic-gradient(${homeColor} 0% ${homeEnd}%, ${this.drawColor} ${homeEnd}% ${drawEnd}%, ${awayColor} ${drawEnd}% 100%)`,
+      homeCount, drawCount, awayCount, homePct, drawPct, awayPct,
+    };
+  }
+
+  resultPie = computed(() => this.buildPickPie(this.predictionEntries()));
+
+  // ── Admin-Vorschau: Auswertung testweise schon vor Anpfiff sichtbar, als eigene, separat
+  // geladene Karte (eigener Zustand statt predictions(), damit locked/my_pick unangetastet
+  // bleiben — normale Manager sehen davon nichts, siehe H2HPredictionTrait::getH2HPredictionState). ─
+
+  isAdmin = computed(() => this.auth.isAdmin());
+
+  private previewData   = signal<any>(null);
+  previewLoading         = signal(false);
+  showingPreview         = signal(false);
+  previewEntries         = computed(() => (this.previewData()?.preview_entries ?? []) as any[]);
+  previewPie             = computed(() => this.buildPickPie(this.previewEntries()));
+
+  openPreview(): void {
+    const matchId = this.match()?.id;
+    if (!matchId) return;
+    this.showingPreview.set(true);
+    if (this.previewData() || this.previewLoading()) return;
+    this.previewLoading.set(true);
+    this.api.get<any>(`h2h/${matchId}?preview=1`).subscribe({
+      next: full => { this.previewData.set(full?.predictions ?? null); this.previewLoading.set(false); },
+      error: () => { this.previewLoading.set(false); this.showingPreview.set(false); },
+    });
+  }
+
+  closePreview(): void {
+    this.showingPreview.set(false);
   }
 
   homeSdsDefenders = computed(() => {
@@ -193,5 +291,18 @@ export class H2HMatchComponent {
 
   positionPlayers(lineup: any[], pos: string): any[] {
     return lineup.filter(p => p.position === pos);
+  }
+
+  constructor() {
+    this.tickHandle = setInterval(() => this.now.set(Date.now()), 15_000);
+    effect(() => {
+      if (this.isRevealed() && !(this.predictions()?.locked ?? false)) {
+        this.refetchPredictionsAfterKickoff();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.tickHandle !== undefined) clearInterval(this.tickHandle);
   }
 }
