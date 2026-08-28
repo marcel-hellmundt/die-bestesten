@@ -541,6 +541,10 @@
   gap: $space-2;
 }
 
+// Positions-Ribbon wie team/lineup/lineup.component.scss's .bench-player--chip: eine um
+// -45deg rotierte Farbfläche in der oberen linken Ecke statt eines Textlabels — hier auf
+// die schmale, vertikale Kartenform dieser Bank-Karten übertragen (gleiches Seitenverhältnis
+// und dieselben Offset-Verhältnisse wie dort, nur proportional etwas größer).
 .h2h-bench-card {
   display: flex;
   flex-direction: column;
@@ -552,13 +556,26 @@
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-md;
+  position: relative;
+  overflow: hidden;
   transition: border-color $transition-fast;
 
   &:hover {
     border-color: $color-accent;
   }
 
+  &__pos {
+    position: absolute;
+    width: 90px;
+    height: 45px;
+    top: -26px;
+    left: -45px;
+    transform: rotate(-45deg);
+  }
+
   &__photo-wrap {
+    position: relative;
+    z-index: 1;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -578,6 +595,8 @@
   }
 
   &__name {
+    position: relative;
+    z-index: 1;
     font-size: $font-xs;
     font-weight: $font-weight-medium;
     text-align: center;
@@ -585,12 +604,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 100%;
-  }
-
-  &__pos {
-    font-size: 10px;
-    color: $color-text-muted;
-    text-transform: uppercase;
   }
 }
 

@@ -92,6 +92,18 @@ export class H2HMatchComponent {
     return `https://img.die-bestesten.de/manager/${managerId}.jpg`;
   }
 
+  // Gleiche rotierte Farbfläche zur Positions-Visualisierung wie team/lineup/lineup.component
+  // (.bench-player__pos) — hier für die Bank-Karten neben dem H2H-Feld übernommen.
+  positionColor(pos: string): string {
+    const map: Record<string, string> = {
+      GOALKEEPER: 'var(--position-goalkeeper)',
+      DEFENDER:   'var(--position-defender)',
+      MIDFIELDER: 'var(--position-midfielder)',
+      FORWARD:    'var(--position-forward)',
+    };
+    return map[pos] ?? 'transparent';
+  }
+
   phaseLabel = computed(() => {
     const map: Record<string, string> = {
       group: 'Gruppenphase', quarterfinal: 'Viertelfinale', semifinal: 'Halbfinale', final: 'Finale',

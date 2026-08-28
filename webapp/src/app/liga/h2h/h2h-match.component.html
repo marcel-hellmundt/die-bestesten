@@ -286,6 +286,7 @@
 
   <ng-template #benchCard let-p="p">
     <a class="h2h-bench-card" [routerLink]="['/daten/player', p.player_id]">
+      <div class="h2h-bench-card__pos" [style.background-color]="positionColor(p.position)"></div>
       <div class="h2h-bench-card__photo-wrap">
         @if (p.photo_uploaded && p.photo_season_id) {
           <img
@@ -299,7 +300,6 @@
         }
       </div>
       <span class="h2h-bench-card__name">{{ p.displayname }}</span>
-      <span class="h2h-bench-card__pos">{{ p.position | slice: 0 : 3 }}</span>
     </a>
   </ng-template>
 
