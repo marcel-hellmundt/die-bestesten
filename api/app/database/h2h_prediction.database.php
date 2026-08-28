@@ -145,4 +145,57 @@ trait H2HPredictionTrait
 
         return ['status' => true];
     }
+
+    /**
+     * Nach Spieltagsabschluss aufgerufen (siehe MatchdayController::patch(), direkt nach
+     * finalizeMatchday() — braucht die dort frisch geschriebenen team_rating-Zeilen). Berechnet
+     * für jedes H2H-Match dieses Spieltags das tatsächliche Ergebnis (home/draw/away) über
+     * H2HTrait::h2hGoals() und setzt bei allen zugehörigen Tipps result auf 'won' (pick ==
+     * Ergebnis) oder 'lost'. AND result = 'open' macht den Aufruf idempotent, falls ein Spieltag
+     * je erneut abgeschlossen werden sollte.
+     */
+    public function evaluateH2HPredictionResults(string $matchdayId): int
+    {
+        $mq = $this->con_league->prepare(
+            "SELECT id, home_team_id, away_team_id FROM h2h_match WHERE matchday_id = :mid"
+        );
+        $mq->execute([':mid' => $matchdayId]);
+        $matches = $mq->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($matches)) return 0;
+
+        $teamIds = array_values(array_unique(array_merge(
+            array_column($matches, 'home_team_id'), array_column($matches, 'away_team_id')
+        )));
+        $ph = implode(',', array_fill(0, count($teamIds), '?'));
+        $rq = $this->con_league->prepare(
+            "SELECT team_id, goals, sds_defender, assists, invalid
+             FROM team_rating WHERE matchday_id = ? AND team_id IN ($ph)"
+        );
+        $rq->execute(array_merge([$matchdayId], $teamIds));
+        $ratingMap = array_column($rq->fetchAll(PDO::FETCH_ASSOC), null, 'team_id');
+
+        $markWon  = $this->con_league->prepare(
+            "UPDATE h2h_prediction SET result = 'won'  WHERE match_id = :mid AND pick = :pick AND result = 'open'"
+        );
+        $markLost = $this->con_league->prepare(
+            "UPDATE h2h_prediction SET result = 'lost' WHERE match_id = :mid AND pick <> :pick AND result = 'open'"
+        );
+
+        $updated = 0;
+        foreach ($matches as $m) {
+            $goals = $this->h2hGoals($ratingMap[$m['home_team_id']] ?? null, $ratingMap[$m['away_team_id']] ?? null);
+            if ($goals['home'] === null || $goals['away'] === null) continue;
+
+            $outcome = $goals['home'] === $goals['away']
+                ? 'draw'
+                : ($goals['home'] > $goals['away'] ? 'home' : 'away');
+
+            $markWon->execute([':mid' => $m['id'], ':pick' => $outcome]);
+            $updated += $markWon->rowCount();
+            $markLost->execute([':mid' => $m['id'], ':pick' => $outcome]);
+            $updated += $markLost->rowCount();
+        }
+
+        return $updated;
+    }
 }

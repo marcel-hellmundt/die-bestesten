@@ -241,7 +241,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/matchday/:id',
-                        'description' => 'Entweder completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an alle Admins mit hinterlegter E-Mail-Adresse senden — Admin. Oder Stammdaten bearbeiten — Body: beliebige Kombination aus number, start_date, kickoff_date; 404 wenn nicht gefunden, 409 wenn Spieltag bereits completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date liegt — Admin',
+                        'description' => 'Entweder completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, h2h_prediction.result der H2H-Matches dieses Spieltags auswerten (won/lost je nach tatsächlichem Ergebnis), Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an alle Admins mit hinterlegter E-Mail-Adresse senden — Admin. Oder Stammdaten bearbeiten — Body: beliebige Kombination aus number, start_date, kickoff_date; 404 wenn nicht gefunden, 409 wenn Spieltag bereits completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date liegt — Admin',
                         'path_params' => [':id' => 'UUID des Spieltags'],
                     ],
                     [

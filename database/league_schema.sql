@@ -183,6 +183,11 @@ CREATE TABLE IF NOT EXISTS h2h_prediction (
     odds       DECIMAL(6,2) NULL,             -- Pseudo-Quote (H2HTrait::calculateH2HOdds) des Picks,
                                                -- wie im Frontend bei Tippabgabe angezeigt — kann sich
                                                -- bis Anpfiff durch Aufstellungsänderungen noch ändern
+    result     ENUM('open','won','lost') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'open',
+                                               -- 'open' bis Spieltagsabschluss, danach von
+                                               -- H2HPredictionTrait::evaluateH2HPredictionResults()
+                                               -- gesetzt: 'won' wenn pick == tatsächliches Ergebnis
+                                               -- (siehe H2HTrait::h2hGoals()), sonst 'lost'
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (match_id) REFERENCES h2h_match(id) ON DELETE CASCADE,
     UNIQUE KEY uk_h2h_prediction (match_id, manager_id)
