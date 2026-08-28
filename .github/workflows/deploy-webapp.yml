@@ -39,5 +39,6 @@ jobs:
             set ftp:ssl-protect-data true;
             set ssl:verify-certificate false;
             open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-            mirror --reverse --delete --verbose ./webapp/dist/webapp/browser/ ${{ vars.FTP_DIR_WEBAPP }};
+            mirror --reverse --only-missing --verbose ./webapp/dist/webapp/browser/img/ ${{ vars.FTP_DIR_WEBAPP }}/img/;
+            mirror --reverse --delete --verbose --exclude '^img/' ./webapp/dist/webapp/browser/ ${{ vars.FTP_DIR_WEBAPP }};
           "
