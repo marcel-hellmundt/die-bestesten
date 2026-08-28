@@ -150,7 +150,12 @@
                 @if (homeLogoUrl()) {
                   <img class="h2h-predict-btn__logo" [src]="homeLogoUrl()!" (error)="$any($event.target).style.display = 'none'" alt="" />
                 }
-                <span class="h2h-predict-btn__label">1</span>
+                <span class="h2h-predict-btn__text">
+                  <span class="h2h-predict-btn__label">1</span>
+                  @if (odds()?.home != null) {
+                    <span class="h2h-predict-btn__odds">{{ odds()!.home!.toFixed(2) }}</span>
+                  }
+                </span>
               </button>
               <button
                 class="h2h-predict-btn"
@@ -159,7 +164,12 @@
                 (click)="submitPrediction('draw')"
                 title="Unentschieden"
               >
-                <span class="h2h-predict-btn__label">X</span>
+                <span class="h2h-predict-btn__text">
+                  <span class="h2h-predict-btn__label">X</span>
+                  @if (odds()?.draw != null) {
+                    <span class="h2h-predict-btn__odds">{{ odds()!.draw!.toFixed(2) }}</span>
+                  }
+                </span>
               </button>
               <button
                 class="h2h-predict-btn"
@@ -172,7 +182,12 @@
                 @if (awayLogoUrl()) {
                   <img class="h2h-predict-btn__logo" [src]="awayLogoUrl()!" (error)="$any($event.target).style.display = 'none'" alt="" />
                 }
-                <span class="h2h-predict-btn__label">2</span>
+                <span class="h2h-predict-btn__text">
+                  <span class="h2h-predict-btn__label">2</span>
+                  @if (odds()?.away != null) {
+                    <span class="h2h-predict-btn__odds">{{ odds()!.away!.toFixed(2) }}</span>
+                  }
+                </span>
               </button>
             </div>
             @if (predictionError(); as err) {

@@ -376,9 +376,24 @@
     flex-shrink: 0;
   }
 
+  // Eigener Spalten-Wrapper für Label + Quote (der Button selbst ist eine Reihe für
+  // Logo+Text; Label und Quote sollen aber übereinander stehen statt nebeneinander).
+  &__text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.15;
+  }
+
   &__label {
     font-size: $font-md;
     font-weight: $font-weight-semibold;
+  }
+
+  &__odds {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    opacity: 0.8;
   }
 }
 

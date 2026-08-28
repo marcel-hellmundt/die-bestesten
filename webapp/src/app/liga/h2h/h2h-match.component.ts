@@ -44,6 +44,11 @@ export class H2HMatchComponent implements OnDestroy {
   homeBench  = computed(() => (this.data()?.home_bench  ?? []) as any[]);
   awayBench  = computed(() => (this.data()?.away_bench  ?? []) as any[]);
 
+  // Deterministische Pseudo-Quote (Heim/Unentschieden/Auswärts) aus Marktwert+Saisonpunkten der
+  // aufgestellten Spieler — reine Orientierung, keine echten Einsätze; siehe
+  // H2HTrait::calculateH2HOdds() im Backend für die Berechnung.
+  odds = computed(() => this.data()?.odds ?? null);
+
   // ── Tipp abgeben (bis Anpfiff privat/änderbar, danach für alle sichtbar) ───────
 
   // predictionsOverride greift, sobald der clientseitige Anpfiff-Check (kickoffPassed) zuschlägt,
