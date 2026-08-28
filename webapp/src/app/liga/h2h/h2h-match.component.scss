@@ -225,6 +225,11 @@
 
 .bench-toggle {
   margin-bottom: $space-4;
+
+  // Desktop zeigt beide Bänke immer (siehe .h2h-bench) — der Toggle ist nur auf Mobile nötig.
+  @media (min-width: calc($mobile-breakpoint + 1px)) {
+    display: none;
+  }
 }
 
 // ── Mobile: team toggle ──────────────────────────────────────────────────────

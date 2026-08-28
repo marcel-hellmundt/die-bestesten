@@ -193,7 +193,7 @@
   </div>
 
   <div class="h2h-field-wrap">
-    @if (showBench && homeBench().length > 0) {
+    @if (homeBench().length > 0) {
       <div class="h2h-bench h2h-bench--home">
         @for (p of homeBench(); track p.player_id) {
           <ng-container *ngTemplateOutlet="benchCard; context: { p: p }"></ng-container>
@@ -236,7 +236,7 @@
       </div>
     </div>
 
-    @if (showBench && awayBench().length > 0) {
+    @if (awayBench().length > 0) {
       <div class="h2h-bench h2h-bench--away">
         @for (p of awayBench(); track p.player_id) {
           <ng-container *ngTemplateOutlet="benchCard; context: { p: p }"></ng-container>
@@ -303,15 +303,13 @@
     </a>
   </ng-template>
 
-  <!-- Bank (toggle) -->
+  <!-- Bank (mobile toggle only — desktop always shows both benches, see .h2h-bench above) -->
   @if (homeBench().length > 0 || awayBench().length > 0) {
     <button class="btn btn--ghost btn--sm bench-toggle" (click)="showBench = !showBench">
       {{ showBench ? 'Bank ausblenden' : 'Bank anzeigen' }}
     </button>
 
     @if (showBench) {
-      <!-- Mobile: bench of the selected team only (desktop shows both teams' benches as
-           player-cards left/right of .h2h-field instead, see .h2h-bench above). -->
       <div class="mobile-bench-list">
         @for (p of selectedBench(); track p.player_id) {
           <div class="mobile-bench-row">
