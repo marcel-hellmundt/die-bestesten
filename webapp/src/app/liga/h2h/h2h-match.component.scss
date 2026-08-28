@@ -484,14 +484,13 @@
 // left-to-right for both teams at once — home GK→FWD, away mirrored FWD→GK). Player cards
 // reuse the .field-player styles above via the shared #fieldPlayer ng-template.
 
+// Manager-Namen sitzen direkt über dem Feld selbst (eigene Spalte mit dem Feld, siehe
+// .h2h-field-col), nicht über der ganzen Zeile inkl. Bänke — bleiben so auch bei ein-/
+// ausgeblendeten Bänken exakt über der linken/rechten Feldhälfte ausgerichtet.
 .h2h-field-managers {
-  display: none;
-
-  @media (min-width: calc($mobile-breakpoint + 1px)) {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: $space-3;
-  }
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $space-3;
 }
 
 .h2h-field-manager {
@@ -504,9 +503,9 @@
   }
 }
 
-// Beide Bänke (optional, siehe .h2h-bench) und das Feld liegen in derselben Flex-Row, damit
-// das Feld beim Ein-/Ausblenden der Bänke horizontal zentriert bleibt (justify-content:center
-// auf die ganze Gruppe statt margin:auto nur aufs Feld) statt sich zu verschieben.
+// Beide Bänke (optional, siehe .h2h-bench) und die Feld-Spalte liegen in derselben Flex-Row,
+// damit die Feld-Spalte beim Ein-/Ausblenden der Bänke horizontal zentriert bleibt
+// (justify-content:center auf die ganze Gruppe statt margin:auto nur auf die Spalte).
 .h2h-field-wrap {
   display: none;
 
@@ -519,14 +518,20 @@
   }
 }
 
+.h2h-field-col {
+  display: flex;
+  flex-direction: column;
+  width: 75%;
+  max-width: 900px;
+  flex: 0 1 auto;
+}
+
 .h2h-field {
   container-type: inline-size;
   background-color: #05c46b;
   border-radius: $radius-lg;
   aspect-ratio: 16 / 9;
-  width: 75%;
-  max-width: 900px;
-  flex: 0 1 auto;
+  width: 100%;
   display: flex;
   position: relative;
   overflow: hidden;

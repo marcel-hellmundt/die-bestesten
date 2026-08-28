@@ -167,31 +167,6 @@
   <!-- Desktop: one combined field for both teams — home GK→FWD left→right, away mirrored
        FWD→GK, so both teams' forwards meet at the halfway line. Replaces the old two-column
        table layout (see .h2h-field-wrap's mobile display:none / .lineup-grid removal). -->
-  <div class="h2h-field-managers">
-    @if (homeTeam()?.manager_id) {
-      <div class="h2h-field-manager h2h-field-manager--home">
-        <img
-          class="player-avatar-sm"
-          [src]="managerPhotoUrl(homeTeam().manager_id)"
-          (error)="$any($event.target).style.display = 'none'"
-          alt=""
-        />
-        <span class="manager-name">{{ homeTeam().manager_name }}</span>
-      </div>
-    }
-    @if (awayTeam()?.manager_id) {
-      <div class="h2h-field-manager h2h-field-manager--away">
-        <span class="manager-name">{{ awayTeam().manager_name }}</span>
-        <img
-          class="player-avatar-sm"
-          [src]="managerPhotoUrl(awayTeam().manager_id)"
-          (error)="$any($event.target).style.display = 'none'"
-          alt=""
-        />
-      </div>
-    }
-  </div>
-
   <div class="h2h-field-wrap">
     @if (homeBench().length > 0) {
       <div class="h2h-bench h2h-bench--home">
@@ -201,37 +176,66 @@
       </div>
     }
 
-    <div class="h2h-field">
-      <div class="h2h-field__half h2h-field__half--home">
-        @for (pos of homeFieldPositions; track pos) {
-          <div class="h2h-field__col">
-            @for (p of positionPlayers(homeLineup(), pos); track p.player_id) {
-              <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
-            }
+    <div class="h2h-field-col">
+      <!-- Manager names sit directly above the field itself (not the whole row incl. benches),
+           so home/away stay aligned with the field's own left/right half. -->
+      <div class="h2h-field-managers">
+        @if (homeTeam()?.manager_id) {
+          <div class="h2h-field-manager h2h-field-manager--home">
+            <img
+              class="player-avatar-sm"
+              [src]="managerPhotoUrl(homeTeam().manager_id)"
+              (error)="$any($event.target).style.display = 'none'"
+              alt=""
+            />
+            <span class="manager-name">{{ homeTeam().manager_name }}</span>
           </div>
         }
-      </div>
-      <div class="h2h-field__half h2h-field__half--away">
-        @for (pos of awayFieldPositions; track pos) {
-          <div class="h2h-field__col">
-            @for (p of positionPlayers(awayLineup(), pos); track p.player_id) {
-              <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
-            }
+        @if (awayTeam()?.manager_id) {
+          <div class="h2h-field-manager h2h-field-manager--away">
+            <span class="manager-name">{{ awayTeam().manager_name }}</span>
+            <img
+              class="player-avatar-sm"
+              [src]="managerPhotoUrl(awayTeam().manager_id)"
+              (error)="$any($event.target).style.display = 'none'"
+              alt=""
+            />
           </div>
         }
       </div>
 
-      <!-- Field markings -->
-      <div class="h2h-field__lines">
-        <div class="h2h-field__boundary">
-          <div class="h2h-field__halfway-line"></div>
-          <div class="h2h-field__circle"></div>
-          <div class="h2h-field__penalty h2h-field__penalty--left"></div>
-          <div class="h2h-field__penalty h2h-field__penalty--right"></div>
-          <div class="h2h-field__flag h2h-field__flag--tl"></div>
-          <div class="h2h-field__flag h2h-field__flag--tr"></div>
-          <div class="h2h-field__flag h2h-field__flag--bl"></div>
-          <div class="h2h-field__flag h2h-field__flag--br"></div>
+      <div class="h2h-field">
+        <div class="h2h-field__half h2h-field__half--home">
+          @for (pos of homeFieldPositions; track pos) {
+            <div class="h2h-field__col">
+              @for (p of positionPlayers(homeLineup(), pos); track p.player_id) {
+                <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
+              }
+            </div>
+          }
+        </div>
+        <div class="h2h-field__half h2h-field__half--away">
+          @for (pos of awayFieldPositions; track pos) {
+            <div class="h2h-field__col">
+              @for (p of positionPlayers(awayLineup(), pos); track p.player_id) {
+                <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Field markings -->
+        <div class="h2h-field__lines">
+          <div class="h2h-field__boundary">
+            <div class="h2h-field__halfway-line"></div>
+            <div class="h2h-field__circle"></div>
+            <div class="h2h-field__penalty h2h-field__penalty--left"></div>
+            <div class="h2h-field__penalty h2h-field__penalty--right"></div>
+            <div class="h2h-field__flag h2h-field__flag--tl"></div>
+            <div class="h2h-field__flag h2h-field__flag--tr"></div>
+            <div class="h2h-field__flag h2h-field__flag--bl"></div>
+            <div class="h2h-field__flag h2h-field__flag--br"></div>
+          </div>
         </div>
       </div>
     </div>
