@@ -15,8 +15,10 @@ trait H2HPredictionTrait
      * normale Manager davon nichts sehen; my_pick bleibt parallel verfügbar, der Admin kann also
      * weiterhin normal tippen, während er sich die Vorschau ansieht.
      */
-    public function getH2HPredictionState(string $matchId, string $managerId, ?array $matchday, string $seasonId, bool $preview = false): array
-    {
+    public function getH2HPredictionState(
+        string $matchId, string $managerId, ?array $matchday, string $seasonId,
+        ?string $homeManagerId, ?string $awayManagerId, bool $preview = false
+    ): array {
         $kickoffDate = $matchday['kickoff_date'] ?? null;
         $locked      = $kickoffDate !== null && strtotime($kickoffDate) <= time();
 
@@ -33,6 +35,11 @@ trait H2HPredictionTrait
             // Tipp-Karte bleibt für die anderen im Frontend komplett unsichtbar statt nur die
             // Buttons zu deaktivieren.
             $result['is_current_matchday'] = $matchday ? $this->isCurrentH2HMatchday($matchday, $seasonId) : false;
+            // Manager eines der beiden beteiligten Teams dürfen nicht auf ihr eigenes Match
+            // tippen — sie könnten die angezeigte Quote durch Verändern der eigenen Aufstellung
+            // bewusst manipulieren (siehe H2HTrait::calculateH2HOdds). Betrifft nur die eigene
+            // Tipp-Abgabe, nicht die Sichtbarkeit der Tipps anderer Manager nach Anpfiff.
+            $result['is_own_match'] = $managerId !== '' && ($managerId === $homeManagerId || $managerId === $awayManagerId);
         }
 
         if ($locked || $preview) {
@@ -90,13 +97,25 @@ trait H2HPredictionTrait
     public function submitH2HPrediction(string $matchId, string $managerId, string $pick, ?float $odds): array
     {
         $mq = $this->con_league->prepare(
-            "SELECT matchday_id FROM h2h_match WHERE id = :id LIMIT 1"
+            "SELECT matchday_id, home_team_id, away_team_id FROM h2h_match WHERE id = :id LIMIT 1"
         );
         $mq->execute([':id' => $matchId]);
-        $matchdayId = $mq->fetchColumn();
-        if (!$matchdayId) {
+        $match = $mq->fetch(PDO::FETCH_ASSOC);
+        if (!$match) {
             http_response_code(404);
             return ['status' => false, 'message' => 'Match nicht gefunden'];
+        }
+        $matchdayId = $match['matchday_id'];
+
+        // Manager eines der beiden beteiligten Teams dürfen nicht auf ihr eigenes Match tippen —
+        // sie könnten die angezeigte Quote durch Verändern der eigenen Aufstellung manipulieren.
+        $tq = $this->con_league->prepare(
+            "SELECT manager_id FROM team WHERE id IN (:home, :away)"
+        );
+        $tq->execute([':home' => $match['home_team_id'], ':away' => $match['away_team_id']]);
+        if (in_array($managerId, $tq->fetchAll(PDO::FETCH_COLUMN), true)) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Tippen auf ein eigenes Match ist nicht möglich'];
         }
 
         $mdq = $this->con->prepare(

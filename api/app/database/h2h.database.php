@@ -700,7 +700,10 @@ trait H2HTrait
             'away_lineup'  => $awayLineup['nominated'],
             'away_bench'   => $awayLineup['bench'],
             'odds'         => $this->calculateH2HOdds($homeLineup['nominated'], $awayLineup['nominated']),
-            'predictions'  => $this->getH2HPredictionState($match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $match['season_id'], $predictionsPreview),
+            'predictions'  => $this->getH2HPredictionState(
+                $match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $match['season_id'],
+                $homeTeam['manager_id'] ?? null, $awayTeam['manager_id'] ?? null, $predictionsPreview
+            ),
         ];
     }
 

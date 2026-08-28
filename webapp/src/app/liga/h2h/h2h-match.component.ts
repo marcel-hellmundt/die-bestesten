@@ -86,8 +86,12 @@ export class H2HMatchComponent implements OnDestroy {
   // gesamte Tipp-Karte unsichtbar statt nur die Buttons zu deaktivieren.
   canTipThisMatchday = computed(() => this.predictions()?.is_current_matchday ?? false);
 
+  // Manager eines der beiden beteiligten Teams dürfen nicht auf ihr eigenes Match tippen — sie
+  // könnten die angezeigte Quote sonst durch Verändern der eigenen Aufstellung manipulieren.
+  isOwnMatch = computed(() => this.predictions()?.is_own_match ?? false);
+
   hideCard = computed(() =>
-    this.hideEmptyResult() || (!this.isRevealed() && !this.canTipThisMatchday())
+    this.hideEmptyResult() || (!this.isRevealed() && (!this.canTipThisMatchday() || this.isOwnMatch()))
   );
 
   private refetchedAfterKickoff = false;
@@ -119,7 +123,7 @@ export class H2HMatchComponent implements OnDestroy {
 
   submitPrediction(pick: 'home' | 'draw' | 'away'): void {
     const matchId = this.match()?.id;
-    if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday()) return;
+    if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday() || this.isOwnMatch()) return;
 
     const previous = this.optimisticPick();
     this.optimisticPick.set(pick);
