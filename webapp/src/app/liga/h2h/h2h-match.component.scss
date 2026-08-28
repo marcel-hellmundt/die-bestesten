@@ -334,24 +334,25 @@
 
 // --pick-color: Team-Farbe (Home/Away, per [style] gesetzt) bzw. Mittelgrau bei Unentschieden
 // (Default-Wert unten) — treibt sowohl den Hover-Rahmen als auch die vollflächige aktive Füllung.
+// Horizontal in zwei Bänder geteilt (7:3 Flex-Ratio ≈ 70/30 der Buttonhöhe, statt fixer
+// Prozent-Basis, die eine explizite Button-Höhe bräuchte): oben (__top) Logo+Label auf hellem
+// Grund, unten (__bottom) die Quote auf hellgrauem Grund — overflow:hidden am Button clippt
+// beide Bänder sauber auf die abgerundeten Ecken.
 .h2h-predict-btn {
   --pick-color: #a4b0be;
 
   flex: 1 1 0;
   min-width: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: $space-2;
-  padding: $space-2;
+  flex-direction: column;
+  padding: 0;
   border: 2px solid $color-border;
   border-radius: $radius-md;
-  background: $color-surface;
+  overflow: hidden;
   color: $color-text;
   cursor: pointer;
   transition:
     border-color $transition-fast,
-    background $transition-fast,
     color $transition-fast;
 
   &:hover:not(:disabled) {
@@ -365,24 +366,39 @@
 
   &--active {
     border-color: var(--pick-color);
-    background: var(--pick-color);
     color: #fff;
+
+    .h2h-predict-btn__top,
+    .h2h-predict-btn__bottom {
+      background: var(--pick-color);
+    }
+  }
+
+  &__top {
+    flex: 7 7 0%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $space-2;
+    background: $color-surface;
+  }
+
+  &__bottom {
+    flex: 3 3 0%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    background: $color-surface-alt;
   }
 
   &__logo {
+    position: absolute;
+    left: $space-2;
     width: 20px;
     height: 20px;
     object-fit: contain;
-    flex-shrink: 0;
-  }
-
-  // Eigener Spalten-Wrapper für Label + Quote (der Button selbst ist eine Reihe für
-  // Logo+Text; Label und Quote sollen aber übereinander stehen statt nebeneinander).
-  &__text {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1.15;
   }
 
   &__label {
