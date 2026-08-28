@@ -290,13 +290,29 @@ export class TopbarComponent implements OnDestroy {
     this.isLeagueDropdownOpen.set(false);
   }
 
+  // team/:id und liga/h2h/:id verweisen auf Liga-DB-spezifische IDs (team, h2h_match) — die
+  // existieren nach einem Liga-Wechsel nicht mehr unter derselben ID, daher Rückfall auf die
+  // nächstmögliche Übersichtsseite. Alle anderen IDs (Spieler, Verein, Manager, Transferfenster, …)
+  // sind global und bleiben nach dem Wechsel gültig, dort wird dieselbe URL einfach neu geladen.
+  private readonly leagueScopedRouteFallbacks: { pattern: RegExp; fallback: string }[] = [
+    { pattern: /^\/team\/[^/]+/, fallback: '/liga/teams' },
+    { pattern: /^\/liga\/h2h\/(?!modus$)[^/]+$/, fallback: '/liga/h2h' },
+  ];
+
+  private buildLeagueSwitchTargetUrl(): string {
+    const current = this.router.url;
+    const hit = this.leagueScopedRouteFallbacks.find(({ pattern }) => pattern.test(current));
+    return hit ? hit.fallback : current;
+  }
+
   switchLeague(leagueId: string): void {
     if (leagueId === this.activeLeagueId() || this.leagueSwitching()) return;
     this.leagueSwitching.set(true);
     this.closeLeagueDropdown();
+    const targetUrl = this.buildLeagueSwitchTargetUrl();
     this.auth.switchLeague(leagueId).subscribe({
       next: () => {
-        window.location.href = '/';
+        window.location.href = targetUrl;
       },
       error: () => this.leagueSwitching.set(false),
     });
