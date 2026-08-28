@@ -211,6 +211,11 @@
     background-color: color-mix(in srgb, $color-accent 6%, transparent);
     border-radius: $radius-sm;
   }
+
+  &--average {
+    width: 72px;
+    margin-left: $space-4;
+  }
 }
 
 .pr-overview__header {

@@ -131,6 +131,24 @@
           }
         </div>
       }
+
+      <div class="pr-overview__col pr-overview__col--average">
+        <div class="pr-overview__header">
+          <span class="pr-overview__table-label">Ø Tipp</span>
+        </div>
+        @for (s of averageTable(); track s.team_id) {
+          <div class="pr-overview__row pr-overview__row--table">
+            <img
+              class="pr-overview__logo"
+              [src]="logoFailed(s.team_id) ? 'img/placeholders/club.png' : teamLogoUrl(s.season_id, s.team_id)"
+              (error)="onLogoError(s.team_id)"
+              [title]="s.team_name"
+              alt=""
+            />
+            <span class="pr-overview__position">{{ s.avg_position.toFixed(1) }}</span>
+          </div>
+        }
+      </div>
     </div>
   </div>
 }

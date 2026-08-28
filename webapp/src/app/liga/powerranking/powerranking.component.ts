@@ -146,6 +146,27 @@ export class PowerrankingComponent {
     })),
   );
 
+  // Durchschnittsposition je Team über alle abgegebenen Tipps hinweg, aufsteigend sortiert
+  averageTable = computed(() => {
+    const sums = new Map<string, { sum: number; count: number }>();
+    for (const e of this.entries()) {
+      for (const p of e.picks) {
+        const cur = sums.get(p.team_id) ?? { sum: 0, count: 0 };
+        cur.sum += p.position;
+        cur.count += 1;
+        sums.set(p.team_id, cur);
+      }
+    }
+    const list = [...sums.entries()]
+      .map(([teamId, { sum, count }]) => {
+        const info = this.teamInfo(teamId);
+        return info ? { ...info, avg_position: sum / count } : null;
+      })
+      .filter((x): x is PowerrankingStanding & { avg_position: number } => !!x);
+    list.sort((a, b) => a.avg_position - b.avg_position);
+    return list;
+  });
+
   // Zustand A: eigener editierbarer Tipp — Team-Roster nur laden, solange ungesperrt
   private teamsState = toSignal(
     toObservable(this.response).pipe(
