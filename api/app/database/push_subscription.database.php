@@ -45,7 +45,11 @@ trait PushSubscriptionTrait
      */
     public function sendPushNotification(array $managerIds, string $title, string $body, ?string $url = null): void
     {
-        if (empty($managerIds) || empty($_ENV['VAPID_PUBLIC_KEY']) || empty($_ENV['VAPID_PRIVATE_KEY'])) return;
+        if (empty($managerIds)) return;
+        if (empty($_ENV['VAPID_PUBLIC_KEY']) || empty($_ENV['VAPID_PRIVATE_KEY'])) {
+            error_log('sendPushNotification: VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY not configured — skipping');
+            return;
+        }
 
         $ph = implode(',', array_fill(0, count($managerIds), '?'));
         $q  = $this->con->prepare("SELECT endpoint, p256dh, auth FROM push_subscription WHERE manager_id IN ($ph)");
@@ -79,10 +83,14 @@ trait PushSubscriptionTrait
             foreach ($webPush->flush() as $report) {
                 if ($report->isSubscriptionExpired()) {
                     $this->deletePushSubscriptionByEndpoint($report->getEndpoint());
+                } elseif (!$report->isSuccess()) {
+                    error_log('sendPushNotification: failed for ' . $report->getEndpoint() . ' — ' . $report->getReason());
                 }
             }
-        } catch (\Throwable) {
-            // Push-Versand ist best-effort — Fehler dürfen den aufrufenden Request nicht stören
+        } catch (\Throwable $e) {
+            // Push-Versand ist best-effort — Fehler dürfen den aufrufenden Request nicht stören,
+            // aber landen im PHP-Error-Log statt spurlos zu verschwinden.
+            error_log('sendPushNotification: exception — ' . $e->getMessage());
         }
     }
 }
