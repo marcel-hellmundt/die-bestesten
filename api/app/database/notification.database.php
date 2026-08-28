@@ -68,7 +68,7 @@ trait NotificationTrait
         'achievement_earned'    => ['in_app', 'push'],
         'h2h_draw'              => ['in_app'],
         'scouted_player_update' => ['in_app', 'push'],
-        'lineup_player_goal'    => ['in_app', 'push'],
+        'lineup_player_goal'    => ['push'],
     ];
 
     public function isValidPreferenceCombo(string $channel, string $eventType): bool

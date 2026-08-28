@@ -452,10 +452,10 @@ trait PlayerRatingTrait
     /**
      * Wird aufgerufen, sobald sich der Torzähler eines player_rating erhöht (siehe
      * updatePlayerRating() oben) — benachrichtigt jeden Manager der aktuellen Liga, der den
-     * Spieler für diesen Spieltag aufgestellt hat (team_lineup.nominated = 1), per In-App-
-     * Notification + Web-Push. Gleiches Muster wie WatchlistTrait::notifyWatchersPlayerSds();
-     * Zustellfehler dürfen das eigentliche Rating-Update nicht blockieren (siehe
-     * PushSubscriptionTrait::sendPushNotification()).
+     * Spieler für diesen Spieltag aufgestellt hat (team_lineup.nominated = 1), per Web-Push
+     * (bewusst kein In-App-Eintrag — siehe NotificationTrait::NOTIFICATION_CHANNELS, lineup_player_goal
+     * unterstützt nur den push-Channel). Zustellfehler dürfen das eigentliche Rating-Update nicht
+     * blockieren (siehe PushSubscriptionTrait::sendPushNotification()).
      */
     private function notifyLineupPlayerGoal(string $playerId, string $matchdayId, string $displayname): void
     {
@@ -470,12 +470,6 @@ trait PlayerRatingTrait
 
         $title = 'Tor!';
         $body  = "$displayname hat für dich getroffen.";
-
-        foreach ($managerIds as $managerId) {
-            if ($this->isNotificationEnabled($managerId, 'in_app', 'lineup_player_goal')) {
-                $this->createNotification($managerId, $title, $body, null);
-            }
-        }
 
         $pushManagerIds = array_values(array_filter(
             $managerIds,

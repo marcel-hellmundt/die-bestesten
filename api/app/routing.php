@@ -552,7 +552,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/notification/preferences',
-                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {in_app:{matchday_completed,achievement_earned,h2h_draw,scouted_player_update,lineup_player_goal},push:{achievement_earned,scouted_player_update,lineup_player_goal}} (je bool) — zwei getrennt schaltbare Channels pro event_type, push nur für event_types, die es unterstützen; fehlende Einträge = true (default ON) — Auth',
+                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {in_app:{matchday_completed,achievement_earned,h2h_draw,scouted_player_update},push:{achievement_earned,scouted_player_update,lineup_player_goal}} (je bool) — zwei getrennt schaltbare Channels pro event_type, nicht jedes event_type unterstützt beide (lineup_player_goal nur push); fehlende Einträge = true (default ON) — Auth',
                     ],
                     [
                         'method' => 'PATCH',
