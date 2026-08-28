@@ -134,22 +134,39 @@
         <div class="h2h-predict-card__options">
           <button
             class="h2h-predict-btn"
+            [style.--pick-color]="homeTeam()?.color"
             [class.h2h-predict-btn--active]="myPick() === 'home'"
             [disabled]="submittingPick()"
             (click)="submitPrediction('home')"
-          >{{ homeTeam()?.team_name }}</button>
+            [attr.title]="homeTeam()?.team_name"
+          >
+            @if (homeLogoUrl()) {
+              <img class="h2h-predict-btn__logo" [src]="homeLogoUrl()!" (error)="$any($event.target).style.display = 'none'" alt="" />
+            }
+            <span class="h2h-predict-btn__label">1</span>
+          </button>
           <button
             class="h2h-predict-btn"
             [class.h2h-predict-btn--active]="myPick() === 'draw'"
             [disabled]="submittingPick()"
             (click)="submitPrediction('draw')"
-          >Unentschieden</button>
+            title="Unentschieden"
+          >
+            <span class="h2h-predict-btn__label">X</span>
+          </button>
           <button
             class="h2h-predict-btn"
+            [style.--pick-color]="awayTeam()?.color"
             [class.h2h-predict-btn--active]="myPick() === 'away'"
             [disabled]="submittingPick()"
             (click)="submitPrediction('away')"
-          >{{ awayTeam()?.team_name }}</button>
+            [attr.title]="awayTeam()?.team_name"
+          >
+            @if (awayLogoUrl()) {
+              <img class="h2h-predict-btn__logo" [src]="awayLogoUrl()!" (error)="$any($event.target).style.display = 'none'" alt="" />
+            }
+            <span class="h2h-predict-btn__label">2</span>
+          </button>
         </div>
         @if (predictionError(); as err) {
           <p class="h2h-predict-card__error">{{ err }}</p>

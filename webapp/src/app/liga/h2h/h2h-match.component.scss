@@ -248,9 +248,10 @@
     margin-bottom: $space-2;
   }
 
+  // Bleibt bewusst eine einzelne Reihe (kein flex-wrap) — auch in der schmalen Sidebar-Spalte
+  // des Desktop-2-Spalten-Layouts sollen Heim/Unentschieden/Auswärts nebeneinander stehen.
   &__options {
     display: flex;
-    flex-wrap: wrap;
     gap: $space-2;
   }
 
@@ -269,22 +270,30 @@
   }
 }
 
+// --pick-color: Team-Farbe (Home/Away, per [style] gesetzt) bzw. Mittelgrau bei Unentschieden
+// (--draw-Modifier) — treibt sowohl den Hover-Rahmen als auch die vollflächige aktive Füllung.
 .h2h-predict-btn {
-  flex: 1 1 140px;
-  padding: $space-2 $space-3;
-  border: 1px solid $color-border;
+  --pick-color: #{$color-text-muted};
+
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  padding: $space-2;
+  border: 2px solid $color-border;
   border-radius: $radius-md;
   background: $color-surface;
   color: $color-text;
-  font-size: $font-sm;
-  font-weight: $font-weight-medium;
   cursor: pointer;
   transition:
     border-color $transition-fast,
-    background $transition-fast;
+    background $transition-fast,
+    color $transition-fast;
 
   &:hover:not(:disabled) {
-    border-color: $color-accent;
+    border-color: var(--pick-color);
   }
 
   &:disabled {
@@ -293,8 +302,20 @@
   }
 
   &--active {
-    border-color: $color-accent;
-    background: color-mix(in srgb, $color-accent 10%, $color-surface);
+    border-color: var(--pick-color);
+    background: var(--pick-color);
+    color: #fff;
+  }
+
+  &__logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    font-size: $font-md;
     font-weight: $font-weight-semibold;
   }
 }
