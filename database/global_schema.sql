@@ -296,6 +296,18 @@ CREATE TABLE IF NOT EXISTS notification_preference (
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: push_subscription (Web-Push-Abo eines Browsers/Geräts, siehe PushSubscriptionTrait)
+CREATE TABLE IF NOT EXISTS push_subscription (
+    id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id CHAR(36)     NOT NULL,
+    endpoint   VARCHAR(500) NOT NULL,  -- vom Browser vergebene Push-Service-URL, pro Gerät/Browser eindeutig
+    p256dh     VARCHAR(255) NOT NULL,  -- Public Key des Browser-Abos (Verschlüsselung der Payload)
+    auth       VARCHAR(255) NOT NULL,  -- Auth-Secret des Browser-Abos
+    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_push_subscription_endpoint (endpoint(255))
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Tabelle: manager_achievement
 CREATE TABLE IF NOT EXISTS manager_achievement (
     id             CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),

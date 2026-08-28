@@ -6,6 +6,7 @@ import { ApiService } from '../core/api.service';
 import { AuthService } from '../auth/auth.service';
 import { DataCacheService } from '../core/data-cache.service';
 import { NotificationService } from '../core/notification.service';
+import { PushNotificationService } from '../core/push-notification.service';
 import { environment } from '../../environments/environment';
 
 interface ManagerProfile {
@@ -28,13 +29,28 @@ export class SettingsComponent {
   private router    = inject(Router);
   private cache     = inject(DataCacheService);
   private notifSvc  = inject(NotificationService);
+  private pushSvc   = inject(PushNotificationService);
 
   @ViewChild('photoInput') photoInput!: ElementRef<HTMLInputElement>;
 
   preferences    = this.notifSvc.preferences;
 
+  pushStatus  = this.pushSvc.status;
+  pushBusy    = this.pushSvc.busy;
+  pushError   = this.pushSvc.error;
+  pushIosHint = computed(() => this.pushSvc.isIos() && !this.pushSvc.isStandalone());
+
   constructor() {
     this.notifSvc.loadPreferences();
+    this.pushSvc.refreshStatus();
+  }
+
+  togglePush(): void {
+    if (this.pushStatus() === 'subscribed') {
+      this.pushSvc.unsubscribe();
+    } else {
+      this.pushSvc.subscribe();
+    }
   }
 
   pref(key: string): boolean {

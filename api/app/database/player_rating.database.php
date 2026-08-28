@@ -365,6 +365,17 @@ trait PlayerRatingTrait
             $sdsPlayerId = $oldRow['player_id'] ?? null;
         }
 
+        $oldGoals = null;
+        $goalsPlayerId = $goalsMatchdayId = null;
+        if (array_key_exists('goals', $data)) {
+            $oldRow = $this->con->prepare("SELECT goals, player_id, matchday_id FROM player_rating WHERE id = ? LIMIT 1");
+            $oldRow->execute([$id]);
+            $oldRow = $oldRow->fetch(PDO::FETCH_ASSOC);
+            $oldGoals = $oldRow ? (int) $oldRow['goals'] : null;
+            $goalsPlayerId   = $oldRow['player_id']   ?? null;
+            $goalsMatchdayId = $oldRow['matchday_id'] ?? null;
+        }
+
         $allowed = ['grade', 'participation', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'];
         $sets    = [];
         $params  = [':id' => $id];
@@ -428,7 +439,47 @@ trait PlayerRatingTrait
             $this->notifyWatchersPlayerSds($sdsPlayerId, $displayname);
         }
 
+        if (isset($oldGoals) && (int) $data['goals'] > $oldGoals && !empty($goalsPlayerId) && !empty($goalsMatchdayId)) {
+            $dnq = $this->con->prepare("SELECT displayname FROM player WHERE id = ? LIMIT 1");
+            $dnq->execute([$goalsPlayerId]);
+            $displayname = $dnq->fetchColumn() ?: 'Spieler';
+            $this->notifyLineupPlayerGoal($goalsPlayerId, $goalsMatchdayId, $displayname);
+        }
+
         return $updated;
+    }
+
+    /**
+     * Wird aufgerufen, sobald sich der Torzähler eines player_rating erhöht (siehe
+     * updatePlayerRating() oben) — benachrichtigt jeden Manager der aktuellen Liga, der den
+     * Spieler für diesen Spieltag aufgestellt hat (team_lineup.nominated = 1), per In-App-
+     * Notification + Web-Push. Gleiches Muster wie WatchlistTrait::notifyWatchersPlayerSds();
+     * Zustellfehler dürfen das eigentliche Rating-Update nicht blockieren (siehe
+     * PushSubscriptionTrait::sendPushNotification()).
+     */
+    private function notifyLineupPlayerGoal(string $playerId, string $matchdayId, string $displayname): void
+    {
+        $q = $this->con_league->prepare(
+            "SELECT t.manager_id FROM team_lineup tl
+             JOIN team t ON t.id = tl.team_id
+             WHERE tl.matchday_id = ? AND tl.player_id = ? AND tl.nominated = 1"
+        );
+        $q->execute([$matchdayId, $playerId]);
+        $managerIds = $q->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($managerIds)) return;
+
+        $managerIds = array_values(array_filter(
+            $managerIds,
+            fn($m) => $this->isNotificationEnabled($m, 'lineup_player_goal')
+        ));
+        if (empty($managerIds)) return;
+
+        $title = 'Tor!';
+        $body  = "$displayname hat für dich getroffen.";
+        foreach ($managerIds as $managerId) {
+            $this->createNotification($managerId, $title, $body, null);
+        }
+        $this->sendPushNotification($managerIds, $title, $body);
     }
 
     private function calculatePoints(string $id): int

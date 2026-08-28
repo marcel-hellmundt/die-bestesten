@@ -29,6 +29,7 @@ require_once 'buy.database.php';
 require_once 'offer.database.php';
 require_once 'search.database.php';
 require_once 'notification.database.php';
+require_once 'push_subscription.database.php';
 require_once 'watchlist.database.php';
 require_once 'h2h.database.php';
 require_once 'h2h_prediction.database.php';
@@ -68,6 +69,7 @@ class Database
     use PasswordResetTrait;
     use SearchTrait;
     use NotificationTrait;
+    use PushSubscriptionTrait;
     use WatchlistTrait;
     use H2HTrait;
     use H2HPredictionTrait;

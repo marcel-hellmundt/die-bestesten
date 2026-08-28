@@ -1154,6 +1154,25 @@ class Routing
                 ],
             ]),
 
+            new Route('push_subscription', 'PushSubscription', [
+                'title' => 'Push Subscription',
+                'description' => 'Web-Push-Abo eines Browsers/Geräts (Push API + Service Worker) — Auth',
+                'endpoints' => [
+                    [
+                        'method' => 'POST',
+                        'path' => '/push_subscription',
+                        'description' => 'Abo speichern/aktualisieren (Upsert per UNIQUE(endpoint)) — 400 wenn endpoint/keys.p256dh/keys.auth fehlen',
+                        'body' => ['endpoint' => 'vom Browser vergebene Push-Service-URL', 'keys' => '{p256dh, auth} — vom PushSubscription-Objekt des Browsers'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/push_subscription',
+                        'description' => 'Abo entfernen (idempotent) — 400 wenn endpoint fehlt',
+                        'body' => ['endpoint' => 'zu entfernende Push-Service-URL'],
+                    ],
+                ],
+            ]),
+
             new Route('search', 'Search', [
                 'title' => 'Search',
                 'description' => 'Globale Live-Suche über Player, Club, Team und Manager — Auth',

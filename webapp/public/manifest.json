@@ -1,0 +1,16 @@
+{
+  "name": "Die Bestesten",
+  "short_name": "Die Bestesten",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "img/logos/die-bestesten.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

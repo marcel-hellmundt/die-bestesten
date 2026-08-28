@@ -154,7 +154,63 @@
         <span class="toggle__track"></span>
       </span>
     </label>
+
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Aufgestellter Spieler trifft</span>
+        <span class="pref-desc">Wenn ein von dir aufgestellter Spieler ein Tor erzielt</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('lineup_player_goal')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('lineup_player_goal', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
   </div>
+</section>
+
+<!-- Push-Benachrichtigungen -->
+<section class="settings-section">
+  <div class="section-header-row"><h2 class="section-header">Push-Benachrichtigungen</h2></div>
+
+  @if (pushStatus() === 'unsupported') {
+    <p class="state-msg">Dein Browser unterstützt keine Push-Benachrichtigungen.</p>
+  } @else {
+    @if (pushIosHint()) {
+      <p class="state-msg">
+        Auf dem iPhone/iPad funktionieren Push-Benachrichtigungen nur, wenn die Seite über
+        „Zum Home-Bildschirm“ als App hinzugefügt wurde.
+      </p>
+    }
+
+    @if (pushStatus() === 'denied') {
+      <p class="state-msg state-msg--error">
+        Push-Benachrichtigungen wurden im Browser blockiert — bitte in den Browser-Einstellungen
+        für diese Seite erlauben.
+      </p>
+    } @else {
+      <p class="pref-desc">
+        {{ pushStatus() === 'subscribed'
+          ? 'Push-Benachrichtigungen sind auf diesem Gerät aktiviert.'
+          : 'Erhalte Systembenachrichtigungen auf diesem Gerät, z.B. wenn ein aufgestellter Spieler trifft.' }}
+      </p>
+
+      @if (pushError()) {
+        <p class="state-msg state-msg--error">{{ pushError() }}</p>
+      }
+
+      <button class="btn btn-primary"
+              [disabled]="pushBusy()"
+              (click)="togglePush()">
+        {{ pushBusy()
+          ? 'Wird verarbeitet…'
+          : (pushStatus() === 'subscribed' ? 'Deaktivieren' : 'Aktivieren') }}
+      </button>
+    }
+  }
 </section>
 
 <!-- Konto löschen -->
