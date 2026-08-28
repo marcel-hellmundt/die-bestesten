@@ -20,6 +20,7 @@ interface PowerrankingStanding {
   team_id: string;
   team_name: string;
   color: string | null;
+  manager_id: string;
   manager_name: string;
   season_id: string;
   total_points: number;
@@ -122,6 +123,18 @@ export class PowerrankingComponent {
 
   // Für die Logo-Übersicht: reale Tabelle strikt nach Platzierung aufsteigend
   realTable = computed(() => [...this.standings()].sort((a, b) => a.actual_position - b.actual_position));
+
+  // manager_id -> eigenes team_id, um in jeder Tipp-Spalte die Zeile des eigenen Teams
+  // hervorzuheben (eigenes Team = Team des Tippers, nicht das getippte Team an sich)
+  private ownTeamIdByManager = computed(() => {
+    const map = new Map<string, string>();
+    for (const s of this.standings()) map.set(s.manager_id, s.team_id);
+    return map;
+  });
+
+  isOwnTeamPick(managerId: string, teamId: string): boolean {
+    return this.ownTeamIdByManager().get(managerId) === teamId;
+  }
 
   avatarFailed = new Set<string>();
   onAvatarError(managerId: string): void { this.avatarFailed.add(managerId); }

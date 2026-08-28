@@ -81,7 +81,7 @@ trait PowerrankingTrait
             $actualPosByTeam[$row['team_id']] = $rank;
             $standings[] = [
                 'team_id' => $row['team_id'], 'team_name' => $row['team_name'], 'color' => $row['color'],
-                'manager_name' => $row['manager_name'], 'season_id' => $row['season_id'],
+                'manager_id' => $row['manager_id'], 'manager_name' => $row['manager_name'], 'season_id' => $row['season_id'],
                 'total_points' => $points, 'actual_position' => $rank,
             ];
         }

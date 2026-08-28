@@ -112,7 +112,7 @@
             </span>
           </div>
           @for (p of e.picks; track p.team_id) {
-            <div class="pr-overview__row">
+            <div class="pr-overview__row" [class.pr-overview__row--own-team]="isOwnTeamPick(e.manager_id, p.team_id)">
               @if (teamInfo(p.team_id); as info) {
                 <span class="pr-overview__logo-wrap">
                   <img

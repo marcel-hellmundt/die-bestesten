@@ -271,6 +271,11 @@
     justify-content: flex-start;
     gap: 4px;
   }
+
+  &--own-team {
+    background-color: color-mix(in srgb, $color-accent 12%, transparent);
+    border-radius: $radius-sm;
+  }
 }
 
 .pr-overview__position {

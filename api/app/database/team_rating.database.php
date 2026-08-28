@@ -56,7 +56,7 @@ trait TeamRatingTrait
             // No completed matchday yet — still list teams already registered for the
             // season (e.g. before a season starts) instead of an empty table.
             $tq = $this->con_league->prepare(
-                "SELECT t.id AS team_id, t.team_name, t.color_primary AS color, t.season_id, m.manager_name
+                "SELECT t.id AS team_id, t.team_name, t.color_primary AS color, t.season_id, t.manager_id, m.manager_name
                  FROM team t
                  JOIN manager m ON m.id = t.manager_id
                  WHERE t.season_id = :season_id
@@ -86,7 +86,7 @@ trait TeamRatingTrait
 
         $rq = $this->con_league->prepare(
             "SELECT t.id AS team_id, t.team_name, t.color_primary AS color, t.season_id,
-                    m.manager_name,
+                    t.manager_id, m.manager_name,
                     COALESCE(SUM(tr.points), 0)             AS total_points,
                     COALESCE(SUM(tr.goals), 0)              AS total_goals,
                     COALESCE(SUM(tr.assists), 0)            AS total_assists,
@@ -101,7 +101,7 @@ trait TeamRatingTrait
              JOIN team t ON t.id = tr.team_id
              JOIN manager m ON m.id = t.manager_id
              WHERE tr.matchday_id IN ($placeholders)
-             GROUP BY t.id, t.team_name, t.color_primary, t.season_id, m.manager_name
+             GROUP BY t.id, t.team_name, t.color_primary, t.season_id, t.manager_id, m.manager_name
              ORDER BY total_points DESC"
         );
         $rq->execute($ids);

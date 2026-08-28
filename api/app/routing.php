@@ -497,7 +497,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team_rating/season',
-                        'description' => 'Saisontabelle — aggregierte Summen (Punkte, Tore, Assists, SdS, total_red_cards, total_yellow_red_cards, …) aller Teams, sortiert nach Punkten',
+                        'description' => 'Saisontabelle — aggregierte Summen (Punkte, Tore, Assists, SdS, total_red_cards, total_yellow_red_cards, …) aller Teams inkl. manager_id, sortiert nach Punkten',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                 ],
@@ -1034,7 +1034,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/powerranking',
-                        'description' => 'Vor Anpfiff Spieltag 1: { locked:false, season_id, kickoff_date, my_picks:[{team_id,position}], submitted_count, total_managers } — eigener Tipp, andere Tipps unsichtbar; submitted_count/total_managers = wie viele Manager der Saison bereits (irgend)einen Tipp abgegeben haben von wie vielen insgesamt. Nach Anpfiff Spieltag 1 (oder mit ?preview=1 als Admin): { locked:bool, preview:bool, season_id, kickoff_date, standings:[{team_id,team_name,color,manager_name,season_id,total_points,actual_position}], entries:[{manager_id,manager_name,alias,total_deviation,picks:[{team_id,predicted_position,actual_position,deviation}]}] } sortiert nach total_deviation ASC — standings = aktuelle Live-Saisontabelle wie /team_rating/season; actual_position = Standard-Wettkampf-Rang (1224), punktgleiche Teams (z.B. alle 0 Punkte vor Saisonstart) teilen sich denselben Platz statt willkürlich durchnummeriert zu werden; preview=true = Reveal-Ansicht wird nur wegen Admin-Vorschau vor dem eigentlichen Lock gezeigt (locked bleibt false); 403 wenn für die Liga deaktiviert — Auth',
+                        'description' => 'Vor Anpfiff Spieltag 1: { locked:false, season_id, kickoff_date, my_picks:[{team_id,position}], submitted_count, total_managers } — eigener Tipp, andere Tipps unsichtbar; submitted_count/total_managers = wie viele Manager der Saison bereits (irgend)einen Tipp abgegeben haben von wie vielen insgesamt. Nach Anpfiff Spieltag 1 (oder mit ?preview=1 als Admin): { locked:bool, preview:bool, season_id, kickoff_date, standings:[{team_id,team_name,color,manager_id,manager_name,season_id,total_points,actual_position}], entries:[{manager_id,manager_name,alias,total_deviation,picks:[{team_id,predicted_position,actual_position,deviation}]}] } sortiert nach total_deviation ASC — standings = aktuelle Live-Saisontabelle wie /team_rating/season; actual_position = Standard-Wettkampf-Rang (1224), punktgleiche Teams (z.B. alle 0 Punkte vor Saisonstart) teilen sich denselben Platz statt willkürlich durchnummeriert zu werden; preview=true = Reveal-Ansicht wird nur wegen Admin-Vorschau vor dem eigentlichen Lock gezeigt (locked bleibt false); 403 wenn für die Liga deaktiviert — Auth',
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)', 'preview' => '"1" — Admin sieht die Reveal-Ansicht (alle Tipps + Tabelle) schon vor Anpfiff Spieltag 1; für Nicht-Admins wirkungslos'],
                     ],
                     [
