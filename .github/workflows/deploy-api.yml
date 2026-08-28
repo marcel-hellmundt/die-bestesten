@@ -20,6 +20,8 @@ jobs:
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install dependencies
         working-directory: api
@@ -28,6 +30,24 @@ jobs:
       - name: Install lftp
         run: sudo apt-get install -y lftp
 
+      # composer install regenerates vendor/ from scratch on every run, giving every file a fresh
+      # mtime even when composer.lock didn't change — lftp then treats all of vendor/ as "changed"
+      # and re-uploads it every single deploy, which dominates the deploy time. Only re-sync
+      # vendor/ when composer.lock actually changed in this push; otherwise leave the server's
+      # existing vendor/ untouched. Falls back to "always sync" when the previous commit can't be
+      # determined (new branch, workflow_dispatch, shallow history) — correctness over speed.
+      - name: Check if composer.lock changed
+        id: lock
+        run: |
+          before="${{ github.event.before }}"
+          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$before" 2>/dev/null; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$before" HEAD -- api/composer.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Upload to FTP
         run: |
           lftp -c "
@@ -35,5 +55,16 @@ jobs:
             set ftp:ssl-protect-data true;
             set ssl:verify-certificate false;
             open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
-            mirror --reverse --delete --exclude .env --exclude .git --verbose ./api/ ${{ vars.FTP_DIR_API }};
+            mirror --reverse --delete --exclude .env --exclude .git --exclude vendor --verbose ./api/ ${{ vars.FTP_DIR_API }};
+          "
+
+      - name: Upload vendor to FTP
+        if: steps.lock.outputs.changed == 'true'
+        run: |
+          lftp -c "
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ssl:verify-certificate false;
+            open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+            mirror --reverse --delete --verbose ./api/vendor/ ${{ vars.FTP_DIR_API }}/vendor/;
           "
