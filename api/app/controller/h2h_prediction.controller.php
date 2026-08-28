@@ -18,7 +18,12 @@ class H2HPredictionController extends _BaseController
             return ['status' => false, 'message' => 'match_id und pick (home|draw|away) erforderlich'];
         }
 
-        return $this->db->submitH2HPrediction($matchId, $GLOBALS['auth_manager_id'], $pick);
+        // Vom Frontend zum Zeitpunkt der Tippabgabe für genau diesen Pick angezeigte Pseudo-Quote
+        // — optional, wird unverändert als Snapshot gespeichert (siehe
+        // H2HPredictionTrait::submitH2HPrediction).
+        $odds = isset($body['odds']) ? (float) $body['odds'] : null;
+
+        return $this->db->submitH2HPrediction($matchId, $GLOBALS['auth_manager_id'], $pick, $odds);
     }
 
     protected function patch(): mixed  { return $this->methodNotAllowed(); }

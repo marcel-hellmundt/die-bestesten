@@ -37,7 +37,7 @@ trait H2HPredictionTrait
 
         if ($locked || $preview) {
             $allQ = $this->con_league->prepare(
-                "SELECT hp.manager_id, m.manager_name, m.alias, hp.pick
+                "SELECT hp.manager_id, m.manager_name, m.alias, hp.pick, hp.odds
                  FROM h2h_prediction hp JOIN manager m ON m.id = hp.manager_id
                  WHERE hp.match_id = :mid ORDER BY m.manager_name ASC"
             );
@@ -80,8 +80,14 @@ trait H2HPredictionTrait
      * UNIQUE(match_id, manager_id) — Tipp bleibt bis Anpfiff beliebig oft änderbar). Serverseitige
      * Absicherung des Frontend-Gates aus getH2HPredictionState() (is_current_matchday) — nur
      * Matches des aktuellen Spieltags sind tippbar, nicht bereits geplante zukünftige.
+     *
+     * $odds: die im Frontend zum Zeitpunkt der Tippabgabe für genau diesen Pick angezeigte
+     * Pseudo-Quote (siehe H2HTrait::calculateH2HOdds), vom Client mitgeschickt und unverändert
+     * gespeichert — kein Server-seitiger Neuberechnungs-Aufwand nötig, da rein informativ ohne
+     * echte Einsätze. Die Quote kann sich bis Anpfiff durch Aufstellungsänderungen noch ändern;
+     * dieser Snapshot hält fest, was der Manager beim Tippen tatsächlich gesehen hat.
      */
-    public function submitH2HPrediction(string $matchId, string $managerId, string $pick): array
+    public function submitH2HPrediction(string $matchId, string $managerId, string $pick, ?float $odds): array
     {
         $mq = $this->con_league->prepare(
             "SELECT matchday_id FROM h2h_match WHERE id = :id LIMIT 1"
@@ -114,9 +120,9 @@ trait H2HPredictionTrait
         }
 
         $this->con_league->prepare(
-            "INSERT INTO h2h_prediction (match_id, manager_id, pick) VALUES (:mid, :man, :pick)
-             ON DUPLICATE KEY UPDATE pick = VALUES(pick)"
-        )->execute([':mid' => $matchId, ':man' => $managerId, ':pick' => $pick]);
+            "INSERT INTO h2h_prediction (match_id, manager_id, pick, odds) VALUES (:mid, :man, :pick, :odds)
+             ON DUPLICATE KEY UPDATE pick = VALUES(pick), odds = VALUES(odds)"
+        )->execute([':mid' => $matchId, ':man' => $managerId, ':pick' => $pick, ':odds' => $odds]);
 
         return ['status' => true];
     }

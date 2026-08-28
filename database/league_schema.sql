@@ -180,6 +180,9 @@ CREATE TABLE IF NOT EXISTS h2h_prediction (
     match_id   CHAR(36) NOT NULL,
     manager_id CHAR(36) NOT NULL,             -- Referenz auf global_schema.manager.id (kein FK, cross-DB)
     pick       ENUM('home','draw','away') CHARACTER SET utf8mb4 NOT NULL,
+    odds       DECIMAL(6,2) NULL,             -- Pseudo-Quote (H2HTrait::calculateH2HOdds) des Picks,
+                                               -- wie im Frontend bei Tippabgabe angezeigt — kann sich
+                                               -- bis Anpfiff durch Aufstellungsänderungen noch ändern
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (match_id) REFERENCES h2h_match(id) ON DELETE CASCADE,
     UNIQUE KEY uk_h2h_prediction (match_id, manager_id)

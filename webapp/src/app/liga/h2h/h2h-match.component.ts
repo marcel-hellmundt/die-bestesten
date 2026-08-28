@@ -126,7 +126,12 @@ export class H2HMatchComponent implements OnDestroy {
     this.submittingPick.set(true);
     this.predictionError.set(null);
 
-    this.api.post<{ status: boolean; message?: string }>('h2h_prediction', { match_id: matchId, pick }).subscribe({
+    // Nur die Quote des gewählten Picks wird 1:1 als Snapshot mitgeschickt (siehe
+    // H2HPredictionTrait::submitH2HPrediction) — sie kann sich bis Anpfiff durch
+    // Aufstellungsänderungen noch von der Quote unterscheiden, die am Ende gilt.
+    const body = { match_id: matchId, pick, odds: this.odds()?.[pick] ?? null };
+
+    this.api.post<{ status: boolean; message?: string }>('h2h_prediction', body).subscribe({
       next: () => this.submittingPick.set(false),
       error: (err) => {
         this.optimisticPick.set(previous);
