@@ -47,4 +47,24 @@
       </div>
     }
   </div>
+
+  <div class="nav-groups-bottom">
+    @for (group of bottomGroups(); track group.label) {
+      <div class="nav-group">
+        @if (group.label) {
+          <span class="nav-group-label">{{ group.label }}</span>
+        }
+        <ul class="nav-items">
+          @for (item of group.items; track item.label) {
+            <li>
+              <a class="nav-item" [routerLink]="item.route" routerLinkActive="nav-item--active">
+                <app-icon [name]="item.icon" class="nav-icon"></app-icon>
+                <span class="nav-label">{{ item.label }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
 </nav>
