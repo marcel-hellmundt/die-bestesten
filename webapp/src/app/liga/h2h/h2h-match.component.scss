@@ -383,8 +383,13 @@
     }
   }
 
+  // width:100% statt uns auf die Flex-Stretch-Vorgabe des Column-Containers zu verlassen — auf
+  // iOS Safari (in Kombination mit appearance:none auf dem <button>) schrumpfte das Band sonst
+  // auf die Breite seines Inhalts statt die volle Buttonbreite einzunehmen, wodurch die farbige
+  // Füllung + der Text links im Button "hängen" statt zentriert über die volle Breite zu sitzen.
   &__top {
     flex: 7 7 0;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -395,6 +400,7 @@
 
   &__bottom {
     flex: 3 3 0;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
