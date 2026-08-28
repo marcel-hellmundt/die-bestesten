@@ -1,0 +1,18 @@
+<div class="push-prompt">
+  <p class="push-prompt__text">
+    Aktiviere Push-Benachrichtigungen, um sofort informiert zu werden — z.&nbsp;B. wenn ein von
+    dir aufgestellter Spieler ein Tor erzielt. Du kannst das jederzeit in den Einstellungen
+    ändern.
+  </p>
+
+  @if (pushSvc.error()) {
+    <p class="state-msg state-msg--error">{{ pushSvc.error() }}</p>
+  }
+
+  <div class="push-prompt__actions">
+    <button class="btn" [disabled]="pushSvc.busy()" (click)="dismiss()">Später</button>
+    <button class="btn btn-primary" [disabled]="pushSvc.busy()" (click)="enable()">
+      {{ pushSvc.busy() ? 'Wird aktiviert…' : 'Aktivieren' }}
+    </button>
+  </div>
+</div>

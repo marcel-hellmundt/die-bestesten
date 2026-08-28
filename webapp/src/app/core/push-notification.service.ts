@@ -36,6 +36,28 @@ export class PushNotificationService {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   }
 
+  // Merkt sich pro Gerät/Browser (nicht pro Manager, da rein lokal), ob der einmalige
+  // Push-Hinweis-Dialog (siehe shell/push-prompt) bereits weggeklickt wurde — verhindert, dass er
+  // bei jedem Login erneut nervt, unabhängig davon ob der Nutzer sich für/gegen Push entschieden hat.
+  private readonly promptDismissedKey = 'push_prompt_dismissed';
+
+  isPromptDismissed(): boolean {
+    try {
+      return localStorage.getItem(this.promptDismissedKey) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  dismissPrompt(): void {
+    try {
+      localStorage.setItem(this.promptDismissedKey, '1');
+    } catch {
+      // localStorage kann in seltenen Fällen blockiert sein (privater Modus etc.) — dann bleibt
+      // der Dialog beim nächsten Login halt erneut sichtbar, kein harter Fehler nötig.
+    }
+  }
+
   async refreshStatus(): Promise<void> {
     if (!this.isSupported()) {
       this._status.set('unsupported');

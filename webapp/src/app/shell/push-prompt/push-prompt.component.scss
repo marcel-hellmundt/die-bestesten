@@ -1,0 +1,15 @@
+@use '../../../styles/variables' as *;
+
+.push-prompt {
+  &__text {
+    font-size: $font-sm;
+    color: $color-text;
+    margin-bottom: $space-4;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $space-3;
+  }
+}

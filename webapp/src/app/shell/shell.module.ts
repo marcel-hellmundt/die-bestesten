@@ -9,6 +9,7 @@ import { IconComponent } from '../core/icon/icon.component';
 import { AchievementNotificationComponent } from './achievement-notification/achievement-notification.component';
 import { BottomSheetComponent } from './bottom-sheet/bottom-sheet.component';
 import { CreateTeamComponent } from './create-team/create-team.component';
+import { PushPromptComponent } from './push-prompt/push-prompt.component';
 
 const routes: Routes = [
   {
@@ -31,7 +32,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent, CreateTeamComponent],
+  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent, CreateTeamComponent, PushPromptComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes)
