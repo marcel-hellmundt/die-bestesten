@@ -376,10 +376,10 @@
 
   &__top {
     flex: 7 7 0%;
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: $space-1;
     padding: $space-2;
     background: $color-surface;
   }
@@ -394,11 +394,10 @@
   }
 
   &__logo {
-    position: absolute;
-    left: $space-2;
     width: 20px;
     height: 20px;
     object-fit: contain;
+    flex-shrink: 0;
   }
 
   &__label {
