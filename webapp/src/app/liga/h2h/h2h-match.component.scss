@@ -500,7 +500,9 @@
 }
 
 .h2h-history-row {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: $space-3;
   padding: $space-3 0;
   color: inherit;
   text-decoration: none;
@@ -512,13 +514,12 @@
   }
 
   &__matchday {
-    margin-bottom: $space-1;
+    flex-shrink: 0;
+    width: 44px;
     font-size: $font-2xs;
+    line-height: 1.3;
     color: $color-text-muted;
     text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   &__teams {
@@ -526,6 +527,8 @@
     align-items: center;
     justify-content: center;
     gap: $space-3;
+    flex: 1;
+    min-width: 0;
   }
 
   &__logo {

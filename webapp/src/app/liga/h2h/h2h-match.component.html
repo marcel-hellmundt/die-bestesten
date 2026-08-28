@@ -234,9 +234,7 @@
               >{{ cache.seasonName(group.season_id) }}</a>
               @for (m of group.matches; track m.id) {
                 <a class="h2h-history-row" [routerLink]="['/liga/h2h', m.id]">
-                  <div class="h2h-history-row__matchday">
-                    Spieltag {{ m.matchday_number }} · {{ phaseLabelFor(m.phase) }} · {{ m.league_name }}
-                  </div>
+                  <div class="h2h-history-row__matchday">Spieltag<br />{{ m.matchday_number }}</div>
                   <div class="h2h-history-row__teams">
                     <img
                       class="h2h-history-row__logo"

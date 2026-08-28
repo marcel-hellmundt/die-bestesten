@@ -298,7 +298,6 @@ export class H2HMatchComponent implements OnDestroy {
     group: 'Gruppenphase', quarterfinal: 'Viertelfinale', semifinal: 'Halbfinale', final: 'Finale',
   };
   phaseLabel = computed(() => this.phaseLabels[this.match()?.phase ?? ''] ?? '');
-  phaseLabelFor(phase: string): string { return this.phaseLabels[phase] ?? ''; }
 
   teamLogoUrl(seasonId: string, teamId: string): string {
     return `https://img.die-bestesten.de/team/${seasonId}/${teamId}.png`;
