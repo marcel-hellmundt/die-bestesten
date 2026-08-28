@@ -132,11 +132,13 @@
   <div class="team-toggle">
     <button
       class="team-toggle__btn"
+      [style.--team-color]="homeTeam()?.color"
       [class.team-toggle__btn--active]="selectedSide() === 'home'"
       (click)="selectedSide.set('home')"
     >{{ homeTeam()?.team_name }}</button>
     <button
       class="team-toggle__btn"
+      [style.--team-color]="awayTeam()?.color"
       [class.team-toggle__btn--active]="selectedSide() === 'away'"
       (click)="selectedSide.set('away')"
     >{{ awayTeam()?.team_name }}</button>

@@ -578,34 +578,52 @@
 }
 
 // ── Mobile: team toggle ──────────────────────────────────────────────────────
+// Gleicher Pill-/Segmented-Control-Look wie saisonvorschau.component.scss's
+// .points-mode-toggle (Alle Spieler/Teuerste 11/Beste 11) — hier für Heim/Auswärts.
 
 .team-toggle {
   display: none;
 
   @media (max-width: $mobile-breakpoint) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: $space-2;
+    display: flex;
+    gap: 2px;
+    padding: 2px;
     margin-bottom: $space-4;
+    border: 1px solid $color-border;
+    border-radius: $radius-full;
+    background: $color-surface;
   }
 
   &__btn {
-    padding: $space-2 $space-3;
-    border: 1px solid $color-border;
-    border-radius: $radius-md;
-    background: $color-surface;
+    --team-color: #{$color-surface-alt};
+
+    flex: 1;
+    height: 30px;
+    padding: 0 $space-2;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
     color: $color-text-muted;
-    font-size: $font-sm;
+    font-size: $font-xs;
     font-weight: $font-weight-medium;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
+    transition:
+      color $transition-fast,
+      background-color $transition-fast;
+
+    // :not(.team-toggle__btn--active), da sonst ein noch aktiver :hover (z.B. auf Mobile nach
+    // einem Tap, solange der Finger/Mauszeiger über dem Button bleibt) dank höherer Spezifität
+    // die dunkle Hover-Textfarbe über die weiße Aktiv-Textfarbe legt.
+    &:hover:not(.team-toggle__btn--active) {
+      color: $color-text;
+    }
 
     &--active {
-      border-color: $color-accent;
-      color: $color-text;
-      background: color-mix(in srgb, $color-accent 8%, $color-surface);
+      color: #fff;
+      background: var(--team-color);
       font-weight: $font-weight-semibold;
     }
   }
