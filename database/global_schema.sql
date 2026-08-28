@@ -287,12 +287,16 @@ CREATE TABLE IF NOT EXISTS notification (
     FOREIGN KEY (receiver_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Tabelle: notification_preference
+-- Tabelle: notification_preference — pro Manager EIN Toggle je (channel, event_type)-Kombination;
+-- channel = in_app (Glocke, siehe NotificationTrait) oder push (Web-Push, siehe
+-- PushSubscriptionTrait) — nicht jedes event_type unterstützt beide Channels, siehe
+-- NotificationController::patch() für die erlaubten Kombinationen
 CREATE TABLE IF NOT EXISTS notification_preference (
     manager_id CHAR(36)    NOT NULL,
+    channel    ENUM('in_app', 'push') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'in_app',
     event_type VARCHAR(50) NOT NULL,
     enabled    BOOL        NOT NULL DEFAULT 1,
-    PRIMARY KEY (manager_id, event_type),
+    PRIMARY KEY (manager_id, channel, event_type),
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

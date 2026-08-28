@@ -1197,7 +1197,7 @@ trait H2HTrait
 
         $allMgrsQ = $this->con->prepare(
             "SELECT id FROM manager WHERE status = 'active'
-             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
+             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE channel = 'in_app' AND event_type = 'h2h_draw' AND enabled = 0)"
         );
         $allMgrsQ->execute();
         $allManagerIds = $allMgrsQ->fetchAll(PDO::FETCH_COLUMN);
@@ -1439,7 +1439,7 @@ trait H2HTrait
 
         $allMgrsQ = $this->con->prepare(
             "SELECT id FROM manager WHERE status = 'active'
-             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
+             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE channel = 'in_app' AND event_type = 'h2h_draw' AND enabled = 0)"
         );
         $allMgrsQ->execute();
         $notifStmt = $this->con->prepare(
@@ -1672,7 +1672,7 @@ trait H2HTrait
 
         $allMgrsQ = $this->con->prepare(
             "SELECT id FROM manager WHERE status = 'active'
-             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE event_type = 'h2h_draw' AND enabled = 0)"
+             AND id NOT IN (SELECT manager_id FROM notification_preference WHERE channel = 'in_app' AND event_type = 'h2h_draw' AND enabled = 0)"
         );
         $allMgrsQ->execute();
         $notifStmt = $this->con->prepare(

@@ -59,35 +59,61 @@ trait NotificationTrait
         return $id;
     }
 
-    // Preferences
+    // Preferences — welche event_types welche Channels unterstützen (nicht jedes Event ist auch
+    // als Push verfügbar). Einzige Quelle der Wahrheit für sowohl die Default-Struktur von
+    // getNotificationPreferences() als auch die Validierung in
+    // NotificationController::patch()/isValidPreferenceCombo().
+    private const NOTIFICATION_CHANNELS = [
+        'matchday_completed'    => ['in_app'],
+        'achievement_earned'    => ['in_app', 'push'],
+        'h2h_draw'              => ['in_app'],
+        'scouted_player_update' => ['in_app', 'push'],
+        'lineup_player_goal'    => ['in_app', 'push'],
+    ];
+
+    public function isValidPreferenceCombo(string $channel, string $eventType): bool
+    {
+        return in_array($channel, self::NOTIFICATION_CHANNELS[$eventType] ?? [], true);
+    }
 
     public function getNotificationPreferences(string $managerId): array
     {
-        $defined = [
-            'matchday_completed' => true,
-            'achievement_earned' => true,
-            'h2h_draw'           => true,
-            'lineup_player_goal' => true,
-        ];
+        $result = ['in_app' => [], 'push' => []];
+        foreach (self::NOTIFICATION_CHANNELS as $eventType => $channels) {
+            foreach ($channels as $channel) {
+                $result[$channel][$eventType] = true;
+            }
+        }
+
         $q = $this->con->prepare(
-            "SELECT event_type, enabled FROM notification_preference WHERE manager_id = ?"
+            "SELECT channel, event_type, enabled FROM notification_preference WHERE manager_id = ?"
         );
         $q->execute([$managerId]);
         foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            if (array_key_exists($row['event_type'], $defined)) {
-                $defined[$row['event_type']] = (bool) $row['enabled'];
+            if (isset($result[$row['channel']][$row['event_type']])) {
+                $result[$row['channel']][$row['event_type']] = (bool) $row['enabled'];
             }
         }
-        return $defined;
+        return $result;
     }
 
-    public function setNotificationPreference(string $managerId, string $eventType, bool $enabled): void
+    public function setNotificationPreference(string $managerId, string $channel, string $eventType, bool $enabled): void
     {
         $this->con->prepare(
-            "INSERT INTO notification_preference (manager_id, event_type, enabled)
-             VALUES (?, ?, ?)
+            "INSERT INTO notification_preference (manager_id, channel, event_type, enabled)
+             VALUES (?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE enabled = VALUES(enabled)"
-        )->execute([$managerId, $eventType, $enabled ? 1 : 0]);
+        )->execute([$managerId, $channel, $eventType, $enabled ? 1 : 0]);
+    }
+
+    public function isNotificationEnabled(string $managerId, string $channel, string $eventType): bool
+    {
+        $q = $this->con->prepare(
+            "SELECT enabled FROM notification_preference WHERE manager_id = ? AND channel = ? AND event_type = ?"
+        );
+        $q->execute([$managerId, $channel, $eventType]);
+        $row = $q->fetch(PDO::FETCH_ASSOC);
+        return $row === false || (bool) $row['enabled'];
     }
 
     // Bulk notification creators
@@ -98,7 +124,7 @@ trait NotificationTrait
             "SELECT id FROM manager WHERE status = 'active'
              AND id NOT IN (
                  SELECT manager_id FROM notification_preference
-                 WHERE event_type = 'matchday_completed' AND enabled = 0
+                 WHERE channel = 'in_app' AND event_type = 'matchday_completed' AND enabled = 0
              )"
         );
         $q->execute();
@@ -118,20 +144,19 @@ trait NotificationTrait
 
     public function createAchievementNotification(string $managerId, string $achievementName, string $level, ?string $reason, ?string $earnedAt = null): void
     {
-        $pref = $this->con->prepare(
-            "SELECT enabled FROM notification_preference
-             WHERE manager_id = ? AND event_type = 'achievement_earned'"
-        );
-        $pref->execute([$managerId]);
-        $row = $pref->fetch(PDO::FETCH_ASSOC);
-        if ($row !== false && !(bool) $row['enabled']) return;
-
         $levelLabel = match ($level) { 'bronze' => ' (Bronze)', 'silver' => ' (Silber)', default => '' };
         $title = "Achievement: $achievementName$levelLabel";
-        $createdAt = $earnedAt ?? date('Y-m-d H:i:s');
-        $this->con->prepare(
-            "INSERT INTO notification (id, receiver_id, title, message, created_at)
-             VALUES (UUID(), ?, ?, ?, ?)"
-        )->execute([$managerId, $title, $reason, $createdAt]);
+
+        if ($this->isNotificationEnabled($managerId, 'in_app', 'achievement_earned')) {
+            $createdAt = $earnedAt ?? date('Y-m-d H:i:s');
+            $this->con->prepare(
+                "INSERT INTO notification (id, receiver_id, title, message, created_at)
+                 VALUES (UUID(), ?, ?, ?, ?)"
+            )->execute([$managerId, $title, $reason, $createdAt]);
+        }
+
+        if ($this->isNotificationEnabled($managerId, 'push', 'achievement_earned')) {
+            $this->sendPushNotification([$managerId], $title, $reason ?? 'Neues Achievement freigeschaltet!');
+        }
     }
 }

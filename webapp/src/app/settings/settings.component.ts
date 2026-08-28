@@ -5,7 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../auth/auth.service';
 import { DataCacheService } from '../core/data-cache.service';
-import { NotificationService } from '../core/notification.service';
+import { NotificationChannel, NotificationService } from '../core/notification.service';
 import { PushNotificationService } from '../core/push-notification.service';
 import { environment } from '../../environments/environment';
 
@@ -53,13 +53,13 @@ export class SettingsComponent {
     }
   }
 
-  pref(key: string): boolean {
-    const val = this.preferences()[key];
+  pref(channel: NotificationChannel, key: string): boolean {
+    const val = this.preferences()[channel][key];
     return val === undefined ? true : val;
   }
 
-  setPreference(eventType: string, enabled: boolean): void {
-    this.notifSvc.setPreference(eventType, enabled);
+  setPreference(channel: NotificationChannel, eventType: string, enabled: boolean): void {
+    this.notifSvc.setPreference(channel, eventType, enabled);
   }
 
   // Profile

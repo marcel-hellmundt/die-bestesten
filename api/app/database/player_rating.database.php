@@ -468,18 +468,22 @@ trait PlayerRatingTrait
         $managerIds = $q->fetchAll(PDO::FETCH_COLUMN);
         if (empty($managerIds)) return;
 
-        $managerIds = array_values(array_filter(
-            $managerIds,
-            fn($m) => $this->isNotificationEnabled($m, 'lineup_player_goal')
-        ));
-        if (empty($managerIds)) return;
-
         $title = 'Tor!';
         $body  = "$displayname hat für dich getroffen.";
+
         foreach ($managerIds as $managerId) {
-            $this->createNotification($managerId, $title, $body, null);
+            if ($this->isNotificationEnabled($managerId, 'in_app', 'lineup_player_goal')) {
+                $this->createNotification($managerId, $title, $body, null);
+            }
         }
-        $this->sendPushNotification($managerIds, $title, $body);
+
+        $pushManagerIds = array_values(array_filter(
+            $managerIds,
+            fn($m) => $this->isNotificationEnabled($m, 'push', 'lineup_player_goal')
+        ));
+        if (!empty($pushManagerIds)) {
+            $this->sendPushNotification($pushManagerIds, $title, $body);
+        }
     }
 
     private function calculatePoints(string $id): int

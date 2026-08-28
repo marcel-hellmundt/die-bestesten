@@ -191,19 +191,42 @@
   gap: 0;
 }
 
+.pref-header {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding-bottom: $space-2;
+
+  &__spacer {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__col {
+    flex-shrink: 0;
+    width: 44px;
+    text-align: center;
+    font-size: $font-2xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
 .pref-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: $space-4;
   padding: $space-3 0;
   border-bottom: 1px solid $color-border;
-  cursor: pointer;
 
   &:last-child { border-bottom: none; }
 }
 
 .pref-text {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;

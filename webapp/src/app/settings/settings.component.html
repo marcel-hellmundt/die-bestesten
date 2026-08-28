@@ -110,65 +110,104 @@
   <div class="section-header-row"><h2 class="section-header">Benachrichtigungen</h2></div>
 
   <div class="pref-list">
-    <label class="pref-item">
+    <div class="pref-header">
+      <span class="pref-header__spacer"></span>
+      <span class="pref-header__col">In-App</span>
+      <span class="pref-header__col">Push</span>
+    </div>
+
+    <div class="pref-item">
       <div class="pref-text">
         <span class="pref-name">Spieltag abgeschlossen</span>
         <span class="pref-desc">Wenn ein Spieltag ausgewertet wurde</span>
       </div>
-      <span class="toggle">
+      <label class="toggle">
         <input type="checkbox"
                class="toggle__input"
-               [checked]="pref('matchday_completed')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('matchday_completed', $any($event.target).checked)" />
+               [checked]="pref('in_app', 'matchday_completed')"
+               (change)="setPreference('in_app', 'matchday_completed', $any($event.target).checked)" />
         <span class="toggle__track"></span>
-      </span>
-    </label>
+      </label>
+      <span class="toggle toggle--placeholder"></span>
+    </div>
 
-    <label class="pref-item">
+    <div class="pref-item">
       <div class="pref-text">
         <span class="pref-name">Achievement erhalten</span>
         <span class="pref-desc">Wenn du ein neues Achievement freischaltest</span>
       </div>
-      <span class="toggle">
+      <label class="toggle">
         <input type="checkbox"
                class="toggle__input"
-               [checked]="pref('achievement_earned')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('achievement_earned', $any($event.target).checked)" />
+               [checked]="pref('in_app', 'achievement_earned')"
+               (change)="setPreference('in_app', 'achievement_earned', $any($event.target).checked)" />
         <span class="toggle__track"></span>
-      </span>
-    </label>
+      </label>
+      <label class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('push', 'achievement_earned')"
+               (change)="setPreference('push', 'achievement_earned', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </label>
+    </div>
 
-    <label class="pref-item">
+    <div class="pref-item">
       <div class="pref-text">
         <span class="pref-name">H2H-Auslosung</span>
         <span class="pref-desc">Bei Auslosung der Gruppenphase, des Viertelfinales oder Halbfinales</span>
       </div>
-      <span class="toggle">
+      <label class="toggle">
         <input type="checkbox"
                class="toggle__input"
-               [checked]="pref('h2h_draw')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('h2h_draw', $any($event.target).checked)" />
+               [checked]="pref('in_app', 'h2h_draw')"
+               (change)="setPreference('in_app', 'h2h_draw', $any($event.target).checked)" />
         <span class="toggle__track"></span>
-      </span>
-    </label>
+      </label>
+      <span class="toggle toggle--placeholder"></span>
+    </div>
 
-    <label class="pref-item">
+    <div class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Beobachteter Spieler</span>
+        <span class="pref-desc">Wenn ein Spieler auf deiner Beobachtungsliste gekauft/verkauft wird oder Spieler des Spieltags ist</span>
+      </div>
+      <label class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('in_app', 'scouted_player_update')"
+               (change)="setPreference('in_app', 'scouted_player_update', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('push', 'scouted_player_update')"
+               (change)="setPreference('push', 'scouted_player_update', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </label>
+    </div>
+
+    <div class="pref-item">
       <div class="pref-text">
         <span class="pref-name">Aufgestellter Spieler trifft</span>
         <span class="pref-desc">Wenn ein von dir aufgestellter Spieler ein Tor erzielt</span>
       </div>
-      <span class="toggle">
+      <label class="toggle">
         <input type="checkbox"
                class="toggle__input"
-               [checked]="pref('lineup_player_goal')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('lineup_player_goal', $any($event.target).checked)" />
+               [checked]="pref('in_app', 'lineup_player_goal')"
+               (change)="setPreference('in_app', 'lineup_player_goal', $any($event.target).checked)" />
         <span class="toggle__track"></span>
-      </span>
-    </label>
+      </label>
+      <label class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('push', 'lineup_player_goal')"
+               (change)="setPreference('push', 'lineup_player_goal', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </label>
+    </div>
   </div>
 </section>
 

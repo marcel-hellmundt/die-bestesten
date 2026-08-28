@@ -116,14 +116,15 @@ trait WatchlistTrait
         $q->execute([$playerId, $sellerTeamId]);
         $watchers = $q->fetchAll(PDO::FETCH_ASSOC);
 
+        $title = "Beobachteter Spieler verkauft";
+        $body  = "$displayname wurde verkauft.";
         foreach ($watchers as $w) {
-            if (!$this->isNotificationEnabled($w['manager_id'], 'scouted_player_update')) continue;
-            $this->createNotification(
-                $w['manager_id'],
-                "Beobachteter Spieler verkauft",
-                "$displayname wurde verkauft.",
-                null
-            );
+            if ($this->isNotificationEnabled($w['manager_id'], 'in_app', 'scouted_player_update')) {
+                $this->createNotification($w['manager_id'], $title, $body, null);
+            }
+            if ($this->isNotificationEnabled($w['manager_id'], 'push', 'scouted_player_update')) {
+                $this->sendPushNotification([$w['manager_id']], $title, $body);
+            }
         }
     }
 
@@ -137,14 +138,15 @@ trait WatchlistTrait
         $q->execute([$playerId, $buyerTeamId]);
         $watchers = $q->fetchAll(PDO::FETCH_ASSOC);
 
+        $title = "Beobachteter Spieler gekauft";
+        $body  = "$displayname wurde von $buyerTeamName gekauft.";
         foreach ($watchers as $w) {
-            if (!$this->isNotificationEnabled($w['manager_id'], 'scouted_player_update')) continue;
-            $this->createNotification(
-                $w['manager_id'],
-                "Beobachteter Spieler gekauft",
-                "$displayname wurde von $buyerTeamName gekauft.",
-                null
-            );
+            if ($this->isNotificationEnabled($w['manager_id'], 'in_app', 'scouted_player_update')) {
+                $this->createNotification($w['manager_id'], $title, $body, null);
+            }
+            if ($this->isNotificationEnabled($w['manager_id'], 'push', 'scouted_player_update')) {
+                $this->sendPushNotification([$w['manager_id']], $title, $body);
+            }
         }
     }
 
@@ -158,24 +160,15 @@ trait WatchlistTrait
         $q->execute([$playerId]);
         $watchers = $q->fetchAll(PDO::FETCH_ASSOC);
 
+        $title = "Beobachteter Spieler SdS";
+        $body  = "$displayname ist Spieler des Spieltags.";
         foreach ($watchers as $w) {
-            if (!$this->isNotificationEnabled($w['manager_id'], 'scouted_player_update')) continue;
-            $this->createNotification(
-                $w['manager_id'],
-                "Beobachteter Spieler SdS",
-                "$displayname ist Spieler des Spieltags.",
-                null
-            );
+            if ($this->isNotificationEnabled($w['manager_id'], 'in_app', 'scouted_player_update')) {
+                $this->createNotification($w['manager_id'], $title, $body, null);
+            }
+            if ($this->isNotificationEnabled($w['manager_id'], 'push', 'scouted_player_update')) {
+                $this->sendPushNotification([$w['manager_id']], $title, $body);
+            }
         }
-    }
-
-    private function isNotificationEnabled(string $managerId, string $eventType): bool
-    {
-        $q = $this->con->prepare(
-            "SELECT enabled FROM notification_preference WHERE manager_id = ? AND event_type = ?"
-        );
-        $q->execute([$managerId, $eventType]);
-        $row = $q->fetch(PDO::FETCH_ASSOC);
-        return $row === false || (bool) $row['enabled'];
     }
 }

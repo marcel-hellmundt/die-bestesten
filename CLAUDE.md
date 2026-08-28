@@ -213,8 +213,8 @@ GET      /notification/unread_count — {count: N} — leichtgewichtiger Endpunk
 PATCH    /notification/:id     — Einzelne Notification als gelesen markieren (read_at = NOW()); 403 wenn nicht eigene — Auth
 PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen markieren — Auth
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
-GET      /notification/preferences — {matchday_completed: bool, achievement_earned: bool, h2h_draw: bool, lineup_player_goal: bool}; fehlende DB-Einträge = true (default ON) — Auth
-PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|h2h_draw|lineup_player_goal, enabled: bool} — Auth
+GET      /notification/preferences — {in_app:{matchday_completed,achievement_earned,h2h_draw,scouted_player_update,lineup_player_goal},push:{achievement_earned,scouted_player_update,lineup_player_goal}} (je bool) — zwei getrennt schaltbare Channels pro event_type, push nur für die event_types, die es unterstützen (siehe NotificationTrait::NOTIFICATION_CHANNELS); fehlende DB-Einträge = true (default ON) — Auth
+PATCH    /notification/preferences — {channel: in_app|push, event_type: matchday_completed|achievement_earned|h2h_draw|scouted_player_update|lineup_player_goal, enabled: bool}; 422 wenn die Channel/event_type-Kombination nicht unterstützt wird (z.B. push+matchday_completed) — Auth
 GET      /session               — ?range=day|month|year|all (optional, default day) → {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden},mobile_seconds:{key:Sekunden},desktop_seconds:{key:Sekunden}}]} sortiert nach Gesamtnutzung DESC — Nutzungsdauer je Manager gebucketed nach Zeitraum (Heatmap-Rohdaten); Bucket-Schlüssel: day=Stunde "YYYY-MM-DDTHH:00:00", month=Tag "YYYY-MM-DD", year=Montag der Woche "YYYY-MM-DD", all=1. des Monats "YYYY-MM-DD" (kein festes Fenster — seit der allerersten manager_session); mobile_seconds/desktop_seconds = dieselben Buckets, aber nur je eine Gerätekategorie (device_type mobile/tablet bzw. desktop/unbekannt), unabhängig voneinander dedupliziert — Mobile-Anteil für die Heatmap-Färbung ist mobile_seconds/(mobile_seconds+desktop_seconds), nicht gegen buckets (kann bei gleichzeitiger Mehrgeräte-Nutzung > buckets-Wert liegen) — Admin
 ```
 
@@ -232,7 +232,7 @@ GET      /session               — ?range=day|month|year|all (optional, default
 
 **notification**: id PK, sender_id CHAR(36)? (NULL = Systemnachricht; kein FK), receiver_id FK → manager, title VARCHAR(255), message TEXT?, created_at DATETIME, read_at DATETIME? (NULL = ungelesen)
 
-**notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned, scouted_player_update, lineup_player_goal
+**notification_preference**: manager_id FK + channel ENUM(in_app/push) DEFAULT in_app + event_type VARCHAR(50) PK (zusammen) — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; je ein Toggle pro (channel, event_type); nicht jedes event_type unterstützt beide Channels — event_types: matchday_completed (nur in_app), achievement_earned (in_app+push), h2h_draw (nur in_app), scouted_player_update (in_app+push), lineup_player_goal (in_app+push), siehe NotificationTrait::NOTIFICATION_CHANNELS
 
 **push_subscription**: id PK, manager_id FK, endpoint VARCHAR(500) UNIQUE (vom Browser vergebene Push-Service-URL), p256dh VARCHAR(255), auth VARCHAR(255) (Verschlüsselungs-Keys des Browser-Abos), created_at — Web-Push-Abo eines Browsers/Geräts (siehe PushSubscriptionTrait, POST/DELETE /push_subscription); ein Manager kann mehrere Abos haben (mehrere Geräte/Browser)
 

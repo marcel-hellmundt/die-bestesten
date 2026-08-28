@@ -13,7 +13,11 @@ export interface AppNotification {
   read_at: string | null;
 }
 
-export type NotificationPreferences = Record<string, boolean>;
+export type NotificationChannel = 'in_app' | 'push';
+export interface NotificationPreferences {
+  in_app: Record<string, boolean>;
+  push: Record<string, boolean>;
+}
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
@@ -21,7 +25,7 @@ export class NotificationService {
   private loaded = false;
 
   private _notifications = signal<AppNotification[]>([]);
-  private _preferences = signal<NotificationPreferences>({});
+  private _preferences = signal<NotificationPreferences>({ in_app: {}, push: {} });
   private _unreadCount = signal<number>(0);
 
   notifications = this._notifications.asReadonly();
@@ -85,13 +89,13 @@ export class NotificationService {
   loadPreferences(): void {
     this.api
       .get<NotificationPreferences>('notification/preferences')
-      .pipe(catchError(() => of({} as NotificationPreferences)))
+      .pipe(catchError(() => of({ in_app: {}, push: {} } as NotificationPreferences)))
       .subscribe((prefs) => this._preferences.set(prefs));
   }
 
-  setPreference(eventType: string, enabled: boolean): void {
-    this._preferences.update((p) => ({ ...p, [eventType]: enabled }));
-    this.api.patch<any>('notification/preferences', { event_type: eventType, enabled }).subscribe();
+  setPreference(channel: NotificationChannel, eventType: string, enabled: boolean): void {
+    this._preferences.update((p) => ({ ...p, [channel]: { ...p[channel], [eventType]: enabled } }));
+    this.api.patch<any>('notification/preferences', { channel, event_type: eventType, enabled }).subscribe();
   }
 
   markAsRead(id: string): void {

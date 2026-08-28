@@ -39,14 +39,14 @@ class NotificationController extends _BaseController
 
         if ($this->id === 'preferences') {
             $body      = $this->body();
+            $channel   = $body['channel']    ?? null;
             $eventType = $body['event_type'] ?? null;
             $enabled   = $body['enabled']    ?? null;
-            $allowed   = ['matchday_completed', 'achievement_earned', 'h2h_draw', 'lineup_player_goal'];
-            if (!$eventType || !in_array($eventType, $allowed) || $enabled === null) {
+            if (!$channel || !$eventType || $enabled === null || !$this->db->isValidPreferenceCombo($channel, $eventType)) {
                 http_response_code(422);
-                return ['message' => 'event_type (matchday_completed|achievement_earned|h2h_draw|lineup_player_goal) und enabled (bool) erforderlich'];
+                return ['message' => 'channel (in_app|push), event_type und enabled (bool) erforderlich — nicht jedes event_type unterstützt push'];
             }
-            $this->db->setNotificationPreference($managerId, $eventType, (bool) $enabled);
+            $this->db->setNotificationPreference($managerId, $channel, $eventType, (bool) $enabled);
             return ['ok' => true];
         }
 
