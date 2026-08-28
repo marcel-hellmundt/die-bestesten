@@ -140,18 +140,23 @@ export class H2HMatchComponent implements OnDestroy {
       else drawCount++;
     }
 
+    // Reihenfolge im Uhrzeigersinn ab 12 Uhr (conic-gradient-Default): Auswärts, Unentschieden,
+    // Heim — dadurch liegt Heim optisch links, Auswärts rechts und Unentschieden unten, wenn
+    // beide Teams getippt wurden. Rundungsrest landet auf Heim (letztes Segment, endet bei
+    // 100%), damit der Gradient exakt schließt statt eine Lücke/Überlappung am oberen Rand zu
+    // hinterlassen.
     const total    = entries.length;
-    const homePct  = Math.round(homeCount / total * 100);
+    const awayPct  = Math.round(awayCount / total * 100);
     const drawPct  = Math.round(drawCount / total * 100);
-    const awayPct  = 100 - homePct - drawPct;
-    const homeEnd  = homePct;
-    const drawEnd  = homePct + drawPct;
+    const homePct  = 100 - awayPct - drawPct;
+    const awayEnd  = awayPct;
+    const drawEnd  = awayPct + drawPct;
 
     const homeColor = this.homeTeam()?.color ?? this.drawColor;
     const awayColor = this.awayTeam()?.color ?? this.drawColor;
 
     return {
-      gradient: `conic-gradient(${homeColor} 0% ${homeEnd}%, ${this.drawColor} ${homeEnd}% ${drawEnd}%, ${awayColor} ${drawEnd}% 100%)`,
+      gradient: `conic-gradient(${awayColor} 0% ${awayEnd}%, ${this.drawColor} ${awayEnd}% ${drawEnd}%, ${homeColor} ${drawEnd}% 100%)`,
       homeCount, drawCount, awayCount, homePct, drawPct, awayPct,
     };
   }
