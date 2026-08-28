@@ -227,9 +227,13 @@
         <div class="h2h-history-list">
           @for (group of headToHeadGroups(); track group.season_id) {
             <div class="h2h-history-group">
-              <div class="h2h-history-group__label">{{ cache.seasonName(group.season_id) }}</div>
+              <a
+                class="h2h-history-group__label"
+                routerLink="/liga/h2h"
+                [queryParams]="{ season_id: group.season_id }"
+              >{{ cache.seasonName(group.season_id) }}</a>
               @for (m of group.matches; track m.id) {
-                <div class="h2h-history-row">
+                <a class="h2h-history-row" [routerLink]="['/liga/h2h', m.id]">
                   <div class="h2h-history-row__matchday">
                     Spieltag {{ m.matchday_number }} · {{ phaseLabelFor(m.phase) }} · {{ m.league_name }}
                   </div>
@@ -254,7 +258,7 @@
                       alt=""
                     />
                   </div>
-                </div>
+                </a>
               }
             </div>
           }

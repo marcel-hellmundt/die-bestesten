@@ -1,6 +1,6 @@
 import { Component, ElementRef, Injector, OnDestroy, ViewChild, afterNextRender, computed, effect, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, filter, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
@@ -16,11 +16,21 @@ export class H2HComponent implements OnDestroy {
   @ViewChild('koSection') private koSectionRef?: ElementRef<HTMLElement>;
   private api    = inject(ApiService);
   private router = inject(Router);
+  private route  = inject(ActivatedRoute);
   cache          = inject(DataCacheService);
 
   seasons = computed(() =>
     [...this.cache.startedSeasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
   );
+
+  // ?season_id= erlaubt Deep-Links auf eine bestimmte Saison (z.B. von der "Bisherige
+  // Begegnungen"-Card im H2H-Match-Detail) — angewendet, sobald seasons() geladen ist, danach
+  // greift wieder normal die manuelle Pfeil-Navigation über selectedIndex.
+  private queryParamSeasonId = toSignal(
+    this.route.queryParamMap.pipe(map(p => p.get('season_id'))),
+    { initialValue: null as string | null },
+  );
+  private appliedQueryParamSeason = false;
 
   selectedIndex      = signal(0);
   selectedSeason     = computed(() => this.seasons()[this.selectedIndex()] ?? null);
@@ -160,6 +170,17 @@ export class H2HComponent implements OnDestroy {
 
   constructor() {
     this.cache.ensureSeasons();
+
+    effect(() => {
+      if (this.appliedQueryParamSeason) return;
+      const wanted = this.queryParamSeasonId();
+      if (!wanted) return;
+      const idx = this.seasons().findIndex(s => s.id === wanted);
+      if (idx >= 0) {
+        this.selectedIndex.set(idx);
+        this.appliedQueryParamSeason = true;
+      }
+    });
 
     const injector = inject(Injector);
     afterNextRender(() => {

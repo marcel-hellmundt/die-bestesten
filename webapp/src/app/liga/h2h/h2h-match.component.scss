@@ -463,7 +463,7 @@
 .h2h-history-list {
   display: flex;
   flex-direction: column;
-  gap: $space-4;
+  gap: $space-6;
 }
 
 .h2h-history-group {
@@ -471,18 +471,49 @@
   flex-direction: column;
   gap: $space-3;
 
+  // Deutlich sichtbare Trennung zwischen Saisons — klar stärker als die reine border-bottom-
+  // Trennlinie zwischen einzelnen Spielen derselben Saison (siehe .h2h-history-row).
+  &:not(:first-child) {
+    padding-top: $space-5;
+    border-top: 1px solid $color-border;
+  }
+
   &__label {
+    display: block;
+    text-align: center;
+    padding: $space-1 0;
     font-size: $font-2xs;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    text-decoration: none;
+    border-radius: $radius-sm;
+    transition: background-color $transition-fast, color $transition-fast;
+
+    &:hover {
+      color: $color-text;
+      background-color: $color-surface-alt;
+    }
   }
 }
 
 .h2h-history-row {
-  padding-bottom: $space-3;
+  display: block;
+  padding: $space-3 0;
   border-bottom: 1px solid $color-border;
+  color: inherit;
+  text-decoration: none;
+  border-radius: $radius-sm;
+  transition: background-color $transition-fast;
+
+  &:hover {
+    background-color: $color-surface-alt;
+  }
+
+  &:first-child {
+    padding-top: 0;
+  }
 
   &:last-child {
     padding-bottom: 0;

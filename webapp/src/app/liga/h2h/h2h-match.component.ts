@@ -350,6 +350,9 @@ export class H2HMatchComponent implements OnDestroy {
   }
 
   constructor() {
+    // Für cache.seasonName() in der "Bisherige Begegnungen"-Card — Begegnungen können aus
+    // anderen Saisons stammen als der aktuell aktiven, deren Name sonst nicht im Cache läge.
+    this.cache.ensureSeasons();
     this.tickHandle = setInterval(() => this.now.set(Date.now()), 15_000);
     effect(() => {
       if (this.isRevealed() && !(this.predictions()?.locked ?? false)) {
