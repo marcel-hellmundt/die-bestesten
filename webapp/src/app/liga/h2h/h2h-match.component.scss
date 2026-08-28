@@ -469,12 +469,13 @@
 .h2h-history-group {
   display: flex;
   flex-direction: column;
-  gap: $space-3;
+  gap: $space-2;
 
-  // Deutlich sichtbare Trennung zwischen Saisons — klar stärker als die reine border-bottom-
-  // Trennlinie zwischen einzelnen Spielen derselben Saison (siehe .h2h-history-row).
+  // Trennlinien gibt es nur zwischen Saisons, nicht zwischen einzelnen Spielen derselben
+  // Saison (siehe .h2h-history-row ohne eigene border) — dafür Abstand über/unter dem
+  // Saisonnamen bewusst knapp gehalten.
   &:not(:first-child) {
-    padding-top: $space-5;
+    padding-top: $space-3;
     border-top: 1px solid $color-border;
   }
 
@@ -501,7 +502,6 @@
 .h2h-history-row {
   display: block;
   padding: $space-3 0;
-  border-bottom: 1px solid $color-border;
   color: inherit;
   text-decoration: none;
   border-radius: $radius-sm;
@@ -509,10 +509,6 @@
 
   &:hover {
     background-color: $color-surface-alt;
-  }
-
-  &:last-child {
-    border-bottom: none;
   }
 
   &__matchday {
