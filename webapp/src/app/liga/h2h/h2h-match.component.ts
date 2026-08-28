@@ -42,6 +42,45 @@ export class H2HMatchComponent {
   homeBench  = computed(() => (this.data()?.home_bench  ?? []) as any[]);
   awayBench  = computed(() => (this.data()?.away_bench  ?? []) as any[]);
 
+  // ── Tipp abgeben (bis Anpfiff privat/änderbar, danach für alle sichtbar) ───────
+
+  predictions        = computed(() => this.data()?.predictions ?? null);
+  predictionsLocked  = computed(() => this.predictions()?.locked ?? false);
+  predictionEntries  = computed(() => (this.predictions()?.entries ?? []) as any[]);
+
+  // Optimistisches Update, damit der Klick sofort im UI ankommt statt auf den nächsten
+  // Server-Roundtrip zu warten — bei Fehlschlag (z.B. Anpfiff inzwischen erfolgt) wird die
+  // Auswahl zurückgesetzt und predictionError zeigt eine kurze Fehlermeldung an.
+  private optimisticPick = signal<'home' | 'draw' | 'away' | null>(null);
+  myPick          = computed(() => this.optimisticPick() ?? this.predictions()?.my_pick ?? null);
+  submittingPick  = signal(false);
+  predictionError = signal<string | null>(null);
+
+  pickLabel(pick: string): string {
+    if (pick === 'home') return this.homeTeam()?.team_name ?? 'Heimsieg';
+    if (pick === 'away') return this.awayTeam()?.team_name ?? 'Auswärtssieg';
+    return 'Unentschieden';
+  }
+
+  submitPrediction(pick: 'home' | 'draw' | 'away'): void {
+    const matchId = this.match()?.id;
+    if (!matchId || this.submittingPick()) return;
+
+    const previous = this.optimisticPick();
+    this.optimisticPick.set(pick);
+    this.submittingPick.set(true);
+    this.predictionError.set(null);
+
+    this.api.post<{ status: boolean; message?: string }>('h2h_prediction', { match_id: matchId, pick }).subscribe({
+      next: () => this.submittingPick.set(false),
+      error: (err) => {
+        this.optimisticPick.set(previous);
+        this.submittingPick.set(false);
+        this.predictionError.set(err?.error?.message ?? 'Tipp konnte nicht gespeichert werden.');
+      },
+    });
+  }
+
   homeSdsDefenders = computed(() => {
     const count = this.homeRating()?.sds_defender ?? 0;
     const named = this.homeLineup().filter(p =>

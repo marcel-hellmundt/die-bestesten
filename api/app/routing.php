@@ -1064,7 +1064,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h/:id',
-                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten — Auth',
+                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten, predictions (Tipp-Status, siehe POST /h2h_prediction) — Auth',
                     ],
                     [
                         'method' => 'POST',
@@ -1136,6 +1136,19 @@ class Routing
                         'method' => 'DELETE',
                         'path' => '/h2h_group/:id',
                         'description' => 'Gruppe + Team-Zuordnungen löschen, Matches behalten (group_id → NULL) — Admin',
+                    ],
+                ],
+            ]),
+
+            new Route('h2h_prediction', 'H2HPrediction', [
+                'title' => 'H2H Prediction',
+                'description' => 'Tipp eines Managers auf ein H2H-Match (Sieger/Unentschieden) — bis Anpfiff der Matchday privat/änderbar, danach für alle sichtbar (siehe GET /h2h/:id → predictions) — Auth',
+                'endpoints' => [
+                    [
+                        'method' => 'POST',
+                        'path' => '/h2h_prediction',
+                        'description' => 'Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist — Auth',
+                        'body' => ['match_id' => 'UUID des H2H-Matches', 'pick' => 'home|draw|away'],
                     ],
                 ],
             ]),

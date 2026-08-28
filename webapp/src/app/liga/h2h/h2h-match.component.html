@@ -123,6 +123,54 @@
     }
   </div>
 
+  <!-- Tipp abgeben: bis Anpfiff der eigene, änderbare Tipp; danach die Tipps aller Manager. -->
+  @if (predictions(); as pred) {
+    <div class="card h2h-predict-card">
+      @if (!pred.locked) {
+        <div class="h2h-predict-card__label">Dein Tipp</div>
+        <div class="h2h-predict-card__options">
+          <button
+            class="h2h-predict-btn"
+            [class.h2h-predict-btn--active]="myPick() === 'home'"
+            [disabled]="submittingPick()"
+            (click)="submitPrediction('home')"
+          >{{ homeTeam()?.team_name }}</button>
+          <button
+            class="h2h-predict-btn"
+            [class.h2h-predict-btn--active]="myPick() === 'draw'"
+            [disabled]="submittingPick()"
+            (click)="submitPrediction('draw')"
+          >Unentschieden</button>
+          <button
+            class="h2h-predict-btn"
+            [class.h2h-predict-btn--active]="myPick() === 'away'"
+            [disabled]="submittingPick()"
+            (click)="submitPrediction('away')"
+          >{{ awayTeam()?.team_name }}</button>
+        </div>
+        @if (predictionError(); as err) {
+          <p class="h2h-predict-card__error">{{ err }}</p>
+        } @else {
+          <p class="h2h-predict-card__hint">Tipp änderbar bis Anpfiff.</p>
+        }
+      } @else {
+        <div class="h2h-predict-card__label">Tipps</div>
+        @if (predictionEntries().length > 0) {
+          <div class="h2h-predict-list">
+            @for (e of predictionEntries(); track e.manager_id) {
+              <div class="h2h-predict-row">
+                <span class="h2h-predict-row__name">{{ e.manager_name }}</span>
+                <span class="h2h-predict-row__pick">{{ pickLabel(e.pick) }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="state-msg">Niemand hat getippt.</p>
+        }
+      }
+    </div>
+  }
+
   <!-- Mobile: team toggle + pitch view of the selected team; desktop shows both teams at
        once on one combined field instead (.h2h-field-wrap below, mobile display:none). -->
   <div class="team-toggle">

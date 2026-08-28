@@ -184,7 +184,7 @@ GET      /transaction          — ?team_id (erforderlich) → {budget, transact
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth
 GET      /h2h               ?season_id= (optional, default=aktiv) → {groups:[{id,name,sort_index,teams[],standings[],matches[]}], knockout_matches:[]} — Auth
 GET      /h2h/status        → {exists} — ob die Liga jemals ein H2H-Turnier generiert hat (beliebige Saison); für die Sichtbarkeit des H2H-Menüpunkts im Frontend — Auth
-GET      /h2h/:id            → Match-Detail {match,matchday,home_team,away_team,home_rating,away_rating,home_lineup[],home_bench[],away_lineup[],away_bench[]} mit Spieler-Einzelpunkten — Auth
+GET      /h2h/:id            → Match-Detail {match,matchday,home_team,away_team,home_rating,away_rating,home_lineup[],home_bench[],away_lineup[],away_bench[],predictions} mit Spieler-Einzelpunkten; predictions vor Anpfiff der Matchday {locked:false,kickoff_date,my_pick:'home'|'draw'|'away'|null} (Tipps anderer Manager geheim), danach {locked:true,kickoff_date,entries:[{manager_id,manager_name,alias,pick}]} — Auth
 POST     /h2h               {season_id,phase,leg,home_team_id,away_team_id,matchday_id,group_id?,sort_index?} → {id} — Admin
 PATCH    /h2h/:id           {home_team_id?,away_team_id?,matchday_id?,group_id?,sort_index?} — Admin
 DELETE   /h2h/:id           — Admin
@@ -196,6 +196,7 @@ GET      /h2h_group         ?season_id= → [{id,name,sort_index,teams:[team_id,
 POST     /h2h_group         {season_id,name,sort_index?} → {id} — Admin
 PATCH    /h2h_group/:id     {name?,sort_index?,teams?:[team_id,...]} (teams ersetzt alle Zuordnungen) — Admin
 DELETE   /h2h_group/:id     kaskadiert auf h2h_group_team; h2h_match.group_id → NULL — Admin
+POST     /h2h_prediction    {match_id, pick:'home'|'draw'|'away'} — Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist — Auth
 GET      /watchlist            — ?team_id (erforderlich, nur eigenes Team) → [{id,player_id,displayname,photo_uploaded,position,price,season_points,season_id,club_id,club_name,club_short_name,club_logo_uploaded,current_team{team_id,team_name,color,team_season_id,manager_name,alias}|null,created_at}] — Auth
 POST     /watchlist            — {team_id, player_id} → {id} — Spieler zur Beobachtungsliste hinzufügen; idempotent (INSERT IGNORE) — nur eigenes Team — Auth
 DELETE   /watchlist/:id        — {team_id} — Spieler von der Beobachtungsliste entfernen — nur eigenes Team — Auth
@@ -260,3 +261,5 @@ GET      /session               — ?range=day|month|year|all (optional, default
 **team_watchlist**: id PK, team_id FK, player_id CHAR(36) (cross-DB auf global_schema.player, kein FK), created_at — UNIQUE(team_id, player_id) — private Beobachtungsliste; Benachrichtigung bei Kauf/Verkauf/SdS des Spielers (event_type: scouted_player_update)
 
 **powerranking_pick**: id PK, season_id (cross-DB)?, manager_id (cross-DB)?, team_id FK, position INT, created_at — UNIQUE(season_id,manager_id,team_id) + UNIQUE(season_id,manager_id,position) — Kicker-Stecktabelle-Tipp; Tippphase bis Anpfiff Spieltag 1 (Editierfenster), danach gesperrt und für alle sichtbar
+
+**h2h_prediction**: id PK, match_id FK → h2h_match (ON DELETE CASCADE), manager_id (cross-DB), pick ENUM(home/draw/away), created_at — UNIQUE(match_id, manager_id) — Tipp auf ein H2H-Match; änderbar (Upsert) bis Anpfiff der zugehörigen Matchday, danach für alle sichtbar (siehe GET /h2h/:id → predictions)

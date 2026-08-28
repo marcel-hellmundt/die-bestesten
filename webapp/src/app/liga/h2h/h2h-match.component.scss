@@ -201,6 +201,97 @@
   flex-shrink: 0;
 }
 
+// ── Tipp-Karte ──────────────────────────────────────────────────────────────
+
+.h2h-predict-card {
+  padding: $space-4 $space-6;
+  margin-bottom: $space-6;
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: $space-2;
+  }
+
+  &__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
+
+  &__hint,
+  &__error {
+    font-size: $font-xs;
+    margin-top: $space-2;
+  }
+
+  &__hint {
+    color: $color-text-muted;
+  }
+
+  &__error {
+    color: $color-danger;
+  }
+}
+
+.h2h-predict-btn {
+  flex: 1 1 140px;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition:
+    border-color $transition-fast,
+    background $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $color-accent;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  &--active {
+    border-color: $color-accent;
+    background: color-mix(in srgb, $color-accent 10%, $color-surface);
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.h2h-predict-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.h2h-predict-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-1 0;
+  font-size: $font-sm;
+
+  &__name {
+    color: $color-text;
+  }
+
+  &__pick {
+    color: $color-text-muted;
+    font-weight: $font-weight-medium;
+    text-align: right;
+  }
+}
+
 // ── Manager row ───────────────────────────────────────────────────────────────
 
 .manager-row {

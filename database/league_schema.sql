@@ -172,3 +172,15 @@ CREATE TABLE IF NOT EXISTS h2h_match (
     sort_index    INT                                                              NOT NULL DEFAULT 0,
     FOREIGN KEY (group_id) REFERENCES h2h_group(id) ON DELETE SET NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: h2h_prediction (Tipp eines Managers auf ein H2H-Match — bis Anpfiff der Matchday
+-- privat/änderbar, danach für alle Manager sichtbar, siehe H2HPredictionTrait)
+CREATE TABLE IF NOT EXISTS h2h_prediction (
+    id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    match_id   CHAR(36) NOT NULL,
+    manager_id CHAR(36) NOT NULL,             -- Referenz auf global_schema.manager.id (kein FK, cross-DB)
+    pick       ENUM('home','draw','away') CHARACTER SET utf8mb4 NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (match_id) REFERENCES h2h_match(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_h2h_prediction (match_id, manager_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -645,6 +645,7 @@ trait H2HTrait
             'home_bench'   => $homeLineup['bench'],
             'away_lineup'  => $awayLineup['nominated'],
             'away_bench'   => $awayLineup['bench'],
+            'predictions'  => $this->getH2HPredictionState($match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday),
         ];
     }
 
