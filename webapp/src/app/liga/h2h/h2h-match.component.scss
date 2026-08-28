@@ -463,7 +463,21 @@
 .h2h-history-list {
   display: flex;
   flex-direction: column;
+  gap: $space-4;
+}
+
+.h2h-history-group {
+  display: flex;
+  flex-direction: column;
   gap: $space-3;
+
+  &__label {
+    font-size: $font-2xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
 }
 
 .h2h-history-row {
@@ -475,38 +489,28 @@
     border-bottom: none;
   }
 
-  &__teams {
-    display: flex;
-    align-items: center;
-    gap: $space-2;
-  }
-
-  &__team {
-    display: flex;
-    align-items: center;
-    gap: $space-1;
-    min-width: 0;
-    flex: 1 1 0;
-
-    &--away {
-      flex-direction: row-reverse;
-      text-align: right;
-    }
-  }
-
-  &__logo {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-
-  &__name {
-    font-size: $font-xs;
-    color: $color-text;
+  &__matchday {
+    margin-bottom: $space-1;
+    font-size: $font-2xs;
+    color: $color-text-muted;
+    text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  &__teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-3;
+  }
+
+  &__logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
   }
 
   &__score {
@@ -514,15 +518,7 @@
     font-size: $font-sm;
     font-weight: $font-weight-semibold;
     color: $color-text;
-    padding: 0 $space-2;
     font-variant-numeric: tabular-nums;
-  }
-
-  &__meta {
-    margin-top: 2px;
-    font-size: $font-2xs;
-    color: $color-text-muted;
-    text-align: center;
   }
 }
 

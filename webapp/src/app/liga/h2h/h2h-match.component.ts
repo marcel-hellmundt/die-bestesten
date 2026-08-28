@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { DataCacheService } from '../../core/data-cache.service';
 
 @Component({
   selector: 'app-h2h-match',
@@ -14,6 +15,7 @@ import { AuthService } from '../../auth/auth.service';
 export class H2HMatchComponent implements OnDestroy {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
+  cache        = inject(DataCacheService);
 
   private id$ = inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id')!));
 
@@ -52,6 +54,21 @@ export class H2HMatchComponent implements OnDestroy {
   // Alle bisherigen (abgeschlossenen) H2H-Begegnungen zwischen genau diesen beiden Managern,
   // liga- und saisonübergreifend — siehe H2HTrait::getH2HHeadToHeadHistory() im Backend.
   headToHead = computed(() => (this.data()?.head_to_head ?? []) as any[]);
+
+  // Nach Saison gruppiert für die Kartenanzeige — headToHead() ist bereits absteigend nach
+  // kickoff_date sortiert, Matches derselben Saison stehen also immer schon hintereinander.
+  headToHeadGroups = computed(() => {
+    const groups: { season_id: string; matches: any[] }[] = [];
+    for (const m of this.headToHead()) {
+      const last = groups[groups.length - 1];
+      if (last && last.season_id === m.season_id) {
+        last.matches.push(m);
+      } else {
+        groups.push({ season_id: m.season_id, matches: [m] });
+      }
+    }
+    return groups;
+  });
 
   // ── Tipp abgeben (bis Anpfiff privat/änderbar, danach für alle sichtbar) ───────
 
