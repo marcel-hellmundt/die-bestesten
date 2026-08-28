@@ -27,6 +27,10 @@
 
   &-search {
     position: relative;
+    // Ohne eigenen z-index verliert die wachsende Such-Box beim mobilen Aufklappen gegen
+    // .topbar-league (später im DOM, gewinnt bei gleichem/keinem z-index automatisch) — die Box
+    // wächst optisch über die Liga-Auswahl hinweg, lag aber bislang optisch darunter.
+    z-index: $z-raised;
     display: flex;
     align-items: center;
     gap: $space-2;
@@ -134,16 +138,43 @@
 
   &-left {
     @media (max-width: #{$mobile-breakpoint}) {
+      position: relative; // Anker für .topbar-search bei --has-league (siehe unten)
+      // Verhindert, dass die Box auf 0 Höhe kollabiert, sobald ihr einziges Kind (.topbar-search)
+      // bei --has-league auf position:absolute wechselt und damit nicht mehr zur Auto-Höhe
+      // beiträgt — dessen height:100% braucht sonst nichts zum Auflösen.
+      height: $control-height;
       display: flex;
       // Shrinks to its collapsed-icon content by default so the growth below goes to
       // .topbar-league instead (as wide as possible without touching the search icon or the
       // profile photo) — only reclaims flex:1 while the search box itself is expanded and
-      // actually needs the room.
+      // actually needs the room. Gilt nur, wenn es keine Liga-Auswahl gibt (--has-league fehlt) —
+      // sonst übernimmt die Absolute-Positionierung unten, siehe deren Kommentar.
       flex: 0 1 auto;
       min-width: 0;
 
       &--search-active {
         flex: 1;
+      }
+
+      // Existiert eine Liga-Auswahl, wächst die Suche NICHT mehr per Flex (das verschob sonst
+      // .topbar-league beim Aufklappen mit, obwohl deren Breite unabhängig bleiben soll) —
+      // stattdessen legt sich .topbar-search per position:absolute exakt über den vorher
+      // gemessenen Bereich bis zum rechten Rand von .topbar-league (searchExpandWidth(), siehe
+      // Component), die dadurch währenddessen komplett unverändert/unbeeinflusst bleibt.
+      &--has-league.topbar-left--search-active {
+        // .topbar-left selbst darf dabei nicht auf 0 schrumpfen: sobald ihr einziges Kind
+        // position:absolute bekommt, trägt es nicht mehr zur Auto-Breite bei — ohne diese feste
+        // Breite gäbe .topbar-left seinen bisherigen Platz frei, .topbar-league (weiterhin
+        // flex:1) würde ihn sich schnappen und dadurch selbst sichtbar breiter werden.
+        flex: 0 0 $control-height;
+        width: $control-height;
+
+        .topbar-search {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+        }
       }
     }
   }
@@ -153,9 +184,12 @@
   // mobile, splitting the free space roughly in half instead of giving it all to the search.
   // Angular's component-scoped selector outranks the global one, so this override only
   // applies inside the topbar, and only on mobile — desktop keeps the original behavior.
+  // display:none (statt nur flex-grow:0) entfernt es komplett aus dem Flex-Layout, sonst zählt
+  // .topbar's eigener gap trotz 0 Eigenbreite auf BEIDEN Seiten — der Abstand zwischen Such-Icon
+  // und Liga-Auswahl wäre sonst doppelt so groß wie der Rand-Abstand der Topbar.
   .spacer {
     @media (max-width: #{$mobile-breakpoint}) {
-      flex-grow: 0;
+      display: none;
     }
   }
 
@@ -223,6 +257,14 @@
   &-user {
     position: relative;
     margin-left: 24px;
+
+    // Auf Mobile bleiben von .topbar-right nur der Avatar übrig (Icon-Buttons sind dort
+    // ausgeblendet, siehe .topbar-icon-btn) — die zusätzlichen 24px Abstand (gedacht als Trenner
+    // zum vorherigen Icon-Button) summieren sich dort mit dem normalen .topbar-gap zu 40px statt
+    // der einheitlichen $space-4, die überall sonst gelten sollen.
+    @media (max-width: #{$mobile-breakpoint}) {
+      margin-left: 0;
+    }
 
     .user-avatar {
       position: relative;

@@ -65,6 +65,14 @@ export class TopbarComponent implements OnDestroy {
   searchResults = signal<SearchResults | null>(null);
   searchLoading = signal(false);
   isSearchOpen  = signal(false);
+  // Bleibt beim Schließen noch true, bis die 0.25s-Breiten-Transition der Suchbox durchgelaufen
+  // ist (siehe onSearchTransitionEnd) — .topbar-search muss so lange position:absolute behalten
+  // (siehe SCSS &--has-league), sonst ist sie beim Zuklappen sofort wieder normales Flex-Element
+  // und zieht .topbar-league live mit, während sie sich zurück auf Icon-Breite verkleinert.
+  isSearchClosing = signal(false);
+  // "Aktiv" für die Layout-Zwecke (Klassen/Breite) — schließt die Ausklingphase mit ein, im
+  // Unterschied zu isSearchOpen() (steuert Fokus/Ergebnisse/Sichtbarkeit des Inputs selbst).
+  isSearchExpanded = computed(() => this.isSearchOpen() || this.isSearchClosing());
 
   managerName        = computed(() => this.auth.getManagerName() ?? '');
   managerId          = computed(() => this.auth.getManagerId());
@@ -92,6 +100,28 @@ export class TopbarComponent implements OnDestroy {
 
   @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('searchContainer') searchContainerRef?: ElementRef<HTMLElement>;
+  @ViewChild('leagueEl') leagueRef?: ElementRef<HTMLElement>;
+  @ViewChild('userMenuEl') userMenuRef?: ElementRef<HTMLElement>;
+
+  // Mobil, wenn eine Liga-Auswahl existiert: die aufklappende Suche legt sich per
+  // position:absolute exakt bis zum rechten Rand von .topbar-league (siehe Template/SCSS) —
+  // dieser Wert wird VOR dem Öffnen gemessen, damit .topbar-league dabei nie ihre eigene Breite
+  // ändert (sie bliebe sonst über normales Flex-Wachstum mit der Suche gekoppelt).
+  searchExpandWidth = signal<number | null>(null);
+
+  private measureSearchExpandWidth(): void {
+    const searchEl = this.searchContainerRef?.nativeElement;
+    const leagueEl = this.leagueRef?.nativeElement;
+    if (!searchEl || !leagueEl) { this.searchExpandWidth.set(null); return; }
+    const searchLeft  = searchEl.getBoundingClientRect().left;
+    const leagueRight = leagueEl.getBoundingClientRect().right;
+    this.searchExpandWidth.set(Math.max(0, leagueRight - searchLeft));
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.isSearchOpen()) this.measureSearchExpandWidth();
+  }
 
   failedImageIds = signal<Set<string>>(new Set());
 
@@ -166,32 +196,56 @@ export class TopbarComponent implements OnDestroy {
 
   onSearchContainerClick(): void {
     if (!this.isSearchOpen()) {
+      this.measureSearchExpandWidth();
       this.isSearchOpen.set(true);
       this.searchInputRef?.nativeElement.focus();
     }
   }
 
   onSearchFocus(): void {
+    this.measureSearchExpandWidth();
     this.isSearchOpen.set(true);
   }
 
   closeSearch(): void {
     this.isSearchOpen.set(false);
     this.searchInputRef?.nativeElement.blur();
+    if (this.showLeagueSwitcher()) {
+      this.isSearchClosing.set(true);
+      // Fallback, falls transitionend aus irgendeinem Grund nie feuert (z.B. schnelles
+      // Auf/Zu-Klicken unterbricht die Transition) — verhindert, dass isSearchClosing dauerhaft
+      // hängen bleibt. Etwas länger als die 0.25s-CSS-Transition.
+      window.setTimeout(() => this.isSearchClosing.set(false), 300);
+    }
   }
 
-  // Der bestehende Backdrop (Sibling nach .topbar) reicht auf Mobile nicht: .topbar selbst hat
-  // per sticky-Positionierung ein höheres z-index als der Backdrop und fängt daher jeden Klick
-  // innerhalb des Topbar-Streifens (z.B. auf die restliche freie Fläche) ab, bevor er den
-  // Backdrop erreicht — die Suche blieb dann geöffnet+breit und die (per --search-active
-  // ausgeblendeten) Icon-Buttons unerreichbar. Ein document-weiter Klick-Listener schließt
-  // stattdessen bei jedem Klick außerhalb von .topbar-search, unabhängig von Stacking-Kontexten.
+  // Feuert u.a. beim width-Übergang der Suchbox (siehe .topbar-search transition) — erst wenn der
+  // beim Schließen fertig durchgelaufen ist, darf .topbar-search wieder normales Flex-Element
+  // werden (siehe isSearchExpanded()/isSearchClosing oben).
+  onSearchTransitionEnd(event: TransitionEvent): void {
+    if (event.propertyName !== 'width') return;
+    if (!this.isSearchOpen()) this.isSearchClosing.set(false);
+  }
+
+  // Der bestehende Backdrop (Sibling nach .topbar, für User-/Liga-Dropdown) reicht auf Mobile
+  // nicht: .topbar selbst hat per sticky-Positionierung ein höheres z-index als der Backdrop und
+  // fängt daher jeden Klick innerhalb des Topbar-Streifens (z.B. auf die restliche freie Fläche
+  // oder ein anderes Icon) ab, bevor er den Backdrop erreicht — ein Dropdown blieb dann offen,
+  // bis man exakt den eigenen Toggle-Button erneut traf oder außerhalb der ganzen Topbar klickte.
+  // Ein document-weiter Klick-Listener schließt stattdessen bei jedem Klick außerhalb der
+  // jeweiligen Box, unabhängig von Stacking-Kontexten — für Suche, User- und Liga-Dropdown gleichermaßen.
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (!this.isSearchOpen()) return;
     const target = event.target as Node;
-    if (!this.searchContainerRef?.nativeElement.contains(target)) {
+
+    if (this.isSearchOpen() && !this.searchContainerRef?.nativeElement.contains(target)) {
       this.closeSearch();
+    }
+    if (this.isDropdownOpen() && !this.userMenuRef?.nativeElement.contains(target)) {
+      this.closeDropdown();
+    }
+    if (this.isLeagueDropdownOpen() && !this.leagueRef?.nativeElement.contains(target)) {
+      this.closeLeagueDropdown();
     }
   }
 

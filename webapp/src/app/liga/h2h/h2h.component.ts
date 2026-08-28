@@ -114,6 +114,29 @@ export class H2HComponent implements OnDestroy {
     return !!m.kickoff_date && new Date(m.kickoff_date) <= new Date() && m.completed === false;
   }
 
+  // ── Aktueller Spieltag hervorheben ──────────────────────────────────────────
+  // "Aktuell" wird rein aus den bereits geladenen Matches abgeleitet (kein Zusatz-Request):
+  // die kleinste matchday_number unter allen noch nicht abgeschlossenen Matches — da alle
+  // Gruppen denselben festen Spieltag-Zeitplan teilen, ist das eindeutig der gerade laufende
+  // bzw. als nächstes anstehende Spieltag.
+  private allMatches = computed(() => [
+    ...this.groups().flatMap(g => g.matches as any[]),
+    ...this.knockoutMatches(),
+  ]);
+
+  currentMatchdayNumber = computed(() => {
+    const pending = this.allMatches().filter(m => !m.completed && m.matchday_number != null);
+    if (pending.length === 0) return null;
+    return pending.reduce((min, m) => (m.matchday_number < min ? m.matchday_number : min), pending[0].matchday_number);
+  });
+
+  // Blinkendes Hervorheben der "–:–"-Anzeige (noch kein Rating/Tor vorhanden) nur für Matches
+  // des aktuellen Spieltags — unabhängig davon, ob der Anpfiff schon war (isLive) oder noch
+  // bevorsteht.
+  isPendingOnCurrentMatchday(m: any): boolean {
+    return m.home_goals == null && m.matchday_number === this.currentMatchdayNumber();
+  }
+
   navigateToMatch(id: string): void {
     this.router.navigate(['/liga/h2h', id]);
   }

@@ -4,7 +4,7 @@ class SessionController extends _BaseController
 {
     public static array $methodRoles = ['GET' => 'admin'];
 
-    private const ALLOWED_RANGES = ['day', 'month', 'year'];
+    private const ALLOWED_RANGES = ['day', 'month', 'year', 'all'];
 
     protected function get(): mixed
     {
