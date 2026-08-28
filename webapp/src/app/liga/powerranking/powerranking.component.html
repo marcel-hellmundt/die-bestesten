@@ -90,8 +90,11 @@
             <span class="pr-overview__position">{{ s.actual_position }}.</span>
             <img
               class="pr-overview__logo"
+              [class.pr-overview__logo--active]="hoveredTeamId() === s.team_id"
               [src]="logoFailed(s.team_id) ? 'img/placeholders/club.png' : teamLogoUrl(s.season_id, s.team_id)"
               (error)="onLogoError(s.team_id)"
+              (mouseenter)="onTeamHover(s.team_id)"
+              (mouseleave)="onTeamHoverEnd()"
               [title]="s.team_name"
               alt=""
             />
@@ -117,8 +120,11 @@
                 <span class="pr-overview__logo-wrap">
                   <img
                     class="pr-overview__logo"
+                    [class.pr-overview__logo--active]="hoveredTeamId() === p.team_id"
                     [src]="logoFailed(p.team_id) ? 'img/placeholders/club.png' : teamLogoUrl(info.season_id, p.team_id)"
                     (error)="onLogoError(p.team_id)"
+                    (mouseenter)="onTeamHover(p.team_id)"
+                    (mouseleave)="onTeamHoverEnd()"
                     [title]="info.team_name"
                     alt=""
                   />
@@ -140,8 +146,11 @@
           <div class="pr-overview__row pr-overview__row--table">
             <img
               class="pr-overview__logo"
+              [class.pr-overview__logo--active]="hoveredTeamId() === s.team_id"
               [src]="logoFailed(s.team_id) ? 'img/placeholders/club.png' : teamLogoUrl(s.season_id, s.team_id)"
               (error)="onLogoError(s.team_id)"
+              (mouseenter)="onTeamHover(s.team_id)"
+              (mouseleave)="onTeamHoverEnd()"
               [title]="s.team_name"
               alt=""
             />

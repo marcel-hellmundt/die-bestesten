@@ -136,6 +136,12 @@ export class PowerrankingComponent {
     return this.ownTeamIdByManager().get(managerId) === teamId;
   }
 
+  // Hover-Highlight: beim Hovern eines Team-Logos werden alle Vorkommen desselben Teams
+  // (echte Tabelle, jede Tipp-Spalte, Durchschnitts-Spalte) gleichzeitig größer skaliert
+  hoveredTeamId = signal<string | null>(null);
+  onTeamHover(teamId: string): void { this.hoveredTeamId.set(teamId); }
+  onTeamHoverEnd(): void { this.hoveredTeamId.set(null); }
+
   avatarFailed = new Set<string>();
   onAvatarError(managerId: string): void { this.avatarFailed.add(managerId); }
 
