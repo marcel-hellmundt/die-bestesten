@@ -180,6 +180,55 @@ $mobile-nav-height: 64px;
       }
     }
 
+    // Ersetzt &__grade, solange noch keine Note vorliegt — unterscheidet, ob der Spieler auf
+    // seinen Einsatz noch wartet (Verein spielt später, kein player_rating vorhanden), bereits
+    // in der Startelf steht, eingewechselt wurde oder (Verein hat schon gespielt, aber der
+    // Spieler wurde nicht eingesetzt) player_rating existiert ohne participation. Ohne diese
+    // Badges sahen "noch nicht gespielt" und "gespielt, aber nicht eingesetzt" identisch aus.
+    &__status {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: $font-weight-bold;
+      color: #fff;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      @media (max-width: $mobile-breakpoint) {
+        width: 18px;
+        height: 18px;
+        font-size: 9px;
+
+        svg {
+          width: 10px;
+          height: 10px;
+        }
+      }
+
+      &--waiting {
+        background: $color-text-muted;
+      }
+
+      &--starting {
+        background: #009432;
+      }
+
+      &--sub {
+        background: #ffc312;
+      }
+
+      &--not-used {
+        background: #ff3f34;
+      }
+    }
+
     &__points {
       flex-shrink: 0;
       width: 32px;
