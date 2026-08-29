@@ -213,15 +213,19 @@ $mobile-nav-height: 64px;
       }
 
       &--waiting {
-        background: $color-text-muted;
+        background: #a4b0be;
       }
 
       &--starting {
-        background: #009432;
+        background: #fff;
+        color: #009432;
+        border: 1.5px solid currentColor;
       }
 
       &--sub {
-        background: #ffc312;
+        background: #fff;
+        color: #ffc312;
+        border: 1.5px solid currentColor;
       }
 
       &--not-used {
