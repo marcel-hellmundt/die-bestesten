@@ -217,15 +217,13 @@ $mobile-nav-height: 64px;
       }
 
       &--starting {
-        background: #fff;
+        background: rgba(255, 255, 255, 0.88);
         color: #009432;
-        border: 1.5px solid currentColor;
       }
 
       &--sub {
-        background: #fff;
+        background: rgba(255, 255, 255, 0.88);
         color: #ffc312;
-        border: 1.5px solid currentColor;
       }
 
       &--not-used {
