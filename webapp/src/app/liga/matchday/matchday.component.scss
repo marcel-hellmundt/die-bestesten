@@ -639,14 +639,9 @@
   max-width: unset;
 }
 
-.table-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: $space-2;
-}
-
 .stats-mode-toggle {
   display: inline-flex;
+  margin-left: auto;
   border: 1px solid $color-border;
   border-radius: $radius-full;
   padding: 2px;

@@ -43,6 +43,24 @@
         }
       </select>
     }
+    @if (ratings().length > 0) {
+      <div class="stats-mode-toggle col-desktop">
+        <button
+          class="stats-mode-toggle__btn"
+          [class.active]="statsMode() === 'stats'"
+          (click)="statsMode.set('stats')"
+        >
+          Statistik
+        </button>
+        <button
+          class="stats-mode-toggle__btn"
+          [class.active]="statsMode() === 'lineup'"
+          (click)="statsMode.set('lineup')"
+        >
+          Einsatz
+        </button>
+      </div>
+    }
   </div>
 
   @if (!matchday()) {
@@ -54,24 +72,6 @@
         @if (ratings().length === 0) {
           <p class="state-msg">Keine Ratings für diesen Spieltag.</p>
         } @else {
-          <div class="table-toolbar col-desktop">
-            <div class="stats-mode-toggle">
-              <button
-                class="stats-mode-toggle__btn"
-                [class.active]="statsMode() === 'stats'"
-                (click)="statsMode.set('stats')"
-              >
-                Statistik
-              </button>
-              <button
-                class="stats-mode-toggle__btn"
-                [class.active]="statsMode() === 'lineup'"
-                (click)="statsMode.set('lineup')"
-              >
-                Einsatz
-              </button>
-            </div>
-          </div>
           <table class="data-table data-table--compact">
             <thead>
               <tr>
