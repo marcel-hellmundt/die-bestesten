@@ -82,11 +82,13 @@ class Guard
                 // Session-Heartbeat darf einen Request nie zum Scheitern bringen.
             }
 
-            // 'manager' = any authenticated active manager; additional roles require explicit
-            // assignment. $requiredRole may also be an array of acceptable roles (OR semantics),
-            // e.g. ['contributor', 'maintainer'] — the manager needs at least one of them.
-            $allowedRoles = is_array($requiredRole) ? $requiredRole : [$requiredRole];
-            if (!in_array('manager', $allowedRoles, true) && !array_intersect($allowedRoles, $manager['roles'])) {
+            // Roles are hierarchical (see _BaseController::ROLE_RANK) — a manager holds at most
+            // one explicit role (manager_role has 1 row per manager), and its rank must be >= the
+            // required role's rank. 'manager' = rank 0, satisfied by anyone authenticated.
+            $myRole  = $manager['roles'][0] ?? 'manager';
+            $myRank  = _BaseController::ROLE_RANK[$myRole] ?? 0;
+            $reqRank = _BaseController::ROLE_RANK[$requiredRole] ?? 0;
+            if ($myRank < $reqRank) {
                 return ['status' => false, 'code' => 403, 'message' => 'Forbidden'];
             }
 

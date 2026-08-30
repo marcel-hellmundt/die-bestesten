@@ -159,7 +159,7 @@ class ManagerController extends _BaseController
                 http_response_code(404);
                 return ['status' => false, 'message' => 'Manager not found'];
             }
-            $this->db->addManagerRole($this->id, $role);
+            $this->db->setManagerRole($this->id, $role);
             return ['roles' => $this->db->getManagerRoles($this->id)];
         }
         return $this->methodNotAllowed();

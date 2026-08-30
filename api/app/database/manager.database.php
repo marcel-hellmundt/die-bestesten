@@ -130,10 +130,13 @@ trait ManagerTrait
         return $q->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    public function addManagerRole(string $managerId, string $role): void
+    // Upsert — a manager holds at most one explicit role (manager_role has 1 row per manager,
+    // PK on manager_id), so assigning a new role replaces whichever one was set before.
+    public function setManagerRole(string $managerId, string $role): void
     {
         $q = $this->con->prepare(
-            "INSERT IGNORE INTO manager_role (manager_id, role) VALUES (:manager_id, :role)"
+            "INSERT INTO manager_role (manager_id, role) VALUES (:manager_id, :role)
+             ON DUPLICATE KEY UPDATE role = VALUES(role)"
         );
         $q->execute([':manager_id' => $managerId, ':role' => $role]);
     }
@@ -144,15 +147,6 @@ trait ManagerTrait
             "DELETE FROM manager_role WHERE manager_id = :manager_id AND role = :role"
         );
         $q->execute([':manager_id' => $managerId, ':role' => $role]);
-    }
-
-    public function setManagerRoles(string $managerId, array $roles): void
-    {
-        $this->con->prepare("DELETE FROM manager_role WHERE manager_id = :id")
-            ->execute([':id' => $managerId]);
-        foreach ($roles as $role) {
-            $this->addManagerRole($managerId, $role);
-        }
     }
 
     public function getManagerWithTeams(string $id): array|false

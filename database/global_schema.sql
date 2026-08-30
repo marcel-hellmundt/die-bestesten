@@ -228,12 +228,12 @@ CREATE TABLE IF NOT EXISTS manager (
     last_activity DATETIME     NULL DEFAULT NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Tabelle: manager_role (zusätzliche Rollen pro Manager; additiv)
+-- Tabelle: manager_role (höchste zusätzliche Rolle pro Manager; hierarchisch — admin impliziert
+-- maintainer+contributor+manager, maintainer impliziert contributor+manager, contributor
+-- impliziert manager. Maximal 1 Zeile pro Manager; kein Eintrag = Basisrolle 'manager'.
 CREATE TABLE IF NOT EXISTS manager_role (
-    id         CHAR(36)                    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
-    manager_id CHAR(36)                    NOT NULL,
+    manager_id CHAR(36)                                   NOT NULL PRIMARY KEY,
     role       ENUM('contributor', 'maintainer', 'admin') CHARACTER SET utf8mb4 NOT NULL,
-    UNIQUE KEY uk_manager_role (manager_id, role),
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

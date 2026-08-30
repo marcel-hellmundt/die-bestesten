@@ -7,6 +7,16 @@ export const ROLE_LABEL: Record<string, string> = {
   manager:     'Manager',
 };
 
+// Hierarchical: a manager holds at most one explicit role, and it also satisfies every
+// requirement ranked at or below it (admin >= maintainer >= contributor >= manager). Mirrors
+// _BaseController::ROLE_RANK on the backend.
+export const ROLE_RANK: Record<string, number> = {
+  manager:     0,
+  contributor: 1,
+  maintainer:  2,
+  admin:       3,
+};
+
 export const POSITION_LABEL: Record<string, string> = {
   GOALKEEPER: 'TOR',
   DEFENDER:   'ABW',

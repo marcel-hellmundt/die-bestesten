@@ -134,9 +134,10 @@ export class ManagerDataComponent {
 
     req.subscribe({
       next: () => {
-        const newRoles = hasRole
-          ? (manager.roles ?? []).filter((r: string) => r !== role)
-          : [...(manager.roles ?? []), role];
+        // Hierarchical, max 1 role per manager (backend upserts) — clicking a role either
+        // clears it (revert to base 'manager') or replaces whatever role was set before,
+        // never adds alongside it.
+        const newRoles = hasRole ? [] : [role];
         this._managers.update((list) =>
           list.map((m) => (m.id === manager.id ? { ...m, roles: newRoles } : m)),
         );

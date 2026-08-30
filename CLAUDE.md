@@ -54,11 +54,11 @@ styles/
 
 ## API-Autorisierung (RBAC)
 
-**Additives Rollenmodell**: Jeder Manager hat die Basisrolle `manager` (implizit). Zusätzliche Rollen (`contributor`, `maintainer`, `admin`) werden in der `manager_role`-Tabelle gespeichert und sind frei kombinierbar — keine automatische Vererbung zwischen ihnen (ein Admin ohne explizite `maintainer`-Zuweisung besteht keinen `maintainer`-Check). `contributor` deckt nur das Eintragen von Spieltagsdaten ab (siehe `/player_rating`), `maintainer` zusätzlich Spieler-/Vereins-/Saison-/Ligaverwaltung u.ä.
+**Hierarchisches Rollenmodell**: Jeder Manager hat die Basisrolle `manager` (implizit, Rang 0). Höchstens eine zusätzliche Rolle (`contributor` Rang 1, `maintainer` Rang 2, `admin` Rang 3) wird als einzelne Zeile in der `manager_role`-Tabelle gespeichert (PK `manager_id` — max. 1 Zeile pro Manager). Jede Rolle schließt automatisch alle niedrigeren Ränge ein (admin ⊇ maintainer ⊇ contributor ⊇ manager) — keine separate Zuweisung nötig. `contributor` deckt nur das Eintragen von Spieltagsdaten ab (siehe `/player_rating`), `maintainer` zusätzlich Spieler-/Vereins-/Saison-/Ligaverwaltung u.ä.
 
-`$methodRoles` pro Controller: HTTP-Methode → erforderliche Rolle, oder ein Array mehrerer akzeptierter Rollen (ODER-Verknüpfung, z. B. `['contributor', 'maintainer']`). Prüfung: `guest` = kein Token nötig, aber falls ein gültiger Token mitgeschickt wird, dekodiert der Guard ihn trotzdem optional (setzt `auth_manager_id`/`auth_league_id`, ohne bei ungültigem/fehlendem Token einen Fehler zu werfen) — relevant für Endpunkte wie `/league/mine`, die sich für eingeloggte Manager anders verhalten; `manager` = jeder eingeloggte Manager; `contributor`/`maintainer`/`admin` = Manager muss (mindestens) eine dieser Rollen in seiner Rollenliste haben. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle fehlt. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_roles']` (Array).
+`$methodRoles` pro Controller: HTTP-Methode → erforderliche Rolle (einzelner String, kein Array). Prüfung: `guest` = kein Token nötig, aber falls ein gültiger Token mitgeschickt wird, dekodiert der Guard ihn trotzdem optional (setzt `auth_manager_id`/`auth_league_id`, ohne bei ungültigem/fehlendem Token einen Fehler zu werfen) — relevant für Endpunkte wie `/league/mine`, die sich für eingeloggte Manager anders verhalten; ansonsten vergleicht der Guard den Rang der höchsten Rolle des Managers (`_BaseController::ROLE_RANK`) gegen den Rang der erforderlichen Rolle — reicht der eigene Rang, ist der Zugriff erlaubt, unabhängig vom exakten Rollennamen. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rang zu niedrig. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_roles']` (Array mit höchstens einem Eintrag).
 
-Rollenvergabe: `POST /manager/:id/roles` mit `{role}`, Entzug: `DELETE /manager/:id/roles/:role` — jeweils Admin.
+Rollenvergabe: `POST /manager/:id/roles` mit `{role}` (Upsert — ersetzt eine evtl. vorhandene Rolle), Entzug (zurück auf Basisrolle `manager`): `DELETE /manager/:id/roles/:role` — jeweils Admin.
 
 ## Datenbankschema
 
@@ -222,7 +222,7 @@ GET      /session               — ?range=day|month|year|all (optional, default
 
 **manager**: id PK, manager_name UNIQUE (Anzeigename/Username), first_name VARCHAR(100)? (echter Vorname — für Achievement-Vergleiche), alias UNIQUE?, password, status ENUM(active/blocked/deleted/invited) DEFAULT active (invited = von Admin per `POST /manager` angelegt, wartet auf Erstpasswort via Einladungslink; wechselt bei erfolgreichem `POST /auth/password-reset` automatisch zu active), email UNIQUE?, date_of_birth?, last_activity DATETIME?
 
-**manager_role**: id PK, manager_id FK, role ENUM(contributor/maintainer/admin) — UNIQUE(manager_id, role) — additiv; jeder Manager hat implizit 'manager'
+**manager_role**: manager_id PK+FK, role ENUM(contributor/maintainer/admin) — max. 1 Zeile pro Manager (hierarchisch: admin ⊇ maintainer ⊇ contributor ⊇ 'manager'); kein Eintrag = Basisrolle 'manager'
 
 **password_reset_token**: id PK, manager_id FK, token_hash VARCHAR(64) UNIQUE, expires_at DATETIME, used BOOL DEFAULT 0, created_at DATETIME
 

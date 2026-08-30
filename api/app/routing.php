@@ -790,7 +790,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/manager/:id/roles',
-                        'description' => 'Rolle hinzufügen — Body: { role: "contributor"|"maintainer"|"admin" } — gibt aktualisierte roles[] zurück — Admin',
+                        'description' => 'Rolle setzen (Upsert — ersetzt eine evtl. vorhandene Rolle, max. 1 pro Manager, hierarchisch: admin ⊇ maintainer ⊇ contributor ⊇ manager) — Body: { role: "contributor"|"maintainer"|"admin" } — gibt aktualisierte roles[] zurück — Admin',
                         'path_params' => [':id' => 'UUID des Managers'],
                     ],
                     [
