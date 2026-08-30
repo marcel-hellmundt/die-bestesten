@@ -321,16 +321,19 @@ CREATE TABLE IF NOT EXISTS manager_stadium (
     UNIQUE KEY uk_manager_stadium (manager_id, stadium_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Tabelle: maintainer_contribution (welcher Maintainer hat Spielerratings eingetragen)
--- player_rating_id ist Cross-DB-Referenz auf player_rating.id (kein FK)
+-- Tabelle: maintainer_contribution (welche Manager an einem player_rating mitgewirkt haben)
+-- player_rating_id ist Cross-DB-Referenz auf player_rating.id (kein FK). Akkumuliert statt
+-- Upsert: UNIQUE über (rating, Kategorie, Manager) statt nur (rating, Kategorie) — trägt z.B.
+-- Manager A ein Tor ein und korrigiert später Manager B dasselbe Feld, bleiben BEIDE unter
+-- 'stats' gelistet statt dass B den Eintrag von A überschreibt.
 CREATE TABLE IF NOT EXISTS maintainer_contribution (
-    id                CHAR(36)                                       NOT NULL PRIMARY KEY DEFAULT (UUID()),
-    manager_id        CHAR(36)                                       NOT NULL,
-    player_rating_id  CHAR(36)                                       NOT NULL,
-    contribution_type ENUM('bulk_create', 'manual_create', 'grade') CHARACTER SET utf8mb4 NOT NULL,
-    created_at        DATETIME                                       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id                CHAR(36)                                            NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id        CHAR(36)                                            NOT NULL,
+    player_rating_id  CHAR(36)                                            NOT NULL,
+    contribution_type ENUM('create', 'participation', 'stats', 'note') CHARACTER SET utf8mb4 NOT NULL,
+    created_at        DATETIME                                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
-    UNIQUE KEY uk_contribution (player_rating_id, contribution_type)
+    UNIQUE KEY uk_contribution (player_rating_id, contribution_type, manager_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Achievements (v2)

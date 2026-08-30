@@ -5,7 +5,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
-import { PlayerRating } from '../../core/models/player-rating.model';
+import { PlayerRating, RatingContributor } from '../../core/models/player-rating.model';
 import { POSITION_LABEL } from '../../core/constants';
 
 interface Club {
@@ -162,6 +162,8 @@ export class RatingsDataComponent {
     return { goals: s.goals, assists: s.assists, has_sds: s.has_sds };
   }
 
+  // Both status queries are matchday-wide (all clubs), not club-scoped, despite firing from
+  // club-specific contexts (selectClub/init/loadRatings) — refreshed together here.
   private refreshClubStatuses(): void {
     const md = this.selectedMatchday();
     if (!md) return;
@@ -181,6 +183,41 @@ export class RatingsDataComponent {
           })),
         ),
       );
+
+    this.api
+      .get<any[]>(`player_rating/contribution_summary?matchday_id=${md.id}`)
+      .pipe(catchError(() => of([] as any[])))
+      .subscribe((list) => this.contributionSummary.set(list));
+  }
+
+  contributionSummary = signal<
+    { manager_id: string; manager_name: string; total: number; by_type: Record<string, number> }[]
+  >([]);
+
+  readonly summaryModes: { key: 'total' | 'participation' | 'stats' | 'note'; label: string }[] = [
+    { key: 'total', label: 'Gesamt' },
+    { key: 'participation', label: 'Aufstellung' },
+    { key: 'stats', label: 'Stats' },
+    { key: 'note', label: 'Noten' },
+  ];
+
+  // 'total' returns the backend's already-total-sorted list as-is; every other category
+  // re-sorts by that category's count and drops managers who didn't contribute to it at all —
+  // showing a "0" entry under e.g. "Noten" for someone who only set the lineup would be noise,
+  // not signal. All four groups render simultaneously (stacked), not behind a tab switch.
+  summaryForMode(mode: 'total' | 'participation' | 'stats' | 'note') {
+    const list = this.contributionSummary();
+    if (mode === 'total') return list;
+    return [...list]
+      .filter((c) => (c.by_type[mode] ?? 0) > 0)
+      .sort((a, b) => (b.by_type[mode] ?? 0) - (a.by_type[mode] ?? 0));
+  }
+
+  countForMode(
+    c: { total: number; by_type: Record<string, number> },
+    mode: 'total' | 'participation' | 'stats' | 'note',
+  ): number {
+    return mode === 'total' ? c.total : (c.by_type[mode] ?? 0);
   }
 
   clubStatusClass(clubId: string): string {
@@ -224,6 +261,7 @@ export class RatingsDataComponent {
     // Bar visible for a moment if the prior matchday happened to be fully graded — while the
     // fresh refreshClubStatuses() call for the newly selected matchday is still in flight.
     this.clubStatuses.set([]);
+    this.contributionSummary.set([]);
     this.refreshClubStatuses();
   }
 
@@ -391,6 +429,35 @@ export class RatingsDataComponent {
   };
   posLabel(pos: string | null): string {
     return pos ? (POSITION_LABEL[pos] ?? pos) : '';
+  }
+
+  contributorPhotoUrl(managerId: string): string | null {
+    return this.cache.managerPhotoUrl(managerId);
+  }
+
+  private static readonly CONTRIBUTION_LABEL: Record<string, string> = {
+    create: 'Aufstellung angelegt',
+    participation: 'Startelf/Eingewechselt gesetzt',
+    stats: 'Statistiken eingetragen',
+    note: 'Note eingetragen',
+  };
+
+  contributorTypeLabels(c: RatingContributor): string[] {
+    return c.types.map((t) => RatingsDataComponent.CONTRIBUTION_LABEL[t] ?? t);
+  }
+
+  contributorTooltip = signal<RatingContributor | null>(null);
+  contributorTooltipPos = signal<{ top: number; left: number } | null>(null);
+
+  onContributorEnter(event: MouseEvent, c: RatingContributor): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.contributorTooltip.set(c);
+    this.contributorTooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+  }
+
+  onContributorLeave(): void {
+    this.contributorTooltip.set(null);
+    this.contributorTooltipPos.set(null);
   }
 
   private byPositionOnly = (a: PlayerRating, b: PlayerRating) => {
@@ -752,7 +819,7 @@ export class RatingsDataComponent {
       }
       newlyAssigned++;
       matched.push(player.displayname);
-      this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting', _contribution_type: 'bulk_create' }).subscribe({
+      this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting' }).subscribe({
         next: (res) =>
           this.ratings.update((list) =>
             list.map((r) =>

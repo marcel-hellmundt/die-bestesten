@@ -1,5 +1,107 @@
 @use '../../../styles/variables' as *;
 
+// Desktop: narrow sidebar to the right with the matchday-wide contribution summary (see
+// refreshClubStatuses(), which also refreshes contributionSummary — both are matchday-wide,
+// not club-scoped). Collapses to a single column on mobile, sidebar hidden entirely — this
+// is a nice-to-have overview, not core functionality.
+.ratings-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: $space-6;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+  }
+}
+
+.main-col {
+  min-width: 0;
+}
+
+.sidebar {
+  position: sticky;
+  top: calc(60px + #{$space-4});
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.contribution-summary {
+  padding: $space-4;
+
+  &__title {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: $space-3;
+  }
+
+  &__group {
+    padding-top: $space-3;
+    margin-top: $space-3;
+    border-top: 1px solid $color-border;
+
+    &:first-of-type {
+      padding-top: 0;
+      margin-top: 0;
+      border-top: none;
+    }
+  }
+
+  &__group-label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    margin-bottom: $space-1;
+  }
+
+  &__group-empty {
+    font-size: $font-sm;
+    color: $color-text-muted;
+    margin: 0;
+  }
+
+  &__empty {
+    font-size: $font-xs;
+    margin: 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-1 0;
+  }
+
+  &__avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: $radius-full;
+    object-fit: cover;
+    background: $color-surface-alt;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    font-size: $font-sm;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__count {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+}
+
 // Matchday pill bar
 .matchday-bar {
   display: flex;
@@ -536,6 +638,62 @@
 .col-reset {
   width: 32px;
   text-align: center;
+}
+
+.col-contributors {
+  // Fixed width instead of the usual shrink-to-content "1%" trick — with this many columns
+  // competing for space, auto table layout was compressing it below the avatars' actual size
+  // instead of sizing to fit them. 80px comfortably fits all 4 possible category avatars
+  // (22px + 3 × 14px visible sliver each, see .contributor-stack's overlap).
+  width: 80px;
+  white-space: nowrap;
+}
+
+// Wer an dieser Zeile mitgewirkt hat (Anlegen/Aufstellung/Statistiken/Note — siehe
+// maintainer_contribution), ein Avatar je beteiligtem Manager, dedupliziert.
+.contributor-stack {
+  display: inline-flex;
+
+  img.contributor-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: $radius-full;
+    object-fit: cover;
+    border: 2px solid $color-surface;
+    background: $color-surface-alt;
+    margin-left: -8px;
+    cursor: default;
+
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+}
+
+// Custom hover tooltip for a contributor avatar (see onContributorEnter()) — mirrors
+// team/lineup/lineup.component.scss's .player-breakdown tooltip pattern.
+.contributor-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 9999;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    margin-bottom: 2px;
+  }
+
+  &__row {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
 }
 
 .reset-btn {

@@ -31,6 +31,14 @@ class PlayerRatingController extends _BaseController
             return $this->db->getClubStatusByMatchday($matchdayId);
         }
 
+        if ($this->id === 'contribution_summary') {
+            if (!$matchdayId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'matchday_id ist erforderlich'];
+            }
+            return $this->db->getContributionSummaryForMatchday($matchdayId);
+        }
+
         if (!$matchdayId || !$clubId) {
             http_response_code(400);
             return ['status' => false, 'message' => 'matchday_id und club_id sind erforderlich'];
@@ -163,7 +171,7 @@ class PlayerRatingController extends _BaseController
             return ['status' => false, 'message' => 'Spieltag hat noch nicht begonnen'];
         }
 
-        return $this->db->initPlayerRatingsForClub($matchdayId, $clubId, $matchday['season_id']);
+        return $this->db->initPlayerRatingsForClub($matchdayId, $clubId, $matchday['season_id'], $GLOBALS['auth_manager_id']);
     }
 
     protected function patch(): mixed
