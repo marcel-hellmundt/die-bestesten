@@ -20,6 +20,9 @@
 }
 
 .sidebar {
+  position: sticky;
+  top: calc(60px + #{$space-4});
+
   @media (max-width: $mobile-breakpoint) {
     display: none;
   }
@@ -35,6 +38,31 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: $space-3;
+  }
+
+  &__group {
+    padding-top: $space-3;
+    margin-top: $space-3;
+    border-top: 1px solid $color-border;
+
+    &:first-of-type {
+      padding-top: 0;
+      margin-top: 0;
+      border-top: none;
+    }
+  }
+
+  &__group-label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    margin-bottom: $space-1;
+  }
+
+  &__group-empty {
+    font-size: $font-sm;
+    color: $color-text-muted;
+    margin: 0;
   }
 
   &__empty {

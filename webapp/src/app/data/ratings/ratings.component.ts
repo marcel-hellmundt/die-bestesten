@@ -194,6 +194,32 @@ export class RatingsDataComponent {
     { manager_id: string; manager_name: string; total: number; by_type: Record<string, number> }[]
   >([]);
 
+  readonly summaryModes: { key: 'total' | 'participation' | 'stats' | 'note'; label: string }[] = [
+    { key: 'total', label: 'Gesamt' },
+    { key: 'participation', label: 'Aufstellung' },
+    { key: 'stats', label: 'Stats' },
+    { key: 'note', label: 'Noten' },
+  ];
+
+  // 'total' returns the backend's already-total-sorted list as-is; every other category
+  // re-sorts by that category's count and drops managers who didn't contribute to it at all —
+  // showing a "0" entry under e.g. "Noten" for someone who only set the lineup would be noise,
+  // not signal. All four groups render simultaneously (stacked), not behind a tab switch.
+  summaryForMode(mode: 'total' | 'participation' | 'stats' | 'note') {
+    const list = this.contributionSummary();
+    if (mode === 'total') return list;
+    return [...list]
+      .filter((c) => (c.by_type[mode] ?? 0) > 0)
+      .sort((a, b) => (b.by_type[mode] ?? 0) - (a.by_type[mode] ?? 0));
+  }
+
+  countForMode(
+    c: { total: number; by_type: Record<string, number> },
+    mode: 'total' | 'participation' | 'stats' | 'note',
+  ): number {
+    return mode === 'total' ? c.total : (c.by_type[mode] ?? 0);
+  }
+
   clubStatusClass(clubId: string): string {
     const s = this.clubStatusMap().get(clubId);
     if (!s || s.rating_count === 0) return '';
