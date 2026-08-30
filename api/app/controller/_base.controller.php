@@ -4,9 +4,14 @@ require_once __DIR__ . '/../util/image_upload.util.php';
 
 abstract class _BaseController
 {
-    // Required role per HTTP method: 'guest' | 'manager' | 'maintainer' | 'admin'
-    // guest = no auth needed, manager = any authenticated user, etc.
+    // Required role per HTTP method: 'guest' | 'manager' | 'contributor' | 'maintainer' | 'admin'
+    // guest = no auth needed, manager = any authenticated user, etc. Roles are hierarchical
+    // (see ROLE_RANK) — a manager only ever holds their single highest role, and it also
+    // satisfies every requirement ranked at or below it.
     public static array $methodRoles = [];
+
+    // Higher rank = more privileged; a manager's rank must be >= the required role's rank.
+    public const ROLE_RANK = ['manager' => 0, 'contributor' => 1, 'maintainer' => 2, 'admin' => 3];
 
     public Database $db;
     public string $endpoint  = '';
@@ -51,14 +56,25 @@ abstract class _BaseController
         return ['status' => false, 'message' => 'Method Not Allowed'];
     }
 
+    protected function myRoleRank(): int
+    {
+        $role = ($GLOBALS['auth_roles'] ?? [])[0] ?? 'manager';
+        return self::ROLE_RANK[$role] ?? 0;
+    }
+
     protected function isAdmin(): bool
     {
-        return in_array('admin', $GLOBALS['auth_roles'] ?? []);
+        return $this->myRoleRank() >= self::ROLE_RANK['admin'];
     }
 
     protected function isMaintainer(): bool
     {
-        return in_array('maintainer', $GLOBALS['auth_roles'] ?? []);
+        return $this->myRoleRank() >= self::ROLE_RANK['maintainer'];
+    }
+
+    protected function isContributor(): bool
+    {
+        return $this->myRoleRank() >= self::ROLE_RANK['contributor'];
     }
 
     protected function ownsTeam(string $teamId): bool

@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { ROLE_RANK } from '../core/constants';
 
 export interface League {
   id:     string;
@@ -90,12 +91,23 @@ export class AuthService {
     return this.getRoles().includes(role);
   }
 
+  // A manager holds at most one explicit role; its rank also satisfies every requirement
+  // ranked at or below it (admin >= maintainer >= contributor >= manager).
+  private myRoleRank(): number {
+    const role = this.getRoles()[0] ?? 'manager';
+    return ROLE_RANK[role] ?? 0;
+  }
+
   isAdmin(): boolean {
-    return this.hasRole('admin');
+    return this.myRoleRank() >= ROLE_RANK['admin'];
   }
 
   isMaintainer(): boolean {
-    return this.hasRole('maintainer') || this.hasRole('admin');
+    return this.myRoleRank() >= ROLE_RANK['maintainer'];
+  }
+
+  isContributor(): boolean {
+    return this.myRoleRank() >= ROLE_RANK['contributor'];
   }
 
   getLeagueId(): string | null {

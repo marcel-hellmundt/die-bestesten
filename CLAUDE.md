@@ -54,11 +54,11 @@ styles/
 
 ## API-Autorisierung (RBAC)
 
-**Additives Rollenmodell**: Jeder Manager hat die Basisrolle `manager` (implizit). Zusätzliche Rollen (`maintainer`, `admin`) werden in der `manager_role`-Tabelle gespeichert und sind frei kombinierbar.
+**Hierarchisches Rollenmodell**: Jeder Manager hat die Basisrolle `manager` (implizit, Rang 0). Höchstens eine zusätzliche Rolle (`contributor` Rang 1, `maintainer` Rang 2, `admin` Rang 3) wird als einzelne Zeile in der `manager_role`-Tabelle gespeichert (PK `manager_id` — max. 1 Zeile pro Manager). Jede Rolle schließt automatisch alle niedrigeren Ränge ein (admin ⊇ maintainer ⊇ contributor ⊇ manager) — keine separate Zuweisung nötig. `contributor` deckt nur das Eintragen von Spieltagsdaten ab (siehe `/player_rating`), `maintainer` zusätzlich Spieler-/Vereins-/Saison-/Ligaverwaltung u.ä.
 
-`$methodRoles` pro Controller: HTTP-Methode → erforderliche Rolle. Prüfung: `guest` = kein Token nötig, aber falls ein gültiger Token mitgeschickt wird, dekodiert der Guard ihn trotzdem optional (setzt `auth_manager_id`/`auth_league_id`, ohne bei ungültigem/fehlendem Token einen Fehler zu werfen) — relevant für Endpunkte wie `/league/mine`, die sich für eingeloggte Manager anders verhalten; `manager` = jeder eingeloggte Manager; `maintainer`/`admin` = Manager muss diese Rolle in seiner Rollenliste haben. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rolle fehlt. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_roles']` (Array).
+`$methodRoles` pro Controller: HTTP-Methode → erforderliche Rolle (einzelner String, kein Array). Prüfung: `guest` = kein Token nötig, aber falls ein gültiger Token mitgeschickt wird, dekodiert der Guard ihn trotzdem optional (setzt `auth_manager_id`/`auth_league_id`, ohne bei ungültigem/fehlendem Token einen Fehler zu werfen) — relevant für Endpunkte wie `/league/mine`, die sich für eingeloggte Manager anders verhalten; ansonsten vergleicht der Guard den Rang der höchsten Rolle des Managers (`_BaseController::ROLE_RANK`) gegen den Rang der erforderlichen Rolle — reicht der eigene Rang, ist der Zugriff erlaubt, unabhängig vom exakten Rollennamen. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rang zu niedrig. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_roles']` (Array mit höchstens einem Eintrag).
 
-Rollenvergabe: `POST /manager/:id/roles` mit `{role}`, Entzug: `DELETE /manager/:id/roles/:role` — jeweils Admin.
+Rollenvergabe: `POST /manager/:id/roles` mit `{role}` (Upsert — ersetzt eine evtl. vorhandene Rolle), Entzug (zurück auf Basisrolle `manager`): `DELETE /manager/:id/roles/:role` — jeweils Admin. Die 403-Prüfung selbst liest bei jedem Request live aus der DB, wirkt also sofort; das im JWT eingebettete `roles` kann kurzzeitig veralten — der Guard vergleicht es deshalb bei jedem authentifizierten Request gegen die aktuelle DB-Rolle und schickt bei Abweichung sofort (nicht erst im 3-Tage-Rolling-Window) ein frisches Token per `X-New-Token`-Header, das der Frontend-Interceptor automatisch übernimmt — kein Logout/Login nötig, damit eine Rollenänderung im UI ankommt.
 
 ## Datenbankschema
 
@@ -150,9 +150,9 @@ DELETE   /player_in_club/:id   — löscht den Eintrag; 404 wenn nicht gefunden 
 GET      /player_rating        — ?matchday_id&club_id → Spielerinfos + price, starting_count (Starts in der Saison); sortiert nach starting_count DESC, position, price DESC
 GET      /player_rating/best_xi — ?matchday_id (required), ?free_agents_only=0|1 — beste valide 11 (343/352/433/442/451/532/541) für einen Spieltag; gibt {formation, players[{player_id,displayname,position,points,grade,club_id,club_name,club_short_name}], total_points} zurück; free_agents_only=1 nur Spieler ohne Fantasy-Team — Auth
 GET      /player_rating/status — ?matchday_id → [{club_id, rating_count, starter_count, grade_count, goals, assists, has_sds}] — aggregierter Status aller Clubs für einen Spieltag
-POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen für aktuelle Clubspieler mit gültigem player_in_season (Position + Marktwert gesetzt) in der Saison des Spieltags; 409 wenn completed oder (vor kickoff_date und nicht Admin) — Maintainer+
-POST     /player_rating/validate-csv — multipart: matchday_id + csv-Datei (;-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte) → {ok, checked?} oder {ok: false, mismatches: [{kicker_id, displayname, csv_points, db_points, error}]}; error: 'points mismatch' | 'player not found in db' (+ first_name/last_name/club_name/position/price) | 'no ratings in season' — Maintainer+
-PATCH    /player_rating/:id    — Maintainer+; 403 wenn Spieltag completed; Body: grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card (points wird immer serverseitig berechnet)
+POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen für aktuelle Clubspieler mit gültigem player_in_season (Position + Marktwert gesetzt) in der Saison des Spieltags; 409 wenn completed oder vor kickoff_date (gilt für alle Rollen inkl. Admin — Ratings dürfen nie für zukünftige Spieltage angelegt werden) — Contributor+
+POST     /player_rating/validate-csv — multipart: matchday_id + csv-Datei (;-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte) → {ok, checked?} oder {ok: false, mismatches: [{kicker_id, displayname, csv_points, db_points, error}]}; error: 'points mismatch' | 'player not found in db' (+ first_name/last_name/club_name/position/price) | 'no ratings in season' — Contributor+
+PATCH    /player_rating/:id    — Contributor+; 403 wenn Spieltag completed; Body: grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card (points wird immer serverseitig berechnet)
 POST     /auth                 — JWT-Login; Response enthält token + leagues[] + league_id (null wenn keine Liga)
 POST     /auth/switch-league  — {league_id} → {token, league_id}; neues JWT mit geänderter league_id; 403 wenn kein Zugang — Auth
 POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)
@@ -222,7 +222,7 @@ GET      /session               — ?range=day|month|year|all (optional, default
 
 **manager**: id PK, manager_name UNIQUE (Anzeigename/Username), first_name VARCHAR(100)? (echter Vorname — für Achievement-Vergleiche), alias UNIQUE?, password, status ENUM(active/blocked/deleted/invited) DEFAULT active (invited = von Admin per `POST /manager` angelegt, wartet auf Erstpasswort via Einladungslink; wechselt bei erfolgreichem `POST /auth/password-reset` automatisch zu active), email UNIQUE?, date_of_birth?, last_activity DATETIME?
 
-**manager_role**: id PK, manager_id FK, role ENUM(maintainer/admin) — UNIQUE(manager_id, role) — additiv; jeder Manager hat implizit 'manager'
+**manager_role**: manager_id PK+FK, role ENUM(contributor/maintainer/admin) — max. 1 Zeile pro Manager (hierarchisch: admin ⊇ maintainer ⊇ contributor ⊇ 'manager'); kein Eintrag = Basisrolle 'manager'
 
 **password_reset_token**: id PK, manager_id FK, token_hash VARCHAR(64) UNIQUE, expires_at DATETIME, used BOOL DEFAULT 0, created_at DATETIME
 

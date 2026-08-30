@@ -151,11 +151,11 @@
                   @if (isAdmin()) {
                     <button
                       class="role-badge role-badge--{{ role }}"
-                      [class.role-badge--inactive]="!(m.roles ?? []).includes(role)"
+                      [class.role-badge--inactive]="!isRoleActive(m, role)"
                       [disabled]="isRoleToggling(m.id, role)"
                       (click)="toggleRole(m, role)"
                     >{{ roleLabel[role] }}</button>
-                  } @else if ((m.roles ?? []).includes(role)) {
+                  } @else if (isRoleActive(m, role)) {
                     <span class="role-badge role-badge--{{ role }}">{{ roleLabel[role] }}</span>
                   }
                 }

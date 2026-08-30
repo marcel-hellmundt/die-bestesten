@@ -82,13 +82,22 @@ class Guard
                 // Session-Heartbeat darf einen Request nie zum Scheitern bringen.
             }
 
-            // 'manager' = any authenticated active manager; additional roles require explicit assignment
-            if ($requiredRole !== 'manager' && !in_array($requiredRole, $manager['roles'])) {
+            // Roles are hierarchical (see _BaseController::ROLE_RANK) — a manager holds at most
+            // one explicit role (manager_role has 1 row per manager), and its rank must be >= the
+            // required role's rank. 'manager' = rank 0, satisfied by anyone authenticated.
+            $myRole  = $manager['roles'][0] ?? 'manager';
+            $myRank  = _BaseController::ROLE_RANK[$myRole] ?? 0;
+            $reqRank = _BaseController::ROLE_RANK[$requiredRole] ?? 0;
+            if ($myRank < $reqRank) {
                 return ['status' => false, 'code' => 403, 'message' => 'Forbidden'];
             }
 
-            // Rolling window: refresh token if less than 3 days remaining
-            if (($decoded->exp - time()) < 60 * 60 * 24 * 3) {
+            // Refresh token if less than 3 days remaining (rolling window), OR immediately if
+            // the manager's role changed since this token was issued (e.g. just promoted/demoted
+            // by an admin) — keeps the frontend's cached JWT payload (nav visibility, isAdmin()
+            // etc.) in sync on the very next request instead of requiring a logout/login.
+            $rolesChanged = ($decoded->roles ?? []) !== $manager['roles'];
+            if ($rolesChanged || ($decoded->exp - time()) < 60 * 60 * 24 * 3) {
                 $now      = time();
                 $newToken = JWT::encode([
                     'sub'          => $manager['id'],

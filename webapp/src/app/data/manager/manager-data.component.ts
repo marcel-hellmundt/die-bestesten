@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
-import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
+import { ROLE_LABEL, ROLE_ORDER, ROLE_RANK } from '../../core/constants';
 
 @Component({
   selector: 'app-data-manager',
@@ -53,7 +53,7 @@ export class ManagerDataComponent {
     list.sort((a, b) => {
       let cmp: number;
       if (col === 'roles') {
-        cmp = (a.roles?.length ?? 0) - (b.roles?.length ?? 0);
+        cmp = this.roleRank(a) - this.roleRank(b);
       } else if (col === 'stadiums_visited') {
         cmp = (a.stadiums_visited ?? 0) - (b.stadiums_visited ?? 0);
       } else {
@@ -69,7 +69,19 @@ export class ManagerDataComponent {
 
   readonly roleOrder       = ROLE_ORDER;
   readonly roleLabel       = ROLE_LABEL;
-  readonly assignableRoles = ['admin', 'maintainer'];
+  readonly assignableRoles = ['admin', 'maintainer', 'contributor'];
+
+  roleRank(manager: any): number {
+    const actualRole = (manager.roles ?? [])[0] ?? 'manager';
+    return ROLE_RANK[actualRole] ?? 0;
+  }
+
+  // Hierarchical highlighting: a manager's single actual role also "lights up" every badge
+  // ranked at or below it (e.g. maintainer highlights both maintainer and contributor) —
+  // distinct from the exact-match check toggleRole() uses to decide add vs. remove.
+  isRoleActive(manager: any, role: string): boolean {
+    return this.roleRank(manager) >= (ROLE_RANK[role] ?? 0);
+  }
 
   roleTogglingState    = signal<Record<string, boolean>>({});
   allLeagues           = signal<any[]>([]);
@@ -134,9 +146,10 @@ export class ManagerDataComponent {
 
     req.subscribe({
       next: () => {
-        const newRoles = hasRole
-          ? (manager.roles ?? []).filter((r: string) => r !== role)
-          : [...(manager.roles ?? []), role];
+        // Hierarchical, max 1 role per manager (backend upserts) — clicking a role either
+        // clears it (revert to base 'manager') or replaces whatever role was set before,
+        // never adds alongside it.
+        const newRoles = hasRole ? [] : [role];
         this._managers.update((list) =>
           list.map((m) => (m.id === manager.id ? { ...m, roles: newRoles } : m)),
         );

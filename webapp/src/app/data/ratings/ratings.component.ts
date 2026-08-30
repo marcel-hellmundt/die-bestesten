@@ -39,8 +39,9 @@ export class RatingsDataComponent {
   private auth = inject(AuthService);
   private cache = inject(DataCacheService);
 
-  isAdmin = computed(() => this.auth.isAdmin());
+  isAdmin      = computed(() => this.auth.isAdmin());
   isMaintainer = computed(() => this.auth.isMaintainer());
+  canEdit      = computed(() => this.auth.isMaintainer() || this.auth.isContributor());
 
   // ── Active season ──────────────────────────────────────────────
   private activeSeasonState = toSignal(
@@ -100,9 +101,13 @@ export class RatingsDataComponent {
     { initialValue: [] as any[] },
   );
 
-  // Sorted ASC (lowest number = oldest = first uncompleted)
+  // Sorted ASC (lowest number = oldest = first uncompleted); future matchdays (kickoff not yet
+  // reached) are excluded entirely — player_rating objects can never be created for them (see
+  // POST /player_rating/init), so there's nothing to do here for them yet.
   matchdays = computed(() =>
-    [...(this.pageData()?.matchdays ?? [])].sort((a, b) => a.number - b.number),
+    [...(this.pageData()?.matchdays ?? [])]
+      .filter((m) => m.kickoff_date && new Date(m.kickoff_date) <= new Date())
+      .sort((a, b) => a.number - b.number),
   );
 
   bundesligaClubs = computed((): Club[] => {
@@ -214,6 +219,11 @@ export class RatingsDataComponent {
     this.csvFile.set(null);
     this.participationError.set(null);
     this.sdsError.set(null);
+    // Cleared synchronously (not just re-fetched) so allClubsDone() can't briefly evaluate
+    // against the previous matchday's statuses — e.g. flashing the "Spieltag abschließen"-
+    // Bar visible for a moment if the prior matchday happened to be fully graded — while the
+    // fresh refreshClubStatuses() call for the newly selected matchday is still in flight.
+    this.clubStatuses.set([]);
     this.refreshClubStatuses();
   }
 
@@ -239,7 +249,7 @@ export class RatingsDataComponent {
     const md = this.selectedMatchday();
     if (!md) return;
 
-    if (md.completed || !this.isMaintainer()) {
+    if (md.completed || !this.canEdit()) {
       this.loadRatings(md.id, clubId);
     } else {
       this.ratingsState.set('loading');
@@ -407,6 +417,16 @@ export class RatingsDataComponent {
   benchRatings = computed(() =>
     [...this.ratings()].filter((r) => !r.participation).sort(this.byBench),
   );
+
+  // Grouped by position (goalkeeper row, then defender, midfielder, forward) for the bench
+  // card grid — byBench already sorts by starting_count DESC then price DESC within a position
+  // once filtered down to it, so no extra sort is needed per group.
+  benchGroups = computed(() => {
+    const bench = this.benchRatings();
+    return (['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'] as const)
+      .map((position) => ({ position, players: bench.filter((r) => r.position === position) }))
+      .filter((g) => g.players.length > 0);
+  });
 
   participationError = signal<string | null>(null);
   sdsError = signal<string | null>(null);
