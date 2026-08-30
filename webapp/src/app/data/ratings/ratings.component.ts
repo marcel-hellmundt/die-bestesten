@@ -570,6 +570,11 @@ export class RatingsDataComponent {
       return;
     }
     this.participationError.set(null);
+    // Marking a bench card as starting/substitute moves a row into a table further up the
+    // page (Startelf/Eingewechselt) while removing a card further down (Nicht eingesetzt) —
+    // the resulting height delta shifts the viewport out from under the user mid-click-spree.
+    // If they were scrolled to the bottom, snap back there once the DOM has actually updated.
+    const wasAtBottom = this.isScrolledToBottom();
     this.api.patch<any>(`player_rating/${ratingId}`, { participation: value }).subscribe({
       next: (res) => {
         this.ratings.update((list) =>
@@ -579,8 +584,20 @@ export class RatingsDataComponent {
               : r,
           ),
         );
+        if (wasAtBottom) this.scrollToBottomNextFrame();
       },
     });
+  }
+
+  private isScrolledToBottom(): boolean {
+    const threshold = 40;
+    return window.innerHeight + window.scrollY >= document.body.offsetHeight - threshold;
+  }
+
+  private scrollToBottomNextFrame(): void {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight })),
+    );
   }
 
   // ── CSV validation ────────────────────────────────────────────────
