@@ -97,3 +97,12 @@
     </div>
   </div>
 }
+
+<ng-template #visitedHintSheet>
+  <p class="visited-hint__text">
+    Diese Karte ist interaktiv: Klicke auf ein Vereinswappen, um Infos zum Stadion zu sehen, und
+    markiere dort Stadien, die du schon selbst besucht hast — so siehst du auf einen Blick, welche
+    Stadien dir noch fehlen und wer sonst schon dort war.
+  </p>
+  <button class="btn btn-primary visited-hint__btn" (click)="dismissVisitedHint()">Verstanden</button>
+</ng-template>
