@@ -137,6 +137,8 @@ export class MatchdayComponent {
     this.router.navigate(['/team', teamId, 'aufstellung'], { queryParams: { matchday_id: this.matchday()?.id } });
   }
 
+  statsMode = signal<'stats' | 'lineup'>('stats');
+
   bestXiMode = signal<'all' | 'free'>('all');
 
   private bestXiData = toSignal(

@@ -638,3 +638,68 @@
   height: 16px;
   max-width: unset;
 }
+
+.table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: $space-2;
+}
+
+.stats-mode-toggle {
+  display: inline-flex;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  padding: 2px;
+  gap: 2px;
+
+  &__btn {
+    padding: $space-1 $space-4;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: all $transition-fast;
+    white-space: nowrap;
+
+    &.active {
+      background: $color-accent;
+      color: #fff;
+    }
+
+    &:hover:not(.active) {
+      color: $color-text;
+    }
+  }
+}
+
+.status-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: $radius-full;
+  color: #fff;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+
+  &--starting {
+    background: #009432;
+  }
+
+  &--substitute {
+    background: #ffc312;
+  }
+
+  &--not-used {
+    background: #ff3f34;
+  }
+
+  &--waiting {
+    background: #a4b0be;
+  }
+}

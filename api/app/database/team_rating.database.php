@@ -373,12 +373,65 @@ trait TeamRatingTrait
         }
         $maxNumber = (int) $maxQ->fetchColumn();
 
+        $statusCounts = $this->getLineupStatusCounts($matchday['id']);
+        foreach ($ratings as &$r) {
+            $r['status_counts'] = $statusCounts[$r['team_id']]
+                ?? ['starting' => 0, 'substitute' => 0, 'not_used' => 0, 'waiting' => 0];
+        }
+        unset($r);
+
         return [
             'matchday' => $matchday,
             'ratings' => $ratings,
             'sds_player' => $sdsPlayer,
             'max_matchday_number' => $maxNumber,
         ];
+    }
+
+    // Wie viele nominierten Spieler je Team sich in welchem Einsatz-Status befinden — Grundlage
+    // für die Aufstellungsstatus-Ansicht der Spieltagstabelle (siehe /liga/spieltag). Dieselbe
+    // Zustandslogik wie im Lineup (points === null => wartet, da kein player_rating existiert).
+    private function getLineupStatusCounts(string $matchdayId): array
+    {
+        $lq = $this->con_league->prepare(
+            "SELECT team_id, player_id FROM team_lineup
+             WHERE matchday_id = :matchday_id AND nominated = 1"
+        );
+        $lq->execute([':matchday_id' => $matchdayId]);
+        $lineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
+
+        $counts = [];
+        foreach ($lineupRows as $row) {
+            if (!isset($counts[$row['team_id']])) {
+                $counts[$row['team_id']] = ['starting' => 0, 'substitute' => 0, 'not_used' => 0, 'waiting' => 0];
+            }
+        }
+        if (empty($lineupRows)) return $counts;
+
+        $playerIds = array_unique(array_column($lineupRows, 'player_id'));
+        $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+        $prq = $this->con->prepare(
+            "SELECT player_id, points, participation FROM player_rating
+             WHERE matchday_id = ? AND player_id IN ($placeholders)"
+        );
+        $prq->execute(array_merge([$matchdayId], $playerIds));
+        $ratingByPlayer = array_column($prq->fetchAll(PDO::FETCH_ASSOC), null, 'player_id');
+
+        foreach ($lineupRows as $row) {
+            $tid = $row['team_id'];
+            $pr = $ratingByPlayer[$row['player_id']] ?? null;
+            if ($pr === null || $pr['points'] === null) {
+                $counts[$tid]['waiting']++;
+            } elseif ($pr['participation'] === 'starting') {
+                $counts[$tid]['starting']++;
+            } elseif ($pr['participation'] === 'substitute') {
+                $counts[$tid]['substitute']++;
+            } else {
+                $counts[$tid]['not_used']++;
+            }
+        }
+
+        return $counts;
     }
 
     private function getLiveTeamRatings(string $matchdayId): array
