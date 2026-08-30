@@ -347,7 +347,7 @@ export class LineupComponent {
   // Tooltip
 
   onBadgeEnter(event: MouseEvent, p: LineupPlayer): void {
-    if (!this.showBreakdown()) return;
+    if (!this.showBreakdown() || p.points === null) return;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     this.tooltipPlayer.set(p);
     this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
