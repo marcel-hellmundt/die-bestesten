@@ -442,7 +442,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_rating',
-                        'description' => 'Alle Ratings eines Clubs an einem Spieltag (mit Spieler-Infos inkl. price, starting_count); sortiert nach starting_count DESC, position, price DESC — Auth',
+                        'description' => 'Alle Ratings eines Clubs an einem Spieltag (mit Spieler-Infos inkl. price, starting_count); sortiert nach starting_count DESC, position, price DESC; jedes Rating enthält contributors[{manager_id,manager_name,types[]}] — welche Manager an dieser Zeile mitgewirkt haben (types ⊆ create/participation/stats/note, siehe maintainer_contribution) — Auth',
                         'query_params' => [
                             'matchday_id' => 'UUID des Spieltags (erforderlich)',
                             'club_id' => 'UUID des Clubs (erforderlich)',
@@ -478,7 +478,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/player_rating/:id',
-                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; optionales _contribution_type (bulk_create|manual_create, default manual_create) bei participation-Änderungen; points wird immer serverseitig berechnet — Contributor+',
+                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; points wird immer serverseitig berechnet; trackt beteiligte Manager in maintainer_contribution (Kategorien: participation/stats/note) — Contributor+',
                         'path_params' => [':id' => 'UUID der player_rating-Zeile'],
                     ],
                 ],

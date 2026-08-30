@@ -393,6 +393,10 @@ export class RatingsDataComponent {
     return pos ? (POSITION_LABEL[pos] ?? pos) : '';
   }
 
+  contributorPhotoUrl(managerId: string): string | null {
+    return this.cache.managerPhotoUrl(managerId);
+  }
+
   private byPositionOnly = (a: PlayerRating, b: PlayerRating) => {
     const qa = RatingsDataComponent.POSITION_ORDER[a.position ?? ''] ?? 9;
     const qb = RatingsDataComponent.POSITION_ORDER[b.position ?? ''] ?? 9;
@@ -752,7 +756,7 @@ export class RatingsDataComponent {
       }
       newlyAssigned++;
       matched.push(player.displayname);
-      this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting', _contribution_type: 'bulk_create' }).subscribe({
+      this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting' }).subscribe({
         next: (res) =>
           this.ratings.update((list) =>
             list.map((r) =>

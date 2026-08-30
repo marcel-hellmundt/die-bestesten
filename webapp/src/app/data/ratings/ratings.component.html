@@ -362,6 +362,21 @@
             >
               <span class="card-icon card-icon--red" [class.card-icon--on]="r.red_card"></span>
             </td>
+            <td class="col-contributors">
+              @if (r.contributors.length > 0) {
+                <span class="contributor-stack">
+                  @for (c of r.contributors; track c.manager_id) {
+                    <img
+                      class="contributor-avatar"
+                      [src]="contributorPhotoUrl(c.manager_id)"
+                      [alt]="c.manager_name"
+                      [title]="c.manager_name + ' (' + c.types.join(', ') + ')'"
+                      (error)="$any($event.target).style.display = 'none'"
+                    />
+                  }
+                </span>
+              }
+            </td>
             @if (editable) {
               <td class="col-reset">
                 <button class="reset-btn" (click)="resetRating(r.id)" title="Zurücksetzen">
@@ -426,6 +441,7 @@
                       <th>Zu Null</th>
                       <th></th>
                       <th></th>
+                      <th class="col-contributors"></th>
                       @if (!selectedMatchday()?.completed) {
                         <th></th>
                       }
@@ -471,6 +487,7 @@
                       <th>Zu Null</th>
                       <th></th>
                       <th></th>
+                      <th class="col-contributors"></th>
                       @if (!selectedMatchday()?.completed) {
                         <th></th>
                       }

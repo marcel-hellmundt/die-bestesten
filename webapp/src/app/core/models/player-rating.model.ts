@@ -1,3 +1,9 @@
+export interface RatingContributor {
+  manager_id: string;
+  manager_name: string;
+  types: string[];
+}
+
 export class PlayerRating {
   constructor(
     public id: string,
@@ -22,6 +28,8 @@ export class PlayerRating {
     public photo_uploaded: boolean,
     public price: number | null,
     public starting_count: number,
+    // Wer an dieser Zeile mitgewirkt hat — siehe maintainer_contribution
+    public contributors: RatingContributor[],
   ) {}
 
   static from(data: any): PlayerRating {
@@ -47,6 +55,7 @@ export class PlayerRating {
       !!data.photo_uploaded,
       data.price !== null && data.price !== undefined ? Number(data.price) : null,
       Number(data.starting_count ?? 0),
+      data.contributors ?? [],
     );
   }
 }

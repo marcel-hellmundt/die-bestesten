@@ -48,7 +48,57 @@ trait PlayerRatingTrait
             ':club_id'     => $clubId,
             ':season_id'   => $seasonId,
         ]);
-        return $query->fetchAll(PDO::FETCH_ASSOC);
+        $ratings = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        $contributorsByRating = $this->getContributorsForRatings(array_column($ratings, 'id'));
+        foreach ($ratings as &$r) {
+            $r['contributors'] = $contributorsByRating[$r['id']] ?? [];
+        }
+        unset($r);
+
+        return $ratings;
+    }
+
+    // Wer hat an einer Reihe von player_rating-Zeilen mitgewirkt — gruppiert je Zeile nach
+    // Manager (types = alle Kategorien, an denen dieser Manager beteiligt war). Siehe
+    // maintainer_contribution in global_schema.sql für das Akkumulations-Modell.
+    private function getContributorsForRatings(array $ratingIds): array
+    {
+        $ratingIds = array_values(array_unique(array_filter($ratingIds)));
+        if (empty($ratingIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($ratingIds), '?'));
+        $q = $this->con->prepare(
+            "SELECT mc.player_rating_id, mc.manager_id, m.manager_name, mc.contribution_type
+             FROM maintainer_contribution mc
+             JOIN manager m ON m.id = mc.manager_id
+             WHERE mc.player_rating_id IN ($placeholders)"
+        );
+        $q->execute($ratingIds);
+
+        $byRating = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $rid = $c['player_rating_id'];
+            $mid = $c['manager_id'];
+            if (!isset($byRating[$rid][$mid])) {
+                $byRating[$rid][$mid] = [
+                    'manager_id'   => $mid,
+                    'manager_name' => $c['manager_name'],
+                    'types'        => [],
+                ];
+            }
+            $byRating[$rid][$mid]['types'][] = $c['contribution_type'];
+        }
+
+        return array_map('array_values', $byRating);
+    }
+
+    private function insertContribution(string $ratingId, string $managerId, string $type): void
+    {
+        $this->con->prepare(
+            "INSERT IGNORE INTO maintainer_contribution (id, manager_id, player_rating_id, contribution_type)
+             VALUES (UUID(), :manager_id, :rating_id, :type)"
+        )->execute([':manager_id' => $managerId, ':rating_id' => $ratingId, ':type' => $type]);
     }
 
     /**
@@ -59,7 +109,7 @@ trait PlayerRatingTrait
      * Uses INSERT IGNORE so existing ratings are not overwritten.
      * Returns: count of newly created ratings + IDs of existing ones.
      */
-    public function initPlayerRatingsForClub(string $matchdayId, string $clubId, string $seasonId): array
+    public function initPlayerRatingsForClub(string $matchdayId, string $clubId, string $seasonId, string $managerId): array
     {
         $players = $this->con->prepare(
             "SELECT p.id AS player_id, p.displayname
@@ -104,6 +154,7 @@ trait PlayerRatingTrait
                     ':matchday_id' => $matchdayId,
                     ':club_id'     => $clubId,
                 ]);
+                $this->insertContribution($newId, $managerId, 'create');
                 $created[] = ['player_id' => $row['player_id'], 'displayname' => $row['displayname']];
             }
         }
@@ -335,7 +386,11 @@ trait PlayerRatingTrait
             LIMIT 1
         ");
         $query->execute([':id' => $id]);
-        return $query->fetch(PDO::FETCH_ASSOC);
+        $rating = $query->fetch(PDO::FETCH_ASSOC);
+        if ($rating) {
+            $rating['contributors'] = $this->getContributorsForRatings([$id])[$id] ?? [];
+        }
+        return $rating;
     }
 
     /**
@@ -389,35 +444,26 @@ trait PlayerRatingTrait
         $this->con->prepare('UPDATE player_rating SET points = :p WHERE id = :id')
             ->execute([':p' => $newPoints, ':id' => $id]);
 
-        // Track maintainer contributions (global DB)
+        // Track maintainer contributions (global DB) — accumulate every distinct manager who
+        // touched a category, never overwritten (see maintainer_contribution in
+        // global_schema.sql), so e.g. two different managers correcting a player's goals both
+        // stay credited under 'stats' instead of the later edit erasing the earlier one.
         if (array_key_exists('participation', $data) && $data['participation'] !== null) {
-            $this->con->prepare(
-                "DELETE FROM maintainer_contribution
-                 WHERE player_rating_id = :id
-                   AND contribution_type IN ('bulk_create', 'manual_create')"
-            )->execute([':id' => $id]);
-            $type = in_array($data['_contribution_type'] ?? '', ['bulk_create', 'manual_create'])
-                ? $data['_contribution_type']
-                : 'manual_create';
-            $this->con->prepare(
-                "INSERT INTO maintainer_contribution (id, manager_id, player_rating_id, contribution_type)
-                 VALUES (UUID(), :manager_id, :rating_id, :type)"
-            )->execute([':manager_id' => $managerId, ':rating_id' => $id, ':type' => $type]);
+            $this->insertContribution($id, $managerId, 'participation');
         }
 
-        if (array_key_exists('grade', $data)) {
-            if ($data['grade'] !== null) {
-                $this->con->prepare(
-                    "INSERT INTO maintainer_contribution
-                     (id, manager_id, player_rating_id, contribution_type)
-                     VALUES (UUID(), :m, :r, 'grade')
-                     ON DUPLICATE KEY UPDATE manager_id = :m2, created_at = NOW()"
-                )->execute([':m' => $managerId, ':r' => $id, ':m2' => $managerId]);
-            } else {
-                $this->con->prepare(
-                    "DELETE FROM maintainer_contribution
-                     WHERE player_rating_id = :id AND contribution_type = 'grade'"
-                )->execute([':id' => $id]);
+        if (array_key_exists('grade', $data) && $data['grade'] !== null) {
+            $this->insertContribution($id, $managerId, 'note');
+        }
+
+        // Only a truthy/non-zero value counts as an actual contribution — resetRating() clears
+        // every stats field to 0/false in one call, which must NOT credit the person doing the
+        // reset as having "reported" stats.
+        $statsFields = ['goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'];
+        foreach ($statsFields as $field) {
+            if (array_key_exists($field, $data) && $data[$field]) {
+                $this->insertContribution($id, $managerId, 'stats');
+                break;
             }
         }
 

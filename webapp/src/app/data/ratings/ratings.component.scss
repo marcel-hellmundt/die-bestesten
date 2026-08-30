@@ -538,6 +538,31 @@
   text-align: center;
 }
 
+.col-contributors {
+  width: 1%;
+  white-space: nowrap;
+}
+
+// Wer an dieser Zeile mitgewirkt hat (Anlegen/Aufstellung/Statistiken/Note — siehe
+// maintainer_contribution), ein Avatar je beteiligtem Manager, dedupliziert.
+.contributor-stack {
+  display: inline-flex;
+
+  img.contributor-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: $radius-full;
+    object-fit: cover;
+    border: 2px solid $color-surface;
+    background: $color-surface-alt;
+    margin-left: -8px;
+
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+}
+
 .reset-btn {
   display: inline-flex;
   align-items: center;
