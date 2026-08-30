@@ -1,10 +1,25 @@
 @use '../../../styles/variables' as *;
 
+// Mirrors .matchday-layout's grid (1fr 260px) so the right-aligned toggle inside
+// __main lines up with the table's right edge instead of the full page width —
+// the empty __spacer cell stands in for the sidebar column.
 .matchday-nav {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: $space-6;
+  align-items: center;
+  margin-bottom: $space-6;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.matchday-nav__main {
   display: flex;
   align-items: center;
   gap: $space-3;
-  margin-bottom: $space-6;
+  min-width: 0;
 
   @media (max-width: $mobile-breakpoint) {
     flex-wrap: wrap;

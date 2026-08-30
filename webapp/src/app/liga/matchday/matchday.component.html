@@ -4,63 +4,66 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   <div class="matchday-nav">
-    <div class="matchday-selector">
-      <button
-        class="nav-arrow"
-        (click)="decrement()"
-        [disabled]="!canDecrement()"
-        aria-label="Vorheriger Spieltag"
-      >
-        ‹
-      </button>
-      <select
-        class="select"
-        (change)="onMatchdayChange(+$any($event.target).value)"
-      >
-        @for (m of matchdays(); track m.number) {
-          <option [value]="m.number" [selected]="m.number === currentNumber()">{{ m.number }}. Spieltag</option>
-        }
-      </select>
-      @if (isLive()) {
-        <span class="live-badge">Live</span>
-      }
-      <button
-        class="nav-arrow"
-        (click)="increment()"
-        [disabled]="!canIncrement()"
-        aria-label="Nächster Spieltag"
-      >
-        ›
-      </button>
-    </div>
-    @if (seasons().length > 1) {
-      <select
-        class="season-select select"
-        (change)="onSeasonChange($any($event.target).value)"
-      >
-        @for (s of seasons(); track s.id) {
-          <option [value]="s.id" [selected]="s.id === seasonId()">{{ s.displayName }}</option>
-        }
-      </select>
-    }
-    @if (ratings().length > 0) {
-      <div class="stats-mode-toggle col-desktop">
+    <div class="matchday-nav__main">
+      <div class="matchday-selector">
         <button
-          class="stats-mode-toggle__btn"
-          [class.active]="statsMode() === 'stats'"
-          (click)="statsMode.set('stats')"
+          class="nav-arrow"
+          (click)="decrement()"
+          [disabled]="!canDecrement()"
+          aria-label="Vorheriger Spieltag"
         >
-          Statistik
+          ‹
         </button>
-        <button
-          class="stats-mode-toggle__btn"
-          [class.active]="statsMode() === 'lineup'"
-          (click)="statsMode.set('lineup')"
+        <select
+          class="select"
+          (change)="onMatchdayChange(+$any($event.target).value)"
         >
-          Einsatz
+          @for (m of matchdays(); track m.number) {
+            <option [value]="m.number" [selected]="m.number === currentNumber()">{{ m.number }}. Spieltag</option>
+          }
+        </select>
+        @if (isLive()) {
+          <span class="live-badge">Live</span>
+        }
+        <button
+          class="nav-arrow"
+          (click)="increment()"
+          [disabled]="!canIncrement()"
+          aria-label="Nächster Spieltag"
+        >
+          ›
         </button>
       </div>
-    }
+      @if (seasons().length > 1) {
+        <select
+          class="season-select select"
+          (change)="onSeasonChange($any($event.target).value)"
+        >
+          @for (s of seasons(); track s.id) {
+            <option [value]="s.id" [selected]="s.id === seasonId()">{{ s.displayName }}</option>
+          }
+        </select>
+      }
+      @if (ratings().length > 0) {
+        <div class="stats-mode-toggle col-desktop">
+          <button
+            class="stats-mode-toggle__btn"
+            [class.active]="statsMode() === 'stats'"
+            (click)="statsMode.set('stats')"
+          >
+            Statistik
+          </button>
+          <button
+            class="stats-mode-toggle__btn"
+            [class.active]="statsMode() === 'lineup'"
+            (click)="statsMode.set('lineup')"
+          >
+            Einsatz
+          </button>
+        </div>
+      }
+    </div>
+    <div class="matchday-nav__spacer col-desktop"></div>
   </div>
 
   @if (!matchday()) {
