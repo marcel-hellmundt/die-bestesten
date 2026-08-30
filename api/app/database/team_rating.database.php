@@ -390,7 +390,9 @@ trait TeamRatingTrait
 
     // Wie viele nominierten Spieler je Team sich in welchem Einsatz-Status befinden — Grundlage
     // für die Aufstellungsstatus-Ansicht der Spieltagstabelle (siehe /liga/spieltag). Dieselbe
-    // Zustandslogik wie im Lineup (points === null => wartet, da kein player_rating existiert).
+    // Zustandslogik wie im Lineup (waiting => noch keine player_rating-Zeile vorhanden, unabhängig
+    // davon ob deren Werte bereits gesetzt sind — sonst würde eine leer initialisierte Zeile
+    // fälschlich als "wartet" statt "nicht eingesetzt" gezählt).
     private function getLineupStatusCounts(string $matchdayId): array
     {
         $lq = $this->con_league->prepare(
@@ -420,7 +422,7 @@ trait TeamRatingTrait
         foreach ($lineupRows as $row) {
             $tid = $row['team_id'];
             $pr = $ratingByPlayer[$row['player_id']] ?? null;
-            if ($pr === null || $pr['points'] === null) {
+            if ($pr === null) {
                 $counts[$tid]['waiting']++;
             } elseif ($pr['participation'] === 'starting') {
                 $counts[$tid]['starting']++;
