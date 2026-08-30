@@ -101,9 +101,13 @@ export class RatingsDataComponent {
     { initialValue: [] as any[] },
   );
 
-  // Sorted ASC (lowest number = oldest = first uncompleted)
+  // Sorted ASC (lowest number = oldest = first uncompleted); future matchdays (kickoff not yet
+  // reached) are excluded entirely — player_rating objects can never be created for them (see
+  // POST /player_rating/init), so there's nothing to do here for them yet.
   matchdays = computed(() =>
-    [...(this.pageData()?.matchdays ?? [])].sort((a, b) => a.number - b.number),
+    [...(this.pageData()?.matchdays ?? [])]
+      .filter((m) => m.kickoff_date && new Date(m.kickoff_date) <= new Date())
+      .sort((a, b) => a.number - b.number),
   );
 
   bundesligaClubs = computed((): Club[] => {
