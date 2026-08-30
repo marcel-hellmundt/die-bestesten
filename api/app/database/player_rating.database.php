@@ -456,14 +456,33 @@ trait PlayerRatingTrait
             $this->insertContribution($id, $managerId, 'note');
         }
 
-        // Only a truthy/non-zero value counts as an actual contribution — resetRating() clears
-        // every stats field to 0/false in one call, which must NOT credit the person doing the
-        // reset as having "reported" stats.
+        // Judged on the resulting row, not just the touched fields — if a stat field was patched
+        // and the row now has no stats left at all (every one back to 0/false), someone almost
+        // certainly just corrected a mistake (e.g. removed a wrongly entered goal) rather than
+        // reported anything, so the 'stats' credit no longer applies to anyone and is dropped
+        // entirely; resetRating() clearing everything in one call hits this same path.
         $statsFields = ['goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'];
-        foreach ($statsFields as $field) {
-            if (array_key_exists($field, $data) && $data[$field]) {
+        if (array_intersect($statsFields, array_keys($data))) {
+            $statsRow = $this->con->prepare(
+                'SELECT goals, assists, clean_sheet, sds, red_card, yellow_red_card
+                 FROM player_rating WHERE id = :id LIMIT 1'
+            );
+            $statsRow->execute([':id' => $id]);
+            $statsRow = $statsRow->fetch(PDO::FETCH_ASSOC);
+
+            $hasAnyStat = $statsRow && array_reduce(
+                $statsFields,
+                fn($carry, $field) => $carry || (int) $statsRow[$field] > 0,
+                false
+            );
+
+            if ($hasAnyStat) {
                 $this->insertContribution($id, $managerId, 'stats');
-                break;
+            } else {
+                $this->con->prepare(
+                    "DELETE FROM maintainer_contribution
+                     WHERE player_rating_id = :id AND contribution_type = 'stats'"
+                )->execute([':id' => $id]);
             }
         }
 
