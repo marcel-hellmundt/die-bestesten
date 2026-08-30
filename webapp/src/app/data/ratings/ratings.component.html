@@ -523,68 +523,38 @@
           @if (benchRatings().length > 0) {
             <div class="group-section">
               <div class="group-header">Nicht eingesetzt ({{ benchRatings().length }})</div>
-              <div class="table-container">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Spieler</th>
-                      @if (!selectedMatchday()?.completed) {
-                        <th class="col-actions"></th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (r of benchRatings(); track r.id) {
-                      <tr>
-                        <td class="col-player">
-                          <span class="player-cell">
-                            @if (r.position) {
-                              <span
-                                class="position-badge"
-                                [style.background-color]="
-                                  'var(--position-' + r.position.toLowerCase() + ')'
-                                "
-                                >{{ posLabel(r.position) }}</span
-                              >
-                            }
-                            {{ r.displayname }}
-                            @if (r.starting_count) {
-                              <span class="starting-count">({{ r.starting_count }})</span>
-                            }
-                          </span>
-                        </td>
+              <div class="bench-grid">
+                @for (group of benchGroups(); track group.position) {
+                  <div class="bench-row">
+                    <span
+                      class="position-badge bench-row__label"
+                      [style.background-color]="'var(--position-' + group.position.toLowerCase() + ')'"
+                      >{{ posLabel(group.position) }}</span
+                    >
+                    @for (r of group.players; track r.id) {
+                      <button
+                        class="bench-card"
+                        [disabled]="selectedMatchday()?.completed"
+                        (click)="setParticipation(r.id, 'starting')"
+                        title="Als Startelf markieren"
+                      >
                         @if (!selectedMatchday()?.completed) {
-                          <td class="col-actions">
-                            <span class="part-actions">
-                              <button
-                                class="part-btn"
-                                (click)="setParticipation(r.id, 'starting')"
-                                title="Als Startelf markieren"
-                              >
-                                <img
-                                  src="img/icons/part-starting.svg"
-                                  class="part-icon"
-                                  alt="Startelf"
-                                />
-                              </button>
-                              <button
-                                class="part-btn"
-                                (click)="setParticipation(r.id, 'substitute')"
-                                title="Als Einwechslung markieren"
-                              >
-                                <img
-                                  src="img/icons/part-substitute.svg"
-                                  class="part-icon"
-                                  alt="Eingewechselt"
-                                />
-                              </button>
-                            </span>
-                          </td>
+                          <span
+                            class="bench-card__sub-btn"
+                            (click)="$event.stopPropagation(); setParticipation(r.id, 'substitute')"
+                            title="Als Einwechslung markieren"
+                          >
+                            <img src="img/icons/part-substitute.svg" class="part-icon" alt="Eingewechselt" />
+                          </span>
                         }
-                      </tr>
+                        <span class="bench-card__name">{{ r.displayname }}</span>
+                        @if (r.starting_count) {
+                          <span class="starting-count">({{ r.starting_count }})</span>
+                        }
+                      </button>
                     }
-                  </tbody>
-                </table>
+                  </div>
+                }
               </div>
             </div>
           }

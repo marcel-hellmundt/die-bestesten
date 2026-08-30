@@ -418,6 +418,16 @@ export class RatingsDataComponent {
     [...this.ratings()].filter((r) => !r.participation).sort(this.byBench),
   );
 
+  // Grouped by position (goalkeeper row, then defender, midfielder, forward) for the bench
+  // card grid — byBench already sorts by starting_count DESC then price DESC within a position
+  // once filtered down to it, so no extra sort is needed per group.
+  benchGroups = computed(() => {
+    const bench = this.benchRatings();
+    return (['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'] as const)
+      .map((position) => ({ position, players: bench.filter((r) => r.position === position) }))
+      .filter((g) => g.players.length > 0);
+  });
+
   participationError = signal<string | null>(null);
   sdsError = signal<string | null>(null);
 

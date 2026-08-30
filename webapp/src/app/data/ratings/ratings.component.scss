@@ -595,6 +595,77 @@
   flex-shrink: 0;
 }
 
+// Bench card grid — one row per position, cards sorted starting_count DESC then price DESC
+// within the row (see benchGroups()). Clicking a card marks the player as starting (the common
+// case, much easier to hit than the old row buttons); the small sub-btn corner overlay still
+// allows marking as substitute directly.
+.bench-grid {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.bench-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-2;
+
+  &__label {
+    flex-shrink: 0;
+  }
+}
+
+.bench-card {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-8 $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition:
+    background $transition-fast,
+    border-color $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: $color-surface-alt;
+    border-color: $color-text-muted;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  &__name {
+    white-space: nowrap;
+  }
+
+  &__sub-btn {
+    position: absolute;
+    top: 50%;
+    right: $space-1;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: $radius-sm;
+    cursor: pointer;
+
+    &:hover {
+      background: $color-surface;
+    }
+  }
+}
+
 .bulk-textarea {
   flex: 1;
   width: 100%;
