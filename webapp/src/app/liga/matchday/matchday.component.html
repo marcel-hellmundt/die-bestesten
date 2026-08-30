@@ -4,45 +4,66 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   <div class="matchday-nav">
-    <div class="matchday-selector">
-      <button
-        class="nav-arrow"
-        (click)="decrement()"
-        [disabled]="!canDecrement()"
-        aria-label="Vorheriger Spieltag"
-      >
-        ‹
-      </button>
-      <select
-        class="select"
-        (change)="onMatchdayChange(+$any($event.target).value)"
-      >
-        @for (m of matchdays(); track m.number) {
-          <option [value]="m.number" [selected]="m.number === currentNumber()">{{ m.number }}. Spieltag</option>
+    <div class="matchday-nav__main">
+      <div class="matchday-selector">
+        <button
+          class="nav-arrow"
+          (click)="decrement()"
+          [disabled]="!canDecrement()"
+          aria-label="Vorheriger Spieltag"
+        >
+          ‹
+        </button>
+        <select
+          class="select"
+          (change)="onMatchdayChange(+$any($event.target).value)"
+        >
+          @for (m of matchdays(); track m.number) {
+            <option [value]="m.number" [selected]="m.number === currentNumber()">{{ m.number }}. Spieltag</option>
+          }
+        </select>
+        @if (isLive()) {
+          <span class="live-badge">Live</span>
         }
-      </select>
-      @if (isLive()) {
-        <span class="live-badge">Live</span>
+        <button
+          class="nav-arrow"
+          (click)="increment()"
+          [disabled]="!canIncrement()"
+          aria-label="Nächster Spieltag"
+        >
+          ›
+        </button>
+      </div>
+      @if (seasons().length > 1) {
+        <select
+          class="season-select select"
+          (change)="onSeasonChange($any($event.target).value)"
+        >
+          @for (s of seasons(); track s.id) {
+            <option [value]="s.id" [selected]="s.id === seasonId()">{{ s.displayName }}</option>
+          }
+        </select>
       }
-      <button
-        class="nav-arrow"
-        (click)="increment()"
-        [disabled]="!canIncrement()"
-        aria-label="Nächster Spieltag"
-      >
-        ›
-      </button>
+      @if (ratings().length > 0) {
+        <div class="stats-mode-toggle col-desktop">
+          <button
+            class="stats-mode-toggle__btn"
+            [class.active]="statsMode() === 'stats'"
+            (click)="statsMode.set('stats')"
+          >
+            Statistik
+          </button>
+          <button
+            class="stats-mode-toggle__btn"
+            [class.active]="statsMode() === 'lineup'"
+            (click)="statsMode.set('lineup')"
+          >
+            Einsatz
+          </button>
+        </div>
+      }
     </div>
-    @if (seasons().length > 1) {
-      <select
-        class="season-select select"
-        (change)="onSeasonChange($any($event.target).value)"
-      >
-        @for (s of seasons(); track s.id) {
-          <option [value]="s.id" [selected]="s.id === seasonId()">{{ s.displayName }}</option>
-        }
-      </select>
-    }
+    <div class="matchday-nav__spacer col-desktop"></div>
   </div>
 
   @if (!matchday()) {
@@ -59,11 +80,18 @@
               <tr>
                 <th class="col-rank">#</th>
                 <th>Team</th>
-                <th class="col-icons col-desktop">SdS</th>
-                <th class="col-icons col-desktop">Tore</th>
-                <th class="col-icons col-desktop">Vorlagen</th>
-                <th class="col-cards col-desktop">Karten</th>
-                <th class="col-icons col-cs col-desktop">Zu Null</th>
+                @if (statsMode() === 'stats') {
+                  <th class="col-icons col-desktop">SdS</th>
+                  <th class="col-icons col-desktop">Tore</th>
+                  <th class="col-icons col-desktop">Vorlagen</th>
+                  <th class="col-cards col-desktop">Karten</th>
+                  <th class="col-icons col-cs col-desktop">Zu Null</th>
+                } @else {
+                  <th class="col-status col-desktop">Startelf</th>
+                  <th class="col-status col-desktop">Eingewechselt</th>
+                  <th class="col-status col-desktop">Nicht gespielt</th>
+                  <th class="col-status col-desktop">Wartet</th>
+                }
                 <th class="col-stats col-mobile"></th>
                 <th class="col-points">Punkte</th>
                 @if (!isLive() && cache.finesEnabled()) {
@@ -98,44 +126,75 @@
                       }
                     </span>
                   </td>
-                  <td class="col-icons col-desktop">
-                    <span class="icons-wrap">
-                      @for (s of range(+r.sds); track s) {
-                        <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
-                      }
-                    </span>
-                  </td>
-                  <td class="col-icons col-desktop">
-                    <span class="icons-wrap">
-                      @for (g of range(+r.goals); track g) {
-                        <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
-                      }
-                    </span>
-                  </td>
-                  <td class="col-icons col-desktop">
-                    <span class="icons-wrap">
-                      @for (a of range(+r.assists); track a) {
-                        <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
-                      }
-                    </span>
-                  </td>
-                  <td class="col-cards col-desktop">
-                    @if (+r.yellow_red_cards || +r.red_cards) {
-                      <span class="cards-wrap">
-                        @for (c of range(+r.yellow_red_cards); track c) {
-                          <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
-                        }
-                        @for (c of range(+r.red_cards); track c) {
-                          <span class="card-chip card-chip--red" title="Rot"></span>
+                  @if (statsMode() === 'stats') {
+                    <td class="col-icons col-desktop">
+                      <span class="icons-wrap">
+                        @for (s of range(+r.sds); track s) {
+                          <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
                         }
                       </span>
-                    }
-                  </td>
-                  <td class="col-icons col-cs col-desktop">
-                    @if (+r.clean_sheet) {
-                      <img src="img/icons/clean_sheet.png" class="rating-icon" alt="Zu Null" />
-                    }
-                  </td>
+                    </td>
+                    <td class="col-icons col-desktop">
+                      <span class="icons-wrap">
+                        @for (g of range(+r.goals); track g) {
+                          <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
+                        }
+                      </span>
+                    </td>
+                    <td class="col-icons col-desktop">
+                      <span class="icons-wrap">
+                        @for (a of range(+r.assists); track a) {
+                          <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
+                        }
+                      </span>
+                    </td>
+                    <td class="col-cards col-desktop">
+                      @if (+r.yellow_red_cards || +r.red_cards) {
+                        <span class="cards-wrap">
+                          @for (c of range(+r.yellow_red_cards); track c) {
+                            <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
+                          }
+                          @for (c of range(+r.red_cards); track c) {
+                            <span class="card-chip card-chip--red" title="Rot"></span>
+                          }
+                        </span>
+                      }
+                    </td>
+                    <td class="col-icons col-cs col-desktop">
+                      @if (+r.clean_sheet) {
+                        <img src="img/icons/clean_sheet.png" class="rating-icon" alt="Zu Null" />
+                      }
+                    </td>
+                  } @else {
+                    <td class="col-status col-desktop">
+                      <span
+                        class="status-count status-count--starting"
+                        [class.status-count--zero]="!r.status_counts?.starting"
+                        >{{ r.status_counts?.starting ?? 0 }}</span
+                      >
+                    </td>
+                    <td class="col-status col-desktop">
+                      <span
+                        class="status-count status-count--substitute"
+                        [class.status-count--zero]="!r.status_counts?.substitute"
+                        >{{ r.status_counts?.substitute ?? 0 }}</span
+                      >
+                    </td>
+                    <td class="col-status col-desktop">
+                      <span
+                        class="status-count status-count--not-used"
+                        [class.status-count--zero]="!r.status_counts?.not_used"
+                        >{{ r.status_counts?.not_used ?? 0 }}</span
+                      >
+                    </td>
+                    <td class="col-status col-desktop">
+                      <span
+                        class="status-count status-count--waiting"
+                        [class.status-count--zero]="!r.status_counts?.waiting"
+                        >{{ r.status_counts?.waiting ?? 0 }}</span
+                      >
+                    </td>
+                  }
                   <td class="col-stats col-mobile">
                     <span class="stats-compact">
                       <span class="stats-compact__sds">

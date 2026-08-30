@@ -1,10 +1,25 @@
 @use '../../../styles/variables' as *;
 
+// Mirrors .matchday-layout's grid (1fr 260px) so the right-aligned toggle inside
+// __main lines up with the table's right edge instead of the full page width —
+// the empty __spacer cell stands in for the sidebar column.
 .matchday-nav {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: $space-6;
+  align-items: center;
+  margin-bottom: $space-6;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.matchday-nav__main {
   display: flex;
   align-items: center;
   gap: $space-3;
-  margin-bottom: $space-6;
+  min-width: 0;
 
   @media (max-width: $mobile-breakpoint) {
     flex-wrap: wrap;
@@ -465,6 +480,11 @@
   }
 }
 
+.col-status {
+  text-align: center;
+  white-space: nowrap;
+}
+
 .invalid-label {
   flex-shrink: 0;
   padding: 2px $space-2;
@@ -637,4 +657,70 @@
   width: 16px;
   height: 16px;
   max-width: unset;
+}
+
+.stats-mode-toggle {
+  display: inline-flex;
+  margin-left: auto;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  padding: 2px;
+  gap: 2px;
+
+  &__btn {
+    padding: $space-1 $space-4;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: all $transition-fast;
+    white-space: nowrap;
+
+    &.active {
+      background: $color-accent;
+      color: #fff;
+    }
+
+    &:hover:not(.active) {
+      color: $color-text;
+    }
+  }
+}
+
+.status-count {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-full;
+  color: #fff;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+
+  &--starting {
+    background: #009432;
+  }
+
+  &--substitute {
+    background: #ffc312;
+  }
+
+  &--not-used {
+    background: #ff3f34;
+  }
+
+  &--waiting {
+    background: #a4b0be;
+  }
+
+  &--zero {
+    opacity: 0.5;
+    background: none;
+    color: $color-text-muted;
+  }
 }
