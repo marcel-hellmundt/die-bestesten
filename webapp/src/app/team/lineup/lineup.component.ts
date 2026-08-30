@@ -24,6 +24,7 @@ interface LineupPlayer {
   red_card: number;
   yellow_red_card: number;
   participation: string | null;
+  has_rating: boolean;
   photo_uploaded: boolean;
 }
 
