@@ -539,7 +539,11 @@
 }
 
 .col-contributors {
-  width: 1%;
+  // Fixed width instead of the usual shrink-to-content "1%" trick — with this many columns
+  // competing for space, auto table layout was compressing it below the avatars' actual size
+  // instead of sizing to fit them. 80px comfortably fits all 4 possible category avatars
+  // (22px + 3 × 14px visible sliver each, see .contributor-stack's overlap).
+  width: 80px;
   white-space: nowrap;
 }
 
