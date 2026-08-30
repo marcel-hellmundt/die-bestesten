@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
-import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
+import { ROLE_LABEL, ROLE_ORDER, ROLE_RANK } from '../../core/constants';
 
 @Component({
   selector: 'app-data-manager',
@@ -70,6 +70,14 @@ export class ManagerDataComponent {
   readonly roleOrder       = ROLE_ORDER;
   readonly roleLabel       = ROLE_LABEL;
   readonly assignableRoles = ['admin', 'maintainer', 'contributor'];
+
+  // Hierarchical highlighting: a manager's single actual role also "lights up" every badge
+  // ranked at or below it (e.g. maintainer highlights both maintainer and contributor) —
+  // distinct from the exact-match check toggleRole() uses to decide add vs. remove.
+  isRoleActive(manager: any, role: string): boolean {
+    const actualRole = (manager.roles ?? [])[0] ?? 'manager';
+    return (ROLE_RANK[actualRole] ?? 0) >= (ROLE_RANK[role] ?? 0);
+  }
 
   roleTogglingState    = signal<Record<string, boolean>>({});
   allLeagues           = signal<any[]>([]);
