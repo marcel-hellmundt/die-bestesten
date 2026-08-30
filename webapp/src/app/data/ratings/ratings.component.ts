@@ -162,6 +162,8 @@ export class RatingsDataComponent {
     return { goals: s.goals, assists: s.assists, has_sds: s.has_sds };
   }
 
+  // Both status queries are matchday-wide (all clubs), not club-scoped, despite firing from
+  // club-specific contexts (selectClub/init/loadRatings) — refreshed together here.
   private refreshClubStatuses(): void {
     const md = this.selectedMatchday();
     if (!md) return;
@@ -181,7 +183,16 @@ export class RatingsDataComponent {
           })),
         ),
       );
+
+    this.api
+      .get<any[]>(`player_rating/contribution_summary?matchday_id=${md.id}`)
+      .pipe(catchError(() => of([] as any[])))
+      .subscribe((list) => this.contributionSummary.set(list));
   }
+
+  contributionSummary = signal<
+    { manager_id: string; manager_name: string; total: number; by_type: Record<string, number> }[]
+  >([]);
 
   clubStatusClass(clubId: string): string {
     const s = this.clubStatusMap().get(clubId);
@@ -224,6 +235,7 @@ export class RatingsDataComponent {
     // Bar visible for a moment if the prior matchday happened to be fully graded — while the
     // fresh refreshClubStatuses() call for the newly selected matchday is still in flight.
     this.clubStatuses.set([]);
+    this.contributionSummary.set([]);
     this.refreshClubStatuses();
   }
 

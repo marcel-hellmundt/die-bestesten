@@ -102,6 +102,45 @@ trait PlayerRatingTrait
     }
 
     /**
+     * Aggregierte Contribution-Übersicht für einen ganzen Spieltag (alle Clubs), sortiert nach
+     * Gesamtzahl der bearbeiteten Ratings absteigend — Grundlage für die Sidebar-Zusammenfassung
+     * auf /daten/ratings.
+     */
+    public function getContributionSummaryForMatchday(string $matchdayId): array
+    {
+        $q = $this->con->prepare(
+            "SELECT mc.manager_id, m.manager_name, mc.contribution_type,
+                    COUNT(DISTINCT mc.player_rating_id) AS cnt
+             FROM maintainer_contribution mc
+             JOIN manager m       ON m.id = mc.manager_id
+             JOIN player_rating pr ON pr.id = mc.player_rating_id
+             WHERE pr.matchday_id = :matchday_id
+             GROUP BY mc.manager_id, m.manager_name, mc.contribution_type"
+        );
+        $q->execute([':matchday_id' => $matchdayId]);
+
+        $byManager = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $mid = $row['manager_id'];
+            if (!isset($byManager[$mid])) {
+                $byManager[$mid] = [
+                    'manager_id'   => $mid,
+                    'manager_name' => $row['manager_name'],
+                    'total'        => 0,
+                    'by_type'      => ['create' => 0, 'participation' => 0, 'stats' => 0, 'note' => 0],
+                ];
+            }
+            $cnt = (int) $row['cnt'];
+            $byManager[$mid]['by_type'][$row['contribution_type']] = $cnt;
+            $byManager[$mid]['total'] += $cnt;
+        }
+
+        $result = array_values($byManager);
+        usort($result, fn($a, $b) => $b['total'] <=> $a['total']);
+        return $result;
+    }
+
+    /**
      * Creates empty player_ratings for all current players of a club on a matchday, restricted
      * to players with a valid player_in_season entry for that season (position + price set) —
      * a player_in_club row alone can be stale (e.g. left the club but not yet marked to_date,

@@ -1,5 +1,79 @@
 @use '../../../styles/variables' as *;
 
+// Desktop: narrow sidebar to the right with the matchday-wide contribution summary (see
+// refreshClubStatuses(), which also refreshes contributionSummary — both are matchday-wide,
+// not club-scoped). Collapses to a single column on mobile, sidebar hidden entirely — this
+// is a nice-to-have overview, not core functionality.
+.ratings-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: $space-6;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+  }
+}
+
+.main-col {
+  min-width: 0;
+}
+
+.sidebar {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.contribution-summary {
+  padding: $space-4;
+
+  &__title {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: $space-3;
+  }
+
+  &__empty {
+    font-size: $font-xs;
+    margin: 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-1 0;
+  }
+
+  &__avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: $radius-full;
+    object-fit: cover;
+    background: $color-surface-alt;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    font-size: $font-sm;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__count {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+}
+
 // Matchday pill bar
 .matchday-bar {
   display: flex;

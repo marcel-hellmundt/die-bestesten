@@ -23,6 +23,8 @@
     }
   </div>
 
+  <div class="ratings-layout">
+  <div class="main-col">
   <!-- Punkte validieren (CSV-Validierung) -->
   @if (selectedMatchday() && !selectedMatchday()!.completed && allClubsDone()) {
     <div class="close-matchday-bar">
@@ -580,6 +582,30 @@
       }
     </section>
   }
+  </div>
+
+  <div class="sidebar">
+    <div class="card contribution-summary">
+      <div class="contribution-summary__title">Mitwirkende Manager</div>
+      @if (contributionSummary().length === 0) {
+        <p class="state-msg contribution-summary__empty">Noch keine Einträge für diesen Spieltag.</p>
+      } @else {
+        @for (c of contributionSummary(); track c.manager_id) {
+          <div class="contribution-summary__row">
+            <img
+              class="contribution-summary__avatar"
+              [src]="contributorPhotoUrl(c.manager_id)"
+              [alt]="c.manager_name"
+              (error)="$any($event.target).style.display = 'none'"
+            />
+            <span class="contribution-summary__name">{{ c.manager_name }}</span>
+            <span class="contribution-summary__count">{{ c.total }}</span>
+          </div>
+        }
+      }
+    </div>
+  </div>
+  </div>
 }
 
 @if (contributorTooltip(); as c) {
