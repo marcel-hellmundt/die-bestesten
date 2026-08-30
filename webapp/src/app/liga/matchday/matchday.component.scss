@@ -712,4 +712,10 @@
   &--waiting {
     background: #a4b0be;
   }
+
+  &--zero {
+    opacity: 0.5;
+    background: none;
+    color: $color-text-muted;
+  }
 }

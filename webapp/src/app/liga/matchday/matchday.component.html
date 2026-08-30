@@ -167,16 +167,32 @@
                     </td>
                   } @else {
                     <td class="col-icons col-desktop">
-                      <span class="status-count status-count--starting">{{ r.status_counts?.starting ?? 0 }}</span>
+                      <span
+                        class="status-count status-count--starting"
+                        [class.status-count--zero]="!r.status_counts?.starting"
+                        >{{ r.status_counts?.starting ?? 0 }}</span
+                      >
                     </td>
                     <td class="col-icons col-desktop">
-                      <span class="status-count status-count--substitute">{{ r.status_counts?.substitute ?? 0 }}</span>
+                      <span
+                        class="status-count status-count--substitute"
+                        [class.status-count--zero]="!r.status_counts?.substitute"
+                        >{{ r.status_counts?.substitute ?? 0 }}</span
+                      >
                     </td>
                     <td class="col-icons col-desktop">
-                      <span class="status-count status-count--not-used">{{ r.status_counts?.not_used ?? 0 }}</span>
+                      <span
+                        class="status-count status-count--not-used"
+                        [class.status-count--zero]="!r.status_counts?.not_used"
+                        >{{ r.status_counts?.not_used ?? 0 }}</span
+                      >
                     </td>
                     <td class="col-icons col-desktop">
-                      <span class="status-count status-count--waiting">{{ r.status_counts?.waiting ?? 0 }}</span>
+                      <span
+                        class="status-count status-count--waiting"
+                        [class.status-count--zero]="!r.status_counts?.waiting"
+                        >{{ r.status_counts?.waiting ?? 0 }}</span
+                      >
                     </td>
                   }
                   <td class="col-stats col-mobile">
