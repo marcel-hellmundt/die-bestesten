@@ -87,10 +87,10 @@
                   <th class="col-cards col-desktop">Karten</th>
                   <th class="col-icons col-cs col-desktop">Zu Null</th>
                 } @else {
-                  <th class="col-icons col-desktop">Startelf</th>
-                  <th class="col-icons col-desktop">Eingewechselt</th>
-                  <th class="col-icons col-desktop">Nicht gespielt</th>
-                  <th class="col-icons col-desktop">Wartet</th>
+                  <th class="col-status col-desktop">Startelf</th>
+                  <th class="col-status col-desktop">Eingewechselt</th>
+                  <th class="col-status col-desktop">Nicht gespielt</th>
+                  <th class="col-status col-desktop">Wartet</th>
                 }
                 <th class="col-stats col-mobile"></th>
                 <th class="col-points">Punkte</th>
@@ -166,28 +166,28 @@
                       }
                     </td>
                   } @else {
-                    <td class="col-icons col-desktop">
+                    <td class="col-status col-desktop">
                       <span
                         class="status-count status-count--starting"
                         [class.status-count--zero]="!r.status_counts?.starting"
                         >{{ r.status_counts?.starting ?? 0 }}</span
                       >
                     </td>
-                    <td class="col-icons col-desktop">
+                    <td class="col-status col-desktop">
                       <span
                         class="status-count status-count--substitute"
                         [class.status-count--zero]="!r.status_counts?.substitute"
                         >{{ r.status_counts?.substitute ?? 0 }}</span
                       >
                     </td>
-                    <td class="col-icons col-desktop">
+                    <td class="col-status col-desktop">
                       <span
                         class="status-count status-count--not-used"
                         [class.status-count--zero]="!r.status_counts?.not_used"
                         >{{ r.status_counts?.not_used ?? 0 }}</span
                       >
                     </td>
-                    <td class="col-icons col-desktop">
+                    <td class="col-status col-desktop">
                       <span
                         class="status-count status-count--waiting"
                         [class.status-count--zero]="!r.status_counts?.waiting"

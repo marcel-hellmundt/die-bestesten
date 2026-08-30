@@ -480,6 +480,11 @@
   }
 }
 
+.col-status {
+  text-align: center;
+  white-space: nowrap;
+}
+
 .invalid-label {
   flex-shrink: 0;
   padding: 2px $space-2;
