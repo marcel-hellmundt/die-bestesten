@@ -219,6 +219,11 @@ export class RatingsDataComponent {
     this.csvFile.set(null);
     this.participationError.set(null);
     this.sdsError.set(null);
+    // Cleared synchronously (not just re-fetched) so allClubsDone() can't briefly evaluate
+    // against the previous matchday's statuses — e.g. flashing the "Spieltag abschließen"-
+    // Bar visible for a moment if the prior matchday happened to be fully graded — while the
+    // fresh refreshClubStatuses() call for the newly selected matchday is still in flight.
+    this.clubStatuses.set([]);
     this.refreshClubStatuses();
   }
 
