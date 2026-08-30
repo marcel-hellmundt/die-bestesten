@@ -158,8 +158,7 @@ class PlayerRatingController extends _BaseController
             return ['status' => false, 'message' => 'Spieltag ist bereits abgeschlossen'];
         }
 
-        $isAdmin = $this->isAdmin();
-        if (!$isAdmin && (!$matchday['kickoff_date'] || new \DateTime() < new \DateTime($matchday['kickoff_date']))) {
+        if (!$matchday['kickoff_date'] || new \DateTime() < new \DateTime($matchday['kickoff_date'])) {
             http_response_code(409);
             return ['status' => false, 'message' => 'Spieltag hat noch nicht begonnen'];
         }
