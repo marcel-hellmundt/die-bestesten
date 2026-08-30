@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { IconModule } from '../shared/icon/icon.module';
 import { MaintainerGuard } from '../auth/maintainer.guard';
 import { ContributorGuard } from '../auth/contributor.guard';
+import { AdminGuard } from '../auth/admin.guard';
 
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
@@ -25,6 +26,7 @@ import { SessionHeatmapComponent } from './session/session-heatmap.component';
 
 const M = [MaintainerGuard];
 const C = [ContributorGuard];
+const A = [AdminGuard];
 
 const routes: Routes = [
   {
@@ -45,10 +47,10 @@ const routes: Routes = [
       // player routes: no MaintainerGuard — managers may get read access here later
       { path: 'player',        component: PlayerDataComponent },
       { path: 'player/:id',    component: PlayerDetailComponent },
-      { path: 'achievements',  component: AchievementsDataComponent, canActivate: M },
-      { path: 'manager',       component: ManagerDataComponent,      canActivate: M },
+      { path: 'achievements',  component: AchievementsDataComponent, canActivate: A },
+      { path: 'manager',       component: ManagerDataComponent,      canActivate: A },
       { path: 'player-import', component: PlayerImportDataComponent, canActivate: M },
-      { path: 'session-heatmap', component: SessionHeatmapComponent, canActivate: M },
+      { path: 'session-heatmap', component: SessionHeatmapComponent, canActivate: A },
     ]
   }
 ];
