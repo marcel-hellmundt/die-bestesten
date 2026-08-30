@@ -5,7 +5,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
-import { PlayerRating } from '../../core/models/player-rating.model';
+import { PlayerRating, RatingContributor } from '../../core/models/player-rating.model';
 import { POSITION_LABEL } from '../../core/constants';
 
 interface Club {
@@ -395,6 +395,31 @@ export class RatingsDataComponent {
 
   contributorPhotoUrl(managerId: string): string | null {
     return this.cache.managerPhotoUrl(managerId);
+  }
+
+  private static readonly CONTRIBUTION_LABEL: Record<string, string> = {
+    create: 'Aufstellung angelegt',
+    participation: 'Startelf/Eingewechselt gesetzt',
+    stats: 'Statistiken eingetragen',
+    note: 'Note eingetragen',
+  };
+
+  contributorTypeLabels(c: RatingContributor): string[] {
+    return c.types.map((t) => RatingsDataComponent.CONTRIBUTION_LABEL[t] ?? t);
+  }
+
+  contributorTooltip = signal<RatingContributor | null>(null);
+  contributorTooltipPos = signal<{ top: number; left: number } | null>(null);
+
+  onContributorEnter(event: MouseEvent, c: RatingContributor): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.contributorTooltip.set(c);
+    this.contributorTooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+  }
+
+  onContributorLeave(): void {
+    this.contributorTooltip.set(null);
+    this.contributorTooltipPos.set(null);
   }
 
   private byPositionOnly = (a: PlayerRating, b: PlayerRating) => {

@@ -370,8 +370,9 @@
                       class="contributor-avatar"
                       [src]="contributorPhotoUrl(c.manager_id)"
                       [alt]="c.manager_name"
-                      [title]="c.manager_name + ' (' + c.types.join(', ') + ')'"
                       (error)="$any($event.target).style.display = 'none'"
+                      (mouseenter)="onContributorEnter($event, c)"
+                      (mouseleave)="onContributorLeave()"
                     />
                   }
                 </span>
@@ -579,4 +580,13 @@
       }
     </section>
   }
+}
+
+@if (contributorTooltip(); as c) {
+  <div class="contributor-tooltip" [style.top.px]="contributorTooltipPos()!.top" [style.left.px]="contributorTooltipPos()!.left">
+    <div class="contributor-tooltip__name">{{ c.manager_name }}</div>
+    @for (label of contributorTypeLabels(c); track label) {
+      <div class="contributor-tooltip__row">{{ label }}</div>
+    }
+  </div>
 }

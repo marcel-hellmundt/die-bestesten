@@ -560,10 +560,37 @@
     border: 2px solid $color-surface;
     background: $color-surface-alt;
     margin-left: -8px;
+    cursor: default;
 
     &:first-child {
       margin-left: 0;
     }
+  }
+}
+
+// Custom hover tooltip for a contributor avatar (see onContributorEnter()) — mirrors
+// team/lineup/lineup.component.scss's .player-breakdown tooltip pattern.
+.contributor-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 9999;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    margin-bottom: 2px;
+  }
+
+  &__row {
+    font-size: $font-xs;
+    color: $color-text-muted;
   }
 }
 
