@@ -1,9 +1,10 @@
-export const ROLE_ORDER: string[] = ['admin', 'maintainer', 'manager'];
+export const ROLE_ORDER: string[] = ['admin', 'maintainer', 'contributor', 'manager'];
 
 export const ROLE_LABEL: Record<string, string> = {
-  admin:      'Kernel-Kapitän',
-  maintainer: 'Daten-Fee',
-  manager:    'Manager',
+  admin:       'Kernel-Kapitän',
+  maintainer:  'Daten-Fee',
+  contributor: 'Punkte-Praktikant',
+  manager:     'Manager',
 };
 
 export const POSITION_LABEL: Record<string, string> = {

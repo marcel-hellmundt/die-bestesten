@@ -105,7 +105,7 @@ export class NavComponent {
   topGroups = computed<NavGroup[]>(() => [this.ligaGroup(), ...this.teamGroups(), this.marktGroup]);
 
   bottomGroups = computed<NavGroup[]>(() =>
-    this.auth.isMaintainer() ? [{ label: '', items: [{ label: 'Datenbank', icon: 'data', route: '/daten' }] }] : [],
+    this.auth.isContributor() ? [{ label: '', items: [{ label: 'Datenbank', icon: 'data', route: '/daten' }] }] : [],
   );
 
   mobileNavItems = computed<NavItem[]>(() =>

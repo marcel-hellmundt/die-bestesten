@@ -29,9 +29,10 @@ trait ManagerTrait
              LEFT JOIN manager_stadium ms ON ms.manager_id  = m.id
              GROUP BY m.id, m.manager_name, m.alias, m.status, m.email, m.last_activity
              ORDER BY
-                 CASE WHEN MAX(mr.role = 'admin')      = 1 THEN 0
-                      WHEN MAX(mr.role = 'maintainer') = 1 THEN 1
-                      ELSE 2 END ASC,
+                 CASE WHEN MAX(mr.role = 'admin')       = 1 THEN 0
+                      WHEN MAX(mr.role = 'maintainer')  = 1 THEN 1
+                      WHEN MAX(mr.role = 'contributor') = 1 THEN 2
+                      ELSE 3 END ASC,
                  m.manager_name ASC"
         );
         $q->execute();

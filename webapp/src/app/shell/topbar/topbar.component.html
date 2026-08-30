@@ -302,7 +302,7 @@
             }
           </a>
           <hr class="dropdown-divider dropdown-divider--mobile-only" />
-          @if (isMaintainer()) {
+          @if (isContributor()) {
             <a class="dropdown-item" routerLink="/daten" (click)="closeDropdown()">
               <app-icon name="data"></app-icon>
               Datenbank

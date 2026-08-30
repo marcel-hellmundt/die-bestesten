@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS manager (
 CREATE TABLE IF NOT EXISTS manager_role (
     id         CHAR(36)                    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
     manager_id CHAR(36)                    NOT NULL,
-    role       ENUM('maintainer', 'admin') CHARACTER SET utf8mb4 NOT NULL,
+    role       ENUM('contributor', 'maintainer', 'admin') CHARACTER SET utf8mb4 NOT NULL,
     UNIQUE KEY uk_manager_role (manager_id, role),
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

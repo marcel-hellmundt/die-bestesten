@@ -82,8 +82,11 @@ class Guard
                 // Session-Heartbeat darf einen Request nie zum Scheitern bringen.
             }
 
-            // 'manager' = any authenticated active manager; additional roles require explicit assignment
-            if ($requiredRole !== 'manager' && !in_array($requiredRole, $manager['roles'])) {
+            // 'manager' = any authenticated active manager; additional roles require explicit
+            // assignment. $requiredRole may also be an array of acceptable roles (OR semantics),
+            // e.g. ['contributor', 'maintainer'] — the manager needs at least one of them.
+            $allowedRoles = is_array($requiredRole) ? $requiredRole : [$requiredRole];
+            if (!in_array('manager', $allowedRoles, true) && !array_intersect($allowedRoles, $manager['roles'])) {
                 return ['status' => false, 'code' => 403, 'message' => 'Forbidden'];
             }
 

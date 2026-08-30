@@ -150,7 +150,7 @@ class ManagerController extends _BaseController
         if ($this->id && $this->sub === 'roles') {
             if (!$this->isAdmin()) { http_response_code(403); return ['status' => false, 'message' => 'Forbidden']; }
             $role = $this->body()['role'] ?? null;
-            $allowed = ['maintainer', 'admin'];
+            $allowed = ['contributor', 'maintainer', 'admin'];
             if (!$role || !in_array($role, $allowed)) {
                 http_response_code(400);
                 return ['status' => false, 'message' => 'Ungültige Rolle. Erlaubt: ' . implode(', ', $allowed)];

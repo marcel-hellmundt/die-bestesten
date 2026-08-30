@@ -98,6 +98,10 @@ export class AuthService {
     return this.hasRole('maintainer') || this.hasRole('admin');
   }
 
+  isContributor(): boolean {
+    return this.hasRole('contributor') || this.isMaintainer();
+  }
+
   getLeagueId(): string | null {
     return this._leagueId();
   }

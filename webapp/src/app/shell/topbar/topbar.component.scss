@@ -351,6 +351,10 @@
             background: color-mix(in srgb, var(--flat-emerald) 18%, transparent);
             color: var(--flat-emerald);
           }
+          &--contributor {
+            background: color-mix(in srgb, var(--flat-carrot) 18%, transparent);
+            color: var(--flat-carrot);
+          }
           &--manager {
             background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent);
             color: var(--flat-alizarin);

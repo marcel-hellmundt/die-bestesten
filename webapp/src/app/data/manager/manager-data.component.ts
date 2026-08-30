@@ -69,7 +69,7 @@ export class ManagerDataComponent {
 
   readonly roleOrder       = ROLE_ORDER;
   readonly roleLabel       = ROLE_LABEL;
-  readonly assignableRoles = ['admin', 'maintainer'];
+  readonly assignableRoles = ['admin', 'maintainer', 'contributor'];
 
   roleTogglingState    = signal<Record<string, boolean>>({});
   allLeagues           = signal<any[]>([]);

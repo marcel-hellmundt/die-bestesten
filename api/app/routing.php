@@ -468,17 +468,17 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/player_rating/init',
-                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs mit gültigem player_in_season (Position + Marktwert gesetzt) in der Saison des Spieltags — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück',
+                        'description' => 'Erstellt leere Ratings für alle aktuellen Spieler eines Clubs mit gültigem player_in_season (Position + Marktwert gesetzt) in der Saison des Spieltags — Body: { matchday_id, club_id }; 409 wenn completed oder (vor kickoff_date und nicht Admin); gibt created-Count + existing-Liste zurück — Contributor+',
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/player_rating/validate-csv',
-                        'description' => 'CSV-Punkte mit DB-Punkten vergleichen — multipart/form-data: matchday_id + csv-Datei (Semikolon-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte); gibt {ok: true, checked: N} oder {ok: false, mismatches: [{displayname, csv_points, db_points}]} zurück — Maintainer+',
+                        'description' => 'CSV-Punkte mit DB-Punkten vergleichen — multipart/form-data: matchday_id + csv-Datei (Semikolon-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte); gibt {ok: true, checked: N} oder {ok: false, mismatches: [{displayname, csv_points, db_points}]} zurück — Contributor+',
                     ],
                     [
                         'method' => 'PATCH',
                         'path' => '/player_rating/:id',
-                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; optionales _contribution_type (bulk_create|manual_create, default manual_create) bei participation-Änderungen; points wird immer serverseitig berechnet — Maintainer+',
+                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; optionales _contribution_type (bulk_create|manual_create, default manual_create) bei participation-Änderungen; points wird immer serverseitig berechnet — Contributor+',
                         'path_params' => [':id' => 'UUID der player_rating-Zeile'],
                     ],
                 ],
@@ -790,14 +790,14 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/manager/:id/roles',
-                        'description' => 'Rolle hinzufügen — Body: { role: "maintainer"|"admin" } — gibt aktualisierte roles[] zurück — Admin',
+                        'description' => 'Rolle hinzufügen — Body: { role: "contributor"|"maintainer"|"admin" } — gibt aktualisierte roles[] zurück — Admin',
                         'path_params' => [':id' => 'UUID des Managers'],
                     ],
                     [
                         'method' => 'DELETE',
                         'path' => '/manager/:id/roles/:role',
                         'description' => 'Rolle entziehen — gibt aktualisierte roles[] zurück — Admin',
-                        'path_params' => [':id' => 'UUID des Managers', ':role' => 'Rollenname (maintainer|admin)'],
+                        'path_params' => [':id' => 'UUID des Managers', ':role' => 'Rollenname (contributor|maintainer|admin)'],
                     ],
                     [
                         'method' => 'POST',

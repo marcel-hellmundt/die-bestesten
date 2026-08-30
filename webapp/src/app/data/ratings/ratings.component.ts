@@ -39,8 +39,9 @@ export class RatingsDataComponent {
   private auth = inject(AuthService);
   private cache = inject(DataCacheService);
 
-  isAdmin = computed(() => this.auth.isAdmin());
+  isAdmin      = computed(() => this.auth.isAdmin());
   isMaintainer = computed(() => this.auth.isMaintainer());
+  canEdit      = computed(() => this.auth.isMaintainer() || this.auth.isContributor());
 
   // ── Active season ──────────────────────────────────────────────
   private activeSeasonState = toSignal(
@@ -239,7 +240,7 @@ export class RatingsDataComponent {
     const md = this.selectedMatchday();
     if (!md) return;
 
-    if (md.completed || !this.isMaintainer()) {
+    if (md.completed || !this.canEdit()) {
       this.loadRatings(md.id, clubId);
     } else {
       this.ratingsState.set('loading');

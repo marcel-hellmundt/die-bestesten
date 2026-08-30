@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { IconModule } from '../shared/icon/icon.module';
 import { MaintainerGuard } from '../auth/maintainer.guard';
+import { ContributorGuard } from '../auth/contributor.guard';
 
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
@@ -23,6 +24,7 @@ import { PlayerImportDataComponent } from './player-import/player-import.compone
 import { SessionHeatmapComponent } from './session/session-heatmap.component';
 
 const M = [MaintainerGuard];
+const C = [ContributorGuard];
 
 const routes: Routes = [
   {
@@ -39,7 +41,7 @@ const routes: Routes = [
       { path: 'club',         component: ClubDataComponent,       canActivate: M },
       { path: 'club/:id',     component: ClubDetailComponent,     canActivate: M },
       { path: 'season',       component: SeasonDataComponent,     canActivate: M },
-      { path: 'ratings',      component: RatingsDataComponent,    canActivate: M },
+      { path: 'ratings',      component: RatingsDataComponent,    canActivate: C },
       // player routes: no MaintainerGuard — managers may get read access here later
       { path: 'player',        component: PlayerDataComponent },
       { path: 'player/:id',    component: PlayerDetailComponent },
