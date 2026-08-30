@@ -1,9 +1,10 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, TemplateRef, ViewChild } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { DataCacheService } from '../core/data-cache.service';
 import { GoogleMapsLoaderService } from '../core/google-maps-loader.service';
+import { BottomSheetService } from '../core/bottom-sheet.service';
 import { StadiumClub, StadiumMapEntry } from '../core/models/stadium.model';
 import { environment } from '../../environments/environment';
 
@@ -96,6 +97,7 @@ export class MapComponent {
   private api = inject(ApiService);
   private cache = inject(DataCacheService);
   private mapsLoader = inject(GoogleMapsLoaderService);
+  private bottomSheet = inject(BottomSheetService);
 
   mapsReady = this.mapsLoader.ready;
 
@@ -382,6 +384,29 @@ export class MapComponent {
   // Stadiums the logged-in manager has marked as visited.
   private visitedStadiumIds = signal<Set<string>>(new Set());
 
+  // One-time explanation for first-time visitors with nothing marked yet — dismissing it via
+  // the "Verstanden" button (not the sheet's own X/backdrop) is what suppresses it permanently,
+  // even if the manager still has 0 visited stadiums on their next visit.
+  @ViewChild('visitedHintSheet') visitedHintSheet!: TemplateRef<any>;
+  private readonly VISITED_HINT_DISMISSED_KEY = 'map-visited-hint-dismissed';
+
+  private hasDismissedVisitedHint(): boolean {
+    try {
+      return localStorage.getItem(this.VISITED_HINT_DISMISSED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  dismissVisitedHint(): void {
+    try {
+      localStorage.setItem(this.VISITED_HINT_DISMISSED_KEY, '1');
+    } catch {
+      // localStorage unavailable (e.g. private mode) — sheet just won't stay suppressed.
+    }
+    this.bottomSheet.close();
+  }
+
   isVisited(stadiumId: string): boolean {
     return this.visitedStadiumIds().has(stadiumId);
   }
@@ -451,6 +476,9 @@ export class MapComponent {
       .pipe(catchError(() => of([])))
       .subscribe((ids) => {
         this.visitedStadiumIds.set(new Set(ids));
+        if (ids.length === 0 && !this.hasDismissedVisitedHint() && this.visitedHintSheet) {
+          this.bottomSheet.open(this.visitedHintSheet, { title: 'Karte entdecken' });
+        }
       });
 
     effect(() => {

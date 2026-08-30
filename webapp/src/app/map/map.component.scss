@@ -339,3 +339,16 @@
     }
   }
 }
+
+// One-time explanation sheet for first-time visitors (see visitedHintSheet in map.component.ts)
+.visited-hint {
+  &__text {
+    margin: 0 0 $space-4;
+    color: $color-text-muted;
+    line-height: 1.5;
+  }
+
+  &__btn {
+    width: 100%;
+  }
+}

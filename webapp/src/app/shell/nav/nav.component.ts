@@ -86,7 +86,7 @@ export class NavComponent {
         : []),
       { label: 'Ruhmeshalle', icon: 'ruhmeshalle', route: '/liga/ruhmeshalle' },
       ...(this.cache.isHotTakesLeague()
-        ? [{ label: 'Hot-Takes & Wetten', icon: 'statistiken', route: '/liga/hot-takes', isNew: true } as NavItem]
+        ? [{ label: 'Hot-Takes & Wetten', icon: 'statistiken', route: '/liga/hot-takes' } as NavItem]
         : []),
     ],
   }));
