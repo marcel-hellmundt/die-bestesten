@@ -53,7 +53,7 @@ export class ManagerDataComponent {
     list.sort((a, b) => {
       let cmp: number;
       if (col === 'roles') {
-        cmp = (a.roles?.length ?? 0) - (b.roles?.length ?? 0);
+        cmp = this.roleRank(a) - this.roleRank(b);
       } else if (col === 'stadiums_visited') {
         cmp = (a.stadiums_visited ?? 0) - (b.stadiums_visited ?? 0);
       } else {
@@ -71,12 +71,16 @@ export class ManagerDataComponent {
   readonly roleLabel       = ROLE_LABEL;
   readonly assignableRoles = ['admin', 'maintainer', 'contributor'];
 
+  roleRank(manager: any): number {
+    const actualRole = (manager.roles ?? [])[0] ?? 'manager';
+    return ROLE_RANK[actualRole] ?? 0;
+  }
+
   // Hierarchical highlighting: a manager's single actual role also "lights up" every badge
   // ranked at or below it (e.g. maintainer highlights both maintainer and contributor) —
   // distinct from the exact-match check toggleRole() uses to decide add vs. remove.
   isRoleActive(manager: any, role: string): boolean {
-    const actualRole = (manager.roles ?? [])[0] ?? 'manager';
-    return (ROLE_RANK[actualRole] ?? 0) >= (ROLE_RANK[role] ?? 0);
+    return this.roleRank(manager) >= (ROLE_RANK[role] ?? 0);
   }
 
   roleTogglingState    = signal<Record<string, boolean>>({});
