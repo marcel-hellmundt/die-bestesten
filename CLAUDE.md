@@ -58,7 +58,7 @@ styles/
 
 `$methodRoles` pro Controller: HTTP-Methode → erforderliche Rolle (einzelner String, kein Array). Prüfung: `guest` = kein Token nötig, aber falls ein gültiger Token mitgeschickt wird, dekodiert der Guard ihn trotzdem optional (setzt `auth_manager_id`/`auth_league_id`, ohne bei ungültigem/fehlendem Token einen Fehler zu werfen) — relevant für Endpunkte wie `/league/mine`, die sich für eingeloggte Manager anders verhalten; ansonsten vergleicht der Guard den Rang der höchsten Rolle des Managers (`_BaseController::ROLE_RANK`) gegen den Rang der erforderlichen Rolle — reicht der eigene Rang, ist der Zugriff erlaubt, unabhängig vom exakten Rollennamen. Fehlende Einträge = `guest`. 401 = kein Token, 403 = Rang zu niedrig. Guard setzt `$GLOBALS['auth_manager_id']` + `$GLOBALS['auth_roles']` (Array mit höchstens einem Eintrag).
 
-Rollenvergabe: `POST /manager/:id/roles` mit `{role}` (Upsert — ersetzt eine evtl. vorhandene Rolle), Entzug (zurück auf Basisrolle `manager`): `DELETE /manager/:id/roles/:role` — jeweils Admin.
+Rollenvergabe: `POST /manager/:id/roles` mit `{role}` (Upsert — ersetzt eine evtl. vorhandene Rolle), Entzug (zurück auf Basisrolle `manager`): `DELETE /manager/:id/roles/:role` — jeweils Admin. Die 403-Prüfung selbst liest bei jedem Request live aus der DB, wirkt also sofort; das im JWT eingebettete `roles` kann kurzzeitig veralten — der Guard vergleicht es deshalb bei jedem authentifizierten Request gegen die aktuelle DB-Rolle und schickt bei Abweichung sofort (nicht erst im 3-Tage-Rolling-Window) ein frisches Token per `X-New-Token`-Header, das der Frontend-Interceptor automatisch übernimmt — kein Logout/Login nötig, damit eine Rollenänderung im UI ankommt.
 
 ## Datenbankschema
 
