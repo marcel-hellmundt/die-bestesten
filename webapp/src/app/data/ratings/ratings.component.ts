@@ -277,6 +277,9 @@ export class RatingsDataComponent {
   initWarnings = signal<string[]>([]);
   initCreatedNames = signal<string[]>([]);
 
+  teamLogoErrors = new Set<string>();
+  onTeamLogoError(teamId: string): void { this.teamLogoErrors.add(teamId); }
+
   selectClub(clubId: string): void {
     if (this.selectedClubId() === clubId) return;
     this.selectedClubId.set(clubId);
@@ -513,7 +516,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         ),
@@ -532,7 +541,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         ),
@@ -547,7 +562,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         ),
@@ -566,7 +587,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         ),
@@ -607,7 +634,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         ),
@@ -620,7 +653,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         );
@@ -652,7 +691,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         );
@@ -831,7 +876,13 @@ export class RatingsDataComponent {
           this.ratings.update((list) =>
             list.map((r) =>
               r.id === player.id
-                ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+                ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
                 : r,
             ),
           ),
@@ -923,7 +974,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         ),
@@ -937,7 +994,13 @@ export class RatingsDataComponent {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
-              ? PlayerRating.from({ ...res.rating, starting_count: r.starting_count })
+              ? PlayerRating.from({
+                  ...res.rating,
+                  starting_count: r.starting_count,
+                  team_id: r.team_id,
+                  team_season_id: r.team_season_id,
+                  team_nominated: r.team_nominated,
+                })
               : r,
           ),
         ),

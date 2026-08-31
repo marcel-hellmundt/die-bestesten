@@ -239,6 +239,15 @@
           <ng-template #ratingCols let-r="r" let-editable="editable">
             <td class="col-player">
               <span class="player-cell">
+                @if (r.team_id && !teamLogoErrors.has(r.team_id)) {
+                  <img
+                    class="player-cell__team-logo"
+                    [class.player-cell__team-logo--bench]="!r.team_nominated"
+                    [src]="'https://img.die-bestesten.de/team/' + r.team_season_id + '/' + r.team_id + '.png'"
+                    alt=""
+                    (error)="onTeamLogoError(r.team_id)"
+                  />
+                }
                 @if (r.position) {
                   <span
                     class="position-badge"

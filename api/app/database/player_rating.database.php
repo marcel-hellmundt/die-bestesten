@@ -51,8 +51,33 @@ trait PlayerRatingTrait
         $ratings = $query->fetchAll(PDO::FETCH_ASSOC);
 
         $contributorsByRating = $this->getContributorsForRatings(array_column($ratings, 'id'));
+
+        // Fantasy team (if any) that had this player nominated/benched for this matchday —
+        // team_lineup lives in the league DB, player_rating in the global DB, so this is a
+        // separate lookup merged in by player_id. Drives the small team-logo hint next to the
+        // position badge in the "Punkte eintragen" player list.
+        $playerIds  = array_column($ratings, 'player_id');
+        $teamByPlayer = [];
+        if (!empty($playerIds)) {
+            $ph  = implode(',', array_fill(0, count($playerIds), '?'));
+            $tlq = $this->con_league->prepare(
+                "SELECT tl.player_id, tl.team_id, tl.nominated, t.season_id AS team_season_id
+                 FROM team_lineup tl
+                 JOIN team t ON t.id = tl.team_id
+                 WHERE tl.matchday_id = ? AND tl.player_id IN ($ph)"
+            );
+            $tlq->execute(array_merge([$matchdayId], $playerIds));
+            foreach ($tlq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $teamByPlayer[$row['player_id']] = $row;
+            }
+        }
+
         foreach ($ratings as &$r) {
             $r['contributors'] = $contributorsByRating[$r['id']] ?? [];
+            $t = $teamByPlayer[$r['player_id']] ?? null;
+            $r['team_id']         = $t['team_id'] ?? null;
+            $r['team_season_id']  = $t['team_season_id'] ?? null;
+            $r['team_nominated']  = $t ? (bool) $t['nominated'] : false;
         }
         unset($r);
 
