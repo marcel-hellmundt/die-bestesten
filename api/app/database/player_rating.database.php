@@ -207,18 +207,24 @@ trait PlayerRatingTrait
 
     /**
      * Returns per-club rating status for a matchday.
-     * [{club_id, rating_count, starter_count, grade_count, goals, assists, has_sds}]
+     * [{club_id, rating_count, starter_count, grade_count, red_card_no_grade_count, goals, assists, has_sds}]
+     *
+     * red_card_no_grade_count: players sent off early enough (straight red) that no grade was
+     * ever assignable — grade_count alone would then permanently plateau below 11 even once every
+     * player has been fully processed, so callers add this on top of grade_count when checking
+     * "is this club done" (e.g. before enabling the CSV Punktecheck).
      */
     public function getClubStatusByMatchday(string $matchdayId): array
     {
         $query = $this->con->prepare("
             SELECT club_id,
-                   COUNT(*)                                    AS rating_count,
-                   SUM(participation = 'starting')             AS starter_count,
-                   SUM(grade IS NOT NULL)                      AS grade_count,
-                   SUM(goals)                                  AS goals,
-                   SUM(assists)                                AS assists,
-                   MAX(sds)                                    AS has_sds
+                   COUNT(*)                                                     AS rating_count,
+                   SUM(participation = 'starting')                              AS starter_count,
+                   SUM(grade IS NOT NULL)                                       AS grade_count,
+                   SUM(grade IS NULL AND red_card = 1)                          AS red_card_no_grade_count,
+                   SUM(goals)                                                   AS goals,
+                   SUM(assists)                                                 AS assists,
+                   MAX(sds)                                                     AS has_sds
             FROM player_rating
             WHERE matchday_id = :matchday_id
             GROUP BY club_id

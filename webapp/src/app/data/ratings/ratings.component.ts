@@ -144,13 +144,13 @@ export class RatingsDataComponent {
 
   // ── Club status per matchday ────────────────────────────────────
   clubStatuses = signal<
-    { club_id: string; rating_count: number; starter_count: number; grade_count: number; goals: number; assists: number; has_sds: boolean }[]
+    { club_id: string; rating_count: number; starter_count: number; grade_count: number; red_card_no_grade_count: number; goals: number; assists: number; has_sds: boolean }[]
   >([]);
 
   private clubStatusMap = computed(() => {
     const m = new Map<
       string,
-      { rating_count: number; starter_count: number; grade_count: number; goals: number; assists: number; has_sds: boolean }
+      { rating_count: number; starter_count: number; grade_count: number; red_card_no_grade_count: number; goals: number; assists: number; has_sds: boolean }
     >();
     for (const s of this.clubStatuses()) m.set(s.club_id, s);
     return m;
@@ -177,6 +177,7 @@ export class RatingsDataComponent {
             rating_count: Number(s.rating_count),
             starter_count: Number(s.starter_count),
             grade_count: Number(s.grade_count),
+            red_card_no_grade_count: Number(s.red_card_no_grade_count ?? 0),
             goals: Number(s.goals ?? 0),
             assists: Number(s.assists ?? 0),
             has_sds: Boolean(Number(s.has_sds ?? 0)),
@@ -224,8 +225,12 @@ export class RatingsDataComponent {
     const s = this.clubStatusMap().get(clubId);
     if (!s || s.rating_count === 0) return '';
     if (s.starter_count < 11) return 'club-tile--pending-dashed';
-    if (s.grade_count === 0) return 'club-tile--pending';
-    if (s.grade_count < 11) return 'club-tile--done-partial';
+    // A player sent off early enough never gets a grade — count that player as "done" via
+    // red_card_no_grade_count too, otherwise a club with a straight red plateaus below 11
+    // grades forever even once every player has actually been fully processed.
+    const done = s.grade_count + s.red_card_no_grade_count;
+    if (done === 0) return 'club-tile--pending';
+    if (done < 11) return 'club-tile--done-partial';
     return 'club-tile--done';
   }
 
@@ -674,7 +679,9 @@ export class RatingsDataComponent {
     const map = this.clubStatusMap();
     return clubs.every((c) => {
       const s = map.get(c.id);
-      return s && s.grade_count >= 11;
+      // See clubStatusClass() — a straight-red player never gets a grade, so grade_count alone
+      // would never reach 11 for that club even once fully processed.
+      return s && s.grade_count + s.red_card_no_grade_count >= 11;
     });
   });
 
