@@ -17,7 +17,8 @@ trait H2HPredictionTrait
      */
     public function getH2HPredictionState(
         string $matchId, string $managerId, ?array $matchday, string $seasonId,
-        ?string $homeManagerId, ?string $awayManagerId, bool $preview = false
+        ?string $homeManagerId, ?string $awayManagerId, bool $preview = false,
+        bool $lineupsReady = true
     ): array {
         $kickoffDate = $matchday['kickoff_date'] ?? null;
         $locked      = $kickoffDate !== null && strtotime($kickoffDate) <= time();
@@ -40,6 +41,12 @@ trait H2HPredictionTrait
             // bewusst manipulieren (siehe H2HTrait::calculateH2HOdds). Betrifft nur die eigene
             // Tipp-Abgabe, nicht die Sichtbarkeit der Tipps anderer Manager nach Anpfiff.
             $result['is_own_match'] = $managerId !== '' && ($managerId === $homeManagerId || $managerId === $awayManagerId);
+            // Tippen erst, sobald beide Teams für diesen Spieltag eine Aufstellung (mind. 1
+            // nominierter Spieler) gesetzt haben — vorher wäre die angezeigte Quote der
+            // "keine Daten"-Fallback aus calculateH2HOdds() (z.B. 2,70/3,85/2,70 für beide
+            // Teams gleich), was Manager fälschlich als echte Einschätzung lesen. Karte bleibt
+            // dann komplett unsichtbar, analog is_current_matchday/is_own_match.
+            $result['lineups_ready'] = $lineupsReady;
         }
 
         if ($locked || $preview) {
@@ -80,6 +87,22 @@ trait H2HPredictionTrait
         $currentNumber = $curQ->fetchColumn();
 
         return $currentNumber !== false && (int) $matchday['number'] === (int) $currentNumber;
+    }
+
+    // True, wenn beide Teams für diesen Spieltag mindestens einen nominierten Spieler im
+    // team_lineup haben. Server-seitige Absicherung des Frontend-Gates (lineups_ready in
+    // getH2HPredictionState()) — ohne Aufstellung auf mindestens einer Seite ist die Quote nur
+    // der neutrale "keine Daten"-Fallback aus H2HTrait::calculateH2HOdds(), auf den ein Tipp
+    // keinen echten Aussagewert hätte.
+    private function bothTeamsHaveLineup(string $homeTeamId, string $awayTeamId, string $matchdayId): bool
+    {
+        $q = $this->con_league->prepare(
+            "SELECT team_id FROM team_lineup
+             WHERE matchday_id = :mid AND team_id IN (:home, :away) AND nominated = 1
+             GROUP BY team_id"
+        );
+        $q->execute([':mid' => $matchdayId, ':home' => $homeTeamId, ':away' => $awayTeamId]);
+        return count($q->fetchAll(PDO::FETCH_COLUMN)) === 2;
     }
 
     /**
@@ -136,6 +159,10 @@ trait H2HPredictionTrait
         if (!$this->isCurrentH2HMatchday($matchday, $matchday['season_id'])) {
             http_response_code(403);
             return ['status' => false, 'message' => 'Tippen ist nur für Matches des aktuellen Spieltags möglich'];
+        }
+        if (!$this->bothTeamsHaveLineup($match['home_team_id'], $match['away_team_id'], $matchdayId)) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Tippen ist erst möglich, sobald beide Teams eine Aufstellung abgegeben haben'];
         }
 
         $this->con_league->prepare(

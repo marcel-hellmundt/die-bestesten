@@ -111,8 +111,15 @@ export class H2HMatchComponent implements OnDestroy {
   // könnten die angezeigte Quote sonst durch Verändern der eigenen Aufstellung manipulieren.
   isOwnMatch = computed(() => this.predictions()?.is_own_match ?? false);
 
+  // Tippen erst, sobald beide Teams eine Aufstellung für diesen Spieltag gesetzt haben — vorher
+  // ist die Quote nur der neutrale "keine Daten"-Fallback (siehe Backend calculateH2HOdds()),
+  // auf den ein Tipp keinen echten Aussagewert hätte. Default true, falls das Backend das Feld
+  // (nur vor Anpfiff im Response) noch nicht mitschickt.
+  lineupsReady = computed(() => this.predictions()?.lineups_ready ?? true);
+
   hideCard = computed(() =>
-    this.hideEmptyResult() || (!this.isRevealed() && (!this.canTipThisMatchday() || this.isOwnMatch()))
+    this.hideEmptyResult() ||
+    (!this.isRevealed() && (!this.canTipThisMatchday() || this.isOwnMatch() || !this.lineupsReady()))
   );
 
   private refetchedAfterKickoff = false;
