@@ -228,8 +228,14 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Returns season-aggregated player ratings (all matchdays of the season that contains the given matchday).
-     * CSV-equivalent points = SUM(points) + participation bonus (starting=+2, substitute=+1) + SUM(assists).
+     * Returns season-aggregated player ratings (all matchdays of the same season AND division as
+     * the given matchday). CSV-equivalent points = SUM(points) + participation bonus
+     * (starting=+2, substitute=+1) + SUM(assists).
+     *
+     * Scoped to the matchday's division, not just its season: a player who switches divisions
+     * mid-season (e.g. promoted/relegated in the winter) keeps all player_rating rows in the same
+     * season, but our external CSV provider only counts the points earned in the player's current
+     * division — summing across both would double-count a division change as season-wide points.
      */
     public function getPlayerRatingsSummaryBySeason(string $matchdayId): array
     {
@@ -241,9 +247,10 @@ trait PlayerRatingTrait
                    SUM(pr.assists)  AS total_assists,
                    MAX(CASE WHEN pr.matchday_id = :current_matchday_id THEN pr.club_id END) AS club_id
             FROM player_rating pr
-            JOIN player p   ON p.id = pr.player_id
+            JOIN player p    ON p.id = pr.player_id
             JOIN matchday md ON md.id = pr.matchday_id
-            WHERE md.season_id = (SELECT season_id FROM matchday WHERE id = :matchday_id LIMIT 1)
+            JOIN matchday cur ON cur.id = :matchday_id
+            WHERE md.season_id = cur.season_id AND md.division_id = cur.division_id
             GROUP BY p.id, p.kicker_id, p.displayname
         ");
         $query->execute([':matchday_id' => $matchdayId, ':current_matchday_id' => $matchdayId]);
