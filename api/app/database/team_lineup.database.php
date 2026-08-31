@@ -196,6 +196,7 @@ trait TeamLineupTrait
             $player['season_points']  = (int) ($seasonPointsMap[$e['player_id']] ?? 0);
             $player['grade']          = $rating['grade'] ?? null;
             $player['points']         = isset($rating['points']) ? (int)$rating['points'] : null;
+            $player['has_rating']     = isset($ratingMap[$e['player_id']]);
             $player['goals']          = (int)($rating['goals'] ?? 0);
             $player['assists']        = (int)($rating['assists'] ?? 0);
             $player['clean_sheet']    = (int)($rating['clean_sheet'] ?? 0);

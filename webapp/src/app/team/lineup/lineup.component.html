@@ -95,7 +95,7 @@
                      (mouseleave)="onBadgeLeave()">
                   @if (p.grade) {
                     <span class="field-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
-                  } @else if (p.points === null) {
+                  } @else if (!p.has_rating) {
                     <span class="field-player__status field-player__status--waiting" title="Wartet auf Einsatz (Verein spielt später)">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 2h12" /><path d="M6 22h12" /><path d="M6 2v6l6 4 6-4V2" /><path d="M6 22v-6l6-4 6 4v6" />
