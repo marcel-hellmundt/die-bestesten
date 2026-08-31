@@ -28,6 +28,10 @@ export class PlayerRating {
     public photo_uploaded: boolean,
     public price: number | null,
     public starting_count: number,
+    // Fantasy-Team, das den Spieler an diesem Spieltag im team_lineup führt — null wenn keins
+    public team_id: string | null,
+    public team_season_id: string | null,
+    public team_nominated: boolean,
     // Wer an dieser Zeile mitgewirkt hat — siehe maintainer_contribution
     public contributors: RatingContributor[],
   ) {}
@@ -55,6 +59,9 @@ export class PlayerRating {
       !!data.photo_uploaded,
       data.price !== null && data.price !== undefined ? Number(data.price) : null,
       Number(data.starting_count ?? 0),
+      data.team_id ?? null,
+      data.team_season_id ?? null,
+      !!data.team_nominated,
       data.contributors ?? [],
     );
   }

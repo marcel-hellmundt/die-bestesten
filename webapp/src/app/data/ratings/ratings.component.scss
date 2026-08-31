@@ -495,6 +495,27 @@
   white-space: nowrap;
 }
 
+// Fantasy-Team, das den Spieler an diesem Spieltag führt — grau/transparent solange nur im
+// Kader, nicht in der Startelf/Einwechslung dieses Teams für diesen Spieltag nominiert.
+.player-cell__team-logo {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+
+  &--bench {
+    filter: grayscale(1);
+    opacity: 0.4;
+  }
+
+  // No team for this player — reserves the same 16px slot so the position badge (and name)
+  // still line up vertically across rows instead of shifting left.
+  &--blank {
+    visibility: hidden;
+  }
+}
+
 .col-points {
   font-weight: $font-weight-bold;
   color: $color-text;

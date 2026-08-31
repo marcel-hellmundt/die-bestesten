@@ -51,8 +51,33 @@ trait PlayerRatingTrait
         $ratings = $query->fetchAll(PDO::FETCH_ASSOC);
 
         $contributorsByRating = $this->getContributorsForRatings(array_column($ratings, 'id'));
+
+        // Fantasy team (if any) that had this player nominated/benched for this matchday —
+        // team_lineup lives in the league DB, player_rating in the global DB, so this is a
+        // separate lookup merged in by player_id. Drives the small team-logo hint next to the
+        // position badge in the "Punkte eintragen" player list.
+        $playerIds  = array_column($ratings, 'player_id');
+        $teamByPlayer = [];
+        if (!empty($playerIds)) {
+            $ph  = implode(',', array_fill(0, count($playerIds), '?'));
+            $tlq = $this->con_league->prepare(
+                "SELECT tl.player_id, tl.team_id, tl.nominated, t.season_id AS team_season_id
+                 FROM team_lineup tl
+                 JOIN team t ON t.id = tl.team_id
+                 WHERE tl.matchday_id = ? AND tl.player_id IN ($ph)"
+            );
+            $tlq->execute(array_merge([$matchdayId], $playerIds));
+            foreach ($tlq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $teamByPlayer[$row['player_id']] = $row;
+            }
+        }
+
         foreach ($ratings as &$r) {
             $r['contributors'] = $contributorsByRating[$r['id']] ?? [];
+            $t = $teamByPlayer[$r['player_id']] ?? null;
+            $r['team_id']         = $t['team_id'] ?? null;
+            $r['team_season_id']  = $t['team_season_id'] ?? null;
+            $r['team_nominated']  = $t ? (bool) $t['nominated'] : false;
         }
         unset($r);
 
@@ -207,18 +232,24 @@ trait PlayerRatingTrait
 
     /**
      * Returns per-club rating status for a matchday.
-     * [{club_id, rating_count, starter_count, grade_count, goals, assists, has_sds}]
+     * [{club_id, rating_count, starter_count, grade_count, red_card_no_grade_count, goals, assists, has_sds}]
+     *
+     * red_card_no_grade_count: players sent off early enough (straight red) that no grade was
+     * ever assignable — grade_count alone would then permanently plateau below 11 even once every
+     * player has been fully processed, so callers add this on top of grade_count when checking
+     * "is this club done" (e.g. before enabling the CSV Punktecheck).
      */
     public function getClubStatusByMatchday(string $matchdayId): array
     {
         $query = $this->con->prepare("
             SELECT club_id,
-                   COUNT(*)                                    AS rating_count,
-                   SUM(participation = 'starting')             AS starter_count,
-                   SUM(grade IS NOT NULL)                      AS grade_count,
-                   SUM(goals)                                  AS goals,
-                   SUM(assists)                                AS assists,
-                   MAX(sds)                                    AS has_sds
+                   COUNT(*)                                                     AS rating_count,
+                   SUM(participation = 'starting')                              AS starter_count,
+                   SUM(grade IS NOT NULL)                                       AS grade_count,
+                   SUM(grade IS NULL AND red_card = 1)                          AS red_card_no_grade_count,
+                   SUM(goals)                                                   AS goals,
+                   SUM(assists)                                                 AS assists,
+                   MAX(sds)                                                     AS has_sds
             FROM player_rating
             WHERE matchday_id = :matchday_id
             GROUP BY club_id
@@ -228,8 +259,14 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Returns season-aggregated player ratings (all matchdays of the season that contains the given matchday).
-     * CSV-equivalent points = SUM(points) + participation bonus (starting=+2, substitute=+1) + SUM(assists).
+     * Returns season-aggregated player ratings (all matchdays of the same season AND division as
+     * the given matchday). CSV-equivalent points = SUM(points) + participation bonus
+     * (starting=+2, substitute=+1) + SUM(assists).
+     *
+     * Scoped to the matchday's division, not just its season: a player who switches divisions
+     * mid-season (e.g. promoted/relegated in the winter) keeps all player_rating rows in the same
+     * season, but our external CSV provider only counts the points earned in the player's current
+     * division — summing across both would double-count a division change as season-wide points.
      */
     public function getPlayerRatingsSummaryBySeason(string $matchdayId): array
     {
@@ -241,9 +278,10 @@ trait PlayerRatingTrait
                    SUM(pr.assists)  AS total_assists,
                    MAX(CASE WHEN pr.matchday_id = :current_matchday_id THEN pr.club_id END) AS club_id
             FROM player_rating pr
-            JOIN player p   ON p.id = pr.player_id
+            JOIN player p    ON p.id = pr.player_id
             JOIN matchday md ON md.id = pr.matchday_id
-            WHERE md.season_id = (SELECT season_id FROM matchday WHERE id = :matchday_id LIMIT 1)
+            JOIN matchday cur ON cur.id = :matchday_id
+            WHERE md.season_id = cur.season_id AND md.division_id = cur.division_id
             GROUP BY p.id, p.kicker_id, p.displayname
         ");
         $query->execute([':matchday_id' => $matchdayId, ':current_matchday_id' => $matchdayId]);
