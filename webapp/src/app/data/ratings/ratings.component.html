@@ -247,6 +247,8 @@
                     alt=""
                     (error)="onTeamLogoError(r.team_id)"
                   />
+                } @else {
+                  <span class="player-cell__team-logo player-cell__team-logo--blank"></span>
                 }
                 @if (r.position) {
                   <span
