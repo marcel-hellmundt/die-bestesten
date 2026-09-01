@@ -314,8 +314,19 @@ export class SessionHeatmapComponent {
   // einen (nicht existierenden) fließenden Übergang zwischen ihnen. Ein Intervall ganz ohne
   // Nutzung fällt außerdem als fehlender Balken sofort auf, statt als unauffälliger Punkt auf
   // der Nulllinie zwischen Nachbar-Werten unterzugehen.
-  private readonly USAGE_BAR_GAP    = 0.15; // Anteil der Spaltenbreite als Lücke auf jeder Seite
-  private readonly USAGE_BAR_RADIUS = 0.08; // ganz leichter Radius, nur an den oberen Ecken
+  private readonly USAGE_BAR_GAP = 0.15; // Anteil der Spaltenbreite als Lücke auf jeder Seite
+
+  // Getrennter x-/y-Radius statt eines gemeinsamen Werts: die ViewBox "0 0 columnCount 100" wird
+  // per preserveAspectRatio="none" NICHT gleichmäßig gestreckt — 1 y-Einheit entspricht ungefähr
+  // 1px (Container ist 100px bzw. mobil 70px hoch, bei 100 y-Einheiten Gesamthöhe), während
+  // 1 x-Einheit je nach columnCount (24 Stunden, 31 Tage, 52 Wochen, …) einem VIELFACHEN an
+  // Pixeln entspricht. Ein einzelner "r"-Wert für beide Achsen (frühere Version) war dadurch am
+  // rechten/linken Rand sichtbar breit, aber vertikal praktisch unsichtbar (0.08 y-Einheiten ≈
+  // 0,08px) — der Radius verschwand komplett. Der y-Radius bleibt daher ein fester Absolutwert
+  // in y-Einheiten (≈Pixel), der x-Radius ein Anteil der (bereits in x-Einheiten vorliegenden)
+  // Balkenbreite, damit die Rundung bei jeder Spaltenzahl proportional zur Balkenbreite bleibt.
+  private readonly USAGE_BAR_RADIUS_Y = 4;
+  private readonly USAGE_BAR_RADIUS_X_FRACTION = 0.3;
 
   usageChart = computed(() => {
     const cols = this.columns();
@@ -330,6 +341,7 @@ export class SessionHeatmapComponent {
     const h      = bottom - top;
     const gap    = this.USAGE_BAR_GAP;
     const width  = 1 - gap * 2;
+    const rx     = Math.min(width * this.USAGE_BAR_RADIUS_X_FRACTION, width / 2);
 
     // x/width in Spalten-Einheiten — passend zum ViewBox "0 0 N 100". Ein Pfad statt <rect rx>,
     // damit nur die oberen beiden Ecken abgerundet werden — rx/ry auf <rect> würde alle vier
@@ -338,19 +350,19 @@ export class SessionHeatmapComponent {
       const barHeight = (v / maxValue) * h;
       if (barHeight <= 0) return { path: '' };
 
-      const x = i + gap;
-      const y = bottom - barHeight;
-      const r = Math.min(this.USAGE_BAR_RADIUS, width / 2, barHeight / 2);
+      const x  = i + gap;
+      const y  = bottom - barHeight;
+      const ry = Math.min(this.USAGE_BAR_RADIUS_Y, barHeight / 2);
       // Quadratische Bezier statt Ellipsen-Arc: der Kontrollpunkt liegt exakt auf der scharfen
       // Ecke, wodurch die Kurve zwangsläufig innerhalb des Balkens bleibt — kein Rätselraten um
       // die richtige sweep-flag-Richtung, die (falsch gewählt) die Ecke stattdessen nach außen
       // über die flache Oberkante hinaus wölben würde.
       const path =
         `M${x.toFixed(3)},${bottom} ` +
-        `L${x.toFixed(3)},${(y + r).toFixed(3)} ` +
-        `Q${x.toFixed(3)},${y.toFixed(3)} ${(x + r).toFixed(3)},${y.toFixed(3)} ` +
-        `L${(x + width - r).toFixed(3)},${y.toFixed(3)} ` +
-        `Q${(x + width).toFixed(3)},${y.toFixed(3)} ${(x + width).toFixed(3)},${(y + r).toFixed(3)} ` +
+        `L${x.toFixed(3)},${(y + ry).toFixed(3)} ` +
+        `Q${x.toFixed(3)},${y.toFixed(3)} ${(x + rx).toFixed(3)},${y.toFixed(3)} ` +
+        `L${(x + width - rx).toFixed(3)},${y.toFixed(3)} ` +
+        `Q${(x + width).toFixed(3)},${y.toFixed(3)} ${(x + width).toFixed(3)},${(y + ry).toFixed(3)} ` +
         `L${(x + width).toFixed(3)},${bottom} Z`;
       return { path };
     });
