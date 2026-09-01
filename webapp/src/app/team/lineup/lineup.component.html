@@ -48,7 +48,12 @@
         }
 
         @if (showInvalidLineupHint()) {
-          <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+          <div class="field-invalid-hint">
+            <span class="field-invalid-hint__card">
+              <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
+              <span>Keine gültige Aufstellung vorhanden</span>
+            </span>
+          </div>
         } @else {
         @for (pos of pitchPositions; track pos) {
           <div class="field-section">

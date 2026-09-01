@@ -89,17 +89,20 @@ trait H2HPredictionTrait
         return $currentNumber !== false && (int) $matchday['number'] === (int) $currentNumber;
     }
 
-    // True, wenn beide Teams für diesen Spieltag mindestens einen nominierten Spieler im
-    // team_lineup haben. Server-seitige Absicherung des Frontend-Gates (lineups_ready in
-    // getH2HPredictionState()) — ohne Aufstellung auf mindestens einer Seite ist die Quote nur
-    // der neutrale "keine Daten"-Fallback aus H2HTrait::calculateH2HOdds(), auf den ein Tipp
-    // keinen echten Aussagewert hätte.
+    // True, wenn beide Teams für diesen Spieltag eine VOLLSTÄNDIGE gültige Aufstellung (genau 11
+    // nominierte Spieler) haben — nicht nur irgendeine Teilaufstellung. Ein gespeichertes Lineup
+    // ist laut PATCH-Sanity-Check immer entweder komplett (11) oder ein noch erreichbarer
+    // Zwischenstand (<11, z.B. beim schrittweisen Aufstellen oder nach einer Lücke durch POST
+    // /sell, siehe dort) — 11 ist also gleichbedeutend mit "eine der 7 gültigen Formationen ist
+    // tatsächlich komplett gefüllt". Server-seitige Absicherung des Frontend-Gates (lineups_ready
+    // in getH2HPredictionState()) — mit nur einer Teilaufstellung auf einer Seite wäre die Quote
+    // verzerrt (fehlende Spieler zählen nicht mit) und ein Tipp darauf irreführend.
     private function bothTeamsHaveLineup(string $homeTeamId, string $awayTeamId, string $matchdayId): bool
     {
         $q = $this->con_league->prepare(
-            "SELECT team_id FROM team_lineup
+            "SELECT team_id, COUNT(*) AS cnt FROM team_lineup
              WHERE matchday_id = :mid AND team_id IN (:home, :away) AND nominated = 1
-             GROUP BY team_id"
+             GROUP BY team_id HAVING cnt = 11"
         );
         $q->execute([':mid' => $matchdayId, ':home' => $homeTeamId, ':away' => $awayTeamId]);
         return count($q->fetchAll(PDO::FETCH_COLUMN)) === 2;

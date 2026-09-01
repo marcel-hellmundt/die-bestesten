@@ -133,10 +133,13 @@
   </div>
 
   <!-- Für Matches, deren Spieltag noch in der Zukunft liegt (oder bei denen schlicht noch
-       niemand aufgestellt hat), existieren noch keine team_lineup-Einträge — dieselbe
-       lineups_ready-Bedingung, die auch die Tipp-Karte gate't (siehe hideCard()), ersetzt dann
-       Feld+Bank durch einen Platzhalter-Hinweis statt eines leeren Feldes. -->
-  @if (!lineupsReady()) {
+       niemand aufgestellt hat), existieren noch keine team_lineup-Einträge auf keiner der beiden
+       Seiten — ersetzt Feld+Bank dann durch einen Platzhalter-Hinweis statt eines leeren Feldes.
+       lineupsReady() selbst verlangt inzwischen eine VOLLSTÄNDIGE Aufstellung auf beiden Seiten
+       (gate't nur noch die Tipp-Karte, siehe hideCard()) — hasAnyLineupData() bleibt bewusst
+       nachsichtiger, damit eine einseitige/unvollständige Aufstellung das Feld weiterhin zeigt,
+       mit showHomeInvalidHint()/showAwayInvalidHint() je Seite statt der ganzen Sektion. -->
+  @if (!hasAnyLineupData()) {
     <div class="card">
       <p class="state-msg">Für diese Partie ist noch keine Aufstellung verfügbar.</p>
     </div>
@@ -231,7 +234,12 @@
       <div class="h2h-field">
         <div class="h2h-field__half h2h-field__half--home">
           @if (showHomeInvalidHint()) {
-            <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+            <div class="field-invalid-hint">
+              <span class="field-invalid-hint__card">
+                <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
+                <span>Keine gültige Aufstellung vorhanden</span>
+              </span>
+            </div>
           } @else {
           @for (pos of homeFieldPositions; track pos) {
             <div class="h2h-field__col">
@@ -244,7 +252,12 @@
         </div>
         <div class="h2h-field__half h2h-field__half--away">
           @if (showAwayInvalidHint()) {
-            <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+            <div class="field-invalid-hint">
+              <span class="field-invalid-hint__card">
+                <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
+                <span>Keine gültige Aufstellung vorhanden</span>
+              </span>
+            </div>
           } @else {
           @for (pos of awayFieldPositions; track pos) {
             <div class="h2h-field__col">

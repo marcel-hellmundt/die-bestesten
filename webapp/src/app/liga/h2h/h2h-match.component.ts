@@ -46,6 +46,16 @@ export class H2HMatchComponent implements OnDestroy {
   homeBench  = computed(() => (this.data()?.home_bench  ?? []) as any[]);
   awayBench  = computed(() => (this.data()?.away_bench  ?? []) as any[]);
 
+  // Whether to render the pitch section at all — independent of lineupsReady() (which now
+  // requires a COMPLETE valid XI on both sides, see below, purely to gate betting/odds). This
+  // stays lenient (any team_lineup data on either side) so a one-sided or partial lineup still
+  // renders the field with showHomeInvalidHint()/showAwayInvalidHint() taking over per side,
+  // instead of collapsing the whole section to the "not available yet" placeholder.
+  hasAnyLineupData = computed(() =>
+    this.homeLineup().length > 0 || this.homeBench().length > 0 ||
+    this.awayLineup().length > 0 || this.awayBench().length > 0
+  );
+
   // A saved team_lineup is always either a complete valid XI (11 nominated) or a still-reachable
   // partial build/gap (see team_lineup.database.php's isReachableFormation, and POST /sell which
   // only clears the sold player's own entry instead of resetting the whole lineup to bench) — for

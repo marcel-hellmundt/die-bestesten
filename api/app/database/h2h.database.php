@@ -783,7 +783,10 @@ trait H2HTrait
             'predictions'  => $this->getH2HPredictionState(
                 $match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $match['season_id'],
                 $homeTeam['manager_id'] ?? null, $awayTeam['manager_id'] ?? null, $predictionsPreview,
-                !empty($homeLineup['nominated']) && !empty($awayLineup['nominated'])
+                // Beide Teams brauchen eine VOLLSTÄNDIGE gültige Aufstellung (11 nominiert), nicht
+                // nur irgendeine Teilaufstellung — sonst wäre die Quote durch fehlende Spieler auf
+                // einer Seite verzerrt (siehe H2HPredictionTrait::bothTeamsHaveLineup()).
+                count($homeLineup['nominated']) === 11 && count($awayLineup['nominated']) === 11
             ),
             'head_to_head' => ($homeTeam['manager_id'] ?? null) && ($awayTeam['manager_id'] ?? null)
                 ? $this->getH2HHeadToHeadHistory($homeTeam['manager_id'], $awayTeam['manager_id'], $match['id'])

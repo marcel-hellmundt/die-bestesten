@@ -1166,7 +1166,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h_prediction/available',
-                        'description' => 'Aktuell bebettbare H2H-Matches der aktiven Saison (aktueller Spieltag, beide Teams haben eine Aufstellung, Manager führt keines der beiden Teams selbst) — fürs Wettbüro (Direktlinks im Leer-Zustand) — Auth',
+                        'description' => 'Aktuell bebettbare H2H-Matches der aktiven Saison (aktueller Spieltag, beide Teams haben eine vollständige gültige Aufstellung mit 11 nominierten Spielern, Manager führt keines der beiden Teams selbst) — fürs Wettbüro (Direktlinks im Leer-Zustand) — Auth',
                     ],
                     [
                         'method' => 'POST',
