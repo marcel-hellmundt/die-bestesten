@@ -9,6 +9,11 @@
        Auf Mobile ohne Wirkung (kein Grid dort) — Reihenfolge bleibt die normale Dokumentreihenfolge:
        Ergebnis, Lineup (Feld + Bank), Tipps, Bisherige Begegnungen. -->
   <div class="h2h-detail-layout">
+  <!-- Header+Feld+Bänke als ein einzelnes Grid-Item (statt zwei über die Sidebar-Spalte
+       gespannte Zeilen) — sonst bläht ein hoher Sidebar-Inhalt (z.B. die Admin-Quoten-Card) die
+       implizite erste Grid-Zeile (Header) auf und schiebt das Feld sichtbar nach unten, da CSS
+       Grid überschüssige Höhe eines zeilenübergreifenden Items auf alle gespannten Zeilen verteilt. -->
+  <div class="h2h-detail-layout__main">
   <!-- Header -->
   <div class="match-header card">
     <div class="match-meta">
@@ -286,6 +291,7 @@
       </div>
     }
   }
+  </div>
 
   <!-- Sidebar-Slot des Desktop-Grids (grid-area: side, siehe .h2h-detail-layout__side) — Tipp-
        Karte oben, direkt darunter (nur Admins, nur vor Anpfiff) dieselbe Auswertungs-Card wie
@@ -379,6 +385,87 @@
       <div class="card h2h-predict-card">
         <div class="h2h-predict-card__label">Tipps</div>
         <ng-container *ngTemplateOutlet="pieResult; context: { pie: previewPie(), entries: previewEntries() }"></ng-container>
+      </div>
+    }
+
+    <!-- Admin-only Transparenz-Card: schlüsselt die Zwischenwerte der Quoten-Berechnung auf
+         (siehe H2HTrait::calculateH2HOdds() im Backend) — odds_breakdown kommt vom Server nur
+         für Admins befüllt, sonst null. -->
+    @if (isAdmin() && oddsBreakdown(); as bd) {
+      <div class="card h2h-predict-card h2h-odds-breakdown">
+        <div class="h2h-predict-card__label">Quoten-Berechnung</div>
+        <div class="h2h-odds-breakdown__header">
+          <span></span>
+          <span class="h2h-odds-breakdown__team" [style.color]="homeTeam()?.color">{{ homeTeam()?.team_name }}</span>
+          <span class="h2h-odds-breakdown__team" [style.color]="awayTeam()?.color">{{ awayTeam()?.team_name }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Marktwert (aufgestellt)</span>
+          <span>{{ bd.home_value | number: '1.0-0' }} €</span>
+          <span>{{ bd.away_value | number: '1.0-0' }} €</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Saisonpunkte (aufgestellt)</span>
+          <span>{{ bd.home_points }}</span>
+          <span>{{ bd.away_points }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Anteil Marktwert ({{ bd.value_weight * 100 }}%)</span>
+          <span>{{ bd.value_ratio_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ (1 - bd.value_ratio_home) * 100 | number: '1.0-1' }} %</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Anteil Saisonpunkte ({{ bd.points_weight * 100 }}%)</span>
+          <span>{{ bd.points_ratio_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ (1 - bd.points_ratio_home) * 100 | number: '1.0-1' }} %</span>
+        </div>
+
+        <!-- Projizierte Tordifferenz: gleiche Formel wie die echte H2H-Ergebnisberechnung
+             (Tore + Vorlagen/3, abzüglich gegnerischer Abwehr-SdS), aber auf Saison-Summen der
+             aufgestellten Spieler statt Einzelspieltagswerten — dominant gewichtet (siehe unten),
+             da am nächsten an dem, was den tatsächlichen Ausgang bestimmt. -->
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Saison-Tore (aufgestellt)</span>
+          <span>{{ bd.home_season_goals }}</span>
+          <span>{{ bd.away_season_goals }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Saison-Vorlagen (aufgestellt)</span>
+          <span>{{ bd.home_season_assists }}</span>
+          <span>{{ bd.away_season_assists }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Abwehr-SdS (GK/DEF, aufgestellt)</span>
+          <span>{{ bd.home_def_sds }}</span>
+          <span>{{ bd.away_def_sds }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Projizierte Tore (Tore + Vorlagen/3 − gegn. Abwehr-SdS)</span>
+          <span>{{ bd.proj_home_goals }}</span>
+          <span>{{ bd.proj_away_goals }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Anteil projizierte Tore ({{ bd.goals_weight * 100 }}%, dominant)</span>
+          <span>{{ bd.goals_ratio_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ (1 - bd.goals_ratio_home) * 100 | number: '1.0-1' }} %</span>
+        </div>
+
+        <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
+          <span class="h2h-odds-breakdown__label">Stärke-Vorsprung (Heim)</span>
+          <span>{{ bd.edge > 0 ? '+' : '' }}{{ bd.edge | number: '1.0-3' }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
+          <span class="h2h-odds-breakdown__label">Unentschieden-Wahrscheinlichkeit</span>
+          <span>{{ bd.prob_draw * 100 | number: '1.0-1' }} %</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Sieg-Wahrscheinlichkeit</span>
+          <span>{{ bd.prob_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ bd.prob_away * 100 | number: '1.0-1' }} %</span>
+        </div>
+        <p class="h2h-predict-card__hint">
+          Konstanten: Unentschieden max. {{ bd.draw_max * 100 }}%, Abfallrate {{ bd.draw_k }}, Skalierung {{ bd.c }}
+        </p>
       </div>
     }
 

@@ -398,29 +398,63 @@ trait H2HTrait
     }
 
     /**
-     * Deterministische Pseudo-Quote (Heim/Unentschieden/Auswärts) rein aus Marktwert + Saison-
-     * Punkten der jeweils AUFGESTELLTEN Spieler (nicht Bank) — keine echten Wetten/Einsätze,
-     * nur zur Einordnung "wer ist auf dem Papier stärker". Beide Signale (Marktwert, Punkte)
-     * fließen je zur Hälfte in einen Stärke-Vorsprung (edge, -0.5..+0.5, + = Heim stärker) ein.
+     * Deterministische Pseudo-Quote (Heim/Unentschieden/Auswärts) aus Marktwert, Saisonpunkten
+     * UND einer projizierten Tordifferenz der jeweils AUFGESTELLTEN Spieler (nicht Bank) — keine
+     * echten Wetten/Einsätze, nur zur Einordnung "wer ist auf dem Papier stärker". Drei Signale
+     * fließen gewichtet in einen Stärke-Vorsprung (edge, -0.5..+0.5, + = Heim stärker) ein:
+     * Marktwert (25%), Saisonpunkte (25%) und die projizierte Tordifferenz (50%, dominant — sie
+     * bildet die tatsächliche H2H-Ergebnisformel h2hGoals() auf Saison-Ebene nach, siehe unten).
      * Daraus: Unentschieden-Wahrscheinlichkeit schrumpft mit wachsendem Gefälle (Glockenkurve,
      * analog realer Fußball-Statistik — ausgeglichene Teams spielen häufiger unentschieden),
      * die restliche Wahrscheinlichkeit teilt sich logistisch auf Heim/Auswärts auf (gleiche
      * Kurvenform wie eine Elo-Gewinnwahrscheinlichkeit). Odds = 1/Wahrscheinlichkeit, ohne
      * Buchmacher-Marge.
+     *
+     * Projizierte Tordifferenz: dieselbe Formel wie h2hGoals() (Tore + Vorlagen/3, abzüglich der
+     * gegnerischen Abwehr-SdS — Tore zählen also 3x so viel wie Vorlagen, eine SdS von Verteidiger
+     * oder Torhüter verhindert 1 Tor des Gegners), aber mit Saison-Summen statt Einzelspieltags-
+     * werten, da vor Anpfiff naturgemäß noch keine Werte für DIESEN Spieltag existieren.
+     *
+     * 'breakdown' enthält alle Zwischenwerte dieser Rechnung — Grundlage für die Admin-only
+     * Transparenz-Card auf der H2H-Match-Detailseite (siehe getH2HMatchDetail()).
      */
     private function calculateH2HOdds(array $homeNominated, array $awayNominated): array
     {
         $sum = fn(array $players, string $key) => array_sum(array_column($players, $key));
+        $defSds = fn(array $players) => array_sum(array_map(
+            fn($p) => in_array($p['position'] ?? null, ['GOALKEEPER', 'DEFENDER'], true) ? ($p['season_sds'] ?? 0) : 0,
+            $players
+        ));
 
         $homeValue  = $sum($homeNominated, 'price');
         $awayValue  = $sum($awayNominated, 'price');
         $homePoints = $sum($homeNominated, 'season_points');
         $awayPoints = $sum($awayNominated, 'season_points');
 
+        $homeSeasonGoals   = $sum($homeNominated, 'season_goals');
+        $awaySeasonGoals   = $sum($awayNominated, 'season_goals');
+        $homeSeasonAssists = $sum($homeNominated, 'season_assists');
+        $awaySeasonAssists = $sum($awayNominated, 'season_assists');
+        $homeDefSds        = $defSds($homeNominated);
+        $awayDefSds        = $defSds($awayNominated);
+
+        // Gleiche Formel wie H2HTrait::h2hGoals(), nur auf Saison-Summen statt einem einzelnen
+        // Spieltag angewendet — Tore + Vorlagen/3, gedeckelt bei 0, abzüglich gegnerischer
+        // Abwehr-SdS.
+        $projHomeGoals = max(0, $homeSeasonGoals + intdiv($homeSeasonAssists, 3) - $awayDefSds);
+        $projAwayGoals = max(0, $awaySeasonGoals + intdiv($awaySeasonAssists, 3) - $homeDefSds);
+
         $valueRatioHome  = ($homeValue + $awayValue) > 0 ? $homeValue / ($homeValue + $awayValue) : 0.5;
         $pointsRatioHome = ($homePoints + $awayPoints) > 0 ? $homePoints / ($homePoints + $awayPoints) : 0.5;
+        $goalsRatioHome  = ($projHomeGoals + $projAwayGoals) > 0
+            ? $projHomeGoals / ($projHomeGoals + $projAwayGoals)
+            : 0.5;
 
-        $edge = (0.5 * $valueRatioHome + 0.5 * $pointsRatioHome) - 0.5;
+        $valueWeight = 0.25;
+        $pointsWeight = 0.25;
+        $goalsWeight = 0.5; // dominant — am nächsten an der tatsächlichen Ergebnisformel
+
+        $edge = ($valueWeight * $valueRatioHome + $pointsWeight * $pointsRatioHome + $goalsWeight * $goalsRatioHome) - 0.5;
 
         $drawMax  = 0.26; // Unentschieden-Wahrscheinlichkeit bei perfekt ausgeglichenen Teams
         $drawK    = 6.0;  // wie schnell die Unentschieden-Chance mit wachsendem Gefälle sinkt
@@ -433,10 +467,41 @@ trait H2HTrait
 
         $toOdds = fn(float $p) => $p > 0 ? round(1 / $p, 2) : null;
 
-        return ['home' => $toOdds($probHome), 'draw' => $toOdds($probDraw), 'away' => $toOdds($probAway)];
+        return [
+            'home' => $toOdds($probHome),
+            'draw' => $toOdds($probDraw),
+            'away' => $toOdds($probAway),
+            'breakdown' => [
+                'home_value'         => (float) $homeValue,
+                'away_value'         => (float) $awayValue,
+                'home_points'        => (int) $homePoints,
+                'away_points'        => (int) $awayPoints,
+                'home_season_goals'  => (int) $homeSeasonGoals,
+                'away_season_goals'  => (int) $awaySeasonGoals,
+                'home_season_assists' => (int) $homeSeasonAssists,
+                'away_season_assists' => (int) $awaySeasonAssists,
+                'home_def_sds'       => (int) $homeDefSds,
+                'away_def_sds'       => (int) $awayDefSds,
+                'proj_home_goals'    => (int) $projHomeGoals,
+                'proj_away_goals'    => (int) $projAwayGoals,
+                'value_ratio_home'   => round($valueRatioHome, 4),
+                'points_ratio_home'  => round($pointsRatioHome, 4),
+                'goals_ratio_home'   => round($goalsRatioHome, 4),
+                'value_weight'       => $valueWeight,
+                'points_weight'      => $pointsWeight,
+                'goals_weight'       => $goalsWeight,
+                'edge'               => round($edge, 4),
+                'draw_max'           => $drawMax,
+                'draw_k'             => $drawK,
+                'c'                  => $c,
+                'prob_home'          => round($probHome, 4),
+                'prob_draw'          => round($probDraw, 4),
+                'prob_away'          => round($probAway, 4),
+            ],
+        ];
     }
 
-    public function getH2HMatchDetail(string $matchId, bool $predictionsPreview = false): array|false
+    public function getH2HMatchDetail(string $matchId, bool $predictionsPreview = false, bool $includeOddsBreakdown = false): array|false
     {
         // Load match
         $mq = $this->con_league->prepare(
@@ -606,17 +671,27 @@ trait H2HTrait
                 $ratingMap[$r['player_id']] = $r;
             }
 
-            // Saison-kumulierte Punkte (global DB) — für calculateH2HOdds() unten; gleiches
-            // Muster wie TeamLineupTrait's Bank-Sortierung.
-            $seasonPtsQ = $this->con->prepare(
-                "SELECT pr.player_id, COALESCE(SUM(pr.points), 0) AS season_points
+            // Saison-kumulierte Punkte/Tore/Vorlagen/SdS (global DB) — für calculateH2HOdds()
+            // unten (Punkte gleiches Muster wie TeamLineupTrait's Bank-Sortierung; Tore/Vorlagen/
+            // SdS sind das neue Signal, das dieselbe Gewichtung wie die echte H2H-Ergebnisformel
+            // h2hGoals() auf Saison-Ebene nachbildet).
+            $seasonStatsQ = $this->con->prepare(
+                "SELECT pr.player_id,
+                        COALESCE(SUM(pr.points), 0)  AS season_points,
+                        COALESCE(SUM(pr.goals), 0)   AS season_goals,
+                        COALESCE(SUM(pr.assists), 0) AS season_assists,
+                        COALESCE(SUM(pr.sds), 0)     AS season_sds
                  FROM player_rating pr
                  JOIN matchday m ON m.id = pr.matchday_id
                  WHERE m.season_id = ? AND pr.player_id IN ($ph)
                  GROUP BY pr.player_id"
             );
-            $seasonPtsQ->execute(array_merge([$seasonId], $playerIds));
-            $seasonPointsMap = array_column($seasonPtsQ->fetchAll(PDO::FETCH_ASSOC), 'season_points', 'player_id');
+            $seasonStatsQ->execute(array_merge([$seasonId], $playerIds));
+            $seasonStatsRows = $seasonStatsQ->fetchAll(PDO::FETCH_ASSOC);
+            $seasonPointsMap  = array_column($seasonStatsRows, 'season_points',  'player_id');
+            $seasonGoalsMap   = array_column($seasonStatsRows, 'season_goals',   'player_id');
+            $seasonAssistsMap = array_column($seasonStatsRows, 'season_assists', 'player_id');
+            $seasonSdsMap     = array_column($seasonStatsRows, 'season_sds',     'player_id');
 
             $posOrder  = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
             $nominated = [];
@@ -647,6 +722,9 @@ trait H2HTrait
                     'participation'      => $r['participation'] ?? null,
                     'price'              => (float) ($p['price'] ?? 0),
                     'season_points'      => (int) ($seasonPointsMap[$e['player_id']] ?? 0),
+                    'season_goals'       => (int) ($seasonGoalsMap[$e['player_id']] ?? 0),
+                    'season_assists'     => (int) ($seasonAssistsMap[$e['player_id']] ?? 0),
+                    'season_sds'         => (int) ($seasonSdsMap[$e['player_id']] ?? 0),
                 ];
                 if ($e['nominated']) {
                     $nominated[] = $row;
@@ -671,6 +749,7 @@ trait H2HTrait
         $homeRating = $ratingMap[$match['home_team_id']] ?? null;
         $awayRating = $ratingMap[$match['away_team_id']] ?? null;
         $goals      = $this->h2hGoals($homeRating, $awayRating);
+        $oddsResult = $this->calculateH2HOdds($homeLineup['nominated'], $awayLineup['nominated']);
 
         return [
             'match'        => [
@@ -699,7 +778,8 @@ trait H2HTrait
             'home_bench'   => $homeLineup['bench'],
             'away_lineup'  => $awayLineup['nominated'],
             'away_bench'   => $awayLineup['bench'],
-            'odds'         => $this->calculateH2HOdds($homeLineup['nominated'], $awayLineup['nominated']),
+            'odds'         => ['home' => $oddsResult['home'], 'draw' => $oddsResult['draw'], 'away' => $oddsResult['away']],
+            'odds_breakdown' => $includeOddsBreakdown ? $oddsResult['breakdown'] : null,
             'predictions'  => $this->getH2HPredictionState(
                 $match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $match['season_id'],
                 $homeTeam['manager_id'] ?? null, $awayTeam['manager_id'] ?? null, $predictionsPreview,

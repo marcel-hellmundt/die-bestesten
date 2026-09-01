@@ -51,6 +51,10 @@ export class H2HMatchComponent implements OnDestroy {
   // H2HTrait::calculateH2HOdds() im Backend für die Berechnung.
   odds = computed(() => this.data()?.odds ?? null);
 
+  // Zwischenwerte der Quoten-Berechnung — nur vom Backend befüllt, wenn der Aufrufer Admin ist
+  // (siehe H2HController::get()). Grundlage für die Transparenz-Card weiter unten.
+  oddsBreakdown = computed(() => this.data()?.odds_breakdown ?? null);
+
   // Alle bisherigen (abgeschlossenen) H2H-Begegnungen zwischen genau diesen beiden Managern,
   // liga- und saisonübergreifend — siehe H2HTrait::getH2HHeadToHeadHistory() im Backend.
   headToHead = computed(() => (this.data()?.head_to_head ?? []) as any[]);

@@ -15,31 +15,29 @@
 }
 
 // ── Desktop: 2-Spalten-Layout ──────────────────────────────────────────────────
-// Links (breit): Header + Feld/Bänke; rechts (schmal): Sidebar-Slot mit Tipp-Karte + (nur
-// Admins, nur vor Anpfiff) derselben Auswertungs-Card darunter, siehe .h2h-detail-layout__side.
-// Alle drei direkten Kinder (.match-header/.h2h-field-wrap/.h2h-detail-layout__side) sind
-// bereits direkte Kinder dieses Wrappers (weder @if noch @for erzeugen ein eigenes
-// Hüll-Element) — auf Mobile bleibt der Wrapper ein normaler Block, die Kinder stapeln sich
-// also unverändert in Dokumentreihenfolge (kein Grid unterhalb des Breakpoints).
-
+// Links (breit): Header + Feld/Bänke, gruppiert in .h2h-detail-layout__main als EIN Grid-Item;
+// rechts (schmal): Sidebar-Slot mit Tipp-Karte + (nur Admins, nur vor Anpfiff) derselben
+// Auswertungs-Card darunter, siehe .h2h-detail-layout__side. Beide sind bereits direkte Kinder
+// dieses Wrappers (weder @if noch @for erzeugen ein eigenes Hüll-Element) — auf Mobile bleibt
+// der Wrapper ein normaler Block, die Kinder stapeln sich also unverändert in
+// Dokumentreihenfolge (kein Grid unterhalb des Breakpoints).
+//
+// Bewusst EINE Grid-Zeile statt zwei ("header side" / "field side"): ein zeilenübergreifendes
+// Sidebar-Item verteilt seine überschüssige Höhe laut CSS-Grid-Spec auf ALLE gespannten Zeilen,
+// auch die eigentlich kurze Header-Zeile — ein hoher Sidebar-Inhalt (z.B. die Admin-Quoten-Card)
+// bläht dadurch die Header-Zeile auf und schiebt das Feld sichtbar nach unten. Header+Feld als
+// ein einzelnes Item in einer einzigen Zeile umgeht das vollständig.
 .h2h-detail-layout {
   @media (min-width: calc($mobile-breakpoint + 1px)) {
     display: grid;
     grid-template-columns: 1fr minmax(240px, 300px);
-    grid-template-areas:
-      "header side"
-      "field  side";
+    grid-template-areas: "main side";
     align-items: start;
     gap: $space-6;
     margin-bottom: $space-6;
 
-    .match-header {
-      grid-area: header;
-      margin-bottom: 0;
-    }
-    .h2h-field-wrap {
-      grid-area: field;
-      margin-bottom: 0;
+    .h2h-detail-layout__main {
+      grid-area: main;
     }
 
     .h2h-detail-layout__side {
@@ -279,6 +277,49 @@
     color: $color-danger;
   }
 
+}
+
+// Admin-only Transparenz-Card für die Quoten-Berechnung — Label + Heim-Wert + Auswärts-Wert
+// als 3-Spalten-Grid; Zeilen ohne Auswärts-Gegenstück (Unentschieden, Stärke-Vorsprung) spannen
+// die letzten beiden Spalten zu einem einzelnen Wert zusammen (--full).
+.h2h-odds-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  font-size: $font-xs;
+
+  &__header,
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: $space-3;
+    align-items: center;
+  }
+
+  &__header {
+    padding-bottom: $space-1;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__team {
+    font-weight: $font-weight-medium;
+    text-align: right;
+  }
+
+  &__label {
+    color: $color-text-muted;
+  }
+
+  &__row {
+    span:not(.h2h-odds-breakdown__label) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &--full span:last-child {
+      grid-column: 2 / span 2;
+    }
+  }
 }
 
 // Kreisdiagramm der Tipp-Verteilung — gleiches Muster wie session-heatmap.component.scss's

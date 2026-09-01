@@ -17,7 +17,7 @@ class H2HController extends _BaseController
 
         if ($this->id) {
             $preview = ($this->params['preview'] ?? '') === '1' && $this->isAdmin();
-            $detail  = $this->db->getH2HMatchDetail($this->id, $preview);
+            $detail  = $this->db->getH2HMatchDetail($this->id, $preview, $this->isAdmin());
             if (!$detail) {
                 http_response_code(404);
                 return ['status' => false, 'message' => 'Match not found'];
