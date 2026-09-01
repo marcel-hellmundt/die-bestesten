@@ -92,10 +92,18 @@ export class HomeComponent {
     return all.filter(m => m.matchday_number === md.number);
   });
 
+  // Ist das eigene Team schon in den heutigen H2H-Spielen (h2hMatchesForDay) vertreten, wäre der
+  // "Nächstes Spiel"-Hinweis darunter redundant — man sieht sein Spiel ja bereits oben.
+  hasOwnH2hMatchToday = computed(() => {
+    const myId = this.cache.myTeamId();
+    if (!myId) return false;
+    return this.h2hMatchesForDay().some(m => m.home_team_id === myId || m.away_team_id === myId);
+  });
+
   nextH2hMatch = computed(() => {
     const myId = this.cache.myTeamId();
     const md = this.currentMatchday();
-    if (!myId || !md || !this.h2hData()) return null;
+    if (!myId || !md || !this.h2hData() || this.hasOwnH2hMatchToday()) return null;
     const all: any[] = [
       ...(this.h2hData()!.groups?.flatMap((g: any) => g.matches ?? []) ?? []),
       ...(this.h2hData()!.knockout_matches ?? []),

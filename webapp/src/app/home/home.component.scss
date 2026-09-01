@@ -236,9 +236,10 @@
     justify-content: flex-end;
   }
 
+  // Logo zuerst (DOM-Reihenfolge img→Name in der Vorlage), linksbündig innerhalb der Spalte —
+  // so treffen sich Heim- und Auswärtslogo in der Mitte der Zeile statt an den äußeren Rändern.
   &--away {
-    justify-content: flex-end;
-    flex-direction: row-reverse;
+    justify-content: flex-start;
   }
 }
 
