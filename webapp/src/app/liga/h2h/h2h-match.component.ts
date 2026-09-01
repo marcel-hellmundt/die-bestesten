@@ -55,6 +55,9 @@ export class H2HMatchComponent implements OnDestroy {
   // (siehe H2HController::get()). Grundlage für die Transparenz-Card weiter unten.
   oddsBreakdown = computed(() => this.data()?.odds_breakdown ?? null);
 
+  // Einklappzustand der Quoten-Berechnung-Card — rein clientseitig, kein Persistieren nötig.
+  oddsBreakdownExpanded = signal(true);
+
   // Alle bisherigen (abgeschlossenen) H2H-Begegnungen zwischen genau diesen beiden Managern,
   // liga- und saisonübergreifend — siehe H2HTrait::getH2HHeadToHeadHistory() im Backend.
   headToHead = computed(() => (this.data()?.head_to_head ?? []) as any[]);

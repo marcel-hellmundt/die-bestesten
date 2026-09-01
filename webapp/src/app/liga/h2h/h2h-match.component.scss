@@ -28,6 +28,34 @@
 // bläht dadurch die Header-Zeile auf und schiebt das Feld sichtbar nach unten. Header+Feld als
 // ein einzelnes Item in einer einzigen Zeile umgeht das vollständig.
 .h2h-detail-layout {
+  // Mobile: die Tipp-/Auswertungs-Card (Wett-Buttons vor Anpfiff bzw. Tipps-Verteilung danach)
+  // soll direkt unter der Ergebnis-Card stehen, statt hinter Feld/Bank — obwohl sie im Markup
+  // erst deutlich später (in .h2h-detail-layout__side) folgt. display:contents löst die beiden
+  // Gruppierungs-Divs optisch auf, sodass ihre Kinder direkte Flex-Items dieses Containers
+  // werden; order sortiert sie dann unabhängig von der Dokumentreihenfolge um. Betrifft nur
+  // diese beiden Elemente — alles andere behält seine natürliche Reihenfolge (order 0).
+  //
+  // .h2h-predict-card--primary (nicht die generische .h2h-predict-card) ist bewusst der
+  // Selektor: die Admin-Vorschau-Card und die Quoten-Berechnung-Card teilen sich dieselbe Basis-
+  // klasse für Card-Padding/Label-Styling, sollen aber NICHT mit nach oben wandern.
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    flex-direction: column;
+
+    .h2h-detail-layout__main,
+    .h2h-detail-layout__side {
+      display: contents;
+    }
+
+    .match-header {
+      order: -2;
+    }
+
+    .h2h-predict-card--primary {
+      order: -1;
+    }
+  }
+
   @media (min-width: calc($mobile-breakpoint + 1px)) {
     display: grid;
     grid-template-columns: 1fr minmax(240px, 300px);
@@ -247,6 +275,12 @@
   padding: $space-4 $space-6;
   margin-bottom: $space-6;
 
+  // Die Wett-Buttons stehen bewusst frei statt in einer .card-Box — kein Hintergrund/Rahmen/
+  // Padding der geteilten .card-Klasse, nur die eigenen Abstände zu Label/Hint bleiben.
+  &--bare {
+    padding: 0;
+  }
+
   &__label {
     font-size: $font-xs;
     font-weight: $font-weight-medium;
@@ -287,6 +321,43 @@
   flex-direction: column;
   gap: $space-1;
   font-size: $font-xs;
+
+  // Chevron zeigt nach rechts (eingeklappt) bzw. nach oben (aufgeklappt) — eingeklappt bleiben
+  // nur Titel + Button sichtbar, der Rest der Card entfällt komplett (siehe @if im Template).
+  &__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+
+    .h2h-predict-card__label {
+      margin-bottom: 0;
+    }
+
+    &--expanded {
+      margin-bottom: $space-2;
+    }
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: $color-text-muted;
+    transition: transform $transition-fast;
+  }
+
+  &__toggle--expanded &__chevron {
+    transform: rotate(-90deg);
+  }
 
   &__header,
   &__row {

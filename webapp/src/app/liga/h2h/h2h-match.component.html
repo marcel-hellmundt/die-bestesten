@@ -304,8 +304,10 @@
          Anpfiff erkennt, während die Seite offen bleibt). -->
     @if (predictions(); as pred) {
       @if (!hideCard()) {
-        <div class="card h2h-predict-card">
-          @if (!isRevealed()) {
+        @if (!isRevealed()) {
+          <!-- Die Wett-Buttons selbst stehen bewusst frei (keine .card-Box) — nur die
+               Auswertung nach Anpfiff darunter bleibt eine Card. -->
+          <div class="h2h-predict-card h2h-predict-card--bare h2h-predict-card--primary">
             <div class="h2h-predict-card__label">Dein Tipp</div>
             <div class="h2h-predict-card__options">
               <button
@@ -370,14 +372,18 @@
             } @else {
               <p class="h2h-predict-card__hint">Tipp änderbar bis Anpfiff.</p>
             }
-          } @else if (pred.locked) {
+          </div>
+        } @else if (pred.locked) {
+          <div class="card h2h-predict-card h2h-predict-card--primary">
             <div class="h2h-predict-card__label">Tipps</div>
             <ng-container *ngTemplateOutlet="pieResult; context: { pie: resultPie(), entries: predictionEntries() }"></ng-container>
-          } @else {
+          </div>
+        } @else {
+          <div class="card h2h-predict-card h2h-predict-card--primary">
             <div class="h2h-predict-card__label">Tipps</div>
             <p class="state-msg">Wird ausgewertet…</p>
-          }
-        </div>
+          </div>
+        }
       }
     }
 
@@ -393,7 +399,19 @@
          für Admins befüllt, sonst null. -->
     @if (isAdmin() && oddsBreakdown(); as bd) {
       <div class="card h2h-predict-card h2h-odds-breakdown">
-        <div class="h2h-predict-card__label">Quoten-Berechnung</div>
+        <button
+          type="button"
+          class="h2h-odds-breakdown__toggle"
+          [class.h2h-odds-breakdown__toggle--expanded]="oddsBreakdownExpanded()"
+          (click)="oddsBreakdownExpanded.set(!oddsBreakdownExpanded())"
+          [attr.aria-expanded]="oddsBreakdownExpanded()"
+        >
+          <span class="h2h-predict-card__label">Quoten-Berechnung</span>
+          <svg class="h2h-odds-breakdown__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 6 15 12 9 18" />
+          </svg>
+        </button>
+        @if (oddsBreakdownExpanded()) {
         <div class="h2h-odds-breakdown__header">
           <span></span>
           <span class="h2h-odds-breakdown__team" [style.color]="homeTeam()?.color">{{ homeTeam()?.team_name }}</span>
@@ -466,6 +484,7 @@
         <p class="h2h-predict-card__hint">
           Konstanten: Unentschieden max. {{ bd.draw_max * 100 }}%, Abfallrate {{ bd.draw_k }}, Skalierung {{ bd.c }}
         </p>
+        }
       </div>
     }
 
