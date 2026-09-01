@@ -67,6 +67,9 @@ interface TooltipState {
   mobilePct: number;
   desktopLabel: string;
   desktopPct: number;
+  // Nur bei Spalten-Hover im Monats-Range gesetzt (siehe onChartColumnHover) — Wert der
+  // gestrichelten Trendlinie (Ø Zeit/Nutzer, rollender 7-Tage-Durchschnitt) für diese Spalte.
+  trendLabel?: string;
 }
 
 @Component({
@@ -370,6 +373,93 @@ export class SessionHeatmapComponent {
     return { bars, columnCount: cols.length };
   });
 
+  // ── Ø Zeit pro Nutzer/Tag (rollender 7-Tage-Durchschnitt) ───────────────────
+  // "Daily Time Spent per User" statt DAU (Daily Active Users) — die Nutzerzahl selbst ist hier
+  // recht konstant und wenig aussagekräftig, die Zeit pro Nutzer schwankt dagegen deutlich mehr.
+  // Ein rollender 7-Tage-Durchschnitt glättet Wochentags-Effekte (z.B. Wochenende), die bei
+  // Einzeltagen sonst den Trend verdecken würden.
+  //
+  // Die Card zeigt IMMER den Wert unabhängig vom oben gewählten range() (Tag/Monat/Jahr/
+  // Insgesamt) — dafür ein eigener, fixer range=month-Fetch (analog zu globalTotals oben), statt
+  // sich auf data() zu verlassen, das je nach Toggle stündliche/wöchentliche/monatliche statt
+  // tägliche Buckets liefern kann.
+  private dailyData = toSignal(
+    this.api.get<HeatmapResponse>('session?range=month').pipe(
+      catchError(() => of({ range: 'month', managers: [] } as HeatmapResponse)),
+    ),
+  );
+
+  // Pro Tag: Summe aller Sekunden (alle Manager) + Anzahl Manager mit >0 Sekunden an diesem Tag.
+  private dailyTotals(source: HeatmapResponse | undefined): Map<string, { seconds: number; activeUsers: number }> {
+    const map = new Map<string, { seconds: number; activeUsers: number }>();
+    for (const m of source?.managers ?? []) {
+      for (const [key, secs] of Object.entries(m.buckets)) {
+        const entry = map.get(key) ?? { seconds: 0, activeUsers: 0 };
+        entry.seconds += secs;
+        if (secs > 0) entry.activeUsers++;
+        map.set(key, entry);
+      }
+    }
+    return map;
+  }
+
+  // Rollender 7-Tage-Durchschnitt von "Sekunden pro aktivem Nutzer" für eine chronologisch
+  // sortierte Liste von Tagesschlüsseln — Fenster verkürzt sich an den ersten Tagen der
+  // geladenen Historie (kein Zugriff auf Tage davor), statt mit Nullen aufzufüllen.
+  private rollingSecondsPerUser(keys: string[], totals: Map<string, { seconds: number; activeUsers: number }>): number[] {
+    const perDay = keys.map(k => {
+      const t = totals.get(k);
+      return t && t.activeUsers > 0 ? t.seconds / t.activeUsers : 0;
+    });
+    return perDay.map((_, i) => {
+      const window = perDay.slice(Math.max(0, i - 6), i + 1);
+      return window.reduce((s, v) => s + v, 0) / window.length;
+    });
+  }
+
+  // "in Minuten" explizit gewünscht statt formatDuration()'s h/min-Format — der Wert bleibt bei
+  // diesem Nenner (Sekunden pro aktivem Nutzer) praktisch immer unter einer Stunde.
+  private formatMinutes(seconds: number): string {
+    const minutes = seconds / 60;
+    return (minutes < 10 ? minutes.toFixed(1) : Math.round(minutes).toString()).replace('.', ',') + ' min';
+  }
+
+  // Card-Wert: letzter Tag der geladenen 30-Tage-Historie.
+  dailyTimePerUser = computed(() => {
+    const totals = this.dailyTotals(this.dailyData());
+    const keys   = Array.from(totals.keys()).sort();
+    if (keys.length === 0) return null;
+
+    const rolling = this.rollingSecondsPerUser(keys, totals);
+    return { minutesLabel: this.formatMinutes(rolling[rolling.length - 1]) };
+  });
+
+  // Gestrichelte Trendlinie über dem Balkenchart: nur im Monats-Range sinnvoll, da dort jede
+  // Spalte exakt einen Kalendertag abdeckt (Tag/Jahr/Insgesamt-Buckets sind Stunden/Wochen/
+  // Monate — "7-Tage" ergäbe dort keine Entsprechung zu den Spalten). Eigene Skalierung
+  // (eigenes maxValue) statt der Balken-Skala, da andere Einheit (Sekunden/Nutzer statt
+  // Gesamt-Sekunden) — die Linie zeigt nur den relativen Trendverlauf, keine absoluten Werte im
+  // selben Koordinatensystem wie die Balken. `values` (Sekunden/Nutzer je Spalte, roh statt
+  // normiert) wird zusätzlich zurückgegeben, damit onChartColumnHover denselben Wert im Tooltip
+  // anzeigen kann, ohne die Rolling-Berechnung ein zweites Mal auszuführen.
+  usageDashedLine = computed(() => {
+    if (this.range() !== 'month') return null;
+    const cols = this.columns();
+    if (cols.length === 0) return null;
+
+    const totals  = this.dailyTotals(this.data());
+    const values  = this.rollingSecondsPerUser(cols.map(c => c.key), totals);
+    const maxValue = Math.max(...values, 1);
+
+    const top    = this.USAGE_CHART_PAD;
+    const bottom = 100 - this.USAGE_CHART_PAD;
+    const h      = bottom - top;
+
+    const dots = values.map((v, i) => ({ x: i + 0.5, y: bottom - (v / maxValue) * h }));
+    const line = dots.map((d, i) => `${i === 0 ? 'M' : 'L'}${d.x.toFixed(3)},${d.y.toFixed(1)}`).join(' ');
+    return { line, values };
+  });
+
   // Absteigend nach globaler Gesamtnutzung (siehe globalTotalSeconds — unabhängig vom gewählten
   // Intervall, damit die Reihenfolge beim Wechsel zwischen Tag/Monat/Jahr stabil bleibt), bei
   // Gleichstand alphabetisch als stabiler Tiebreaker.
@@ -514,13 +604,18 @@ export class SessionHeatmapComponent {
   }
 
   // Gleicher Tooltip wie onCellHover, aber aggregiert über alle Manager dieses Zeitslots (== eine
-  // Spalte im Linechart) statt einer einzelnen Manager-Zelle.
-  onChartColumnHover(event: MouseEvent, col: BucketColumn): void {
+  // Spalte im Linechart) statt einer einzelnen Manager-Zelle. index kommt aus dem $index der
+  // Spalten-Schleife im Template — dient nur zum Nachschlagen des Trendlinie-Werts (usageDashedLine
+  // liefert seine Rolling-Werte parallel zu columns() sortiert).
+  onChartColumnHover(event: MouseEvent, col: BucketColumn, index: number): void {
     const total  = this.totalsByBucket().get(col.key) ?? 0;
     const device = this.deviceTotalsByBucket().get(col.key);
-    this.hoveredTooltip.set(
-      this.buildTooltip(this.formatBucketLabel(col), total, device?.mobile ?? 0, device?.desktop ?? 0, this.tooltipPosition(event)),
-    );
+    const tooltip = this.buildTooltip(this.formatBucketLabel(col), total, device?.mobile ?? 0, device?.desktop ?? 0, this.tooltipPosition(event));
+    const trendValue = this.usageDashedLine()?.values[index];
+    if (trendValue !== undefined) {
+      tooltip.trendLabel = this.formatMinutes(trendValue);
+    }
+    this.hoveredTooltip.set(tooltip);
   }
 
   onCellLeave(): void {
