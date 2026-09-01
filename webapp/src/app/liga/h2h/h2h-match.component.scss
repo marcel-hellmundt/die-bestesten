@@ -281,6 +281,49 @@
 
 }
 
+// Admin-only Transparenz-Card für die Quoten-Berechnung — Label + Heim-Wert + Auswärts-Wert
+// als 3-Spalten-Grid; Zeilen ohne Auswärts-Gegenstück (Unentschieden, Stärke-Vorsprung) spannen
+// die letzten beiden Spalten zu einem einzelnen Wert zusammen (--full).
+.h2h-odds-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  font-size: $font-xs;
+
+  &__header,
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: $space-3;
+    align-items: center;
+  }
+
+  &__header {
+    padding-bottom: $space-1;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__team {
+    font-weight: $font-weight-medium;
+    text-align: right;
+  }
+
+  &__label {
+    color: $color-text-muted;
+  }
+
+  &__row {
+    span:not(.h2h-odds-breakdown__label) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &--full span:last-child {
+      grid-column: 2 / span 2;
+    }
+  }
+}
+
 // Kreisdiagramm der Tipp-Verteilung — gleiches Muster wie session-heatmap.component.scss's
 // .device-pie (reiner CSS conic-gradient statt SVG), nur mit 3 statt 2 Segmenten.
 .h2h-predict-pie {

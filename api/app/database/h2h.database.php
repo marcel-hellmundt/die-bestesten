@@ -407,6 +407,9 @@ trait H2HTrait
      * die restliche Wahrscheinlichkeit teilt sich logistisch auf Heim/Auswärts auf (gleiche
      * Kurvenform wie eine Elo-Gewinnwahrscheinlichkeit). Odds = 1/Wahrscheinlichkeit, ohne
      * Buchmacher-Marge.
+     *
+     * 'breakdown' enthält alle Zwischenwerte dieser Rechnung — Grundlage für die Admin-only
+     * Transparenz-Card auf der H2H-Match-Detailseite (siehe getH2HMatchDetail()).
      */
     private function calculateH2HOdds(array $homeNominated, array $awayNominated): array
     {
@@ -433,10 +436,29 @@ trait H2HTrait
 
         $toOdds = fn(float $p) => $p > 0 ? round(1 / $p, 2) : null;
 
-        return ['home' => $toOdds($probHome), 'draw' => $toOdds($probDraw), 'away' => $toOdds($probAway)];
+        return [
+            'home' => $toOdds($probHome),
+            'draw' => $toOdds($probDraw),
+            'away' => $toOdds($probAway),
+            'breakdown' => [
+                'home_value'        => (float) $homeValue,
+                'away_value'        => (float) $awayValue,
+                'home_points'       => (int) $homePoints,
+                'away_points'       => (int) $awayPoints,
+                'value_ratio_home'  => round($valueRatioHome, 4),
+                'points_ratio_home' => round($pointsRatioHome, 4),
+                'edge'              => round($edge, 4),
+                'draw_max'          => $drawMax,
+                'draw_k'            => $drawK,
+                'c'                 => $c,
+                'prob_home'         => round($probHome, 4),
+                'prob_draw'         => round($probDraw, 4),
+                'prob_away'         => round($probAway, 4),
+            ],
+        ];
     }
 
-    public function getH2HMatchDetail(string $matchId, bool $predictionsPreview = false): array|false
+    public function getH2HMatchDetail(string $matchId, bool $predictionsPreview = false, bool $includeOddsBreakdown = false): array|false
     {
         // Load match
         $mq = $this->con_league->prepare(
@@ -671,6 +693,7 @@ trait H2HTrait
         $homeRating = $ratingMap[$match['home_team_id']] ?? null;
         $awayRating = $ratingMap[$match['away_team_id']] ?? null;
         $goals      = $this->h2hGoals($homeRating, $awayRating);
+        $oddsResult = $this->calculateH2HOdds($homeLineup['nominated'], $awayLineup['nominated']);
 
         return [
             'match'        => [
@@ -699,7 +722,8 @@ trait H2HTrait
             'home_bench'   => $homeLineup['bench'],
             'away_lineup'  => $awayLineup['nominated'],
             'away_bench'   => $awayLineup['bench'],
-            'odds'         => $this->calculateH2HOdds($homeLineup['nominated'], $awayLineup['nominated']),
+            'odds'         => ['home' => $oddsResult['home'], 'draw' => $oddsResult['draw'], 'away' => $oddsResult['away']],
+            'odds_breakdown' => $includeOddsBreakdown ? $oddsResult['breakdown'] : null,
             'predictions'  => $this->getH2HPredictionState(
                 $match['id'], $GLOBALS['auth_manager_id'] ?? '', $matchday, $match['season_id'],
                 $homeTeam['manager_id'] ?? null, $awayTeam['manager_id'] ?? null, $predictionsPreview,

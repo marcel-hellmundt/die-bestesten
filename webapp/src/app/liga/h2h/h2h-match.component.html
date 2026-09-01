@@ -382,6 +382,56 @@
       </div>
     }
 
+    <!-- Admin-only Transparenz-Card: schlüsselt die Zwischenwerte der Quoten-Berechnung auf
+         (siehe H2HTrait::calculateH2HOdds() im Backend) — odds_breakdown kommt vom Server nur
+         für Admins befüllt, sonst null. -->
+    @if (isAdmin() && oddsBreakdown(); as bd) {
+      <div class="card h2h-predict-card h2h-odds-breakdown">
+        <div class="h2h-predict-card__label">Quoten-Berechnung</div>
+        <div class="h2h-odds-breakdown__header">
+          <span></span>
+          <span class="h2h-odds-breakdown__team" [style.color]="homeTeam()?.color">{{ homeTeam()?.team_name }}</span>
+          <span class="h2h-odds-breakdown__team" [style.color]="awayTeam()?.color">{{ awayTeam()?.team_name }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Marktwert (aufgestellt)</span>
+          <span>{{ bd.home_value | number: '1.0-0' }} €</span>
+          <span>{{ bd.away_value | number: '1.0-0' }} €</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Saisonpunkte (aufgestellt)</span>
+          <span>{{ bd.home_points }}</span>
+          <span>{{ bd.away_points }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Anteil Marktwert</span>
+          <span>{{ bd.value_ratio_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ (1 - bd.value_ratio_home) * 100 | number: '1.0-1' }} %</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Anteil Saisonpunkte</span>
+          <span>{{ bd.points_ratio_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ (1 - bd.points_ratio_home) * 100 | number: '1.0-1' }} %</span>
+        </div>
+        <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
+          <span class="h2h-odds-breakdown__label">Stärke-Vorsprung (Heim, je 50% Marktwert+Punkte)</span>
+          <span>{{ bd.edge > 0 ? '+' : '' }}{{ bd.edge | number: '1.0-3' }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
+          <span class="h2h-odds-breakdown__label">Unentschieden-Wahrscheinlichkeit</span>
+          <span>{{ bd.prob_draw * 100 | number: '1.0-1' }} %</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Sieg-Wahrscheinlichkeit</span>
+          <span>{{ bd.prob_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ bd.prob_away * 100 | number: '1.0-1' }} %</span>
+        </div>
+        <p class="h2h-predict-card__hint">
+          Konstanten: Unentschieden max. {{ bd.draw_max * 100 }}%, Abfallrate {{ bd.draw_k }}, Skalierung {{ bd.c }}
+        </p>
+      </div>
+    }
+
     <!-- Alle bisherigen Begegnungen dieser beiden Manager, liga- und saisonübergreifend,
          neueste oben (siehe H2HTrait::getH2HHeadToHeadHistory()). -->
     @if (headToHead().length > 0) {
