@@ -58,21 +58,15 @@ export class H2HMatchComponent implements OnDestroy {
 
   // A saved team_lineup is always either a complete valid XI (11 nominated) or a still-reachable
   // partial build/gap (see team_lineup.database.php's isReachableFormation, and POST /sell which
-  // only clears the sold player's own entry instead of resetting the whole lineup to bench) — for
-  // a neutral or opposing viewer that's not something to show player-by-player; each manager
-  // still sees their own side as-is (mirrors lineup.component.ts's isOwnTeam/isLineupComplete).
-  private isTeamMine(team: any): boolean {
-    return !!team?.manager_id && team.manager_id === this.auth.getManagerId();
-  }
-
-  isHomeTeamMine = computed(() => this.isTeamMine(this.homeTeam()));
-  isAwayTeamMine = computed(() => this.isTeamMine(this.awayTeam()));
-
+  // only clears the sold player's own entry instead of resetting the whole lineup to bench) — this
+  // page is read-only regardless of ownership (lineup editing only happens on
+  // /team/:id/aufstellung), so unlike lineup.component.ts there's no owner exception here: an
+  // incomplete lineup shows the hint for everyone, including its own manager.
   isHomeLineupComplete = computed(() => this.homeLineup().length === 11);
   isAwayLineupComplete = computed(() => this.awayLineup().length === 11);
 
-  showHomeInvalidHint = computed(() => !this.isHomeTeamMine() && !this.isHomeLineupComplete());
-  showAwayInvalidHint = computed(() => !this.isAwayTeamMine() && !this.isAwayLineupComplete());
+  showHomeInvalidHint = computed(() => !this.isHomeLineupComplete());
+  showAwayInvalidHint = computed(() => !this.isAwayLineupComplete());
 
   // Mobile pitch view shows one team at a time (see selectedSide below).
   showSelectedInvalidHint = computed(() =>
