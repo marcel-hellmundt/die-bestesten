@@ -151,6 +151,11 @@ class Routing
                         'path' => '/all_time_standings',
                         'description' => 'Returns { standings: [{id, manager_name, alias, total_points}], top_matchdays: [{points, matchday_id, matchday_number, team_name, season_id, manager_name}] }',
                     ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/all_time_standings/by_season',
+                        'description' => 'Rang jedes Managers in der ewigen Tabelle nach jeder Saison (kumulierte Punkte über alle Saisons bis einschließlich dieser, Standard-Wettkampf-Rang unter allen Managern) — [{season_id, entries:[{manager_id,manager_name,rank,cumulative_points}]}] chronologisch, entries nur für Teilnehmer der jeweiligen Saison — fürs Ruhmeshalle-Bewegungs-Grid',
+                    ],
                 ],
             ]),
 

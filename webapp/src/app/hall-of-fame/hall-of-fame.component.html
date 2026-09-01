@@ -178,4 +178,42 @@
       }
     </div>
   }
+
+  @if (!movementLoading() && movementColumns().length > 0) {
+    <div class="table-section-title">Bewegung in der ewigen Tabelle</div>
+    <div class="card movement-card">
+      <div class="movement-grid">
+        @for (col of movementColumns(); track col.season_id) {
+          <div class="movement-col">
+            @for (e of col.entries; track e.manager_id) {
+              <div
+                class="avatar avatar--sm movement-head"
+                (mouseenter)="onMovementHeadEnter($event, e)"
+                (mouseleave)="onMovementHeadLeave()"
+              >
+                @if (!avatarFailed.has(e.manager_id)) {
+                  <img
+                    [src]="cache.managerPhotoUrl(e.manager_id)"
+                    [alt]="e.manager_name"
+                    (error)="onAvatarError(e.manager_id)"
+                  />
+                }
+                @if (avatarFailed.has(e.manager_id)) {
+                  <span class="avatar__initial">{{ e.manager_name[0].toUpperCase() }}</span>
+                }
+              </div>
+            }
+            <div class="movement-col__label">{{ cache.seasonName(col.season_id) }}</div>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (movementTooltip(); as mt) {
+      <div class="movement-tooltip" [style.top.px]="mt.top" [style.left.px]="mt.left">
+        <div class="movement-tooltip__name">{{ mt.entry.manager_name }}</div>
+        <div class="movement-tooltip__points">{{ mt.entry.cumulative_points | number: '1.0-0' }} Pkt</div>
+      </div>
+    }
+  }
 }

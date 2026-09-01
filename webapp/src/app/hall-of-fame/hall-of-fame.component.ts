@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
@@ -23,6 +23,24 @@ interface TopMatchdayEntry {
   manager_name: string;
 }
 
+interface MovementEntry {
+  manager_id: string;
+  manager_name: string;
+  rank: number;
+  cumulative_points: number;
+}
+
+interface MovementSeasonColumn {
+  season_id: string;
+  entries: MovementEntry[];
+}
+
+interface MovementTooltip {
+  entry: MovementEntry;
+  top: number;
+  left: number;
+}
+
 @Component({
   selector: 'app-hall-of-fame',
   standalone: false,
@@ -43,6 +61,30 @@ export class HallOfFameComponent {
       catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' }))
     )
   );
+
+  // Bewegung in der ewigen Tabelle: eine Spalte je Saison (chronologisch, siehe API), Köpfe
+  // darin bereits absteigend nach Rang sortiert vom Backend geliefert.
+  private movementState = toSignal(
+    this.api.get<MovementSeasonColumn[]>('all_time_standings/by_season').pipe(
+      map(data => ({ data, loading: false })),
+      startWith({ data: [] as MovementSeasonColumn[], loading: true }),
+      catchError(() => of({ data: [] as MovementSeasonColumn[], loading: false })),
+    )
+  );
+
+  movementColumns = computed(() => this.movementState()?.data ?? []);
+  movementLoading = computed(() => this.movementState()?.loading ?? true);
+
+  movementTooltip = signal<MovementTooltip | null>(null);
+
+  onMovementHeadEnter(event: MouseEvent, entry: MovementEntry): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.movementTooltip.set({ entry, top: rect.top, left: rect.left + rect.width / 2 });
+  }
+
+  onMovementHeadLeave(): void {
+    this.movementTooltip.set(null);
+  }
 
   private awardsState = toSignal(
     this.api.get<any[]>('award').pipe(

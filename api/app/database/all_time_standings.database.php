@@ -63,4 +63,84 @@ trait AllTimeStandingsTrait
             'top_matchdays' => $topMatchdays,
         ];
     }
+
+    /**
+     * Für jede Saison (chronologisch) der Rang jedes teilnehmenden Managers in der ewigen
+     * Tabelle NACH dieser Saison — kumulierte Punkte über alle Saisons bis einschließlich dieser
+     * (nicht nur die Saisonpunkte selbst) — plus der kumulierten Punktesumme für den Tooltip.
+     * Fürs Ruhmeshalle-Bewegungs-Grid (webapp: HallOfFameComponent). Rang = Position unter ALLEN
+     * Managern mit je Cent Punkten bis zu diesem Zeitpunkt (Standard-Wettkampf-Rang, punktgleiche
+     * Manager teilen sich denselben Platz), nicht nur unter den Teilnehmern dieser einen Saison —
+     * ein Manager, der diese Saison pausiert, bleibt also im Nenner für alle anderen relevant.
+     * Nur Manager mit einem Team in der jeweiligen Saison tauchen in deren entries[] auf.
+     */
+    public function getAllTimeStandingsBySeason(): array
+    {
+        $seasonQuery = $this->con->query("SELECT id, start_date FROM season ORDER BY start_date ASC");
+        $seasons = $seasonQuery->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($seasons)) return [];
+
+        $managerQuery = $this->con_league->query(
+            "SELECT id, manager_name FROM manager WHERE status != 'deleted'"
+        );
+        $managers = array_column($managerQuery->fetchAll(PDO::FETCH_ASSOC), null, 'id');
+
+        $pointsQuery = $this->con_league->query(
+            "SELECT t.season_id, t.manager_id, COALESCE(SUM(tr.points), 0) AS season_points
+             FROM team t
+             LEFT JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+             GROUP BY t.season_id, t.manager_id"
+        );
+        $bySeason = [];
+        foreach ($pointsQuery->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $bySeason[$row['season_id']][$row['manager_id']] = (float) $row['season_points'];
+        }
+
+        $cumulative = [];
+        $result     = [];
+
+        foreach ($seasons as $season) {
+            $participants = $bySeason[$season['id']] ?? [];
+            foreach ($participants as $managerId => $points) {
+                if (!isset($managers[$managerId])) continue; // deleted manager
+                $cumulative[$managerId] = ($cumulative[$managerId] ?? 0) + $points;
+            }
+
+            $ranked = [];
+            foreach ($cumulative as $managerId => $total) {
+                $ranked[] = ['manager_id' => $managerId, 'total' => $total];
+            }
+            usort($ranked, fn($a, $b) => $b['total'] <=> $a['total']
+                ?: strcmp($managers[$a['manager_id']]['manager_name'], $managers[$b['manager_id']]['manager_name']));
+
+            $rankByManager = [];
+            $prevTotal     = null;
+            $prevRank      = 0;
+            foreach ($ranked as $i => $r) {
+                $rank = ($prevTotal !== null && $r['total'] === $prevTotal) ? $prevRank : $i + 1;
+                $rankByManager[$r['manager_id']] = $rank;
+                $prevRank  = $rank;
+                $prevTotal = $r['total'];
+            }
+
+            $entries = [];
+            foreach ($participants as $managerId => $points) {
+                if (!isset($managers[$managerId])) continue;
+                $entries[] = [
+                    'manager_id'        => $managerId,
+                    'manager_name'      => $managers[$managerId]['manager_name'],
+                    'rank'              => $rankByManager[$managerId],
+                    'cumulative_points' => $cumulative[$managerId],
+                ];
+            }
+            usort($entries, fn($a, $b) => $a['rank'] <=> $b['rank']);
+
+            $result[] = [
+                'season_id' => $season['id'],
+                'entries'   => $entries,
+            ];
+        }
+
+        return $result;
+    }
 }

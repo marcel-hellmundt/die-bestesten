@@ -209,3 +209,73 @@ td.col-points {
   color: $color-text-muted;
   font-style: italic;
 }
+
+// ── Bewegung in der ewigen Tabelle ───────────────────────────────────────────
+// Eine Spalte je Saison, Köpfe darin von oben (Rang 1) nach unten gestapelt — macht
+// Auf-/Abstiege zwischen Saisons als Zickzack der Kopf-Positionen sichtbar.
+
+.movement-card {
+  overflow: hidden;
+}
+
+.movement-grid {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-4;
+  overflow-x: auto;
+  padding-bottom: $space-2;
+}
+
+.movement-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+  flex-shrink: 0;
+}
+
+.movement-col__label {
+  margin-top: $space-2;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
+.movement-head {
+  cursor: pointer;
+  transition: transform $transition-fast;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+// Gleiches Muster wie .player-breakdown in team/lineup/lineup.component.scss.
+.movement-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 9999;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+  text-align: center;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.movement-tooltip__name {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.movement-tooltip__points {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
