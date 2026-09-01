@@ -239,8 +239,8 @@ trait H2HPredictionTrait
         $q = $this->con_league->prepare(
             "SELECT hp.match_id, hp.pick, hp.odds, hp.result,
                     hm.matchday_id, hm.home_team_id, hm.away_team_id,
-                    th.team_name AS home_team_name, th.color AS home_color,
-                    ta.team_name AS away_team_name, ta.color AS away_color
+                    th.team_name AS home_team_name, th.color_primary AS home_color,
+                    ta.team_name AS away_team_name, ta.color_primary AS away_color
              FROM h2h_prediction hp
              JOIN h2h_match hm ON hm.id = hp.match_id
              JOIN team th ON th.id = hm.home_team_id
