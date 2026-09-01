@@ -25,6 +25,13 @@
       <span class="usage-total-card__value">{{ totalUsageLabel() }}</span>
     </div>
 
+    @if (dailyTimePerUser(); as dtu) {
+      <div class="card usage-total-card">
+        <span class="usage-total-card__label">Ø Zeit / Nutzer (7 Tage)</span>
+        <span class="usage-total-card__value">{{ dtu.minutesLabel }}</span>
+      </div>
+    }
+
     @if (devicePie(); as pie) {
       <div class="card device-pie-card">
         <div class="device-pie" [style.background]="pie.gradient"></div>
@@ -67,10 +74,10 @@
     @if (usageChart(); as chart) {
       <div class="usage-chart">
         <div class="usage-chart-hover-row">
-          @for (col of columns(); track col.key) {
+          @for (col of columns(); track col.key; let i = $index) {
             <div
               class="usage-chart-hover-target"
-              (mouseenter)="onChartColumnHover($event, col)"
+              (mouseenter)="onChartColumnHover($event, col, i)"
               (mouseleave)="onCellLeave()"
             ></div>
           }
@@ -81,15 +88,22 @@
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          <path
-            [attr.d]="chart.line"
-            fill="none"
-            [attr.stroke]="chartColor"
-            stroke-width="2"
-            vector-effect="non-scaling-stroke"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-          />
+          @for (bar of chart.bars; track $index) {
+            <path [attr.d]="bar.path" [attr.fill]="chartColor" />
+          }
+          @if (usageDashedLine(); as dl) {
+            <path
+              [attr.d]="dl.line"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-dasharray="4 3"
+              vector-effect="non-scaling-stroke"
+              stroke-linejoin="round"
+              stroke-linecap="round"
+              class="usage-chart-trend-line"
+            />
+          }
         </svg>
       </div>
     }
@@ -135,6 +149,13 @@
         <div class="heatmap-tooltip__row">
           <span>Desktop</span>
           <span class="heatmap-tooltip__value">{{ tip.desktopLabel }} ({{ tip.desktopPct }}%)</span>
+        </div>
+      }
+      @if (tip.trendLabel) {
+        <hr class="heatmap-tooltip__divider" />
+        <div class="heatmap-tooltip__row">
+          <span>Ø Zeit/Nutzer (7 Tage)</span>
+          <span class="heatmap-tooltip__value">{{ tip.trendLabel }}</span>
         </div>
       }
     </div>

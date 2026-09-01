@@ -274,6 +274,13 @@
   pointer-events: none;
 }
 
+// Gestrichelte Ø-Zeit/Nutzer-Trendlinie (nur Monats-Range, siehe usageDashedLine()) — bewusst
+// gedeckt statt in der Balkenfarbe, da sie auf einer eigenen (relativen) Skala liegt und nicht
+// mit den absoluten Balkenwerten verwechselt werden soll.
+.usage-chart-trend-line {
+  color: $color-text-muted;
+}
+
 // Unsichtbare Hover-Ziele, ein Div je Datenspalte, als gleich breite Flex-Kinder exakt über der
 // SVG platziert.
 .usage-chart-hover-row {
@@ -401,5 +408,12 @@
     font-weight: $font-weight-medium;
     font-variant-numeric: tabular-nums;
     color: $color-text-muted;
+  }
+
+  // Trennt die Trendlinie-Zeile (Ø Zeit/Nutzer) von Gesamt/Mobil/Desktop darüber.
+  &__divider {
+    border: none;
+    border-top: 1px solid $color-border;
+    margin: $space-2 0;
   }
 }
