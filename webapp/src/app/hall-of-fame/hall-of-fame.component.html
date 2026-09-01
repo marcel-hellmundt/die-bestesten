@@ -182,12 +182,24 @@
   @if (!movementLoading() && movementColumns().length > 0) {
     <div class="table-section-title">Bewegung in der ewigen Tabelle</div>
     <div class="card movement-card">
-      <div class="movement-grid">
+      <div class="movement-grid" #movementGridEl>
+        <svg
+          class="movement-lines-svg"
+          [style.width.px]="connectorSvgSize().w"
+          [style.height.px]="connectorSvgSize().h"
+        >
+          @if (connectorPath(); as path) {
+            <path [attr.d]="path" class="movement-connector-line" />
+          }
+        </svg>
         @for (col of movementColumns(); track col.season_id) {
           <div class="movement-col">
+            <div class="movement-col__label">{{ cache.seasonName(col.season_id) }}</div>
             @for (e of col.entries; track e.manager_id) {
               <div
                 class="avatar avatar--sm movement-head"
+                [class.movement-head--active]="hoveredManagerId() === e.manager_id"
+                [attr.data-manager-id]="e.manager_id"
                 (mouseenter)="onMovementHeadEnter($event, e)"
                 (mouseleave)="onMovementHeadLeave()"
               >
@@ -203,7 +215,6 @@
                 }
               </div>
             }
-            <div class="movement-col__label">{{ cache.seasonName(col.season_id) }}</div>
           </div>
         }
       </div>

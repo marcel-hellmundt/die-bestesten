@@ -219,6 +219,7 @@ td.col-points {
 }
 
 .movement-grid {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: $space-4;
@@ -226,7 +227,28 @@ td.col-points {
   padding-bottom: $space-2;
 }
 
+// Verbindungslinie(n) — liegt als Kind IM scrollbaren Bereich (scrollt mit den Spalten mit),
+// daher width/height in px statt 100% (siehe connectorSvgSize() im Component: grid.scrollWidth).
+.movement-lines-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.movement-connector-line {
+  fill: none;
+  stroke: $color-accent;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+
 .movement-col {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -235,7 +257,7 @@ td.col-points {
 }
 
 .movement-col__label {
-  margin-top: $space-2;
+  margin-bottom: $space-2;
   font-size: $font-xs;
   font-weight: $font-weight-semibold;
   color: $color-text-muted;
@@ -243,11 +265,13 @@ td.col-points {
 }
 
 .movement-head {
+  position: relative;
   cursor: pointer;
   transition: transform $transition-fast;
 
-  &:hover {
-    transform: scale(1.1);
+  &--active {
+    transform: scale(1.25);
+    z-index: 2;
   }
 }
 
