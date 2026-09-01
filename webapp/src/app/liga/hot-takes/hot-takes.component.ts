@@ -48,7 +48,7 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
       { targetTeamId: '81123688-0f53-47b6-a92e-b64628c635e5', text: "Nils' beste Saison ever", status: 'pending' }, // Blutgrätsche 69
       { targetTeamId: '80778c37-a22a-40a3-acd7-b52c1845bb22', text: 'Fab macht seinen ersten Transfer erst wieder im Winter', status: 'pending' }, // Fab
       { targetTeamId: 'da221851-6aca-4499-b830-d47adaf5f07c', text: 'Von den 4 Stürmern spielen nie 3 gleichzeitig in der S11', status: 'pending' }, // Fiasko Fantasto
-      { targetTeamId: 'cd3e7c38-b50b-4388-8e58-e0363ecdf990', text: 'Nicht mehr als zwei gleichzeitige S11-Einsätze von Pavlovic, Konstantelias, Lokonga und Burkhardt', status: 'pending' }, // Concordia Hachmannsfeld
+      { targetTeamId: 'cd3e7c38-b50b-4388-8e58-e0363ecdf990', text: 'Nicht mehr als zwei gleichzeitige S11-Einsätze von Pavlovic, Konstantelias, Lokonga und Burkhardt', status: 'false' }, // Concordia Hachmannsfeld
       { targetTeamId: '31c26702-9842-471c-a5bb-7b57a9561c87', text: 'Beste Abwehr der Liga', status: 'pending' }, // Schlaggy
     ],
   },
