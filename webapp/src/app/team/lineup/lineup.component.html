@@ -47,6 +47,9 @@
           <div class="formation-error">{{ formationError() }}</div>
         }
 
+        @if (showInvalidLineupHint()) {
+          <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+        } @else {
         @for (pos of pitchPositions; track pos) {
           <div class="field-section">
             @for (p of getPlayersByPosition(pos); track p.id) {
@@ -134,6 +137,7 @@
               }
             }
           </div>
+        }
         }
 
         <!-- Field markings -->

@@ -160,12 +160,16 @@
 
   <div class="mobile-pitch-wrap">
     <div class="field">
+      @if (showSelectedInvalidHint()) {
+        <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+      } @else {
       @for (pos of pitchPositions; track pos) {
         <div class="field-section">
           @for (p of playersByPosition(pos); track p.player_id) {
             <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
           }
         </div>
+      }
       }
 
       <!-- Field markings -->
@@ -226,6 +230,9 @@
 
       <div class="h2h-field">
         <div class="h2h-field__half h2h-field__half--home">
+          @if (showHomeInvalidHint()) {
+            <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+          } @else {
           @for (pos of homeFieldPositions; track pos) {
             <div class="h2h-field__col">
               @for (p of positionPlayers(homeLineup(), pos); track p.player_id) {
@@ -233,14 +240,19 @@
               }
             </div>
           }
+          }
         </div>
         <div class="h2h-field__half h2h-field__half--away">
+          @if (showAwayInvalidHint()) {
+            <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+          } @else {
           @for (pos of awayFieldPositions; track pos) {
             <div class="h2h-field__col">
               @for (p of positionPlayers(awayLineup(), pos); track p.player_id) {
                 <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
               }
             </div>
+          }
           }
         </div>
 

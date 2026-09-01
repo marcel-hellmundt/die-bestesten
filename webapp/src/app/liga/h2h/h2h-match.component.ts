@@ -46,6 +46,29 @@ export class H2HMatchComponent implements OnDestroy {
   homeBench  = computed(() => (this.data()?.home_bench  ?? []) as any[]);
   awayBench  = computed(() => (this.data()?.away_bench  ?? []) as any[]);
 
+  // A saved team_lineup is always either a complete valid XI (11 nominated) or a still-reachable
+  // partial build/gap (see team_lineup.database.php's isReachableFormation, and POST /sell which
+  // only clears the sold player's own entry instead of resetting the whole lineup to bench) — for
+  // a neutral or opposing viewer that's not something to show player-by-player; each manager
+  // still sees their own side as-is (mirrors lineup.component.ts's isOwnTeam/isLineupComplete).
+  private isTeamMine(team: any): boolean {
+    return !!team?.manager_id && team.manager_id === this.auth.getManagerId();
+  }
+
+  isHomeTeamMine = computed(() => this.isTeamMine(this.homeTeam()));
+  isAwayTeamMine = computed(() => this.isTeamMine(this.awayTeam()));
+
+  isHomeLineupComplete = computed(() => this.homeLineup().length === 11);
+  isAwayLineupComplete = computed(() => this.awayLineup().length === 11);
+
+  showHomeInvalidHint = computed(() => !this.isHomeTeamMine() && !this.isHomeLineupComplete());
+  showAwayInvalidHint = computed(() => !this.isAwayTeamMine() && !this.isAwayLineupComplete());
+
+  // Mobile pitch view shows one team at a time (see selectedSide below).
+  showSelectedInvalidHint = computed(() =>
+    this.selectedSide() === 'home' ? this.showHomeInvalidHint() : this.showAwayInvalidHint()
+  );
+
   // Deterministische Pseudo-Quote (Heim/Unentschieden/Auswärts) aus Marktwert+Saisonpunkten der
   // aufgestellten Spieler — reine Orientierung, keine echten Einsätze; siehe
   // H2HTrait::calculateH2HOdds() im Backend für die Berechnung.

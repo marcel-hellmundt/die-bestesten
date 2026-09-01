@@ -1124,6 +1124,23 @@
   flex: 1;
   display: flex;
   z-index: 2;
+  position: relative;
+}
+
+// Shown instead of a side's player columns for a neutral/opposing viewer when that team's
+// lineup isn't a complete valid XI (mid-build, or gapped by a sale) — see
+// showHomeInvalidHint()/showAwayInvalidHint()/showSelectedInvalidHint() in the component.
+.field-invalid-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: $space-4;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
 }
 
 .h2h-field__col {
