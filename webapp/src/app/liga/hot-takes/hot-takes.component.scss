@@ -47,6 +47,16 @@
   display: flex;
   align-items: flex-start;
   gap: $space-2;
+  max-width: 320px;
+}
+
+.hot-takes__take--false .hot-takes__take-text {
+  color: $color-text-muted;
+  text-decoration: line-through;
+}
+
+.hot-takes__take--true .hot-takes__take-text {
+  font-weight: $font-weight-bold;
 }
 
 .hot-takes__status-icon {

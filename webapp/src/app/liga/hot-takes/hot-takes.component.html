@@ -45,8 +45,8 @@
             @for (authorId of authors; track authorId) {
               <td>
                 @if (takeFor(authorId, t.id); as take) {
-                  <span class="hot-takes__take">
-                    <span>{{ take.text }}</span>
+                  <span class="hot-takes__take" [class]="'hot-takes__take--' + take.status">
+                    <span class="hot-takes__take-text">{{ take.text }}</span>
                     <img class="hot-takes__status-icon" [src]="statusIcon(take.status)" alt="" />
                   </span>
                 } @else {
