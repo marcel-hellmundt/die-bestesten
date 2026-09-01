@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
@@ -23,6 +23,24 @@ interface TopMatchdayEntry {
   manager_name: string;
 }
 
+interface MovementEntry {
+  manager_id: string;
+  manager_name: string;
+  rank: number;
+  cumulative_points: number;
+}
+
+interface MovementSeasonColumn {
+  season_id: string;
+  entries: MovementEntry[];
+}
+
+interface MovementTooltip {
+  entry: MovementEntry;
+  top: number;
+  left: number;
+}
+
 @Component({
   selector: 'app-hall-of-fame',
   standalone: false,
@@ -43,6 +61,69 @@ export class HallOfFameComponent {
       catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' }))
     )
   );
+
+  // Bewegung in der ewigen Tabelle: eine Spalte je Saison (chronologisch, siehe API), Köpfe
+  // darin bereits absteigend nach Rang sortiert vom Backend geliefert.
+  private movementState = toSignal(
+    this.api.get<MovementSeasonColumn[]>('all_time_standings/by_season').pipe(
+      map(data => ({ data, loading: false })),
+      startWith({ data: [] as MovementSeasonColumn[], loading: true }),
+      catchError(() => of({ data: [] as MovementSeasonColumn[], loading: false })),
+    )
+  );
+
+  movementColumns = computed(() => this.movementState()?.data ?? []);
+  movementLoading = computed(() => this.movementState()?.loading ?? true);
+
+  movementTooltip     = signal<MovementTooltip | null>(null);
+  hoveredManagerId     = signal<string | null>(null);
+  connectorPath        = signal<string | null>(null);
+  connectorSvgSize     = signal({ w: 0, h: 0 });
+
+  @ViewChild('movementGridEl') private movementGridEl?: ElementRef<HTMLElement>;
+
+  onMovementHeadEnter(event: MouseEvent, entry: MovementEntry): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.movementTooltip.set({ entry, top: rect.top, left: rect.left + rect.width / 2 });
+    this.hoveredManagerId.set(entry.manager_id);
+    this.updateConnectorLine(entry.manager_id);
+  }
+
+  onMovementHeadLeave(): void {
+    this.movementTooltip.set(null);
+    this.hoveredManagerId.set(null);
+    this.connectorPath.set(null);
+  }
+
+  // Verbindungslinie durch alle Köpfe desselben Managers über die Saison-Spalten hinweg (gleiches
+  // Grundmuster wie h2h.component.ts's updateLines() für die K.o.-Baum-Linien) — Koordinaten
+  // relativ zum scrollbaren Grid-Container selbst (inkl. scrollLeft), damit die Linie beim
+  // horizontalen Scrollen mit den Köpfen mitwandert statt an der Viewport-Position zu kleben.
+  private updateConnectorLine(managerId: string): void {
+    const grid = this.movementGridEl?.nativeElement;
+    if (!grid) return;
+
+    const gridRect = grid.getBoundingClientRect();
+    this.connectorSvgSize.set({ w: grid.scrollWidth, h: grid.clientHeight });
+
+    const heads = Array.from(
+      grid.querySelectorAll<HTMLElement>(`[data-manager-id="${managerId}"]`)
+    );
+    if (heads.length < 2) {
+      this.connectorPath.set(null);
+      return;
+    }
+
+    const points = heads.map(el => {
+      const r = el.getBoundingClientRect();
+      return {
+        x: r.left - gridRect.left + grid.scrollLeft + r.width / 2,
+        y: r.top - gridRect.top + r.height / 2,
+      };
+    });
+
+    this.connectorPath.set(points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' '));
+  }
 
   private awardsState = toSignal(
     this.api.get<any[]>('award').pipe(

@@ -209,3 +209,97 @@ td.col-points {
   color: $color-text-muted;
   font-style: italic;
 }
+
+// ── Bewegung in der ewigen Tabelle ───────────────────────────────────────────
+// Eine Spalte je Saison, Köpfe darin von oben (Rang 1) nach unten gestapelt — macht
+// Auf-/Abstiege zwischen Saisons als Zickzack der Kopf-Positionen sichtbar.
+
+.movement-card {
+  overflow: hidden;
+}
+
+.movement-grid {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: $space-4;
+  overflow-x: auto;
+  padding-bottom: $space-2;
+}
+
+// Verbindungslinie(n) — liegt als Kind IM scrollbaren Bereich (scrollt mit den Spalten mit),
+// daher width/height in px statt 100% (siehe connectorSvgSize() im Component: grid.scrollWidth).
+.movement-lines-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.movement-connector-line {
+  fill: none;
+  stroke: $color-accent;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+
+.movement-col {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+  flex-shrink: 0;
+}
+
+.movement-col__label {
+  margin-bottom: $space-2;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
+.movement-head {
+  position: relative;
+  cursor: pointer;
+  transition: transform $transition-fast;
+
+  &--active {
+    transform: scale(1.25);
+    z-index: 2;
+  }
+}
+
+// Gleiches Muster wie .player-breakdown in team/lineup/lineup.component.scss.
+.movement-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 9999;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+  text-align: center;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.movement-tooltip__name {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.movement-tooltip__points {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}

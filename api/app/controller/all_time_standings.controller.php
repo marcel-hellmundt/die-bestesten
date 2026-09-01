@@ -6,6 +6,10 @@ class AllTimeStandingsController extends _BaseController
 
     protected function get(): mixed
     {
+        if ($this->id === 'by_season') {
+            return $this->db->getAllTimeStandingsBySeason();
+        }
+
         return $this->db->getAllTimeStandings();
     }
 
