@@ -106,6 +106,56 @@ trait H2HPredictionTrait
     }
 
     /**
+     * Aktuell bebettbare H2H-Matches der aktiven Saison — Spieltag ist der aktuelle (kleinste noch
+     * nicht abgeschlossene number in Saison+Division), beide Teams haben bereits eine Aufstellung
+     * (bothTeamsHaveLineup()), und der Manager führt keines der beiden Teams selbst. Fürs Wettbüro
+     * (webapp: BettingOfficeComponent) — Direktlinks im Leer-Zustand, statt den Manager selbst
+     * suchen zu lassen.
+     */
+    public function getAvailableH2HMatches(string $managerId): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) return [];
+
+        $divisionId = $this->getLeagueDivisionId();
+        if (!$divisionId) return [];
+
+        $mdq = $this->con->prepare(
+            "SELECT id, number FROM matchday
+             WHERE season_id = :sid AND division_id = :did AND completed = 0
+             ORDER BY number ASC LIMIT 1"
+        );
+        $mdq->execute([':sid' => $seasonId, ':did' => $divisionId]);
+        $matchday = $mdq->fetch(PDO::FETCH_ASSOC);
+        if (!$matchday) return [];
+
+        $q = $this->con_league->prepare(
+            "SELECT hm.id, hm.home_team_id, hm.away_team_id,
+                    th.team_name AS home_team_name, th.manager_id AS home_manager_id,
+                    ta.team_name AS away_team_name, ta.manager_id AS away_manager_id
+             FROM h2h_match hm
+             JOIN team th ON th.id = hm.home_team_id
+             JOIN team ta ON ta.id = hm.away_team_id
+             WHERE hm.matchday_id = :mid"
+        );
+        $q->execute([':mid' => $matchday['id']]);
+
+        $available = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $m) {
+            if ($m['home_manager_id'] === $managerId || $m['away_manager_id'] === $managerId) continue;
+            if (!$this->bothTeamsHaveLineup($m['home_team_id'], $m['away_team_id'], $matchday['id'])) continue;
+
+            $available[] = [
+                'match_id'        => $m['id'],
+                'matchday_number' => $matchday['number'],
+                'home_team_name'  => $m['home_team_name'],
+                'away_team_name'  => $m['away_team_name'],
+            ];
+        }
+        return $available;
+    }
+
+    /**
      * Setzt/ändert den Tipp eines Managers für ein Match (Upsert per ON DUPLICATE KEY UPDATE über
      * UNIQUE(match_id, manager_id) — Tipp bleibt bis Anpfiff beliebig oft änderbar). Serverseitige
      * Absicherung des Frontend-Gates aus getH2HPredictionState() (is_current_matchday) — nur
@@ -224,5 +274,111 @@ trait H2HPredictionTrait
         }
 
         return $updated;
+    }
+
+    /**
+     * Alle Tipps eines Managers über alle Saisons/Matches hinweg, fürs Wettbüro
+     * (webapp: BettingOfficeComponent) — je Tipp die Partie, das Endergebnis (h2hGoals(), null
+     * solange noch keine team_rating-Zeilen vorliegen), der eigene Pick, die zum Tippzeitpunkt
+     * angezeigte Quote sowie result (open/won/lost). Absteigend nach Anpfiff sortiert (neueste
+     * zuerst, älteste unten) — matchday liegt in der globalen DB (con), daher zweite Abfrage statt
+     * JOIN über die Liga-DB-Verbindung.
+     */
+    public function getMyH2HPredictions(string $managerId): array
+    {
+        $q = $this->con_league->prepare(
+            "SELECT hp.match_id, hp.pick, hp.odds, hp.result,
+                    hm.matchday_id, hm.home_team_id, hm.away_team_id,
+                    th.team_name AS home_team_name, th.color_primary AS home_color,
+                    ta.team_name AS away_team_name, ta.color_primary AS away_color
+             FROM h2h_prediction hp
+             JOIN h2h_match hm ON hm.id = hp.match_id
+             JOIN team th ON th.id = hm.home_team_id
+             JOIN team ta ON ta.id = hm.away_team_id
+             WHERE hp.manager_id = :man"
+        );
+        $q->execute([':man' => $managerId]);
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) return [];
+
+        // Produktions-DB liefert pick/result (ENUM ... CHARACTER SET utf8mb4) mitunter als
+        // ucs2/utf16 zurück, was Null-Bytes einstreut (\0h\0o\0m\0e) — dieselbe Ursache wie bei
+        // h2h_match.phase in H2HTrait::getH2HOverview(). Ungefiltert lässt das json_encode() für
+        // die gesamte Response scheitern (liefert dann `false` statt eines Arrays), wodurch das
+        // Frontend trotz vorhandener Tipps eine leere Liste zeigt.
+        foreach ($rows as &$row) {
+            $row['pick']   = str_replace("\0", '', $row['pick']);
+            $row['result'] = str_replace("\0", '', $row['result']);
+        }
+        unset($row);
+
+        $matchdayIds = array_values(array_unique(array_column($rows, 'matchday_id')));
+        $mph = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $mdq = $this->con->prepare(
+            "SELECT id, number, season_id, kickoff_date FROM matchday WHERE id IN ($mph)"
+        );
+        $mdq->execute($matchdayIds);
+        $matchdayMap = array_column($mdq->fetchAll(PDO::FETCH_ASSOC), null, 'id');
+
+        $teamIds = array_values(array_unique(array_merge(
+            array_column($rows, 'home_team_id'), array_column($rows, 'away_team_id')
+        )));
+        $tph = implode(',', array_fill(0, count($teamIds), '?'));
+        $rq = $this->con_league->prepare(
+            "SELECT team_id, matchday_id, goals, assists, sds_defender, invalid
+             FROM team_rating WHERE matchday_id IN ($mph) AND team_id IN ($tph)"
+        );
+        $rq->execute(array_merge($matchdayIds, $teamIds));
+        $ratingMap = [];
+        foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $ratingMap[$r['matchday_id']][$r['team_id']] = $r;
+        }
+
+        usort($rows, fn($a, $b) => strcmp(
+            $matchdayMap[$b['matchday_id']]['kickoff_date'] ?? '',
+            $matchdayMap[$a['matchday_id']]['kickoff_date'] ?? ''
+        ));
+
+        return array_map(function ($row) use ($matchdayMap, $ratingMap) {
+            $md    = $matchdayMap[$row['matchday_id']] ?? null;
+            $goals = $this->h2hGoals(
+                $ratingMap[$row['matchday_id']][$row['home_team_id']] ?? null,
+                $ratingMap[$row['matchday_id']][$row['away_team_id']] ?? null
+            );
+
+            return [
+                'match_id'         => $row['match_id'],
+                'matchday_number'  => $md['number']    ?? null,
+                'season_id'        => $md['season_id'] ?? null,
+                'home_team_id'     => $row['home_team_id'],
+                'home_team_name'   => $row['home_team_name'],
+                'home_color'       => $row['home_color'],
+                'away_team_id'     => $row['away_team_id'],
+                'away_team_name'   => $row['away_team_name'],
+                'away_color'       => $row['away_color'],
+                'home_goals'       => $goals['home'],
+                'away_goals'       => $goals['away'],
+                'pick'             => $row['pick'],
+                'odds'             => $row['odds'],
+                'result'           => $row['result'],
+            ];
+        }, $rows);
+    }
+
+    /**
+     * Alle Manager, die bisher mindestens einen H2H-Tipp abgegeben haben, mit ihrer Anzahl
+     * korrekter Tipps (result='won') — fürs Wettbüro (webapp: BettingOfficeComponent), dort je
+     * Sieg ein reward.png-Icon. Absteigend nach Siegen sortiert.
+     */
+    public function getH2HPredictionStandings(): array
+    {
+        return $this->con_league->query(
+            "SELECT hp.manager_id, m.manager_name, m.alias,
+                    SUM(CASE WHEN hp.result = 'won' THEN 1 ELSE 0 END) AS wins
+             FROM h2h_prediction hp
+             JOIN manager m ON m.id = hp.manager_id
+             GROUP BY hp.manager_id, m.manager_name, m.alias
+             ORDER BY wins DESC, m.manager_name ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
     }
 }

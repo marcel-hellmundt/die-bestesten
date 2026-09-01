@@ -2,9 +2,24 @@
 
 class H2HPredictionController extends _BaseController
 {
-    public static array $methodRoles = ['POST' => 'manager'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'manager'];
 
-    protected function get(): mixed { return $this->methodNotAllowed(); }
+    protected function get(): mixed
+    {
+        if ($this->id === 'mine') {
+            return $this->db->getMyH2HPredictions($GLOBALS['auth_manager_id']);
+        }
+
+        if ($this->id === 'standings') {
+            return $this->db->getH2HPredictionStandings();
+        }
+
+        if ($this->id === 'available') {
+            return $this->db->getAvailableH2HMatches($GLOBALS['auth_manager_id']);
+        }
+
+        return $this->methodNotAllowed();
+    }
 
     protected function post(): mixed
     {

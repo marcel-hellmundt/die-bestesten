@@ -1,0 +1,233 @@
+@use '../../../styles/variables' as *;
+
+.betting-office-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: $space-6;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.main-col {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.bets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+
+.bets-toggle {
+  display: inline-flex;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  padding: 2px;
+  gap: 2px;
+
+  &__btn {
+    padding: $space-1 $space-4;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: all $transition-fast;
+    white-space: nowrap;
+
+    &.active {
+      background: $color-accent;
+      color: #fff;
+    }
+
+    &:hover:not(.active) {
+      color: $color-text;
+    }
+  }
+}
+
+.bets-summary {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
+.bet-list-card {
+  padding: 0;
+}
+
+.bets-empty-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.bets-empty-card__title {
+  font-weight: $font-weight-semibold;
+}
+
+.bets-empty-card__hint {
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.bets-empty-card__matches {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  a {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-accent;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.bet-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $color-border;
+  font-size: $font-sm;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.bet-row__matchday {
+  flex-shrink: 0;
+  width: 24px;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  text-align: center;
+}
+
+.bet-row__match {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  flex: 1;
+  min-width: 0;
+}
+
+// Beide Seiten gleich breit (flex:1 auf Basis der verfügbaren Breite, nicht des
+// Inhalts) — das Ergebnis in der Mitte bleibt dadurch zeilenübergreifend an derselben
+// Position, unabhängig von der Länge der Teamnamen links/rechts.
+.bet-row__side {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  flex: 1 1 0;
+  min-width: 0;
+
+  &--home {
+    justify-content: flex-end;
+  }
+
+  &--away {
+    justify-content: flex-start;
+  }
+}
+
+.bet-row__team-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: $font-weight-medium;
+  min-width: 0;
+}
+
+.team-logo-sm {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.team-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bet-row__score {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: #000;
+  border-radius: $radius-sm;
+  color: #fff;
+  padding: 2px $space-2;
+}
+
+.h2h-sep {
+  color: $color-text-muted;
+  margin: 0 2px;
+}
+
+.h2h-pending {
+  font-size: $font-xs;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.bet-row__pick {
+  flex-shrink: 0;
+  min-width: 160px;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+
+  &--won {
+    color: $color-success;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.bet-row__odds {
+  flex-shrink: 0;
+  width: 40px;
+  text-align: right;
+  color: $color-text-muted;
+}
+
+.data-table td {
+  vertical-align: middle;
+}
+
+.wins-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.reward-icon {
+  width: 18px;
+  height: 18px;
+}
