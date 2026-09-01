@@ -42,12 +42,14 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
     takes: [
       { targetTeamId: '129c1cf4-5ec6-4947-8c2c-50df149be9d4', text: 'Ich habe am Ende 3 150Pkt Spieler', status: 'pending' }, // Sackflanke
       { targetTeamId: 'ce11729a-cdd2-43d0-bfc8-4edaad9f5949', text: 'Petkov bester Mittelfeldspieler bei Eike', status: 'pending' }, // Kackbratzen
-      { targetTeamId: '9153be2f-37b1-42c1-9103-167717e78ce7', text: 'Die meisten Kaderrotationen', status: 'pending' }, // US Töfte Calcio
+      { targetTeamId: '9153be2f-37b1-42c1-9103-167717e78ce7', text: 'Die meisten Kaderrotationen + Bolin macht 100 Punkte und wird damit sein zweitbester Mittelfeldspieler', status: 'pending' }, // US Töfte Calcio
       { targetTeamId: '37d712d3-4c34-472f-a46f-72f2cc99f1c3', text: 'Mohya wird Nationalspieler', status: 'pending' }, // ZSG Fortschritt Achmer
       { targetTeamId: '863867f0-9691-4808-b411-a15bb25bbd9b', text: 'Kein Stürmer macht mehr als 50 Punkte', status: 'pending' }, // Bonn 17
       { targetTeamId: '81123688-0f53-47b6-a92e-b64628c635e5', text: "Nils' beste Saison ever", status: 'pending' }, // Blutgrätsche 69
       { targetTeamId: '80778c37-a22a-40a3-acd7-b52c1845bb22', text: 'Fab macht seinen ersten Transfer erst wieder im Winter', status: 'pending' }, // Fab
       { targetTeamId: 'da221851-6aca-4499-b830-d47adaf5f07c', text: 'Von den 4 Stürmern spielen nie 3 gleichzeitig in der S11', status: 'pending' }, // Fiasko Fantasto
+      { targetTeamId: 'cd3e7c38-b50b-4388-8e58-e0363ecdf990', text: 'Nicht mehr als zwei gleichzeitige S11-Einsätze von Pavlovic, Konstantelias, Lokonga und Burkhardt', status: 'pending' }, // Concordia Hachmannsfeld
+      { targetTeamId: '31c26702-9842-471c-a5bb-7b57a9561c87', text: 'Beste Abwehr der Liga', status: 'pending' }, // Schlaggy
     ],
   },
   {
