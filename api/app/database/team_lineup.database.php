@@ -48,6 +48,12 @@ trait TeamLineupTrait
                     (int) $currentMatchday['number'],
                     $seasonId
                 );
+                $this->ensureLineupEntriesForOtherTeams(
+                    $teamId,
+                    $currentMatchday['id'],
+                    (int) $currentMatchday['number'],
+                    $seasonId
+                );
             }
         }
 
@@ -468,6 +474,98 @@ trait TeamLineupTrait
                 ':nom'  => $prev ? (int) $prev['nominated'] : 0,
                 ':pidx' => $prev ? $prev['position_index'] : null,
             ]);
+        }
+    }
+
+    /**
+     * Heilt beim Öffnen einer beliebigen Lineup-Seite gleich die ganze Liga mit, statt dass jedes
+     * Team einzeln erst seine eigene Seite geöffnet haben muss (siehe ensureLineupEntriesForTeam()
+     * fürs angefragte Team selbst — das hier ergänzt alle ÜBRIGEN Teams derselben Saison).
+     *
+     * Ein Team wird komplett übersprungen, wenn auch nur einer der im vorherigen Spieltag
+     * NOMINIERTEN Spieler (aufgestellt, nicht nur im Kader) das Team inzwischen verlassen hat —
+     * lieber gar keine automatische Aufstellung anlegen als eine lückenhafte, die der Manager
+     * dann für einen absichtlich unvollständigen Zwischenstand hält. Ohne vorherigen Spieltag
+     * (z.B. Spieltag 1) gibt es nichts zu übernehmen, daher ebenfalls kein Auto-Anlegen.
+     */
+    private function ensureLineupEntriesForOtherTeams(string $requestingTeamId, string $matchdayId, int $matchdayNumber, string $seasonId): void
+    {
+        $teamsQ = $this->con_league->prepare("SELECT id FROM team WHERE season_id = :sid AND id <> :self");
+        $teamsQ->execute([':sid' => $seasonId, ':self' => $requestingTeamId]);
+        $teamIds = $teamsQ->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($teamIds)) return;
+
+        $existingQ = $this->con_league->prepare(
+            "SELECT DISTINCT team_id FROM team_lineup WHERE matchday_id = :mid"
+        );
+        $existingQ->execute([':mid' => $matchdayId]);
+        $alreadyHasEntries = array_flip($existingQ->fetchAll(PDO::FETCH_COLUMN));
+
+        $pendingTeamIds = array_values(array_filter($teamIds, fn($tid) => !isset($alreadyHasEntries[$tid])));
+        if (empty($pendingTeamIds)) return;
+
+        $divisionQ = $this->con->prepare("SELECT division_id FROM matchday WHERE id = :id LIMIT 1");
+        $divisionQ->execute([':id' => $matchdayId]);
+        $divisionId = $divisionQ->fetchColumn();
+
+        $prevQ = $this->con->prepare(
+            "SELECT id FROM matchday
+             WHERE season_id = :sid AND division_id = :did AND number < :num
+             ORDER BY number DESC LIMIT 1"
+        );
+        $prevQ->execute([':sid' => $seasonId, ':did' => $divisionId, ':num' => $matchdayNumber]);
+        $prevMatchdayId = $prevQ->fetchColumn() ?: null;
+        if (!$prevMatchdayId) return;
+
+        $ph = implode(',', array_fill(0, count($pendingTeamIds), '?'));
+
+        $activeQ = $this->con_league->prepare(
+            "SELECT team_id, player_id FROM player_in_team
+             WHERE team_id IN ($ph) AND to_matchday_id IS NULL"
+        );
+        $activeQ->execute($pendingTeamIds);
+        $activeByTeam = [];
+        foreach ($activeQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $activeByTeam[$row['team_id']][$row['player_id']] = true;
+        }
+
+        $prevQ2 = $this->con_league->prepare(
+            "SELECT team_id, player_id, nominated, position_index
+             FROM team_lineup WHERE team_id IN ($ph) AND matchday_id = ?"
+        );
+        $prevQ2->execute(array_merge($pendingTeamIds, [$prevMatchdayId]));
+        $prevByTeam = [];
+        foreach ($prevQ2->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $prevByTeam[$row['team_id']][] = $row;
+        }
+
+        $insertQ = $this->con_league->prepare(
+            "INSERT IGNORE INTO team_lineup (id, team_id, player_id, matchday_id, nominated, position_index)
+             VALUES (UUID(), :tid, :pid, :mid, :nom, :pidx)"
+        );
+
+        foreach ($pendingTeamIds as $teamId) {
+            $prevLineup = $prevByTeam[$teamId] ?? [];
+            if (empty($prevLineup)) continue;
+
+            $activePlayers = $activeByTeam[$teamId] ?? [];
+
+            foreach ($prevLineup as $row) {
+                if ((int) $row['nominated'] === 1 && !isset($activePlayers[$row['player_id']])) {
+                    continue 2; // ein nominierter Spieler ist weg — dieses Team überspringen
+                }
+            }
+
+            foreach ($prevLineup as $row) {
+                if (!isset($activePlayers[$row['player_id']])) continue; // verkaufter Bankspieler
+                $insertQ->execute([
+                    ':tid'  => $teamId,
+                    ':pid'  => $row['player_id'],
+                    ':mid'  => $matchdayId,
+                    ':nom'  => (int) $row['nominated'],
+                    ':pidx' => $row['position_index'],
+                ]);
+            }
         }
     }
 }
