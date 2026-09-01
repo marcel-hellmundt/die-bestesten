@@ -247,6 +247,12 @@
   padding: $space-4 $space-6;
   margin-bottom: $space-6;
 
+  // Die Wett-Buttons stehen bewusst frei statt in einer .card-Box — kein Hintergrund/Rahmen/
+  // Padding der geteilten .card-Klasse, nur die eigenen Abstände zu Label/Hint bleiben.
+  &--bare {
+    padding: 0;
+  }
+
   &__label {
     font-size: $font-xs;
     font-weight: $font-weight-medium;
