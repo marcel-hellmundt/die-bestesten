@@ -14,6 +14,10 @@ class H2HPredictionController extends _BaseController
             return $this->db->getH2HPredictionStandings();
         }
 
+        if ($this->id === 'available') {
+            return $this->db->getAvailableH2HMatches($GLOBALS['auth_manager_id']);
+        }
+
         return $this->methodNotAllowed();
     }
 

@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -28,6 +28,13 @@ interface StandingRow {
   wins: number;
 }
 
+interface AvailableMatch {
+  match_id: string;
+  matchday_number: number | null;
+  home_team_name: string;
+  away_team_name: string;
+}
+
 @Component({
   selector: 'app-betting-office',
   standalone: false,
@@ -55,10 +62,28 @@ export class BettingOfficeComponent {
     { initialValue: { data: [] as StandingRow[], loading: true } },
   );
 
+  private availableState = toSignal(
+    this.api.get<AvailableMatch[]>('h2h_prediction/available').pipe(
+      map(data => ({ data, loading: false })),
+      startWith({ data: [] as AvailableMatch[], loading: true }),
+      catchError(() => of({ data: [] as AvailableMatch[], loading: false })),
+    ),
+    { initialValue: { data: [] as AvailableMatch[], loading: true } },
+  );
+
   bets              = computed(() => this.betsState().data);
   betsLoading       = computed(() => this.betsState().loading);
   standings         = computed(() => this.standingsState().data);
   standingsLoading  = computed(() => this.standingsState().loading);
+  availableMatches  = computed(() => this.availableState().data);
+
+  betsFilter   = signal<'all' | 'open' | 'won'>('all');
+  filteredBets = computed(() => {
+    const filter = this.betsFilter();
+    return filter === 'all' ? this.bets() : this.bets().filter(b => b.result === filter);
+  });
+  wonCount     = computed(() => this.bets().filter(b => b.result === 'won').length);
+  totalCount   = computed(() => this.bets().length);
 
   pickLabel(b: Bet): string {
     if (b.pick === 'draw') return 'Unentschieden';

@@ -106,6 +106,56 @@ trait H2HPredictionTrait
     }
 
     /**
+     * Aktuell bebettbare H2H-Matches der aktiven Saison — Spieltag ist der aktuelle (kleinste noch
+     * nicht abgeschlossene number in Saison+Division), beide Teams haben bereits eine Aufstellung
+     * (bothTeamsHaveLineup()), und der Manager führt keines der beiden Teams selbst. Fürs Wettbüro
+     * (webapp: BettingOfficeComponent) — Direktlinks im Leer-Zustand, statt den Manager selbst
+     * suchen zu lassen.
+     */
+    public function getAvailableH2HMatches(string $managerId): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) return [];
+
+        $divisionId = $this->getLeagueDivisionId();
+        if (!$divisionId) return [];
+
+        $mdq = $this->con->prepare(
+            "SELECT id, number FROM matchday
+             WHERE season_id = :sid AND division_id = :did AND completed = 0
+             ORDER BY number ASC LIMIT 1"
+        );
+        $mdq->execute([':sid' => $seasonId, ':did' => $divisionId]);
+        $matchday = $mdq->fetch(PDO::FETCH_ASSOC);
+        if (!$matchday) return [];
+
+        $q = $this->con_league->prepare(
+            "SELECT hm.id, hm.home_team_id, hm.away_team_id,
+                    th.team_name AS home_team_name, th.manager_id AS home_manager_id,
+                    ta.team_name AS away_team_name, ta.manager_id AS away_manager_id
+             FROM h2h_match hm
+             JOIN team th ON th.id = hm.home_team_id
+             JOIN team ta ON ta.id = hm.away_team_id
+             WHERE hm.matchday_id = :mid"
+        );
+        $q->execute([':mid' => $matchday['id']]);
+
+        $available = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $m) {
+            if ($m['home_manager_id'] === $managerId || $m['away_manager_id'] === $managerId) continue;
+            if (!$this->bothTeamsHaveLineup($m['home_team_id'], $m['away_team_id'], $matchday['id'])) continue;
+
+            $available[] = [
+                'match_id'        => $m['id'],
+                'matchday_number' => $matchday['number'],
+                'home_team_name'  => $m['home_team_name'],
+                'away_team_name'  => $m['away_team_name'],
+            ];
+        }
+        return $available;
+    }
+
+    /**
      * Setzt/ändert den Tipp eines Managers für ein Match (Upsert per ON DUPLICATE KEY UPDATE über
      * UNIQUE(match_id, manager_id) — Tipp bleibt bis Anpfiff beliebig oft änderbar). Serverseitige
      * Absicherung des Frontend-Gates aus getH2HPredictionState() (is_current_matchday) — nur

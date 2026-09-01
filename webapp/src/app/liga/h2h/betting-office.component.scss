@@ -24,56 +24,144 @@
   gap: $space-4;
 }
 
-.bet-list {
-  display: flex;
-  flex-direction: column;
-  gap: $space-3;
-}
-
-.bet-card {
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-  padding: $space-4;
-}
-
-.bet-card__meta {
-  font-size: $font-xs;
-  font-weight: $font-weight-semibold;
-  color: $color-text-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.bet-card__match {
+.bets-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: $space-3;
+  flex-wrap: wrap;
 }
 
-.bet-card__team {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-  flex: 1;
-  min-width: 0;
+.bets-toggle {
+  display: inline-flex;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  padding: 2px;
+  gap: 2px;
 
-  &--away {
-    justify-content: flex-end;
-    text-align: right;
+  &__btn {
+    padding: $space-1 $space-4;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: all $transition-fast;
+    white-space: nowrap;
+
+    &.active {
+      background: $color-accent;
+      color: #fff;
+    }
+
+    &:hover:not(.active) {
+      color: $color-text;
+    }
   }
 }
 
-.bet-card__team-name {
+.bets-summary {
+  font-size: $font-sm;
+  color: $color-text-muted;
+  white-space: nowrap;
+}
+
+.bet-list-card {
+  padding: 0;
+}
+
+.bets-empty-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.bets-empty-card__title {
+  font-weight: $font-weight-semibold;
+}
+
+.bets-empty-card__hint {
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.bets-empty-card__matches {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  a {
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-accent;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.bet-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $color-border;
+  font-size: $font-sm;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.bet-row__matchday {
+  flex-shrink: 0;
+  width: 24px;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  text-align: center;
+}
+
+.bet-row__match {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  flex: 1;
+  min-width: 0;
+}
+
+// Beide Seiten gleich breit (flex:1 auf Basis der verfügbaren Breite, nicht des
+// Inhalts) — das Ergebnis in der Mitte bleibt dadurch zeilenübergreifend an derselben
+// Position, unabhängig von der Länge der Teamnamen links/rechts.
+.bet-row__side {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  flex: 1 1 0;
+  min-width: 0;
+
+  &--home {
+    justify-content: flex-end;
+  }
+
+  &--away {
+    justify-content: flex-start;
+  }
+}
+
+.bet-row__team-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: $font-weight-medium;
+  min-width: 0;
 }
 
-.team-logo-md {
-  width: 32px;
-  height: 32px;
+.team-logo-sm {
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -86,7 +174,7 @@
   flex-shrink: 0;
 }
 
-.bet-card__score {
+.bet-row__score {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -109,30 +197,22 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
-.bet-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: $space-2;
-  border-top: 1px solid $color-border;
-  font-size: $font-sm;
-}
-
-.bet-card__pick {
+.bet-row__pick {
+  flex-shrink: 0;
+  min-width: 160px;
   font-weight: $font-weight-medium;
+  white-space: nowrap;
 
   &--won {
     color: $color-success;
     font-weight: $font-weight-semibold;
   }
-
-  &--lost {
-    color: $color-text-muted;
-    text-decoration: line-through;
-  }
 }
 
-.bet-card__odds {
+.bet-row__odds {
+  flex-shrink: 0;
+  width: 40px;
+  text-align: right;
   color: $color-text-muted;
 }
 
@@ -145,7 +225,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  min-height: 18px;
 }
 
 .reward-icon {
