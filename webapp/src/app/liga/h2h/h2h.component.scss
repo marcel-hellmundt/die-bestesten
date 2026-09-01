@@ -53,6 +53,28 @@
   }
 }
 
+.betting-link {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 $space-4;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-accent;
+  background: $color-surface;
+  border: 1px solid $color-accent;
+  border-radius: $radius-md;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color $transition-fast, color $transition-fast;
+
+  &:hover {
+    background: $color-accent;
+    color: #fff;
+  }
+}
+
 .mode-link {
   display: inline-flex;
   align-items: center;

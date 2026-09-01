@@ -1,0 +1,149 @@
+@use '../../../styles/variables' as *;
+
+.betting-office-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: $space-6;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.main-col {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.bet-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.bet-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-4;
+}
+
+.bet-card__meta {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.bet-card__match {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.bet-card__team {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex: 1;
+  min-width: 0;
+
+  &--away {
+    justify-content: flex-end;
+    text-align: right;
+  }
+}
+
+.bet-card__team-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: $font-weight-medium;
+}
+
+.team-logo-md {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.team-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bet-card__score {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: #000;
+  border-radius: $radius-sm;
+  color: #fff;
+  padding: 2px $space-2;
+}
+
+.h2h-sep {
+  color: $color-text-muted;
+  margin: 0 2px;
+}
+
+.h2h-pending {
+  font-size: $font-xs;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.bet-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: $space-2;
+  border-top: 1px solid $color-border;
+  font-size: $font-sm;
+}
+
+.bet-card__pick {
+  font-weight: $font-weight-medium;
+
+  &--won {
+    color: $color-success;
+    font-weight: $font-weight-semibold;
+  }
+
+  &--lost {
+    color: $color-text-muted;
+    text-decoration: line-through;
+  }
+}
+
+.bet-card__odds {
+  color: $color-text-muted;
+}
+
+.wins-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.reward-icon {
+  width: 18px;
+  height: 18px;
+}

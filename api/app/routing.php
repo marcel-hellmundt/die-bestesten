@@ -1154,6 +1154,16 @@ class Routing
                 'description' => 'Tipp eines Managers auf ein H2H-Match (Sieger/Unentschieden) — bis Anpfiff der Matchday privat/änderbar, danach für alle sichtbar (siehe GET /h2h/:id → predictions) — Auth',
                 'endpoints' => [
                     [
+                        'method' => 'GET',
+                        'path' => '/h2h_prediction/mine',
+                        'description' => 'Alle eigenen Tipps über alle Saisons/Matches hinweg, fürs Wettbüro — je Tipp Partie (Teams), Endergebnis (home_goals/away_goals, null solange unentschieden/noch nicht gespielt), eigener pick, odds-Snapshot und result (open/won/lost); absteigend nach Anpfiff sortiert (neueste zuerst) — Auth',
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/h2h_prediction/standings',
+                        'description' => 'Alle Manager, die bisher mindestens einen H2H-Tipp abgegeben haben, mit wins (Anzahl result=won) — fürs Wettbüro; absteigend nach wins sortiert — Auth',
+                    ],
+                    [
                         'method' => 'POST',
                         'path' => '/h2h_prediction',
                         'description' => 'Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); odds speichert die im Frontend zum Zeitpunkt der Tippabgabe für genau diesen Pick angezeigte Pseudo-Quote unverändert als Snapshot (kann sich bis Anpfiff durch Aufstellungsänderungen noch ändern, siehe GET /h2h/:id → odds); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist, die Matchday nicht die aktuelle ist (kleinste noch nicht abgeschlossene number in Saison+Division) oder der Manager eines der beiden beteiligten Teams selbst führt (Quote sonst über die eigene Aufstellung manipulierbar) — Auth',
