@@ -136,6 +136,10 @@
   color: $color-text-muted;
 }
 
+.data-table td {
+  vertical-align: middle;
+}
+
 .wins-cell {
   display: flex;
   flex-wrap: wrap;

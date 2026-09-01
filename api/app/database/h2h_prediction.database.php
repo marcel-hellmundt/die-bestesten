@@ -251,6 +251,17 @@ trait H2HPredictionTrait
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
         if (empty($rows)) return [];
 
+        // Produktions-DB liefert pick/result (ENUM ... CHARACTER SET utf8mb4) mitunter als
+        // ucs2/utf16 zurück, was Null-Bytes einstreut (\0h\0o\0m\0e) — dieselbe Ursache wie bei
+        // h2h_match.phase in H2HTrait::getH2HOverview(). Ungefiltert lässt das json_encode() für
+        // die gesamte Response scheitern (liefert dann `false` statt eines Arrays), wodurch das
+        // Frontend trotz vorhandener Tipps eine leere Liste zeigt.
+        foreach ($rows as &$row) {
+            $row['pick']   = str_replace("\0", '', $row['pick']);
+            $row['result'] = str_replace("\0", '', $row['result']);
+        }
+        unset($row);
+
         $matchdayIds = array_values(array_unique(array_column($rows, 'matchday_id')));
         $mph = implode(',', array_fill(0, count($matchdayIds), '?'));
         $mdq = $this->con->prepare(
