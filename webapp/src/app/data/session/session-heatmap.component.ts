@@ -310,6 +310,13 @@ export class SessionHeatmapComponent {
     return map;
   });
 
+  // Balken statt Linie: die Zeitintervalle sind unabhängig voneinander — eine Linie suggeriert
+  // einen (nicht existierenden) fließenden Übergang zwischen ihnen. Ein Intervall ganz ohne
+  // Nutzung fällt außerdem als fehlender Balken sofort auf, statt als unauffälliger Punkt auf
+  // der Nulllinie zwischen Nachbar-Werten unterzugehen.
+  private readonly USAGE_BAR_GAP    = 0.15; // Anteil der Spaltenbreite als Lücke auf jeder Seite
+  private readonly USAGE_BAR_RADIUS = 0.08; // ganz leichter Radius, nur an den oberen Ecken
+
   usageChart = computed(() => {
     const cols = this.columns();
     if (cols.length === 0) return null;
@@ -321,12 +328,34 @@ export class SessionHeatmapComponent {
     const top    = this.USAGE_CHART_PAD;
     const bottom = 100 - this.USAGE_CHART_PAD;
     const h      = bottom - top;
+    const gap    = this.USAGE_BAR_GAP;
+    const width  = 1 - gap * 2;
 
-    // x in Spalten-Einheiten (Mitte von Spalte i = i + 0.5) — passend zum ViewBox "0 0 N 100".
-    const dots = values.map((v, i) => ({ x: i + 0.5, y: bottom - (v / maxValue) * h }));
-    const line = dots.map((d, i) => `${i === 0 ? 'M' : 'L'}${d.x.toFixed(3)},${d.y.toFixed(1)}`).join(' ');
+    // x/width in Spalten-Einheiten — passend zum ViewBox "0 0 N 100". Ein Pfad statt <rect rx>,
+    // damit nur die oberen beiden Ecken abgerundet werden — rx/ry auf <rect> würde alle vier
+    // Ecken abrunden, auch die unteren auf der gemeinsamen Grundlinie.
+    const bars = values.map((v, i) => {
+      const barHeight = (v / maxValue) * h;
+      if (barHeight <= 0) return { path: '' };
 
-    return { line, columnCount: cols.length };
+      const x = i + gap;
+      const y = bottom - barHeight;
+      const r = Math.min(this.USAGE_BAR_RADIUS, width / 2, barHeight / 2);
+      // Quadratische Bezier statt Ellipsen-Arc: der Kontrollpunkt liegt exakt auf der scharfen
+      // Ecke, wodurch die Kurve zwangsläufig innerhalb des Balkens bleibt — kein Rätselraten um
+      // die richtige sweep-flag-Richtung, die (falsch gewählt) die Ecke stattdessen nach außen
+      // über die flache Oberkante hinaus wölben würde.
+      const path =
+        `M${x.toFixed(3)},${bottom} ` +
+        `L${x.toFixed(3)},${(y + r).toFixed(3)} ` +
+        `Q${x.toFixed(3)},${y.toFixed(3)} ${(x + r).toFixed(3)},${y.toFixed(3)} ` +
+        `L${(x + width - r).toFixed(3)},${y.toFixed(3)} ` +
+        `Q${(x + width).toFixed(3)},${y.toFixed(3)} ${(x + width).toFixed(3)},${(y + r).toFixed(3)} ` +
+        `L${(x + width).toFixed(3)},${bottom} Z`;
+      return { path };
+    });
+
+    return { bars, columnCount: cols.length };
   });
 
   // Absteigend nach globaler Gesamtnutzung (siehe globalTotalSeconds — unabhängig vom gewählten

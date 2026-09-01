@@ -81,15 +81,9 @@
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          <path
-            [attr.d]="chart.line"
-            fill="none"
-            [attr.stroke]="chartColor"
-            stroke-width="2"
-            vector-effect="non-scaling-stroke"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-          />
+          @for (bar of chart.bars; track $index) {
+            <path [attr.d]="bar.path" [attr.fill]="chartColor" />
+          }
         </svg>
       </div>
     }
