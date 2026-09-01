@@ -127,6 +127,15 @@
     }
   </div>
 
+  <!-- Für Matches, deren Spieltag noch in der Zukunft liegt (oder bei denen schlicht noch
+       niemand aufgestellt hat), existieren noch keine team_lineup-Einträge — dieselbe
+       lineups_ready-Bedingung, die auch die Tipp-Karte gate't (siehe hideCard()), ersetzt dann
+       Feld+Bank durch einen Platzhalter-Hinweis statt eines leeren Feldes. -->
+  @if (!lineupsReady()) {
+    <div class="card">
+      <p class="state-msg">Für diese Partie ist noch keine Aufstellung verfügbar.</p>
+    </div>
+  } @else {
   <!-- Mobile: team toggle + pitch view of the selected team; desktop shows both teams at
        once on one combined field instead (.h2h-field-wrap below, mobile display:none). -->
   <div class="team-toggle">
@@ -254,6 +263,7 @@
       </div>
     }
   </div>
+  }
 
   <!-- Bank (mobile toggle only — desktop always shows both benches, see .h2h-bench above). Bleibt
        ein direktes Kind von .h2h-detail-layout (statt außerhalb), obwohl es auf Desktop per
