@@ -690,6 +690,13 @@
   }
 }
 
+.lineup-compact {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  flex-wrap: wrap;
+}
+
 .status-count {
   display: inline-flex;
   flex-shrink: 0;
@@ -701,6 +708,12 @@
   color: #fff;
   font-size: $font-xs;
   font-weight: $font-weight-bold;
+
+  &--sm {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
 
   &--starting {
     background: #009432;
