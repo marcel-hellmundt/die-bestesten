@@ -48,7 +48,7 @@ export class LineupComponent {
   // Whose team this is — a foreign team's lineup is viewable (e.g. via /liga/teams), but never
   // editable: the API already rejects a PATCH with "Not your team", this just keeps the UI from
   // suggesting otherwise (drag&drop that silently gets rejected on save is confusing).
-  private isOwnTeam = toSignal(
+  isOwnTeam = toSignal(
     this.teamId$.pipe(
       switchMap(id => this.api.get<any>(`team/${id}`).pipe(catchError(() => of(null)))),
       map(team => team?.manager_id === this.auth.getManagerId())
@@ -169,6 +169,15 @@ export class LineupComponent {
       n.filter(p => p.position === 'FORWARD').length,
     ];
   });
+
+  // A saved lineup is always either a complete valid XI (11 nominated) or a still-reachable
+  // partial build (see isReachableFormation) — PATCH rejects anything else. For a foreign
+  // viewer, a partial lineup is either mid-build or gapped by a sale (see POST /sell: it only
+  // clears the sold player's own entry, leaving the rest nominated instead of a bank reset) —
+  // either way it's not something a stranger should see player-by-player; the owner still sees
+  // it as-is (see canEdit's empty-slot bubbles) to fix it themselves.
+  isLineupComplete = computed(() => this.nominated().length === 11);
+  showInvalidLineupHint = computed(() => !this.isOwnTeam() && !this.isLineupComplete());
 
   isEditable = computed(() => {
     const md = this.matchday();

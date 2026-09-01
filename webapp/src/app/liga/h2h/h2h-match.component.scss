@@ -1124,6 +1124,40 @@
   flex: 1;
   display: flex;
   z-index: 2;
+  position: relative;
+}
+
+// Shown instead of a side's player columns for a neutral/opposing viewer when that team's
+// lineup isn't a complete valid XI (mid-build, or gapped by a sale) — see
+// showHomeInvalidHint()/showAwayInvalidHint()/showSelectedInvalidHint() in the component.
+.field-invalid-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 2; // über .field-lines/.h2h-field__lines (z-index: 1)
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-4;
+
+  &__card {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    background: $color-surface;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: $space-2 $space-3;
+    color: $color-text;
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    text-align: left;
+  }
+
+  &__icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
 }
 
 .h2h-field__col {

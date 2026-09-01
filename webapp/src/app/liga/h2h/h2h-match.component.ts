@@ -46,6 +46,33 @@ export class H2HMatchComponent implements OnDestroy {
   homeBench  = computed(() => (this.data()?.home_bench  ?? []) as any[]);
   awayBench  = computed(() => (this.data()?.away_bench  ?? []) as any[]);
 
+  // Whether to render the pitch section at all — independent of lineupsReady() (which now
+  // requires a COMPLETE valid XI on both sides, see below, purely to gate betting/odds). This
+  // stays lenient (any team_lineup data on either side) so a one-sided or partial lineup still
+  // renders the field with showHomeInvalidHint()/showAwayInvalidHint() taking over per side,
+  // instead of collapsing the whole section to the "not available yet" placeholder.
+  hasAnyLineupData = computed(() =>
+    this.homeLineup().length > 0 || this.homeBench().length > 0 ||
+    this.awayLineup().length > 0 || this.awayBench().length > 0
+  );
+
+  // A saved team_lineup is always either a complete valid XI (11 nominated) or a still-reachable
+  // partial build/gap (see team_lineup.database.php's isReachableFormation, and POST /sell which
+  // only clears the sold player's own entry instead of resetting the whole lineup to bench) — this
+  // page is read-only regardless of ownership (lineup editing only happens on
+  // /team/:id/aufstellung), so unlike lineup.component.ts there's no owner exception here: an
+  // incomplete lineup shows the hint for everyone, including its own manager.
+  isHomeLineupComplete = computed(() => this.homeLineup().length === 11);
+  isAwayLineupComplete = computed(() => this.awayLineup().length === 11);
+
+  showHomeInvalidHint = computed(() => !this.isHomeLineupComplete());
+  showAwayInvalidHint = computed(() => !this.isAwayLineupComplete());
+
+  // Mobile pitch view shows one team at a time (see selectedSide below).
+  showSelectedInvalidHint = computed(() =>
+    this.selectedSide() === 'home' ? this.showHomeInvalidHint() : this.showAwayInvalidHint()
+  );
+
   // Deterministische Pseudo-Quote (Heim/Unentschieden/Auswärts) aus Marktwert+Saisonpunkten der
   // aufgestellten Spieler — reine Orientierung, keine echten Einsätze; siehe
   // H2HTrait::calculateH2HOdds() im Backend für die Berechnung.

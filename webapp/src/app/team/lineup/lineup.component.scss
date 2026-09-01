@@ -909,6 +909,39 @@ $mobile-nav-height: 64px;
   white-space: nowrap;
 }
 
+// Shown instead of the player grid for foreign viewers when the lineup isn't a complete valid
+// XI (mid-build, or gapped by a sale — see showInvalidLineupHint()) — the owner still sees the
+// actual (partial) lineup + empty slots to fix it themselves.
+.field-invalid-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 2; // über .field-lines (z-index: 1)
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-6;
+
+  &__card {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    background: $color-surface;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: $space-2 $space-4;
+    color: $color-text;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    text-align: left;
+  }
+
+  &__icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+}
+
 // Drag hover states on field players
 .field--editable {
   .field-player {

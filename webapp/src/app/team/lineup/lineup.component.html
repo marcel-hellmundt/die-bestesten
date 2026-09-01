@@ -47,6 +47,14 @@
           <div class="formation-error">{{ formationError() }}</div>
         }
 
+        @if (showInvalidLineupHint()) {
+          <div class="field-invalid-hint">
+            <span class="field-invalid-hint__card">
+              <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
+              <span>Keine gültige Aufstellung vorhanden</span>
+            </span>
+          </div>
+        } @else {
         @for (pos of pitchPositions; track pos) {
           <div class="field-section">
             @for (p of getPlayersByPosition(pos); track p.id) {
@@ -135,6 +143,7 @@
             }
           </div>
         }
+        }
 
         <!-- Field markings -->
         <div class="field-lines">
@@ -153,7 +162,10 @@
 
       <!-- Mobile bench (card row below pitch, same card as the desktop sidebar) — stepped
            via the arrow buttons instead of finger-scrollable, so it doesn't fight with
-           dragging a chip onto the field. -->
+           dragging a chip onto the field. Hidden for foreign viewers alongside the field
+           hint (showInvalidLineupHint()) — the bank is only useful for building/fixing the
+           lineup, which only the owner can do. -->
+      @if (!showInvalidLineupHint()) {
       <div class="mobile-bench">
         <span class="mobile-bench__label">Ersatzbank</span>
         <button
@@ -179,6 +191,7 @@
           aria-label="Weitere Bank-Spieler"
         >›</button>
       </div>
+      }
     </div>
 
     <!-- SIDEBAR -->
@@ -228,12 +241,14 @@
         </div>
       </div>
 
+      @if (!showInvalidLineupHint()) {
       <div class="sidebar-block desktop-bench">
         <h3 class="sidebar-title">Ersatzbank</h3>
         <div class="bench-list">
           <ng-container *ngTemplateOutlet="benchList"></ng-container>
         </div>
       </div>
+      }
 
     </div>
   </div>
