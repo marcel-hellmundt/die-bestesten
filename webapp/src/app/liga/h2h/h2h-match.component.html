@@ -404,17 +404,48 @@
           <span>{{ bd.away_points }}</span>
         </div>
         <div class="h2h-odds-breakdown__row">
-          <span class="h2h-odds-breakdown__label">Anteil Marktwert</span>
+          <span class="h2h-odds-breakdown__label">Anteil Marktwert ({{ bd.value_weight * 100 }}%)</span>
           <span>{{ bd.value_ratio_home * 100 | number: '1.0-1' }} %</span>
           <span>{{ (1 - bd.value_ratio_home) * 100 | number: '1.0-1' }} %</span>
         </div>
         <div class="h2h-odds-breakdown__row">
-          <span class="h2h-odds-breakdown__label">Anteil Saisonpunkte</span>
+          <span class="h2h-odds-breakdown__label">Anteil Saisonpunkte ({{ bd.points_weight * 100 }}%)</span>
           <span>{{ bd.points_ratio_home * 100 | number: '1.0-1' }} %</span>
           <span>{{ (1 - bd.points_ratio_home) * 100 | number: '1.0-1' }} %</span>
         </div>
+
+        <!-- Projizierte Tordifferenz: gleiche Formel wie die echte H2H-Ergebnisberechnung
+             (Tore + Vorlagen/3, abzüglich gegnerischer Abwehr-SdS), aber auf Saison-Summen der
+             aufgestellten Spieler statt Einzelspieltagswerten — dominant gewichtet (siehe unten),
+             da am nächsten an dem, was den tatsächlichen Ausgang bestimmt. -->
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Saison-Tore (aufgestellt)</span>
+          <span>{{ bd.home_season_goals }}</span>
+          <span>{{ bd.away_season_goals }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Saison-Vorlagen (aufgestellt)</span>
+          <span>{{ bd.home_season_assists }}</span>
+          <span>{{ bd.away_season_assists }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Abwehr-SdS (GK/DEF, aufgestellt)</span>
+          <span>{{ bd.home_def_sds }}</span>
+          <span>{{ bd.away_def_sds }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Projizierte Tore (Tore + Vorlagen/3 − gegn. Abwehr-SdS)</span>
+          <span>{{ bd.proj_home_goals }}</span>
+          <span>{{ bd.proj_away_goals }}</span>
+        </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Anteil projizierte Tore ({{ bd.goals_weight * 100 }}%, dominant)</span>
+          <span>{{ bd.goals_ratio_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ (1 - bd.goals_ratio_home) * 100 | number: '1.0-1' }} %</span>
+        </div>
+
         <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
-          <span class="h2h-odds-breakdown__label">Stärke-Vorsprung (Heim, je 50% Marktwert+Punkte)</span>
+          <span class="h2h-odds-breakdown__label">Stärke-Vorsprung (Heim)</span>
           <span>{{ bd.edge > 0 ? '+' : '' }}{{ bd.edge | number: '1.0-3' }}</span>
         </div>
         <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
