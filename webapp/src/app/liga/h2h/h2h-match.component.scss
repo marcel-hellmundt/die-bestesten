@@ -28,6 +28,34 @@
 // bläht dadurch die Header-Zeile auf und schiebt das Feld sichtbar nach unten. Header+Feld als
 // ein einzelnes Item in einer einzigen Zeile umgeht das vollständig.
 .h2h-detail-layout {
+  // Mobile: die Tipp-/Auswertungs-Card (Wett-Buttons vor Anpfiff bzw. Tipps-Verteilung danach)
+  // soll direkt unter der Ergebnis-Card stehen, statt hinter Feld/Bank — obwohl sie im Markup
+  // erst deutlich später (in .h2h-detail-layout__side) folgt. display:contents löst die beiden
+  // Gruppierungs-Divs optisch auf, sodass ihre Kinder direkte Flex-Items dieses Containers
+  // werden; order sortiert sie dann unabhängig von der Dokumentreihenfolge um. Betrifft nur
+  // diese beiden Elemente — alles andere behält seine natürliche Reihenfolge (order 0).
+  //
+  // .h2h-predict-card--primary (nicht die generische .h2h-predict-card) ist bewusst der
+  // Selektor: die Admin-Vorschau-Card und die Quoten-Berechnung-Card teilen sich dieselbe Basis-
+  // klasse für Card-Padding/Label-Styling, sollen aber NICHT mit nach oben wandern.
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    flex-direction: column;
+
+    .h2h-detail-layout__main,
+    .h2h-detail-layout__side {
+      display: contents;
+    }
+
+    .match-header {
+      order: -2;
+    }
+
+    .h2h-predict-card--primary {
+      order: -1;
+    }
+  }
+
   @media (min-width: calc($mobile-breakpoint + 1px)) {
     display: grid;
     grid-template-columns: 1fr minmax(240px, 300px);
