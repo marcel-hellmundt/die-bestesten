@@ -195,7 +195,7 @@
        FWD→GK, so both teams' forwards meet at the halfway line. Replaces the old two-column
        table layout (see .h2h-field-wrap's mobile display:none / .lineup-grid removal). -->
   <div class="h2h-field-wrap">
-    @if (homeBench().length > 0) {
+    @if (homeBench().length > 0 && !showHomeInvalidHint()) {
       <div class="h2h-bench h2h-bench--home">
         @for (p of homeBench(); track p.player_id) {
           <ng-container *ngTemplateOutlet="benchCard; context: { p: p }"></ng-container>
@@ -285,7 +285,7 @@
       </div>
     </div>
 
-    @if (awayBench().length > 0) {
+    @if (awayBench().length > 0 && !showAwayInvalidHint()) {
       <div class="h2h-bench h2h-bench--away">
         @for (p of awayBench(); track p.player_id) {
           <ng-container *ngTemplateOutlet="benchCard; context: { p: p }"></ng-container>
@@ -298,8 +298,10 @@
   <!-- Bank (mobile toggle only — desktop always shows both benches, see .h2h-bench above). Bleibt
        ein direktes Kind von .h2h-detail-layout (statt außerhalb), obwohl es auf Desktop per
        display:none ohnehin unsichtbar ist — nur so zählt die Dokumentreihenfolge (Lineup vor
-       Tipps) auch auf Mobile, wo kein Grid greift. -->
-  @if (homeBench().length > 0 || awayBench().length > 0) {
+       Tipps) auch auf Mobile, wo kein Grid greift. An die aktuell ausgewählte Seite gekoppelt
+       (nicht mehr die Vereinigung beider Seiten) — showSelectedInvalidHint() blendet die Bank
+       für Fremde bei unvollständiger Aufstellung aus, analog zum Feld. -->
+  @if (selectedBench().length > 0 && !showSelectedInvalidHint()) {
     <button class="btn btn--ghost btn--sm bench-toggle" (click)="showBench = !showBench">
       {{ showBench ? 'Bank ausblenden' : 'Bank anzeigen' }}
     </button>
