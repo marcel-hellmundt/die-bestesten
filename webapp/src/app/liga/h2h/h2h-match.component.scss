@@ -322,6 +322,43 @@
   gap: $space-1;
   font-size: $font-xs;
 
+  // Chevron zeigt nach rechts (eingeklappt) bzw. nach oben (aufgeklappt) — eingeklappt bleiben
+  // nur Titel + Button sichtbar, der Rest der Card entfällt komplett (siehe @if im Template).
+  &__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+
+    .h2h-predict-card__label {
+      margin-bottom: 0;
+    }
+
+    &--expanded {
+      margin-bottom: $space-2;
+    }
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: $color-text-muted;
+    transition: transform $transition-fast;
+  }
+
+  &__toggle--expanded &__chevron {
+    transform: rotate(-90deg);
+  }
+
   &__header,
   &__row {
     display: grid;
