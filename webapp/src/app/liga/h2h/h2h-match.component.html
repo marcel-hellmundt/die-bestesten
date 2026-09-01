@@ -9,6 +9,11 @@
        Auf Mobile ohne Wirkung (kein Grid dort) — Reihenfolge bleibt die normale Dokumentreihenfolge:
        Ergebnis, Lineup (Feld + Bank), Tipps, Bisherige Begegnungen. -->
   <div class="h2h-detail-layout">
+  <!-- Header+Feld+Bänke als ein einzelnes Grid-Item (statt zwei über die Sidebar-Spalte
+       gespannte Zeilen) — sonst bläht ein hoher Sidebar-Inhalt (z.B. die Admin-Quoten-Card) die
+       implizite erste Grid-Zeile (Header) auf und schiebt das Feld sichtbar nach unten, da CSS
+       Grid überschüssige Höhe eines zeilenübergreifenden Items auf alle gespannten Zeilen verteilt. -->
+  <div class="h2h-detail-layout__main">
   <!-- Header -->
   <div class="match-header card">
     <div class="match-meta">
@@ -286,6 +291,7 @@
       </div>
     }
   }
+  </div>
 
   <!-- Sidebar-Slot des Desktop-Grids (grid-area: side, siehe .h2h-detail-layout__side) — Tipp-
        Karte oben, direkt darunter (nur Admins, nur vor Anpfiff) dieselbe Auswertungs-Card wie
