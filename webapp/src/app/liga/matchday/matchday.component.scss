@@ -659,6 +659,16 @@
   max-width: unset;
 }
 
+.mobile-break {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+    flex-basis: 100%;
+    height: 0;
+  }
+}
+
 .stats-mode-toggle {
   display: inline-flex;
   margin-left: auto;
@@ -693,7 +703,8 @@
 .lineup-compact {
   display: flex;
   align-items: center;
-  gap: $space-1;
+  justify-content: center;
+  gap: $space-3;
   flex-wrap: wrap;
 }
 
