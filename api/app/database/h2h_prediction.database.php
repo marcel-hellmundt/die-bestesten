@@ -369,9 +369,10 @@ trait H2HPredictionTrait
     }
 
     /**
-     * Alle Manager, die bisher mindestens einen H2H-Tipp abgegeben haben, mit ihrer Anzahl
-     * korrekter Tipps (result='won') — fürs Wettbüro (webapp: BettingOfficeComponent), dort je
-     * Sieg ein reward.png-Icon. Absteigend nach Siegen sortiert.
+     * Alle Manager, die bereits mindestens einen ausgewerteten H2H-Tipp haben (result won/lost —
+     * noch offene Tipps zählen nicht, da deren Ausgang für andere Manager noch geheim ist), mit
+     * ihrer Anzahl korrekter Tipps (result='won') — fürs Wettbüro (webapp: BettingOfficeComponent),
+     * dort je Sieg ein reward.png-Icon. Absteigend nach Siegen sortiert.
      */
     public function getH2HPredictionStandings(): array
     {
@@ -380,6 +381,7 @@ trait H2HPredictionTrait
                     SUM(CASE WHEN hp.result = 'won' THEN 1 ELSE 0 END) AS wins
              FROM h2h_prediction hp
              JOIN manager m ON m.id = hp.manager_id
+             WHERE hp.result <> 'open'
              GROUP BY hp.manager_id, m.manager_name, m.alias
              ORDER BY wins DESC, m.manager_name ASC"
         )->fetchAll(PDO::FETCH_ASSOC);

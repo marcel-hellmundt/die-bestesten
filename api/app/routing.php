@@ -1166,7 +1166,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h_prediction/standings',
-                        'description' => 'Alle Manager, die bisher mindestens einen H2H-Tipp abgegeben haben, mit wins (Anzahl result=won) — fürs Wettbüro; absteigend nach wins sortiert — Auth',
+                        'description' => 'Alle Manager, die bereits mindestens einen ausgewerteten H2H-Tipp haben (result won/lost, offene zählen nicht), mit wins (Anzahl result=won) — fürs Wettbüro; absteigend nach wins sortiert — Auth',
                     ],
                     [
                         'method' => 'GET',
