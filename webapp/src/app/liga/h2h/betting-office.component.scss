@@ -87,22 +87,6 @@
   color: $color-text-muted;
 }
 
-.bets-empty-card__matches {
-  display: flex;
-  flex-direction: column;
-  gap: $space-1;
-
-  a {
-    font-size: $font-sm;
-    font-weight: $font-weight-medium;
-    color: $color-accent;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-}
-
 .bet-row {
   display: flex;
   align-items: center;
@@ -230,4 +214,109 @@
 .reward-icon {
   width: 18px;
   height: 18px;
+}
+
+// ── Offene Tipps — gleiche Optik wie die Tipp-Karte in h2h-match.component.scss, hier eine
+// Card je Match statt einer einzelnen Karte für das aktuell betrachtete Match.
+
+.available-matches {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.available-match-card {
+  padding: $space-3 $space-4;
+}
+
+.h2h-predict-card {
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: $space-2;
+  }
+
+  &__options {
+    display: flex;
+    gap: $space-2;
+  }
+
+  &__error {
+    font-size: $font-xs;
+    color: $color-danger;
+    margin-top: $space-2;
+  }
+}
+
+.h2h-predict-btn {
+  --pick-color: #a4b0be;
+
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: center;
+
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 2px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  color: $color-text;
+  cursor: pointer;
+  transition:
+    border-color $transition-fast,
+    color $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: var(--pick-color);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  &__top {
+    flex: 7 7 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-1;
+    padding: $space-2;
+    background: $color-surface;
+  }
+
+  &__bottom {
+    flex: 3 3 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    background: $color-surface-alt;
+  }
+
+  &__logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__odds {
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    opacity: 0.8;
+  }
 }
