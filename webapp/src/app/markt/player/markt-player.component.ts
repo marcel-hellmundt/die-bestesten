@@ -528,6 +528,16 @@ export class MarktPlayerComponent {
     this.maxPrice.set(val >= this.maxDataPrice() ? null : val);
   }
 
+  // Auf 10.000er-Schritt abgerundet, damit der Wert exakt zum Slider-Raster passt und nie über
+  // dem tatsächlich verfügbaren Budget liegt; entspricht "Alle Preise", falls das Budget ohnehin
+  // über dem teuersten gelisteten Spieler liegt (gleiche Konvention wie onPriceInput()).
+  setMaxPriceToBudget(): void {
+    const budget = this.remainingBudget();
+    if (budget === null) return;
+    const rounded = Math.max(0, Math.floor(budget / 10_000) * 10_000);
+    this.maxPrice.set(rounded >= this.maxDataPrice() ? null : rounded);
+  }
+
   resetFilters(): void {
     this.searchQuery.set('');
     this.positionFilter.set(null);
