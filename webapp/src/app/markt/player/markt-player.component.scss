@@ -160,7 +160,15 @@
   }
 }
 
+.filter-slider-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
 .filter-slider {
+  flex: 1;
+  min-width: 0;
   appearance: auto;
   height: auto !important;
   border: none !important;
@@ -169,6 +177,27 @@
   padding: 0 !important;
   accent-color: $color-accent;
   cursor: pointer;
+}
+
+.filter-budget-btn {
+  flex-shrink: 0;
+  padding: 4px $space-2;
+  border-radius: $radius-sm;
+  border: 1px solid $color-border;
+  background: transparent;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  cursor: pointer;
+  transition:
+    background $transition-fast,
+    color $transition-fast,
+    border-color $transition-fast;
+
+  &:hover {
+    border-color: $color-text-muted;
+    color: $color-text;
+  }
 }
 
 .filter-price-val {
