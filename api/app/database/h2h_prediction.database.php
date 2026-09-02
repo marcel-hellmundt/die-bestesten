@@ -110,10 +110,12 @@ trait H2HPredictionTrait
 
     /**
      * Aktuell bebettbare H2H-Matches der aktiven Saison — Spieltag ist der aktuelle (kleinste noch
-     * nicht abgeschlossene number in Saison+Division), beide Teams haben bereits eine Aufstellung
-     * (bothTeamsHaveLineup()), und der Manager führt keines der beiden Teams selbst. Fürs Wettbüro
-     * (webapp: BettingOfficeComponent) — Direktlinks im Leer-Zustand, statt den Manager selbst
-     * suchen zu lassen.
+     * nicht abgeschlossene number in Saison+Division), beide Teams haben bereits eine vollständige
+     * Aufstellung (bothTeamsHaveLineup()), der Manager führt keines der beiden Teams selbst, UND
+     * hat für dieses Match noch keinen Tipp abgegeben. Fürs Wettbüro (webapp:
+     * BettingOfficeComponent) — Liste "noch offener" Tipp-Möglichkeiten mit derselben
+     * Quoten+Buttons-UI wie die H2H-Match-Detailseite, daher wird deren getH2HMatchDetail() pro
+     * Match wiederverwendet statt die Odds-Berechnung hier zu duplizieren.
      */
     public function getAvailableH2HMatches(string $managerId): array
     {
@@ -134,25 +136,40 @@ trait H2HPredictionTrait
 
         $q = $this->con_league->prepare(
             "SELECT hm.id, hm.home_team_id, hm.away_team_id,
-                    th.team_name AS home_team_name, th.manager_id AS home_manager_id,
-                    ta.team_name AS away_team_name, ta.manager_id AS away_manager_id
+                    th.manager_id AS home_manager_id, ta.manager_id AS away_manager_id
              FROM h2h_match hm
              JOIN team th ON th.id = hm.home_team_id
              JOIN team ta ON ta.id = hm.away_team_id
              WHERE hm.matchday_id = :mid"
         );
         $q->execute([':mid' => $matchday['id']]);
+        $matches = $q->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($matches)) return [];
+
+        $matchIds = array_column($matches, 'id');
+        $ph       = implode(',', array_fill(0, count($matchIds), '?'));
+        $predQ    = $this->con_league->prepare(
+            "SELECT match_id FROM h2h_prediction WHERE manager_id = ? AND match_id IN ($ph)"
+        );
+        $predQ->execute(array_merge([$managerId], $matchIds));
+        $alreadyPredicted = array_flip($predQ->fetchAll(PDO::FETCH_COLUMN));
 
         $available = [];
-        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $m) {
+        foreach ($matches as $m) {
             if ($m['home_manager_id'] === $managerId || $m['away_manager_id'] === $managerId) continue;
+            if (isset($alreadyPredicted[$m['id']])) continue;
             if (!$this->bothTeamsHaveLineup($m['home_team_id'], $m['away_team_id'], $matchday['id'])) continue;
+
+            $detail = $this->getH2HMatchDetail($m['id']);
+            if (!$detail) continue;
 
             $available[] = [
                 'match_id'        => $m['id'],
                 'matchday_number' => $matchday['number'],
-                'home_team_name'  => $m['home_team_name'],
-                'away_team_name'  => $m['away_team_name'],
+                'season_id'       => $detail['match']['season_id'],
+                'home_team'       => $detail['home_team'],
+                'away_team'       => $detail['away_team'],
+                'odds'            => $detail['odds'],
             ];
         }
         return $available;
@@ -369,9 +386,10 @@ trait H2HPredictionTrait
     }
 
     /**
-     * Alle Manager, die bisher mindestens einen H2H-Tipp abgegeben haben, mit ihrer Anzahl
-     * korrekter Tipps (result='won') — fürs Wettbüro (webapp: BettingOfficeComponent), dort je
-     * Sieg ein reward.png-Icon. Absteigend nach Siegen sortiert.
+     * Alle Manager, die bereits mindestens einen ausgewerteten H2H-Tipp haben (result won/lost —
+     * noch offene Tipps zählen nicht, da deren Ausgang für andere Manager noch geheim ist), mit
+     * ihrer Anzahl korrekter Tipps (result='won') — fürs Wettbüro (webapp: BettingOfficeComponent),
+     * dort je Sieg ein reward.png-Icon. Absteigend nach Siegen sortiert.
      */
     public function getH2HPredictionStandings(): array
     {
@@ -380,6 +398,7 @@ trait H2HPredictionTrait
                     SUM(CASE WHEN hp.result = 'won' THEN 1 ELSE 0 END) AS wins
              FROM h2h_prediction hp
              JOIN manager m ON m.id = hp.manager_id
+             WHERE hp.result <> 'open'
              GROUP BY hp.manager_id, m.manager_name, m.alias
              ORDER BY wins DESC, m.manager_name ASC"
         )->fetchAll(PDO::FETCH_ASSOC);

@@ -40,20 +40,8 @@
         <p class="bets-empty-card__title">Noch keine Wetten abgegeben.</p>
         <p class="bets-empty-card__hint">
           Tipps kannst du jederzeit im Match-Detail eines H2H-Spiels abgeben — für Partien des
-          aktuellen Spieltags, sobald beide beteiligten Teams mindestens einen Spieler aufgestellt
-          haben.
+          aktuellen Spieltags, sobald beide beteiligten Teams eine vollständige Aufstellung haben.
         </p>
-        @if (availableMatches().length > 0) {
-          <ul class="bets-empty-card__matches">
-            @for (m of availableMatches(); track m.match_id) {
-              <li>
-                <a [routerLink]="['/liga/h2h', m.match_id]">
-                  {{ m.home_team_name }} : {{ m.away_team_name }}
-                </a>
-              </li>
-            }
-          </ul>
-        }
       </div>
     } @else if (filteredBets().length === 0) {
       <p class="state-msg">Keine Wetten in dieser Ansicht.</p>
@@ -102,6 +90,91 @@
             </span>
             <span class="bet-row__odds">{{ b.odds ?? '–' }}</span>
           </div>
+        }
+      </div>
+    }
+
+    <div class="table-section-title">Offene Tipps</div>
+    @if (availableLoading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (availableMatches().length === 0) {
+      <p class="state-msg">Aktuell keine offenen Tipp-Möglichkeiten.</p>
+    } @else {
+      <div class="available-matches">
+        @for (m of availableMatches(); track m.match_id) {
+          <div class="card h2h-predict-card available-match-card">
+            <div class="h2h-predict-card__label">
+              {{ m.home_team.team_name }} – {{ m.away_team.team_name }}
+            </div>
+            <div class="h2h-predict-card__options">
+              <button
+                class="h2h-predict-btn"
+                [style.--pick-color]="m.home_team.color"
+                [disabled]="submittingMatchId() === m.match_id"
+                (click)="submitAvailablePrediction(m, 'home')"
+                [attr.title]="m.home_team.team_name"
+              >
+                <span class="h2h-predict-btn__top">
+                  @if (!logoFailed(m.home_team.id)) {
+                    <img
+                      class="h2h-predict-btn__logo"
+                      [src]="teamLogoUrl(m.home_team.id, m.season_id)"
+                      (error)="onLogoError(m.home_team.id)"
+                      alt=""
+                    />
+                  }
+                  <span class="h2h-predict-btn__label">1</span>
+                </span>
+                <span class="h2h-predict-btn__bottom">
+                  @if (m.odds.home != null) {
+                    <span class="h2h-predict-btn__odds">{{ m.odds.home!.toFixed(2) }}</span>
+                  }
+                </span>
+              </button>
+              <button
+                class="h2h-predict-btn"
+                [disabled]="submittingMatchId() === m.match_id"
+                (click)="submitAvailablePrediction(m, 'draw')"
+                title="Unentschieden"
+              >
+                <span class="h2h-predict-btn__top">
+                  <span class="h2h-predict-btn__label">X</span>
+                </span>
+                <span class="h2h-predict-btn__bottom">
+                  @if (m.odds.draw != null) {
+                    <span class="h2h-predict-btn__odds">{{ m.odds.draw!.toFixed(2) }}</span>
+                  }
+                </span>
+              </button>
+              <button
+                class="h2h-predict-btn"
+                [style.--pick-color]="m.away_team.color"
+                [disabled]="submittingMatchId() === m.match_id"
+                (click)="submitAvailablePrediction(m, 'away')"
+                [attr.title]="m.away_team.team_name"
+              >
+                <span class="h2h-predict-btn__top">
+                  @if (!logoFailed(m.away_team.id)) {
+                    <img
+                      class="h2h-predict-btn__logo"
+                      [src]="teamLogoUrl(m.away_team.id, m.season_id)"
+                      (error)="onLogoError(m.away_team.id)"
+                      alt=""
+                    />
+                  }
+                  <span class="h2h-predict-btn__label">2</span>
+                </span>
+                <span class="h2h-predict-btn__bottom">
+                  @if (m.odds.away != null) {
+                    <span class="h2h-predict-btn__odds">{{ m.odds.away!.toFixed(2) }}</span>
+                  }
+                </span>
+              </button>
+            </div>
+          </div>
+        }
+        @if (predictionError(); as err) {
+          <p class="h2h-predict-card__error">{{ err }}</p>
         }
       </div>
     }

@@ -423,8 +423,11 @@
 
     <!-- Admin-only Transparenz-Card: schlüsselt die Zwischenwerte der Quoten-Berechnung auf
          (siehe H2HTrait::calculateH2HOdds() im Backend) — odds_breakdown kommt vom Server nur
-         für Admins befüllt, sonst null. -->
-    @if (isAdmin() && oddsBreakdown(); as bd) {
+         für Admins befüllt, sonst null. Ohne vollständige Aufstellung auf beiden Seiten
+         (lineupsReady()) ist auch für Admins kein Tipp möglich (siehe hideCard()) — die
+         Berechnung dahinter beruht dann auf einer unvollständigen Aufstellung und wäre
+         irreführend, daher bleibt die Karte in dem Fall ebenfalls ausgeblendet. -->
+    @if (isAdmin() && lineupsReady() && oddsBreakdown(); as bd) {
       <div class="card h2h-predict-card h2h-odds-breakdown">
         <button
           type="button"
