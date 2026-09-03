@@ -119,18 +119,62 @@
               <img class="tbl-logo tbl-logo--sm" [class.logo--placeholder]="!c.logo_uploaded" [src]="clubLogoUrl(c)" alt="" />
               <span class="club-team-row__name">{{ c.name }}</span>
             </span>
-            @if (c.leading_team; as lt) {
+            @if (c.leading_teams.length > 0) {
+              <span class="club-team-row__team">
+                <span class="club-team-row__count">{{ c.leading_count }}x</span>
+                <span class="club-team-row__logos">
+                  @for (lt of c.leading_teams; track lt.id) {
+                    <span
+                      class="club-team-row__logo-wrap club-team-row__hover-target"
+                      (mouseenter)="onListHover($event, lt.team_name + ' · ' + c.name, lt.players)"
+                      (mouseleave)="onListLeave()"
+                    >
+                      @if (!logoFailed(lt.id)) {
+                        <img class="tbl-logo tbl-logo--sm" [src]="leadingTeamLogoUrl(lt.id)" (error)="onLogoError(lt.id)" alt="" [title]="lt.team_name" />
+                      } @else if (lt.color) {
+                        <span class="team-dot" [style.background-color]="lt.color" [title]="lt.team_name"></span>
+                      }
+                    </span>
+                  }
+                </span>
+              </span>
+            } @else {
+              <span class="club-team-row__team club-team-row__team--empty">–</span>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="card">
+    <div class="card-title">Vereinsherkunft</div>
+    @if (teamClubsLoading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (teamClubsError()) {
+      <p class="state-msg state-msg--error">{{ teamClubsError() }}</p>
+    } @else if (teamClubs().length === 0) {
+      <p class="state-msg">Keine Teams für diese Saison.</p>
+    } @else {
+      <div class="club-team-list">
+        @for (t of teamClubs(); track t.id) {
+          <div class="club-team-row">
+            <span class="club-team-row__club">
+              @if (!logoFailed(t.id)) {
+                <img class="tbl-logo tbl-logo--sm" [src]="leadingTeamLogoUrl(t.id)" (error)="onLogoError(t.id)" alt="" />
+              } @else if (t.color) {
+                <span class="team-dot" [style.background-color]="t.color"></span>
+              }
+              <span class="club-team-row__name">{{ t.team_name }}</span>
+            </span>
+            @if (t.leading_club; as lc) {
               <span
-                class="club-team-row__team"
-                (mouseenter)="onTeamHover($event, c)"
-                (mouseleave)="onTeamLeave()"
+                class="club-team-row__team club-team-row__hover-target"
+                (mouseenter)="onListHover($event, t.team_name + ' · ' + lc.name, lc.players)"
+                (mouseleave)="onListLeave()"
               >
-                <span class="club-team-row__team-name">{{ lt.team_name }}</span>
-                @if (!logoFailed(lt.id)) {
-                  <img class="tbl-logo tbl-logo--sm" [src]="leadingTeamLogoUrl(lt.id)" (error)="onLogoError(lt.id)" alt="" />
-                } @else if (lt.color) {
-                  <span class="team-dot" [style.background-color]="lt.color"></span>
-                }
+                <span class="club-team-row__team-name">{{ lc.name }}</span>
+                <img class="tbl-logo tbl-logo--sm" [class.logo--placeholder]="!lc.logo_uploaded" [src]="clubLogoUrl(lc)" alt="" />
               </span>
             } @else {
               <span class="club-team-row__team club-team-row__team--empty">–</span>
@@ -142,18 +186,18 @@
   </div>
 </div>
 
-@if (tooltipClub(); as tc) {
+@if (tooltipTitle(); as title) {
   <div
-    class="club-team-tooltip"
-    [class.club-team-tooltip--below]="tooltipBelow()"
-    [class.club-team-tooltip--ready]="tooltipReady()"
+    class="list-tooltip"
+    [class.list-tooltip--below]="tooltipBelow()"
+    [class.list-tooltip--ready]="tooltipReady()"
     [style.top.px]="tooltipPos()!.top"
     [style.left.px]="tooltipPos()!.left"
-    #clubTeamTooltipEl
+    #listTooltipEl
   >
-    <span class="club-team-tooltip__title">{{ tc.leading_team!.team_name }} · {{ tc.name }}</span>
-    <ul class="club-team-tooltip__list">
-      @for (p of tc.leading_team!.players; track p.name) {
+    <span class="list-tooltip__title">{{ title }}</span>
+    <ul class="list-tooltip__list">
+      @for (p of tooltipPlayers(); track p.name) {
         <li>{{ p.name }}</li>
       }
     </ul>

@@ -700,7 +700,13 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team/clubs',
-                        'description' => 'Alle Vereine der Liga-Division (Fallback: höchste deutsche Division) mit dem Team, das die meisten aktuellen Kaderspieler dieses Vereins führt — gibt [{id,name,short_name,logo_uploaded,leading_team:{id,team_name,color,color_secondary,count,players:[{name}]}|null}] sortiert nach Vereinsname zurück; leading_team=null wenn kein Team Kaderspieler dieses Vereins hat; players alphabetisch sortiert — Auth',
+                        'description' => 'Alle Vereine der Liga-Division (Fallback: höchste deutsche Division) mit ALLEN Teams, die die meisten aktuellen Kaderspieler dieses Vereins führen (bei Gleichstand mehrere) — gibt [{id,name,short_name,logo_uploaded,leading_count,leading_teams:[{id,team_name,color,color_secondary,players:[{name}]}]}] sortiert nach leading_count absteigend (dann Vereinsname) zurück; leading_count=0 und leading_teams=[] wenn kein Team Kaderspieler dieses Vereins hat; players alphabetisch, leading_teams nach team_name sortiert — Auth',
+                        'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/team/leading_clubs',
+                        'description' => 'Für jedes Team der Saison der Verein, aus dem die meisten aktuellen Kaderspieler stammen — gibt [{id,team_name,color,color_secondary,leading_club:{id,name,short_name,logo_uploaded,count,players:[{name}]}|null}] zurück; leading_club=null wenn kein zuordenbarer Kaderspieler; players alphabetisch sortiert — Auth',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                     [

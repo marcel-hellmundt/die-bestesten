@@ -182,7 +182,7 @@
   }
 }
 
-// ── Vereine-Card ─────────────────────────────────────────────────────────────
+// ── Vereine- / Vereinsherkunft-Cards ─────────────────────────────────────────
 
 .card-title {
   font-family: $font-display;
@@ -233,6 +233,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  font-weight: $font-weight-medium;
 }
 
 .club-team-row__team {
@@ -240,6 +241,15 @@
   align-items: center;
   gap: $space-2;
   flex-shrink: 0;
+
+  &--empty {
+    color: $color-text-muted;
+  }
+}
+
+// Diskreter Hover-Bereich (Padding+Radius+Hintergrund) — bei "Vereinsherkunft" die ganze
+// Verein-Zeile rechts, bei "Vereine" jedes einzelne Team-Logo für sich (siehe __logo-wrap).
+.club-team-row__hover-target {
   border-radius: $radius-sm;
   padding: 2px $space-2;
   cursor: default;
@@ -247,15 +257,23 @@
   &:hover {
     background: $color-surface-alt;
   }
+}
 
-  &--empty {
-    color: $color-text-muted;
-    cursor: default;
+.club-team-row__count {
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
-    &:hover {
-      background: none;
-    }
-  }
+.club-team-row__logos {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.club-team-row__logo-wrap {
+  display: flex;
+  align-items: center;
 }
 
 .club-team-row__team-name {
@@ -271,7 +289,7 @@
   flex-shrink: 0;
 }
 
-.club-team-tooltip {
+.list-tooltip {
   position: fixed;
   transform: translate(-50%, calc(-100% - 8px));
   transform-origin: bottom center;
@@ -302,7 +320,7 @@
   }
 }
 
-.club-team-tooltip__title {
+.list-tooltip__title {
   display: block;
   font-size: $font-xs;
   font-weight: $font-weight-semibold;
@@ -310,7 +328,7 @@
   margin-bottom: $space-2;
 }
 
-.club-team-tooltip__list {
+.list-tooltip__list {
   list-style: none;
   margin: 0;
   padding: 0;

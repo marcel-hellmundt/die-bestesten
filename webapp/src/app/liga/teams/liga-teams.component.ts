@@ -29,7 +29,6 @@ interface ClubLeadingTeam {
   team_name: string;
   color: string | null;
   color_secondary: string | null;
-  count: number;
   players: ClubLeadingTeamPlayer[];
 }
 
@@ -38,7 +37,25 @@ interface ClubLeadingTeamRow {
   name: string;
   short_name: string | null;
   logo_uploaded: boolean;
-  leading_team: ClubLeadingTeam | null;
+  leading_count: number;
+  leading_teams: ClubLeadingTeam[];
+}
+
+interface TeamLeadingClub {
+  id: string;
+  name: string;
+  short_name: string | null;
+  logo_uploaded: boolean;
+  count: number;
+  players: ClubLeadingTeamPlayer[];
+}
+
+interface TeamLeadingClubRow {
+  id: string;
+  team_name: string;
+  color: string | null;
+  color_secondary: string | null;
+  leading_club: TeamLeadingClub | null;
 }
 
 // Mirrors squad.component.ts's CONSTRAINTS — same min/max squad requirements per position.
@@ -125,6 +142,30 @@ export class LigaTeamsComponent {
   clubsLoading = computed(() => this.clubState().loading);
   clubsError   = computed(() => this.clubState().error);
 
+  // Für jedes Team der Verein, aus dem die meisten aktuellen Kaderspieler stammen — für die
+  // "Vereinsherkunft"-Card unterhalb der Teams-Tabelle (Kehrseite der Vereine-Card oben).
+  private teamClubState = toSignal(
+    toObservable(this.effectiveSeasonId).pipe(
+      switchMap(id => {
+        if (!id) return of({ data: [] as TeamLeadingClubRow[], loading: false, error: null as string | null });
+        return this.api.get<TeamLeadingClubRow[]>(`team/leading_clubs?season_id=${id}`).pipe(
+          map(data => ({
+            data: [...data].sort((a, b) => a.team_name.localeCompare(b.team_name)),
+            loading: false,
+            error: null as string | null,
+          })),
+          startWith({ data: [] as TeamLeadingClubRow[], loading: true, error: null as string | null }),
+          catchError(() => of({ data: [] as TeamLeadingClubRow[], loading: false, error: 'Fehler beim Laden' }))
+        );
+      })
+    ),
+    { initialValue: { data: [] as TeamLeadingClubRow[], loading: true, error: null as string | null } }
+  );
+
+  teamClubs        = computed(() => this.teamClubState().data);
+  teamClubsLoading = computed(() => this.teamClubState().loading);
+  teamClubsError   = computed(() => this.teamClubState().error);
+
   private logoErrors = new Set<string>();
 
   logoFailed(id: string): boolean { return this.logoErrors.has(id); }
@@ -138,7 +179,7 @@ export class LigaTeamsComponent {
     return `${environment.imageApiUrl}/team/${this.effectiveSeasonId()}/${teamId}.png`;
   }
 
-  clubLogoUrl(c: ClubLeadingTeamRow): string {
+  clubLogoUrl(c: { id: string; logo_uploaded: boolean }): string {
     return c.logo_uploaded
       ? `${environment.imageApiUrl}/club/${c.id}.png`
       : 'img/placeholders/club.png';
@@ -194,29 +235,34 @@ export class LigaTeamsComponent {
     this.router.navigate(['/team', teamId]);
   }
 
-  // Hover-Tooltip über dem führenden Team einer Vereins-Zeile — listet dessen Kaderspieler
-  // dieses Vereins auf. Gleiches Edge-Clamp-Muster wie andernorts im Projekt (fixed position,
-  // zweiter Messungs-Pass per requestAnimationFrame, hoverSeq gegen veraltete Callbacks).
-  @ViewChild('clubTeamTooltipEl') clubTeamTooltipEl?: ElementRef<HTMLElement>;
-  tooltipClub  = signal<ClubLeadingTeamRow | null>(null);
-  tooltipPos   = signal<{ top: number; left: number } | null>(null);
-  tooltipBelow = signal(false);
-  tooltipReady = signal(false);
+  // Generischer Hover-Tooltip (Titel + Spielerliste) für beide Vereins-/Team-Zeilen unten —
+  // "Vereine"-Card hovert über dem führenden Team (zeigt dessen Kaderspieler dieses Vereins),
+  // "Vereinsherkunft"-Card hovert über dem führenden Verein (zeigt dieselbe Art Spielerliste,
+  // nur umgekehrt referenziert) — beides dieselbe zugrunde liegende Spielerliste, nur mit
+  // unterschiedlichem Titel. Gleiches Edge-Clamp-Muster wie andernorts im Projekt (fixed
+  // position, zweiter Messungs-Pass per requestAnimationFrame, hoverSeq gegen veraltete Callbacks).
+  @ViewChild('listTooltipEl') listTooltipEl?: ElementRef<HTMLElement>;
+  tooltipTitle   = signal<string | null>(null);
+  tooltipPlayers = signal<ClubLeadingTeamPlayer[]>([]);
+  tooltipPos     = signal<{ top: number; left: number } | null>(null);
+  tooltipBelow   = signal(false);
+  tooltipReady   = signal(false);
 
   private static readonly TOOLTIP_EDGE_MARGIN = 24;
   private hoverSeq = 0;
 
-  onTeamHover(event: MouseEvent, club: ClubLeadingTeamRow): void {
-    if (!club.leading_team?.players.length) return;
+  onListHover(event: MouseEvent, title: string, players: ClubLeadingTeamPlayer[]): void {
+    if (!players.length) return;
     const seq = ++this.hoverSeq;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.tooltipClub.set(club);
+    this.tooltipTitle.set(title);
+    this.tooltipPlayers.set(players);
     this.tooltipBelow.set(false);
     this.tooltipReady.set(false);
     this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
 
     requestAnimationFrame(() => {
-      const el = this.clubTeamTooltipEl?.nativeElement;
+      const el = this.listTooltipEl?.nativeElement;
       if (!el || seq !== this.hoverSeq) return;
 
       const margin = LigaTeamsComponent.TOOLTIP_EDGE_MARGIN;
@@ -243,9 +289,10 @@ export class LigaTeamsComponent {
     });
   }
 
-  onTeamLeave(): void {
+  onListLeave(): void {
     this.hoverSeq++;
-    this.tooltipClub.set(null);
+    this.tooltipTitle.set(null);
+    this.tooltipPlayers.set([]);
     this.tooltipPos.set(null);
     this.tooltipReady.set(false);
   }
