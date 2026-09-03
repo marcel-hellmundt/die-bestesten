@@ -268,17 +268,15 @@
 .club-team-row__logos {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0;
 }
 
 .club-team-row__logo-wrap {
   display: flex;
   align-items: center;
-}
-
-.club-team-row__team-name {
-  font-weight: $font-weight-medium;
-  white-space: nowrap;
+  // Enger als der generische .club-team-row__hover-target-Abstand — bei mehreren Logos
+  // nebeneinander (Gleichstand) soll die Reihe kompakt wirken statt einzeln freizustehen.
+  padding: 2px 3px;
 }
 
 .team-dot {

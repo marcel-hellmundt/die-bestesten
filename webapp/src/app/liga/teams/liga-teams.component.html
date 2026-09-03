@@ -104,7 +104,7 @@
 
 <div class="teams-extra-grid">
   <div class="card">
-    <div class="card-title">Vereine</div>
+    <div class="card-title">Klumpenrisiko</div>
     @if (clubsLoading()) {
       <p class="state-msg">Laden…</p>
     } @else if (clubsError()) {
@@ -148,7 +148,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">Vereinsherkunft</div>
+    <div class="card-title">Vorlieben</div>
     @if (teamClubsLoading()) {
       <p class="state-msg">Laden…</p>
     } @else if (teamClubsError()) {
@@ -167,14 +167,20 @@
               }
               <span class="club-team-row__name">{{ t.team_name }}</span>
             </span>
-            @if (t.leading_club; as lc) {
-              <span
-                class="club-team-row__team club-team-row__hover-target"
-                (mouseenter)="onListHover($event, t.team_name + ' · ' + lc.name, lc.players)"
-                (mouseleave)="onListLeave()"
-              >
-                <span class="club-team-row__team-name">{{ lc.name }}</span>
-                <img class="tbl-logo tbl-logo--sm" [class.logo--placeholder]="!lc.logo_uploaded" [src]="clubLogoUrl(lc)" alt="" />
+            @if (t.leading_clubs.length > 0) {
+              <span class="club-team-row__team">
+                <span class="club-team-row__count">{{ t.leading_count }}x</span>
+                <span class="club-team-row__logos">
+                  @for (lc of t.leading_clubs; track lc.id) {
+                    <span
+                      class="club-team-row__logo-wrap club-team-row__hover-target"
+                      (mouseenter)="onListHover($event, t.team_name + ' · ' + lc.name, lc.players)"
+                      (mouseleave)="onListLeave()"
+                    >
+                      <img class="tbl-logo tbl-logo--sm" [class.logo--placeholder]="!lc.logo_uploaded" [src]="clubLogoUrl(lc)" alt="" [title]="lc.name" />
+                    </span>
+                  }
+                </span>
               </span>
             } @else {
               <span class="club-team-row__team club-team-row__team--empty">–</span>

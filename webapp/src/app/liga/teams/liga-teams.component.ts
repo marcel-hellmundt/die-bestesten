@@ -46,7 +46,6 @@ interface TeamLeadingClub {
   name: string;
   short_name: string | null;
   logo_uploaded: boolean;
-  count: number;
   players: ClubLeadingTeamPlayer[];
 }
 
@@ -55,7 +54,8 @@ interface TeamLeadingClubRow {
   team_name: string;
   color: string | null;
   color_secondary: string | null;
-  leading_club: TeamLeadingClub | null;
+  leading_count: number;
+  leading_clubs: TeamLeadingClub[];
 }
 
 // Mirrors squad.component.ts's CONSTRAINTS — same min/max squad requirements per position.

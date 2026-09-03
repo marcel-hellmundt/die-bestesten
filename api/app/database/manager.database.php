@@ -621,9 +621,9 @@ trait ManagerTrait
     }
 
     /**
-     * Für jedes Team der Saison: der Verein, aus dem die meisten aktuellen Kaderspieler stammen,
-     * inkl. Spielerliste fürs Frontend-Tooltip. Teams ohne (zuordenbare) Kaderspieler liefern
-     * leading_club=null.
+     * Für jedes Team der Saison: ALLE Vereine, aus denen die meisten aktuellen Kaderspieler
+     * stammen (bei Gleichstand mehrere), inkl. Spielerliste je Verein fürs Frontend-Tooltip.
+     * Teams ohne (zuordenbare) Kaderspieler liefern leading_count=0, leading_clubs=[].
      */
     public function getTeamLeadingClubs(string $seasonId): array
     {
@@ -632,7 +632,7 @@ trait ManagerTrait
         if (empty($teamById)) return [];
 
         $teams = array_values($teamById);
-        foreach ($teams as &$t) { $t['leading_club'] = null; }
+        foreach ($teams as &$t) { $t['leading_count'] = 0; $t['leading_clubs'] = []; }
         unset($t);
 
         if (empty($assignments['rows'])) return $teams;
@@ -655,18 +655,22 @@ trait ManagerTrait
 
         foreach ($teams as &$team) {
             $byClub = $byTeamClub[$team['id']] ?? [];
-            $best = null;
+            $maxCount = 0;
             foreach ($byClub as $clubId => $players) {
-                if (!isset($clubInfo[$clubId])) continue;
-                $count = count($players);
-                if ($best !== null && ($count < $best['count']
-                    || ($count === $best['count'] && $clubInfo[$clubId]['name'] >= $best['name']))) {
-                    continue;
-                }
-                usort($players, fn($a, $b) => strcasecmp($a['name'], $b['name']));
-                $best = $clubInfo[$clubId] + ['count' => $count, 'players' => $players];
+                if (isset($clubInfo[$clubId])) $maxCount = max($maxCount, count($players));
             }
-            $team['leading_club'] = $best;
+            if ($maxCount === 0) continue;
+
+            $leaders = [];
+            foreach ($byClub as $clubId => $players) {
+                if (!isset($clubInfo[$clubId]) || count($players) !== $maxCount) continue;
+                usort($players, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+                $leaders[] = $clubInfo[$clubId] + ['players' => $players];
+            }
+            usort($leaders, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
+            $team['leading_count'] = $maxCount;
+            $team['leading_clubs'] = $leaders;
         }
         unset($team);
 

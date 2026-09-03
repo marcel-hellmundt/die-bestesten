@@ -706,7 +706,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team/leading_clubs',
-                        'description' => 'Für jedes Team der Saison der Verein, aus dem die meisten aktuellen Kaderspieler stammen — gibt [{id,team_name,color,color_secondary,leading_club:{id,name,short_name,logo_uploaded,count,players:[{name}]}|null}] zurück; leading_club=null wenn kein zuordenbarer Kaderspieler; players alphabetisch sortiert — Auth',
+                        'description' => 'Für jedes Team der Saison ALLE Vereine, aus denen die meisten aktuellen Kaderspieler stammen (bei Gleichstand mehrere) — gibt [{id,team_name,color,color_secondary,leading_count,leading_clubs:[{id,name,short_name,logo_uploaded,players:[{name}]}]}] zurück; leading_count=0 und leading_clubs=[] wenn kein zuordenbarer Kaderspieler; players alphabetisch, leading_clubs nach Vereinsname sortiert — Auth',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                     [
