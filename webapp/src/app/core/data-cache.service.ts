@@ -28,7 +28,6 @@ export class DataCacheService {
   private lineupState    = signal<{ hasMatchday: boolean; nominated: any[]; loaded: boolean }>({ hasMatchday: false, nominated: [], loaded: false });
   private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; fineRuleset: string | null; powerrankingEnabled: boolean; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, loaded: false });
   private h2hStatusState = signal<{ exists: boolean; loaded: boolean }>({ exists: false, loaded: false });
-  private saisonvorschauStatusState = signal<{ available: boolean; loaded: boolean }>({ available: true, loaded: false });
 
   seasons        = computed(() => this.seasonsState().data);
   startedSeasons = computed(() => {
@@ -165,16 +164,6 @@ export class DataCacheService {
     this.api.get<{ exists: boolean }>('h2h/status').subscribe({
       next: data => this.h2hStatusState.set({ exists: !!data.exists, loaded: true }),
       error: () => this.h2hStatusState.set({ exists: false, loaded: true }),
-    });
-  }
-
-  saisonvorschauAvailable = computed(() => this.saisonvorschauStatusState().available);
-
-  ensureSaisonvorschauStatus(): void {
-    if (this.saisonvorschauStatusState().loaded) return;
-    this.api.get<{ available: boolean }>('saisonvorschau/status').subscribe({
-      next: data => this.saisonvorschauStatusState.set({ available: !!data.available, loaded: true }),
-      error: () => this.saisonvorschauStatusState.set({ available: true, loaded: true }),
     });
   }
 

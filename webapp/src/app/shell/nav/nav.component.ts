@@ -15,8 +15,9 @@ interface NavGroup {
   icon?: string;
   // Route für den mobilen Bottom-Bar-Tab dieser Gruppe — fällt sonst auf items[0].route zurück.
   // Nötig, weil die Reihenfolge in items[] rein für die Desktop-Sidebar/Pill-Nav-Anzeige gilt und
-  // nicht zwingend die gewünschte Mobile-Standardseite widerspiegelt (z.B. Liga: Saisonvorschau
-  // steht zwar an erster Stelle, der Liga-Tab soll aber weiterhin auf Spieltag öffnen).
+  // nicht zwingend die gewünschte Mobile-Standardseite widerspiegelt (z.B. könnte items[0] durch
+  // bedingte Einträge am Anfang der Liste variieren, während der Liga-Tab immer auf Spieltag
+  // öffnen soll).
   mobileRoute?: string | any[];
   items: NavItem[];
 }
@@ -71,9 +72,6 @@ export class NavComponent {
     icon: 'tabelle',
     mobileRoute: '/liga/spieltag',
     items: [
-      ...(this.cache.saisonvorschauAvailable()
-        ? [{ label: 'Saisonvorschau', icon: 'eye', route: '/liga/saisonvorschau' } as NavItem]
-        : []),
       { label: 'Spieltag', icon: 'spieltag', route: '/liga/spieltag' },
       { label: 'Tabelle', icon: 'tabelle', route: '/liga/tabelle' },
 
@@ -119,7 +117,6 @@ export class NavComponent {
   constructor() {
     this.cache.ensureMyTeam();
     this.cache.ensureH2HStatus();
-    this.cache.ensureSaisonvorschauStatus();
     this.cache.ensureLeague();
     effect(() => {
       if (this.cache.myTeamId()) {

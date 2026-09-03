@@ -31,87 +31,181 @@
 } @else if (teams().length === 0) {
   <p class="state-msg">Noch keine Teams in dieser Saison.</p>
 } @else {
-  <div class="teams-grid">
-    @for (t of teams(); track t.id) {
-      <div class="team-card row-link" (click)="navigate(t.id)">
-        @if (t.squad_valid) {
-          <span class="squad-badge squad-badge--valid"
-                (mouseenter)="onValidityEnter($event, t)" (mouseleave)="onValidityLeave()">
-            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 8.5L6.5 12L13 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-        } @else {
-          <span class="squad-badge squad-badge--invalid"
-                (mouseenter)="onValidityEnter($event, t)" (mouseleave)="onValidityLeave()">
-            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 4L12 12M12 4L4 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </span>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="col-team">Team</th>
+          <th class="col-valid"></th>
+          <th class="col-squad"></th>
+          <th class="col-value">Marktwert</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of teams(); track t.id) {
+          <tr class="row-link" (click)="navigate(t.id)">
+            <td class="col-team">
+              <span class="team-cell">
+                <img
+                  class="tbl-logo"
+                  [class.logo--placeholder]="logoFailed(t.id)"
+                  [src]="logoFailed(t.id) ? 'img/placeholders/club.png' : teamLogoUrl(t)"
+                  [alt]="t.team_name"
+                  (error)="onLogoError(t.id)"
+                />
+                <span class="team-name">{{ t.team_name }}</span>
+              </span>
+            </td>
+            <td class="col-valid">
+              @if (t.squad_valid) {
+                <span class="valid-icon valid-icon--valid">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M3 8.5L6.5 12L13 5"
+                      stroke="white"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+              } @else {
+                <span class="valid-icon valid-icon--invalid">
+                  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M4 4L12 12M12 4L4 12"
+                      stroke="white"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+              }
+            </td>
+            <td class="col-squad">
+              <div class="squad-summary">
+                @for (stat of positionCounts(t); track stat.position) {
+                  <span
+                    class="squad-summary__pos"
+                    [style.color]="stat.color"
+                    [style.opacity]="stat.opacity"
+                    >{{ stat.label }} {{ stat.count }}/{{ stat.min }}</span
+                  >
+                }
+              </div>
+            </td>
+            <td class="col-value">{{ formatValue(t.total_value) }}</td>
+          </tr>
         }
-
-        <!-- Mobile-only: no hover there, so the position breakdown behind the badge (see
-             .squad-validity-tooltip, desktop-only) shows directly as vorhanden/min per Position. -->
-        <div class="mobile-position-summary">
-          @for (stat of positionCounts(t); track stat.position) {
-            <span class="mobile-position-summary__row" [style.color]="positionColor(stat.position)">
-              {{ stat.count }}/{{ stat.min }}
-            </span>
-          }
-        </div>
-
-        <div class="team-card__logo-wrap">
-          @if (!logoFailed(t.id)) {
-            <img class="team-card__logo" [src]="teamLogoUrl(t)" (error)="onLogoError(t.id)" alt="" />
-          } @else {
-            <div class="team-card__logo-placeholder" [style.background-color]="t.color ?? '#888'"></div>
-          }
-        </div>
-
-        <div class="team-card__colors">
-          <span class="color-bubble" [style.background-color]="t.color ?? '#888'"></span>
-          @if (t.color_secondary) {
-            <span class="color-bubble" [style.background-color]="t.color_secondary"></span>
-          }
-        </div>
-
-        <div class="team-card__name">{{ t.team_name }}</div>
-
-        <div class="team-card__manager">
-          <div class="manager-avatar">
-            @if (!managerFailed(t.manager_id)) {
-              <img class="manager-avatar__img" [src]="managerPhotoUrl(t)" (error)="onManagerError(t.manager_id)" alt="" />
-            } @else {
-              <span class="manager-avatar__initials">{{ t.manager_name.charAt(0).toUpperCase() }}</span>
-            }
-          </div>
-          <span class="manager-name">{{ t.manager_name }}</span>
-        </div>
-
-        <span class="team-card__value">{{ formatValue(t.total_value) }}</span>
-      </div>
-    }
+      </tbody>
+    </table>
   </div>
 }
 
-@if (tooltipTeam(); as tt) {
-  <div class="squad-validity-tooltip"
-       [class.squad-validity-tooltip--below]="tooltipBelow()"
-       [class.squad-validity-tooltip--ready]="tooltipReady()"
-       [style.top.px]="tooltipPos()!.top"
-       [style.left.px]="tooltipPos()!.left"
-       #validityTooltipEl>
-    @for (stat of positionStats(tt); track stat.position) {
-      <div class="pos-stat" [style.--pos-color]="positionColor(stat.position)">
-        <div class="pos-stat__header">
-          <span class="pos-stat__label">{{ positionLabel(stat.position) }}</span>
-        </div>
-        <div class="pos-stat__bubbles">
-          @for (bubble of stat.bubbles; track $index) {
-            <span class="bubble" [class.bubble--filled]="bubble.filled" [class.bubble--min]="bubble.isMin"></span>
-          }
-        </div>
+<div class="teams-extra-grid">
+  <div class="card">
+    <div class="card-title">Klumpenrisiko</div>
+    @if (clubsLoading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (clubsError()) {
+      <p class="state-msg state-msg--error">{{ clubsError() }}</p>
+    } @else if (clubs().length === 0) {
+      <p class="state-msg">Keine Vereine für diese Saison.</p>
+    } @else {
+      <div class="club-team-list">
+        @for (c of clubs(); track c.id) {
+          <div class="club-team-row">
+            <span class="club-team-row__club">
+              <img class="tbl-logo tbl-logo--sm" [class.logo--placeholder]="!c.logo_uploaded" [src]="clubLogoUrl(c)" alt="" />
+              <span class="club-team-row__name">{{ c.name }}</span>
+            </span>
+            @if (c.leading_teams.length > 0) {
+              <span class="club-team-row__team">
+                <span class="club-team-row__count">{{ c.leading_count }}x</span>
+                <span class="club-team-row__logos">
+                  @for (lt of c.leading_teams; track lt.id) {
+                    <span
+                      class="club-team-row__logo-wrap club-team-row__hover-target"
+                      (mouseenter)="onListHover($event, lt.team_name + ' · ' + c.name, lt.players)"
+                      (mouseleave)="onListLeave()"
+                    >
+                      @if (!logoFailed(lt.id)) {
+                        <img class="tbl-logo tbl-logo--sm" [src]="leadingTeamLogoUrl(lt.id)" (error)="onLogoError(lt.id)" alt="" [title]="lt.team_name" />
+                      } @else if (lt.color) {
+                        <span class="team-dot" [style.background-color]="lt.color" [title]="lt.team_name"></span>
+                      }
+                    </span>
+                  }
+                </span>
+              </span>
+            } @else {
+              <span class="club-team-row__team club-team-row__team--empty">–</span>
+            }
+          </div>
+        }
       </div>
     }
+  </div>
+
+  <div class="card">
+    <div class="card-title">Vorlieben</div>
+    @if (teamClubsLoading()) {
+      <p class="state-msg">Laden…</p>
+    } @else if (teamClubsError()) {
+      <p class="state-msg state-msg--error">{{ teamClubsError() }}</p>
+    } @else if (teamClubs().length === 0) {
+      <p class="state-msg">Keine Teams für diese Saison.</p>
+    } @else {
+      <div class="club-team-list">
+        @for (t of teamClubs(); track t.id) {
+          <div class="club-team-row">
+            <span class="club-team-row__club">
+              @if (!logoFailed(t.id)) {
+                <img class="tbl-logo tbl-logo--sm" [src]="leadingTeamLogoUrl(t.id)" (error)="onLogoError(t.id)" alt="" />
+              } @else if (t.color) {
+                <span class="team-dot" [style.background-color]="t.color"></span>
+              }
+              <span class="club-team-row__name">{{ t.team_name }}</span>
+            </span>
+            @if (t.leading_clubs.length > 0) {
+              <span class="club-team-row__team">
+                <span class="club-team-row__count">{{ t.leading_count }}x</span>
+                <span class="club-team-row__logos">
+                  @for (lc of t.leading_clubs; track lc.id) {
+                    <span
+                      class="club-team-row__logo-wrap club-team-row__hover-target"
+                      (mouseenter)="onListHover($event, t.team_name + ' · ' + lc.name, lc.players)"
+                      (mouseleave)="onListLeave()"
+                    >
+                      <img class="tbl-logo tbl-logo--sm" [class.logo--placeholder]="!lc.logo_uploaded" [src]="clubLogoUrl(lc)" alt="" [title]="lc.name" />
+                    </span>
+                  }
+                </span>
+              </span>
+            } @else {
+              <span class="club-team-row__team club-team-row__team--empty">–</span>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+@if (tooltipTitle(); as title) {
+  <div
+    class="list-tooltip"
+    [class.list-tooltip--below]="tooltipBelow()"
+    [class.list-tooltip--ready]="tooltipReady()"
+    [style.top.px]="tooltipPos()!.top"
+    [style.left.px]="tooltipPos()!.left"
+    #listTooltipEl
+  >
+    <span class="list-tooltip__title">{{ title }}</span>
+    <ul class="list-tooltip__list">
+      @for (p of tooltipPlayers(); track p.name) {
+        <li>{{ p.name }}</li>
+      }
+    </ul>
   </div>
 }
