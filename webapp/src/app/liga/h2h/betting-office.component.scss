@@ -1,5 +1,28 @@
 @use '../../../styles/variables' as *;
 
+.card-title {
+  font-family: $font-display;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  letter-spacing: 0.01em;
+  margin-bottom: $space-3;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  text-decoration: none;
+  margin-bottom: $space-6;
+  transition: color $transition-fast;
+  &:hover {
+    color: $color-text;
+  }
+}
+
 .betting-office-layout {
   display: grid;
   grid-template-columns: 1fr 320px;
@@ -22,6 +45,16 @@
   display: flex;
   flex-direction: column;
   gap: $space-4;
+
+  // .table-container bringt normalerweise eine eigene Box (Rahmen/Hintergrund/Radius) mit —
+  // hier steckt sie in der Bestenliste-Card, die diese Box bereits stellt; ohne Override gäbe es
+  // eine sichtbare Card-in-Card-Umrandung um eine im Grunde einfache Liste.
+  .table-container {
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+  }
 }
 
 .bets-header {
@@ -30,6 +63,7 @@
   justify-content: space-between;
   gap: $space-3;
   flex-wrap: wrap;
+  margin-bottom: $space-4;
 }
 
 .bets-toggle {
@@ -68,21 +102,23 @@
   white-space: nowrap;
 }
 
-.bet-list-card {
-  padding: 0;
+.bet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.bets-empty-card {
+.bets-empty {
   display: flex;
   flex-direction: column;
   gap: $space-2;
 }
 
-.bets-empty-card__title {
+.bets-empty__title {
   font-weight: $font-weight-semibold;
 }
 
-.bets-empty-card__hint {
+.bets-empty__hint {
   font-size: $font-sm;
   color: $color-text-muted;
 }
@@ -91,12 +127,12 @@
   display: flex;
   align-items: center;
   gap: $space-3;
-  padding: $space-3 $space-4;
-  border-bottom: 1px solid $color-border;
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
   font-size: $font-sm;
 
-  &:last-child {
-    border-bottom: none;
+  &:hover {
+    background: $color-surface-alt;
   }
 }
 
@@ -222,10 +258,13 @@
 .available-matches {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: $space-3;
 }
 
 .available-match-card {
+  width: 100%;
+  max-width: 480px;
   padding: $space-3 $space-4;
 }
 
