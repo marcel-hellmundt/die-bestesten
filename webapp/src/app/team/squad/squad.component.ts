@@ -146,7 +146,10 @@ export class SquadComponent {
 
   formatPrice(price: number | null): string {
     if (price == null) return '—';
-    if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + ' Mio. €';
+    // 2 Nachkommastellen zwingend nötig, nicht 1: der Marktwert steigt pro Saisonpunkt um
+    // 20.000 € (division.points_bonus), also in 0,02-Mio-Schritten — mit nur 1 Nachkommastelle
+    // würden z.B. 1,82 Mio und 1,84 Mio beide auf "1,8 Mio" gerundet und wären ununterscheidbar.
+    if (price >= 1_000_000) return (price / 1_000_000).toFixed(2).replace('.', ',') + ' Mio. €';
     if (price >= 1_000)     return (price / 1_000).toFixed(0) + ' Tsd. €';
     return price.toLocaleString('de-DE') + ' €';
   }

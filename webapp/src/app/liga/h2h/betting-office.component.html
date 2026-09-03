@@ -1,54 +1,57 @@
+<a class="back-link" routerLink="/liga/h2h">← H2H</a>
+
 <h1 class="page-title">Wettbüro</h1>
 
 <div class="betting-office-layout">
   <div class="main-col">
-    <div class="table-section-title">Meine Wetten</div>
+    <div class="card">
+      <div class="card-title">Meine Wetten</div>
 
-    @if (!betsLoading() && totalCount() > 0) {
-      <div class="bets-header">
-        <div class="bets-toggle">
-          <button
-            class="bets-toggle__btn"
-            [class.active]="betsFilter() === 'all'"
-            (click)="betsFilter.set('all')"
-          >
-            Alle
-          </button>
-          <button
-            class="bets-toggle__btn"
-            [class.active]="betsFilter() === 'open'"
-            (click)="betsFilter.set('open')"
-          >
-            Offen
-          </button>
-          <button
-            class="bets-toggle__btn"
-            [class.active]="betsFilter() === 'won'"
-            (click)="betsFilter.set('won')"
-          >
-            Gewonnen
-          </button>
+      @if (!betsLoading() && totalCount() > 0) {
+        <div class="bets-header">
+          <div class="bets-toggle">
+            <button
+              class="bets-toggle__btn"
+              [class.active]="betsFilter() === 'all'"
+              (click)="betsFilter.set('all')"
+            >
+              Alle
+            </button>
+            <button
+              class="bets-toggle__btn"
+              [class.active]="betsFilter() === 'open'"
+              (click)="betsFilter.set('open')"
+            >
+              Offen
+            </button>
+            <button
+              class="bets-toggle__btn"
+              [class.active]="betsFilter() === 'won'"
+              (click)="betsFilter.set('won')"
+            >
+              Gewonnen
+            </button>
+          </div>
+          <span class="bets-summary">{{ wonCount() }} Gewonnen von {{ totalCount() }} Wetten</span>
         </div>
-        <span class="bets-summary">{{ wonCount() }} Gewonnen von {{ totalCount() }} Wetten</span>
-      </div>
-    }
+      }
 
-    @if (betsLoading()) {
-      <p class="state-msg">Laden…</p>
-    } @else if (totalCount() === 0) {
-      <div class="card bets-empty-card">
-        <p class="bets-empty-card__title">Noch keine Wetten abgegeben.</p>
-        <p class="bets-empty-card__hint">
-          Tipps kannst du jederzeit im Match-Detail eines H2H-Spiels abgeben — für Partien des
-          aktuellen Spieltags, sobald beide beteiligten Teams eine vollständige Aufstellung haben.
-        </p>
-      </div>
-    } @else if (filteredBets().length === 0) {
-      <p class="state-msg">Keine Wetten in dieser Ansicht.</p>
-    } @else {
-      <div class="card bet-list-card">
-        @for (b of filteredBets(); track b.match_id) {
-          <div class="bet-row">
+      @if (betsLoading()) {
+        <p class="state-msg">Laden…</p>
+      } @else if (totalCount() === 0) {
+        <div class="bets-empty">
+          <p class="bets-empty__title">Noch keine Wetten abgegeben.</p>
+          <p class="bets-empty__hint">
+            Tipps kannst du jederzeit im Match-Detail eines H2H-Spiels abgeben — für Partien des
+            aktuellen Spieltags, sobald beide beteiligten Teams eine vollständige Aufstellung haben.
+          </p>
+        </div>
+      } @else if (filteredBets().length === 0) {
+        <p class="state-msg">Keine Wetten in dieser Ansicht.</p>
+      } @else {
+        <div class="bet-list">
+          @for (b of filteredBets(); track b.match_id) {
+            <div class="bet-row">
             <span class="bet-row__pick" [class.bet-row__pick--won]="b.result === 'won'">
               {{ pickLabel(b) }}
             </span>
@@ -89,10 +92,11 @@
               </span>
             </span>
             <span class="bet-row__odds">{{ b.odds ?? '–' }}</span>
-          </div>
-        }
-      </div>
-    }
+            </div>
+          }
+        </div>
+      }
+    </div>
 
     <div class="table-section-title">Offene Tipps</div>
     @if (availableLoading()) {
@@ -181,8 +185,9 @@
   </div>
 
   <div class="sidebar">
-    <div class="table-section-title">Bestenliste</div>
-    <div class="table-container">
+    <div class="card">
+      <div class="card-title">Bestenliste</div>
+      <div class="table-container">
       @if (standingsLoading()) {
         <p class="state-msg">Laden…</p>
       } @else if (standings().length === 0) {
@@ -211,6 +216,7 @@
           </tbody>
         </table>
       }
+      </div>
     </div>
   </div>
 </div>

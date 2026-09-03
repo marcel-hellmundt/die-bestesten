@@ -9,7 +9,7 @@
       class="topbar-search"
       [class.topbar-search--active]="isSearchOpen()"
       [class.topbar-search--panel-open]="isSearchOpen() && searchQuery().length >= 3"
-      [style.width.px]="isSearchOpen() && showLeagueSwitcher() ? searchExpandWidth() : null"
+      [style.width.px]="isSearchOpen() && showLeagueSwitcher() && isMobileViewport() ? searchExpandWidth() : null"
       (click)="onSearchContainerClick()"
       (transitionend)="onSearchTransitionEnd($event)"
     >
