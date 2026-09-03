@@ -124,6 +124,15 @@ export class TopbarComponent implements OnDestroy {
     if (this.isSearchOpen()) this.measureSearchExpandWidth();
   }
 
+  // Das per searchExpandWidth() gemessene absolute Breiten-Wachstum ist nur auf Mobile nötig
+  // (dort legt sich die aufklappende Suche per position:absolute über die Liga-Auswahl, siehe
+  // SCSS &--has-league) — auf Desktop bleibt .topbar-search normales Flex-Element mit fester
+  // 260px-Breite, ein gesetzter Inline-Width-Style hätte sie dort ungewollt breitgezogen.
+  // $mobile-breakpoint aus _variables.scss (768px) lässt sich hier nicht importieren, daher fix verdrahtet.
+  isMobileViewport(): boolean {
+    return window.matchMedia('(max-width: 768px)').matches;
+  }
+
   failedImageIds = signal<Set<string>>(new Set());
 
   onImageError(id: string): void {

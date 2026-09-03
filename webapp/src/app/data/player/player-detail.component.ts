@@ -806,9 +806,19 @@ export class PlayerDetailComponent {
   }
 
   formatPriceShort(price: number): string {
-    if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + ' M';
+    // 2 Nachkommastellen zwingend nötig, nicht 1: der Marktwert steigt pro Saisonpunkt um
+    // 20.000 € (division.points_bonus), also in 0,02-Mio-Schritten — mit nur 1 Nachkommastelle
+    // würden z.B. 1,82 Mio und 1,84 Mio beide auf "1,8 M" gerundet und wären ununterscheidbar.
+    if (price >= 1_000_000) return (price / 1_000_000).toFixed(2).replace('.', ',') + ' M';
     if (price >= 1_000)     return (price / 1_000).toFixed(0) + ' T';
     return String(price);
+  }
+
+  // Aktueller Marktwert einer Saison-Zeile: Grundpreis (player_in_season.price) zzgl. des durch
+  // Saisonpunkte gestiegenen Anteils (division.points_bonus je Punkt) — gleiche Formel wie
+  // marketValue() (aktuelle Saison) und die entsprechenden Berechnungen in Kader/Transfermarkt.
+  seasonMarketValue(s: { price: number | string; total_points: number | string }): number {
+    return Math.round(+s.price + +s.total_points * this.cache.pointsBonus());
   }
 
   range(n: number | string): number[] {

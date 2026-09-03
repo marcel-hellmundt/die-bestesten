@@ -112,12 +112,9 @@ export class HomeComponent {
       .filter(m => (m.home_team_id === myId || m.away_team_id === myId) && m.matchday_number > md.number)
       .sort((a, b) => a.matchday_number - b.matchday_number)[0];
     if (!next) return null;
-    const isHome = next.home_team_id === myId;
     return {
       matchday: this.matchdays().find(m => m.number === next.matchday_number) ?? null,
-      opponentId:    isHome ? next.away_team_id   : next.home_team_id,
-      opponentName:  isHome ? next.away_team_name : next.home_team_name,
-      opponentColor: isHome ? next.away_color      : next.home_color,
+      match: next,
     };
   });
 
@@ -183,25 +180,46 @@ export class HomeComponent {
       take(1),
       switchMap(seasons => {
         const seasonId = [...seasons].sort((a, b) => b.start_date.localeCompare(a.start_date))[0].id;
-        return forkJoin({
-          matchdays: this.api.get<any[]>(`matchday?season_id=${seasonId}`).pipe(
-            map(d => d.map(Matchday.from)),
-            catchError(() => of([] as Matchday[]))
-          ),
-          windows: this.api.get<any[]>(`transferwindow?season_id=${seasonId}`).pipe(
-            catchError(() => of([] as any[]))
-          ),
-          h2h: this.api.get<any>(`h2h?season_id=${seasonId}`).pipe(
-            catchError(() => of(null))
-          ),
-          standings: this.api.get<any>(`team_rating/season?season_id=${seasonId}`).pipe(
-            map(d => d.standings ?? []),
-            catchError(() => of([] as any[]))
-          ),
-          lastMatchday: this.api.get<any>(`team_rating?season_id=${seasonId}`).pipe(
-            catchError(() => of(null))
-          ),
-        }).pipe(map(r => ({ ...r, seasonId })));
+        return this.api.get<any[]>(`matchday?season_id=${seasonId}`).pipe(
+          map(d => d.map(Matchday.from)),
+          catchError(() => of([] as Matchday[])),
+          switchMap(matchdays => {
+            // "Letzter Spieltag"-Card soll den letzten Spieltag MIT Ergebnissen zeigen, nicht den
+            // aktuellen vor dessen Anpfiff (sonst z.B. "0 Pkt · Spieltag 4" während Transferphase/
+            // Aufstellungsfenster vor Spieltag 4) — daher bei noch nicht angepfiffenem aktuellen
+            // Spieltag den vorherigen explizit anfragen statt den Default (aktuelle Runde) zu nutzen.
+            const today = new Date().toISOString().slice(0, 10);
+            const current = [...matchdays]
+              .sort((a, b) => a.number - b.number)
+              .filter(m => m.start_date <= today)
+              .at(-1) ?? null;
+            const notYetKickedOff = !!current && new Date(current.kickoff_date) > new Date();
+            let lastMatchday$ = this.api.get<any>(`team_rating?season_id=${seasonId}`).pipe(
+              catchError(() => of(null))
+            );
+            if (notYetKickedOff) {
+              const prev = matchdays
+                .filter(m => m.number < current!.number)
+                .sort((a, b) => b.number - a.number)[0] ?? null;
+              lastMatchday$ = prev
+                ? this.api.get<any>(`team_rating?season_id=${seasonId}&matchday_number=${prev.number}`).pipe(catchError(() => of(null)))
+                : of(null);
+            }
+            return forkJoin({
+              windows: this.api.get<any[]>(`transferwindow?season_id=${seasonId}`).pipe(
+                catchError(() => of([] as any[]))
+              ),
+              h2h: this.api.get<any>(`h2h?season_id=${seasonId}`).pipe(
+                catchError(() => of(null))
+              ),
+              standings: this.api.get<any>(`team_rating/season?season_id=${seasonId}`).pipe(
+                map(d => d.standings ?? []),
+                catchError(() => of([] as any[]))
+              ),
+              lastMatchday: lastMatchday$,
+            }).pipe(map(r => ({ ...r, matchdays, seasonId })));
+          })
+        );
       })
     ).subscribe(r => {
       this.currentSeasonId.set(r.seasonId);

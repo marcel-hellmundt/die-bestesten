@@ -545,15 +545,19 @@
               <thead>
                 <tr>
                   <th>Saison</th>
-                  <th>
+                  <th class="col-position">
                     <span class="hidden-mobile">Position</span
                     ><span class="visible-mobile">Pos</span>
                   </th>
-                  <th>
+                  <th class="col-price">
+                    <span class="hidden-mobile">Grundpreis</span
+                    ><span class="visible-mobile">GP</span>
+                  </th>
+                  <th class="col-price">
                     <span class="hidden-mobile">Marktwert</span
                     ><span class="visible-mobile">MW</span>
                   </th>
-                  <th>
+                  <th class="col-points-season">
                     <span class="hidden-mobile">Punkte</span><span class="visible-mobile">Pkt</span>
                   </th>
                 </tr>
@@ -568,7 +572,7 @@
                     (click)="selectedSeasonId.set(s.season_id)"
                   >
                     <td>{{ cache.seasonName(s.season_id) }}</td>
-                    <td>
+                    <td class="col-position">
                       <span
                         class="position-badge position-badge--text"
                         [style.background-color]="positionColor(s.position)"
@@ -576,6 +580,7 @@
                       >
                     </td>
                     <td class="col-price">{{ formatPriceShort(s.price) }}</td>
+                    <td class="col-price">{{ formatPriceShort(seasonMarketValue(s)) }}</td>
                     <td class="col-points-season">{{ s.total_points }}</td>
                   </tr>
                 }

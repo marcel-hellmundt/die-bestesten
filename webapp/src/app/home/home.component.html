@@ -87,20 +87,33 @@
             }
           </div>
         }
-        @if (nextH2hMatch()) {
+        @if (nextH2hMatch(); as next) {
           <div class="h2h-next">
-            <span class="h2h-next-label">Nächstes Spiel · Spieltag {{ nextH2hMatch()!.matchday?.number }}</span>
-            <div class="h2h-next-row">
-              @if (!logoFailed(nextH2hMatch()!.opponentId)) {
-                <img class="team-logo-h2h" [src]="teamLogoUrl(nextH2hMatch()!.opponentId)"
-                  (error)="onLogoError(nextH2hMatch()!.opponentId)" alt="" />
-              } @else if (nextH2hMatch()!.opponentColor) {
-                <span class="team-dot" [style.background-color]="nextH2hMatch()!.opponentColor"></span>
-              }
-              <span class="h2h-next-name">{{ nextH2hMatch()!.opponentName }}</span>
-              @if (nextH2hMatch()!.matchday) {
-                <span class="h2h-next-date">{{ nextH2hMatch()!.matchday!.kickoff_date | date:'EE dd.MM.' }}</span>
-              }
+            <span class="h2h-next-label">Nächstes eigenes Spiel · Spieltag {{ next.matchday?.number }}</span>
+            <div class="h2h-row row-link" (click)="router.navigate(['/liga/h2h', next.match.id])">
+              <span class="h2h-team h2h-team--home">
+                {{ next.match.home_team_name }}
+                @if (!logoFailed(next.match.home_team_id)) {
+                  <img class="team-logo-h2h" [src]="teamLogoUrl(next.match.home_team_id)" (error)="onLogoError(next.match.home_team_id)" alt="" />
+                } @else if (next.match.home_color) {
+                  <span class="team-dot" [style.background-color]="next.match.home_color"></span>
+                }
+              </span>
+              <span class="h2h-score">
+                @if (next.matchday) {
+                  <span class="score-tbd">{{ next.matchday.kickoff_date | date:'EE dd.MM.' }}</span>
+                } @else {
+                  <span class="score-tbd">–</span>
+                }
+              </span>
+              <span class="h2h-team h2h-team--away">
+                @if (!logoFailed(next.match.away_team_id)) {
+                  <img class="team-logo-h2h" [src]="teamLogoUrl(next.match.away_team_id)" (error)="onLogoError(next.match.away_team_id)" alt="" />
+                } @else if (next.match.away_color) {
+                  <span class="team-dot" [style.background-color]="next.match.away_color"></span>
+                }
+                {{ next.match.away_team_name }}
+              </span>
             </div>
           </div>
         }
@@ -133,7 +146,7 @@
 
       <!-- Mini Table -->
       <div class="card home-card--table">
-        <div class="card-title">Gesamttabelle</div>
+        <div class="card-title">Saisontabelle</div>
         @if (miniTable().length === 0) {
           <p class="card-empty">Noch keine Tabelle verfügbar.</p>
         } @else {
@@ -153,7 +166,7 @@
             }
           </div>
         }
-        <a class="card-link" routerLink="/liga/tabelle">Gesamttabelle →</a>
+        <a class="card-link" routerLink="/liga/tabelle">Saisontabelle →</a>
       </div>
 
       <!-- Last matchday card -->

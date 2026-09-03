@@ -367,27 +367,6 @@
   margin-bottom: $space-2;
 }
 
-.h2h-next-row {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-}
-
-.h2h-next-name {
-  flex: 1;
-  font-size: $font-sm;
-  font-weight: $font-weight-medium;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.h2h-next-date {
-  font-size: $font-xs;
-  color: $color-text-muted;
-  white-space: nowrap;
-}
-
 // ── Last Matchday Card ────────────────────────────────────────────────────────
 
 .last-md-stats {
