@@ -15,6 +15,15 @@ class TeamController extends _BaseController
             return $this->db->getTeamsBySeason($seasonId);
         }
 
+        if ($this->id === 'clubs') {
+            $seasonId = $this->params['season_id'] ?? null;
+            if (!$seasonId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'season_id required'];
+            }
+            return $this->db->getClubLeadingTeams($seasonId);
+        }
+
         if ($this->id === 'check-name') {
             $name = trim($this->params['name'] ?? '');
             if (strlen($name) < 3) {

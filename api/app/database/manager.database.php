@@ -483,6 +483,114 @@ trait ManagerTrait
         return $teams;
     }
 
+    /**
+     * Für jeden Verein der Liga-Division (Fallback: höchste deutsche Division): das Team mit den
+     * meisten aktuellen Kaderspielern dieses Vereins, inkl. Spielerliste fürs Frontend-Tooltip.
+     * Vereine ohne Team mit Kaderspielern liefern leading_team=null.
+     */
+    public function getClubLeadingTeams(string $seasonId): array
+    {
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $clubQ = $this->con->prepare(
+                "SELECT c.id, c.name, c.short_name, c.logo_uploaded
+                 FROM club_in_season cis
+                 JOIN club c ON c.id = cis.club_id
+                 WHERE cis.season_id = :season_id AND cis.division_id = :division_id
+                 ORDER BY c.name"
+            );
+            $clubQ->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
+        } else {
+            $clubQ = $this->con->prepare(
+                "SELECT c.id, c.name, c.short_name, c.logo_uploaded
+                 FROM club_in_season cis
+                 JOIN club c ON c.id = cis.club_id
+                 JOIN division d ON d.id = cis.division_id
+                 WHERE cis.season_id = :season_id AND d.level = 1 AND LOWER(d.country_id) = 'de'
+                 ORDER BY c.name"
+            );
+            $clubQ->execute([':season_id' => $seasonId]);
+        }
+        $clubs = $clubQ->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($clubs)) return [];
+
+        foreach ($clubs as &$c) { $c['leading_team'] = null; }
+        unset($c);
+
+        $tq = $this->con_league->prepare(
+            "SELECT id, team_name, color_primary AS color, color_secondary FROM team WHERE season_id = :s"
+        );
+        $tq->execute([':s' => $seasonId]);
+        $teams = $tq->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($teams)) return $clubs;
+
+        $teamById = [];
+        foreach ($teams as $t) {
+            $teamById[$t['id']] = [
+                'id'              => $t['id'],
+                'team_name'       => $t['team_name'],
+                'color'           => $this->resolveColor($t['color'] ?? null),
+                'color_secondary' => $this->resolveColor($t['color_secondary'] ?? null),
+            ];
+        }
+
+        $teamIds = array_column($teams, 'id');
+        $tph = implode(',', array_fill(0, count($teamIds), '?'));
+        $pitQ = $this->con_league->prepare(
+            "SELECT team_id, player_id FROM player_in_team WHERE team_id IN ($tph) AND to_matchday_id IS NULL"
+        );
+        $pitQ->execute($teamIds);
+        $playerInTeam = $pitQ->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($playerInTeam)) return $clubs;
+
+        $allPlayerIds = array_values(array_unique(array_column($playerInTeam, 'player_id')));
+        $pph = implode(',', array_fill(0, count($allPlayerIds), '?'));
+
+        $clubByPlayer = [];
+        $cq = $this->con->prepare(
+            "SELECT player_id, club_id FROM player_in_club WHERE player_id IN ($pph) AND to_date IS NULL"
+        );
+        $cq->execute($allPlayerIds);
+        foreach ($cq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $clubByPlayer[$row['player_id']] = $row['club_id'];
+        }
+
+        $nameByPlayer = [];
+        $nq = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($pph)");
+        $nq->execute($allPlayerIds);
+        foreach ($nq->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $nameByPlayer[$row['id']] = $row['displayname'];
+        }
+
+        // club_id => team_id => [player_id, ...]
+        $byClubTeam = [];
+        foreach ($playerInTeam as $row) {
+            $clubId = $clubByPlayer[$row['player_id']] ?? null;
+            if ($clubId === null) continue;
+            $byClubTeam[$clubId][$row['team_id']][] = $row['player_id'];
+        }
+
+        foreach ($clubs as &$club) {
+            $byTeam = $byClubTeam[$club['id']] ?? [];
+            $best = null;
+            foreach ($byTeam as $teamId => $playerIds) {
+                if (!isset($teamById[$teamId])) continue;
+                $count = count($playerIds);
+                if ($best !== null && ($count < $best['count']
+                    || ($count === $best['count'] && $teamById[$teamId]['team_name'] >= $best['team_name']))) {
+                    continue;
+                }
+                $players = array_map(fn($pid) => ['name' => $nameByPlayer[$pid] ?? '?'], $playerIds);
+                usort($players, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+                $best = $teamById[$teamId] + ['count' => $count, 'players' => $players];
+            }
+            $club['leading_team'] = $best;
+        }
+        unset($club);
+
+        return $clubs;
+    }
+
     public function getMyTeamForActiveSeason(string $managerId): array|false
     {
         $activeSeasonId = $this->getActiveSeasonId();

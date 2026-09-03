@@ -20,6 +20,27 @@ interface LigaTeam {
   position_counts: Record<string, number>;
 }
 
+interface ClubLeadingTeamPlayer {
+  name: string;
+}
+
+interface ClubLeadingTeam {
+  id: string;
+  team_name: string;
+  color: string | null;
+  color_secondary: string | null;
+  count: number;
+  players: ClubLeadingTeamPlayer[];
+}
+
+interface ClubLeadingTeamRow {
+  id: string;
+  name: string;
+  short_name: string | null;
+  logo_uploaded: boolean;
+  leading_team: ClubLeadingTeam | null;
+}
+
 // Mirrors squad.component.ts's CONSTRAINTS — same min/max squad requirements per position.
 const CONSTRAINTS: Record<string, { min: number; max: number }> = {
   GOALKEEPER: { min: 1, max: 2 },
@@ -67,7 +88,11 @@ export class LigaTeamsComponent {
       switchMap(id => {
         if (!id) return of({ data: [] as LigaTeam[], loading: false, error: null as string | null });
         return this.api.get<LigaTeam[]>(`team?season_id=${id}`).pipe(
-          map(data => ({ data, loading: false, error: null as string | null })),
+          map(data => ({
+            data: [...data].sort((a, b) => b.total_value - a.total_value),
+            loading: false,
+            error: null as string | null,
+          })),
           startWith({ data: [] as LigaTeam[], loading: true, error: null as string | null }),
           catchError(() => of({ data: [] as LigaTeam[], loading: false, error: 'Fehler beim Laden' }))
         );
@@ -80,111 +105,67 @@ export class LigaTeamsComponent {
   loading = computed(() => this.state().loading);
   error   = computed(() => this.state().error);
 
-  private logoErrors    = new Set<string>();
-  private managerErrors = new Set<string>();
+  // Vereine der Liga-Division mit dem Team, das die meisten aktuellen Kaderspieler dieses
+  // Vereins führt — für die "Vereine"-Card unterhalb der Teams-Tabelle.
+  private clubState = toSignal(
+    toObservable(this.effectiveSeasonId).pipe(
+      switchMap(id => {
+        if (!id) return of({ data: [] as ClubLeadingTeamRow[], loading: false, error: null as string | null });
+        return this.api.get<ClubLeadingTeamRow[]>(`team/clubs?season_id=${id}`).pipe(
+          map(data => ({ data, loading: false, error: null as string | null })),
+          startWith({ data: [] as ClubLeadingTeamRow[], loading: true, error: null as string | null }),
+          catchError(() => of({ data: [] as ClubLeadingTeamRow[], loading: false, error: 'Fehler beim Laden' }))
+        );
+      })
+    ),
+    { initialValue: { data: [] as ClubLeadingTeamRow[], loading: true, error: null as string | null } }
+  );
 
-  logoFailed(teamId: string): boolean    { return this.logoErrors.has(teamId); }
-  managerFailed(mId: string): boolean    { return this.managerErrors.has(mId); }
-  onLogoError(teamId: string): void      { this.logoErrors.add(teamId); }
-  onManagerError(mId: string): void      { this.managerErrors.add(mId); }
+  clubs        = computed(() => this.clubState().data);
+  clubsLoading = computed(() => this.clubState().loading);
+  clubsError   = computed(() => this.clubState().error);
+
+  private logoErrors = new Set<string>();
+
+  logoFailed(id: string): boolean { return this.logoErrors.has(id); }
+  onLogoError(id: string): void   { this.logoErrors.add(id); }
 
   teamLogoUrl(t: LigaTeam): string {
     return `${environment.imageApiUrl}/team/${t.season_id}/${t.id}.png`;
   }
 
-  managerPhotoUrl(t: LigaTeam): string {
-    return `${environment.imageApiUrl}/manager/${t.manager_id}.jpg`;
+  leadingTeamLogoUrl(teamId: string): string {
+    return `${environment.imageApiUrl}/team/${this.effectiveSeasonId()}/${teamId}.png`;
+  }
+
+  clubLogoUrl(c: ClubLeadingTeamRow): string {
+    return c.logo_uploaded
+      ? `${environment.imageApiUrl}/club/${c.id}.png`
+      : 'img/placeholders/club.png';
   }
 
   formatValue(v: number): string {
-    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.', ',') + ' Mio. €';
+    // 2 Nachkommastellen zwingend noetig, nicht 1: der Marktwert steigt pro Saisonpunkt um
+    // 20.000 EUR (division.points_bonus), also in 0,02-Mio-Schritten - mit nur 1 Nachkommastelle
+    // waeren nah beieinanderliegende Kaderwerte sonst nicht unterscheidbar.
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(2).replace('.', ',') + ' Mio. €';
     if (v >= 1_000)     return (v / 1_000).toFixed(0) + ' Tsd. €';
     return v.toLocaleString('de-DE') + ' €';
   }
 
-  // Squad-validity tooltip (desktop hover only, see .squad-validity-tooltip media query) —
-  // mirrors squad.component.ts's positionStats(), just without the pending-offer bubble state
-  // since that's specific to viewing your own team's open bids.
-  @ViewChild('validityTooltipEl') validityTooltipEl?: ElementRef<HTMLElement>;
-  tooltipTeam  = signal<LigaTeam | null>(null);
-  tooltipPos   = signal<{ top: number; left: number } | null>(null);
-  tooltipBelow = signal(false);
-  // Stays false until the edge-clamped position below is known — the tooltip renders
-  // invisible (but still laid out/measurable, see .squad-validity-tooltip's `visibility`) in
-  // the meantime, so the naive placement never flashes on screen before snapping to its
-  // final spot.
-  tooltipReady = signal(false);
-
-  private static readonly TOOLTIP_EDGE_MARGIN = 24;
-
-  onValidityEnter(event: MouseEvent, t: LigaTeam): void {
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.tooltipTeam.set(t);
-    this.tooltipBelow.set(false);
-    this.tooltipReady.set(false);
-    this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
-
-    // Top-row / near-the-right-edge badges don't leave enough room for the tooltip on that
-    // side — its rendered size only exists once Angular has actually painted it, so this can
-    // only be corrected in a follow-up pass. The tooltip has a fixed (not shrink-to-fit) width
-    // precisely so this measurement is stable regardless of how close to the edge it started.
-    // requestAnimationFrame (not queueMicrotask): the browser only paints once all pending
-    // microtasks — including Angular's own change-detection flush from the .set() above — have
-    // drained, so this is guaranteed to see the DOM after Angular actually patched it in.
-    requestAnimationFrame(() => {
-      const el = this.validityTooltipEl?.nativeElement;
-      if (!el || this.tooltipTeam() !== t) return;
-
-      const margin = LigaTeamsComponent.TOOLTIP_EDGE_MARGIN;
-      let top   = rect.top;
-      let left  = rect.left + rect.width / 2;
-      let below = false;
-
-      const tipRect = el.getBoundingClientRect();
-
-      if (tipRect.top < margin) {
-        below = true;
-        top = rect.bottom;
-      }
-
-      const halfWidth = tipRect.width / 2;
-      const maxLeft   = window.innerWidth - margin - halfWidth;
-      const minLeft   = margin + halfWidth;
-      if (left > maxLeft) left = maxLeft;
-      if (left < minLeft) left = minLeft;
-
-      this.tooltipBelow.set(below);
-      this.tooltipPos.set({ top, left });
-      this.tooltipReady.set(true);
-    });
-  }
-
-  onValidityLeave(): void {
-    this.tooltipTeam.set(null);
-    this.tooltipPos.set(null);
-    this.tooltipReady.set(false);
-  }
-
-  // Mobile equivalent of positionStats() below — no hover there for the tooltip, so the
-  // count/min per position is shown directly as compact colored text instead of bubbles.
+  // Kompakte Badges je Position direkt in der Tabellenzeile - gedimmt sobald der Kader dort
+  // unter dem Minimum liegt.
   positionCounts(t: LigaTeam) {
-    return POSITIONS.map(pos => ({
-      position: pos,
-      count: t.position_counts?.[pos] ?? 0,
-      min: CONSTRAINTS[pos].min,
-    }));
-  }
-
-  positionStats(t: LigaTeam) {
     return POSITIONS.map(pos => {
-      const { min, max } = CONSTRAINTS[pos];
       const count = t.position_counts?.[pos] ?? 0;
+      const min = CONSTRAINTS[pos].min;
       return {
         position: pos,
-        bubbles: Array.from({ length: max }, (_, i) => ({
-          filled: i < count,
-          isMin:  i < min,
-        })),
+        label: this.positionLabel(pos),
+        count,
+        min,
+        color: this.positionColor(pos),
+        opacity: count < min ? 0.3 : 1,
       };
     });
   }
@@ -211,6 +192,62 @@ export class LigaTeamsComponent {
 
   navigate(teamId: string): void {
     this.router.navigate(['/team', teamId]);
+  }
+
+  // Hover-Tooltip über dem führenden Team einer Vereins-Zeile — listet dessen Kaderspieler
+  // dieses Vereins auf. Gleiches Edge-Clamp-Muster wie andernorts im Projekt (fixed position,
+  // zweiter Messungs-Pass per requestAnimationFrame, hoverSeq gegen veraltete Callbacks).
+  @ViewChild('clubTeamTooltipEl') clubTeamTooltipEl?: ElementRef<HTMLElement>;
+  tooltipClub  = signal<ClubLeadingTeamRow | null>(null);
+  tooltipPos   = signal<{ top: number; left: number } | null>(null);
+  tooltipBelow = signal(false);
+  tooltipReady = signal(false);
+
+  private static readonly TOOLTIP_EDGE_MARGIN = 24;
+  private hoverSeq = 0;
+
+  onTeamHover(event: MouseEvent, club: ClubLeadingTeamRow): void {
+    if (!club.leading_team?.players.length) return;
+    const seq = ++this.hoverSeq;
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.tooltipClub.set(club);
+    this.tooltipBelow.set(false);
+    this.tooltipReady.set(false);
+    this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+
+    requestAnimationFrame(() => {
+      const el = this.clubTeamTooltipEl?.nativeElement;
+      if (!el || seq !== this.hoverSeq) return;
+
+      const margin = LigaTeamsComponent.TOOLTIP_EDGE_MARGIN;
+      let top   = rect.top;
+      let left  = rect.left + rect.width / 2;
+      let below = false;
+
+      const tipRect = el.getBoundingClientRect();
+
+      if (tipRect.top < margin) {
+        below = true;
+        top = rect.bottom;
+      }
+
+      const halfWidth = tipRect.width / 2;
+      const maxLeft   = window.innerWidth - margin - halfWidth;
+      const minLeft   = margin + halfWidth;
+      if (left > maxLeft) left = maxLeft;
+      if (left < minLeft) left = minLeft;
+
+      this.tooltipBelow.set(below);
+      this.tooltipPos.set({ top, left });
+      this.tooltipReady.set(true);
+    });
+  }
+
+  onTeamLeave(): void {
+    this.hoverSeq++;
+    this.tooltipClub.set(null);
+    this.tooltipPos.set(null);
+    this.tooltipReady.set(false);
   }
 
   constructor() {

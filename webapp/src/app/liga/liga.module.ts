@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { LigaComponent } from './liga.component';
-import { SaisonvorschauComponent } from './saisonvorschau/saisonvorschau.component';
 import { MatchdayComponent } from './matchday/matchday.component';
 import { TableComponent } from './table/table.component';
 import { LigaTeamsComponent } from './teams/liga-teams.component';
@@ -21,7 +20,6 @@ const routes: Routes = [
     component: LigaComponent,
     children: [
       { path: '',             redirectTo: 'spieltag', pathMatch: 'full' },
-      { path: 'saisonvorschau', component: SaisonvorschauComponent },
       { path: 'spieltag',     component: MatchdayComponent },
       { path: 'tabelle',      component: TableComponent },
       { path: 'powerranking', component: PowerrankingComponent },
@@ -37,7 +35,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [LigaComponent, SaisonvorschauComponent, MatchdayComponent, TableComponent, LigaTeamsComponent, HallOfFameComponent, H2HComponent, H2HMatchComponent, H2HModeComponent, BettingOfficeComponent, PowerrankingComponent, HotTakesComponent],
+  declarations: [LigaComponent, MatchdayComponent, TableComponent, LigaTeamsComponent, HallOfFameComponent, H2HComponent, H2HMatchComponent, H2HModeComponent, BettingOfficeComponent, PowerrankingComponent, HotTakesComponent],
   imports: [CommonModule, RouterModule.forChild(routes), DragDropModule]
 })
 export class LigaModule {}

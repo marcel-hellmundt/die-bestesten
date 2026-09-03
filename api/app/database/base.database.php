@@ -34,7 +34,6 @@ require_once 'h2h.database.php';
 require_once 'h2h_prediction.database.php';
 require_once 'powerranking.database.php';
 require_once 'session.database.php';
-require_once 'saisonvorschau.database.php';
 
 class Database
 {
@@ -73,7 +72,6 @@ class Database
     use H2HPredictionTrait;
     use PowerrankingTrait;
     use SessionTrait;
-    use SaisonvorschauTrait;
 
     private $con;
     private $con_league;

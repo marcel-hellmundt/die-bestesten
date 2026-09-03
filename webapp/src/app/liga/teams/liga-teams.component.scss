@@ -41,113 +41,259 @@
   &:focus { outline: none; border-color: $color-text-muted; }
 }
 
-.teams-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: $space-4;
+.col-team {
+  vertical-align: middle;
 }
 
-.team-card {
-  position: relative;
+.team-cell {
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: $space-3;
-  padding: $space-5 $space-4;
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-lg;
-  cursor: pointer;
+
+  @media (max-width: $mobile-breakpoint) {
+    gap: $space-2;
+
+    .tbl-logo {
+      width: 28px;
+      height: 28px;
+    }
+  }
+}
+
+.team-name {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.col-valid {
+  width: 60px;
   text-align: center;
 }
 
-.squad-badge {
-  position: absolute;
-  top: $space-2;
-  right: $space-2;
+.col-squad {
+  min-width: 220px;
+}
+
+.col-value {
+  width: 140px;
+  text-align: right;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+// Mobile: die Tabelle muss ohne horizontales Scrollen komplett auf den Bildschirm passen —
+// table-layout:fixed erzwingt feste Spaltenbreiten (in Summe 100%) statt sich am (auf Mobile eh
+// ausgeblendeten) Teamnamen und den nicht umbrechenden Header-Labels aufzuziehen.
+@media (max-width: $mobile-breakpoint) {
+  .data-table {
+    table-layout: fixed;
+    width: 100%;
+
+    th,
+    td {
+      padding-inline: 4px;
+    }
+
+    th {
+      white-space: normal;
+      overflow-wrap: break-word;
+      line-height: 1.2;
+      font-size: 10px;
+    }
+
+    th:first-child,
+    td:first-child {
+      padding-inline-start: $space-3;
+    }
+
+    th:last-child,
+    td:last-child {
+      padding-inline-end: $space-3;
+    }
+  }
+
+  .col-team {
+    width: 26%;
+  }
+  .col-valid {
+    width: 12%;
+    min-width: unset;
+  }
+  .col-squad {
+    width: 32%;
+    min-width: unset;
+  }
+  .col-value {
+    width: 30%;
+  }
+}
+
+.valid-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 
   svg {
     width: 11px;
     height: 11px;
   }
 
-  &--valid   { background: $color-success; }
-  &--invalid { background: $color-danger; }
-}
-
-// Mobile-only stand-in for the desktop hover tooltip (no hover on touch) — vorhanden/min per
-// position, stacked right under the badge, each pair colored in that position's color.
-.mobile-position-summary {
-  display: none;
+  &--valid {
+    background: $color-success;
+  }
+  &--invalid {
+    background: $color-danger;
+  }
 
   @media (max-width: $mobile-breakpoint) {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    position: absolute;
-    top: calc(#{$space-2} + 20px + 4px);
-    // Badge is `right: $space-2; width: 20px`, so its horizontal center sits at
-    // $space-2 + 10px from the container's right edge. Position this block's right edge
-    // there, then shift it right by half its own (auto) width — the standard trick to center
-    // an element on a fixed point without knowing its width up front.
-    right: calc(#{$space-2} + 10px);
-    transform: translateX(50%);
-  }
+    width: 16px;
+    height: 16px;
 
-  &__row {
-    font-size: 11px;
-    font-weight: $font-weight-semibold;
-    line-height: 1.2;
-    font-variant-numeric: tabular-nums;
-    text-align: center;
+    svg {
+      width: 9px;
+      height: 9px;
+    }
   }
 }
 
-// Squad-validity tooltip — desktop hover only for now (mobile has no hover; a tap-based
-// variant follows separately). Mirrors .player-breakdown's fixed-position-near-cursor pattern
-// in lineup.component.scss.
-.squad-validity-tooltip {
+.squad-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1 $space-3;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+
+  // Untereinander statt nebeneinander — spart horizontale Breite, die auf Mobile für die feste
+  // Spaltenbreite (siehe .col-squad oben) gebraucht wird.
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 1px;
+    font-size: 10px;
+  }
+
+  &__pos {
+    white-space: nowrap;
+  }
+}
+
+// ── Vereine-Card ─────────────────────────────────────────────────────────────
+
+.card-title {
+  font-family: $font-display;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  letter-spacing: 0.01em;
+  margin-bottom: $space-3;
+}
+
+.teams-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-4;
+  margin-top: $space-6;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.club-team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.club-team-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+}
+
+.club-team-row__club {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.club-team-row__name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.club-team-row__team {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-shrink: 0;
+  border-radius: $radius-sm;
+  padding: 2px $space-2;
+  cursor: default;
+
+  &:hover {
+    background: $color-surface-alt;
+  }
+
+  &--empty {
+    color: $color-text-muted;
+    cursor: default;
+
+    &:hover {
+      background: none;
+    }
+  }
+}
+
+.club-team-row__team-name {
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
+.team-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+}
+
+.club-team-tooltip {
   position: fixed;
-  // scale() shrinks the whole thing (bubbles/labels included) without needing a separate
-  // compact variant of the shared .pos-stat/.bubble classes, which stay full-size on the
-  // squad page. transform-origin anchors the scale to the tip nearest the badge, so shrinking
-  // doesn't visibly pull the tooltip away from it.
-  transform: translate(-50%, calc(-100% - 8px)) scale(0.82);
+  transform: translate(-50%, calc(-100% - 8px));
   transform-origin: bottom center;
-  // Above the sticky topbar ($z-sticky) — top-row badges sit close enough to it that the
-  // tooltip would otherwise render underneath it.
   z-index: $z-overlay;
   background: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-md;
-  padding: $space-4;
+  padding: $space-3 $space-4;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
   pointer-events: none;
-  // Fixed (not min-width/auto) so the box never shrink-to-fits based on how much room is left
-  // between the badge and the viewport edge — with only `left` set (no `right`), an auto-width
-  // fixed-position box's shrink-to-fit sizing is constrained by that remaining space, which
-  // made the tooltip visibly narrower for badges near the right edge of the screen.
-  width: 210px;
-  // Invisible until JS has measured it and corrected its position (edge clamping, below-flip)
-  // — still laid out and measurable while hidden this way (unlike display:none), it just isn't
-  // painted, so the naive placement never flashes on screen before snapping to its final spot.
+  width: 200px;
+  // Unsichtbar bis JS die Position gemessen/korrigiert hat (Edge-Clamp) — bleibt dabei
+  // layoutfähig/messbar (im Gegensatz zu display:none), damit die naive Platzierung nie kurz
+  // aufblitzt, bevor sie an ihre finale Position springt.
   visibility: hidden;
 
   &--ready {
     visibility: visible;
   }
 
-  // Flipped below the badge when there isn't enough room above (top grid rows) — set once
-  // JS measures the rendered tooltip running off the top of the viewport.
   &--below {
-    transform: translate(-50%, 8px) scale(0.82);
+    transform: translate(-50%, 8px);
     transform-origin: top center;
   }
 
@@ -156,88 +302,20 @@
   }
 }
 
-.team-card__logo-wrap {
-  width: 72px;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.team-card__logo {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.team-card__logo-placeholder {
-  width: 56px;
-  height: 56px;
-  border-radius: $radius-md;
-}
-
-.team-card__colors {
-  display: flex;
-  gap: $space-2;
-  justify-content: center;
-}
-
-.color-bubble {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.team-card__name {
+.club-team-tooltip__title {
+  display: block;
+  font-size: $font-xs;
   font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  margin-bottom: $space-2;
+}
+
+.club-team-tooltip__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: $font-sm;
-  color: $color-text;
-  line-height: 1.3;
-}
-
-.team-card__manager {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-}
-
-.manager-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: $color-surface-alt;
-  border: 1px solid $color-border;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.manager-avatar__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.manager-avatar__initials {
-  font-size: $font-xs;
-  font-weight: $font-weight-bold;
-  color: $color-text-muted;
-}
-
-.manager-name {
-  font-size: $font-xs;
-  color: $color-text-muted;
-}
-
-.team-card__value {
-  position: absolute;
-  bottom: $space-2;
-  right: $space-2;
-  font-size: $font-xs;
-  color: $color-text-muted;
-  opacity: 0.6;
 }

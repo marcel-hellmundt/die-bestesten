@@ -699,6 +699,12 @@ class Routing
                     ],
                     [
                         'method' => 'GET',
+                        'path' => '/team/clubs',
+                        'description' => 'Alle Vereine der Liga-Division (Fallback: höchste deutsche Division) mit dem Team, das die meisten aktuellen Kaderspieler dieses Vereins führt — gibt [{id,name,short_name,logo_uploaded,leading_team:{id,team_name,color,color_secondary,count,players:[{name}]}|null}] sortiert nach Vereinsname zurück; leading_team=null wenn kein Team Kaderspieler dieses Vereins hat; players alphabetisch sortiert — Auth',
+                        'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
+                    ],
+                    [
+                        'method' => 'GET',
                         'path' => '/team/mine',
                         'description' => 'Eigenes Team der aktiven Saison — gibt { id, team_name, season_id, color } zurück; 404 wenn kein Team vorhanden — Auth',
                     ],
@@ -737,23 +743,6 @@ class Routing
                         'path' => '/team/:id/logo/takeover',
                         'description' => 'Übernimmt das Logo aus dem Vorsaison-Team desselben Managers für dieses Team — nur eigenes Team; 404 wenn kein Vorsaison-Team — Auth',
                         'path_params' => [':id' => 'UUID des Teams'],
-                    ],
-                ],
-            ]),
-
-            new Route('saisonvorschau', 'Saisonvorschau', [
-                'title' => 'Saisonvorschau',
-                'description' => 'Kader-Übersicht vor/während Saisonstart im Vergleich zur Vorsaison',
-                'endpoints' => [
-                    [
-                        'method' => 'GET',
-                        'path' => '/saisonvorschau',
-                        'description' => 'Alle Teams der aktiven Saison mit Kaderzusammensetzung — gibt { season_id, previous_season_id, available, kickoff_date, teams:[{id,team_name,color,color_secondary,manager_id,manager_name,alias,squad_valid,position_counts:{GOALKEEPER,DEFENDER,MIDFIELDER,FORWARD},previous_season_points,previous_season_points_value11,previous_season_points_best11,points_breakdown:{all,value11,best11}:[{name,points,position,club_id,club_logo_uploaded},...],newcomer_count,newcomer_players:[{name,club_id,club_logo_uploaded},...]}], promoted_clubs:[{id,name,short_name,logo_uploaded}], promoted_club_teams:[{team_id,team_name,color,color_secondary,count,players:[{name,club_id,club_logo_uploaded},...]}], special_clubs:[{id,name,logo_uploaded}], special_club_teams:[{team_id,team_name,color,color_secondary,count,players:[{name,club_id,club_logo_uploaded},...]}] } zurück; nur verfügbar bis zum Anpfiff des 1. Spieltags der Liga-Division (kickoff_date) — danach available=false und teams/promoted_clubs/etc. bleiben leer, ohne die Kaderberechnung auszuführen; previous_season_points = Summe der Vorsaison-Punkte aller aktuellen Kaderspieler; previous_season_points_value11 = Vorsaison-Punkte-Summe der 11 (nach Marktwert) teuersten Spieler, die eine der 7 gültigen Formationen ergeben; previous_season_points_best11 = Vorsaison-Punkte-Summe der 11 Spieler, die unter allen gültigen Formationen die höchste Punktzahl ergeben; beide null, wenn keine Formation mit dem Kader erreichbar ist (bei squad_valid=true immer erreichbar); points_breakdown = je Modus die zugrundeliegenden Spieler mit Punkten/Position für den Frontend-Tooltip beim Hover über die Punkte-Zahl — all nach Punkten absteigend, value11 nach Marktwert absteigend, best11 nach Position (GOALKEEPER→DEFENDER→MIDFIELDER→FORWARD) sortiert; newcomer_count/newcomer_players = Anzahl bzw. Spieler (alphabetisch, mit aktuellem Verein fürs Logo) der Kaderspieler ohne ein einziges player_rating in der Vorsaison; promoted_clubs = Vereine der Liga-Division, die in der Vorsaison genau eine Division tiefer (level+1) spielten; promoted_club_teams zählt dabei keine Lückenfüller-Spieler (Marktwert exakt 500.000€ in der 1. Liga bzw. 100.000€ in der 2. Liga); promoted_club_teams/special_club_teams = Teams mit Kaderspielern (players analog mit club_id/club_logo_uploaded) dieser bzw. der fest gewählten Vereine "RB Leipzig"/"TSG Hoffenheim", absteigend nach count sortiert (nur count>0); leere Struktur ohne aktive Saison — Auth',
-                    ],
-                    [
-                        'method' => 'GET',
-                        'path' => '/saisonvorschau/status',
-                        'description' => 'Nur { available, kickoff_date } — ob die Saisonvorschau aktuell verfügbar ist (vor Anpfiff Spieltag 1), ohne die komplette Kaderberechnung auszuführen; für die Sichtbarkeit des Saisonvorschau-Menüpunkts im Frontend (analog GET /h2h/status) — Auth',
                     ],
                 ],
             ]),

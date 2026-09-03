@@ -11,6 +11,5 @@ export class LigaComponent {
 
   constructor() {
     this.cache.ensureLeague();
-    this.cache.ensureSaisonvorschauStatus();
   }
 }
