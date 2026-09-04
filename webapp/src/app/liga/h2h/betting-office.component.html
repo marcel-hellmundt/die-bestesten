@@ -88,10 +88,15 @@
         <div class="bet-list">
           @for (b of filteredBets(); track b.match_id) {
             <a class="bet-row" [routerLink]="['/liga/h2h', b.match_id]">
-            <span class="bet-row__pick" [class.bet-row__pick--won]="b.result === 'won'">
-              {{ pickLabel(b) }}
+            <span
+              class="bet-row__pick"
+              [class.bet-row__pick--won]="b.result === 'won'"
+              [class.bet-row__pick--lost]="b.result === 'lost'"
+              [attr.title]="pickLabel(b)"
+            >
+              {{ pickCode(b.pick) }}
             </span>
-            <span class="bet-row__matchday hidden-mobile">{{ b.matchday_number ?? '?' }}</span>
+            <span class="bet-row__matchday hidden-mobile">{{ b.matchday_number != null ? 'Sp. ' + b.matchday_number : '?' }}</span>
             <span class="bet-row__match">
               <span class="bet-row__side bet-row__side--home">
                 <span class="bet-row__team-name hidden-mobile">{{ b.home_team_name }}</span>
@@ -128,14 +133,17 @@
               </span>
             </span>
             <span class="bet-row__odds">{{ b.odds ?? '–' }}</span>
-            @if (b.stake != null) {
-              <span class="bet-row__stake">
-                {{ b.stake }}
+            <span class="bet-row__stake">
+              @if (b.stake != null) {
+                <span class="bet-row__stake-value">
+                  {{ b.stake }}
+                  <img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />
+                </span>
                 @if (b.payout != null) {
                   <span class="bet-row__payout">→ {{ formatLukaten(b.payout) }}</span>
                 }
-              </span>
-            }
+              }
+            </span>
             </a>
           }
         </div>
@@ -156,8 +164,8 @@
             </div>
             <div class="h2h-stake-row">
               <span class="h2h-stake-row__budget">
-                <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
-                Budget: <strong>{{ formatLukaten(budget()) }}</strong>
+                Budget: <strong>{{ formatLukatenNumber(budget()) }}</strong>
+                <img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />
               </span>
               <label class="h2h-stake-row__input-wrap">
                 <input
@@ -171,10 +179,7 @@
                   [disabled]="submittingMatchId() === m.match_id"
                   (input)="onAvailableStakeChange(m.match_id, $any($event.target).value)"
                 />
-                <span class="h2h-stake-row__unit">
-                  <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
-                  Lukaten
-                </span>
+                <img class="lukat-icon h2h-stake-row__unit" src="img/icons/lukat.png" alt="Lukaten" />
               </label>
             </div>
             <div class="h2h-predict-card__options">
@@ -325,7 +330,7 @@
   </div>
 </div>
 
-@if (tooltipTitle(); as title) {
+@if (tooltipMatch(); as w) {
   <div
     class="list-tooltip"
     [class.list-tooltip--below]="tooltipBelow()"
@@ -334,7 +339,32 @@
     [style.left.px]="tooltipPos()!.left"
     #winTooltipEl
   >
-    <span class="list-tooltip__title">{{ title }}</span>
-    <span class="list-tooltip__detail">{{ tooltipDetail() }}</span>
+    <div class="list-tooltip__match">
+      <span class="list-tooltip__side">
+        @if (!logoFailed(w.home_team_id)) {
+          <img class="team-logo-sm" [src]="teamLogoUrl(w.home_team_id, w.season_id)" (error)="onLogoError(w.home_team_id)" alt="" />
+        } @else if (w.home_color) {
+          <span class="team-dot" [style.background-color]="w.home_color"></span>
+        }
+      </span>
+      <span class="h2h-score">
+        @if (w.home_goals !== null) {
+          <strong>{{ w.home_goals }}</strong><span class="h2h-sep">:</span><strong>{{ w.away_goals }}</strong>
+        } @else {
+          <span class="h2h-pending">–</span><span class="h2h-sep">:</span><span class="h2h-pending">–</span>
+        }
+      </span>
+      <span class="list-tooltip__side">
+        @if (!logoFailed(w.away_team_id)) {
+          <img class="team-logo-sm" [src]="teamLogoUrl(w.away_team_id, w.season_id)" (error)="onLogoError(w.away_team_id)" alt="" />
+        } @else if (w.away_color) {
+          <span class="team-dot" [style.background-color]="w.away_color"></span>
+        }
+      </span>
+    </div>
+    <span class="list-tooltip__title">{{ w.home_team_name }} – {{ w.away_team_name }}</span>
+    <span class="list-tooltip__detail">
+      Tipp: {{ wonMatchPickLabel(w) }}@if (tooltipOdds(w); as odds) { · Quote {{ odds }} }
+    </span>
   </div>
 }

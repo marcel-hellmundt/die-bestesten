@@ -227,6 +227,13 @@ export class H2HMatchComponent implements OnDestroy {
     return `${s} Lukaten`;
   }
 
+  // Nur die Zahl, ohne "Lukaten"-Suffix — für Stellen, an denen das lukat.png-Icon direkt daneben
+  // steht und den Suffix bereits visuell ersetzt (siehe .h2h-stake-row__budget).
+  formatLukatenNumber(v: number | null): string {
+    if (v == null) return '–';
+    return Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
+  }
+
   pickLabel(pick: string): string {
     if (pick === 'home') return this.homeTeam()?.team_name ?? 'Heimsieg';
     if (pick === 'away') return this.awayTeam()?.team_name ?? 'Auswärtssieg';

@@ -388,7 +388,8 @@
 }
 
 .h2h-stake-row__input {
-  width: 64px;
+  width: 84px;
+  min-width: 0;
   border: none;
   background: none;
   font-size: $font-sm;
@@ -399,7 +400,7 @@
   }
 
   // Spinner-Pfeile ausblenden — Feld bleibt trotzdem per Tastatur/Scroll änderbar, wirkt so
-  // kompakter neben dem "Lukaten"-Suffix.
+  // kompakter neben dem Lukaten-Icon.
   &::-webkit-outer-spin-button,
   &::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -411,12 +412,7 @@
 }
 
 .h2h-stake-row__unit {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: $font-xs;
-  color: $color-text-muted;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 // Admin-only Transparenz-Card für die Quoten-Berechnung — Label + Heim-Wert + Auswärts-Wert

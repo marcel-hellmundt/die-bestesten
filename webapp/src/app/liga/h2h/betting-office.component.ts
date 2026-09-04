@@ -26,10 +26,15 @@ interface Bet {
 
 interface WonMatch {
   match_id: string;
+  season_id: string | null;
+  home_team_id: string;
   home_team_name: string;
   home_color: string | null;
+  away_team_id: string;
   away_team_name: string;
   away_color: string | null;
+  home_goals: number | null;
+  away_goals: number | null;
   pick: 'home' | 'draw' | 'away';
   odds: number | null;
 }
@@ -189,6 +194,12 @@ export class BettingOfficeComponent {
     return b.pick === 'home' ? b.home_team_name : b.away_team_name;
   }
 
+  pickCode(pick: 'home' | 'draw' | 'away'): '1' | 'X' | '2' {
+    if (pick === 'home') return '1';
+    if (pick === 'away') return '2';
+    return 'X';
+  }
+
   wonMatchPickLabel(w: WonMatch): string {
     if (w.pick === 'draw') return 'Unentschieden';
     return w.pick === 'home' ? w.home_team_name : w.away_team_name;
@@ -202,6 +213,13 @@ export class BettingOfficeComponent {
     if (v == null) return '–';
     const s = Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
     return `${s} Lukaten`;
+  }
+
+  // Nur die Zahl, ohne "Lukaten"-Suffix — für Stellen, an denen das lukat.png-Icon direkt daneben
+  // steht und den Suffix bereits visuell ersetzt (siehe .h2h-stake-row__budget).
+  formatLukatenNumber(v: number | null): string {
+    if (v == null) return '–';
+    return Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
   }
 
   private logoErrors = new Set<string>();
@@ -260,26 +278,30 @@ export class BettingOfficeComponent {
     });
   }
 
-  // ── Hover-Tooltip über einem Reward-Icon: zeigt Match + individuell eingelockte Quote —
-  // gleiches Edge-Clamp-Muster wie liga-teams.component.ts's onListHover()/onListLeave(),
-  // hier für ein einzelnes Detail-Objekt statt einer Spielerliste.
+  // ── Hover-Tooltip über einem Reward-Icon: zeigt beide Vereinslogos, Endergebnis und
+  // individuell eingelockte Quote — gleiches Edge-Clamp-Muster wie liga-teams.component.ts's
+  // onListHover()/onListLeave(), hier für ein einzelnes Match-Objekt statt einer Spielerliste.
   @ViewChild('winTooltipEl') winTooltipEl?: ElementRef<HTMLElement>;
-  tooltipTitle  = signal<string | null>(null);
-  tooltipDetail = signal<string>('');
-  tooltipPos    = signal<{ top: number; left: number } | null>(null);
-  tooltipBelow  = signal(false);
-  tooltipReady  = signal(false);
+  tooltipMatch = signal<WonMatch | null>(null);
+  tooltipPos   = signal<{ top: number; left: number } | null>(null);
+  tooltipBelow = signal(false);
+  tooltipReady = signal(false);
 
   private static readonly TOOLTIP_EDGE_MARGIN = 24;
   private hoverSeq = 0;
 
+  // Number(...) statt w.odds.toFixed() direkt — DECIMAL-Spalten kommen vom Backend zwar schon als
+  // Zahl (siehe getH2HPredictionStandings()), diese Absicherung verhindert trotzdem einen Crash,
+  // falls hier je wieder ein String durchrutscht.
+  tooltipOdds(w: WonMatch): string | null {
+    const odds = w.odds != null ? Number(w.odds) : null;
+    return odds != null && !Number.isNaN(odds) ? odds.toFixed(2).replace('.', ',') : null;
+  }
+
   onWinHover(event: MouseEvent, w: WonMatch): void {
     const seq = ++this.hoverSeq;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.tooltipTitle.set(`${w.home_team_name} – ${w.away_team_name}`);
-    this.tooltipDetail.set(
-      `Tipp: ${this.wonMatchPickLabel(w)}${w.odds != null ? ' · Quote ' + w.odds.toFixed(2).replace('.', ',') : ''}`
-    );
+    this.tooltipMatch.set(w);
     this.tooltipBelow.set(false);
     this.tooltipReady.set(false);
     this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
@@ -314,7 +336,7 @@ export class BettingOfficeComponent {
 
   onWinLeave(): void {
     this.hoverSeq++;
-    this.tooltipTitle.set(null);
+    this.tooltipMatch.set(null);
     this.tooltipPos.set(null);
     this.tooltipReady.set(false);
   }

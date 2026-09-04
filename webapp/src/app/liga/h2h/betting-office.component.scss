@@ -244,10 +244,11 @@
 
 .bet-row__matchday {
   flex-shrink: 0;
-  width: 24px;
+  width: 40px;
   color: $color-text-muted;
   font-size: $font-xs;
   text-align: center;
+  white-space: nowrap;
 }
 
 .bet-row__match {
@@ -325,13 +326,26 @@
 
 .bet-row__pick {
   flex-shrink: 0;
-  min-width: 160px;
-  font-weight: $font-weight-medium;
-  white-space: nowrap;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  background: $color-border;
+  color: $color-text-muted;
+  font-family: $font-display;
+  font-weight: $font-weight-semibold;
+  font-size: $font-sm;
 
   &--won {
-    color: $color-success;
-    font-weight: $font-weight-semibold;
+    background: $color-success;
+    color: #fff;
+  }
+
+  &--lost {
+    background: $color-danger;
+    color: #fff;
   }
 }
 
@@ -349,6 +363,12 @@
   font-size: $font-xs;
   font-variant-numeric: tabular-nums;
   color: $color-text-muted;
+}
+
+.bet-row__stake-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .bet-row__payout {
@@ -431,7 +451,8 @@
 }
 
 .h2h-stake-row__input {
-  width: 64px;
+  width: 84px;
+  min-width: 0;
   border: none;
   background: none;
   font-size: $font-sm;
@@ -452,12 +473,7 @@
 }
 
 .h2h-stake-row__unit {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: $font-xs;
-  color: $color-text-muted;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .h2h-predict-card {
@@ -567,7 +583,7 @@
   padding: $space-3 $space-4;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
   pointer-events: none;
-  width: 200px;
+  width: 220px;
   visibility: hidden;
 
   &--ready {
@@ -584,15 +600,30 @@
   }
 }
 
+.list-tooltip__match {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  margin-bottom: $space-2;
+}
+
+.list-tooltip__side {
+  display: flex;
+  align-items: center;
+}
+
 .list-tooltip__title {
   display: block;
   font-size: $font-xs;
   font-weight: $font-weight-semibold;
   color: $color-text-muted;
+  text-align: center;
   margin-bottom: $space-1;
 }
 
 .list-tooltip__detail {
   display: block;
   font-size: $font-sm;
+  text-align: center;
 }

@@ -491,7 +491,9 @@ trait H2HPredictionTrait
                 'home_goals'       => $goals['home'],
                 'away_goals'       => $goals['away'],
                 'pick'             => $row['pick'],
-                'odds'             => $row['odds'],
+                // DECIMAL-Spalte kommt von PDO als String zurück — Cast hält den Frontend-Typ
+                // (number|null) ehrlich.
+                'odds'             => $row['odds'] !== null ? (float) $row['odds'] : null,
                 'stake'            => $row['stake'] !== null ? (int) $row['stake'] : null,
                 // Voller Rückzahlungsbetrag in Lukaten bei gewonnenem, gestaktem Tipp (inkl.
                 // ursprünglichem Einsatz) — null bei fehlendem Einsatz oder result != 'won'.
@@ -513,6 +515,7 @@ trait H2HPredictionTrait
     {
         $rows = $this->con_league->query(
             "SELECT hp.manager_id, m.manager_name, m.alias, hp.match_id, hp.pick, hp.odds, hp.result,
+                    hm.matchday_id, hm.home_team_id, hm.away_team_id,
                     th.team_name AS home_team_name, th.color_primary AS home_color,
                     ta.team_name AS away_team_name, ta.color_primary AS away_color
              FROM h2h_prediction hp
@@ -524,11 +527,35 @@ trait H2HPredictionTrait
              ORDER BY m.manager_name ASC"
         )->fetchAll(PDO::FETCH_ASSOC);
 
+        if (empty($rows)) return [];
+
+        // Für Vereinslogos (Saison des Matches) und das Endergebnis (h2hGoals()) im Reward-Icon-
+        // Tooltip — gleiches Muster wie getMyH2HPredictions().
+        $matchdayIds = array_values(array_unique(array_column($rows, 'matchday_id')));
+        $mph = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $mdq = $this->con->prepare("SELECT id, season_id FROM matchday WHERE id IN ($mph)");
+        $mdq->execute($matchdayIds);
+        $seasonByMatchday = array_column($mdq->fetchAll(PDO::FETCH_ASSOC), 'season_id', 'id');
+
+        $teamIds = array_values(array_unique(array_merge(
+            array_column($rows, 'home_team_id'), array_column($rows, 'away_team_id')
+        )));
+        $tph = implode(',', array_fill(0, count($teamIds), '?'));
+        $rq = $this->con_league->prepare(
+            "SELECT team_id, matchday_id, goals, assists, sds_defender, invalid
+             FROM team_rating WHERE matchday_id IN ($mph) AND team_id IN ($tph)"
+        );
+        $rq->execute(array_merge($matchdayIds, $teamIds));
+        $ratingMap = [];
+        foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $ratingMap[$r['matchday_id']][$r['team_id']] = $r;
+        }
+
         // Pro Manager gruppieren statt per SQL GROUP BY zu aggregieren — won_matches braucht das
-        // Detail jeder einzelnen Sieg-Zeile fürs Frontend-Tooltip (Match + individuell
-        // eingelockte Quote), nicht nur die Zählsumme. wins bleibt trotzdem auch für Manager mit
-        // ausschließlich verlorenen Tipps bei 0 statt ganz aus der Liste zu fallen (gleiches
-        // Einschlusskriterium wie vorher: mind. ein AUSGEWERTETER Tipp, result <> 'open').
+        // Detail jeder einzelnen Sieg-Zeile fürs Frontend-Tooltip (Match, Logos, Endergebnis,
+        // individuell eingelockte Quote), nicht nur die Zählsumme. wins bleibt trotzdem auch für
+        // Manager mit ausschließlich verlorenen Tipps bei 0 statt ganz aus der Liste zu fallen
+        // (gleiches Einschlusskriterium wie vorher: mind. ein AUSGEWERTETER Tipp, result <> 'open').
         $byManager = [];
         foreach ($rows as $row) {
             $mid = $row['manager_id'];
@@ -543,14 +570,25 @@ trait H2HPredictionTrait
             }
             if ($row['result'] === 'won') {
                 $byManager[$mid]['wins']++;
+                $goals = $this->h2hGoals(
+                    $ratingMap[$row['matchday_id']][$row['home_team_id']] ?? null,
+                    $ratingMap[$row['matchday_id']][$row['away_team_id']] ?? null
+                );
                 $byManager[$mid]['won_matches'][] = [
                     'match_id'       => $row['match_id'],
+                    'season_id'      => $seasonByMatchday[$row['matchday_id']] ?? null,
+                    'home_team_id'   => $row['home_team_id'],
                     'home_team_name' => $row['home_team_name'],
                     'home_color'     => $row['home_color'],
+                    'away_team_id'   => $row['away_team_id'],
                     'away_team_name' => $row['away_team_name'],
                     'away_color'     => $row['away_color'],
+                    'home_goals'     => $goals['home'],
+                    'away_goals'     => $goals['away'],
                     'pick'           => $row['pick'],
-                    'odds'           => $row['odds'],
+                    // DECIMAL-Spalte kommt von PDO als String zurück — ohne Cast bricht z.B. ein
+                    // .toFixed() im Frontend auf dem vermeintlichen number-Wert.
+                    'odds'           => $row['odds'] !== null ? (float) $row['odds'] : null,
                 ];
             }
         }

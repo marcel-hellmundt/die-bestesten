@@ -1161,7 +1161,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h_prediction/standings',
-                        'description' => 'Alle Manager, die bereits mindestens einen ausgewerteten H2H-Tipp haben (result won/lost, offene zählen nicht), mit wins (Anzahl result=won) und won_matches ([{match_id,home_team_name,home_color,away_team_name,away_color,pick,odds}] je Sieg, für Reward-Icon-Tooltips im Frontend) — fürs Wettbüro; absteigend nach wins sortiert — Auth',
+                        'description' => 'Alle Manager, die bereits mindestens einen ausgewerteten H2H-Tipp haben (result won/lost, offene zählen nicht), mit wins (Anzahl result=won) und won_matches ([{match_id,season_id,home_team_id,home_team_name,home_color,away_team_id,away_team_name,away_color,home_goals,away_goals,pick,odds}] je Sieg, für Reward-Icon-Tooltips im Frontend: Logos via home_team_id/away_team_id+season_id, Endergebnis via home_goals/away_goals) — fürs Wettbüro; absteigend nach wins sortiert — Auth',
                     ],
                     [
                         'method' => 'GET',

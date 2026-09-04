@@ -168,7 +168,12 @@
   <div class="mobile-pitch-wrap">
     <div class="field">
       @if (showSelectedInvalidHint()) {
-        <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+        <div class="field-invalid-hint">
+          <span class="field-invalid-hint__card">
+            <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
+            <span>Keine gültige Aufstellung vorhanden</span>
+          </span>
+        </div>
       } @else {
       @for (pos of pitchPositions; track pos) {
         <div class="field-section">
@@ -350,8 +355,8 @@
             <div class="h2h-predict-card__label">Dein Tipp</div>
             <div class="h2h-stake-row">
               <span class="h2h-stake-row__budget">
-                <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
-                Budget: <strong>{{ formatLukaten(budget()) }}</strong>
+                Budget: <strong>{{ formatLukatenNumber(budget()) }}</strong>
+                <img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />
               </span>
               <label class="h2h-stake-row__input-wrap">
                 <input
@@ -365,10 +370,7 @@
                   [disabled]="submittingPick()"
                   (input)="onStakeInputChange($any($event.target).value)"
                 />
-                <span class="h2h-stake-row__unit">
-                  <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
-                  Lukaten
-                </span>
+                <img class="lukat-icon h2h-stake-row__unit" src="img/icons/lukat.png" alt="Lukaten" />
               </label>
             </div>
             <div class="h2h-predict-card__options">
