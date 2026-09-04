@@ -138,10 +138,19 @@
 }
 
 .history-row__match {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: $space-1;
   min-width: 0;
+  color: $color-text-muted;
+}
+
+.history-row__side {
+  display: flex;
+  align-items: center;
+}
+
+.history-row__sep {
   color: $color-text-muted;
 }
 
@@ -291,6 +300,26 @@
   height: 22px;
   object-fit: contain;
   flex-shrink: 0;
+}
+
+.player-avatar-sm {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.manager-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.budget-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
 }
 
 .team-dot {
@@ -613,17 +642,30 @@
   align-items: center;
 }
 
-.list-tooltip__title {
-  display: block;
-  font-size: $font-xs;
-  font-weight: $font-weight-semibold;
-  color: $color-text-muted;
-  text-align: center;
-  margin-bottom: $space-1;
+.odds-badge {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  width: fit-content;
+  margin: 0 auto;
+  border-radius: $radius-full;
+  overflow: hidden;
+  font-size: $font-sm;
 }
 
-.list-tooltip__detail {
-  display: block;
-  font-size: $font-sm;
-  text-align: center;
+.odds-badge__label {
+  display: flex;
+  align-items: center;
+  background: $color-surface-alt;
+  color: $color-text-muted;
+  padding: 2px $space-3;
+}
+
+.odds-badge__value {
+  display: flex;
+  align-items: center;
+  background: #000;
+  color: #fff;
+  font-weight: $font-weight-bold;
+  padding: 2px $space-3;
 }

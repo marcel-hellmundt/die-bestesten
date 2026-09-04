@@ -200,13 +200,12 @@ export class BettingOfficeComponent {
     return 'X';
   }
 
-  wonMatchPickLabel(w: WonMatch): string {
-    if (w.pick === 'draw') return 'Unentschieden';
-    return w.pick === 'home' ? w.home_team_name : w.away_team_name;
-  }
-
   teamLogoUrl(teamId: string, seasonId: string | null): string {
     return `${environment.imageApiUrl}/team/${seasonId ?? ''}/${teamId}.png`;
+  }
+
+  managerPhotoUrl(managerId: string): string {
+    return `${environment.imageApiUrl}/manager/${managerId}.jpg`;
   }
 
   formatLukaten(v: number | null): string {

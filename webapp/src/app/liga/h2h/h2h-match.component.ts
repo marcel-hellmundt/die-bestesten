@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
@@ -83,7 +83,7 @@ export class H2HMatchComponent implements OnDestroy {
   oddsBreakdown = computed(() => this.data()?.odds_breakdown ?? null);
 
   // Einklappzustand der Quoten-Berechnung-Card — rein clientseitig, kein Persistieren nötig.
-  oddsBreakdownExpanded = signal(true);
+  oddsBreakdownExpanded = signal(false);
 
   // Alle bisherigen (abgeschlossenen) H2H-Begegnungen zwischen genau diesen beiden Managern,
   // liga- und saisonübergreifend — siehe H2HTrait::getH2HHeadToHeadHistory() im Backend.
@@ -234,12 +234,6 @@ export class H2HMatchComponent implements OnDestroy {
     return Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
   }
 
-  pickLabel(pick: string): string {
-    if (pick === 'home') return this.homeTeam()?.team_name ?? 'Heimsieg';
-    if (pick === 'away') return this.awayTeam()?.team_name ?? 'Auswärtssieg';
-    return 'Unentschieden';
-  }
-
   // Jeder Klick auf einen Pick-Button (auch den bereits aktiven) setzt/aktualisiert Pick+Einsatz
   // mit dem aktuellen Eingabewert — Entfernen läuft über den separaten removePrediction()-Button.
   submitPrediction(pick: 'home' | 'draw' | 'away'): void {
@@ -371,6 +365,75 @@ export class H2HMatchComponent implements OnDestroy {
       next: full => this.previewData.set(full?.predictions ?? null),
       error: () => { this.previewFetchTriggered = false; },
     });
+  }
+
+  // ── Tipp-Auswertung: 3 Spalten (1/X/2) mit den Manager-Fotos der jeweiligen Tipper statt
+  // einer schlichten Namensliste — ersetzt .h2h-predict-list.
+  entriesForPick(entries: any[], pick: 'home' | 'draw' | 'away'): any[] {
+    return entries.filter(e => e.pick === pick);
+  }
+
+  // Das tatsächliche Ergebnis steckt nicht direkt in entries[], ergibt sich aber daraus: sobald
+  // der Spieltag abgeschlossen ist, hat H2HPredictionTrait::evaluateH2HPredictionResults() bei
+  // jedem Eintrag mit dem richtigen Pick result='won' gesetzt — jeder solche Eintrag verrät also
+  // den gewonnenen Pick, ohne die h2hGoals()-Logik hier zu duplizieren. Vor Spieltagabschluss
+  // (result noch 'open') liefert das konsequent null — noch kein Gewinner zum Markieren.
+  winningPick(entries: any[]): 'home' | 'draw' | 'away' | null {
+    return entries.find(e => e.result === 'won')?.pick ?? null;
+  }
+
+  // ── Hover-Tooltip über einem Manager-Foto: Pick-Quote + eigener Einsatz/Gewinn — gleiches
+  // Edge-Clamp-Muster wie betting-office.component.ts's onWinHover()/onWinLeave().
+  @ViewChild('predictTooltipEl') predictTooltipEl?: ElementRef<HTMLElement>;
+  tooltipEntry = signal<any | null>(null);
+  tooltipPos   = signal<{ top: number; left: number } | null>(null);
+  tooltipBelow = signal(false);
+  tooltipReady = signal(false);
+
+  private static readonly TOOLTIP_EDGE_MARGIN = 24;
+  private hoverSeq = 0;
+
+  onEntryHover(event: MouseEvent, e: any): void {
+    const seq = ++this.hoverSeq;
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.tooltipEntry.set(e);
+    this.tooltipBelow.set(false);
+    this.tooltipReady.set(false);
+    this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+
+    requestAnimationFrame(() => {
+      const el = this.predictTooltipEl?.nativeElement;
+      if (!el || seq !== this.hoverSeq) return;
+
+      const margin = H2HMatchComponent.TOOLTIP_EDGE_MARGIN;
+      let top   = rect.top;
+      let left  = rect.left + rect.width / 2;
+      let below = false;
+
+      const tipRect = el.getBoundingClientRect();
+
+      if (tipRect.top < margin) {
+        below = true;
+        top = rect.bottom;
+      }
+
+      const halfWidth = tipRect.width / 2;
+      const maxLeft   = window.innerWidth - margin - halfWidth;
+      const minLeft   = margin + halfWidth;
+      if (left > maxLeft) left = maxLeft;
+      if (left < minLeft) left = minLeft;
+
+      this.tooltipBelow.set(below);
+      this.tooltipPos.set({ top, left });
+      this.tooltipReady.set(true);
+    });
+  }
+
+  onEntryLeave(): void {
+    this.hoverSeq++;
+    this.tooltipEntry.set(null);
+    this.tooltipPos.set(null);
+    this.tooltipReady.set(false);
   }
 
   homeSdsDefenders = computed(() => {
