@@ -83,7 +83,7 @@ const HOT_TAKES: { authorManagerId: string; takes: HotTake[] }[] = [
       {
         targetTeamId: 'cd3e7c38-b50b-4388-8e58-e0363ecdf990',
         text: 'Nicht mehr als zwei gleichzeitige S11-Einsätze von Pavlovic, Konstantelias, Lokonga und Burkhardt',
-        status: 'false',
+        status: 'pending',
       }, // Concordia Hachmannsfeld
       {
         targetTeamId: '31c26702-9842-471c-a5bb-7b57a9561c87',
