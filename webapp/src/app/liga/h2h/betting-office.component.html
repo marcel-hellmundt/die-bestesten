@@ -1,8 +1,44 @@
 <a class="back-link" routerLink="/liga/h2h">← H2H</a>
 
-<h1 class="page-title">Wettbüro</h1>
+<h1 class="page-title">Bestico</h1>
 
 <div class="betting-office-layout">
+  <div class="left-col">
+    <div class="card">
+      <div class="card-title">Mein Budget</div>
+      <span class="budget-value">
+        <img class="lukat-icon lukat-icon--lg" src="img/icons/lukat.png" alt="" />
+        {{ formatLukaten(budget()) }}
+      </span>
+
+      <div class="history-label">Historie</div>
+      @if (stakedHistory().length === 0) {
+        <p class="state-msg">Noch keine gestakten Tipps in dieser Saison.</p>
+      } @else {
+        <div class="history-list">
+          @for (b of stakedHistory(); track b.match_id) {
+            <a class="history-row" [routerLink]="['/liga/h2h', b.match_id]">
+              <span class="history-row__match">{{ b.home_team_name }} – {{ b.away_team_name }}</span>
+              <span
+                class="history-row__stake"
+                [class.history-row__stake--won]="b.result === 'won'"
+                [class.history-row__stake--lost]="b.result === 'lost'"
+              >
+                @if (b.result === 'won') {
+                  +{{ formatLukaten(b.payout) }}
+                } @else if (b.result === 'lost') {
+                  -{{ b.stake }}
+                } @else {
+                  {{ b.stake }} Lukaten
+                }
+              </span>
+            </a>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
   <div class="main-col">
     <div class="card">
       <div class="card-title">Meine Wetten</div>
@@ -51,7 +87,7 @@
       } @else {
         <div class="bet-list">
           @for (b of filteredBets(); track b.match_id) {
-            <div class="bet-row">
+            <a class="bet-row" [routerLink]="['/liga/h2h', b.match_id]">
             <span class="bet-row__pick" [class.bet-row__pick--won]="b.result === 'won'">
               {{ pickLabel(b) }}
             </span>
@@ -92,7 +128,15 @@
               </span>
             </span>
             <span class="bet-row__odds">{{ b.odds ?? '–' }}</span>
-            </div>
+            @if (b.stake != null) {
+              <span class="bet-row__stake">
+                {{ b.stake }}
+                @if (b.payout != null) {
+                  <span class="bet-row__payout">→ {{ formatLukaten(b.payout) }}</span>
+                }
+              </span>
+            }
+            </a>
           }
         </div>
       }
@@ -109,6 +153,29 @@
           <div class="card h2h-predict-card available-match-card">
             <div class="h2h-predict-card__label">
               {{ m.home_team.team_name }} – {{ m.away_team.team_name }}
+            </div>
+            <div class="h2h-stake-row">
+              <span class="h2h-stake-row__budget">
+                <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
+                Budget: <strong>{{ formatLukaten(budget()) }}</strong>
+              </span>
+              <label class="h2h-stake-row__input-wrap">
+                <input
+                  type="number"
+                  class="h2h-stake-row__input"
+                  min="1"
+                  step="1"
+                  [max]="budget() ?? 0"
+                  placeholder="Einsatz"
+                  [value]="stakeForMatch(m.match_id) ?? ''"
+                  [disabled]="submittingMatchId() === m.match_id"
+                  (input)="onAvailableStakeChange(m.match_id, $any($event.target).value)"
+                />
+                <span class="h2h-stake-row__unit">
+                  <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
+                  Lukaten
+                </span>
+              </label>
             </div>
             <div class="h2h-predict-card__options">
               <button
@@ -206,8 +273,14 @@
                 <td>{{ row.manager_name }}</td>
                 <td>
                   <span class="wins-cell">
-                    @for (w of range(+row.wins); track w) {
-                      <img src="img/icons/reward.png" class="reward-icon" alt="Sieg" />
+                    @for (w of row.won_matches; track w.match_id) {
+                      <img
+                        src="img/icons/reward.png"
+                        class="reward-icon"
+                        alt="Sieg"
+                        (mouseenter)="onWinHover($event, w)"
+                        (mouseleave)="onWinLeave()"
+                      />
                     }
                   </span>
                 </td>
@@ -218,5 +291,50 @@
       }
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-title card-title--icon">
+        <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
+        Lukaten
+      </div>
+      <div class="table-container">
+      @if (budgetStandingsLoading()) {
+        <p class="state-msg">Laden…</p>
+      } @else if (budgetStandings().length === 0) {
+        <p class="state-msg">Noch keine gestakten Tipps.</p>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Manager</th>
+              <th class="col-value">Budget</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of budgetStandings(); track row.manager_id) {
+              <tr>
+                <td>{{ row.manager_name }}</td>
+                <td class="col-value">{{ formatLukaten(row.budget) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      </div>
+    </div>
   </div>
 </div>
+
+@if (tooltipTitle(); as title) {
+  <div
+    class="list-tooltip"
+    [class.list-tooltip--below]="tooltipBelow()"
+    [class.list-tooltip--ready]="tooltipReady()"
+    [style.top.px]="tooltipPos()!.top"
+    [style.left.px]="tooltipPos()!.left"
+    #winTooltipEl
+  >
+    <span class="list-tooltip__title">{{ title }}</span>
+    <span class="list-tooltip__detail">{{ tooltipDetail() }}</span>
+  </div>
+}

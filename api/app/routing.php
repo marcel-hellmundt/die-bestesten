@@ -1072,7 +1072,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h/:id',
-                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten (inkl. price/season_points je Spieler), odds (deterministische Pseudo-Quote Heim/Unentschieden/Auswärts aus Marktwert+Saisonpunkten der jeweils aufgestellten Spieler, keine echten Einsätze), predictions (Tipp-Status, siehe POST /h2h_prediction), head_to_head (alle abgeschlossenen H2H-Matches zwischen genau den beiden Managern dieses Matches, liga- und saisonübergreifend über alle Ligen der Instanz hinweg, absteigend nach kickoff_date, ohne das aktuelle Match selbst) — Auth; predictions enthält vor Anpfiff zusätzlich is_current_matchday (bool, nur bei true ist Tippen möglich, bei zukünftigen Spieltagen bleibt die Tipp-Karte im Frontend komplett unsichtbar) und is_own_match (bool, true wenn der eingeloggte Manager eines der beiden Teams führt — Tippen dann ebenfalls nicht möglich, da sonst über die eigene Aufstellung manipulierbar), sowie submitted_count (Anzahl bereits abgegebener Tipps für dieses Match, ohne die Tipps selbst preiszugeben); ?preview=1 (nur Admin) liefert predictions.preview_entries testweise schon vor Anpfiff mit, ohne locked/my_pick zu verändern',
+                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten (inkl. price/season_points je Spieler), odds (deterministische Pseudo-Quote Heim/Unentschieden/Auswärts aus Marktwert+Saisonpunkten der jeweils aufgestellten Spieler, keine echten Einsätze), predictions (Tipp-Status, siehe POST /h2h_prediction), head_to_head (alle abgeschlossenen H2H-Matches zwischen genau den beiden Managern dieses Matches, liga- und saisonübergreifend über alle Ligen der Instanz hinweg, absteigend nach kickoff_date, ohne das aktuelle Match selbst) — Auth; predictions enthält vor Anpfiff zusätzlich is_current_matchday (bool, nur bei true ist Tippen möglich, bei zukünftigen Spieltagen bleibt die Tipp-Karte im Frontend komplett unsichtbar) und is_own_match (bool, true wenn der eingeloggte Manager eines der beiden Teams führt — Tippen dann ebenfalls nicht möglich, da sonst über die eigene Aufstellung manipulierbar), sowie submitted_count (Anzahl bereits abgegebener Tipps für dieses Match, ohne die Tipps selbst preiszugeben), my_stake (eigener aktueller Einsatz in Lukaten für dieses Match, null ohne Einsatz) und budget (aktuelles Lukaten-Budget des eingeloggten Managers für die Saison des Matches); ?preview=1 (nur Admin) liefert predictions.preview_entries testweise schon vor Anpfiff mit, ohne locked/my_pick zu verändern',
                         'query_params' => ['preview' => '"1" — Admin-Vorschau der Tipp-Auswertung vor Anpfiff (optional)'],
                     ],
                     [
@@ -1156,12 +1156,12 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h_prediction/mine',
-                        'description' => 'Alle eigenen Tipps über alle Saisons/Matches hinweg, fürs Wettbüro — je Tipp Partie (Teams), Endergebnis (home_goals/away_goals, null solange unentschieden/noch nicht gespielt), eigener pick, odds-Snapshot und result (open/won/lost); absteigend nach Anpfiff sortiert (neueste zuerst) — Auth',
+                        'description' => 'Alle eigenen Tipps über alle Saisons/Matches hinweg, fürs Wettbüro — je Tipp Partie (Teams), Endergebnis (home_goals/away_goals, null solange unentschieden/noch nicht gespielt), eigener pick, odds-Snapshot, stake (Einsatz in Lukaten, null wenn ohne Einsatz getippt), payout (voller Rückzahlungsbetrag stake*odds bei result=won, sonst null) und result (open/won/lost); absteigend nach Anpfiff sortiert (neueste zuerst) — Auth',
                     ],
                     [
                         'method' => 'GET',
                         'path' => '/h2h_prediction/standings',
-                        'description' => 'Alle Manager, die bereits mindestens einen ausgewerteten H2H-Tipp haben (result won/lost, offene zählen nicht), mit wins (Anzahl result=won) — fürs Wettbüro; absteigend nach wins sortiert — Auth',
+                        'description' => 'Alle Manager, die bereits mindestens einen ausgewerteten H2H-Tipp haben (result won/lost, offene zählen nicht), mit wins (Anzahl result=won) und won_matches ([{match_id,home_team_name,home_color,away_team_name,away_color,pick,odds}] je Sieg, für Reward-Icon-Tooltips im Frontend) — fürs Wettbüro; absteigend nach wins sortiert — Auth',
                     ],
                     [
                         'method' => 'GET',
@@ -1169,15 +1169,25 @@ class Routing
                         'description' => 'Aktuell bebettbare H2H-Matches der aktiven Saison (aktueller Spieltag, beide Teams haben eine vollständige gültige Aufstellung mit 11 nominierten Spielern, Manager führt keines der beiden Teams selbst und hat noch nicht getippt) — home_team/away_team/odds identisch zu GET /h2h/:id — fürs Wettbüro, dort mit derselben Quoten+Buttons-UI wie die H2H-Match-Detailseite — Auth',
                     ],
                     [
+                        'method' => 'GET',
+                        'path' => '/h2h_prediction/budget',
+                        'description' => 'Aktuelles Lukaten-Budget (fiktive Wettwährung) des eingeloggten Managers für die aktive Saison — gibt {budget} zurück; kein gespeicherter Kontostand, live aus h2h_prediction berechnet: 100 - SUM(stake) + SUM(stake*odds WHERE result=won), nur Tipps mit gesetztem Einsatz zählen — Auth',
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/h2h_prediction/budget_standings',
+                        'description' => 'Alle Manager mit mindestens einem gestakten Tipp (stake gesetzt) in der aktiven Saison, mit ihrem aktuellen Lukaten-Budget — gibt [{manager_id,manager_name,alias,budget}] zurück, absteigend nach budget sortiert — fürs Wettbüro, zweite Bestenliste neben den Sieg-Zählern — Auth',
+                    ],
+                    [
                         'method' => 'POST',
                         'path' => '/h2h_prediction',
-                        'description' => 'Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); odds speichert die im Frontend zum Zeitpunkt der Tippabgabe für genau diesen Pick angezeigte Pseudo-Quote unverändert als Snapshot (kann sich bis Anpfiff durch Aufstellungsänderungen noch ändern, siehe GET /h2h/:id → odds); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist, die Matchday nicht die aktuelle ist (kleinste noch nicht abgeschlossene number in Saison+Division) oder der Manager eines der beiden beteiligten Teams selbst führt (Quote sonst über die eigene Aufstellung manipulierbar) — Auth',
-                        'body' => ['match_id' => 'UUID des H2H-Matches', 'pick' => 'home|draw|away', 'odds' => 'DECIMAL (optional) — Quote des gewählten Picks zum Zeitpunkt der Tippabgabe'],
+                        'description' => 'Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); odds speichert die im Frontend zum Zeitpunkt der Tippabgabe für genau diesen Pick angezeigte Pseudo-Quote unverändert als Snapshot (kann sich bis Anpfiff durch Aufstellungsänderungen noch ändern, siehe GET /h2h/:id → odds); gibt {status, budget} zurück (aktuelles Lukaten-Budget nach dieser Änderung); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist, die Matchday nicht die aktuelle ist (kleinste noch nicht abgeschlossene number in Saison+Division) oder der Manager eines der beiden beteiligten Teams selbst führt (Quote sonst über die eigene Aufstellung manipulierbar), 422 wenn stake < 1 oder das aktuell verfügbare Budget übersteigt (eigener bestehender Einsatz auf dasselbe Match zählt dabei nicht mit) — Auth',
+                        'body' => ['match_id' => 'UUID des H2H-Matches', 'pick' => 'home|draw|away', 'odds' => 'DECIMAL (optional) — Quote des gewählten Picks zum Zeitpunkt der Tippabgabe', 'stake' => 'INT (optional) — Einsatz in Lukaten, min 1, max aktuelles Budget (422 bei Verstoß); null lässt den Tipp wie bisher ohne Einsatz zu'],
                     ],
                     [
                         'method' => 'DELETE',
                         'path' => '/h2h_prediction/:id',
-                        'description' => 'Eigenen Tipp wieder entfernen (:id = UUID des H2H-Matches, nicht die Tipp-Zeile selbst) — nur bis Anpfiff, danach wie POST gesperrt (403); 404 wenn Match nicht gefunden; idempotent, kein Fehler wenn ohnehin kein eigener Tipp vorhanden war — Auth',
+                        'description' => 'Eigenen Tipp wieder entfernen (:id = UUID des H2H-Matches, nicht die Tipp-Zeile selbst) — nur bis Anpfiff, danach wie POST gesperrt (403); 404 wenn Match nicht gefunden; idempotent, kein Fehler wenn ohnehin kein eigener Tipp vorhanden war; ein evtl. gesetzter Einsatz wird automatisch freigegeben — Response wie bei POST {status, budget} — Auth',
                         'path_params' => [':id' => 'UUID des H2H-Matches'],
                     ],
                 ],

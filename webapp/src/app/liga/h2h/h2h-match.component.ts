@@ -196,38 +196,77 @@ export class H2HMatchComponent implements OnDestroy {
   submittingPick  = signal(false);
   predictionError = signal<string | null>(null);
 
+  // Lukaten (fiktive Wettwährung) — gleiches Override-Muster wie optimisticPick: undefined = kein
+  // lokaler Override, null = explizit entfernt (nach removePrediction()).
+  private optimisticStake = signal<number | null | undefined>(undefined);
+  myStake = computed(() => {
+    const o = this.optimisticStake();
+    return o !== undefined ? o : (this.predictions()?.my_stake ?? null);
+  });
+  private optimisticBudget = signal<number | undefined>(undefined);
+  budget = computed(() => this.optimisticBudget() ?? this.predictions()?.budget ?? null);
+  // Verfügbares Maximum fürs Einsatzfeld dieses Matches: aktuelles Budget zzgl. des eigenen
+  // bereits auf DIESES Match gesetzten Einsatzes (der beim Ändern nicht "doppelt" kostet, siehe
+  // getManagerLukatenBudget()'s $excludeMatchId im Backend).
+  maxStake = computed(() => (this.budget() ?? 0) + (this.myStake() ?? 0));
+
+  // Frei editierbares Einsatz-Eingabefeld — einmalig beim ersten Laden mit dem aktuellen eigenen
+  // Einsatz vorbefüllt (siehe constructor-effect), danach vollständig nutzergesteuert.
+  stakeInput = signal<number | null>(null);
+  private stakeInputSeeded = false;
+
+  onStakeInputChange(raw: string): void {
+    this.stakeInputSeeded = true;
+    const n = raw.trim() === '' ? null : Math.trunc(+raw);
+    this.stakeInput.set(n !== null && Number.isFinite(n) ? n : null);
+  }
+
+  formatLukaten(v: number | null): string {
+    if (v == null) return '–';
+    const s = Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
+    return `${s} Lukaten`;
+  }
+
   pickLabel(pick: string): string {
     if (pick === 'home') return this.homeTeam()?.team_name ?? 'Heimsieg';
     if (pick === 'away') return this.awayTeam()?.team_name ?? 'Auswärtssieg';
     return 'Unentschieden';
   }
 
-  // Klick auf den bereits ausgewählten Pick entfernt den Tipp wieder, statt ihn erneut zu
-  // speichern — nur möglich, solange die Tippphase offen ist (aktueller Spieltag, vor Anpfiff,
-  // kein eigenes Match, siehe dieselben Guards wie unten).
+  // Jeder Klick auf einen Pick-Button (auch den bereits aktiven) setzt/aktualisiert Pick+Einsatz
+  // mit dem aktuellen Eingabewert — Entfernen läuft über den separaten removePrediction()-Button.
   submitPrediction(pick: 'home' | 'draw' | 'away'): void {
-    if (this.myPick() === pick) {
-      this.removePrediction();
-      return;
-    }
-
     const matchId = this.match()?.id;
     if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday() || this.isOwnMatch()) return;
 
-    const previous = this.optimisticPick();
+    const stake = this.stakeInput();
+    if (stake !== null && (!Number.isInteger(stake) || stake < 1 || stake > this.maxStake())) {
+      this.predictionError.set(`Einsatz muss eine ganze Zahl zwischen 1 und ${this.maxStake()} sein.`);
+      return;
+    }
+
+    const previousPick   = this.optimisticPick();
+    const previousStake  = this.optimisticStake();
+    const previousBudget = this.optimisticBudget();
     this.optimisticPick.set(pick);
+    this.optimisticStake.set(stake);
     this.submittingPick.set(true);
     this.predictionError.set(null);
 
     // Nur die Quote des gewählten Picks wird 1:1 als Snapshot mitgeschickt (siehe
     // H2HPredictionTrait::submitH2HPrediction) — sie kann sich bis Anpfiff durch
     // Aufstellungsänderungen noch von der Quote unterscheiden, die am Ende gilt.
-    const body = { match_id: matchId, pick, odds: this.odds()?.[pick] ?? null };
+    const body = { match_id: matchId, pick, odds: this.odds()?.[pick] ?? null, stake };
 
-    this.api.post<{ status: boolean; message?: string }>('h2h_prediction', body).subscribe({
-      next: () => this.submittingPick.set(false),
+    this.api.post<{ status: boolean; message?: string; budget?: number }>('h2h_prediction', body).subscribe({
+      next: (res) => {
+        this.submittingPick.set(false);
+        if (res.budget !== undefined) this.optimisticBudget.set(res.budget);
+      },
       error: (err) => {
-        this.optimisticPick.set(previous);
+        this.optimisticPick.set(previousPick);
+        this.optimisticStake.set(previousStake);
+        this.optimisticBudget.set(previousBudget);
         this.submittingPick.set(false);
         this.predictionError.set(err?.error?.message ?? 'Tipp konnte nicht gespeichert werden.');
       },
@@ -238,15 +277,23 @@ export class H2HMatchComponent implements OnDestroy {
     const matchId = this.match()?.id;
     if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday() || this.isOwnMatch()) return;
 
-    const previous = this.optimisticPick();
+    const previousPick   = this.optimisticPick();
+    const previousStake  = this.optimisticStake();
+    const previousBudget = this.optimisticBudget();
     this.optimisticPick.set(null);
+    this.optimisticStake.set(null);
     this.submittingPick.set(true);
     this.predictionError.set(null);
 
-    this.api.delete<{ status: boolean; message?: string }>(`h2h_prediction/${matchId}`).subscribe({
-      next: () => this.submittingPick.set(false),
+    this.api.delete<{ status: boolean; message?: string; budget?: number }>(`h2h_prediction/${matchId}`).subscribe({
+      next: (res) => {
+        this.submittingPick.set(false);
+        if (res.budget !== undefined && res.budget !== null) this.optimisticBudget.set(res.budget);
+      },
       error: (err) => {
-        this.optimisticPick.set(previous);
+        this.optimisticPick.set(previousPick);
+        this.optimisticStake.set(previousStake);
+        this.optimisticBudget.set(previousBudget);
         this.submittingPick.set(false);
         this.predictionError.set(err?.error?.message ?? 'Tipp konnte nicht entfernt werden.');
       },
@@ -448,6 +495,15 @@ export class H2HMatchComponent implements OnDestroy {
     effect(() => {
       if (this.isAdmin() && !this.isRevealed() && this.match()?.id) {
         this.loadPreview();
+      }
+    });
+    // Einsatzfeld einmalig beim ersten Laden mit dem eigenen aktuellen Einsatz vorbefüllen
+    // (falls einer existiert) — danach übernimmt onStakeInputChange() vollständig.
+    effect(() => {
+      const p = this.predictions();
+      if (p && !this.stakeInputSeeded) {
+        this.stakeInputSeeded = true;
+        this.stakeInput.set(p.my_stake ?? null);
       }
     });
   }

@@ -348,6 +348,29 @@
                Auswertung nach Anpfiff darunter bleibt eine Card. -->
           <div class="h2h-predict-card h2h-predict-card--bare h2h-predict-card--primary">
             <div class="h2h-predict-card__label">Dein Tipp</div>
+            <div class="h2h-stake-row">
+              <span class="h2h-stake-row__budget">
+                <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
+                Budget: <strong>{{ formatLukaten(budget()) }}</strong>
+              </span>
+              <label class="h2h-stake-row__input-wrap">
+                <input
+                  type="number"
+                  class="h2h-stake-row__input"
+                  min="1"
+                  step="1"
+                  [max]="maxStake()"
+                  placeholder="Einsatz"
+                  [value]="stakeInput() ?? ''"
+                  [disabled]="submittingPick()"
+                  (input)="onStakeInputChange($any($event.target).value)"
+                />
+                <span class="h2h-stake-row__unit">
+                  <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
+                  Lukaten
+                </span>
+              </label>
+            </div>
             <div class="h2h-predict-card__options">
               <button
                 class="h2h-predict-btn"
@@ -412,6 +435,14 @@
               <p class="h2h-predict-card__hint">Tipp änderbar bis Anpfiff.</p>
             }
             <p class="h2h-predict-card__hint">{{ submittedCountLabel() }}</p>
+            @if (myPick()) {
+              <button
+                class="h2h-predict-card__remove"
+                type="button"
+                [disabled]="submittingPick()"
+                (click)="removePrediction()"
+              >Tipp entfernen ✕</button>
+            }
           </div>
         } @else if (pred.locked) {
           <div class="card h2h-predict-card h2h-predict-card--primary">

@@ -18,6 +18,14 @@ class H2HPredictionController extends _BaseController
             return $this->db->getAvailableH2HMatches($GLOBALS['auth_manager_id']);
         }
 
+        if ($this->id === 'budget') {
+            return ['budget' => $this->db->getManagerLukatenBudgetForActiveSeason($GLOBALS['auth_manager_id'])];
+        }
+
+        if ($this->id === 'budget_standings') {
+            return $this->db->getLukatenStandings();
+        }
+
         return $this->methodNotAllowed();
     }
 
@@ -38,7 +46,11 @@ class H2HPredictionController extends _BaseController
         // H2HPredictionTrait::submitH2HPrediction).
         $odds = isset($body['odds']) ? (float) $body['odds'] : null;
 
-        return $this->db->submitH2HPrediction($matchId, $GLOBALS['auth_manager_id'], $pick, $odds);
+        // Einsatz in Lukaten (fiktive Wettwährung) — optional, weiterhin unbelasteter Tipp
+        // möglich; Validierung (min 1, max Budget) übernimmt submitH2HPrediction().
+        $stake = isset($body['stake']) && $body['stake'] !== null ? (int) $body['stake'] : null;
+
+        return $this->db->submitH2HPrediction($matchId, $GLOBALS['auth_manager_id'], $pick, $odds, $stake);
     }
 
     protected function patch(): mixed { return $this->methodNotAllowed(); }

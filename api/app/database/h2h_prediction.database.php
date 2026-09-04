@@ -27,10 +27,16 @@ trait H2HPredictionTrait
 
         if (!$locked) {
             $mine = $this->con_league->prepare(
-                "SELECT pick FROM h2h_prediction WHERE match_id = :mid AND manager_id = :man LIMIT 1"
+                "SELECT pick, stake FROM h2h_prediction WHERE match_id = :mid AND manager_id = :man LIMIT 1"
             );
             $mine->execute([':mid' => $matchId, ':man' => $managerId]);
-            $result['my_pick'] = $mine->fetchColumn() ?: null;
+            $mineRow = $mine->fetch(PDO::FETCH_ASSOC);
+            $result['my_pick']  = $mineRow['pick'] ?? null;
+            // Eigener aktueller Einsatz in Lukaten (fiktive Wettwährung, siehe stake-Spalte) +
+            // aktuelles Lukaten-Budget für diese Saison — beide nur relevant, solange die
+            // Tippphase offen ist (analog my_pick).
+            $result['my_stake'] = isset($mineRow['stake']) ? (int) $mineRow['stake'] : null;
+            $result['budget']   = $this->getManagerLukatenBudget($managerId, $seasonId);
             // Tippen ist nur für Matches des aktuellen Spieltags möglich, nicht für bereits
             // geplante zukünftige (deren Aufstellungen/Marktwerte noch nicht final sind) — die
             // Tipp-Karte bleibt für die anderen im Frontend komplett unsichtbar statt nur die
@@ -74,6 +80,49 @@ trait H2HPredictionTrait
         }
 
         return $result;
+    }
+
+    /**
+     * Aktuelles Lukaten-Budget (fiktive Wettwährung) eines Managers für eine Saison — kein
+     * gespeicherter Kontostand, sondern live aus h2h_prediction berechnet (analog zum
+     * Echtgeld-Teambudget, das per SUM(amount) aus der transaction-Tabelle kommt): jeder Manager
+     * startet mit 100, jeder gesetzte Einsatz wird sofort "ausgegeben" (auch bei offenen/
+     * verlorenen Tipps), nur gewonnene Tipps zahlen stake*odds (den vollen Betrag inkl.
+     * ursprünglichem Einsatz) zurück. Nur Zeilen mit stake IS NOT NULL zählen — alte Tipps ohne
+     * Einsatz (vor Einführung dieses Features) bleiben unberücksichtigt.
+     *
+     * $excludeMatchId blendet den eigenen (alten) Einsatz auf genau dieses Match aus der Summe
+     * aus — nötig, um beim Ändern eines bestehenden Einsatzes den vollen (unveränderten)
+     * verfügbaren Rahmen zu prüfen, statt den Manager durch seinen eigenen alten Einsatz auf
+     * dasselbe Match zu blockieren (siehe submitH2HPrediction()).
+     */
+    public function getManagerLukatenBudget(string $managerId, string $seasonId, ?string $excludeMatchId = null): float
+    {
+        $sql = "SELECT 100
+                  - COALESCE(SUM(hp.stake), 0)
+                  + COALESCE(SUM(CASE WHEN hp.result = 'won' THEN hp.stake * hp.odds ELSE 0 END), 0) AS budget
+                FROM h2h_prediction hp
+                JOIN h2h_match hm ON hm.id = hp.match_id
+                WHERE hp.manager_id = :man AND hm.season_id = :season AND hp.stake IS NOT NULL";
+        $params = [':man' => $managerId, ':season' => $seasonId];
+        if ($excludeMatchId !== null) {
+            $sql .= " AND hp.match_id != :exclude";
+            $params[':exclude'] = $excludeMatchId;
+        }
+        $q = $this->con_league->prepare($sql);
+        $q->execute($params);
+        return (float) $q->fetchColumn();
+    }
+
+    /**
+     * Lukaten-Budget des Managers für die aktive Saison — Kurzform für den GET
+     * /h2h_prediction/budget-Endpunkt.
+     */
+    public function getManagerLukatenBudgetForActiveSeason(string $managerId): float
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) return 100.0;
+        return $this->getManagerLukatenBudget($managerId, $seasonId);
     }
 
     /**
@@ -194,7 +243,7 @@ trait H2HPredictionTrait
      * echte Einsätze. Die Quote kann sich bis Anpfiff durch Aufstellungsänderungen noch ändern;
      * dieser Snapshot hält fest, was der Manager beim Tippen tatsächlich gesehen hat.
      */
-    public function submitH2HPrediction(string $matchId, string $managerId, string $pick, ?float $odds): array
+    public function submitH2HPrediction(string $matchId, string $managerId, string $pick, ?float $odds, ?int $stake = null): array
     {
         $mq = $this->con_league->prepare(
             "SELECT matchday_id, home_team_id, away_team_id FROM h2h_match WHERE id = :id LIMIT 1"
@@ -242,12 +291,29 @@ trait H2HPredictionTrait
             return ['status' => false, 'message' => 'Tippen ist erst möglich, sobald beide Teams eine Aufstellung abgegeben haben'];
         }
 
-        $this->con_league->prepare(
-            "INSERT INTO h2h_prediction (match_id, manager_id, pick, odds) VALUES (:mid, :man, :pick, :odds)
-             ON DUPLICATE KEY UPDATE pick = VALUES(pick), odds = VALUES(odds)"
-        )->execute([':mid' => $matchId, ':man' => $managerId, ':pick' => $pick, ':odds' => $odds]);
+        // Einsatz in Lukaten (fiktive Wettwährung) ist optional — null lässt einen Tipp wie
+        // bisher ohne Budget-Auswirkung zu. Wenn gesetzt: ganzzahlig, mindestens 1, höchstens das
+        // aktuell verfügbare Budget (der eigene alte Einsatz auf GENAU dieses Match zählt dabei
+        // nicht mit, siehe getManagerLukatenBudget()'s $excludeMatchId — sonst könnte ein
+        // bestehender Einsatz nie erhöht werden).
+        if ($stake !== null) {
+            if ($stake < 1) {
+                http_response_code(422);
+                return ['status' => false, 'message' => 'Einsatz muss mindestens 1 Lukat betragen'];
+            }
+            $budget = $this->getManagerLukatenBudget($managerId, $matchday['season_id'], $matchId);
+            if ($stake > $budget) {
+                http_response_code(422);
+                return ['status' => false, 'message' => 'Einsatz übersteigt dein aktuelles Budget'];
+            }
+        }
 
-        return ['status' => true];
+        $this->con_league->prepare(
+            "INSERT INTO h2h_prediction (match_id, manager_id, pick, odds, stake) VALUES (:mid, :man, :pick, :odds, :stake)
+             ON DUPLICATE KEY UPDATE pick = VALUES(pick), odds = VALUES(odds), stake = VALUES(stake)"
+        )->execute([':mid' => $matchId, ':man' => $managerId, ':pick' => $pick, ':odds' => $odds, ':stake' => $stake]);
+
+        return ['status' => true, 'budget' => $this->getManagerLukatenBudget($managerId, $matchday['season_id'])];
     }
 
     /**
@@ -268,7 +334,7 @@ trait H2HPredictionTrait
         }
 
         $mdq = $this->con->prepare(
-            "SELECT (kickoff_date IS NOT NULL AND kickoff_date <= NOW()) AS locked
+            "SELECT season_id, (kickoff_date IS NOT NULL AND kickoff_date <= NOW()) AS locked
              FROM matchday WHERE id = :id LIMIT 1"
         );
         $mdq->execute([':id' => $match['matchday_id']]);
@@ -282,7 +348,11 @@ trait H2HPredictionTrait
             "DELETE FROM h2h_prediction WHERE match_id = :mid AND manager_id = :man"
         )->execute([':mid' => $matchId, ':man' => $managerId]);
 
-        return ['status' => true];
+        // Ein evtl. gesetzter Einsatz wird durchs Löschen automatisch wieder freigegeben (reine
+        // Formel-Konsequenz, siehe getManagerLukatenBudget()) — nur die Response muss das frische
+        // Budget noch mitliefern.
+        $budget = $matchday ? $this->getManagerLukatenBudget($managerId, $matchday['season_id']) : null;
+        return ['status' => true, 'budget' => $budget];
     }
 
     /**
@@ -349,7 +419,7 @@ trait H2HPredictionTrait
     public function getMyH2HPredictions(string $managerId): array
     {
         $q = $this->con_league->prepare(
-            "SELECT hp.match_id, hp.pick, hp.odds, hp.result,
+            "SELECT hp.match_id, hp.pick, hp.odds, hp.stake, hp.result,
                     hm.matchday_id, hm.home_team_id, hm.away_team_id,
                     th.team_name AS home_team_name, th.color_primary AS home_color,
                     ta.team_name AS away_team_name, ta.color_primary AS away_color
@@ -422,6 +492,12 @@ trait H2HPredictionTrait
                 'away_goals'       => $goals['away'],
                 'pick'             => $row['pick'],
                 'odds'             => $row['odds'],
+                'stake'            => $row['stake'] !== null ? (int) $row['stake'] : null,
+                // Voller Rückzahlungsbetrag in Lukaten bei gewonnenem, gestaktem Tipp (inkl.
+                // ursprünglichem Einsatz) — null bei fehlendem Einsatz oder result != 'won'.
+                'payout'           => ($row['stake'] !== null && $row['result'] === 'won')
+                    ? round((float) $row['stake'] * (float) $row['odds'], 2)
+                    : null,
                 'result'           => $row['result'],
             ];
         }, $rows);
@@ -435,14 +511,91 @@ trait H2HPredictionTrait
      */
     public function getH2HPredictionStandings(): array
     {
-        return $this->con_league->query(
-            "SELECT hp.manager_id, m.manager_name, m.alias,
-                    SUM(CASE WHEN hp.result = 'won' THEN 1 ELSE 0 END) AS wins
+        $rows = $this->con_league->query(
+            "SELECT hp.manager_id, m.manager_name, m.alias, hp.match_id, hp.pick, hp.odds, hp.result,
+                    th.team_name AS home_team_name, th.color_primary AS home_color,
+                    ta.team_name AS away_team_name, ta.color_primary AS away_color
              FROM h2h_prediction hp
              JOIN manager m ON m.id = hp.manager_id
+             JOIN h2h_match hm ON hm.id = hp.match_id
+             JOIN team th ON th.id = hm.home_team_id
+             JOIN team ta ON ta.id = hm.away_team_id
              WHERE hp.result <> 'open'
-             GROUP BY hp.manager_id, m.manager_name, m.alias
-             ORDER BY wins DESC, m.manager_name ASC"
+             ORDER BY m.manager_name ASC"
         )->fetchAll(PDO::FETCH_ASSOC);
+
+        // Pro Manager gruppieren statt per SQL GROUP BY zu aggregieren — won_matches braucht das
+        // Detail jeder einzelnen Sieg-Zeile fürs Frontend-Tooltip (Match + individuell
+        // eingelockte Quote), nicht nur die Zählsumme. wins bleibt trotzdem auch für Manager mit
+        // ausschließlich verlorenen Tipps bei 0 statt ganz aus der Liste zu fallen (gleiches
+        // Einschlusskriterium wie vorher: mind. ein AUSGEWERTETER Tipp, result <> 'open').
+        $byManager = [];
+        foreach ($rows as $row) {
+            $mid = $row['manager_id'];
+            if (!isset($byManager[$mid])) {
+                $byManager[$mid] = [
+                    'manager_id'   => $mid,
+                    'manager_name' => $row['manager_name'],
+                    'alias'        => $row['alias'],
+                    'wins'         => 0,
+                    'won_matches'  => [],
+                ];
+            }
+            if ($row['result'] === 'won') {
+                $byManager[$mid]['wins']++;
+                $byManager[$mid]['won_matches'][] = [
+                    'match_id'       => $row['match_id'],
+                    'home_team_name' => $row['home_team_name'],
+                    'home_color'     => $row['home_color'],
+                    'away_team_name' => $row['away_team_name'],
+                    'away_color'     => $row['away_color'],
+                    'pick'           => $row['pick'],
+                    'odds'           => $row['odds'],
+                ];
+            }
+        }
+
+        $result = array_values($byManager);
+        usort($result, fn($a, $b) => $b['wins'] <=> $a['wins'] ?: strcmp($a['manager_name'], $b['manager_name']));
+
+        return $result;
+    }
+
+    /**
+     * Alle Manager mit mindestens einem gestakten Tipp (stake IS NOT NULL) in der aktiven
+     * Saison, mit ihrem aktuellen Lukaten-Budget (siehe getManagerLukatenBudget()) — fürs
+     * Wettbüro (Bestico), zweite Bestenliste neben den Sieg-Zählern. Absteigend nach Budget
+     * sortiert.
+     */
+    public function getLukatenStandings(): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) return [];
+
+        $managerIdsQ = $this->con_league->prepare(
+            "SELECT DISTINCT hp.manager_id
+             FROM h2h_prediction hp
+             JOIN h2h_match hm ON hm.id = hp.match_id
+             WHERE hp.stake IS NOT NULL AND hm.season_id = :season"
+        );
+        $managerIdsQ->execute([':season' => $seasonId]);
+        $ids = $managerIdsQ->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($ids)) return [];
+
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $mq = $this->con_league->prepare(
+            "SELECT id AS manager_id, manager_name, alias FROM manager WHERE id IN ($ph)"
+        );
+        $mq->execute($ids);
+        $managers = $mq->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($managers as &$m) {
+            $m['budget'] = $this->getManagerLukatenBudget($m['manager_id'], $seasonId);
+        }
+        unset($m);
+
+        usort($managers, fn($a, $b) => $b['budget'] <=> $a['budget'] ?: strcmp($a['manager_name'], $b['manager_name']));
+
+        return $managers;
     }
 }
