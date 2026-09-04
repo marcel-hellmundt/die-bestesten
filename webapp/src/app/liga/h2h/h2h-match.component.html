@@ -32,18 +32,20 @@
         @if (homeTeam()?.color) {
           <span class="team-color-bar" [style.background-color]="homeTeam().color"></span>
         }
-        <div class="match-team-name">{{ homeTeam()?.team_name }}</div>
+        <a class="match-team-name" [routerLink]="['/team', homeTeam()?.id]">{{ homeTeam()?.team_name }}</a>
       </div>
 
       <!-- Score -->
       <div class="match-score">
         @if (homeLogoUrl()) {
-          <img
-            class="score-logo score-logo--home"
-            [src]="homeLogoUrl()!"
-            (error)="$any($event.target).style.display = 'none'"
-            alt=""
-          />
+          <a [routerLink]="['/team', homeTeam()?.id]">
+            <img
+              class="score-logo score-logo--home"
+              [src]="homeLogoUrl()!"
+              (error)="$any($event.target).style.display = 'none'"
+              alt=""
+            />
+          </a>
         }
         <div class="score-values">
           @if (homeRating() && awayRating()) {
@@ -61,12 +63,14 @@
           }
         </div>
         @if (awayLogoUrl()) {
-          <img
-            class="score-logo score-logo--away"
-            [src]="awayLogoUrl()!"
-            (error)="$any($event.target).style.display = 'none'"
-            alt=""
-          />
+          <a [routerLink]="['/team', awayTeam()?.id]">
+            <img
+              class="score-logo score-logo--away"
+              [src]="awayLogoUrl()!"
+              (error)="$any($event.target).style.display = 'none'"
+              alt=""
+            />
+          </a>
         }
       </div>
 
@@ -75,7 +79,7 @@
         @if (awayTeam()?.color) {
           <span class="team-color-bar" [style.background-color]="awayTeam().color"></span>
         }
-        <div class="match-team-name">{{ awayTeam()?.team_name }}</div>
+        <a class="match-team-name" [routerLink]="['/team', awayTeam()?.id]">{{ awayTeam()?.team_name }}</a>
       </div>
     </div>
 
@@ -208,7 +212,7 @@
            so home/away stay aligned with the field's own left/right half. -->
       <div class="h2h-field-managers">
         @if (homeTeam()?.manager_id) {
-          <div class="h2h-field-manager h2h-field-manager--home">
+          <a class="h2h-field-manager h2h-field-manager--home" [routerLink]="['/manager', homeTeam().manager_id]">
             <img
               class="player-avatar-sm"
               [src]="managerPhotoUrl(homeTeam().manager_id)"
@@ -216,10 +220,10 @@
               alt=""
             />
             <span class="manager-name">{{ homeTeam().manager_name }}</span>
-          </div>
+          </a>
         }
         @if (awayTeam()?.manager_id) {
-          <div class="h2h-field-manager h2h-field-manager--away">
+          <a class="h2h-field-manager h2h-field-manager--away" [routerLink]="['/manager', awayTeam().manager_id]">
             <span class="manager-name">{{ awayTeam().manager_name }}</span>
             <img
               class="player-avatar-sm"
@@ -227,7 +231,7 @@
               (error)="$any($event.target).style.display = 'none'"
               alt=""
             />
-          </div>
+          </a>
         }
       </div>
 
@@ -331,7 +335,15 @@
          Anpfiff erkennt, während die Seite offen bleibt). -->
     @if (predictions(); as pred) {
       @if (!hideCard()) {
-        @if (!isRevealed()) {
+        @if (!isRevealed() && isOwnMatch()) {
+          <div class="card h2h-predict-card h2h-predict-card--primary">
+            <div class="h2h-predict-card__label">Dein Tipp</div>
+            <p class="state-msg">
+              Tipps können grundsätzlich nicht auf Matches mit eigener Beteiligung abgegeben
+              werden.
+            </p>
+          </div>
+        } @else if (!isRevealed()) {
           <!-- Die Wett-Buttons selbst stehen bewusst frei (keine .card-Box) — nur die
                Auswertung nach Anpfiff darunter bleibt eine Card. -->
           <div class="h2h-predict-card h2h-predict-card--bare h2h-predict-card--primary">
@@ -399,6 +411,7 @@
             } @else {
               <p class="h2h-predict-card__hint">Tipp änderbar bis Anpfiff.</p>
             }
+            <p class="h2h-predict-card__hint">{{ submittedCountLabel() }}</p>
           </div>
         } @else if (pred.locked) {
           <div class="card h2h-predict-card h2h-predict-card--primary">

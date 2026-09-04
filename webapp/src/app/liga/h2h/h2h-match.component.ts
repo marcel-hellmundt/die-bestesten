@@ -151,9 +151,21 @@ export class H2HMatchComponent implements OnDestroy {
   // (nur vor Anpfiff im Response) noch nicht mitschickt.
   lineupsReady = computed(() => this.predictions()?.lineups_ready ?? true);
 
+  // Reine Anzahl bereits abgegebener Tipps (nicht wer/was) — die Tipps selbst bleiben vor
+  // Anpfiff geheim (siehe hideCard()-Kommentar), die Anzahl darf trotzdem schon angezeigt werden.
+  submittedCount = computed(() => this.predictions()?.submitted_count ?? 0);
+  submittedCountLabel = computed(() => {
+    const n = this.submittedCount();
+    if (n === 0) return 'Noch niemand hat getippt.';
+    if (n === 1) return '1 Manager hat bereits getippt.';
+    return `${n} Manager haben bereits getippt.`;
+  });
+
+  // isOwnMatch() blendet die Card bewusst NICHT mehr aus (siehe Template) — dort erscheint
+  // stattdessen ein Hinweis, warum getippt werden könnte, aber nicht darf.
   hideCard = computed(() =>
     this.hideEmptyResult() ||
-    (!this.isRevealed() && (!this.canTipThisMatchday() || this.isOwnMatch() || !this.lineupsReady()))
+    (!this.isRevealed() && (!this.canTipThisMatchday() || (!this.isOwnMatch() && !this.lineupsReady())))
   );
 
   private refetchedAfterKickoff = false;
@@ -172,8 +184,15 @@ export class H2HMatchComponent implements OnDestroy {
   // Optimistisches Update, damit der Klick sofort im UI ankommt statt auf den nächsten
   // Server-Roundtrip zu warten — bei Fehlschlag (z.B. Anpfiff inzwischen erfolgt) wird die
   // Auswahl zurückgesetzt und predictionError zeigt eine kurze Fehlermeldung an.
-  private optimisticPick = signal<'home' | 'draw' | 'away' | null>(null);
-  myPick          = computed(() => this.optimisticPick() ?? this.predictions()?.my_pick ?? null);
+  // undefined = keine lokale Override (myPick() greift auf predictions().my_pick zurück); null
+  // ist davon bewusst unterschieden — steht für "Tipp wurde gerade lokal entfernt", sonst würde
+  // myPick() nach dem Entfernen sofort wieder auf den noch nicht neu geladenen Server-Wert
+  // zurückfallen und der entfernte Pick bliebe optisch ausgewählt.
+  private optimisticPick = signal<'home' | 'draw' | 'away' | null | undefined>(undefined);
+  myPick          = computed(() => {
+    const o = this.optimisticPick();
+    return o !== undefined ? o : (this.predictions()?.my_pick ?? null);
+  });
   submittingPick  = signal(false);
   predictionError = signal<string | null>(null);
 
@@ -183,7 +202,15 @@ export class H2HMatchComponent implements OnDestroy {
     return 'Unentschieden';
   }
 
+  // Klick auf den bereits ausgewählten Pick entfernt den Tipp wieder, statt ihn erneut zu
+  // speichern — nur möglich, solange die Tippphase offen ist (aktueller Spieltag, vor Anpfiff,
+  // kein eigenes Match, siehe dieselben Guards wie unten).
   submitPrediction(pick: 'home' | 'draw' | 'away'): void {
+    if (this.myPick() === pick) {
+      this.removePrediction();
+      return;
+    }
+
     const matchId = this.match()?.id;
     if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday() || this.isOwnMatch()) return;
 
@@ -203,6 +230,25 @@ export class H2HMatchComponent implements OnDestroy {
         this.optimisticPick.set(previous);
         this.submittingPick.set(false);
         this.predictionError.set(err?.error?.message ?? 'Tipp konnte nicht gespeichert werden.');
+      },
+    });
+  }
+
+  removePrediction(): void {
+    const matchId = this.match()?.id;
+    if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday() || this.isOwnMatch()) return;
+
+    const previous = this.optimisticPick();
+    this.optimisticPick.set(null);
+    this.submittingPick.set(true);
+    this.predictionError.set(null);
+
+    this.api.delete<{ status: boolean; message?: string }>(`h2h_prediction/${matchId}`).subscribe({
+      next: () => this.submittingPick.set(false),
+      error: (err) => {
+        this.optimisticPick.set(previous);
+        this.submittingPick.set(false);
+        this.predictionError.set(err?.error?.message ?? 'Tipp konnte nicht entfernt werden.');
       },
     });
   }

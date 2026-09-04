@@ -2,7 +2,7 @@
 
 class H2HPredictionController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'manager'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'manager', 'DELETE' => 'manager'];
 
     protected function get(): mixed
     {
@@ -41,6 +41,14 @@ class H2HPredictionController extends _BaseController
         return $this->db->submitH2HPrediction($matchId, $GLOBALS['auth_manager_id'], $pick, $odds);
     }
 
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
-    protected function delete(): mixed { return $this->methodNotAllowed(); }
+    protected function patch(): mixed { return $this->methodNotAllowed(); }
+
+    protected function delete(): mixed
+    {
+        if (!$this->id) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'match_id required'];
+        }
+        return $this->db->deleteH2HPrediction($this->id, $GLOBALS['auth_manager_id']);
+    }
 }

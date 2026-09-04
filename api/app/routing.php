@@ -1072,7 +1072,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h/:id',
-                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten (inkl. price/season_points je Spieler), odds (deterministische Pseudo-Quote Heim/Unentschieden/Auswärts aus Marktwert+Saisonpunkten der jeweils aufgestellten Spieler, keine echten Einsätze), predictions (Tipp-Status, siehe POST /h2h_prediction), head_to_head (alle abgeschlossenen H2H-Matches zwischen genau den beiden Managern dieses Matches, liga- und saisonübergreifend über alle Ligen der Instanz hinweg, absteigend nach kickoff_date, ohne das aktuelle Match selbst) — Auth; predictions enthält vor Anpfiff zusätzlich is_current_matchday (bool, nur bei true ist Tippen möglich, bei zukünftigen Spieltagen bleibt die Tipp-Karte im Frontend komplett unsichtbar) und is_own_match (bool, true wenn der eingeloggte Manager eines der beiden Teams führt — Tippen dann ebenfalls nicht möglich, da sonst über die eigene Aufstellung manipulierbar); ?preview=1 (nur Admin) liefert predictions.preview_entries testweise schon vor Anpfiff mit, ohne locked/my_pick zu verändern',
+                        'description' => 'Match-Detail: beide Teams, Lineups mit Spieler-Einzelpunkten (inkl. price/season_points je Spieler), odds (deterministische Pseudo-Quote Heim/Unentschieden/Auswärts aus Marktwert+Saisonpunkten der jeweils aufgestellten Spieler, keine echten Einsätze), predictions (Tipp-Status, siehe POST /h2h_prediction), head_to_head (alle abgeschlossenen H2H-Matches zwischen genau den beiden Managern dieses Matches, liga- und saisonübergreifend über alle Ligen der Instanz hinweg, absteigend nach kickoff_date, ohne das aktuelle Match selbst) — Auth; predictions enthält vor Anpfiff zusätzlich is_current_matchday (bool, nur bei true ist Tippen möglich, bei zukünftigen Spieltagen bleibt die Tipp-Karte im Frontend komplett unsichtbar) und is_own_match (bool, true wenn der eingeloggte Manager eines der beiden Teams führt — Tippen dann ebenfalls nicht möglich, da sonst über die eigene Aufstellung manipulierbar), sowie submitted_count (Anzahl bereits abgegebener Tipps für dieses Match, ohne die Tipps selbst preiszugeben); ?preview=1 (nur Admin) liefert predictions.preview_entries testweise schon vor Anpfiff mit, ohne locked/my_pick zu verändern',
                         'query_params' => ['preview' => '"1" — Admin-Vorschau der Tipp-Auswertung vor Anpfiff (optional)'],
                     ],
                     [
@@ -1173,6 +1173,12 @@ class Routing
                         'path' => '/h2h_prediction',
                         'description' => 'Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); odds speichert die im Frontend zum Zeitpunkt der Tippabgabe für genau diesen Pick angezeigte Pseudo-Quote unverändert als Snapshot (kann sich bis Anpfiff durch Aufstellungsänderungen noch ändern, siehe GET /h2h/:id → odds); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist, die Matchday nicht die aktuelle ist (kleinste noch nicht abgeschlossene number in Saison+Division) oder der Manager eines der beiden beteiligten Teams selbst führt (Quote sonst über die eigene Aufstellung manipulierbar) — Auth',
                         'body' => ['match_id' => 'UUID des H2H-Matches', 'pick' => 'home|draw|away', 'odds' => 'DECIMAL (optional) — Quote des gewählten Picks zum Zeitpunkt der Tippabgabe'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/h2h_prediction/:id',
+                        'description' => 'Eigenen Tipp wieder entfernen (:id = UUID des H2H-Matches, nicht die Tipp-Zeile selbst) — nur bis Anpfiff, danach wie POST gesperrt (403); 404 wenn Match nicht gefunden; idempotent, kein Fehler wenn ohnehin kein eigener Tipp vorhanden war — Auth',
+                        'path_params' => [':id' => 'UUID des H2H-Matches'],
                     ],
                 ],
             ]),
