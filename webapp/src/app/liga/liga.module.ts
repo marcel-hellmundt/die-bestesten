@@ -25,7 +25,7 @@ const routes: Routes = [
       { path: 'powerranking', component: PowerrankingComponent },
       { path: 'h2h',          component: H2HComponent },
       { path: 'h2h/modus',    component: H2HModeComponent },
-      { path: 'h2h/wettbüro', component: BettingOfficeComponent },
+      { path: 'h2h/bestico',  component: BettingOfficeComponent },
       { path: 'h2h/:id',      component: H2HMatchComponent },
       { path: 'teams',        component: LigaTeamsComponent },
       { path: 'ruhmeshalle',  component: HallOfFameComponent },

@@ -18,7 +18,23 @@
         <div class="history-list">
           @for (b of stakedHistory(); track b.match_id) {
             <a class="history-row" [routerLink]="['/liga/h2h', b.match_id]">
-              <span class="history-row__match">{{ b.home_team_name }} – {{ b.away_team_name }}</span>
+              <span class="history-row__match">
+                <span class="history-row__side">
+                  @if (!logoFailed(b.home_team_id)) {
+                    <img class="team-logo-sm" [src]="teamLogoUrl(b.home_team_id, b.season_id)" (error)="onLogoError(b.home_team_id)" alt="" />
+                  } @else if (b.home_color) {
+                    <span class="team-dot" [style.background-color]="b.home_color"></span>
+                  }
+                </span>
+                <span class="history-row__sep">–</span>
+                <span class="history-row__side">
+                  @if (!logoFailed(b.away_team_id)) {
+                    <img class="team-logo-sm" [src]="teamLogoUrl(b.away_team_id, b.season_id)" (error)="onLogoError(b.away_team_id)" alt="" />
+                  } @else if (b.away_color) {
+                    <span class="team-dot" [style.background-color]="b.away_color"></span>
+                  }
+                </span>
+              </span>
               <span
                 class="history-row__stake"
                 [class.history-row__stake--won]="b.result === 'won'"
@@ -26,10 +42,8 @@
               >
                 @if (b.result === 'won') {
                   +{{ formatLukaten(b.payout) }}
-                } @else if (b.result === 'lost') {
-                  -{{ b.stake }}
                 } @else {
-                  {{ b.stake }} Lukaten
+                  -{{ b.stake }} Lukaten
                 }
               </span>
             </a>
@@ -258,7 +272,7 @@
 
   <div class="sidebar">
     <div class="card">
-      <div class="card-title">Bestenliste</div>
+      <div class="card-title">Siegerliste</div>
       <div class="table-container">
       @if (standingsLoading()) {
         <p class="state-msg">Laden…</p>
@@ -275,7 +289,17 @@
           <tbody>
             @for (row of standings(); track row.manager_id) {
               <tr>
-                <td>{{ row.manager_name }}</td>
+                <td>
+                  <span class="manager-cell">
+                    <img
+                      class="player-avatar-sm"
+                      [src]="managerPhotoUrl(row.manager_id)"
+                      (error)="$any($event.target).style.display = 'none'"
+                      alt=""
+                    />
+                    {{ row.manager_name }}
+                  </span>
+                </td>
                 <td>
                   <span class="wins-cell">
                     @for (w of row.won_matches; track w.match_id) {
@@ -298,10 +322,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title card-title--icon">
-        <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
-        Lukaten
-      </div>
+      <div class="card-title">Schatzkammer</div>
       <div class="table-container">
       @if (budgetStandingsLoading()) {
         <p class="state-msg">Laden…</p>
@@ -318,8 +339,23 @@
           <tbody>
             @for (row of budgetStandings(); track row.manager_id) {
               <tr>
-                <td>{{ row.manager_name }}</td>
-                <td class="col-value">{{ formatLukaten(row.budget) }}</td>
+                <td>
+                  <span class="manager-cell">
+                    <img
+                      class="player-avatar-sm"
+                      [src]="managerPhotoUrl(row.manager_id)"
+                      (error)="$any($event.target).style.display = 'none'"
+                      alt=""
+                    />
+                    {{ row.manager_name }}
+                  </span>
+                </td>
+                <td class="col-value">
+                  <span class="budget-cell">
+                    <strong>{{ formatLukatenNumber(row.budget) }}</strong>
+                    <img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />
+                  </span>
+                </td>
               </tr>
             }
           </tbody>
@@ -347,7 +383,7 @@
           <span class="team-dot" [style.background-color]="w.home_color"></span>
         }
       </span>
-      <span class="h2h-score">
+      <span class="bet-row__score">
         @if (w.home_goals !== null) {
           <strong>{{ w.home_goals }}</strong><span class="h2h-sep">:</span><strong>{{ w.away_goals }}</strong>
         } @else {
@@ -362,9 +398,11 @@
         }
       </span>
     </div>
-    <span class="list-tooltip__title">{{ w.home_team_name }} – {{ w.away_team_name }}</span>
-    <span class="list-tooltip__detail">
-      Tipp: {{ wonMatchPickLabel(w) }}@if (tooltipOdds(w); as odds) { · Quote {{ odds }} }
-    </span>
+    @if (tooltipOdds(w); as odds) {
+      <span class="odds-badge">
+        <span class="odds-badge__label">Quote</span>
+        <span class="odds-badge__value">{{ odds }}</span>
+      </span>
+    }
   </div>
 }

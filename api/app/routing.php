@@ -1176,7 +1176,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h_prediction/budget_standings',
-                        'description' => 'Alle Manager mit mindestens einem gestakten Tipp (stake gesetzt) in der aktiven Saison, mit ihrem aktuellen Lukaten-Budget — gibt [{manager_id,manager_name,alias,budget}] zurück, absteigend nach budget sortiert — fürs Wettbüro, zweite Bestenliste neben den Sieg-Zählern — Auth',
+                        'description' => 'Alle Manager mit mindestens einem gestakten Tipp (stake gesetzt) in der aktiven Saison, mit ihrem aktuellen Lukaten-Budget — gibt [{manager_id,manager_name,alias,budget}] zurück, absteigend nach budget sortiert — fürs Wettbüro, zweite Bestenliste neben den Sieg-Zählern; budget zählt hier nur Einsätze auf bereits angepfiffene (nicht mehr änderbare/löschbare) Matches — offene Tipps auf zukünftige Matches mindern das angezeigte Budget noch nicht (anders als GET /h2h_prediction/budget, das alle gesetzten Einsätze zählt) — Auth',
                     ],
                     [
                         'method' => 'POST',

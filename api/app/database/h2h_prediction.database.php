@@ -95,12 +95,18 @@ trait H2HPredictionTrait
      * aus — nötig, um beim Ändern eines bestehenden Einsatzes den vollen (unveränderten)
      * verfügbaren Rahmen zu prüfen, statt den Manager durch seinen eigenen alten Einsatz auf
      * dasselbe Match zu blockieren (siehe submitH2HPrediction()).
+     *
+     * $lockedOnly (nur für getLukatenStandings()'s Schatzkammer-Ranking) blendet zusätzlich
+     * Einsätze auf noch nicht angepfiffene Matches aus — ein offener, jederzeit noch änderbarer/
+     * löschbarer Tipp soll dort nicht wie ein bereits "abgebuchter" Einsatz wirken. Für die
+     * eigene Budget-Anzeige und die Einsatz-Validierung beim Tippen bleibt es bei allen
+     * gesetzten Einsätzen (lockedOnly=false) — sonst könnte über mehrere offene Tipps auf
+     * zukünftige Matches mehr Budget gebunden werden, als tatsächlich verfügbar ist.
      */
-    public function getManagerLukatenBudget(string $managerId, string $seasonId, ?string $excludeMatchId = null): float
-    {
-        $sql = "SELECT 100
-                  - COALESCE(SUM(hp.stake), 0)
-                  + COALESCE(SUM(CASE WHEN hp.result = 'won' THEN hp.stake * hp.odds ELSE 0 END), 0) AS budget
+    public function getManagerLukatenBudget(
+        string $managerId, string $seasonId, ?string $excludeMatchId = null, bool $lockedOnly = false
+    ): float {
+        $sql = "SELECT hp.stake, hp.odds, hp.result, hm.matchday_id
                 FROM h2h_prediction hp
                 JOIN h2h_match hm ON hm.id = hp.match_id
                 WHERE hp.manager_id = :man AND hm.season_id = :season AND hp.stake IS NOT NULL";
@@ -111,7 +117,32 @@ trait H2HPredictionTrait
         }
         $q = $this->con_league->prepare($sql);
         $q->execute($params);
-        return (float) $q->fetchColumn();
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) return 100.0;
+
+        if ($lockedOnly) {
+            $matchdayIds = array_values(array_unique(array_column($rows, 'matchday_id')));
+            $ph  = implode(',', array_fill(0, count($matchdayIds), '?'));
+            $mdq = $this->con->prepare(
+                "SELECT id, (kickoff_date IS NOT NULL AND kickoff_date <= NOW()) AS locked
+                 FROM matchday WHERE id IN ($ph)"
+            );
+            $mdq->execute($matchdayIds);
+            $lockedMap = [];
+            foreach ($mdq->fetchAll(PDO::FETCH_ASSOC) as $md) {
+                $lockedMap[$md['id']] = (bool) $md['locked'];
+            }
+            $rows = array_filter($rows, fn($r) => $lockedMap[$r['matchday_id']] ?? false);
+        }
+
+        $budget = 100.0;
+        foreach ($rows as $r) {
+            $budget -= (float) $r['stake'];
+            if ($r['result'] === 'won') {
+                $budget += (float) $r['stake'] * (float) $r['odds'];
+            }
+        }
+        return $budget;
     }
 
     /**
@@ -601,9 +632,11 @@ trait H2HPredictionTrait
 
     /**
      * Alle Manager mit mindestens einem gestakten Tipp (stake IS NOT NULL) in der aktiven
-     * Saison, mit ihrem aktuellen Lukaten-Budget (siehe getManagerLukatenBudget()) — fürs
-     * Wettbüro (Bestico), zweite Bestenliste neben den Sieg-Zählern. Absteigend nach Budget
-     * sortiert.
+     * Saison, mit ihrem aktuellen Lukaten-Budget — fürs Wettbüro (Bestico), zweite Bestenliste
+     * neben den Sieg-Zählern. Absteigend nach Budget sortiert. Nutzt getManagerLukatenBudget()
+     * mit lockedOnly=true: Einsätze auf noch nicht angepfiffene (weiterhin änderbare/löschbare)
+     * Matches fließen hier bewusst noch nicht in die Wertung ein, erst nach Anpfiff gilt der
+     * Einsatz als "abgebucht".
      */
     public function getLukatenStandings(): array
     {
@@ -628,7 +661,7 @@ trait H2HPredictionTrait
         $managers = $mq->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($managers as &$m) {
-            $m['budget'] = $this->getManagerLukatenBudget($m['manager_id'], $seasonId);
+            $m['budget'] = $this->getManagerLukatenBudget($m['manager_id'], $seasonId, null, true);
         }
         unset($m);
 
