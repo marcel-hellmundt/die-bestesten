@@ -501,7 +501,9 @@
   display: flex;
   align-items: center;
   gap: $space-3;
-  margin-bottom: $space-3;
+  // Etwas mehr als sonst üblich — das reward.png schwebt über der 1/X/2-Box (siehe
+  // .h2h-predict-column__reward) und würde bei zu wenig Abstand mit der Legende hier kollidieren.
+  margin-bottom: $space-6;
 
   &__circle {
     flex-shrink: 0;
@@ -705,16 +707,24 @@
   position: relative;
   display: inline-flex;
   cursor: default;
+
+  // Größer als das generische .player-avatar-sm (22px) — hier stehen die Fotos für sich allein
+  // statt neben einem Namen, dürfen also mehr Raum einnehmen.
+  .player-avatar-sm {
+    width: 32px;
+    height: 32px;
+  }
 }
 
 // Kleines Lukat-Icon unten rechts am Foto — signalisiert auf einen Blick, dass dieser Manager
-// (zusätzlich zum reinen Tipp) auch einen Einsatz gesetzt hat.
+// (zusätzlich zum reinen Tipp) auch einen Einsatz gesetzt hat. Deutlich kleiner als das Foto
+// (vorher fast so groß wie das 22px-Foto selbst und wirkte dadurch überdeckend).
 .h2h-predict-avatar__stake-badge {
   position: absolute;
   bottom: -2px;
   right: -2px;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   object-fit: contain;
   border-radius: 50%;
   background: $color-surface;
