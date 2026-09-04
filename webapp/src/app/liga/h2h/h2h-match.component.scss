@@ -503,7 +503,7 @@
   gap: $space-3;
   // Etwas mehr als sonst üblich — das reward.png schwebt über der 1/X/2-Box (siehe
   // .h2h-predict-column__reward) und würde bei zu wenig Abstand mit der Legende hier kollidieren.
-  margin-bottom: $space-6;
+  margin-bottom: $space-8;
 
   &__circle {
     flex-shrink: 0;
@@ -683,7 +683,7 @@
 // Markiert den tatsächlich eingetroffenen Pick — schwebt über der Box statt sie zu überdecken.
 .h2h-predict-column__reward {
   position: absolute;
-  top: -14px;
+  top: -22px;
   left: 50%;
   transform: translateX(-50%);
   width: 20px;
