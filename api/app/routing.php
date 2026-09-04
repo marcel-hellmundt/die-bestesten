@@ -1174,6 +1174,12 @@ class Routing
                         'description' => 'Tipp setzen/ändern (Upsert, beliebig oft bis Anpfiff); odds speichert die im Frontend zum Zeitpunkt der Tippabgabe für genau diesen Pick angezeigte Pseudo-Quote unverändert als Snapshot (kann sich bis Anpfiff durch Aufstellungsänderungen noch ändern, siehe GET /h2h/:id → odds); 404 wenn Match nicht gefunden, 403 wenn Anpfiff der zugehörigen Matchday bereits erfolgt ist, die Matchday nicht die aktuelle ist (kleinste noch nicht abgeschlossene number in Saison+Division) oder der Manager eines der beiden beteiligten Teams selbst führt (Quote sonst über die eigene Aufstellung manipulierbar) — Auth',
                         'body' => ['match_id' => 'UUID des H2H-Matches', 'pick' => 'home|draw|away', 'odds' => 'DECIMAL (optional) — Quote des gewählten Picks zum Zeitpunkt der Tippabgabe'],
                     ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/h2h_prediction/:id',
+                        'description' => 'Eigenen Tipp wieder entfernen (:id = UUID des H2H-Matches, nicht die Tipp-Zeile selbst) — nur bis Anpfiff, danach wie POST gesperrt (403); 404 wenn Match nicht gefunden; idempotent, kein Fehler wenn ohnehin kein eigener Tipp vorhanden war — Auth',
+                        'path_params' => [':id' => 'UUID des H2H-Matches'],
+                    ],
                 ],
             ]),
 

@@ -184,8 +184,15 @@ export class H2HMatchComponent implements OnDestroy {
   // Optimistisches Update, damit der Klick sofort im UI ankommt statt auf den nächsten
   // Server-Roundtrip zu warten — bei Fehlschlag (z.B. Anpfiff inzwischen erfolgt) wird die
   // Auswahl zurückgesetzt und predictionError zeigt eine kurze Fehlermeldung an.
-  private optimisticPick = signal<'home' | 'draw' | 'away' | null>(null);
-  myPick          = computed(() => this.optimisticPick() ?? this.predictions()?.my_pick ?? null);
+  // undefined = keine lokale Override (myPick() greift auf predictions().my_pick zurück); null
+  // ist davon bewusst unterschieden — steht für "Tipp wurde gerade lokal entfernt", sonst würde
+  // myPick() nach dem Entfernen sofort wieder auf den noch nicht neu geladenen Server-Wert
+  // zurückfallen und der entfernte Pick bliebe optisch ausgewählt.
+  private optimisticPick = signal<'home' | 'draw' | 'away' | null | undefined>(undefined);
+  myPick          = computed(() => {
+    const o = this.optimisticPick();
+    return o !== undefined ? o : (this.predictions()?.my_pick ?? null);
+  });
   submittingPick  = signal(false);
   predictionError = signal<string | null>(null);
 
@@ -195,7 +202,15 @@ export class H2HMatchComponent implements OnDestroy {
     return 'Unentschieden';
   }
 
+  // Klick auf den bereits ausgewählten Pick entfernt den Tipp wieder, statt ihn erneut zu
+  // speichern — nur möglich, solange die Tippphase offen ist (aktueller Spieltag, vor Anpfiff,
+  // kein eigenes Match, siehe dieselben Guards wie unten).
   submitPrediction(pick: 'home' | 'draw' | 'away'): void {
+    if (this.myPick() === pick) {
+      this.removePrediction();
+      return;
+    }
+
     const matchId = this.match()?.id;
     if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday() || this.isOwnMatch()) return;
 
@@ -215,6 +230,25 @@ export class H2HMatchComponent implements OnDestroy {
         this.optimisticPick.set(previous);
         this.submittingPick.set(false);
         this.predictionError.set(err?.error?.message ?? 'Tipp konnte nicht gespeichert werden.');
+      },
+    });
+  }
+
+  removePrediction(): void {
+    const matchId = this.match()?.id;
+    if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday() || this.isOwnMatch()) return;
+
+    const previous = this.optimisticPick();
+    this.optimisticPick.set(null);
+    this.submittingPick.set(true);
+    this.predictionError.set(null);
+
+    this.api.delete<{ status: boolean; message?: string }>(`h2h_prediction/${matchId}`).subscribe({
+      next: () => this.submittingPick.set(false),
+      error: (err) => {
+        this.optimisticPick.set(previous);
+        this.submittingPick.set(false);
+        this.predictionError.set(err?.error?.message ?? 'Tipp konnte nicht entfernt werden.');
       },
     });
   }

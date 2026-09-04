@@ -166,6 +166,12 @@
   font-size: $font-xl;
   font-weight: $font-weight-semibold;
   line-height: 1.1;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 
   @media (max-width: $mobile-breakpoint) {
     font-size: $font-xs;
@@ -190,6 +196,12 @@
     width: 52px;
     height: 52px;
   }
+}
+
+// Anchor um .score-logo (Link zur Team-Detailseite) — reines Layout-Wrapping, keine eigene
+// Optik, damit das Logo weiterhin wie ein direktes .match-score-Flex-Kind aussieht.
+.match-score a {
+  display: flex;
 }
 
 .score-values {
@@ -1004,6 +1016,12 @@
   display: flex;
   align-items: center;
   gap: $space-2;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover .manager-name {
+    text-decoration: underline;
+  }
 
   &--away {
     flex-direction: row-reverse;

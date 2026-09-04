@@ -251,6 +251,41 @@ trait H2HPredictionTrait
     }
 
     /**
+     * Eigenen Tipp wieder entfernen (Klick auf den bereits ausgewählten Pick) — nur bis Anpfiff,
+     * danach wie bei submitH2HPrediction() gesperrt. Kein 404 wenn ohnehin kein Tipp vorhanden
+     * war (idempotent), das Frontend ruft dies ohnehin nur bei bestehendem eigenen Pick auf.
+     */
+    public function deleteH2HPrediction(string $matchId, string $managerId): array
+    {
+        $mq = $this->con_league->prepare(
+            "SELECT matchday_id FROM h2h_match WHERE id = :id LIMIT 1"
+        );
+        $mq->execute([':id' => $matchId]);
+        $match = $mq->fetch(PDO::FETCH_ASSOC);
+        if (!$match) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Match nicht gefunden'];
+        }
+
+        $mdq = $this->con->prepare(
+            "SELECT (kickoff_date IS NOT NULL AND kickoff_date <= NOW()) AS locked
+             FROM matchday WHERE id = :id LIMIT 1"
+        );
+        $mdq->execute([':id' => $match['matchday_id']]);
+        $matchday = $mdq->fetch(PDO::FETCH_ASSOC);
+        if ($matchday && (bool) $matchday['locked']) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Tippphase beendet — Anpfiff war bereits'];
+        }
+
+        $this->con_league->prepare(
+            "DELETE FROM h2h_prediction WHERE match_id = :mid AND manager_id = :man"
+        )->execute([':mid' => $matchId, ':man' => $managerId]);
+
+        return ['status' => true];
+    }
+
+    /**
      * Nach Spieltagsabschluss aufgerufen (siehe MatchdayController::patch(), direkt nach
      * finalizeMatchday() — braucht die dort frisch geschriebenen team_rating-Zeilen). Berechnet
      * für jedes H2H-Match dieses Spieltags das tatsächliche Ergebnis (home/draw/away) über
