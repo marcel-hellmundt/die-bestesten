@@ -151,9 +151,21 @@ export class H2HMatchComponent implements OnDestroy {
   // (nur vor Anpfiff im Response) noch nicht mitschickt.
   lineupsReady = computed(() => this.predictions()?.lineups_ready ?? true);
 
+  // Reine Anzahl bereits abgegebener Tipps (nicht wer/was) — die Tipps selbst bleiben vor
+  // Anpfiff geheim (siehe hideCard()-Kommentar), die Anzahl darf trotzdem schon angezeigt werden.
+  submittedCount = computed(() => this.predictions()?.submitted_count ?? 0);
+  submittedCountLabel = computed(() => {
+    const n = this.submittedCount();
+    if (n === 0) return 'Noch niemand hat getippt.';
+    if (n === 1) return '1 Manager hat bereits getippt.';
+    return `${n} Manager haben bereits getippt.`;
+  });
+
+  // isOwnMatch() blendet die Card bewusst NICHT mehr aus (siehe Template) — dort erscheint
+  // stattdessen ein Hinweis, warum getippt werden könnte, aber nicht darf.
   hideCard = computed(() =>
     this.hideEmptyResult() ||
-    (!this.isRevealed() && (!this.canTipThisMatchday() || this.isOwnMatch() || !this.lineupsReady()))
+    (!this.isRevealed() && (!this.canTipThisMatchday() || (!this.isOwnMatch() && !this.lineupsReady())))
   );
 
   private refetchedAfterKickoff = false;

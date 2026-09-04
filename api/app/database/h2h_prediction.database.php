@@ -47,6 +47,13 @@ trait H2HPredictionTrait
             // Teams gleich), was Manager fälschlich als echte Einschätzung lesen. Karte bleibt
             // dann komplett unsichtbar, analog is_current_matchday/is_own_match.
             $result['lineups_ready'] = $lineupsReady;
+            // Reine Anzahl (nicht wer/was) ist vor Anpfiff unbedenklich mitzugeben — die
+            // einzelnen Tipps selbst bleiben über $entries/preview_entries weiterhin geheim.
+            $countQ = $this->con_league->prepare(
+                "SELECT COUNT(*) FROM h2h_prediction WHERE match_id = :mid"
+            );
+            $countQ->execute([':mid' => $matchId]);
+            $result['submitted_count'] = (int) $countQ->fetchColumn();
         }
 
         if ($locked || $preview) {
