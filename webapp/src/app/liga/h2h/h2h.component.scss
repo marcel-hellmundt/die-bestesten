@@ -305,6 +305,10 @@
   font-weight: $font-weight-medium;
 }
 
+// Hell (Standard) = Spiel liegt noch in der Zukunft, nichts Wichtiges passiert gerade — dunkel
+// (--dark, siehe isDarkScoreBox()) nur für abgeschlossene, laufende oder auf dem aktuellen
+// Spieltag anstehende Partien. Ersetzt das vorherige, nur an der Strichfarbe erkennbare (und
+// zusätzlich blinkende) Signal für "bald startend" durch einen deutlichen Hintergrundwechsel.
 .h2h-score {
   display: flex;
   align-items: center;
@@ -312,11 +316,22 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   justify-content: center;
-  background: black;
+  background: $color-surface;
   border-radius: 4px;
-  color: #fff;
+  color: $color-text;
   padding: 1px 8px;
   font-size: 16px;
+
+  &--dark {
+    background: black;
+    color: #fff;
+
+    // .h2h-pending setzt sonst immer seine eigene gedämpfte Grundfarbe — hier stattdessen die
+    // Farbe von .h2h-score--dark (#fff) übernehmen statt einer eigenen Farbe.
+    .h2h-pending {
+      color: inherit;
+    }
+  }
 
   &--live strong {
     color: #f3f053;
@@ -331,17 +346,6 @@
 .h2h-pending {
   font-size: $font-xs;
   color: $color-text-muted;
-
-  // Match des aktuellen Spieltags, noch ohne Rating/Tore (egal ob vor oder nach Anpfiff) —
-  // blinkt statt statisch grau, um auf die anstehende/laufende Partie aufmerksam zu machen.
-  &--current {
-    animation: h2h-pending-blink 1.6s ease infinite;
-  }
-}
-
-@keyframes h2h-pending-blink {
-  0%, 100% { color: #fff; }
-  50%      { color: #f3f053; }
 }
 
 // ── Knockout ──────────────────────────────────────────────────────────────────
