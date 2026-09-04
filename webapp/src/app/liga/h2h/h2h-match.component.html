@@ -633,16 +633,67 @@
           </div>
         </div>
       </div>
-      <div class="h2h-predict-list">
-        @for (e of entries; track e.manager_id) {
-          <div class="h2h-predict-row">
-            <span class="h2h-predict-row__name">{{ e.manager_name }}</span>
-            <span class="h2h-predict-row__pick">{{ pickLabel(e.pick) }}</span>
+      <div class="h2h-predict-columns">
+        <div class="h2h-predict-column">
+          <div class="h2h-predict-column__header-wrap">
+            @if (winningPick(entries) === 'home') {
+              <img class="h2h-predict-column__reward" src="img/icons/reward.png" alt="Gewonnen" />
+            }
+            <span class="h2h-predict-column__header" [style.background-color]="homeTeam()?.color">1</span>
           </div>
-        }
+          <div class="h2h-predict-column__avatars">
+            <ng-container *ngTemplateOutlet="predictAvatars; context: { list: entriesForPick(entries, 'home') }"></ng-container>
+          </div>
+        </div>
+        <div class="h2h-predict-column">
+          <div class="h2h-predict-column__header-wrap">
+            @if (winningPick(entries) === 'draw') {
+              <img class="h2h-predict-column__reward" src="img/icons/reward.png" alt="Gewonnen" />
+            }
+            <span class="h2h-predict-column__header" [style.background-color]="drawColor">X</span>
+          </div>
+          <div class="h2h-predict-column__avatars">
+            <ng-container *ngTemplateOutlet="predictAvatars; context: { list: entriesForPick(entries, 'draw') }"></ng-container>
+          </div>
+        </div>
+        <div class="h2h-predict-column">
+          <div class="h2h-predict-column__header-wrap">
+            @if (winningPick(entries) === 'away') {
+              <img class="h2h-predict-column__reward" src="img/icons/reward.png" alt="Gewonnen" />
+            }
+            <span class="h2h-predict-column__header" [style.background-color]="awayTeam()?.color">2</span>
+          </div>
+          <div class="h2h-predict-column__avatars">
+            <ng-container *ngTemplateOutlet="predictAvatars; context: { list: entriesForPick(entries, 'away') }"></ng-container>
+          </div>
+        </div>
       </div>
     } @else {
       <p class="state-msg">Niemand hat getippt.</p>
+    }
+  </ng-template>
+
+  <ng-template #predictAvatars let-list="list">
+    @if (list.length > 0) {
+      @for (e of list; track e.manager_id) {
+        <span
+          class="h2h-predict-avatar"
+          (mouseenter)="onEntryHover($event, e)"
+          (mouseleave)="onEntryLeave()"
+        >
+          <img
+            class="player-avatar-sm"
+            [src]="managerPhotoUrl(e.manager_id)"
+            (error)="$any($event.target).style.display = 'none'"
+            alt=""
+          />
+          @if (e.stake != null) {
+            <img class="h2h-predict-avatar__stake-badge" src="img/icons/lukat.png" alt="" />
+          }
+        </span>
+      }
+    } @else {
+      <span class="h2h-predict-column__empty">–</span>
     }
   </ng-template>
 
@@ -723,4 +774,26 @@
       <span class="h2h-bench-card__name">{{ p.displayname }}</span>
     </a>
   </ng-template>
+
+  @if (tooltipEntry(); as e) {
+    <div
+      class="predict-tooltip"
+      [class.predict-tooltip--below]="tooltipBelow()"
+      [class.predict-tooltip--ready]="tooltipReady()"
+      [style.top.px]="tooltipPos()!.top"
+      [style.left.px]="tooltipPos()!.left"
+      #predictTooltipEl
+    >
+      <span class="predict-tooltip__name">{{ e.manager_name }}</span>
+      <span class="predict-tooltip__detail">Quote {{ e.odds != null ? e.odds.toFixed(2) : '–' }}</span>
+      @if (e.stake != null) {
+        <span class="predict-tooltip__detail">
+          Einsatz: {{ e.stake }} Lukaten
+          @if (e.result === 'won' && e.payout != null) {
+            · Gewinn: +{{ formatLukatenNumber(e.payout) }}
+          }
+        </span>
+      }
+    </div>
+  }
 }

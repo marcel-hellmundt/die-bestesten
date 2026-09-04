@@ -64,12 +64,34 @@ trait H2HPredictionTrait
 
         if ($locked || $preview) {
             $allQ = $this->con_league->prepare(
-                "SELECT hp.manager_id, m.manager_name, m.alias, hp.pick, hp.odds
+                "SELECT hp.manager_id, m.manager_name, m.alias, hp.pick, hp.odds, hp.stake, hp.result
                  FROM h2h_prediction hp JOIN manager m ON m.id = hp.manager_id
                  WHERE hp.match_id = :mid ORDER BY m.manager_name ASC"
             );
             $allQ->execute([':mid' => $matchId]);
-            $entries = $allQ->fetchAll(PDO::FETCH_ASSOC);
+            // Gleiches Cast-/Payout-Muster wie getMyH2HPredictions() — DECIMAL-Spalten kommen von
+            // PDO als String zurück, payout wird serverseitig statt im Frontend berechnet, um den
+            // bekannten "w.odds.toFixed ist keine Funktion"-Bug (String statt number) nicht erneut
+            // einzuschleppen (siehe Bestico-Reward-Tooltip). pick/result (ENUM) kommen von der
+            // Produktions-DB mitunter als ucs2/utf16 mit eingestreuten Null-Bytes zurück (gleiche
+            // Ursache wie bei getMyH2HPredictions()/h2h_match.phase) — ungefiltert würde sowohl der
+            // ===-Vergleich hier (payout) als auch im Frontend (winningPick()) lautlos fehlschlagen.
+            $entries = array_map(function ($row) {
+                $pick   = str_replace("\0", '', $row['pick']);
+                $result = str_replace("\0", '', $row['result']);
+                return [
+                    'manager_id'   => $row['manager_id'],
+                    'manager_name' => $row['manager_name'],
+                    'alias'        => $row['alias'],
+                    'pick'         => $pick,
+                    'odds'         => $row['odds'] !== null ? (float) $row['odds'] : null,
+                    'stake'        => $row['stake'] !== null ? (int) $row['stake'] : null,
+                    'payout'       => ($row['stake'] !== null && $result === 'won')
+                        ? round((float) $row['stake'] * (float) $row['odds'], 2)
+                        : null,
+                    'result'       => $result,
+                ];
+            }, $allQ->fetchAll(PDO::FETCH_ASSOC));
 
             if ($locked) {
                 $result['entries'] = $entries;

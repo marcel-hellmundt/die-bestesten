@@ -642,29 +642,126 @@
   }
 }
 
-.h2h-predict-list {
+// Ersetzt die vorherige Namensliste (Manager + Tipp-Text) durch 3 Spalten (1/X/2) mit den
+// Manager-Fotos der jeweiligen Tipper — kompakter, auf einen Blick per Foto statt Lesen erfassbar.
+.h2h-predict-columns {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: $space-3;
 }
 
-.h2h-predict-row {
+.h2h-predict-column {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+}
+
+.h2h-predict-column__header-wrap {
+  position: relative;
+}
+
+// Gleiches Badge-Design wie betting-office.component.scss's .bet-row__pick (28x28, abgerundetes
+// Quadrat) — hier aber fest mit Team-Farbe (Heim/Auswärts) bzw. dem Unentschieden-Grau aus dem
+// Tipp-Kreisdiagramm (siehe drawColor) statt der won/lost-Einfärbung einer einzelnen Wette.
+.h2h-predict-column__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: $space-3;
-  padding: $space-1 0;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-md;
+  font-family: $font-display;
+  font-weight: $font-weight-semibold;
   font-size: $font-sm;
+  color: #fff;
+}
 
-  &__name {
-    color: $color-text;
+// Markiert den tatsächlich eingetroffenen Pick — schwebt über der Box statt sie zu überdecken.
+.h2h-predict-column__reward {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.h2h-predict-column__avatars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: $space-1;
+}
+
+.h2h-predict-column__empty {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+.h2h-predict-avatar {
+  position: relative;
+  display: inline-flex;
+  cursor: default;
+}
+
+// Kleines Lukat-Icon unten rechts am Foto — signalisiert auf einen Blick, dass dieser Manager
+// (zusätzlich zum reinen Tipp) auch einen Einsatz gesetzt hat.
+.h2h-predict-avatar__stake-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: $color-surface;
+  box-shadow: 0 0 0 1px $color-surface;
+}
+
+// ── Hover-Tooltip über einem Tipp-Manager-Foto ──────────────────────────────────
+// Gleiches Edge-Clamp-Muster wie betting-office.component.scss's .list-tooltip.
+.predict-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  transform-origin: bottom center;
+  z-index: $z-overlay;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+  visibility: hidden;
+
+  &--ready {
+    visibility: visible;
   }
 
-  &__pick {
-    color: $color-text-muted;
-    font-weight: $font-weight-medium;
-    text-align: right;
+  &--below {
+    transform: translate(-50%, 8px);
+    transform-origin: top center;
   }
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.predict-tooltip__name {
+  display: block;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.predict-tooltip__detail {
+  display: block;
+  font-size: $font-xs;
+  color: $color-text-muted;
 }
 
 // ── Bisherige Begegnungen ────────────────────────────────────────────────────
