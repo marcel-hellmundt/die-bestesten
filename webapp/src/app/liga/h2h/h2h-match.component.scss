@@ -1,5 +1,13 @@
 @use '../../../styles/variables' as *;
 
+.lukat-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  vertical-align: -2px;
+  flex-shrink: 0;
+}
+
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -323,6 +331,88 @@
     color: $color-danger;
   }
 
+  &__remove {
+    display: block;
+    margin-top: $space-2;
+    padding: 0;
+    background: none;
+    border: none;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      color: $color-danger;
+      text-decoration: underline;
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+  }
+}
+
+// Einsatz (Lukaten, fiktive Wettwährung) + Budget-Anzeige — oberhalb der Pick-Buttons.
+.h2h-stake-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-bottom: $space-3;
+}
+
+.h2h-stake-row__budget {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-sm;
+  color: $color-text-muted;
+
+  strong {
+    color: $color-text;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.h2h-stake-row__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  height: 36px;
+  padding: 0 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  flex-shrink: 0;
+}
+
+.h2h-stake-row__input {
+  width: 84px;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: $font-sm;
+  color: $color-text;
+
+  &:focus {
+    outline: none;
+  }
+
+  // Spinner-Pfeile ausblenden — Feld bleibt trotzdem per Tastatur/Scroll änderbar, wirkt so
+  // kompakter neben dem Lukaten-Icon.
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  &[type='number'] {
+    appearance: textfield;
+  }
+}
+
+.h2h-stake-row__unit {
+  flex-shrink: 0;
 }
 
 // Admin-only Transparenz-Card für die Quoten-Berechnung — Label + Heim-Wert + Auswärts-Wert

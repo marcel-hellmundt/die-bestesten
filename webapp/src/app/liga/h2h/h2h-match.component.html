@@ -168,7 +168,12 @@
   <div class="mobile-pitch-wrap">
     <div class="field">
       @if (showSelectedInvalidHint()) {
-        <div class="field-invalid-hint">Keine gültige Aufstellung vorhanden</div>
+        <div class="field-invalid-hint">
+          <span class="field-invalid-hint__card">
+            <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
+            <span>Keine gültige Aufstellung vorhanden</span>
+          </span>
+        </div>
       } @else {
       @for (pos of pitchPositions; track pos) {
         <div class="field-section">
@@ -348,6 +353,26 @@
                Auswertung nach Anpfiff darunter bleibt eine Card. -->
           <div class="h2h-predict-card h2h-predict-card--bare h2h-predict-card--primary">
             <div class="h2h-predict-card__label">Dein Tipp</div>
+            <div class="h2h-stake-row">
+              <span class="h2h-stake-row__budget">
+                Budget: <strong>{{ formatLukatenNumber(budget()) }}</strong>
+                <img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />
+              </span>
+              <label class="h2h-stake-row__input-wrap">
+                <input
+                  type="number"
+                  class="h2h-stake-row__input"
+                  min="1"
+                  step="1"
+                  [max]="maxStake()"
+                  placeholder="Einsatz"
+                  [value]="stakeInput() ?? ''"
+                  [disabled]="submittingPick()"
+                  (input)="onStakeInputChange($any($event.target).value)"
+                />
+                <img class="lukat-icon h2h-stake-row__unit" src="img/icons/lukat.png" alt="Lukaten" />
+              </label>
+            </div>
             <div class="h2h-predict-card__options">
               <button
                 class="h2h-predict-btn"
@@ -412,6 +437,14 @@
               <p class="h2h-predict-card__hint">Tipp änderbar bis Anpfiff.</p>
             }
             <p class="h2h-predict-card__hint">{{ submittedCountLabel() }}</p>
+            @if (myPick()) {
+              <button
+                class="h2h-predict-card__remove"
+                type="button"
+                [disabled]="submittingPick()"
+                (click)="removePrediction()"
+              >Tipp entfernen ✕</button>
+            }
           </div>
         } @else if (pred.locked) {
           <div class="card h2h-predict-card h2h-predict-card--primary">

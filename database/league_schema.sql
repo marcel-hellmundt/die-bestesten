@@ -183,6 +183,12 @@ CREATE TABLE IF NOT EXISTS h2h_prediction (
     odds       DECIMAL(6,2) NULL,             -- Pseudo-Quote (H2HTrait::calculateH2HOdds) des Picks,
                                                -- wie im Frontend bei Tippabgabe angezeigt — kann sich
                                                -- bis Anpfiff durch Aufstellungsänderungen noch ändern
+    stake      INT NULL,                      -- Einsatz in Lukaten (fiktive Währung, optional, min 1,
+                                               -- max aktuelles Budget); NULL = Tipp ohne Einsatz (auch
+                                               -- alle vor Einführung dieses Features abgegebenen Tipps).
+                                               -- Lukaten-Budget je Manager+Saison wird live berechnet:
+                                               -- 100 - SUM(stake) + SUM(stake*odds WHERE result='won'),
+                                               -- kein gespeicherter Kontostand (siehe H2HPredictionTrait)
     result     ENUM('open','won','lost') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'open',
                                                -- 'open' bis Spieltagsabschluss, danach von
                                                -- H2HPredictionTrait::evaluateH2HPredictionResults()

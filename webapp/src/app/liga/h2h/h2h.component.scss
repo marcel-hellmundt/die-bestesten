@@ -53,25 +53,31 @@
   }
 }
 
+// Bewusst eigene Marken-Optik (angelehnt an bekannte Wettanbieter-Logos: fette kursive
+// Blockschrift, Weiß auf Rot) statt der neutralen Outline-Buttons anderswo im Projekt —
+// Grundfarbe eigener Ton, Hover wechselt bewusst auf $color-accent (unser Primary-Rot).
 .betting-link {
   display: inline-flex;
   align-items: center;
   height: 36px;
   padding: 0 $space-4;
   font-size: $font-sm;
-  font-weight: $font-weight-semibold;
-  color: $color-accent;
-  background: $color-surface;
-  border: 1px solid $color-accent;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #e2001a;
+  border: 1px solid #e2001a;
   border-radius: $radius-md;
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background-color $transition-fast, color $transition-fast;
+  transition: background-color $transition-fast, border-color $transition-fast;
 
   &:hover {
     background: $color-accent;
-    color: #fff;
+    border-color: $color-accent;
   }
 }
 
@@ -106,16 +112,15 @@
     border-color: $color-text-muted;
   }
 
-  &__short {
-    display: none;
-  }
-
+  // Mobile: nur noch das Info-Icon, kein Text mehr — macht den Button deutlich kleiner statt nur
+  // den langen Satz zu kürzen.
   @media (max-width: $mobile-breakpoint) {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+
     &__long {
       display: none;
-    }
-    &__short {
-      display: inline;
     }
   }
 }
@@ -300,6 +305,10 @@
   font-weight: $font-weight-medium;
 }
 
+// Hell (Standard) = Spiel liegt noch in der Zukunft, nichts Wichtiges passiert gerade — dunkel
+// (--dark, siehe isDarkScoreBox()) nur für abgeschlossene, laufende oder auf dem aktuellen
+// Spieltag anstehende Partien. Ersetzt das vorherige, nur an der Strichfarbe erkennbare (und
+// zusätzlich blinkende) Signal für "bald startend" durch einen deutlichen Hintergrundwechsel.
 .h2h-score {
   display: flex;
   align-items: center;
@@ -307,11 +316,22 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   justify-content: center;
-  background: black;
+  background: $color-surface;
   border-radius: 4px;
-  color: #fff;
+  color: $color-text;
   padding: 1px 8px;
   font-size: 16px;
+
+  &--dark {
+    background: black;
+    color: #fff;
+
+    // .h2h-pending setzt sonst immer seine eigene gedämpfte Grundfarbe — hier stattdessen die
+    // Farbe von .h2h-score--dark (#fff) übernehmen statt einer eigenen Farbe.
+    .h2h-pending {
+      color: inherit;
+    }
+  }
 
   &--live strong {
     color: #f3f053;
@@ -326,17 +346,6 @@
 .h2h-pending {
   font-size: $font-xs;
   color: $color-text-muted;
-
-  // Match des aktuellen Spieltags, noch ohne Rating/Tore (egal ob vor oder nach Anpfiff) —
-  // blinkt statt statisch grau, um auf die anstehende/laufende Partie aufmerksam zu machen.
-  &--current {
-    animation: h2h-pending-blink 1.6s ease infinite;
-  }
-}
-
-@keyframes h2h-pending-blink {
-  0%, 100% { color: #fff; }
-  50%      { color: #f3f053; }
 }
 
 // ── Knockout ──────────────────────────────────────────────────────────────────

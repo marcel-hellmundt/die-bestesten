@@ -140,11 +140,18 @@ export class H2HComponent implements OnDestroy {
     return pending.reduce((min, m) => (m.matchday_number < min ? m.matchday_number : min), pending[0].matchday_number);
   });
 
-  // Blinkendes Hervorheben der "–:–"-Anzeige (noch kein Rating/Tor vorhanden) nur für Matches
-  // des aktuellen Spieltags — unabhängig davon, ob der Anpfiff schon war (isLive) oder noch
-  // bevorsteht.
-  isPendingOnCurrentMatchday(m: any): boolean {
-    return m.home_goals == null && m.matchday_number === this.currentMatchdayNumber();
+  // Score-Box dunkel (schwarz) nur für relevante Spiele — abgeschlossen, laufend oder auf dem
+  // aktuellen Spieltag ("bald startend"); alle weiter in der Zukunft liegenden Spiele bleiben
+  // hell, damit auf den ersten Blick klar ist, welche Partien gerade wichtig sind (ersetzt das
+  // vorherige, zu unauffällige Blink-Highlight).
+  isDarkScoreBox(m: any): boolean {
+    return !!m.completed || this.isLive(m) || m.matchday_number === this.currentMatchdayNumber();
+  }
+
+  // Finale-Aggregat-Score (beide Legs zusammen, kein einzelnes Match-Objekt) — dunkel sobald
+  // bereits ein Ergebnis vorliegt oder eines der beiden Legs selbst dunkel wäre.
+  isDarkAggScoreBox(mu: { legs: any[]; hasResults: boolean }): boolean {
+    return mu.hasResults || mu.legs.some(leg => this.isDarkScoreBox(leg));
   }
 
   navigateToMatch(id: string): void {
