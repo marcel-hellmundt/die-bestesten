@@ -510,7 +510,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team_rating/season',
-                        'description' => 'Saisontabelle — aggregierte Summen (Punkte, Tore, Assists, SdS, total_red_cards, total_yellow_red_cards, …) aller Teams inkl. manager_id, sortiert nach Punkten',
+                        'description' => 'Saisontabelle — aggregierte Summen (Punkte, Tore, Assists, SdS, total_red_cards, total_yellow_red_cards, …) aller Teams inkl. manager_id, sortiert nach Punkten; zusätzliches Feld participation:[{team_id,team_name,color,season_id,starting,substitute,none,total,starting_pct,substitute_pct,none_pct}] — je Team, wie sich die über die Saison nominierten Spieler (team_lineup.nominated=1) auf player_rating.participation verteilen (starting/substitute/kein Einsatz, inkl. fehlender player_rating-Zeile), absteigend nach starting_pct sortiert — für die Einsatzquote-Card auf /liga/tabelle',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                 ],
@@ -1156,7 +1156,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h_prediction/mine',
-                        'description' => 'Alle eigenen Tipps über alle Saisons/Matches hinweg, fürs Wettbüro — je Tipp Partie (Teams), Endergebnis (home_goals/away_goals, null solange unentschieden/noch nicht gespielt), eigener pick, odds-Snapshot, stake (Einsatz in Lukaten, null wenn ohne Einsatz getippt), payout (voller Rückzahlungsbetrag stake*odds bei result=won, sonst null) und result (open/won/lost); absteigend nach Anpfiff sortiert (neueste zuerst) — Auth',
+                        'description' => 'Alle eigenen Tipps über alle Saisons/Matches hinweg, fürs Wettbüro — je Tipp Partie (Teams), Endergebnis (home_goals/away_goals, null solange unentschieden/noch nicht gespielt; bei bereits angepfiffenem, noch nicht abgeschlossenem Spieltag live aus player_rating x team_lineup geschätzt), live (bool, Spieltag angepfiffen aber noch nicht abgeschlossen — fürs gelb hervorgehobene Live-Ergebnis analog /liga/h2h), eigener pick, odds-Snapshot, stake (Einsatz in Lukaten, null wenn ohne Einsatz getippt), payout (voller Rückzahlungsbetrag stake*odds bei result=won, sonst null) und result (open/won/lost); absteigend nach Anpfiff sortiert (neueste zuerst) — Auth',
                     ],
                     [
                         'method' => 'GET',

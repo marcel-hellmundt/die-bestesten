@@ -341,6 +341,12 @@
   border-radius: $radius-sm;
   color: #fff;
   padding: 2px $space-2;
+
+  // Gleiche Live-Farbe wie h2h.component.scss's .h2h-score--live (Styles nicht komponenten-
+  // übergreifend geteilt, daher hier eigenständig definiert statt die Klasse zu importieren).
+  &--live strong {
+    color: #f3f053;
+  }
 }
 
 .h2h-sep {

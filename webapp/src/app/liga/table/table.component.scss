@@ -1,12 +1,25 @@
 @use '../../../styles/variables' as *;
 
+// Gleiches Spalten-Raster wie .table-layout darunter — dadurch landet .live-toggle (rechts
+// ausgerichtet innerhalb __controls) exakt über der rechten Kante der Tabelle statt über der
+// rechten Kante der Sidebar.
 .season-nav {
-  display: flex;
-  align-items: center;
-  gap: $space-3;
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: $space-6;
   margin-bottom: $space-6;
 
   .page-title { margin: 0; }
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.season-nav__controls {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
 
   @media (max-width: $mobile-breakpoint) {
     flex-wrap: wrap;
@@ -62,7 +75,8 @@
   display: inline-flex;
   align-items: center;
   gap: $space-1;
-  padding: 4px $space-3;
+  height: 36px;
+  padding: 0 $space-3;
   border: 1px solid $color-border;
   border-radius: $radius-full;
   background: $color-surface;
@@ -133,10 +147,22 @@
   object-fit: contain;
 }
 
+.luck-card__label {
+  font-weight: 500;
+}
+
 .luck-card {
   display: flex;
   flex-direction: column;
   gap: $space-3;
+  width: 100%;
+}
+
+// .luck-card-wrap zentriert seine Kinder (align-items:center), wodurch sie standardmäßig auf
+// Inhaltsbreite schrumpfen — .luck-card bekommt oben explizit width:100%, .stat-card (globale
+// Klasse, hier für die Kegelstrafen-Box wiederverwendet) braucht dieselbe lokale Überschreibung,
+// damit sie wie die übrigen Sidebar-Cards die volle Breite einnimmt.
+.luck-card-wrap .stat-card {
   width: 100%;
 }
 
@@ -283,6 +309,19 @@
   }
 }
 
+// Feste Breite statt geteiltem flex:1 mit .chart-card — soll immer genau die Hälfte der Zeile
+// einnehmen, unabhängig davon wie viel Platz .chart-card daneben beansprucht.
+.participation-card {
+  flex: 0 0 50%;
+  max-width: 50%;
+  min-width: 0;
+
+  @media (max-width: $mobile-breakpoint) {
+    flex-basis: auto;
+    max-width: 100%;
+  }
+}
+
 .chart-card {
   &__label {
     display: block;
@@ -293,6 +332,66 @@
     color: $color-text-muted;
     margin-bottom: $space-3;
   }
+}
+
+// Grid statt Flex-Spalte: die Namensspalte (auto) sizt sich dadurch an den jeweils breitesten
+// Teamnamen über ALLE Zeilen hinweg (kein Ellipsis nötig), die Balkenspalte (1fr) füllt in jeder
+// Zeile exakt denselben restlichen Platz — beides gemeinsam hält die Balken trotzdem gleich breit.
+.participation-list {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: $space-2;
+}
+
+// display:contents löst die Zeile optisch auf, damit Logo/Name/Balken direkte Grid-Items von
+// .participation-list werden (Klick-/Routing-Verhalten des <a> bleibt unangetastet).
+.participation-row {
+  display: contents;
+  color: inherit;
+  text-decoration: none;
+}
+
+.participation-row__logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+
+  &.logo--placeholder {
+    opacity: 0.5;
+  }
+}
+
+.participation-row__name {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
+// Gleiche Farbsemantik wie .status-count in matchday.component.scss (Startelf/Eingewechselt/
+// kein Einsatz sollen app-weit gleich aussehen).
+.participation-bar {
+  display: flex;
+  height: 16px;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: $color-border;
+  cursor: default;
+  transition: transform $transition-fast;
+
+  // Nur vertikal skalieren (scaleY statt scale) — Breite/Ausrichtung zu Name und Balken der
+  // Nachbarzeilen soll unverändert bleiben.
+  &--hovered {
+    transform: scaleY(1.3);
+  }
+}
+
+.participation-bar__seg {
+  height: 100%;
+
+  &--starting   { background: #009432; }
+  &--substitute { background: #ffc312; }
+  &--none       { background: #ff3f34; }
 }
 
 .chart-container {
@@ -361,4 +460,52 @@
       }
     }
   }
+}
+
+// ── Hover-Tooltip über einem Einsatzquote-Balken ────────────────────────────────
+// Gleiches Edge-Clamp-Muster wie betting-office.component.scss's .list-tooltip.
+.participation-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 8px));
+  transform-origin: bottom center;
+  z-index: $z-overlay;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+  visibility: hidden;
+
+  &--ready {
+    visibility: visible;
+  }
+
+  &--below {
+    transform: translate(-50%, 8px);
+    transform-origin: top center;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.participation-tooltip__name {
+  display: block;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  margin-bottom: $space-1;
+}
+
+.participation-tooltip__detail {
+  display: block;
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+
+  &--starting   { color: #009432; }
+  &--substitute { color: #d19a00; } // dunkler als das reine Balken-Gelb (#ffc312) — sonst auf hellem Grund kaum lesbar
+  &--none       { color: #ff3f34; }
 }

@@ -4,38 +4,40 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   <div class="season-nav">
-    <button
-      class="nav-arrow"
-      (click)="decrement()"
-      [disabled]="!canDecrement()"
-      aria-label="Ältere Saison"
-    >
-      ‹
-    </button>
-    <select class="select" (change)="onSeasonChange($any($event.target).value)">
-      @for (s of seasons(); track s.id) {
-        <option [value]="s.id" [selected]="s.id === selectedSeason()!.id">{{ s.longDisplayName }}</option>
-      }
-    </select>
-    <button
-      class="nav-arrow"
-      (click)="increment()"
-      [disabled]="!canIncrement()"
-      aria-label="Neuere Saison"
-    >
-      ›
-    </button>
-    @if (isCurrentSeason() && isLoggedIn()) {
+    <div class="season-nav__controls">
       <button
-        class="live-toggle"
-        [class.live-toggle--active]="liveMode()"
-        (click)="liveMode.set(!liveMode())"
-        title="Live-Punkte des laufenden Spieltags einrechnen"
+        class="nav-arrow"
+        (click)="decrement()"
+        [disabled]="!canDecrement()"
+        aria-label="Ältere Saison"
       >
-        <span class="live-dot"></span>
-        Live
+        ‹
       </button>
-    }
+      <select class="select" (change)="onSeasonChange($any($event.target).value)">
+        @for (s of seasons(); track s.id) {
+          <option [value]="s.id" [selected]="s.id === selectedSeason()!.id">{{ s.longDisplayName }}</option>
+        }
+      </select>
+      <button
+        class="nav-arrow"
+        (click)="increment()"
+        [disabled]="!canIncrement()"
+        aria-label="Neuere Saison"
+      >
+        ›
+      </button>
+      @if (isCurrentSeason() && isLoggedIn()) {
+        <button
+          class="live-toggle"
+          [class.live-toggle--active]="liveMode()"
+          (click)="liveMode.set(!liveMode())"
+          title="Live-Punkte des laufenden Spieltags einrechnen"
+        >
+          <span class="live-dot"></span>
+          Live
+        </button>
+      }
+    </div>
   </div>
 
   @if (rows().length === 0) {
@@ -171,14 +173,47 @@
             </div>
           </div>
         }
+
+        @if (participationStats().length > 0) {
+          <div class="card chart-card participation-card">
+            <span class="chart-card__label">Einsatzquote</span>
+            <div class="participation-list">
+              @for (r of participationStats(); track r.team_id) {
+                <a
+                  class="participation-row"
+                  [routerLink]="['/team', r.team_id]"
+                  (mouseenter)="onParticipationHover($event, r)"
+                  (mouseleave)="onParticipationLeave()"
+                >
+                  <img
+                    class="participation-row__logo"
+                    [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
+                    [class.logo--placeholder]="logoErrors.has(r.team_id)"
+                    [alt]="r.team_name"
+                    (error)="onLogoError(r.team_id)"
+                  />
+                  <span class="participation-row__name">{{ r.team_name }}</span>
+                  <span class="participation-bar" [class.participation-bar--hovered]="tooltipRow()?.team_id === r.team_id">
+                    <span class="participation-bar__seg participation-bar__seg--starting" [style.width.%]="r.starting_pct"></span>
+                    <span class="participation-bar__seg participation-bar__seg--substitute" [style.width.%]="r.substitute_pct"></span>
+                    <span class="participation-bar__seg participation-bar__seg--none" [style.width.%]="r.none_pct"></span>
+                  </span>
+                </a>
+              }
+            </div>
+          </div>
+        }
       </div>
     </div>
 
     <div class="sidebar">
       @if (totalFines() > 0) {
-        <div class="stat-card">
-          <span class="stat-label stat-label--alizarin">Kegelstrafen</span>
-          <div class="stat-value">{{ totalFines() | number: '1.2-2' }} €</div>
+        <div class="luck-card-wrap">
+          <img class="luck-card__icon" src="/img/icons/bowling.png" alt="" aria-hidden="true" />
+          <span class="luck-card__label luck-card__label--fine">Kegelstrafen</span>
+          <div class="stat-card">
+            <div class="stat-value">{{ totalFines() | number: '1.2-2' }} €</div>
+          </div>
         </div>
       }
 
@@ -258,4 +293,20 @@
     </div>
   </div>
   }
+}
+
+@if (tooltipRow(); as r) {
+  <div
+    class="participation-tooltip"
+    [class.participation-tooltip--below]="tooltipBelow()"
+    [class.participation-tooltip--ready]="tooltipReady()"
+    [style.top.px]="tooltipPos()!.top"
+    [style.left.px]="tooltipPos()!.left"
+    #participationTooltipEl
+  >
+    <span class="participation-tooltip__name">{{ r.team_name }}</span>
+    <span class="participation-tooltip__detail participation-tooltip__detail--starting">{{ r.starting }}× Startelf ({{ r.starting_pct }}%)</span>
+    <span class="participation-tooltip__detail participation-tooltip__detail--substitute">{{ r.substitute }}× Eingewechselt ({{ r.substitute_pct }}%)</span>
+    <span class="participation-tooltip__detail participation-tooltip__detail--none">{{ r.none }}× kein Einsatz ({{ r.none_pct }}%)</span>
+  </div>
 }

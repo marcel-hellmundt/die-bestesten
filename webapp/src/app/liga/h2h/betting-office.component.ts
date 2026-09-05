@@ -17,6 +17,7 @@ interface Bet {
   away_color: string | null;
   home_goals: number | null;
   away_goals: number | null;
+  live: boolean;
   pick: 'home' | 'draw' | 'away';
   odds: number | null;
   stake: number | null;

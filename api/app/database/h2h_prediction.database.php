@@ -500,7 +500,7 @@ trait H2HPredictionTrait
         $matchdayIds = array_values(array_unique(array_column($rows, 'matchday_id')));
         $mph = implode(',', array_fill(0, count($matchdayIds), '?'));
         $mdq = $this->con->prepare(
-            "SELECT id, number, season_id, kickoff_date FROM matchday WHERE id IN ($mph)"
+            "SELECT id, number, season_id, kickoff_date, completed FROM matchday WHERE id IN ($mph)"
         );
         $mdq->execute($matchdayIds);
         $matchdayMap = array_column($mdq->fetchAll(PDO::FETCH_ASSOC), null, 'id');
@@ -519,6 +519,82 @@ trait H2HPredictionTrait
             $ratingMap[$r['matchday_id']][$r['team_id']] = $r;
         }
 
+        // Live-Fallback: für Spieltage, die bereits angepfiffen, aber noch nicht abgeschlossen
+        // sind, existiert noch keine team_rating-Zeile (die entsteht erst bei Spieltagsabschluss
+        // durch einen Admin) — dieselbe Live-Aggregation aus player_rating x team_lineup wie in
+        // H2HTrait::getH2HOverview()/getH2HMatchDetail() (dort jeweils privat/inline dupliziert,
+        // hier fürs Wettbüro-"Meine Wetten" ebenso nachgebildet statt eine gemeinsame Methode zu
+        // erzwingen, die die abweichenden Aufrufer sonst unnötig koppeln würde).
+        $now = time();
+        $liveMatchdayIds = array_values(array_filter($matchdayIds, function ($mdId) use ($matchdayMap, $now) {
+            $md = $matchdayMap[$mdId] ?? null;
+            return $md && !$md['completed'] && !empty($md['kickoff_date']) && strtotime($md['kickoff_date']) <= $now;
+        }));
+
+        if (!empty($liveMatchdayIds)) {
+            $phLmd = implode(',', array_fill(0, count($liveMatchdayIds), '?'));
+            $lq = $this->con_league->prepare(
+                "SELECT team_id, matchday_id, player_id FROM team_lineup
+                 WHERE matchday_id IN ($phLmd) AND nominated = 1"
+            );
+            $lq->execute($liveMatchdayIds);
+            $liveLineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($liveLineupRows)) {
+                $livePlayerIds = array_values(array_unique(array_column($liveLineupRows, 'player_id')));
+                $phLp = implode(',', array_fill(0, count($livePlayerIds), '?'));
+                $lprq = $this->con->prepare(
+                    "SELECT pr.player_id, pr.matchday_id,
+                            COALESCE(pr.goals, 0)   AS goals,
+                            COALESCE(pr.assists, 0) AS assists,
+                            COALESCE(pr.sds, 0)     AS sds,
+                            pis.position
+                     FROM player_rating pr
+                     LEFT JOIN player_in_season pis
+                            ON pis.player_id = pr.player_id AND pis.season_id = (
+                                SELECT season_id FROM matchday WHERE id = pr.matchday_id
+                            )
+                     WHERE pr.matchday_id IN ($phLmd) AND pr.player_id IN ($phLp)"
+                );
+                $lprq->execute(array_merge($liveMatchdayIds, $livePlayerIds));
+                $liveRatingByPlayerMd = [];
+                foreach ($lprq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $liveRatingByPlayerMd[$r['player_id']][$r['matchday_id']] = $r;
+                }
+
+                $liveAgg = [];
+                foreach ($liveLineupRows as $entry) {
+                    $pr = $liveRatingByPlayerMd[$entry['player_id']][$entry['matchday_id']] ?? null;
+                    if (!$pr) continue;
+                    $tId  = $entry['team_id'];
+                    $mdId = $entry['matchday_id'];
+                    if (!isset($liveAgg[$mdId][$tId])) {
+                        $liveAgg[$mdId][$tId] = ['goals' => 0, 'assists' => 0, 'sds_defender' => 0];
+                    }
+                    $liveAgg[$mdId][$tId]['goals']   += (int) $pr['goals'];
+                    $liveAgg[$mdId][$tId]['assists'] += (int) $pr['assists'];
+                    if ($pr['sds'] && in_array($pr['position'], ['GOALKEEPER', 'DEFENDER'])) {
+                        $liveAgg[$mdId][$tId]['sds_defender']++;
+                    }
+                }
+
+                foreach ($liveAgg as $mdId => $byTeam) {
+                    foreach ($byTeam as $tId => $agg) {
+                        // Füllt nur eine Lücke — eine echte team_rating-Zeile (sobald der
+                        // Spieltag abgeschlossen ist) hat immer Vorrang vor der Live-Schätzung.
+                        if (!isset($ratingMap[$mdId][$tId])) {
+                            $ratingMap[$mdId][$tId] = [
+                                'goals'        => $agg['goals'],
+                                'assists'      => $agg['assists'],
+                                'sds_defender' => $agg['sds_defender'],
+                                'invalid'      => false,
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
         usort($rows, fn($a, $b) => strcmp(
             $matchdayMap[$b['matchday_id']]['kickoff_date'] ?? '',
             $matchdayMap[$a['matchday_id']]['kickoff_date'] ?? ''
@@ -530,6 +606,10 @@ trait H2HPredictionTrait
                 $ratingMap[$row['matchday_id']][$row['home_team_id']] ?? null,
                 $ratingMap[$row['matchday_id']][$row['away_team_id']] ?? null
             );
+            // Gleiche Definition wie H2HComponent::isLive() im Frontend — Spieltag bereits
+            // angepfiffen, aber noch nicht abgeschlossen.
+            $isLive = $md && !$md['completed'] && !empty($md['kickoff_date'])
+                && strtotime($md['kickoff_date']) <= time();
 
             return [
                 'match_id'         => $row['match_id'],
@@ -543,6 +623,7 @@ trait H2HPredictionTrait
                 'away_color'       => $row['away_color'],
                 'home_goals'       => $goals['home'],
                 'away_goals'       => $goals['away'],
+                'live'             => $isLive,
                 'pick'             => $row['pick'],
                 // DECIMAL-Spalte kommt von PDO als String zurück — Cast hält den Frontend-Typ
                 // (number|null) ehrlich.

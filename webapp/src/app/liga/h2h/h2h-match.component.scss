@@ -1090,25 +1090,17 @@
       font-weight: $font-weight-bold;
       color: #fff;
 
-      svg {
+      svg, img {
         width: 10px;
         height: 10px;
+        object-fit: contain;
       }
 
+      // waiting bleibt eine graue Kreisfläche (kein eigenes Icon dafür vorhanden) — starting/
+      // sub/not-used nutzen die bereits farbigen part-*.svg-Icons, daher hier ohne eigenen
+      // Hintergrund/Textfarbe.
       &--waiting {
         background: #a4b0be;
-      }
-
-      &--starting {
-        color: #009432;
-      }
-
-      &--sub {
-        color: #ffc312;
-      }
-
-      &--not-used {
-        background: #ff3f34;
       }
     }
   }

@@ -110,18 +110,16 @@
                       </svg>
                     </span>
                   } @else if (p.participation === 'starting') {
-                    <span class="field-player__status field-player__status--starting" title="In der Startelf">11</span>
+                    <span class="field-player__status field-player__status--starting" title="In der Startelf">
+                      <img src="img/icons/part-starting.svg" alt="Startelf" />
+                    </span>
                   } @else if (p.participation === 'substitute') {
                     <span class="field-player__status field-player__status--sub" title="Eingewechselt">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
-                      </svg>
+                      <img src="img/icons/part-substitute.svg" alt="Eingewechselt" />
                     </span>
                   } @else {
                     <span class="field-player__status field-player__status--not-used" title="Nicht eingesetzt">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
+                      <img src="img/icons/part-none.svg" alt="Nicht eingesetzt" />
                     </span>
                   }
                   <span class="field-player__name">{{ p.displayname }}</span>
