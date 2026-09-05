@@ -125,7 +125,7 @@
                   <span class="team-dot" [style.background-color]="b.home_color"></span>
                 }
               </span>
-              <span class="bet-row__score h2h-score">
+              <span class="bet-row__score h2h-score" [class.bet-row__score--live]="b.live">
                 @if (b.home_goals !== null) {
                   <strong>{{ b.home_goals }}</strong><span class="h2h-sep">:</span><strong>{{ b.away_goals }}</strong>
                 } @else {

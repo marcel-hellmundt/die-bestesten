@@ -1156,7 +1156,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/h2h_prediction/mine',
-                        'description' => 'Alle eigenen Tipps über alle Saisons/Matches hinweg, fürs Wettbüro — je Tipp Partie (Teams), Endergebnis (home_goals/away_goals, null solange unentschieden/noch nicht gespielt), eigener pick, odds-Snapshot, stake (Einsatz in Lukaten, null wenn ohne Einsatz getippt), payout (voller Rückzahlungsbetrag stake*odds bei result=won, sonst null) und result (open/won/lost); absteigend nach Anpfiff sortiert (neueste zuerst) — Auth',
+                        'description' => 'Alle eigenen Tipps über alle Saisons/Matches hinweg, fürs Wettbüro — je Tipp Partie (Teams), Endergebnis (home_goals/away_goals, null solange unentschieden/noch nicht gespielt; bei bereits angepfiffenem, noch nicht abgeschlossenem Spieltag live aus player_rating x team_lineup geschätzt), live (bool, Spieltag angepfiffen aber noch nicht abgeschlossen — fürs gelb hervorgehobene Live-Ergebnis analog /liga/h2h), eigener pick, odds-Snapshot, stake (Einsatz in Lukaten, null wenn ohne Einsatz getippt), payout (voller Rückzahlungsbetrag stake*odds bei result=won, sonst null) und result (open/won/lost); absteigend nach Anpfiff sortiert (neueste zuerst) — Auth',
                     ],
                     [
                         'method' => 'GET',
