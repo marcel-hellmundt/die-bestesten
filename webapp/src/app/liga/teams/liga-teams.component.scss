@@ -180,6 +180,26 @@
   &__pos {
     white-space: nowrap;
   }
+
+  // Gekauft/Verkauft rechts neben der Formationsanzeige — margin-left:auto auf dem ersten der
+  // beiden Trade-Badges schiebt beide gemeinsam ans Zeilenende, solange genug Platz in der Zeile
+  // ist (:first-of-type griffe hier auf den Tag "span" statt die Klasse, daher eigene Modifier-
+  // Klasse statt Pseudoselektor).
+  &__trade {
+    white-space: nowrap;
+    color: $color-text-muted;
+    font-weight: $font-weight-medium;
+
+    &--first {
+      margin-left: auto;
+    }
+
+    @media (max-width: $mobile-breakpoint) {
+      &--first {
+        margin-left: 0;
+      }
+    }
+  }
 }
 
 // ── Vereine- / Vereinsherkunft-Cards ─────────────────────────────────────────

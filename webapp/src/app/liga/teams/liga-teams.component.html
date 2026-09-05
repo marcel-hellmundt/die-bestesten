@@ -92,6 +92,8 @@
                     >{{ stat.label }} {{ stat.count }}/{{ stat.min }}</span
                   >
                 }
+                <span class="squad-summary__trade squad-summary__trade--first">Gekauft {{ t.bought }}</span>
+                <span class="squad-summary__trade">Verkauft {{ t.sold }}</span>
               </div>
             </td>
             <td class="col-value">{{ formatValue(t.total_value) }}</td>
