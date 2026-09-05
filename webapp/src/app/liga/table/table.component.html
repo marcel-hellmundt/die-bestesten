@@ -171,6 +171,34 @@
             </div>
           </div>
         }
+
+        @if (participationStats().length > 0) {
+          <div class="card chart-card participation-card">
+            <span class="chart-card__label">Einsatzquote</span>
+            <div class="participation-list">
+              @for (r of participationStats(); track r.team_id) {
+                <a class="participation-row" [routerLink]="['/team', r.team_id]">
+                  <img
+                    class="participation-row__logo"
+                    [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
+                    [class.logo--placeholder]="logoErrors.has(r.team_id)"
+                    [alt]="r.team_name"
+                    (error)="onLogoError(r.team_id)"
+                  />
+                  <span class="participation-row__name">{{ r.team_name }}</span>
+                  <span
+                    class="participation-bar"
+                    [attr.title]="r.starting_pct + '% Startelf, ' + r.substitute_pct + '% Eingewechselt, ' + r.none_pct + '% kein Einsatz'"
+                  >
+                    <span class="participation-bar__seg participation-bar__seg--starting" [style.width.%]="r.starting_pct"></span>
+                    <span class="participation-bar__seg participation-bar__seg--substitute" [style.width.%]="r.substitute_pct"></span>
+                    <span class="participation-bar__seg participation-bar__seg--none" [style.width.%]="r.none_pct"></span>
+                  </span>
+                </a>
+              }
+            </div>
+          </div>
+        }
       </div>
     </div>
 

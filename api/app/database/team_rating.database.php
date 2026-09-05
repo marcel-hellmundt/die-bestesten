@@ -79,7 +79,7 @@ trait TeamRatingTrait
             }
             unset($t);
 
-            return ['standings' => $teams, 'luck' => ['lucky' => [], 'unlucky' => []], 'chart' => []];
+            return ['standings' => $teams, 'luck' => ['lucky' => [], 'unlucky' => []], 'chart' => [], 'participation' => []];
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -110,6 +110,7 @@ trait TeamRatingTrait
         unset($row);
 
         $luckData = $this->getSeasonLuckStats($ids, $numberById);
+        $participationCounts = $this->getSeasonParticipationStats($ids);
 
         // Build per-team season fine totals and chart series from per-matchday data
         $fineByTeam = [];
@@ -149,10 +150,27 @@ trait TeamRatingTrait
 
         unset($luckData['_all']);
 
+        $participationRows = [];
+        foreach ($rows as $row) {
+            $tid = $row['team_id'];
+            if (!isset($participationCounts[$tid])) continue;
+            $participationRows[] = array_merge(
+                [
+                    'team_id'   => $tid,
+                    'team_name' => $row['team_name'],
+                    'color'     => $row['color'],
+                    'season_id' => $row['season_id'],
+                ],
+                $participationCounts[$tid]
+            );
+        }
+        usort($participationRows, fn($a, $b) => $b['starting_pct'] <=> $a['starting_pct']);
+
         return [
             'standings' => $rows,
             'luck' => $luckData,
             'chart' => array_values($chartByTeam),
+            'participation' => $participationRows,
         ];
     }
 
@@ -255,6 +273,70 @@ trait TeamRatingTrait
             'hoelzerne_bank' => $hoelzerne_bank,
             'matchday_wins' => array_values($winsByTeam),
         ];
+    }
+
+    /**
+     * Wie sich die pro Spieltag nominierten Spieler (team_lineup.nominated=1) über die ganze
+     * Saison hinweg auf Startelf/Eingewechselt/kein Einsatz verteilen — je Team Summe + Prozent.
+     * Gleiches Zwei-Abfragen-plus-PHP-Merge-Muster wie getLineupStatusCounts() (dort nur für
+     * einen einzelnen Spieltag), hier über alle $matchdayIds aufsummiert. Bewusst nur eine
+     * "kein Einsatz"-Kategorie (statt dort waiting/not_used getrennt) — für die Saisonstatistik
+     * auf /liga/tabelle soll ein fehlender player_rating-Eintrag genauso zählen wie eine
+     * vorhandene Zeile mit participation=NULL.
+     */
+    private function getSeasonParticipationStats(array $matchdayIds): array
+    {
+        if (empty($matchdayIds)) return [];
+
+        $mph = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $lq = $this->con_league->prepare(
+            "SELECT team_id, player_id, matchday_id FROM team_lineup
+             WHERE matchday_id IN ($mph) AND nominated = 1"
+        );
+        $lq->execute($matchdayIds);
+        $lineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($lineupRows)) return [];
+
+        $playerIds = array_values(array_unique(array_column($lineupRows, 'player_id')));
+        $pph = implode(',', array_fill(0, count($playerIds), '?'));
+        $prq = $this->con->prepare(
+            "SELECT player_id, matchday_id, participation FROM player_rating
+             WHERE matchday_id IN ($mph) AND player_id IN ($pph)"
+        );
+        $prq->execute(array_merge($matchdayIds, $playerIds));
+        $ratingByKey = [];
+        foreach ($prq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $ratingByKey[$r['player_id'] . '|' . $r['matchday_id']] = $r['participation'];
+        }
+
+        $counts = [];
+        foreach ($lineupRows as $row) {
+            $tid = $row['team_id'];
+            if (!isset($counts[$tid])) {
+                $counts[$tid] = ['starting' => 0, 'substitute' => 0, 'none' => 0];
+            }
+            $participation = $ratingByKey[$row['player_id'] . '|' . $row['matchday_id']] ?? null;
+            if ($participation === 'starting') {
+                $counts[$tid]['starting']++;
+            } elseif ($participation === 'substitute') {
+                $counts[$tid]['substitute']++;
+            } else {
+                $counts[$tid]['none']++;
+            }
+        }
+
+        foreach ($counts as &$c) {
+            $total = $c['starting'] + $c['substitute'] + $c['none'];
+            $c['total'] = $total;
+            // Rundungsrest auf starting absorbieren (gleiches Muster wie buildPickPie() im
+            // Frontend), damit die drei Prozentwerte in Summe immer exakt 100 ergeben.
+            $c['substitute_pct'] = $total > 0 ? (int) round($c['substitute'] / $total * 100) : 0;
+            $c['none_pct']       = $total > 0 ? (int) round($c['none'] / $total * 100) : 0;
+            $c['starting_pct']   = 100 - $c['substitute_pct'] - $c['none_pct'];
+        }
+        unset($c);
+
+        return $counts;
     }
 
     public function getTeamRatingsByActiveSeason(string $seasonId, ?int $matchdayNumber = null): array|false

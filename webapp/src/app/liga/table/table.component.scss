@@ -295,6 +295,61 @@
   }
 }
 
+.participation-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.participation-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  color: inherit;
+  text-decoration: none;
+}
+
+.participation-row__logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+
+  &.logo--placeholder {
+    opacity: 0.5;
+  }
+}
+
+.participation-row__name {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Gleiche Farbsemantik wie .status-count in matchday.component.scss (Startelf/Eingewechselt/
+// kein Einsatz sollen app-weit gleich aussehen).
+.participation-bar {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 40px;
+  height: 8px;
+  border-radius: $radius-full;
+  overflow: hidden;
+  background: $color-border;
+}
+
+.participation-bar__seg {
+  height: 100%;
+
+  &--starting   { background: #009432; }
+  &--substitute { background: #ffc312; }
+  &--none       { background: #ff3f34; }
+}
+
 .chart-container {
   background: $color-surface;
   border: 1px solid $color-border;

@@ -123,6 +123,7 @@ export class TableComponent {
   goldeneBuerste = computed(() => (this.state().data?.luck?.goldene_buerste  ?? []) as any[]);
   hoelzerneBand  = computed(() => (this.state().data?.luck?.hoelzerne_bank   ?? []) as any[]);
   matchdayWins   = computed(() => (this.state().data?.luck?.matchday_wins    ?? []) as any[]);
+  participationStats = computed(() => (this.state().data?.participation ?? []) as any[]);
   loading        = computed(() => this.state().loading);
   error          = computed(() => this.state().error);
 
