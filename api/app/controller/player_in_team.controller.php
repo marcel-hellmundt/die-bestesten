@@ -21,9 +21,11 @@ class PlayerInTeamController extends _BaseController
             return ['status' => false, 'message' => 'team_id or player_id required'];
         }
         if (!empty($this->params['include_former'])) {
+            $formerResult = $this->db->getFormerSquadByTeamId($teamId);
             return [
-                'current' => $this->db->getSquadByTeamId($teamId),
-                'former'  => $this->db->getFormerSquadByTeamId($teamId),
+                'current'       => $this->db->getSquadByTeamId($teamId),
+                'former'        => $formerResult['former'],
+                'drafted_squad' => $formerResult['drafted_squad'],
             ];
         }
         return $this->db->getSquadByTeamId($teamId);
