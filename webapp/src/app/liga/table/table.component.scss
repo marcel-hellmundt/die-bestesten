@@ -318,6 +318,7 @@
 
   @media (max-width: $mobile-breakpoint) {
     flex-basis: auto;
+    width: 100%;
     max-width: 100%;
   }
 }
@@ -342,6 +343,11 @@
   grid-template-columns: auto auto 1fr;
   align-items: center;
   gap: $space-2;
+
+  // Name ausgeblendet -> nur noch 2 sichtbare Spalten (Logo, Balken).
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: auto 1fr;
+  }
 }
 
 // display:contents löst die Zeile optisch auf, damit Logo/Name/Balken direkte Grid-Items von
@@ -366,6 +372,10 @@
   font-size: $font-sm;
   font-weight: $font-weight-medium;
   white-space: nowrap;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
 }
 
 // Gleiche Farbsemantik wie .status-count in matchday.component.scss (Startelf/Eingewechselt/

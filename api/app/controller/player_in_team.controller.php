@@ -21,11 +21,26 @@ class PlayerInTeamController extends _BaseController
             return ['status' => false, 'message' => 'team_id or player_id required'];
         }
         if (!empty($this->params['include_former'])) {
+            $current      = $this->db->getSquadByTeamId($teamId);
             $formerResult = $this->db->getFormerSquadByTeamId($teamId);
+
+            // Aktuell noch im Kader stehende zugeloste Spieler zusätzlich in drafted_squad
+            // aufnehmen (in_squad=true) — vor den bereits am Spieltag 1 wieder verkauften
+            // Zulosungen (in_squad=false), die aus getFormerSquadByTeamId() kommen.
+            $draftedInSquad = array_values(array_map(function ($p) {
+                $p['in_squad'] = true;
+                return $p;
+            }, array_filter($current, fn($p) => $p['is_drafted'])));
+
+            $draftedSold = array_map(function ($p) {
+                $p['in_squad'] = false;
+                return $p;
+            }, $formerResult['drafted_squad']);
+
             return [
-                'current'       => $this->db->getSquadByTeamId($teamId),
+                'current'       => $current,
                 'former'        => $formerResult['former'],
-                'drafted_squad' => $formerResult['drafted_squad'],
+                'drafted_squad' => array_merge($draftedInSquad, $draftedSold),
             ];
         }
         return $this->db->getSquadByTeamId($teamId);

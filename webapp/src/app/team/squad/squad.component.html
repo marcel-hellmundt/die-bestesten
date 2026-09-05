@@ -165,6 +165,9 @@
                 </span>
                 <span class="former-name">
                   <span class="former-name__text">{{ p.displayname }}</span>
+                  @if (p.in_squad) {
+                    <span class="drafted-badge">Im Kader</span>
+                  }
                 </span>
                 <span class="former-points">{{ p.points }}</span>
               </a>
