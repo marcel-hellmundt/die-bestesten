@@ -190,6 +190,52 @@ class Database
         return $q->fetchColumn() ?: null;
     }
 
+    /**
+     * Sonderfall Liga 3d6d3a32-555b-11f1-af97-c81f66ca5914 / Saison
+     * 7fc6c05b-dccc-4280-9f8c-0eba4a095d64 (2. Liga): der Spielbetrieb begann dort erst am
+     * Spieltag 2 statt Spieltag 1 (Spieltag 1 existiert als Datensatz, wurde für diese Division
+     * aber nie gespielt — daher in /team/:id/aufstellung auch nicht im Spieltag-Dropdown
+     * wählbar). assignDraftPlayers() setzt from_matchday_id bei der Zulosung trotzdem regulär
+     * auf Spieltag 1 der Division — ein Spieler, der direkt wieder verkauft wurde, landete
+     * dadurch mit to_matchday_id auf Spieltag 2 (dem tatsächlichen ersten Transferfenster),
+     * wodurch der sonst genutzte Abgleich from_matchday_id === to_matchday_id (siehe
+     * resolveDraftFlipMatchdayId()) fehlschlug und der Spieler fälschlich unter "Ehemalige"
+     * statt "Zugeloster Kader" blieb. Bewusst hart codiert statt konfigurierbar — einmaliger
+     * Einführungs-Sonderfall dieser einen Liga+Saison, ab der Folgesaison läuft es reguär wieder
+     * ab Spieltag 1.
+     */
+    protected function draftFlipMatchdayNumber(string $seasonId): int
+    {
+        $leagueId = $GLOBALS['auth_league_id'] ?? null;
+        if ($leagueId === '3d6d3a32-555b-11f1-af97-c81f66ca5914'
+            && $seasonId === '7fc6c05b-dccc-4280-9f8c-0eba4a095d64'
+        ) {
+            return 2;
+        }
+        return 1;
+    }
+
+    /**
+     * Löst den tatsächlich für den "Zulosung sofort wieder verkauft"-Abgleich relevanten
+     * Spieltag auf — im Regelfall identisch mit $draftMatchdayId (dem Spieltag, an dem laut
+     * transaction.matchday_id zugelost wurde), außer für den Sonderfall aus
+     * draftFlipMatchdayNumber().
+     */
+    protected function resolveDraftFlipMatchdayId(string $seasonId, string $draftMatchdayId): string
+    {
+        $number = $this->draftFlipMatchdayNumber($seasonId);
+        if ($number === 1) return $draftMatchdayId;
+
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId === null) return $draftMatchdayId;
+
+        $q = $this->con->prepare(
+            "SELECT id FROM matchday WHERE season_id = :s AND division_id = :d AND number = :n LIMIT 1"
+        );
+        $q->execute([':s' => $seasonId, ':d' => $divisionId, ':n' => $number]);
+        return $q->fetchColumn() ?: $draftMatchdayId;
+    }
+
     protected function getLeagueFineRuleset(): string
     {
         $leagueId = $GLOBALS['auth_league_id'] ?? null;

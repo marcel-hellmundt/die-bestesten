@@ -51,13 +51,27 @@ trait PlayerInTeamTrait
         return $players;
     }
 
+    /**
+     * Ehemalige + "Zugeloster Kader" (zugeloste Spieler, die noch am Zulosungs-Spieltag selbst
+     * wieder verkauft wurden, bevor sie je wirklich Teil des Kaders waren — sollen nicht als
+     * reguläre "Ehemalige" zählen). Eine Zulosung hat immer from_matchday_id = Spieltag 1 der
+     * Division/Saison (siehe LeagueTrait::assignDraftPlayers()) — "am selben Spieltag wieder
+     * verkauft" prüft daher normalerweise denselben Stint auf to_matchday_id === from_matchday_id
+     * (siehe resolveDraftFlipMatchdayId() für die eine bekannte Ausnahme, in der der tatsächliche
+     * Saisonstart einer Division erst Spieltag 2 war). Ein Spieler mit einem zusätzlichen,
+     * späteren Kauf+Verkauf beim selben Team bleibt trotzdem in "former" (kann also in beiden
+     * Listen auftauchen) — nur wer ausschließlich den Zulosungs-Flip als Abgang hat, wird
+     * komplett nach drafted_squad verschoben.
+     */
     public function getFormerSquadByTeamId(string $teamId): array
     {
+        $empty = ['former' => [], 'drafted_squad' => []];
+
         // Get season_id from team
         $tq = $this->con_league->prepare("SELECT season_id FROM team WHERE id = :id LIMIT 1");
         $tq->execute([':id' => $teamId]);
         $team = $tq->fetch(PDO::FETCH_ASSOC);
-        if (!$team) return [];
+        if (!$team) return $empty;
         $seasonId = $team['season_id'];
 
         // Active player_ids for exclusion
@@ -77,9 +91,68 @@ trait PlayerInTeamTrait
 
         // Exclude re-bought players
         $formerIds = array_values(array_diff($formerIds, $activeIds));
-        if (empty($formerIds)) return [];
+        if (empty($formerIds)) return $empty;
 
-        return $this->markDrafted($this->fetchPlayerDetails($formerIds, $seasonId), $teamId);
+        $players = $this->markDrafted($this->fetchPlayerDetails($formerIds, $seasonId), $teamId);
+
+        $draftedPlayers = array_values(array_filter($players, fn($p) => $p['is_drafted']));
+        $draftedSquad   = [];
+        $excludeFromFormer = [];
+
+        if (!empty($draftedPlayers)) {
+            $draftTxQ = $this->con_league->prepare(
+                "SELECT matchday_id, SUBSTRING(reason, LENGTH('Draft-Zuweisung: ') + 1) AS displayname
+                 FROM transaction WHERE team_id = :team_id AND reason LIKE 'Draft-Zuweisung: %'"
+            );
+            $draftTxQ->execute([':team_id' => $teamId]);
+            $draftMatchdayByName = array_column($draftTxQ->fetchAll(PDO::FETCH_ASSOC), 'matchday_id', 'displayname');
+
+            $draftedIds = array_column($draftedPlayers, 'id');
+            $ph = implode(',', array_fill(0, count($draftedIds), '?'));
+            $stintQ = $this->con_league->prepare(
+                "SELECT player_id, from_matchday_id, to_matchday_id FROM player_in_team
+                 WHERE team_id = ? AND player_id IN ($ph)"
+            );
+            $stintQ->execute(array_merge([$teamId], $draftedIds));
+            $stintsByPlayer = [];
+            foreach ($stintQ->fetchAll(PDO::FETCH_ASSOC) as $s) {
+                $stintsByPlayer[$s['player_id']][] = $s;
+            }
+
+            $flipMatchdayCache = [];
+            foreach ($draftedPlayers as $p) {
+                $draftMdId = $draftMatchdayByName[$p['displayname']] ?? null;
+                if ($draftMdId === null) continue;
+
+                if (!isset($flipMatchdayCache[$draftMdId])) {
+                    $flipMatchdayCache[$draftMdId] = $this->resolveDraftFlipMatchdayId($seasonId, $draftMdId);
+                }
+                $flipMdId = $flipMatchdayCache[$draftMdId];
+
+                $stints = $stintsByPlayer[$p['id']] ?? [];
+                $departureStints = array_filter($stints, fn($s) => $s['to_matchday_id'] !== null);
+                $flipStint = null;
+                foreach ($departureStints as $s) {
+                    if ($s['from_matchday_id'] === $draftMdId && $s['to_matchday_id'] === $flipMdId) {
+                        $flipStint = $s;
+                        break;
+                    }
+                }
+                if ($flipStint === null) continue;
+
+                $draftedSquad[] = $p;
+                // Nur ausschließen, wenn der Zulosungs-Flip der EINZIGE Abgangs-Stint ist —
+                // ein weiterer, späterer Kauf+Verkauf soll den Spieler weiterhin in "former"
+                // zeigen.
+                if (count($departureStints) === 1) {
+                    $excludeFromFormer[$p['id']] = true;
+                }
+            }
+        }
+
+        $former = array_values(array_filter($players, fn($p) => !isset($excludeFromFormer[$p['id']])));
+
+        return ['former' => $former, 'drafted_squad' => $draftedSquad];
     }
 
     public function getTeamByPlayerId(string $playerId): ?array

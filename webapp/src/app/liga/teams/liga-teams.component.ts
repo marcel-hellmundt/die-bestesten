@@ -18,6 +18,8 @@ interface LigaTeam {
   squad_valid: boolean;
   total_value: number;
   position_counts: Record<string, number>;
+  bought: number;
+  sold: number;
 }
 
 interface ClubLeadingTeamPlayer {

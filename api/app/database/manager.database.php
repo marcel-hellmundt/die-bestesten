@@ -480,6 +480,76 @@ trait ManagerTrait
         }
         unset($team);
 
+        // Gekauft/Verkauft über die ganze Saison je Team (für /liga/teams) — alle
+        // player_in_team-Stints (nicht nur aktive) gegen die Draft-Zuweisungen dieses Teams
+        // abgleichen, um Zulosungen von echten Käufen zu unterscheiden. Gleiches
+        // Erkennungsmuster wie markDrafted()/getFormerSquadByTeamId() in
+        // player_in_team.database.php (dort pro Team+Spielername, hier für alle Teams auf
+        // einmal), da transaction keine player_id-Spalte hat und Zulosung+Kauf/Verkauf nur über
+        // den reason-Text + matchday_id korreliert werden können.
+        $stintQ = $this->con_league->prepare(
+            "SELECT team_id, player_id, from_matchday_id, to_matchday_id
+             FROM player_in_team WHERE team_id IN ($ph)"
+        );
+        $stintQ->execute($teamIds);
+        $allStints = $stintQ->fetchAll(PDO::FETCH_ASSOC);
+
+        $stintPlayerIds  = array_values(array_unique(array_column($allStints, 'player_id')));
+        $displaynameById = [];
+        if (!empty($stintPlayerIds)) {
+            $spp = implode(',', array_fill(0, count($stintPlayerIds), '?'));
+            $dnq = $this->con->prepare("SELECT id, displayname FROM player WHERE id IN ($spp)");
+            $dnq->execute($stintPlayerIds);
+            $displaynameById = array_column($dnq->fetchAll(PDO::FETCH_ASSOC), 'displayname', 'id');
+        }
+
+        $draftTxQ = $this->con_league->prepare(
+            "SELECT team_id, matchday_id, SUBSTRING(reason, LENGTH('Draft-Zuweisung: ') + 1) AS displayname
+             FROM transaction WHERE team_id IN ($ph) AND reason LIKE 'Draft-Zuweisung: %'"
+        );
+        $draftTxQ->execute($teamIds);
+        $draftMatchdayByTeamName = [];
+        foreach ($draftTxQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $draftMatchdayByTeamName[$r['team_id'] . '|' . $r['displayname']] = $r['matchday_id'];
+        }
+
+        $bought = array_fill_keys($teamIds, 0);
+        $sold   = array_fill_keys($teamIds, 0);
+        $flipMatchdayCache = [];
+        foreach ($allStints as $s) {
+            $tid         = $s['team_id'];
+            $displayname = $displaynameById[$s['player_id']] ?? null;
+            $draftMdId   = $displayname !== null ? ($draftMatchdayByTeamName["$tid|$displayname"] ?? null) : null;
+            // Zulosung erkannt an genau dem Stint, dessen from_matchday_id mit der
+            // Draft-Transaktion übereinstimmt (ein Spieler kann theoretisch mehrere Stints im
+            // selben Team haben — nur der zur Zulosung passende zählt nicht als Kauf).
+            $isDraftStint = $draftMdId !== null && $s['from_matchday_id'] === $draftMdId;
+
+            if (!$isDraftStint) {
+                $bought[$tid]++;
+            }
+            if ($s['to_matchday_id'] !== null) {
+                // Zulosung zählt nur als Verkauf, wenn sie NICHT noch am selben (effektiven,
+                // siehe resolveDraftFlipMatchdayId()) Spieltag wieder abgegeben wurde.
+                $isDraftFlip = false;
+                if ($isDraftStint) {
+                    if (!isset($flipMatchdayCache[$draftMdId])) {
+                        $flipMatchdayCache[$draftMdId] = $this->resolveDraftFlipMatchdayId($seasonId, $draftMdId);
+                    }
+                    $isDraftFlip = $s['to_matchday_id'] === $flipMatchdayCache[$draftMdId];
+                }
+                if (!$isDraftFlip) {
+                    $sold[$tid]++;
+                }
+            }
+        }
+
+        foreach ($teams as &$team) {
+            $team['bought'] = $bought[$team['id']] ?? 0;
+            $team['sold']   = $sold[$team['id']]   ?? 0;
+        }
+        unset($team);
+
         return $teams;
     }
 

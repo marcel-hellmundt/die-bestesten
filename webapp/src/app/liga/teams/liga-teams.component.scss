@@ -75,6 +75,16 @@
   min-width: 220px;
 }
 
+.col-num {
+  width: 90px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: $font-weight-semibold;
+
+  &--bought { color: $color-success; }
+  &--sold   { color: $color-danger; }
+}
+
 .col-value {
   width: 140px;
   text-align: right;
@@ -123,6 +133,9 @@
   .col-squad {
     width: 32%;
     min-width: unset;
+  }
+  .col-num {
+    display: none;
   }
   .col-value {
     width: 30%;

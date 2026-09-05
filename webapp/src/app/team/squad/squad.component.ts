@@ -50,22 +50,24 @@ export class SquadComponent {
           ),
         }).pipe(
           map(({ squad, offers }) => ({
-            current:       squad.current  as any[],
-            former:        squad.former   as any[],
+            current:       squad.current        as any[],
+            former:        squad.former         as any[],
+            draftedSquad:  squad.drafted_squad   as any[],
             pendingOffers: (offers.offers as any[]).filter(o => o.status === 'pending'),
             loading: false,
             error: null as string | null,
           })),
-          startWith({ current: [] as any[], former: [] as any[], pendingOffers: [] as any[], loading: true, error: null as string | null }),
-          catchError(() => of({ current: [] as any[], former: [] as any[], pendingOffers: [] as any[], loading: false, error: 'Fehler beim Laden' }))
+          startWith({ current: [] as any[], former: [] as any[], draftedSquad: [] as any[], pendingOffers: [] as any[], loading: true, error: null as string | null }),
+          catchError(() => of({ current: [] as any[], former: [] as any[], draftedSquad: [] as any[], pendingOffers: [] as any[], loading: false, error: 'Fehler beim Laden' }))
         )
       )
     ),
-    { initialValue: { current: [] as any[], former: [] as any[], pendingOffers: [] as any[], loading: true, error: null as string | null } }
+    { initialValue: { current: [] as any[], former: [] as any[], draftedSquad: [] as any[], pendingOffers: [] as any[], loading: true, error: null as string | null } }
   );
 
   players       = computed(() => this.state().current);
   former        = computed(() => this.state().former);
+  draftedSquad  = computed(() => this.state().draftedSquad);
   pendingOffers = computed(() => this.state().pendingOffers);
   loading       = computed(() => this.state().loading);
   error         = computed(() => this.state().error);
