@@ -196,9 +196,10 @@ $mobile-nav-height: 64px;
       font-weight: $font-weight-bold;
       color: #fff;
 
-      svg {
+      svg, img {
         width: 16px;
         height: 16px;
+        object-fit: contain;
       }
 
       @media (max-width: $mobile-breakpoint) {
@@ -206,26 +207,17 @@ $mobile-nav-height: 64px;
         height: 18px;
         font-size: 9px;
 
-        svg {
+        svg, img {
           width: 10px;
           height: 10px;
         }
       }
 
+      // waiting bleibt eine graue Kreisfläche (kein eigenes Icon dafür vorhanden) — starting/
+      // sub/not-used nutzen die bereits farbigen part-*.svg-Icons, daher hier ohne eigenen
+      // Hintergrund/Textfarbe.
       &--waiting {
         background: #a4b0be;
-      }
-
-      &--starting {
-        color: #009432;
-      }
-
-      &--sub {
-        color: #ffc312;
-      }
-
-      &--not-used {
-        background: #ff3f34;
       }
     }
 

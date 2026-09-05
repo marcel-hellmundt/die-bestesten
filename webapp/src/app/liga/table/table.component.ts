@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
@@ -179,6 +179,66 @@ export class TableComponent {
 
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
+
+  // ── Custom Hover-Tooltip über einem Einsatzquote-Balken — gleiches Edge-Clamp-Muster wie
+  // betting-office.component.ts's onWinHover()/onWinLeave() bzw. h2h-match.component.ts's
+  // onEntryHover()/onEntryLeave().
+  @ViewChild('participationTooltipEl') participationTooltipEl?: ElementRef<HTMLElement>;
+  tooltipRow    = signal<any | null>(null);
+  tooltipPos    = signal<{ top: number; left: number } | null>(null);
+  tooltipBelow  = signal(false);
+  tooltipReady  = signal(false);
+
+  private static readonly TOOLTIP_EDGE_MARGIN = 24;
+  private hoverSeq = 0;
+
+  onParticipationHover(event: MouseEvent, r: any): void {
+    const seq = ++this.hoverSeq;
+    // Handler hängt am ganzen (display:contents-)Zeilen-Link, damit der Tooltip nicht springt,
+    // wenn man z.B. vom Namen Richtung Balken bewegt — currentTarget selbst hat aber keine eigene
+    // Box (display:contents), daher immer am Balken innerhalb der Zeile verankern.
+    const rowEl = event.currentTarget as HTMLElement;
+    const anchorEl = rowEl.querySelector('.participation-bar') ?? rowEl;
+    const rect = anchorEl.getBoundingClientRect();
+    this.tooltipRow.set(r);
+    this.tooltipBelow.set(false);
+    this.tooltipReady.set(false);
+    this.tooltipPos.set({ top: rect.top, left: rect.left + rect.width / 2 });
+
+    requestAnimationFrame(() => {
+      const el = this.participationTooltipEl?.nativeElement;
+      if (!el || seq !== this.hoverSeq) return;
+
+      const margin = TableComponent.TOOLTIP_EDGE_MARGIN;
+      let top   = rect.top;
+      let left  = rect.left + rect.width / 2;
+      let below = false;
+
+      const tipRect = el.getBoundingClientRect();
+
+      if (tipRect.top < margin) {
+        below = true;
+        top = rect.bottom;
+      }
+
+      const halfWidth = tipRect.width / 2;
+      const maxLeft   = window.innerWidth - margin - halfWidth;
+      const minLeft   = margin + halfWidth;
+      if (left > maxLeft) left = maxLeft;
+      if (left < minLeft) left = minLeft;
+
+      this.tooltipBelow.set(below);
+      this.tooltipPos.set({ top, left });
+      this.tooltipReady.set(true);
+    });
+  }
+
+  onParticipationLeave(): void {
+    this.hoverSeq++;
+    this.tooltipRow.set(null);
+    this.tooltipPos.set(null);
+    this.tooltipReady.set(false);
+  }
 
   constructor() {
     this.cache.ensureSeasons();

@@ -669,16 +669,24 @@
   }
 }
 
+// height:36px matcht .select/.nav-arrow daneben (Spieltag-/Saison-Auswahl) — Buttons darin
+// füllen die volle Höhe statt sich über vertikales Padding auf ihre eigene Höhe zu bringen.
 .stats-mode-toggle {
   display: inline-flex;
+  align-items: center;
+  height: 36px;
   margin-left: auto;
   border: 1px solid $color-border;
   border-radius: $radius-full;
   padding: 2px;
   gap: 2px;
+  box-sizing: border-box;
 
   &__btn {
-    padding: $space-1 $space-4;
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 $space-4;
     border: none;
     border-radius: $radius-full;
     background: transparent;
