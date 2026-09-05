@@ -515,6 +515,7 @@ trait ManagerTrait
 
         $bought = array_fill_keys($teamIds, 0);
         $sold   = array_fill_keys($teamIds, 0);
+        $flipMatchdayCache = [];
         foreach ($allStints as $s) {
             $tid         = $s['team_id'];
             $displayname = $displaynameById[$s['player_id']] ?? null;
@@ -528,9 +529,15 @@ trait ManagerTrait
                 $bought[$tid]++;
             }
             if ($s['to_matchday_id'] !== null) {
-                // Zulosung zählt nur als Verkauf, wenn sie NICHT noch am selben Spieltag (also
-                // Spieltag 1) wieder abgegeben wurde.
-                $isDraftFlip = $isDraftStint && $s['to_matchday_id'] === $draftMdId;
+                // Zulosung zählt nur als Verkauf, wenn sie NICHT noch am selben (effektiven,
+                // siehe resolveDraftFlipMatchdayId()) Spieltag wieder abgegeben wurde.
+                $isDraftFlip = false;
+                if ($isDraftStint) {
+                    if (!isset($flipMatchdayCache[$draftMdId])) {
+                        $flipMatchdayCache[$draftMdId] = $this->resolveDraftFlipMatchdayId($seasonId, $draftMdId);
+                    }
+                    $isDraftFlip = $s['to_matchday_id'] === $flipMatchdayCache[$draftMdId];
+                }
                 if (!$isDraftFlip) {
                     $sold[$tid]++;
                 }

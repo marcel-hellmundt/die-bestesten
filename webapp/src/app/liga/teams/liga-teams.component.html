@@ -38,6 +38,8 @@
           <th class="col-team">Team</th>
           <th class="col-valid"></th>
           <th class="col-squad"></th>
+          <th class="col-num col-num--bought">Gekauft</th>
+          <th class="col-num col-num--sold">Verkauft</th>
           <th class="col-value">Marktwert</th>
         </tr>
       </thead>
@@ -92,10 +94,10 @@
                     >{{ stat.label }} {{ stat.count }}/{{ stat.min }}</span
                   >
                 }
-                <span class="squad-summary__trade squad-summary__trade--first">Gekauft {{ t.bought }}</span>
-                <span class="squad-summary__trade">Verkauft {{ t.sold }}</span>
               </div>
             </td>
+            <td class="col-num col-num--bought">{{ t.bought }}</td>
+            <td class="col-num col-num--sold">{{ t.sold }}</td>
             <td class="col-value">{{ formatValue(t.total_value) }}</td>
           </tr>
         }

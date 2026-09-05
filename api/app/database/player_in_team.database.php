@@ -52,14 +52,16 @@ trait PlayerInTeamTrait
     }
 
     /**
-     * Ehemalige + "Zugeloster Kader" (zugeloste Spieler, die noch am Spieltag 1 selbst wieder
-     * verkauft wurden, bevor sie je wirklich Teil des Kaders waren — sollen nicht als reguläre
-     * "Ehemalige" zählen). Eine Zulosung hat immer from_matchday_id = Spieltag 1 der Division/
-     * Saison (siehe LeagueTrait::assignDraftPlayers()) — "am Spieltag 1 wieder verkauft" prüft
-     * daher einfach denselben Stint auf to_matchday_id === from_matchday_id. Ein Spieler mit
-     * einem zusätzlichen, späteren Kauf+Verkauf beim selben Team bleibt trotzdem in "former"
-     * (kann also in beiden Listen auftauchen) — nur wer ausschließlich den Zulosungs-Flip als
-     * Abgang hat, wird komplett nach drafted_squad verschoben.
+     * Ehemalige + "Zugeloster Kader" (zugeloste Spieler, die noch am Zulosungs-Spieltag selbst
+     * wieder verkauft wurden, bevor sie je wirklich Teil des Kaders waren — sollen nicht als
+     * reguläre "Ehemalige" zählen). Eine Zulosung hat immer from_matchday_id = Spieltag 1 der
+     * Division/Saison (siehe LeagueTrait::assignDraftPlayers()) — "am selben Spieltag wieder
+     * verkauft" prüft daher normalerweise denselben Stint auf to_matchday_id === from_matchday_id
+     * (siehe resolveDraftFlipMatchdayId() für die eine bekannte Ausnahme, in der der tatsächliche
+     * Saisonstart einer Division erst Spieltag 2 war). Ein Spieler mit einem zusätzlichen,
+     * späteren Kauf+Verkauf beim selben Team bleibt trotzdem in "former" (kann also in beiden
+     * Listen auftauchen) — nur wer ausschließlich den Zulosungs-Flip als Abgang hat, wird
+     * komplett nach drafted_squad verschoben.
      */
     public function getFormerSquadByTeamId(string $teamId): array
     {
@@ -117,15 +119,21 @@ trait PlayerInTeamTrait
                 $stintsByPlayer[$s['player_id']][] = $s;
             }
 
+            $flipMatchdayCache = [];
             foreach ($draftedPlayers as $p) {
                 $draftMdId = $draftMatchdayByName[$p['displayname']] ?? null;
                 if ($draftMdId === null) continue;
+
+                if (!isset($flipMatchdayCache[$draftMdId])) {
+                    $flipMatchdayCache[$draftMdId] = $this->resolveDraftFlipMatchdayId($seasonId, $draftMdId);
+                }
+                $flipMdId = $flipMatchdayCache[$draftMdId];
 
                 $stints = $stintsByPlayer[$p['id']] ?? [];
                 $departureStints = array_filter($stints, fn($s) => $s['to_matchday_id'] !== null);
                 $flipStint = null;
                 foreach ($departureStints as $s) {
-                    if ($s['from_matchday_id'] === $draftMdId && $s['to_matchday_id'] === $draftMdId) {
+                    if ($s['from_matchday_id'] === $draftMdId && $s['to_matchday_id'] === $flipMdId) {
                         $flipStint = $s;
                         break;
                     }
