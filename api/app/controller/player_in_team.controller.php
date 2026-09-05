@@ -25,8 +25,11 @@ class PlayerInTeamController extends _BaseController
             $formerResult = $this->db->getFormerSquadByTeamId($teamId);
 
             // Aktuell noch im Kader stehende zugeloste Spieler zusätzlich in drafted_squad
-            // aufnehmen (in_squad=true) — vor den bereits am Spieltag 1 wieder verkauften
-            // Zulosungen (in_squad=false), die aus getFormerSquadByTeamId() kommen.
+            // aufnehmen (in_squad=true) neben den bereits am Spieltag 1 wieder verkauften
+            // Zulosungen (in_squad=false) aus getFormerSquadByTeamId() — beide Gruppen kommen
+            // bereits einzeln nach Position/Punkte/Marktwert sortiert aus fetchPlayerDetails(),
+            // nach dem Zusammenführen daher gleich wieder neu sortieren (nicht nach
+            // in_squad-Status gruppiert stehen lassen).
             $draftedInSquad = array_values(array_map(function ($p) {
                 $p['in_squad'] = true;
                 return $p;
@@ -37,10 +40,18 @@ class PlayerInTeamController extends _BaseController
                 return $p;
             }, $formerResult['drafted_squad']);
 
+            $positionOrder = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
+            $draftedSquad  = array_merge($draftedInSquad, $draftedSold);
+            usort($draftedSquad, fn($a, $b) =>
+                ($positionOrder[$a['position']] ?? 9) <=> ($positionOrder[$b['position']] ?? 9)
+                ?: $b['points'] <=> $a['points']
+                ?: $b['price'] <=> $a['price']
+            );
+
             return [
                 'current'       => $current,
                 'former'        => $formerResult['former'],
-                'drafted_squad' => array_merge($draftedInSquad, $draftedSold),
+                'drafted_squad' => $draftedSquad,
             ];
         }
         return $this->db->getSquadByTeamId($teamId);
