@@ -25,16 +25,21 @@ trait OfferTrait
             $activeSeasonId = $this->getActiveSeasonId();
 
             $ph  = implode(',', array_fill(0, count($playerIds), '?'));
+            // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A) —
+            // sonst könnte ein Spieler mit 2 Zeilen (Divisionswechsel) mit der falschen
+            // Position/dem falschen Foto-Flag angezeigt werden.
             $pq  = $this->con->prepare(
                 "SELECT p.id, p.displayname, pis.photo_uploaded, pis.position,
                         pic.club_id, c.logo_uploaded AS club_logo_uploaded
                  FROM player p
-                 LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
                  LEFT JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
+                 LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic.club_id AND cis_cur.season_id = ?
+                 LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
+                     AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
                  LEFT JOIN club c ON c.id = pic.club_id
                  WHERE p.id IN ($ph)"
             );
-            $pq->execute(array_merge([$activeSeasonId], array_values($playerIds)));
+            $pq->execute(array_merge([$activeSeasonId, $activeSeasonId], array_values($playerIds)));
             foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) {
                 $playerMap[$p['id']] = [
                     'displayname'        => $p['displayname'],
@@ -152,8 +157,18 @@ trait OfferTrait
         }
 
         // 2b. Position limit: current squad + pending offers must not exceed max
+        // pis auf die Zeile der AKTUELLEN Division des angebotenen Spielers eingeschränkt (Fragment A).
         $posQ = $this->con->prepare(
-            "SELECT position FROM player_in_season WHERE player_id = :pid AND season_id = :sid LIMIT 1"
+            "SELECT position FROM player_in_season pis
+             WHERE pis.player_id = :pid AND pis.season_id = :sid
+               AND pis.division_id = COALESCE(
+                     (SELECT cis.division_id
+                      FROM player_in_club pic
+                      JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                      WHERE pic.player_id = pis.player_id AND pic.to_date IS NULL
+                      LIMIT 1),
+                     pis.division_id)
+             LIMIT 1"
         );
         $posQ->execute([':pid' => $playerId, ':sid' => $activeSeasonId]);
         $position = $posQ->fetchColumn() ?: '';
@@ -168,11 +183,18 @@ trait OfferTrait
             $squadIds->execute([':tid' => $teamId]);
             $activeIds = $squadIds->fetchAll(PDO::FETCH_COLUMN);
 
+            // Jeweils auf die Zeile der aktuellen Division JEDES Kader-/Gebots-Spielers eingeschränkt
+            // (Fragment A, Bulk-Form) — sonst könnte ein transferierter Spieler mit 2 Zeilen doppelt
+            // oder mit der falschen (alten) Position gezählt werden.
             $currentCount = 0;
             if (!empty($activeIds)) {
                 $ph = implode(',', array_fill(0, count($activeIds), '?'));
                 $cq = $this->con->prepare(
-                    "SELECT COUNT(*) FROM player_in_season WHERE player_id IN ($ph) AND season_id = ? AND position = ?"
+                    "SELECT COUNT(*) FROM player_in_season pis
+                     LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
+                     LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+                     WHERE pis.player_id IN ($ph) AND pis.season_id = ? AND pis.position = ?
+                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
                 );
                 $cq->execute(array_merge($activeIds, [$activeSeasonId, $position]));
                 $currentCount = (int) $cq->fetchColumn();
@@ -188,7 +210,11 @@ trait OfferTrait
             if (!empty($pendingIds)) {
                 $ph = implode(',', array_fill(0, count($pendingIds), '?'));
                 $piq = $this->con->prepare(
-                    "SELECT COUNT(*) FROM player_in_season WHERE player_id IN ($ph) AND season_id = ? AND position = ?"
+                    "SELECT COUNT(*) FROM player_in_season pis
+                     LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
+                     LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+                     WHERE pis.player_id IN ($ph) AND pis.season_id = ? AND pis.position = ?
+                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
                 );
                 $piq->execute(array_merge($pendingIds, [$activeSeasonId, $position]));
                 $pendingCount = (int) $piq->fetchColumn();
@@ -202,9 +228,18 @@ trait OfferTrait
         }
 
         // 3. Price snapshot = base price + points_in_season * points_bonus
+        // pis auf die Zeile der AKTUELLEN Division des Spielers eingeschränkt (Fragment A).
         $pq = $this->con->prepare(
-            "SELECT COALESCE(price, 0) FROM player_in_season
-             WHERE player_id = :pid AND season_id = :sid LIMIT 1"
+            "SELECT COALESCE(pis.price, 0) FROM player_in_season pis
+             WHERE pis.player_id = :pid AND pis.season_id = :sid
+               AND pis.division_id = COALESCE(
+                     (SELECT cis.division_id
+                      FROM player_in_club pic
+                      JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                      WHERE pic.player_id = pis.player_id AND pic.to_date IS NULL
+                      LIMIT 1),
+                     pis.division_id)
+             LIMIT 1"
         );
         $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
         $basePrice = (int) $pq->fetchColumn();
@@ -476,16 +511,19 @@ trait OfferTrait
         $pph            = implode(',', array_fill(0, count($playerIds), '?'));
         $activeSeasonId = $this->getActiveSeasonId();
 
+        // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A).
         $pq = $this->con->prepare(
             "SELECT p.id, p.displayname, pis.position, pis.photo_uploaded,
                     pic.club_id, c.logo_uploaded AS club_logo_uploaded
              FROM player p
-             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
              LEFT JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
+             LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic.club_id AND cis_cur.season_id = ?
+             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
+                 AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
              LEFT JOIN club c ON c.id = pic.club_id
              WHERE p.id IN ($pph)"
         );
-        $pq->execute(array_merge([$activeSeasonId], array_values($playerIds)));
+        $pq->execute(array_merge([$activeSeasonId, $activeSeasonId], array_values($playerIds)));
         $playerMap = [];
         foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) {
             $playerMap[$p['id']] = [
