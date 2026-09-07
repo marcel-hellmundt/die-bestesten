@@ -451,6 +451,9 @@
                     >
                       {{ creatingPlayers().has(r.kicker_id) ? '…' : 'Spieler anlegen' }}
                     </button>
+                    @if (createPlayerErrors().has(r.kicker_id)) {
+                      <span class="row-issues__error">{{ createPlayerErrors().get(r.kicker_id) }}</span>
+                    }
                   </div>
                 </td>
               </tr>

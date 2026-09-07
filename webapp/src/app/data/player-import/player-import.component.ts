@@ -59,6 +59,7 @@ export class PlayerImportDataComponent {
   fixingMismatch = signal<Set<number>>(new Set());
   fixingClub = signal<Set<number>>(new Set());
   creatingPlayers = signal<Set<number>>(new Set());
+  createPlayerErrors = signal<Map<number, string>>(new Map());
 
   /** Club-/Spielklassen-bezogene Blocker — lassen sich per Klick ("übernehmen") beheben. */
   private isBlocked(r: PlayerImportRow): boolean {
@@ -380,6 +381,7 @@ export class PlayerImportDataComponent {
     if (!seasonId || !row.csv_position || !row.csv_price) return;
 
     this.creatingPlayers.update((s) => new Set([...s, row.kicker_id]));
+    this.createPlayerErrors.update((m) => { const n = new Map(m); n.delete(row.kicker_id); return n; });
     this.api.post<{ id: string; displayname: string }>('player/create', {
       kicker_id: row.kicker_id,
       first_name: row.csv_first_name,
@@ -414,8 +416,9 @@ export class PlayerImportDataComponent {
           importable: false,
         })));
       },
-      error: () => {
+      error: (err: any) => {
         this.creatingPlayers.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
+        this.createPlayerErrors.update((m) => new Map([...m, [row.kicker_id, err?.error?.message ?? 'Fehler beim Anlegen']]));
       },
     });
   }
