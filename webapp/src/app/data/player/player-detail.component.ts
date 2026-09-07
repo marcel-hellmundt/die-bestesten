@@ -22,6 +22,7 @@ interface TeamHistoryEntry {
 }
 
 interface PlayerInSeason {
+  player_in_season_id: string;
   season_id: string;
   price: number;
   position: 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD';
@@ -197,7 +198,7 @@ export class PlayerDetailComponent {
     { initialValue: [] as { id: string; name: string }[] }
   );
 
-  private activeSeasonId = computed(() =>
+  activeSeasonId = computed(() =>
     [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))[0]?.id ?? null
   );
 
@@ -278,6 +279,51 @@ export class PlayerDetailComponent {
       error: (err: any) => {
         this.addingSeasonRecord.set(false);
         this.addSeasonError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
+
+  // Doppelklick-Bearbeitung eines bestehenden player_in_season-Eintrags (Admin) — sicherheitshalber
+  // nur die aktuelle Saison, da sich falsche Werte dort jederzeit gegen den nächsten CSV-Abgleich
+  // verifizieren lassen; ältere Saisons sind historisch abgeschlossen und bleiben gesperrt.
+  @ViewChild('editSeasonSheet') editSeasonSheet!: TemplateRef<any>;
+
+  editingSeason      = signal<PlayerInSeason | null>(null);
+  editSeasonPosition = signal<'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD'>('MIDFIELDER');
+  editSeasonPrice    = signal(0);
+  savingSeasonEdit   = signal(false);
+  editSeasonError    = signal<string | null>(null);
+
+  openEditSeasonForm(s: PlayerInSeason): void {
+    if (!this.isAdmin() || s.season_id !== this.activeSeasonId()) return;
+    this.editingSeason.set(s);
+    this.editSeasonPosition.set(s.position);
+    this.editSeasonPrice.set(+s.price);
+    this.editSeasonError.set(null);
+    this.bottomSheet.open(this.editSeasonSheet, { title: 'Saison-Eintrag bearbeiten' });
+  }
+
+  submitEditSeason(): void {
+    const s     = this.editingSeason();
+    const price = this.editSeasonPrice();
+    if (!s || this.savingSeasonEdit()) return;
+    if (!price || price <= 0) { this.editSeasonError.set('Preis muss > 0 sein'); return; }
+
+    this.savingSeasonEdit.set(true);
+    this.editSeasonError.set(null);
+    this.api.patch<{ status: boolean }>(`player_in_season/${s.player_in_season_id}`, {
+      position: this.editSeasonPosition(),
+      price,
+    }).subscribe({
+      next: () => {
+        this.savingSeasonEdit.set(false);
+        this.bottomSheet.close();
+        this.editingSeason.set(null);
+        this.reloadPlayer$.next();
+      },
+      error: (err: any) => {
+        this.savingSeasonEdit.set(false);
+        this.editSeasonError.set(err?.error?.message ?? 'Fehler beim Speichern');
       },
     });
   }

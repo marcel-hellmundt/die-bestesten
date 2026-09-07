@@ -927,7 +927,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player/:id',
-                        'description' => 'Ein Spieler mit aktuellem Club, Saisondaten und allen Spieltagsbewertungen; clubs[] enthält je Eintrag zusätzlich die player_in_club-id; jeder seasons[]-Eintrag enthält soon_available (wie /player_in_season/available_players — true nur für die aktive Saison, wenn deren player_in_season-Zeile seit Beginn des gerade offenen Transferfensters erstellt/geändert wurde; ältere Saisons immer false)',
+                        'description' => 'Ein Spieler mit aktuellem Club, Saisondaten und allen Spieltagsbewertungen; clubs[] enthält je Eintrag zusätzlich die player_in_club-id; jeder seasons[]-Eintrag enthält zusätzlich player_in_season_id (für PATCH /player_in_season/:id) und soon_available (wie /player_in_season/available_players — true nur für die aktive Saison, wenn deren player_in_season-Zeile seit Beginn des gerade offenen Transferfensters erstellt/geändert wurde; ältere Saisons immer false)',
                         'path_params' => [':id' => 'UUID des Spielers'],
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
                     ],
