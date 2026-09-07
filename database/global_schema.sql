@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS player (
 -- WHERE division_id IS NULL;
 -- -- Erst wenn SELECT COUNT(*) FROM player_in_season WHERE division_id IS NULL = 0:
 -- ALTER TABLE player_in_season MODIFY COLUMN division_id CHAR(36) NOT NULL;
--- ALTER TABLE player_in_season ADD CONSTRAINT fk_pis_division FOREIGN KEY (division_id) REFERENCES division(id);
+-- ALTER TABLE player_in_season ADD CONSTRAINT fk_player_in_season_division_id FOREIGN KEY (division_id) REFERENCES division(id);
 -- ALTER TABLE player_in_season DROP INDEX uk_player_season;
 -- ALTER TABLE player_in_season ADD UNIQUE KEY uk_player_season_division (player_id, season_id, division_id);
 CREATE TABLE IF NOT EXISTS player_in_season (
