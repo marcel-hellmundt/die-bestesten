@@ -122,6 +122,7 @@ trait TeamRatingTrait
                 $chartByTeam[$tid] = [
                     'team_id' => $tid,
                     'team_name' => $r['team_name'],
+                    'season_id' => $r['season_id'],
                     'color' => $r['color'],
                     'series' => [],
                 ];

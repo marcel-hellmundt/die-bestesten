@@ -162,7 +162,15 @@ export class TableComponent {
     const teams = series.map((t: any) => ({
       team_id:   t.team_id,
       team_name: t.team_name,
+      season_id: t.season_id,
       color:     t.color ?? '#888888',
+      // x-Koordinate je Spieltag, für den Hover-Tooltip: nächstgelegener Punkt zur Maus-Position
+      // wird per Horizontal-Abstand gesucht (Crosshair-artig, unabhängig von der Y-Position).
+      points: (t.series as any[]).map((s: any) => ({
+        x: toX(s.matchday),
+        matchday: s.matchday,
+        points: s.points,
+      })),
       pathD: (t.series as any[])
         .map((s: any, i: number) => `${i === 0 ? 'M' : 'L'}${toX(s.matchday).toFixed(1)},${toY(s.points).toFixed(1)}`)
         .join(' '),
@@ -187,6 +195,53 @@ export class TableComponent {
 
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
+
+  // ── Custom Hover-Tooltip über einer Saisonverlauf-Linie ──────────────────────────
+  chartTooltip = signal<{ team_id: string; team_name: string; season_id: string; matchday: number; points: number } | null>(null);
+  chartTooltipPos = signal<{ top: number; left: number } | null>(null);
+
+  onChartHover(
+    event: MouseEvent,
+    team: { team_id: string; team_name: string; season_id: string; points: { x: number; matchday: number; points: number }[] },
+  ): void {
+    const svg = (event.currentTarget as SVGGraphicsElement).ownerSVGElement;
+    if (!svg || !team.points.length) return;
+
+    const pt = svg.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const svgPt = pt.matrixTransform(ctm.inverse());
+
+    // Nächstgelegener Spieltag zur Maus-X-Position — reines Crosshair, keine Y-Distanz nötig.
+    let nearest = team.points[0];
+    let minDist = Math.abs(nearest.x - svgPt.x);
+    for (const p of team.points) {
+      const d = Math.abs(p.x - svgPt.x);
+      if (d < minDist) { minDist = d; nearest = p; }
+    }
+
+    this.chartTooltip.set({
+      team_id:   team.team_id,
+      team_name: team.team_name,
+      season_id: team.season_id,
+      matchday:  nearest.matchday,
+      points:    nearest.points,
+    });
+
+    // Einfaches horizontales Clamping statt Re-Messung per rAF (wie onParticipationHover) — der
+    // Tooltip folgt der Maus bei jeder mousemove, ein rAF-Messzyklus pro Event wäre unnötig teuer.
+    const margin = 12;
+    const assumedHalfWidth = 90;
+    const left = Math.min(Math.max(event.clientX, margin + assumedHalfWidth), window.innerWidth - margin - assumedHalfWidth);
+    this.chartTooltipPos.set({ top: event.clientY, left });
+  }
+
+  onChartLeave(): void {
+    this.chartTooltip.set(null);
+    this.chartTooltipPos.set(null);
+  }
 
   // ── Custom Hover-Tooltip über einem Einsatzquote-Balken — gleiches Edge-Clamp-Muster wie
   // betting-office.component.ts's onWinHover()/onWinLeave() bzw. h2h-match.component.ts's
