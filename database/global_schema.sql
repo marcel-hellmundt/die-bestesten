@@ -92,8 +92,11 @@ CREATE TABLE IF NOT EXISTS player (
 -- -- Erst wenn SELECT COUNT(*) FROM player_in_season WHERE division_id IS NULL = 0:
 -- ALTER TABLE player_in_season MODIFY COLUMN division_id CHAR(36) NOT NULL;
 -- ALTER TABLE player_in_season ADD CONSTRAINT fk_player_in_season_division_id FOREIGN KEY (division_id) REFERENCES division(id);
--- ALTER TABLE player_in_season DROP INDEX uk_player_season;
+-- -- Neuen Unique-Index ZUERST anlegen (deckt player_id als Präfix ebenfalls ab) — erst danach
+-- -- lässt sich uk_player_season droppen, da er sonst noch die einzige Stütze für den
+-- -- player_id-FK ist (#1553 Cannot drop index ... needed in a foreign key constraint):
 -- ALTER TABLE player_in_season ADD UNIQUE KEY uk_player_season_division (player_id, season_id, division_id);
+-- ALTER TABLE player_in_season DROP INDEX uk_player_season;
 CREATE TABLE IF NOT EXISTS player_in_season (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
