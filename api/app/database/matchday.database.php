@@ -191,6 +191,9 @@ trait MatchdayTrait
         $ratingByPlayer = [];
         $allPlayerIds   = array_unique(array_column($lineupRows, 'player_id'));
         if (!empty($allPlayerIds)) {
+            // pis auf die Division DIESES SPIELTAGS eingeschränkt (Fragment B, matchday.division_id
+            // ist NOT NULL, kein Fallback nötig) — verhindert, dass ein Spieler, der seit diesem
+            // Spieltag die Division gewechselt hat, mit der falschen (neuen) Position gescort wird.
             $ph  = implode(',', array_fill(0, count($allPlayerIds), '?'));
             $prQ = $this->con->prepare(
                 "SELECT pr.player_id,
@@ -205,9 +208,10 @@ trait MatchdayTrait
                  FROM player_rating pr
                  LEFT JOIN player_in_season pis
                         ON pis.player_id = pr.player_id AND pis.season_id = ?
+                        AND pis.division_id = ?
                  WHERE pr.matchday_id = ? AND pr.player_id IN ($ph)"
             );
-            $prQ->execute(array_merge([$seasonId, $matchdayId], array_values($allPlayerIds)));
+            $prQ->execute(array_merge([$seasonId, $matchday['division_id'], $matchdayId], array_values($allPlayerIds)));
             $ratingByPlayer = array_column($prQ->fetchAll(PDO::FETCH_ASSOC), null, 'player_id');
         }
 

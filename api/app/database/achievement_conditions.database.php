@@ -1462,7 +1462,7 @@ trait AchievementConditionsTrait
             return [];
 
         $matchdays = $this->con->query(
-            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, md.division_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
              WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
@@ -1500,15 +1500,17 @@ trait AchievementConditionsTrait
         $stmt->execute($playerIds);
         $birthDates = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'date_of_birth', 'id');
 
-        // player_id|season_id => position
+        // player_id|division_id => position — Rating-Zeitpunkt-bezogen (Fragment B): nach
+        // division_id statt season_id gekeyt, damit ein Spieler mit 2 player_in_season-Zeilen
+        // (Divisionswechsel) am jeweiligen Spieltag die Position DER DAMALIGEN Division bekommt.
         $stmt = $this->con->prepare(
-            "SELECT player_id, season_id, position FROM player_in_season
+            "SELECT player_id, division_id, position FROM player_in_season
              WHERE player_id IN ($pPlh) AND season_id IN ($sPlh)"
         );
         $stmt->execute([...$playerIds, ...$seasonIds]);
         $positions = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $positions[$row['player_id'] . '|' . $row['season_id']] = $row['position'];
+            $positions[$row['player_id'] . '|' . $row['division_id']] = $row['position'];
         }
 
         // manager_id => matchday_id => rows
@@ -1532,7 +1534,7 @@ trait AchievementConditionsTrait
                 $allYoung     = true;
                 $hasFieldPlayer = false;
                 foreach ($players as $p) {
-                    $pos = $positions[$p['player_id'] . '|' . $p['team_season_id']] ?? null;
+                    $pos = $positions[$p['player_id'] . '|' . $md['division_id']] ?? null;
                     if ($pos === 'GOALKEEPER')
                         continue;
 
@@ -2137,7 +2139,7 @@ trait AchievementConditionsTrait
         if (empty($managerIds)) return [];
 
         $matchdays = $this->con->query(
-            "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
+            "SELECT md.id, md.number, md.kickoff_date, md.season_id, md.division_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
              WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
@@ -2160,23 +2162,25 @@ trait AchievementConditionsTrait
 
         if (empty($scorers)) return [];
 
+        // player_id|division_id => true — Rating-Zeitpunkt-bezogen (Fragment B): nach division_id
+        // statt season_id gekeyt, damit die Position DES SPIELTAGS gilt, nicht die aktuelle.
         $scorerPlayerIds = array_values(array_unique(array_column($scorers, 'player_id')));
         $ssPlh = implode(',', array_fill(0, count($seasonIds), '?'));
         $ppPlh = implode(',', array_fill(0, count($scorerPlayerIds), '?'));
         $stmt = $this->con->prepare(
-            "SELECT player_id, season_id FROM player_in_season
+            "SELECT player_id, division_id FROM player_in_season
              WHERE player_id IN ($ppPlh) AND season_id IN ($ssPlh) AND position = 'GOALKEEPER'"
         );
         $stmt->execute([...$scorerPlayerIds, ...$seasonIds]);
         $gkSet = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $gkSet[$row['player_id'] . '|' . $row['season_id']] = true;
+            $gkSet[$row['player_id'] . '|' . $row['division_id']] = true;
         }
 
         $gkScorerSet = [];
         foreach ($scorers as $row) {
             $md = $mdMeta[$row['matchday_id']] ?? null;
-            if ($md && isset($gkSet[$row['player_id'] . '|' . $md['season_id']])) {
+            if ($md && isset($gkSet[$row['player_id'] . '|' . $md['division_id']])) {
                 $gkScorerSet[$row['player_id'] . '|' . $row['matchday_id']] = true;
             }
         }
@@ -2776,7 +2780,7 @@ trait AchievementConditionsTrait
         if (empty($managerIds)) return [];
 
         $matchdays = $this->con->query(
-            "SELECT md.id, md.kickoff_date, md.season_id, s.start_date AS season_start
+            "SELECT md.id, md.kickoff_date, md.season_id, md.division_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
              WHERE md.completed = 1
@@ -2789,6 +2793,7 @@ trait AchievementConditionsTrait
         $kickoffMap     = array_column($matchdays, 'kickoff_date', 'id');
         $seasonStartMap = array_column($matchdays, 'season_start', 'id');
         $mdToSeason     = array_column($matchdays, 'season_id', 'id');
+        $mdToDivision   = array_column($matchdays, 'division_id', 'id');
 
         $plh  = implode(',', array_fill(0, count($managerIds), '?'));
         $mPlh = implode(',', array_fill(0, count($mdIds), '?'));
@@ -2812,15 +2817,18 @@ trait AchievementConditionsTrait
         $stmt->execute($playerIds);
         $countryMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'country_id', 'id');
 
+        // Rating-Zeitpunkt-bezogen (Fragment B): nach division_id statt season_id gekeyt, damit
+        // ein Spieler mit 2 player_in_season-Zeilen (Divisionswechsel) am jeweiligen Spieltag die
+        // Position DER DAMALIGEN Division bekommt.
         $seasonIds = array_values(array_unique(array_column($matchdays, 'season_id')));
         $sPlh = implode(',', array_fill(0, count($seasonIds), '?'));
         $stmt = $this->con->prepare(
-            "SELECT player_id, season_id, position FROM player_in_season WHERE player_id IN ($pPlh) AND season_id IN ($sPlh)"
+            "SELECT player_id, division_id, position FROM player_in_season WHERE player_id IN ($pPlh) AND season_id IN ($sPlh)"
         );
         $stmt->execute([...$playerIds, ...$seasonIds]);
         $positionMap = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row)
-            $positionMap[$row['player_id']][$row['season_id']] = $row['position'];
+            $positionMap[$row['player_id']][$row['division_id']] = $row['position'];
 
         $groups = [];
         foreach ($lineups as $row) {
@@ -2839,6 +2847,7 @@ trait AchievementConditionsTrait
 
             $seasonId  = $mdToSeason[$data['matchday_id']] ?? null;
             if (!$seasonId) continue;
+            $divisionId = $mdToDivision[$data['matchday_id']] ?? null;
 
             $countries = [];
             $posCounts = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
@@ -2848,7 +2857,7 @@ trait AchievementConditionsTrait
                 $country = $countryMap[$pid] ?? null;
                 if ($country === null) { $valid = false; break; }
                 $countries[] = $country;
-                $pos = $positionMap[$pid][$seasonId] ?? null;
+                $pos = $positionMap[$pid][$divisionId] ?? null;
                 if ($pos !== null && isset($posCounts[$pos])) $posCounts[$pos]++;
             }
 
@@ -2985,6 +2994,7 @@ trait AchievementConditionsTrait
              FROM player_rating pr
              JOIN matchday md ON md.id = pr.matchday_id
              JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+                 AND pis.division_id = md.division_id
              WHERE pr.matchday_id IN ($mPlh) AND pis.position IS NOT NULL"
         );
         $stmt->execute($mdIds);
