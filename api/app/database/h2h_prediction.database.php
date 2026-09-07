@@ -143,18 +143,7 @@ trait H2HPredictionTrait
         if (empty($rows)) return 100.0;
 
         if ($lockedOnly) {
-            $matchdayIds = array_values(array_unique(array_column($rows, 'matchday_id')));
-            $ph  = implode(',', array_fill(0, count($matchdayIds), '?'));
-            $mdq = $this->con->prepare(
-                "SELECT id, (kickoff_date IS NOT NULL AND kickoff_date <= NOW()) AS locked
-                 FROM matchday WHERE id IN ($ph)"
-            );
-            $mdq->execute($matchdayIds);
-            $lockedMap = [];
-            foreach ($mdq->fetchAll(PDO::FETCH_ASSOC) as $md) {
-                $lockedMap[$md['id']] = (bool) $md['locked'];
-            }
-            $rows = array_filter($rows, fn($r) => $lockedMap[$r['matchday_id']] ?? false);
+            $rows = $this->filterToLockedMatchdayRows($rows);
         }
 
         $budget = 100.0;
@@ -165,6 +154,57 @@ trait H2HPredictionTrait
             }
         }
         return $budget;
+    }
+
+    /**
+     * Filtert Zeilen mit 'matchday_id' auf bereits angepfiffene (kickoff_date <= NOW()) Matchdays
+     * — gemeinsame Logik für getManagerLukatenBudget()'s $lockedOnly und getBankLukatenBalance().
+     */
+    private function filterToLockedMatchdayRows(array $rows): array
+    {
+        $matchdayIds = array_values(array_unique(array_column($rows, 'matchday_id')));
+        $ph  = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $mdq = $this->con->prepare(
+            "SELECT id, (kickoff_date IS NOT NULL AND kickoff_date <= NOW()) AS locked
+             FROM matchday WHERE id IN ($ph)"
+        );
+        $mdq->execute($matchdayIds);
+        $lockedMap = [];
+        foreach ($mdq->fetchAll(PDO::FETCH_ASSOC) as $md) {
+            $lockedMap[$md['id']] = (bool) $md['locked'];
+        }
+        return array_filter($rows, fn($r) => $lockedMap[$r['matchday_id']] ?? false);
+    }
+
+    /**
+     * Kontostand der "Bank" — der fiktiven Gegenseite jeder Wette, kein echter Manager. Hält alle
+     * Einsätze offener/verlorener Tipps (noch nicht ausgezahlt bzw. gewonnen/behalten) und zieht
+     * alle an gewonnene Tipps ausgeschütteten Gewinne (stake*odds) wieder ab. Nimmt an derselben
+     * lockedOnly-Wertung wie getLukatenStandings() teil (nur bereits angepfiffene Matches), damit
+     * die Bank-Zeile zur selben Schatzkammer-Wertung wie die Manager-Zeilen passt.
+     */
+    private function getBankLukatenBalance(string $seasonId): float
+    {
+        $sql = "SELECT hp.stake, hp.odds, hp.result, hm.matchday_id
+                FROM h2h_prediction hp
+                JOIN h2h_match hm ON hm.id = hp.match_id
+                WHERE hm.season_id = :season AND hp.stake IS NOT NULL";
+        $q = $this->con_league->prepare($sql);
+        $q->execute([':season' => $seasonId]);
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) return 0.0;
+
+        $rows = $this->filterToLockedMatchdayRows($rows);
+
+        $balance = 0.0;
+        foreach ($rows as $r) {
+            if ($r['result'] === 'won') {
+                $balance -= (float) $r['stake'] * (float) $r['odds'];
+            } else {
+                $balance += (float) $r['stake'];
+            }
+        }
+        return $balance;
     }
 
     /**
@@ -735,11 +775,12 @@ trait H2HPredictionTrait
 
     /**
      * Alle Manager mit mindestens einem gestakten Tipp (stake IS NOT NULL) in der aktiven
-     * Saison, mit ihrem aktuellen Lukaten-Budget — fürs Wettbüro (Bestico), zweite Bestenliste
-     * neben den Sieg-Zählern. Absteigend nach Budget sortiert. Nutzt getManagerLukatenBudget()
-     * mit lockedOnly=true: Einsätze auf noch nicht angepfiffene (weiterhin änderbare/löschbare)
-     * Matches fließen hier bewusst noch nicht in die Wertung ein, erst nach Anpfiff gilt der
-     * Einsatz als "abgebucht".
+     * Saison, mit ihrem aktuellen Lukaten-Budget — fürs Wettbüro (Bestico), "Schatzkammer"-
+     * Bestenliste neben den Sieg-Zählern. Zusätzlich eine synthetische "Bank"-Zeile (manager_id
+     * null) mit dem Kontostand der Gegenseite aller Wetten, siehe getBankLukatenBalance().
+     * Absteigend nach Budget sortiert. Nutzt getManagerLukatenBudget() mit lockedOnly=true:
+     * Einsätze auf noch nicht angepfiffene (weiterhin änderbare/löschbare) Matches fließen hier
+     * bewusst noch nicht in die Wertung ein, erst nach Anpfiff gilt der Einsatz als "abgebucht".
      */
     public function getLukatenStandings(): array
     {
@@ -767,6 +808,15 @@ trait H2HPredictionTrait
             $m['budget'] = $this->getManagerLukatenBudget($m['manager_id'], $seasonId, null, true);
         }
         unset($m);
+
+        // Bank ist kein echter Manager, sondern die Gegenseite jeder Wette — siehe
+        // getBankLukatenBalance(). Nimmt an derselben Wertung/Sortierung teil wie die Manager.
+        $managers[] = [
+            'manager_id'   => null,
+            'manager_name' => 'Bank',
+            'alias'        => null,
+            'budget'       => $this->getBankLukatenBalance($seasonId),
+        ];
 
         usort($managers, fn($a, $b) => $b['budget'] <=> $a['budget'] ?: strcmp($a['manager_name'], $b['manager_name']));
 
