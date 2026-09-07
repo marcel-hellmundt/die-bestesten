@@ -563,14 +563,14 @@
                 </tr>
               </thead>
               <tbody>
-                @for (s of p.seasons; track s.season_id) {
+                @for (s of p.seasons; track s.player_in_season_id) {
                   <tr
                     class="row-link"
                     [class.row--selected]="
                       (selectedSeasonId() ?? p.seasons[0].season_id) === s.season_id
                     "
-                    [class.row--editable]="isAdmin() && s.season_id === activeSeasonId()"
-                    [title]="isAdmin() && s.season_id === activeSeasonId() ? 'Doppelklick zum Bearbeiten' : ''"
+                    [class.row--editable]="isAdmin() && s.player_in_season_id === currentDivisionSeasonEntry()?.player_in_season_id"
+                    [title]="isAdmin() && s.player_in_season_id === currentDivisionSeasonEntry()?.player_in_season_id ? 'Doppelklick zum Bearbeiten' : ''"
                     (click)="selectedSeasonId.set(s.season_id)"
                     (dblclick)="openEditSeasonForm(s)"
                   >
