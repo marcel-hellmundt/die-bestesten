@@ -79,6 +79,21 @@ trait PlayerTrait
             $q->execute([':player_id' => $id, ':season_id' => $seasonId]);
             $player['current_season'] = $q->fetch(PDO::FETCH_ASSOC) ?: null;
 
+            // Ein Spieler kann innerhalb einer Saison in unterschiedlichen Divisionen gespielt haben
+            // (z.B. Winterwechsel 2. Liga → 1. Liga) — beide Divisionen führen eigene Spieltage mit
+            // teils identischer matchday_number, was ohne Filter zu doppelten/verwirrenden Einträgen
+            // führt. Eingeschränkt auf die Division der anfragenden Liga (Fallback: höchste deutsche
+            // Division, gleiches Muster wie getAvailablePlayers()), damit nur die für den Manager
+            // relevante Spielklasse angezeigt wird.
+            $divisionId = $this->getLeagueDivisionId();
+            if ($divisionId !== null) {
+                $divisionWhere  = 'AND d.id = :division_id';
+                $divisionParams = [':division_id' => $divisionId];
+            } else {
+                $divisionWhere  = "AND d.level = 1 AND LOWER(d.country_id) = 'de'";
+                $divisionParams = [];
+            }
+
             $q = $this->con->prepare("
                 SELECT pr.id, pr.grade, pr.participation,
                        pr.goals, pr.assists, pr.clean_sheet,
@@ -87,11 +102,13 @@ trait PlayerTrait
                        m.number AS matchday_number, m.kickoff_date
                 FROM player_rating pr
                 JOIN matchday m  ON pr.matchday_id = m.id
+                JOIN division d  ON d.id = m.division_id
                 LEFT JOIN club c ON c.id = pr.club_id
                 WHERE pr.player_id = :player_id AND m.season_id = :season_id
+                $divisionWhere
                 ORDER BY m.number ASC
             ");
-            $q->execute([':player_id' => $id, ':season_id' => $seasonId]);
+            $q->execute([':player_id' => $id, ':season_id' => $seasonId, ...$divisionParams]);
             $player['ratings'] = $q->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $player['current_season'] = null;
@@ -100,7 +117,7 @@ trait PlayerTrait
 
         // All seasons (sorted newest first) with aggregated points
         $q = $this->con->prepare("
-            SELECT pis.season_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated,
+            SELECT pis.id AS player_in_season_id, pis.season_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated,
                    s.start_date AS season_start,
                    COALESCE(SUM(pr.points), 0) AS total_points
             FROM player_in_season pis
@@ -108,7 +125,7 @@ trait PlayerTrait
             LEFT JOIN matchday m ON m.season_id = pis.season_id
             LEFT JOIN player_rating pr ON pr.player_id = pis.player_id AND pr.matchday_id = m.id
             WHERE pis.player_id = :player_id
-            GROUP BY pis.season_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated, s.start_date
+            GROUP BY pis.id, pis.season_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated, s.start_date
             ORDER BY s.start_date DESC
         ");
         $q->execute([':player_id' => $id]);

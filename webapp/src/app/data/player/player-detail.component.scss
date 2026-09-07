@@ -309,6 +309,11 @@
   td { color: var(--flat-river); }
 }
 
+.row--editable {
+  cursor: pointer;
+  &:hover { outline: 1px dashed $color-text-muted; outline-offset: -1px; }
+}
+
 .col-price,
 .col-points-season { font-variant-numeric: tabular-nums; text-align: right; }
 .col-points-season { font-weight: $font-weight-bold; }

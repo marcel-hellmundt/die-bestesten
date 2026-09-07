@@ -246,7 +246,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/matchday/:id',
-                        'description' => 'Entweder completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, h2h_prediction.result der H2H-Matches dieses Spieltags auswerten (won/lost je nach tatsächlichem Ergebnis), Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an alle Admins mit hinterlegter E-Mail-Adresse senden — Admin. Oder Stammdaten bearbeiten — Body: beliebige Kombination aus number, start_date, kickoff_date; 404 wenn nicht gefunden, 409 wenn Spieltag bereits completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date liegt — Admin',
+                        'description' => 'Entweder completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, maintainer_contribution vom Typ "create" für Spieler ohne gesetzte participation (also nicht eingesetzte Kaderspieler) wieder löschen — /player_rating/init vergibt "create" zunächst für den kompletten gültigen Kader, da die echte Aufstellung zu diesem Zeitpunkt noch unbekannt ist, siehe maintainer_contribution in CLAUDE.md —, h2h_prediction.result der H2H-Matches dieses Spieltags auswerten (won/lost je nach tatsächlichem Ergebnis), Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an alle Admins mit hinterlegter E-Mail-Adresse senden — Admin. Oder Stammdaten bearbeiten — Body: beliebige Kombination aus number, start_date, kickoff_date; 404 wenn nicht gefunden, 409 wenn Spieltag bereits completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date liegt — Admin',
                         'path_params' => [':id' => 'UUID des Spieltags'],
                     ],
                     [
@@ -927,7 +927,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player/:id',
-                        'description' => 'Ein Spieler mit aktuellem Club, Saisondaten und allen Spieltagsbewertungen; clubs[] enthält je Eintrag zusätzlich die player_in_club-id; jeder seasons[]-Eintrag enthält soon_available (wie /player_in_season/available_players — true nur für die aktive Saison, wenn deren player_in_season-Zeile seit Beginn des gerade offenen Transferfensters erstellt/geändert wurde; ältere Saisons immer false)',
+                        'description' => 'Ein Spieler mit aktuellem Club, Saisondaten und Spieltagsbewertungen; clubs[] enthält je Eintrag zusätzlich die player_in_club-id; jeder seasons[]-Eintrag enthält zusätzlich player_in_season_id (für PATCH /player_in_season/:id) und soon_available (wie /player_in_season/available_players — true nur für die aktive Saison, wenn deren player_in_season-Zeile seit Beginn des gerade offenen Transferfensters erstellt/geändert wurde; ältere Saisons immer false); ratings[] ist auf die Division der anfragenden Liga eingeschränkt (Fallback: höchste deutsche Division) — ein Spieler, der innerhalb einer Saison in mehreren Divisionen gespielt hat (z.B. Winterwechsel 2. Liga → 1. Liga), zeigt sonst teils doppelte matchday_number-Werte aus der jeweils anderen Division',
                         'path_params' => [':id' => 'UUID des Spielers'],
                         'query_params' => ['season_id' => 'UUID der Saison (optional, default: aktive Saison)'],
                     ],
@@ -968,6 +968,19 @@ class Routing
                             'price'      => 'int — Marktwert in € (0 < price <= 50.000.000)',
                             'club_id'    => 'UUID des Clubs (optional) — erstellt player_in_club-Eintrag',
                             'from_date'  => 'DATE YYYY-MM-DD (optional, default: heute) — Vertragsbeginn',
+                        ],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/player/create_manual',
+                        'description' => 'Notfall-Anlage eines neuen Spielers ohne kicker_id (z.B. wenn der externe CSV-Dienstleister einen Spieler, der am Wochenende gespielt und Punkte geholt hat, noch nicht kennt und der Spieltag sonst nicht mit vollständigen 11 Startern abgeschlossen werden kann) — gibt {id} zurück; kicker_id bleibt NULL, Marktwert wird serverseitig fest auf 99.000.000 € gesetzt (bewusst über dem sonst erlaubten Maximum von 50.000.000 €, damit kein Manager den Spieler versehentlich für einen Spottpreis kauft, bevor CSV-Import bzw. PATCH /player_in_season den echten Marktwert setzt); 409 bei displayname-Duplikat — Admin',
+                        'body' => [
+                            'first_name'  => 'string',
+                            'last_name'   => 'string',
+                            'displayname' => 'string (muss UNIQUE sein)',
+                            'season_id'   => 'UUID der Saison',
+                            'position'    => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD',
+                            'club_id'     => 'UUID des Clubs — erstellt player_in_club-Eintrag mit from_date=heute',
                         ],
                     ],
                 ],

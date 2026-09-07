@@ -569,7 +569,10 @@
                     [class.row--selected]="
                       (selectedSeasonId() ?? p.seasons[0].season_id) === s.season_id
                     "
+                    [class.row--editable]="isAdmin() && s.season_id === activeSeasonId()"
+                    [title]="isAdmin() && s.season_id === activeSeasonId() ? 'Doppelklick zum Bearbeiten' : ''"
                     (click)="selectedSeasonId.set(s.season_id)"
+                    (dblclick)="openEditSeasonForm(s)"
                   >
                     <td>{{ cache.seasonName(s.season_id) }}</td>
                     <td class="col-position">
@@ -929,5 +932,47 @@
         Schließen
       </button>
     }
+  </div>
+</ng-template>
+
+<ng-template #editSeasonSheet>
+  <div class="add-form" (keydown.enter)="!savingSeasonEdit() && submitEditSeason()">
+    <div class="add-form-row">
+      <div class="add-form-field">
+        <label class="add-form-label">Position</label>
+        <select
+          class="input input--sm"
+          [value]="editSeasonPosition()"
+          (change)="editSeasonPosition.set($any($event.target).value)"
+        >
+          <option value="GOALKEEPER">Torwart</option>
+          <option value="DEFENDER">Abwehr</option>
+          <option value="MIDFIELDER">Mittelfeld</option>
+          <option value="FORWARD">Sturm</option>
+        </select>
+      </div>
+      <div class="add-form-field add-form-field--sm">
+        <label class="add-form-label">Preis (€)</label>
+        <input
+          class="input input--sm"
+          type="number"
+          min="1"
+          step="100000"
+          [value]="editSeasonPrice()"
+          (input)="editSeasonPrice.set(+$any($event.target).value)"
+        />
+      </div>
+    </div>
+    @if (editSeasonError()) {
+      <p class="add-form-error">{{ editSeasonError() }}</p>
+    }
+    <div class="add-form-actions">
+      <button class="btn-save" (click)="submitEditSeason()" [disabled]="savingSeasonEdit() || editSeasonPrice() <= 0">
+        {{ savingSeasonEdit() ? 'Speichern…' : 'Speichern' }}
+      </button>
+      <button class="btn-cancel" (click)="bottomSheet.close()" [disabled]="savingSeasonEdit()">
+        Abbrechen
+      </button>
+    </div>
   </div>
 </ng-template>
