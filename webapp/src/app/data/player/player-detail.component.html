@@ -604,11 +604,22 @@
             <div class="add-form-row">
               <div class="add-form-field">
                 <label class="add-form-label">Saison</label>
-                <select class="input input--sm" (change)="newSeasonId.set($any($event.target).value)">
+                <select class="input input--sm" (change)="onNewSeasonIdChange($any($event.target).value)">
                   @for (s of availableSeasons(); track s.id) {
                     <option [value]="s.id" [selected]="s.id === newSeasonId()">{{ cache.seasonName(s.id) }}</option>
                   }
                 </select>
+              </div>
+              <div class="add-form-field">
+                <label class="add-form-label">Division</label>
+                <select class="input input--sm" (change)="newSeasonDivisionId.set($any($event.target).value)">
+                  @for (d of availableDivisionsForNewSeason(); track d.id) {
+                    <option [value]="d.id" [selected]="d.id === newSeasonDivisionId()">{{ d.name }}</option>
+                  }
+                </select>
+                @if (availableDivisionsForNewSeason().length === 0) {
+                  <span class="add-form-error">Spieler hat bereits Einträge für alle Divisionen dieser Saison</span>
+                }
               </div>
               <div class="add-form-field">
                 <label class="add-form-label">Position</label>
@@ -635,7 +646,7 @@
               <p class="add-form-error">{{ addSeasonError() }}</p>
             }
             <div class="add-form-actions">
-              <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || newSeasonPrice() <= 0">
+              <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || !newSeasonDivisionId() || newSeasonPrice() <= 0">
                 {{ addingSeasonRecord() ? 'Speichern…' : 'Speichern' }}
               </button>
               <button class="btn-cancel" (click)="cancelAddSeason()" [disabled]="addingSeasonRecord()">

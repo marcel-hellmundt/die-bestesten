@@ -235,18 +235,41 @@ export class PlayerDetailComponent {
   // Add-season form state
   showAddSeasonForm  = signal(false);
   newSeasonId        = signal('');
+  newSeasonDivisionId = signal('');
   newSeasonPosition  = signal<'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD'>('MIDFIELDER');
   newSeasonPrice     = signal(0);
   addingSeasonRecord = signal(false);
   addSeasonError     = signal<string | null>(null);
 
-  availableSeasons = computed(() => {
-    const existing = new Set((this.player()?.seasons ?? []).map(s => s.season_id));
-    return this.cache.seasons().filter(s => !existing.has(s.id));
+  // Alle Saisons wählbar — ein Spieler darf jetzt mehrere player_in_season-Zeilen pro Saison haben
+  // (eine je Division, z.B. bei einem Divisionswechsel), daher keine season_id-basierte Filterung
+  // mehr. Stattdessen: pro gewählter Saison die Divisionen ausschließen, die der Spieler dort
+  // schon hat (UNIQUE(player_id, season_id, division_id) verbietet ohnehin ein echtes Duplikat).
+  availableSeasons = computed(() => this.cache.seasons());
+
+  private usedDivisionIdsForNewSeason = computed(() => {
+    const seasonId = this.newSeasonId();
+    return new Set(
+      (this.player()?.seasons ?? [])
+        .filter(s => s.season_id === seasonId)
+        .map(s => s.division_id)
+    );
   });
 
+  availableDivisionsForNewSeason = computed(() => {
+    const used = this.usedDivisionIdsForNewSeason();
+    return this.cache.divisions().filter(d => !used.has(d.id));
+  });
+
+  onNewSeasonIdChange(seasonId: string): void {
+    this.newSeasonId.set(seasonId);
+    this.newSeasonDivisionId.set(this.availableDivisionsForNewSeason()[0]?.id ?? '');
+  }
+
   openAddSeasonForm(): void {
-    this.newSeasonId.set(this.availableSeasons()[0]?.id ?? '');
+    const seasonId = this.activeSeasonId() ?? this.availableSeasons()[0]?.id ?? '';
+    this.newSeasonId.set(seasonId);
+    this.newSeasonDivisionId.set(this.availableDivisionsForNewSeason()[0]?.id ?? '');
     this.newSeasonPosition.set('MIDFIELDER');
     this.newSeasonPrice.set(0);
     this.addSeasonError.set(null);
@@ -259,17 +282,19 @@ export class PlayerDetailComponent {
   }
 
   submitAddSeason(): void {
-    const p     = this.player();
-    const price = this.newSeasonPrice();
-    if (!p || !this.newSeasonId() || this.addingSeasonRecord()) return;
+    const p          = this.player();
+    const price      = this.newSeasonPrice();
+    const divisionId = this.newSeasonDivisionId();
+    if (!p || !this.newSeasonId() || !divisionId || this.addingSeasonRecord()) return;
     if (!price || price <= 0) { this.addSeasonError.set('Preis muss > 0 sein'); return; }
 
     this.addingSeasonRecord.set(true);
     this.addSeasonError.set(null);
     this.api.post<{ id: string }>('player_in_season', {
-      player_id: p.id,
-      season_id: this.newSeasonId(),
-      position:  this.newSeasonPosition(),
+      player_id:   p.id,
+      season_id:   this.newSeasonId(),
+      division_id: divisionId,
+      position:    this.newSeasonPosition(),
       price,
     }).subscribe({
       next: () => {
