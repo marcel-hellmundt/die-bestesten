@@ -196,6 +196,13 @@ export class TableComponent {
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
 
+  // Eigenes, vom persistenten logoErrors entkoppeltes Set fürs Tooltip-Logo — die Tooltip-<img>
+  // wechselt beim Drüberfahren schnell zwischen vielen Teams durch, ein einzelner Lade-Fehler
+  // dort (z.B. wegen des schnellen Src-Wechsels abgebrochene Requests) soll nicht dazu führen,
+  // dass die Tabelle/Einsatzquote-Liste für dasselbe Team fälschlich auf den Platzhalter springt.
+  chartLogoErrors = new Set<string>();
+  onChartLogoError(teamId: string) { this.chartLogoErrors.add(teamId); }
+
   // ── Custom Hover-Tooltip über einer Saisonverlauf-Linie ──────────────────────────
   chartTooltip = signal<{ team_id: string; team_name: string; season_id: string; matchday: number; points: number } | null>(null);
   chartTooltipPos = signal<{ top: number; left: number } | null>(null);

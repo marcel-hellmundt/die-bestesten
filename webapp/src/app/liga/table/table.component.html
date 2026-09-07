@@ -342,9 +342,9 @@
   >
     <img
       class="chart-tooltip__logo"
-      [src]="logoErrors.has(ct.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + ct.season_id + '/' + ct.team_id + '.png'"
-      [class.logo--placeholder]="logoErrors.has(ct.team_id)"
-      (error)="onLogoError(ct.team_id)"
+      [src]="chartLogoErrors.has(ct.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + ct.season_id + '/' + ct.team_id + '.png'"
+      [class.logo--placeholder]="chartLogoErrors.has(ct.team_id)"
+      (error)="onChartLogoError(ct.team_id)"
       alt=""
     />
     <span class="chart-tooltip__text">
