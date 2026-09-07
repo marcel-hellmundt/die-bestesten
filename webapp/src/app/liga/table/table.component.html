@@ -87,7 +87,11 @@
                 <td class="col-num col-cs" [class.col-muted]="!r.total_clean_sheet">{{ r.total_clean_sheet || 0 }}</td>
                 <td class="col-num col-points">{{ r.total_points | number }}</td>
                 @if (cache.finesEnabled()) {
-                  <td class="col-fine" [class.col-fine--active]="r.fine > 0">
+                  <td
+                    class="col-fine"
+                    [class.col-fine--active]="r.fine > 0 && !fineIsStartgeldOnly(r)"
+                    [class.col-fine--startgeld]="fineIsStartgeldOnly(r)"
+                  >
                     @if (r.fine > 0) {
                       {{ r.fine | number: '1.2-2' }} €
                     }

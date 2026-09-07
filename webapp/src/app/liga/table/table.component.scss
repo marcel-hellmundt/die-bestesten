@@ -256,6 +256,10 @@
     color: $color-danger;
     font-weight: $font-weight-semibold;
   }
+
+  &--startgeld {
+    opacity: 0.4;
+  }
 }
 
 .col-cs { color: $color-success; font-weight: $font-weight-semibold; }

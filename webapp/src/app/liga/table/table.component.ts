@@ -118,6 +118,14 @@ export class TableComponent {
   });
 
   totalFines     = computed(() => this.rows().reduce((sum, r) => sum + Number(r.fine ?? 0), 0));
+
+  // Startgeld ist fest in team_rating.database.php eingepreist (fine = Summe der Spieltagsstrafen
+  // + 5.0 €) — entspricht die Gesamtstrafe genau diesem Betrag, ist bislang keine echte
+  // Spieltagsstrafe dazugekommen und die Anzeige soll entsprechend zurückhaltender wirken.
+  private readonly STARTGELD = 5;
+  fineIsStartgeldOnly(r: any): boolean {
+    return Number(r.fine ?? 0) === this.STARTGELD;
+  }
   lucky          = computed(() => (this.state().data?.luck?.lucky           ?? []) as any[]);
   unlucky        = computed(() => (this.state().data?.luck?.unlucky          ?? []) as any[]);
   goldeneBuerste = computed(() => (this.state().data?.luck?.goldene_buerste  ?? []) as any[]);
