@@ -32,6 +32,11 @@
   />
   <span class="list-count">{{ filteredItems().length }} / {{ items().length }}</span>
   <span class="spacer"></span>
+  @if (isAdmin()) {
+    <button class="btn" (click)="openCreatePlayerForm()" title="Notfall-Anlage — Spieler ohne CSV-Datensatz">
+      + Spieler manuell anlegen
+    </button>
+  }
   @if (isMaintainer()) {
     <a class="btn btn-primary" routerLink="/daten/player-import">
       <app-icon name="upload" />
@@ -78,3 +83,73 @@
     </table>
   </div>
 }
+
+<ng-template #createPlayerSheet>
+  <div class="add-form" (keydown.enter)="!creatingPlayer() && submitCreatePlayer()">
+    <p class="add-form-hint">
+      Notfall-Mechanismus: der externe Datenlieferant kennt diesen Spieler noch nicht, obwohl er bereits gespielt und Punkte geholt hat.
+      Der Marktwert wird bewusst auf 99.000.000&nbsp;€ gesetzt, damit ihn kein Manager versehentlich kaufen kann, bis der reguläre CSV-Import
+      den echten Marktwert setzt (Saison: {{ activeSeasonId() ? cache.seasonName(activeSeasonId()!) : '—' }}).
+    </p>
+    <div class="add-form-row">
+      <div class="add-form-field">
+        <label class="add-form-label">Vorname</label>
+        <input
+          class="input input--sm"
+          type="text"
+          [value]="newFirstName()"
+          (input)="newFirstName.set($any($event.target).value)"
+        />
+      </div>
+      <div class="add-form-field">
+        <label class="add-form-label">Nachname</label>
+        <input
+          class="input input--sm"
+          type="text"
+          [value]="newLastName()"
+          (input)="newLastName.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+    <div class="add-form-row">
+      <div class="add-form-field">
+        <label class="add-form-label">Anzeigename</label>
+        <input
+          class="input input--sm"
+          type="text"
+          [value]="newDisplayname()"
+          (input)="newDisplayname.set($any($event.target).value)"
+        />
+      </div>
+    </div>
+    <div class="add-form-row">
+      <div class="add-form-field">
+        <label class="add-form-label">Position</label>
+        <select class="input input--sm" [value]="newPosition()" (change)="newPosition.set($any($event.target).value)">
+          @for (p of positions; track p) {
+            <option [value]="p">{{ POSITION_LABEL[p] }}</option>
+          }
+        </select>
+      </div>
+      <div class="add-form-field">
+        <label class="add-form-label">Verein</label>
+        <select class="input input--sm" [value]="newClubId()" (change)="newClubId.set($any($event.target).value)">
+          @for (c of clubs(); track c.id) {
+            <option [value]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    @if (createPlayerError()) {
+      <p class="add-form-error">{{ createPlayerError() }}</p>
+    }
+    <div class="add-form-actions">
+      <button class="btn-save" (click)="submitCreatePlayer()" [disabled]="creatingPlayer() || !canCreatePlayer()">
+        {{ creatingPlayer() ? 'Wird angelegt…' : 'Anlegen' }}
+      </button>
+      <button class="btn-cancel" (click)="bottomSheet.close()" [disabled]="creatingPlayer()">
+        Abbrechen
+      </button>
+    </div>
+  </div>
+</ng-template>

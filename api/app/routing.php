@@ -970,6 +970,19 @@ class Routing
                             'from_date'  => 'DATE YYYY-MM-DD (optional, default: heute) — Vertragsbeginn',
                         ],
                     ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/player/create_manual',
+                        'description' => 'Notfall-Anlage eines neuen Spielers ohne kicker_id (z.B. wenn der externe CSV-Dienstleister einen Spieler, der am Wochenende gespielt und Punkte geholt hat, noch nicht kennt und der Spieltag sonst nicht mit vollständigen 11 Startern abgeschlossen werden kann) — gibt {id} zurück; kicker_id bleibt NULL, Marktwert wird serverseitig fest auf 99.000.000 € gesetzt (bewusst über dem sonst erlaubten Maximum von 50.000.000 €, damit kein Manager den Spieler versehentlich für einen Spottpreis kauft, bevor CSV-Import bzw. PATCH /player_in_season den echten Marktwert setzt); 409 bei displayname-Duplikat — Admin',
+                        'body' => [
+                            'first_name'  => 'string',
+                            'last_name'   => 'string',
+                            'displayname' => 'string (muss UNIQUE sein)',
+                            'season_id'   => 'UUID der Saison',
+                            'position'    => 'GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD',
+                            'club_id'     => 'UUID des Clubs — erstellt player_in_club-Eintrag mit from_date=heute',
+                        ],
+                    ],
                 ],
             ]),
 

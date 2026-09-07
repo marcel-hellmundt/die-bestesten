@@ -43,6 +43,10 @@ class PlayerController extends _BaseController
             return $this->db->createPlayer($body);
         }
 
+        if ($this->id === 'create_manual') {
+            return $this->createManual();
+        }
+
         return $this->methodNotAllowed();
     }
 
@@ -71,6 +75,58 @@ class PlayerController extends _BaseController
         }
 
         return ['status' => true];
+    }
+
+    /**
+     * Notfall-Anlage für Admins: ein Spieler hat am Wochenende gespielt und Punkte geholt, ist
+     * aber noch nicht vom externen CSV-Dienstleister importiert worden — ohne diesen Spieler in
+     * player_rating lässt sich der Spieltag für sein Team nicht mit 11 Startern abschließen.
+     * kicker_id bleibt NULL (unbekannt); der Marktwert liegt bewusst weit über dem sonst
+     * erlaubten Maximum (0 < price <= 50.000.000), damit kein Manager den Spieler versehentlich
+     * für einen Spottpreis kauft, bevor der reguläre CSV-Import bzw. eine manuelle Korrektur via
+     * PATCH /player_in_season den echten Marktwert setzt.
+     */
+    private function createManual(): mixed
+    {
+        if (!$this->isAdmin()) {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Nur Admins dürfen Spieler manuell anlegen'];
+        }
+
+        $body = $this->body();
+        foreach (['first_name', 'last_name', 'displayname', 'season_id', 'position', 'club_id'] as $f) {
+            if (empty($body[$f])) {
+                http_response_code(400);
+                return ['status' => false, 'message' => "$f fehlt"];
+            }
+        }
+
+        if (!in_array($body['position'], ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'], true)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Invalid position'];
+        }
+
+        $displayname = trim((string) $body['displayname']);
+        if ($displayname === '') {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'displayname darf nicht leer sein'];
+        }
+        if ($this->db->playerDisplaynameExists($displayname)) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Ein Spieler mit diesem Namen existiert bereits'];
+        }
+
+        return $this->db->createPlayer([
+            'kicker_id'   => null,
+            'first_name'  => $body['first_name'],
+            'last_name'   => $body['last_name'],
+            'displayname' => $displayname,
+            'season_id'   => $body['season_id'],
+            'position'    => $body['position'],
+            'price'       => 99_000_000,
+            'club_id'     => $body['club_id'],
+            'from_date'   => date('Y-m-d'),
+        ]);
     }
 
     protected function patch(): mixed

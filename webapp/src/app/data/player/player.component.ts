@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, TemplateRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BehaviorSubject, catchError, map, of, startWith, switchMap } from 'rxjs';
@@ -6,6 +6,8 @@ import { ApiService } from '../../core/api.service';
 import { Player } from '../../core/models/player.model';
 import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
+import { BottomSheetService } from '../../core/bottom-sheet.service';
+import { POSITION_LABEL } from '../../core/constants';
 
 @Component({
   selector: 'app-data-player',
@@ -18,11 +20,13 @@ export class PlayerDataComponent {
   private router = inject(Router);
   private route  = inject(ActivatedRoute);
   private auth   = inject(AuthService);
+  bottomSheet    = inject(BottomSheetService);
 
   navigate(id: string): void { this.router.navigate([id], { relativeTo: this.route }); }
   cache = inject(DataCacheService);
 
   isMaintainer = computed(() => this.auth.isMaintainer());
+  isAdmin      = computed(() => this.auth.isAdmin());
 
   private reload$ = new BehaviorSubject<void>(undefined);
 
@@ -81,8 +85,83 @@ export class PlayerDataComponent {
     )
   );
 
+  // Notfall-Anlage (Admin): Spieler hat bereits gespielt/Punkte geholt, ist aber noch nicht vom
+  // externen CSV-Dienstleister erfasst — ohne ihn lässt sich der Spieltag für sein Team nicht mit
+  // 11 Startern abschließen. Siehe POST /player/create_manual.
+  @ViewChild('createPlayerSheet') createPlayerSheet!: TemplateRef<any>;
+
+  readonly POSITION_LABEL = POSITION_LABEL;
+  readonly positions: ('GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD')[] =
+    ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+
+  clubs = toSignal(
+    this.api.get<{ id: string; name: string }[]>('club').pipe(
+      map(list => [...list].sort((a, b) => a.name.localeCompare(b.name))),
+      catchError(() => of([] as { id: string; name: string }[]))
+    ),
+    { initialValue: [] as { id: string; name: string }[] }
+  );
+
+  activeSeasonId = computed(() =>
+    [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))[0]?.id ?? null
+  );
+
+  newFirstName   = signal('');
+  newLastName    = signal('');
+  newDisplayname = signal('');
+  newPosition    = signal<'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD'>('MIDFIELDER');
+  newClubId      = signal('');
+  creatingPlayer = signal(false);
+  createPlayerError = signal<string | null>(null);
+
+  canCreatePlayer = computed(() =>
+    this.newFirstName().trim() !== '' &&
+    this.newLastName().trim()  !== '' &&
+    this.newDisplayname().trim() !== '' &&
+    !!this.newClubId() &&
+    !!this.activeSeasonId()
+  );
+
+  openCreatePlayerForm(): void {
+    this.newFirstName.set('');
+    this.newLastName.set('');
+    this.newDisplayname.set('');
+    this.newPosition.set('MIDFIELDER');
+    this.newClubId.set(this.clubs()[0]?.id ?? '');
+    this.createPlayerError.set(null);
+    this.bottomSheet.open(this.createPlayerSheet, { title: 'Spieler manuell anlegen' });
+  }
+
+  submitCreatePlayer(): void {
+    const seasonId = this.activeSeasonId();
+    if (!this.canCreatePlayer() || !seasonId || this.creatingPlayer()) return;
+
+    this.creatingPlayer.set(true);
+    this.createPlayerError.set(null);
+    this.api.post<{ id: string }>('player/create_manual', {
+      first_name:  this.newFirstName().trim(),
+      last_name:   this.newLastName().trim(),
+      displayname: this.newDisplayname().trim(),
+      season_id:   seasonId,
+      position:    this.newPosition(),
+      club_id:     this.newClubId(),
+    }).subscribe({
+      next: ({ id }) => {
+        this.creatingPlayer.set(false);
+        this.bottomSheet.close();
+        this.reload$.next();
+        this.navigate(id);
+      },
+      error: (err: any) => {
+        this.creatingPlayer.set(false);
+        this.createPlayerError.set(err?.error?.message ?? 'Fehler beim Anlegen');
+      },
+    });
+  }
+
   constructor() {
     this.cache.ensureLeague();
     this.cache.ensureDivisions();
+    this.cache.ensureSeasons();
   }
 }
