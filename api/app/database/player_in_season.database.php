@@ -115,6 +115,7 @@ trait PlayerInSeasonTrait
              JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
              JOIN club c            ON c.id = pic.club_id
              JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                 AND cis.division_id = pis.division_id
              JOIN division d        ON d.id = cis.division_id
              LEFT JOIN player_rating pr ON pr.player_id = p.id
                  AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
@@ -603,6 +604,7 @@ trait PlayerInSeasonTrait
              FROM player_in_season pis
              JOIN player_in_club pic ON pic.player_id = pis.player_id AND pic.to_date IS NULL
              JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                 AND cis.division_id = pis.division_id
              JOIN division d ON d.id = cis.division_id
              WHERE pis.season_id = :season_id
                $divisionWhere"
