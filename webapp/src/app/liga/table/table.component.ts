@@ -118,6 +118,14 @@ export class TableComponent {
   });
 
   totalFines     = computed(() => this.rows().reduce((sum, r) => sum + Number(r.fine ?? 0), 0));
+
+  // Startgeld ist fest in team_rating.database.php eingepreist (fine = Summe der Spieltagsstrafen
+  // + 5.0 €) — entspricht die Gesamtstrafe genau diesem Betrag, ist bislang keine echte
+  // Spieltagsstrafe dazugekommen und die Anzeige soll entsprechend zurückhaltender wirken.
+  private readonly STARTGELD = 5;
+  fineIsStartgeldOnly(r: any): boolean {
+    return Number(r.fine ?? 0) === this.STARTGELD;
+  }
   lucky          = computed(() => (this.state().data?.luck?.lucky           ?? []) as any[]);
   unlucky        = computed(() => (this.state().data?.luck?.unlucky          ?? []) as any[]);
   goldeneBuerste = computed(() => (this.state().data?.luck?.goldene_buerste  ?? []) as any[]);
@@ -154,7 +162,15 @@ export class TableComponent {
     const teams = series.map((t: any) => ({
       team_id:   t.team_id,
       team_name: t.team_name,
+      season_id: t.season_id,
       color:     t.color ?? '#888888',
+      // x-Koordinate je Spieltag, für den Hover-Tooltip: nächstgelegener Punkt zur Maus-Position
+      // wird per Horizontal-Abstand gesucht (Crosshair-artig, unabhängig von der Y-Position).
+      points: (t.series as any[]).map((s: any) => ({
+        x: toX(s.matchday),
+        matchday: s.matchday,
+        points: s.points,
+      })),
       pathD: (t.series as any[])
         .map((s: any, i: number) => `${i === 0 ? 'M' : 'L'}${toX(s.matchday).toFixed(1)},${toY(s.points).toFixed(1)}`)
         .join(' '),
@@ -179,6 +195,60 @@ export class TableComponent {
 
   logoErrors = new Set<string>();
   onLogoError(teamId: string) { this.logoErrors.add(teamId); }
+
+  // Eigenes, vom persistenten logoErrors entkoppeltes Set fürs Tooltip-Logo — die Tooltip-<img>
+  // wechselt beim Drüberfahren schnell zwischen vielen Teams durch, ein einzelner Lade-Fehler
+  // dort (z.B. wegen des schnellen Src-Wechsels abgebrochene Requests) soll nicht dazu führen,
+  // dass die Tabelle/Einsatzquote-Liste für dasselbe Team fälschlich auf den Platzhalter springt.
+  chartLogoErrors = new Set<string>();
+  onChartLogoError(teamId: string) { this.chartLogoErrors.add(teamId); }
+
+  // ── Custom Hover-Tooltip über einer Saisonverlauf-Linie ──────────────────────────
+  chartTooltip = signal<{ team_id: string; team_name: string; season_id: string; matchday: number; points: number } | null>(null);
+  chartTooltipPos = signal<{ top: number; left: number } | null>(null);
+
+  onChartHover(
+    event: MouseEvent,
+    team: { team_id: string; team_name: string; season_id: string; points: { x: number; matchday: number; points: number }[] },
+  ): void {
+    const svg = (event.currentTarget as SVGGraphicsElement).ownerSVGElement;
+    if (!svg || !team.points.length) return;
+
+    const pt = svg.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const svgPt = pt.matrixTransform(ctm.inverse());
+
+    // Nächstgelegener Spieltag zur Maus-X-Position — reines Crosshair, keine Y-Distanz nötig.
+    let nearest = team.points[0];
+    let minDist = Math.abs(nearest.x - svgPt.x);
+    for (const p of team.points) {
+      const d = Math.abs(p.x - svgPt.x);
+      if (d < minDist) { minDist = d; nearest = p; }
+    }
+
+    this.chartTooltip.set({
+      team_id:   team.team_id,
+      team_name: team.team_name,
+      season_id: team.season_id,
+      matchday:  nearest.matchday,
+      points:    nearest.points,
+    });
+
+    // Einfaches horizontales Clamping statt Re-Messung per rAF (wie onParticipationHover) — der
+    // Tooltip folgt der Maus bei jeder mousemove, ein rAF-Messzyklus pro Event wäre unnötig teuer.
+    const margin = 12;
+    const assumedHalfWidth = 90;
+    const left = Math.min(Math.max(event.clientX, margin + assumedHalfWidth), window.innerWidth - margin - assumedHalfWidth);
+    this.chartTooltipPos.set({ top: event.clientY, left });
+  }
+
+  onChartLeave(): void {
+    this.chartTooltip.set(null);
+    this.chartTooltipPos.set(null);
+  }
 
   // ── Custom Hover-Tooltip über einem Einsatzquote-Balken — gleiches Edge-Clamp-Muster wie
   // betting-office.component.ts's onWinHover()/onWinLeave() bzw. h2h-match.component.ts's

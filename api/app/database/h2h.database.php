@@ -407,8 +407,10 @@ trait H2HTrait
      * Daraus: Unentschieden-Wahrscheinlichkeit schrumpft mit wachsendem Gefälle (Glockenkurve,
      * analog realer Fußball-Statistik — ausgeglichene Teams spielen häufiger unentschieden),
      * die restliche Wahrscheinlichkeit teilt sich logistisch auf Heim/Auswärts auf (gleiche
-     * Kurvenform wie eine Elo-Gewinnwahrscheinlichkeit). Odds = 1/Wahrscheinlichkeit, ohne
-     * Buchmacher-Marge.
+     * Kurvenform wie eine Elo-Gewinnwahrscheinlichkeit). Odds = 1/(Wahrscheinlichkeit *
+     * (1+MARGIN)) — MARGIN ist eine übliche Buchmacher-Marge (Overround) von 6%, wie bei
+     * Fußball-1X2-Märkten realer Buchmacher üblich; reduziert jede Quote gleichmäßig relativ zu
+     * ihrer fairen Wahrscheinlichkeit, sodass 1/home + 1/draw + 1/away = 1+MARGIN statt 1 ergibt.
      *
      * Projizierte Tordifferenz: dieselbe Formel wie h2hGoals() (Tore + Vorlagen/3, abzüglich der
      * gegnerischen Abwehr-SdS — Tore zählen also 3x so viel wie Vorlagen, eine SdS von Verteidiger
@@ -456,7 +458,7 @@ trait H2HTrait
 
         $edge = ($valueWeight * $valueRatioHome + $pointsWeight * $pointsRatioHome + $goalsWeight * $goalsRatioHome) - 0.5;
 
-        $drawMax  = 0.26; // Unentschieden-Wahrscheinlichkeit bei perfekt ausgeglichenen Teams
+        $drawMax  = 0.35; // Unentschieden-Wahrscheinlichkeit bei perfekt ausgeglichenen Teams
         $drawK    = 6.0;  // wie schnell die Unentschieden-Chance mit wachsendem Gefälle sinkt
         $probDraw = $drawMax * exp(-$drawK * $edge * $edge);
 
@@ -465,7 +467,8 @@ trait H2HTrait
         $probHome = (1 - $probDraw) * $probHomeGivenDecisive;
         $probAway = 1 - $probDraw - $probHome;
 
-        $toOdds = fn(float $p) => $p > 0 ? round(1 / $p, 2) : null;
+        $margin = 0.06; // Buchmacher-Marge (Overround) — üblicher Wert für Fußball-1X2-Märkte
+        $toOdds = fn(float $p) => $p > 0 ? round(1 / ($p * (1 + $margin)), 2) : null;
 
         return [
             'home' => $toOdds($probHome),
@@ -494,6 +497,7 @@ trait H2HTrait
                 'draw_max'           => $drawMax,
                 'draw_k'             => $drawK,
                 'c'                  => $c,
+                'margin'             => $margin,
                 'prob_home'          => round($probHome, 4),
                 'prob_draw'          => round($probDraw, 4),
                 'prob_away'          => round($probAway, 4),

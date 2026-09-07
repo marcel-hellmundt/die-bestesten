@@ -49,7 +49,7 @@ interface StandingRow {
 }
 
 interface BudgetStandingRow {
-  manager_id: string;
+  manager_id: string | null; // null = synthetische "Bank"-Zeile, siehe GET /h2h_prediction/budget_standings
   manager_name: string;
   alias: string | null;
   budget: number;

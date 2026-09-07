@@ -87,7 +87,11 @@
                 <td class="col-num col-cs" [class.col-muted]="!r.total_clean_sheet">{{ r.total_clean_sheet || 0 }}</td>
                 <td class="col-num col-points">{{ r.total_points | number }}</td>
                 @if (cache.finesEnabled()) {
-                  <td class="col-fine" [class.col-fine--active]="r.fine > 0">
+                  <td
+                    class="col-fine"
+                    [class.col-fine--active]="r.fine > 0 && !fineIsStartgeldOnly(r)"
+                    [class.col-fine--startgeld]="fineIsStartgeldOnly(r)"
+                  >
                     @if (r.fine > 0) {
                       {{ r.fine | number: '1.2-2' }} €
                     }
@@ -108,7 +112,10 @@
               <div class="luck-list">
                 @for (r of matchdayWins(); track r.team_id) {
                   <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                    <span class="manager-cell">
+                      <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                      <span class="luck-item__team">{{ r.manager_name }}</span>
+                    </span>
                     <span class="luck-item__meta">{{ r.wins }}×</span>
                   </a>
                 }
@@ -150,9 +157,13 @@
                       class="chart-line"
                       fill="none"
                     />
-                    <path [attr.d]="t.pathD" class="chart-line-hit" fill="none">
-                      <title>{{ t.team_name }}</title>
-                    </path>
+                    <path
+                      [attr.d]="t.pathD"
+                      class="chart-line-hit"
+                      fill="none"
+                      (mousemove)="onChartHover($event, t)"
+                      (mouseleave)="onChartLeave()"
+                    />
                   </g>
                 }
                 <text
@@ -225,7 +236,10 @@
             <div class="luck-list">
               @for (r of hoelzerneBand(); track r.team_id) {
                 <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="manager-cell">
+                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                  </span>
                   <span class="luck-item__meta">−{{ r.gap }} Pkt</span>
                 </a>
               }
@@ -242,7 +256,10 @@
             <div class="luck-list">
               @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
                 <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="manager-cell">
+                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                  </span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
@@ -261,7 +278,10 @@
             <div class="luck-list">
               @for (r of lucky(); track r.team_id + r.matchday_id) {
                 <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="manager-cell">
+                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                  </span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
@@ -280,7 +300,10 @@
             <div class="luck-list">
               @for (r of unlucky(); track r.team_id + r.matchday_id) {
                 <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="manager-cell">
+                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                  </span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
@@ -308,5 +331,25 @@
     <span class="participation-tooltip__detail participation-tooltip__detail--starting">{{ r.starting }}× Startelf ({{ r.starting_pct }}%)</span>
     <span class="participation-tooltip__detail participation-tooltip__detail--substitute">{{ r.substitute }}× Eingewechselt ({{ r.substitute_pct }}%)</span>
     <span class="participation-tooltip__detail participation-tooltip__detail--none">{{ r.none }}× kein Einsatz ({{ r.none_pct }}%)</span>
+  </div>
+}
+
+@if (chartTooltip(); as ct) {
+  <div
+    class="chart-tooltip"
+    [style.top.px]="chartTooltipPos()!.top"
+    [style.left.px]="chartTooltipPos()!.left"
+  >
+    <img
+      class="chart-tooltip__logo"
+      [src]="chartLogoErrors.has(ct.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + ct.season_id + '/' + ct.team_id + '.png'"
+      [class.logo--placeholder]="chartLogoErrors.has(ct.team_id)"
+      (error)="onChartLogoError(ct.team_id)"
+      alt=""
+    />
+    <span class="chart-tooltip__text">
+      <span class="chart-tooltip__name">{{ ct.team_name }}</span>
+      <span class="chart-tooltip__detail">Sp. {{ ct.matchday }} · {{ ct.points }} Pkt</span>
+    </span>
   </div>
 }

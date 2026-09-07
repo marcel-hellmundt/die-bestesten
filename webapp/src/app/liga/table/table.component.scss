@@ -194,6 +194,21 @@
   }
 }
 
+.manager-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+}
+
+.player-avatar-sm {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .data-table--compact {
   th, td {
     padding: 2px $space-3;
@@ -255,6 +270,10 @@
   &--active {
     color: $color-danger;
     font-weight: $font-weight-semibold;
+  }
+
+  &--startgeld {
+    opacity: 0.4;
   }
 }
 
@@ -518,4 +537,50 @@
   &--starting   { color: #009432; }
   &--substitute { color: #d19a00; } // dunkler als das reine Balken-Gelb (#ffc312) — sonst auf hellem Grund kaum lesbar
   &--none       { color: #ff3f34; }
+}
+
+// ── Hover-Tooltip über einer Saisonverlauf-Linie ────────────────────────────────
+// Folgt der Maus direkt (kein rAF-Messzyklus wie .participation-tooltip nötig), daher einfacheres
+// Positions-/Sichtbarkeitsmodell — @if im Template steuert das Ein-/Ausblenden.
+.chart-tooltip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 12px));
+  z-index: $z-overlay;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.chart-tooltip__logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.chart-tooltip__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-tooltip__name {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+}
+
+.chart-tooltip__detail {
+  font-size: $font-xs;
+  color: $color-text-muted;
 }

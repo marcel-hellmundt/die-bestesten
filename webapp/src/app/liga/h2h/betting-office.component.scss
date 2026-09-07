@@ -308,6 +308,10 @@
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
+
+  &--square {
+    border-radius: 0;
+  }
 }
 
 .manager-cell {

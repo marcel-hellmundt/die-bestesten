@@ -82,6 +82,12 @@
     color: $color-text-muted;
     white-space: nowrap;
   }
+
+  &__error {
+    color: $color-danger;
+    white-space: normal !important;
+    max-width: 220px;
+  }
 }
 
 .status-icons {

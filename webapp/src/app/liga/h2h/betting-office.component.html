@@ -341,12 +341,16 @@
               <tr>
                 <td>
                   <span class="manager-cell">
-                    <img
-                      class="player-avatar-sm"
-                      [src]="managerPhotoUrl(row.manager_id)"
-                      (error)="$any($event.target).style.display = 'none'"
-                      alt=""
-                    />
+                    @if (row.manager_id) {
+                      <img
+                        class="player-avatar-sm"
+                        [src]="managerPhotoUrl(row.manager_id)"
+                        (error)="$any($event.target).style.display = 'none'"
+                        alt=""
+                      />
+                    } @else {
+                      <img class="player-avatar-sm player-avatar-sm--square" src="img/bestico/bank.png" alt="" />
+                    }
                     {{ row.manager_name }}
                   </span>
                 </td>
