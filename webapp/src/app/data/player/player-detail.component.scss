@@ -4,6 +4,14 @@
   to { transform: rotate(360deg); }
 }
 
+.division-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: $space-1;
+}
+
 .detail-header {
   margin-bottom: $space-8;
 

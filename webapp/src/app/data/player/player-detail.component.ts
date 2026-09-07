@@ -24,6 +24,7 @@ interface TeamHistoryEntry {
 interface PlayerInSeason {
   player_in_season_id: string;
   season_id: string;
+  division_id: string;
   price: number;
   position: 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD';
   photo_uploaded: number;

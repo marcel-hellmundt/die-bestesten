@@ -574,7 +574,15 @@
                     (click)="selectedSeasonId.set(s.season_id)"
                     (dblclick)="openEditSeasonForm(s)"
                   >
-                    <td>{{ cache.seasonName(s.season_id) }}</td>
+                    <td>
+                      <img
+                        class="division-icon"
+                        [src]="'img/divisions/' + s.division_id + '.png'"
+                        [title]="cache.divisionName(s.division_id)"
+                        alt=""
+                      />
+                      {{ cache.seasonName(s.season_id) }}
+                    </td>
                     <td class="col-position">
                       <span
                         class="position-badge position-badge--text"
