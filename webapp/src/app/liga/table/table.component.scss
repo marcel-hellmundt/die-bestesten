@@ -194,6 +194,21 @@
   }
 }
 
+.manager-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+}
+
+.player-avatar-sm {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .data-table--compact {
   th, td {
     padding: 2px $space-3;

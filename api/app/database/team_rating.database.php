@@ -184,7 +184,7 @@ trait TeamRatingTrait
         $rq = $this->con_league->prepare("
             WITH ranked AS (
                 SELECT tr.team_id, tr.matchday_id, tr.points, tr.max_points,
-                       t.team_name, t.season_id, t.color_primary AS color, m.manager_name, tr.invalid,
+                       t.team_name, t.season_id, t.color_primary AS color, m.id AS manager_id, m.manager_name, tr.invalid,
                        DENSE_RANK() OVER (PARTITION BY tr.matchday_id, tr.invalid ORDER BY tr.points ASC) AS rank_asc,
                        SUM(tr.invalid)  OVER (PARTITION BY tr.matchday_id)                         AS invalid_cnt
                 FROM team_rating tr
@@ -232,7 +232,7 @@ trait TeamRatingTrait
         foreach ($validRows as $r) {
             $tid = $r['team_id'];
             if (!isset($gaps[$tid])) {
-                $gaps[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_name' => $r['manager_name'], 'color' => $r['color'], 'season_id' => $r['season_id'], 'gap' => 0];
+                $gaps[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_id' => $r['manager_id'], 'manager_name' => $r['manager_name'], 'color' => $r['color'], 'season_id' => $r['season_id'], 'gap' => 0];
             }
             $gaps[$tid]['gap'] += (int) $r['max_points'] - (int) $r['points'];
         }
@@ -251,7 +251,7 @@ trait TeamRatingTrait
                 if ((int) $r['points'] === (int) $maxPts) {
                     $tid = $r['team_id'];
                     if (!isset($winsByTeam[$tid])) {
-                        $winsByTeam[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_name' => $r['manager_name'], 'wins' => 0];
+                        $winsByTeam[$tid] = ['team_id' => $tid, 'team_name' => $r['team_name'], 'manager_id' => $r['manager_id'], 'manager_name' => $r['manager_name'], 'wins' => 0];
                     }
                     $winsByTeam[$tid]['wins']++;
                 }

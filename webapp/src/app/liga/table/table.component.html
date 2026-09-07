@@ -112,7 +112,10 @@
               <div class="luck-list">
                 @for (r of matchdayWins(); track r.team_id) {
                   <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                    <span class="manager-cell">
+                      <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                      <span class="luck-item__team">{{ r.manager_name }}</span>
+                    </span>
                     <span class="luck-item__meta">{{ r.wins }}×</span>
                   </a>
                 }
@@ -229,7 +232,10 @@
             <div class="luck-list">
               @for (r of hoelzerneBand(); track r.team_id) {
                 <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="manager-cell">
+                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                  </span>
                   <span class="luck-item__meta">−{{ r.gap }} Pkt</span>
                 </a>
               }
@@ -246,7 +252,10 @@
             <div class="luck-list">
               @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
                 <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="manager-cell">
+                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                  </span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
@@ -265,7 +274,10 @@
             <div class="luck-list">
               @for (r of lucky(); track r.team_id + r.matchday_id) {
                 <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="manager-cell">
+                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                  </span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
@@ -284,7 +296,10 @@
             <div class="luck-list">
               @for (r of unlucky(); track r.team_id + r.matchday_id) {
                 <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="luck-item__team">{{ r.manager_name }}</span>
+                  <span class="manager-cell">
+                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                    <span class="luck-item__team">{{ r.manager_name }}</span>
+                  </span>
                   <span class="luck-item__meta"
                     >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
                   >
