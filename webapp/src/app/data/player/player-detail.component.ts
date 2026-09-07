@@ -119,6 +119,13 @@ export class PlayerDetailComponent {
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error ?? null);
 
+  // Division-Icon nur relevant, wenn der Spieler tatsächlich in mehr als einer Division gespielt
+  // hat — im Normalfall (immer dieselbe Division) ist es reine visuelle Ablenkung.
+  hasMultipleDivisions = computed(() => {
+    const seasons = this.player()?.seasons ?? [];
+    return new Set(seasons.map(s => s.division_id)).size > 1;
+  });
+
   isMaintainer = computed(() => this.auth.isMaintainer());
 
   countries = toSignal(
