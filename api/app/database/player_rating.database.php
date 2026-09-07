@@ -575,13 +575,24 @@ trait PlayerRatingTrait
 
     private function calculatePoints(string $id): int
     {
+        // pis.division_id muss auf die Division ZUM ZEITPUNKT DIESES RATINGS auflösen (pr.club_id),
+        // nicht auf die aktuelle Division des Spielers — sonst würde ein späterer Divisionswechsel
+        // (Winterwechsel) rückwirkend die Position/den Marktwert alter, bereits gespeicherter
+        // Ratings verändern. Fallback auf matchday.division_id, da pr.club_id bei historischen
+        // Daten ohne Club-Tracking NULL sein kann (siehe Spaltenkommentar in global_schema.sql).
         $query = $this->con->prepare("
             SELECT pr.grade, pr.participation, pr.goals, pr.assists,
                    pr.clean_sheet, pr.sds, pr.red_card, pr.yellow_red_card,
                    pis.position
             FROM player_rating pr
             JOIN matchday md ON md.id = pr.matchday_id
-            LEFT JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+            LEFT JOIN player_in_season pis
+                   ON pis.player_id = pr.player_id
+                  AND pis.season_id = md.season_id
+                  AND pis.division_id = COALESCE(
+                        (SELECT cis.division_id FROM club_in_season cis
+                         WHERE cis.club_id = pr.club_id AND cis.season_id = md.season_id LIMIT 1),
+                        md.division_id)
             WHERE pr.id = :id
             LIMIT 1
         ");

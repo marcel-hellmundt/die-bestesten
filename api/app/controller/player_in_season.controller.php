@@ -26,11 +26,12 @@ class PlayerInSeasonController extends _BaseController
         if ($this->id === 'preview_csv') return $this->previewCsv();
         if ($this->id === 'import_csv')  return $this->importCsv();
 
-        $body     = $this->body();
-        $playerId = $body['player_id'] ?? null;
-        $seasonId = $body['season_id'] ?? null;
-        $position = $body['position']  ?? null;
-        $price    = isset($body['price']) ? (int) $body['price'] : null;
+        $body       = $this->body();
+        $playerId   = $body['player_id']   ?? null;
+        $seasonId   = $body['season_id']   ?? null;
+        $divisionId = $body['division_id'] ?? null;
+        $position   = $body['position']    ?? null;
+        $price      = isset($body['price']) ? (int) $body['price'] : null;
 
         $validPositions = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
@@ -44,13 +45,24 @@ class PlayerInSeasonController extends _BaseController
             return ['status' => false, 'message' => 'Invalid position'];
         }
 
+        // division_id ist optional — ohne explizite Angabe wird sie aus dem aktuellen Verein des
+        // Spielers hergeleitet (Fallback: Liga-Division). Erlaubt älteren Frontend-Callern ohne
+        // Divisions-Auswahl (z.B. das "Saison hinzufügen"-Formular), unverändert weiterzulaufen.
+        if (!$divisionId) {
+            $divisionId = $this->db->resolvePlayerCurrentDivisionId($playerId, $seasonId);
+            if (!$divisionId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'division_id konnte nicht automatisch ermittelt werden — bitte explizit angeben'];
+            }
+        }
+
         $id = $this->generateGUID();
         try {
-            $this->db->createPlayerInSeason($id, $playerId, $seasonId, $position, $price);
+            $this->db->createPlayerInSeason($id, $playerId, $seasonId, $divisionId, $position, $price);
         } catch (PDOException $e) {
             if ($e->getCode() === '23000') {
                 http_response_code(409);
-                return ['status' => false, 'message' => 'Spieler hat bereits einen Eintrag für diese Saison'];
+                return ['status' => false, 'message' => 'Spieler hat bereits einen Eintrag für diese Saison in dieser Division'];
             }
             throw $e;
         }
@@ -90,14 +102,20 @@ class PlayerInSeasonController extends _BaseController
             return ['status' => false, 'message' => 'Nur Maintainer dürfen CSV-Imports durchführen'];
         }
 
-        $rows = $this->body()['rows'] ?? null;
+        $body       = $this->body();
+        $rows       = $body['rows']        ?? null;
+        $divisionId = $body['division_id'] ?? null;
         if (!is_array($rows) || empty($rows)) {
             http_response_code(400);
             return ['status' => false, 'message' => 'rows[] erforderlich'];
         }
+        if (!$divisionId) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'division_id erforderlich'];
+        }
 
         try {
-            $result = $this->db->importCsvRows($rows);
+            $result = $this->db->importCsvRows($rows, $divisionId);
         } catch (RuntimeException $e) {
             http_response_code(422);
             return ['status' => false, 'message' => $e->getMessage()];

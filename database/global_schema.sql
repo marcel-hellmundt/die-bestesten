@@ -64,18 +64,49 @@ CREATE TABLE IF NOT EXISTS player (
     FOREIGN KEY (country_id) REFERENCES country(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Tabelle: player_in_season (m-n Beziehung player <-> season)
+-- Tabelle: player_in_season (m-n Beziehung player <-> season, eine Zeile je Division, in der der
+-- Spieler innerhalb der Saison gespielt hat — normalerweise 1 Zeile, bei einem Divisionswechsel
+-- während der Saison (z.B. Winterwechsel 2. Liga -> 1. Liga) 2 Zeilen, damit der alte Marktwert/
+-- die alte Position der vorherigen Division nicht überschrieben werden, sondern als Historie
+-- erhalten bleiben)
+-- Produktions-Migration (kein Migrations-Runner in diesem Repo):
+-- ALTER TABLE player_in_season ADD COLUMN division_id CHAR(36) NULL AFTER season_id;
+-- -- Backfill (division_id NULL -> aktueller Club des Spielers -> dessen Division dieser Saison):
+-- UPDATE player_in_season pis
+-- JOIN player_in_club pic ON pic.player_id = pis.player_id AND pic.to_date IS NULL
+-- JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+-- SET pis.division_id = cis.division_id WHERE pis.division_id IS NULL;
+-- -- Fallback 1: letzter bekannter Verein des Spielers (auch falls nicht mehr aktuell) für diese Saison:
+-- UPDATE player_in_season pis
+-- JOIN (
+--     SELECT pic.player_id, cis.season_id, cis.division_id,
+--            ROW_NUMBER() OVER (PARTITION BY pic.player_id, cis.season_id ORDER BY pic.from_date DESC) AS rn
+--     FROM player_in_club pic
+--     JOIN club_in_season cis ON cis.club_id = pic.club_id
+-- ) resolved ON resolved.player_id = pis.player_id AND resolved.season_id = pis.season_id AND resolved.rn = 1
+-- SET pis.division_id = resolved.division_id WHERE pis.division_id IS NULL;
+-- -- Fallback 2: keine Vereinsdaten auflösbar -> höchste deutsche Division (gleicher Fallback wie
+-- -- getLeagueDivisionId()-Aufrufer im Code):
+-- UPDATE player_in_season SET division_id = (SELECT id FROM division WHERE level = 1 AND LOWER(country_id) = 'de' LIMIT 1)
+-- WHERE division_id IS NULL;
+-- -- Erst wenn SELECT COUNT(*) FROM player_in_season WHERE division_id IS NULL = 0:
+-- ALTER TABLE player_in_season MODIFY COLUMN division_id CHAR(36) NOT NULL;
+-- ALTER TABLE player_in_season ADD CONSTRAINT fk_pis_division FOREIGN KEY (division_id) REFERENCES division(id);
+-- ALTER TABLE player_in_season DROP INDEX uk_player_season;
+-- ALTER TABLE player_in_season ADD UNIQUE KEY uk_player_season_division (player_id, season_id, division_id);
 CREATE TABLE IF NOT EXISTS player_in_season (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
     season_id CHAR(36) NOT NULL,                -- FK zu season.id
+    division_id CHAR(36) NOT NULL,              -- FK zu division.id — Division, in der Preis/Position dieser Zeile gelten
     price DECIMAL(10,2) DEFAULT NULL,           -- Marktwert
     position ENUM('GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD') CHARACTER SET utf8mb4 DEFAULT NULL,  -- Position
     photo_uploaded BOOLEAN DEFAULT FALSE,       -- Gibt an, ob ein Foto für den Spieler in dieser Saison hochgeladen wurde
     last_updated DATETIME DEFAULT NULL,         -- Erstell-/Änderungszeitpunkt (Position/Preis); NULL = seit jeher unverändert (immer sichtbar) — steuert Markt-Sichtbarkeit während eines offenen Transferfensters
     FOREIGN KEY (player_id) REFERENCES player(id),
     FOREIGN KEY (season_id) REFERENCES season(id),
-    UNIQUE KEY uk_player_season (player_id, season_id)
+    FOREIGN KEY (division_id) REFERENCES division(id),
+    UNIQUE KEY uk_player_season_division (player_id, season_id, division_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: player_in_club (m-n Beziehung player <-> club)
