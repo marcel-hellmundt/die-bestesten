@@ -4,12 +4,18 @@
   to { transform: rotate(360deg); }
 }
 
+.season-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+}
+
 .division-icon {
   width: 16px;
   height: 16px;
   object-fit: contain;
-  vertical-align: middle;
-  margin-right: $space-1;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
 .detail-header {

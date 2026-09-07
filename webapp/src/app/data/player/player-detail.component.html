@@ -575,13 +575,15 @@
                     (dblclick)="openEditSeasonForm(s)"
                   >
                     <td>
-                      <img
-                        class="division-icon"
-                        [src]="'img/divisions/' + s.division_id + '.png'"
-                        [title]="cache.divisionName(s.division_id)"
-                        alt=""
-                      />
-                      {{ cache.seasonName(s.season_id) }}
+                      <span class="season-cell">
+                        <img
+                          class="division-icon"
+                          [src]="'img/divisions/' + s.division_id + '.png'"
+                          [title]="cache.divisionName(s.division_id)"
+                          alt=""
+                        />
+                        {{ cache.seasonName(s.season_id) }}
+                      </span>
                     </td>
                     <td class="col-position">
                       <span
