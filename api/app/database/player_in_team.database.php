@@ -245,6 +245,8 @@ trait PlayerInTeamTrait
 
     private function fetchPlayerDetails(array $playerIds, string $seasonId): array
     {
+        // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A) —
+        // nutzt den ohnehin schon vorhandenen pic-Join (current_club_id) mit, kein zusätzlicher.
         $ph = implode(',', array_fill(0, count($playerIds), '?'));
         $q  = $this->con->prepare(
             "SELECT p.id, p.displayname, p.country_id,
@@ -254,13 +256,16 @@ trait PlayerInTeamTrait
                     pic.club_id AS current_club_id,
                     c.logo_uploaded AS club_logo_uploaded
              FROM player p
+             LEFT JOIN player_in_club pic
+                   ON pic.player_id = p.id AND pic.to_date IS NULL
+             LEFT JOIN club_in_season cis_cur
+                   ON cis_cur.club_id = pic.club_id AND cis_cur.season_id = ?
              LEFT JOIN player_in_season pis
                    ON pis.player_id = p.id AND pis.season_id = ?
+                   AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
              LEFT JOIN player_rating pr
                    ON pr.player_id = p.id
                    AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
-             LEFT JOIN player_in_club pic
-                   ON pic.player_id = p.id AND pic.to_date IS NULL
              LEFT JOIN club c
                    ON c.id = pic.club_id
              WHERE p.id IN ($ph)
@@ -270,7 +275,7 @@ trait PlayerInTeamTrait
                       points DESC,
                       pis.price DESC"
         );
-        $q->execute(array_merge([$seasonId, $seasonId, $seasonId], $playerIds));
+        $q->execute(array_merge([$seasonId, $seasonId, $seasonId, $seasonId], $playerIds));
         return $q->fetchAll(PDO::FETCH_ASSOC);
     }
 }

@@ -8,14 +8,18 @@ trait SearchTrait
         $activeSeasonId = $this->getActiveSeasonId();
 
         // Players
+        // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A).
         $pq = $this->con->prepare(
             "SELECT p.id, p.displayname, p.first_name, p.last_name,
                     pis.position, pis.photo_uploaded,
                     :season_id AS season_id,
                     COALESCE(SUM(pr.points), 0) AS points
              FROM player p
+             LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = p.id AND pic_cur.to_date IS NULL
+             LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = :season_id4
              LEFT JOIN player_in_season pis
                    ON pis.player_id = p.id AND pis.season_id = :season_id2
+                   AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
              LEFT JOIN player_rating pr
                    ON pr.player_id = p.id
                    AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = :season_id3)
@@ -28,6 +32,7 @@ trait SearchTrait
             ':season_id'  => $activeSeasonId,
             ':season_id2' => $activeSeasonId,
             ':season_id3' => $activeSeasonId,
+            ':season_id4' => $activeSeasonId,
             ':q'          => $like,
             ':q2'         => $like,
             ':q3'         => $like,

@@ -449,9 +449,14 @@ trait ManagerTrait
         $prices    = [];
         if (!empty($allPlayerIds)) {
             $allPlayerIds = array_unique($allPlayerIds);
+            // Fragment A, Bulk-Form: jeder Spieler auf seine eigene aktuelle Division eingeschränkt.
             $pp = implode(',', array_fill(0, count($allPlayerIds), '?'));
             $pisQ = $this->con->prepare(
-                "SELECT player_id, position, price FROM player_in_season WHERE player_id IN ($pp) AND season_id = ?"
+                "SELECT pis.player_id, pis.position, pis.price FROM player_in_season pis
+                 LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
+                 LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+                 WHERE pis.player_id IN ($pp) AND pis.season_id = ?
+                   AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
             );
             $pisQ->execute([...$allPlayerIds, $seasonId]);
             foreach ($pisQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
