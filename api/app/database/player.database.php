@@ -246,24 +246,33 @@ trait PlayerTrait
     }
 
     /**
-     * Bulk-lookup by exact displayname, indexed by displayname. Used as a second-pass check
-     * for kicker_id-matching CSV rows that found no player: if a player with the same
-     * displayname already exists under a different kicker_id, the CSV's kicker_id is likely
-     * wrong/changed rather than the player being genuinely new.
+     * Bulk-lookup by exact (first_name, last_name) pair, indexed by "first_name|last_name". Used
+     * as a second-pass check for kicker_id-matching CSV rows that found no player: if a player
+     * with the same full name already exists under a different kicker_id, the CSV's kicker_id is
+     * likely wrong/changed rather than the player being genuinely new. Matched on full name
+     * rather than displayname — the CSV's Kurzname is often just the surname, which caused
+     * false-positive matches against unrelated players sharing a common last name.
      */
-    public function getPlayersByDisplaynames(array $displaynames): array
+    public function getPlayersByFullNames(array $pairs): array
     {
-        if (empty($displaynames)) return [];
+        if (empty($pairs)) return [];
 
-        $placeholders = implode(',', array_fill(0, count($displaynames), '?'));
+        $conditions = [];
+        $params     = [];
+        foreach (array_values($pairs) as $i => $pair) {
+            $conditions[]      = "(first_name = :fn$i AND last_name = :ln$i)";
+            $params[":fn$i"]   = $pair['first_name'];
+            $params[":ln$i"]   = $pair['last_name'];
+        }
+
         $query = $this->con->prepare(
-            "SELECT id, kicker_id, displayname FROM player WHERE displayname IN ($placeholders)"
+            "SELECT id, kicker_id, displayname, first_name, last_name FROM player WHERE " . implode(' OR ', $conditions)
         );
-        $query->execute($displaynames);
+        $query->execute($params);
 
         $out = [];
         foreach ($query->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $out[$row['displayname']] = $row;
+            $out[$row['first_name'] . '|' . $row['last_name']] = $row;
         }
         return $out;
     }
@@ -310,7 +319,7 @@ trait PlayerTrait
             ]);
         }
 
-        return ['id' => $playerId];
+        return ['id' => $playerId, 'displayname' => $body['displayname']];
     }
 
 }

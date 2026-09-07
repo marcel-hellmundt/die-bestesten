@@ -40,6 +40,21 @@ class PlayerController extends _BaseController
                 http_response_code(400);
                 return ['message' => 'price muss zwischen 0 und 50.000.000 liegen'];
             }
+
+            // Der CSV-Kurzname (meist nur der Nachname) kollidiert bei häufigen Nachnamen (z.B.
+            // "Gomez") schnell mit einem bereits vorhandenen Spieler — displayname ist UNIQUE.
+            // Statt mit einem rohen SQL-Fehler abzubrechen, automatisch auf "1. Buchstabe Vorname
+            // + Nachname" ausweichen (z.B. "J. Gomez"); kollidiert selbst das noch, sauberer 409
+            // statt stillschweigend einen dritten Namen zu erfinden.
+            if ($this->db->playerDisplaynameExists($body['displayname'])) {
+                $fallback = mb_substr(trim((string) $body['first_name']), 0, 1) . '. ' . trim((string) $body['last_name']);
+                if ($this->db->playerDisplaynameExists($fallback)) {
+                    http_response_code(409);
+                    return ['status' => false, 'message' => "Anzeigename \"{$body['displayname']}\" und Ausweichname \"$fallback\" bereits vergeben — Spieler manuell anlegen"];
+                }
+                $body['displayname'] = $fallback;
+            }
+
             return $this->db->createPlayer($body);
         }
 

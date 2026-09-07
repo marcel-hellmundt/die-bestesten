@@ -318,14 +318,20 @@ trait PlayerInSeasonTrait
         $currentClubMap = $this->getCurrentClubByPlayerIds($matchedPlayerIds);
         $masterDataMap  = $this->getPlayerMasterDataByIds($matchedPlayerIds);
 
-        // Second-pass check for rows with no kicker_id match: same displayname already in DB
-        // under a different kicker_id likely means the CSV's kicker_id is wrong/changed rather
-        // than the player being genuinely new.
-        $unmatchedDisplaynames = array_values(array_unique(array_map(
-            fn($r) => $r['displayname'],
-            array_filter($parsedRows, fn($r) => !isset($playerMap[$r['kicker_id']]))
-        )));
-        $duplicateCandidateMap = $this->getPlayersByDisplaynames($unmatchedDisplaynames);
+        // Second-pass check for rows with no kicker_id match: same full name (first_name +
+        // last_name) already in DB under a different kicker_id likely means the CSV's kicker_id
+        // is wrong/changed rather than the player being genuinely new. Matched on full name, not
+        // displayname — the CSV's Kurzname is often just the surname, which caused false
+        // positives for common last names (e.g. "Gomez") shared by unrelated players.
+        $unmatchedNamePairs = [];
+        foreach ($parsedRows as $r) {
+            if (isset($playerMap[$r['kicker_id']])) continue;
+            $unmatchedNamePairs[$r['first_name'] . '|' . $r['last_name']] = [
+                'first_name' => $r['first_name'],
+                'last_name'  => $r['last_name'],
+            ];
+        }
+        $duplicateCandidateMap = $this->getPlayersByFullNames($unmatchedNamePairs);
 
         // Resolve every distinct CSV club name once, then bulk-check which division each
         // resolved club actually plays in this season — used to detect a CSV uploaded for
@@ -388,7 +394,7 @@ trait PlayerInSeasonTrait
             $club    = $clubByName[$r['club_name']];
             $existing = $player ? ($existingMap[$player['id']] ?? null) : null;
             $currentClub = $player ? ($currentClubMap[$player['id']] ?? null) : null;
-            $duplicateCandidate = $player ? null : ($duplicateCandidateMap[$r['displayname']] ?? null);
+            $duplicateCandidate = $player ? null : ($duplicateCandidateMap[$r['first_name'] . '|' . $r['last_name']] ?? null);
             $masterData = $player ? ($masterDataMap[$player['id']] ?? null) : null;
 
             $alreadyInSeason = $existing !== null;

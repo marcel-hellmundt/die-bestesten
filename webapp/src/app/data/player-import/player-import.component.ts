@@ -380,7 +380,7 @@ export class PlayerImportDataComponent {
     if (!seasonId || !row.csv_position || !row.csv_price) return;
 
     this.creatingPlayers.update((s) => new Set([...s, row.kicker_id]));
-    this.api.post<{ id: string }>('player/create', {
+    this.api.post<{ id: string; displayname: string }>('player/create', {
       kicker_id: row.kicker_id,
       first_name: row.csv_first_name,
       last_name: row.csv_last_name,
@@ -391,12 +391,15 @@ export class PlayerImportDataComponent {
       club_id: row.matched_club_id ?? undefined,
       from_date: this.seasonStartDate() ?? undefined,
     }).subscribe({
-      next: ({ id }) => {
+      next: ({ id, displayname }) => {
         this.creatingPlayers.update((s) => { const n = new Set(s); n.delete(row.kicker_id); return n; });
         this.rows.update((list) => list.map((r) => r !== row ? r : PlayerImportRow.from({
           ...r,
           matched_player_id: id,
-          matched_displayname: r.csv_displayname,
+          // Bei displayname-Kollision (z.B. Kurzname nur Nachname, mehrfach vergeben) legt der
+          // Server automatisch unter einem Ausweichnamen an ("1. Buchstabe Vorname + Nachname")
+          // — die tatsächlich vergebene displayname kommt deshalb aus der Response, nicht aus dem CSV.
+          matched_displayname: displayname,
           current_club_id: r.matched_club_id,
           current_club_name: r.csv_club_name,
           current_club_logo_uploaded: r.club_logo_uploaded,
