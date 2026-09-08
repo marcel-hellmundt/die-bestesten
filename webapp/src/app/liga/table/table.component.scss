@@ -309,6 +309,27 @@
   gap: $space-4;
   margin-top: $space-6;
 
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+  }
+}
+
+// Umschließt .chart-row__cards + .position-points-card, damit letztere exakt so breit wird wie
+// Saisonverlauf+Einsatzquote zusammen — unabhängig davon, ob daneben noch .wins-card (Spieltags-
+// siege) Platz beansprucht (die volle .chart-row wäre sonst inkl. .wins-card breiter).
+.chart-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+}
+
+.chart-row__cards {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-4;
+
   .chart-card {
     flex: 1;
     min-width: 0;
@@ -424,12 +445,8 @@
 }
 
 // ── Punkte nach Mannschaftsteil ─────────────────────────────────────────────
-// Volle Breite von .main-col (also so breit wie .chart-row) statt Teil von dessen Flex-Zeile —
-// eigene Card darunter, nicht daneben.
-.position-points-card {
-  margin-top: $space-6;
-}
-
+// Sitzt in .chart-row__main statt direkt in .chart-row — dadurch genau so breit wie
+// Saisonverlauf+Einsatzquote zusammen, nicht die ganze .chart-row inkl. .wins-card.
 .position-points-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -453,13 +470,15 @@
     margin-bottom: $space-2;
   }
 
-  // Spalte ist nur ein Viertel der .card-Breite — Teamname muss dort abgeschnitten werden
-  // können, statt die Spalte (und damit .tbl-logo/Punkte-Spalte) aufzublähen.
-  .team-cell { min-width: 0; }
-  .team-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  // Kein Teamname (nur Logo) — Logo mittig statt linksbündig in der jetzt schmalen Spalte.
+  // .tbl-logo ist global display:block (füllt sonst die volle Zellenbreite); hier bewusst auf
+  // inline-block zurückgesetzt, damit text-align:center auf der Zelle greift.
+  td.col-team {
+    text-align: center;
+
+    .tbl-logo {
+      display: inline-block;
+    }
   }
 }
 

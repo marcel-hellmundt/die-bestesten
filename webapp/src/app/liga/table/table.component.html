@@ -124,6 +124,8 @@
           </div>
         }
 
+        <div class="chart-row__main">
+        <div class="chart-row__cards">
         @if (chartData(); as chart) {
           <div class="card chart-card">
             <span class="chart-card__label">Saisonverlauf</span>
@@ -214,29 +216,28 @@
             </div>
           </div>
         }
-      </div>
+        </div>
 
-      @if (positionPoints(); as groups) {
-        <div class="card position-points-card">
-          <span class="chart-card__label">Punkte nach Mannschaftsteil</span>
-          <div class="position-points-grid">
-            @for (g of groups; track g.key) {
-              <div class="position-points-col">
-                <div class="position-points-col__label">{{ g.label }}</div>
-                <table class="data-table data-table--compact">
-                  <thead>
-                    <tr>
-                      <th class="col-rank">#</th>
-                      <th>Team</th>
-                      <th class="col-num col-points">Pkt</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (r of g.rows; track r.team_id; let i = $index) {
-                      <tr class="row-link" (click)="navigateToTeam(r.team_id)">
-                        <td class="col-rank">{{ r[g.key] !== g.rows[i - 1]?.[g.key] ? i + 1 : '' }}</td>
-                        <td class="col-team">
-                          <span class="team-cell">
+        @if (positionPoints(); as groups) {
+          <div class="card position-points-card">
+            <span class="chart-card__label">Punkte nach Mannschaftsteil</span>
+            <div class="position-points-grid">
+              @for (g of groups; track g.key) {
+                <div class="position-points-col">
+                  <div class="position-points-col__label">{{ g.label }}</div>
+                  <table class="data-table data-table--compact">
+                    <thead>
+                      <tr>
+                        <th class="col-rank">#</th>
+                        <th></th>
+                        <th class="col-num col-points">Pkt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (r of g.rows; track r.team_id; let i = $index) {
+                        <tr class="row-link" (click)="navigateToTeam(r.team_id)">
+                          <td class="col-rank">{{ r[g.key] !== g.rows[i - 1]?.[g.key] ? i + 1 : '' }}</td>
+                          <td class="col-team">
                             <img
                               class="tbl-logo"
                               [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
@@ -244,19 +245,19 @@
                               [alt]="r.team_name"
                               (error)="onLogoError(r.team_id)"
                             />
-                            <span class="team-name">{{ r.team_name }}</span>
-                          </span>
-                        </td>
-                        <td class="col-num col-points">{{ r[g.key] | number }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
+                          </td>
+                          <td class="col-num col-points">{{ r[g.key] | number }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
           </div>
+        }
         </div>
-      }
+      </div>
     </div>
 
     <div class="sidebar">
