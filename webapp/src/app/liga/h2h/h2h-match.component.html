@@ -38,7 +38,7 @@
       <!-- Score -->
       <div class="match-score">
         @if (homeLogoUrl()) {
-          <a [routerLink]="['/team', homeTeam()?.id]">
+          <a class="score-logo-link score-logo-link--home" [routerLink]="['/team', homeTeam()?.id]">
             <img
               class="score-logo score-logo--home"
               [src]="homeLogoUrl()!"
@@ -63,7 +63,7 @@
           }
         </div>
         @if (awayLogoUrl()) {
-          <a [routerLink]="['/team', awayTeam()?.id]">
+          <a class="score-logo-link score-logo-link--away" [routerLink]="['/team', awayTeam()?.id]">
             <img
               class="score-logo score-logo--away"
               [src]="awayLogoUrl()!"
@@ -433,10 +433,7 @@
             </div>
             @if (predictionError(); as err) {
               <p class="h2h-predict-card__error">{{ err }}</p>
-            } @else {
-              <p class="h2h-predict-card__hint">Tipp änderbar bis Anpfiff.</p>
             }
-            <p class="h2h-predict-card__hint">{{ submittedCountLabel() }}</p>
             @if (myPick()) {
               <button
                 class="h2h-predict-card__remove"

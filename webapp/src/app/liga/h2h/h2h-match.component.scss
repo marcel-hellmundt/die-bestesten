@@ -129,9 +129,15 @@
       display: contents;
     }
 
-    .score-logo--home { grid-area: home-logo; justify-self: center; }
-    .score-logo--away { grid-area: away-logo; justify-self: center; }
-    .score-values     { grid-area: score-mid; justify-self: center; }
+    // .score-logo--home/--away (grid-area/justify-self) target the <img>, but display:contents
+    // on .match-score makes its child <a> (not the nested <img>) the actual grid item — grid
+    // placement/alignment props on a non-grid-item element have no effect. Without this, the <a>
+    // defaults to justify-self:stretch (fills the whole 1fr column) and, being display:flex with
+    // the default justify-content:flex-start, left-aligns the logo instead of centering it above
+    // the (centered) team name below.
+    .score-logo-link--home { grid-area: home-logo; justify-content: center; }
+    .score-logo-link--away { grid-area: away-logo; justify-content: center; }
+    .score-values           { grid-area: score-mid; justify-self: center; }
   }
 }
 
