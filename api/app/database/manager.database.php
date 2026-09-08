@@ -447,23 +447,39 @@ trait ManagerTrait
         // Get positions + prices from global DB
         $positions = [];
         $prices    = [];
+        $seasonPts = [];
         if (!empty($allPlayerIds)) {
             $allPlayerIds = array_unique($allPlayerIds);
             // Fragment A, Bulk-Form: jeder Spieler auf seine eigene aktuelle Division eingeschränkt.
+            // Punkte-Summe zusätzlich auf dieselbe Division eingeschränkt (matchday.division_id =
+            // pis.division_id), sonst würde sie bei einem Divisionswechsel Spieltage beider
+            // Divisionen mitzählen (siehe player_in_team.database.php::fetchPlayerDetails()).
             $pp = implode(',', array_fill(0, count($allPlayerIds), '?'));
             $pisQ = $this->con->prepare(
-                "SELECT pis.player_id, pis.position, pis.price FROM player_in_season pis
+                "SELECT pis.player_id, pis.position, pis.price,
+                        COALESCE(SUM(pr.points), 0) AS season_points
+                 FROM player_in_season pis
                  LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
                  LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+                 LEFT JOIN player_rating pr ON pr.player_id = pis.player_id
+                     AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = pis.season_id AND division_id = pis.division_id)
                  WHERE pis.player_id IN ($pp) AND pis.season_id = ?
-                   AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
+                   AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+                 GROUP BY pis.player_id, pis.position, pis.price"
             );
             $pisQ->execute([...$allPlayerIds, $seasonId]);
             foreach ($pisQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
                 $positions[$row['player_id']] = $row['position'];
                 $prices[$row['player_id']]    = (float) $row['price'];
+                $seasonPts[$row['player_id']] = (int) $row['season_points'];
             }
         }
+
+        // Marktwert = Grundpreis + Saisonpunkte * division.points_bonus (gleiche Formel wie beim
+        // Kauf/Verkauf und in squad.component.ts::marketValue() — vorher fehlte die
+        // Punkte-Steigerung hier komplett, sodass /liga/teams einen niedrigeren Wert als die
+        // Kaderansicht zeigte).
+        $pointsBonus = $this->getDivisionConfig()['points_bonus'];
 
         // Validate each squad: minimums GK≥1 DEF≥5 MID≥5 FWD≥3; sum total_value
         $sqMin = ['GOALKEEPER' => 1, 'DEFENDER' => 5, 'MIDFIELDER' => 5, 'FORWARD' => 3];
@@ -473,7 +489,7 @@ trait ManagerTrait
             foreach ($teamPlayerIds[$team['id']] as $pid) {
                 $pos = $positions[$pid] ?? null;
                 if ($pos && isset($counts[$pos])) $counts[$pos]++;
-                $totalValue += $prices[$pid] ?? 0.0;
+                $totalValue += ($prices[$pid] ?? 0.0) + ($seasonPts[$pid] ?? 0) * $pointsBonus;
             }
             $valid = true;
             foreach ($sqMin as $pos => $min) {
