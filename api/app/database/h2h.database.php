@@ -490,10 +490,13 @@ trait H2HTrait
         // gelten als N0 "virtuelle Tipps", die echten Tipps kommen dazu addiert — je mehr echte
         // Tipps vorliegen, desto stärker verdrängen sie das Modell (jeder Tipp verschiebt die
         // nächste Quote leicht, siehe Docstring oben). N0 skaliert dynamisch mit der Liga-Größe
-        // (die Hälfte der stimmberechtigten Manager wiegt so viel wie das Modell), damit kleine
+        // (das 4-Fache der stimmberechtigten Manager wiegt so viel wie das Modell), damit kleine
         // und große Ligen gleich empfindlich reagieren statt eine fixe Zahl zu nutzen, die in
-        // großen Ligen zu träge und in kleinen zu volatil wäre.
-        $n0     = max(1.0, $eligibleManagerCount / 2);
+        // großen Ligen zu träge und in kleinen zu volatil wäre. Faktor 4 (statt z.B. 1) ist
+        // bewusst so gewählt, dass ein EINZELNER Tipp die Quote nur moderat verschiebt (ein
+        // einzelner Manager soll nie stark ins Gewicht fallen), eine breite Mehrheit (z.B. 9 von
+        // 10 stimmberechtigten Managern) sie aber weiterhin deutlich senkt.
+        $n0     = max(1.0, $eligibleManagerCount * 4);
         $nHome  = max(0, $pickCounts['home'] ?? 0);
         $nDraw  = max(0, $pickCounts['draw'] ?? 0);
         $nAway  = max(0, $pickCounts['away'] ?? 0);
