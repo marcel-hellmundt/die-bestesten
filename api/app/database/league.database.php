@@ -73,7 +73,7 @@ trait LeagueTrait
         $league = $query->fetch(PDO::FETCH_ASSOC);
         if ($league) {
             $league['manager_count']        = $this->getLeagueManagerCount($id);
-            $league['teams']                = $this->getLeagueTeamList($league['db_name']);
+            $league['teams']                = $this->getLeagueTeamList($league['db_name'], $league['division_id'] ?? null);
             $league['powerranking_enabled'] = (bool) $league['powerranking_enabled'];
         }
         return $league;
@@ -361,7 +361,7 @@ trait LeagueTrait
         return (int) $q->fetchColumn();
     }
 
-    private function getLeagueTeamList(string $dbName): array
+    private function getLeagueTeamList(string $dbName, ?string $divisionId): array
     {
         try {
             $pdo = $this->openLeagueConnection($dbName);
@@ -393,24 +393,48 @@ trait LeagueTrait
                 $playerIdsByTeam[$sr['team_id']][] = $sr['player_id'];
             }
 
-            $priceMap = []; // "playerId:seasonId" => price
+            // Marktwert = Grundpreis + Saisonpunkte * division.points_bonus (gleiche Formel wie
+            // beim Kauf/Verkauf, siehe offer.database.php/sell.database.php) — vorher fehlte die
+            // Punkte-Steigerung hier komplett, sodass diese Übersicht einen niedrigeren Wert als
+            // die Kaderansicht (squad.component.ts::marketValue()) zeigte.
+            $pointsBonus = 20_000;
+            if ($divisionId !== null) {
+                $dq = $this->con->prepare("SELECT points_bonus FROM division WHERE id = :id LIMIT 1");
+                $dq->execute([':id' => $divisionId]);
+                $pointsBonus = (int) ($dq->fetchColumn() ?: 20_000);
+            } else {
+                $dq = $this->con->query("SELECT points_bonus FROM division WHERE level = 1 AND LOWER(country_id) = 'de' LIMIT 1");
+                $pointsBonus = (int) ($dq->fetchColumn() ?: 20_000);
+            }
+
+            $priceMap  = []; // "playerId:seasonId" => price
+            $pointsMap = []; // "playerId:seasonId" => season_points
             $allPlayerIds = array_values(array_unique(array_column($squadRows, 'player_id')));
             if (!empty($allPlayerIds)) {
                 // Fragment A, Bulk-Form: jeder Spieler auf die Zeile seiner AKTUELLEN Division
                 // eingeschränkt, sonst könnte ein transferierter Spieler mit 2 Zeilen den Kaderwert
-                // verdoppeln bzw. mit dem falschen Preis einfließen.
+                // verdoppeln bzw. mit dem falschen Preis einfließen. Punkte-Summe zusätzlich auf
+                // dieselbe Division eingeschränkt (matchday.division_id = pis.division_id), sonst
+                // würde sie bei einem Divisionswechsel Spieltage beider Divisionen mitzählen (siehe
+                // die analoge Korrektur in player_in_team.database.php::fetchPlayerDetails()).
                 $ph = implode(',', array_fill(0, count($allPlayerIds), '?'));
                 $pq = $this->con->prepare(
-                    "SELECT pis.player_id, pis.season_id, COALESCE(pis.price, 0) AS price
+                    "SELECT pis.player_id, pis.season_id, COALESCE(pis.price, 0) AS price,
+                            COALESCE(SUM(pr.points), 0) AS season_points
                      FROM player_in_season pis
                      LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
                      LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+                     LEFT JOIN player_rating pr ON pr.player_id = pis.player_id
+                         AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = pis.season_id AND division_id = pis.division_id)
                      WHERE pis.player_id IN ($ph)
-                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
+                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+                     GROUP BY pis.player_id, pis.season_id, pis.price"
                 );
                 $pq->execute($allPlayerIds);
                 foreach ($pq->fetchAll(\PDO::FETCH_ASSOC) as $pr) {
-                    $priceMap[$pr['player_id'] . ':' . $pr['season_id']] = (int) $pr['price'];
+                    $key = $pr['player_id'] . ':' . $pr['season_id'];
+                    $priceMap[$key]  = (int) $pr['price'];
+                    $pointsMap[$key] = (int) $pr['season_points'];
                 }
             }
 
@@ -418,7 +442,8 @@ trait LeagueTrait
                 $teamPlayerIds = $playerIdsByTeam[$row['id']] ?? [];
                 $squadValue = 0;
                 foreach ($teamPlayerIds as $pid) {
-                    $squadValue += $priceMap[$pid . ':' . $row['season_id']] ?? 0;
+                    $key = $pid . ':' . $row['season_id'];
+                    $squadValue += ($priceMap[$key] ?? 0) + ($pointsMap[$key] ?? 0) * $pointsBonus;
                 }
                 $row['squad_count'] = count($teamPlayerIds);
                 $row['squad_value'] = $squadValue;

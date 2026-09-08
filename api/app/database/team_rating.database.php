@@ -75,6 +75,10 @@ trait TeamRatingTrait
                 $t['total_sds_defender']      = 0;
                 $t['total_clean_sheet']       = 0;
                 $t['total_missed_goals']      = 0;
+                $t['total_points_goalkeeper'] = 0;
+                $t['total_points_defender']   = 0;
+                $t['total_points_midfielder'] = 0;
+                $t['total_points_forward']    = 0;
                 $t['matchdays_played']        = 0;
             }
             unset($t);
@@ -96,6 +100,10 @@ trait TeamRatingTrait
                     COALESCE(SUM(tr.sds_defender), 0)       AS total_sds_defender,
                     COALESCE(SUM(tr.clean_sheet), 0)        AS total_clean_sheet,
                     COALESCE(SUM(tr.missed_goals), 0)       AS total_missed_goals,
+                    COALESCE(SUM(tr.points_goalkeeper), 0)  AS total_points_goalkeeper,
+                    COALESCE(SUM(tr.points_defender), 0)    AS total_points_defender,
+                    COALESCE(SUM(tr.points_midfielder), 0)  AS total_points_midfielder,
+                    COALESCE(SUM(tr.points_forward), 0)     AS total_points_forward,
                     COUNT(CASE WHEN tr.invalid = 0 THEN 1 END) AS matchdays_played
              FROM team_rating tr
              JOIN team t ON t.id = tr.team_id

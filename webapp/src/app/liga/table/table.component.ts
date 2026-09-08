@@ -81,13 +81,17 @@ export class TableComponent {
   private baseRows = computed(() =>
     (this.state().data?.standings ?? []).map((r: any) => ({
       ...r,
-      total_points:           Number(r.total_points)           || 0,
-      total_goals:            Number(r.total_goals)            || 0,
-      total_assists:          Number(r.total_assists)          || 0,
-      total_sds:              Number(r.total_sds)              || 0,
-      total_clean_sheet:      Number(r.total_clean_sheet)      || 0,
-      total_red_cards:        Number(r.total_red_cards)        || 0,
-      total_yellow_red_cards: Number(r.total_yellow_red_cards) || 0,
+      total_points:            Number(r.total_points)            || 0,
+      total_goals:             Number(r.total_goals)              || 0,
+      total_assists:           Number(r.total_assists)            || 0,
+      total_sds:               Number(r.total_sds)                || 0,
+      total_clean_sheet:       Number(r.total_clean_sheet)        || 0,
+      total_red_cards:         Number(r.total_red_cards)          || 0,
+      total_yellow_red_cards:  Number(r.total_yellow_red_cards)   || 0,
+      total_points_goalkeeper: Number(r.total_points_goalkeeper)  || 0,
+      total_points_defender:   Number(r.total_points_defender)    || 0,
+      total_points_midfielder: Number(r.total_points_midfielder)  || 0,
+      total_points_forward:    Number(r.total_points_forward)     || 0,
     })) as any[]
   );
 
@@ -132,6 +136,47 @@ export class TableComponent {
   hoelzerneBand  = computed(() => (this.state().data?.luck?.hoelzerne_bank   ?? []) as any[]);
   matchdayWins   = computed(() => (this.state().data?.luck?.matchday_wins    ?? []) as any[]);
   participationStats = computed(() => (this.state().data?.participation ?? []) as any[]);
+
+  // Punkte nach Mannschaftsteil — 4 separat sortierte Mini-Tabellen (Torwart/Abwehr/Mittelfeld/
+  // Sturm), je aus der pro Spieltag bereits denormalisierten team_rating.points_goalkeeper/
+  // defender/midfielder/forward-Summe (siehe TeamRatingTrait::getSeasonStandings()) — bewusst auf
+  // baseRows() statt rows() gebaut: der Live-Modus rechnet nur die Gesamt-/Tore-/Karten-Felder
+  // live aus player_rating x team_lineup hoch, keine Mannschaftsteil-Aufschlüsselung, die Card
+  // soll also unabhängig vom Live-Toggle immer den Stand der abgeschlossenen Spieltage zeigen.
+  private readonly positionGroups: { key: 'total_points_goalkeeper' | 'total_points_defender' | 'total_points_midfielder' | 'total_points_forward'; label: string; color: string; icon: string }[] = [
+    { key: 'total_points_goalkeeper', label: 'Torwart',    color: 'var(--position-goalkeeper)', icon: 'img/icons/position_goalkeeper.png' },
+    { key: 'total_points_defender',   label: 'Abwehr',     color: 'var(--position-defender)',   icon: 'img/icons/position_defender.png' },
+    { key: 'total_points_midfielder', label: 'Mittelfeld', color: 'var(--position-midfielder)', icon: 'img/icons/position_midfielder.png' },
+    { key: 'total_points_forward',    label: 'Sturm',      color: 'var(--position-forward)',    icon: 'img/icons/position_forward.png' },
+  ];
+
+  // pct je Zeile = Anteil dieser Mannschaftsteil-Punkte an der Gesamtpunktzahl des Teams — pro
+  // Gruppe neu berechnet statt am geteilten baseRows()-Objekt zu hängen, da jede der 4 Tabellen
+  // einen anderen pct-Wert für dasselbe Team braucht.
+  positionPoints = computed(() => {
+    const base = this.baseRows();
+    if (!base.length) return null;
+    return this.positionGroups.map(g => ({
+      key: g.key,
+      label: g.label,
+      color: g.color,
+      icon: g.icon,
+      rows: base
+        .map(r => ({
+          ...r,
+          groupPoints: r[g.key] as number,
+          groupPct: r.total_points > 0 ? (r[g.key] / r.total_points) * 100 : 0,
+        }))
+        .sort((a, b) => b.groupPoints - a.groupPoints),
+    }));
+  });
+
+  // Hover auf eine ganze Zeile (nicht nur das Logo selbst, größere Trefferfläche) in einer der 4
+  // Mannschaftsteil-Tabellen hebt dasselbe Team auch in den anderen 3 hervor (team_id-Abgleich,
+  // unabhängig von der jeweiligen Sortierposition).
+  hoveredPositionTeamId = signal<string | null>(null);
+  onPositionTeamHover(teamId: string): void { this.hoveredPositionTeamId.set(teamId); }
+  onPositionTeamLeave(): void { this.hoveredPositionTeamId.set(null); }
   loading        = computed(() => this.state().loading);
   error          = computed(() => this.state().error);
 
