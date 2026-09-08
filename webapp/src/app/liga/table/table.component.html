@@ -224,7 +224,7 @@
             <div class="position-points-grid">
               @for (g of groups; track g.key) {
                 <div class="position-points-col">
-                  <div class="position-points-col__label">{{ g.label }}</div>
+                  <div class="position-points-col__label" [style.color]="g.color">{{ g.label }}</div>
                   <table class="data-table data-table--compact">
                     <thead>
                       <tr>
@@ -236,17 +236,23 @@
                     <tbody>
                       @for (r of g.rows; track r.team_id; let i = $index) {
                         <tr class="row-link" (click)="navigateToTeam(r.team_id)">
-                          <td class="col-rank">{{ r[g.key] !== g.rows[i - 1]?.[g.key] ? i + 1 : '' }}</td>
+                          <td class="col-rank">{{ r.groupPoints !== g.rows[i - 1]?.groupPoints ? i + 1 : '' }}</td>
                           <td class="col-team">
                             <img
                               class="tbl-logo"
+                              [class.tbl-logo--hovered]="hoveredPositionTeamId() === r.team_id"
                               [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
                               [class.logo--placeholder]="logoErrors.has(r.team_id)"
                               [alt]="r.team_name"
                               (error)="onLogoError(r.team_id)"
+                              (mouseenter)="onPositionTeamHover(r.team_id)"
+                              (mouseleave)="onPositionTeamLeave()"
                             />
                           </td>
-                          <td class="col-num col-points">{{ r[g.key] | number }}</td>
+                          <td class="col-num col-points">
+                            {{ r.groupPoints | number }}
+                            <span class="position-points-pct">{{ r.groupPct | number: '1.0-0' }}%</span>
+                          </td>
                         </tr>
                       }
                     </tbody>

@@ -143,22 +143,38 @@ export class TableComponent {
   // baseRows() statt rows() gebaut: der Live-Modus rechnet nur die Gesamt-/Tore-/Karten-Felder
   // live aus player_rating x team_lineup hoch, keine Mannschaftsteil-Aufschlüsselung, die Card
   // soll also unabhängig vom Live-Toggle immer den Stand der abgeschlossenen Spieltage zeigen.
-  private readonly positionGroups: { key: 'total_points_goalkeeper' | 'total_points_defender' | 'total_points_midfielder' | 'total_points_forward'; label: string }[] = [
-    { key: 'total_points_goalkeeper', label: 'Torwart' },
-    { key: 'total_points_defender',   label: 'Abwehr' },
-    { key: 'total_points_midfielder', label: 'Mittelfeld' },
-    { key: 'total_points_forward',    label: 'Sturm' },
+  private readonly positionGroups: { key: 'total_points_goalkeeper' | 'total_points_defender' | 'total_points_midfielder' | 'total_points_forward'; label: string; color: string }[] = [
+    { key: 'total_points_goalkeeper', label: 'Torwart',    color: 'var(--position-goalkeeper)' },
+    { key: 'total_points_defender',   label: 'Abwehr',     color: 'var(--position-defender)' },
+    { key: 'total_points_midfielder', label: 'Mittelfeld', color: 'var(--position-midfielder)' },
+    { key: 'total_points_forward',    label: 'Sturm',      color: 'var(--position-forward)' },
   ];
 
+  // pct je Zeile = Anteil dieser Mannschaftsteil-Punkte an der Gesamtpunktzahl des Teams — pro
+  // Gruppe neu berechnet statt am geteilten baseRows()-Objekt zu hängen, da jede der 4 Tabellen
+  // einen anderen pct-Wert für dasselbe Team braucht.
   positionPoints = computed(() => {
     const base = this.baseRows();
     if (!base.length) return null;
     return this.positionGroups.map(g => ({
       key: g.key,
       label: g.label,
-      rows: [...base].sort((a, b) => b[g.key] - a[g.key]),
+      color: g.color,
+      rows: base
+        .map(r => ({
+          ...r,
+          groupPoints: r[g.key] as number,
+          groupPct: r.total_points > 0 ? (r[g.key] / r.total_points) * 100 : 0,
+        }))
+        .sort((a, b) => b.groupPoints - a.groupPoints),
     }));
   });
+
+  // Hover auf ein Team-Logo in einer der 4 Mannschaftsteil-Tabellen hebt dasselbe Team auch in
+  // den anderen 3 hervor (team_id-Abgleich, unabhängig von der jeweiligen Sortierposition).
+  hoveredPositionTeamId = signal<string | null>(null);
+  onPositionTeamHover(teamId: string): void { this.hoveredPositionTeamId.set(teamId); }
+  onPositionTeamLeave(): void { this.hoveredPositionTeamId.set(null); }
   loading        = computed(() => this.state().loading);
   error          = computed(() => this.state().error);
 

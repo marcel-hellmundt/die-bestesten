@@ -450,7 +450,7 @@
 .position-points-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: $space-4;
+  gap: $space-8;
 
   @media (max-width: $mobile-breakpoint) {
     grid-template-columns: 1fr;
@@ -461,6 +461,8 @@
 .position-points-col {
   min-width: 0;
 
+  // Farbe kommt inline per [style.color] (dieselbe --position-*-Semantik wie
+  // squad.component.ts::positionColor()) — $color-text-muted nur Fallback, falls das mal fehlt.
   &__label {
     display: block;
     font-size: $font-xs;
@@ -478,8 +480,23 @@
 
     .tbl-logo {
       display: inline-block;
+      transition: transform $transition-fast;
+
+      &--hovered {
+        transform: scale(1.35);
+      }
     }
   }
+}
+
+// Anteil an der Gesamtpunktzahl des Teams, neben der absoluten Punktzahl — kleiner und nicht
+// fett, damit die Punktzahl selbst (.col-points) das dominante Element der Zeile bleibt.
+.position-points-pct {
+  display: inline-block;
+  margin-left: $space-1;
+  font-size: $font-xs;
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
 }
 
 .chart-container {
