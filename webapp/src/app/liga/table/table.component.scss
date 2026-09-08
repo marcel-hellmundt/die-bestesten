@@ -487,6 +487,13 @@
       }
     }
   }
+
+  // .col-num ist standardmäßig nur 60px breit — "1234 56%" bricht darin sonst auf 2 Zeilen um
+  // (Prozent landet unter statt neben der Punktzahl). Etwas breiter + nowrap erzwingt eine Zeile.
+  td.col-points {
+    width: 84px;
+    white-space: nowrap;
+  }
 }
 
 // Anteil an der Gesamtpunktzahl des Teams, neben der absoluten Punktzahl — kleiner und nicht
