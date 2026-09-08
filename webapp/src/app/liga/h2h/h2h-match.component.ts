@@ -76,11 +76,20 @@ export class H2HMatchComponent implements OnDestroy {
   // Deterministische Pseudo-Quote (Heim/Unentschieden/Auswärts) aus Marktwert+Saisonpunkten der
   // aufgestellten Spieler — reine Orientierung, keine echten Einsätze; siehe
   // H2HTrait::calculateH2HOdds() im Backend für die Berechnung.
-  odds = computed(() => this.data()?.odds ?? null);
+  //
+  // oddsOverride greift nach dem eigenen Setzen/Löschen eines Tipps (siehe
+  // refreshAfterOwnPrediction()) — die Quote hängt seit dem Crowd-Adjustment auch vom eigenen
+  // Tipp-Stand ab (server-seitig wird der eigene aktive Tipp aus der Crowd-Berechnung
+  // ausgeklammert, siehe getH2HMatchDetail()), ändert sich also durch den eigenen Tipp selbst.
+  // Ohne diesen Reload blieben die Buttons bis zum nächsten Hard-Refresh auf der alten Quote
+  // stehen — gleiches Override-Muster wie predictionsOverride weiter unten.
+  private oddsOverride = signal<any>(null);
+  odds = computed(() => this.oddsOverride() ?? this.data()?.odds ?? null);
 
   // Zwischenwerte der Quoten-Berechnung — nur vom Backend befüllt, wenn der Aufrufer Admin ist
   // (siehe H2HController::get()). Grundlage für die Transparenz-Card weiter unten.
-  oddsBreakdown = computed(() => this.data()?.odds_breakdown ?? null);
+  private oddsBreakdownOverride = signal<any>(null);
+  oddsBreakdown = computed(() => this.oddsBreakdownOverride() ?? this.data()?.odds_breakdown ?? null);
 
   // Einklappzustand der Quoten-Berechnung-Card — rein clientseitig, kein Persistieren nötig.
   oddsBreakdownExpanded = signal(false);
@@ -151,16 +160,6 @@ export class H2HMatchComponent implements OnDestroy {
   // (nur vor Anpfiff im Response) noch nicht mitschickt.
   lineupsReady = computed(() => this.predictions()?.lineups_ready ?? true);
 
-  // Reine Anzahl bereits abgegebener Tipps (nicht wer/was) — die Tipps selbst bleiben vor
-  // Anpfiff geheim (siehe hideCard()-Kommentar), die Anzahl darf trotzdem schon angezeigt werden.
-  submittedCount = computed(() => this.predictions()?.submitted_count ?? 0);
-  submittedCountLabel = computed(() => {
-    const n = this.submittedCount();
-    if (n === 0) return 'Noch niemand hat getippt.';
-    if (n === 1) return '1 Manager hat bereits getippt.';
-    return `${n} Manager haben bereits getippt.`;
-  });
-
   // isOwnMatch() blendet die Card bewusst NICHT mehr aus (siehe Template) — dort erscheint
   // stattdessen ein Hinweis, warum getippt werden könnte, aber nicht darf.
   hideCard = computed(() =>
@@ -178,6 +177,23 @@ export class H2HMatchComponent implements OnDestroy {
     this.api.get<any>(`h2h/${matchId}`).subscribe({
       next: full => this.predictionsOverride.set(full?.predictions ?? null),
       error: () => { this.refetchedAfterKickoff = false; },
+    });
+  }
+
+  // Nach dem eigenen Setzen/Löschen eines Tipps: odds()/oddsBreakdown() neu laden, damit die
+  // Buttons sofort die neu berechnete Quote zeigen statt bis zum nächsten Hard-Refresh auf der
+  // alten stehen zu bleiben (siehe oddsOverride-Kommentar oben). predictions() gleich mit
+  // aktualisiert (submitted_count ändert sich durch den eigenen Tipp ebenfalls).
+  private refreshAfterOwnPrediction(): void {
+    const matchId = this.match()?.id;
+    if (!matchId) return;
+    this.api.get<any>(`h2h/${matchId}`).subscribe({
+      next: full => {
+        this.oddsOverride.set(full?.odds ?? null);
+        this.oddsBreakdownOverride.set(full?.odds_breakdown ?? null);
+        this.predictionsOverride.set(full?.predictions ?? null);
+      },
+      error: () => {},
     });
   }
 
@@ -263,6 +279,7 @@ export class H2HMatchComponent implements OnDestroy {
       next: (res) => {
         this.submittingPick.set(false);
         if (res.budget !== undefined) this.optimisticBudget.set(res.budget);
+        this.refreshAfterOwnPrediction();
       },
       error: (err) => {
         this.optimisticPick.set(previousPick);
@@ -290,6 +307,7 @@ export class H2HMatchComponent implements OnDestroy {
       next: (res) => {
         this.submittingPick.set(false);
         if (res.budget !== undefined && res.budget !== null) this.optimisticBudget.set(res.budget);
+        this.refreshAfterOwnPrediction();
       },
       error: (err) => {
         this.optimisticPick.set(previousPick);

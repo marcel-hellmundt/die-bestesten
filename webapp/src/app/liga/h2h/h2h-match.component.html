@@ -38,7 +38,7 @@
       <!-- Score -->
       <div class="match-score">
         @if (homeLogoUrl()) {
-          <a [routerLink]="['/team', homeTeam()?.id]">
+          <a class="score-logo-link score-logo-link--home" [routerLink]="['/team', homeTeam()?.id]">
             <img
               class="score-logo score-logo--home"
               [src]="homeLogoUrl()!"
@@ -63,7 +63,7 @@
           }
         </div>
         @if (awayLogoUrl()) {
-          <a [routerLink]="['/team', awayTeam()?.id]">
+          <a class="score-logo-link score-logo-link--away" [routerLink]="['/team', awayTeam()?.id]">
             <img
               class="score-logo score-logo--away"
               [src]="awayLogoUrl()!"
@@ -433,10 +433,7 @@
             </div>
             @if (predictionError(); as err) {
               <p class="h2h-predict-card__error">{{ err }}</p>
-            } @else {
-              <p class="h2h-predict-card__hint">Tipp änderbar bis Anpfiff.</p>
             }
-            <p class="h2h-predict-card__hint">{{ submittedCountLabel() }}</p>
             @if (myPick()) {
               <button
                 class="h2h-predict-card__remove"
@@ -548,12 +545,34 @@
           <span class="h2h-odds-breakdown__label">Stärke-Vorsprung (Heim)</span>
           <span>{{ bd.edge > 0 ? '+' : '' }}{{ bd.edge | number: '1.0-3' }}</span>
         </div>
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Modell-Wahrscheinlichkeit (vor Tipps)</span>
+          <span>{{ bd.model_prob_home * 100 | number: '1.0-1' }} %</span>
+          <span>{{ bd.model_prob_away * 100 | number: '1.0-1' }} %</span>
+        </div>
         <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
-          <span class="h2h-odds-breakdown__label">Unentschieden-Wahrscheinlichkeit</span>
+          <span class="h2h-odds-breakdown__label">Modell-Unentschieden-Wahrscheinlichkeit</span>
+          <span>{{ bd.model_prob_draw * 100 | number: '1.0-1' }} %</span>
+        </div>
+
+        <!-- Crowd-Adjustment: bisherige Tipps fließen als Bayes'scher Pseudo-Count-Prior ein
+             (siehe calculateH2HOdds() in h2h.database.php) — Modell zählt als crowd_n0 "virtuelle
+             Tipps", echte Tipps verdrängen es zunehmend. -->
+        <div class="h2h-odds-breakdown__row">
+          <span class="h2h-odds-breakdown__label">Bisherige Tipps ({{ bd.pick_count_home + bd.pick_count_draw + bd.pick_count_away }} von {{ bd.eligible_manager_count }} stimmberechtigt)</span>
+          <span>{{ bd.pick_count_home }}</span>
+          <span>{{ bd.pick_count_away }}</span>
+        </div>
+        <p class="h2h-predict-card__hint">
+          Crowd-Prior-Gewicht (N0 = stimmberechtigte Manager × 4): {{ bd.crowd_n0 }} — je mehr echte Tipps vorliegen, desto stärker verdrängen sie die Modell-Quote
+        </p>
+
+        <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
+          <span class="h2h-odds-breakdown__label">Unentschieden-Wahrscheinlichkeit (inkl. Tipps)</span>
           <span>{{ bd.prob_draw * 100 | number: '1.0-1' }} %</span>
         </div>
         <div class="h2h-odds-breakdown__row">
-          <span class="h2h-odds-breakdown__label">Sieg-Wahrscheinlichkeit</span>
+          <span class="h2h-odds-breakdown__label">Sieg-Wahrscheinlichkeit (inkl. Tipps)</span>
           <span>{{ bd.prob_home * 100 | number: '1.0-1' }} %</span>
           <span>{{ bd.prob_away * 100 | number: '1.0-1' }} %</span>
         </div>
