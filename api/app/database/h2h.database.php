@@ -428,8 +428,18 @@ trait H2HTrait
      * 'breakdown' enthält alle Zwischenwerte dieser Rechnung — Grundlage für die Admin-only
      * Transparenz-Card auf der H2H-Match-Detailseite (siehe getH2HMatchDetail()).
      */
-    private function calculateH2HOdds(array $homeNominated, array $awayNominated): array
-    {
+    /**
+     * $pickCounts = ['home'=>n,'draw'=>n,'away'=>n] bereits abgegebene Tipps für dieses Match;
+     * $eligibleManagerCount = Liga-Manager, die überhaupt tippen dürften (Teams der Saison minus
+     * die 2 am Match beteiligten, siehe H2HPredictionTrait — is_own_match). Fließt als Bayes'scher
+     * Pseudo-Count-Prior in die Wahrscheinlichkeiten ein (siehe blendProbabilitiesWithPicks()
+     * unten): viele Tipps auf den "falschen" Außenseiter drücken die Quote spürbar, wenige
+     * verändern sie kaum — smooth, jeder einzelne Tipp verschiebt die nächste Quote leicht.
+     */
+    private function calculateH2HOdds(
+        array $homeNominated, array $awayNominated,
+        array $pickCounts = ['home' => 0, 'draw' => 0, 'away' => 0], int $eligibleManagerCount = 0
+    ): array {
         $sum = fn(array $players, string $key) => array_sum(array_column($players, $key));
         $defSds = fn(array $players) => array_sum(array_map(
             fn($p) => in_array($p['position'] ?? null, ['GOALKEEPER', 'DEFENDER'], true) ? ($p['season_sds'] ?? 0) : 0,
@@ -472,8 +482,26 @@ trait H2HTrait
 
         $c = 0.18; // Skalierung des Stärke-Vorsprungs (kleiner = schärfere Heim/Auswärts-Aufteilung)
         $probHomeGivenDecisive = 1 / (1 + (10 ** (-$edge / $c)));
-        $probHome = (1 - $probDraw) * $probHomeGivenDecisive;
-        $probAway = 1 - $probDraw - $probHome;
+        $modelProbHome = (1 - $probDraw) * $probHomeGivenDecisive;
+        $modelProbDraw = $probDraw;
+        $modelProbAway = 1 - $modelProbDraw - $modelProbHome;
+
+        // Crowd-Adjustment: Bayes'scher Pseudo-Count-Prior. Die Modell-Wahrscheinlichkeiten
+        // gelten als N0 "virtuelle Tipps", die echten Tipps kommen dazu addiert — je mehr echte
+        // Tipps vorliegen, desto stärker verdrängen sie das Modell (jeder Tipp verschiebt die
+        // nächste Quote leicht, siehe Docstring oben). N0 skaliert dynamisch mit der Liga-Größe
+        // (die Hälfte der stimmberechtigten Manager wiegt so viel wie das Modell), damit kleine
+        // und große Ligen gleich empfindlich reagieren statt eine fixe Zahl zu nutzen, die in
+        // großen Ligen zu träge und in kleinen zu volatil wäre.
+        $n0     = max(1.0, $eligibleManagerCount / 2);
+        $nHome  = max(0, $pickCounts['home'] ?? 0);
+        $nDraw  = max(0, $pickCounts['draw'] ?? 0);
+        $nAway  = max(0, $pickCounts['away'] ?? 0);
+        $nTotal = $nHome + $nDraw + $nAway;
+
+        $probHome = ($modelProbHome * $n0 + $nHome) / ($n0 + $nTotal);
+        $probDraw = ($modelProbDraw * $n0 + $nDraw) / ($n0 + $nTotal);
+        $probAway = ($modelProbAway * $n0 + $nAway) / ($n0 + $nTotal);
 
         $margin = 0.06; // Buchmacher-Marge (Overround) — üblicher Wert für Fußball-1X2-Märkte
         $toOdds = fn(float $p) => $p > 0 ? round(1 / ($p * (1 + $margin)), 2) : null;
@@ -505,6 +533,14 @@ trait H2HTrait
                 'draw_max'           => $drawMax,
                 'draw_k'             => $drawK,
                 'c'                  => $c,
+                'model_prob_home'    => round($modelProbHome, 4),
+                'model_prob_draw'    => round($modelProbDraw, 4),
+                'model_prob_away'    => round($modelProbAway, 4),
+                'pick_count_home'    => $nHome,
+                'pick_count_draw'    => $nDraw,
+                'pick_count_away'    => $nAway,
+                'eligible_manager_count' => $eligibleManagerCount,
+                'crowd_n0'           => round($n0, 2),
                 'margin'             => $margin,
                 'prob_home'          => round($probHome, 4),
                 'prob_draw'          => round($probDraw, 4),
@@ -773,7 +809,30 @@ trait H2HTrait
         $homeRating = $ratingMap[$match['home_team_id']] ?? null;
         $awayRating = $ratingMap[$match['away_team_id']] ?? null;
         $goals      = $this->h2hGoals($homeRating, $awayRating);
-        $oddsResult = $this->calculateH2HOdds($homeLineup['nominated'], $awayLineup['nominated']);
+
+        // Bisherige Tipps + stimmberechtigte Manager-Anzahl fürs Crowd-Adjustment in
+        // calculateH2HOdds() (siehe deren Docstring). Stimmberechtigt = Teams dieser Saison
+        // minus die 2 am Match beteiligten (deren Manager dürfen laut is_own_match ohnehin
+        // nicht auf ihr eigenes Match tippen). pick kommt als ENUM mitunter mit eingestreuten
+        // Null-Bytes zurück (gleiche Ursache wie an anderen ENUM-Stellen in diesem Trait) —
+        // ungefiltert würde der Schlüssel-Abgleich unten lautlos leer bleiben.
+        $pickCountsQ = $this->con_league->prepare(
+            "SELECT pick, COUNT(*) AS cnt FROM h2h_prediction WHERE match_id = ? GROUP BY pick"
+        );
+        $pickCountsQ->execute([$match['id']]);
+        $pickCounts = ['home' => 0, 'draw' => 0, 'away' => 0];
+        foreach ($pickCountsQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $pick = str_replace("\0", '', $row['pick']);
+            if (isset($pickCounts[$pick])) $pickCounts[$pick] = (int) $row['cnt'];
+        }
+
+        $teamCountQ = $this->con_league->prepare("SELECT COUNT(*) FROM team WHERE season_id = ?");
+        $teamCountQ->execute([$match['season_id']]);
+        $eligibleManagerCount = max(0, (int) $teamCountQ->fetchColumn() - 2);
+
+        $oddsResult = $this->calculateH2HOdds(
+            $homeLineup['nominated'], $awayLineup['nominated'], $pickCounts, $eligibleManagerCount
+        );
 
         return [
             'match'        => [
