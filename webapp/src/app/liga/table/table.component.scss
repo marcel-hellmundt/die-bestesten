@@ -423,6 +423,46 @@
   &--none       { background: #ff3f34; }
 }
 
+// ── Punkte nach Mannschaftsteil ─────────────────────────────────────────────
+// Volle Breite von .main-col (also so breit wie .chart-row) statt Teil von dessen Flex-Zeile —
+// eigene Card darunter, nicht daneben.
+.position-points-card {
+  margin-top: $space-6;
+}
+
+.position-points-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-4;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: 1fr;
+    gap: $space-6;
+  }
+}
+
+.position-points-col {
+  min-width: 0;
+
+  &__label {
+    display: block;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-align: center;
+    color: $color-text-muted;
+    margin-bottom: $space-2;
+  }
+
+  // Spalte ist nur ein Viertel der .card-Breite — Teamname muss dort abgeschnitten werden
+  // können, statt die Spalte (und damit .tbl-logo/Punkte-Spalte) aufzublähen.
+  .team-cell { min-width: 0; }
+  .team-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 .chart-container {
   overflow: hidden;
 
