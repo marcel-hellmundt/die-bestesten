@@ -424,10 +424,6 @@
 }
 
 .chart-container {
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-xl;
-  padding: $space-4;
   overflow: hidden;
 
   .season-chart {
