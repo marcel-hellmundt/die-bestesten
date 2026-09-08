@@ -495,19 +495,31 @@
     }
   }
 
-  // .col-num ist standardmäßig nur 60px breit — "1234 56%" bricht darin sonst auf 2 Zeilen um
-  // (Prozent landet unter statt neben der Punktzahl). Etwas breiter + nowrap erzwingt eine Zeile.
+  // .col-num ist standardmäßig nur 60px breit — reicht nicht für Punktzahl + Prozent nebeneinander
+  // (siehe Flex-Layout unten). Als Flex-Zeile statt reinem Inline-Text, damit .position-points-pct
+  // eine FESTE Breite bekommen kann — sonst würde die variierende Zeichenbreite von "9%" vs.
+  // "100%" die Punktzahl davor pro Zeile unterschiedlich weit nach links schieben und die
+  // Punktzahlen stünden nicht mehr untereinander.
   td.col-points {
-    width: 84px;
+    width: 104px;
     white-space: nowrap;
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    gap: $space-3;
   }
 }
 
-// Anteil an der Gesamtpunktzahl des Teams, neben der absoluten Punktzahl — kleiner und nicht
-// fett, damit die Punktzahl selbst (.col-points) das dominante Element der Zeile bleibt.
+// .position-points-value braucht keinen eigenen Stil — erbt font-weight/font-variant-numeric von
+// .col-points, ist nur als eigenes <span> nötig, damit es als Flex-Item neben .position-points-pct
+// sitzt statt mit ihm im selben Textfluss zu verschmelzen.
+
+// Anteil an der Gesamtpunktzahl des Teams — kleiner, nicht fett, feste Breite (siehe Kommentar bei
+// td.col-points), rechtsbündig innerhalb dieser Breite (gleiche Semantik wie .col-points selbst).
 .position-points-pct {
-  display: inline-block;
-  margin-left: $space-1;
+  flex: 0 0 32px;
+  width: 32px;
+  text-align: right;
   font-size: $font-xs;
   font-weight: $font-weight-normal;
   color: $color-text-muted;
