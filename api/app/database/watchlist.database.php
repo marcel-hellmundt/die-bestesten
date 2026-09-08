@@ -34,7 +34,7 @@ trait WatchlistTrait
                  AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
              LEFT JOIN club             c   ON c.id = pic.club_id
              LEFT JOIN player_rating    pr  ON pr.player_id = p.id
-                 AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
+                 AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ? AND division_id = pis.division_id)
              WHERE p.id IN ($ph)
              GROUP BY p.id, p.displayname, pis.position, pis.price, pis.season_id, pis.photo_uploaded,
                       pic.club_id, c.name, c.short_name, c.logo_uploaded"

@@ -247,11 +247,25 @@ trait PlayerInTeamTrait
     {
         // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A) —
         // nutzt den ohnehin schon vorhandenen pic-Join (current_club_id) mit, kein zusätzlicher.
+        //
+        // Die Punktesumme braucht dagegen einen DRITTEN Scope, weder Fragment A noch B: ein
+        // Fantasy-Team kann nur Punkte aus Spieltagen der eigenen Liga-Division holen — ohne
+        // Filter würde bei einem divisionswechselnden Spieler (2 player_in_season-Zeilen) über
+        // beide Divisionen summiert (z.B. 3+4 statt 3 bzw. 4 je nach Kaderansicht).
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $divisionWhere  = 'AND md.division_id = ?';
+            $divisionParams = [$divisionId];
+        } else {
+            $divisionWhere  = "AND d.level = 1 AND LOWER(d.country_id) = 'de'";
+            $divisionParams = [];
+        }
+
         $ph = implode(',', array_fill(0, count($playerIds), '?'));
         $q  = $this->con->prepare(
             "SELECT p.id, p.displayname, p.country_id,
-                    pis.position, pis.price, pis.photo_uploaded,
                     ? AS season_id,
+                    pis.position, pis.price, pis.photo_uploaded,
                     COALESCE(SUM(pr.points), 0) AS points,
                     pic.club_id AS current_club_id,
                     c.logo_uploaded AS club_logo_uploaded
@@ -265,7 +279,12 @@ trait PlayerInTeamTrait
                    AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
              LEFT JOIN player_rating pr
                    ON pr.player_id = p.id
-                   AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
+                   AND pr.matchday_id IN (
+                       SELECT md.id FROM matchday md
+                       LEFT JOIN division d ON d.id = md.division_id
+                       WHERE md.season_id = ?
+                       $divisionWhere
+                   )
              LEFT JOIN club c
                    ON c.id = pic.club_id
              WHERE p.id IN ($ph)
@@ -275,7 +294,11 @@ trait PlayerInTeamTrait
                       points DESC,
                       pis.price DESC"
         );
-        $q->execute(array_merge([$seasonId, $seasonId, $seasonId, $seasonId], $playerIds));
+        $q->execute(array_merge(
+            [$seasonId, $seasonId, $seasonId, $seasonId],
+            $divisionParams,
+            $playerIds
+        ));
         return $q->fetchAll(PDO::FETCH_ASSOC);
     }
 }

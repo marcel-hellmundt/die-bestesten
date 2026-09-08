@@ -118,7 +118,7 @@ trait PlayerInSeasonTrait
                  AND cis.division_id = pis.division_id
              JOIN division d        ON d.id = cis.division_id
              LEFT JOIN player_rating pr ON pr.player_id = p.id
-                 AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
+                 AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ? AND division_id = pis.division_id)
              LEFT JOIN club_in_season cis_prev
                  ON cis_prev.club_id = pic.club_id
                  AND cis_prev.season_id = ?

@@ -182,15 +182,29 @@ trait TeamLineupTrait
 
         // Season-cumulative points per player — used to order the bench within a position
         // (this matchday's own `points` above is null for everyone before kickoff, which is
-        // exactly when bench ordering matters most, so it's useless as a tiebreaker there)
+        // exactly when bench ordering matters most, so it's useless as a tiebreaker there).
+        // Scoped to the requesting league's own division (like fetchPlayerDetails in
+        // player_in_team.database.php) — a fantasy team only ever scores matchdays from its
+        // own league's division, so a divisionswechsel spieler's other-division points must
+        // not leak into this ordering.
+        $lineupDivisionId = $this->getLeagueDivisionId();
+        if ($lineupDivisionId !== null) {
+            $seasonPtsDivisionWhere  = 'AND m.division_id = ?';
+            $seasonPtsDivisionParams = [$lineupDivisionId];
+        } else {
+            $seasonPtsDivisionWhere  = "AND d.level = 1 AND LOWER(d.country_id) = 'de'";
+            $seasonPtsDivisionParams = [];
+        }
         $seasonPtsQ = $this->con->prepare(
             "SELECT pr.player_id, COALESCE(SUM(pr.points), 0) AS season_points
              FROM player_rating pr
              JOIN matchday m ON m.id = pr.matchday_id
+             LEFT JOIN division d ON d.id = m.division_id
              WHERE m.season_id = ? AND pr.player_id IN ($ph)
+             $seasonPtsDivisionWhere
              GROUP BY pr.player_id"
         );
-        $seasonPtsQ->execute(array_merge([$seasonId], $playerIds));
+        $seasonPtsQ->execute(array_merge([$seasonId], $playerIds, $seasonPtsDivisionParams));
         $seasonPointsMap = array_column($seasonPtsQ->fetchAll(PDO::FETCH_ASSOC), 'season_points', 'player_id');
 
         // Merge lineup meta + ratings into player data
