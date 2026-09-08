@@ -555,16 +555,25 @@
           <span>{{ bd.model_prob_draw * 100 | number: '1.0-1' }} %</span>
         </div>
 
-        <!-- Crowd-Adjustment: bisherige Tipps fließen als Bayes'scher Pseudo-Count-Prior ein
-             (siehe calculateH2HOdds() in h2h.database.php) — Modell zählt als crowd_n0 "virtuelle
-             Tipps", echte Tipps verdrängen es zunehmend. -->
+        <!-- Crowd-Adjustment, zweistufig (siehe calculateH2HOdds() in h2h.database.php):
+             Beteiligungs-Faktor (S-Kurve, kippt bei 50% der stimmberechtigten Manager) ×
+             Einigkeits-Faktor (Herfindahl-Index über die 3 Picks, 0=Patt, 1=einstimmig) — ein
+             knapper Split bewegt dadurch selbst bei hoher Beteiligung nur wenig. -->
         <div class="h2h-odds-breakdown__row">
           <span class="h2h-odds-breakdown__label">Bisherige Tipps ({{ bd.pick_count_home + bd.pick_count_draw + bd.pick_count_away }} von {{ bd.eligible_manager_count }} stimmberechtigt)</span>
           <span>{{ bd.pick_count_home }}</span>
           <span>{{ bd.pick_count_away }}</span>
         </div>
+        <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
+          <span class="h2h-odds-breakdown__label">Beteiligungs-Faktor ({{ bd.participation_share * 100 | number: '1.0-0' }}% getippt)</span>
+          <span>{{ bd.participation_weight * 100 | number: '1.0-1' }} %</span>
+        </div>
+        <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
+          <span class="h2h-odds-breakdown__label">Einigkeits-Faktor</span>
+          <span>{{ bd.conviction * 100 | number: '1.0-1' }} %</span>
+        </div>
         <p class="h2h-predict-card__hint">
-          Crowd-Prior-Gewicht (N0 = stimmberechtigte Manager × 4): {{ bd.crowd_n0 }} — je mehr echte Tipps vorliegen, desto stärker verdrängen sie die Modell-Quote
+          Crowd-Gewicht (Beteiligung × Einigkeit): {{ bd.crowd_weight * 100 | number: '1.0-1' }} % — so stark verdrängen die bisherigen Tipps die Modell-Quote
         </p>
 
         <div class="h2h-odds-breakdown__row h2h-odds-breakdown__row--full">
