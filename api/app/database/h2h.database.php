@@ -829,6 +829,24 @@ trait H2HTrait
             if (isset($pickCounts[$pick])) $pickCounts[$pick] = (int) $row['cnt'];
         }
 
+        // Der eigene aktive Tipp des anfragenden Managers zählt hier NICHT mit — sonst könnte er
+        // ihn (um)setzen, dadurch die Crowd-Verteilung zu seinen Gunsten verschieben, die neu
+        // berechnete (vergünstigte) Quote sehen und direkt darauf neu tippen, um sich selbst eine
+        // bessere Quote zu "ermogeln". Jeder Manager sieht die Quote also immer so, als hätte NUR
+        // er selbst noch nicht getippt — Tipps aller anderen fließen weiterhin normal ein.
+        $ownPickManagerId = $GLOBALS['auth_manager_id'] ?? null;
+        if ($ownPickManagerId) {
+            $ownPickQ = $this->con_league->prepare(
+                "SELECT pick FROM h2h_prediction WHERE match_id = ? AND manager_id = ? LIMIT 1"
+            );
+            $ownPickQ->execute([$match['id'], $ownPickManagerId]);
+            $ownPick = $ownPickQ->fetchColumn();
+            if ($ownPick !== false) {
+                $ownPick = str_replace("\0", '', $ownPick);
+                if (isset($pickCounts[$ownPick])) $pickCounts[$ownPick] = max(0, $pickCounts[$ownPick] - 1);
+            }
+        }
+
         $teamCountQ = $this->con_league->prepare("SELECT COUNT(*) FROM team WHERE season_id = ?");
         $teamCountQ->execute([$match['season_id']]);
         $eligibleManagerCount = max(0, (int) $teamCountQ->fetchColumn() - 2);
