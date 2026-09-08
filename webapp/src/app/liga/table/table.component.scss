@@ -496,18 +496,23 @@
   }
 
   // .col-num ist standardmäßig nur 60px breit — reicht nicht für Punktzahl + Prozent nebeneinander
-  // (siehe Flex-Layout unten). Als Flex-Zeile statt reinem Inline-Text, damit .position-points-pct
-  // eine FESTE Breite bekommen kann — sonst würde die variierende Zeichenbreite von "9%" vs.
-  // "100%" die Punktzahl davor pro Zeile unterschiedlich weit nach links schieben und die
-  // Punktzahlen stünden nicht mehr untereinander.
+  // (siehe .position-points-cell unten).
   td.col-points {
     width: 104px;
     white-space: nowrap;
-    display: flex;
-    justify-content: flex-end;
-    align-items: baseline;
-    gap: $space-3;
   }
+}
+
+// display:flex sitzt bewusst auf diesem inneren <div>, NICHT direkt auf td.col-points — display:flex
+// auf einer <td> bricht in manchen Browsern die normale Tabellenzeilen-Höhenberechnung (Zeilen mit
+// einer leeren Nachbarzelle, z.B. col-rank bei Punktgleichstand, wurden dadurch sichtbar niedriger
+// als Zeilen mit gefüllter Rang-Zelle). Als normale <td> bleibt die Zeilenhöhe für alle Zeilen
+// gleich (bestimmt vom 32px-Logo in .col-team), das Flex-Layout wirkt nur innerhalb dieser Zelle.
+.position-points-cell {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: $space-3;
 }
 
 // .position-points-value braucht keinen eigenen Stil — erbt font-weight/font-variant-numeric von

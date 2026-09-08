@@ -253,8 +253,10 @@
                             />
                           </td>
                           <td class="col-num col-points">
-                            <span class="position-points-value">{{ r.groupPoints | number }}</span>
-                            <span class="position-points-pct">{{ r.groupPct | number: '1.0-0' }}%</span>
+                            <div class="position-points-cell">
+                              <span class="position-points-value">{{ r.groupPoints | number }}</span>
+                              <span class="position-points-pct">{{ r.groupPct | number: '1.0-0' }}%</span>
+                            </div>
                           </td>
                         </tr>
                       }
