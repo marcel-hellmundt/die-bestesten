@@ -143,11 +143,11 @@ export class TableComponent {
   // baseRows() statt rows() gebaut: der Live-Modus rechnet nur die Gesamt-/Tore-/Karten-Felder
   // live aus player_rating x team_lineup hoch, keine Mannschaftsteil-Aufschlüsselung, die Card
   // soll also unabhängig vom Live-Toggle immer den Stand der abgeschlossenen Spieltage zeigen.
-  private readonly positionGroups: { key: 'total_points_goalkeeper' | 'total_points_defender' | 'total_points_midfielder' | 'total_points_forward'; label: string; color: string }[] = [
-    { key: 'total_points_goalkeeper', label: 'Torwart',    color: 'var(--position-goalkeeper)' },
-    { key: 'total_points_defender',   label: 'Abwehr',     color: 'var(--position-defender)' },
-    { key: 'total_points_midfielder', label: 'Mittelfeld', color: 'var(--position-midfielder)' },
-    { key: 'total_points_forward',    label: 'Sturm',      color: 'var(--position-forward)' },
+  private readonly positionGroups: { key: 'total_points_goalkeeper' | 'total_points_defender' | 'total_points_midfielder' | 'total_points_forward'; label: string; color: string; icon: string }[] = [
+    { key: 'total_points_goalkeeper', label: 'Torwart',    color: 'var(--position-goalkeeper)', icon: 'img/icons/position_goalkeeper.png' },
+    { key: 'total_points_defender',   label: 'Abwehr',     color: 'var(--position-defender)',   icon: 'img/icons/position_defender.png' },
+    { key: 'total_points_midfielder', label: 'Mittelfeld', color: 'var(--position-midfielder)', icon: 'img/icons/position_midfielder.png' },
+    { key: 'total_points_forward',    label: 'Sturm',      color: 'var(--position-forward)',    icon: 'img/icons/position_forward.png' },
   ];
 
   // pct je Zeile = Anteil dieser Mannschaftsteil-Punkte an der Gesamtpunktzahl des Teams — pro
@@ -160,6 +160,7 @@ export class TableComponent {
       key: g.key,
       label: g.label,
       color: g.color,
+      icon: g.icon,
       rows: base
         .map(r => ({
           ...r,
@@ -170,8 +171,9 @@ export class TableComponent {
     }));
   });
 
-  // Hover auf ein Team-Logo in einer der 4 Mannschaftsteil-Tabellen hebt dasselbe Team auch in
-  // den anderen 3 hervor (team_id-Abgleich, unabhängig von der jeweiligen Sortierposition).
+  // Hover auf eine ganze Zeile (nicht nur das Logo selbst, größere Trefferfläche) in einer der 4
+  // Mannschaftsteil-Tabellen hebt dasselbe Team auch in den anderen 3 hervor (team_id-Abgleich,
+  // unabhängig von der jeweiligen Sortierposition).
   hoveredPositionTeamId = signal<string | null>(null);
   onPositionTeamHover(teamId: string): void { this.hoveredPositionTeamId.set(teamId); }
   onPositionTeamLeave(): void { this.hoveredPositionTeamId.set(null); }

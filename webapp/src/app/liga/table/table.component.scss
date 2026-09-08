@@ -450,7 +450,7 @@
 .position-points-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: $space-8;
+  gap: $space-10;
 
   @media (max-width: $mobile-breakpoint) {
     grid-template-columns: 1fr;
@@ -461,6 +461,14 @@
 .position-points-col {
   min-width: 0;
 
+  &__icon {
+    display: block;
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    margin: 0 auto $space-2;
+  }
+
   // Farbe kommt inline per [style.color] (dieselbe --position-*-Semantik wie
   // squad.component.ts::positionColor()) — $color-text-muted nur Fallback, falls das mal fehlt.
   &__label {
@@ -469,17 +477,16 @@
     font-weight: $font-weight-semibold;
     text-align: center;
     color: $color-text-muted;
-    margin-bottom: $space-2;
+    // Abstand zur Tabelle darunter etwas großzügiger als der übliche $space-2, damit Icon+Label
+    // als eigener Block klar von den Punktzahlen abgesetzt sind.
+    margin-bottom: $space-4;
   }
 
-  // Kein Teamname (nur Logo) — Logo mittig statt linksbündig in der jetzt schmalen Spalte.
-  // .tbl-logo ist global display:block (füllt sonst die volle Zellenbreite); hier bewusst auf
-  // inline-block zurückgesetzt, damit text-align:center auf der Zelle greift.
+  // Logo linksbündig statt zentriert.
   td.col-team {
-    text-align: center;
+    text-align: left;
 
     .tbl-logo {
-      display: inline-block;
       transition: transform $transition-fast;
 
       &--hovered {
