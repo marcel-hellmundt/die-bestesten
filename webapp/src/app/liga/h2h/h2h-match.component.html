@@ -556,9 +556,10 @@
         </div>
 
         <!-- Crowd-Adjustment, zweistufig (siehe calculateH2HOdds() in h2h.database.php):
-             Beteiligungs-Faktor (S-Kurve, kippt bei 50% der stimmberechtigten Manager) ×
+             Beteiligungs-Faktor (S-Kurve, kippt bei 65% der stimmberechtigten Manager) ×
              Einigkeits-Faktor (Herfindahl-Index über die 3 Picks, 0=Patt, 1=einstimmig) — ein
-             knapper Split bewegt dadurch selbst bei hoher Beteiligung nur wenig. -->
+             knapper Split bewegt dadurch selbst bei hoher Beteiligung nur wenig; das Produkt ist
+             zusätzlich auf max. 70% gedeckelt, die Statistik behält also immer Einfluss. -->
         <div class="h2h-odds-breakdown__row">
           <span class="h2h-odds-breakdown__label">Bisherige Tipps ({{ bd.pick_count_home + bd.pick_count_draw + bd.pick_count_away }} von {{ bd.eligible_manager_count }} stimmberechtigt)</span>
           <span>{{ bd.pick_count_home }}</span>

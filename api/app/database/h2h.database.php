@@ -498,13 +498,16 @@ trait H2HTrait
         $nTotal = $nHome + $nDraw + $nAway;
 
         // (1) Beteiligungs-Faktor: S-Kurve über den Anteil bereits abgegebener Tipps an den
-        // stimmberechtigten Managern, zentriert auf $tipPoint (Kipppunkt bei 50% Beteiligung) —
-        // wenige frühe Tipps bewegen kaum etwas, um den Kipppunkt herum beschleunigt sich der
-        // Effekt, danach dominiert die Crowd fast vollständig. Auf [0,1] reskaliert, da eine rohe
-        // Sigmoid-Funktion sich den Rändern nur asymptotisch annähert (0 Tipps soll exakt Gewicht
-        // 0 ergeben).
-        $tipPoint  = 0.5;
-        $steepness = 10.0;
+        // stimmberechtigten Managern, zentriert auf $tipPoint (Kipppunkt bei 65% Beteiligung,
+        // bewusst deutlich über der Hälfte — bei vielen Managern in der Liga ist es nicht
+        // sonderlich unwahrscheinlich, dass die ersten 2-3 zufällig zum selben Außenseiter
+        // tendieren, das soll noch kaum ins Gewicht fallen) — wenige frühe Tipps bewegen so gut
+        // wie nichts, um den Kipppunkt herum beschleunigt sich der Effekt, danach dominiert die
+        // Crowd zunehmend (aber siehe $maxCrowdWeight unten — nie vollständig). Auf [0,1]
+        // reskaliert, da eine rohe Sigmoid-Funktion sich den Rändern nur asymptotisch annähert (0
+        // Tipps soll exakt Gewicht 0 ergeben).
+        $tipPoint  = 0.65;
+        $steepness = 8.0;
         $sigmoid   = fn(float $x): float => 1 / (1 + exp(-$steepness * ($x - $tipPoint)));
         $sigAt0    = $sigmoid(0.0);
         $sigAt1    = $sigmoid(1.0);
@@ -523,7 +526,13 @@ trait H2HTrait
             $conviction = 0.0;
         }
 
-        $crowdWeight   = $participationWeight * $conviction;
+        // Deckel auf das maximale Crowd-Gewicht: selbst bei völliger Einstimmigkeit ALLER
+        // stimmberechtigten Manager (Beteiligung + Einigkeit je 100%) soll die Quote nicht
+        // komplett auf die Crowd umschwenken — die ursprünglichen statistischen Werte
+        // (Marktwert/Punkte/Tordifferenz) behalten immer mindestens 1-$maxCrowdWeight Einfluss,
+        // statt bei totalem Konsens gegen 0/unendlich zu laufen.
+        $maxCrowdWeight = 0.7;
+        $crowdWeight    = $maxCrowdWeight * $participationWeight * $conviction;
         $crowdProbHome = $nTotal > 0 ? $nHome / $nTotal : $modelProbHome;
         $crowdProbDraw = $nTotal > 0 ? $nDraw / $nTotal : $modelProbDraw;
         $crowdProbAway = $nTotal > 0 ? $nAway / $nTotal : $modelProbAway;
