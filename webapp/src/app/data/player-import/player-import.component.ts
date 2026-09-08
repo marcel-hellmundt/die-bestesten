@@ -436,6 +436,7 @@ export class PlayerImportDataComponent {
   }
 
   confirmImport(): void {
+    const divisionId = this.divisionId();
     const rows = this.rows()
       .filter((r) => r.importable)
       .map((r) => ({
@@ -443,10 +444,10 @@ export class PlayerImportDataComponent {
         position: r.csv_position!,
         price: r.csv_price!,
       }));
-    if (!rows.length) return;
+    if (!rows.length || !divisionId) return;
 
     this.importing.set(true);
-    this.api.importPlayerSeasonRows(rows).subscribe({
+    this.api.importPlayerSeasonRows(rows, divisionId).subscribe({
       next: (res) => {
         this.importing.set(false);
         this.importResult.set(res);

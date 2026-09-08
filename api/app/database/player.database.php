@@ -70,10 +70,23 @@ trait PlayerTrait
 
         // Season data and ratings
         if ($seasonId) {
+            // Auf die Division des AKTUELLEN Vereins des Spielers eingeschränkt — nach einem
+            // Divisionswechsel innerhalb der Saison gibt es sonst zwei player_in_season-Zeilen für
+            // diese season_id, und "current_season" soll die Zeile zeigen, die gerade gilt (nicht
+            // irgendeine der beiden). Fallback (COALESCE) auf "kein Filter", falls kein aktueller
+            // Verein auflösbar ist (z.B. sehr alte/lückenhafte Daten) — dann wie bisher.
             $q = $this->con->prepare("
                 SELECT price, position, photo_uploaded
-                FROM player_in_season
-                WHERE player_id = :player_id AND season_id = :season_id
+                FROM player_in_season pis
+                WHERE pis.player_id = :player_id AND pis.season_id = :season_id
+                  AND pis.division_id = COALESCE(
+                        (SELECT cis.division_id
+                         FROM player_in_club pic
+                         JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                         WHERE pic.player_id = pis.player_id AND pic.to_date IS NULL
+                         LIMIT 1),
+                        pis.division_id)
+                ORDER BY pis.last_updated DESC
                 LIMIT 1
             ");
             $q->execute([':player_id' => $id, ':season_id' => $seasonId]);
@@ -115,17 +128,22 @@ trait PlayerTrait
             $player['ratings']        = [];
         }
 
-        // All seasons (sorted newest first) with aggregated points
+        // All seasons (sorted newest first) with aggregated points. Bereits pro Zeile (pis.id)
+        // gruppiert statt pro season_id — ein Divisionswechsel führt zu 2 Zeilen für dieselbe
+        // season_id. matchday-Join zusätzlich auf m.division_id = pis.division_id eingeschränkt,
+        // sonst würden die Punkte einer Zeile auch Spieltage der jeweils ANDEREN Division dieser
+        // Saison mitzählen (beide Zeilen hätten dann die volle Saisonsumme statt ihres eigenen
+        // Divisions-Anteils).
         $q = $this->con->prepare("
-            SELECT pis.id AS player_in_season_id, pis.season_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated,
+            SELECT pis.id AS player_in_season_id, pis.season_id, pis.division_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated,
                    s.start_date AS season_start,
                    COALESCE(SUM(pr.points), 0) AS total_points
             FROM player_in_season pis
             JOIN season s ON s.id = pis.season_id
-            LEFT JOIN matchday m ON m.season_id = pis.season_id
+            LEFT JOIN matchday m ON m.season_id = pis.season_id AND m.division_id = pis.division_id
             LEFT JOIN player_rating pr ON pr.player_id = pis.player_id AND pr.matchday_id = m.id
             WHERE pis.player_id = :player_id
-            GROUP BY pis.id, pis.season_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated, s.start_date
+            GROUP BY pis.id, pis.season_id, pis.division_id, pis.price, pis.position, pis.photo_uploaded, pis.last_updated, s.start_date
             ORDER BY s.start_date DESC
         ");
         $q->execute([':player_id' => $id]);
@@ -294,15 +312,16 @@ trait PlayerTrait
         ]);
 
         $stmt = $this->con->prepare("
-            INSERT INTO player_in_season (id, player_id, season_id, price, position, photo_uploaded, last_updated)
-            VALUES (:id, :player_id, :season_id, :price, :position, 0, NOW())
+            INSERT INTO player_in_season (id, player_id, season_id, division_id, price, position, photo_uploaded, last_updated)
+            VALUES (:id, :player_id, :season_id, :division_id, :price, :position, 0, NOW())
         ");
         $stmt->execute([
-            ':id'        => $this->con->query("SELECT UUID() AS id")->fetchColumn(),
-            ':player_id' => $playerId,
-            ':season_id' => $body['season_id'],
-            ':price'     => $body['price'],
-            ':position'  => $body['position'],
+            ':id'          => $this->con->query("SELECT UUID() AS id")->fetchColumn(),
+            ':player_id'   => $playerId,
+            ':season_id'   => $body['season_id'],
+            ':division_id' => $body['division_id'],
+            ':price'       => $body['price'],
+            ':position'    => $body['position'],
         ]);
 
         if (!empty($body['club_id'])) {

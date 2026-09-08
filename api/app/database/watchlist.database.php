@@ -19,6 +19,8 @@ trait WatchlistTrait
         $playerIds = array_column($rows, 'player_id');
         $ph        = implode(',', array_fill(0, count($playerIds), '?'));
 
+        // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A) —
+        // nutzt den ohnehin vorhandenen pic-Join mit, kein zusätzlicher.
         $pq = $this->con->prepare(
             "SELECT p.id, p.displayname,
                     pis.position, pis.price, pis.season_id, pis.photo_uploaded,
@@ -26,8 +28,10 @@ trait WatchlistTrait
                     c.name AS club_name, c.short_name AS club_short_name, c.logo_uploaded AS club_logo_uploaded,
                     COALESCE(SUM(pr.points), 0) AS season_points
              FROM player p
-             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
              LEFT JOIN player_in_club   pic ON pic.player_id = p.id AND pic.to_date IS NULL
+             LEFT JOIN club_in_season   cis_cur ON cis_cur.club_id = pic.club_id AND cis_cur.season_id = ?
+             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
+                 AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
              LEFT JOIN club             c   ON c.id = pic.club_id
              LEFT JOIN player_rating    pr  ON pr.player_id = p.id
                  AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
@@ -35,7 +39,7 @@ trait WatchlistTrait
              GROUP BY p.id, p.displayname, pis.position, pis.price, pis.season_id, pis.photo_uploaded,
                       pic.club_id, c.name, c.short_name, c.logo_uploaded"
         );
-        $pq->execute([$seasonId, $seasonId, ...$playerIds]);
+        $pq->execute([$seasonId, $seasonId, $seasonId, ...$playerIds]);
         $playerMap = [];
         foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $playerMap[$row['id']] = $row;

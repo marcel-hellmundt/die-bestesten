@@ -563,18 +563,30 @@
                 </tr>
               </thead>
               <tbody>
-                @for (s of p.seasons; track s.season_id) {
+                @for (s of p.seasons; track s.player_in_season_id) {
                   <tr
                     class="row-link"
                     [class.row--selected]="
                       (selectedSeasonId() ?? p.seasons[0].season_id) === s.season_id
                     "
-                    [class.row--editable]="isAdmin() && s.season_id === activeSeasonId()"
-                    [title]="isAdmin() && s.season_id === activeSeasonId() ? 'Doppelklick zum Bearbeiten' : ''"
+                    [class.row--editable]="isAdmin() && s.player_in_season_id === currentDivisionSeasonEntry()?.player_in_season_id"
+                    [title]="isAdmin() && s.player_in_season_id === currentDivisionSeasonEntry()?.player_in_season_id ? 'Doppelklick zum Bearbeiten' : ''"
                     (click)="selectedSeasonId.set(s.season_id)"
                     (dblclick)="openEditSeasonForm(s)"
                   >
-                    <td>{{ cache.seasonName(s.season_id) }}</td>
+                    <td>
+                      <span class="season-cell">
+                        @if (hasMultipleDivisions()) {
+                          <img
+                            class="division-icon"
+                            [src]="'img/divisions/' + s.division_id + '.png'"
+                            [title]="cache.divisionName(s.division_id)"
+                            alt=""
+                          />
+                        }
+                        {{ cache.seasonName(s.season_id) }}
+                      </span>
+                    </td>
                     <td class="col-position">
                       <span
                         class="position-badge position-badge--text"
@@ -596,11 +608,22 @@
             <div class="add-form-row">
               <div class="add-form-field">
                 <label class="add-form-label">Saison</label>
-                <select class="input input--sm" (change)="newSeasonId.set($any($event.target).value)">
+                <select class="input input--sm" (change)="onNewSeasonIdChange($any($event.target).value)">
                   @for (s of availableSeasons(); track s.id) {
                     <option [value]="s.id" [selected]="s.id === newSeasonId()">{{ cache.seasonName(s.id) }}</option>
                   }
                 </select>
+              </div>
+              <div class="add-form-field">
+                <label class="add-form-label">Division</label>
+                <select class="input input--sm" (change)="newSeasonDivisionId.set($any($event.target).value)">
+                  @for (d of availableDivisionsForNewSeason(); track d.id) {
+                    <option [value]="d.id" [selected]="d.id === newSeasonDivisionId()">{{ d.name }}</option>
+                  }
+                </select>
+                @if (availableDivisionsForNewSeason().length === 0) {
+                  <span class="add-form-error">Spieler hat bereits Einträge für alle Divisionen dieser Saison</span>
+                }
               </div>
               <div class="add-form-field">
                 <label class="add-form-label">Position</label>
@@ -627,7 +650,7 @@
               <p class="add-form-error">{{ addSeasonError() }}</p>
             }
             <div class="add-form-actions">
-              <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || newSeasonPrice() <= 0">
+              <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || !newSeasonDivisionId() || newSeasonPrice() <= 0">
                 {{ addingSeasonRecord() ? 'Speichern…' : 'Speichern' }}
               </button>
               <button class="btn-cancel" (click)="cancelAddSeason()" [disabled]="addingSeasonRecord()">

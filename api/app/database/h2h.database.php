@@ -177,6 +177,9 @@ trait H2HTrait
             if (!empty($liveLineupRows)) {
                 $livePlayerIds = array_values(array_unique(array_column($liveLineupRows, 'player_id')));
                 $phLp = implode(',', array_fill(0, count($livePlayerIds), '?'));
+                // Rating-Zeitpunkt-bezogen (Fragment B): pis.division_id über pr.club_id
+                // aufgelöst (Fallback: md.division_id), damit die Position der Division dieses
+                // Spieltags gilt, nicht der aktuellen Division des Spielers.
                 $lprq = $this->con->prepare(
                     "SELECT pr.player_id, pr.matchday_id,
                             COALESCE(pr.goals, 0)   AS goals,
@@ -184,11 +187,16 @@ trait H2HTrait
                             COALESCE(pr.sds, 0)     AS sds,
                             pis.position
                      FROM player_rating pr
+                     JOIN matchday md ON md.id = pr.matchday_id
                      LEFT JOIN player_in_season pis
-                            ON pis.player_id = pr.player_id AND pis.season_id = ?
+                            ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+                           AND pis.division_id = COALESCE(
+                                 (SELECT cis.division_id FROM club_in_season cis
+                                  WHERE cis.club_id = pr.club_id AND cis.season_id = md.season_id LIMIT 1),
+                                 md.division_id)
                      WHERE pr.matchday_id IN ($phAmd) AND pr.player_id IN ($phLp)"
                 );
-                $lprq->execute(array_merge([$seasonId], $activeMatchdayIds, $livePlayerIds));
+                $lprq->execute(array_merge($activeMatchdayIds, $livePlayerIds));
                 $liveRatingByPlayerMd = [];
                 foreach ($lprq->fetchAll(PDO::FETCH_ASSOC) as $r) {
                     $liveRatingByPlayerMd[$r['player_id']][$r['matchday_id']] = $r;
@@ -574,6 +582,7 @@ trait H2HTrait
                 if (!empty($liveLineupRows)) {
                     $livePlayerIds = array_values(array_unique(array_column($liveLineupRows, 'player_id')));
                     $phP = implode(',', array_fill(0, count($livePlayerIds), '?'));
+                    // Rating-Zeitpunkt-bezogen (Fragment B), analog zum Live-Fallback weiter oben.
                     $lprq = $this->con->prepare(
                         "SELECT pr.player_id,
                                 COALESCE(pr.points, 0)  AS points,
@@ -582,11 +591,16 @@ trait H2HTrait
                                 COALESCE(pr.sds, 0)     AS sds,
                                 pis.position
                          FROM player_rating pr
+                         JOIN matchday md ON md.id = pr.matchday_id
                          LEFT JOIN player_in_season pis
-                                ON pis.player_id = pr.player_id AND pis.season_id = ?
+                                ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+                               AND pis.division_id = COALESCE(
+                                     (SELECT cis.division_id FROM club_in_season cis
+                                      WHERE cis.club_id = pr.club_id AND cis.season_id = md.season_id LIMIT 1),
+                                     md.division_id)
                          WHERE pr.matchday_id = ? AND pr.player_id IN ($phP)"
                     );
-                    $lprq->execute(array_merge([$match['season_id'], $match['matchday_id']], $livePlayerIds));
+                    $lprq->execute(array_merge([$match['matchday_id']], $livePlayerIds));
                     $liveRatingByPlayer = array_column($lprq->fetchAll(PDO::FETCH_ASSOC), null, 'player_id');
 
                     $liveAgg = [];
@@ -635,16 +649,18 @@ trait H2HTrait
             $playerIds = array_column($entries, 'player_id');
             $ph        = implode(',', array_fill(0, count($playerIds), '?'));
 
-            // Player info (global DB)
+            // Player info (global DB) — pis auf die Division DIESES SPIELTAGS eingeschränkt
+            // (Fragment B, matchday.division_id ist NOT NULL, kein Fallback nötig).
             $pq = $this->con->prepare(
                 "SELECT p.id, p.displayname,
                         pis.position, pis.price, pis.photo_uploaded,
                         pis.season_id AS photo_season_id
                  FROM player p
                  LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
+                     AND pis.division_id = ?
                  WHERE p.id IN ($ph)"
             );
-            $pq->execute(array_merge([$seasonId], $playerIds));
+            $pq->execute(array_merge([$seasonId, $matchday['division_id']], $playerIds));
             $playerMap = [];
             foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) {
                 $playerMap[$p['id']] = $p;

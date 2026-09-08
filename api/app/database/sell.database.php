@@ -36,12 +36,23 @@ trait SellTrait
         $matchdayId = $window['matchday_id'];
         $seasonId   = $window['season_id'];
 
-        // 2. Base price + displayname
+        // 2. Base price + displayname — pis auf die Zeile der AKTUELLEN Division eingeschränkt
+        // (Fragment A). Die Saisonpunkte-Summe weiter unten bleibt bewusst divisionsübergreifend
+        // (Verkaufspreis soll die volle Saisonleistung berücksichtigen, auch über einen Wechsel
+        // hinweg) — nur der Grundpreis selbst muss zur aktuellen Division passen.
         $pq = $this->con->prepare(
             "SELECT COALESCE(pis.price, 0) AS price, p.displayname
              FROM player_in_season pis
              JOIN player p ON p.id = pis.player_id
-             WHERE pis.player_id = :pid AND pis.season_id = :sid LIMIT 1"
+             WHERE pis.player_id = :pid AND pis.season_id = :sid
+               AND pis.division_id = COALESCE(
+                     (SELECT cis.division_id
+                      FROM player_in_club pic
+                      JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                      WHERE pic.player_id = pis.player_id AND pic.to_date IS NULL
+                      LIMIT 1),
+                     pis.division_id)
+             LIMIT 1"
         );
         $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
         $ps          = $pq->fetch(PDO::FETCH_ASSOC);

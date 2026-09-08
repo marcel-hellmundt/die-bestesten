@@ -117,7 +117,7 @@ trait LeagueTrait
 
         $ph  = implode(',', array_fill(0, count($allMatchdayIds), '?'));
         $mdQ = $this->con->prepare(
-            "SELECT md.id, md.number, md.season_id FROM matchday md
+            "SELECT md.id, md.number, md.season_id, md.division_id FROM matchday md
              JOIN season s ON s.id = md.season_id
              WHERE md.id IN ($ph) AND s.start_date >= '2020-07-01'"
         );
@@ -166,16 +166,20 @@ trait LeagueTrait
                 $prMap[$r['player_id']][$r['matchday_id']] = $r;
             }
 
+            // Rating-Zeitpunkt-bezogen (Fragment B): posMap wird pro Matchday nachgeschlagen, daher
+            // nach division_id (nicht season_id) gekeyt — ein Spieler mit 2 player_in_season-Zeilen
+            // (Divisionswechsel) muss hier die Position der Division bekommen, in der der jeweilige
+            // Spieltag tatsächlich stattfand, nicht irgendeine der beiden.
             $allSeasonIds = array_values(array_unique(array_column($matchdayMap, 'season_id')));
             if (!empty($allSeasonIds)) {
                 $phS  = implode(',', array_fill(0, count($allSeasonIds), '?'));
                 $pisQ = $this->con->prepare(
-                    "SELECT player_id, season_id, position FROM player_in_season
+                    "SELECT player_id, season_id, division_id, position FROM player_in_season
                      WHERE player_id IN ($phP) AND season_id IN ($phS)"
                 );
                 $pisQ->execute(array_merge($allPlayerIds, $allSeasonIds));
                 foreach ($pisQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                    $posMap[$r['player_id']][$r['season_id']] = $r['position'];
+                    $posMap[$r['player_id']][$r['division_id']] = $r['position'];
                 }
             }
         }
@@ -184,7 +188,7 @@ trait LeagueTrait
         foreach ($trRows as $tr) {
             $md = $matchdayMap[$tr['matchday_id']] ?? null;
             if (!$md) continue; // pre-2020/21 or unknown matchday
-            $seasonId = $md['season_id'];
+            $divisionId = $md['division_id'];
             $players  = $lineupMap[$tr['team_id']][$tr['matchday_id']] ?? [];
 
             $calcInvalid = empty($players) ? 1 : 0;
@@ -195,7 +199,7 @@ trait LeagueTrait
             foreach ($players as $pid) {
                 $pr  = $prMap[$pid][$tr['matchday_id']] ?? null;
                 if (!$pr) continue;
-                $pos = $posMap[$pid][$seasonId] ?? null;
+                $pos = $posMap[$pid][$divisionId] ?? null;
                 $calcPoints += (int) $pr['points'];
                 $calcGoals  += (int) $pr['goals'];
                 $calcAssists += (int) $pr['assists'];
@@ -241,7 +245,7 @@ trait LeagueTrait
                     'team_name'       => $tr['team_name'],
                     'manager_name'    => $tr['manager_name'],
                     'matchday_number' => (int) $md['number'],
-                    'season_id'       => $seasonId,
+                    'season_id'       => $md['season_id'],
                     'fields'          => $diff,
                 ];
             }
@@ -392,10 +396,17 @@ trait LeagueTrait
             $priceMap = []; // "playerId:seasonId" => price
             $allPlayerIds = array_values(array_unique(array_column($squadRows, 'player_id')));
             if (!empty($allPlayerIds)) {
+                // Fragment A, Bulk-Form: jeder Spieler auf die Zeile seiner AKTUELLEN Division
+                // eingeschränkt, sonst könnte ein transferierter Spieler mit 2 Zeilen den Kaderwert
+                // verdoppeln bzw. mit dem falschen Preis einfließen.
                 $ph = implode(',', array_fill(0, count($allPlayerIds), '?'));
                 $pq = $this->con->prepare(
-                    "SELECT player_id, season_id, COALESCE(price, 0) AS price
-                     FROM player_in_season WHERE player_id IN ($ph)"
+                    "SELECT pis.player_id, pis.season_id, COALESCE(pis.price, 0) AS price
+                     FROM player_in_season pis
+                     LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
+                     LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+                     WHERE pis.player_id IN ($ph)
+                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
                 );
                 $pq->execute($allPlayerIds);
                 foreach ($pq->fetchAll(\PDO::FETCH_ASSOC) as $pr) {
@@ -565,6 +576,7 @@ trait LeagueTrait
              JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
              JOIN club c             ON c.id = pic.club_id
              JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                 AND cis.division_id = pis.division_id
              JOIN division d         ON d.id = cis.division_id
              WHERE pis.season_id = ?
                $divisionWhere
@@ -654,11 +666,20 @@ trait LeagueTrait
         $insertTx = $con->prepare(
             "INSERT INTO transaction (team_id, amount, reason, matchday_id) VALUES (:tid, :amount, :reason, :mid)"
         );
+        // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A).
         $priceQ = $this->con->prepare(
             "SELECT COALESCE(pis.price, 0) AS price, pis.position, p.displayname
              FROM player_in_season pis
              JOIN player p ON p.id = pis.player_id
-             WHERE pis.player_id = ? AND pis.season_id = ? LIMIT 1"
+             WHERE pis.player_id = ? AND pis.season_id = ?
+               AND pis.division_id = COALESCE(
+                     (SELECT cis.division_id
+                      FROM player_in_club pic
+                      JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                      WHERE pic.player_id = pis.player_id AND pic.to_date IS NULL
+                      LIMIT 1),
+                     pis.division_id)
+             LIMIT 1"
         );
 
         $created    = [];
@@ -744,10 +765,15 @@ trait LeagueTrait
         $counts = ['GOALKEEPER' => 0, 'DEFENDER' => 0, 'MIDFIELDER' => 0, 'FORWARD' => 0];
         if (empty($playerIds)) return $counts;
 
+        // Fragment A, Bulk-Form: jeder Spieler auf seine eigene aktuelle Division eingeschränkt.
         $ph = implode(',', array_fill(0, count($playerIds), '?'));
         $q  = $this->con->prepare(
-            "SELECT position, COUNT(*) AS cnt FROM player_in_season
-             WHERE player_id IN ($ph) AND season_id = ? GROUP BY position"
+            "SELECT pis.position, COUNT(*) AS cnt FROM player_in_season pis
+             LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
+             LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+             WHERE pis.player_id IN ($ph) AND pis.season_id = ?
+               AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+             GROUP BY pis.position"
         );
         $q->execute(array_merge($playerIds, [$seasonId]));
         foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {

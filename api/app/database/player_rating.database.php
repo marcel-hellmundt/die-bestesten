@@ -11,6 +11,16 @@ trait PlayerRatingTrait
         $matchday = $this->getMatchdayById($matchdayId);
         $seasonId = $matchday ? $matchday['season_id'] : null;
 
+        // Rating-Zeitpunkt-bezogen (Fragment B): $clubId ist bereits fix gebunden (pr.club_id =
+        // :club_id), die Division ist also für alle Zeilen dieselbe — einmal über club_in_season
+        // auflösen (Fallback: Division des Spieltags selbst), statt pro Zeile neu zu berechnen.
+        $divisionId = null;
+        if ($seasonId) {
+            $divisionId = $this->getClubDivisionMap([$clubId], $seasonId)[$clubId] ?? null;
+        }
+        $divisionId = $divisionId ?? ($matchday['division_id'] ?? null);
+        $divisionWhere = $divisionId !== null ? 'AND pis.division_id = :division_id' : '';
+
         $query = $this->con->prepare("
             SELECT p.id            AS player_id,
                    p.first_name,
@@ -39,15 +49,18 @@ trait PlayerRatingTrait
             FROM player_rating pr
             JOIN player p                  ON p.id = pr.player_id
             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
+                $divisionWhere
             WHERE pr.matchday_id = :matchday_id
               AND pr.club_id = :club_id
             ORDER BY starting_count DESC, pis.position ASC, pis.price DESC
         ");
-        $query->execute([
+        $params = [
             ':matchday_id' => $matchdayId,
             ':club_id'     => $clubId,
             ':season_id'   => $seasonId,
-        ]);
+        ];
+        if ($divisionId !== null) $params[':division_id'] = $divisionId;
+        $query->execute($params);
         $ratings = $query->fetchAll(PDO::FETCH_ASSOC);
 
         $contributorsByRating = $this->getContributorsForRatings(array_column($ratings, 'id'));
@@ -175,16 +188,26 @@ trait PlayerRatingTrait
      */
     public function initPlayerRatingsForClub(string $matchdayId, string $clubId, string $seasonId, string $managerId): array
     {
+        // Rating-Zeitpunkt-bezogen (Fragment B): Division einmal aus $clubId + $seasonId auflösen
+        // (gilt für alle Spieler dieses Clubs gleich), damit ein Spieler mit 2 player_in_season-
+        // Zeilen (Divisionswechsel) mit Position/Preis der Division dieses Vereins gefunden wird,
+        // nicht mit denen seiner (evtl. inzwischen anderen) aktuellen Division.
+        $divisionId = $this->getClubDivisionMap([$clubId], $seasonId)[$clubId] ?? null;
+        $divisionWhere = $divisionId !== null ? 'AND pis.division_id = :division_id' : '';
+
         $players = $this->con->prepare(
             "SELECT p.id AS player_id, p.displayname
              FROM player_in_club pic
              JOIN player p ON p.id = pic.player_id
              JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
+                 $divisionWhere
              WHERE pic.club_id = :club_id AND pic.to_date IS NULL
                AND pis.position IS NOT NULL AND pis.price IS NOT NULL AND pis.price > 0
              ORDER BY p.last_name ASC"
         );
-        $players->execute([':club_id' => $clubId, ':season_id' => $seasonId]);
+        $params = [':club_id' => $clubId, ':season_id' => $seasonId];
+        if ($divisionId !== null) $params[':division_id'] = $divisionId;
+        $players->execute($params);
         $playerRows = $players->fetchAll(PDO::FETCH_ASSOC);
 
         $insert = $this->con->prepare(
@@ -329,9 +352,10 @@ trait PlayerRatingTrait
                    c.logo_uploaded AS club_logo_uploaded
             FROM player_rating pr
             JOIN player p ON p.id = pr.player_id
-            LEFT JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = :season_id
             LEFT JOIN club c ON c.id = pr.club_id
             $divisionJoin
+            LEFT JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = :season_id
+                AND pis.division_id = d.id
             WHERE pr.matchday_id = :matchday_id
               AND pis.position IS NOT NULL
               $divisionWhere
@@ -458,7 +482,13 @@ trait PlayerRatingTrait
             FROM player_rating pr
             JOIN player p                  ON p.id = pr.player_id
             JOIN matchday md               ON md.id = pr.matchday_id
-            LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = md.season_id
+            LEFT JOIN player_in_season pis
+                   ON pis.player_id = p.id
+                  AND pis.season_id = md.season_id
+                  AND pis.division_id = COALESCE(
+                        (SELECT cis.division_id FROM club_in_season cis
+                         WHERE cis.club_id = pr.club_id AND cis.season_id = md.season_id LIMIT 1),
+                        md.division_id)
             WHERE pr.id = :id
             LIMIT 1
         ");
@@ -575,13 +605,24 @@ trait PlayerRatingTrait
 
     private function calculatePoints(string $id): int
     {
+        // pis.division_id muss auf die Division ZUM ZEITPUNKT DIESES RATINGS auflösen (pr.club_id),
+        // nicht auf die aktuelle Division des Spielers — sonst würde ein späterer Divisionswechsel
+        // (Winterwechsel) rückwirkend die Position/den Marktwert alter, bereits gespeicherter
+        // Ratings verändern. Fallback auf matchday.division_id, da pr.club_id bei historischen
+        // Daten ohne Club-Tracking NULL sein kann (siehe Spaltenkommentar in global_schema.sql).
         $query = $this->con->prepare("
             SELECT pr.grade, pr.participation, pr.goals, pr.assists,
                    pr.clean_sheet, pr.sds, pr.red_card, pr.yellow_red_card,
                    pis.position
             FROM player_rating pr
             JOIN matchday md ON md.id = pr.matchday_id
-            LEFT JOIN player_in_season pis ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+            LEFT JOIN player_in_season pis
+                   ON pis.player_id = pr.player_id
+                  AND pis.season_id = md.season_id
+                  AND pis.division_id = COALESCE(
+                        (SELECT cis.division_id FROM club_in_season cis
+                         WHERE cis.club_id = pr.club_id AND cis.season_id = md.season_id LIMIT 1),
+                        md.division_id)
             WHERE pr.id = :id
             LIMIT 1
         ");

@@ -429,8 +429,9 @@ trait TeamRatingTrait
                     pr.points, pr.grade, pr.goals, pr.assists, pr.clean_sheet
              FROM player_rating pr
              JOIN player p ON p.id = pr.player_id
-             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
              $divisionJoin
+             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
+                 AND pis.division_id = d.id
              WHERE pr.matchday_id = :matchday_id $divisionWhere
              ORDER BY pr.points DESC
              LIMIT 1"

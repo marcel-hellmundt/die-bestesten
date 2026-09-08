@@ -115,6 +115,7 @@ trait PlayerInSeasonTrait
              JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
              JOIN club c            ON c.id = pic.club_id
              JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                 AND cis.division_id = pis.division_id
              JOIN division d        ON d.id = cis.division_id
              LEFT JOIN player_rating pr ON pr.player_id = p.id
                  AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ?)
@@ -197,20 +198,44 @@ trait PlayerInSeasonTrait
         return (bool) $q->fetchColumn();
     }
 
-    public function createPlayerInSeason(string $id, string $playerId, string $seasonId, string $position, int $price): void
+    /**
+     * Leitet die aktuelle Division eines Spielers her (aktueller Verein -> dessen Division dieser
+     * Saison, gleiches Muster wie getAvailablePlayers()), Fallback auf die Liga-Division
+     * (getLeagueDivisionId()), falls kein aktueller Verein/keine club_in_season-Zeile auflösbar
+     * ist. Für Aufrufer, die division_id nicht explizit mitgeben (z.B. das ältere "Saison
+     * hinzufügen"-Formular im Frontend, das noch keine Divisions-Auswahl hat).
+     */
+    public function resolvePlayerCurrentDivisionId(string $playerId, string $seasonId): ?string
     {
         $q = $this->con->prepare(
-            "INSERT INTO player_in_season (id, player_id, season_id, position, price, last_updated)
-             VALUES (?, ?, ?, ?, ?, NOW())"
+            "SELECT cis.division_id
+             FROM player_in_club pic
+             JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = :season_id
+             WHERE pic.player_id = :player_id AND pic.to_date IS NULL
+             LIMIT 1"
         );
-        $q->execute([$id, $playerId, $seasonId, $position, $price]);
+        $q->execute([':player_id' => $playerId, ':season_id' => $seasonId]);
+        $divisionId = $q->fetchColumn();
+        return $divisionId !== false ? $divisionId : $this->getLeagueDivisionId();
+    }
+
+    public function createPlayerInSeason(string $id, string $playerId, string $seasonId, string $divisionId, string $position, int $price): void
+    {
+        $q = $this->con->prepare(
+            "INSERT INTO player_in_season (id, player_id, season_id, division_id, position, price, last_updated)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())"
+        );
+        $q->execute([$id, $playerId, $seasonId, $divisionId, $position, $price]);
     }
 
     /**
-     * player_in_season rows (id, position, price) for the given players/season,
-     * indexed by player_id. Doubles as an existence check via isset().
+     * player_in_season rows (id, position, price) for the given players/season, scoped to one
+     * division and indexed by player_id. Doubles as an existence check via isset(). Division-
+     * scoped (not just season) so a player who transferred divisions mid-season and already has
+     * a row for their OLD division isn't wrongly treated as "already imported" when a CSV for
+     * their NEW division is processed — that should create a second row, not be blocked/merged.
      */
-    public function getExistingPlayerInSeasonMap(array $playerIds, string $seasonId): array
+    public function getExistingPlayerInSeasonMap(array $playerIds, string $seasonId, string $divisionId): array
     {
         if (empty($playerIds)) return [];
 
@@ -218,9 +243,9 @@ trait PlayerInSeasonTrait
         $q = $this->con->prepare(
             "SELECT id, player_id, position, price, photo_uploaded
              FROM player_in_season
-             WHERE season_id = ? AND player_id IN ($placeholders)"
+             WHERE season_id = ? AND division_id = ? AND player_id IN ($placeholders)"
         );
-        $q->execute(array_merge([$seasonId], $playerIds));
+        $q->execute(array_merge([$seasonId, $divisionId], $playerIds));
 
         $out = [];
         foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
@@ -314,7 +339,6 @@ trait PlayerInSeasonTrait
             fn($r) => $playerMap[$r['kicker_id']]['id'] ?? null,
             $parsedRows
         )));
-        $existingMap    = $this->getExistingPlayerInSeasonMap($matchedPlayerIds, $seasonId);
         $currentClubMap = $this->getCurrentClubByPlayerIds($matchedPlayerIds);
         $masterDataMap  = $this->getPlayerMasterDataByIds($matchedPlayerIds);
 
@@ -382,6 +406,12 @@ trait PlayerInSeasonTrait
                 'resolved_club_count'  => 0,
             ];
         }
+
+        // Division-scoped (not just season) — a player already imported under a DIFFERENT
+        // division this season (e.g. their old club before a mid-season transfer) must not be
+        // treated as "already_in_season" here; that would wrongly block/merge against this CSV's
+        // division instead of creating the second, division-specific row a transfer needs.
+        $existingMap = $this->getExistingPlayerInSeasonMap($matchedPlayerIds, $seasonId, $divisionId);
 
         $resolvedClubCount = 0;
         $divisionMismatchCount = 0;
@@ -496,7 +526,7 @@ trait PlayerInSeasonTrait
      * preview rows. Re-resolves the season server-side and re-checks duplicates for
      * race-safety — duplicates/invalid rows are reported in skipped[], not thrown.
      */
-    public function importCsvRows(array $rows): array
+    public function importCsvRows(array $rows, string $divisionId): array
     {
         $seasonId = $this->getActiveSeasonId();
         if (!$seasonId) {
@@ -504,7 +534,7 @@ trait PlayerInSeasonTrait
         }
 
         $playerIds   = array_column($rows, 'player_id');
-        $existingSet = $this->getExistingPlayerInSeasonMap($playerIds, $seasonId);
+        $existingSet = $this->getExistingPlayerInSeasonMap($playerIds, $seasonId, $divisionId);
 
         $created = [];
         $skipped = [];
@@ -530,7 +560,7 @@ trait PlayerInSeasonTrait
 
             $id = $this->con->query("SELECT UUID() AS id")->fetchColumn();
             try {
-                $this->createPlayerInSeason($id, $playerId, $seasonId, $position, $price);
+                $this->createPlayerInSeason($id, $playerId, $seasonId, $divisionId, $position, $price);
                 $created[] = ['player_id' => $playerId, 'id' => $id];
             } catch (PDOException $e) {
                 if ($e->getCode() === '23000') {
@@ -574,6 +604,7 @@ trait PlayerInSeasonTrait
              FROM player_in_season pis
              JOIN player_in_club pic ON pic.player_id = pis.player_id AND pic.to_date IS NULL
              JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                 AND cis.division_id = pis.division_id
              JOIN division d ON d.id = cis.division_id
              WHERE pis.season_id = :season_id
                $divisionWhere"

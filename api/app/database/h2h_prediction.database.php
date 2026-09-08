@@ -583,6 +583,8 @@ trait H2HPredictionTrait
             if (!empty($liveLineupRows)) {
                 $livePlayerIds = array_values(array_unique(array_column($liveLineupRows, 'player_id')));
                 $phLp = implode(',', array_fill(0, count($livePlayerIds), '?'));
+                // Rating-Zeitpunkt-bezogen (Fragment B): pis.division_id über pr.club_id
+                // aufgelöst (Fallback: md.division_id), analog H2HTrait::getH2HOverview().
                 $lprq = $this->con->prepare(
                     "SELECT pr.player_id, pr.matchday_id,
                             COALESCE(pr.goals, 0)   AS goals,
@@ -590,10 +592,13 @@ trait H2HPredictionTrait
                             COALESCE(pr.sds, 0)     AS sds,
                             pis.position
                      FROM player_rating pr
+                     JOIN matchday md ON md.id = pr.matchday_id
                      LEFT JOIN player_in_season pis
-                            ON pis.player_id = pr.player_id AND pis.season_id = (
-                                SELECT season_id FROM matchday WHERE id = pr.matchday_id
-                            )
+                            ON pis.player_id = pr.player_id AND pis.season_id = md.season_id
+                           AND pis.division_id = COALESCE(
+                                 (SELECT cis.division_id FROM club_in_season cis
+                                  WHERE cis.club_id = pr.club_id AND cis.season_id = md.season_id LIMIT 1),
+                                 md.division_id)
                      WHERE pr.matchday_id IN ($phLmd) AND pr.player_id IN ($phLp)"
                 );
                 $lprq->execute(array_merge($liveMatchdayIds, $livePlayerIds));

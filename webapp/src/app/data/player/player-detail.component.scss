@@ -4,6 +4,20 @@
   to { transform: rotate(360deg); }
 }
 
+.season-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+}
+
+.division-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
 .detail-header {
   margin-bottom: $space-8;
 

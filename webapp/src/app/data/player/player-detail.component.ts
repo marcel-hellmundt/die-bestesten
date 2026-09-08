@@ -24,6 +24,7 @@ interface TeamHistoryEntry {
 interface PlayerInSeason {
   player_in_season_id: string;
   season_id: string;
+  division_id: string;
   price: number;
   position: 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD';
   photo_uploaded: number;
@@ -69,6 +70,7 @@ interface PlayerDetail {
   date_of_birth: string | null;
   height_cm: number | null;
   weight_kg: number | null;
+  current_club: { club_id: string; name: string; short_name: string; from_date: string; on_loan: number } | null;
   seasons: PlayerInSeason[];
   clubs: PlayerInClub[];
   ratings: PlayerRating[];
@@ -117,6 +119,13 @@ export class PlayerDetailComponent {
   player  = computed(() => this.state()?.data ?? null);
   loading = computed(() => this.state()?.loading ?? true);
   error   = computed(() => this.state()?.error ?? null);
+
+  // Division-Icon nur relevant, wenn der Spieler tatsächlich in mehr als einer Division gespielt
+  // hat — im Normalfall (immer dieselbe Division) ist es reine visuelle Ablenkung.
+  hasMultipleDivisions = computed(() => {
+    const seasons = this.player()?.seasons ?? [];
+    return new Set(seasons.map(s => s.division_id)).size > 1;
+  });
 
   isMaintainer = computed(() => this.auth.isMaintainer());
 
@@ -215,6 +224,26 @@ export class PlayerDetailComponent {
     { initialValue: [] as { club_id: string; division_id: string }[] }
   );
 
+  // Löst die player_in_season-Zeile auf, die zur AKTUELLEN Division des Spielers passt (Fragment A,
+  // client-seitiges Gegenstück zum Backend-Pattern) — ersetzt "p.seasons[0]" als Stand-in für "die
+  // aktuelle Zeile", was bei einem Divisionswechsel (2 Zeilen für dieselbe Saison) sonst beliebig
+  // die falsche Zeile treffen könnte. Fallback auf die bisherige Logik, falls kein aktueller Verein/
+  // keine Division auflösbar ist.
+  currentDivisionSeasonEntry = computed(() => {
+    const p = this.player();
+    if (!p) return null;
+    const activeSeasonId = this.activeSeasonId();
+    const currentClubId  = p.current_club?.club_id ?? null;
+    const clubDivisionId = currentClubId
+      ? this.activeSeasonClubMap().find(e => e.club_id === currentClubId)?.division_id
+      : null;
+    if (clubDivisionId) {
+      const match = p.seasons.find(s => s.season_id === activeSeasonId && s.division_id === clubDivisionId);
+      if (match) return match;
+    }
+    return p.seasons.find(s => s.season_id === activeSeasonId) ?? p.seasons[0] ?? null;
+  });
+
   allClubs = computed(() => {
     const clubs        = this.allClubsRaw();
     const leagueDivId  = this.cache.leagueDivisionId();
@@ -234,18 +263,41 @@ export class PlayerDetailComponent {
   // Add-season form state
   showAddSeasonForm  = signal(false);
   newSeasonId        = signal('');
+  newSeasonDivisionId = signal('');
   newSeasonPosition  = signal<'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD'>('MIDFIELDER');
   newSeasonPrice     = signal(0);
   addingSeasonRecord = signal(false);
   addSeasonError     = signal<string | null>(null);
 
-  availableSeasons = computed(() => {
-    const existing = new Set((this.player()?.seasons ?? []).map(s => s.season_id));
-    return this.cache.seasons().filter(s => !existing.has(s.id));
+  // Alle Saisons wählbar — ein Spieler darf jetzt mehrere player_in_season-Zeilen pro Saison haben
+  // (eine je Division, z.B. bei einem Divisionswechsel), daher keine season_id-basierte Filterung
+  // mehr. Stattdessen: pro gewählter Saison die Divisionen ausschließen, die der Spieler dort
+  // schon hat (UNIQUE(player_id, season_id, division_id) verbietet ohnehin ein echtes Duplikat).
+  availableSeasons = computed(() => this.cache.seasons());
+
+  private usedDivisionIdsForNewSeason = computed(() => {
+    const seasonId = this.newSeasonId();
+    return new Set(
+      (this.player()?.seasons ?? [])
+        .filter(s => s.season_id === seasonId)
+        .map(s => s.division_id)
+    );
   });
 
+  availableDivisionsForNewSeason = computed(() => {
+    const used = this.usedDivisionIdsForNewSeason();
+    return this.cache.divisions().filter(d => !used.has(d.id));
+  });
+
+  onNewSeasonIdChange(seasonId: string): void {
+    this.newSeasonId.set(seasonId);
+    this.newSeasonDivisionId.set(this.availableDivisionsForNewSeason()[0]?.id ?? '');
+  }
+
   openAddSeasonForm(): void {
-    this.newSeasonId.set(this.availableSeasons()[0]?.id ?? '');
+    const seasonId = this.activeSeasonId() ?? this.availableSeasons()[0]?.id ?? '';
+    this.newSeasonId.set(seasonId);
+    this.newSeasonDivisionId.set(this.availableDivisionsForNewSeason()[0]?.id ?? '');
     this.newSeasonPosition.set('MIDFIELDER');
     this.newSeasonPrice.set(0);
     this.addSeasonError.set(null);
@@ -258,17 +310,19 @@ export class PlayerDetailComponent {
   }
 
   submitAddSeason(): void {
-    const p     = this.player();
-    const price = this.newSeasonPrice();
-    if (!p || !this.newSeasonId() || this.addingSeasonRecord()) return;
+    const p          = this.player();
+    const price      = this.newSeasonPrice();
+    const divisionId = this.newSeasonDivisionId();
+    if (!p || !this.newSeasonId() || !divisionId || this.addingSeasonRecord()) return;
     if (!price || price <= 0) { this.addSeasonError.set('Preis muss > 0 sein'); return; }
 
     this.addingSeasonRecord.set(true);
     this.addSeasonError.set(null);
     this.api.post<{ id: string }>('player_in_season', {
-      player_id: p.id,
-      season_id: this.newSeasonId(),
-      position:  this.newSeasonPosition(),
+      player_id:   p.id,
+      season_id:   this.newSeasonId(),
+      division_id: divisionId,
+      position:    this.newSeasonPosition(),
       price,
     }).subscribe({
       next: () => {
@@ -295,7 +349,7 @@ export class PlayerDetailComponent {
   editSeasonError    = signal<string | null>(null);
 
   openEditSeasonForm(s: PlayerInSeason): void {
-    if (!this.isAdmin() || s.season_id !== this.activeSeasonId()) return;
+    if (!this.isAdmin() || s.player_in_season_id !== this.currentDivisionSeasonEntry()?.player_in_season_id) return;
     this.editingSeason.set(s);
     this.editSeasonPosition.set(s.position);
     this.editSeasonPrice.set(+s.price);
@@ -533,7 +587,7 @@ export class PlayerDetailComponent {
   };
 
   positionLimitReached = computed(() => {
-    const position = this.player()?.seasons?.[0]?.position;
+    const position = this.currentDivisionSeasonEntry()?.position;
     if (!position || !this.SQUAD_MAX[position]) return false;
     const max          = this.SQUAD_MAX[position];
     const squadCount   = this.mySquad().filter((p: any) => p.position === position).length;
@@ -541,7 +595,7 @@ export class PlayerDetailComponent {
     return squadCount + pendingCount >= max;
   });
 
-  isSoonAvailable = computed(() => !!this.player()?.seasons?.[0]?.soon_available);
+  isSoonAvailable = computed(() => !!this.currentDivisionSeasonEntry()?.soon_available);
 
   availableBudget = computed(() => this.myBudget() - (this.myOfferData().pending_sum ?? 0));
 
@@ -626,7 +680,7 @@ export class PlayerDetailComponent {
   );
 
   marketValue = computed(() => {
-    const price = +(this.player()?.seasons?.[0]?.price ?? 0);
+    const price = +(this.currentDivisionSeasonEntry()?.price ?? 0);
     return Math.round(price + this.totalPoints() * this.cache.pointsBonus());
   });
 
@@ -750,7 +804,10 @@ export class PlayerDetailComponent {
     const p    = this.player();
     if (!team || !win || !p) return;
 
-    const currentSeason = p.seasons.find(s => s.season_id === team.season_id) ?? p.seasons[0];
+    // team.season_id ist praktisch immer die aktive Saison (Verkauf nur im offenen
+    // Transferfenster möglich) — currentDivisionSeasonEntry() löst dafür bereits korrekt gegen
+    // die AKTUELLE Division auf, Fallback wie bisher falls doch mal abweichend.
+    const currentSeason = this.currentDivisionSeasonEntry() ?? p.seasons.find(s => s.season_id === team.season_id) ?? p.seasons[0];
     const basePrice = currentSeason?.price ?? 0;
     const pts = this.totalPoints();
     const sellPrice = Math.round(+basePrice + pts * this.cache.pointsBonus());
@@ -1008,7 +1065,15 @@ export class PlayerDetailComponent {
     const p = this.player();
     if (!p || p.seasons.length === 0) return null;
 
-    const dataMap = new Map(p.seasons.map(s => [s.season_id, s]));
+    // Bei einem Divisionswechsel gibt es 2 Zeilen für dieselbe season_id — der Chart zeigt weiter
+    // nur 1 Balken pro Saison (kein Redesign auf gestapelte/geteilte Balken), wählt aber
+    // deterministisch die Zeile mit dem höheren Marktwert statt eine beliebige der beiden
+    // (vorher: stiller Map-Overwrite in undefinierter DB-Reihenfolge).
+    const dataMap = new Map<string, PlayerInSeason>();
+    for (const s of p.seasons) {
+      const existing = dataMap.get(s.season_id);
+      if (!existing || +s.price > +existing.price) dataMap.set(s.season_id, s);
+    }
 
     // Use all seasons from cache to build a complete timeline with gaps
     const allSeasons = [...this.cache.seasons()]

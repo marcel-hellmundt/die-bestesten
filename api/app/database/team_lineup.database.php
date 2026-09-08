@@ -150,15 +150,19 @@ trait TeamLineupTrait
         $playerIds = array_column($entries, 'player_id');
         $ph        = implode(',', array_fill(0, count($playerIds), '?'));
 
-        // Get player details + position from global DB
+        // Get player details + position from global DB — pis auf die Zeile der AKTUELLEN Division
+        // jedes Spielers eingeschränkt (Fragment A).
         $playerQ = $this->con->prepare(
             "SELECT p.id, p.displayname, p.country_id,
                     pis.position, pis.price, pis.photo_uploaded
              FROM player p
+             LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = p.id AND pic_cur.to_date IS NULL
+             LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = ?
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
+                 AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
              WHERE p.id IN ($ph)"
         );
-        $playerQ->execute(array_merge([$seasonId], $playerIds));
+        $playerQ->execute(array_merge([$seasonId, $seasonId], $playerIds));
         $playerMap = [];
         foreach ($playerQ->fetchAll(PDO::FETCH_ASSOC) as $p) {
             $playerMap[$p['id']] = $p;
@@ -362,10 +366,15 @@ trait TeamLineupTrait
         $playerIds = $playerQ->fetchAll(PDO::FETCH_COLUMN);
         if (empty($playerIds)) return $counts;
 
+        // Fragment A, Bulk-Form: jeder Spieler auf seine eigene aktuelle Division eingeschränkt.
         $ph = implode(',', array_fill(0, count($playerIds), '?'));
         $posQ = $this->con->prepare(
-            "SELECT position, COUNT(*) AS c FROM player_in_season
-             WHERE season_id = ? AND player_id IN ($ph) GROUP BY position"
+            "SELECT pis.position, COUNT(*) AS c FROM player_in_season pis
+             LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
+             LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+             WHERE pis.season_id = ? AND pis.player_id IN ($ph)
+               AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+             GROUP BY pis.position"
         );
         $posQ->execute(array_merge([$seasonId], $playerIds));
         foreach ($posQ->fetchAll(PDO::FETCH_ASSOC) as $row) {

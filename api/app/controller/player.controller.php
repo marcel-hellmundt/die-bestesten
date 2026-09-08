@@ -41,6 +41,28 @@ class PlayerController extends _BaseController
                 return ['message' => 'price muss zwischen 0 und 50.000.000 liegen'];
             }
 
+            // division_id ist optional, wenn club_id angegeben ist — dann wird sie daraus
+            // hergeleitet (club_id ist selbst optional, da nicht jeder Anlass einen Verein kennt).
+            // Ist division_id trotzdem explizit angegeben, muss sie zur tatsächlichen Division des
+            // Vereins dieser Saison passen (sonst landet der Spieler mit einer division_id an, die
+            // nicht zu seinem Verein passt).
+            $clubDivisionId = null;
+            if (!empty($body['club_id'])) {
+                $clubDivisionMap = $this->db->getClubDivisionMap([$body['club_id']], $body['season_id']);
+                $clubDivisionId  = $clubDivisionMap[$body['club_id']] ?? null;
+            }
+            if (isset($body['division_id'])) {
+                if ($clubDivisionId !== null && $clubDivisionId !== $body['division_id']) {
+                    http_response_code(422);
+                    return ['status' => false, 'message' => 'division_id passt nicht zum angegebenen Verein'];
+                }
+            } elseif ($clubDivisionId !== null) {
+                $body['division_id'] = $clubDivisionId;
+            } else {
+                http_response_code(400);
+                return ['message' => 'division_id fehlt (und konnte nicht aus club_id hergeleitet werden)'];
+            }
+
             // Der CSV-Kurzname (meist nur der Nachname) kollidiert bei häufigen Nachnamen (z.B.
             // "Gomez") schnell mit einem bereits vorhandenen Spieler — displayname ist UNIQUE.
             // Statt mit einem rohen SQL-Fehler abzubrechen, automatisch auf "1. Buchstabe Vorname
@@ -131,12 +153,20 @@ class PlayerController extends _BaseController
             return ['status' => false, 'message' => 'Ein Spieler mit diesem Namen existiert bereits'];
         }
 
+        $clubDivisionMap = $this->db->getClubDivisionMap([$body['club_id']], $body['season_id']);
+        $divisionId      = $clubDivisionMap[$body['club_id']] ?? null;
+        if ($divisionId === null) {
+            http_response_code(422);
+            return ['status' => false, 'message' => 'Verein spielt laut unseren Daten in keiner Division dieser Saison'];
+        }
+
         return $this->db->createPlayer([
             'kicker_id'   => null,
             'first_name'  => $body['first_name'],
             'last_name'   => $body['last_name'],
             'displayname' => $displayname,
             'season_id'   => $body['season_id'],
+            'division_id' => $divisionId,
             'position'    => $body['position'],
             'price'       => 99_000_000,
             'club_id'     => $body['club_id'],
