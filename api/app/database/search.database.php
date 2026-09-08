@@ -22,7 +22,7 @@ trait SearchTrait
                    AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
              LEFT JOIN player_rating pr
                    ON pr.player_id = p.id
-                   AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = :season_id3)
+                   AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = :season_id3 AND division_id = pis.division_id)
              WHERE p.displayname LIKE :q OR p.first_name LIKE :q2 OR p.last_name LIKE :q3
              GROUP BY p.id, p.displayname, p.first_name, p.last_name, pis.position, pis.photo_uploaded
              ORDER BY points DESC, p.displayname

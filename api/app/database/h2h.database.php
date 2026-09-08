@@ -695,6 +695,10 @@ trait H2HTrait
             // unten (Punkte gleiches Muster wie TeamLineupTrait's Bank-Sortierung; Tore/Vorlagen/
             // SdS sind das neue Signal, das dieselbe Gewichtung wie die echte H2H-Ergebnisformel
             // h2hGoals() auf Saison-Ebene nachbildet).
+            // Fragment B: auf die Division DIESES SPIELTAGS eingeschränkt, sonst würde ein
+            // divisionswechselnder Spieler mit Saisonwerten aus BEIDEN Divisionen in die Quote
+            // einfließen (siehe player_in_team.database.php::fetchPlayerDetails() für dasselbe
+            // Muster bei der Kader-Punktesumme).
             $seasonStatsQ = $this->con->prepare(
                 "SELECT pr.player_id,
                         COALESCE(SUM(pr.points), 0)  AS season_points,
@@ -703,10 +707,10 @@ trait H2HTrait
                         COALESCE(SUM(pr.sds), 0)     AS season_sds
                  FROM player_rating pr
                  JOIN matchday m ON m.id = pr.matchday_id
-                 WHERE m.season_id = ? AND pr.player_id IN ($ph)
+                 WHERE m.season_id = ? AND m.division_id = ? AND pr.player_id IN ($ph)
                  GROUP BY pr.player_id"
             );
-            $seasonStatsQ->execute(array_merge([$seasonId], $playerIds));
+            $seasonStatsQ->execute(array_merge([$seasonId, $matchday['division_id']], $playerIds));
             $seasonStatsRows = $seasonStatsQ->fetchAll(PDO::FETCH_ASSOC);
             $seasonPointsMap  = array_column($seasonStatsRows, 'season_points',  'player_id');
             $seasonGoalsMap   = array_column($seasonStatsRows, 'season_goals',   'player_id');
