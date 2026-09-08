@@ -486,25 +486,60 @@ trait H2HTrait
         $modelProbDraw = $probDraw;
         $modelProbAway = 1 - $modelProbDraw - $modelProbHome;
 
-        // Crowd-Adjustment: Bayes'scher Pseudo-Count-Prior. Die Modell-Wahrscheinlichkeiten
-        // gelten als N0 "virtuelle Tipps", die echten Tipps kommen dazu addiert — je mehr echte
-        // Tipps vorliegen, desto stärker verdrängen sie das Modell (jeder Tipp verschiebt die
-        // nächste Quote leicht, siehe Docstring oben). N0 skaliert dynamisch mit der Liga-Größe
-        // (das 4-Fache der stimmberechtigten Manager wiegt so viel wie das Modell), damit kleine
-        // und große Ligen gleich empfindlich reagieren statt eine fixe Zahl zu nutzen, die in
-        // großen Ligen zu träge und in kleinen zu volatil wäre. Faktor 4 (statt z.B. 1) ist
-        // bewusst so gewählt, dass ein EINZELNER Tipp die Quote nur moderat verschiebt (ein
-        // einzelner Manager soll nie stark ins Gewicht fallen), eine breite Mehrheit (z.B. 9 von
-        // 10 stimmberechtigten Managern) sie aber weiterhin deutlich senkt.
-        $n0     = max(1.0, $eligibleManagerCount * 4);
+        // Crowd-Adjustment, zweistufig — reines "je mehr Tipps, desto mehr Gewicht" (frühere
+        // Pseudo-Count-Version) hatte zwei Probleme: (1) ein EINZELNER Tipp hatte bereits den
+        // größten Grenzeffekt (die Ableitung von n/(N0+n) sinkt mit wachsendem n), obwohl wenige
+        // frühe Tipps kaum aussagekräftig sind; (2) ein knapper Split (z.B. 4:2) wog bei
+        // ausreichender Beteiligung genauso schwer wie ein 9:1-Konsens, obwohl er kaum eine klare
+        // Tendenz zeigt. Beides behoben durch zwei getrennte, multiplizierte Faktoren:
         $nHome  = max(0, $pickCounts['home'] ?? 0);
         $nDraw  = max(0, $pickCounts['draw'] ?? 0);
         $nAway  = max(0, $pickCounts['away'] ?? 0);
         $nTotal = $nHome + $nDraw + $nAway;
 
-        $probHome = ($modelProbHome * $n0 + $nHome) / ($n0 + $nTotal);
-        $probDraw = ($modelProbDraw * $n0 + $nDraw) / ($n0 + $nTotal);
-        $probAway = ($modelProbAway * $n0 + $nAway) / ($n0 + $nTotal);
+        // (1) Beteiligungs-Faktor: S-Kurve über den Anteil bereits abgegebener Tipps an den
+        // stimmberechtigten Managern, zentriert auf $tipPoint (Kipppunkt bei 65% Beteiligung,
+        // bewusst deutlich über der Hälfte — bei vielen Managern in der Liga ist es nicht
+        // sonderlich unwahrscheinlich, dass die ersten 2-3 zufällig zum selben Außenseiter
+        // tendieren, das soll noch kaum ins Gewicht fallen) — wenige frühe Tipps bewegen so gut
+        // wie nichts, um den Kipppunkt herum beschleunigt sich der Effekt, danach dominiert die
+        // Crowd zunehmend (aber siehe $maxCrowdWeight unten — nie vollständig). Auf [0,1]
+        // reskaliert, da eine rohe Sigmoid-Funktion sich den Rändern nur asymptotisch annähert (0
+        // Tipps soll exakt Gewicht 0 ergeben).
+        $tipPoint  = 0.65;
+        $steepness = 8.0;
+        $sigmoid   = fn(float $x): float => 1 / (1 + exp(-$steepness * ($x - $tipPoint)));
+        $sigAt0    = $sigmoid(0.0);
+        $sigAt1    = $sigmoid(1.0);
+        $participationShare  = $eligibleManagerCount > 0 ? min(1.0, $nTotal / $eligibleManagerCount) : ($nTotal > 0 ? 1.0 : 0.0);
+        $participationWeight = ($sigmoid($participationShare) - $sigAt0) / ($sigAt1 - $sigAt0);
+
+        // (2) Einigkeits-Faktor: normalisierter Herfindahl-Index über die 3 Picks (0 = Patt/
+        // Gleichverteilung, 1 = einstimmig) — ohne ihn würde ein knapper 4:2-Split bei hoher
+        // Beteiligung genauso stark wiegen wie ein 9:1-Konsens.
+        if ($nTotal > 0) {
+            $pHomeShare = $nHome / $nTotal;
+            $pDrawShare = $nDraw / $nTotal;
+            $pAwayShare = $nAway / $nTotal;
+            $conviction = (3 * ($pHomeShare ** 2 + $pDrawShare ** 2 + $pAwayShare ** 2) - 1) / 2;
+        } else {
+            $conviction = 0.0;
+        }
+
+        // Deckel auf das maximale Crowd-Gewicht: selbst bei völliger Einstimmigkeit ALLER
+        // stimmberechtigten Manager (Beteiligung + Einigkeit je 100%) soll die Quote nicht
+        // komplett auf die Crowd umschwenken — die ursprünglichen statistischen Werte
+        // (Marktwert/Punkte/Tordifferenz) behalten immer mindestens 1-$maxCrowdWeight Einfluss,
+        // statt bei totalem Konsens gegen 0/unendlich zu laufen.
+        $maxCrowdWeight = 0.7;
+        $crowdWeight    = $maxCrowdWeight * $participationWeight * $conviction;
+        $crowdProbHome = $nTotal > 0 ? $nHome / $nTotal : $modelProbHome;
+        $crowdProbDraw = $nTotal > 0 ? $nDraw / $nTotal : $modelProbDraw;
+        $crowdProbAway = $nTotal > 0 ? $nAway / $nTotal : $modelProbAway;
+
+        $probHome = (1 - $crowdWeight) * $modelProbHome + $crowdWeight * $crowdProbHome;
+        $probDraw = (1 - $crowdWeight) * $modelProbDraw + $crowdWeight * $crowdProbDraw;
+        $probAway = (1 - $crowdWeight) * $modelProbAway + $crowdWeight * $crowdProbAway;
 
         $margin = 0.06; // Buchmacher-Marge (Overround) — üblicher Wert für Fußball-1X2-Märkte
         $toOdds = fn(float $p) => $p > 0 ? round(1 / ($p * (1 + $margin)), 2) : null;
@@ -543,7 +578,10 @@ trait H2HTrait
                 'pick_count_draw'    => $nDraw,
                 'pick_count_away'    => $nAway,
                 'eligible_manager_count' => $eligibleManagerCount,
-                'crowd_n0'           => round($n0, 2),
+                'participation_share'  => round($participationShare, 4),
+                'participation_weight' => round($participationWeight, 4),
+                'conviction'           => round($conviction, 4),
+                'crowd_weight'         => round($crowdWeight, 4),
                 'margin'             => $margin,
                 'prob_home'          => round($probHome, 4),
                 'prob_draw'          => round($probDraw, 4),
