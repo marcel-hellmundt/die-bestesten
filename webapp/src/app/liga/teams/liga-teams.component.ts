@@ -107,11 +107,7 @@ export class LigaTeamsComponent {
       switchMap(id => {
         if (!id) return of({ data: [] as LigaTeam[], loading: false, error: null as string | null });
         return this.api.get<LigaTeam[]>(`team?season_id=${id}`).pipe(
-          map(data => ({
-            data: [...data].sort((a, b) => b.total_value - a.total_value),
-            loading: false,
-            error: null as string | null,
-          })),
+          map(data => ({ data, loading: false, error: null as string | null })),
           startWith({ data: [] as LigaTeam[], loading: true, error: null as string | null }),
           catchError(() => of({ data: [] as LigaTeam[], loading: false, error: 'Fehler beim Laden' }))
         );
@@ -123,6 +119,30 @@ export class LigaTeamsComponent {
   teams   = computed(() => this.state().data);
   loading = computed(() => this.state().loading);
   error   = computed(() => this.state().error);
+
+  sortCol = signal<'total_value' | 'bought' | 'sold'>('total_value');
+  sortDir = signal<'asc' | 'desc'>('desc');
+
+  sort(col: 'total_value' | 'bought' | 'sold'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('desc');
+    }
+  }
+
+  sortedTeams = computed(() => {
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    const list = [...this.teams()];
+    list.sort((a, b) => {
+      let cmp = a[col] - b[col];
+      if (cmp === 0) cmp = a.team_name.localeCompare(b.team_name);
+      return dir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  });
 
   // Vereine der Liga-Division mit dem Team, das die meisten aktuellen Kaderspieler dieses
   // Vereins führt — für die "Vereine"-Card unterhalb der Teams-Tabelle.

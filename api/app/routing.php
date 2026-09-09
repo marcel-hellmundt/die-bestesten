@@ -700,13 +700,13 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team/clubs',
-                        'description' => 'Alle Vereine der Liga-Division (Fallback: höchste deutsche Division) mit ALLEN Teams, die die meisten aktuellen Kaderspieler dieses Vereins führen (bei Gleichstand mehrere) — gibt [{id,name,short_name,logo_uploaded,leading_count,leading_teams:[{id,team_name,color,color_secondary,players:[{name}]}]}] sortiert nach leading_count absteigend (dann Vereinsname) zurück; leading_count=0 und leading_teams=[] wenn kein Team Kaderspieler dieses Vereins hat; players alphabetisch, leading_teams nach team_name sortiert — Auth',
+                        'description' => 'Alle Vereine der Liga-Division (Fallback: höchste deutsche Division) mit ALLEN Teams, die die meisten aktuellen Kaderspieler dieses Vereins führen (bei Gleichstand mehrere) — gibt [{id,name,short_name,logo_uploaded,leading_count,leading_teams:[{id,team_name,color,color_secondary,players:[{name}]}]}] sortiert nach leading_count absteigend (dann Vereinsname) zurück; leading_count=0 und leading_teams=[] wenn kein Team Kaderspieler dieses Vereins hat; players alphabetisch, leading_teams nach team_name sortiert; Kaderspieler mit aktuellem player_in_season-Preis von exakt 500.000 € in der 1. Liga (level=1, country=DE) zählen nicht mit — bloße Auffüller zum Erreichen der Kader-Mindestanforderungen, keine bewussten Käufe — Auth',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                     [
                         'method' => 'GET',
                         'path' => '/team/leading_clubs',
-                        'description' => 'Für jedes Team der Saison ALLE Vereine, aus denen die meisten aktuellen Kaderspieler stammen (bei Gleichstand mehrere) — gibt [{id,team_name,color,color_secondary,leading_count,leading_clubs:[{id,name,short_name,logo_uploaded,players:[{name}]}]}] zurück; leading_count=0 und leading_clubs=[] wenn kein zuordenbarer Kaderspieler; players alphabetisch, leading_clubs nach Vereinsname sortiert — Auth',
+                        'description' => 'Für jedes Team der Saison ALLE Vereine, aus denen die meisten aktuellen Kaderspieler stammen (bei Gleichstand mehrere) — gibt [{id,team_name,color,color_secondary,leading_count,leading_clubs:[{id,name,short_name,logo_uploaded,players:[{name}]}]}] zurück; leading_count=0 und leading_clubs=[] wenn kein zuordenbarer Kaderspieler; players alphabetisch, leading_clubs nach Vereinsname sortiert; Kaderspieler mit aktuellem player_in_season-Preis von exakt 500.000 € in der 1. Liga (level=1, country=DE) zählen nicht mit — bloße Auffüller zum Erreichen der Kader-Mindestanforderungen, keine bewussten Käufe — Auth',
                         'query_params' => ['season_id' => 'UUID der Saison (erforderlich)'],
                     ],
                     [

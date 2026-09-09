@@ -92,6 +92,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+.col-sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover { color: var(--flat-river); }
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  opacity: 0.5;
+  font-size: 11px;
+}
+
 // Mobile: die Tabelle muss ohne horizontales Scrollen komplett auf den Bildschirm passen —
 // table-layout:fixed erzwingt feste Spaltenbreiten (in Summe 100%) statt sich am (auf Mobile eh
 // ausgeblendeten) Teamnamen und den nicht umbrechenden Header-Labels aufzuziehen.

@@ -38,13 +38,22 @@
           <th class="col-team">Team</th>
           <th class="col-valid"></th>
           <th class="col-squad"></th>
-          <th class="col-num col-num--bought">Gekauft</th>
-          <th class="col-num col-num--sold">Verkauft</th>
-          <th class="col-value">Marktwert</th>
+          <th class="col-num col-num--bought col-sortable" (click)="sort('bought')">
+            Gekauft
+            <span class="sort-indicator">{{ sortCol() === 'bought' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="col-num col-num--sold col-sortable" (click)="sort('sold')">
+            Verkauft
+            <span class="sort-indicator">{{ sortCol() === 'sold' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="col-value col-sortable" (click)="sort('total_value')">
+            Marktwert
+            <span class="sort-indicator">{{ sortCol() === 'total_value' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
         </tr>
       </thead>
       <tbody>
-        @for (t of teams(); track t.id) {
+        @for (t of sortedTeams(); track t.id) {
           <tr class="row-link" (click)="navigate(t.id)">
             <td class="col-team">
               <span class="team-cell">
@@ -108,7 +117,7 @@
 
 <div class="teams-extra-grid">
   <div class="card">
-    <div class="card-title">Klumpenrisiko</div>
+    <div class="card-title">Vorlieben</div>
     @if (clubsLoading()) {
       <p class="state-msg">Laden…</p>
     } @else if (clubsError()) {
@@ -152,7 +161,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">Vorlieben</div>
+    <div class="card-title">Klumpenrisiko</div>
     @if (teamClubsLoading()) {
       <p class="state-msg">Laden…</p>
     } @else if (teamClubsError()) {

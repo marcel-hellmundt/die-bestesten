@@ -626,8 +626,26 @@ trait ManagerTrait
             $nameByPlayer[$row['id']] = $row['displayname'];
         }
 
+        // Kader-Auffüller aussortieren: Spieler, deren aktueller player_in_season-Preis in der
+        // 1. Liga (level=1, country=DE) exakt 500.000 € beträgt, sind keine bewussten Käufe,
+        // sondern nur nötig, um die Mindestkaderanforderungen zu erfüllen — verzerren sonst
+        // Klumpenrisiko-/Vorlieben-Auswertung.
+        $fillerPlayerIds = [];
+        $filQ = $this->con->prepare(
+            "SELECT pis.player_id
+             FROM player_in_season pis
+             JOIN division d ON d.id = pis.division_id
+             WHERE pis.player_id IN ($pph) AND pis.season_id = ? AND pis.price = 500000
+               AND d.level = 1 AND LOWER(d.country_id) = 'de'"
+        );
+        $filQ->execute([...$allPlayerIds, $seasonId]);
+        foreach ($filQ->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $fillerPlayerIds[$row['player_id']] = true;
+        }
+
         $rows = [];
         foreach ($playerInTeam as $row) {
+            if (isset($fillerPlayerIds[$row['player_id']])) continue;
             $clubId = $clubByPlayer[$row['player_id']] ?? null;
             if ($clubId === null) continue;
             $rows[] = [
