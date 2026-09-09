@@ -107,6 +107,50 @@ export class PlayerImportDataComponent {
     return this.isRowComplete(r) && !this.isFullyComplete(r);
   }
 
+  // ── "Fast fertig"-Filter: welche fehlenden Stammdaten-Kategorien überhaupt interessieren ──
+  // Manche Ligen pflegen z.B. Größe/Gewicht bewusst nicht — ohne Filter würde die "Fast fertig"-
+  // Liste dann dauerhaft von Zeilen überflutet, die aus Sicht der Liga längst fertig sind. Auswahl
+  // wird in localStorage gemerkt (per Browser/Gerät, nicht pro Liga) — muss nach jedem CSV-Import
+  // nicht neu gesetzt werden.
+  readonly missingFieldOptions: { key: string; label: string; check: (r: PlayerImportRow) => boolean }[] = [
+    { key: 'photo',        label: 'Foto',          check: (r) => !r.has_current_photo },
+    { key: 'date_of_birth', label: 'Geburtsdatum', check: (r) => !r.date_of_birth },
+    { key: 'birth_city',    label: 'Geburtsort',   check: (r) => !r.birth_city },
+    { key: 'height_cm',     label: 'Größe',        check: (r) => !r.height_cm },
+    { key: 'weight_kg',     label: 'Gewicht',      check: (r) => !r.weight_kg },
+    { key: 'country_id',    label: 'Nationalität', check: (r) => !r.country_id },
+  ];
+
+  private static readonly MISSING_FILTER_STORAGE_KEY = 'player-import-missing-field-filters';
+
+  private loadMissingFieldFilters(): Record<string, boolean> {
+    const defaults: Record<string, boolean> = {};
+    for (const opt of this.missingFieldOptions) defaults[opt.key] = true;
+    try {
+      const raw = localStorage.getItem(PlayerImportDataComponent.MISSING_FILTER_STORAGE_KEY);
+      if (!raw) return defaults;
+      return { ...defaults, ...JSON.parse(raw) };
+    } catch {
+      return defaults;
+    }
+  }
+
+  missingFieldEnabled = signal<Record<string, boolean>>(this.loadMissingFieldFilters());
+
+  toggleMissingFieldFilter(key: string): void {
+    const next = { ...this.missingFieldEnabled(), [key]: !this.missingFieldEnabled()[key] };
+    this.missingFieldEnabled.set(next);
+    try {
+      localStorage.setItem(PlayerImportDataComponent.MISSING_FILTER_STORAGE_KEY, JSON.stringify(next));
+    } catch {}
+  }
+
+  /** Fehlende Kategorien einer Zeile, eingeschränkt auf die aktuell aktivierten Checkboxen. */
+  rowVisibleMissing(r: PlayerImportRow): { key: string; label: string }[] {
+    const enabled = this.missingFieldEnabled();
+    return this.missingFieldOptions.filter((o) => enabled[o.key] && o.check(r));
+  }
+
   matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
   unmatchedRows = computed(() => this.rows().filter((r) => !r.isMatched));
   /** Unmatched rows shown under "Neu in CSV" — excludes rows whose only issue is Marktwert (those go to "Keine Aktion möglich"). */
@@ -126,7 +170,7 @@ export class PlayerImportDataComponent {
     const rows = this.matchedRows();
     switch (this.selectedCard()) {
       case 'done': return rows.filter((r) => this.isFullyComplete(r));
-      case 'almost': return rows.filter((r) => this.isAlmostComplete(r));
+      case 'almost': return rows.filter((r) => this.isAlmostComplete(r) && this.rowVisibleMissing(r).length > 0);
       case 'importable': return rows.filter((r) => r.importable);
       case 'mismatch': return rows.filter((r) => r.position_price_mismatch);
       case 'blocked': return rows.filter((r) => this.isBlocked(r));

@@ -184,6 +184,21 @@
       </div>
     </div>
 
+    @if (selectedCard() === 'almost') {
+      <div class="missing-field-filters">
+        @for (opt of missingFieldOptions; track opt.key) {
+          <label class="missing-field-filter">
+            <input
+              type="checkbox"
+              [checked]="missingFieldEnabled()[opt.key]"
+              (change)="toggleMissingFieldFilter(opt.key)"
+            />
+            {{ opt.label }}
+          </label>
+        }
+      </div>
+    }
+
     @if (isMatchedCardSelected()) {
       <div class="table-container">
         <table class="data-table data-table--compact">
@@ -334,8 +349,8 @@
                 @if (selectedCard() === 'almost') {
                   <td class="mismatch-error">
                     <div class="row-issues">
-                      @for (item of r.missingItems; track item) {
-                        <span>{{ item }}</span>
+                      @for (item of rowVisibleMissing(r); track item.key) {
+                        <span>{{ item.label }}</span>
                       }
                     </div>
                   </td>

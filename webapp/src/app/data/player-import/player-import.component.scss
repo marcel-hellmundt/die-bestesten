@@ -44,6 +44,29 @@
   margin-top: $space-4;
 }
 
+.missing-field-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-4;
+  margin: $space-4 0;
+  padding: $space-3 $space-4;
+  background: $color-surface-alt;
+  border-radius: $radius-md;
+}
+
+.missing-field-filter {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  font-size: $font-sm;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    cursor: pointer;
+  }
+}
+
 .col-sortable {
   cursor: pointer;
   user-select: none;

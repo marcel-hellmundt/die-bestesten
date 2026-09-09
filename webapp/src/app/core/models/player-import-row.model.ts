@@ -45,17 +45,6 @@ export class PlayerImportRow {
     return !!this.country_id && !!this.birth_city && !!this.date_of_birth && !!this.height_cm && !!this.weight_kg;
   }
 
-  /** Was für "komplett fertig" noch fehlt — leer, wenn Stammdaten + Foto vollständig sind. */
-  get missingItems(): string[] {
-    const missing: string[] = [];
-    if (!this.date_of_birth) missing.push('Geburtsdatum');
-    if (!this.height_cm)     missing.push('Größe');
-    if (!this.weight_kg)     missing.push('Gewicht');
-    if (!this.country_id)    missing.push('Nationalität');
-    if (!this.birth_city)    missing.push('Geburtsort');
-    if (!this.has_current_photo) missing.push('Foto');
-    return missing;
-  }
 
   get hasDuplicateCandidate(): boolean {
     return this.duplicate_candidate_player_id !== null;
