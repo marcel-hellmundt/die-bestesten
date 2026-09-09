@@ -185,17 +185,20 @@
     </div>
 
     @if (selectedCard() === 'almost') {
-      <div class="missing-field-filters">
-        @for (opt of missingFieldOptions; track opt.key) {
-          <label class="missing-field-filter">
-            <input
-              type="checkbox"
-              [checked]="missingFieldEnabled()[opt.key]"
-              (change)="toggleMissingFieldFilter(opt.key)"
-            />
-            {{ opt.label }}
-          </label>
-        }
+      <div class="missing-field-filter-row">
+        <span class="missing-field-filter-row__label">{{ filteredMatchedRows().length }} sichtbar</span>
+        <div class="missing-field-toggle">
+          @for (opt of missingFieldOptions; track opt.key) {
+            <button
+              type="button"
+              class="missing-field-toggle__btn"
+              [class.active]="missingFieldEnabled()[opt.key]"
+              (click)="toggleMissingFieldFilter(opt.key)"
+            >
+              {{ opt.label }}
+            </button>
+          }
+        </div>
       </div>
     }
 

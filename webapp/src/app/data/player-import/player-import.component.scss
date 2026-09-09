@@ -44,26 +44,56 @@
   margin-top: $space-4;
 }
 
-.missing-field-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $space-4;
-  margin: $space-4 0;
-  padding: $space-3 $space-4;
-  background: $color-surface-alt;
-  border-radius: $radius-md;
-}
-
-.missing-field-filter {
+// Gleiches Reiter-Pattern wie .stats-mode-toggle auf /liga/spieltag (Statistik/Einsatz) — hier
+// aber als unabhängig umschaltbare Filter statt sich gegenseitig ausschließender Tabs, daher
+// <button> statt Radiogruppe: aktiv = roter Hintergrund/weiße Schrift, inaktiv = grauer
+// Hintergrund/dunkelgraue Schrift (gleiche Farbwerte wie dort).
+.missing-field-filter-row {
   display: flex;
   align-items: center;
-  gap: $space-1;
-  font-size: $font-sm;
-  cursor: pointer;
-  user-select: none;
+  justify-content: flex-end;
+  gap: $space-3;
+  margin: $space-4 0;
 
-  input {
+  &__label {
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+}
+
+.missing-field-toggle {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  padding: 2px;
+  gap: 2px;
+  box-sizing: border-box;
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 $space-4;
+    border: none;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
     cursor: pointer;
+    transition: all $transition-fast;
+    white-space: nowrap;
+
+    &.active {
+      background: $color-accent;
+      color: #fff;
+    }
+
+    &:hover:not(.active) {
+      color: $color-text;
+    }
   }
 }
 
