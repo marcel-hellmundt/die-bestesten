@@ -403,7 +403,7 @@ trait OfferTrait
                     $bq = $this->con_league->prepare(
                         "SELECT id, team_id, offer_value FROM offer
                          WHERE transferwindow_id = :wid AND player_id = :pid AND status = 'pending'
-                         ORDER BY offer_value DESC, created_at ASC"
+                         ORDER BY offer_value DESC, RAND()"
                     );
                     $bq->execute([':wid' => $windowId, ':pid' => $playerId]);
                     $bids = $bq->fetchAll(PDO::FETCH_ASSOC);
