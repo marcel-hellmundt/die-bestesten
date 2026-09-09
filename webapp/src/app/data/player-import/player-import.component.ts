@@ -435,6 +435,13 @@ export class PlayerImportDataComponent {
       position: row.csv_position,
       price: row.csv_price,
       club_id: row.matched_club_id ?? undefined,
+      // Explizit die im CSV-Import bestätigte Division mitschicken, statt sie serverseitig aus
+      // club_id herleiten zu lassen (siehe POST /player/create) — sonst schlägt das Anlegen fehl,
+      // falls der Verein noch kein club_in_season für die laufende Saison hat (z.B. ganz erster
+      // Import einer neuen Saison, bevor die Divisionszuordnungen gepflegt sind), obwohl die
+      // richtige Division hier bereits bekannt/bestätigt ist. Der Server prüft club_id/division_id
+      // trotzdem weiterhin auf Widerspruch (422), falls beide gesetzt sind und nicht zusammenpassen.
+      division_id: this.divisionId() ?? undefined,
       from_date: this.seasonStartDate() ?? undefined,
     }).subscribe({
       next: ({ id, displayname }) => {
