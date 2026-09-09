@@ -1,11 +1,15 @@
 @use 'variables' as *;
 
-// :not([type="checkbox"]):not([type="radio"]) — diese Regel (appearance:none, volle Breite/Höhe,
-// radius-full, roter Border bei ng-invalid) ist für Text-/Such-/Zahlen-Inputs gedacht. Ohne den
-// Ausschluss verwandelt sie jede Checkbox/Radio in einen riesigen weißen Kreis mit rotem Rand bei
-// Validierung — das ist im Projekt schon mehrfach aufgetaucht und wieder entfernt worden. Checkboxen
-// und Radios sollen die native Browser-Darstellung behalten, nicht dieses Text-Input-Styling erben.
-input:not([type="checkbox"]):not([type="radio"]),
+// :not([type="checkbox"]):not([type="radio"]):not([type="range"]) — diese Regel (appearance:none,
+// volle Breite/Höhe, radius-full, roter Border bei ng-invalid) ist für Text-/Such-/Zahlen-Inputs
+// gedacht. Ohne den Ausschluss verwandelt sie jede Checkbox/Radio in einen riesigen weißen Kreis
+// mit rotem Rand bei Validierung — das ist im Projekt schon mehrfach aufgetaucht und wieder
+// entfernt worden. Checkboxen und Radios sollen die native Browser-Darstellung behalten, nicht
+// dieses Text-Input-Styling erben. Gleiches Problem für type="range" (siehe /markt/spieler-Filter):
+// appearance:none unterdrückt die native Track-Darstellung, das lokale .filter-slider-Override
+// (appearance:auto ohne !important) verliert dagegen die Spezifitäts-Kollision mit dieser
+// Compound-Selector-Regel — der Slider zeigte danach nur noch den Thumb, keinen Bereich mehr.
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 select,
 textarea {
   width: 100%;
