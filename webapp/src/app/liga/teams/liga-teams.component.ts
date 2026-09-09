@@ -172,7 +172,11 @@ export class LigaTeamsComponent {
         if (!id) return of({ data: [] as TeamLeadingClubRow[], loading: false, error: null as string | null });
         return this.api.get<TeamLeadingClubRow[]>(`team/leading_clubs?season_id=${id}`).pipe(
           map(data => ({
-            data: [...data].sort((a, b) => a.team_name.localeCompare(b.team_name)),
+            data: [...data].sort((a, b) =>
+              b.leading_count - a.leading_count
+              || b.leading_clubs.length - a.leading_clubs.length
+              || a.team_name.localeCompare(b.team_name)
+            ),
             loading: false,
             error: null as string | null,
           })),
