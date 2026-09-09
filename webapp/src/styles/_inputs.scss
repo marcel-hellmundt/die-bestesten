@@ -1,6 +1,11 @@
 @use 'variables' as *;
 
-input,
+// :not([type="checkbox"]):not([type="radio"]) — diese Regel (appearance:none, volle Breite/Höhe,
+// radius-full, roter Border bei ng-invalid) ist für Text-/Such-/Zahlen-Inputs gedacht. Ohne den
+// Ausschluss verwandelt sie jede Checkbox/Radio in einen riesigen weißen Kreis mit rotem Rand bei
+// Validierung — das ist im Projekt schon mehrfach aufgetaucht und wieder entfernt worden. Checkboxen
+// und Radios sollen die native Browser-Darstellung behalten, nicht dieses Text-Input-Styling erben.
+input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
   width: 100%;
