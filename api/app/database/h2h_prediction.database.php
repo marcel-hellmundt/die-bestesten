@@ -177,11 +177,12 @@ trait H2HPredictionTrait
     }
 
     /**
-     * Kontostand der "Bank" — der fiktiven Gegenseite jeder Wette, kein echter Manager. Hält alle
-     * Einsätze offener/verlorener Tipps (noch nicht ausgezahlt bzw. gewonnen/behalten) und zieht
-     * alle an gewonnene Tipps ausgeschütteten Gewinne (stake*odds) wieder ab. Nimmt an derselben
-     * lockedOnly-Wertung wie getLukatenStandings() teil (nur bereits angepfiffene Matches), damit
-     * die Bank-Zeile zur selben Schatzkammer-Wertung wie die Manager-Zeilen passt.
+     * Kontostand der "Bank" — der fiktiven Gegenseite jeder Wette, kein echter Manager. Jeder
+     * Einsatz geht zunächst an die Bank (unabhängig vom Ausgang); bei gewonnenen Tipps zahlt sie
+     * zusätzlich die volle Auszahlung (stake*odds) aus — da jede Quote > 1 ist, verliert die Bank
+     * bei jedem gewonnenen Tipp per Saldo (stake - stake*odds). Nimmt an derselben lockedOnly-
+     * Wertung wie getLukatenStandings() teil (nur bereits angepfiffene Matches), damit die
+     * Bank-Zeile zur selben Schatzkammer-Wertung wie die Manager-Zeilen passt.
      */
     private function getBankLukatenBalance(string $seasonId): float
     {
@@ -198,10 +199,13 @@ trait H2HPredictionTrait
 
         $balance = 0.0;
         foreach ($rows as $r) {
+            // Jeder Einsatz geht zuerst an die Bank, unabhängig vom Ausgang — bei gewonnenen
+            // Tipps zahlt sie danach zusätzlich stake*odds aus (mehr als sie eingenommen hat,
+            // da jede Quote > 1 ist). Vorher fehlte dieses += hier, wodurch der Einsatz
+            // gewonnener Tipps nie in der Bank-Summe ankam.
+            $balance += (float) $r['stake'];
             if ($r['result'] === 'won') {
                 $balance -= (float) $r['stake'] * (float) $r['odds'];
-            } else {
-                $balance += (float) $r['stake'];
             }
         }
         return $balance;
