@@ -85,11 +85,20 @@
   &--sold   { color: $color-danger; }
 }
 
+.col-num__row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: $space-1;
+}
+
 .col-num__diff {
-  display: block;
   font-size: $font-xs;
   font-weight: $font-weight-normal;
-  color: $color-text-muted;
+
+  // Blass-rot: zugeloster Kader hat rechnerisch mehr Punkte als das Team tatsächlich geholt hat.
+  &--positive { color: #f87171; }
+  // Blass-grün: umgekehrt, der Regelfall.
+  &--negative { color: #4ade80; }
 }
 
 .col-value {

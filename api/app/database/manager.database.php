@@ -515,9 +515,8 @@ trait ManagerTrait
             $draftedNamesByTeam[$r['team_id']][$r['displayname']] = true;
         }
 
-        $draftedPoints       = array_fill_keys($teamIds, 0);
-        $draftedActiveCount  = array_fill_keys($teamIds, 0);
-        $draftedActualPoints = array_fill_keys($teamIds, 0);
+        $draftedPoints      = array_fill_keys($teamIds, 0);
+        $draftedActiveCount = array_fill_keys($teamIds, 0);
 
         if (!empty($draftedNamesByTeam)) {
             $allDraftedNames = array_values(array_unique(array_merge(
@@ -573,42 +572,23 @@ trait ManagerTrait
                         }
                     }
                 }
-
-                // Tatsächlich vom Team geholte Punkte dieser Spieler: nur Spieltage, an denen sie
-                // wirklich aufgestellt waren (team_lineup.nominated=1) — im Gegensatz zu
-                // drafted_points oben, das ihre komplette Saisonpunktzahl zählt, unabhängig davon
-                // ob das Team sie je eingesetzt hat. team_lineup liegt in der Liga-DB,
-                // player_rating in der globalen DB — zwei getrennte Abfragen + Merge in PHP statt
-                // Cross-DB-JOIN, gleiches Muster wie TeamLineupTrait.
-                $tlQ = $this->con_league->prepare(
-                    "SELECT team_id, player_id, matchday_id FROM team_lineup
-                     WHERE team_id IN ($ph) AND player_id IN ($dpp) AND nominated = 1"
-                );
-                $tlQ->execute([...$teamIds, ...$draftedPlayerIds]);
-                $lineupRows = $tlQ->fetchAll(PDO::FETCH_ASSOC);
-
-                if (!empty($lineupRows)) {
-                    $prQ = $this->con->prepare(
-                        "SELECT player_id, matchday_id, points FROM player_rating WHERE player_id IN ($dpp)"
-                    );
-                    $prQ->execute($draftedPlayerIds);
-                    $pointsByPlayerMatchday = [];
-                    foreach ($prQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                        $pointsByPlayerMatchday[$r['player_id'] . '|' . $r['matchday_id']] = (int) $r['points'];
-                    }
-
-                    foreach ($lineupRows as $r) {
-                        $key = $r['player_id'] . '|' . $r['matchday_id'];
-                        $draftedActualPoints[$r['team_id']] += $pointsByPlayerMatchday[$key] ?? 0;
-                    }
-                }
             }
         }
 
+        // Gesamtpunktzahl des Teams in der Saison (team_rating, league-DB) — Vergleichswert für
+        // drafted_points auf /liga/teams: wie groß ist der Anteil des zugelosten Kaders an der
+        // tatsächlichen Team-Punktzahl.
+        $seasonPointsQ = $this->con_league->prepare(
+            "SELECT team_id, COALESCE(SUM(points), 0) AS total_points
+             FROM team_rating WHERE team_id IN ($ph) GROUP BY team_id"
+        );
+        $seasonPointsQ->execute($teamIds);
+        $seasonPointsByTeam = array_column($seasonPointsQ->fetchAll(PDO::FETCH_ASSOC), 'total_points', 'team_id');
+
         foreach ($teams as &$team) {
-            $team['drafted_points']        = $draftedPoints[$team['id']] ?? 0;
-            $team['drafted_active_count']  = $draftedActiveCount[$team['id']] ?? 0;
-            $team['drafted_actual_points'] = $draftedActualPoints[$team['id']] ?? 0;
+            $team['drafted_points']       = $draftedPoints[$team['id']] ?? 0;
+            $team['drafted_active_count'] = $draftedActiveCount[$team['id']] ?? 0;
+            $team['season_points']        = (int) ($seasonPointsByTeam[$team['id']] ?? 0);
         }
         unset($team);
 

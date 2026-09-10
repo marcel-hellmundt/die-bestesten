@@ -116,10 +116,17 @@
             <td class="col-num col-num--bought">{{ t.bought }}</td>
             <td class="col-num col-num--sold">{{ t.sold }}</td>
             <td class="col-num">
-              {{ t.drafted_points }}
-              @if (draftedPointsDiff(t) !== 0) {
-                <span class="col-num__diff">({{ draftedPointsDiff(t) }})</span>
-              }
+              <span class="col-num__row">
+                {{ t.drafted_points }}
+                @if (draftedPointsDiff(t) !== 0) {
+                  <span
+                    class="col-num__diff"
+                    [class.col-num__diff--positive]="draftedPointsDiff(t) > 0"
+                    [class.col-num__diff--negative]="draftedPointsDiff(t) < 0"
+                    >({{ draftedPointsDiff(t) > 0 ? '+' : '' }}{{ draftedPointsDiff(t) }})</span
+                  >
+                }
+              </span>
             </td>
             <td class="col-num">{{ t.drafted_active_count }}</td>
             <td class="col-value">{{ formatValue(t.total_value) }}</td>

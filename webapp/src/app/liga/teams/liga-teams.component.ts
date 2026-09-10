@@ -22,7 +22,7 @@ interface LigaTeam {
   sold: number;
   drafted_points: number;
   drafted_active_count: number;
-  drafted_actual_points: number;
+  season_points: number;
 }
 
 interface ClubLeadingTeamPlayer {
@@ -214,11 +214,11 @@ export class LigaTeamsComponent {
       : 'img/placeholders/club.png';
   }
 
-  // Diff zwischen tatsächlich geholten Punkten (nur Spieltage mit team_lineup.nominated=1) und
-  // der vollen Saisonpunktzahl der zugelosten Spieler — meist ≤ 0 (nicht jeder Zugeloster stand
-  // durchgehend im Lineup).
+  // Diff zwischen der Saisonpunktzahl des zugelosten Kaders und der Gesamtpunktzahl des Teams —
+  // positiv (blass-rot) bedeutet: der zugeloste Kader hat rechnerisch mehr Punkte als das Team
+  // insgesamt tatsächlich geholt hat.
   draftedPointsDiff(t: LigaTeam): number {
-    return t.drafted_actual_points - t.drafted_points;
+    return t.drafted_points - t.season_points;
   }
 
   formatValue(v: number): string {
