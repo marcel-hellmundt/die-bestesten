@@ -182,6 +182,9 @@
   justify-content: space-between;
   gap: $space-2;
   margin: 0 0 $space-3;
+  // .former-row darunter hat zusätzlich eigenes Padding ($space-2) — hier gegenhalten, damit die
+  // Punktzahl rechts exakt mit der Punkte-Spalte der einzelnen Spieler fluchtet.
+  padding-inline-end: $space-2;
 
   .section-title {
     margin: 0;

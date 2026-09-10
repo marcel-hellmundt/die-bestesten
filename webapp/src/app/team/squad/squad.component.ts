@@ -72,7 +72,7 @@ export class SquadComponent {
   loading       = computed(() => this.state().loading);
   error         = computed(() => this.state().error);
 
-  draftedSquadTotalPoints = computed(() => this.draftedSquad().reduce((sum, p) => sum + p.points, 0));
+  draftedSquadTotalPoints = computed(() => this.draftedSquad().reduce((sum, p) => sum + Number(p.points), 0));
 
   playerCount      = computed(() => this.players().length);
   totalMarketValue = computed(() => this.players().reduce((sum, p) => sum + this.marketValue(p), 0));
