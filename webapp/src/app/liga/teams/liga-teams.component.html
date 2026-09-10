@@ -115,7 +115,12 @@
             </td>
             <td class="col-num col-num--bought">{{ t.bought }}</td>
             <td class="col-num col-num--sold">{{ t.sold }}</td>
-            <td class="col-num">{{ t.drafted_points }}</td>
+            <td class="col-num">
+              {{ t.drafted_points }}
+              @if (draftedPointsDiff(t) !== 0) {
+                <span class="col-num__diff">({{ draftedPointsDiff(t) }})</span>
+              }
+            </td>
             <td class="col-num">{{ t.drafted_active_count }}</td>
             <td class="col-value">{{ formatValue(t.total_value) }}</td>
           </tr>

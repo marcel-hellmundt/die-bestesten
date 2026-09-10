@@ -85,6 +85,13 @@
   &--sold   { color: $color-danger; }
 }
 
+.col-num__diff {
+  display: block;
+  font-size: $font-xs;
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
+}
+
 .col-value {
   width: 140px;
   text-align: right;

@@ -22,6 +22,7 @@ interface LigaTeam {
   sold: number;
   drafted_points: number;
   drafted_active_count: number;
+  drafted_actual_points: number;
 }
 
 interface ClubLeadingTeamPlayer {
@@ -211,6 +212,13 @@ export class LigaTeamsComponent {
     return c.logo_uploaded
       ? `${environment.imageApiUrl}/club/${c.id}.png`
       : 'img/placeholders/club.png';
+  }
+
+  // Diff zwischen tatsächlich geholten Punkten (nur Spieltage mit team_lineup.nominated=1) und
+  // der vollen Saisonpunktzahl der zugelosten Spieler — meist ≤ 0 (nicht jeder Zugeloster stand
+  // durchgehend im Lineup).
+  draftedPointsDiff(t: LigaTeam): number {
+    return t.drafted_actual_points - t.drafted_points;
   }
 
   formatValue(v: number): string {
