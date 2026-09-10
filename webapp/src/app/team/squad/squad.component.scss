@@ -176,6 +176,25 @@
   margin: 0 0 $space-3;
 }
 
+.section-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $space-2;
+  margin: 0 0 $space-3;
+
+  .section-title {
+    margin: 0;
+  }
+}
+
+.section-title-value {
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  white-space: nowrap;
+}
+
 .former-list {
   display: flex;
   flex-direction: column;

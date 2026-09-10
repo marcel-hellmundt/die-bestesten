@@ -156,7 +156,10 @@
 
       @if (draftedSquad().length > 0) {
         <div class="squad-former card">
-          <h3 class="section-title">Zugeloster Kader</h3>
+          <div class="section-title-row">
+            <h3 class="section-title">Zugeloster Kader</h3>
+            <span class="section-title-value">{{ draftedSquadTotalPoints() }} Pkt</span>
+          </div>
           <div class="former-list">
             @for (p of draftedSquad(); track p.id) {
               <a class="former-row row-link" [routerLink]="['/daten/player', p.id]">
