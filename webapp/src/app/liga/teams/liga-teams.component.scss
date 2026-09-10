@@ -88,7 +88,7 @@
 .col-num__row {
   display: inline-flex;
   align-items: baseline;
-  gap: $space-1;
+  gap: $space-2;
 }
 
 .col-num__diff {
@@ -97,8 +97,8 @@
 
   // Blass-rot: zugeloster Kader hat rechnerisch mehr Punkte als das Team tatsächlich geholt hat.
   &--positive { color: #f87171; }
-  // Blass-grün: umgekehrt, der Regelfall.
-  &--negative { color: #4ade80; }
+  // Blass-grün (etwas dunkler): umgekehrt, der Regelfall.
+  &--negative { color: #22b562; }
 }
 
 .col-value {
