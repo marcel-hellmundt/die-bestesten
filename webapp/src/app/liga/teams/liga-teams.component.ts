@@ -20,6 +20,8 @@ interface LigaTeam {
   position_counts: Record<string, number>;
   bought: number;
   sold: number;
+  drafted_points: number;
+  drafted_active_count: number;
 }
 
 interface ClubLeadingTeamPlayer {
@@ -120,10 +122,10 @@ export class LigaTeamsComponent {
   loading = computed(() => this.state().loading);
   error   = computed(() => this.state().error);
 
-  sortCol = signal<'total_value' | 'bought' | 'sold'>('total_value');
+  sortCol = signal<'total_value' | 'bought' | 'sold' | 'drafted_points' | 'drafted_active_count'>('total_value');
   sortDir = signal<'asc' | 'desc'>('desc');
 
-  sort(col: 'total_value' | 'bought' | 'sold'): void {
+  sort(col: 'total_value' | 'bought' | 'sold' | 'drafted_points' | 'drafted_active_count'): void {
     if (this.sortCol() === col) {
       this.sortDir.update(d => (d === 'asc' ? 'desc' : 'asc'));
     } else {

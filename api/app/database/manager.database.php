@@ -501,6 +501,71 @@ trait ManagerTrait
         }
         unset($team);
 
+        // Zugeloster Kader je Team (für /liga/teams, Desktop-only Spalten): Gesamtpunkte ALLER
+        // jemals per Zulosung erhaltenen Spieler (unabhängig ob/wann verkauft — gleiche Menge wie
+        // PlayerInTeamTrait::getFormerSquadByTeamId()'s drafted_squad[]) + wie viele davon noch
+        // aktiv im Kader stehen.
+        $draftNameQ = $this->con_league->prepare(
+            "SELECT team_id, SUBSTRING(reason, LENGTH('Draft-Zuweisung: ') + 1) AS displayname
+             FROM transaction WHERE team_id IN ($ph) AND reason LIKE 'Draft-Zuweisung: %'"
+        );
+        $draftNameQ->execute($teamIds);
+        $draftedNamesByTeam = [];
+        foreach ($draftNameQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $draftedNamesByTeam[$r['team_id']][$r['displayname']] = true;
+        }
+
+        $draftedPoints      = array_fill_keys($teamIds, 0);
+        $draftedActiveCount = array_fill_keys($teamIds, 0);
+
+        if (!empty($draftedNamesByTeam)) {
+            $allDraftedNames = array_values(array_unique(array_merge(
+                ...array_map('array_keys', array_values($draftedNamesByTeam))
+            )));
+            $dnp  = implode(',', array_fill(0, count($allDraftedNames), '?'));
+            $pidQ = $this->con->prepare("SELECT id, displayname FROM player WHERE displayname IN ($dnp)");
+            $pidQ->execute($allDraftedNames);
+            $playerIdByName = array_column($pidQ->fetchAll(PDO::FETCH_ASSOC), 'id', 'displayname');
+
+            $draftedPlayerIds = array_values(array_unique($playerIdByName));
+            if (!empty($draftedPlayerIds)) {
+                // Saisonpunkte auch für zwischenzeitlich verkaufte zugeloste Spieler (nicht mehr
+                // in $seasonPts enthalten, das nur den aktuellen Kader abdeckt) — gleiche Formel/
+                // Division-Behandlung wie oben.
+                $dpp   = implode(',', array_fill(0, count($draftedPlayerIds), '?'));
+                $dptsQ = $this->con->prepare(
+                    "SELECT pis.player_id, COALESCE(SUM(pr.points), 0) AS season_points
+                     FROM player_in_season pis
+                     LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
+                     LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
+                     LEFT JOIN player_rating pr ON pr.player_id = pis.player_id
+                         AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = pis.season_id AND division_id = pis.division_id)
+                     WHERE pis.player_id IN ($dpp) AND pis.season_id = ?
+                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+                     GROUP BY pis.player_id"
+                );
+                $dptsQ->execute([...$draftedPlayerIds, $seasonId]);
+                $draftedSeasonPts = array_column($dptsQ->fetchAll(PDO::FETCH_ASSOC), 'season_points', 'player_id');
+
+                foreach ($draftedNamesByTeam as $tid => $names) {
+                    foreach (array_keys($names) as $name) {
+                        $pid = $playerIdByName[$name] ?? null;
+                        if ($pid === null) continue;
+                        $draftedPoints[$tid] += (int) ($draftedSeasonPts[$pid] ?? 0);
+                        if (in_array($pid, $teamPlayerIds[$tid] ?? [], true)) {
+                            $draftedActiveCount[$tid]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach ($teams as &$team) {
+            $team['drafted_points']       = $draftedPoints[$team['id']] ?? 0;
+            $team['drafted_active_count'] = $draftedActiveCount[$team['id']] ?? 0;
+        }
+        unset($team);
+
         // Gekauft/Verkauft über die ganze Saison je Team (für /liga/teams) — alle
         // player_in_team-Stints (nicht nur aktive) gegen die Draft-Zuweisungen dieses Teams
         // abgleichen, um Zulosungen von echten Käufen zu unterscheiden. Gleiches

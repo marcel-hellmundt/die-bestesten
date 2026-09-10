@@ -46,6 +46,14 @@
             Verkauft
             <span class="sort-indicator">{{ sortCol() === 'sold' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
           </th>
+          <th class="col-num col-sortable" (click)="sort('drafted_points')">
+            Zugelost Pkt
+            <span class="sort-indicator">{{ sortCol() === 'drafted_points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
+          <th class="col-num col-sortable" (click)="sort('drafted_active_count')">
+            Zugelost aktiv
+            <span class="sort-indicator">{{ sortCol() === 'drafted_active_count' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+          </th>
           <th class="col-value col-sortable" (click)="sort('total_value')">
             Marktwert
             <span class="sort-indicator">{{ sortCol() === 'total_value' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
@@ -107,6 +115,8 @@
             </td>
             <td class="col-num col-num--bought">{{ t.bought }}</td>
             <td class="col-num col-num--sold">{{ t.sold }}</td>
+            <td class="col-num">{{ t.drafted_points }}</td>
+            <td class="col-num">{{ t.drafted_active_count }}</td>
             <td class="col-value">{{ formatValue(t.total_value) }}</td>
           </tr>
         }
