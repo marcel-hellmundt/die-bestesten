@@ -52,16 +52,20 @@ trait PlayerInTeamTrait
     }
 
     /**
-     * Ehemalige + "Zugeloster Kader" (zugeloste Spieler, die noch am Zulosungs-Spieltag selbst
-     * wieder verkauft wurden, bevor sie je wirklich Teil des Kaders waren — sollen nicht als
-     * reguläre "Ehemalige" zählen). Eine Zulosung hat immer from_matchday_id = Spieltag 1 der
-     * Division/Saison (siehe LeagueTrait::assignDraftPlayers()) — "am selben Spieltag wieder
-     * verkauft" prüft daher normalerweise denselben Stint auf to_matchday_id === from_matchday_id
-     * (siehe resolveDraftFlipMatchdayId() für die eine bekannte Ausnahme, in der der tatsächliche
+     * Ehemalige + "Zugeloster Kader". Zugeloster Kader = ALLE Spieler, die das Team jemals per
+     * Zulosung erhalten hat und die inzwischen abgegangen sind — unabhängig davon, ob und wann
+     * sie verkauft wurden (auch ein regulärer, später Verkauf zählt, nicht nur ein sofortiger
+     * Flip am Zulosungs-Spieltag selbst). "Ehemalige" bleibt dagegen enger gefasst: ein
+     * zugeloster Spieler, der noch am Zulosungs-Spieltag selbst wieder verkauft wurde (bevor er
+     * je wirklich Teil des Kaders war), zählt dort NICHT als "echter" Abgang und wird
+     * ausgeschlossen — eine Zulosung hat immer from_matchday_id = Spieltag 1 der Division/Saison
+     * (siehe LeagueTrait::assignDraftPlayers()), "am selben Spieltag wieder verkauft" prüft daher
+     * normalerweise denselben Stint auf to_matchday_id === from_matchday_id (siehe
+     * resolveDraftFlipMatchdayId() für die eine bekannte Ausnahme, in der der tatsächliche
      * Saisonstart einer Division erst Spieltag 2 war). Ein Spieler mit einem zusätzlichen,
      * späteren Kauf+Verkauf beim selben Team bleibt trotzdem in "former" (kann also in beiden
-     * Listen auftauchen) — nur wer ausschließlich den Zulosungs-Flip als Abgang hat, wird
-     * komplett nach drafted_squad verschoben.
+     * Listen auftauchen) — nur wer ausschließlich den Zulosungs-Flip als Abgang hat, wird aus
+     * "former" ausgeschlossen.
      */
     public function getFormerSquadByTeamId(string $teamId): array
     {
@@ -95,11 +99,11 @@ trait PlayerInTeamTrait
 
         $players = $this->markDrafted($this->fetchPlayerDetails($formerIds, $seasonId), $teamId);
 
-        $draftedPlayers = array_values(array_filter($players, fn($p) => $p['is_drafted']));
-        $draftedSquad   = [];
+        // Zugeloster Kader: ALLE abgegangenen zugelosten Spieler, unabhängig vom Verkaufszeitpunkt.
+        $draftedSquad = array_values(array_filter($players, fn($p) => $p['is_drafted']));
         $excludeFromFormer = [];
 
-        if (!empty($draftedPlayers)) {
+        if (!empty($draftedSquad)) {
             $draftTxQ = $this->con_league->prepare(
                 "SELECT matchday_id, SUBSTRING(reason, LENGTH('Draft-Zuweisung: ') + 1) AS displayname
                  FROM transaction WHERE team_id = :team_id AND reason LIKE 'Draft-Zuweisung: %'"
@@ -107,7 +111,7 @@ trait PlayerInTeamTrait
             $draftTxQ->execute([':team_id' => $teamId]);
             $draftMatchdayByName = array_column($draftTxQ->fetchAll(PDO::FETCH_ASSOC), 'matchday_id', 'displayname');
 
-            $draftedIds = array_column($draftedPlayers, 'id');
+            $draftedIds = array_column($draftedSquad, 'id');
             $ph = implode(',', array_fill(0, count($draftedIds), '?'));
             $stintQ = $this->con_league->prepare(
                 "SELECT player_id, from_matchday_id, to_matchday_id FROM player_in_team
@@ -120,7 +124,7 @@ trait PlayerInTeamTrait
             }
 
             $flipMatchdayCache = [];
-            foreach ($draftedPlayers as $p) {
+            foreach ($draftedSquad as $p) {
                 $draftMdId = $draftMatchdayByName[$p['displayname']] ?? null;
                 if ($draftMdId === null) continue;
 
@@ -138,13 +142,9 @@ trait PlayerInTeamTrait
                         break;
                     }
                 }
-                if ($flipStint === null) continue;
-
-                $draftedSquad[] = $p;
-                // Nur ausschließen, wenn der Zulosungs-Flip der EINZIGE Abgangs-Stint ist —
-                // ein weiterer, späterer Kauf+Verkauf soll den Spieler weiterhin in "former"
-                // zeigen.
-                if (count($departureStints) === 1) {
+                // Nur ausschließen, wenn der Zulosungs-Flip der EINZIGE Abgangs-Stint ist — ein
+                // weiterer, späterer Kauf+Verkauf soll den Spieler weiterhin in "former" zeigen.
+                if ($flipStint !== null && count($departureStints) === 1) {
                     $excludeFromFormer[$p['id']] = true;
                 }
             }
