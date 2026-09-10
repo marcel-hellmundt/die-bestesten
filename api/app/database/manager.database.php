@@ -530,21 +530,36 @@ trait ManagerTrait
             $draftedPlayerIds = array_values(array_unique($playerIdByName));
             if (!empty($draftedPlayerIds)) {
                 // Saisonpunkte auch für zwischenzeitlich verkaufte zugeloste Spieler (nicht mehr
-                // in $seasonPts enthalten, das nur den aktuellen Kader abdeckt) — gleiche Formel/
-                // Division-Behandlung wie oben.
+                // in $seasonPts enthalten, das nur den aktuellen Kader abdeckt). Matchdays werden
+                // — wie in PlayerInTeamTrait::fetchPlayerDetails(), Grundlage der Kaderübersicht
+                // (squad.component) — auf die KONFIGURIERTE LIGA-DIVISION eingeschränkt statt auf
+                // die aktuelle Division des jeweiligen Spielers: ein zwischenzeitlich verkaufter
+                // Zugeloster kann inzwischen vereinslos sein (dann keine eindeutige eigene
+                // Division mehr) oder in eine andere Division gewechselt haben — die Liga-Division
+                // ist hier der einzig konsistente Bezugsrahmen, sonst zählen Punkte aus einer
+                // fremden Division mit und die Summe weicht von der Kaderübersicht ab.
+                $divisionId = $this->getLeagueDivisionId();
+                if ($divisionId !== null) {
+                    $mdWhere  = 'md.division_id = ?';
+                    $mdParams = [$divisionId];
+                } else {
+                    $mdWhere  = "d.level = 1 AND LOWER(d.country_id) = 'de'";
+                    $mdParams = [];
+                }
                 $dpp   = implode(',', array_fill(0, count($draftedPlayerIds), '?'));
                 $dptsQ = $this->con->prepare(
-                    "SELECT pis.player_id, COALESCE(SUM(pr.points), 0) AS season_points
-                     FROM player_in_season pis
-                     LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
-                     LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
-                     LEFT JOIN player_rating pr ON pr.player_id = pis.player_id
-                         AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = pis.season_id AND division_id = pis.division_id)
-                     WHERE pis.player_id IN ($dpp) AND pis.season_id = ?
-                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
-                     GROUP BY pis.player_id"
+                    "SELECT p.id AS player_id, COALESCE(SUM(pr.points), 0) AS season_points
+                     FROM player p
+                     LEFT JOIN player_rating pr ON pr.player_id = p.id
+                         AND pr.matchday_id IN (
+                             SELECT md.id FROM matchday md
+                             LEFT JOIN division d ON d.id = md.division_id
+                             WHERE md.season_id = ? AND $mdWhere
+                         )
+                     WHERE p.id IN ($dpp)
+                     GROUP BY p.id"
                 );
-                $dptsQ->execute([...$draftedPlayerIds, $seasonId]);
+                $dptsQ->execute([$seasonId, ...$mdParams, ...$draftedPlayerIds]);
                 $draftedSeasonPts = array_column($dptsQ->fetchAll(PDO::FETCH_ASSOC), 'season_points', 'player_id');
 
                 foreach ($draftedNamesByTeam as $tid => $names) {
