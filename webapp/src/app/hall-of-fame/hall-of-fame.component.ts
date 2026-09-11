@@ -10,6 +10,9 @@ interface AllTimeStandingsEntry {
   manager_name: string;
   alias: string | null;
   total_points: number;
+  seasons_played: number;
+  matchdays_played: number;
+  points_per_matchday: number;
 }
 
 interface TopMatchdayEntry {

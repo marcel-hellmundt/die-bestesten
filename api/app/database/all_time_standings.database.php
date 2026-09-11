@@ -9,7 +9,9 @@ trait AllTimeStandingsTrait
                 m.id,
                 m.manager_name,
                 m.alias,
-                COALESCE(SUM(tr.points), 0) AS total_points
+                COALESCE(SUM(tr.points), 0) AS total_points,
+                COUNT(DISTINCT t.season_id) AS seasons_played,
+                COUNT(CASE WHEN tr.id IS NOT NULL AND tr.invalid = 0 THEN 1 END) AS matchdays_played
              FROM manager m
              INNER JOIN team t  ON t.manager_id = m.id
              LEFT JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
@@ -19,6 +21,15 @@ trait AllTimeStandingsTrait
         );
         $query->execute();
         $standings = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($standings as &$row) {
+            $row['seasons_played']       = (int) $row['seasons_played'];
+            $row['matchdays_played']     = (int) $row['matchdays_played'];
+            $row['points_per_matchday']  = $row['matchdays_played'] > 0
+                ? round((float) $row['total_points'] / $row['matchdays_played'], 2)
+                : 0.0;
+        }
+        unset($row);
 
         // Top 5 best single matchday performances (seasons from 2017/18 onwards)
         $seasonQuery = $this->con->prepare(

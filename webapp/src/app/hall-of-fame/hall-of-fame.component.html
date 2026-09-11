@@ -11,6 +11,8 @@
         <tr>
           <th class="col-rank">#</th>
           <th colspan="2">Manager</th>
+          <th class="col-points hidden-mobile">Saisons</th>
+          <th class="col-points hidden-mobile">Pkt/Spiel</th>
           <th class="col-points">Punkte</th>
         </tr>
       </thead>
@@ -53,6 +55,8 @@
                 <span class="manager-alias">{{ entry.alias }}</span>
               }
             </td>
+            <td class="col-points hidden-mobile">{{ entry.seasons_played }}</td>
+            <td class="col-points hidden-mobile">{{ entry.points_per_matchday | number: '1.2-2' }}</td>
             <td class="col-points">{{ entry.total_points | number }}</td>
           </tr>
         }

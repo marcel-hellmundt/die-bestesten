@@ -149,7 +149,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/all_time_standings',
-                        'description' => 'Returns { standings: [{id, manager_name, alias, total_points}], top_matchdays: [{points, matchday_id, matchday_number, team_name, season_id, manager_name}] }',
+                        'description' => 'Returns { standings: [{id, manager_name, alias, total_points, seasons_played, matchdays_played, points_per_matchday}], top_matchdays: [{points, matchday_id, matchday_number, team_name, season_id, manager_name}] } — seasons_played = Anzahl Saisons mit eigenem Team (COUNT DISTINCT team.season_id); matchdays_played = Anzahl gewerteter Spieltage (team_rating, invalid=0) über alle Saisons; points_per_matchday = total_points / matchdays_played, gerundet auf 2 Nachkommastellen (0 ohne gewertete Spieltage)',
                     ],
                     [
                         'method' => 'GET',
