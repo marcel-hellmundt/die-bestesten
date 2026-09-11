@@ -490,10 +490,17 @@
 }
 
 .h2h-stake-row__input {
-  width: 84px;
+  // !important gegen das globale input:not(...)-Styling (volle Breite, eigener Border/
+  // Background/Radius/Höhe) — dieses Feld lebt in einem eigenen Wrapper (.h2h-stake-row__input-wrap),
+  // der Border/Radius/Höhe schon stellt; ohne die Overrides gewinnt die höher spezifische globale
+  // Regel und das Feld rendert sich selbst nochmal als verschachtelte Pill-Box im Wrapper.
+  width: 84px !important;
   min-width: 0;
-  border: none;
-  background: none;
+  height: auto !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: none !important;
   font-size: $font-sm;
   color: $color-text;
 
