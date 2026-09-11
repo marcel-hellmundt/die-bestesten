@@ -21,6 +21,25 @@ td.col-points {
   font-size: $font-md;
 }
 
+td.col-points--muted {
+  font-weight: $font-weight-normal;
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.col-sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover { color: var(--flat-river); }
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  opacity: 0.5;
+  font-size: 11px;
+}
+
 .rank {
   display: inline-flex;
   align-items: center;

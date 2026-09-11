@@ -138,6 +138,37 @@ export class HallOfFameComponent {
 
   items         = computed(() => (this.state()?.data?.standings    ?? []) as AllTimeStandingsEntry[]);
   topMatchdays  = computed(() => (this.state()?.data?.top_matchdays ?? []) as TopMatchdayEntry[]);
+
+  // Rang = feste Platzierung in der ewigen Tabelle nach Gesamtpunkten (Backend liefert standings[]
+  // bereits so sortiert) — bleibt beim Umsortieren der Anzeige unverändert, damit Medaillen/#
+  // immer die tatsächliche All-Time-Platzierung zeigen statt der aktuellen Sortier-Position.
+  rankedItems = computed(() =>
+    this.items().map((entry, i) => ({ ...entry, rank: i + 1 }))
+  );
+
+  sortCol = signal<'seasons_played' | 'matchdays_played' | 'points_per_matchday' | 'total_points'>('total_points');
+  sortDir = signal<'asc' | 'desc'>('desc');
+
+  sort(col: 'seasons_played' | 'matchdays_played' | 'points_per_matchday' | 'total_points'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('desc');
+    }
+  }
+
+  sortedItems = computed(() => {
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    const list = [...this.rankedItems()];
+    list.sort((a, b) => {
+      let cmp = a[col] - b[col];
+      if (cmp === 0) cmp = a.manager_name.localeCompare(b.manager_name);
+      return dir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  });
   loading       = computed(() => this.state()?.loading ?? true);
   error         = computed(() => this.state()?.error   ?? null);
   awards        = computed(() => this.awardsState()?.data ?? []);
