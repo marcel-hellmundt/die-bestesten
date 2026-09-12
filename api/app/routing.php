@@ -154,7 +154,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/all_time_standings/by_season',
-                        'description' => 'Rang jedes Managers in der ewigen Tabelle nach jeder Saison (kumulierte Punkte über alle Saisons bis einschließlich dieser, Standard-Wettkampf-Rang unter allen Managern) — [{season_id, entries:[{manager_id,manager_name,rank,cumulative_points}]}] chronologisch, entries nur für Teilnehmer der jeweiligen Saison — fürs Ruhmeshalle-Bewegungs-Grid',
+                        'description' => 'Rang jedes Managers in der ewigen Tabelle nach jeder Saison (kumulierte Punkte über alle Saisons bis einschließlich dieser, Standard-Wettkampf-Rang unter allen Managern) — [{season_id, entries:[{manager_id,manager_name,rank,cumulative_points}]}] chronologisch, entries nur für Teilnehmer der jeweiligen Saison; Saisons, in denen die aktuelle Liga gar nicht gespielt hat (keine eigenen Teams), tauchen nicht als (leere) Spalte auf — fürs Ruhmeshalle-Bewegungs-Grid',
                     ],
                     [
                         'method' => 'GET',

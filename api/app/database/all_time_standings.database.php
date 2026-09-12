@@ -146,6 +146,11 @@ trait AllTimeStandingsTrait
             }
             usort($entries, fn($a, $b) => $a['rank'] <=> $b['rank']);
 
+            // Saisons, in denen diese Liga gar nicht gespielt hat (keine Teams), sollen im
+            // Bewegungs-Grid nicht als leere Spalte auftauchen — cumulative[] wurde oben ohnehin
+            // nicht verändert, das Überspringen hier wirkt sich also nur auf die Anzeige aus.
+            if (empty($entries)) continue;
+
             $result[] = [
                 'season_id' => $season['id'],
                 'entries'   => $entries,
