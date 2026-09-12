@@ -175,6 +175,16 @@ td.col-points--muted {
   color: $color-text-muted;
 }
 
+// Auf dieser Seite soll "Bewegung in der ewigen Tabelle" wie die Card-Labels im awards-grid
+// aussehen (.award-label) statt in der sonst app-weiten, größeren .table-section-title-Schrift —
+// Override bleibt dank Angular View Encapsulation auf diese Komponente beschränkt, .table-
+// section-title selbst (globale Konvention für Section-Header andernorts) bleibt unangetastet.
+.table-section-title {
+  font-family: inherit;
+  font-size: $font-xs;
+  letter-spacing: 0.06em;
+}
+
 .award-card {
   width: 100%;
 }
@@ -209,6 +219,13 @@ td.col-points--muted {
     object-fit: contain;
     display: block;
   }
+}
+
+// Etwas größer als das Standard-.team-logo — für "Top 5 Einzelspieltage", wo es neben Namen/
+// Meta-Text eher untergeht.
+.team-logo--md {
+  width: 32px;
+  height: 32px;
 }
 
 .col-winner-name {
@@ -319,6 +336,156 @@ td.col-points--muted {
 }
 
 .movement-tooltip__points {
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+// ── Bestes/schlechtestes Ergebnis je Platz ───────────────────────────────────
+// Sitzt als eigenes Grid-Item im 3-spaltigen awards-grid, direkt nach "Top 5 Einzelspieltage" —
+// nimmt dort 2 der 3 Spalten ein (so breit wie Goldene Bürste + Hölzerne Bank zusammen), landet
+// dadurch rechts neben Top 5. Nur ab Desktop-Breite relevant — im mobilen 1-Spalten-Grid würde
+// span:2 sonst eine zweite, leere Spalte erzwingen.
+.position-results-wrap {
+  @media (min-width: $mobile-breakpoint + 1) {
+    grid-column: span 2;
+  }
+}
+
+// Forest-Plot-artige Range-Darstellung: eine Zeile je Tabellenplatz, ein durchgehend heller
+// Track über die volle Breite (gemeinsame Skala aller Plätze, siehe positionRanges() in der
+// Komponente) mit einem farbigen Segment für die tatsächliche Best-/Schlechtestes-Spanne dieses
+// Platzes, einem Strich für den Durchschnitt darin, und den Team-Logos an den beiden Enden.
+.position-range-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.position-range-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.position-range-label {
+  flex: 0 0 20px;
+  text-align: right;
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.15s ease;
+}
+
+.position-range-row:hover .position-range-label {
+  color: $color-text;
+}
+
+.position-range-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: $radius-sm;
+  background: $color-surface-alt;
+  margin: $space-4 0;
+}
+
+.position-range-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: $radius-sm;
+  background: $color-accent;
+}
+
+// Grauer Bereich links vom Range-Segment (0 bis Schlechtestes) — dunkelt beim Hovern der Zeile
+// etwas nach, als dezentes Hover-Feedback zusätzlich zu den größer werdenden Logos.
+.position-range-track-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: $radius-sm 0 0 $radius-sm;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.position-range-row:hover .position-range-track-left {
+  background: $color-border;
+}
+
+.position-range-avg {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 14px;
+  background: $color-text;
+  transform: translate(-50%, -50%);
+  border-radius: 1px;
+}
+
+.position-range-endpoint {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  .team-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.15s ease;
+  }
+}
+
+// Hover gilt der ganzen Zeile (Tooltip), die Logos vergrößern sich dabei leicht als Feedback —
+// 32px → 36px (Faktor 1.125), per transform statt width/height, damit es nicht neu layoutet.
+.position-range-row:hover .position-range-endpoint .team-logo {
+  transform: scale(1.125);
+}
+
+// 3 Spalten (Schlechtestes | Ø | Bestes), durch eine graue Trennlinie separiert — Inhalt je
+// Spalte (Logo, Name, Punkte, Saison) untereinander gestapelt und zentriert.
+.position-tooltip {
+  display: flex;
+  align-items: stretch;
+  gap: $space-3;
+  text-align: center;
+  white-space: normal;
+}
+
+.position-tooltip__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 88px;
+  justify-content: center;
+}
+
+.position-tooltip__sep {
+  align-self: stretch;
+  width: 1px;
+  background: $color-border;
+}
+
+.position-tooltip__logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  margin-bottom: 2px;
+}
+
+.position-tooltip__average {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.position-tooltip__season {
   font-size: $font-xs;
   color: $color-text-muted;
 }

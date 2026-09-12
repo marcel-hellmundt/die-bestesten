@@ -175,7 +175,7 @@
                   <td class="col-logo" style="padding-right:0">
                     @if (!logoFailed.has(r.team_id)) {
                       <img
-                        class="team-logo"
+                        class="team-logo team-logo--md"
                         [src]="'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
                         [alt]="r.team_name"
                         (error)="onLogoError(r.team_id)"
@@ -194,6 +194,105 @@
           </div>
         </div>
       }
+
+      @if (!positionsLoading() && positions().length > 0) {
+        <div class="award-wrap position-results-wrap">
+          <span class="award-label">Bestes &amp; schlechtestes Ergebnis je Platz</span>
+          <div class="card award-card">
+            <div class="position-range-list">
+              @for (row of positionRanges(); track row.position) {
+                <div
+                  class="position-range-row"
+                  (mouseenter)="onPositionRowHover($event, row)"
+                  (mouseleave)="onPositionRowLeave()"
+                >
+                  <span class="position-range-label">{{ row.position }}</span>
+                  <div class="position-range-track">
+                    @if (row.worstPct !== null) {
+                      <div class="position-range-track-left" [style.width.%]="row.worstPct"></div>
+                    }
+                    @if (row.worstPct !== null && row.bestPct !== null) {
+                      <div
+                        class="position-range-bar"
+                        [style.left.%]="row.worstPct"
+                        [style.width.%]="row.bestPct - row.worstPct"
+                      ></div>
+                    }
+                    @if (row.avgPct !== null) {
+                      <div class="position-range-avg" [style.left.%]="row.avgPct"></div>
+                    }
+                    @if (row.worst; as worst) {
+                      <div
+                        class="position-range-endpoint position-range-endpoint--worst row-link"
+                        [style.left.%]="row.worstPct"
+                        (click)="navigate(['/team', worst.team_id])"
+                      >
+                        @if (!logoFailed.has(worst.team_id)) {
+                          <img
+                            class="team-logo"
+                            [src]="positionTeamLogoUrl(worst)"
+                            [alt]="worst.team_name"
+                            (error)="onLogoError(worst.team_id)"
+                          />
+                        }
+                      </div>
+                    }
+                    @if (row.best; as best) {
+                      <div
+                        class="position-range-endpoint position-range-endpoint--best row-link"
+                        [style.left.%]="row.bestPct"
+                        (click)="navigate(['/team', best.team_id])"
+                      >
+                        @if (!logoFailed.has(best.team_id)) {
+                          <img
+                            class="team-logo"
+                            [src]="positionTeamLogoUrl(best)"
+                            [alt]="best.team_name"
+                            (error)="onLogoError(best.team_id)"
+                          />
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (positionTooltip(); as pt) {
+    <div class="movement-tooltip position-tooltip" [style.top.px]="pt.top" [style.left.px]="pt.left">
+      <div class="position-tooltip__col">
+        @if (pt.row.worst; as worst) {
+          @if (!logoFailed.has(worst.team_id)) {
+            <img class="team-logo position-tooltip__logo" [src]="positionTeamLogoUrl(worst)" [alt]="worst.team_name" />
+          }
+          <div class="movement-tooltip__points">{{ worst.points | number }} Pkt</div>
+          <div class="position-tooltip__season">{{ worst.season_label }}</div>
+        } @else {
+          <span class="col-no-winner">–</span>
+        }
+      </div>
+      <div class="position-tooltip__sep"></div>
+      <div class="position-tooltip__col">
+        <div class="position-tooltip__average">{{ pt.row.average_points !== null ? (pt.row.average_points | number: '1.1-1') : '–' }}</div>
+        <div class="position-tooltip__season">Ø Pkt</div>
+      </div>
+      <div class="position-tooltip__sep"></div>
+      <div class="position-tooltip__col">
+        @if (pt.row.best; as best) {
+          @if (!logoFailed.has(best.team_id)) {
+            <img class="team-logo position-tooltip__logo" [src]="positionTeamLogoUrl(best)" [alt]="best.team_name" />
+          }
+          <div class="movement-tooltip__points">{{ best.points | number }} Pkt</div>
+          <div class="position-tooltip__season">{{ best.season_label }}</div>
+        } @else {
+          <span class="col-no-winner">–</span>
+        }
+      </div>
     </div>
   }
 

@@ -10,6 +10,10 @@ class AllTimeStandingsController extends _BaseController
             return $this->db->getAllTimeStandingsBySeason();
         }
 
+        if ($this->id === 'by_position') {
+            return $this->db->getAllTimeStandingsByPosition();
+        }
+
         return $this->db->getAllTimeStandings();
     }
 

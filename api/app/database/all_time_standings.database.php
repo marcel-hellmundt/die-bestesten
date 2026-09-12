@@ -146,12 +146,122 @@ trait AllTimeStandingsTrait
             }
             usort($entries, fn($a, $b) => $a['rank'] <=> $b['rank']);
 
+            // Saisons, in denen diese Liga gar nicht gespielt hat (keine Teams), sollen im
+            // Bewegungs-Grid nicht als leere Spalte auftauchen — cumulative[] wurde oben ohnehin
+            // nicht verändert, das Überspringen hier wirkt sich also nur auf die Anzeige aus.
+            if (empty($entries)) continue;
+
             $result[] = [
                 'season_id' => $season['id'],
                 'entries'   => $entries,
             ];
         }
 
+        return $result;
+    }
+
+    /**
+     * Für jeden Tabellenplatz 1..12 (feste 12er-Liga) das beste und schlechteste jemals dort
+     * erzielte Saisonergebnis — nur Saisons mit genau 12 teilnehmenden Teams zählen (ein Team
+     * weniger/mehr würde die Platzierungen verzerren), die aktuelle (laufende) Saison wird
+     * ausgeschlossen (deren Punktestand ist noch unfertig und würde den "schlechtesten" Platz zu
+     * Saisonbeginn systematisch belegen). Fürs Ruhmeshalle-"Bestes/Schlechtestes Ergebnis je
+     * Platz"-Grid (webapp: HallOfFameComponent). Gibt [] zurück, wenn die aktuelle Saison dieser
+     * Liga nicht (mehr) 12 Teams hat — die App unterstützt auch andere Ligagrößen (siehe H2H:
+     * 9- oder 12-Team-Format), das Feature ist aber auf die feste 12er-Liga zugeschnitten.
+     */
+    public function getAllTimeStandingsByPosition(): array
+    {
+        $teamCount = 12;
+        $activeSeasonId = $this->getActiveSeasonId();
+        if ($activeSeasonId === null) return [];
+
+        $activeTeamCountQ = $this->con_league->prepare(
+            "SELECT COUNT(*) FROM team WHERE season_id = ?"
+        );
+        $activeTeamCountQ->execute([$activeSeasonId]);
+        if ((int) $activeTeamCountQ->fetchColumn() !== $teamCount) return [];
+
+        $q = $this->con_league->prepare(
+            "SELECT t.season_id, t.id AS team_id, t.team_name,
+                    t.color_primary AS color, t.color_secondary,
+                    COALESCE(SUM(tr.points), 0) AS total_points
+             FROM team t
+             LEFT JOIN team_rating tr ON tr.team_id = t.id AND tr.invalid = 0
+             GROUP BY t.season_id, t.id, t.team_name, t.color_primary, t.color_secondary"
+        );
+        $q->execute();
+
+        $bySeason = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            if ($r['season_id'] === $activeSeasonId) continue;
+            $bySeason[$r['season_id']][] = $r;
+        }
+
+        $seasonLabels = [];
+        if (!empty($bySeason)) {
+            $seasonIds = array_keys($bySeason);
+            $ph = implode(',', array_fill(0, count($seasonIds), '?'));
+            $sq = $this->con->prepare("SELECT id, start_date FROM season WHERE id IN ($ph)");
+            $sq->execute($seasonIds);
+            foreach ($sq->fetchAll(PDO::FETCH_ASSOC) as $s) {
+                $year = (int) substr($s['start_date'], 0, 4);
+                $y1   = str_pad($year % 100, 2, '0', STR_PAD_LEFT);
+                $y2   = str_pad(($year + 1) % 100, 2, '0', STR_PAD_LEFT);
+                $seasonLabels[$s['id']] = "$y1/$y2";
+            }
+        }
+
+        $best      = [];
+        $worst     = [];
+        $sumPoints = [];
+        $count     = [];
+
+        foreach ($bySeason as $seasonId => $teams) {
+            if (count($teams) !== $teamCount) continue;
+
+            usort($teams, fn($a, $b) => (float) $b['total_points'] <=> (float) $a['total_points']
+                ?: strcmp($a['team_name'], $b['team_name']));
+
+            $prevPoints = null;
+            $prevRank   = 0;
+            foreach ($teams as $i => $t) {
+                $points = (float) $t['total_points'];
+                $rank   = ($prevPoints !== null && $points === $prevPoints) ? $prevRank : $i + 1;
+                $prevRank   = $rank;
+                $prevPoints = $points;
+
+                $entry = [
+                    'team_id'         => $t['team_id'],
+                    'team_name'       => $t['team_name'],
+                    'color'           => $this->resolveColor($t['color']),
+                    'color_secondary' => $this->resolveColor($t['color_secondary']),
+                    'points'          => $points,
+                    'season_id'       => $seasonId,
+                    'season_label'    => $seasonLabels[$seasonId] ?? null,
+                ];
+
+                if (!isset($best[$rank]) || $points > $best[$rank]['points']) {
+                    $best[$rank] = $entry;
+                }
+                if (!isset($worst[$rank]) || $points < $worst[$rank]['points']) {
+                    $worst[$rank] = $entry;
+                }
+
+                $sumPoints[$rank] = ($sumPoints[$rank] ?? 0) + $points;
+                $count[$rank]     = ($count[$rank] ?? 0) + 1;
+            }
+        }
+
+        $result = [];
+        for ($pos = 1; $pos <= $teamCount; $pos++) {
+            $result[] = [
+                'position'      => $pos,
+                'best'          => $best[$pos]  ?? null,
+                'worst'         => $worst[$pos] ?? null,
+                'average_points' => isset($count[$pos]) ? round($sumPoints[$pos] / $count[$pos], 1) : null,
+            ];
+        }
         return $result;
     }
 }

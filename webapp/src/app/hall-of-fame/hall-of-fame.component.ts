@@ -44,6 +44,35 @@ interface MovementTooltip {
   left: number;
 }
 
+interface PositionResultEntry {
+  team_id: string;
+  team_name: string;
+  color: string | null;
+  color_secondary: string | null;
+  points: number;
+  season_id: string;
+  season_label: string | null;
+}
+
+interface PositionRow {
+  position: number;
+  best: PositionResultEntry | null;
+  worst: PositionResultEntry | null;
+  average_points: number | null;
+}
+
+interface PositionRangeRow extends PositionRow {
+  worstPct: number | null;
+  bestPct: number | null;
+  avgPct: number | null;
+}
+
+interface PositionRowTooltip {
+  row: PositionRangeRow;
+  top: number;
+  left: number;
+}
+
 @Component({
   selector: 'app-hall-of-fame',
   standalone: false,
@@ -126,6 +155,70 @@ export class HallOfFameComponent {
     });
 
     this.connectorPath.set(points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' '));
+  }
+
+  // Bestes/schlechtestes Saisonergebnis je Tabellenplatz (nur 12er-Saisons, aktuelle Saison
+  // ausgeschlossen — siehe Backend-Doku).
+  private positionsState = toSignal(
+    this.api.get<PositionRow[]>('all_time_standings/by_position').pipe(
+      map(data => ({ data, loading: false })),
+      startWith({ data: [] as PositionRow[], loading: true }),
+      catchError(() => of({ data: [] as PositionRow[], loading: false }))
+    )
+  );
+
+  positions        = computed(() => this.positionsState()?.data ?? []);
+  positionsLoading = computed(() => this.positionsState()?.loading ?? true);
+
+  // Gemeinsame Skala über alle Plätze hinweg (statt pro Zeile), damit die Ranges optisch
+  // vergleichbar bleiben. Desktop: Skala startet bei 0 Punkten, ein kleiner Rand oben (8% der
+  // Spanne) verhindert, dass das obere Logo am äußersten Rand abgeschnitten wird. Mobil ist
+  // links-rechts deutlich weniger Platz (siehe $mobile-breakpoint) — eine bei 0 startende Skala
+  // würde dort alle Ranges winzig zusammengequetscht rechts kleben lassen, deshalb dort
+  // stattdessen ab dem niedrigsten je erzielten Wert beginnen (mit Rand auf beiden Seiten).
+  positionRanges = computed<PositionRangeRow[]>(() => {
+    const rows = this.positions();
+    if (!rows.length) return [];
+
+    let min = Infinity;
+    let max = -Infinity;
+    for (const row of rows) {
+      if (row.worst) min = Math.min(min, row.worst.points);
+      if (row.best)  max = Math.max(max, row.best.points);
+    }
+    if (!isFinite(min) || !isFinite(max)) {
+      return rows.map(row => ({ ...row, worstPct: null, bestPct: null, avgPct: null }));
+    }
+
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    const span = max - min || 1;
+    const pad = span * 0.08;
+    const domainMin = isMobile ? Math.max(0, min - pad) : 0;
+    const domainMax = max + (isMobile ? pad : max * 0.08);
+    const domainSpan = domainMax - domainMin || 1;
+    const pct = (value: number) => ((value - domainMin) / domainSpan) * 100;
+
+    return rows.map(row => ({
+      ...row,
+      worstPct: row.worst ? pct(row.worst.points) : null,
+      bestPct:  row.best  ? pct(row.best.points)  : null,
+      avgPct:   row.average_points !== null ? pct(row.average_points) : null,
+    }));
+  });
+
+  positionTooltip = signal<PositionRowTooltip | null>(null);
+
+  onPositionRowHover(event: MouseEvent, row: PositionRangeRow): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.positionTooltip.set({ row, top: rect.top, left: rect.left + rect.width / 2 });
+  }
+
+  onPositionRowLeave(): void {
+    this.positionTooltip.set(null);
+  }
+
+  positionTeamLogoUrl(entry: PositionResultEntry): string {
+    return `https://img.die-bestesten.de/team/${entry.season_id}/${entry.team_id}.png`;
   }
 
   private awardsState = toSignal(
