@@ -1075,6 +1075,12 @@
       text-overflow: ellipsis;
       flex-grow: 1;
       text-align: center;
+
+      // Nicht eingesetzter Spieler (player_rating vorhanden, aber participation weder starting
+      // noch substitute) — Name dezenter statt schwarz, analog zum grauen "Nicht eingesetzt"-Icon.
+      &--not-used {
+        color: #9ca3af;
+      }
     }
 
     &__points {

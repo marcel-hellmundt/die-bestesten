@@ -812,6 +812,7 @@ trait H2HTrait
                     'club_logo_uploaded' => (bool) ($cl['club_logo_uploaded'] ?? false),
                     'nominated'          => (bool) $e['nominated'],
                     'position_index'     => $e['position_index'],
+                    'has_rating'         => isset($ratingMap[$e['player_id']]),
                     'grade'              => $r['grade'] ?? null,
                     'points'             => isset($r['points']) ? (int) $r['points'] : null,
                     'goals'              => (int) ($r['goals'] ?? 0),
