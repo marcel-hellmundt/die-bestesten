@@ -161,12 +161,21 @@ trait AllTimeStandingsTrait
      * weniger/mehr würde die Platzierungen verzerren), die aktuelle (laufende) Saison wird
      * ausgeschlossen (deren Punktestand ist noch unfertig und würde den "schlechtesten" Platz zu
      * Saisonbeginn systematisch belegen). Fürs Ruhmeshalle-"Bestes/Schlechtestes Ergebnis je
-     * Platz"-Grid (webapp: HallOfFameComponent).
+     * Platz"-Grid (webapp: HallOfFameComponent). Gibt [] zurück, wenn die aktuelle Saison dieser
+     * Liga nicht (mehr) 12 Teams hat — die App unterstützt auch andere Ligagrößen (siehe H2H:
+     * 9- oder 12-Team-Format), das Feature ist aber auf die feste 12er-Liga zugeschnitten.
      */
     public function getAllTimeStandingsByPosition(): array
     {
         $teamCount = 12;
         $activeSeasonId = $this->getActiveSeasonId();
+        if ($activeSeasonId === null) return [];
+
+        $activeTeamCountQ = $this->con_league->prepare(
+            "SELECT COUNT(*) FROM team WHERE season_id = ?"
+        );
+        $activeTeamCountQ->execute([$activeSeasonId]);
+        if ((int) $activeTeamCountQ->fetchColumn() !== $teamCount) return [];
 
         $q = $this->con_league->prepare(
             "SELECT t.season_id, t.id AS team_id, t.team_name,
