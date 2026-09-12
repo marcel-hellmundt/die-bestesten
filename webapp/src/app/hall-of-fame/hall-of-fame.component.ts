@@ -61,6 +61,12 @@ interface PositionRow {
   average_points: number | null;
 }
 
+interface PositionRangeRow extends PositionRow {
+  worstPct: number | null;
+  bestPct: number | null;
+  avgPct: number | null;
+}
+
 interface PositionTooltip {
   entry: PositionResultEntry;
   top: number;
@@ -163,6 +169,38 @@ export class HallOfFameComponent {
 
   positions        = computed(() => this.positionsState()?.data ?? []);
   positionsLoading = computed(() => this.positionsState()?.loading ?? true);
+
+  // Gemeinsame Skala über alle Plätze hinweg (statt pro Zeile), damit die Ranges optisch
+  // vergleichbar bleiben — ein kleiner Rand außen (8% der Gesamtspanne) verhindert, dass die
+  // Logos an den äußersten Enden abgeschnitten werden.
+  positionRanges = computed<PositionRangeRow[]>(() => {
+    const rows = this.positions();
+    if (!rows.length) return [];
+
+    let min = Infinity;
+    let max = -Infinity;
+    for (const row of rows) {
+      if (row.worst) min = Math.min(min, row.worst.points);
+      if (row.best)  max = Math.max(max, row.best.points);
+    }
+    if (!isFinite(min) || !isFinite(max)) {
+      return rows.map(row => ({ ...row, worstPct: null, bestPct: null, avgPct: null }));
+    }
+
+    const span = max - min || 1;
+    const pad = span * 0.08;
+    const domainMin = min - pad;
+    const domainMax = max + pad;
+    const domainSpan = domainMax - domainMin || 1;
+    const pct = (value: number) => ((value - domainMin) / domainSpan) * 100;
+
+    return rows.map(row => ({
+      ...row,
+      worstPct: row.worst ? pct(row.worst.points) : null,
+      bestPct:  row.best  ? pct(row.best.points)  : null,
+      avgPct:   row.average_points !== null ? pct(row.average_points) : null,
+    }));
+  });
 
   positionTooltip = signal<PositionTooltip | null>(null);
 

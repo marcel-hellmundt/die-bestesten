@@ -341,52 +341,78 @@ td.col-points--muted {
   }
 }
 
-// table-layout:fixed + gleiche Breite für beide Ergebnis-Spalten sorgt dafür, dass Bestes/Ø/
-// Schlechtestes Ergebnis in jeder Zeile denselben Abstand zueinander haben, statt dass die
-// (sonst auto-breiten) Ergebnis-Spalten sich unterschiedlich stark strecken.
-.position-results-table {
-  table-layout: fixed;
-  width: 100%;
+// Forest-Plot-artige Range-Darstellung: eine Zeile je Tabellenplatz, ein durchgehend heller
+// Track über die volle Breite (gemeinsame Skala aller Plätze, siehe positionRanges() in der
+// Komponente) mit einem farbigen Segment für die tatsächliche Best-/Schlechtestes-Spanne dieses
+// Platzes, einem Strich für den Durchschnitt darin, und den Team-Logos an den beiden Enden.
+.position-range-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
 }
 
-.col-position-result {
-  width: 40%;
-  padding: $space-1 $space-3;
-  text-align: center;
-}
-
-.position-result-cell {
-  display: inline-flex;
+.position-range-row {
+  display: flex;
   align-items: center;
-  gap: $space-2;
-  padding: $space-1 $space-2;
-  border-radius: $radius-sm;
-  cursor: pointer;
-
-  &:hover {
-    background: $color-surface-alt;
-  }
-
-  .team-logo {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    display: block;
-  }
+  gap: $space-3;
 }
 
-.col-average {
-  width: 56px;
-  text-align: center;
+.position-range-label {
+  flex: 0 0 20px;
+  text-align: right;
   font-size: $font-sm;
+  font-weight: $font-weight-semibold;
   color: $color-text-muted;
   font-variant-numeric: tabular-nums;
 }
 
-.position-result-points {
-  font-size: $font-sm;
-  font-weight: $font-weight-semibold;
-  font-variant-numeric: tabular-nums;
+.position-range-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: $radius-sm;
+  background: $color-surface-alt;
+  margin: $space-4 0;
+}
+
+.position-range-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: $radius-sm;
+  background: $color-accent;
+}
+
+.position-range-avg {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 14px;
+  background: $color-text;
+  transform: translate(-50%, -50%);
+  border-radius: 1px;
+}
+
+.position-range-endpoint {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: $color-surface;
+  border: 2px solid $color-accent;
+  cursor: pointer;
+
+  .team-logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    display: block;
+  }
 }
 
 .position-tooltip {

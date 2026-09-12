@@ -199,70 +199,61 @@
         <div class="award-wrap position-results-wrap">
           <span class="award-label">Bestes &amp; schlechtestes Ergebnis je Platz</span>
           <div class="card award-card">
-            <table class="data-table data-table--compact position-results-table">
-              <thead>
-                <tr>
-                  <th class="col-rank">Platz</th>
-                  <th class="col-position-result">Bestes Ergebnis</th>
-                  <th class="col-average">Ø</th>
-                  <th class="col-position-result">Schlechtestes Ergebnis</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of positions(); track row.position) {
-                  <tr>
-                    <td class="col-rank-sm">{{ row.position }}</td>
-                    <td class="col-position-result">
-                      @if (row.best; as best) {
-                        <span
-                          class="position-result-cell row-link"
-                          (click)="navigate(['/team', best.team_id])"
-                          (mouseenter)="onPositionResultHover($event, best)"
-                          (mouseleave)="onPositionResultLeave()"
-                        >
-                          @if (!logoFailed.has(best.team_id)) {
-                            <img
-                              class="team-logo"
-                              [src]="positionTeamLogoUrl(best)"
-                              [alt]="best.team_name"
-                              (error)="onLogoError(best.team_id)"
-                            />
-                          }
-                          <span class="position-result-points">{{ best.points | number }}</span>
-                        </span>
-                      } @else {
-                        <span class="col-no-winner">–</span>
-                      }
-                    </td>
-                    <td class="col-average">
-                      {{ row.average_points !== null ? (row.average_points | number: '1.1-1') : '–' }}
-                    </td>
-                    <td class="col-position-result">
-                      @if (row.worst; as worst) {
-                        <span
-                          class="position-result-cell row-link"
-                          (click)="navigate(['/team', worst.team_id])"
-                          (mouseenter)="onPositionResultHover($event, worst)"
-                          (mouseleave)="onPositionResultLeave()"
-                        >
-                          @if (!logoFailed.has(worst.team_id)) {
-                            <img
-                              class="team-logo"
-                              [src]="positionTeamLogoUrl(worst)"
-                              [alt]="worst.team_name"
-                              (error)="onLogoError(worst.team_id)"
-                            />
-                          }
-                          <span class="position-result-points">{{ worst.points | number }}</span>
-                        </span>
-                      } @else {
-                        <span class="col-no-winner">–</span>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+            <div class="position-range-list">
+              @for (row of positionRanges(); track row.position) {
+                <div class="position-range-row">
+                  <span class="position-range-label">{{ row.position }}</span>
+                  <div class="position-range-track">
+                    @if (row.worstPct !== null && row.bestPct !== null) {
+                      <div
+                        class="position-range-bar"
+                        [style.left.%]="row.worstPct"
+                        [style.width.%]="row.bestPct - row.worstPct"
+                      ></div>
+                    }
+                    @if (row.avgPct !== null) {
+                      <div class="position-range-avg" [style.left.%]="row.avgPct"></div>
+                    }
+                    @if (row.worst; as worst) {
+                      <div
+                        class="position-range-endpoint position-range-endpoint--worst row-link"
+                        [style.left.%]="row.worstPct"
+                        (click)="navigate(['/team', worst.team_id])"
+                        (mouseenter)="onPositionResultHover($event, worst)"
+                        (mouseleave)="onPositionResultLeave()"
+                      >
+                        @if (!logoFailed.has(worst.team_id)) {
+                          <img
+                            class="team-logo"
+                            [src]="positionTeamLogoUrl(worst)"
+                            [alt]="worst.team_name"
+                            (error)="onLogoError(worst.team_id)"
+                          />
+                        }
+                      </div>
+                    }
+                    @if (row.best; as best) {
+                      <div
+                        class="position-range-endpoint position-range-endpoint--best row-link"
+                        [style.left.%]="row.bestPct"
+                        (click)="navigate(['/team', best.team_id])"
+                        (mouseenter)="onPositionResultHover($event, best)"
+                        (mouseleave)="onPositionResultLeave()"
+                      >
+                        @if (!logoFailed.has(best.team_id)) {
+                          <img
+                            class="team-logo"
+                            [src]="positionTeamLogoUrl(best)"
+                            [alt]="best.team_name"
+                            (error)="onLogoError(best.team_id)"
+                          />
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
           </div>
         </div>
       }
