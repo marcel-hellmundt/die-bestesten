@@ -324,6 +324,15 @@ td.col-points--muted {
 }
 
 // ── Bestes/schlechtestes Ergebnis je Platz ───────────────────────────────────
+// Sitzt als eigenes Grid-Item im 3-spaltigen awards-grid, direkt nach "Top 5 Einzelspieltage" —
+// nimmt dort 2 der 3 Spalten ein (so breit wie Goldene Bürste + Hölzerne Bank zusammen), landet
+// dadurch rechts neben Top 5. Nur ab Desktop-Breite relevant — im mobilen 1-Spalten-Grid würde
+// span:2 sonst eine zweite, leere Spalte erzwingen.
+.position-results-wrap {
+  @media (min-width: $mobile-breakpoint + 1) {
+    grid-column: span 2;
+  }
+}
 
 .col-position-result {
   padding: $space-1 $space-3;
@@ -347,6 +356,14 @@ td.col-points--muted {
     object-fit: contain;
     display: block;
   }
+}
+
+.col-average {
+  width: 56px;
+  text-align: center;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  font-variant-numeric: tabular-nums;
 }
 
 .position-result-points {

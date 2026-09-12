@@ -58,6 +58,7 @@ interface PositionRow {
   position: number;
   best: PositionResultEntry | null;
   worst: PositionResultEntry | null;
+  average_points: number | null;
 }
 
 interface PositionTooltip {

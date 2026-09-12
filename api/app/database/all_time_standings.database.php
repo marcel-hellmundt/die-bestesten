@@ -198,8 +198,10 @@ trait AllTimeStandingsTrait
             }
         }
 
-        $best  = [];
-        $worst = [];
+        $best      = [];
+        $worst     = [];
+        $sumPoints = [];
+        $count     = [];
 
         foreach ($bySeason as $seasonId => $teams) {
             if (count($teams) !== $teamCount) continue;
@@ -231,15 +233,19 @@ trait AllTimeStandingsTrait
                 if (!isset($worst[$rank]) || $points < $worst[$rank]['points']) {
                     $worst[$rank] = $entry;
                 }
+
+                $sumPoints[$rank] = ($sumPoints[$rank] ?? 0) + $points;
+                $count[$rank]     = ($count[$rank] ?? 0) + 1;
             }
         }
 
         $result = [];
         for ($pos = 1; $pos <= $teamCount; $pos++) {
             $result[] = [
-                'position' => $pos,
-                'best'     => $best[$pos]  ?? null,
-                'worst'    => $worst[$pos] ?? null,
+                'position'      => $pos,
+                'best'          => $best[$pos]  ?? null,
+                'worst'         => $worst[$pos] ?? null,
+                'average_points' => isset($count[$pos]) ? round($sumPoints[$pos] / $count[$pos], 1) : null,
             ];
         }
         return $result;

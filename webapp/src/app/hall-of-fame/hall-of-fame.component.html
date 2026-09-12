@@ -194,85 +194,89 @@
           </div>
         </div>
       }
+
+      @if (!positionsLoading() && positions().length > 0) {
+        <div class="award-wrap position-results-wrap">
+          <span class="award-label">Bestes &amp; schlechtestes Ergebnis je Platz</span>
+          <div class="card award-card">
+            <table class="data-table data-table--compact">
+              <thead>
+                <tr>
+                  <th class="col-rank">Platz</th>
+                  <th>Bestes Ergebnis</th>
+                  <th class="col-average">Ø</th>
+                  <th>Schlechtestes Ergebnis</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of positions(); track row.position) {
+                  <tr>
+                    <td class="col-rank-sm">{{ row.position }}</td>
+                    <td class="col-position-result">
+                      @if (row.best; as best) {
+                        <span
+                          class="position-result-cell row-link"
+                          (click)="navigate(['/team', best.team_id])"
+                          (mouseenter)="onPositionResultHover($event, best)"
+                          (mouseleave)="onPositionResultLeave()"
+                        >
+                          @if (!logoFailed.has(best.team_id)) {
+                            <img
+                              class="team-logo"
+                              [src]="positionTeamLogoUrl(best)"
+                              [alt]="best.team_name"
+                              (error)="onLogoError(best.team_id)"
+                            />
+                          }
+                          <span class="position-result-points">{{ best.points | number }}</span>
+                        </span>
+                      } @else {
+                        <span class="col-no-winner">–</span>
+                      }
+                    </td>
+                    <td class="col-average">
+                      {{ row.average_points !== null ? (row.average_points | number: '1.1-1') : '–' }}
+                    </td>
+                    <td class="col-position-result">
+                      @if (row.worst; as worst) {
+                        <span
+                          class="position-result-cell row-link"
+                          (click)="navigate(['/team', worst.team_id])"
+                          (mouseenter)="onPositionResultHover($event, worst)"
+                          (mouseleave)="onPositionResultLeave()"
+                        >
+                          @if (!logoFailed.has(worst.team_id)) {
+                            <img
+                              class="team-logo"
+                              [src]="positionTeamLogoUrl(worst)"
+                              [alt]="worst.team_name"
+                              (error)="onLogoError(worst.team_id)"
+                            />
+                          }
+                          <span class="position-result-points">{{ worst.points | number }}</span>
+                        </span>
+                      } @else {
+                        <span class="col-no-winner">–</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     </div>
   }
 
-  @if (!positionsLoading() && positions().length > 0) {
-    <div class="table-section-title">Bestes &amp; schlechtestes Ergebnis je Platz</div>
-    <div class="table-container">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="col-rank">Platz</th>
-            <th>Bestes Ergebnis</th>
-            <th>Schlechtestes Ergebnis</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of positions(); track row.position) {
-            <tr>
-              <td class="col-rank">
-                <span class="rank">{{ row.position }}</span>
-              </td>
-              <td class="col-position-result">
-                @if (row.best; as best) {
-                  <span
-                    class="position-result-cell row-link"
-                    (click)="navigate(['/team', best.team_id])"
-                    (mouseenter)="onPositionResultHover($event, best)"
-                    (mouseleave)="onPositionResultLeave()"
-                  >
-                    @if (!logoFailed.has(best.team_id)) {
-                      <img
-                        class="team-logo"
-                        [src]="positionTeamLogoUrl(best)"
-                        [alt]="best.team_name"
-                        (error)="onLogoError(best.team_id)"
-                      />
-                    }
-                    <span class="position-result-points">{{ best.points | number }}</span>
-                  </span>
-                } @else {
-                  <span class="col-no-winner">–</span>
-                }
-              </td>
-              <td class="col-position-result">
-                @if (row.worst; as worst) {
-                  <span
-                    class="position-result-cell row-link"
-                    (click)="navigate(['/team', worst.team_id])"
-                    (mouseenter)="onPositionResultHover($event, worst)"
-                    (mouseleave)="onPositionResultLeave()"
-                  >
-                    @if (!logoFailed.has(worst.team_id)) {
-                      <img
-                        class="team-logo"
-                        [src]="positionTeamLogoUrl(worst)"
-                        [alt]="worst.team_name"
-                        (error)="onLogoError(worst.team_id)"
-                      />
-                    }
-                    <span class="position-result-points">{{ worst.points | number }}</span>
-                  </span>
-                } @else {
-                  <span class="col-no-winner">–</span>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+  @if (positionTooltip(); as pt) {
+    <div class="movement-tooltip position-tooltip" [style.top.px]="pt.top" [style.left.px]="pt.left">
+      @if (!logoFailed.has(pt.entry.team_id)) {
+        <img class="team-logo position-tooltip__logo" [src]="positionTeamLogoUrl(pt.entry)" alt="" />
+      }
+      <div class="movement-tooltip__name">{{ pt.entry.team_name }}</div>
+      <div class="movement-tooltip__points">{{ pt.entry.points | number }} Pkt · {{ pt.entry.season_label }}</div>
     </div>
-
-    @if (positionTooltip(); as pt) {
-      <div class="movement-tooltip position-tooltip" [style.top.px]="pt.top" [style.left.px]="pt.left">
-        @if (!logoFailed.has(pt.entry.team_id)) {
-          <img class="team-logo position-tooltip__logo" [src]="positionTeamLogoUrl(pt.entry)" alt="" />
-        }
-        <div class="movement-tooltip__name">{{ pt.entry.team_name }}</div>
-        <div class="movement-tooltip__points">{{ pt.entry.points | number }} Pkt · {{ pt.entry.season_label }}</div>
-      </div>
-    }
   }
 
   @if (!movementLoading() && movementColumns().length > 0) {
