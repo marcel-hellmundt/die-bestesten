@@ -105,16 +105,12 @@ trait PlayerRatingTrait
         $ratingIds = array_values(array_unique(array_filter($ratingIds)));
         if (empty($ratingIds)) return [];
 
-        // contribution_type = 'create' wird nicht mehr vergeben (bloßer Init-Klick, kein
-        // Bewertungs-Beitrag, siehe insertContribution()) und hier zusätzlich ausgeblendet, falls
-        // aus der Zeit vor dieser Änderung noch alte 'create'-Zeilen in der DB stehen.
         $placeholders = implode(',', array_fill(0, count($ratingIds), '?'));
         $q = $this->con->prepare(
             "SELECT mc.player_rating_id, mc.manager_id, m.manager_name, mc.contribution_type
              FROM maintainer_contribution mc
              JOIN manager m ON m.id = mc.manager_id
-             WHERE mc.player_rating_id IN ($placeholders)
-               AND mc.contribution_type != 'create'"
+             WHERE mc.player_rating_id IN ($placeholders)"
         );
         $q->execute($ratingIds);
 
@@ -157,7 +153,6 @@ trait PlayerRatingTrait
              JOIN manager m       ON m.id = mc.manager_id
              JOIN player_rating pr ON pr.id = mc.player_rating_id
              WHERE pr.matchday_id = :matchday_id
-               AND mc.contribution_type != 'create'
              GROUP BY mc.manager_id, m.manager_name, mc.contribution_type"
         );
         $q->execute([':matchday_id' => $matchdayId]);

@@ -318,18 +318,6 @@ trait MatchdayTrait
             }
         }
 
-        // "create"-Contributions (bloßer Init-Klick für den kompletten Kader, kein echter Bewertungs-
-        // Beitrag) werden seit player_rating.database.php::initPlayerRatingsForClub() nicht mehr
-        // vergeben und in getContributorsForRatings()/getContributionSummaryForMatchday() ohnehin
-        // ausgeblendet; hier werden zusätzlich evtl. noch vorhandene alte 'create'-Zeilen aus der
-        // Zeit vor dieser Änderung endgültig entfernt.
-        $this->con->prepare(
-            "DELETE mc FROM maintainer_contribution mc
-             JOIN player_rating pr ON pr.id = mc.player_rating_id
-             WHERE pr.matchday_id = :matchday_id
-               AND mc.contribution_type = 'create'"
-        )->execute([':matchday_id' => $matchdayId]);
-
         return $updatedCount;
     }
 
