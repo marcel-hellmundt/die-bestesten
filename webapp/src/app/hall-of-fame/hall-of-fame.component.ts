@@ -44,6 +44,28 @@ interface MovementTooltip {
   left: number;
 }
 
+interface PositionResultEntry {
+  team_id: string;
+  team_name: string;
+  color: string | null;
+  color_secondary: string | null;
+  points: number;
+  season_id: string;
+  season_label: string | null;
+}
+
+interface PositionRow {
+  position: number;
+  best: PositionResultEntry | null;
+  worst: PositionResultEntry | null;
+}
+
+interface PositionTooltip {
+  entry: PositionResultEntry;
+  top: number;
+  left: number;
+}
+
 @Component({
   selector: 'app-hall-of-fame',
   standalone: false,
@@ -126,6 +148,34 @@ export class HallOfFameComponent {
     });
 
     this.connectorPath.set(points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' '));
+  }
+
+  // Bestes/schlechtestes Saisonergebnis je Tabellenplatz (nur 12er-Saisons, aktuelle Saison
+  // ausgeschlossen — siehe Backend-Doku).
+  private positionsState = toSignal(
+    this.api.get<PositionRow[]>('all_time_standings/by_position').pipe(
+      map(data => ({ data, loading: false })),
+      startWith({ data: [] as PositionRow[], loading: true }),
+      catchError(() => of({ data: [] as PositionRow[], loading: false }))
+    )
+  );
+
+  positions        = computed(() => this.positionsState()?.data ?? []);
+  positionsLoading = computed(() => this.positionsState()?.loading ?? true);
+
+  positionTooltip = signal<PositionTooltip | null>(null);
+
+  onPositionResultHover(event: MouseEvent, entry: PositionResultEntry): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.positionTooltip.set({ entry, top: rect.top, left: rect.left + rect.width / 2 });
+  }
+
+  onPositionResultLeave(): void {
+    this.positionTooltip.set(null);
+  }
+
+  positionTeamLogoUrl(entry: PositionResultEntry): string {
+    return `https://img.die-bestesten.de/team/${entry.season_id}/${entry.team_id}.png`;
   }
 
   private awardsState = toSignal(

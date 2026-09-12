@@ -322,3 +322,49 @@ td.col-points--muted {
   font-size: $font-xs;
   color: $color-text-muted;
 }
+
+// ── Bestes/schlechtestes Ergebnis je Platz ───────────────────────────────────
+
+.col-position-result {
+  padding: $space-1 $space-3;
+}
+
+.position-result-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-1 $space-2;
+  border-radius: $radius-sm;
+  cursor: pointer;
+
+  &:hover {
+    background: $color-surface-alt;
+  }
+
+  .team-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.position-result-points {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+}
+
+.position-tooltip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.position-tooltip__logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  margin-bottom: 2px;
+}

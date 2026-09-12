@@ -156,6 +156,11 @@ class Routing
                         'path' => '/all_time_standings/by_season',
                         'description' => 'Rang jedes Managers in der ewigen Tabelle nach jeder Saison (kumulierte Punkte über alle Saisons bis einschließlich dieser, Standard-Wettkampf-Rang unter allen Managern) — [{season_id, entries:[{manager_id,manager_name,rank,cumulative_points}]}] chronologisch, entries nur für Teilnehmer der jeweiligen Saison — fürs Ruhmeshalle-Bewegungs-Grid',
                     ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/all_time_standings/by_position',
+                        'description' => 'Für jeden Tabellenplatz 1..12 das beste + schlechteste jemals dort erzielte Saisonergebnis — [{position, best:{team_id,team_name,color,color_secondary,points,season_id,season_label}|null, worst:{...}|null}] — nur Saisons mit exakt 12 teilnehmenden Teams zählen, die aktuelle (laufende) Saison ist ausgeschlossen (unfertiger Punktestand würde den schlechtesten Platz zu Saisonbeginn systematisch belegen); Platz per Standard-Wettkampf-Rang (punktgleiche Teams teilen sich denselben Platz) innerhalb jeder qualifizierenden Saison; best/worst null, falls kein Team je diesen Platz belegt hat — fürs Ruhmeshalle-"Bestes/Schlechtestes Ergebnis je Platz"-Grid',
+                    ],
                 ],
             ]),
 
