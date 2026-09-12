@@ -334,8 +334,18 @@ td.col-points--muted {
   }
 }
 
+// table-layout:fixed + gleiche Breite für beide Ergebnis-Spalten sorgt dafür, dass Bestes/Ø/
+// Schlechtestes Ergebnis in jeder Zeile denselben Abstand zueinander haben, statt dass die
+// (sonst auto-breiten) Ergebnis-Spalten sich unterschiedlich stark strecken.
+.position-results-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
 .col-position-result {
+  width: 40%;
   padding: $space-1 $space-3;
+  text-align: center;
 }
 
 .position-result-cell {
