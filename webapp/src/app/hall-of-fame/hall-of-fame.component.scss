@@ -175,6 +175,16 @@ td.col-points--muted {
   color: $color-text-muted;
 }
 
+// Auf dieser Seite soll "Bewegung in der ewigen Tabelle" wie die Card-Labels im awards-grid
+// aussehen (.award-label) statt in der sonst app-weiten, größeren .table-section-title-Schrift —
+// Override bleibt dank Angular View Encapsulation auf diese Komponente beschränkt, .table-
+// section-title selbst (globale Konvention für Section-Header andernorts) bleibt unangetastet.
+.table-section-title {
+  font-family: inherit;
+  font-size: $font-xs;
+  letter-spacing: 0.06em;
+}
+
 .award-card {
   width: 100%;
 }
@@ -364,6 +374,11 @@ td.col-points--muted {
   font-weight: $font-weight-semibold;
   color: $color-text-muted;
   font-variant-numeric: tabular-nums;
+  transition: color 0.15s ease;
+}
+
+.position-range-row:hover .position-range-label {
+  color: $color-text;
 }
 
 .position-range-track {
@@ -383,6 +398,22 @@ td.col-points--muted {
   background: $color-accent;
 }
 
+// Grauer Bereich links vom Range-Segment (0 bis Schlechtestes) — dunkelt beim Hovern der Zeile
+// etwas nach, als dezentes Hover-Feedback zusätzlich zu den größer werdenden Logos.
+.position-range-track-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: $radius-sm 0 0 $radius-sm;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.position-range-row:hover .position-range-track-left {
+  background: $color-border;
+}
+
 .position-range-avg {
   position: absolute;
   top: 50%;
@@ -400,31 +431,61 @@ td.col-points--muted {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: $color-surface;
-  border: 2px solid $color-accent;
   cursor: pointer;
 
   .team-logo {
-    width: 18px;
-    height: 18px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
     display: block;
+    transition: transform 0.15s ease;
   }
 }
 
+// Hover gilt der ganzen Zeile (Tooltip), die Logos vergrößern sich dabei leicht als Feedback —
+// 32px → 36px (Faktor 1.125), per transform statt width/height, damit es nicht neu layoutet.
+.position-range-row:hover .position-range-endpoint .team-logo {
+  transform: scale(1.125);
+}
+
+// 3 Spalten (Schlechtestes | Ø | Bestes), durch eine graue Trennlinie separiert — Inhalt je
+// Spalte (Logo, Name, Punkte, Saison) untereinander gestapelt und zentriert.
 .position-tooltip {
+  display: flex;
+  align-items: stretch;
+  gap: $space-3;
+  text-align: center;
+  white-space: normal;
+}
+
+.position-tooltip__col {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  width: 88px;
+  justify-content: center;
+}
+
+.position-tooltip__sep {
+  align-self: stretch;
+  width: 1px;
+  background: $color-border;
 }
 
 .position-tooltip__logo {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   margin-bottom: 2px;
+}
+
+.position-tooltip__average {
+  font-size: $font-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.position-tooltip__season {
+  font-size: $font-xs;
+  color: $color-text-muted;
 }

@@ -67,8 +67,8 @@ interface PositionRangeRow extends PositionRow {
   avgPct: number | null;
 }
 
-interface PositionTooltip {
-  entry: PositionResultEntry;
+interface PositionRowTooltip {
+  row: PositionRangeRow;
   top: number;
   left: number;
 }
@@ -171,8 +171,11 @@ export class HallOfFameComponent {
   positionsLoading = computed(() => this.positionsState()?.loading ?? true);
 
   // Gemeinsame Skala über alle Plätze hinweg (statt pro Zeile), damit die Ranges optisch
-  // vergleichbar bleiben — ein kleiner Rand außen (8% der Gesamtspanne) verhindert, dass die
-  // Logos an den äußersten Enden abgeschnitten werden.
+  // vergleichbar bleiben. Desktop: Skala startet bei 0 Punkten, ein kleiner Rand oben (8% der
+  // Spanne) verhindert, dass das obere Logo am äußersten Rand abgeschnitten wird. Mobil ist
+  // links-rechts deutlich weniger Platz (siehe $mobile-breakpoint) — eine bei 0 startende Skala
+  // würde dort alle Ranges winzig zusammengequetscht rechts kleben lassen, deshalb dort
+  // stattdessen ab dem niedrigsten je erzielten Wert beginnen (mit Rand auf beiden Seiten).
   positionRanges = computed<PositionRangeRow[]>(() => {
     const rows = this.positions();
     if (!rows.length) return [];
@@ -187,10 +190,11 @@ export class HallOfFameComponent {
       return rows.map(row => ({ ...row, worstPct: null, bestPct: null, avgPct: null }));
     }
 
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
     const span = max - min || 1;
     const pad = span * 0.08;
-    const domainMin = min - pad;
-    const domainMax = max + pad;
+    const domainMin = isMobile ? Math.max(0, min - pad) : 0;
+    const domainMax = max + (isMobile ? pad : max * 0.08);
     const domainSpan = domainMax - domainMin || 1;
     const pct = (value: number) => ((value - domainMin) / domainSpan) * 100;
 
@@ -202,14 +206,14 @@ export class HallOfFameComponent {
     }));
   });
 
-  positionTooltip = signal<PositionTooltip | null>(null);
+  positionTooltip = signal<PositionRowTooltip | null>(null);
 
-  onPositionResultHover(event: MouseEvent, entry: PositionResultEntry): void {
+  onPositionRowHover(event: MouseEvent, row: PositionRangeRow): void {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.positionTooltip.set({ entry, top: rect.top, left: rect.left + rect.width / 2 });
+    this.positionTooltip.set({ row, top: rect.top, left: rect.left + rect.width / 2 });
   }
 
-  onPositionResultLeave(): void {
+  onPositionRowLeave(): void {
     this.positionTooltip.set(null);
   }
 
