@@ -364,7 +364,7 @@ CREATE TABLE IF NOT EXISTS maintainer_contribution (
     id                CHAR(36)                                            NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id        CHAR(36)                                            NOT NULL,
     player_rating_id  CHAR(36)                                            NOT NULL,
-    contribution_type ENUM('create', 'participation', 'stats', 'note') CHARACTER SET utf8mb4 NOT NULL,
+    contribution_type ENUM('participation', 'stats', 'note') CHARACTER SET utf8mb4 NOT NULL,
     created_at        DATETIME                                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     UNIQUE KEY uk_contribution (player_rating_id, contribution_type, manager_id)

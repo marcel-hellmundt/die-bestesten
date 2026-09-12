@@ -165,7 +165,7 @@ trait PlayerRatingTrait
                     'manager_id'   => $mid,
                     'manager_name' => $row['manager_name'],
                     'total'        => 0,
-                    'by_type'      => ['create' => 0, 'participation' => 0, 'stats' => 0, 'note' => 0],
+                    'by_type'      => ['participation' => 0, 'stats' => 0, 'note' => 0],
                 ];
             }
             $cnt = (int) $row['cnt'];
@@ -185,8 +185,11 @@ trait PlayerRatingTrait
      * or simply never added to this season's fantasy pool).
      * Uses INSERT IGNORE so existing ratings are not overwritten.
      * Returns: count of newly created ratings + IDs of existing ones.
+     * No maintainer_contribution is credited for this — it's a single bulk-init click for the
+     * whole squad (~20-25 players), not meaningful data-entry work; only participation/stats/note
+     * (real per-player work) count, see updateRating().
      */
-    public function initPlayerRatingsForClub(string $matchdayId, string $clubId, string $seasonId, string $managerId): array
+    public function initPlayerRatingsForClub(string $matchdayId, string $clubId, string $seasonId): array
     {
         // Rating-Zeitpunkt-bezogen (Fragment B): Division einmal aus $clubId + $seasonId auflösen
         // (gilt für alle Spieler dieses Clubs gleich), damit ein Spieler mit 2 player_in_season-
@@ -241,7 +244,6 @@ trait PlayerRatingTrait
                     ':matchday_id' => $matchdayId,
                     ':club_id'     => $clubId,
                 ]);
-                $this->insertContribution($newId, $managerId, 'create');
                 $created[] = ['player_id' => $row['player_id'], 'displayname' => $row['displayname']];
             }
         }
