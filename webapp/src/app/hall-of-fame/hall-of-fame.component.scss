@@ -211,6 +211,13 @@ td.col-points--muted {
   }
 }
 
+// Etwas größer als das Standard-.team-logo — für "Top 5 Einzelspieltage", wo es neben Namen/
+// Meta-Text eher untergeht.
+.team-logo--md {
+  width: 32px;
+  height: 32px;
+}
+
 .col-winner-name {
   font-size: $font-sm;
   font-weight: $font-weight-medium;

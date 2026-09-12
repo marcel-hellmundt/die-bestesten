@@ -175,7 +175,7 @@
                   <td class="col-logo" style="padding-right:0">
                     @if (!logoFailed.has(r.team_id)) {
                       <img
-                        class="team-logo"
+                        class="team-logo team-logo--md"
                         [src]="'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
                         [alt]="r.team_name"
                         (error)="onLogoError(r.team_id)"
