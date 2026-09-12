@@ -110,7 +110,9 @@ trait PlayerRatingTrait
             "SELECT mc.player_rating_id, mc.manager_id, m.manager_name, mc.contribution_type
              FROM maintainer_contribution mc
              JOIN manager m ON m.id = mc.manager_id
-             WHERE mc.player_rating_id IN ($placeholders)"
+             JOIN player_rating pr ON pr.id = mc.player_rating_id
+             WHERE mc.player_rating_id IN ($placeholders)
+               AND NOT (mc.contribution_type = 'create' AND pr.participation IS NULL)"
         );
         $q->execute($ratingIds);
 
@@ -153,6 +155,7 @@ trait PlayerRatingTrait
              JOIN manager m       ON m.id = mc.manager_id
              JOIN player_rating pr ON pr.id = mc.player_rating_id
              WHERE pr.matchday_id = :matchday_id
+               AND NOT (mc.contribution_type = 'create' AND pr.participation IS NULL)
              GROUP BY mc.manager_id, m.manager_name, mc.contribution_type"
         );
         $q->execute([':matchday_id' => $matchdayId]);
