@@ -318,19 +318,16 @@ trait MatchdayTrait
             }
         }
 
-        // "create"-Contributions gehören nur Spielern, die im echten Match tatsächlich eingesetzt
-        // wurden (participation gesetzt) — sonst bringt ein einzelner Init-Klick für den kompletten
-        // Kader (~20-25 Spieler, siehe initPlayerRatingsForClub()) genauso viel Gutschrift wie
-        // echtes Punkte-Eintragen. getContributorsForRatings()/getContributionSummaryForMatchday()
-        // blenden solche Zeilen (participation noch NULL) schon vorher aus der Anzeige aus; hier
-        // wird final aufgeräumt, sobald mit Spieltagsabschluss endgültig feststeht, wer wirklich
-        // gespielt hat.
+        // "create"-Contributions (bloßer Init-Klick für den kompletten Kader, kein echter Bewertungs-
+        // Beitrag) werden seit player_rating.database.php::initPlayerRatingsForClub() nicht mehr
+        // vergeben und in getContributorsForRatings()/getContributionSummaryForMatchday() ohnehin
+        // ausgeblendet; hier werden zusätzlich evtl. noch vorhandene alte 'create'-Zeilen aus der
+        // Zeit vor dieser Änderung endgültig entfernt.
         $this->con->prepare(
             "DELETE mc FROM maintainer_contribution mc
              JOIN player_rating pr ON pr.id = mc.player_rating_id
              WHERE pr.matchday_id = :matchday_id
-               AND mc.contribution_type = 'create'
-               AND pr.participation IS NULL"
+               AND mc.contribution_type = 'create'"
         )->execute([':matchday_id' => $matchdayId]);
 
         return $updatedCount;
