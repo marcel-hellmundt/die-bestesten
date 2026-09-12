@@ -775,7 +775,10 @@
             <img src="img/icons/part-none.svg" alt="Nicht eingesetzt" />
           </span>
         }
-        <span class="field-player__name">{{ p.displayname }}</span>
+        <span
+          class="field-player__name"
+          [class.field-player__name--not-used]="p.has_rating && p.participation !== 'starting' && p.participation !== 'substitute'"
+        >{{ p.displayname }}</span>
         @if (p.points != null) {
           <span class="field-player__points" [class.field-player__points--neg]="p.points < 0">{{ p.points }}</span>
         }

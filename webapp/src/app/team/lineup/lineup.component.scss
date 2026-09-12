@@ -178,6 +178,12 @@ $mobile-nav-height: 64px;
         padding: 0 4px;
         font-size: 9px;
       }
+
+      // Nicht eingesetzter Spieler (player_rating vorhanden, aber participation weder starting
+      // noch substitute) — Name dezenter statt schwarz, analog zum grauen "Nicht eingesetzt"-Icon.
+      &--not-used {
+        color: #9ca3af;
+      }
     }
 
     // Ersetzt &__grade, solange noch keine Note vorliegt — unterscheidet, ob der Spieler auf
