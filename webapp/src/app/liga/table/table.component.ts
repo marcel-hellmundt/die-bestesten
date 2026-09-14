@@ -1,6 +1,6 @@
 import { Component, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
+import { catchError, combineLatest, filter, map, of, scan, startWith, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
@@ -68,19 +68,37 @@ export class TableComponent {
   );
 
   completedMatchdayNumbers = computed(() => this.matchdaysState().map(m => m.number));
-  minMatchdayNumber = computed(() => this.completedMatchdayNumbers()[0] ?? null);
+  minMatchdayNumber = computed(() => {
+    const nums = this.completedMatchdayNumbers();
+    return nums.length ? nums[0] : null;
+  });
   maxMatchdayNumber = computed(() => {
     const nums = this.completedMatchdayNumbers();
     return nums.length ? nums[nums.length - 1] : null;
   });
 
-  // Saisonwechsel macht einen zuvor gewählten Zeitraum ungültig (andere Saison = andere
-  // Spieltags-Range) — Zeitraum-Modus dabei immer zurücksetzen statt die Auswahl zu übernehmen.
-  private resetIntervalOnSeasonChangeEffect = effect(() => {
-    this.selectedSeason();
-    this.intervalMode.set(false);
-    this.fromMatchday.set(null);
-    this.toMatchday.set(null);
+  // Zeitraum bleibt beim Saisonwechsel aktiv (statt sich zurückzusetzen) — nur die Auswahl wird
+  // ggf. an die neue Saison angepasst: keine abgeschlossenen Spieltage (oder nur einer) schaltet
+  // den Zeitraum-Modus ab (der Button selbst wird dann ohnehin ausgeblendet, siehe Template),
+  // sonst wird from/to auf die neue Spieltags-Range geklemmt (z.B. beim Wechsel zur aktuellen
+  // Saison, deren letzter abgeschlossener Spieltag niedriger liegen kann als das zuvor gewählte
+  // "bis").
+  private syncIntervalRangeEffect = effect(() => {
+    const nums = this.completedMatchdayNumbers();
+    if (!this.intervalMode()) return;
+    if (nums.length <= 1) {
+      this.intervalMode.set(false);
+      this.fromMatchday.set(null);
+      this.toMatchday.set(null);
+      return;
+    }
+    const min = nums[0];
+    const max = nums[nums.length - 1];
+    const clamp = (n: number | null) => n === null ? null : Math.min(Math.max(n, min), max);
+    const from = clamp(this.fromMatchday()) ?? min;
+    const to   = clamp(this.toMatchday())   ?? max;
+    if (from !== this.fromMatchday()) this.fromMatchday.set(from);
+    if (to   !== this.toMatchday())   this.toMatchday.set(to);
   });
 
   toggleIntervalMode(): void {
@@ -90,7 +108,9 @@ export class TableComponent {
       // Zeitraum + Live schließen sich aus (laufender Spieltag + fester Endpunkt in der
       // Vergangenheit wäre widersprüchlich) — siehe Live-Button-Guard im Template.
       this.liveMode.set(false);
-      this.fromMatchday.set(this.minMatchdayNumber());
+      // Vorausgefüllt mit der kompletten Saison (Spieltag 1 bis zuletzt abgeschlossen) — Nutzer
+      // schränkt von dort aus gezielt ein, statt bei einer leeren/unerwarteten Auswahl zu starten.
+      this.fromMatchday.set(1);
       this.toMatchday.set(this.maxMatchdayNumber());
     } else {
       this.fromMatchday.set(null);
@@ -98,18 +118,30 @@ export class TableComponent {
     }
   }
 
+  private clampMatchday(n: number): number {
+    const min = this.minMatchdayNumber() ?? 1;
+    const max = this.maxMatchdayNumber() ?? min;
+    if (!Number.isFinite(n)) return min;
+    return Math.min(Math.max(n, min), max);
+  }
+
   onFromMatchdayChange(value: string): void {
-    const n = Number(value);
+    const n = this.clampMatchday(Number(value));
     this.fromMatchday.set(n);
     if (this.toMatchday() !== null && n > this.toMatchday()!) this.toMatchday.set(n);
   }
 
   onToMatchdayChange(value: string): void {
-    const n = Number(value);
+    const n = this.clampMatchday(Number(value));
     this.toMatchday.set(n);
     if (this.fromMatchday() !== null && n < this.fromMatchday()!) this.fromMatchday.set(n);
   }
 
+  // keepPrevious markiert die sofortige "gerade erst losgeschickt"-Zwischen-Emission des inneren
+  // switchMap — der nachfolgende scan() ersetzt dort data NICHT durch null, sondern behält den
+  // zuletzt geladenen Stand, damit z.B. das Umschalten des Zeitraum-Toggles nicht die komplette
+  // Seite kurz auf "Laden…" zurücksetzt (sichtbares weißes Aufblitzen) — nur ein echtes neues
+  // Ergebnis (Erfolg oder Fehler) ersetzt die angezeigten Daten.
   private state = toSignal(
     combineLatest([
       toObservable(this.seasons).pipe(filter(s => s.length > 0)),
@@ -120,20 +152,31 @@ export class TableComponent {
     ]).pipe(
       switchMap(([seasons, idx, interval, from, to]) => {
         const season = seasons[idx];
-        if (!season) return of({ data: null, loading: false, error: null as string | null });
+        if (!season) return of({ data: null as any, loading: false, error: null as string | null, keepPrevious: false });
         let url = `team_rating/season?season_id=${season.id}`;
         if (interval && from !== null && to !== null) {
           url += `&from_matchday_number=${from}&to_matchday_number=${to}`;
         }
         return this.api.get<any>(url).pipe(
-          map(data => ({ data, loading: false, error: null as string | null })),
-          startWith({ data: null as any, loading: true, error: null as string | null }),
-          catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' }))
+          map(data => ({ data, loading: false, error: null as string | null, keepPrevious: false })),
+          startWith({ data: null as any, loading: true, error: null as string | null, keepPrevious: true }),
+          catchError(() => of({ data: null as any, loading: false, error: 'Fehler beim Laden', keepPrevious: false }))
         );
-      })
+      }),
+      scan(
+        (prev, curr) => curr.keepPrevious
+          ? { data: prev.data, loading: true, error: null as string | null }
+          : { data: curr.data, loading: curr.loading, error: curr.error },
+        { data: null as any, loading: true, error: null as string | null }
+      )
     ),
     { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
+
+  // Nur beim allerersten Laden (noch keine Daten vorhanden) den ganzen Inhalt durch "Laden…"
+  // ersetzen — ein Refetch mit bereits vorhandenen Daten (Zeitraum-/Live-Toggle, Saisonwechsel)
+  // soll die bestehende Ansicht nicht kurz verschwinden lassen.
+  showInitialLoading = computed(() => this.loading() && !this.state().data);
 
   isCurrentSeason = computed(() => this.selectedIndex() === 0);
 

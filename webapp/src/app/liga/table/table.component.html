@@ -1,4 +1,4 @@
-@if (loading()) {
+@if (showInitialLoading()) {
   <p class="state-msg">Laden…</p>
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
@@ -26,44 +26,54 @@
       >
         ›
       </button>
-      @if (completedMatchdayNumbers().length > 1) {
-        <button
-          class="live-toggle"
-          [class.live-toggle--active]="intervalMode()"
-          (click)="toggleIntervalMode()"
-          title="Nur einen Spieltag-Zeitraum anzeigen"
-        >
-          Zeitraum
-        </button>
-      }
-      @if (isCurrentSeason() && isLoggedIn() && !intervalMode()) {
-        <button
-          class="live-toggle"
-          [class.live-toggle--active]="liveMode()"
-          (click)="liveMode.set(!liveMode())"
-          title="Live-Punkte des laufenden Spieltags einrechnen"
-        >
-          <span class="live-dot"></span>
-          Live
-        </button>
-      }
-    </div>
-
-    @if (intervalMode()) {
-      <div class="season-nav__interval">
-        <select class="select" (change)="onFromMatchdayChange($any($event.target).value)">
-          @for (n of completedMatchdayNumbers(); track n) {
-            <option [value]="n" [disabled]="toMatchday() !== null && n > toMatchday()!" [selected]="n === fromMatchday()">Sp. {{ n }}</option>
-          }
-        </select>
-        <span class="season-nav__interval-sep">–</span>
-        <select class="select" (change)="onToMatchdayChange($any($event.target).value)">
-          @for (n of completedMatchdayNumbers(); track n) {
-            <option [value]="n" [disabled]="fromMatchday() !== null && n < fromMatchday()!" [selected]="n === toMatchday()">Sp. {{ n }}</option>
-          }
-        </select>
+      <div class="season-nav__toggles">
+        @if (intervalMode()) {
+          <div class="season-nav__interval">
+            <input
+              type="number"
+              class="interval-input"
+              [value]="fromMatchday()"
+              [min]="minMatchdayNumber() ?? 1"
+              [max]="maxMatchdayNumber() ?? undefined"
+              (change)="onFromMatchdayChange($any($event.target).value)"
+              aria-label="Von Spieltag"
+            />
+            <span class="season-nav__interval-sep">–</span>
+            <input
+              type="number"
+              class="interval-input"
+              [value]="toMatchday()"
+              [min]="minMatchdayNumber() ?? 1"
+              [max]="maxMatchdayNumber() ?? undefined"
+              (change)="onToMatchdayChange($any($event.target).value)"
+              aria-label="Bis Spieltag"
+            />
+          </div>
+        }
+        @if (completedMatchdayNumbers().length > 1) {
+          <button
+            class="live-toggle"
+            [class.live-toggle--active]="intervalMode()"
+            (click)="toggleIntervalMode()"
+            title="Nur einen Spieltag-Zeitraum anzeigen"
+          >
+            Zeitraum
+          </button>
+        }
+        @if (isCurrentSeason() && isLoggedIn()) {
+          <button
+            class="live-toggle"
+            [class.live-toggle--active]="liveMode()"
+            [disabled]="intervalMode()"
+            (click)="liveMode.set(!liveMode())"
+            title="Live-Punkte des laufenden Spieltags einrechnen"
+          >
+            <span class="live-dot"></span>
+            Live
+          </button>
+        }
       </div>
-    }
+    </div>
   </div>
 
   @if (rows().length === 0) {

@@ -27,18 +27,40 @@
   }
 }
 
-// Zeitraum-Auswahl (von/bis Spieltag) — eigene Zeile unter .season-nav__controls, über beide
-// Grid-Spalten hinweg (grid-column: 1/-1), statt in der 220px-Spalte danebenzulanden.
+// Zeitraum-Auswahl (von/bis Spieltag) — sitzt links vom "Zeitraum"-Button, innerhalb derselben
+// .season-nav__toggles-Zeile (siehe dort für die margin-left:auto-Begründung).
 .season-nav__interval {
-  grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: $space-2;
 
-  @media (max-width: $mobile-breakpoint) {
-    justify-content: flex-start;
-    flex-wrap: wrap;
+  // Verschachtelt statt als Top-Level-Klasse: die globale input:not(...)-Regel aus _inputs.scss
+  // (appearance:none, width:100%, radius-full — für normale Text-Inputs gedacht) hat rein
+  // CSS-seitig durch die 3 verketteten :not() höhere Spezifität als eine einzelne Klasse; erst
+  // die zusätzliche Angular-Scoping-Attribut-Selektoren, die bei einem 2-Compound-Selektor wie
+  // hier automatisch dazukommen, heben diese Regel darüber (siehe .digit-bar input[type='number']
+  // in bids.component.scss für dasselbe Muster) — sonst blieb das Feld bei 100% Breite und
+  // überlagerte Zeitraum-/Live-Button.
+  .interval-input {
+    // Globales $control-height (38px, siehe _inputs.scss) überschrieben — sonst 2px höher als
+    // die 36px hohen Zeitraum-/Live-Buttons daneben, wodurch die restliche UI beim Aktivieren
+    // sichtbar nach unten sprang.
+    width: 48px;
+    height: 36px;
+    flex-shrink: 0;
+    text-align: center;
+    padding: 0 $space-1;
+
+    // Spinner-Pfeile ausblenden — bei so einem schmalen Feld nehmen sie zu viel Platz weg und der
+    // Bereich lässt sich ohnehin über die min/max-Klemmung in onFromMatchdayChange()/
+    // onToMatchdayChange() bequem per Eingabe statt Klicken anpassen.
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    appearance: textfield;
+    -moz-appearance: textfield;
   }
 }
 
@@ -90,6 +112,17 @@
   }
 }
 
+// Umschließt Zeitraum- + Live-Toggle als eine Einheit — margin-left:auto sitzt bewusst HIER
+// (statt an beiden .live-toggle-Buttons einzeln), sonst würde jeder Button seinen eigenen Anteil
+// des übrigen Flex-Freiraums absorbieren und die beiden Toggles würden auseinandergezogen statt
+// direkt nebeneinander zu sitzen.
+.season-nav__toggles {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-left: auto;
+}
+
 .live-toggle {
   display: inline-flex;
   align-items: center;
@@ -104,7 +137,6 @@
   color: $color-text-muted;
   cursor: pointer;
   transition: all $transition-fast;
-  margin-left: auto;
 
   .live-dot {
     width: 7px;
@@ -124,6 +156,13 @@
       box-shadow: 0 0 4px var(--flat-emerald);
       animation: pulse 1.5s ease-in-out infinite;
     }
+  }
+
+  // Bleibt bei aktivem Zeitraum-Filter sichtbar statt zu verschwinden (kein Layout-Sprung) —
+  // nur ausgegraut/nicht klickbar, da Zeitraum + Live sich inhaltlich ausschließen.
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
