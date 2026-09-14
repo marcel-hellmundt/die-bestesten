@@ -14,7 +14,13 @@ class TeamRatingController extends _BaseController
         }
 
         if ($this->id === 'season') {
-            return $this->db->getSeasonStandings($seasonId);
+            $fromMatchday = isset($this->params['from_matchday_number'])
+                ? (int) $this->params['from_matchday_number']
+                : null;
+            $toMatchday = isset($this->params['to_matchday_number'])
+                ? (int) $this->params['to_matchday_number']
+                : null;
+            return $this->db->getSeasonStandings($seasonId, $fromMatchday, $toMatchday);
         }
 
         $matchdayNumber = isset($this->params['matchday_number'])
