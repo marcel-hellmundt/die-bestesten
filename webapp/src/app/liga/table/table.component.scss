@@ -27,6 +27,25 @@
   }
 }
 
+// Zeitraum-Auswahl (von/bis Spieltag) — eigene Zeile unter .season-nav__controls, über beide
+// Grid-Spalten hinweg (grid-column: 1/-1), statt in der 220px-Spalte danebenzulanden.
+.season-nav__interval {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-2;
+
+  @media (max-width: $mobile-breakpoint) {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+.season-nav__interval-sep {
+  color: $color-text-muted;
+}
+
 .nav-arrow {
   display: flex;
   justify-content: center;

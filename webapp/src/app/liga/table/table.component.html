@@ -26,7 +26,17 @@
       >
         ›
       </button>
-      @if (isCurrentSeason() && isLoggedIn()) {
+      @if (completedMatchdayNumbers().length > 1) {
+        <button
+          class="live-toggle"
+          [class.live-toggle--active]="intervalMode()"
+          (click)="toggleIntervalMode()"
+          title="Nur einen Spieltag-Zeitraum anzeigen"
+        >
+          Zeitraum
+        </button>
+      }
+      @if (isCurrentSeason() && isLoggedIn() && !intervalMode()) {
         <button
           class="live-toggle"
           [class.live-toggle--active]="liveMode()"
@@ -38,6 +48,22 @@
         </button>
       }
     </div>
+
+    @if (intervalMode()) {
+      <div class="season-nav__interval">
+        <select class="select" (change)="onFromMatchdayChange($any($event.target).value)">
+          @for (n of completedMatchdayNumbers(); track n) {
+            <option [value]="n" [disabled]="toMatchday() !== null && n > toMatchday()!" [selected]="n === fromMatchday()">Sp. {{ n }}</option>
+          }
+        </select>
+        <span class="season-nav__interval-sep">–</span>
+        <select class="select" (change)="onToMatchdayChange($any($event.target).value)">
+          @for (n of completedMatchdayNumbers(); track n) {
+            <option [value]="n" [disabled]="fromMatchday() !== null && n < fromMatchday()!" [selected]="n === toMatchday()">Sp. {{ n }}</option>
+          }
+        </select>
+      </div>
+    }
   </div>
 
   @if (rows().length === 0) {

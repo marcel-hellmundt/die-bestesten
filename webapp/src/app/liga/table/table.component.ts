@@ -1,10 +1,11 @@
-import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, startWith, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
+import { Matchday } from '../../core/models/matchday.model';
 
 @Component({
   selector: 'app-liga-table',
@@ -40,15 +41,91 @@ export class TableComponent {
     if (idx >= 0) this.selectedIndex.set(idx);
   }
 
+  // Zeitraum-Filter ("Zeitraum"-Toggle auf /liga/tabelle): schränkt die Saisonauswertung auf
+  // Spieltag fromMatchday..toMatchday ein (beide inklusiv), siehe GET /team_rating/season's
+  // from_matchday_number/to_matchday_number. Default: kein Filter (ganze Saison, unverändertes
+  // Verhalten) — intervalMode aus, from/to null.
+  intervalMode  = signal(false);
+  fromMatchday  = signal<number | null>(null);
+  toMatchday    = signal<number | null>(null);
+
+  // Abgeschlossene Spieltage der aktuell gewählten Saison — Grundlage für die Zeitraum-
+  // Dropdown-Optionen und deren Min/Max.
+  private matchdaysState = toSignal(
+    toObservable(this.selectedSeason).pipe(
+      filter((s): s is NonNullable<typeof s> => !!s),
+      switchMap(season =>
+        this.api.get<any[]>(`matchday?season_id=${season.id}`).pipe(
+          map(data => (data ?? [])
+            .map(Matchday.from)
+            .filter(m => m.completed)
+            .sort((a, b) => a.number - b.number)),
+          catchError(() => of([] as Matchday[]))
+        )
+      )
+    ),
+    { initialValue: [] as Matchday[] }
+  );
+
+  completedMatchdayNumbers = computed(() => this.matchdaysState().map(m => m.number));
+  minMatchdayNumber = computed(() => this.completedMatchdayNumbers()[0] ?? null);
+  maxMatchdayNumber = computed(() => {
+    const nums = this.completedMatchdayNumbers();
+    return nums.length ? nums[nums.length - 1] : null;
+  });
+
+  // Saisonwechsel macht einen zuvor gewählten Zeitraum ungültig (andere Saison = andere
+  // Spieltags-Range) — Zeitraum-Modus dabei immer zurücksetzen statt die Auswahl zu übernehmen.
+  private resetIntervalOnSeasonChangeEffect = effect(() => {
+    this.selectedSeason();
+    this.intervalMode.set(false);
+    this.fromMatchday.set(null);
+    this.toMatchday.set(null);
+  });
+
+  toggleIntervalMode(): void {
+    const next = !this.intervalMode();
+    this.intervalMode.set(next);
+    if (next) {
+      // Zeitraum + Live schließen sich aus (laufender Spieltag + fester Endpunkt in der
+      // Vergangenheit wäre widersprüchlich) — siehe Live-Button-Guard im Template.
+      this.liveMode.set(false);
+      this.fromMatchday.set(this.minMatchdayNumber());
+      this.toMatchday.set(this.maxMatchdayNumber());
+    } else {
+      this.fromMatchday.set(null);
+      this.toMatchday.set(null);
+    }
+  }
+
+  onFromMatchdayChange(value: string): void {
+    const n = Number(value);
+    this.fromMatchday.set(n);
+    if (this.toMatchday() !== null && n > this.toMatchday()!) this.toMatchday.set(n);
+  }
+
+  onToMatchdayChange(value: string): void {
+    const n = Number(value);
+    this.toMatchday.set(n);
+    if (this.fromMatchday() !== null && n < this.fromMatchday()!) this.fromMatchday.set(n);
+  }
+
   private state = toSignal(
     combineLatest([
       toObservable(this.seasons).pipe(filter(s => s.length > 0)),
       toObservable(this.selectedIndex),
+      toObservable(this.intervalMode),
+      toObservable(this.fromMatchday),
+      toObservable(this.toMatchday),
     ]).pipe(
-      switchMap(([seasons, idx]) => {
+      switchMap(([seasons, idx, interval, from, to]) => {
         const season = seasons[idx];
         if (!season) return of({ data: null, loading: false, error: null as string | null });
-        return this.api.get<any>(`team_rating/season?season_id=${season.id}`).pipe(
+        let url = `team_rating/season?season_id=${season.id}`;
+        if (interval && from !== null && to !== null) {
+          url += `&from_matchday_number=${from}&to_matchday_number=${to}`;
+        }
+        return this.api.get<any>(url).pipe(
           map(data => ({ data, loading: false, error: null as string | null })),
           startWith({ data: null as any, loading: true, error: null as string | null }),
           catchError(() => of({ data: null, loading: false, error: 'Fehler beim Laden' }))
@@ -194,14 +271,17 @@ export class TableComponent {
     const allPoints = series.flatMap((t: any) => t.series);
     if (allPoints.length < 2) return null;
 
+    // minMatchday NICHT als 1 angenommen — bei aktivem Zeitraum-Filter beginnt die Serie erst
+    // beim gewählten fromMatchday, sonst würde die Linie gestaucht/verzerrt gezeichnet.
+    const minMatchday = Math.min(...allPoints.map((s: any) => s.matchday));
     const maxMatchday = Math.max(...allPoints.map((s: any) => s.matchday));
     const maxPoints   = Math.max(...allPoints.map((s: any) => s.points));
-    if (maxMatchday < 2 || maxPoints === 0) return null;
+    if (maxMatchday === minMatchday || maxPoints === 0) return null;
 
     const plotW = this.chartW - this.padL - this.padR;
     const plotH = this.chartH - this.padT - this.padB;
 
-    const toX = (md: number) => this.padL + ((md - 1) / (maxMatchday - 1)) * plotW;
+    const toX = (md: number) => this.padL + ((md - minMatchday) / (maxMatchday - minMatchday)) * plotW;
     const toY = (pts: number) => this.padT + plotH - (pts / maxPoints) * plotH;
 
     const teams = series.map((t: any) => ({
@@ -227,7 +307,7 @@ export class TableComponent {
     ];
 
     const xLabels = [
-      { x: toX(1),           label: 'Sp. 1' },
+      { x: toX(minMatchday), label: `Sp. ${minMatchday}` },
       { x: toX(maxMatchday), label: `ST ${maxMatchday}` },
     ];
 

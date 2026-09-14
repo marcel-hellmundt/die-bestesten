@@ -30,23 +30,39 @@ trait TeamRatingTrait
         return $rows;
     }
 
-    public function getSeasonStandings(string $seasonId): array
+    /**
+     * $fromMatchdayNumber/$toMatchdayNumber grenzen die Saisonauswertung (Standings, Strafen,
+     * Glückspilze/Pechvögel, Saisonverlauf-Chart, Einsatzquote) auf einen Spieltags-Ausschnitt
+     * ein — für die "Zeitraum"-Ansicht auf /liga/tabelle. null = kein Limit (Default: ganze
+     * Saison, unverändertes Verhalten).
+     */
+    public function getSeasonStandings(string $seasonId, ?int $fromMatchdayNumber = null, ?int $toMatchdayNumber = null): array
     {
         $divisionId = $this->getLeagueDivisionId();
+        $rangeSql = '';
+        $rangeParams = [];
+        if ($fromMatchdayNumber !== null) {
+            $rangeSql .= ' AND number >= :from_number';
+            $rangeParams[':from_number'] = $fromMatchdayNumber;
+        }
+        if ($toMatchdayNumber !== null) {
+            $rangeSql .= ' AND number <= :to_number';
+            $rangeParams[':to_number'] = $toMatchdayNumber;
+        }
         if ($divisionId !== null) {
             $matchdayIds = $this->con->prepare(
                 "SELECT id, number FROM matchday
-                 WHERE season_id = :season_id AND completed = 1 AND division_id = :division_id"
+                 WHERE season_id = :season_id AND completed = 1 AND division_id = :division_id" . $rangeSql
             );
-            $matchdayIds->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
+            $matchdayIds->execute(array_merge([':season_id' => $seasonId, ':division_id' => $divisionId], $rangeParams));
         } else {
             $matchdayIds = $this->con->prepare(
                 "SELECT m.id, m.number FROM matchday m
                  JOIN division d ON d.id = m.division_id
                  WHERE m.season_id = :season_id AND m.completed = 1
-                   AND d.level = 1 AND LOWER(d.country_id) = 'de'"
+                   AND d.level = 1 AND LOWER(d.country_id) = 'de'" . str_replace('number', 'm.number', $rangeSql)
             );
-            $matchdayIds->execute([':season_id' => $seasonId]);
+            $matchdayIds->execute(array_merge([':season_id' => $seasonId], $rangeParams));
         }
         $matchdayRows = $matchdayIds->fetchAll(PDO::FETCH_ASSOC);
         $ids = array_column($matchdayRows, 'id');
