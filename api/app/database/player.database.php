@@ -6,12 +6,24 @@ trait PlayerTrait
     {
         $seasonId = $seasonId ?? $this->getActiveSeasonId();
 
+        // Bei einem Divisionswechsel innerhalb der Saison (z.B. Winterwechsel) hat ein Spieler
+        // 2 player_in_season-Zeilen für dieselbe season_id (eine je Division) — ohne den
+        // zusätzlichen division_id-Constraint hier matchte der ursprüngliche LEFT JOIN (nur auf
+        // season_id) BEIDE Zeilen und der Spieler tauchte doppelt im Kader auf (z.B. sichtbar in
+        // der "Spieler ohne Rating"-Liste auf /daten/ratings). Die Division wird stattdessen aus
+        // dem aktuellen Verein hergeleitet (club_in_season) — gleiches Muster wie z.B.
+        // H2HTrait::buildLineup()'s photo_season_id-Auflösung.
         $sql = "
             SELECT p.id, p.first_name, p.last_name, p.displayname, p.country_id,
                    pis.position AS season_position
             FROM player_in_club pic
             JOIN player p ON pic.player_id = p.id
             LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
+                AND pis.division_id = (
+                    SELECT cis.division_id FROM club_in_season cis
+                    WHERE cis.club_id = :club_id_div AND cis.season_id = :season_id_div
+                    LIMIT 1
+                )
             WHERE pic.club_id = :club_id AND pic.to_date IS NULL
             ORDER BY
                 CASE WHEN pis.position IS NULL THEN 1 ELSE 0 END,
@@ -20,7 +32,12 @@ trait PlayerTrait
         ";
 
         $query = $this->con->prepare($sql);
-        $query->execute([':club_id' => $clubId, ':season_id' => $seasonId]);
+        $query->execute([
+            ':club_id'      => $clubId,
+            ':season_id'    => $seasonId,
+            ':club_id_div'  => $clubId,
+            ':season_id_div' => $seasonId,
+        ]);
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
