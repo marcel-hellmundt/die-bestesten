@@ -13,6 +13,13 @@ class AchievementController extends _BaseController
             }
             return $this->db->getAllAchievementsAdmin();
         }
+        if (isset($this->params['preview_revocations'])) {
+            if (!in_array('admin', $GLOBALS['auth_roles'] ?? [])) {
+                http_response_code(403);
+                return ['error' => 'Forbidden'];
+            }
+            return $this->db->getRevocationPreview();
+        }
         return $this->db->getManagerAchievements($GLOBALS['auth_manager_id']);
     }
 

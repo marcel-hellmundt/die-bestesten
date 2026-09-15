@@ -129,4 +129,26 @@ trait NotificationTrait
              VALUES (UUID(), ?, ?, ?, ?)"
         )->execute([$managerId, $title, $reason, $createdAt]);
     }
+
+    // Zur besseren Kontrolle sollen Admins IMMER mitbekommen, wenn irgendein Manager ein
+    // Achievement bekommt — unabhängig von dessen eigener 'achievement_earned'-Präferenz (die
+    // gilt nur für die Benachrichtigung des Empfängers selbst, siehe createAchievementNotification
+    // oben). Der Empfänger wird aus der Admin-Liste ausgenommen, falls er selbst Admin ist — sonst
+    // bekäme er dieselbe Nachricht doppelt (einmal als Empfänger, einmal als Admin).
+    public function notifyAdminsOfAchievement(string $earnerManagerId, string $earnerName, string $achievementName, string $level, ?string $reason, ?string $earnedAt = null): void
+    {
+        $adminIds = array_diff($this->getAdminManagerIds(), [$earnerManagerId]);
+        if (empty($adminIds)) return;
+
+        $levelLabel = match ($level) { 'bronze' => ' (Bronze)', 'silver' => ' (Silber)', default => '' };
+        $title = "Achievement vergeben: $earnerName – $achievementName$levelLabel";
+        $createdAt = $earnedAt ?? date('Y-m-d H:i:s');
+        $insert = $this->con->prepare(
+            "INSERT INTO notification (id, receiver_id, title, message, created_at)
+             VALUES (UUID(), ?, ?, ?, ?)"
+        );
+        foreach ($adminIds as $adminId) {
+            $insert->execute([$adminId, $title, $reason, $createdAt]);
+        }
+    }
 }

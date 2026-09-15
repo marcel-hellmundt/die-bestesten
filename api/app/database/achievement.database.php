@@ -2,6 +2,71 @@
 
 trait AchievementTrait
 {
+    /**
+     * Rein lesende Vorschau, welche AKTUELL vergebenen Achievements bei einer Neuauswertung
+     * entzogen würden (d.h. der Manager erfüllt die Bedingung mit der jetzigen check_*()-Logik
+     * nicht mehr) — ohne irgendetwas zu schreiben. Gedacht für den Übergang, nachdem die
+     * check_*()-Bedingungen auf reine 1.-Liga-Leistungen eingeschränkt wurden: zeigt, welche
+     * bereits vergebenen Achievements auf 2.-Liga-Leistungen beruhten, damit vor dem tatsächlichen
+     * Entzug (POST /achievement/evaluate/:id, das denselben Vergleich macht und dabei löscht)
+     * erst manuell geprüft werden kann, was betroffen wäre.
+     */
+    public function getRevocationPreview(): array
+    {
+        $achievements = $this->con->query(
+            "SELECT id, condition_key, name FROM achievement"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($achievements)) return [];
+
+        $managerRows = $this->con->query(
+            "SELECT id, manager_name FROM manager WHERE status = 'active'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $managerIds   = array_column($managerRows, 'id');
+        $managerNames = array_column($managerRows, 'manager_name', 'id');
+
+        if (empty($managerIds)) return [];
+
+        $earned = $this->con->query(
+            "SELECT manager_id, achievement_id, reason, level FROM manager_achievement"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $holdersByAchievement = [];
+        foreach ($earned as $row) {
+            $holdersByAchievement[$row['achievement_id']][$row['manager_id']] = $row;
+        }
+
+        $result = [];
+        foreach ($achievements as $achievement) {
+            $holders = $holdersByAchievement[$achievement['id']] ?? [];
+            if (empty($holders)) continue;
+
+            $method = 'check_' . $achievement['condition_key'];
+            $currentEarners = method_exists($this, $method) ? $this->$method($managerIds) : [];
+
+            $toRevoke = [];
+            foreach ($holders as $managerId => $row) {
+                if (isset($currentEarners[$managerId])) continue;
+                $toRevoke[] = [
+                    'manager_id'   => $managerId,
+                    'manager_name' => $managerNames[$managerId] ?? $managerId,
+                    'reason'       => $row['reason'],
+                    'level'        => $row['level'],
+                ];
+            }
+
+            if (!empty($toRevoke)) {
+                $result[] = [
+                    'achievement_id'   => $achievement['id'],
+                    'achievement_name' => $achievement['name'],
+                    'condition_key'    => $achievement['condition_key'],
+                    'to_revoke'        => $toRevoke,
+                ];
+            }
+        }
+        return $result;
+    }
+
     public function evaluateAchievements(bool $notify = false): array
     {
         $newCount = 0;
@@ -43,7 +108,9 @@ trait AchievementTrait
                         'reason'           => $meta['reason'] ?? null,
                     ];
                     if ($notify) {
+                        $earnerName = $managerNames[$managerId] ?? $managerId;
                         $this->createAchievementNotification($managerId, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
+                        $this->notifyAdminsOfAchievement($managerId, $earnerName, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
                     }
                 }
             }
@@ -61,9 +128,11 @@ trait AchievementTrait
 
         if (!$achievement) return;
 
-        $managerIds = $this->con->query(
-            "SELECT id FROM manager WHERE status = 'active'"
-        )->fetchAll(PDO::FETCH_COLUMN);
+        $managerRows = $this->con->query(
+            "SELECT id, manager_name FROM manager WHERE status = 'active'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $managerIds   = array_column($managerRows, 'id');
+        $managerNames = array_column($managerRows, 'manager_name', 'id');
 
         $method  = 'check_' . $achievement['condition_key'];
         $earners = method_exists($this, $method) ? $this->$method($managerIds) : [];
@@ -89,7 +158,10 @@ trait AchievementTrait
         foreach ($earners as $managerId => $meta) {
             $stmt->execute([$managerId, $achievementId, $meta['reason'], $meta['earned_at'], $meta['level'] ?? 'gold']);
             if ($stmt->rowCount() === 1) {
-                $this->createAchievementNotification($managerId, $achievement['name'], $meta['level'] ?? 'gold', $meta['reason'], $meta['earned_at']);
+                $level = $meta['level'] ?? 'gold';
+                $earnerName = $managerNames[$managerId] ?? $managerId;
+                $this->createAchievementNotification($managerId, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
+                $this->notifyAdminsOfAchievement($managerId, $earnerName, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
             }
         }
     }

@@ -528,12 +528,12 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/achievement',
-                        'description' => 'Alle Achievements mit earned_at (null = nicht verdient) für den eingeloggten Manager — Auth; ?all=true → Alle Achievements inkl. threshold_bronze/silver/gold und Manager-Liste mit earned-Status — Admin',
+                        'description' => 'Alle Achievements mit earned_at (null = nicht verdient) für den eingeloggten Manager — Auth; ?all=true → Alle Achievements inkl. threshold_bronze/silver/gold und Manager-Liste mit earned-Status — Admin; ?preview_revocations=1 → [{achievement_id,achievement_name,condition_key,to_revoke:[{manager_id,manager_name,reason,level}]}] — rein lesende Vorschau, welche aktuell vergebenen Achievements bei einer Neuauswertung mit der jetzigen check_*()-Logik entzogen würden (Manager erfüllt die Bedingung nicht mehr, ohne dass tatsächlich geschrieben wird); nur Achievements mit mindestens einem betroffenen Manager enthalten — Admin',
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/achievement/evaluate',
-                        'description' => 'Achievement-Auswertung für alle Manager anstoßen (Backfill) — Admin; /:id → Einzelnes Achievement neu auswerten inkl. Entzug bei nicht mehr erfüllten Anforderungen — Admin',
+                        'description' => 'Achievement-Auswertung für alle Manager anstoßen (Backfill) — Admin; /:id → Einzelnes Achievement neu auswerten inkl. Entzug bei nicht mehr erfüllten Anforderungen — Admin; bei jeder neu vergebenen Zeile werden sowohl der Empfänger (respektiert dessen notification_preference \'achievement_earned\') als auch — unabhängig davon, immer — alle Admins außer dem Empfänger selbst benachrichtigt (siehe auch PATCH /matchday/:id completed=true, das intern dieselbe Auswertung mit Benachrichtigung anstößt)',
                     ],
                     [
                         'method' => 'PATCH',

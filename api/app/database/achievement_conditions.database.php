@@ -5,6 +5,29 @@ trait AchievementConditionsTrait
     // Alle Methoden: check_X(array $managerIds): array<manager_id, ['reason'=>string,'earned_at'=>string]>
     // Cross-DB-Joins werden PHP-seitig aufgelöst (con = global, con_league = liga).
 
+    private ?string $division1Id = null;
+    private bool $division1Resolved = false;
+
+    // Achievements wurden ursprünglich auf Basis von 1.-Liga-Leistungen kalibriert (Schwellenwerte
+    // wie 1400 Saisonpunkte, 80 Punkte an einem Spieltag, …). Seitdem die Liga zeitweise in der
+    // 2. Liga spielt (mit spürbar anderer Punkteverteilung), würden dieselben Schwellenwerte dort
+    // zu leicht erreicht — Achievements sollen deshalb unabhängig von der aktuell konfigurierten
+    // league.division_id IMMER nur Leistungen der echten 1. Liga (Bundesliga, level=1, DE) zählen.
+    // Bewusst fest verdrahtet statt über getLeagueDivisionId() — letztere kann inzwischen auf eine
+    // andere Division zeigen, hier ist aber unabhängig von der Liga-Konfiguration immer explizit
+    // die 1. Liga gemeint.
+    private function getDivision1Id(): ?string
+    {
+        if (!$this->division1Resolved) {
+            $id = $this->con->query(
+                "SELECT id FROM division WHERE level = 1 AND LOWER(country_id) = 'de' LIMIT 1"
+            )->fetchColumn();
+            $this->division1Id = $id !== false ? $id : null;
+            $this->division1Resolved = true;
+        }
+        return $this->division1Id;
+    }
+
     private function seasonLabel(string $startDate): string
     {
         $year = (int) substr($startDate, 0, 4);
@@ -25,11 +48,17 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $completedSeasons = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT season_id FROM matchday
+             WHERE division_id = :division1_id
              GROUP BY season_id
              HAVING COUNT(*) = SUM(completed) AND COUNT(*) > 0"
-        )->fetchAll(PDO::FETCH_COLUMN);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $completedSeasons = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         if (empty($completedSeasons))
             return [];
@@ -37,9 +66,9 @@ trait AchievementConditionsTrait
         $sPlh = implode(',', array_fill(0, count($completedSeasons), '?'));
 
         $stmt = $this->con->prepare(
-            "SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh)"
+            "SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh) AND division_id = ?"
         );
-        $stmt->execute($completedSeasons);
+        $stmt->execute([...$completedSeasons, $division1Id]);
         $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $matchdayToSeason = [];
@@ -123,13 +152,18 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.number, md.kickoff_date, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY s.start_date ASC, md.number ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -217,12 +251,17 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $validMatchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE s.start_date >= '2017-07-01'"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             WHERE s.start_date >= '2017-07-01' AND md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $validMatchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($validMatchdays))
             return [];
@@ -279,13 +318,18 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.number, md.kickoff_date, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY md.season_id, md.number ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -385,13 +429,18 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $sdsRows = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT pr.player_id, pr.matchday_id, md.number, md.kickoff_date, s.start_date AS season_start
              FROM player_rating pr
              JOIN matchday md ON md.id = pr.matchday_id
              JOIN season s ON s.id = md.season_id
-             WHERE pr.sds = 1"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             WHERE pr.sds = 1 AND md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $sdsRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($sdsRows))
             return [];
@@ -467,10 +516,16 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
-             FROM matchday md JOIN season s ON s.id = md.season_id"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             FROM matchday md JOIN season s ON s.id = md.season_id
+             WHERE md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -548,10 +603,16 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
-             FROM matchday md JOIN season s ON s.id = md.season_id"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             FROM matchday md JOIN season s ON s.id = md.season_id
+             WHERE md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -629,10 +690,16 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
-             FROM matchday md JOIN season s ON s.id = md.season_id"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             FROM matchday md JOIN season s ON s.id = md.season_id
+             WHERE md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -707,10 +774,16 @@ trait AchievementConditionsTrait
 
     private function checkSeasonAggregate(array $managerIds, string $column, int $threshold, string $unit): array
     {
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
-             FROM matchday md JOIN season s ON s.id = md.season_id"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             FROM matchday md JOIN season s ON s.id = md.season_id
+             WHERE md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -787,6 +860,9 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
         // Load contributions first (no IN clause) so we only query global DB for
         // the rating IDs that actually have contributions — avoids max_allowed_packet.
         $contributions = $this->con->query(
@@ -806,11 +882,11 @@ trait AchievementConditionsTrait
         $stmt = $this->con->prepare(
             "SELECT pr.id AS rating_id, md.id AS matchday_id, md.number, md.kickoff_date, s.start_date AS season_start
              FROM player_rating pr
-             JOIN matchday md ON md.id = pr.matchday_id AND md.completed = 1
+             JOIN matchday md ON md.id = pr.matchday_id AND md.completed = 1 AND md.division_id = ?
              JOIN season s ON s.id = md.season_id
              WHERE pr.id IN ($rPlh)"
         );
-        $stmt->execute($ratingIds);
+        $stmt->execute([$division1Id, ...$ratingIds]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($rows))
@@ -869,6 +945,9 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
         $cheapPlayers = $this->con->query(
             "SELECT player_id, season_id FROM player_in_season WHERE price = 500000"
         )->fetchAll(PDO::FETCH_ASSOC);
@@ -912,9 +991,9 @@ trait AchievementConditionsTrait
 
         // Load matchday metadata (number needed to compare ownership window)
         $stmt = $this->con->prepare(
-            "SELECT id, season_id, number, kickoff_date FROM matchday WHERE season_id IN ($sPlh)"
+            "SELECT id, season_id, number, kickoff_date FROM matchday WHERE season_id IN ($sPlh) AND division_id = ?"
         );
-        $stmt->execute($seasons);
+        $stmt->execute([...$seasons, $division1Id]);
         $mdMeta   = [];
         $lastKickoff = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $md) {
@@ -1020,6 +1099,9 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
         $plh = implode(',', array_fill(0, count($managerIds), '?'));
         $stmt = $this->con_league->prepare(
             "SELECT m.id AS manager_id, o.player_id, o.offer_value, o.transferwindow_id
@@ -1055,11 +1137,11 @@ trait AchievementConditionsTrait
         $stmt = $this->con->prepare(
             "SELECT tw.id AS tw_id, md.kickoff_date, s.start_date AS season_start
              FROM transferwindow tw
-             JOIN matchday md ON md.id = tw.matchday_id
+             JOIN matchday md ON md.id = tw.matchday_id AND md.division_id = ?
              JOIN season s ON s.id = md.season_id
              WHERE tw.id IN ($twPlh)"
         );
-        $stmt->execute($twIds);
+        $stmt->execute([$division1Id, ...$twIds]);
         $twMeta = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), null, 'tw_id');
 
         // Spieler-Displaynamen
@@ -1090,13 +1172,18 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -1176,14 +1263,19 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start,
                     DATE_FORMAT(DATE_ADD(md.kickoff_date, INTERVAL 2 DAY), '%m-%d') AS stichtag_mmdd
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1
+             WHERE md.completed = 1 AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -1276,13 +1368,18 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1
+             WHERE md.completed = 1 AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -1368,13 +1465,18 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -1461,13 +1563,18 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, md.division_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -1572,6 +1679,9 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
         $plh = implode(',', array_fill(0, count($managerIds), '?'));
         $stmt = $this->con_league->prepare(
             "SELECT m.id AS manager_id, t.team_name, t.season_id, COUNT(*) AS transfers
@@ -1597,9 +1707,9 @@ trait AchievementConditionsTrait
 
         $lastKickoff = [];
         $stmt = $this->con->prepare(
-            "SELECT season_id, MAX(kickoff_date) AS last_kickoff FROM matchday WHERE season_id IN ($sPlh) GROUP BY season_id"
+            "SELECT season_id, MAX(kickoff_date) AS last_kickoff FROM matchday WHERE season_id IN ($sPlh) AND division_id = ? GROUP BY season_id"
         );
-        $stmt->execute($seasonIds);
+        $stmt->execute([...$seasonIds, $division1Id]);
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $lastKickoff[$row['season_id']] = $row['last_kickoff'];
         }
@@ -1643,12 +1753,17 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE s.start_date >= '2017-07-01'"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             WHERE s.start_date >= '2017-07-01' AND md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -1743,12 +1858,17 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $validMatchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $validMatchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($validMatchdays))
             return [];
@@ -1803,12 +1923,17 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
-        $validMatchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $validMatchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($validMatchdays))
             return [];
@@ -1864,14 +1989,19 @@ trait AchievementConditionsTrait
         if (empty($managerIds))
             return [];
 
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
         // All completed matchdays sorted chronologically
-        $matchdays = $this->con->query(
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.number, md.kickoff_date, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-01-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-01-01' AND md.division_id = :division1_id
              ORDER BY s.start_date ASC, md.number ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays))
             return [];
@@ -1953,6 +2083,9 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
         $plh = implode(',', array_fill(0, count($managerIds), '?'));
         $stmt = $this->con_league->prepare(
             "SELECT s.player_id, s.transferwindow_id, t.manager_id
@@ -1970,15 +2103,17 @@ trait AchievementConditionsTrait
         $stmt = $this->con->prepare(
             "SELECT tw.id AS tw_id, md.kickoff_date AS tw_kickoff
              FROM transferwindow tw
-             JOIN matchday md ON md.id = tw.matchday_id
+             JOIN matchday md ON md.id = tw.matchday_id AND md.division_id = ?
              WHERE tw.id IN ($twPlh)"
         );
-        $stmt->execute($twIds);
+        $stmt->execute([$division1Id, ...$twIds]);
         $twMeta = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), null, 'tw_id');
 
-        $allMatchdays = $this->con->query(
-            "SELECT id, number, kickoff_date, season_id FROM matchday WHERE completed = 1 ORDER BY kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->con->prepare(
+            "SELECT id, number, kickoff_date, season_id FROM matchday WHERE completed = 1 AND division_id = :division1_id ORDER BY kickoff_date ASC"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $allMatchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $sellsWithNextMd = [];
         foreach ($sells as $sell) {
@@ -2055,13 +2190,18 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
@@ -2138,13 +2278,18 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, md.division_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
@@ -2238,12 +2383,17 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
@@ -2294,13 +2444,18 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.kickoff_date, md.season_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
@@ -2377,12 +2532,17 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.kickoff_date, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'"
-        )->fetchAll(PDO::FETCH_ASSOC);
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id"
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
@@ -2492,6 +2652,9 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
         $plh = implode(',', array_fill(0, count($managerIds), '?'));
 
         $stmt = $this->con_league->prepare(
@@ -2507,13 +2670,15 @@ trait AchievementConditionsTrait
         // Nur Manager mit gesetztem Vornamen können das Achievement erreichen
         $managerIds = array_values(array_filter($managerIds, fn($id) => !empty($managerFirstNames[$id])));
 
-        $matchdays = $this->con->query(
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.number, md.season_id, md.kickoff_date, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1 AND s.start_date >= '2017-07-01'
+             WHERE md.completed = 1 AND s.start_date >= '2017-07-01' AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
@@ -2609,11 +2774,17 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $completedSeasons = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT season_id FROM matchday
+             WHERE division_id = :division1_id
              GROUP BY season_id
              HAVING COUNT(*) = SUM(completed) AND COUNT(*) > 0"
-        )->fetchAll(PDO::FETCH_COLUMN);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $completedSeasons = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         if (empty($completedSeasons)) return [];
 
@@ -2623,8 +2794,8 @@ trait AchievementConditionsTrait
         $stmt->execute(array_values($completedSeasons));
         $seasonStartMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'start_date', 'id');
 
-        $stmt = $this->con->prepare("SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh)");
-        $stmt->execute(array_values($completedSeasons));
+        $stmt = $this->con->prepare("SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh) AND division_id = ?");
+        $stmt->execute([...array_values($completedSeasons), $division1Id]);
         $matchdayRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $matchdayToSeason = [];
@@ -2694,11 +2865,17 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $completedSeasons = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT season_id FROM matchday
+             WHERE division_id = :division1_id
              GROUP BY season_id
              HAVING COUNT(*) = SUM(completed) AND COUNT(*) > 0"
-        )->fetchAll(PDO::FETCH_COLUMN);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $completedSeasons = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         if (empty($completedSeasons)) return [];
 
@@ -2708,8 +2885,8 @@ trait AchievementConditionsTrait
         $stmt->execute(array_values($completedSeasons));
         $seasonStartMap = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'start_date', 'id');
 
-        $stmt = $this->con->prepare("SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh)");
-        $stmt->execute(array_values($completedSeasons));
+        $stmt = $this->con->prepare("SELECT id, season_id, kickoff_date FROM matchday WHERE season_id IN ($sPlh) AND division_id = ?");
+        $stmt->execute([...array_values($completedSeasons), $division1Id]);
         $matchdayRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $matchdayToSeason = [];
@@ -2779,13 +2956,18 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.kickoff_date, md.season_id, md.division_id, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1
+             WHERE md.completed = 1 AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
@@ -2896,13 +3078,18 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.kickoff_date, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1
+             WHERE md.completed = 1 AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
@@ -2971,13 +3158,18 @@ trait AchievementConditionsTrait
     {
         if (empty($managerIds)) return [];
 
-        $matchdays = $this->con->query(
+        $division1Id = $this->getDivision1Id();
+        if ($division1Id === null) return [];
+
+        $stmt = $this->con->prepare(
             "SELECT md.id, md.season_id, md.kickoff_date, md.number, s.start_date AS season_start
              FROM matchday md
              JOIN season s ON s.id = md.season_id
-             WHERE md.completed = 1
+             WHERE md.completed = 1 AND md.division_id = :division1_id
              ORDER BY md.kickoff_date ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        );
+        $stmt->execute([':division1_id' => $division1Id]);
+        $matchdays = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($matchdays)) return [];
 
