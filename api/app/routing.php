@@ -533,7 +533,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/achievement/evaluate',
-                        'description' => 'Achievement-Auswertung für alle Manager anstoßen (Backfill) — Admin; /:id → Einzelnes Achievement neu auswerten inkl. Entzug bei nicht mehr erfüllten Anforderungen — Admin',
+                        'description' => 'Achievement-Auswertung für alle Manager anstoßen (Backfill) — Admin; /:id → Einzelnes Achievement neu auswerten inkl. Entzug bei nicht mehr erfüllten Anforderungen — Admin; bei jeder neu vergebenen Zeile werden sowohl der Empfänger (respektiert dessen notification_preference \'achievement_earned\') als auch — unabhängig davon, immer — alle Admins außer dem Empfänger selbst benachrichtigt (siehe auch PATCH /matchday/:id completed=true, das intern dieselbe Auswertung mit Benachrichtigung anstößt)',
                     ],
                     [
                         'method' => 'PATCH',

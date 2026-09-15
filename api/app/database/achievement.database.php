@@ -108,7 +108,9 @@ trait AchievementTrait
                         'reason'           => $meta['reason'] ?? null,
                     ];
                     if ($notify) {
+                        $earnerName = $managerNames[$managerId] ?? $managerId;
                         $this->createAchievementNotification($managerId, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
+                        $this->notifyAdminsOfAchievement($managerId, $earnerName, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
                     }
                 }
             }
@@ -126,9 +128,11 @@ trait AchievementTrait
 
         if (!$achievement) return;
 
-        $managerIds = $this->con->query(
-            "SELECT id FROM manager WHERE status = 'active'"
-        )->fetchAll(PDO::FETCH_COLUMN);
+        $managerRows = $this->con->query(
+            "SELECT id, manager_name FROM manager WHERE status = 'active'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+        $managerIds   = array_column($managerRows, 'id');
+        $managerNames = array_column($managerRows, 'manager_name', 'id');
 
         $method  = 'check_' . $achievement['condition_key'];
         $earners = method_exists($this, $method) ? $this->$method($managerIds) : [];
@@ -154,7 +158,10 @@ trait AchievementTrait
         foreach ($earners as $managerId => $meta) {
             $stmt->execute([$managerId, $achievementId, $meta['reason'], $meta['earned_at'], $meta['level'] ?? 'gold']);
             if ($stmt->rowCount() === 1) {
-                $this->createAchievementNotification($managerId, $achievement['name'], $meta['level'] ?? 'gold', $meta['reason'], $meta['earned_at']);
+                $level = $meta['level'] ?? 'gold';
+                $earnerName = $managerNames[$managerId] ?? $managerId;
+                $this->createAchievementNotification($managerId, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
+                $this->notifyAdminsOfAchievement($managerId, $earnerName, $achievement['name'], $level, $meta['reason'], $meta['earned_at']);
             }
         }
     }
