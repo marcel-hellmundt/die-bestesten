@@ -185,15 +185,58 @@ export class RatingsDataComponent {
         ),
       );
 
-    this.api
-      .get<any[]>(`player_rating/contribution_summary?matchday_id=${md.id}`)
-      .pipe(catchError(() => of([] as any[])))
-      .subscribe((list) => this.contributionSummary.set(list));
+    this.refreshContributionSummary(true);
   }
 
   contributionSummary = signal<
     { manager_id: string; manager_name: string; total: number; by_type: Record<string, number> }[]
   >([]);
+
+  // ── Live-Update der "Mitwirkende Manager"-Card (Sidebar, Desktop) ────────────────
+  // Nach jeder eintragenden Aktion (Aufstellung/Statistik/Note) wird die Contribution-Summary
+  // neu geladen und mit dem vorherigen Stand verglichen — jede Kategorie (total/participation/
+  // stats/note), in der sich der Zähler eines Managers erhöht hat, bekommt eine kurze "+1"-
+  // Animation neben der Zahl (grün, faded aus, wandert nach oben weg). silent=true (Navigation
+  // zwischen Spieltagen/Vereinen, siehe refreshClubStatuses()) lädt nur neu, ohne zu vergleichen —
+  // sonst würde jeder Seitenwechsel alle Zeilen fälschlich als "gerade eingetragen" animieren.
+  contributionBumps = signal<{ id: number; managerId: string; mode: string }[]>([]);
+  private bumpSeq = 0;
+
+  bumpsFor(managerId: string, mode: string) {
+    return this.contributionBumps().filter((b) => b.managerId === managerId && b.mode === mode);
+  }
+
+  removeBump(id: number): void {
+    this.contributionBumps.update((arr) => arr.filter((b) => b.id !== id));
+  }
+
+  private refreshContributionSummary(silent = false): void {
+    const md = this.selectedMatchday();
+    if (!md) return;
+    this.api
+      .get<any[]>(`player_rating/contribution_summary?matchday_id=${md.id}`)
+      .pipe(catchError(() => of([] as any[])))
+      .subscribe((list) => {
+        if (!silent) {
+          const modes: ('total' | 'participation' | 'stats' | 'note')[] = [
+            'total', 'participation', 'stats', 'note',
+          ];
+          const prevByManager = new Map(this.contributionSummary().map((c) => [c.manager_id, c]));
+          for (const c of list) {
+            const prevC = prevByManager.get(c.manager_id);
+            for (const mode of modes) {
+              const prevCount = prevC ? this.countForMode(prevC, mode) : 0;
+              const newCount = this.countForMode(c, mode);
+              if (newCount > prevCount) {
+                const id = ++this.bumpSeq;
+                this.contributionBumps.update((arr) => [...arr, { id, managerId: c.manager_id, mode }]);
+              }
+            }
+          }
+        }
+        this.contributionSummary.set(list);
+      });
+  }
 
   readonly summaryModes: { key: 'total' | 'participation' | 'stats' | 'note'; label: string }[] = [
     { key: 'total', label: 'Gesamt' },
@@ -512,7 +555,7 @@ export class RatingsDataComponent {
     current: boolean,
   ): void {
     this.api.patch<any>(`player_rating/${ratingId}`, { [field]: current ? 0 : 1 }).subscribe({
-      next: (res) =>
+      next: (res) => {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
@@ -525,7 +568,9 @@ export class RatingsDataComponent {
                 })
               : r,
           ),
-        ),
+        );
+        this.refreshContributionSummary();
+      },
     });
   }
 
@@ -537,7 +582,7 @@ export class RatingsDataComponent {
     const body: any = { red_card: current ? 0 : 1 };
     if (!current) body['yellow_red_card'] = 0;
     this.api.patch<any>(`player_rating/${ratingId}`, body).subscribe({
-      next: (res) =>
+      next: (res) => {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
@@ -550,7 +595,9 @@ export class RatingsDataComponent {
                 })
               : r,
           ),
-        ),
+        );
+        this.refreshContributionSummary();
+      },
     });
   }
 
@@ -558,7 +605,7 @@ export class RatingsDataComponent {
     const body: any = { yellow_red_card: current ? 0 : 1 };
     if (!current) body['red_card'] = 0;
     this.api.patch<any>(`player_rating/${ratingId}`, body).subscribe({
-      next: (res) =>
+      next: (res) => {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
@@ -571,7 +618,9 @@ export class RatingsDataComponent {
                 })
               : r,
           ),
-        ),
+        );
+        this.refreshContributionSummary();
+      },
     });
   }
 
@@ -583,7 +632,7 @@ export class RatingsDataComponent {
     }
     this.sdsError.set(null);
     this.api.patch<any>(`player_rating/${ratingId}`, { sds: newVal ? 1 : 0 }).subscribe({
-      next: (res) =>
+      next: (res) => {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
@@ -596,7 +645,9 @@ export class RatingsDataComponent {
                 })
               : r,
           ),
-        ),
+        );
+        this.refreshContributionSummary();
+      },
     });
   }
 
@@ -630,7 +681,7 @@ export class RatingsDataComponent {
       yellow_red_card: 0,
     };
     this.api.patch<any>(`player_rating/${ratingId}`, reset).subscribe({
-      next: (res) =>
+      next: (res) => {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
@@ -643,7 +694,11 @@ export class RatingsDataComponent {
                 })
               : r,
           ),
-        ),
+        );
+        // Kein Bump erwartet (Reset senkt Zähler eher, als sie zu erhöhen) — refreshContribution-
+        // Summary() aktualisiert trotzdem live die Sidebar-Zahlen, ohne dafür extra zu navigieren.
+        this.refreshContributionSummary();
+      },
     });
   }
 
@@ -663,6 +718,7 @@ export class RatingsDataComponent {
               : r,
           ),
         );
+        this.refreshContributionSummary();
       },
     });
   }
@@ -702,6 +758,7 @@ export class RatingsDataComponent {
           ),
         );
         if (wasAtBottom) this.scrollToBottomNextFrame();
+        this.refreshContributionSummary();
       },
     });
   }
@@ -872,7 +929,7 @@ export class RatingsDataComponent {
       newlyAssigned++;
       matched.push(player.displayname);
       this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting' }).subscribe({
-        next: (res) =>
+        next: (res) => {
           this.ratings.update((list) =>
             list.map((r) =>
               r.id === player.id
@@ -885,7 +942,9 @@ export class RatingsDataComponent {
                 })
                 : r,
             ),
-          ),
+          );
+          this.refreshContributionSummary();
+        },
       });
     }
 
@@ -970,7 +1029,7 @@ export class RatingsDataComponent {
   selectGrade(ratingId: string, grade: number): void {
     this.gradePickerRatingId.set(null);
     this.api.patch<any>(`player_rating/${ratingId}`, { grade }).subscribe({
-      next: (res) =>
+      next: (res) => {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
@@ -983,14 +1042,16 @@ export class RatingsDataComponent {
                 })
               : r,
           ),
-        ),
+        );
+        this.refreshContributionSummary();
+      },
     });
   }
 
   clearGrade(ratingId: string): void {
     this.gradePickerRatingId.set(null);
     this.api.patch<any>(`player_rating/${ratingId}`, { grade: null }).subscribe({
-      next: (res) =>
+      next: (res) => {
         this.ratings.update((list) =>
           list.map((r) =>
             r.id === ratingId
@@ -1003,7 +1064,9 @@ export class RatingsDataComponent {
                 })
               : r,
           ),
-        ),
+        );
+        this.refreshContributionSummary();
+      },
     });
   }
 

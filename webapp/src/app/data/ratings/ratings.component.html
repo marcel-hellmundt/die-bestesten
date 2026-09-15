@@ -616,7 +616,12 @@
                     (error)="$any($event.target).style.display = 'none'"
                   />
                   <span class="contribution-summary__name">{{ c.manager_name }}</span>
-                  <span class="contribution-summary__count">{{ countForMode(c, m.key) }}</span>
+                  <span class="contribution-summary__count-wrap">
+                    <span class="contribution-summary__count">{{ countForMode(c, m.key) }}</span>
+                    @for (b of bumpsFor(c.manager_id, m.key); track b.id) {
+                      <span class="contribution-bump" (animationend)="removeBump(b.id)">+1</span>
+                    }
+                  </span>
                 </div>
               }
             }

@@ -100,6 +100,44 @@
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
   }
+
+  // Verankert den "+1"-Bump relativ zur Zahl — position:relative statt am ganzen __row, damit
+  // der Bump exakt neben dem jeweiligen Zähler auftaucht (eine Zeile kann pro Modus-Gruppe
+  // unterschiedliche Zähler haben, siehe bumpsFor(managerId, mode) im Component).
+  &__count-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+}
+
+// Live-Feedback nach einer eintragenden Aktion (Aufstellung/Statistik/Note) — siehe
+// refreshContributionSummary() im Component. Startet neben der Zahl, blendet kurz ein,
+// verschwindet dabei nach oben weg.
+.contribution-bump {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 0;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: $color-success;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: contribution-bump 900ms ease-out forwards;
+}
+
+@keyframes contribution-bump {
+  0% {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
 }
 
 // Matchday pill bar
