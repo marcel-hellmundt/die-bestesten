@@ -929,6 +929,11 @@
     flex: 1;
     min-width: 0;
   }
+
+  // Erzwingt eine eigene Zeile im wrap:flex-Layout statt neben Label/Button zu quetschen.
+  &__error {
+    flex-basis: 100%;
+  }
 }
 
 .no-ratings-panel {

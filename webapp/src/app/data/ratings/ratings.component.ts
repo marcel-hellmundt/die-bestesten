@@ -304,6 +304,7 @@ export class RatingsDataComponent {
     this.csvFile.set(null);
     this.participationError.set(null);
     this.sdsError.set(null);
+    this.addMissingError.set(null);
     // Cleared synchronously (not just re-fetched) so allClubsDone() can't briefly evaluate
     // against the previous matchday's statuses — e.g. flashing the "Spieltag abschließen"-
     // Bar visible for a moment if the prior matchday happened to be fully graded — while the
@@ -334,6 +335,7 @@ export class RatingsDataComponent {
     this.bulkResult.set(null);
     this.participationError.set(null);
     this.sdsError.set(null);
+    this.addMissingError.set(null);
 
     const md = this.selectedMatchday();
     if (!md) return;
@@ -441,15 +443,28 @@ export class RatingsDataComponent {
   });
 
   addingMissing = signal(false);
+  addMissingError = signal<string | null>(null);
 
   addMissing(): void {
     const md = this.selectedMatchday();
     const clubId = this.selectedClubId();
     if (!md || !clubId) return;
     this.addingMissing.set(true);
+    this.addMissingError.set(null);
     this.api.post<any>('player_rating/init', { matchday_id: md.id, club_id: clubId }).subscribe({
-      next: () => {
+      next: (res) => {
         this.addingMissing.set(false);
+        // POST /player_rating/init matcht player_in_season strikt über die Division des
+        // aktuellen Vereins (siehe initPlayerRatingsForClub()) — created+existing beide leer
+        // heißt, dass der/die angezeigten Spieler dort keine Zeile mit Position+Marktwert>0
+        // haben (z.B. player_in_season noch für die falsche/andere Division angelegt). Der
+        // Button tat in diesem Fall bisher stillschweigend nichts — jetzt zumindest ein Hinweis
+        // statt eines wirkungslosen Klicks ohne jede Rückmeldung.
+        if (!res?.created?.length && !res?.existing?.length) {
+          this.addMissingError.set(
+            'Keine Ratings angelegt — player_in_season der betroffenen Spieler passt vermutlich nicht zur aktuellen Division dieses Vereins.',
+          );
+        }
         this.loadRatings(md.id, clubId);
       },
       error: () => this.addingMissing.set(false),

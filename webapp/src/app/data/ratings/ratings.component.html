@@ -548,6 +548,9 @@
               >
                 {{ addingMissing() ? 'Wird angelegt…' : 'Ratings anlegen' }}
               </button>
+              @if (addMissingError()) {
+                <div class="participation-error missing-panel__error">{{ addMissingError() }}</div>
+              }
             </div>
           }
 
