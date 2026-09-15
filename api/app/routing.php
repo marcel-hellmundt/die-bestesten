@@ -528,7 +528,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/achievement',
-                        'description' => 'Alle Achievements mit earned_at (null = nicht verdient) für den eingeloggten Manager — Auth; ?all=true → Alle Achievements inkl. threshold_bronze/silver/gold und Manager-Liste mit earned-Status — Admin',
+                        'description' => 'Alle Achievements mit earned_at (null = nicht verdient) für den eingeloggten Manager — Auth; ?all=true → Alle Achievements inkl. threshold_bronze/silver/gold und Manager-Liste mit earned-Status — Admin; ?preview_revocations=1 → [{achievement_id,achievement_name,condition_key,to_revoke:[{manager_id,manager_name,reason,level}]}] — rein lesende Vorschau, welche aktuell vergebenen Achievements bei einer Neuauswertung mit der jetzigen check_*()-Logik entzogen würden (Manager erfüllt die Bedingung nicht mehr, ohne dass tatsächlich geschrieben wird); nur Achievements mit mindestens einem betroffenen Manager enthalten — Admin',
                     ],
                     [
                         'method' => 'POST',
