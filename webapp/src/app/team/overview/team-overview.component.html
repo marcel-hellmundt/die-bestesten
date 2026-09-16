@@ -4,43 +4,7 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
 
-  <div class="charts-row">
-    @if (pointsChart(); as chart) {
-      <div class="card chart-card">
-        <span class="chart-title">Punkte pro Spieltag</span>
-        <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" [attr.height]="cH" aria-hidden="true">
-          @for (t of chart.yTicks; track t.label) {
-            <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
-            <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
-          }
-          @for (b of chart.bars; track b.labelX) {
-            <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.width" [attr.height]="b.height" [attr.fill]="b.fill" rx="2" />
-            <text [attr.x]="b.labelX" [attr.y]="cH - padB + 12" class="chart-label chart-label--x">{{ b.label }}</text>
-          }
-        </svg>
-      </div>
-    }
-
-    @if (positionChart(); as chart) {
-      <div class="card chart-card">
-        <span class="chart-title">Tabellenplatz (kumulativ)</span>
-        <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" [attr.height]="cH" aria-hidden="true">
-          @for (t of chart.yTicks; track t.label) {
-            <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
-            <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
-          }
-          @for (l of chart.xLabels; track l.x) {
-            <text [attr.x]="l.x" [attr.y]="cH - padB + 12" class="chart-label chart-label--x">{{ l.label }}</text>
-          }
-          <path [attr.d]="chart.line" fill="none" [attr.stroke]="chart.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-          @for (d of chart.dots; track d.x) {
-            <circle [attr.cx]="d.x" [attr.cy]="d.y" r="3" [attr.fill]="chart.color" />
-          }
-        </svg>
-      </div>
-    }
-  </div>
-
+  <div class="overview-page">
   <div class="overview-row">
     @if (ratings().length === 0) {
       <p class="state-msg overview-empty">Noch keine Spieltagsergebnisse vorhanden.</p>
@@ -52,11 +16,12 @@
             <th class="col-st">Sp.</th>
             <th class="col-rank">#</th>
             <th class="col-icons">SdS</th>
-            <th class="col-icons">Tore</th>
-            <th class="col-icons">Assists</th>
-            <th class="col-cs">CS</th>
-            <th class="col-rc col-rc--yr">Gelb-Rot</th>
-            <th class="col-rc col-rc--red">Rot</th>
+            <th class="col-icons hidden-mobile">Tore</th>
+            <th class="col-icons hidden-mobile">Assists</th>
+            <th class="col-icons-mobile">Tore/Assists</th>
+            <th class="col-cs"><img src="/img/icons/clean_sheet.png" class="header-icon" alt="Zu Null" title="Zu Null" /></th>
+            <th class="col-rc col-rc--yr"><span class="card-icon card-icon--yr card-icon--on" title="Gelb-Rote Karten"></span></th>
+            <th class="col-rc col-rc--red"><span class="card-icon card-icon--red card-icon--on" title="Rote Karten"></span></th>
             <th class="col-points">Punkte</th>
             @if (cache.finesEnabled()) {
               <th class="col-fine">Strafe</th>
@@ -75,15 +40,25 @@
                   }
                 </span>
               </td>
-              <td class="col-icons">
+              <td class="col-icons hidden-mobile">
                 <span class="icons-wrap">
                   @for (g of range(+r.goals); track g) {
                     <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" />
                   }
                 </span>
               </td>
-              <td class="col-icons">
+              <td class="col-icons hidden-mobile">
                 <span class="icons-wrap">
+                  @for (a of range(+r.assists); track a) {
+                    <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" />
+                  }
+                </span>
+              </td>
+              <td class="col-icons-mobile">
+                <span class="icons-wrap">
+                  @for (g of range(+r.goals); track g) {
+                    <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" />
+                  }
                   @for (a of range(+r.assists); track a) {
                     <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" />
                   }
@@ -106,8 +81,9 @@
             <td class="col-st foot-label">Gesamt</td>
             <td></td>
             <td class="col-icons">{{ totalSds() || '' }}</td>
-            <td class="col-icons">{{ totalGoals() || '' }}</td>
-            <td class="col-icons">{{ totalAssists() || '' }}</td>
+            <td class="col-icons hidden-mobile">{{ totalGoals() || '' }}</td>
+            <td class="col-icons hidden-mobile">{{ totalAssists() || '' }}</td>
+            <td class="col-icons-mobile">{{ totalGoals() || totalAssists() ? (totalGoals() + ' / ' + totalAssists()) : '' }}</td>
             <td class="col-cs">{{ totalCleanSheet() || '' }}</td>
             <td class="col-rc col-rc--yr">{{ totalYellowRedCards() || '' }}</td>
             <td class="col-rc col-rc--red">{{ totalRedCards() || '' }}</td>
@@ -155,5 +131,43 @@
         }
       </div>
     }
+  </div>
+
+  <div class="charts-row">
+    @if (pointsChart(); as chart) {
+      <div class="card chart-card">
+        <span class="chart-title">Punkte pro Spieltag</span>
+        <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" [attr.height]="cH" aria-hidden="true">
+          @for (t of chart.yTicks; track t.label) {
+            <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
+            <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
+          }
+          @for (b of chart.bars; track b.labelX) {
+            <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.width" [attr.height]="b.height" [attr.fill]="b.fill" rx="2" />
+            <text [attr.x]="b.labelX" [attr.y]="cH - padB + 12" class="chart-label chart-label--x">{{ b.label }}</text>
+          }
+        </svg>
+      </div>
+    }
+
+    @if (positionChart(); as chart) {
+      <div class="card chart-card">
+        <span class="chart-title">Tabellenplatz (kumulativ)</span>
+        <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" [attr.height]="cH" aria-hidden="true">
+          @for (t of chart.yTicks; track t.label) {
+            <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
+            <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
+          }
+          @for (l of chart.xLabels; track l.x) {
+            <text [attr.x]="l.x" [attr.y]="cH - padB + 12" class="chart-label chart-label--x">{{ l.label }}</text>
+          }
+          <path [attr.d]="chart.line" fill="none" [attr.stroke]="chart.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+          @for (d of chart.dots; track d.x) {
+            <circle [attr.cx]="d.x" [attr.cy]="d.y" r="3" [attr.fill]="chart.color" />
+          }
+        </svg>
+      </div>
+    }
+  </div>
   </div>
 }

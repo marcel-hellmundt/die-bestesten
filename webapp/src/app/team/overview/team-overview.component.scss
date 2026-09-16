@@ -4,9 +4,11 @@
   display: flex;
   gap: $space-4;
   padding: $space-4;
+  order: 1;
 
   @media (max-width: $mobile-breakpoint) {
     flex-direction: column;
+    order: 2;
   }
 }
 
@@ -59,11 +61,21 @@
   }
 }
 
+// Mobile: Tabelle (.overview-row) soll vor den Charts (.charts-row) stehen, Desktop bleibt
+// unverändert (Charts zuerst) — per CSS order statt DOM-Reihenfolge (im Markup steht die
+// Tabelle zuerst), damit beides mit derselben Template-Struktur auskommt. Immer flex (nicht
+// nur mobile), sonst würde die DOM-Reihenfolge auf Desktop durchschlagen.
+.overview-page {
+  display: flex;
+  flex-direction: column;
+}
+
 .overview-row {
   display: flex;
   align-items: flex-start;
   gap: $space-4;
   padding: 0 $space-4 $space-4;
+  order: 2;
 
   .table-container,
   .overview-empty {
@@ -73,14 +85,46 @@
 
   @media (max-width: $mobile-breakpoint) {
     flex-direction: column;
+    // Jetzt (per order) der erste Block auf der Seite — braucht daher Top- statt Bottom-Padding;
+    // .charts-row bringt mit seinem eigenen padding:$space-4 weiterhin den Abstand zwischen
+    // beiden Blöcken.
+    order: 1;
+    padding: $space-4 $space-4 0;
 
     // align-self:stretch statt width:100% — sonst sind width UND beide margin-inline-Werte
     // gleichzeitig fix vorgegeben (überbestimmt); der Browser verwirft dabei den rechten margin-
     // Wert und berechnet ihn neu, wodurch der Rand nur links, aber nicht rechts ausbricht.
-    .table-container,
     .overview-empty {
       align-self: stretch;
       margin-inline: -$space-4;
+    }
+
+    // margin-inline: -$space-4 kompensiert nur .overview-rows eigenes Padding, nicht das von
+    // shell-content darüber — der Rand blieb dadurch 16px vor dem echten Bildschirmrand stehen
+    // (gleiches Problem wie zuvor bei den Tabellen auf Spielerdetail-/Kaderseite gelöst). Bricht
+    // stattdessen direkt bis zum Viewport-Rand aus, unabhängig von der Padding-Verschachtelung.
+    .table-container {
+      width: 100vw;
+      max-width: 100vw;
+      position: relative;
+      left: 50%;
+      right: 50%;
+      margin-inline: -50vw;
+    }
+
+    .data-table {
+      th,
+      td {
+        padding-inline: $space-1;
+      }
+      th:first-child,
+      td:first-child {
+        padding-inline-start: $space-3;
+      }
+      th:last-child,
+      td:last-child {
+        padding-inline-end: $space-3;
+      }
     }
   }
 }
@@ -212,6 +256,18 @@
   text-align: left;
 }
 
+// Tore + Assists zusammen in einer Spalte auf Mobile statt in 2 — spart Platz; .hidden-mobile
+// blendet dafür die separaten Desktop-Spalten dort aus (siehe Template).
+.col-icons-mobile {
+  display: none;
+  text-align: left;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: table-cell;
+    width: 56px;
+  }
+}
+
 .col-cs {
   width: 36px;
   text-align: center;
@@ -226,6 +282,30 @@
 
   &--red { color: $color-danger; }
   &--yr  { color: color-mix(in srgb, $color-danger 55%, $color-text-muted); }
+}
+
+// Gleiche Icons wie beim Punkte-Eintragen (siehe ratings.component) statt Textlabels im
+// Tabellenkopf — .header-icon = clean_sheet.png, .card-icon = dieselbe farbige Karten-Raute.
+.header-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.card-icon {
+  display: inline-block;
+  width: 11px;
+  height: 15px;
+  border-radius: 2px;
+  vertical-align: middle;
+
+  &--yr {
+    background: linear-gradient(to right, $color-warning 50%, $color-danger 50%);
+  }
+  &--red {
+    background: $color-danger;
+  }
 }
 
 .col-points {
