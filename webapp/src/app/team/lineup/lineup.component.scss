@@ -520,6 +520,22 @@ $mobile-nav-height: 64px;
   }
 }
 
+// Replaced on mobile by .mobile-points above the pitch.
+.desktop-points {
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.mobile-points {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+    margin-bottom: $space-3;
+  }
+}
+
 .desktop-bench {
   @media (max-width: $mobile-breakpoint) {
     display: none;
@@ -594,12 +610,30 @@ $mobile-nav-height: 64px;
     }
   }
 
-  &__info {
+  // Wraps photo + info — the in-flow flex:1 counterpart to the absolutely-positioned/bleeding
+  // .bench-player__pos ribbon and .bench-player__photo-wrap circle.
+  &__main {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  &__info {
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    position: relative;
+    z-index: 1;
+  }
+
+  // Groups stats icons + grade/points on the right, opposite .bench-player__main.
+  &__side {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: $space-2;
     position: relative;
     z-index: 1;
   }
@@ -631,6 +665,13 @@ $mobile-nav-height: 64px;
     &--none {
       color: $color-text-muted;
     }
+  }
+
+  &__stats {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
   }
 
   // Wraps grade + points so they stack vertically when a grade is present, taking up
@@ -684,19 +725,23 @@ $mobile-nav-height: 64px;
     }
   }
 
-  // Compact chip variant for the mobile bench row — photo on top, name below, no room for
-  // status/grade/points. Applied as its own class rather than scoped via a .mobile-bench
-  // ancestor selector: CDK clones this element into a global drag preview outside any local
-  // DOM ancestry, so an ancestor-scoped rule would silently stop applying to the preview and
-  // fall back to this full card's layout (bleeding absolutely-positioned photo, overflow:
-  // hidden) — which renders as a near-empty box while dragging.
+  // Compact chip variant for the mobile bench row — photo above name on the left (like the
+  // original chip), stats/note/points stacked on the right, same overall height as before
+  // (governed by the left column: 40px photo + name + padding).
+  // Applied as its own class rather than scoped via a .mobile-bench ancestor selector: CDK
+  // clones this element into a global drag preview outside any local DOM ancestry, so an
+  // ancestor-scoped rule would silently stop applying to the preview and fall back to this
+  // full card's layout (bleeding absolutely-positioned photo, overflow: hidden) — which
+  // renders as a near-empty box while dragging.
   &--chip {
     flex: 0 0 auto;
-    width: 56px;
+    // No fixed width — without stats/grade/points, .bench-player__side is omitted entirely
+    // (see template) so the card should shrink back to just the photo+name column instead of
+    // stretching to a fixed width and leaving empty space on the right.
+    width: auto;
     max-height: none;
-    flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: $space-2;
     padding: $space-1;
     // Explicit (not just inherited) so it's unmistakably visible against the green pitch
     // while being dragged — that's the state where it actually needs to stand out.
@@ -711,11 +756,13 @@ $mobile-nav-height: 64px;
       left: -35px;
     }
 
+    .bench-player__main {
+      flex: 0 0 auto;
+      flex-direction: column;
+      gap: 2px;
+    }
+
     .bench-player__photo-wrap {
-      // position:relative (not static) so the inherited z-index:1 from the base rule still
-      // takes effect and keeps the photo stacked above the ribbon, like on desktop. top/left
-      // reset to 0 — relative positioning still applies the base rule's absolute-positioning
-      // offset (top:8px; left:-8px) otherwise, which would push the photo off-center here.
       position: relative;
       top: 0;
       left: 0;
@@ -725,7 +772,6 @@ $mobile-nav-height: 64px;
 
     .bench-player__info {
       align-items: center;
-      width: 100%;
     }
 
     .bench-player__name {
@@ -737,9 +783,40 @@ $mobile-nav-height: 64px;
       max-width: 100%;
     }
 
-    .bench-player__status,
-    .bench-player__score {
+    // Kein Platz für den Status-Text ("Startelf"/"Eingewechselt"/...) in der schmalen Chip —
+    // Note/Punkte/Tore/Assists/Karte rechts reichen, um auf einen Blick zu sehen, ob der
+    // Spieler schon eine Bewertung hat.
+    .bench-player__status {
       display: none;
+    }
+
+    .bench-player__side {
+      flex: 0 0 auto;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .bench-player__stats {
+      justify-content: center;
+
+      .fp-icon {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
+    // Note + Punkte übereinander (wie .bench-player__score es auf Desktop schon per
+    // Basisregel tut) statt nebeneinander — spart Breite in der schmalen Chip.
+    .bench-player__grade {
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
+      font-size: 9px;
+    }
+
+    .bench-player__points {
+      width: auto;
+      font-size: $font-xs;
     }
   }
 }

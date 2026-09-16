@@ -41,6 +41,15 @@
         </div>
       </div>
 
+      @if (points() != null && showBreakdown()) {
+        <div class="mobile-points">
+          <div class="points-bar">
+            <div class="points-bar__fill" [style.width.%]="pointsPercent()"></div>
+            <span class="points-bar__label">{{ points() }} Punkte</span>
+          </div>
+        </div>
+      }
+
       <div class="field" [class.field--editable]="canEdit()">
 
         @if (formationError()) {
@@ -216,8 +225,8 @@
         }
       </div>
 
-      @if (points() != null && matchday()?.completed) {
-        <div class="sidebar-block">
+      @if (points() != null && showBreakdown()) {
+        <div class="sidebar-block desktop-points">
           <h3 class="sidebar-title">Punkte</h3>
           <div class="points-bar">
             <div class="points-bar__fill" [style.width.%]="pointsPercent()"></div>
@@ -273,30 +282,51 @@
          (cdkDragReleased)="onDragReleased($event, 'bench')"
          (cdkDragEnded)="onDragEnd()">
         <div class="bench-player__pos" [style.background-color]="positionColor(p.position)"></div>
-        <div class="bench-player__photo-wrap">
-          @if (photoUrl(p) && !photoErrors.has(p.id)) {
-            <img class="bench-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
-          } @else {
-            <img class="bench-player__photo bench-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
-          }
+        <div class="bench-player__main">
+          <div class="bench-player__photo-wrap">
+            @if (photoUrl(p) && !photoErrors.has(p.id)) {
+              <img class="bench-player__photo" [src]="photoUrl(p)" [alt]="p.displayname" (error)="onPhotoError(p.id)" />
+            } @else {
+              <img class="bench-player__photo bench-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
+            }
+          </div>
+          <div class="bench-player__info">
+            <span class="bench-player__name">
+              @if (p.sds) { <span class="bench-player__sds-star">★</span> }{{ p.displayname }}
+            </span>
+            <span class="bench-player__status" [ngClass]="participationClass(p.participation)">
+              {{ participationLabel(p.participation) }}
+            </span>
+          </div>
         </div>
-        <div class="bench-player__info">
-          <span class="bench-player__name">
-            @if (p.sds) { <span class="bench-player__sds-star">★</span> }{{ p.displayname }}
-          </span>
-          <span class="bench-player__status" [ngClass]="participationClass(p.participation)">
-            {{ participationLabel(p.participation) }}
-          </span>
-        </div>
-        @if (p.grade) {
-          <div class="bench-player__score">
-            <span class="bench-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
-            @if (p.points != null) {
+        @if (p.goals || p.assists || p.yellow_red_card || p.red_card || p.grade || p.points != null) {
+          <div class="bench-player__side">
+            @if (p.goals || p.assists || p.yellow_red_card || p.red_card) {
+              <span class="bench-player__stats">
+                @for (g of range(p.goals); track g) {
+                  <img src="img/icons/goal.png" class="fp-icon" alt="Tor" />
+                }
+                @for (a of range(p.assists); track a) {
+                  <img src="img/icons/assist.png" class="fp-icon" alt="Vorlage" />
+                }
+                @if (p.yellow_red_card) {
+                  <span class="fp-card fp-card--yr"></span>
+                } @else if (p.red_card) {
+                  <span class="fp-card fp-card--red"></span>
+                }
+              </span>
+            }
+            @if (p.grade) {
+              <div class="bench-player__score">
+                <span class="bench-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
+                @if (p.points != null) {
+                  <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
+                }
+              </div>
+            } @else if (p.points != null) {
               <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
             }
           </div>
-        } @else if (p.points != null) {
-          <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
         }
       </a>
     }
