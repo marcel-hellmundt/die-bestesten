@@ -331,412 +331,10 @@
     }
   </section>
 
-  <!-- 3-column grid -->
+  <!-- Vertical stack: Noten-Tabelle, Liga-Teams, Stats, Saisons, Vereinshistorie -->
   <div class="detail-grid">
-    <!-- Left column -->
-    <div class="detail-grid__col">
-      <!-- Liga-Teamhistorie -->
-      @if (teamHistory().length > 0) {
-        <section class="detail-section">
-          <div class="section-header-row">
-            <h2 class="section-header">Liga-Teams</h2>
-          </div>
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Team</th>
-                  <th class="col-md">Von</th>
-                  <th class="col-md">Bis</th>
-                  <th class="col-price">Kaufpreis</th>
-                  <th class="col-points-season">Punkte</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (t of teamHistory(); track t.team_id + t.from_matchday_number) {
-                  <tr class="row-link" (click)="navigateToTeam(t.team_id)">
-                    <td>
-                      <span class="team-history-cell">
-                        <img
-                          class="tbl-logo"
-                          [src]="teamLogoUrl({ id: t.team_id, season_id: t.season_id })"
-                          [alt]="t.team_name"
-                          (error)="$any($event.target).style.display = 'none'"
-                        />
-                        <span>
-                          <span class="team-history__name">
-                            {{ t.team_name }}
-                            @if (t.is_drafted) {
-                              <span class="drafted-badge">Zugelost</span>
-                            }
-                          </span>
-                          <span class="team-history__manager">{{ t.manager_name }}</span>
-                        </span>
-                      </span>
-                    </td>
-                    <td class="col-md">
-                      {{ t.from_matchday_number != null ? 'Sp. ' + t.from_matchday_number : '—' }}
-                    </td>
-                    <td class="col-md">{{ displayToMatchday(t) }}</td>
-                    <td class="col-price">{{ t.price_paid != null ? formatPrice(t.price_paid) : '—' }}</td>
-                    <td class="col-points-season">
-                      {{ teamPoints().get(t.team_id + '_' + t.from_matchday_number) ?? 0 }}
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </section>
-      }
-
-      <!-- Vereinshistorie -->
-      <section class="detail-section">
-        <div class="section-header-row">
-          <h2 class="section-header">Vereinshistorie</h2>
-          <div class="section-header-actions">
-            @if (isMaintainer() && !showAddClubForm()) {
-              <button class="btn-edit" (click)="openAddClubForm()" title="Verein hinzufügen">
-                <app-icon name="plus" />
-              </button>
-            }
-          </div>
-        </div>
-        @if (showAddClubForm()) {
-          <div class="add-form" (keydown.enter)="!addingClub() && submitClubForm()">
-            <p class="add-form-title">{{ editingClubEntryId() ? 'Verein bearbeiten' : 'Verein hinzufügen' }}</p>
-            <div class="add-form-row">
-              <div class="add-form-field">
-                <label class="add-form-label">Verein</label>
-                <select class="input input--sm" (change)="newClubId.set($any($event.target).value)">
-                  @for (c of allClubs(); track c.id) {
-                    <option [value]="c.id" [selected]="c.id === newClubId()">{{ c.name }}</option>
-                  }
-                </select>
-              </div>
-              <div class="add-form-field add-form-field--sm">
-                <label class="add-form-label">Von</label>
-                <input
-                  class="input input--sm"
-                  type="date"
-                  [value]="newFromDate()"
-                  (input)="newFromDate.set($any($event.target).value)"
-                />
-              </div>
-              <div class="add-form-field add-form-field--sm">
-                <label class="add-form-label">Bis (leer = heute)</label>
-                <input
-                  class="input input--sm"
-                  type="date"
-                  [value]="newToDate()"
-                  (input)="newToDate.set($any($event.target).value)"
-                />
-              </div>
-              <div class="add-form-field add-form-field--checkbox">
-                <label class="add-form-label">Leihe</label>
-                <label class="checkbox-wrap">
-                  <input
-                    type="checkbox"
-                    [checked]="newOnLoan()"
-                    (click)="newOnLoan.set(!newOnLoan())"
-                  />
-                  <span>Leihspieler</span>
-                </label>
-              </div>
-            </div>
-            @if (addClubError()) {
-              <p class="add-form-error">{{ addClubError() }}</p>
-            }
-            <div class="add-form-actions">
-              <button class="btn-save" (click)="submitClubForm()" [disabled]="addingClub() || !newClubId()">
-                {{ addingClub() ? 'Speichern…' : 'Speichern' }}
-              </button>
-              <button class="btn-cancel" (click)="cancelAddClub()" [disabled]="addingClub() || deletingClub()">
-                Abbrechen
-              </button>
-              @if (editingClubEntryId()) {
-                <button
-                  class="btn-delete"
-                  (click)="deleteClub()"
-                  [disabled]="addingClub() || deletingClub()"
-                  title="Vereinseintrag löschen"
-                >
-                  <app-icon name="trash" />
-                  {{ deletingClub() ? 'Wird gelöscht…' : 'Löschen' }}
-                </button>
-              }
-            </div>
-          </div>
-        }
-        @if (p.clubs.length === 0 && !showAddClubForm()) {
-          <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
-        }
-        @if (p.clubs.length > 0) {
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th colspan="2">Verein</th>
-                  <th>Von</th>
-                  <th>Bis</th>
-                  @if (isMaintainer()) {
-                    <th></th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                @for (c of p.clubs; track c.id) {
-                  <tr class="row-link" (click)="navigateToClub(c.club_id)">
-                    <td class="col-logo">
-                      <img
-                        [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
-                        class="tbl-logo"
-                        [class.logo--placeholder]="!c.logo_uploaded"
-                        alt=""
-                      />
-                    </td>
-                    <td>
-                      {{ c.club_name }}
-                      @if (c.on_loan) {
-                        <span class="loan-badge">Leihe</span>
-                      }
-                    </td>
-                    <td class="col-date">{{ formatDate(c.from_date) }}</td>
-                    <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
-                    @if (isMaintainer()) {
-                      <td class="col-actions">
-                        <button
-                          class="row-edit-btn"
-                          (click)="openEditClubForm(c); $event.stopPropagation()"
-                          title="Vereinseintrag bearbeiten"
-                        >
-                          <app-icon name="pencil" />
-                        </button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      </section>
-    </div>
-    <!-- /detail-grid__col left -->
-
-    <!-- Middle: Saisons table + price chart below -->
-    <div class="detail-grid__col">
-      <section class="detail-section">
-        <div class="section-header-row">
-          <h2 class="section-header">Saisons</h2>
-          <div class="section-header-actions">
-            @if (isMaintainer() && !showAddSeasonForm() && availableSeasons().length > 0) {
-              <button class="btn-edit" (click)="openAddSeasonForm()" title="Saison hinzufügen">
-                <app-icon name="plus" />
-              </button>
-            }
-          </div>
-        </div>
-        @if (p.seasons.length === 0 && !showAddSeasonForm()) {
-          <p class="state-msg">Keine Saison-Daten vorhanden.</p>
-        } @else if (p.seasons.length > 0) {
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Saison</th>
-                  <th class="col-position">
-                    <span class="hidden-mobile">Position</span
-                    ><span class="visible-mobile">Pos</span>
-                  </th>
-                  <th class="col-price">
-                    <span class="hidden-mobile">Grundpreis</span
-                    ><span class="visible-mobile">GP</span>
-                  </th>
-                  <th class="col-price">
-                    <span class="hidden-mobile">Marktwert</span
-                    ><span class="visible-mobile">MW</span>
-                  </th>
-                  <th class="col-points-season">
-                    <span class="hidden-mobile">Punkte</span><span class="visible-mobile">Pkt</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (s of p.seasons; track s.player_in_season_id) {
-                  <tr
-                    class="row-link"
-                    [class.row--selected]="
-                      (selectedSeasonId() ?? p.seasons[0].season_id) === s.season_id
-                    "
-                    [class.row--editable]="isAdmin() && s.player_in_season_id === currentDivisionSeasonEntry()?.player_in_season_id"
-                    [title]="isAdmin() && s.player_in_season_id === currentDivisionSeasonEntry()?.player_in_season_id ? 'Doppelklick zum Bearbeiten' : ''"
-                    (click)="selectedSeasonId.set(s.season_id)"
-                    (dblclick)="openEditSeasonForm(s)"
-                  >
-                    <td>
-                      <span class="season-cell">
-                        @if (hasMultipleDivisions()) {
-                          <img
-                            class="division-icon"
-                            [src]="'img/divisions/' + s.division_id + '.png'"
-                            [title]="cache.divisionName(s.division_id)"
-                            alt=""
-                          />
-                        }
-                        {{ cache.seasonName(s.season_id) }}
-                      </span>
-                    </td>
-                    <td class="col-position">
-                      <span
-                        class="position-badge position-badge--text"
-                        [style.background-color]="positionColor(s.position)"
-                        >{{ positionLabel(s.position) }}</span
-                      >
-                    </td>
-                    <td class="col-price">{{ formatPriceShort(s.price) }}</td>
-                    <td class="col-price">{{ formatPriceShort(seasonMarketValue(s)) }}</td>
-                    <td class="col-points-season">{{ s.total_points }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-        @if (showAddSeasonForm()) {
-          <div class="add-form" (keydown.enter)="!addingSeasonRecord() && submitAddSeason()">
-            <div class="add-form-row">
-              <div class="add-form-field">
-                <label class="add-form-label">Saison</label>
-                <select class="input input--sm" (change)="onNewSeasonIdChange($any($event.target).value)">
-                  @for (s of availableSeasons(); track s.id) {
-                    <option [value]="s.id" [selected]="s.id === newSeasonId()">{{ cache.seasonName(s.id) }}</option>
-                  }
-                </select>
-              </div>
-              <div class="add-form-field">
-                <label class="add-form-label">Division</label>
-                <select class="input input--sm" (change)="newSeasonDivisionId.set($any($event.target).value)">
-                  @for (d of availableDivisionsForNewSeason(); track d.id) {
-                    <option [value]="d.id" [selected]="d.id === newSeasonDivisionId()">{{ d.name }}</option>
-                  }
-                </select>
-                @if (availableDivisionsForNewSeason().length === 0) {
-                  <span class="add-form-error">Spieler hat bereits Einträge für alle Divisionen dieser Saison</span>
-                }
-              </div>
-              <div class="add-form-field">
-                <label class="add-form-label">Position</label>
-                <select class="input input--sm" (change)="newSeasonPosition.set($any($event.target).value)">
-                  <option value="GOALKEEPER">Torwart</option>
-                  <option value="DEFENDER">Abwehr</option>
-                  <option value="MIDFIELDER" selected>Mittelfeld</option>
-                  <option value="FORWARD">Sturm</option>
-                </select>
-              </div>
-              <div class="add-form-field add-form-field--sm">
-                <label class="add-form-label">Preis (€)</label>
-                <input
-                  class="input input--sm"
-                  type="number"
-                  min="1"
-                  step="100000"
-                  [value]="newSeasonPrice()"
-                  (input)="newSeasonPrice.set(+$any($event.target).value)"
-                />
-              </div>
-            </div>
-            @if (addSeasonError()) {
-              <p class="add-form-error">{{ addSeasonError() }}</p>
-            }
-            <div class="add-form-actions">
-              <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || !newSeasonDivisionId() || newSeasonPrice() <= 0">
-                {{ addingSeasonRecord() ? 'Speichern…' : 'Speichern' }}
-              </button>
-              <button class="btn-cancel" (click)="cancelAddSeason()" [disabled]="addingSeasonRecord()">
-                Abbrechen
-              </button>
-            </div>
-          </div>
-        }
-      </section>
-
-      @if (priceChartData(); as chart) {
-        <div class="chart-container">
-          <svg
-            class="price-chart"
-            [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
-            [attr.width]="chartW"
-            [attr.height]="chartH"
-            aria-hidden="true"
-          >
-            @for (tick of chart.yTicks; track tick.y) {
-              <line
-                [attr.x1]="padL"
-                [attr.x2]="chartW - padR"
-                [attr.y1]="tick.y"
-                [attr.y2]="tick.y"
-                class="chart-grid"
-              />
-              <text [attr.x]="padL - 4" [attr.y]="tick.y" class="chart-label chart-label--y">
-                {{ tick.label }}
-              </text>
-            }
-            @for (bar of chart.bars; track bar.labelX) {
-              <rect
-                [attr.x]="bar.x"
-                [attr.y]="bar.y"
-                [attr.width]="bar.width"
-                [attr.height]="bar.height"
-                [style.fill]="bar.color"
-                rx="3"
-              >
-                <title>{{ bar.tooltip }}</title>
-              </rect>
-              <text
-                [attr.x]="bar.labelX"
-                [attr.y]="chartH - padB + 10"
-                class="chart-label chart-label--x"
-              >
-                {{ bar.label }}
-              </text>
-            }
-            @if (chart.pointsLine) {
-              <polyline
-                [attr.points]="chart.pointsLine"
-                fill="none"
-                stroke="#000000"
-                stroke-width="1.5"
-                stroke-dasharray="4 3"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            }
-          </svg>
-        </div>
-      }
-    </div>
-
-    <!-- Right: ratings table -->
+    <!-- Noten / Spieltags-Ergebnisse -->
     <section class="detail-section">
-      <div class="rating-stats-grid">
-        <div class="stat-card">
-          <span class="stat-label" style="color: var(--flat-emerald)">Punkte</span>
-          <div class="stat-value">{{ totalPoints() }}</div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label" style="color: var(--flat-sunflower)">Ø Note</span>
-          <div class="stat-value">{{ avgGrade() ?? '—' }}</div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label" style="color: var(--flat-alizarin)">Tore</span>
-          <div class="stat-value">{{ totalGoals() }}</div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label" style="color: var(--flat-river)">Vorlagen</span>
-          <div class="stat-value">{{ totalAssists() }}</div>
-        </div>
-      </div>
       <div class="section-header-row">
         <h2 class="section-header">Noten</h2>
       </div>
@@ -753,10 +351,7 @@
                 <th class="col-team-logo"></th>
                 <th class="col-part"></th>
                 <th class="col-grade">Note</th>
-                <th class="col-sds"></th>
-                <th class="col-icons">Tore</th>
-                <th class="col-icons">Assists</th>
-                <th class="col-card">Karte</th>
+                <th class="col-stats"></th>
                 <th class="col-points">Punkte</th>
               </tr>
             </thead>
@@ -825,35 +420,423 @@
                       >{{ r.grade ?? '—' }}</span
                     >
                   </td>
-                  <td class="col-icons">
-                    @if (+r.sds) {
-                      <span class="icons-wrap">
-                        <img src="img/icons/sds.png" class="rating-icon" alt="SdS" />
-                      </span>
-                    }
-                  </td>
-                  <td class="col-icons">
+                  <td class="col-stats">
                     <span class="icons-wrap">
+                      @if (+r.sds) {
+                        <img src="img/icons/sds.png" class="rating-icon" alt="SdS" title="Spieler des Spieltags" />
+                      }
                       @for (i of range(r.goals); track i) {
-                        <img src="img/icons/goal.png" class="rating-icon" alt="Tor" />
+                        <img src="img/icons/goal.png" class="rating-icon" alt="Tor" title="Tor" />
                       }
-                    </span>
-                  </td>
-                  <td class="col-icons">
-                    <span class="icons-wrap">
                       @for (i of range(r.assists); track i) {
-                        <img src="img/icons/assist.png" class="rating-icon" alt="Assist" />
+                        <img src="img/icons/assist.png" class="rating-icon" alt="Assist" title="Vorlage" />
+                      }
+                      @if (+r.yellow_red_card) {
+                        <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
+                      } @else if (+r.red_card) {
+                        <span class="card-chip card-chip--red" title="Rot"></span>
                       }
                     </span>
-                  </td>
-                  <td class="col-card">
-                    @if (+r.yellow_red_card) {
-                      <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
-                    } @else if (+r.red_card) {
-                      <span class="card-chip card-chip--red" title="Rot"></span>
-                    }
                   </td>
                   <td class="col-points">{{ r.points ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <!-- Liga-Teamhistorie -->
+    @if (teamHistory().length > 0) {
+      <section class="detail-section">
+        <div class="section-header-row">
+          <h2 class="section-header">Liga-Teams</h2>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th class="col-md">Von</th>
+                <th class="col-md">Bis</th>
+                <th class="col-price">Kaufpreis</th>
+                <th class="col-points-season">Punkte</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of teamHistory(); track t.team_id + t.from_matchday_number) {
+                <tr class="row-link" (click)="navigateToTeam(t.team_id)">
+                  <td>
+                    <span class="team-history-cell">
+                      <img
+                        class="tbl-logo"
+                        [src]="teamLogoUrl({ id: t.team_id, season_id: t.season_id })"
+                        [alt]="t.team_name"
+                        (error)="$any($event.target).style.display = 'none'"
+                      />
+                      <span>
+                        <span class="team-history__name">
+                          {{ t.team_name }}
+                          @if (t.is_drafted) {
+                            <span class="drafted-badge">Zugelost</span>
+                          }
+                        </span>
+                        <span class="team-history__manager">{{ t.manager_name }}</span>
+                      </span>
+                    </span>
+                  </td>
+                  <td class="col-md">
+                    {{ t.from_matchday_number != null ? 'Sp. ' + t.from_matchday_number : '—' }}
+                  </td>
+                  <td class="col-md">{{ displayToMatchday(t) }}</td>
+                  <td class="col-price">{{ t.price_paid != null ? formatPriceCompact(t.price_paid) : '—' }}</td>
+                  <td class="col-points-season">
+                    {{ teamPoints().get(t.team_id + '_' + t.from_matchday_number) ?? 0 }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    <!-- Stats -->
+    <div class="rating-stats-grid">
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-emerald)">Punkte</span>
+        <div class="stat-value">{{ totalPoints() }}</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-sunflower)">Ø Note</span>
+        <div class="stat-value">{{ avgGrade() ?? '—' }}</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-alizarin)">Tore</span>
+        <div class="stat-value">{{ totalGoals() }}</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-river)">Vorlagen</span>
+        <div class="stat-value">{{ totalAssists() }}</div>
+      </div>
+    </div>
+
+    <!-- Saisons -->
+    <section class="detail-section">
+      <div class="section-header-row">
+        <h2 class="section-header">Saisons</h2>
+        <div class="section-header-actions">
+          @if (isMaintainer() && !showAddSeasonForm() && availableSeasons().length > 0) {
+            <button class="btn-edit" (click)="openAddSeasonForm()" title="Saison hinzufügen">
+              <app-icon name="plus" />
+            </button>
+          }
+        </div>
+      </div>
+      @if (p.seasons.length === 0 && !showAddSeasonForm()) {
+        <p class="state-msg">Keine Saison-Daten vorhanden.</p>
+      } @else if (p.seasons.length > 0) {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Saison</th>
+                <th class="col-position">
+                  <span class="hidden-mobile">Position</span
+                  ><span class="visible-mobile">Pos</span>
+                </th>
+                <th class="col-price">
+                  <span class="hidden-mobile">Grundpreis</span
+                  ><span class="visible-mobile">GP</span>
+                </th>
+                <th class="col-price">
+                  <span class="hidden-mobile">Marktwert</span
+                  ><span class="visible-mobile">MW</span>
+                </th>
+                <th class="col-points-season">
+                  <span class="hidden-mobile">Punkte</span><span class="visible-mobile">Pkt</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of p.seasons; track s.player_in_season_id) {
+                <tr
+                  class="row-link"
+                  [class.row--selected]="
+                    (selectedSeasonId() ?? p.seasons[0].season_id) === s.season_id
+                  "
+                  [class.row--editable]="isAdmin() && s.player_in_season_id === currentDivisionSeasonEntry()?.player_in_season_id"
+                  [title]="isAdmin() && s.player_in_season_id === currentDivisionSeasonEntry()?.player_in_season_id ? 'Doppelklick zum Bearbeiten' : ''"
+                  (click)="selectedSeasonId.set(s.season_id)"
+                  (dblclick)="openEditSeasonForm(s)"
+                >
+                  <td>
+                    <span class="season-cell">
+                      @if (hasMultipleDivisions()) {
+                        <img
+                          class="division-icon"
+                          [src]="'img/divisions/' + s.division_id + '.png'"
+                          [title]="cache.divisionName(s.division_id)"
+                          alt=""
+                        />
+                      }
+                      {{ cache.seasonName(s.season_id) }}
+                    </span>
+                  </td>
+                  <td class="col-position">
+                    <span
+                      class="position-badge position-badge--text"
+                      [style.background-color]="positionColor(s.position)"
+                      >{{ positionLabel(s.position) }}</span
+                    >
+                  </td>
+                  <td class="col-price">{{ formatPriceShort(s.price) }}</td>
+                  <td class="col-price">{{ formatPriceShort(seasonMarketValue(s)) }}</td>
+                  <td class="col-points-season">{{ s.total_points }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @if (showAddSeasonForm()) {
+        <div class="add-form" (keydown.enter)="!addingSeasonRecord() && submitAddSeason()">
+          <div class="add-form-row">
+            <div class="add-form-field">
+              <label class="add-form-label">Saison</label>
+              <select class="input input--sm" (change)="onNewSeasonIdChange($any($event.target).value)">
+                @for (s of availableSeasons(); track s.id) {
+                  <option [value]="s.id" [selected]="s.id === newSeasonId()">{{ cache.seasonName(s.id) }}</option>
+                }
+              </select>
+            </div>
+            <div class="add-form-field">
+              <label class="add-form-label">Division</label>
+              <select class="input input--sm" (change)="newSeasonDivisionId.set($any($event.target).value)">
+                @for (d of availableDivisionsForNewSeason(); track d.id) {
+                  <option [value]="d.id" [selected]="d.id === newSeasonDivisionId()">{{ d.name }}</option>
+                }
+              </select>
+              @if (availableDivisionsForNewSeason().length === 0) {
+                <span class="add-form-error">Spieler hat bereits Einträge für alle Divisionen dieser Saison</span>
+              }
+            </div>
+            <div class="add-form-field">
+              <label class="add-form-label">Position</label>
+              <select class="input input--sm" (change)="newSeasonPosition.set($any($event.target).value)">
+                <option value="GOALKEEPER">Torwart</option>
+                <option value="DEFENDER">Abwehr</option>
+                <option value="MIDFIELDER" selected>Mittelfeld</option>
+                <option value="FORWARD">Sturm</option>
+              </select>
+            </div>
+            <div class="add-form-field add-form-field--sm">
+              <label class="add-form-label">Preis (€)</label>
+              <input
+                class="input input--sm"
+                type="number"
+                min="1"
+                step="100000"
+                [value]="newSeasonPrice()"
+                (input)="newSeasonPrice.set(+$any($event.target).value)"
+              />
+            </div>
+          </div>
+          @if (addSeasonError()) {
+            <p class="add-form-error">{{ addSeasonError() }}</p>
+          }
+          <div class="add-form-actions">
+            <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || !newSeasonDivisionId() || newSeasonPrice() <= 0">
+              {{ addingSeasonRecord() ? 'Speichern…' : 'Speichern' }}
+            </button>
+            <button class="btn-cancel" (click)="cancelAddSeason()" [disabled]="addingSeasonRecord()">
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+
+    @if (priceChartData(); as chart) {
+      <div class="chart-container">
+        <svg
+          class="price-chart"
+          [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+          [attr.width]="chartW"
+          [attr.height]="chartH"
+          aria-hidden="true"
+        >
+          @for (tick of chart.yTicks; track tick.y) {
+            <line
+              [attr.x1]="padL"
+              [attr.x2]="chartW - padR"
+              [attr.y1]="tick.y"
+              [attr.y2]="tick.y"
+              class="chart-grid"
+            />
+            <text [attr.x]="padL - 4" [attr.y]="tick.y" class="chart-label chart-label--y">
+              {{ tick.label }}
+            </text>
+          }
+          @for (bar of chart.bars; track bar.labelX) {
+            <rect
+              [attr.x]="bar.x"
+              [attr.y]="bar.y"
+              [attr.width]="bar.width"
+              [attr.height]="bar.height"
+              [style.fill]="bar.color"
+              rx="3"
+            >
+              <title>{{ bar.tooltip }}</title>
+            </rect>
+            <text
+              [attr.x]="bar.labelX"
+              [attr.y]="chartH - padB + 10"
+              class="chart-label chart-label--x"
+            >
+              {{ bar.label }}
+            </text>
+          }
+          @if (chart.pointsLine) {
+            <polyline
+              [attr.points]="chart.pointsLine"
+              fill="none"
+              stroke="#000000"
+              stroke-width="1.5"
+              stroke-dasharray="4 3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          }
+        </svg>
+      </div>
+    }
+
+    <!-- Vereinshistorie -->
+    <section class="detail-section">
+      <div class="section-header-row">
+        <h2 class="section-header">Vereinshistorie</h2>
+        <div class="section-header-actions">
+          @if (isMaintainer() && !showAddClubForm()) {
+            <button class="btn-edit" (click)="openAddClubForm()" title="Verein hinzufügen">
+              <app-icon name="plus" />
+            </button>
+          }
+        </div>
+      </div>
+      @if (showAddClubForm()) {
+        <div class="add-form" (keydown.enter)="!addingClub() && submitClubForm()">
+          <p class="add-form-title">{{ editingClubEntryId() ? 'Verein bearbeiten' : 'Verein hinzufügen' }}</p>
+          <div class="add-form-row">
+            <div class="add-form-field">
+              <label class="add-form-label">Verein</label>
+              <select class="input input--sm" (change)="newClubId.set($any($event.target).value)">
+                @for (c of allClubs(); track c.id) {
+                  <option [value]="c.id" [selected]="c.id === newClubId()">{{ c.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="add-form-field add-form-field--sm">
+              <label class="add-form-label">Von</label>
+              <input
+                class="input input--sm"
+                type="date"
+                [value]="newFromDate()"
+                (input)="newFromDate.set($any($event.target).value)"
+              />
+            </div>
+            <div class="add-form-field add-form-field--sm">
+              <label class="add-form-label">Bis (leer = heute)</label>
+              <input
+                class="input input--sm"
+                type="date"
+                [value]="newToDate()"
+                (input)="newToDate.set($any($event.target).value)"
+              />
+            </div>
+            <div class="add-form-field add-form-field--checkbox">
+              <label class="add-form-label">Leihe</label>
+              <label class="checkbox-wrap">
+                <input
+                  type="checkbox"
+                  [checked]="newOnLoan()"
+                  (click)="newOnLoan.set(!newOnLoan())"
+                />
+                <span>Leihspieler</span>
+              </label>
+            </div>
+          </div>
+          @if (addClubError()) {
+            <p class="add-form-error">{{ addClubError() }}</p>
+          }
+          <div class="add-form-actions">
+            <button class="btn-save" (click)="submitClubForm()" [disabled]="addingClub() || !newClubId()">
+              {{ addingClub() ? 'Speichern…' : 'Speichern' }}
+            </button>
+            <button class="btn-cancel" (click)="cancelAddClub()" [disabled]="addingClub() || deletingClub()">
+              Abbrechen
+            </button>
+            @if (editingClubEntryId()) {
+              <button
+                class="btn-delete"
+                (click)="deleteClub()"
+                [disabled]="addingClub() || deletingClub()"
+                title="Vereinseintrag löschen"
+              >
+                <app-icon name="trash" />
+                {{ deletingClub() ? 'Wird gelöscht…' : 'Löschen' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+      @if (p.clubs.length === 0 && !showAddClubForm()) {
+        <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
+      }
+      @if (p.clubs.length > 0) {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th colspan="2">Verein</th>
+                <th>Von</th>
+                <th>Bis</th>
+                @if (isMaintainer()) {
+                  <th></th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of p.clubs; track c.id) {
+                <tr class="row-link" (click)="navigateToClub(c.club_id)">
+                  <td class="col-logo">
+                    <img
+                      [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
+                      class="tbl-logo"
+                      [class.logo--placeholder]="!c.logo_uploaded"
+                      alt=""
+                    />
+                  </td>
+                  <td>
+                    {{ c.club_name }}
+                    @if (c.on_loan) {
+                      <span class="loan-badge">Leihe</span>
+                    }
+                  </td>
+                  <td class="col-date">{{ formatDate(c.from_date) }}</td>
+                  <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
+                  @if (isMaintainer()) {
+                    <td class="col-actions">
+                      <button
+                        class="row-edit-btn"
+                        (click)="openEditClubForm(c); $event.stopPropagation()"
+                        title="Vereinseintrag bearbeiten"
+                      >
+                        <app-icon name="pencil" />
+                      </button>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>

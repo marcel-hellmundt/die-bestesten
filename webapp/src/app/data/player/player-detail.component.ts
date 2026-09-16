@@ -908,6 +908,15 @@ export class PlayerDetailComponent {
     }).format(price);
   }
 
+  // Kompakte Preisdarstellung für enge Tabellenspalten (z.B. Liga-Teams-Kaufpreis), z.B.
+  // 3.800.000 € -> "3,8M€" — 1 Nachkommastelle reicht hier (anders als formatPriceShort), da
+  // Kaufpreise keine 20.000-€-Punktebonus-Schritte sind, deren Unterscheidbarkeit erfordern.
+  formatPriceCompact(price: number): string {
+    if (price >= 1_000_000) return (price / 1_000_000).toFixed(1).replace('.', ',') + 'M€';
+    if (price >= 1_000)     return (price / 1_000).toFixed(0) + 'T€';
+    return price.toLocaleString('de-DE') + '€';
+  }
+
   formatPriceShort(price: number): string {
     // 2 Nachkommastellen zwingend nötig, nicht 1: der Marktwert steigt pro Saisonpunkt um
     // 20.000 € (division.points_bonus), also in 0,02-Mio-Schritten — mit nur 1 Nachkommastelle
