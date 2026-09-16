@@ -121,7 +121,7 @@
                 </div>
               </td>
               <td class="col-right player-price">{{ formatPrice(marketValue(p)) }}</td>
-              <td class="col-right player-team-points">{{ p.team_points }} Pkt</td>
+              <td class="col-right player-team-points" [class.player-points--full]="isAllPointsForTeam(p)">{{ p.team_points }} Pkt</td>
               <td class="col-right player-points">{{ p.points }} Pkt</td>
             </tr>
           }
