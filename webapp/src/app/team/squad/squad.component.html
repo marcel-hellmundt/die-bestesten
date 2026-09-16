@@ -75,6 +75,7 @@
             <th class="col-photo"></th>
             <th>Name</th>
             <th class="col-right player-price">Marktwert</th>
+            <th class="col-right">Punkte im Team</th>
             <th class="col-right">Punkte</th>
           </tr>
         </thead>
@@ -120,6 +121,7 @@
                 </div>
               </td>
               <td class="col-right player-price">{{ formatPrice(marketValue(p)) }}</td>
+              <td class="col-right player-team-points">{{ p.team_points }} Pkt</td>
               <td class="col-right player-points">{{ p.points }} Pkt</td>
             </tr>
           }
