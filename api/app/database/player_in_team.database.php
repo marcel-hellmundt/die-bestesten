@@ -19,7 +19,46 @@ trait PlayerInTeamTrait
         $seasonId  = $rows[0]['season_id'];
         $playerIds = array_column($rows, 'player_id');
 
-        return $this->markDrafted($this->fetchPlayerDetails($playerIds, $seasonId), $teamId);
+        return $this->markDrafted($this->fetchPlayerDetails($playerIds, $seasonId, $teamId), $teamId);
+    }
+
+    /**
+     * Punkte, die ein Spieler tatsächlich FÜR dieses Team geholt hat — nur Spieltage, an denen er
+     * im team_lineup dieses Teams nominiert (aufgestellt) war, nicht die gesamte Saisonpunktzahl
+     * des Spielers (die auch Punkte für andere Teams bzw. aus der Zeit ohne Fantasy-Team enthält).
+     */
+    private function getTeamPointsByPlayer(string $teamId, array $playerIds): array
+    {
+        if (empty($playerIds)) return [];
+
+        $ph = implode(',', array_fill(0, count($playerIds), '?'));
+        $lq = $this->con_league->prepare(
+            "SELECT player_id, matchday_id FROM team_lineup
+             WHERE team_id = ? AND nominated = 1 AND player_id IN ($ph)"
+        );
+        $lq->execute(array_merge([$teamId], $playerIds));
+        $lineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($lineupRows)) return [];
+
+        $matchdayIds = array_values(array_unique(array_column($lineupRows, 'matchday_id')));
+        $mph = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $prq = $this->con->prepare(
+            "SELECT player_id, matchday_id, COALESCE(points, 0) AS points
+             FROM player_rating
+             WHERE player_id IN ($ph) AND matchday_id IN ($mph)"
+        );
+        $prq->execute(array_merge($playerIds, $matchdayIds));
+        $pointsByKey = [];
+        foreach ($prq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $pointsByKey[$r['player_id'] . '|' . $r['matchday_id']] = (float) $r['points'];
+        }
+
+        $teamPoints = [];
+        foreach ($lineupRows as $row) {
+            $key = $row['player_id'] . '|' . $row['matchday_id'];
+            $teamPoints[$row['player_id']] = ($teamPoints[$row['player_id']] ?? 0) + ($pointsByKey[$key] ?? 0);
+        }
+        return $teamPoints;
     }
 
     /**
@@ -97,7 +136,7 @@ trait PlayerInTeamTrait
         $formerIds = array_values(array_diff($formerIds, $activeIds));
         if (empty($formerIds)) return $empty;
 
-        $players = $this->markDrafted($this->fetchPlayerDetails($formerIds, $seasonId), $teamId);
+        $players = $this->markDrafted($this->fetchPlayerDetails($formerIds, $seasonId, $teamId), $teamId);
 
         // Zugeloster Kader: ALLE abgegangenen zugelosten Spieler, unabhängig vom Verkaufszeitpunkt.
         $draftedSquad = array_values(array_filter($players, fn($p) => $p['is_drafted']));
@@ -243,7 +282,7 @@ trait PlayerInTeamTrait
         ], $rows);
     }
 
-    private function fetchPlayerDetails(array $playerIds, string $seasonId): array
+    private function fetchPlayerDetails(array $playerIds, string $seasonId, ?string $teamId = null): array
     {
         // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A) —
         // nutzt den ohnehin schon vorhandenen pic-Join (current_club_id) mit, kein zusätzlicher.
@@ -299,6 +338,16 @@ trait PlayerInTeamTrait
             $divisionParams,
             $playerIds
         ));
-        return $q->fetchAll(PDO::FETCH_ASSOC);
+        $players = $q->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($teamId !== null) {
+            $teamPoints = $this->getTeamPointsByPlayer($teamId, $playerIds);
+            foreach ($players as &$p) {
+                $p['team_points'] = $teamPoints[$p['id']] ?? 0;
+            }
+            unset($p);
+        }
+
+        return $players;
     }
 }

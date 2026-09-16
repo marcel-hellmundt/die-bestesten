@@ -134,6 +134,10 @@ export class SquadComponent {
     return map[pos] ?? 'transparent';
   }
 
+  isAllPointsForTeam(p: any): boolean {
+    return Number(p.team_points) > 0 && Number(p.team_points) >= Number(p.points);
+  }
+
   marketValue(p: any): number {
     return Number(p.price ?? 0) + Number(p.points ?? 0) * this.cache.pointsBonus();
   }

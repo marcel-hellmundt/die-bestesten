@@ -130,10 +130,11 @@ export class LineupComponent {
   );
 
   // Mobile bench row: stepped via arrow buttons instead of a finger-drag scroll, which would
-  // otherwise fight with dragging a chip onto the field. Step size mirrors .bench-player's
-  // mobile width (56px) + .mobile-bench__list gap (8px) in lineup.component.scss.
-  private readonly benchStepPlayers = 3;
-  private readonly benchChipStep = 64;
+  // otherwise fight with dragging a chip onto the field. Chip width is content-driven (no
+  // stats/grade/points -> narrower), so this is only an approximate average step size, not an
+  // exact pixel match to .bench-player--chip in lineup.component.scss.
+  private readonly benchStepPlayers = 2;
+  private readonly benchChipStep = 90;
 
   shiftBench(direction: 1 | -1): void {
     this.benchListEl?.nativeElement.scrollBy({
