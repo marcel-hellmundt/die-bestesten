@@ -304,6 +304,23 @@
   // Vereinshistorie) ohne horizontales Scrollen auf den Screen passen — gleiches Muster wie
   // beim Kader (siehe squad.component.scss).
   @media (max-width: #{$mobile-breakpoint}) {
+    // Die globale .table-container-Bleed-Technik (margin-inline: -$space-4, siehe _layout.scss)
+    // setzt voraus, dass ausschließlich shell-content zwischen Container und Viewport-Rand
+    // einrückt — hier reicht sie auf echten Geräten nicht bis zum Rand (evtl. verschachtelter
+    // Flex-Kontext des .detail-grid). Stattdessen viewportbezogen bis zum Rand ausbrechen,
+    // unabhängig vom Eltern-Padding. Kein eigenes Innenabstand-Polster auf dem Container (das
+    // würde Zeilen wieder einrücken) — der Abstand sitzt stattdessen an der ersten/letzten
+    // Zelle, damit z.B. der hellblaue Hintergrund einer selektierten Zeile (.row--selected) von
+    // Rand zu Rand durchgefärbt ist.
+    .table-container {
+      width: 100vw;
+      max-width: 100vw;
+      position: relative;
+      left: 50%;
+      right: 50%;
+      margin-inline: -50vw;
+    }
+
     .data-table {
       th,
       td {
@@ -311,7 +328,11 @@
       }
       th:first-child,
       td:first-child {
-        padding-inline-start: $space-2;
+        padding-inline-start: $space-3;
+      }
+      th:last-child,
+      td:last-child {
+        padding-inline-end: $space-3;
       }
     }
   }

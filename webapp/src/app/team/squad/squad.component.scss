@@ -5,13 +5,21 @@
 .squad-layout {
   display: grid;
   grid-template-columns: 20% 1fr 20%;
-  align-items: flex-start;
+  grid-template-areas:
+    'cards main right'
+    'pos   main right';
+  align-items: start;
   gap: $space-4;
 }
 
+.squad-main { grid-area: main; }
+.pos-card { grid-area: pos; }
+.squad-right { grid-area: right; }
+
 // ── Stats sidebar ─────────────────────────────────────────────────────────────
 
-.squad-stats {
+.squad-stat-cards {
+  grid-area: cards;
   display: flex;
   flex-direction: column;
   gap: $space-3;
@@ -20,6 +28,10 @@
 .squad-stat-card {
   text-align: center;
   flex: 1 1 0;
+
+  .stat-value {
+    font-size: $font-2xl;
+  }
 }
 
 .pos-card {
@@ -270,25 +282,35 @@
 // ── Mobile ────────────────────────────────────────────────────────────────────
 
 @media (max-width: $mobile-breakpoint) {
+  // Reihenfolge auf Mobile: Kaderliste, Positions-Bubbles, die 2 Stat-Cards, dann Ehemalige/
+  // Zugelost/Notizen (squad-right) — unabhängig von der Desktop-Spaltenanordnung oben.
   .squad-layout {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      'main'
+      'pos'
+      'cards'
+      'right';
   }
 
-  .squad-stats {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: $space-4 $space-6;
+  .squad-stat-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $space-3;
     width: 100%;
     min-width: 0;
-    overflow: hidden;
+
+    .squad-stat-card {
+      min-width: 0;
+      padding-inline: $space-4;
+    }
+
     .stat-value {
       white-space: nowrap;
     }
   }
 
   .pos-card {
-    flex: 0 0 100%;
-    max-width: 100%;
     min-width: 0;
     overflow: hidden;
   }
@@ -300,7 +322,6 @@
     padding-block: $space-3;
   }
 
-  .squad-main,
   .squad-former,
   .squad-notes {
     width: 100%;
@@ -315,12 +336,41 @@
     display: none;
   }
 
+  // Kader-Tabelle bricht wie die Tabellen auf der Spielerdetailseite bis zum Viewport-Rand aus
+  // (statt nur innerhalb der eingerückten Card zu scrollen) — Card-Rahmen/-Radius/-Padding
+  // dafür auf Mobile abgeschaltet, Titel/Leertext behalten ihren eigenen Innenabstand.
+  .squad-main {
+    width: 100vw;
+    max-width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-inline: -50vw;
+    padding-inline: 0;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    overflow-x: auto;
+
+    > .section-title,
+    > .state-msg {
+      padding-inline: $space-4;
+    }
+  }
+
+  .squad-main .data-table th,
   .squad-main .data-table td {
     padding-inline: $space-1;
   }
 
+  .squad-main .data-table th:first-child,
   .squad-main .data-table td:first-child {
-    padding-inline-start: $space-2;
+    padding-inline-start: $space-3;
+  }
+
+  .squad-main .data-table th:last-child,
+  .squad-main .data-table td:last-child {
+    padding-inline-end: $space-3;
   }
 
   .player-name {

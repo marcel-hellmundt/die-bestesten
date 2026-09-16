@@ -4,63 +4,6 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
   <div class="squad-layout">
-    <!-- Stats -->
-    <aside class="squad-stats">
-      <div class="stat-card squad-stat-card">
-        <span class="stat-label stat-label--emerald">Spieleranzahl</span>
-        <div class="stat-value">{{ playerCount() }}</div>
-      </div>
-
-      <div class="stat-card squad-stat-card">
-        <span class="stat-label stat-label--amethyst">Marktwert</span>
-        <div class="stat-value">{{ formatPrice(totalMarketValue()) }}</div>
-        <div class="stat-desc">Ø {{ formatPrice(avgMarketValue()) }} pro Spieler</div>
-      </div>
-
-      <div class="pos-card" [class.pos-card--warning]="positionWarnings().length > 0">
-        @if (positionWarnings().length > 0) {
-          <div class="squad-warning">
-            <img class="squad-warning__icon" src="img/icons/warning.png" alt="" />
-            @if (playerCount() === 0) {
-              <span>Dein Kader ist noch leer</span>
-            } @else {
-              <span
-                >Zu wenige Spieler:
-                {{ positionWarnings().map(s => positionLabel(s.position) + ' (' + s.count + '/' + s.min + ')').join(', ') }}</span
-              >
-            }
-          </div>
-        }
-        <div class="pos-card__content">
-          @for (stat of positionStats(); track stat.position) {
-            <div class="pos-stat" [style.--pos-color]="positionColor(stat.position)">
-              <div class="pos-stat__header">
-                <span class="pos-stat__label">{{ positionLabel(stat.position) }}</span>
-              </div>
-              <div class="pos-stat__bubbles">
-                @for (bubble of stat.bubbles; track $index) {
-                  <span
-                    class="bubble"
-                    [class.bubble--filled]="bubble.filled"
-                    [class.bubble--pending]="bubble.pending"
-                    [class.bubble--required]="bubble.required"
-                    [class.bubble--min]="bubble.isMin"
-                    >{{ bubble.pending ? '?' : '' }}</span
-                  >
-                }
-              </div>
-            </div>
-          }
-        </div>
-        @if (pendingOffers().length > 0) {
-          <div class="pos-card__legend">
-            <span class="bubble bubble--pending">?</span>
-            <span>= Offenes Gebot</span>
-          </div>
-        }
-      </div>
-    </aside>
-
     <!-- Current players -->
     <div class="squad-main card">
       <h3 class="section-title">Aktueller Kader</h3>
@@ -128,6 +71,64 @@
         </tbody>
       </table>
       }
+    </div>
+
+    <!-- Position bubbles -->
+    <div class="pos-card" [class.pos-card--warning]="positionWarnings().length > 0">
+      @if (positionWarnings().length > 0) {
+        <div class="squad-warning">
+          <img class="squad-warning__icon" src="img/icons/warning.png" alt="" />
+          @if (playerCount() === 0) {
+            <span>Dein Kader ist noch leer</span>
+          } @else {
+            <span
+              >Zu wenige Spieler:
+              {{ positionWarnings().map(s => positionLabel(s.position) + ' (' + s.count + '/' + s.min + ')').join(', ') }}</span
+            >
+          }
+        </div>
+      }
+      <div class="pos-card__content">
+        @for (stat of positionStats(); track stat.position) {
+          <div class="pos-stat" [style.--pos-color]="positionColor(stat.position)">
+            <div class="pos-stat__header">
+              <span class="pos-stat__label">{{ positionLabel(stat.position) }}</span>
+            </div>
+            <div class="pos-stat__bubbles">
+              @for (bubble of stat.bubbles; track $index) {
+                <span
+                  class="bubble"
+                  [class.bubble--filled]="bubble.filled"
+                  [class.bubble--pending]="bubble.pending"
+                  [class.bubble--required]="bubble.required"
+                  [class.bubble--min]="bubble.isMin"
+                  >{{ bubble.pending ? '?' : '' }}</span
+                >
+              }
+            </div>
+          </div>
+        }
+      </div>
+      @if (pendingOffers().length > 0) {
+        <div class="pos-card__legend">
+          <span class="bubble bubble--pending">?</span>
+          <span>= Offenes Gebot</span>
+        </div>
+      }
+    </div>
+
+    <!-- Stats -->
+    <div class="squad-stat-cards">
+      <div class="stat-card squad-stat-card">
+        <span class="stat-label stat-label--emerald">Spieleranzahl</span>
+        <div class="stat-value">{{ playerCount() }}</div>
+      </div>
+
+      <div class="stat-card squad-stat-card">
+        <span class="stat-label stat-label--amethyst">Marktwert</span>
+        <div class="stat-value">{{ formatPrice(totalMarketValue()) }}</div>
+        <div class="stat-desc">Ø {{ formatPrice(avgMarketValue()) }} pro Spieler</div>
+      </div>
     </div>
 
     <!-- Former players + notes -->
