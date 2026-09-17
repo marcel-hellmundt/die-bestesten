@@ -1212,6 +1212,19 @@ class Routing
                 ],
             ]),
 
+            new Route('noten', 'Noten', [
+                'title' => 'Noten',
+                'description' => 'Öffentliche Noten-Übersicht (/noten-Seite im Frontend) — kein Login nötig',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/noten',
+                        'description' => 'Noten + Punkte aller Spieler der 1. Bundesliga (level=1, country=DE — fest, unabhängig von einer evtl. konfigurierten Liga-Division) für einen Spieltag der aktiven Saison → {season_id, matchdays:[{id,number,start_date,kickoff_date}], matchday:{id,number,start_date,kickoff_date}|null, clubs:[{id,name,short_name,logo_uploaded,players:[{id,displayname,position,photo_uploaded,grade,points,participation}]}]}; matchdays enthält nur bereits angepfiffene Spieltage (kickoff_date <= now); ohne matchday_id wird automatisch der letzte angepfiffene Spieltag gewählt; players nur mit participation starting/substitute; clubs sortiert nach Tabellenplatz der Vorsaison (club_in_season.position, unplatzierte ans Ende); matchday=null (clubs=[]) falls in der aktiven Saison noch kein Spieltag angepfiffen wurde — Guest',
+                        'query_params' => ['matchday_id' => 'UUID des Spieltags (optional) — Default: letzter angepfiffener Spieltag'],
+                    ],
+                ],
+            ]),
+
             new Route('search', 'Search', [
                 'title' => 'Search',
                 'description' => 'Globale Live-Suche über Player, Club, Team und Manager — Auth',

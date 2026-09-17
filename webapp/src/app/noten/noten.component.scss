@@ -1,0 +1,189 @@
+@use '../../styles/variables' as *;
+
+.noten-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: $space-5 $space-4;
+  }
+}
+
+.noten-header {
+  display: flex;
+  align-items: baseline;
+  gap: $space-4;
+  margin-bottom: $space-4;
+}
+
+.noten-brand {
+  font-family: $font-display;
+  font-weight: $font-weight-bold;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-accent;
+  }
+}
+
+.page-title {
+  margin: 0;
+}
+
+// Desktop-only / mobile-only toggle — hidden-mobile is already global (_layout.scss); its
+// counterpart for the matchday <select> doesn't exist yet, defined here.
+.hidden-desktop {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+  }
+}
+
+.matchday-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-bottom: $space-6;
+}
+
+.matchday-pill {
+  padding: $space-1 $space-3;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background: $color-surface-alt;
+    border-color: $color-text-muted;
+  }
+
+  &--active {
+    background: $color-accent;
+    border-color: $color-accent;
+    color: #fff;
+  }
+}
+
+.matchday-select {
+  width: 100%;
+  margin-bottom: $space-6;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+}
+
+.club-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $space-4;
+}
+
+.club-card {
+  padding: $space-4;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    margin-bottom: $space-3;
+  }
+
+  &__logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+
+    &.logo--placeholder {
+      opacity: 0.3;
+    }
+  }
+
+  &__name {
+    font-weight: $font-weight-semibold;
+  }
+
+  &__table {
+    width: 100%;
+
+    td {
+      padding: $space-1 $space-2;
+      border-bottom: 1px solid $color-border;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.row--sub {
+  color: $color-text-muted;
+}
+
+.col-pos {
+  width: 40px;
+}
+
+.col-photo {
+  width: 32px;
+}
+
+.player-photo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+
+  &--placeholder {
+    opacity: 0.3;
+  }
+}
+
+.col-name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-grade {
+  width: 40px;
+}
+
+.grade-badge {
+  display: inline-block;
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  min-width: 28px;
+  text-align: center;
+
+  &--unset {
+    color: $color-text-muted;
+  }
+}
+
+.col-points {
+  width: 36px;
+  text-align: right;
+  font-weight: $font-weight-semibold;
+}
+
+.state-msg--sm {
+  font-size: $font-sm;
+  padding: $space-2 0;
+}
