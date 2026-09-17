@@ -62,15 +62,36 @@
                 <tbody>
                   @for (p of club.players; track p.id; let i = $index) {
                     @if (p.participation === 'substitute' && (i === 0 || club.players[i - 1].participation !== 'substitute')) {
-                      <tr class="separator-row"><td colspan="4"><hr /></td></tr>
+                      <tr class="separator-row"><td colspan="5"></td></tr>
                     }
                     <tr [class.row--sub]="p.participation === 'substitute'" [class.row--own]="p.own">
                       <td class="col-pos">
-                        <span class="position-badge" [style.background-color]="positionColor(p.position)">
+                        <span class="pos-label" [style.color]="positionColor(p.position)">
                           {{ positionLabel(p.position) }}
                         </span>
                       </td>
                       <td class="col-name">{{ p.displayname }}</td>
+                      <td class="col-stats">
+                        <span class="icons-wrap">
+                          @if (p.sds) {
+                            <img src="img/icons/sds.png" class="stat-icon" alt="SdS" title="Spieler des Spieltags" />
+                          }
+                          @for (g of range(p.goals); track g) {
+                            <img src="img/icons/goal.png" class="stat-icon" alt="Tor" title="Tor" />
+                          }
+                          @for (a of range(p.assists); track a) {
+                            <img src="img/icons/assist.png" class="stat-icon" alt="Assist" title="Vorlage" />
+                          }
+                          @if (p.clean_sheet) {
+                            <img src="img/icons/clean_sheet.png" class="stat-icon" alt="Zu Null" title="Zu Null" />
+                          }
+                          @if (p.yellow_red_card) {
+                            <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
+                          } @else if (p.red_card) {
+                            <span class="card-chip card-chip--red" title="Rot"></span>
+                          }
+                        </span>
+                      </td>
                       <td class="col-grade">
                         <span
                           class="grade-badge"

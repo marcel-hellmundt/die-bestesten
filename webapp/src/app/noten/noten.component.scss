@@ -51,7 +51,15 @@
 }
 
 .matchday-pill {
-  padding: $space-1 $space-3;
+  // Feste width + aspect-ratio (statt nur aspect-ratio auf einer auto-Größe) — bleibt garantiert
+  // quadratisch unabhängig davon, ob "1" oder "34" drin steht; mit nur aspect-ratio könnte der
+  // Inhalt die Box sonst breiter als hoch aufziehen.
+  width: 34px;
+  aspect-ratio: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border-radius: $radius-full;
   border: 1px solid $color-border;
   background: $color-surface;
@@ -156,15 +164,15 @@
   }
 }
 
-.separator-row td {
-  padding: 0 !important;
-  border-bottom: none !important;
-}
+.separator-row {
+  &:hover {
+    background-color: transparent !important;
+  }
 
-.separator-row hr {
-  border: none;
-  border-top: 1px dashed $color-border;
-  margin: $space-1 0;
+  td {
+    padding: $space-4 0 0 !important;
+    border-bottom: none !important;
+  }
 }
 
 .row--sub {
@@ -178,6 +186,14 @@
 
 .col-pos {
   width: 40px;
+  text-align: center;
+}
+
+.pos-label {
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .col-name {
@@ -186,6 +202,38 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: $font-weight-medium;
+}
+
+.col-stats {
+  white-space: nowrap;
+}
+
+.icons-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.stat-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.card-chip {
+  display: inline-block;
+  width: 8px;
+  height: 11px;
+  border-radius: 1px;
+  vertical-align: middle;
+
+  &--yr {
+    background: linear-gradient(to right, $color-warning 50%, $color-danger 50%);
+  }
+  &--red {
+    background: $color-danger;
+  }
 }
 
 .col-grade {

@@ -78,7 +78,8 @@ trait NotenTrait
         // nicht-eingeloggten Seite unter keinen Umständen ausgespielt werden.
         $playerQuery = $this->con->prepare(
             "SELECT p.id, p.displayname, pis.position,
-                    pr.club_id, pr.grade, pr.points, pr.participation
+                    pr.club_id, pr.grade, pr.points, pr.participation,
+                    pr.sds, pr.goals, pr.assists, pr.clean_sheet, pr.red_card, pr.yellow_red_card
              FROM player_rating pr
              JOIN player p ON p.id = pr.player_id
              JOIN club_in_season cis ON cis.club_id = pr.club_id AND cis.season_id = ? AND cis.division_id = ?
@@ -100,13 +101,19 @@ trait NotenTrait
             $idx = $clubIndexById[$row['club_id']] ?? null;
             if ($idx === null) continue;
             $clubs[$idx]['players'][] = [
-                'id'            => $row['id'],
-                'displayname'   => $row['displayname'],
-                'position'      => $row['position'],
-                'grade'         => $row['grade'] !== null ? (float) $row['grade'] : null,
-                'points'        => (int) $row['points'],
-                'participation' => $row['participation'],
-                'own'           => isset($ownPlayerIds[$row['id']]),
+                'id'              => $row['id'],
+                'displayname'     => $row['displayname'],
+                'position'        => $row['position'],
+                'grade'           => $row['grade'] !== null ? (float) $row['grade'] : null,
+                'points'          => (int) $row['points'],
+                'participation'   => $row['participation'],
+                'own'             => isset($ownPlayerIds[$row['id']]),
+                'sds'             => (bool) $row['sds'],
+                'goals'           => (int) $row['goals'],
+                'assists'         => (int) $row['assists'],
+                'clean_sheet'     => (bool) $row['clean_sheet'],
+                'red_card'        => (bool) $row['red_card'],
+                'yellow_red_card' => (bool) $row['yellow_red_card'],
             ];
         }
 

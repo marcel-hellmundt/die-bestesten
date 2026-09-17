@@ -12,6 +12,12 @@ interface NotenPlayer {
   points: number;
   participation: 'starting' | 'substitute';
   own: boolean;
+  sds: boolean;
+  goals: number;
+  assists: number;
+  clean_sheet: boolean;
+  red_card: boolean;
+  yellow_red_card: boolean;
 }
 
 interface NotenClub {
@@ -124,6 +130,10 @@ export class NotenComponent {
     const graded = club.players.filter((p) => p.grade !== null);
     if (!graded.length) return null;
     return (graded.reduce((s, p) => s + p.grade!, 0) / graded.length).toFixed(2);
+  }
+
+  range(n: number): number[] {
+    return Array.from({ length: n }, (_, i) => i);
   }
 
   totalPoints(club: NotenClub): number {
