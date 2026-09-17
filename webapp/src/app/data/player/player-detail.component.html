@@ -331,125 +331,16 @@
     }
   </section>
 
-  <!-- Vertical stack: Noten-Tabelle, Liga-Teams, Stats, Saisons, Vereinshistorie -->
+  <!-- Desktop: 3-Spalten-Grid (Liga-Teams/Vereinshistorie | Saisons/Chart | Stats/Noten), jede
+       Spalte ein eigener Flex-Container (dicht gestapelt, kein Zeilen-Höhenausgleich über die
+       Spalten hinweg wie zuvor bei CSS-Grid-Areas). Mobile: .detail-col wird display:contents
+       (Spalten lösen sich auf) und jede Section bekommt per order die gewünschte lineare
+       Mobile-Reihenfolge Noten, Liga-Teams, Stats, Saisons, Chart, Vereinshistorie (siehe SCSS). -->
   <div class="detail-grid">
-    <!-- Noten / Spieltags-Ergebnisse -->
-    <section class="detail-section">
-      <div class="section-header-row">
-        <h2 class="section-header">Noten</h2>
-      </div>
-
-      @if (p.ratings.length === 0) {
-        <p class="state-msg">Keine Bewertungen für diese Saison.</p>
-      } @else {
-        <div class="table-container">
-          <table class="data-table ratings-table">
-            <thead>
-              <tr>
-                <th class="col-matchday">#</th>
-                <th class="col-club-logo hidden-mobile"></th>
-                <th class="col-team-logo"></th>
-                <th class="col-part"></th>
-                <th class="col-grade">Note</th>
-                <th class="col-stats"></th>
-                <th class="col-points">Punkte</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of p.ratings; track r.id) {
-                <tr>
-                  <td class="col-matchday">{{ r.matchday_number }}</td>
-                  <td class="col-club-logo hidden-mobile">
-                    <img
-                      [src]="clubLogoUrl(r.club_id, +r.club_logo_uploaded)"
-                      class="tbl-logo tbl-logo--sm"
-                      [class.logo--placeholder]="!+r.club_logo_uploaded"
-                      alt=""
-                    />
-                  </td>
-                  <td class="col-team-logo">
-                    @let ratingTeam = teamForMatchday(r.matchday_number);
-                    @if (ratingTeam) {
-                      @let nominated = lineupNominations().get(+r.matchday_number) ?? true;
-                      <img
-                        class="tbl-logo tbl-logo--sm"
-                        [class.rating-team-logo--bench]="!nominated"
-                        [src]="
-                          teamLogoUrl({ id: ratingTeam.team_id, season_id: ratingTeam.season_id })
-                        "
-                        alt=""
-                        (error)="$any($event.target).style.display = 'none'"
-                      />
-                    } @else {
-                      <img
-                        class="tbl-logo tbl-logo--sm logo--placeholder rating-team-logo--bench"
-                        src="img/placeholders/club.png"
-                        alt=""
-                      />
-                    }
-                  </td>
-                  <td class="col-part">
-                    @if (r.participation === 'starting') {
-                      <img
-                        src="img/icons/part-starting.svg"
-                        class="part-icon"
-                        alt="Startelf"
-                        title="Startelf"
-                      />
-                    } @else if (r.participation === 'substitute') {
-                      <img
-                        src="img/icons/part-substitute.svg"
-                        class="part-icon"
-                        alt="Eingewechselt"
-                        title="Eingewechselt"
-                      />
-                    } @else {
-                      <img
-                        src="img/icons/part-none.svg"
-                        class="part-icon"
-                        alt="Nicht eingesetzt"
-                        title="Nicht eingesetzt"
-                      />
-                    }
-                  </td>
-                  <td class="col-grade">
-                    <span
-                      class="grade-badge"
-                      [style.background]="gradeVar(r.grade)"
-                      [class.grade-badge--unset]="!r.grade"
-                      >{{ r.grade ?? '—' }}</span
-                    >
-                  </td>
-                  <td class="col-stats">
-                    <span class="icons-wrap">
-                      @if (+r.sds) {
-                        <img src="img/icons/sds.png" class="rating-icon" alt="SdS" title="Spieler des Spieltags" />
-                      }
-                      @for (i of range(r.goals); track i) {
-                        <img src="img/icons/goal.png" class="rating-icon" alt="Tor" title="Tor" />
-                      }
-                      @for (i of range(r.assists); track i) {
-                        <img src="img/icons/assist.png" class="rating-icon" alt="Assist" title="Vorlage" />
-                      }
-                      @if (+r.yellow_red_card) {
-                        <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
-                      } @else if (+r.red_card) {
-                        <span class="card-chip card-chip--red" title="Rot"></span>
-                      }
-                    </span>
-                  </td>
-                  <td class="col-points">{{ r.points ?? '—' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </section>
-
+    <div class="detail-col detail-col--liga">
     <!-- Liga-Teamhistorie -->
     @if (teamHistory().length > 0) {
-      <section class="detail-section">
+      <section class="detail-section section-liga-teams">
         <div class="section-header-row">
           <h2 class="section-header">Liga-Teams</h2>
         </div>
@@ -502,28 +393,142 @@
       </section>
     }
 
-    <!-- Stats -->
-    <div class="rating-stats-grid">
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-emerald)">Punkte</span>
-        <div class="stat-value">{{ totalPoints() }}</div>
+    <!-- Vereinshistorie -->
+    <section class="detail-section section-vereinshistorie">
+      <div class="section-header-row">
+        <h2 class="section-header">Vereinshistorie</h2>
+        <div class="section-header-actions">
+          @if (isMaintainer() && !showAddClubForm()) {
+            <button class="btn-edit" (click)="openAddClubForm()" title="Verein hinzufügen">
+              <app-icon name="plus" />
+            </button>
+          }
+        </div>
       </div>
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-sunflower)">Ø Note</span>
-        <div class="stat-value">{{ avgGrade() ?? '—' }}</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-alizarin)">Tore</span>
-        <div class="stat-value">{{ totalGoals() }}</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-river)">Vorlagen</span>
-        <div class="stat-value">{{ totalAssists() }}</div>
-      </div>
+      @if (showAddClubForm()) {
+        <div class="add-form" (keydown.enter)="!addingClub() && submitClubForm()">
+          <p class="add-form-title">{{ editingClubEntryId() ? 'Verein bearbeiten' : 'Verein hinzufügen' }}</p>
+          <div class="add-form-row">
+            <div class="add-form-field">
+              <label class="add-form-label">Verein</label>
+              <select class="input input--sm" (change)="newClubId.set($any($event.target).value)">
+                @for (c of allClubs(); track c.id) {
+                  <option [value]="c.id" [selected]="c.id === newClubId()">{{ c.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="add-form-field add-form-field--sm">
+              <label class="add-form-label">Von</label>
+              <input
+                class="input input--sm"
+                type="date"
+                [value]="newFromDate()"
+                (input)="newFromDate.set($any($event.target).value)"
+              />
+            </div>
+            <div class="add-form-field add-form-field--sm">
+              <label class="add-form-label">Bis (leer = heute)</label>
+              <input
+                class="input input--sm"
+                type="date"
+                [value]="newToDate()"
+                (input)="newToDate.set($any($event.target).value)"
+              />
+            </div>
+            <div class="add-form-field add-form-field--checkbox">
+              <label class="add-form-label">Leihe</label>
+              <label class="checkbox-wrap">
+                <input
+                  type="checkbox"
+                  [checked]="newOnLoan()"
+                  (click)="newOnLoan.set(!newOnLoan())"
+                />
+                <span>Leihspieler</span>
+              </label>
+            </div>
+          </div>
+          @if (addClubError()) {
+            <p class="add-form-error">{{ addClubError() }}</p>
+          }
+          <div class="add-form-actions">
+            <button class="btn-save" (click)="submitClubForm()" [disabled]="addingClub() || !newClubId()">
+              {{ addingClub() ? 'Speichern…' : 'Speichern' }}
+            </button>
+            <button class="btn-cancel" (click)="cancelAddClub()" [disabled]="addingClub() || deletingClub()">
+              Abbrechen
+            </button>
+            @if (editingClubEntryId()) {
+              <button
+                class="btn-delete"
+                (click)="deleteClub()"
+                [disabled]="addingClub() || deletingClub()"
+                title="Vereinseintrag löschen"
+              >
+                <app-icon name="trash" />
+                {{ deletingClub() ? 'Wird gelöscht…' : 'Löschen' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+      @if (p.clubs.length === 0 && !showAddClubForm()) {
+        <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
+      }
+      @if (p.clubs.length > 0) {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th colspan="2">Verein</th>
+                <th>Von</th>
+                <th>Bis</th>
+                @if (isMaintainer()) {
+                  <th></th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of p.clubs; track c.id) {
+                <tr class="row-link" (click)="navigateToClub(c.club_id)">
+                  <td class="col-logo">
+                    <img
+                      [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
+                      class="tbl-logo"
+                      [class.logo--placeholder]="!c.logo_uploaded"
+                      alt=""
+                    />
+                  </td>
+                  <td>
+                    {{ c.club_name }}
+                    @if (c.on_loan) {
+                      <span class="loan-badge">Leihe</span>
+                    }
+                  </td>
+                  <td class="col-date">{{ formatDate(c.from_date) }}</td>
+                  <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
+                  @if (isMaintainer()) {
+                    <td class="col-actions">
+                      <button
+                        class="row-edit-btn"
+                        (click)="openEditClubForm(c); $event.stopPropagation()"
+                        title="Vereinseintrag bearbeiten"
+                      >
+                        <app-icon name="pencil" />
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
     </div>
 
+    <div class="detail-col detail-col--saisons">
     <!-- Saisons -->
-    <section class="detail-section">
+    <section class="detail-section section-saisons">
       <div class="section-header-row">
         <h2 class="section-header">Saisons</h2>
         <div class="section-header-actions">
@@ -659,7 +664,7 @@
     </section>
 
     @if (priceChartData(); as chart) {
-      <div class="chart-container">
+      <div class="chart-container section-price-chart">
         <svg
           class="price-chart"
           [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
@@ -712,131 +717,135 @@
         </svg>
       </div>
     }
+    </div>
 
-    <!-- Vereinshistorie -->
-    <section class="detail-section">
-      <div class="section-header-row">
-        <h2 class="section-header">Vereinshistorie</h2>
-        <div class="section-header-actions">
-          @if (isMaintainer() && !showAddClubForm()) {
-            <button class="btn-edit" (click)="openAddClubForm()" title="Verein hinzufügen">
-              <app-icon name="plus" />
-            </button>
-          }
-        </div>
+    <div class="detail-col detail-col--noten">
+    <!-- Stats -->
+    <div class="rating-stats-grid section-stats">
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-emerald)">Punkte</span>
+        <div class="stat-value">{{ totalPoints() }}</div>
       </div>
-      @if (showAddClubForm()) {
-        <div class="add-form" (keydown.enter)="!addingClub() && submitClubForm()">
-          <p class="add-form-title">{{ editingClubEntryId() ? 'Verein bearbeiten' : 'Verein hinzufügen' }}</p>
-          <div class="add-form-row">
-            <div class="add-form-field">
-              <label class="add-form-label">Verein</label>
-              <select class="input input--sm" (change)="newClubId.set($any($event.target).value)">
-                @for (c of allClubs(); track c.id) {
-                  <option [value]="c.id" [selected]="c.id === newClubId()">{{ c.name }}</option>
-                }
-              </select>
-            </div>
-            <div class="add-form-field add-form-field--sm">
-              <label class="add-form-label">Von</label>
-              <input
-                class="input input--sm"
-                type="date"
-                [value]="newFromDate()"
-                (input)="newFromDate.set($any($event.target).value)"
-              />
-            </div>
-            <div class="add-form-field add-form-field--sm">
-              <label class="add-form-label">Bis (leer = heute)</label>
-              <input
-                class="input input--sm"
-                type="date"
-                [value]="newToDate()"
-                (input)="newToDate.set($any($event.target).value)"
-              />
-            </div>
-            <div class="add-form-field add-form-field--checkbox">
-              <label class="add-form-label">Leihe</label>
-              <label class="checkbox-wrap">
-                <input
-                  type="checkbox"
-                  [checked]="newOnLoan()"
-                  (click)="newOnLoan.set(!newOnLoan())"
-                />
-                <span>Leihspieler</span>
-              </label>
-            </div>
-          </div>
-          @if (addClubError()) {
-            <p class="add-form-error">{{ addClubError() }}</p>
-          }
-          <div class="add-form-actions">
-            <button class="btn-save" (click)="submitClubForm()" [disabled]="addingClub() || !newClubId()">
-              {{ addingClub() ? 'Speichern…' : 'Speichern' }}
-            </button>
-            <button class="btn-cancel" (click)="cancelAddClub()" [disabled]="addingClub() || deletingClub()">
-              Abbrechen
-            </button>
-            @if (editingClubEntryId()) {
-              <button
-                class="btn-delete"
-                (click)="deleteClub()"
-                [disabled]="addingClub() || deletingClub()"
-                title="Vereinseintrag löschen"
-              >
-                <app-icon name="trash" />
-                {{ deletingClub() ? 'Wird gelöscht…' : 'Löschen' }}
-              </button>
-            }
-          </div>
-        </div>
-      }
-      @if (p.clubs.length === 0 && !showAddClubForm()) {
-        <p class="state-msg">Keine Vereinsdaten vorhanden.</p>
-      }
-      @if (p.clubs.length > 0) {
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-sunflower)">Ø Note</span>
+        <div class="stat-value">{{ avgGrade() ?? '—' }}</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-alizarin)">Tore</span>
+        <div class="stat-value">{{ totalGoals() }}</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label" style="color: var(--flat-river)">Vorlagen</span>
+        <div class="stat-value">{{ totalAssists() }}</div>
+      </div>
+    </div>
+
+    <!-- Noten / Spieltags-Ergebnisse -->
+    <section class="detail-section section-noten">
+      <div class="section-header-row">
+        <h2 class="section-header">Noten</h2>
+      </div>
+
+      @if (p.ratings.length === 0) {
+        <p class="state-msg">Keine Bewertungen für diese Saison.</p>
+      } @else {
         <div class="table-container">
-          <table class="data-table">
+          <table class="data-table ratings-table">
             <thead>
               <tr>
-                <th colspan="2">Verein</th>
-                <th>Von</th>
-                <th>Bis</th>
-                @if (isMaintainer()) {
-                  <th></th>
-                }
+                <th class="col-matchday">#</th>
+                <th class="col-club-logo hidden-mobile"></th>
+                <th class="col-team-logo"></th>
+                <th class="col-part"></th>
+                <th class="col-grade">Note</th>
+                <th class="col-stats"></th>
+                <th class="col-points">Punkte</th>
               </tr>
             </thead>
             <tbody>
-              @for (c of p.clubs; track c.id) {
-                <tr class="row-link" (click)="navigateToClub(c.club_id)">
-                  <td class="col-logo">
+              @for (r of p.ratings; track r.id) {
+                <tr>
+                  <td class="col-matchday">{{ r.matchday_number }}</td>
+                  <td class="col-club-logo hidden-mobile">
                     <img
-                      [src]="clubLogoUrl(c.club_id, c.logo_uploaded)"
-                      class="tbl-logo"
-                      [class.logo--placeholder]="!c.logo_uploaded"
+                      [src]="clubLogoUrl(r.club_id, +r.club_logo_uploaded)"
+                      class="tbl-logo tbl-logo--sm"
+                      [class.logo--placeholder]="!+r.club_logo_uploaded"
                       alt=""
                     />
                   </td>
-                  <td>
-                    {{ c.club_name }}
-                    @if (c.on_loan) {
-                      <span class="loan-badge">Leihe</span>
+                  <td class="col-team-logo">
+                    @let ratingTeam = teamForMatchday(r.matchday_number);
+                    @if (ratingTeam) {
+                      @let nominated = lineupNominations().get(+r.matchday_number) ?? true;
+                      <img
+                        class="tbl-logo tbl-logo--sm"
+                        [class.rating-team-logo--bench]="!nominated"
+                        [src]="
+                          teamLogoUrl({ id: ratingTeam.team_id, season_id: ratingTeam.season_id })
+                        "
+                        alt=""
+                        (error)="$any($event.target).style.display = 'none'"
+                      />
+                    } @else {
+                      <img
+                        class="tbl-logo tbl-logo--sm logo--placeholder rating-team-logo--bench"
+                        src="img/placeholders/club.png"
+                        alt=""
+                      />
                     }
                   </td>
-                  <td class="col-date">{{ formatDate(c.from_date) }}</td>
-                  <td class="col-date">{{ c.to_date ? formatDate(c.to_date) : 'heute' }}</td>
-                  @if (isMaintainer()) {
-                    <td class="col-actions">
-                      <button
-                        class="row-edit-btn"
-                        (click)="openEditClubForm(c); $event.stopPropagation()"
-                        title="Vereinseintrag bearbeiten"
-                      >
-                        <app-icon name="pencil" />
-                      </button>
-                    </td>
-                  }
+                  <td class="col-part">
+                    @if (r.participation === 'starting') {
+                      <img
+                        src="img/icons/part-starting.svg"
+                        class="part-icon"
+                        alt="Startelf"
+                        title="Startelf"
+                      />
+                    } @else if (r.participation === 'substitute') {
+                      <img
+                        src="img/icons/part-substitute.svg"
+                        class="part-icon"
+                        alt="Eingewechselt"
+                        title="Eingewechselt"
+                      />
+                    } @else {
+                      <img
+                        src="img/icons/part-none.svg"
+                        class="part-icon"
+                        alt="Nicht eingesetzt"
+                        title="Nicht eingesetzt"
+                      />
+                    }
+                  </td>
+                  <td class="col-grade">
+                    <span
+                      class="grade-badge"
+                      [style.background]="gradeVar(r.grade)"
+                      [class.grade-badge--unset]="!r.grade"
+                      >{{ r.grade ?? '—' }}</span
+                    >
+                  </td>
+                  <td class="col-stats">
+                    <span class="icons-wrap">
+                      @if (+r.sds) {
+                        <img src="img/icons/sds.png" class="rating-icon" alt="SdS" title="Spieler des Spieltags" />
+                      }
+                      @for (i of range(r.goals); track i) {
+                        <img src="img/icons/goal.png" class="rating-icon" alt="Tor" title="Tor" />
+                      }
+                      @for (i of range(r.assists); track i) {
+                        <img src="img/icons/assist.png" class="rating-icon" alt="Assist" title="Vorlage" />
+                      }
+                      @if (+r.yellow_red_card) {
+                        <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
+                      } @else if (+r.red_card) {
+                        <span class="card-chip card-chip--red" title="Rot"></span>
+                      }
+                    </span>
+                  </td>
+                  <td class="col-points">{{ r.points ?? '—' }}</td>
                 </tr>
               }
             </tbody>
@@ -844,6 +853,7 @@
         </div>
       }
     </section>
+    </div>
   </div>
 }
 

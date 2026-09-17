@@ -291,19 +291,52 @@
 }
 
 .detail-grid {
+  // Desktop: 3 unabhängige Spalten (Liga-Teams/Vereinshistorie | Saisons/Marktwert-Chart |
+  // Stats/Noten), jede ein eigener Flex-Container, der seine 2 Sections dicht ohne Lücke
+  // stapelt — bewusst kein CSS-Grid mit gemeinsamen Zeilen mehr (dort bestimmte die höchste
+  // Zelle einer Zeile die Zeilenhöhe für ALLE Spalten, was zwischen kurzem und langem Inhalt
+  // Lücken riss, z.B. Vereinshistorie unter Liga-Teams). Mobile (Media-Query unten): jede
+  // .detail-col wird display:contents (löst sich als Layout-Box auf, ihre Kinder werden direkte
+  // Flex-Items von .detail-grid) und jede Section bekommt per order ihre lineare Mobile-Position
+  // — unabhängig von der Spalten-Gruppierung oben.
   display: flex;
-  flex-direction: column;
   gap: $space-6;
+  align-items: flex-start;
+
+  .detail-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: $space-6;
+  }
 
   .detail-section {
     margin-bottom: 0;
     min-width: 0;
   }
 
+  // Keine Liga-Teams-Card (Spieler war in dieser Saison keinem Team zugeordnet) — Vereins-
+  // historie ist dann das einzige Kind der Spalte und füllt sie dadurch automatisch aus, kein
+  // Sonderfall mehr nötig (anders als frühere Grid-Area-Version).
+
   // Enge Zellen-Innenabstände auf Mobile, damit die Tabellen (Noten, Liga-Teams, Saisons,
   // Vereinshistorie) ohne horizontales Scrollen auf den Screen passen — gleiches Muster wie
   // beim Kader (siehe squad.component.scss).
   @media (max-width: #{$mobile-breakpoint}) {
+    flex-direction: column;
+
+    .detail-col {
+      display: contents;
+    }
+
+    .section-noten           { order: 1; }
+    .section-liga-teams      { order: 2; }
+    .section-stats           { order: 3; }
+    .section-saisons         { order: 4; }
+    .section-price-chart     { order: 5; }
+    .section-vereinshistorie { order: 6; }
+
     // Die globale .table-container-Bleed-Technik (margin-inline: -$space-4, siehe _layout.scss)
     // setzt voraus, dass ausschließlich shell-content zwischen Container und Viewport-Rand
     // einrückt — hier reicht sie auf echten Geräten nicht bis zum Rand (evtl. verschachtelter
@@ -439,7 +472,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: $space-3;
-  margin-bottom: $space-4;
 }
 
 .ratings-table {

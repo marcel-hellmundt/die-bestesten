@@ -1005,6 +1005,9 @@ export class PlayerDetailComponent {
 
     const sorted = p.ratings; // already sorted by matchday_number ASC
     const rawPts = sorted.map((r) => +(r.points ?? 0));
+    // Spieler in dieser Saison nie eingesetzt (alle Ratings 0 Punkte) — ein Balkendiagramm aus
+    // lauter Nulllinien wäre nichtssagend, daher gar nicht erst anzeigen.
+    if (rawPts.every((pt) => pt === 0)) return null;
     const maxPts = Math.max(...rawPts, 0);
     const minPts = Math.min(...rawPts, 0);
     const range  = Math.max(maxPts - minPts, 1);
@@ -1156,6 +1159,24 @@ export class PlayerDetailComponent {
       const entries  = this.watchlistEntries();
       const playerId = this.playerId();
       this.watchlistEntryId.set(entries.find(e => e.player_id === playerId)?.id ?? null);
+    });
+
+    // Initialer Ladevorgang (kein season_id-Param) liefert die Daten der aktiven Saison — hat
+    // der Spieler dafür gar keine player_in_season-Zeile (z.B. inzwischen wieder vereinslos/
+    // abgestiegen), wäre die Ansicht sonst leer, obwohl die "Saisons"-Card noch die neueste
+    // Saison mit Daten zeigt. Wählt in dem Fall automatisch genau diese neueste Saison aus
+    // (löst per selectedSeasonId einen erneuten, season-scoped Ladevorgang aus) — nur beim
+    // allerersten Laden (selectedSeasonId noch null), nicht bei einer bewusst leeren, vom
+    // Nutzer selbst gewählten Saison.
+    effect(() => {
+      const p = this.player();
+      if (!p || this.selectedSeasonId() !== null) return;
+      const activeId = this.activeSeasonId();
+      if (!activeId) return;
+      const hasActiveSeasonEntry = p.seasons.some(s => s.season_id === activeId);
+      if (!hasActiveSeasonEntry && p.seasons.length > 0) {
+        this.selectedSeasonId.set(p.seasons[0].season_id);
+      }
     });
   }
 }
