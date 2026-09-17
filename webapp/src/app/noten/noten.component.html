@@ -43,8 +43,8 @@
           <div class="club-card card">
             <div class="club-card__header">
               <div class="club-card__stats-row">
-                <span class="club-card__avg-grade">{{ avgGrade(club) ?? '—' }}</span>
-                <span class="club-card__total-points">{{ totalPoints(club) }}</span>
+                <span class="club-card__avg-grade">Ø {{ avgGrade(club) ?? '—' }}</span>
+                <span class="club-card__total-points">{{ totalPoints(club) }} Pkt.</span>
               </div>
               <img
                 class="club-card__logo"
@@ -64,7 +64,7 @@
                     @if (p.participation === 'substitute' && (i === 0 || club.players[i - 1].participation !== 'substitute')) {
                       <tr class="separator-row"><td colspan="4"><hr /></td></tr>
                     }
-                    <tr [class.row--sub]="p.participation === 'substitute'">
+                    <tr [class.row--sub]="p.participation === 'substitute'" [class.row--own]="p.own">
                       <td class="col-pos">
                         <span class="position-badge" [style.background-color]="positionColor(p.position)">
                           {{ positionLabel(p.position) }}

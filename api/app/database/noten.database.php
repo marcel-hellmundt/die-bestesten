@@ -90,6 +90,12 @@ trait NotenTrait
         );
         $playerQuery->execute([$seasonId, $divisionId, $seasonId, $divisionId, $matchday['id']]);
 
+        // Eigener Kader nur für eingeloggte Manager (Guard::authorize() dekodiert auf diesem
+        // Guest-Endpunkt ein evtl. mitgeschicktes Token optional, siehe guard.php) — markiert die
+        // eigenen Spieler im Frontend hervorgehoben. Gäste ohne Token bekommen hierfür nie Daten,
+        // $ownPlayerIds bleibt leer.
+        $ownPlayerIds = $this->getOwnSquadPlayerIds($seasonId);
+
         foreach ($playerQuery->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $idx = $clubIndexById[$row['club_id']] ?? null;
             if ($idx === null) continue;
@@ -100,6 +106,7 @@ trait NotenTrait
                 'grade'         => $row['grade'] !== null ? (float) $row['grade'] : null,
                 'points'        => (int) $row['points'],
                 'participation' => $row['participation'],
+                'own'           => isset($ownPlayerIds[$row['id']]),
             ];
         }
 
@@ -118,5 +125,31 @@ trait NotenTrait
         );
         $q->execute();
         return $q->fetchColumn() ?: null;
+    }
+
+    /** player_id => true für den aktiven Kader des eingeloggten Managers in $seasonId (leer für Gäste). */
+    private function getOwnSquadPlayerIds(string $seasonId): array
+    {
+        $managerId = $GLOBALS['auth_manager_id'] ?? null;
+        if (!$managerId) return [];
+
+        try {
+            $tq = $this->con_league->prepare(
+                "SELECT id FROM team WHERE manager_id = ? AND season_id = ? LIMIT 1"
+            );
+            $tq->execute([$managerId, $seasonId]);
+            $teamId = $tq->fetchColumn();
+            if (!$teamId) return [];
+
+            $pq = $this->con_league->prepare(
+                "SELECT player_id FROM player_in_team WHERE team_id = ? AND to_matchday_id IS NULL"
+            );
+            $pq->execute([$teamId]);
+            return array_flip($pq->fetchAll(PDO::FETCH_COLUMN));
+        } catch (PDOException) {
+            // Kein con_league verbunden (z.B. Manager ohne aktive Liga) — einfach ohne
+            // Hervorhebung fortfahren statt den ganzen Request scheitern zu lassen.
+            return [];
+        }
     }
 }

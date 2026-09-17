@@ -11,6 +11,7 @@ interface NotenPlayer {
   grade: number | null;
   points: number;
   participation: 'starting' | 'substitute';
+  own: boolean;
 }
 
 interface NotenClub {

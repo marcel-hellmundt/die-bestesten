@@ -100,28 +100,31 @@
     align-items: center;
     gap: $space-2;
     margin-bottom: $space-3;
-    padding-top: $space-6;
     text-align: center;
   }
 
+  // Etwas oberhalb der vertikalen Mitte von Logo+Name (statt oberhalb reserviertem Platz) —
+  // schiebt sie dadurch nicht nach unten; mit Seitenabstand statt direkt an der Kante.
   &__stats-row {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 35%;
+    left: $space-3;
+    right: $space-3;
+    transform: translateY(-50%);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    pointer-events: none;
   }
 
   &__avg-grade {
-    font-size: $font-lg;
+    font-size: $font-sm;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
   }
 
   &__total-points {
-    font-size: $font-lg;
+    font-size: $font-sm;
     font-weight: $font-weight-semibold;
   }
 
@@ -166,6 +169,11 @@
 
 .row--sub {
   color: $color-text-muted;
+}
+
+// Eigener Kader (nur für eingeloggte Manager vom Backend gesetzt, siehe getOwnSquadPlayerIds())
+.row--own {
+  background: color-mix(in srgb, $color-accent 10%, transparent);
 }
 
 .col-pos {
