@@ -42,6 +42,10 @@
         @for (club of clubs(); track club.id) {
           <div class="club-card card">
             <div class="club-card__header">
+              <div class="club-card__stats-row">
+                <span class="club-card__avg-grade">{{ avgGrade(club) ?? '—' }}</span>
+                <span class="club-card__total-points">{{ totalPoints(club) }}</span>
+              </div>
               <img
                 class="club-card__logo"
                 [class.logo--placeholder]="!club.logo_uploaded"
@@ -56,19 +60,15 @@
             } @else {
               <table class="data-table club-card__table">
                 <tbody>
-                  @for (p of club.players; track p.id) {
+                  @for (p of club.players; track p.id; let i = $index) {
+                    @if (p.participation === 'substitute' && (i === 0 || club.players[i - 1].participation !== 'substitute')) {
+                      <tr class="separator-row"><td colspan="4"><hr /></td></tr>
+                    }
                     <tr [class.row--sub]="p.participation === 'substitute'">
                       <td class="col-pos">
                         <span class="position-badge" [style.background-color]="positionColor(p.position)">
                           {{ positionLabel(p.position) }}
                         </span>
-                      </td>
-                      <td class="col-photo">
-                        @if (photoUrl(p); as url) {
-                          <img class="player-photo" [src]="url" [alt]="p.displayname" />
-                        } @else {
-                          <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
-                        }
                       </td>
                       <td class="col-name">{{ p.displayname }}</td>
                       <td class="col-grade">

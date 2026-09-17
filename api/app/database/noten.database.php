@@ -74,16 +74,19 @@ trait NotenTrait
         $clubIndexById = [];
         foreach ($clubs as $i => $c) { $clubIndexById[$c['id']] = $i; }
 
+        // Bewusst KEIN pis.photo_uploaded/Foto-URL — Spielerbilder dürfen auf dieser öffentlichen,
+        // nicht-eingeloggten Seite unter keinen Umständen ausgespielt werden.
         $playerQuery = $this->con->prepare(
-            "SELECT p.id, p.displayname, pis.position, pis.photo_uploaded,
+            "SELECT p.id, p.displayname, pis.position,
                     pr.club_id, pr.grade, pr.points, pr.participation
              FROM player_rating pr
              JOIN player p ON p.id = pr.player_id
              JOIN club_in_season cis ON cis.club_id = pr.club_id AND cis.season_id = ? AND cis.division_id = ?
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ? AND pis.division_id = ?
              WHERE pr.matchday_id = ? AND pr.participation IN ('starting', 'substitute')
-             ORDER BY FIELD(pis.position, 'GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'),
-                      pr.grade IS NULL, pr.grade ASC"
+             ORDER BY FIELD(pr.participation, 'starting', 'substitute'),
+                      FIELD(pis.position, 'GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'),
+                      pis.price DESC"
         );
         $playerQuery->execute([$seasonId, $divisionId, $seasonId, $divisionId, $matchday['id']]);
 
@@ -94,7 +97,6 @@ trait NotenTrait
                 'id'            => $row['id'],
                 'displayname'   => $row['displayname'],
                 'position'      => $row['position'],
-                'photo_uploaded' => (bool) $row['photo_uploaded'],
                 'grade'         => $row['grade'] !== null ? (float) $row['grade'] : null,
                 'points'        => (int) $row['points'],
                 'participation' => $row['participation'],

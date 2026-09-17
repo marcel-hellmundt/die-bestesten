@@ -8,7 +8,6 @@ interface NotenPlayer {
   id: string;
   displayname: string;
   position: string | null;
-  photo_uploaded: boolean;
   grade: number | null;
   points: number;
   participation: 'starting' | 'substitute';
@@ -67,7 +66,6 @@ export class NotenComponent {
   error   = computed(() => this.state().error);
   private data = computed(() => this.state().data ?? EMPTY);
 
-  seasonId  = computed(() => this.data().season_id);
   matchdays = computed(() => this.data().matchdays);
   matchday  = computed(() => this.data().matchday);
   clubs     = computed(() => this.data().clubs);
@@ -121,9 +119,13 @@ export class NotenComponent {
     return `https://img.die-bestesten.de/club/${club.id}.png`;
   }
 
-  photoUrl(player: NotenPlayer): string | null {
-    const seasonId = this.seasonId();
-    if (!player.photo_uploaded || !seasonId) return null;
-    return `https://img.die-bestesten.de/player/${seasonId}/${player.id}.png`;
+  avgGrade(club: NotenClub): string | null {
+    const graded = club.players.filter((p) => p.grade !== null);
+    if (!graded.length) return null;
+    return (graded.reduce((s, p) => s + p.grade!, 0) / graded.length).toFixed(2);
+  }
+
+  totalPoints(club: NotenClub): number {
+    return club.players.reduce((s, p) => s + p.points, 0);
   }
 }

@@ -94,10 +94,35 @@
   padding: $space-4;
 
   &__header {
+    position: relative;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: $space-3;
+    gap: $space-2;
     margin-bottom: $space-3;
+    padding-top: $space-6;
+    text-align: center;
+  }
+
+  &__stats-row {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__avg-grade {
+    font-size: $font-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+
+  &__total-points {
+    font-size: $font-lg;
+    font-weight: $font-weight-semibold;
   }
 
   &__logo {
@@ -128,6 +153,17 @@
   }
 }
 
+.separator-row td {
+  padding: 0 !important;
+  border-bottom: none !important;
+}
+
+.separator-row hr {
+  border: none;
+  border-top: 1px dashed $color-border;
+  margin: $space-1 0;
+}
+
 .row--sub {
   color: $color-text-muted;
 }
@@ -136,26 +172,12 @@
   width: 40px;
 }
 
-.col-photo {
-  width: 32px;
-}
-
-.player-photo {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-
-  &--placeholder {
-    opacity: 0.3;
-  }
-}
-
 .col-name {
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: $font-weight-medium;
 }
 
 .col-grade {
@@ -164,12 +186,12 @@
 
 .grade-badge {
   display: inline-block;
-  padding: 2px $space-2;
+  width: 28px;
+  padding: 2px 0;
   border-radius: $radius-sm;
   font-size: $font-xs;
   font-weight: $font-weight-bold;
   color: #fff;
-  min-width: 28px;
   text-align: center;
 
   &--unset {
