@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../core/api.service';
+import { AuthService } from '../auth/auth.service';
 
 interface NotenPlayer {
   id: string;
@@ -51,7 +52,13 @@ const EMPTY: NotenResponse = { season_id: null, matchdays: [], matchday: null, c
   styleUrl: './noten.component.scss',
 })
 export class NotenComponent {
-  private api = inject(ApiService);
+  private api  = inject(ApiService);
+  private auth = inject(AuthService);
+
+  isLoggedIn = computed(() => this.auth.isLoggedIn());
+
+  // Default false — eigene Spieler werden nur hervorgehoben, wenn der Manager es explizit anstößt.
+  showOwn = signal(false);
 
   selectedMatchdayId = signal<string | null>(null);
 

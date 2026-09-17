@@ -12,9 +12,53 @@
 
 .noten-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: $space-4;
   margin-bottom: $space-4;
+}
+
+.noten-header__left {
+  display: flex;
+  align-items: baseline;
+  gap: $space-4;
+}
+
+// Gleicher Look wie der Live-Toggle auf der Saisontabelle (liga/table).
+.own-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  height: 36px;
+  padding: 0 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-surface;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: all $transition-fast;
+  flex-shrink: 0;
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: $color-border;
+    transition: background $transition-fast;
+  }
+
+  &--active {
+    border-color: $color-accent;
+    color: $color-accent;
+    background: color-mix(in srgb, $color-accent 10%, transparent);
+
+    .own-toggle__dot {
+      background: $color-accent;
+      box-shadow: 0 0 4px $color-accent;
+    }
+  }
 }
 
 .noten-brand {
@@ -78,6 +122,13 @@
     background: $color-accent;
     border-color: $color-accent;
     color: #fff;
+
+    // Kein eigener Hover-Effekt für den bereits selektierten Button — sonst überschreibt die
+    // graue Hover-Background die weiße Schrift von --active und macht die Zahl unlesbar.
+    &:hover {
+      background: $color-accent;
+      border-color: $color-accent;
+    }
   }
 }
 
@@ -94,7 +145,8 @@
 
 .club-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  // Breiter als vorher — die Stats-Spalte darf nie umbrechen, braucht also im Zweifel mehr Platz.
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: $space-4;
 }
 
@@ -153,26 +205,32 @@
   &__table {
     width: 100%;
 
+    // Überschreibt die globale .data-table-Regel (border-bottom je Zeile, siehe _layout.scss) —
+    // hier soll nur die Startelf/Ersatzbank-Trennlinie sichtbar sein, siehe .separator-line.
     td {
       padding: $space-1 $space-2;
-      border-bottom: 1px solid $color-border;
-    }
-
-    tr:last-child td {
       border-bottom: none;
     }
   }
 }
 
+// Einzige Trennlinie der Tabelle: zwischen Startelf und Ersatzbank, nicht zwischen einzelnen
+// Spielern.
 .separator-row {
   &:hover {
     background-color: transparent !important;
   }
 
   td {
-    padding: $space-4 0 0 !important;
-    border-bottom: none !important;
+    padding: 0 !important;
   }
+}
+
+// Mittig im Gap zwischen letztem Startelf- und erstem Ersatzbank-Spieler — gleich großer Abstand
+// (margin) über und unter der Linie statt Border direkt an der Zellkante.
+.separator-line {
+  border-top: 1px solid $color-border;
+  margin: $space-2 0;
 }
 
 .row--sub {
@@ -182,6 +240,11 @@
 // Eigener Kader (nur für eingeloggte Manager vom Backend gesetzt, siehe getOwnSquadPlayerIds())
 .row--own {
   background: color-mix(in srgb, $color-accent 10%, transparent);
+}
+
+// Spieler des Spieltags — nach .row--own, damit es bei Überschneidung gewinnt.
+.row--sds {
+  background: color-mix(in srgb, $color-warning 20%, transparent);
 }
 
 .col-pos {
@@ -196,28 +259,36 @@
   letter-spacing: 0.04em;
 }
 
+// display:flex statt nur inline-Inhalt — sonst rendert der Zeilenumbruch/Leerraum im Template
+// zwischen Name und Icons als sichtbarer Abstand; im Flex-Kontext wird reiner Whitespace
+// zwischen den Kindern ignoriert, echte gap-Werte bleiben trotzdem steuerbar (hier 0).
 .col-name {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+  font-weight: $font-weight-medium;
+}
+
+.col-name__text {
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: $font-weight-medium;
-}
-
-.col-stats {
-  white-space: nowrap;
 }
 
 .icons-wrap {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
+// Gleiche Größe wie der Spielername (font-size der .data-table, siehe _layout.scss).
 .stat-icon {
-  width: 14px;
-  height: 14px;
+  width: $font-sm;
+  height: $font-sm;
   object-fit: contain;
 }
 
