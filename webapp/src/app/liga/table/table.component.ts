@@ -257,6 +257,55 @@ export class TableComponent {
   matchdayWins   = computed(() => (this.state().data?.luck?.matchday_wins    ?? []) as any[]);
   participationStats = computed(() => (this.state().data?.participation ?? []) as any[]);
 
+  // Mobile: Hölzerne Bank/Goldene Bürste/Glückspilze/Pechvögel als eigenes Swipe-Karussell (siehe
+  // .position-points-carousel weiter unten, gleiches Muster) — Desktop bleibt unverändert im
+  // .sidebar als gestapelte Cards. Nur Karten mit tatsächlich vorhandenen Daten werden aufgenommen
+  // (gleiche @if-Bedingung wie die Desktop-Cards), Anzahl der Slides also variabel (0-4).
+  luckCards = computed(() => {
+    const cards: { key: string; icon: string; label: string; labelClass: string; rows: any[]; meta: (r: any) => string }[] = [];
+    if (this.hoelzerneBand().length > 0) {
+      cards.push({
+        key: 'wood', icon: '/img/icons/bench.png', label: 'Hölzerne Bank', labelClass: 'luck-card__label--wood',
+        rows: this.hoelzerneBand(), meta: (r) => `−${r.gap} Pkt`,
+      });
+    }
+    if (this.goldeneBuerste().length > 0) {
+      cards.push({
+        key: 'gold', icon: '/img/icons/brush.png', label: 'Goldene Bürste', labelClass: 'luck-card__label--gold',
+        rows: this.goldeneBuerste(), meta: (r) => `Sp. ${r.matchday_number} · ${r.points} Pkt`,
+      });
+    }
+    if (this.lucky().length > 0) {
+      cards.push({
+        key: 'lucky', icon: '/img/icons/clover.png', label: 'Glückspilze', labelClass: 'luck-card__label--lucky',
+        rows: this.lucky(), meta: (r) => `Sp. ${r.matchday_number} · ${r.points} Pkt`,
+      });
+    }
+    if (this.unlucky().length > 0) {
+      cards.push({
+        key: 'unlucky', icon: '/img/icons/ghost.png', label: 'Pechvögel', labelClass: 'luck-card__label--unlucky',
+        rows: this.unlucky(), meta: (r) => `Sp. ${r.matchday_number} · ${r.points} Pkt`,
+      });
+    }
+    return cards;
+  });
+
+  activeLuckIndex = signal(0);
+  @ViewChild('luckCarouselTrack') luckCarouselTrack?: ElementRef<HTMLElement>;
+
+  onLuckCarouselScroll(): void {
+    const el = this.luckCarouselTrack?.nativeElement;
+    if (!el || el.clientWidth === 0) return;
+    this.activeLuckIndex.set(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  scrollToLuckIndex(index: number): void {
+    const el = this.luckCarouselTrack?.nativeElement;
+    if (!el) return;
+    el.scrollTo({ left: index * el.clientWidth, behavior: 'smooth' });
+    this.activeLuckIndex.set(index);
+  }
+
   // Punkte nach Mannschaftsteil — 4 separat sortierte Mini-Tabellen (Torwart/Abwehr/Mittelfeld/
   // Sturm), je aus der pro Spieltag bereits denormalisierten team_rating.points_goalkeeper/
   // defender/midfielder/forward-Summe (siehe TeamRatingTrait::getSeasonStandings()) — bewusst auf
@@ -297,6 +346,25 @@ export class TableComponent {
   hoveredPositionTeamId = signal<string | null>(null);
   onPositionTeamHover(teamId: string): void { this.hoveredPositionTeamId.set(teamId); }
   onPositionTeamLeave(): void { this.hoveredPositionTeamId.set(null); }
+
+  // Mobile: die 4 Mannschaftsteil-Tabellen als Swipe-Karussell statt untereinander gestapelt —
+  // ein Slide pro scroll-snap-Seite, activePositionIndex spiegelt die aktuell sichtbare Karte für
+  // die Punkte-Indikatoren darunter (auch bei Finger-Swipe, nicht nur beim Klick auf einen Punkt).
+  activePositionIndex = signal(0);
+  @ViewChild('positionCarouselTrack') positionCarouselTrack?: ElementRef<HTMLElement>;
+
+  onPositionCarouselScroll(): void {
+    const el = this.positionCarouselTrack?.nativeElement;
+    if (!el || el.clientWidth === 0) return;
+    this.activePositionIndex.set(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  scrollToPositionIndex(index: number): void {
+    const el = this.positionCarouselTrack?.nativeElement;
+    if (!el) return;
+    el.scrollTo({ left: index * el.clientWidth, behavior: 'smooth' });
+    this.activePositionIndex.set(index);
+  }
   loading        = computed(() => this.state().loading);
   error          = computed(() => this.state().error);
 

@@ -997,43 +997,62 @@ export class PlayerDetailComponent {
   });
   totalGoals   = computed(() => this.player()?.ratings.reduce((s, r) => s + +r.goals,   0) ?? 0);
   totalAssists = computed(() => this.player()?.ratings.reduce((s, r) => s + +r.assists, 0) ?? 0);
+  totalCleanSheets = computed(() => this.player()?.ratings.reduce((s, r) => s + +r.clean_sheet, 0) ?? 0);
+
+  // Torhüter zeigen "Weiße Westen" statt Tore/Vorlagen — Position der gerade angezeigten Saison
+  // (nicht zwingend die aktive Saison, siehe selectedSeasonId), nicht die aktuelle Division-Zeile.
+  isGoalkeeperSeason = computed(() => {
+    const p = this.player();
+    if (!p) return false;
+    const seasonId = this.selectedSeasonId() ?? p.seasons[0]?.season_id;
+    return p.seasons.find(s => s.season_id === seasonId)?.position === 'GOALKEEPER';
+  });
+
+  // Feste Saisonlänge (1. Bundesliga) — die X-Achse zeigt immer alle 34 Spieltage, unabhängig
+  // davon, wie viele davon bereits eine Bewertung haben (fehlende Spieltage bleiben als leere
+  // Slots stehen statt die Achse auf die tatsächlich vorhandenen Bewertungen zu stauchen).
+  private readonly TOTAL_MATCHDAYS = 34;
 
   // Points bar chart (per matchday, colored by grade)
   pointsChartData = computed(() => {
     const p = this.player();
     if (!p || p.ratings.length === 0) return null;
 
-    const sorted = p.ratings; // already sorted by matchday_number ASC
-    const rawPts = sorted.map((r) => +(r.points ?? 0));
+    const existingRawPts = p.ratings.map((r) => +(r.points ?? 0));
     // Spieler in dieser Saison nie eingesetzt (alle Ratings 0 Punkte) — ein Balkendiagramm aus
     // lauter Nulllinien wäre nichtssagend, daher gar nicht erst anzeigen.
-    if (rawPts.every((pt) => pt === 0)) return null;
+    if (existingRawPts.every((pt) => pt === 0)) return null;
+
+    const n = this.TOTAL_MATCHDAYS;
+    const byNumber = new Map(p.ratings.map((r) => [+r.matchday_number, r]));
+    const slots = Array.from({ length: n }, (_, i) => byNumber.get(i + 1) ?? null);
+
+    const rawPts = slots.map((s) => (s ? +(s.points ?? 0) : 0));
     const maxPts = Math.max(...rawPts, 0);
     const minPts = Math.min(...rawPts, 0);
     const range  = Math.max(maxPts - minPts, 1);
 
     const plotW  = this.pointsChartW - this.padL - this.padR;
     const plotH  = this.chartH - this.padT - this.padB;
-    const n      = sorted.length;
     const slotW  = plotW / n;
     const barW   = Math.min(slotW * 0.65, 40);
 
     // Y coordinate of the zero baseline
     const zeroY = this.padT + plotH * (maxPts / range);
 
-    const bars = sorted.map((s, i) => {
-      const pts  = +(s.points ?? 0);
-      const barH = (Math.abs(pts) / range) * plotH;
+    const bars = slots.map((s, i) => {
+      const pts  = s ? +(s.points ?? 0) : 0;
+      const barH = s ? (Math.abs(pts) / range) * plotH : 0;
       const x    = this.padL + i * slotW + (slotW - barW) / 2;
       const y    = pts >= 0 ? zeroY - barH : zeroY;
       return {
         x, y, width: barW, height: barH,
-        color:   s.grade ? this.gradeVar(s.grade) : '#9ca3af',
+        color:   s ? (s.grade ? this.gradeVar(s.grade) : '#9ca3af') : 'transparent',
         labelX:  this.padL + i * slotW + slotW / 2,
-        label:   s.matchday_number,
-        tooltip: `ST ${s.matchday_number}: ${pts} Pkt`,
+        label:   i + 1,
+        tooltip: s ? `ST ${i + 1}: ${pts} Pkt` : `ST ${i + 1}: keine Bewertung`,
         pts,
-        grade:   s.grade ?? null,
+        grade:   s?.grade ?? null,
         zeroY,
       };
     });
@@ -1044,13 +1063,17 @@ export class PlayerDetailComponent {
     if (maxPts > 0) yTicks.unshift({ y: this.padT,        label: String(maxPts) });
     if (minPts < 0) yTicks.push(  { y: this.padT + plotH, label: String(minPts) });
 
-    // Rolling average line (5-matchday window)
+    // Rolling average line (5-matchday window) — nur über tatsächlich vorhandene Bewertungen
+    // (in Spieltag-Reihenfolge), an ihrer echten X-Position auf der 34er-Achse platziert; fehlende
+    // Spieltage zählen nicht als 0 mit, sonst würde ein Fenster mit vielen unbewerteten Spieltagen
+    // den Schnitt künstlich nach unten ziehen.
     const windowSize = 5;
     const rollingPts: Array<{ x: number; y: number }> = [];
-    for (let i = windowSize - 1; i < sorted.length; i++) {
-      const avg = rawPts.slice(i - windowSize + 1, i + 1).reduce((a, b) => a + b, 0) / windowSize;
+    for (let i = windowSize - 1; i < p.ratings.length; i++) {
+      const avg = existingRawPts.slice(i - windowSize + 1, i + 1).reduce((a, b) => a + b, 0) / windowSize;
+      const matchdayIndex = +p.ratings[i].matchday_number - 1;
       rollingPts.push({
-        x: this.padL + i * slotW + slotW / 2,
+        x: this.padL + matchdayIndex * slotW + slotW / 2,
         y: Math.max(this.padT, Math.min(this.padT + plotH, zeroY - (avg / range) * plotH)),
       });
     }

@@ -190,6 +190,50 @@
   display: flex;
   flex-direction: column;
   gap: $space-8;
+  // Wie .main-col: ohne min-width:0 bemisst ein Grid-Item sich am Inhalt (hier: dem Karussell),
+  // wodurch die Spalte über die Viewport-Breite hinauswächst statt sich am 1fr-Track zu orientieren.
+  min-width: 0;
+}
+
+// .luck-cards-desktop ist ein zusätzlicher Wrapper zwischen .sidebar und den einzelnen
+// .luck-card-wrap-Karten (um sie auf Mobile auszublenden) — braucht deshalb denselben Flex+Gap
+// wie .sidebar, sonst fehlt der Abstand zwischen den 4 Karten. Mobile-Ausblendung bewusst NICHT
+// dem globalen .hidden-mobile überlassen: Angulars View-Encapsulation hängt component-eigenen
+// Regeln ein Scope-Attribut an, wodurch das hier unconditional gesetzte display:flex eine höhere
+// Spezifität hat als das globale .hidden-mobile { @media {display:none} } — die Karten blieben
+// dadurch auch auf Mobile sichtbar (parallel zum Karussell). Deshalb die Mobile-Regel direkt hier.
+.luck-cards-desktop {
+  display: flex;
+  flex-direction: column;
+  gap: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+.luck-carousel {
+  min-width: 0;
+  width: 100%;
+
+  &__track {
+    display: flex;
+    min-width: 0;
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  &__slide {
+    flex: 0 0 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding-right: $space-3;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
 }
 
 .luck-card-wrap {
@@ -346,6 +390,10 @@
   vertical-align: middle;
 }
 
+.team-name {
+  font-weight: 500;
+}
+
 .team-cell {
   display: flex;
   align-items: center;
@@ -367,8 +415,13 @@
   gap: $space-4;
   margin-top: $space-6;
 
+  // align-items:flex-start ist für die Desktop-Reihe gedacht (Karten oben ausgerichtet statt auf
+  // volle Höhe gestreckt) — bei flex-direction:column ist align-items aber die Querachse, also
+  // horizontal: Kinder würden dann auf ihre Inhaltsbreite schrumpfen statt volle Breite
+  // einzunehmen, was einzelne Cards (z.B. Einsatzquote) breiter als den Screen machen kann.
   @media (max-width: $mobile-breakpoint) {
     flex-direction: column;
+    align-items: stretch;
   }
 }
 
@@ -393,8 +446,11 @@
     min-width: 0;
   }
 
+  // Gleicher Grund wie bei .chart-row oben — align-items:flex-start passt nur für die
+  // Desktop-Reihe, nicht für die Mobile-Spalte.
   @media (max-width: $mobile-breakpoint) {
     flex-direction: column;
+    align-items: stretch;
   }
 }
 
@@ -505,14 +561,76 @@
 // ── Punkte nach Mannschaftsteil ─────────────────────────────────────────────
 // Sitzt in .chart-row__main statt direkt in .chart-row — dadurch genau so breit wie
 // Saisonverlauf+Einsatzquote zusammen, nicht die ganze .chart-row inkl. .wins-card.
+// Desktop: alle 4 Tabellen nebeneinander in 1 Card (.position-points-card, hidden-mobile).
+// Mobile: dieselben 4 Tabellen als Swipe-Karussell (.position-points-carousel, hidden-desktop) —
+// eigene Cards, siehe weiter unten.
 .position-points-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: $space-10;
+}
+
+// Gegenstück zum globalen .hidden-mobile (_layout.scss) — dort noch nicht vorhanden.
+.hidden-desktop {
+  display: none;
 
   @media (max-width: $mobile-breakpoint) {
-    grid-template-columns: 1fr;
-    gap: $space-12;
+    display: block;
+  }
+}
+
+.position-points-carousel {
+  // min-width:0 auf jeder Stufe — ohne das bemisst sich die Breite eines Flex-Items sonst am
+  // Inhalt (hier: 4 Tabellen nebeneinander in der Intrinsic-Size-Berechnung), was hier UND bei
+  // Elternelementen (z.B. der Einsatzquote-Card daneben) zu einer viel zu breiten, über den
+  // Viewport hinausragenden Seite führte — die "100%"-Breiten anderer Cards bezogen sich dann auf
+  // diese aufgeblähte Breite statt auf die tatsächliche Bildschirmbreite.
+  min-width: 0;
+  width: 100%;
+
+  &__track {
+    display: flex;
+    min-width: 0;
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    // Kein sichtbarer Scrollbalken — die Punkte darunter sind der Fortschritts-Indikator.
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  &__slide {
+    flex: 0 0 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    // Erzeugt einen sichtbaren Abstand zwischen den Karten beim Swipen, ohne die Scroll-Snap-Logik
+    // (flex-basis bleibt 100%, .onScroll()/scrollTo() im Component rechnen weiter mit clientWidth).
+    padding-right: $space-3;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+}
+
+.position-points-dots {
+  display: flex;
+  justify-content: center;
+  gap: $space-2;
+  margin-top: $space-4;
+}
+
+.position-points-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: $color-border;
+  cursor: pointer;
+  transition: background $transition-fast, transform $transition-fast;
+
+  &--active {
+    background: $color-accent;
+    transform: scale(1.25);
   }
 }
 

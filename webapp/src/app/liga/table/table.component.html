@@ -255,54 +255,85 @@
         </div>
 
         @if (positionPoints(); as groups) {
-          <div class="card position-points-card">
+          <!-- Desktop: alle 4 Mannschaftsteil-Tabellen nebeneinander in 1 Card -->
+          <div class="card position-points-card hidden-mobile">
             <div class="position-points-grid">
               @for (g of groups; track g.key) {
                 <div class="position-points-col">
-                  <img class="position-points-col__icon" [src]="g.icon" alt="" aria-hidden="true" />
-                  <div class="position-points-col__label" [style.color]="g.color">{{ g.label }}</div>
-                  <table class="data-table data-table--compact">
-                    <thead>
-                      <tr>
-                        <th class="col-rank">#</th>
-                        <th></th>
-                        <th class="col-num col-points">Pkt</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (r of g.rows; track r.team_id; let i = $index) {
-                        <tr
-                          class="row-link"
-                          (click)="navigateToTeam(r.team_id)"
-                          (mouseenter)="onPositionTeamHover(r.team_id)"
-                          (mouseleave)="onPositionTeamLeave()"
-                        >
-                          <td class="col-rank">{{ r.groupPoints !== g.rows[i - 1]?.groupPoints ? i + 1 : '' }}</td>
-                          <td class="col-team">
-                            <img
-                              class="tbl-logo"
-                              [class.tbl-logo--hovered]="hoveredPositionTeamId() === r.team_id"
-                              [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
-                              [class.logo--placeholder]="logoErrors.has(r.team_id)"
-                              [alt]="r.team_name"
-                              (error)="onLogoError(r.team_id)"
-                            />
-                          </td>
-                          <td class="col-num col-points">
-                            <div class="position-points-cell">
-                              <span class="position-points-value">{{ r.groupPoints | number }}</span>
-                              <span class="position-points-pct">{{ r.groupPct | number: '1.0-0' }}%</span>
-                            </div>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+                  <ng-container *ngTemplateOutlet="positionTableTpl; context: { g }"></ng-container>
                 </div>
               }
             </div>
           </div>
+
+          <!-- Mobile: dieselben 4 Tabellen als Swipe-Karussell, je 1 eigene Card pro Slide -->
+          <div class="position-points-carousel hidden-desktop">
+            <div
+              class="position-points-carousel__track"
+              #positionCarouselTrack
+              (scroll)="onPositionCarouselScroll()"
+            >
+              @for (g of groups; track g.key) {
+                <div class="position-points-carousel__slide card position-points-col">
+                  <ng-container *ngTemplateOutlet="positionTableTpl; context: { g }"></ng-container>
+                </div>
+              }
+            </div>
+            <div class="position-points-dots">
+              @for (g of groups; track g.key; let i = $index) {
+                <button
+                  type="button"
+                  class="position-points-dot"
+                  [class.position-points-dot--active]="activePositionIndex() === i"
+                  (click)="scrollToPositionIndex(i)"
+                  [attr.aria-label]="g.label"
+                ></button>
+              }
+            </div>
+          </div>
         }
+
+        <ng-template #positionTableTpl let-g="g">
+          <img class="position-points-col__icon" [src]="g.icon" alt="" aria-hidden="true" />
+          <div class="position-points-col__label" [style.color]="g.color">{{ g.label }}</div>
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th></th>
+                <th class="col-num col-points">Pkt</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of g.rows; track r.team_id; let i = $index) {
+                <tr
+                  class="row-link"
+                  (click)="navigateToTeam(r.team_id)"
+                  (mouseenter)="onPositionTeamHover(r.team_id)"
+                  (mouseleave)="onPositionTeamLeave()"
+                >
+                  <td class="col-rank">{{ r.groupPoints !== g.rows[i - 1]?.groupPoints ? i + 1 : '' }}</td>
+                  <td class="col-team">
+                    <img
+                      class="tbl-logo"
+                      [class.tbl-logo--hovered]="hoveredPositionTeamId() === r.team_id"
+                      [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
+                      [class.logo--placeholder]="logoErrors.has(r.team_id)"
+                      [alt]="r.team_name"
+                      (error)="onLogoError(r.team_id)"
+                    />
+                  </td>
+                  <td class="col-num col-points">
+                    <div class="position-points-cell">
+                      <span class="position-points-value">{{ r.groupPoints | number }}</span>
+                      <span class="position-points-pct">{{ r.groupPct | number: '1.0-0' }}%</span>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </ng-template>
         </div>
       </div>
     </div>
@@ -318,88 +349,135 @@
         </div>
       }
 
-      @if (hoelzerneBand().length > 0) {
-        <div class="luck-card-wrap">
-          <img class="luck-card__icon" src="/img/icons/bench.png" alt="" aria-hidden="true" />
-          <span class="luck-card__label luck-card__label--wood">Hölzerne Bank</span>
-          <div class="card luck-card">
-            <div class="luck-list">
-              @for (r of hoelzerneBand(); track r.team_id) {
-                <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="manager-cell">
-                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
-                    <span class="luck-item__team">{{ r.manager_name }}</span>
-                  </span>
-                  <span class="luck-item__meta">−{{ r.gap }} Pkt</span>
-                </a>
-              }
+      <!-- Desktop: gestapelt wie gehabt -->
+      <div class="luck-cards-desktop hidden-mobile">
+        @if (hoelzerneBand().length > 0) {
+          <div class="luck-card-wrap">
+            <img class="luck-card__icon" src="/img/icons/bench.png" alt="" aria-hidden="true" />
+            <span class="luck-card__label luck-card__label--wood">Hölzerne Bank</span>
+            <div class="card luck-card">
+              <div class="luck-list">
+                @for (r of hoelzerneBand(); track r.team_id) {
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                    <span class="manager-cell">
+                      <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                      <span class="luck-item__team">{{ r.manager_name }}</span>
+                    </span>
+                    <span class="luck-item__meta">−{{ r.gap }} Pkt</span>
+                  </a>
+                }
+              </div>
             </div>
           </div>
-        </div>
-      }
+        }
 
-      @if (goldeneBuerste().length > 0) {
-        <div class="luck-card-wrap">
-          <img class="luck-card__icon" src="/img/icons/brush.png" alt="" aria-hidden="true" />
-          <span class="luck-card__label luck-card__label--gold">Goldene Bürste</span>
-          <div class="card luck-card">
-            <div class="luck-list">
-              @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
-                <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="manager-cell">
-                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
-                    <span class="luck-item__team">{{ r.manager_name }}</span>
-                  </span>
-                  <span class="luck-item__meta"
-                    >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
-                  >
-                </a>
-              }
+        @if (goldeneBuerste().length > 0) {
+          <div class="luck-card-wrap">
+            <img class="luck-card__icon" src="/img/icons/brush.png" alt="" aria-hidden="true" />
+            <span class="luck-card__label luck-card__label--gold">Goldene Bürste</span>
+            <div class="card luck-card">
+              <div class="luck-list">
+                @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                    <span class="manager-cell">
+                      <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                      <span class="luck-item__team">{{ r.manager_name }}</span>
+                    </span>
+                    <span class="luck-item__meta"
+                      >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
+                    >
+                  </a>
+                }
+              </div>
             </div>
           </div>
-        </div>
-      }
+        }
 
-      @if (lucky().length > 0) {
-        <div class="luck-card-wrap">
-          <img class="luck-card__icon" src="/img/icons/clover.png" alt="" aria-hidden="true" />
-          <span class="luck-card__label luck-card__label--lucky">Glückspilze</span>
-          <div class="card luck-card">
-            <div class="luck-list">
-              @for (r of lucky(); track r.team_id + r.matchday_id) {
-                <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="manager-cell">
-                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
-                    <span class="luck-item__team">{{ r.manager_name }}</span>
-                  </span>
-                  <span class="luck-item__meta"
-                    >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
-                  >
-                </a>
-              }
+        @if (lucky().length > 0) {
+          <div class="luck-card-wrap">
+            <img class="luck-card__icon" src="/img/icons/clover.png" alt="" aria-hidden="true" />
+            <span class="luck-card__label luck-card__label--lucky">Glückspilze</span>
+            <div class="card luck-card">
+              <div class="luck-list">
+                @for (r of lucky(); track r.team_id + r.matchday_id) {
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                    <span class="manager-cell">
+                      <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                      <span class="luck-item__team">{{ r.manager_name }}</span>
+                    </span>
+                    <span class="luck-item__meta"
+                      >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
+                    >
+                  </a>
+                }
+              </div>
             </div>
           </div>
-        </div>
-      }
+        }
 
-      @if (unlucky().length > 0) {
-        <div class="luck-card-wrap">
-          <img class="luck-card__icon" src="/img/icons/ghost.png" alt="" aria-hidden="true" />
-          <span class="luck-card__label luck-card__label--unlucky">Pechvögel</span>
-          <div class="card luck-card">
-            <div class="luck-list">
-              @for (r of unlucky(); track r.team_id + r.matchday_id) {
-                <a class="luck-item" [routerLink]="['/team', r.team_id]">
-                  <span class="manager-cell">
-                    <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
-                    <span class="luck-item__team">{{ r.manager_name }}</span>
-                  </span>
-                  <span class="luck-item__meta"
-                    >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
-                  >
-                </a>
-              }
+        @if (unlucky().length > 0) {
+          <div class="luck-card-wrap">
+            <img class="luck-card__icon" src="/img/icons/ghost.png" alt="" aria-hidden="true" />
+            <span class="luck-card__label luck-card__label--unlucky">Pechvögel</span>
+            <div class="card luck-card">
+              <div class="luck-list">
+                @for (r of unlucky(); track r.team_id + r.matchday_id) {
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                    <span class="manager-cell">
+                      <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                      <span class="luck-item__team">{{ r.manager_name }}</span>
+                    </span>
+                    <span class="luck-item__meta"
+                      >Sp. {{ r.matchday_number }} · {{ r.points }} Pkt</span
+                    >
+                  </a>
+                }
+              </div>
             </div>
+          </div>
+        }
+      </div>
+
+      <!-- Mobile: dieselben 4 Cards als Swipe-Karussell -->
+      @if (luckCards().length > 0) {
+        <div class="luck-carousel hidden-desktop">
+          <div
+            class="luck-carousel__track"
+            #luckCarouselTrack
+            (scroll)="onLuckCarouselScroll()"
+          >
+            @for (c of luckCards(); track c.key) {
+              <div class="luck-carousel__slide">
+                <div class="luck-card-wrap">
+                  <img class="luck-card__icon" [src]="c.icon" alt="" aria-hidden="true" />
+                  <span class="luck-card__label" [ngClass]="c.labelClass">{{ c.label }}</span>
+                  <div class="card luck-card">
+                    <div class="luck-list">
+                      @for (r of c.rows; track r.team_id + (r.matchday_id ?? '')) {
+                        <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                          <span class="manager-cell">
+                            <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
+                            <span class="luck-item__team">{{ r.manager_name }}</span>
+                          </span>
+                          <span class="luck-item__meta">{{ c.meta(r) }}</span>
+                        </a>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="position-points-dots">
+            @for (c of luckCards(); track c.key; let i = $index) {
+              <button
+                type="button"
+                class="position-points-dot"
+                [class.position-points-dot--active]="activeLuckIndex() === i"
+                (click)="scrollToLuckIndex(i)"
+                [attr.aria-label]="c.label"
+              ></button>
+            }
           </div>
         </div>
       }

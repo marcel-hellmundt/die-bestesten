@@ -730,14 +730,21 @@
         <span class="stat-label" style="color: var(--flat-sunflower)">Ø Note</span>
         <div class="stat-value">{{ avgGrade() ?? '—' }}</div>
       </div>
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-alizarin)">Tore</span>
-        <div class="stat-value">{{ totalGoals() }}</div>
-      </div>
-      <div class="stat-card">
-        <span class="stat-label" style="color: var(--flat-river)">Vorlagen</span>
-        <div class="stat-value">{{ totalAssists() }}</div>
-      </div>
+      @if (isGoalkeeperSeason()) {
+        <div class="stat-card">
+          <span class="stat-label" style="color: var(--flat-river)">Weiße Westen</span>
+          <div class="stat-value">{{ totalCleanSheets() }}</div>
+        </div>
+      } @else {
+        <div class="stat-card">
+          <span class="stat-label" style="color: var(--flat-alizarin)">Tore</span>
+          <div class="stat-value">{{ totalGoals() }}</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label" style="color: var(--flat-river)">Vorlagen</span>
+          <div class="stat-value">{{ totalAssists() }}</div>
+        </div>
+      }
     </div>
 
     <!-- Noten / Spieltags-Ergebnisse -->
