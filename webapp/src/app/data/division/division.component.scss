@@ -11,11 +11,6 @@
   }
 }
 
-.table-section-count {
-  color: $color-text-muted;
-  font-weight: $font-weight-medium;
-}
-
 .division-groups {
   display: flex;
   flex-wrap: wrap;
@@ -35,4 +30,8 @@
 
 .table-container {
   width: 100%;
+}
+
+.division-name {
+  font-weight: 500;
 }

@@ -63,12 +63,11 @@
 }
 
 .club-count-area {
-  width: 60px;
   .club-count {
     display: inline-block;
-    width: 100%;
     text-align: center;
-    padding: 6px $space-3;
+    padding-block: 6px;
+    padding-inline: $space-3;
     border-radius: $radius-sm;
     font-size: $font-sm;
     font-weight: $font-weight-medium;

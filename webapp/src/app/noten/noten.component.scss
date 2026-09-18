@@ -148,10 +148,20 @@
   // Breiter als vorher — die Stats-Spalte darf nie umbrechen, braucht also im Zweifel mehr Platz.
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: $space-4;
+  // start statt dem Grid-Default stretch — eine Card soll sich nicht an der Höhe einer größeren
+  // Nachbar-Card in derselben Zeile ausrichten, sondern nur an ihrem eigenen Inhalt.
+  align-items: start;
 }
 
 .club-card {
   padding: $space-4;
+  display: flex;
+  flex-direction: column;
+  // Mindestens quadratisch, darf aber höher werden, wenn der Inhalt (z.B. eine lange
+  // Spielerliste) mehr Platz braucht — als Grid-Item gilt hier automatisch min-height:auto,
+  // wodurch der Inhalt die per aspect-ratio vorgegebene Höhe überschreiben kann statt
+  // abgeschnitten zu werden.
+  aspect-ratio: 1 / 1;
 
   &__header {
     position: relative;
@@ -161,6 +171,18 @@
     gap: $space-2;
     margin-bottom: $space-3;
     text-align: center;
+  }
+
+  // Zentriert die "Keine Bewertungen"-Meldung in der verbleibenden Kartenhöhe — Grid-Zeilen
+  // stretchen alle Cards auf die Höhe der größten Nachbar-Card (z.B. mit voller Spielerliste),
+  // ohne flex:1 stünde die Meldung sonst oben statt mittig in der leeren Fläche.
+  &__empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0;
   }
 
   // Etwas oberhalb der vertikalen Mitte von Logo+Name (statt oberhalb reserviertem Platz) —
