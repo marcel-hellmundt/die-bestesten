@@ -6,11 +6,11 @@ SET character_set_client = utf8mb4;
 
 -- Tabelle: country
 -- Produktions-Migration (kein Migrations-Runner in diesem Repo):
--- ALTER TABLE country ADD COLUMN rank INT DEFAULT NULL;
+-- ALTER TABLE country ADD COLUMN `rank` INT DEFAULT NULL;
 CREATE TABLE IF NOT EXISTS country (
     id CHAR(2) PRIMARY KEY,     -- ISO Alpha-2 Code, z.B. 'DE'
     name VARCHAR(100) NOT NULL, -- Name des Landes
-    rank INT DEFAULT NULL       -- Rein für die Sortierung von Country-Cards im Frontend (z.B.
+    `rank` INT DEFAULT NULL     -- Rein für die Sortierung von Country-Cards im Frontend (z.B.
                                  -- /daten/division) gedacht, keine sonstige fachliche Bedeutung;
                                  -- NULL = kein manuell gesetzter Rang, sortiert ans Ende
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
