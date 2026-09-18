@@ -84,6 +84,14 @@ export class ClubDetailComponent {
     return this.cache.seasons().filter((s) => !usedIds.has(s.id));
   });
 
+  // Nur Divisionen desselben Landes wie der Club zur Auswahl — eine Division-Zuordnung über
+  // Ländergrenzen hinweg ergibt fachlich keinen Sinn.
+  clubDivisions = computed(() => {
+    const countryId = this.club()?.country_id;
+    if (!countryId) return this.cache.divisions();
+    return this.cache.divisions().filter((d) => d.country_id === countryId);
+  });
+
   idCopied = signal(false);
   logoUploadState = signal<'idle' | 'loading' | 'error'>('idle');
   logoBust = signal<number | null>(null);
@@ -169,11 +177,11 @@ export class ClubDetailComponent {
     const existing = this.seasons().filter((e: any) => e.division_id && e.season_start);
 
     const mostFrequent = (): string => {
-      if (!existing.length) return this.cache.divisions()[0]?.id ?? '';
+      if (!existing.length) return this.clubDivisions()[0]?.id ?? '';
       const counts = new Map<string, number>();
       for (const e of existing) counts.set(e.division_id, (counts.get(e.division_id) ?? 0) + 1);
       const [topId, topCount] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-      return topCount / existing.length >= 0.5 ? topId : (this.cache.divisions()[0]?.id ?? '');
+      return topCount / existing.length >= 0.5 ? topId : (this.clubDivisions()[0]?.id ?? '');
     };
 
     if (!existing.length) return mostFrequent();
@@ -198,7 +206,7 @@ export class ClubDetailComponent {
     const firstSeason = this.availableSeasons()[0];
     this.newSeasonId.set(firstSeason?.id ?? '');
     this.newDivisionId.set(
-      firstSeason ? this.smartDivision(firstSeason.id) : (this.cache.divisions()[0]?.id ?? ''),
+      firstSeason ? this.smartDivision(firstSeason.id) : (this.clubDivisions()[0]?.id ?? ''),
     );
     this.newPosition.set('');
     this.addError.set(null);

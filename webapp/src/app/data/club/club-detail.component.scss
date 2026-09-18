@@ -253,6 +253,12 @@
   display: inline-flex;
   align-items: center;
   gap: $space-2;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 
   .division-badge {
     display: inline-block;

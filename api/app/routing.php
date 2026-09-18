@@ -184,7 +184,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/country',
-                        'description' => 'Alle Länder, alphabetisch sortiert',
+                        'description' => 'Alle Länder, sortiert nach rank (NULL ans Ende), dann alphabetisch; enthält rank (INT?, rein fürs Sortieren von Country-Cards im Frontend, keine sonstige fachliche Bedeutung)',
                     ],
                     [
                         'method' => 'GET',

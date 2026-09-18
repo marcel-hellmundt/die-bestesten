@@ -1,0 +1,38 @@
+@use '../../../styles/variables' as *;
+
+.table-section-title {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+
+  .flag {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.table-section-count {
+  color: $color-text-muted;
+  font-weight: $font-weight-medium;
+}
+
+.division-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-6;
+}
+
+.division-group {
+  flex: 1 1 calc(25% - #{$space-6});
+  max-width: calc(25% - #{$space-6});
+  min-width: 0;
+
+  @media (max-width: $mobile-breakpoint) {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
+
+.table-container {
+  width: 100%;
+}

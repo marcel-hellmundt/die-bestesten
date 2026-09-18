@@ -134,7 +134,7 @@
                             (change)="onDivisionChange(s, $event)"
                             [disabled]="patchingId() === s.id"
                           >
-                            @for (div of cache.divisions(); track div.id) {
+                            @for (div of clubDivisions(); track div.id) {
                               <option [value]="div.id" [selected]="div.id === s.division_id">
                                 {{ div.name }}
                               </option>
@@ -153,13 +153,13 @@
                         </td>
                       } @else {
                         <td>
-                          <span class="division-cell">
+                          <a class="division-cell" [routerLink]="['/daten/division', s.division_id]">
                             <span
                               class="division-badge"
                               [style.background-color]="divisionColor(s.division_id)"
                             ></span>
                             {{ cache.divisionName(s.division_id) }}
-                          </span>
+                          </a>
                         </td>
                         <td>{{ s.position ?? '—' }}</td>
                       }
@@ -194,7 +194,7 @@
                     (change)="newDivisionId.set($any($event.target).value)"
                   >
                     <option value="" [selected]="newDivisionId() === ''">—</option>
-                    @for (d of cache.divisions(); track d.id) {
+                    @for (d of clubDivisions(); track d.id) {
                       <option [value]="d.id" [selected]="d.id === newDivisionId()">
                         {{ d.name }}
                       </option>

@@ -14,29 +14,35 @@
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
-  <div class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th class="col-id">ID</th>
-          <th colspan="2">Name</th>
-          <th>Level</th>
-          <th>Plätze</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of filteredItems(); track item.id) {
-          <tr class="row-link" (click)="navigate(item.id)">
-            <td class="col-id">{{ item.id }}</td>
-            <td class="col-flag">
-              <img [src]="'img/flags/' + item.country_id + '.svg'" class="flag" alt="" />
-            </td>
-            <td>{{ item.name }}</td>
-            <td>{{ item.level }}</td>
-            <td>{{ item.seats }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+  <div class="division-groups">
+    @for (group of groupedByCountry(); track group.countryId) {
+      <div class="division-group">
+        <h3 class="table-section-title">
+          <img [src]="'img/flags/' + group.countryId + '.svg'" class="flag" alt="" />
+          {{ group.countryName }}
+          <span class="table-section-count">{{ group.divisions.length }}</span>
+        </h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Level</th>
+                <th>Plätze</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of group.divisions; track item.id) {
+                <tr class="row-link" (click)="navigate(item.id)">
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.level }}</td>
+                  <td>{{ item.seats }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
   </div>
 }

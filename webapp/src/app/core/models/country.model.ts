@@ -1,7 +1,8 @@
 export class Country {
   constructor(
     public id: string,
-    public name: string
+    public name: string,
+    public rank: number | null = null
   ) {}
 
   get flagUrl(): string {
@@ -9,6 +10,6 @@ export class Country {
   }
 
   static from(data: any): Country {
-    return new Country(data.id, data.name);
+    return new Country(data.id, data.name, data.rank ?? null);
   }
 }

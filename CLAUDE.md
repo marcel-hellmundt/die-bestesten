@@ -67,7 +67,7 @@ Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer co
 
 | Tabelle | Spalten |
 |---------|---------|
-| country | id PK, name |
+| country | id PK, name, rank INT? DEFAULT NULL — rein für die Sortierung von Country-Cards im Frontend (z.B. /daten/division), keine sonstige fachliche Bedeutung; NULL sortiert ans Ende |
 | season | id PK, start_date UNIQUE — aktiv = höchstes start_date |
 | league | id PK, slug UNIQUE, name, db_name, visibility ENUM('public','private') DEFAULT 'public' — public = Beitrittsanfragen erlaubt; private = nur Einladung; fine_ruleset ENUM('classic','none') DEFAULT 'classic' — classic = Spieltags-/Saisonstrafen (Kegelstrafen: 3€/2€/1,50€/1€ + 5€ Startgeld); none = keine Strafen; powerranking_enabled BOOL DEFAULT TRUE — steuert Sichtbarkeit/Nutzbarkeit von /powerranking (Menüpunkt + Endpunkte) |
 | club | id PK, country_id FK, name UNIQUE, short_name, logo_uploaded BOOL |
