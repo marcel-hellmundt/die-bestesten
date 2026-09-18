@@ -87,22 +87,46 @@
             <tr>
               <th class="col-rank">#</th>
               <th>Team</th>
-              <th class="col-num">SdS</th>
-              <th class="col-num">Tore</th>
-              <th class="col-num">Vorlagen</th>
-              <th class="col-num col-rc--yr">Gelb-Rot</th>
-              <th class="col-num col-rc--red">Rot</th>
-              <th class="col-num col-cs">Zu Null</th>
-              <th class="col-num col-points">Punkte</th>
+              <th class="col-num col-sortable" (click)="sort('sds')">
+                SdS
+                <span class="sort-indicator">{{ sortCol() === 'sds' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-num col-sortable" (click)="sort('goals')">
+                Tore
+                <span class="sort-indicator">{{ sortCol() === 'goals' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-num col-sortable" (click)="sort('assists')">
+                Vorlagen
+                <span class="sort-indicator">{{ sortCol() === 'assists' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-num col-rc--yr col-sortable" (click)="sort('yellow_red')">
+                Gelb-Rot
+                <span class="sort-indicator">{{ sortCol() === 'yellow_red' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-num col-rc--red col-sortable" (click)="sort('red')">
+                Rot
+                <span class="sort-indicator">{{ sortCol() === 'red' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-num col-cs col-sortable" (click)="sort('clean_sheet')">
+                Zu Null
+                <span class="sort-indicator">{{ sortCol() === 'clean_sheet' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
+              <th class="col-num col-points col-sortable" (click)="sort('points')">
+                Punkte
+                <span class="sort-indicator">{{ sortCol() === 'points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              </th>
               @if (cache.finesEnabled()) {
-                <th class="col-fine">Strafe</th>
+                <th class="col-fine col-sortable" (click)="sort('fine')">
+                  Strafe
+                  <span class="sort-indicator">{{ sortCol() === 'fine' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                </th>
               }
             </tr>
           </thead>
           <tbody>
-            @for (r of rows(); track r.team_id; let i = $index) {
+            @for (r of sortedRows(); track r.team_id) {
               <tr class="row-link" (click)="navigateToTeam(r.team_id)">
-                <td class="col-rank">{{ r.total_points !== rows()[i - 1]?.total_points ? i + 1 : '' }}</td>
+                <td class="col-rank">{{ rankOf(r.team_id) }}</td>
                 <td class="col-team">
                   <span class="team-cell">
                     <img

@@ -243,6 +243,57 @@ export class TableComponent {
 
   totalFines     = computed(() => this.rows().reduce((sum, r) => sum + Number(r.fine ?? 0), 0));
 
+  // Rang (#) bleibt immer der Punkte-Rang (mit geteilten Plätzen bei Gleichstand) — unabhängig
+  // davon, nach welcher Spalte die Tabelle gerade sortiert angezeigt wird.
+  private rankByTeam = computed(() => {
+    const base = this.rows();
+    const map = new Map<string, number>();
+    base.forEach((r, i) => {
+      const rank = i > 0 && r.total_points === base[i - 1].total_points
+        ? map.get(base[i - 1].team_id)!
+        : i + 1;
+      map.set(r.team_id, rank);
+    });
+    return map;
+  });
+
+  rankOf(teamId: string): number {
+    return this.rankByTeam().get(teamId) ?? 0;
+  }
+
+  sortCol = signal<'points' | 'sds' | 'goals' | 'assists' | 'yellow_red' | 'red' | 'clean_sheet' | 'fine'>('points');
+  sortDir = signal<'asc' | 'desc'>('desc');
+
+  sortedRows = computed(() => {
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    const list = [...this.rows()];
+    list.sort((a, b) => {
+      let cmp: number;
+      switch (col) {
+        case 'points':      cmp = a.total_points - b.total_points; break;
+        case 'sds':         cmp = a.total_sds - b.total_sds; break;
+        case 'goals':       cmp = a.total_goals - b.total_goals; break;
+        case 'assists':     cmp = a.total_assists - b.total_assists; break;
+        case 'yellow_red':  cmp = a.total_yellow_red_cards - b.total_yellow_red_cards; break;
+        case 'red':         cmp = a.total_red_cards - b.total_red_cards; break;
+        case 'clean_sheet': cmp = a.total_clean_sheet - b.total_clean_sheet; break;
+        case 'fine':        cmp = Number(a.fine ?? 0) - Number(b.fine ?? 0); break;
+      }
+      return dir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  });
+
+  sort(col: 'points' | 'sds' | 'goals' | 'assists' | 'yellow_red' | 'red' | 'clean_sheet' | 'fine'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set('desc');
+    }
+  }
+
   // Startgeld ist fest in team_rating.database.php eingepreist (fine = Summe der Spieltagsstrafen
   // + 5.0 €) — entspricht die Gesamtstrafe genau diesem Betrag, ist bislang keine echte
   // Spieltagsstrafe dazugekommen und die Anzeige soll entsprechend zurückhaltender wirken.
