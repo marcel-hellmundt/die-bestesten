@@ -1212,6 +1212,19 @@ class Routing
                 ],
             ]),
 
+            new Route('noten', 'Noten', [
+                'title' => 'Noten',
+                'description' => 'Öffentliche Noten-Übersicht (/noten-Seite im Frontend) — kein Login nötig',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/noten',
+                        'description' => 'Noten + Punkte aller Spieler der 1. Bundesliga (level=1, country=DE — fest, unabhängig von einer evtl. konfigurierten Liga-Division) für einen Spieltag der aktiven Saison → {season_id, matchdays:[{id,number,start_date,kickoff_date}], matchday:{id,number,start_date,kickoff_date}|null, clubs:[{id,name,short_name,logo_uploaded,players:[{id,displayname,position,grade,points,participation,own,sds,goals,assists,clean_sheet,red_card,yellow_red_card}]}]}; bewusst kein Foto-Feld — Spielerbilder werden auf dieser Guest-Seite nie ausgespielt; own = Spieler steht im aktiven Kader des eingeloggten Managers (dessen Team der aktiven Saison in der zum JWT gehörigen Liga-DB) — bei mitgeschicktem, gültigem Token wird dieser optional dekodiert (Guest-Endpunkt, siehe guard.php); ohne Token/für Gäste immer false; matchdays enthält nur bereits angepfiffene Spieltage (kickoff_date <= now); ohne matchday_id wird automatisch der letzte angepfiffene Spieltag gewählt; players nur mit participation starting/substitute, sortiert nach participation (starting vor substitute), dann Position (TOR/ABW/MIT/STU), dann player_in_season.price absteigend; clubs sortiert nach Tabellenplatz der Vorsaison (club_in_season.position, unplatzierte ans Ende); matchday=null (clubs=[]) falls in der aktiven Saison noch kein Spieltag angepfiffen wurde — Guest',
+                        'query_params' => ['matchday_id' => 'UUID des Spieltags (optional) — Default: letzter angepfiffener Spieltag'],
+                    ],
+                ],
+            ]),
+
             new Route('search', 'Search', [
                 'title' => 'Search',
                 'description' => 'Globale Live-Suche über Player, Club, Team und Manager — Auth',

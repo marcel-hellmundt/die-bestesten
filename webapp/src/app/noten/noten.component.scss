@@ -1,0 +1,338 @@
+@use '../../styles/variables' as *;
+
+.noten-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: $space-5 $space-4;
+  }
+}
+
+.noten-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-4;
+}
+
+.noten-header__left {
+  display: flex;
+  align-items: baseline;
+  gap: $space-4;
+}
+
+// Gleicher Look wie der Live-Toggle auf der Saisontabelle (liga/table).
+.own-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  height: 36px;
+  padding: 0 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-surface;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: all $transition-fast;
+  flex-shrink: 0;
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: $color-border;
+    transition: background $transition-fast;
+  }
+
+  &--active {
+    border-color: $color-accent;
+    color: $color-accent;
+    background: color-mix(in srgb, $color-accent 10%, transparent);
+
+    .own-toggle__dot {
+      background: $color-accent;
+      box-shadow: 0 0 4px $color-accent;
+    }
+  }
+}
+
+.noten-brand {
+  font-family: $font-display;
+  font-weight: $font-weight-bold;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-accent;
+  }
+}
+
+.page-title {
+  margin: 0;
+}
+
+// Desktop-only / mobile-only toggle — hidden-mobile is already global (_layout.scss); its
+// counterpart for the matchday <select> doesn't exist yet, defined here.
+.hidden-desktop {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+  }
+}
+
+.matchday-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-bottom: $space-6;
+}
+
+.matchday-pill {
+  // Feste width + aspect-ratio (statt nur aspect-ratio auf einer auto-Größe) — bleibt garantiert
+  // quadratisch unabhängig davon, ob "1" oder "34" drin steht; mit nur aspect-ratio könnte der
+  // Inhalt die Box sonst breiter als hoch aufziehen.
+  width: 34px;
+  aspect-ratio: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background: $color-surface-alt;
+    border-color: $color-text-muted;
+  }
+
+  &--active {
+    background: $color-accent;
+    border-color: $color-accent;
+    color: #fff;
+
+    // Kein eigener Hover-Effekt für den bereits selektierten Button — sonst überschreibt die
+    // graue Hover-Background die weiße Schrift von --active und macht die Zahl unlesbar.
+    &:hover {
+      background: $color-accent;
+      border-color: $color-accent;
+    }
+  }
+}
+
+.matchday-select {
+  width: 100%;
+  margin-bottom: $space-6;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font-size: $font-sm;
+}
+
+.club-grid {
+  display: grid;
+  // Breiter als vorher — die Stats-Spalte darf nie umbrechen, braucht also im Zweifel mehr Platz.
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: $space-4;
+}
+
+.club-card {
+  padding: $space-4;
+
+  &__header {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-2;
+    margin-bottom: $space-3;
+    text-align: center;
+  }
+
+  // Etwas oberhalb der vertikalen Mitte von Logo+Name (statt oberhalb reserviertem Platz) —
+  // schiebt sie dadurch nicht nach unten; mit Seitenabstand statt direkt an der Kante.
+  &__stats-row {
+    position: absolute;
+    top: 35%;
+    left: $space-3;
+    right: $space-3;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  &__avg-grade {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+
+  &__total-points {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+
+    &.logo--placeholder {
+      opacity: 0.3;
+    }
+  }
+
+  &__name {
+    font-weight: $font-weight-semibold;
+  }
+
+  &__table {
+    width: 100%;
+
+    // Überschreibt die globale .data-table-Regel (border-bottom je Zeile, siehe _layout.scss) —
+    // hier soll nur die Startelf/Ersatzbank-Trennlinie sichtbar sein, siehe .separator-line.
+    td {
+      padding: $space-1 $space-2;
+      border-bottom: none;
+    }
+  }
+}
+
+// Einzige Trennlinie der Tabelle: zwischen Startelf und Ersatzbank, nicht zwischen einzelnen
+// Spielern.
+.separator-row {
+  &:hover {
+    background-color: transparent !important;
+  }
+
+  td {
+    padding: 0 !important;
+  }
+}
+
+// Mittig im Gap zwischen letztem Startelf- und erstem Ersatzbank-Spieler — gleich großer Abstand
+// (margin) über und unter der Linie statt Border direkt an der Zellkante.
+.separator-line {
+  border-top: 1px solid $color-border;
+  margin: $space-2 0;
+}
+
+.row--sub {
+  color: $color-text-muted;
+}
+
+// Eigener Kader (nur für eingeloggte Manager vom Backend gesetzt, siehe getOwnSquadPlayerIds())
+.row--own {
+  background: color-mix(in srgb, $color-accent 10%, transparent);
+}
+
+// Spieler des Spieltags — nach .row--own, damit es bei Überschneidung gewinnt.
+.row--sds {
+  background: color-mix(in srgb, $color-warning 20%, transparent);
+}
+
+.col-pos {
+  width: 40px;
+  text-align: center;
+}
+
+.pos-label {
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+// display:flex statt nur inline-Inhalt — sonst rendert der Zeilenumbruch/Leerraum im Template
+// zwischen Name und Icons als sichtbarer Abstand; im Flex-Kontext wird reiner Whitespace
+// zwischen den Kindern ignoriert, echte gap-Werte bleiben trotzdem steuerbar (hier 0).
+.col-name {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+  font-weight: $font-weight-medium;
+}
+
+.col-name__text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icons-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+// Gleiche Größe wie der Spielername (font-size der .data-table, siehe _layout.scss).
+.stat-icon {
+  width: $font-sm;
+  height: $font-sm;
+  object-fit: contain;
+}
+
+.card-chip {
+  display: inline-block;
+  width: 8px;
+  height: 11px;
+  border-radius: 1px;
+  vertical-align: middle;
+
+  &--yr {
+    background: linear-gradient(to right, $color-warning 50%, $color-danger 50%);
+  }
+  &--red {
+    background: $color-danger;
+  }
+}
+
+.col-grade {
+  width: 40px;
+}
+
+.grade-badge {
+  display: inline-block;
+  width: 28px;
+  padding: 2px 0;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  text-align: center;
+
+  &--unset {
+    color: $color-text-muted;
+  }
+}
+
+.col-points {
+  width: 36px;
+  text-align: right;
+  font-weight: $font-weight-semibold;
+}
+
+.state-msg--sm {
+  font-size: $font-sm;
+  padding: $space-2 0;
+}
