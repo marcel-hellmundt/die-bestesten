@@ -325,6 +325,11 @@
   // beim Kader (siehe squad.component.scss).
   @media (max-width: #{$mobile-breakpoint}) {
     flex-direction: column;
+    // align-items: flex-start (oben, für Desktop) steuert bei flex-direction:column die
+    // Kreuzachse = horizontal — Sections würden sonst auf Content-Breite schrumpfen und links
+    // ausgerichtet werden statt die volle Breite auszufüllen (genau der Bug: Tabellen "nach
+    // links gerutscht"/nicht volle Breite). Auf Mobile zurück auf volle Breite stretchen.
+    align-items: stretch;
 
     .detail-col {
       display: contents;
