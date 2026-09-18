@@ -16,6 +16,16 @@
         <div class="card chart-card">
           <span class="chart-title">Guthaben über Zeit</span>
           <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" aria-hidden="true">
+            @for (b of chart.bands; track b.x1) {
+              <rect
+                [attr.x]="b.x1"
+                [attr.y]="padT"
+                [attr.width]="b.x2 - b.x1"
+                [attr.height]="cH - padT - padB"
+                class="chart-band"
+                [class.chart-band--odd]="b.odd"
+              />
+            }
             @for (t of chart.yTicks; track t.label) {
               <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
               <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
@@ -24,8 +34,41 @@
               <text [attr.x]="t.x" [attr.y]="cH - padB + 14" class="chart-label chart-label--x">{{ t.label }}</text>
             }
             <path [attr.d]="chart.line" fill="none" class="chart-line" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-            @for (d of chart.dots; track d.day) {
-              <circle [attr.cx]="d.x" [attr.cy]="d.y" r="2.5" class="chart-dot" />
+            <!-- Volle-Höhe Hover-Spalte pro Tag — reagiert unabhängig von der Y-Position des
+                 Cursors, solange man im Zeitsegment des Tages ist (nicht nur exakt auf der Linie). -->
+            @for (seg of chart.hoverSegments; track $index; let i = $index) {
+              <rect
+                [attr.x]="seg.x1"
+                [attr.y]="padT"
+                [attr.width]="seg.x2 - seg.x1"
+                [attr.height]="cH - padT - padB"
+                fill="transparent"
+                (mouseenter)="hoveredDotIndex.set(i)"
+                (mouseleave)="hoveredDotIndex.set(null)"
+              />
+            }
+            @if (hoveredDotIndex() !== null; as idx) {
+              @let dot = chart.dots[hoveredDotIndex()!];
+              @let tipW = 90;
+              @let tipH = dot.matchday ? 44 : 32;
+              @let tipX = Math.min(Math.max(dot.x - tipW / 2, padL), cW - padR - tipW);
+              @let tipYBelow = dot.y + 10;
+              @let tipY = tipYBelow + tipH > cH - padB ? dot.y - tipH - 10 : tipYBelow;
+              <g class="dot-tooltip" pointer-events="none">
+                <circle [attr.cx]="dot.x" [attr.cy]="dot.y" r="3" class="chart-dot chart-dot--active" />
+                <rect [attr.x]="tipX" [attr.y]="tipY" [attr.width]="tipW" [attr.height]="tipH" rx="5" class="dot-tooltip__bg" />
+                <text [attr.x]="tipX + tipW / 2" [attr.y]="tipY + 13" class="dot-tooltip__value">
+                  {{ formatMoney(dot.balance) }}
+                </text>
+                <text [attr.x]="tipX + tipW / 2" [attr.y]="tipY + 25" class="dot-tooltip__date">
+                  {{ formatDate(dot.day) }}
+                </text>
+                @if (dot.matchday) {
+                  <text [attr.x]="tipX + tipW / 2" [attr.y]="tipY + 37" class="dot-tooltip__matchday">
+                    Spieltag {{ dot.matchday }}
+                  </text>
+                }
+              </g>
             }
           </svg>
         </div>

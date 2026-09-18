@@ -5,21 +5,29 @@
 .squad-layout {
   display: grid;
   grid-template-columns: 20% 1fr 20%;
-  grid-template-areas:
-    'cards main right'
-    'pos   main right';
+  grid-template-areas: 'left main right';
   align-items: start;
   gap: $space-4;
 }
 
 .squad-main { grid-area: main; }
-.pos-card { grid-area: pos; }
 .squad-right { grid-area: right; }
+
+// .squad-left bündelt Stat-Karten + Positions-Card als eigene Flex-Spalte (statt zuvor 2 separate
+// Grid-Areas über 2 Reihen) — mit 2 Reihen spannten .squad-main/.squad-right beide Zeilen, wodurch
+// die "auto"-Höhe der 1. Zeile (Stat-Karten) sich an der viel größeren Spalten-Höhe der Tabelle
+// mitgestreckt hat und ein riesiger Leerraum vor der Positions-Card entstand. Als eigenständige
+// Flex-Spalte richtet sich der Abstand nur noch nach dem eigenen Inhalt.
+.squad-left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
 
 // ── Stats sidebar ─────────────────────────────────────────────────────────────
 
 .squad-stat-cards {
-  grid-area: cards;
   display: flex;
   flex-direction: column;
   gap: $space-3;
@@ -93,6 +101,20 @@
 
 .col-right {
   text-align: right;
+}
+
+.col-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover { color: var(--flat-river); }
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  opacity: 0.5;
+  font-size: 11px;
 }
 
 .club-logo {
@@ -288,12 +310,19 @@
     grid-template-columns: 1fr;
     grid-template-areas:
       'main'
-      'pos'
-      'cards'
+      'left'
       'right';
   }
 
+  // Reihenfolge auf Mobile innerhalb .squad-left: Positions-Bubbles vor den 2 Stat-Cards
+  // (umgekehrt zu Desktop) — per flex order statt DOM-Reihenfolge, da .squad-left jetzt eine
+  // gemeinsame Flex-Spalte ist.
+  .pos-card {
+    order: 1;
+  }
+
   .squad-stat-cards {
+    order: 2;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: $space-3;

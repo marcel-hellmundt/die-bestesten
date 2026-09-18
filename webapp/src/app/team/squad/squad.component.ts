@@ -66,6 +66,35 @@ export class SquadComponent {
   );
 
   players       = computed(() => this.state().current);
+
+  sortCol = signal<'position' | 'price' | 'team_points' | 'points'>('position');
+  sortDir = signal<'asc' | 'desc'>('asc');
+
+  sortedPlayers = computed(() => {
+    const col = this.sortCol();
+    const dir = this.sortDir();
+    const list = [...this.players()];
+    list.sort((a, b) => {
+      let cmp: number;
+      switch (col) {
+        case 'position':    cmp = POSITIONS.indexOf(a.position) - POSITIONS.indexOf(b.position); break;
+        case 'price':       cmp = this.marketValue(a) - this.marketValue(b); break;
+        case 'team_points': cmp = Number(a.team_points) - Number(b.team_points); break;
+        case 'points':      cmp = Number(a.points) - Number(b.points); break;
+      }
+      return dir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  });
+
+  sort(col: 'position' | 'price' | 'team_points' | 'points'): void {
+    if (this.sortCol() === col) {
+      this.sortDir.update(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortCol.set(col);
+      this.sortDir.set(col === 'position' ? 'asc' : 'desc');
+    }
+  }
   former        = computed(() => this.state().former);
   draftedSquad  = computed(() => this.state().draftedSquad);
   pendingOffers = computed(() => this.state().pendingOffers);

@@ -67,6 +67,14 @@
   aspect-ratio: 3 / 1;
 }
 
+.chart-band {
+  fill: $color-surface;
+
+  &--odd {
+    fill: $color-bg;
+  }
+}
+
 .chart-grid {
   stroke: $color-border;
   stroke-width: 1;
@@ -93,6 +101,40 @@
 
 .chart-dot {
   fill: $color-success;
+  transition: r 0.1s;
+
+  &--active {
+    r: 4;
+  }
+}
+
+.dot-group {
+  cursor: default;
+}
+
+.dot-tooltip {
+  &__bg {
+    fill: $color-text;
+  }
+
+  &__value,
+  &__date,
+  &__matchday {
+    font-family: $font-body;
+    text-anchor: middle;
+  }
+
+  &__value {
+    font-size: 10px;
+    font-weight: $font-weight-semibold;
+    fill: $color-bg;
+  }
+
+  &__date,
+  &__matchday {
+    font-size: 9px;
+    fill: color-mix(in srgb, $color-bg 70%, transparent);
+  }
 }
 
 .transactions {
