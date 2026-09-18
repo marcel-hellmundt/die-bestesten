@@ -286,6 +286,12 @@ trait PlayerInTeamTrait
     {
         // pis auf die Zeile der AKTUELLEN Division jedes Spielers eingeschränkt (Fragment A) —
         // nutzt den ohnehin schon vorhandenen pic-Join (current_club_id) mit, kein zusätzlicher.
+        // Fällt per NOT EXISTS auf die einzige vorhandene player_in_season-Zeile zurück, wenn der
+        // Spieler real zu einem Verein außerhalb des getrackten Divisionspools gewechselt ist (z.B.
+        // Abstieg/Wechsel in eine nicht abgebildete Liga) — sonst bliebe position/price/photo_uploaded
+        // NULL, obwohl der Spieler für diese Saison weiterhin ein gültiges player_in_season-Objekt
+        // in seiner ursprünglichen (getrackten) Division hat. Der Manager kann für den realen
+        // Vereinswechsel nichts, der Kader soll dadurch nicht ungültig werden.
         //
         // Die Punktesumme braucht dagegen einen DRITTEN Scope, weder Fragment A noch B: ein
         // Fantasy-Team kann nur Punkte aus Spieltagen der eigenen Liga-Division holen — ohne
@@ -315,7 +321,7 @@ trait PlayerInTeamTrait
                    ON cis_cur.club_id = pic.club_id AND cis_cur.season_id = ?
              LEFT JOIN player_in_season pis
                    ON pis.player_id = p.id AND pis.season_id = ?
-                   AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+                   AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id OR NOT EXISTS (SELECT 1 FROM player_in_season pis_chk WHERE pis_chk.player_id = pis.player_id AND pis_chk.season_id = pis.season_id AND pis_chk.division_id = cis_cur.division_id))
              LEFT JOIN player_rating pr
                    ON pr.player_id = p.id
                    AND pr.matchday_id IN (

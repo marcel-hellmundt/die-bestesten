@@ -35,7 +35,7 @@ trait OfferTrait
                  LEFT JOIN player_in_club pic ON pic.player_id = p.id AND pic.to_date IS NULL
                  LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic.club_id AND cis_cur.season_id = ?
                  LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
-                     AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+                     AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id OR NOT EXISTS (SELECT 1 FROM player_in_season pis_chk WHERE pis_chk.player_id = pis.player_id AND pis_chk.season_id = pis.season_id AND pis_chk.division_id = cis_cur.division_id))
                  LEFT JOIN club c ON c.id = pic.club_id
                  WHERE p.id IN ($ph)"
             );
@@ -194,7 +194,7 @@ trait OfferTrait
                      LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
                      LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
                      WHERE pis.player_id IN ($ph) AND pis.season_id = ? AND pis.position = ?
-                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
+                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id OR NOT EXISTS (SELECT 1 FROM player_in_season pis_chk WHERE pis_chk.player_id = pis.player_id AND pis_chk.season_id = pis.season_id AND pis_chk.division_id = cis_cur.division_id))"
                 );
                 $cq->execute(array_merge($activeIds, [$activeSeasonId, $position]));
                 $currentCount = (int) $cq->fetchColumn();
@@ -214,7 +214,7 @@ trait OfferTrait
                      LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
                      LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
                      WHERE pis.player_id IN ($ph) AND pis.season_id = ? AND pis.position = ?
-                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
+                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id OR NOT EXISTS (SELECT 1 FROM player_in_season pis_chk WHERE pis_chk.player_id = pis.player_id AND pis_chk.season_id = pis.season_id AND pis_chk.division_id = cis_cur.division_id))"
                 );
                 $piq->execute(array_merge($pendingIds, [$activeSeasonId, $position]));
                 $pendingCount = (int) $piq->fetchColumn();

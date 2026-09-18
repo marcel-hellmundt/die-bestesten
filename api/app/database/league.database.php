@@ -427,7 +427,7 @@ trait LeagueTrait
                      LEFT JOIN player_rating pr ON pr.player_id = pis.player_id
                          AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = pis.season_id AND division_id = pis.division_id)
                      WHERE pis.player_id IN ($ph)
-                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+                       AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id OR NOT EXISTS (SELECT 1 FROM player_in_season pis_chk WHERE pis_chk.player_id = pis.player_id AND pis_chk.season_id = pis.season_id AND pis_chk.division_id = cis_cur.division_id))
                      GROUP BY pis.player_id, pis.season_id, pis.price"
                 );
                 $pq->execute($allPlayerIds);

@@ -57,7 +57,7 @@ trait BuyTrait
              LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
              LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
              WHERE pis.player_id IN ($ph) AND pis.season_id = ? AND pis.position = ?
-               AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)"
+               AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id OR NOT EXISTS (SELECT 1 FROM player_in_season pis_chk WHERE pis_chk.player_id = pis.player_id AND pis_chk.season_id = pis.season_id AND pis_chk.division_id = cis_cur.division_id))"
         );
         $cq->execute(array_merge($activeIds, [$seasonId, $position]));
         $count = (int) $cq->fetchColumn();

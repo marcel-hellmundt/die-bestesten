@@ -159,7 +159,7 @@ trait TeamLineupTrait
              LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = p.id AND pic_cur.to_date IS NULL
              LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = ?
              LEFT JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = ?
-                 AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+                 AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id OR NOT EXISTS (SELECT 1 FROM player_in_season pis_chk WHERE pis_chk.player_id = pis.player_id AND pis_chk.season_id = pis.season_id AND pis_chk.division_id = cis_cur.division_id))
              WHERE p.id IN ($ph)"
         );
         $playerQ->execute(array_merge([$seasonId, $seasonId], $playerIds));
@@ -387,7 +387,7 @@ trait TeamLineupTrait
              LEFT JOIN player_in_club pic_cur ON pic_cur.player_id = pis.player_id AND pic_cur.to_date IS NULL
              LEFT JOIN club_in_season cis_cur ON cis_cur.club_id = pic_cur.club_id AND cis_cur.season_id = pis.season_id
              WHERE pis.season_id = ? AND pis.player_id IN ($ph)
-               AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id)
+               AND (cis_cur.division_id IS NULL OR pis.division_id = cis_cur.division_id OR NOT EXISTS (SELECT 1 FROM player_in_season pis_chk WHERE pis_chk.player_id = pis.player_id AND pis_chk.season_id = pis.season_id AND pis_chk.division_id = cis_cur.division_id))
              GROUP BY pis.position"
         );
         $posQ->execute(array_merge([$seasonId], $playerIds));
