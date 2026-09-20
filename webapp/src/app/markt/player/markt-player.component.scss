@@ -1,4 +1,4 @@
-@use '../../../styles/variables' as *;
+﻿@use '../../../styles/variables' as *;
 
 .players-page {
   display: grid;
@@ -670,7 +670,7 @@
 }
 
 .sort-indicator {
-  margin-left: 4px;
+  margin-right: 4px;
   opacity: 0.5;
   font-size: 11px;
 }

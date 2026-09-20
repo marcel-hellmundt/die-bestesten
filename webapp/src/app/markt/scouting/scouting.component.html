@@ -1,4 +1,4 @@
-<h1 class="page-title">Scouting</h1>
+﻿<h1 class="page-title">Scouting</h1>
 
 @if (!hasTeam()) {
   <p class="empty-state">Du hast noch kein Team in dieser Saison.</p>
@@ -14,12 +14,12 @@
           <th>Spieler</th>
           <th></th>
           <th class="col-num col-sortable" (click)="sort('price')">
-            Preis
             <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Preis
           </th>
           <th class="col-num col-points col-sortable" (click)="sort('points')">
-            Punkte
             <span class="sort-indicator">{{ sortCol() === 'points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Punkte
           </th>
           <th class="col-actions-header">Aktionen</th>
         </tr>

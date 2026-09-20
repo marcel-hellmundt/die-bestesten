@@ -1,4 +1,4 @@
-@use '../../../styles/variables' as *;
+﻿@use '../../../styles/variables' as *;
 
 // Gleiches Spalten-Raster wie .table-layout darunter — dadurch landet .live-toggle (rechts
 // ausgerichtet innerhalb __controls) exakt über der rechten Kante der Tabelle statt über der
@@ -352,6 +352,19 @@
       width: 44px;
     }
   }
+
+  // Handy quer gedreht: der Rest der mobilen Ansicht (Sidebar/Bottom-Nav etc.) bleibt unverändert
+  // mobil — nur hier auf /liga/tabelle blenden wir die sonst ausgeblendeten Statistik-Spalten
+  // wieder ein, weil im Querformat genug Platz dafür da ist. orientation:landscape ist dabei
+  // unabhängig von $mobile-breakpoint (reine Breiten-Media-Query) und wird nicht global genutzt,
+  // um den Rest der App (Sidebar-Umschaltung etc.) nicht mit zu beeinflussen.
+  @media (max-width: $mobile-breakpoint) and (orientation: landscape) {
+    display: table-cell;
+
+    &.col-points {
+      width: 44px;
+    }
+  }
 }
 
 .col-points {
@@ -368,7 +381,7 @@
 }
 
 .sort-indicator {
-  margin-left: 4px;
+  margin-right: 4px;
   opacity: 0.5;
   font-size: 11px;
 }
@@ -381,6 +394,10 @@
 
   @media (max-width: $mobile-breakpoint) {
     display: none;
+  }
+
+  @media (max-width: $mobile-breakpoint) and (orientation: landscape) {
+    display: table-cell;
   }
 
   &--active {

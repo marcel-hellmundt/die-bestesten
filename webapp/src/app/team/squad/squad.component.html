@@ -1,4 +1,4 @@
-@if (loading()) {
+﻿@if (loading()) {
   <p class="state-msg">Laden…</p>
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
@@ -14,23 +14,23 @@
         <thead>
           <tr>
             <th class="col-sortable" (click)="sort('position')">
-              Pos.
               <span class="sort-indicator">{{ sortCol() === 'position' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              Pos.
             </th>
             <th class="col-logo"></th>
             <th class="col-photo"></th>
             <th>Name</th>
             <th class="col-right col-sortable player-price" (click)="sort('price')">
-              Marktwert
               <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              Marktwert
             </th>
             <th class="col-right col-sortable" (click)="sort('team_points')">
-              Punkte im Team
               <span class="sort-indicator">{{ sortCol() === 'team_points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              Punkte im Team
             </th>
             <th class="col-right col-sortable" (click)="sort('points')">
-              Punkte
               <span class="sort-indicator">{{ sortCol() === 'points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+              Punkte
             </th>
           </tr>
         </thead>

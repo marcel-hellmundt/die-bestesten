@@ -1,4 +1,4 @@
-<h1 class="page-title">Ruhmeshalle</h1>
+﻿<h1 class="page-title">Ruhmeshalle</h1>
 
 @if (loading()) {
   <p class="state-msg">Laden…</p>
@@ -12,20 +12,20 @@
           <th class="col-rank">#</th>
           <th colspan="2">Manager</th>
           <th class="col-points col-sortable hidden-mobile" (click)="sort('seasons_played')">
-            Saisons
             <span class="sort-indicator">{{ sortCol() === 'seasons_played' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Saisons
           </th>
           <th class="col-points col-sortable hidden-mobile" (click)="sort('matchdays_played')">
-            Spieltage
             <span class="sort-indicator">{{ sortCol() === 'matchdays_played' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Spieltage
           </th>
           <th class="col-points col-sortable hidden-mobile" (click)="sort('points_per_matchday')">
-            Pkt/Spiel
             <span class="sort-indicator">{{ sortCol() === 'points_per_matchday' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Pkt/Spiel
           </th>
           <th class="col-points col-sortable" (click)="sort('total_points')">
-            Punkte
             <span class="sort-indicator">{{ sortCol() === 'total_points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Punkte
           </th>
         </tr>
       </thead>

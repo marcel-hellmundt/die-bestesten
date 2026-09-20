@@ -1,4 +1,4 @@
-@if (!loading() && !error() && items().length > 0) {
+﻿@if (!loading() && !error() && items().length > 0) {
   <div class="stat-grid">
     <div class="stat-card">
       <span class="stat-label" style="color: var(--flat-carrot)">Spieler</span>
@@ -59,12 +59,12 @@
           <th>Vorname</th>
           <th>Nachname</th>
           <th class="col-sortable" (click)="sort('displayname')">
-            Anzeigename
             <span class="sort-indicator">{{ sortCol() === 'displayname' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Anzeigename
           </th>
           <th class="col-sortable col-points" (click)="sort('total_points')">
-            Punkte
             <span class="sort-indicator">{{ sortCol() === 'total_points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Punkte
           </th>
         </tr>
       </thead>

@@ -1,4 +1,4 @@
-<div class="players-page">
+﻿<div class="players-page">
   <aside class="players-filters">
     @if (remainingBudget() !== null) {
       <div class="budget-display">
@@ -142,13 +142,13 @@
                 <th>Verkauft von</th>
               }
               <th class="col-num col-sortable" (click)="sort('price')">
-                Preis
                 <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Preis
               </th>
               <th class="col-num col-points col-sortable" (click)="sort('points')">
+                <span class="sort-indicator">{{ sortCol() === 'points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
                 <span class="th-label-full">Punkte</span>
                 <span class="th-label-short">Pkt.</span>
-                <span class="sort-indicator">{{ sortCol() === 'points' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
               </th>
               @if (cache.myTeamId()) {
                 <th class="col-actions-header">Aktionen</th>

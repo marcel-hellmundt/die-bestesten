@@ -1,4 +1,4 @@
-<h1 class="page-title">Spieler-Import</h1>
+﻿<h1 class="page-title">Spieler-Import</h1>
 <p class="page-subtitle">Spieler-Saisondaten per CSV für die aktive Saison importieren</p>
 
 @switch (step()) {
@@ -208,28 +208,28 @@
           <thead>
             <tr>
               <th class="col-sortable" (click)="matchedSort('firstName')">
-                Vorname
                 <span class="sort-indicator">{{ matchedSortCol() === 'firstName' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Vorname
               </th>
               <th class="col-sortable" (click)="matchedSort('lastName')">
-                Nachname
                 <span class="sort-indicator">{{ matchedSortCol() === 'lastName' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Nachname
               </th>
               <th class="col-sortable" (click)="matchedSort('club')">
-                Verein
                 <span class="sort-indicator">{{ matchedSortCol() === 'club' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Verein
               </th>
               <th class="col-sortable" (click)="matchedSort('position')">
-                Position
                 <span class="sort-indicator">{{ matchedSortCol() === 'position' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Position
               </th>
               <th class="col-sortable" (click)="matchedSort('price')">
-                Marktwert
                 <span class="sort-indicator">{{ matchedSortCol() === 'price' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Marktwert
               </th>
               <th class="col-sortable" (click)="matchedSort('state')">
-                Status
                 <span class="sort-indicator">{{ matchedSortCol() === 'state' ? (matchedSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Status
               </th>
               @if (selectedCard() === 'almost') {
                 <th>Fehlt</th>
@@ -382,20 +382,20 @@
             <tr>
               <th></th>
               <th class="col-sortable" (click)="sort('name')">
-                Spieler
                 <span class="sort-indicator">{{ sortCol() === 'name' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Spieler
               </th>
               <th class="col-sortable" (click)="sort('club')">
-                Verein (CSV)
                 <span class="sort-indicator">{{ sortCol() === 'club' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Verein (CSV)
               </th>
               <th class="col-sortable" (click)="sort('position')">
-                Position
                 <span class="sort-indicator">{{ sortCol() === 'position' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Position
               </th>
               <th class="col-sortable" (click)="sort('price')">
-                Marktwert
                 <span class="sort-indicator">{{ sortCol() === 'price' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Marktwert
               </th>
               <th></th>
             </tr>
@@ -492,12 +492,12 @@
           <thead>
             <tr>
               <th class="col-sortable" (click)="sortMissing('name')">
-                Spieler
                 <span class="sort-indicator">{{ missingSortCol() === 'name' ? (missingSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Spieler
               </th>
               <th class="col-sortable" (click)="sortMissing('club')">
-                Aktueller Club
                 <span class="sort-indicator">{{ missingSortCol() === 'club' ? (missingSortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                Aktueller Club
               </th>
               <th></th>
             </tr>

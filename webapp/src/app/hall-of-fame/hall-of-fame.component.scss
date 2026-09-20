@@ -1,4 +1,4 @@
-@use '../../styles/variables' as *;
+﻿@use '../../styles/variables' as *;
 
 .col-rank {
   width: 48px;
@@ -35,7 +35,7 @@ td.col-points--muted {
 }
 
 .sort-indicator {
-  margin-left: 4px;
+  margin-right: 4px;
   opacity: 0.5;
   font-size: 11px;
 }

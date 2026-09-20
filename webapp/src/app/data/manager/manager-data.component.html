@@ -1,4 +1,4 @@
-<div class="list-bar">
+﻿<div class="list-bar">
   <input
     class="input search-input"
     type="search"
@@ -93,17 +93,17 @@
           <th>Alias</th>
           <th>Status</th>
           <th class="col-sortable hidden-mobile" (click)="sort('last_activity')">
-            Zuletzt aktiv
             <span class="sort-indicator">{{ sortCol() === 'last_activity' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Zuletzt aktiv
           </th>
           <th class="col-sortable" (click)="sort('roles')">
-            Rollen
             <span class="sort-indicator">{{ sortCol() === 'roles' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Rollen
           </th>
           <th>Ligen</th>
           <th class="col-stadiums col-sortable hidden-mobile" (click)="sort('stadiums_visited')">
-            Stadien
             <span class="sort-indicator">{{ sortCol() === 'stadiums_visited' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
+            Stadien
           </th>
         </tr>
       </thead>
