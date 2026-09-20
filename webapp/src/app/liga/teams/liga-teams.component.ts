@@ -4,6 +4,7 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { TeamNavService } from '../../core/team-nav.service';
 import { environment } from '../../../environments/environment';
 
 interface LigaTeam {
@@ -80,9 +81,10 @@ const POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
   styleUrl: './liga-teams.component.scss',
 })
 export class LigaTeamsComponent {
-  private api    = inject(ApiService);
-  private cache  = inject(DataCacheService);
-  private router = inject(Router);
+  private api     = inject(ApiService);
+  private cache   = inject(DataCacheService);
+  private router  = inject(Router);
+  private teamNav = inject(TeamNavService);
 
   seasons = computed(() =>
     [...this.cache.startedSeasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))
@@ -268,6 +270,7 @@ export class LigaTeamsComponent {
   }
 
   navigate(teamId: string): void {
+    this.teamNav.setContext(this.sortedTeams().map((t) => t.id));
     this.router.navigate(['/team', teamId]);
   }
 

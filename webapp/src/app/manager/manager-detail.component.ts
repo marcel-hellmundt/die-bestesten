@@ -5,6 +5,7 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { DataCacheService } from '../core/data-cache.service';
 import { Team } from '../core/models/team.model';
+import { TeamNavService } from '../core/team-nav.service';
 
 @Component({
   selector: 'app-manager-detail',
@@ -15,9 +16,13 @@ import { Team } from '../core/models/team.model';
 export class ManagerDetailComponent {
   private api = inject(ApiService);
   private router = inject(Router);
+  private teamNav = inject(TeamNavService);
   cache = inject(DataCacheService);
 
   navigateToTeam(teamId: string): void {
+    // Chronologisch aufsteigend (älteste zuerst) für die Prev/Next-Navigation auf /team/:id —
+    // teams() selbst ist absteigend sortiert (neueste zuerst) fürs Anzeigen der Liste hier.
+    this.teamNav.setContext([...this.teams()].reverse().map((t) => t.id));
     this.router.navigate(['/team', teamId]);
   }
 

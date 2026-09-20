@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
+import { TeamNavService } from '../../core/team-nav.service';
 
 @Component({
   selector: 'app-matchday',
@@ -17,6 +18,7 @@ export class MatchdayComponent {
   private api    = inject(ApiService);
   private auth   = inject(AuthService);
   private router = inject(Router);
+  private teamNav = inject(TeamNavService);
   cache          = inject(DataCacheService);
 
   // Seasons sorted newest first for dropdown (future seasons excluded)
@@ -134,6 +136,7 @@ export class MatchdayComponent {
   }
 
   navigateToTeam(teamId: string): void {
+    this.teamNav.setContext(this.ratings().map((r: any) => r.team_id));
     this.router.navigate(['/team', teamId, 'aufstellung'], { queryParams: { matchday_id: this.matchday()?.id } });
   }
 

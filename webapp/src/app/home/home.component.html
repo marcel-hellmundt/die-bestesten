@@ -60,7 +60,7 @@
             @for (m of h2hMatchesForDay(); track m.id) {
               <div class="h2h-row row-link" (click)="router.navigate(['/liga/h2h', m.id])">
                 <span class="h2h-team h2h-team--home">
-                  {{ m.home_team_name }}
+                  <span class="h2h-team-name hidden-mobile">{{ m.home_team_name }}</span>
                   @if (!logoFailed(m.home_team_id)) {
                     <img class="team-logo-h2h" [src]="teamLogoUrl(m.home_team_id)" (error)="onLogoError(m.home_team_id)" alt="" />
                   } @else if (m.home_color) {
@@ -81,7 +81,7 @@
                   } @else if (m.away_color) {
                     <span class="team-dot" [style.background-color]="m.away_color"></span>
                   }
-                  {{ m.away_team_name }}
+                  <span class="h2h-team-name hidden-mobile">{{ m.away_team_name }}</span>
                 </span>
               </div>
             }
@@ -92,7 +92,7 @@
             <span class="h2h-next-label">Nächstes eigenes Spiel · Spieltag {{ next.matchday?.number }}</span>
             <div class="h2h-row row-link" (click)="router.navigate(['/liga/h2h', next.match.id])">
               <span class="h2h-team h2h-team--home">
-                {{ next.match.home_team_name }}
+                <span class="h2h-team-name hidden-mobile">{{ next.match.home_team_name }}</span>
                 @if (!logoFailed(next.match.home_team_id)) {
                   <img class="team-logo-h2h" [src]="teamLogoUrl(next.match.home_team_id)" (error)="onLogoError(next.match.home_team_id)" alt="" />
                 } @else if (next.match.home_color) {
@@ -112,7 +112,7 @@
                 } @else if (next.match.away_color) {
                   <span class="team-dot" [style.background-color]="next.match.away_color"></span>
                 }
-                {{ next.match.away_team_name }}
+                <span class="h2h-team-name hidden-mobile">{{ next.match.away_team_name }}</span>
               </span>
             </div>
           </div>

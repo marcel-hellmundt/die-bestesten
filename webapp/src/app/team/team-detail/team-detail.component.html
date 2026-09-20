@@ -17,7 +17,31 @@
       </div>
 
       <div class="team-info">
-        <h1 class="team-name">{{ t.team_name }}</h1>
+        @if (hasTeamNav()) {
+          <div class="team-name-wrap">
+            <button
+              type="button"
+              class="team-nav-btn team-nav-btn--prev"
+              [disabled]="!canGoPrevTeam()"
+              (click)="goPrevTeam()"
+              aria-label="Vorheriges Team"
+            >
+              &lsaquo;
+            </button>
+            <h1 class="team-name">{{ t.team_name }}</h1>
+            <button
+              type="button"
+              class="team-nav-btn team-nav-btn--next"
+              [disabled]="!canGoNextTeam()"
+              (click)="goNextTeam()"
+              aria-label="Nächstes Team"
+            >
+              &rsaquo;
+            </button>
+          </div>
+        } @else {
+          <h1 class="team-name">{{ t.team_name }}</h1>
+        }
         <span class="team-meta">{{ cache.seasonName(t.season_id) }}</span>
         <a class="team-meta team-meta--manager" [routerLink]="['/manager', t.manager_id]">
           {{ t.manager_name }}@if (t.alias) { &nbsp;&bdquo;{{ t.alias }}&ldquo; }

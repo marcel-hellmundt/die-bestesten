@@ -1,10 +1,11 @@
 import { Component, computed, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
+import { TeamNavService } from '../../core/team-nav.service';
 
 @Component({
   selector: 'app-team-detail',
@@ -13,11 +14,53 @@ import { AuthService } from '../../auth/auth.service';
   styleUrl: './team-detail.component.scss'
 })
 export class TeamDetailComponent {
-  private api  = inject(ApiService);
-  private auth = inject(AuthService);
-  cache        = inject(DataCacheService);
+  private api     = inject(ApiService);
+  private auth    = inject(AuthService);
+  private router  = inject(Router);
+  private teamNav = inject(TeamNavService);
+  cache           = inject(DataCacheService);
 
   private id$ = inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id')!));
+  private currentTeamId = toSignal(this.id$, { initialValue: '' });
+
+  // Liste vom navigierenden Absender (Manager-Seite/Liga-Tabelle/Spieltag) gesetzt — nur gültig,
+  // wenn die aktuelle Team-ID tatsächlich darin vorkommt (sonst z.B. Direktaufruf/fremder Link).
+  private navList = computed<string[] | null>(() => {
+    const ids = this.teamNav.getContext();
+    if (!ids || !ids.includes(this.currentTeamId())) return null;
+    return ids;
+  });
+
+  private navIndex = computed(() => {
+    const list = this.navList();
+    return list ? list.indexOf(this.currentTeamId()) : -1;
+  });
+
+  hasTeamNav = computed(() => this.navList() !== null);
+  canGoPrevTeam = computed(() => this.navIndex() > 0);
+  canGoNextTeam = computed(() => {
+    const list = this.navList();
+    return list !== null && this.navIndex() < list.length - 1;
+  });
+
+  private readonly TAB_SEGMENTS = ['uebersicht', 'kader', 'aufstellung', 'finanzen'];
+
+  private currentTabSegment(): string | null {
+    const last = this.router.url.split('?')[0].split('/').pop() ?? '';
+    return this.TAB_SEGMENTS.includes(last) ? last : null;
+  }
+
+  private goToTeamOffset(offset: number): void {
+    const list = this.navList();
+    if (!list) return;
+    const targetId = list[this.navIndex() + offset];
+    if (!targetId) return;
+    const tab = this.currentTabSegment();
+    this.router.navigate(tab ? ['/team', targetId, tab] : ['/team', targetId]);
+  }
+
+  goPrevTeam(): void { this.goToTeamOffset(-1); }
+  goNextTeam(): void { this.goToTeamOffset(1); }
 
   private state = toSignal(
     this.id$.pipe(

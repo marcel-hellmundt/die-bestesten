@@ -171,7 +171,7 @@
             <div class="card luck-card">
               <div class="luck-list">
                 @for (r of matchdayWins(); track r.team_id) {
-                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]" (click)="setTeamNavContext()">
                     <span class="manager-cell">
                       <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
                       <span class="luck-item__team">{{ r.manager_name }}</span>
@@ -255,6 +255,7 @@
                 <a
                   class="participation-row"
                   [routerLink]="['/team', r.team_id]"
+                  (click)="setTeamNavContext()"
                   (mouseenter)="onParticipationHover($event, r)"
                   (mouseleave)="onParticipationLeave()"
                 >
@@ -382,7 +383,7 @@
             <div class="card luck-card">
               <div class="luck-list">
                 @for (r of hoelzerneBand(); track r.team_id) {
-                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]" (click)="setTeamNavContext()">
                     <span class="manager-cell">
                       <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
                       <span class="luck-item__team">{{ r.manager_name }}</span>
@@ -402,7 +403,7 @@
             <div class="card luck-card">
               <div class="luck-list">
                 @for (r of goldeneBuerste(); track r.team_id + r.matchday_id) {
-                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]" (click)="setTeamNavContext()">
                     <span class="manager-cell">
                       <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
                       <span class="luck-item__team">{{ r.manager_name }}</span>
@@ -424,7 +425,7 @@
             <div class="card luck-card">
               <div class="luck-list">
                 @for (r of lucky(); track r.team_id + r.matchday_id) {
-                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]" (click)="setTeamNavContext()">
                     <span class="manager-cell">
                       <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
                       <span class="luck-item__team">{{ r.manager_name }}</span>
@@ -446,7 +447,7 @@
             <div class="card luck-card">
               <div class="luck-list">
                 @for (r of unlucky(); track r.team_id + r.matchday_id) {
-                  <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                  <a class="luck-item" [routerLink]="['/team', r.team_id]" (click)="setTeamNavContext()">
                     <span class="manager-cell">
                       <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
                       <span class="luck-item__team">{{ r.manager_name }}</span>
@@ -478,7 +479,7 @@
                   <div class="card luck-card">
                     <div class="luck-list">
                       @for (r of c.rows; track r.team_id + (r.matchday_id ?? '')) {
-                        <a class="luck-item" [routerLink]="['/team', r.team_id]">
+                        <a class="luck-item" [routerLink]="['/team', r.team_id]" (click)="setTeamNavContext()">
                           <span class="manager-cell">
                             <img class="player-avatar-sm" [src]="cache.managerPhotoUrl(r.manager_id)" (error)="$any($event.target).style.display = 'none'" alt="" />
                             <span class="luck-item__team">{{ r.manager_name }}</span>

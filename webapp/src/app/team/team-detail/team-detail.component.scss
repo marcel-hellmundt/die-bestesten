@@ -55,6 +55,61 @@
     }
   }
 
+  // display:inline-block schrumpft den Wrapper auf die tatsächliche Breite des Namens, damit die
+  // absolut positionierten Buttons direkt links/rechts am Text sitzen statt an der vollen Breite
+  // der Flex-Spalte. position:absolute nimmt die Buttons komplett aus dem Textfluss — der Name
+  // (und alles danach) behält exakt dieselbe Position wie ohne die Buttons.
+  // align-self:flex-start ist nötig, weil .team-info ein Column-Flex-Container ist — ohne das
+  // stretcht das default align-items:stretch den Wrapper auf die volle Spaltenbreite und
+  // überschreibt damit das Shrink-to-content von display:inline-block, wodurch die Buttons weit
+  // neben statt direkt am Namen landen.
+  .team-name-wrap {
+    position: relative;
+    display: inline-block;
+    align-self: flex-start;
+    max-width: 100%;
+  }
+
+  // Textzeichen (‹ ›) statt app-icon/SVG — gleiches Muster wie .nav-arrow in
+  // table.component.scss/matchday.component.scss, unabhängig von SVG-Rendering-Eigenheiten.
+  .team-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: $color-text-muted;
+    font-size: $font-2xl;
+    line-height: 1;
+    cursor: pointer;
+    transition: color $transition-fast;
+
+    &:hover:not(:disabled) {
+      color: $color-text;
+    }
+
+    &:disabled {
+      color: $color-border;
+      cursor: default;
+    }
+
+    &--prev {
+      right: 100%;
+      margin-right: $space-2;
+    }
+
+    &--next {
+      left: 100%;
+      margin-left: $space-2;
+    }
+  }
+
   .team-meta {
     font-size: $font-sm;
     color: $color-text-muted;

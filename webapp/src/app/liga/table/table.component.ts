@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
 import { Matchday } from '../../core/models/matchday.model';
+import { TeamNavService } from '../../core/team-nav.service';
 
 @Component({
   selector: 'app-liga-table',
@@ -17,6 +18,7 @@ export class TableComponent {
   private api    = inject(ApiService);
   private auth   = inject(AuthService);
   private router = inject(Router);
+  private teamNav = inject(TeamNavService);
   cache        = inject(DataCacheService);
 
   isLoggedIn = computed(() => this.auth.isLoggedIn());
@@ -476,7 +478,15 @@ export class TableComponent {
     return { teams, yTicks, xLabels };
   });
 
+  // Für alle direkten [routerLink]-Team-Links auf dieser Seite (Karussells/Sidebar-Karten) —
+  // die Smart-Navigation auf /team/:id soll immer "alle Teams der Saison" zur Verfügung haben,
+  // unabhängig davon, über welchen Link/welche Karte man dorthin gekommen ist.
+  setTeamNavContext(): void {
+    this.teamNav.setContext(this.sortedRows().map((r) => r.team_id));
+  }
+
   navigateToTeam(teamId: string): void {
+    this.setTeamNavContext();
     this.router.navigate(['/team', teamId]);
   }
 
