@@ -86,6 +86,7 @@
     background: none;
     color: $color-text-muted;
     font-size: $font-2xl;
+    font-weight: $font-weight-normal;
     line-height: 1;
     cursor: pointer;
     transition: color $transition-fast;
@@ -101,13 +102,31 @@
 
     &--prev {
       right: 100%;
-      margin-right: $space-2;
+
+      @media (max-width: $mobile-breakpoint) {
+        right: calc(100% - 8px);
+      }
     }
 
+    // Sitzt im Textfluss des h1 (siehe .team-nav-anchor) statt am Wrapper-Rand, damit er bei
+    // einem umbrechenden Namen direkt hinter dem letzten Wort auf der letzten Zeile bleibt.
     &--next {
-      left: 100%;
-      margin-left: $space-2;
+      left: 0;
+
+      @media (max-width: $mobile-breakpoint) {
+        left: -8px;
+      }
     }
+  }
+
+  // Null Breite direkt hinter dem letzten Wort; line-height des h1 ist 1, daher 1em hoch und
+  // top-aligned = exakt die letzte Textzeile.
+  .team-nav-anchor {
+    position: relative;
+    display: inline-block;
+    width: 0;
+    height: 1em;
+    vertical-align: top;
   }
 
   .team-meta {

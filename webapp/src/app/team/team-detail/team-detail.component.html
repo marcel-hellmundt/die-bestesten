@@ -28,16 +28,13 @@
             >
               &lsaquo;
             </button>
-            <h1 class="team-name">{{ t.team_name }}</h1>
-            <button
+            <h1 class="team-name">{{ t.team_name }}<span class="team-nav-anchor"><button
               type="button"
               class="team-nav-btn team-nav-btn--next"
               [disabled]="!canGoNextTeam()"
               (click)="goNextTeam()"
               aria-label="Nächstes Team"
-            >
-              &rsaquo;
-            </button>
+            >&rsaquo;</button></span></h1>
           </div>
         } @else {
           <h1 class="team-name">{{ t.team_name }}</h1>
