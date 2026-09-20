@@ -5,6 +5,7 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { TeamNavService } from '../../core/team-nav.service';
 
 @Component({
   selector: 'app-h2h-match',
@@ -15,6 +16,7 @@ import { DataCacheService } from '../../core/data-cache.service';
 export class H2HMatchComponent implements OnDestroy {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
+  private teamNav = inject(TeamNavService);
   cache        = inject(DataCacheService);
 
   private id$ = inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id')!));
@@ -39,6 +41,12 @@ export class H2HMatchComponent implements OnDestroy {
   matchday   = computed(() => this.data()?.matchday ?? null);
   homeTeam   = computed(() => this.data()?.home_team ?? null);
   awayTeam   = computed(() => this.data()?.away_team ?? null);
+
+  // Prev/Next auf /team/:id zwischen den beiden beteiligten Teams des Matches.
+  setTeamNavContext(): void {
+    const ids = [this.homeTeam()?.id, this.awayTeam()?.id].filter((id): id is string => !!id);
+    this.teamNav.setContext(ids);
+  }
   homeRating = computed(() => this.data()?.home_rating ?? null);
   awayRating = computed(() => this.data()?.away_rating ?? null);
   homeLineup = computed(() => (this.data()?.home_lineup ?? []) as any[]);

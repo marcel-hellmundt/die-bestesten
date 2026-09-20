@@ -32,13 +32,13 @@
         @if (homeTeam()?.color) {
           <span class="team-color-bar" [style.background-color]="homeTeam().color"></span>
         }
-        <a class="match-team-name" [routerLink]="['/team', homeTeam()?.id]">{{ homeTeam()?.team_name }}</a>
+        <a class="match-team-name" [routerLink]="['/team', homeTeam()?.id]" (click)="setTeamNavContext()">{{ homeTeam()?.team_name }}</a>
       </div>
 
       <!-- Score -->
       <div class="match-score">
         @if (homeLogoUrl()) {
-          <a class="score-logo-link score-logo-link--home" [routerLink]="['/team', homeTeam()?.id]">
+          <a class="score-logo-link score-logo-link--home" [routerLink]="['/team', homeTeam()?.id]" (click)="setTeamNavContext()">
             <img
               class="score-logo score-logo--home"
               [src]="homeLogoUrl()!"
@@ -63,7 +63,7 @@
           }
         </div>
         @if (awayLogoUrl()) {
-          <a class="score-logo-link score-logo-link--away" [routerLink]="['/team', awayTeam()?.id]">
+          <a class="score-logo-link score-logo-link--away" [routerLink]="['/team', awayTeam()?.id]" (click)="setTeamNavContext()">
             <img
               class="score-logo score-logo--away"
               [src]="awayLogoUrl()!"
@@ -79,7 +79,7 @@
         @if (awayTeam()?.color) {
           <span class="team-color-bar" [style.background-color]="awayTeam().color"></span>
         }
-        <a class="match-team-name" [routerLink]="['/team', awayTeam()?.id]">{{ awayTeam()?.team_name }}</a>
+        <a class="match-team-name" [routerLink]="['/team', awayTeam()?.id]" (click)="setTeamNavContext()">{{ awayTeam()?.team_name }}</a>
       </div>
     </div>
 

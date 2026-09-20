@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith, switchMap } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, distinctUntilChanged, filter, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
@@ -25,10 +25,28 @@ export class TeamDetailComponent {
 
   // Liste vom navigierenden Absender (Manager-Seite/Liga-Tabelle/Spieltag) gesetzt — nur gültig,
   // wenn die aktuelle Team-ID tatsächlich darin vorkommt (sonst z.B. Direktaufruf/fremder Link).
+  // Fallback für alle Einstiege ohne eigene Liste (Ruhmeshalle, Markt, Spielerseite, Suche,
+  // Direktaufruf, ...): alle Teams derselben Saison wie das aktuell geöffnete Team.
+  private seasonTeamIds = toSignal(
+    toObservable(computed(() => this.team()?.season_id as string | undefined)).pipe(
+      filter((seasonId): seasonId is string => !!seasonId),
+      distinctUntilChanged(),
+      switchMap(seasonId =>
+        this.api.get<any[]>(`team?season_id=${seasonId}`).pipe(
+          map(teams => teams.map(t => t.id as string)),
+          catchError(() => of([] as string[]))
+        )
+      )
+    ),
+    { initialValue: [] as string[] }
+  );
+
   private navList = computed<string[] | null>(() => {
+    const current = this.currentTeamId();
     const ids = this.teamNav.getContext();
-    if (!ids || !ids.includes(this.currentTeamId())) return null;
-    return ids;
+    if (ids && ids.includes(current)) return ids;
+    const fallback = this.seasonTeamIds();
+    return fallback.includes(current) ? fallback : null;
   });
 
   private navIndex = computed(() => {
