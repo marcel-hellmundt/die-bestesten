@@ -272,7 +272,11 @@ export class MarktPlayerComponent {
               open_player_ids: string[];
               open_count: number;
               max_open: number;
-            }>(`player_offer/eligibility?team_id=${id}`).pipe(catchError(() => of(null)))
+            }>(`player_offer/eligibility?team_id=${id}`).pipe(
+              // Antwort ohne die erwarteten Felder (z.B. älterer API-Stand ohne /eligibility) = nicht verfügbar
+              map(res => Array.isArray(res?.open_player_ids) && Array.isArray(res?.full_positions) ? res : null),
+              catchError(() => of(null)),
+            )
           ),
         );
       }),
