@@ -1,0 +1,24 @@
+@use '../../styles/variables' as *;
+
+:host {
+  display: block;
+}
+
+// Desktop: Sub-Menü bleibt beim Scrollen unter der Topbar gepinnt (sticky statt fixed — behält
+// seinen Platz im Layout und braucht keine Breitenkorrektur). Mobile bleibt unverändert:
+// .shell-content setzt dort overflow-x:hidden, was sticky wirkungslos machen würde.
+// --liga-subnav-bottom = Unterkante des gepinnten Sub-Menüs, damit Kind-Seiten (z.B. die
+// Saison-Auswahl auf /liga/tabelle) direkt darunter andocken können.
+@media (min-width: #{$mobile-breakpoint + 1}) {
+  :host {
+    --liga-subnav-bottom: #{$topbar-height + $space-2 + $control-height + $space-2};
+  }
+
+  .pill-nav {
+    position: sticky;
+    top: $topbar-height;
+    z-index: $z-sticky - 10;
+    background: $color-bg;
+    padding-bottom: $space-2;
+  }
+}
