@@ -863,6 +863,14 @@
   margin-bottom: $space-1;
 }
 
+.participation-tooltip__detail.participation-tooltip__total {
+  margin-top: $space-1;
+  padding-top: $space-1;
+  border-top: 1px solid $color-border;
+  color: $color-text;
+  font-weight: $font-weight-semibold;
+}
+
 .participation-tooltip__detail {
   display: block;
   font-size: $font-xs;

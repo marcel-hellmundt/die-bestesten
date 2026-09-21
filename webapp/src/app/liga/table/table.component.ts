@@ -319,6 +319,9 @@ export class TableComponent {
     { key: 'clean_sheet',   label: 'Weiße Weste', color: 'color-mix(in srgb, var(--flat-river) 60%, white)' },
     { key: 'participation', label: 'Einsatz',     color: 'color-mix(in srgb, var(--flat-river) 42%, white)' },
   ];
+  // Minuspunkte (schlechte Noten, Karten) als rotes Segment am Balkenende — Brutto minus dieses
+  // Segment = Nettopunkte des Teams.
+  readonly deductionSegment = { key: 'deductions', label: 'Abzüge', color: 'var(--flat-alizarin)' };
 
   // false = jeder Balken auf 100 % skaliert (Anteile), true = Balkenlänge relativ zum Team mit den
   // meisten Gesamtpunkten (macht Punkteunterschiede zwischen Teams sichtbar).
@@ -329,13 +332,20 @@ export class TableComponent {
       .map(r => {
         const gross = this.pointSourceSegments.reduce((sum, s) => sum + +r[s.key], 0);
         if (gross <= 0) return null;
-        const segments = this.pointSourceSegments.map(s => ({
+        const deductions = Math.abs(+r.deductions);
+        const total = gross + deductions;
+        const parts = [
+          ...this.pointSourceSegments.map(s => ({ ...s, points: +r[s.key] })),
+          ...(deductions > 0 ? [{ ...this.deductionSegment, points: -deductions }] : []),
+        ];
+        const segments = parts.map(s => ({
           ...s,
-          points: +r[s.key],
-          share: +r[s.key] / gross * 100,
-          pct: Math.round(+r[s.key] / gross * 100),
+          share: Math.abs(s.points) / total * 100,
+          pct: Math.round(Math.abs(s.points) / total * 100),
         }));
-        return { ...r, deductions: +r.deductions, segments, gross };
+        const standing = ((this.state().data?.standings ?? []) as any[]).find(t => t.team_id === r.team_id);
+        const netPoints = standing ? +standing.total_points : gross - deductions;
+        return { ...r, deductions: +r.deductions, segments, gross: total, netPoints };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
     const maxGross = Math.max(...rows.map(r => r.gross), 1);

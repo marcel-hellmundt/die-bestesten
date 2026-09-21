@@ -337,6 +337,9 @@
                   <span class="point-source-legend__dot" [style.background]="seg.color"></span>{{ seg.label }}
                 </span>
               }
+              <span class="point-source-legend__item">
+                <span class="point-source-legend__dot" [style.background]="deductionSegment.color"></span>{{ deductionSegment.label }}
+              </span>
             </div>
             <div class="participation-list">
               @for (r of pointSourceRows(); track r.team_id) {
@@ -575,9 +578,7 @@
           <span class="point-source-legend__dot" [style.background]="seg.color"></span>{{ seg.label }}: {{ seg.points }} Pkt ({{ seg.pct }}%)
         </span>
       }
-      @if (r.deductions < 0) {
-        <span class="participation-tooltip__detail participation-tooltip__detail--none">Abzüge: {{ r.deductions }} Pkt</span>
-      }
+      <span class="participation-tooltip__detail participation-tooltip__total">Gesamtpunkte: {{ r.netPoints }}</span>
     } @else {
       <span class="participation-tooltip__detail participation-tooltip__detail--starting">{{ r.starting }}× Startelf ({{ r.starting_pct }}%)</span>
       <span class="participation-tooltip__detail participation-tooltip__detail--substitute">{{ r.substitute }}× Eingewechselt ({{ r.substitute_pct }}%)</span>
