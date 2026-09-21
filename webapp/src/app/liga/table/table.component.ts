@@ -336,7 +336,8 @@ export class TableComponent {
         ...r, parts, gross, minus,
         netPoints: standing ? +standing.total_points : gross - minus,
       };
-    }).filter(r => r.gross > 0 || r.minus > 0);
+    }).filter(r => r.gross > 0 || r.minus > 0)
+      .sort((a, b) => b.netPoints - a.netPoints);
 
     const maxGross = Math.max(...rows.map(r => r.gross), 1);
     const maxMinus = Math.max(...rows.map(r => r.minus), 0);
