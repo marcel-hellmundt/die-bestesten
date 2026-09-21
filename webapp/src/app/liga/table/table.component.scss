@@ -585,20 +585,12 @@
   &--none       { background: #ff3f34; }
 }
 
-.chart-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $space-2;
-  margin-bottom: $space-3;
-
-  .chart-card__label { margin-bottom: 0; }
-}
-
-.live-toggle--sm {
-  height: 26px;
-  padding: 0 $space-2;
-  font-size: $font-xs;
+// Diverging-Balken: links Minuspunkte (rechtsbündig), rechts positive Quellen, dazwischen die Nulllinie.
+.point-source-bar {
+  &__neg, &__pos { display: flex; height: 100%; }
+  &__neg { justify-content: flex-end; }
+  &__pos { border-left: 2px solid $color-text; }
+  &__minus { height: 100%; }
 }
 
 .point-source-legend {

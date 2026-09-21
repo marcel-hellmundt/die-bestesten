@@ -320,17 +320,7 @@
 
         @if (pointSourceRows().length > 0) {
           <div class="card chart-card">
-            <div class="chart-card__header">
-              <span class="chart-card__label">Punkte-Herkunft</span>
-              <button
-                class="live-toggle live-toggle--sm"
-                [class.live-toggle--active]="pointSourceAbsolute()"
-                (click)="pointSourceAbsolute.set(!pointSourceAbsolute())"
-                title="Balkenlänge nach Gesamtpunkten statt auf 100 % skaliert"
-              >
-                Absolut
-              </button>
-            </div>
+            <span class="chart-card__label">Punkte-Herkunft</span>
             <div class="point-source-legend">
               @for (seg of pointSourceSegments; track seg.key) {
                 <span class="point-source-legend__item">
@@ -358,10 +348,15 @@
                     (error)="onLogoError(r.team_id)"
                   />
                   <span class="participation-row__name">{{ r.team_name }}</span>
-                  <span class="participation-bar" [class.participation-bar--hovered]="tooltipRow()?.team_id === r.team_id">
-                    @for (seg of r.segments; track seg.key) {
-                      <span class="participation-bar__seg" [style.width.%]="pointSourceAbsolute() ? seg.share * r.scale : seg.share" [style.background]="seg.color"></span>
-                    }
+                  <span class="participation-bar point-source-bar" [class.participation-bar--hovered]="tooltipRow()?.team_id === r.team_id">
+                    <span class="point-source-bar__neg" [style.width.%]="r.leftPct">
+                      <span class="point-source-bar__minus" [style.width.%]="r.minusWidthPct" [style.background]="deductionSegment.color"></span>
+                    </span>
+                    <span class="point-source-bar__pos" [style.width.%]="100 - r.leftPct">
+                      @for (seg of r.segments; track seg.key) {
+                        <span class="participation-bar__seg" [style.width.%]="seg.share" [style.background]="seg.color"></span>
+                      }
+                    </span>
                   </span>
                 </a>
               }
@@ -576,6 +571,11 @@
       @for (seg of r.segments; track seg.key) {
         <span class="participation-tooltip__detail">
           <span class="point-source-legend__dot" [style.background]="seg.color"></span>{{ seg.label }}: {{ seg.points }} Pkt ({{ seg.pct }}%)
+        </span>
+      }
+      @if (r.minus > 0) {
+        <span class="participation-tooltip__detail">
+          <span class="point-source-legend__dot" [style.background]="deductionSegment.color"></span>{{ deductionSegment.label }}: −{{ r.minus }} Pkt
         </span>
       }
       <span class="participation-tooltip__detail participation-tooltip__total">Gesamtpunkte: {{ r.netPoints }}</span>

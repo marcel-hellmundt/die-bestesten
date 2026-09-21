@@ -323,33 +323,34 @@ export class TableComponent {
   // Segment = Nettopunkte des Teams.
   readonly deductionSegment = { key: 'deductions', label: 'Minuspunkte', color: 'var(--flat-alizarin)' };
 
-  // false = jeder Balken auf 100 % skaliert (Anteile), true = Balkenlänge relativ zum Team mit den
-  // meisten Gesamtpunkten (macht Punkteunterschiede zwischen Teams sichtbar).
-  pointSourceAbsolute = signal(false);
-
+  // Diverging-Balken um eine gemeinsame Nulllinie: positive Quellen laufen nach rechts, Minuspunkte
+  // (schlechte Noten, Karten) nach links — gleiche Skala für alle Teams, damit Balkenlängen
+  // vergleichbar sind und Gesamtpunkte (rechts minus links) ablesbar bleiben.
   pointSourceRows = computed(() => {
-    const rows = ((this.state().data?.point_sources ?? []) as any[])
-      .map(r => {
-        const gross = this.pointSourceSegments.reduce((sum, s) => sum + +r[s.key], 0);
-        if (gross <= 0) return null;
-        const deductions = Math.abs(+r.deductions);
-        const total = gross + deductions;
-        const parts = [
-          ...this.pointSourceSegments.map(s => ({ ...s, points: +r[s.key] })),
-          ...(deductions > 0 ? [{ ...this.deductionSegment, points: -deductions }] : []),
-        ];
-        const segments = parts.map(s => ({
-          ...s,
-          share: Math.abs(s.points) / total * 100,
-          pct: Math.round(Math.abs(s.points) / total * 100),
-        }));
-        const standing = ((this.state().data?.standings ?? []) as any[]).find(t => t.team_id === r.team_id);
-        const netPoints = standing ? +standing.total_points : gross - deductions;
-        return { ...r, deductions: +r.deductions, segments, gross: total, netPoints };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
+    const rows = ((this.state().data?.point_sources ?? []) as any[]).map(r => {
+      const parts = this.pointSourceSegments.map(s => ({ ...s, points: +r[s.key] }));
+      const gross = parts.reduce((sum, s) => sum + s.points, 0);
+      const minus = Math.abs(+r.deductions);
+      const standing = ((this.state().data?.standings ?? []) as any[]).find(t => t.team_id === r.team_id);
+      return {
+        ...r, parts, gross, minus,
+        netPoints: standing ? +standing.total_points : gross - minus,
+      };
+    }).filter(r => r.gross > 0 || r.minus > 0);
+
     const maxGross = Math.max(...rows.map(r => r.gross), 1);
-    return rows.map(r => ({ ...r, scale: r.gross / maxGross }));
+    const maxMinus = Math.max(...rows.map(r => r.minus), 0);
+    const leftPct  = maxMinus / (maxMinus + maxGross) * 100;
+    return rows.map(r => ({
+      ...r,
+      leftPct,
+      minusWidthPct: maxMinus > 0 ? r.minus / maxMinus * 100 : 0,
+      segments: r.parts.map((s: any) => ({
+        ...s,
+        share: s.points / maxGross * 100,
+        pct: r.gross > 0 ? Math.round(s.points / r.gross * 100) : 0,
+      })),
+    }));
   });
 
   // Mobile: Hölzerne Bank/Goldene Bürste/Glückspilze/Pechvögel als eigenes Swipe-Karussell (siehe
