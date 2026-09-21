@@ -128,6 +128,9 @@
       </p>
     } @else {
       <p class="players-count">{{ filteredPlayers().length }} von {{ players().length }} Spielern</p>
+      @if (directError()) {
+        <p class="offer-panel__error">{{ directError() }}</p>
+      }
       <div class="table-container" #tableContainer>
         <table class="data-table">
           <thead>
@@ -219,15 +222,27 @@
                         <app-icon name="eye" />
                         <span class="btn-label">{{ isWatched(p) ? 'Beobachtet' : 'Beobachten' }}</span>
                       </button>
-                      <button
-                        class="offer-btn"
-                        [disabled]="!canBid(p)"
-                        [title]="p.soon_available ? 'Verfügbar ab der nächsten Transferphase' : (p.current_team_id ? 'Spieler hat bereits ein Team' : 'Gebot abgeben')"
-                        (click)="openOffer(p)"
-                      >
-                        <app-icon name="gavel" />
-                        <span class="btn-label">Gebot abgeben</span>
-                      </button>
+                      @if (p.current_team_id) {
+                        <button
+                          class="offer-btn"
+                          [disabled]="!canDirectOffer(p) || directLoadingId() === p.id"
+                          [title]="directOfferBlockReason(p) || 'Angebot machen'"
+                          (click)="openDirectOffer(p)"
+                        >
+                          <app-icon name="gavel" />
+                          <span class="btn-label">Angebot machen</span>
+                        </button>
+                      } @else {
+                        <button
+                          class="offer-btn"
+                          [disabled]="!canBid(p)"
+                          [title]="p.soon_available ? 'Verfügbar ab der nächsten Transferphase' : 'Gebot abgeben'"
+                          (click)="openOffer(p)"
+                        >
+                          <app-icon name="gavel" />
+                          <span class="btn-label">Gebot abgeben</span>
+                        </button>
+                      }
                     </div>
                   </td>
                 }
@@ -422,7 +437,7 @@
         </button>
       </div>
     } @else {
-      <p class="offer-panel__success">Gebot erfolgreich abgeschickt!</p>
+      <p class="offer-panel__success">{{ offerMode() === 'direct' ? 'Angebot erfolgreich abgeschickt! Der andere Manager kann es in einer Transferphase annehmen oder ablehnen.' : 'Gebot erfolgreich abgeschickt!' }}</p>
       <button class="offer-panel__cancel" type="button" (click)="closeOfferSheet()">
         Schließen
       </button>

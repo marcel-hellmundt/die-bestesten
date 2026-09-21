@@ -22,6 +22,10 @@ class PlayerOfferController extends _BaseController
             return ['status' => false, 'message' => 'Not your team'];
         }
 
+        if ($this->id === 'eligibility') {
+            return $this->db->getPlayerOfferEligibility($teamId);
+        }
+
         if ($this->id === 'quote') {
             $playerId = $this->params['player_id'] ?? null;
             if (!$playerId) {

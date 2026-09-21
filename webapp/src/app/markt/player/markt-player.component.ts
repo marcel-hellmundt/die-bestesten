@@ -251,6 +251,52 @@ export class MarktPlayerComponent {
     }
   }
 
+  // ── Angebot machen (Direktangebot auf Spieler in einem fremden Team) ─────────
+  // Gleiche Bedingungen wie auf der Spielerdetailseite (GET /player_offer/quote): Besitzer ≠ eigenes
+  // Team, Marktwert vorhanden, kein offenes Angebot, Ziel-Phase geplant, Position nicht voll, Budget
+  // reicht für den Marktwert. Team-weite Teile kommen gebündelt aus /player_offer/eligibility, die
+  // Marktwert-Prüfung anhand der Listendaten; beim Klick holt eine Quote den serverseitigen Marktwert.
+  private refreshDirect$ = new Subject<void>();
+
+  private eligibility = toSignal(
+    toObservable(this.cache.myTeamId).pipe(
+      switchMap(id => {
+        if (!id) return of(null);
+        return this.refreshDirect$.pipe(
+          startWith(null),
+          switchMap(() =>
+            this.api.get<{
+              target_window: { id: string; end_date: string } | null;
+              available_budget: number;
+              full_positions: string[];
+              open_player_ids: string[];
+              open_count: number;
+              max_open: number;
+            }>(`player_offer/eligibility?team_id=${id}`).pipe(catchError(() => of(null)))
+          ),
+        );
+      }),
+    ),
+  );
+
+  /** Grund, warum "Angebot machen" für diesen Spieler nicht möglich ist (leer = möglich). */
+  directOfferBlockReason(p: FreeAgent): string {
+    const el = this.eligibility();
+    if (!p.current_team_id) return 'Spieler ist in keinem Team';
+    if (p.current_team_id === this.cache.myTeamId()) return 'Das ist dein eigener Spieler';
+    if (!el) return 'Bedingungen werden geladen…';
+    if (el.open_player_ids.includes(p.id)) return 'Du hast bereits ein offenes Angebot für diesen Spieler';
+    if (!el.target_window) return 'Keine offene oder kommende Transferphase geplant';
+    if (el.open_count >= el.max_open) return `Zu viele offene Angebote (max. ${el.max_open})`;
+    if (el.full_positions.includes(p.position)) return 'Positionslimit voll';
+    if (el.available_budget < this.dynamicPrice(p)) return 'Nicht genug verfügbares Budget für den Marktwert';
+    return '';
+  }
+
+  canDirectOffer(p: FreeAgent): boolean {
+    return !!this.cache.myTeamId() && this.directOfferBlockReason(p) === '';
+  }
+
   // ── Gebot abgeben (Quick-Action) ───────────────────────────────────────────
   canBid(p: FreeAgent): boolean {
     return !p.current_team_id && !!this.openWindow() && !!this.cache.myTeamId() && !p.soon_available;
@@ -275,7 +321,15 @@ export class MarktPlayerComponent {
     this.digitE10000()    *     10_000
   );
 
+  // 'market' = Gebot auf einen freien Spieler (POST /offer), 'direct' = Direktangebot (POST /player_offer,
+  // Marktwert kommt dann serverseitig aus /player_offer/quote).
+  offerMode        = signal<'market' | 'direct'>('market');
+  directMarketValue = signal(0);
+  directLoadingId  = signal<string | null>(null);
+  directError      = signal<string | null>(null);
+
   offerMarketValue = computed(() => {
+    if (this.offerMode() === 'direct') return this.directMarketValue();
     const p = this.selectedOfferPlayer();
     return p ? this.dynamicPrice(p) : 0;
   });
@@ -302,8 +356,39 @@ export class MarktPlayerComponent {
     this.digitE10000.set(   +s[s.length - 5] || 0);
   }
 
+  openDirectOffer(p: FreeAgent): void {
+    const teamId = this.cache.myTeamId();
+    if (!teamId || !this.canDirectOffer(p) || this.directLoadingId()) return;
+    this.directLoadingId.set(p.id);
+    this.directError.set(null);
+    this.api.get<{ can_offer: boolean; reason: string | null; market_value: number | null }>(
+      `player_offer/quote?team_id=${teamId}&player_id=${p.id}`
+    ).subscribe({
+      next: q => {
+        this.directLoadingId.set(null);
+        if (!q.can_offer || !q.market_value) {
+          this.directError.set('Angebot aktuell nicht möglich — bitte Seite neu laden.');
+          this.refreshDirect$.next();
+          return;
+        }
+        this.offerMode.set('direct');
+        this.directMarketValue.set(q.market_value);
+        this.selectedOfferPlayer.set(p);
+        this.offerSuccess.set(false);
+        this.offerError.set(null);
+        this.setDigitsFromValue(q.market_value);
+        this.bottomSheet.open(this.offerSheet, { title: 'Angebot abgeben' });
+      },
+      error: () => {
+        this.directLoadingId.set(null);
+        this.directError.set('Fehler beim Laden des Marktwerts');
+      },
+    });
+  }
+
   openOffer(p: FreeAgent): void {
     if (!this.canBid(p)) return;
+    this.offerMode.set('market');
     this.selectedOfferPlayer.set(p);
     this.offerSuccess.set(false);
     this.offerError.set(null);
@@ -349,6 +434,24 @@ export class MarktPlayerComponent {
     const teamId = this.cache.myTeamId();
     const win    = this.openWindow();
     const p      = this.selectedOfferPlayer();
+    if (this.offerMode() === 'direct') {
+      if (!teamId || !p || !this.isValidOffer()) return;
+      this.offerSubmitting.set(true);
+      this.offerError.set(null);
+      this.api.post<any>('player_offer', { team_id: teamId, player_id: p.id, offer_value: this.offerValue() }).subscribe({
+        next: () => {
+          this.offerSubmitting.set(false);
+          this.offerSuccess.set(true);
+          this.refreshOffers$.next();
+          this.refreshDirect$.next();
+        },
+        error: (err: any) => {
+          this.offerSubmitting.set(false);
+          this.offerError.set(err?.error?.message ?? 'Fehler beim Abschicken');
+        },
+      });
+      return;
+    }
     if (!teamId || !win || !p || !this.isValidOffer()) return;
     this.offerSubmitting.set(true);
     this.offerError.set(null);

@@ -553,6 +553,40 @@ trait PlayerOfferTrait
         return $out;
     }
 
+    /**
+     * Team-weite Bedingungen für Direktangebote, gebündelt für Listen (z.B. /markt/spieler), damit nicht je
+     * Spieler eine Quote geladen werden muss: Ziel-Fenster, verfügbares Budget, volle Positionen, Spieler mit
+     * bereits offenem Angebot, Anzahl offener Angebote. Die Bedingungen je Spieler (Besitzer, Marktwert) prüft
+     * der Client anhand seiner Listendaten; maßgeblich bleiben immer /player_offer/quote und POST /player_offer.
+     */
+    public function getPlayerOfferEligibility(string $buyerTeamId): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        $out = [
+            'target_window' => null, 'available_budget' => 0, 'full_positions' => [],
+            'open_player_ids' => [], 'open_count' => 0, 'max_open' => self::MAX_OPEN_PLAYER_OFFERS,
+        ];
+        if (!$seasonId) return $out;
+
+        $this->expireStalePlayerOffers();
+        $out['available_budget'] = $this->getTeamBudgetValue($buyerTeamId) - $this->getReservedBudget($buyerTeamId);
+
+        $window = $this->findTransferwindow($seasonId, false);
+        if ($window) $out['target_window'] = ['id' => $window['id'], 'start_date' => $window['start_date'], 'end_date' => $window['end_date'], 'is_open' => $window['is_open']];
+
+        foreach (self::SQUAD_MAX as $position => $max) {
+            if ($this->countTeamPositionSlots($buyerTeamId, $seasonId, $position) >= $max) $out['full_positions'][] = $position;
+        }
+
+        if ($this->hasPlayerOfferTable()) {
+            $q = $this->con_league->prepare("SELECT player_id FROM player_offer WHERE buyer_team_id = :tid AND status = 'pending'");
+            $q->execute([':tid' => $buyerTeamId]);
+            $out['open_player_ids'] = $q->fetchAll(PDO::FETCH_COLUMN);
+            $out['open_count'] = count($out['open_player_ids']);
+        }
+        return $out;
+    }
+
     // ─── Antworten / Stornieren ────────────────────────────────────────────────────
 
     public function cancelPlayerOffer(string $offerId, string $buyerTeamId): bool
