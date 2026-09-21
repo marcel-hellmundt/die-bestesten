@@ -10,6 +10,69 @@
     </span>
   </h1>
 
+  <!-- Hinterzimmerdeals: vollzogene Direktangebote zwischen Managern, bewusst prominent ganz oben -->
+  @if (directDeals().length) {
+    <section class="deals">
+      <h2 class="deals__title">Hinterzimmerdeals</h2>
+      <div class="player-list">
+        @for (deal of directDeals(); track deal.id) {
+          <div class="player-card player-card--deal">
+            <div class="player-card__player">
+              @if (deal.position) {
+                <span class="position-badge position-badge--text" [style.background-color]="positionColors[deal.position]">
+                  {{ positionLabel[deal.position] }}
+                </span>
+              }
+              <a class="player-photo-wrap" [routerLink]="['/daten/player', deal.player_id]">
+                @if (dealPhotoUrl(deal); as url) {
+                  <img class="player-photo" [src]="url" [alt]="deal.displayname ?? ''" />
+                } @else {
+                  <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
+                }
+              </a>
+              <div class="player-card__info">
+                <a class="player-card__name" [routerLink]="['/daten/player', deal.player_id]">{{ deal.displayname }}</a>
+                <span class="player-card__club">
+                  <a [routerLink]="deal.club_id ? ['/daten/club', deal.club_id] : null">
+                    <img class="club-logo" [src]="clubLogoUrl(deal.club_id, deal.club_logo_uploaded)"
+                         [class.logo--placeholder]="!deal.club_logo_uploaded" alt="" />
+                  </a>
+                </span>
+              </div>
+            </div>
+
+            <div class="deal-flow">
+              @if (deal.seller; as s) {
+                <a class="deal-team" [routerLink]="['/team', s.team_id]" [title]="s.team_name">
+                  @if (!logoErrors.has(s.team_id)) {
+                    <img class="team-logo" [src]="dealTeamLogoUrl(s)" [alt]="s.team_name" (error)="onLogoError(s.team_id)" />
+                  }
+                  <span class="deal-team__name">{{ s.team_name }}</span>
+                </a>
+              }
+              <span class="deal-flow__arrow">→</span>
+              @if (deal.buyer; as b) {
+                <a class="deal-team" [routerLink]="['/team', b.team_id]" [title]="b.team_name">
+                  @if (!logoErrors.has(b.team_id)) {
+                    <img class="team-logo" [src]="dealTeamLogoUrl(b)" [alt]="b.team_name" (error)="onLogoError(b.team_id)" />
+                  }
+                  <span class="deal-team__name">{{ b.team_name }}</span>
+                </a>
+              }
+            </div>
+
+            <div class="winner-bid__price">
+              <span class="winner-bid__amount">{{ formatPrice(deal.price) }}</span>
+              @if (bidPct(deal.price, deal.price_snapshot); as pct) {
+                <span class="winner-bid__pct" [ngClass]="bidPctClass(deal.price, deal.price_snapshot)">{{ pct }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
   @if (cache.myTeamId()) {
     <label class="filter-checkbox">
       Nur eigene Gebote

@@ -276,3 +276,51 @@
   color: $color-text-muted;
   font-style: italic;
 }
+
+// ── Hinterzimmerdeals (vollzogene Direktangebote), prominent über der Gebotsliste ──
+.deals {
+  margin-bottom: $space-6;
+
+  &__title {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    margin: 0 0 $space-3;
+  }
+}
+
+.player-card--deal {
+  border-color: var(--flat-sunflower);
+  background: color-mix(in srgb, var(--flat-sunflower) 8%, $color-surface);
+}
+
+.deal-flow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex: 1 1 auto;
+  min-width: 0;
+
+  &__arrow {
+    color: $color-text-muted;
+  }
+}
+
+.deal-team {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  text-decoration: none;
+  color: $color-text;
+  min-width: 0;
+
+  &__name {
+    font-size: $font-sm;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (max-width: $mobile-breakpoint) {
+      display: none;
+    }
+  }
+}

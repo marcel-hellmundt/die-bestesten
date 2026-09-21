@@ -154,6 +154,21 @@
         <span class="toggle__track"></span>
       </span>
     </label>
+
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Direktangebote</span>
+        <span class="pref-desc">Wenn jemand ein Angebot für einen deiner Spieler abgibt oder auf dein Angebot antwortet</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('direct_offer')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('direct_offer', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
   </div>
 </section>
 

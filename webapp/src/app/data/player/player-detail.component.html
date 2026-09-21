@@ -190,6 +190,18 @@
           @if (sellError()) {
             <span class="sell-error">{{ sellError() }}</span>
           }
+          @if (!isOwnTeam() && myTeam() && directQuote(); as q) {
+            @if (q.existing_offer_id) {
+              <a class="offer-btn offer-btn--exists" routerLink="/markt/gebote">Angebot ausstehend →</a>
+            } @else {
+              <button
+                class="offer-btn"
+                [disabled]="!q.can_offer"
+                [title]="directReasonText(q.reason)"
+                (click)="openDirectOffer()"
+              >Angebot machen</button>
+            }
+          }
           @if (myTeam()) {
             <button
               class="watch-btn"
@@ -984,7 +996,7 @@
         </button>
       </div>
     } @else {
-      <p class="offer-panel__success">Gebot erfolgreich abgeschickt!</p>
+      <p class="offer-panel__success">{{ offerMode() === 'direct' ? 'Angebot erfolgreich abgeschickt! Der andere Manager kann es in einer Transferphase annehmen oder ablehnen.' : 'Gebot erfolgreich abgeschickt!' }}</p>
       <button class="offer-panel__cancel" type="button" (click)="closeOffer()">
         Schließen
       </button>

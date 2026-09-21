@@ -270,3 +270,59 @@
     gap: $space-2;
   }
 }
+
+// ── Direktangebote ("Hinterzimmerdeals") ──────────────────────────────────────
+.direct-card {
+  margin-bottom: $space-4;
+
+  &__title {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    margin: 0 0 $space-1;
+  }
+
+  &__hint {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    margin: 0 0 $space-3;
+  }
+}
+
+.direct-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.direct-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 0;
+  border-top: 1px solid $color-border;
+  flex-wrap: wrap;
+
+  &:first-child { border-top: none; }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1 1 160px;
+  }
+
+  &__sub {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    white-space: nowrap;
+  }
+}

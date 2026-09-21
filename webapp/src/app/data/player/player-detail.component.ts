@@ -60,6 +60,18 @@ interface PlayerRating {
   kickoff_date: string;
 }
 
+// GET /player_offer/quote — Grundlage für den "Angebot machen"-Button (Direktangebot auf einen Spieler
+// im Team eines anderen Managers); market_value/available_budget kommen serverseitig.
+interface DirectQuote {
+  can_offer: boolean;
+  reason: string | null;
+  market_value: number | null;
+  available_budget: number;
+  seller_team: { team_id: string; team_name: string } | null;
+  target_window: { id: string; start_date: string; end_date: string; is_open: boolean } | null;
+  existing_offer_id: string | null;
+}
+
 interface PlayerDetail {
   id: string;
   country_id: string | null;
@@ -679,10 +691,50 @@ export class PlayerDetailComponent {
     this.digitE10000()    *     10_000
   );
 
+  // 'market' = Gebot auf einen freien Spieler (POST /offer), 'direct' = Direktangebot auf einen Spieler
+  // in einem fremden Team (POST /player_offer). Beide teilen sich Sheet + Spinner-Signale.
+  offerMode = signal<'market' | 'direct'>('market');
+
   marketValue = computed(() => {
+    // Direktangebot: serverseitiger Marktwert (Verkaufsformel) — der Client-Wert würde bei einer
+    // angezeigten Vorsaison mit deren Punkten rechnen und einen falschen Mindestbetrag liefern.
+    if (this.offerMode() === 'direct') return this.directQuote()?.market_value ?? 0;
     const price = +(this.currentDivisionSeasonEntry()?.price ?? 0);
     return Math.round(price + this.totalPoints() * this.cache.pointsBonus());
   });
+
+  private refreshDirect$ = new Subject<void>();
+
+  directQuote = toSignal(
+    combineLatest([
+      toObservable(this.currentTeam),
+      toObservable(this.myTeam),
+      this.id$,
+      this.refreshDirect$.pipe(startWith(null)),
+    ]).pipe(
+      switchMap(([team, mine, playerId]) => {
+        // currentTeam ist undefined (lädt) / null (freier Spieler) / Objekt (in einem Team)
+        if (!team || !mine || team.id === mine.id) return of(null as DirectQuote | null);
+        return this.api.get<DirectQuote>(`player_offer/quote?team_id=${mine.id}&player_id=${playerId}`).pipe(
+          catchError(() => of(null as DirectQuote | null))
+        );
+      })
+    ),
+    { initialValue: null as DirectQuote | null }
+  );
+
+  directReasonText(reason: string | null): string {
+    return ({
+      no_season: 'Keine aktive Saison',
+      not_owned: 'Spieler ist in keinem Team',
+      own_player: 'Das ist dein eigener Spieler',
+      no_market_value: 'Für diese Saison ist kein Marktwert vorhanden',
+      already_offered: 'Du hast bereits ein offenes Angebot für diesen Spieler',
+      no_window: 'Keine offene oder kommende Transferphase geplant',
+      position_full: 'Positionslimit voll',
+      insufficient_budget: 'Nicht genug verfügbares Budget für den Marktwert',
+    } as Record<string, string>)[reason ?? ''] ?? '';
+  }
 
   offerPercentage = computed(() => {
     const mv = this.marketValue();
@@ -709,10 +761,21 @@ export class PlayerDetailComponent {
 
   openOffer(): void {
     if (this.isSoonAvailable()) return;
+    this.offerMode.set('market');
     this.offerSuccess.set(false);
     this.offerError.set(null);
     this.setDigitsFromValue(this.marketValue());
     this.bottomSheet.open(this.offerSheet, { title: 'Gebot abgeben' });
+  }
+
+  openDirectOffer(): void {
+    const q = this.directQuote();
+    if (!q?.can_offer || !q.market_value) return;
+    this.offerMode.set('direct');
+    this.offerSuccess.set(false);
+    this.offerError.set(null);
+    this.setDigitsFromValue(q.market_value);
+    this.bottomSheet.open(this.offerSheet, { title: 'Angebot abgeben' });
   }
 
   closeOffer(): void {
@@ -753,6 +816,24 @@ export class PlayerDetailComponent {
     const team = this.myTeam();
     const win  = this.openWindow();
     const p    = this.player();
+    if (this.offerMode() === 'direct') {
+      if (!team || !p || !this.isValidOffer()) return;
+      this.offerSubmitting.set(true);
+      this.offerError.set(null);
+      this.api.post<any>('player_offer', { team_id: team.id, player_id: p.id, offer_value: this.offerValue() }).subscribe({
+        next: () => {
+          this.offerSubmitting.set(false);
+          this.offerSuccess.set(true);
+          this.refreshOffers$.next();
+          this.refreshDirect$.next();
+        },
+        error: (err: any) => {
+          this.offerSubmitting.set(false);
+          this.offerError.set(err?.error?.message ?? 'Fehler beim Abschicken');
+        },
+      });
+      return;
+    }
     if (!team || !win || !p || !this.isValidOffer()) return;
     this.offerSubmitting.set(true);
     this.offerError.set(null);

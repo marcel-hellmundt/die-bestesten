@@ -13,8 +13,12 @@
 @if (loading()) {
   <p class="state-msg">Laden…</p>
 } @else if (!allOffers().length) {
-  <p class="state-msg">Noch keine Gebote abgegeben.</p>
+  <ng-container *ngTemplateOutlet="directOffersTpl" />
+  @if (!directIncoming().length && !directOutgoing().length) {
+    <p class="state-msg">Noch keine Gebote abgegeben.</p>
+  }
 } @else {
+  <ng-container *ngTemplateOutlet="directOffersTpl" />
   @if (pendingSum() > 0) {
     <p class="pending-sum">Reserviert: <strong>{{ formatPrice(pendingSum()) }}</strong></p>
   }
@@ -172,3 +176,102 @@
     </table>
   </div>
 }
+
+<!-- Direktangebote ("Hinterzimmerdeals"): oben eingehende Angebote anderer Manager, darunter die eigenen -->
+<ng-template #directOffersTpl>
+  @if (directIncoming().length) {
+    <section class="card direct-card">
+      <h2 class="direct-card__title">Angebote von anderen Managern</h2>
+      <p class="direct-card__hint">
+        @if (directWindowOpen()) {
+          Annehmen vollzieht den Wechsel sofort — das Geld steht dir noch in dieser Transferphase zur Verfügung.
+        } @else {
+          Antworten ist nur innerhalb einer Transferphase möglich. Angebote laufen am Ende der Phase automatisch ab.
+        }
+      </p>
+      @if (directMessage()) {
+        <p class="bid-edit__error">{{ directMessage() }}</p>
+      }
+      <ul class="direct-list">
+        @for (o of directIncoming(); track o.id) {
+          <li class="direct-row">
+            @if (o.position) {
+              <span class="position-badge" [style.background-color]="'var(--position-' + o.position.toLowerCase() + ')'">{{ posLabel(o.position) }}</span>
+            }
+            <div class="bid-media">
+              @if (directClubLogoUrl(o); as url) {
+                <img class="tbl-logo" [src]="url" alt="" />
+              }
+              <img class="tbl-photo"
+                   [class.logo--placeholder]="!directPhotoUrl(o) || photoErrors.has(o.player_id)"
+                   [src]="directPhotoUrl(o) ?? 'img/placeholders/player.png'"
+                   (error)="onPhotoError(o.player_id)"
+                   alt="" />
+            </div>
+            <div class="direct-row__main">
+              <a class="bid-player-link" [routerLink]="['/daten/player', o.player_id]">{{ o.displayname ?? '–' }}</a>
+              <span class="direct-row__sub">
+                von {{ o.counterpart?.team_name ?? '–' }}
+                @if (o.market_value) { · Marktwert {{ formatPrice(o.market_value) }} }
+                @if (o.expires_at) { · bis {{ o.expires_at | date:'dd.MM. HH:mm' }} }
+              </span>
+            </div>
+            <div class="direct-row__value">
+              <strong>{{ formatPrice(o.offer_value) }}</strong>
+              <span class="bid-pct" [class.bid-pct--success]="directPct(o) <= 100" [class.bid-pct--warning]="directPct(o) > 100 && directPct(o) < 200" [class.bid-pct--danger]="directPct(o) >= 200">{{ directPct(o) }}%</span>
+            </div>
+            <div class="bid-actions">
+              <button class="btn btn-sm btn-primary" [disabled]="!directWindowOpen() || directBusyId() !== null"
+                      [title]="directWindowOpen() ? '' : 'Nur innerhalb einer Transferphase möglich'"
+                      (click)="respondDirect(o, 'accept')">Annehmen</button>
+              <button class="btn btn-sm btn-danger" [disabled]="!directWindowOpen() || directBusyId() !== null"
+                      [title]="directWindowOpen() ? '' : 'Nur innerhalb einer Transferphase möglich'"
+                      (click)="respondDirect(o, 'decline')">Ablehnen</button>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (directOutgoing().length) {
+    <section class="card direct-card">
+      <h2 class="direct-card__title">Meine Direktangebote</h2>
+      <ul class="direct-list">
+        @for (o of directOutgoing(); track o.id) {
+          <li class="direct-row">
+            @if (o.position) {
+              <span class="position-badge" [style.background-color]="'var(--position-' + o.position.toLowerCase() + ')'">{{ posLabel(o.position) }}</span>
+            }
+            <div class="bid-media">
+              @if (directClubLogoUrl(o); as url) {
+                <img class="tbl-logo" [src]="url" alt="" />
+              }
+              <img class="tbl-photo"
+                   [class.logo--placeholder]="!directPhotoUrl(o) || photoErrors.has(o.player_id)"
+                   [src]="directPhotoUrl(o) ?? 'img/placeholders/player.png'"
+                   (error)="onPhotoError(o.player_id)"
+                   alt="" />
+            </div>
+            <div class="direct-row__main">
+              <a class="bid-player-link" [routerLink]="['/daten/player', o.player_id]">{{ o.displayname ?? '–' }}</a>
+              <span class="direct-row__sub">
+                an {{ o.counterpart?.team_name ?? '–' }}
+                @if (o.status === 'pending' && o.expires_at) { · gültig bis {{ o.expires_at | date:'dd.MM. HH:mm' }} }
+              </span>
+            </div>
+            <div class="direct-row__value">
+              <strong>{{ formatPrice(o.offer_value) }}</strong>
+              <span class="bid-status bid-status--{{ o.status }}">{{ directStatusLabel(o.status) }}</span>
+            </div>
+            <div class="bid-actions">
+              @if (o.status === 'pending') {
+                <button class="btn btn-sm btn-danger" [disabled]="directBusyId() !== null" (click)="cancelDirect(o)">Stornieren</button>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</ng-template>

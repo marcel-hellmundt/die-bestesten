@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, effect } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap, of, Subject, startWith } from 'rxjs';
+import { switchMap, of, Subject, startWith, catchError } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
@@ -20,6 +20,27 @@ interface Offer {
   club_logo_uploaded: boolean;
   losers: { team_id: string; team_color: string | null; team_season_id: string | null; is_winner: boolean }[];
 }
+
+// Direktangebot ("Hinterzimmerdeal", GET /player_offer) — Angebot eines Managers für einen Spieler im Team eines anderen.
+interface DirectOffer {
+  id: string;
+  player_id: string;
+  displayname: string | null;
+  position: string | null;
+  season_id: string | null;
+  photo_uploaded: boolean;
+  club_id: string | null;
+  club_logo_uploaded: boolean;
+  counterpart: { team_id: string; team_name: string; color: string | null; season_id: string; manager_name: string } | null;
+  offer_value: number;
+  price_snapshot: number;
+  market_value: number | null;
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired' | 'void';
+  expires_at: string | null;
+  created_at: string;
+  responded_at: string | null;
+}
+interface DirectOffersResponse { offers: DirectOffer[]; window_open: boolean; }
 
 @Component({
   selector: 'app-bids',
@@ -59,6 +80,99 @@ export class BidsComponent {
       })
     )
   );
+
+  // ── Direktangebote (eingehend: Angebote anderer Manager für meine Spieler; ausgehend: meine eigenen)
+  private directRefresh$ = new Subject<void>();
+  private static readonly EMPTY_DIRECT: DirectOffersResponse = { offers: [], window_open: false };
+
+  private directData(direction: 'incoming' | 'outgoing') {
+    return toSignal(
+      toObservable(this.team).pipe(
+        switchMap(t => {
+          if (!t) return of(BidsComponent.EMPTY_DIRECT);
+          return this.directRefresh$.pipe(
+            startWith(null),
+            switchMap(() =>
+              this.api.get<DirectOffersResponse>(`player_offer?team_id=${t.id}&direction=${direction}`).pipe(
+                catchError(() => of(BidsComponent.EMPTY_DIRECT))
+              )
+            )
+          );
+        })
+      ),
+      { initialValue: BidsComponent.EMPTY_DIRECT }
+    );
+  }
+  private directIncomingData = this.directData('incoming');
+  private directOutgoingData = this.directData('outgoing');
+
+  directIncoming  = computed(() => this.directIncomingData().offers);
+  directOutgoing  = computed(() => this.directOutgoingData().offers);
+  directWindowOpen = computed(() => this.directIncomingData().window_open);
+
+  directBusyId = signal<string | null>(null);
+  directMessage = signal<string | null>(null);
+
+  respondDirect(offer: DirectOffer, action: 'accept' | 'decline'): void {
+    const teamId = this.teamId();
+    if (!teamId || this.directBusyId()) return;
+    if (action === 'accept') {
+      const who = offer.counterpart?.team_name ?? 'dem Bieter';
+      if (!confirm(`${offer.displayname} für ${this.formatPrice(offer.offer_value)} an ${who} verkaufen? Der Wechsel wird sofort vollzogen.`)) return;
+    }
+    this.directBusyId.set(offer.id);
+    this.directMessage.set(null);
+    this.api.patch<any>(`player_offer/${offer.id}`, { team_id: teamId, action }).subscribe({
+      next: () => {
+        this.directBusyId.set(null);
+        this.directRefresh$.next();
+        this.refresh$.next();
+        if (action === 'accept') {
+          // Kader/Aufstellung/Budget haben sich geändert — gecachte Stände verwerfen.
+          this.cache.invalidateSquad();
+          this.cache.invalidateLineup();
+        }
+      },
+      error: (err: any) => {
+        this.directBusyId.set(null);
+        this.directMessage.set(err?.error?.message ?? 'Fehler beim Antworten');
+        this.directRefresh$.next();
+      },
+    });
+  }
+
+  cancelDirect(offer: DirectOffer): void {
+    const teamId = this.teamId();
+    if (!teamId || this.directBusyId()) return;
+    this.directBusyId.set(offer.id);
+    this.api.delete<any>(`player_offer/${offer.id}`, { team_id: teamId }).subscribe({
+      next: () => { this.directBusyId.set(null); this.directRefresh$.next(); this.refresh$.next(); },
+      error: () => this.directBusyId.set(null),
+    });
+  }
+
+  directPhotoUrl(o: DirectOffer): string | null {
+    if (!o.photo_uploaded || !o.season_id) return null;
+    return `https://img.die-bestesten.de/player/${o.season_id}/${o.player_id}.png`;
+  }
+
+  directClubLogoUrl(o: DirectOffer): string | null {
+    if (!o.club_id || !o.club_logo_uploaded) return null;
+    return `https://img.die-bestesten.de/club/${o.club_id}.png`;
+  }
+
+  // Prozent vs. AKTUELLEM Marktwert (bei pending vom Server), sonst dem Marktwert bei Anlage.
+  directPct(o: DirectOffer): number {
+    const ref = o.market_value ?? o.price_snapshot;
+    return ref ? Math.round(o.offer_value / ref * 100) : 0;
+  }
+
+  directStatusLabel(status: string): string {
+    return ({
+      pending: 'Ausstehend', accepted: 'Angenommen', declined: 'Abgelehnt',
+      cancelled: 'Storniert', expired: 'Abgelaufen', void: 'Hinfällig',
+    } as Record<string, string>)[status] ?? status;
+  }
 
   allOffers = computed(() => (this.offersData()?.offers ?? []).filter(o => o.status !== 'cancelled'));
   pendingSum        = computed(() => this.offersData()?.pending_sum ?? 0);

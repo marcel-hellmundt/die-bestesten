@@ -16,6 +16,22 @@ trait PlayerOfferTrait
 {
     private const MAX_OPEN_PLAYER_OFFERS = 10;
 
+    private ?bool $playerOfferTableExists = null;
+
+    /**
+     * Die Bestandsfunktionen (Gebote, Budget, Transferfenster) rufen die Reservierungs-Helfer unten
+     * auf. Fehlt die Migration (database/migrate_player_offer.sql) auf einer Liga-DB noch, sollen sie
+     * dort weiter funktionieren statt mit "Table doesn't exist" abzustürzen — die Direktangebote selbst
+     * bleiben bis zur Migration natürlich nicht nutzbar.
+     */
+    public function hasPlayerOfferTable(): bool
+    {
+        if ($this->playerOfferTableExists === null) {
+            $this->playerOfferTableExists = (bool) $this->con_league->query("SHOW TABLES LIKE 'player_offer'")->fetchColumn();
+        }
+        return $this->playerOfferTableExists;
+    }
+
     // ─── Helfer ────────────────────────────────────────────────────────────────────
 
     /**
@@ -25,6 +41,8 @@ trait PlayerOfferTrait
      */
     public function expireStalePlayerOffers(): void
     {
+        if (!$this->hasPlayerOfferTable()) return;
+
         $wids = $this->con_league->query(
             "SELECT DISTINCT expires_window_id FROM player_offer WHERE status = 'pending'"
         )->fetchAll(PDO::FETCH_COLUMN);
@@ -68,6 +86,8 @@ trait PlayerOfferTrait
         $q->execute([':tid' => $teamId, ':ex' => $excludeOfferId, ':ex2' => $excludeOfferId]);
         $sum = (int) $q->fetchColumn();
 
+        if (!$this->hasPlayerOfferTable()) return $sum;
+
         $q = $this->con_league->prepare(
             "SELECT COALESCE(SUM(offer_value), 0) FROM player_offer
              WHERE buyer_team_id = :tid AND status = 'pending' AND (:ex IS NULL OR id != :ex2)"
@@ -79,6 +99,7 @@ trait PlayerOfferTrait
     /** Spieler-IDs der offenen Direktangebote eines Bieters (zählen gegen das Positionslimit). */
     public function getPendingPlayerOfferPlayerIds(string $buyerTeamId): array
     {
+        if (!$this->hasPlayerOfferTable()) return [];
         $this->expireStalePlayerOffers();
         $q = $this->con_league->prepare(
             "SELECT player_id FROM player_offer WHERE buyer_team_id = :tid AND status = 'pending'"
@@ -272,6 +293,8 @@ trait PlayerOfferTrait
      */
     public function voidPendingPlayerOffers(string $playerId, ?string $exceptOfferId = null): array
     {
+        if (!$this->hasPlayerOfferTable()) return [];
+
         $q = $this->con_league->prepare(
             "SELECT id, buyer_team_id FROM player_offer
              WHERE player_id = :pid AND status = 'pending' AND (:ex IS NULL OR id != :ex2)"
@@ -705,6 +728,8 @@ trait PlayerOfferTrait
     /** Vollzogene Direktdeals, die in diesem Transferfenster angenommen wurden. */
     public function getWindowDirectDeals(string $windowId): array
     {
+        if (!$this->hasPlayerOfferTable()) return [];
+
         $q = $this->con_league->prepare(
             "SELECT id, player_id, buyer_team_id, seller_team_id, offer_value, price_snapshot, responded_at
              FROM player_offer WHERE settled_window_id = :wid AND status = 'accepted'
