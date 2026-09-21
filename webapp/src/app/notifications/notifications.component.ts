@@ -26,6 +26,11 @@ export class NotificationsComponent implements OnInit {
     return this.sanitizer.bypassSecurityTrustHtml(escaped.replace(/\n/g, '<br>'));
   }
 
+  // Mobile: zurück von der Detailansicht zur Liste (auf Desktop steht die Liste ohnehin daneben).
+  back(): void {
+    this.selected.set(null);
+  }
+
   select(n: AppNotification): void {
     this.selected.set(n);
     if (!n.read_at) this.service.markAsRead(n.id);

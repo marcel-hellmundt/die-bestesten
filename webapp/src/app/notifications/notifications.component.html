@@ -33,6 +33,7 @@
 
   <div class="notif-detail card" [class.notif-detail--visible]="!!selected()">
     @if (selected(); as n) {
+      <button type="button" class="notif-detail__back" (click)="back()">← Zurück</button>
       <div class="notif-detail__header">
         <h2 class="notif-detail__title">{{ n.title }}</h2>
         <p class="notif-detail__meta">

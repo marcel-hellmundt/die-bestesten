@@ -93,11 +93,49 @@
   padding: $space-6;
   min-height: 200px;
 
+  &__back {
+    display: none; // nur Mobile — auf Desktop steht die Liste neben der Nachricht
+  }
+
+  // Mobile: Liste ist die Standardansicht. Wird eine Benachrichtigung angeklickt, füllt die Nachricht den
+  // Bereich zwischen Topbar und Bottom-Nav (eigener Scrollbereich) mit einem Zurück-Button darüber — so
+  // muss man bei langen Listen nicht ans Listenende scrollen, um die Nachricht zu finden. Die Liste
+  // bleibt darunter unverändert (Scrollposition bleibt beim Zurück erhalten).
   @media (max-width: $mobile-breakpoint) {
     display: none;
 
     &--visible {
       display: block;
+      position: fixed;
+      top: $topbar-height;
+      bottom: 64px; // Höhe der Mobile-Bottom-Nav (siehe shell.component.scss)
+      left: 0;
+      right: 0;
+      z-index: $z-sticky - 20;
+      margin: 0;
+      padding: 0 $space-4 $space-6;
+      border: none;
+      border-radius: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: $color-surface;
+    }
+
+    &__back {
+      display: block;
+      position: sticky;
+      top: 0;
+      width: 100%;
+      margin-bottom: $space-3;
+      padding: $space-3 0;
+      background: $color-surface;
+      border: none;
+      border-bottom: 1px solid $color-border;
+      text-align: left;
+      font-size: $font-sm;
+      font-weight: $font-weight-semibold;
+      color: $color-accent;
+      cursor: pointer;
     }
   }
 
