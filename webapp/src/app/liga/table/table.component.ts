@@ -320,8 +320,12 @@ export class TableComponent {
     { key: 'participation', label: 'Einsatz',     color: 'color-mix(in srgb, var(--flat-river) 22%, white)' },
   ];
 
-  pointSourceRows = computed(() =>
-    ((this.state().data?.point_sources ?? []) as any[])
+  // false = jeder Balken auf 100 % skaliert (Anteile), true = Balkenlänge relativ zum Team mit den
+  // meisten Gesamtpunkten (macht Punkteunterschiede zwischen Teams sichtbar).
+  pointSourceAbsolute = signal(false);
+
+  pointSourceRows = computed(() => {
+    const rows = ((this.state().data?.point_sources ?? []) as any[])
       .map(r => {
         const gross = this.pointSourceSegments.reduce((sum, s) => sum + +r[s.key], 0);
         if (gross <= 0) return null;
@@ -331,10 +335,12 @@ export class TableComponent {
           share: +r[s.key] / gross * 100,
           pct: Math.round(+r[s.key] / gross * 100),
         }));
-        return { ...r, deductions: +r.deductions, segments };
+        return { ...r, deductions: +r.deductions, segments, gross };
       })
-      .filter((r): r is NonNullable<typeof r> => r !== null)
-  );
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+    const maxGross = Math.max(...rows.map(r => r.gross), 1);
+    return rows.map(r => ({ ...r, scale: r.gross / maxGross }));
+  });
 
   // Mobile: Hölzerne Bank/Goldene Bürste/Glückspilze/Pechvögel als eigenes Swipe-Karussell (siehe
   // .position-points-carousel weiter unten, gleiches Muster) — Desktop bleibt unverändert im

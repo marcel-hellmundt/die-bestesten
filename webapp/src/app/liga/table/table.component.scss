@@ -585,6 +585,22 @@
   &--none       { background: #ff3f34; }
 }
 
+.chart-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  margin-bottom: $space-3;
+
+  .chart-card__label { margin-bottom: 0; }
+}
+
+.live-toggle--sm {
+  height: 26px;
+  padding: 0 $space-2;
+  font-size: $font-xs;
+}
+
 .point-source-legend {
   display: flex;
   flex-wrap: wrap;
