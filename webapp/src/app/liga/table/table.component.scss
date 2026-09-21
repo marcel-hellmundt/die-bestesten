@@ -887,14 +887,14 @@
   &--none       { color: #ff3f34; }
 }
 
-// Bei benutzerdefinierter Sortierung der Punkte-Herkunft: nur die Zeile der Sortier-Quelle 500, alle anderen 400.
+// Bei benutzerdefinierter Sortierung der Punkte-Herkunft: nur die Zeile der Sortier-Quelle 600, alle anderen 400.
 .participation-tooltip--sorted {
   .participation-tooltip__detail,
   .participation-tooltip__detail.participation-tooltip__total {
     font-weight: $font-weight-normal;
   }
   .participation-tooltip__detail.participation-tooltip__detail--active {
-    font-weight: $font-weight-medium;
+    font-weight: $font-weight-semibold;
   }
 }
 
