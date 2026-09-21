@@ -587,6 +587,31 @@ trait PlayerOfferTrait
         return $out;
     }
 
+    /**
+     * Anzahl offener Direktangebote anderer Manager für Spieler dieses Managers (aktive Saison) — für den
+     * Hinweis-Badge im Menü. Wird vom 4s-Polling (GET /notification/unread_count) mitgeliefert, daher
+     * bewusst schlank: 0 ohne Tabelle/Saison/Liga-Verbindung.
+     */
+    public function getIncomingPlayerOfferCount(string $managerId): int
+    {
+        try {
+            if (!$this->hasPlayerOfferTable()) return 0;
+            $seasonId = $this->getActiveSeasonId();
+            if (!$seasonId) return 0;
+
+            $this->expireStalePlayerOffers();
+            $q = $this->con_league->prepare(
+                "SELECT COUNT(*) FROM player_offer po
+                 JOIN team t ON t.id = po.seller_team_id
+                 WHERE po.status = 'pending' AND t.manager_id = :mid AND t.season_id = :sid"
+            );
+            $q->execute([':mid' => $managerId, ':sid' => $seasonId]);
+            return (int) $q->fetchColumn();
+        } catch (\Throwable $e) {
+            return 0; // z.B. Manager ohne Liga-Verbindung — der Hinweis darf das Polling nie stören
+        }
+    }
+
     // ─── Antworten / Stornieren ────────────────────────────────────────────────────
 
     public function cancelPlayerOffer(string $offerId, string $buyerTeamId): bool

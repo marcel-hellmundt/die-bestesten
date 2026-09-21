@@ -10,7 +10,10 @@ class NotificationController extends _BaseController
             return $this->db->getNotificationPreferences($GLOBALS['auth_manager_id']);
         }
         if ($this->id === 'unread_count') {
-            return ['count' => $this->db->getUnreadCount($GLOBALS['auth_manager_id'])];
+            return [
+                'count'           => $this->db->getUnreadCount($GLOBALS['auth_manager_id']),
+                'incoming_offers' => $this->db->getIncomingPlayerOfferCount($GLOBALS['auth_manager_id']),
+            ];
         }
         return $this->db->getNotifications($GLOBALS['auth_manager_id']);
     }

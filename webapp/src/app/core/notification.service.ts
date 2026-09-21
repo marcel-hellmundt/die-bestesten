@@ -23,10 +23,13 @@ export class NotificationService {
   private _notifications = signal<AppNotification[]>([]);
   private _preferences = signal<NotificationPreferences>({});
   private _unreadCount = signal<number>(0);
+  // Offene Direktangebote anderer Manager für eigene Spieler (kommt mit dem Polling, für den Menü-Hinweis)
+  private _incomingOffers = signal<number>(0);
 
   notifications = this._notifications.asReadonly();
   preferences = this._preferences.asReadonly();
   unreadCount = this._unreadCount.asReadonly();
+  incomingOffers = this._incomingOffers.asReadonly();
 
   private pollSub?: Subscription;
   private visibilityListenerAdded = false;
@@ -53,11 +56,14 @@ export class NotificationService {
         startWith(0), // beim (Wieder-)Start sofort abfragen, nicht erst nach 4s
         switchMap(() =>
           this.api
-            .get<{ count: number }>('notification/unread_count')
-            .pipe(catchError(() => of({ count: this._unreadCount() }))),
+            .get<{ count: number; incoming_offers?: number }>('notification/unread_count')
+            .pipe(catchError(() => of({ count: this._unreadCount(), incoming_offers: this._incomingOffers() }))),
         ),
       )
-      .subscribe(({ count }) => this._unreadCount.set(count));
+      .subscribe(({ count, incoming_offers }) => {
+        this._unreadCount.set(count);
+        this._incomingOffers.set(incoming_offers ?? 0);
+      });
   }
 
   stopPolling(): void {

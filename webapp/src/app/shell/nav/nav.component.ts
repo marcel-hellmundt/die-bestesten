@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject } from '@angular/core';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { NotificationService } from '../../core/notification.service';
 
 interface NavItem {
   label: string;
@@ -8,6 +9,7 @@ interface NavItem {
   route: string | any[] | null;
   warning?: boolean;
   isNew?: boolean;
+  count?: number; // Hinweis-Zähler (z.B. offene Direktangebote), 0/undefined = kein Badge
 }
 
 interface NavGroup {
@@ -31,6 +33,7 @@ interface NavGroup {
 export class NavComponent {
   private auth = inject(AuthService);
   private cache = inject(DataCacheService);
+  private notifications = inject(NotificationService);
 
   managerName = this.auth.getManagerName();
   managerId = this.auth.getManagerId();
@@ -89,18 +92,19 @@ export class NavComponent {
     ],
   }));
 
-  readonly marktGroup: NavGroup = {
+  marktGroup = computed<NavGroup>(() => ({
     label: 'Markt',
     icon: 'transferphasen',
     items: [
       { label: 'Spieler', icon: 'spieler', route: '/markt/spieler' },
       { label: 'Transferphasen', icon: 'transferphasen', route: '/markt/transferphasen' },
-      { label: 'Gebote', icon: 'gebote', route: '/markt/gebote' },
+      // count = offene Direktangebote anderer Manager für eigene Spieler (siehe /player_offer)
+      { label: 'Gebote', icon: 'gebote', route: '/markt/gebote', count: this.notifications.incomingOffers() },
       { label: 'Scouting', icon: 'eye', route: '/markt/scouting' },
     ],
-  };
+  }));
 
-  topGroups = computed<NavGroup[]>(() => [this.ligaGroup(), ...this.teamGroups(), this.marktGroup]);
+  topGroups = computed<NavGroup[]>(() => [this.ligaGroup(), ...this.teamGroups(), this.marktGroup()]);
 
   bottomGroups = computed<NavGroup[]>(() =>
     this.auth.isContributor() ? [{ label: '', items: [{ label: 'Datenbank', icon: 'data', route: '/daten' }] }] : [],
@@ -111,6 +115,8 @@ export class NavComponent {
       label: g.label,
       icon: g.icon ?? g.items[0].icon,
       route: g.mobileRoute ?? g.items[0].route,
+      // Mobile zeigt nur die Gruppen — deren Zähler ist die Summe der Einträge
+      count: g.items.reduce((sum, i) => sum + (i.count ?? 0), 0),
     })),
   );
 
