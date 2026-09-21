@@ -714,13 +714,13 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_offer/eligibility',
-                        'description' => 'Team-weite Bedingungen für Direktangebote, gebündelt für Listen (z.B. /markt/spieler) — gibt {target_window:{id,start_date,end_date,is_open}|null,available_budget,full_positions:[GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD],open_player_ids:[UUID],open_count,max_open} zurück; die spielerbezogenen Bedingungen (Besitzer, Marktwert) prüft der Client anhand seiner Listendaten, maßgeblich bleiben /player_offer/quote und POST /player_offer — Auth',
+                        'description' => 'Team-weite Bedingungen für Direktangebote, gebündelt für Listen (z.B. /markt/spieler) — gibt {target_window:{id,start_date,end_date,is_open}|null,available_budget,full_positions:[GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD],open_player_ids:[UUID]} zurück; die spielerbezogenen Bedingungen (Besitzer, Marktwert) prüft der Client anhand seiner Listendaten, maßgeblich bleiben /player_offer/quote und POST /player_offer — Auth',
                         'query_params' => ['team_id' => 'UUID des eigenen Teams'],
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/player_offer',
-                        'description' => 'Direktangebot abgeben — Betrag min. Marktwert (Verkaufsformel), max. verfügbares Budget (Budget − offene Gebote − offene Direktangebote); 409 wenn Spieler in keinem Team / bereits ein offenes Angebot des Teams für den Spieler / Positionslimit (inkl. offener Gebote und Direktangebote) / zu viele offene Angebote (max. 10); 422 wenn eigener Spieler, unter Marktwert, Budget nicht ausreichend oder keine offene/kommende Transferphase geplant (Ablauf-Fenster nicht bestimmbar); benachrichtigt den Verkäufer (Event direct_offer) — Auth',
+                        'description' => 'Direktangebot abgeben — Betrag min. Marktwert (Verkaufsformel), max. verfügbares Budget (Budget − offene Gebote − offene Direktangebote); 409 wenn Spieler in keinem Team / bereits ein offenes Angebot des Teams für den Spieler / Positionslimit (inkl. offener Gebote und Direktangebote); 422 wenn eigener Spieler, unter Marktwert, Budget nicht ausreichend oder keine offene/kommende Transferphase geplant (Ablauf-Fenster nicht bestimmbar); benachrichtigt den Verkäufer (Event direct_offer) — Auth',
                         'body' => [
                             'team_id' => 'UUID des bietenden Teams',
                             'player_id' => 'UUID des Spielers',

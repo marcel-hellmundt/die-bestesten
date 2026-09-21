@@ -270,8 +270,6 @@ export class MarktPlayerComponent {
               available_budget: number;
               full_positions: string[];
               open_player_ids: string[];
-              open_count: number;
-              max_open: number;
             }>(`player_offer/eligibility?team_id=${id}`).pipe(
               // Antwort ohne die erwarteten Felder (z.B. älterer API-Stand ohne /eligibility) = nicht verfügbar
               map(res => Array.isArray(res?.open_player_ids) && Array.isArray(res?.full_positions) ? res : null),
@@ -291,7 +289,6 @@ export class MarktPlayerComponent {
     if (!el) return 'Bedingungen werden geladen…';
     if (el.open_player_ids.includes(p.id)) return 'Du hast bereits ein offenes Angebot für diesen Spieler';
     if (!el.target_window) return 'Keine offene oder kommende Transferphase geplant';
-    if (el.open_count >= el.max_open) return `Zu viele offene Angebote (max. ${el.max_open})`;
     if (el.full_positions.includes(p.position)) return 'Positionslimit voll';
     if (el.available_budget < this.dynamicPrice(p)) return 'Nicht genug verfügbares Budget für den Marktwert';
     return '';

@@ -14,8 +14,6 @@
  */
 trait PlayerOfferTrait
 {
-    private const MAX_OPEN_PLAYER_OFFERS = 10;
-
     private ?bool $playerOfferTableExists = null;
 
     /**
@@ -335,14 +333,6 @@ trait PlayerOfferTrait
             if ($sellerTeamId === null) return $this->dealError(409, 'Spieler ist in keinem Team (nutze ein normales Gebot)');
             if ($sellerTeamId === $buyerTeamId) return $this->dealError(422, 'Der Spieler gehört bereits zu deinem Team');
 
-            $cq = $this->con_league->prepare(
-                "SELECT COUNT(*) FROM player_offer WHERE buyer_team_id = :tid AND status = 'pending'"
-            );
-            $cq->execute([':tid' => $buyerTeamId]);
-            if ((int) $cq->fetchColumn() >= self::MAX_OPEN_PLAYER_OFFERS) {
-                return $this->dealError(409, 'Zu viele offene Angebote (max. ' . self::MAX_OPEN_PLAYER_OFFERS . ')');
-            }
-
             $window = $this->findTransferwindow($seasonId, false);
             if (!$window) return $this->dealError(422, 'Keine offene oder kommende Transferphase geplant');
 
@@ -556,7 +546,7 @@ trait PlayerOfferTrait
     /**
      * Team-weite Bedingungen für Direktangebote, gebündelt für Listen (z.B. /markt/spieler), damit nicht je
      * Spieler eine Quote geladen werden muss: Ziel-Fenster, verfügbares Budget, volle Positionen, Spieler mit
-     * bereits offenem Angebot, Anzahl offener Angebote. Die Bedingungen je Spieler (Besitzer, Marktwert) prüft
+     * bereits offenem Angebot. Die Bedingungen je Spieler (Besitzer, Marktwert) prüft
      * der Client anhand seiner Listendaten; maßgeblich bleiben immer /player_offer/quote und POST /player_offer.
      */
     public function getPlayerOfferEligibility(string $buyerTeamId): array
@@ -564,7 +554,7 @@ trait PlayerOfferTrait
         $seasonId = $this->getActiveSeasonId();
         $out = [
             'target_window' => null, 'available_budget' => 0, 'full_positions' => [],
-            'open_player_ids' => [], 'open_count' => 0, 'max_open' => self::MAX_OPEN_PLAYER_OFFERS,
+            'open_player_ids' => [],
         ];
         if (!$seasonId) return $out;
 
@@ -582,7 +572,6 @@ trait PlayerOfferTrait
             $q = $this->con_league->prepare("SELECT player_id FROM player_offer WHERE buyer_team_id = :tid AND status = 'pending'");
             $q->execute([':tid' => $buyerTeamId]);
             $out['open_player_ids'] = $q->fetchAll(PDO::FETCH_COLUMN);
-            $out['open_count'] = count($out['open_player_ids']);
         }
         return $out;
     }
