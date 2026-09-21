@@ -101,13 +101,14 @@ CREATE TABLE IF NOT EXISTS player_offer (
     player_id         CHAR(36)   NOT NULL,             -- Referenz auf global_schema.player.id (kein FK, cross-DB)
     buyer_team_id     CHAR(36)   NOT NULL,             -- bietendes Team
     seller_team_id    CHAR(36)   NOT NULL,             -- Team, das den Spieler zum Angebotszeitpunkt hält
+    proposed_by       ENUM('buyer', 'seller') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'buyer', -- wer das Angebot abgegeben hat: buyer = normales Angebot, seller = Gegenangebot (Phase 2); buyer_team_id zahlt immer
     offer_value       INT        NOT NULL,             -- Geldangebot (reserviert das Budget des Bieters, solange pending)
     price_snapshot    INT        NOT NULL,             -- Marktwert (Verkaufsformel) zum Zeitpunkt des Angebots
-    status            ENUM('pending', 'accepted', 'declined', 'cancelled', 'expired', 'void') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'pending',
-                                                       -- void = hinfällig (Spieler anderweitig vergeben/verkauft)
+    status            ENUM('pending', 'accepted', 'declined', 'cancelled', 'expired', 'void', 'countered') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'pending',
+                                                       -- void = hinfällig (Spieler anderweitig vergeben/verkauft), countered = vom Verkäufer mit einem Gegenangebot beantwortet
     expires_window_id CHAR(36)   NOT NULL,             -- Referenz auf global_schema.transferwindow.id (kein FK, cross-DB) — Ende dieses Fensters = Ablauf
     settled_window_id CHAR(36)   NULL DEFAULT NULL,    -- Transferfenster, in dem der Deal angenommen wurde (für die Hinterzimmerdeals-Ansicht)
-    parent_offer_id   CHAR(36)   NULL DEFAULT NULL,    -- reserviert für Gegenangebote (Phase 2)
+    parent_offer_id   CHAR(36)   NULL DEFAULT NULL,    -- Gegenangebot → das ursprüngliche Angebot, auf das es antwortet
     created_at        DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at        DATETIME   NULL DEFAULT NULL,
     responded_at      DATETIME   NULL DEFAULT NULL,

@@ -326,3 +326,26 @@
     white-space: nowrap;
   }
 }
+
+// Gegenangebot-Eingabe unter einer Zeile der eingehenden Angebote
+.direct-counter {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-2 0 0;
+
+  &__label {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    flex-wrap: wrap;
+
+    .input { width: 160px; }
+  }
+}

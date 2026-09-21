@@ -699,10 +699,10 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_offer',
-                        'description' => 'Direktangebote eines Teams (nur eigenes Team) — gibt {offers:[{id,player_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,season_id,counterpart:{team_id,team_name,color,season_id,manager_name}|null,offer_value,price_snapshot,market_value (aktueller Marktwert, nur bei pending),status,expires_at,created_at,responded_at}],window_open} zurück; counterpart = Bieter (incoming) bzw. Verkäufer (outgoing); abgelaufene Angebote werden dabei live auf expired gesetzt — Auth',
+                        'description' => 'Direktangebote eines Teams (nur eigenes Team) — gibt {offers:[{id,player_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,season_id,counterpart:{team_id,team_name,color,season_id,manager_name}|null,kind:offer|counter,parent_offer_id,offer_value,price_snapshot,market_value (aktueller Marktwert, nur bei pending),status,expires_at,created_at,responded_at}],window_open} zurück; counterpart = Initiator (incoming) bzw. Empfänger (outgoing); kind=counter = Gegenangebot des Verkäufers (Phase 2); abgelaufene Angebote werden dabei live auf expired gesetzt — Auth',
                         'query_params' => [
                             'team_id' => 'UUID des eigenen Teams (erforderlich)',
-                            'direction' => 'incoming (Default) = offene Angebote anderer Manager für Spieler dieses Teams (nur pending); outgoing = alle eigenen Angebote außer selbst stornierten (jeder andere Status, neueste zuerst, max. 50)',
+                            'direction' => 'incoming (Default) = offene Angebote anderer Manager für Spieler dieses Teams (nur pending); outgoing = alle von diesem Team abgegebenen Angebote/Gegenangebote außer selbst stornierten (jeder andere Status inkl. countered, neueste zuerst, max. 50); incoming = offene Angebote, auf die dieses Team antworten darf (beim Gegenangebot ist das der Bieter)',
                         ],
                     ],
                     [
@@ -730,13 +730,13 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/player_offer/:id',
-                        'description' => 'Verkäufer antwortet — accept: vollzieht den Deal sofort (unter Named-Locks auf Spieler + beide Teams, alle Vorbedingungen unter dem Lock erneut geprüft: Besitz, Budget inkl. anderer Reservierungen, Positionslimit; dann in einer Transaktion Stint des Verkäufers schließen, Stint des Käufers öffnen, Käufer −Betrag / Verkäufer +Betrag buchen ("Spielerkauf (Angebot): …" / "Spielerverkauf (Angebot): …"), Lineup des Verkäufers für nicht abgeschlossene Spieltage bereinigen, andere offene Angebote auf den Spieler auf void setzen); decline: lehnt ab — beides nur innerhalb einer offenen Transferphase (403 sonst), nur für das eigene Verkäufer-Team; 404 wenn nicht gefunden/bereits beantwortet, 409 wenn sich der Zustand geändert hat — Auth',
-                        'body' => ['team_id' => 'UUID des Verkäufer-Teams', 'action' => 'accept | decline'],
+                        'description' => 'Empfänger antwortet (beim normalen Angebot der Verkäufer, beim Gegenangebot der Bieter) — accept: vollzieht den Deal sofort (unter Named-Locks auf Spieler + beide Teams, alle Vorbedingungen unter dem Lock erneut geprüft: Besitz, Budget inkl. anderer Reservierungen, Positionslimit; dann in einer Transaktion Stint des Verkäufers schließen, Stint des Käufers öffnen, Käufer −Betrag / Verkäufer +Betrag buchen ("Spielerkauf (Angebot): …" / "Spielerverkauf (Angebot): …"), Lineup des Verkäufers für nicht abgeschlossene Spieltage bereinigen, andere offene Angebote auf den Spieler auf void setzen); decline: lehnt ab; counter (nur der Verkäufer, nur auf ein normales Angebot; body offer_value): Gegenangebot mit höherem Betrag (> ursprüngliches Angebot, ≥ aktueller Marktwert) — das ursprüngliche Angebot wird countered (gibt die Budgetreservierung frei), es entsteht ein neues Angebot mit proposed_by=seller, das kein Budget reserviert (Budget wird beim Annehmen geprüft), bis Ende der laufenden Phase gilt und nicht erneut gekontert werden kann; alles nur innerhalb einer offenen Transferphase (403 sonst), nur für das antwortberechtigte Team; 404 wenn nicht gefunden/bereits beantwortet, 409 wenn sich der Zustand geändert hat — Auth',
+                        'body' => ['team_id' => 'UUID des antwortenden Teams', 'action' => 'accept | decline | counter', 'offer_value' => 'nur bei counter: Betrag in € (INT)'],
                     ],
                     [
                         'method' => 'DELETE',
                         'path' => '/player_offer/:id',
-                        'description' => 'Bieter storniert sein offenes Angebot (status → cancelled, gibt die Budgetreservierung frei) — jederzeit — nur eigenes Team — Auth',
+                        'description' => 'Initiator storniert sein offenes Angebot bzw. Gegenangebot (status → cancelled, gibt eine Budgetreservierung frei) — jederzeit — nur eigenes Team — Auth',
                         'body' => ['team_id' => 'UUID des bietenden Teams'],
                     ],
                 ],

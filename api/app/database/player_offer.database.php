@@ -30,6 +30,38 @@ trait PlayerOfferTrait
         return $this->playerOfferTableExists;
     }
 
+    private ?bool $counterSupported = null;
+
+    /** Ob die Phase-2-Migration (proposed_by, Status 'countered') auf dieser Liga-DB eingespielt ist. */
+    private function hasCounterSupport(): bool
+    {
+        if ($this->counterSupported === null) {
+            $this->counterSupported = $this->hasPlayerOfferTable()
+                && (bool) $this->con_league->query("SHOW COLUMNS FROM player_offer LIKE 'proposed_by'")->fetchColumn();
+        }
+        return $this->counterSupported;
+    }
+
+    /** Nur vom Bieter abgegebene Angebote reservieren Budget/Kaderplätze (ein Gegenangebot bindet den Bieter nicht). */
+    private function buyerProposedSql(): string
+    {
+        return $this->hasCounterSupport() ? " AND proposed_by = 'buyer'" : '';
+    }
+
+    /**
+     * Parteien eines Angebots: initiator = wer es abgegeben hat, recipient = wer antworten darf.
+     * Beim normalen Angebot (proposed_by=buyer) bietet der Käufer und der Verkäufer antwortet, beim
+     * Gegenangebot (proposed_by=seller) umgekehrt. Gezahlt wird immer von buyer_team_id an seller_team_id.
+     */
+    private function offerParties(array $offer): array
+    {
+        $bySeller = ($offer['proposed_by'] ?? 'buyer') === 'seller';
+        return [
+            'initiator' => $bySeller ? $offer['seller_team_id'] : $offer['buyer_team_id'],
+            'recipient' => $bySeller ? $offer['buyer_team_id'] : $offer['seller_team_id'],
+        ];
+    }
+
     // ─── Helfer ────────────────────────────────────────────────────────────────────
 
     /**
@@ -88,7 +120,7 @@ trait PlayerOfferTrait
 
         $q = $this->con_league->prepare(
             "SELECT COALESCE(SUM(offer_value), 0) FROM player_offer
-             WHERE buyer_team_id = :tid AND status = 'pending' AND (:ex IS NULL OR id != :ex2)"
+             WHERE buyer_team_id = :tid AND status = 'pending' AND (:ex IS NULL OR id != :ex2)" . $this->buyerProposedSql()
         );
         $q->execute([':tid' => $teamId, ':ex' => $excludePlayerOfferId, ':ex2' => $excludePlayerOfferId]);
         return $sum + (int) $q->fetchColumn();
@@ -100,7 +132,7 @@ trait PlayerOfferTrait
         if (!$this->hasPlayerOfferTable()) return [];
         $this->expireStalePlayerOffers();
         $q = $this->con_league->prepare(
-            "SELECT player_id FROM player_offer WHERE buyer_team_id = :tid AND status = 'pending'"
+            "SELECT player_id FROM player_offer WHERE buyer_team_id = :tid AND status = 'pending'" . $this->buyerProposedSql()
         );
         $q->execute([':tid' => $buyerTeamId]);
         return $q->fetchAll(PDO::FETCH_COLUMN);
@@ -444,23 +476,33 @@ trait PlayerOfferTrait
     {
         $this->expireStalePlayerOffers();
         $seasonId = $this->getActiveSeasonId();
+        $withCounter = $this->hasCounterSupport();
 
+        // incoming = Angebote, auf die dieses Team antworten darf (Empfänger); outgoing = von diesem Team
+        // abgegebene (Initiator) — beim Gegenangebot sind die Rollen von Käufer/Verkäufer vertauscht.
         if ($direction === 'incoming') {
-            $q = $this->con_league->prepare(
-                "SELECT * FROM player_offer WHERE seller_team_id = :tid AND status = 'pending' ORDER BY created_at DESC"
-            );
+            $where = $withCounter
+                ? "((proposed_by = 'buyer' AND seller_team_id = :t1) OR (proposed_by = 'seller' AND buyer_team_id = :t2)) AND status = 'pending'"
+                : "seller_team_id = :t1 AND status = 'pending'";
+            $sql = "SELECT * FROM player_offer WHERE $where ORDER BY created_at DESC";
         } else {
-            $q = $this->con_league->prepare(
-                "SELECT * FROM player_offer WHERE buyer_team_id = :tid AND status != 'cancelled' ORDER BY created_at DESC LIMIT 50"
-            );
+            $where = $withCounter
+                ? "((proposed_by = 'buyer' AND buyer_team_id = :t1) OR (proposed_by = 'seller' AND seller_team_id = :t2)) AND status != 'cancelled'"
+                : "buyer_team_id = :t1 AND status != 'cancelled'";
+            $sql = "SELECT * FROM player_offer WHERE $where ORDER BY created_at DESC LIMIT 50";
         }
-        $q->execute([':tid' => $teamId]);
+        $q = $this->con_league->prepare($sql);
+        $q->execute($withCounter ? [':t1' => $teamId, ':t2' => $teamId] : [':t1' => $teamId]);
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
-        if (empty($rows)) return ['offers' => [], 'window_open' => $seasonId ? (bool) $this->findTransferwindow($seasonId, true) : false];
+        $windowOpen = $seasonId ? (bool) $this->findTransferwindow($seasonId, true) : false;
+        if (empty($rows)) return ['offers' => [], 'window_open' => $windowOpen];
 
         $playerMap = $seasonId ? $this->getPlayerCardInfoMap(array_column($rows, 'player_id'), $seasonId) : [];
-        $counterIds = array_map(fn($r) => $direction === 'incoming' ? $r['buyer_team_id'] : $r['seller_team_id'], $rows);
-        $teamMap = $this->getTeamInfoMap($counterIds);
+        $counterpartOf = function (array $r) use ($direction): string {
+            $parties = $this->offerParties($r);
+            return $direction === 'incoming' ? $parties['initiator'] : $parties['recipient'];
+        };
+        $teamMap = $this->getTeamInfoMap(array_map($counterpartOf, $rows));
 
         $wids = array_values(array_unique(array_column($rows, 'expires_window_id')));
         $wph  = implode(',', array_fill(0, count($wids), '?'));
@@ -470,9 +512,8 @@ trait PlayerOfferTrait
 
         $offers = [];
         foreach ($rows as $r) {
-            $counterId = $direction === 'incoming' ? $r['buyer_team_id'] : $r['seller_team_id'];
-            $pm        = $playerMap[$r['player_id']] ?? [];
-            $mv        = $seasonId && $r['status'] === 'pending'
+            $pm = $playerMap[$r['player_id']] ?? [];
+            $mv = $seasonId && $r['status'] === 'pending'
                 ? ($this->getPlayerMarketValueInfo($r['player_id'], $seasonId)['market_value'] ?? null)
                 : null;
             $offers[] = [
@@ -484,7 +525,9 @@ trait PlayerOfferTrait
                 'club_id'            => $pm['club_id']            ?? null,
                 'club_logo_uploaded' => $pm['club_logo_uploaded'] ?? false,
                 'season_id'          => $seasonId,
-                'counterpart'        => $teamMap[$counterId]      ?? null,
+                'counterpart'        => $teamMap[$counterpartOf($r)] ?? null,
+                'kind'               => ($r['proposed_by'] ?? 'buyer') === 'seller' ? 'counter' : 'offer',
+                'parent_offer_id'    => $r['parent_offer_id'] ?? null,
                 'offer_value'        => (int) $r['offer_value'],
                 'price_snapshot'     => (int) $r['price_snapshot'],
                 'market_value'       => $mv,
@@ -495,7 +538,7 @@ trait PlayerOfferTrait
             ];
         }
 
-        return ['offers' => $offers, 'window_open' => $seasonId ? (bool) $this->findTransferwindow($seasonId, true) : false];
+        return ['offers' => $offers, 'window_open' => $windowOpen];
     }
 
     /**
@@ -589,12 +632,25 @@ trait PlayerOfferTrait
             if (!$seasonId) return 0;
 
             $this->expireStalePlayerOffers();
-            $q = $this->con_league->prepare(
-                "SELECT COUNT(*) FROM player_offer po
-                 JOIN team t ON t.id = po.seller_team_id
-                 WHERE po.status = 'pending' AND t.manager_id = :mid AND t.season_id = :sid"
-            );
-            $q->execute([':mid' => $managerId, ':sid' => $seasonId]);
+            if ($this->hasCounterSupport()) {
+                // Empfänger: beim normalen Angebot der Verkäufer, beim Gegenangebot der Käufer
+                $q = $this->con_league->prepare(
+                    "SELECT COUNT(*) FROM player_offer po
+                     JOIN team ts ON ts.id = po.seller_team_id
+                     JOIN team tb ON tb.id = po.buyer_team_id
+                     WHERE po.status = 'pending'
+                       AND ((po.proposed_by = 'buyer'  AND ts.manager_id = :m1 AND ts.season_id = :s1)
+                         OR (po.proposed_by = 'seller' AND tb.manager_id = :m2 AND tb.season_id = :s2))"
+                );
+                $q->execute([':m1' => $managerId, ':s1' => $seasonId, ':m2' => $managerId, ':s2' => $seasonId]);
+            } else {
+                $q = $this->con_league->prepare(
+                    "SELECT COUNT(*) FROM player_offer po
+                     JOIN team t ON t.id = po.seller_team_id
+                     WHERE po.status = 'pending' AND t.manager_id = :mid AND t.season_id = :sid"
+                );
+                $q->execute([':mid' => $managerId, ':sid' => $seasonId]);
+            }
             return (int) $q->fetchColumn();
         } catch (\Throwable $e) {
             return 0; // z.B. Manager ohne Liga-Verbindung — der Hinweis darf das Polling nie stören
@@ -603,17 +659,28 @@ trait PlayerOfferTrait
 
     // ─── Antworten / Stornieren ────────────────────────────────────────────────────
 
-    public function cancelPlayerOffer(string $offerId, string $buyerTeamId): bool
+    // Der Initiator (Bieter beim normalen Angebot, Verkäufer beim Gegenangebot) storniert sein offenes Angebot.
+    public function cancelPlayerOffer(string $offerId, string $teamId): bool
     {
-        $q = $this->con_league->prepare(
-            "UPDATE player_offer SET status = 'cancelled', responded_at = NOW()
-             WHERE id = :id AND buyer_team_id = :tid AND status = 'pending'"
-        );
-        $q->execute([':id' => $offerId, ':tid' => $buyerTeamId]);
+        if ($this->hasCounterSupport()) {
+            $q = $this->con_league->prepare(
+                "UPDATE player_offer SET status = 'cancelled', responded_at = NOW()
+                 WHERE id = :id AND status = 'pending'
+                   AND ((proposed_by = 'buyer' AND buyer_team_id = :t1) OR (proposed_by = 'seller' AND seller_team_id = :t2))"
+            );
+            $q->execute([':id' => $offerId, ':t1' => $teamId, ':t2' => $teamId]);
+        } else {
+            $q = $this->con_league->prepare(
+                "UPDATE player_offer SET status = 'cancelled', responded_at = NOW()
+                 WHERE id = :id AND buyer_team_id = :tid AND status = 'pending'"
+            );
+            $q->execute([':id' => $offerId, ':tid' => $teamId]);
+        }
         return $q->rowCount() > 0;
     }
 
-    public function declinePlayerOffer(string $offerId, string $sellerTeamId): array
+    // Der Empfänger (Verkäufer beim normalen Angebot, Käufer beim Gegenangebot) lehnt ab.
+    public function declinePlayerOffer(string $offerId, string $teamId): array
     {
         $this->expireStalePlayerOffers();
         $seasonId = $this->getActiveSeasonId();
@@ -621,13 +688,12 @@ trait PlayerOfferTrait
             return $this->dealError(403, 'Angebote können nur innerhalb einer Transferphase beantwortet werden');
         }
 
-        $oq = $this->con_league->prepare(
-            "SELECT buyer_team_id, player_id FROM player_offer
-             WHERE id = :id AND seller_team_id = :tid AND status = 'pending' LIMIT 1"
-        );
-        $oq->execute([':id' => $offerId, ':tid' => $sellerTeamId]);
+        $oq = $this->con_league->prepare("SELECT * FROM player_offer WHERE id = :id AND status = 'pending' LIMIT 1");
+        $oq->execute([':id' => $offerId]);
         $offer = $oq->fetch(PDO::FETCH_ASSOC);
         if (!$offer) return $this->dealError(404, 'Angebot nicht gefunden oder bereits beantwortet');
+        $parties = $this->offerParties($offer);
+        if ($parties['recipient'] !== $teamId) return $this->dealError(404, 'Angebot nicht gefunden oder bereits beantwortet');
 
         $uq = $this->con_league->prepare(
             "UPDATE player_offer SET status = 'declined', responded_at = NOW()
@@ -637,12 +703,100 @@ trait PlayerOfferTrait
         if ($uq->rowCount() === 0) return $this->dealError(409, 'Angebot wurde bereits beantwortet');
 
         $info = $this->getPlayerMarketValueInfo($offer['player_id'], $seasonId);
+        $what = ($offer['proposed_by'] ?? 'buyer') === 'seller' ? 'Gegenangebot' : 'Angebot';
         $this->notifyTeamManager(
-            $offer['buyer_team_id'],
-            'Angebot abgelehnt',
-            $this->getTeamName($sellerTeamId) . ' hat dein Angebot für ' . ($info['displayname'] ?? 'den Spieler') . ' abgelehnt.'
+            $parties['initiator'],
+            "$what abgelehnt",
+            $this->getTeamName($teamId) . " hat dein $what für " . ($info['displayname'] ?? 'den Spieler') . ' abgelehnt.'
         );
         return ['status' => true];
+    }
+
+    /**
+     * Gegenangebot (Phase 2): Der Verkäufer antwortet auf ein Angebot des Bieters mit einem höheren Betrag.
+     * Das ursprüngliche Angebot wird 'countered' (gibt die Budgetreservierung des Bieters frei), stattdessen
+     * entsteht ein neues Angebot mit proposed_by='seller' — gezahlt wird weiterhin vom Bieter an den
+     * Verkäufer, nur antwortet jetzt der Bieter. Es reserviert kein Budget (der Bieter hat sich noch nicht
+     * gebunden); das Budget wird beim Annehmen geprüft. Ein Gegenangebot lässt sich nicht erneut kontern
+     * (eine Runde), es lebt bis Ende der laufenden Transferphase.
+     */
+    public function counterPlayerOffer(string $offerId, string $sellerTeamId, int $value): array
+    {
+        if (!$this->hasCounterSupport()) return $this->dealError(422, 'Gegenangebote sind auf dieser Liga noch nicht verfügbar');
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) return $this->dealError(422, 'Keine aktive Saison');
+
+        $pre = $this->con_league->prepare("SELECT player_id, buyer_team_id FROM player_offer WHERE id = :id AND seller_team_id = :tid LIMIT 1");
+        $pre->execute([':id' => $offerId, ':tid' => $sellerTeamId]);
+        $preOffer = $pre->fetch(PDO::FETCH_ASSOC);
+        if (!$preOffer) return $this->dealError(404, 'Angebot nicht gefunden');
+
+        $lockNames = ['deal_player_' . $preOffer['player_id'], 'deal_team_' . $preOffer['buyer_team_id'], 'deal_team_' . $sellerTeamId];
+        if (!$this->acquireDealLocks($lockNames)) return $this->dealError(409, 'Bitte gleich nochmal versuchen');
+
+        $newId = null;
+        try {
+            $this->expireStalePlayerOffers();
+
+            $oq = $this->con_league->prepare(
+                "SELECT id, player_id, buyer_team_id, seller_team_id, offer_value, status, proposed_by
+                 FROM player_offer WHERE id = :id AND seller_team_id = :tid LIMIT 1"
+            );
+            $oq->execute([':id' => $offerId, ':tid' => $sellerTeamId]);
+            $offer = $oq->fetch(PDO::FETCH_ASSOC);
+            if (!$offer) return $this->dealError(404, 'Angebot nicht gefunden');
+            if ($offer['status'] !== 'pending') return $this->dealError(409, 'Angebot ist nicht mehr offen');
+            if ($offer['proposed_by'] !== 'buyer') return $this->dealError(409, 'Ein Gegenangebot lässt sich nicht erneut kontern');
+
+            $window = $this->findTransferwindow($seasonId, true);
+            if (!$window) return $this->dealError(403, 'Angebote können nur innerhalb einer Transferphase beantwortet werden');
+
+            $playerId = $offer['player_id'];
+            $buyerId  = $offer['buyer_team_id'];
+
+            if ($this->getActiveOwnerTeamId($playerId, $seasonId) !== $sellerTeamId) {
+                $this->voidPendingPlayerOffers($playerId);
+                return $this->dealError(409, 'Der Spieler gehört nicht mehr zu deinem Team');
+            }
+            if ($value <= (int) $offer['offer_value']) return $this->dealError(422, 'Das Gegenangebot muss über dem ursprünglichen Angebot liegen');
+
+            $info = $this->getPlayerMarketValueInfo($playerId, $seasonId);
+            if (!$info) return $this->dealError(422, 'Spieler hat in dieser Saison keinen Marktwert');
+            if ($value < $info['market_value']) return $this->dealError(422, 'Gegenangebot liegt unter dem Marktwert');
+
+            $newId = $this->con_league->query("SELECT UUID()")->fetchColumn();
+            $this->con_league->beginTransaction();
+            try {
+                $u = $this->con_league->prepare(
+                    "UPDATE player_offer SET status = 'countered', responded_at = NOW() WHERE id = :id AND status = 'pending'"
+                );
+                $u->execute([':id' => $offerId]);
+                if ($u->rowCount() !== 1) throw new \RuntimeException('offer_not_pending');
+
+                $this->con_league->prepare(
+                    "INSERT INTO player_offer (id, player_id, buyer_team_id, seller_team_id, proposed_by, offer_value, price_snapshot, status, expires_window_id, parent_offer_id)
+                     VALUES (:id, :pid, :buyer, :seller, 'seller', :val, :snap, 'pending', :wid, :parent)"
+                )->execute([
+                    ':id' => $newId, ':pid' => $playerId, ':buyer' => $buyerId, ':seller' => $sellerTeamId,
+                    ':val' => $value, ':snap' => $info['market_value'], ':wid' => $window['id'], ':parent' => $offerId,
+                ]);
+                $this->con_league->commit();
+            } catch (\Throwable $e) {
+                $this->con_league->rollBack();
+                if ($e instanceof \RuntimeException) return $this->dealError(409, 'Angebot konnte nicht beantwortet werden (Zustand hat sich geändert)');
+                throw $e;
+            }
+        } finally {
+            $this->releaseDealLocks($lockNames);
+        }
+
+        $this->notifyTeamManager(
+            $buyerId,
+            'Gegenangebot erhalten',
+            $this->getTeamName($sellerTeamId) . ' macht ein Gegenangebot für ' . ($info['displayname'] ?? 'den Spieler') . ': '
+            . number_format($value, 0, ',', '.') . ' €. Du findest es unter Markt → Gebote und kannst es in einer Transferphase annehmen oder ablehnen.'
+        );
+        return ['status' => true, 'offer_id' => $newId];
     }
 
     /**
@@ -652,22 +806,24 @@ trait PlayerOfferTrait
      * beide Konten buchen, Lineup des Verkäufers bereinigen, konkurrierende Angebote auf den Spieler
      * hinfällig machen. Benachrichtigungen erst nach dem Commit.
      */
-    public function acceptPlayerOffer(string $offerId, string $sellerTeamId): array
+    public function acceptPlayerOffer(string $offerId, string $actingTeamId): array
     {
         $seasonId = $this->getActiveSeasonId();
         if (!$seasonId) return $this->dealError(422, 'Keine aktive Saison');
 
-        $pre = $this->con_league->prepare(
-            "SELECT player_id, buyer_team_id FROM player_offer WHERE id = :id AND seller_team_id = :tid LIMIT 1"
-        );
-        $pre->execute([':id' => $offerId, ':tid' => $sellerTeamId]);
+        // Empfänger antwortet: beim normalen Angebot der Verkäufer, beim Gegenangebot der Käufer. Gezahlt
+        // wird in beiden Fällen vom Käuferteam an das Verkäuferteam.
+        $pre = $this->con_league->prepare("SELECT * FROM player_offer WHERE id = :id LIMIT 1");
+        $pre->execute([':id' => $offerId]);
         $preOffer = $pre->fetch(PDO::FETCH_ASSOC);
-        if (!$preOffer) return $this->dealError(404, 'Angebot nicht gefunden');
+        if (!$preOffer || $this->offerParties($preOffer)['recipient'] !== $actingTeamId) {
+            return $this->dealError(404, 'Angebot nicht gefunden');
+        }
 
         $lockNames = [
             'deal_player_' . $preOffer['player_id'],
             'deal_team_' . $preOffer['buyer_team_id'],
-            'deal_team_' . $sellerTeamId,
+            'deal_team_' . $preOffer['seller_team_id'],
         ];
         if (!$this->acquireDealLocks($lockNames)) return $this->dealError(409, 'Bitte gleich nochmal versuchen');
 
@@ -676,25 +832,25 @@ trait PlayerOfferTrait
             $this->expireStalePlayerOffers();
 
             // Ab hier unter Lock: alles neu einlesen, nichts aus dem Vorab-Read übernehmen.
-            $oq = $this->con_league->prepare(
-                "SELECT id, player_id, buyer_team_id, seller_team_id, offer_value, status
-                 FROM player_offer WHERE id = :id AND seller_team_id = :tid LIMIT 1"
-            );
-            $oq->execute([':id' => $offerId, ':tid' => $sellerTeamId]);
+            $oq = $this->con_league->prepare("SELECT * FROM player_offer WHERE id = :id LIMIT 1");
+            $oq->execute([':id' => $offerId]);
             $offer = $oq->fetch(PDO::FETCH_ASSOC);
-            if (!$offer) return $this->dealError(404, 'Angebot nicht gefunden');
+            if (!$offer || $this->offerParties($offer)['recipient'] !== $actingTeamId) return $this->dealError(404, 'Angebot nicht gefunden');
             if ($offer['status'] !== 'pending') return $this->dealError(409, 'Angebot ist nicht mehr offen');
 
             $window = $this->findTransferwindow($seasonId, true);
             if (!$window) return $this->dealError(403, 'Angebote können nur innerhalb einer Transferphase beantwortet werden');
 
-            $playerId = $offer['player_id'];
-            $buyerId  = $offer['buyer_team_id'];
-            $value    = (int) $offer['offer_value'];
+            $playerId     = $offer['player_id'];
+            $buyerId      = $offer['buyer_team_id'];
+            $sellerTeamId = $offer['seller_team_id'];
+            $value        = (int) $offer['offer_value'];
+            $initiatorId  = $this->offerParties($offer)['initiator'];
+            $isCounter    = ($offer['proposed_by'] ?? 'buyer') === 'seller';
 
             if ($this->getActiveOwnerTeamId($playerId, $seasonId) !== $sellerTeamId) {
                 $this->voidPendingPlayerOffers($playerId);
-                return $this->dealError(409, 'Der Spieler gehört nicht mehr zu deinem Team');
+                return $this->dealError(409, $isCounter ? 'Der Spieler gehört dem Verkäufer nicht mehr' : 'Der Spieler gehört nicht mehr zu deinem Team');
             }
 
             $bq = $this->con_league->prepare("SELECT season_id FROM team WHERE id = :id LIMIT 1");
@@ -703,10 +859,10 @@ trait PlayerOfferTrait
 
             $othersReserved = $this->getReservedBudget($buyerId, null, $offerId);
             if ($this->getTeamBudgetValue($buyerId) - $othersReserved < $value) {
-                return $this->dealError(409, 'Der Bieter hat nicht mehr genug Budget');
+                return $this->dealError(409, $isCounter ? 'Nicht genug verfügbares Budget für dieses Gegenangebot' : 'Der Bieter hat nicht mehr genug Budget');
             }
             if ($this->isPositionFull($buyerId, $playerId)) {
-                return $this->dealError(409, 'Der Bieter hat auf dieser Position keinen Platz mehr');
+                return $this->dealError(409, $isCounter ? 'Auf dieser Position ist bei dir kein Platz mehr' : 'Der Bieter hat auf dieser Position keinen Platz mehr');
             }
 
             $info = $this->getPlayerMarketValueInfo($playerId, $seasonId);
@@ -755,12 +911,16 @@ trait PlayerOfferTrait
 
         // Nach dem Commit — Fehler hier dürfen den vollzogenen Deal nicht zurückrollen.
         try {
-            $sellerName = $this->getTeamName($sellerTeamId);
-            $buyerName  = $this->getTeamName($buyerId);
-            $valueText  = number_format($value, 0, ',', '.') . ' €';
-            $this->notifyTeamManager($buyerId, 'Angebot angenommen', "$sellerName hat dein Angebot für $displayname ($valueText) angenommen.");
+            $actorName = $this->getTeamName($actingTeamId);
+            $buyerName = $this->getTeamName($buyerId);
+            $valueText = number_format($value, 0, ',', '.') . ' €';
+            $this->notifyTeamManager(
+                $initiatorId,
+                $isCounter ? 'Gegenangebot angenommen' : 'Angebot angenommen',
+                "$actorName hat dein " . ($isCounter ? 'Gegenangebot' : 'Angebot') . " für $displayname ($valueText) angenommen."
+            );
             foreach ($voided as $v) {
-                $this->notifyTeamManager($v['buyer_team_id'], 'Angebot hinfällig', "$displayname wurde anderweitig vergeben — dein Angebot ist hinfällig.");
+                $this->notifyTeamManager($v['buyer_team_id'], 'Angebot hinfällig', "$displayname wurde anderweitig vergeben — das Angebot ist hinfällig.");
             }
             $this->notifyWatchersPlayerSold($playerId, $sellerTeamId, $displayname);
             $this->notifyWatchersPlayerBought($playerId, $buyerId, $displayname, $buyerName);

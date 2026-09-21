@@ -184,7 +184,7 @@
       <h2 class="direct-card__title">Angebote von anderen Managern</h2>
       <p class="direct-card__hint">
         @if (directWindowOpen()) {
-          Annehmen vollzieht den Wechsel sofort — das Geld steht dir noch in dieser Transferphase zur Verfügung.
+          Annehmen vollzieht den Wechsel sofort — das Geld steht dir noch in dieser Transferphase zur Verfügung. Mit einem Gegenangebot schlägst du einen höheren Preis vor.
         } @else {
           Antworten ist nur innerhalb einer Transferphase möglich. Angebote laufen am Ende der Phase automatisch ab.
         }
@@ -211,7 +211,7 @@
             <div class="direct-row__main">
               <a class="bid-player-link" [routerLink]="['/daten/player', o.player_id]">{{ o.displayname ?? '–' }}</a>
               <span class="direct-row__sub">
-                von {{ o.counterpart?.team_name ?? '–' }}
+                {{ o.kind === 'counter' ? 'Gegenangebot von' : 'von' }} {{ o.counterpart?.team_name ?? '–' }}
                 @if (o.market_value) { · Marktwert {{ formatPrice(o.market_value) }} }
                 @if (o.expires_at) { · bis {{ o.expires_at | date:'dd.MM. HH:mm' }} }
               </span>
@@ -224,10 +224,33 @@
               <button class="btn btn-sm btn-primary" [disabled]="!directWindowOpen() || directBusyId() !== null"
                       [title]="directWindowOpen() ? '' : 'Nur innerhalb einer Transferphase möglich'"
                       (click)="respondDirect(o, 'accept')">Annehmen</button>
+              @if (o.kind === 'offer') {
+                <button class="btn btn-sm btn-ghost" [disabled]="!directWindowOpen() || directBusyId() !== null"
+                        [title]="directWindowOpen() ? 'Höheren Preis vorschlagen' : 'Nur innerhalb einer Transferphase möglich'"
+                        (click)="startCounter(o)">Gegenangebot</button>
+              }
               <button class="btn btn-sm btn-danger" [disabled]="!directWindowOpen() || directBusyId() !== null"
                       [title]="directWindowOpen() ? '' : 'Nur innerhalb einer Transferphase möglich'"
                       (click)="respondDirect(o, 'decline')">Ablehnen</button>
             </div>
+
+            @if (counterId() === o.id) {
+              <div class="direct-counter">
+                <label class="direct-counter__label">Dein Gegenangebot (mind. {{ formatPrice(counterMin(o)) }})</label>
+                <div class="direct-counter__row">
+                  <input class="input input--sm" type="number" [min]="counterMin(o)" step="10000"
+                         [value]="counterValue()"
+                         (input)="counterValue.set(+$any($event.target).value)" />
+                  <button class="btn btn-sm btn-primary"
+                          [disabled]="counterBusy() || counterValue() < counterMin(o)"
+                          (click)="submitCounter(o)">Senden</button>
+                  <button class="btn btn-sm btn-ghost" (click)="cancelCounter()">Abbrechen</button>
+                </div>
+                @if (counterError()) {
+                  <p class="bid-edit__error">{{ counterError() }}</p>
+                }
+              </div>
+            }
           </li>
         }
       </ul>
@@ -256,7 +279,7 @@
             <div class="direct-row__main">
               <a class="bid-player-link" [routerLink]="['/daten/player', o.player_id]">{{ o.displayname ?? '–' }}</a>
               <span class="direct-row__sub">
-                an {{ o.counterpart?.team_name ?? '–' }}
+                {{ o.kind === 'counter' ? 'Gegenangebot an' : 'an' }} {{ o.counterpart?.team_name ?? '–' }}
                 @if (o.status === 'pending' && o.expires_at) { · gültig bis {{ o.expires_at | date:'dd.MM. HH:mm' }} }
               </span>
             </div>

@@ -35,7 +35,9 @@ interface DirectOffer {
   offer_value: number;
   price_snapshot: number;
   market_value: number | null;
-  status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired' | 'void';
+  kind: 'offer' | 'counter';   // counter = Gegenangebot des Verkäufers auf ein Angebot (Phase 2)
+  parent_offer_id: string | null;
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired' | 'void' | 'countered';
   expires_at: string | null;
   created_at: string;
   responded_at: string | null;
@@ -118,8 +120,12 @@ export class BidsComponent {
     const teamId = this.teamId();
     if (!teamId || this.directBusyId()) return;
     if (action === 'accept') {
-      const who = offer.counterpart?.team_name ?? 'dem Bieter';
-      if (!confirm(`${offer.displayname} für ${this.formatPrice(offer.offer_value)} an ${who} verkaufen? Der Wechsel wird sofort vollzogen.`)) return;
+      const who = offer.counterpart?.team_name ?? 'dem anderen Manager';
+      // Beim Gegenangebot bin ich der Käufer (der Verkäufer hat den Preis vorgeschlagen), sonst der Verkäufer.
+      const question = offer.kind === 'counter'
+        ? `${offer.displayname} für ${this.formatPrice(offer.offer_value)} von ${who} kaufen?`
+        : `${offer.displayname} für ${this.formatPrice(offer.offer_value)} an ${who} verkaufen?`;
+      if (!confirm(`${question} Der Wechsel wird sofort vollzogen.`)) return;
     }
     this.directBusyId.set(offer.id);
     this.directMessage.set(null);
@@ -137,6 +143,49 @@ export class BidsComponent {
       error: (err: any) => {
         this.directBusyId.set(null);
         this.directMessage.set(err?.error?.message ?? 'Fehler beim Antworten');
+        this.directRefresh$.next();
+      },
+    });
+  }
+
+  // ── Gegenangebot (nur der Verkäufer, nur auf ein normales Angebot, nur in einer Transferphase)
+  counterId    = signal<string | null>(null);
+  counterValue = signal(0);
+  counterBusy  = signal(false);
+  counterError = signal<string | null>(null);
+
+  /** Mindestbetrag: über dem ursprünglichen Angebot und mindestens der aktuelle Marktwert. */
+  counterMin(o: DirectOffer): number {
+    return Math.max(o.offer_value + 10_000, o.market_value ?? 0);
+  }
+
+  startCounter(o: DirectOffer): void {
+    this.editingId.set(null); // nicht gleichzeitig mit dem Bearbeiten eines Gebots auf einen freien Spieler
+    this.counterError.set(null);
+    this.counterValue.set(this.counterMin(o));
+    this.counterId.set(o.id);
+  }
+
+  cancelCounter(): void {
+    this.counterId.set(null);
+    this.counterError.set(null);
+  }
+
+  submitCounter(o: DirectOffer): void {
+    const teamId = this.teamId();
+    if (!teamId || this.counterBusy() || this.counterValue() < this.counterMin(o)) return;
+    this.counterBusy.set(true);
+    this.counterError.set(null);
+    this.api.patch<any>(`player_offer/${o.id}`, { team_id: teamId, action: 'counter', offer_value: this.counterValue() }).subscribe({
+      next: () => {
+        this.counterBusy.set(false);
+        this.counterId.set(null);
+        this.directRefresh$.next();
+        this.refresh$.next();
+      },
+      error: (err: any) => {
+        this.counterBusy.set(false);
+        this.counterError.set(err?.error?.message ?? 'Fehler beim Senden des Gegenangebots');
         this.directRefresh$.next();
       },
     });
@@ -171,7 +220,7 @@ export class BidsComponent {
   directStatusLabel(status: string): string {
     return ({
       pending: 'Ausstehend', accepted: 'Angenommen', declined: 'Abgelehnt',
-      cancelled: 'Storniert', expired: 'Abgelaufen', void: 'Hinfällig',
+      cancelled: 'Storniert', expired: 'Abgelaufen', void: 'Hinfällig', countered: 'Gekontert',
     } as Record<string, string>)[status] ?? status;
   }
 
@@ -264,6 +313,7 @@ export class BidsComponent {
   }
 
   startEdit(offer: Offer): void {
+    this.counterId.set(null);
     this.setDigitsFromValue(offer.offer_value);
     this.editError.set(null);
     this.editingId.set(offer.id);

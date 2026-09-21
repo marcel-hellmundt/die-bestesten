@@ -60,31 +60,42 @@ class PlayerOfferController extends _BaseController
         return ['status' => true, 'offer_id' => $result['id']];
     }
 
-    // Verkäufer: {team_id, action: accept|decline}. Der Betrag eines Angebots ist unveränderlich
-    // (kein PATCH auf offer_value) — der Verkäufer nimmt also immer genau das an, was er sieht.
+    // Empfänger antwortet: {team_id, action: accept|decline|counter, offer_value? (nur bei counter)}. Empfänger ist
+    // beim normalen Angebot der Verkäufer, beim Gegenangebot der Bieter. Der Betrag eines Angebots ist
+    // unveränderlich (kein PATCH auf offer_value) — man nimmt immer genau das an, was man sieht; ein anderer
+    // Betrag geht nur über ein Gegenangebot (nur der Verkäufer, nur auf ein normales Angebot).
     protected function patch(): mixed
     {
         $body   = $this->body();
         $teamId = $body['team_id'] ?? null;
         $action = $body['action']  ?? null;
 
-        if (!$this->id || !$teamId || !in_array($action, ['accept', 'decline'], true)) {
+        if (!$this->id || !$teamId || !in_array($action, ['accept', 'decline', 'counter'], true)) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'offer id, team_id and action (accept|decline) required'];
+            return ['status' => false, 'message' => 'offer id, team_id and action (accept|decline|counter) required'];
         }
         if (!$this->ownsTeam($teamId)) {
             http_response_code(403);
             return ['status' => false, 'message' => 'Not your team'];
         }
 
-        $result = $action === 'accept'
-            ? $this->db->acceptPlayerOffer($this->id, $teamId)
-            : $this->db->declinePlayerOffer($this->id, $teamId);
+        if ($action === 'counter') {
+            $value = isset($body['offer_value']) ? (int) $body['offer_value'] : 0;
+            if ($value <= 0) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'offer_value required for counter'];
+            }
+            $result = $this->db->counterPlayerOffer($this->id, $teamId, $value);
+        } elseif ($action === 'accept') {
+            $result = $this->db->acceptPlayerOffer($this->id, $teamId);
+        } else {
+            $result = $this->db->declinePlayerOffer($this->id, $teamId);
+        }
         if (!empty($result['error'])) return $this->fail($result);
         return $result;
     }
 
-    // Bieter storniert sein eigenes offenes Angebot (jederzeit).
+    // Initiator storniert sein eigenes offenes Angebot (jederzeit): Bieter sein Angebot, Verkäufer sein Gegenangebot.
     protected function delete(): mixed
     {
         $body   = $this->body();
