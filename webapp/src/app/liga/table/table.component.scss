@@ -887,6 +887,17 @@
   &--none       { color: #ff3f34; }
 }
 
+// Bei benutzerdefinierter Sortierung der Punkte-Herkunft: nur die Zeile der Sortier-Quelle 500, alle anderen 400.
+.participation-tooltip--sorted {
+  .participation-tooltip__detail,
+  .participation-tooltip__detail.participation-tooltip__total {
+    font-weight: $font-weight-normal;
+  }
+  .participation-tooltip__detail.participation-tooltip__detail--active {
+    font-weight: $font-weight-medium;
+  }
+}
+
 // ── Hover-Tooltip über einer Saisonverlauf-Linie ────────────────────────────────
 // Folgt der Maus direkt (kein rAF-Messzyklus wie .participation-tooltip nötig), daher einfacheres
 // Positions-/Sichtbarkeitsmodell — @if im Template steuert das Ein-/Ausblenden.
