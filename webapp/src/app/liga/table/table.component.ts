@@ -200,6 +200,20 @@ export class TableComponent {
     { initialValue: null as any }
   );
 
+  // Live-Daten des laufenden Spieltags (nur wenn Live-Modus an und Spieltag noch nicht abgeschlossen),
+  // je Team indiziert — gemeinsame Grundlage für Tabelle, Saisonverlauf, Einsatzquote, Mannschaftsteil-
+  // und Punkte-Herkunft-Card. Strafen/Auszeichnungen bleiben bewusst beim Stand der abgeschlossenen
+  // Spieltage (hängen an Rängen eines fertigen Spieltags).
+  liveInfo = computed(() => {
+    if (!this.liveMode()) return null;
+    const live = this.liveState();
+    if (!live?.ratings?.length || live.matchday?.completed) return null;
+    return {
+      matchdayNumber: Number(live.matchday?.number) || 0,
+      byTeam: new Map<string, any>((live.ratings as any[]).map(r => [r.team_id, r])),
+    };
+  });
+
   private baseRows = computed(() =>
     (this.state().data?.standings ?? []).map((r: any) => ({
       ...r,
@@ -308,7 +322,25 @@ export class TableComponent {
   goldeneBuerste = computed(() => (this.state().data?.luck?.goldene_buerste  ?? []) as any[]);
   hoelzerneBand  = computed(() => (this.state().data?.luck?.hoelzerne_bank   ?? []) as any[]);
   matchdayWins   = computed(() => (this.state().data?.luck?.matchday_wins    ?? []) as any[]);
-  participationStats = computed(() => (this.state().data?.participation ?? []) as any[]);
+  // Einsatzquote inkl. Live-Spieltag: nominierte Spieler mit bereits gesetztem Einsatz-Status werden
+  // aufaddiert; "waiting" (noch keine player_rating-Zeile) zählt bewusst nicht mit, sonst würde jeder
+  // noch nicht gespielte Spieler die Quote als "kein Einsatz" verzerren.
+  participationStats = computed(() => {
+    const base = (this.state().data?.participation ?? []) as any[];
+    const live = this.liveInfo();
+    if (!live) return base;
+    return base.map(r => {
+      const sc = live.byTeam.get(r.team_id)?.status_counts;
+      if (!sc) return r;
+      const starting   = r.starting   + (sc.starting   ?? 0);
+      const substitute = r.substitute + (sc.substitute ?? 0);
+      const none       = r.none       + (sc.not_used   ?? 0);
+      const total = starting + substitute + none;
+      const substitute_pct = total > 0 ? Math.round(substitute / total * 100) : 0;
+      const none_pct       = total > 0 ? Math.round(none / total * 100) : 0;
+      return { ...r, starting, substitute, none, total, substitute_pct, none_pct, starting_pct: 100 - substitute_pct - none_pct };
+    }).sort((a, b) => b.starting_pct - a.starting_pct);
+  });
 
   // Punkte-Herkunft: Note (eine Farbe) vs. Stats (Schattierungen einer zweiten Farbe, je Quelle).
   readonly pointSourceSegments = [
@@ -337,14 +369,18 @@ export class TableComponent {
   }
 
   pointSourceRows = computed(() => {
+    const live = this.liveInfo();
     const rows = ((this.state().data?.point_sources ?? []) as any[]).map(r => {
-      const parts = this.pointSourceSegments.map(s => ({ ...s, points: +r[s.key] }));
+      const lr = live?.byTeam.get(r.team_id);
+      const ls = lr?.point_sources;
+      const val = (key: string) => +r[key] + (ls ? +ls[key] || 0 : 0);
+      const parts = this.pointSourceSegments.map(s => ({ ...s, points: val(s.key) }));
       const gross = parts.reduce((sum, s) => sum + s.points, 0);
-      const minus = Math.abs(+r.deductions);
+      const minus = Math.abs(val('deductions'));
       const standing = ((this.state().data?.standings ?? []) as any[]).find(t => t.team_id === r.team_id);
       return {
         ...r, parts, gross, minus,
-        netPoints: standing ? +standing.total_points : gross - minus,
+        netPoints: (standing ? +standing.total_points : gross - minus) + (lr ? Number(lr.points) || 0 : 0),
       };
     }).filter(r => r.gross > 0 || r.minus > 0)
       .sort((a, b) => {
@@ -420,9 +456,8 @@ export class TableComponent {
   // Punkte nach Mannschaftsteil — 4 separat sortierte Mini-Tabellen (Torwart/Abwehr/Mittelfeld/
   // Sturm), je aus der pro Spieltag bereits denormalisierten team_rating.points_goalkeeper/
   // defender/midfielder/forward-Summe (siehe TeamRatingTrait::getSeasonStandings()) — bewusst auf
-  // baseRows() statt rows() gebaut: der Live-Modus rechnet nur die Gesamt-/Tore-/Karten-Felder
-  // live aus player_rating x team_lineup hoch, keine Mannschaftsteil-Aufschlüsselung, die Card
-  // soll also unabhängig vom Live-Toggle immer den Stand der abgeschlossenen Spieltage zeigen.
+  // baseRows() statt rows() gebaut und im Live-Modus um die Live-Punkte je Mannschaftsteil
+  // (GET /team_rating → points_goalkeeper/…) ergänzt, siehe positionPoints().
   private readonly positionGroups: { key: 'total_points_goalkeeper' | 'total_points_defender' | 'total_points_midfielder' | 'total_points_forward'; label: string; color: string; icon: string }[] = [
     { key: 'total_points_goalkeeper', label: 'Torwart',    color: 'var(--position-goalkeeper)', icon: 'img/icons/position_goalkeeper.png' },
     { key: 'total_points_defender',   label: 'Abwehr',     color: 'var(--position-defender)',   icon: 'img/icons/position_defender.png' },
@@ -434,7 +469,22 @@ export class TableComponent {
   // Gruppe neu berechnet statt am geteilten baseRows()-Objekt zu hängen, da jede der 4 Tabellen
   // einen anderen pct-Wert für dasselbe Team braucht.
   positionPoints = computed(() => {
-    const base = this.baseRows();
+    const live = this.liveInfo();
+    const base = live
+      ? this.baseRows().map(r => {
+          const lr = live.byTeam.get(r.team_id);
+          if (!lr) return r;
+          const n = (v: any) => Number(v) || 0;
+          return {
+            ...r,
+            total_points:            r.total_points            + n(lr.points),
+            total_points_goalkeeper: r.total_points_goalkeeper + n(lr.points_goalkeeper),
+            total_points_defender:   r.total_points_defender   + n(lr.points_defender),
+            total_points_midfielder: r.total_points_midfielder + n(lr.points_midfielder),
+            total_points_forward:    r.total_points_forward    + n(lr.points_forward),
+          };
+        })
+      : this.baseRows();
     if (!base.length) return null;
     return this.positionGroups.map(g => ({
       key: g.key,
@@ -487,7 +537,15 @@ export class TableComponent {
   readonly padB   = 24;
 
   chartData = computed(() => {
-    const series: any[] = this.state().data?.chart ?? [];
+    const live = this.liveInfo();
+    // Live: pro Team ein zusätzlicher Punkt am Linienende (letzter kumulierter Stand + Live-Punkte
+    // des laufenden Spieltags) — nur wenn dieser Spieltag noch nicht in der Serie steckt.
+    const series: any[] = ((this.state().data?.chart ?? []) as any[]).map(t => {
+      const lr = live?.byTeam.get(t.team_id);
+      const last = t.series[t.series.length - 1];
+      if (!live || !lr || !last || last.matchday >= live.matchdayNumber) return t;
+      return { ...t, series: [...t.series, { matchday: live.matchdayNumber, points: last.points + (Number(lr.points) || 0) }] };
+    });
     if (!series.length) return null;
 
     const allPoints = series.flatMap((t: any) => t.series);

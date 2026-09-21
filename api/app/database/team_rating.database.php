@@ -394,9 +394,11 @@ trait TeamRatingTrait
      * player_rating.database.php — gleiche Position-zum-Ratingzeitpunkt-Auflösung, gleiche
      * Punktwerte. Zeigt nur positive Beiträge je Spieler+Spieltag (Grundlage für Prozentanteile);
      * Minuspunkte (schlechte Note, Karten) kommen gesammelt als 'deductions' zurück, da ein
-     * negativer Anteil kein Balkensegment sein kann.
+     * negativer Anteil kein Balkensegment sein kann. $withPositionPoints ergänzt je Team die
+     * gespeicherten player_rating.points aufsummiert nach Mannschaftsteil (points_goalkeeper/
+     * defender/midfielder/forward) — für die Live-Ansicht von /liga/tabelle.
      */
-    private function getSeasonPointSources(array $matchdayIds): array
+    private function getSeasonPointSources(array $matchdayIds, bool $withPositionPoints = false): array
     {
         if (empty($matchdayIds)) return [];
 
@@ -413,7 +415,7 @@ trait TeamRatingTrait
         $pph = implode(',', array_fill(0, count($playerIds), '?'));
         $prq = $this->con->prepare(
             "SELECT pr.player_id, pr.matchday_id, pr.grade, pr.participation, pr.goals, pr.assists,
-                    pr.clean_sheet, pr.sds, pr.red_card, pr.yellow_red_card, pis.position
+                    pr.clean_sheet, pr.sds, pr.red_card, pr.yellow_red_card, pr.points, pis.position
              FROM player_rating pr
              JOIN matchday md ON md.id = pr.matchday_id
              LEFT JOIN player_in_season pis
@@ -441,8 +443,20 @@ trait TeamRatingTrait
             if (!isset($sources[$tid])) {
                 $sources[$tid] = ['note' => 0, 'goals' => 0, 'assists' => 0, 'sds' => 0,
                                   'clean_sheet' => 0, 'participation' => 0, 'deductions' => 0];
+                if ($withPositionPoints) {
+                    $sources[$tid] += ['points_goalkeeper' => 0, 'points_defender' => 0,
+                                       'points_midfielder' => 0, 'points_forward' => 0];
+                }
             }
             $s = &$sources[$tid];
+
+            if ($withPositionPoints) {
+                $posKey = [
+                    'GOALKEEPER' => 'points_goalkeeper', 'DEFENDER' => 'points_defender',
+                    'MIDFIELDER' => 'points_midfielder', 'FORWARD'  => 'points_forward',
+                ][$r['position'] ?? ''] ?? null;
+                if ($posKey !== null) $s[$posKey] += (int) $r['points'];
+            }
 
             $note = $r['grade'] !== null ? (int) round((3.5 - (float) $r['grade']) * 4) : 0;
             if ($note >= 0) $s['note'] += $note; else $s['deductions'] += $note;
@@ -530,6 +544,27 @@ trait TeamRatingTrait
             $ratings = $this->assignFines($ratings, 'points');
         } else {
             $ratings = $this->getLiveTeamRatings($matchday['id']);
+
+            // Live-Aufschlüsselung (Mannschaftsteil + Punkte-Herkunft) für die Live-Ansicht von
+            // /liga/tabelle — dieselbe Zerlegung wie die Saisonwerte, nur für den laufenden Spieltag.
+            $liveSources = $this->getSeasonPointSources([$matchday['id']], true);
+            foreach ($ratings as &$r) {
+                $ls = $liveSources[$r['team_id']] ?? null;
+                $r['points_goalkeeper'] = $ls['points_goalkeeper'] ?? 0;
+                $r['points_defender']   = $ls['points_defender']   ?? 0;
+                $r['points_midfielder'] = $ls['points_midfielder'] ?? 0;
+                $r['points_forward']    = $ls['points_forward']    ?? 0;
+                $r['point_sources'] = [
+                    'note'          => $ls['note']          ?? 0,
+                    'goals'         => $ls['goals']         ?? 0,
+                    'assists'       => $ls['assists']       ?? 0,
+                    'sds'           => $ls['sds']           ?? 0,
+                    'clean_sheet'   => $ls['clean_sheet']   ?? 0,
+                    'participation' => $ls['participation'] ?? 0,
+                    'deductions'    => $ls['deductions']    ?? 0,
+                ];
+            }
+            unset($r);
         }
 
         $divisionId = $this->getLeagueDivisionId();

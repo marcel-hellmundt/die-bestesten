@@ -943,3 +943,10 @@
   font-size: $font-xs;
   color: $color-text-muted;
 }
+
+// Hinweis im Live-Modus, welche Cards den laufenden Spieltag einrechnen.
+.live-hint {
+  margin: $space-4 0 0;
+  font-size: $font-xs;
+  color: $color-text-muted;
+}

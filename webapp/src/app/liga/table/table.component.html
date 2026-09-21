@@ -163,6 +163,10 @@
         </table>
       </div>
 
+      @if (liveInfo()) {
+        <p class="live-hint">Live: Tabelle, Saisonverlauf, Einsatzquote, Mannschaftsteil und Punkte-Herkunft enthalten den laufenden Spieltag — Strafen und Auszeichnungen zeigen weiterhin nur abgeschlossene Spieltage.</p>
+      }
+
       <div class="chart-row">
         @if (matchdayWins().length > 0) {
           <div class="luck-card-wrap wins-card">
