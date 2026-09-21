@@ -322,10 +322,20 @@ export class TableComponent {
   // Minuspunkte (schlechte Noten, Karten) als rotes Segment am Balkenende — Brutto minus dieses
   // Segment = Nettopunkte des Teams.
   readonly deductionSegment = { key: 'deductions', label: 'Minuspunkte', color: 'var(--flat-alizarin)' };
+  // Legende folgt der Balken-Anordnung: links der Nulllinie Minuspunkte, rechts die Quellen.
+  readonly pointSourceLegend = [this.deductionSegment, ...this.pointSourceSegments];
 
   // Diverging-Balken um eine gemeinsame Nulllinie: positive Quellen laufen nach rechts, Minuspunkte
   // (schlechte Noten, Karten) nach links — gleiche Skala für alle Teams, damit Balkenlängen
   // vergleichbar sind und Gesamtpunkte (rechts minus links) ablesbar bleiben.
+  // Sortierung per Klick auf ein Legenden-Label (key einer Quelle oder 'deductions'); null = nach
+  // Gesamtpunkten (Default). Erneuter Klick auf das aktive Label setzt zurück.
+  pointSourceSort = signal<string | null>(null);
+
+  togglePointSourceSort(key: string): void {
+    this.pointSourceSort.update(k => k === key ? null : key);
+  }
+
   pointSourceRows = computed(() => {
     const rows = ((this.state().data?.point_sources ?? []) as any[]).map(r => {
       const parts = this.pointSourceSegments.map(s => ({ ...s, points: +r[s.key] }));
@@ -337,7 +347,11 @@ export class TableComponent {
         netPoints: standing ? +standing.total_points : gross - minus,
       };
     }).filter(r => r.gross > 0 || r.minus > 0)
-      .sort((a, b) => b.netPoints - a.netPoints);
+      .sort((a, b) => {
+        const key = this.pointSourceSort();
+        const value = (r: any) => key === null ? r.netPoints : key === 'deductions' ? r.minus : +r[key];
+        return (value(b) - value(a)) || (b.netPoints - a.netPoints);
+      });
 
     const maxGross = Math.max(...rows.map(r => r.gross), 1);
     const maxMinus = Math.max(...rows.map(r => r.minus), 0);

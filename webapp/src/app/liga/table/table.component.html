@@ -322,14 +322,17 @@
           <div class="card chart-card">
             <span class="chart-card__label">Punkte-Herkunft</span>
             <div class="point-source-legend">
-              @for (seg of pointSourceSegments; track seg.key) {
-                <span class="point-source-legend__item">
+              @for (seg of pointSourceLegend; track seg.key) {
+                <button
+                  type="button"
+                  class="point-source-legend__item"
+                  [class.point-source-legend__item--active]="pointSourceSort() === seg.key"
+                  (click)="togglePointSourceSort(seg.key)"
+                  title="Nach {{ seg.label }} sortieren"
+                >
                   <span class="point-source-legend__dot" [style.background]="seg.color"></span>{{ seg.label }}
-                </span>
+                </button>
               }
-              <span class="point-source-legend__item">
-                <span class="point-source-legend__dot" [style.background]="deductionSegment.color"></span>{{ deductionSegment.label }}
-              </span>
             </div>
             <div class="participation-list">
               @for (r of pointSourceRows(); track r.team_id) {
