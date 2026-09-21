@@ -27,6 +27,7 @@ require_once 'transaction.database.php';
 require_once 'sell.database.php';
 require_once 'buy.database.php';
 require_once 'offer.database.php';
+require_once 'player_offer.database.php';
 require_once 'search.database.php';
 require_once 'notification.database.php';
 require_once 'watchlist.database.php';
@@ -47,6 +48,7 @@ class Database
     use SellTrait;
     use BuyTrait;
     use OfferTrait;
+    use PlayerOfferTrait;
     use AllTimeStandingsTrait;
     use AwardTrait;
     use AchievementConditionsTrait;

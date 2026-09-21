@@ -19,6 +19,8 @@ trait OfferTrait
                 $pendingSum += (int) $r['offer_value'];
             }
         }
+        // Offene Direktangebote (/player_offer) reservieren dasselbe Budget wie offene Gebote.
+        $pendingSum = $this->getReservedBudget($teamId);
 
         $playerMap = [];
         if (!empty($playerIds)) {
@@ -204,7 +206,10 @@ trait OfferTrait
                 "SELECT player_id FROM offer WHERE team_id = :tid AND status = 'pending'"
             );
             $pendingIdsQ->execute([':tid' => $teamId]);
-            $pendingIds = $pendingIdsQ->fetchAll(PDO::FETCH_COLUMN);
+            $pendingIds = array_merge(
+                $pendingIdsQ->fetchAll(PDO::FETCH_COLUMN),
+                $this->getPendingPlayerOfferPlayerIds($teamId) // offene Direktangebote zählen ebenfalls mit
+            );
 
             $pendingCount = 0;
             if (!empty($pendingIds)) {
@@ -268,13 +273,8 @@ trait OfferTrait
         $bq->execute([':tid' => $teamId]);
         $budget = (int) $bq->fetchColumn();
 
-        // 6. Pending sum
-        $psq = $this->con_league->prepare(
-            "SELECT COALESCE(SUM(offer_value), 0) FROM offer
-             WHERE team_id = :tid AND status = 'pending'"
-        );
-        $psq->execute([':tid' => $teamId]);
-        $pendingSum = (int) $psq->fetchColumn();
+        // 6. Pending sum (offene Gebote + offene Direktangebote)
+        $pendingSum = $this->getReservedBudget($teamId);
 
         // 7. Validate budget
         if ($offerValue > ($budget - $pendingSum)) {
@@ -334,12 +334,7 @@ trait OfferTrait
         $bq->execute([':tid' => $teamId]);
         $budget = (int) $bq->fetchColumn();
 
-        $psq = $this->con_league->prepare(
-            "SELECT COALESCE(SUM(offer_value), 0) FROM offer
-             WHERE team_id = :tid AND status = 'pending' AND id != :oid"
-        );
-        $psq->execute([':tid' => $teamId, ':oid' => $offerId]);
-        $otherPending = (int) $psq->fetchColumn();
+        $otherPending = $this->getReservedBudget($teamId, $offerId);
 
         if ($newValue > ($budget - $otherPending)) return ['error' => 'budget_exceeded'];
 
@@ -415,6 +410,10 @@ trait OfferTrait
                     foreach ($bids as $bid) {
                         if ($this->isPlayerAlreadyInAnyTeam($playerId)) break;
                         if ($this->isPositionFull($bid['team_id'], $playerId)) continue;
+                        // Budget vor dem Zuschlag erneut prüfen (Kontostand inkl. bereits in diesem
+                        // Durchlauf gebuchter Käufe): zwischen Gebot und Auswertung kann sich das Budget
+                        // durch Direktdeals, /buy oder Draft verringert haben — sonst ginge es ins Minus.
+                        if ($this->getTeamBudgetValue($bid['team_id']) < (int) $bid['offer_value']) continue;
                         $winnerId     = $bid['id'];
                         $winnerTeamId = $bid['team_id'];
                         $winnerValue  = (int) $bid['offer_value'];
@@ -494,8 +493,10 @@ trait OfferTrait
         $oq->execute([':wid' => $windowId]);
         $rows = $oq->fetchAll(PDO::FETCH_ASSOC);
 
+        $directDeals = $this->getWindowDirectDeals($windowId);
+
         if (empty($rows)) {
-            return ['window' => $window, 'offers' => []];
+            return ['window' => $window, 'offers' => [], 'direct_deals' => $directDeals];
         }
 
         $teamIds = array_unique(array_column($rows, 'team_id'));
@@ -566,6 +567,6 @@ trait OfferTrait
             ];
         }
 
-        return ['window' => $window, 'offers' => array_values($grouped)];
+        return ['window' => $window, 'offers' => array_values($grouped), 'direct_deals' => $directDeals];
     }
 }

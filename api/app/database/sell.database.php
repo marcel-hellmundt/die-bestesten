@@ -98,16 +98,38 @@ trait SellTrait
         );
         $uq->execute([':mid' => $matchdayId, ':sid' => $sellId, ':tid' => $teamId, ':pid' => $playerId]);
 
-        // 7. Cleanup team_lineup: remove ONLY the sold player's own entries, for every not-yet-
-        // completed matchday, not just the one tied to this transfer window — a row for a later
-        // matchday (e.g. carried over by ensureLineupEntriesForTeam()) would otherwise stay
-        // nominated and could still get scored if that matchday completes before anyone happens
-        // to open the lineup page (the only place that would lazily clean it up otherwise, see
-        // getTeamLineup()'s stale-player cleanup, kept as a secondary safety net). Deliberately
-        // does NOT touch the other nominated players of that matchday — if the sold player was
-        // nominated, the formation is left with a gap at their spot rather than resetting the
-        // whole lineup to the bench (a gap is harmless: isReachableFormation() only rejects
-        // counts that exceed a valid formation's max, never an undercount).
+        // 7. Cleanup team_lineup (siehe removePlayerFromOpenLineups())
+        $this->removePlayerFromOpenLineups($teamId, $playerId);
+
+        // 8. Offene Direktangebote (/player_offer) auf diesen Spieler sind hinfällig — der Spieler
+        // gehört dem Verkäufer nicht mehr. Fehler dürfen den bereits gebuchten Verkauf nicht kippen.
+        try {
+            foreach ($this->voidPendingPlayerOffers($playerId) as $v) {
+                $this->notifyTeamManager($v['buyer_team_id'], 'Angebot hinfällig', "$displayname wurde an den Markt verkauft — dein Angebot ist hinfällig.");
+            }
+        } catch (\Throwable $e) {
+            error_log('sellPlayer void player offers: ' . $e->getMessage());
+        }
+
+        $this->notifyWatchersPlayerSold($playerId, $teamId, $displayname);
+
+        return ['sell_id' => $sellId, 'price' => $sellPrice];
+    }
+
+    /**
+     * Cleanup team_lineup: remove ONLY the given player's own entries of this team, for every
+     * not-yet-completed matchday, not just the one tied to the transfer window — a row for a later
+     * matchday (e.g. carried over by ensureLineupEntriesForTeam()) would otherwise stay nominated and
+     * could still get scored if that matchday completes before anyone happens to open the lineup page
+     * (the only place that would lazily clean it up otherwise, see getTeamLineup()'s stale-player
+     * cleanup, kept as a secondary safety net). Deliberately does NOT touch the other nominated
+     * players of that matchday — if the player was nominated, the formation is left with a gap at
+     * their spot rather than resetting the whole lineup to the bench (a gap is harmless:
+     * isReachableFormation() only rejects counts that exceed a valid formation's max, never an
+     * undercount). Used by sellPlayer() and by acceptPlayerOffer() (direct offers).
+     */
+    public function removePlayerFromOpenLineups(string $teamId, string $playerId): void
+    {
         $lq = $this->con_league->prepare(
             "SELECT id, matchday_id FROM team_lineup
              WHERE team_id = :tid AND player_id = :pid"
@@ -133,9 +155,5 @@ trait SellTrait
                 $this->con_league->prepare("DELETE FROM team_lineup WHERE id IN ($ph3)")->execute($toDelete);
             }
         }
-
-        $this->notifyWatchersPlayerSold($playerId, $teamId, $displayname);
-
-        return ['sell_id' => $sellId, 'price' => $sellPrice];
     }
 }

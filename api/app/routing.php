@@ -660,7 +660,7 @@ class Routing
                         'description' => 'Eigene Gebote abrufen + pending_sum (?team_id) — oder alle Gebote einer geschlossenen Transferphase (?transferwindow_id); triggert Lazy Settlement falls noch pending-Gebote vorhanden — Auth',
                         'query_params' => [
                             'team_id' => 'UUID des Teams → eigene Gebote + pending_sum; jedes Gebot enthält displayname, position, photo_uploaded, club_id, club_logo_uploaded, season_id, losers (für success/lost: [{team_id,team_color,team_season_id,is_winner}]); stornierte Gebote (status=cancelled) werden nicht zurückgegeben',
-                            'transferwindow_id' => 'UUID der Transferphase → alle Gebote gruppiert nach Spieler; 422 wenn Fenster noch offen',
+                            'transferwindow_id' => 'UUID der Transferphase → alle Gebote gruppiert nach Spieler; 422 wenn Fenster noch offen; enthält zusätzlich direct_deals:[{id,player_id,season_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,seller:{team_id,team_name,color,season_id,manager_name},buyer:{…},price,price_snapshot,accepted_at}] — nur VOLLZOGENE Direktdeals (siehe /player_offer), die in diesem Fenster angenommen wurden ("Hinterzimmerdeals"); abgelehnte/abgelaufene bleiben privat',
                         ],
                     ],
                     [
@@ -688,6 +688,50 @@ class Routing
                         'path' => '/offer/:id',
                         'description' => 'Offenes Gebot stornieren (status → cancelled) — nur eigenes Team — Auth',
                         'body' => ['team_id' => 'UUID des Teams'],
+                    ],
+                ],
+            ]),
+
+            new Route('player_offer', 'PlayerOffer', [
+                'title' => 'Player Offer (Direktangebote)',
+                'description' => 'Direktangebote ("Hinterzimmerdeals") auf Spieler, die gerade im Team eines anderen Managers sind. Anlegen jederzeit; Annehmen/Ablehnen durch den Verkäufer nur innerhalb einer offenen Transferphase; Annahme wird sofort vollzogen (Spieler wechselt, Budget beider Teams gebucht). Angebote gelten bis Ende der laufenden (sonst nächsten) Transferphase und laufen danach automatisch ab — live berechnet, kein Cron. Offene Angebote reservieren das Budget des Bieters.',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/player_offer',
+                        'description' => 'Direktangebote eines Teams (nur eigenes Team) — gibt {offers:[{id,player_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,season_id,counterpart:{team_id,team_name,color,season_id,manager_name}|null,offer_value,price_snapshot,market_value (aktueller Marktwert, nur bei pending),status,expires_at,created_at,responded_at}],window_open} zurück; counterpart = Bieter (incoming) bzw. Verkäufer (outgoing); abgelaufene Angebote werden dabei live auf expired gesetzt — Auth',
+                        'query_params' => [
+                            'team_id' => 'UUID des eigenen Teams (erforderlich)',
+                            'direction' => 'incoming (Default) = offene Angebote anderer Manager für Spieler dieses Teams (nur pending); outgoing = alle eigenen Angebote (jeder Status, neueste zuerst, max. 50)',
+                        ],
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/player_offer/quote',
+                        'description' => 'Grundlage für den "Angebot machen"-Button auf der Spielerseite — gibt {can_offer,reason,market_value (serverseitig, Verkaufsformel: Grundpreis + Saisonpunkte * points_bonus),available_budget (Budget − Reservierungen),seller_team|null,target_window:{id,start_date,end_date,is_open}|null,existing_offer_id|null} zurück; reason (wenn can_offer=false): no_season|not_owned|own_player|no_market_value|already_offered|no_window|position_full|insufficient_budget — Auth',
+                        'query_params' => ['team_id' => 'UUID des eigenen Teams', 'player_id' => 'UUID des Spielers'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/player_offer',
+                        'description' => 'Direktangebot abgeben — Betrag min. Marktwert (Verkaufsformel), max. verfügbares Budget (Budget − offene Gebote − offene Direktangebote); 409 wenn Spieler in keinem Team / bereits ein offenes Angebot des Teams für den Spieler / Positionslimit (inkl. offener Gebote und Direktangebote) / zu viele offene Angebote (max. 10); 422 wenn eigener Spieler, unter Marktwert, Budget nicht ausreichend oder keine offene/kommende Transferphase geplant (Ablauf-Fenster nicht bestimmbar); benachrichtigt den Verkäufer (Event direct_offer) — Auth',
+                        'body' => [
+                            'team_id' => 'UUID des bietenden Teams',
+                            'player_id' => 'UUID des Spielers',
+                            'offer_value' => 'Betrag in € (INT, unveränderlich nach dem Anlegen)',
+                        ],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/player_offer/:id',
+                        'description' => 'Verkäufer antwortet — accept: vollzieht den Deal sofort (unter Named-Locks auf Spieler + beide Teams, alle Vorbedingungen unter dem Lock erneut geprüft: Besitz, Budget inkl. anderer Reservierungen, Positionslimit; dann in einer Transaktion Stint des Verkäufers schließen, Stint des Käufers öffnen, Käufer −Betrag / Verkäufer +Betrag buchen ("Spielerkauf (Angebot): …" / "Spielerverkauf (Angebot): …"), Lineup des Verkäufers für nicht abgeschlossene Spieltage bereinigen, andere offene Angebote auf den Spieler auf void setzen); decline: lehnt ab — beides nur innerhalb einer offenen Transferphase (403 sonst), nur für das eigene Verkäufer-Team; 404 wenn nicht gefunden/bereits beantwortet, 409 wenn sich der Zustand geändert hat — Auth',
+                        'body' => ['team_id' => 'UUID des Verkäufer-Teams', 'action' => 'accept | decline'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/player_offer/:id',
+                        'description' => 'Bieter storniert sein offenes Angebot (status → cancelled, gibt die Budgetreservierung frei) — jederzeit — nur eigenes Team — Auth',
+                        'body' => ['team_id' => 'UUID des bietenden Teams'],
                     ],
                 ],
             ]),

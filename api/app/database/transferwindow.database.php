@@ -98,6 +98,15 @@ trait TransferwindowTrait
             return ['status' => false, 'message' => 'Transferfenster hat bereits Gebote und kann nicht gelöscht werden'];
         }
 
+        $dealCount = $this->con_league->prepare(
+            "SELECT COUNT(*) FROM player_offer WHERE expires_window_id = ? OR settled_window_id = ?"
+        );
+        $dealCount->execute([$id, $id]);
+        if ((int) $dealCount->fetchColumn() > 0) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Transferfenster hat bereits Direktangebote und kann nicht gelöscht werden'];
+        }
+
         $sellCount = $this->con_league->prepare("SELECT COUNT(*) FROM sell WHERE transferwindow_id = ?");
         $sellCount->execute([$id]);
         if ((int) $sellCount->fetchColumn() > 0) {
