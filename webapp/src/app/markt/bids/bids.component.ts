@@ -107,7 +107,8 @@ export class BidsComponent {
   private directOutgoingData = this.directData('outgoing');
 
   directIncoming  = computed(() => this.directIncomingData().offers);
-  directOutgoing  = computed(() => this.directOutgoingData().offers);
+  // Selbst stornierte Angebote werden nicht angezeigt (wie bei den Geboten auf freie Spieler)
+  directOutgoing  = computed(() => this.directOutgoingData().offers.filter(o => o.status !== 'cancelled'));
   directWindowOpen = computed(() => this.directIncomingData().window_open);
 
   directBusyId = signal<string | null>(null);

@@ -448,7 +448,7 @@ trait PlayerOfferTrait
 
     /**
      * direction=incoming → offene Angebote anderer Manager für Spieler dieses Teams (nur pending);
-     * direction=outgoing → alle eigenen Angebote dieses Teams (jeder Status, neueste zuerst).
+     * direction=outgoing → alle eigenen Angebote dieses Teams außer selbst stornierten (neueste zuerst).
      */
     public function getPlayerOffers(string $teamId, string $direction): array
     {
@@ -461,7 +461,7 @@ trait PlayerOfferTrait
             );
         } else {
             $q = $this->con_league->prepare(
-                "SELECT * FROM player_offer WHERE buyer_team_id = :tid ORDER BY created_at DESC LIMIT 50"
+                "SELECT * FROM player_offer WHERE buyer_team_id = :tid AND status != 'cancelled' ORDER BY created_at DESC LIMIT 50"
             );
         }
         $q->execute([':tid' => $teamId]);

@@ -702,7 +702,7 @@ class Routing
                         'description' => 'Direktangebote eines Teams (nur eigenes Team) — gibt {offers:[{id,player_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,season_id,counterpart:{team_id,team_name,color,season_id,manager_name}|null,offer_value,price_snapshot,market_value (aktueller Marktwert, nur bei pending),status,expires_at,created_at,responded_at}],window_open} zurück; counterpart = Bieter (incoming) bzw. Verkäufer (outgoing); abgelaufene Angebote werden dabei live auf expired gesetzt — Auth',
                         'query_params' => [
                             'team_id' => 'UUID des eigenen Teams (erforderlich)',
-                            'direction' => 'incoming (Default) = offene Angebote anderer Manager für Spieler dieses Teams (nur pending); outgoing = alle eigenen Angebote (jeder Status, neueste zuerst, max. 50)',
+                            'direction' => 'incoming (Default) = offene Angebote anderer Manager für Spieler dieses Teams (nur pending); outgoing = alle eigenen Angebote außer selbst stornierten (jeder andere Status, neueste zuerst, max. 50)',
                         ],
                     ],
                     [
