@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, combineLatest, filter, map, of, scan, startWith, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
 import { Matchday } from '../../core/models/matchday.model';
 import { TeamNavService } from '../../core/team-nav.service';
+import { LigaSubnavService } from '../liga-subnav.service';
 
 @Component({
   selector: 'app-liga-table',
@@ -19,6 +20,7 @@ export class TableComponent {
   private auth   = inject(AuthService);
   private router = inject(Router);
   private teamNav = inject(TeamNavService);
+  private subnav  = inject(LigaSubnavService);
   cache        = inject(DataCacheService);
 
   isLoggedIn = computed(() => this.auth.isLoggedIn());
@@ -726,5 +728,8 @@ export class TableComponent {
   constructor() {
     this.cache.ensureSeasons();
     this.cache.ensureLeague();
+    // Saison-Auswahl ist der gepinnte Kopfbereich unter dem Sub-Menü (siehe LigaSubnavService).
+    this.subnav.childSticky.set(true);
+    inject(DestroyRef).onDestroy(() => this.subnav.childSticky.set(false));
   }
 }

@@ -3,7 +3,7 @@
 } @else if (error()) {
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else {
-  <div class="season-nav">
+  <div class="season-nav" appStuck>
     <div class="season-nav__controls">
       <button
         class="nav-arrow"

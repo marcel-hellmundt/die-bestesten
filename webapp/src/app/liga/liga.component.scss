@@ -20,5 +20,14 @@
     z-index: $z-sticky - 10;
     background: $color-bg;
     padding-bottom: $space-2;
+
+    // Gepinnt UND letzte Kante des Headers (Seite ohne eigenen gepinnten Kopfbereich): Border
+    // unten + etwas mehr Luft. Die Margin-Verkleinerung gleicht die zusätzlichen 5px (4px
+    // Padding + 1px Border) aus, damit der Inhalt darunter beim Anheften nicht springt.
+    &--last.is-stuck {
+      padding-bottom: $space-3;
+      border-bottom: 1px solid $color-border;
+      margin-bottom: $space-6 - 5px;
+    }
   }
 }

@@ -27,6 +27,13 @@
     padding: $space-2 0;
     margin-top: -$space-2;
     margin-bottom: $space-6 - $space-2;
+
+    // Gepinnt: Border unten + etwas mehr Luft (Margin gleicht die zusätzlichen 5px aus).
+    &.is-stuck {
+      padding-bottom: $space-3;
+      border-bottom: 1px solid $color-border;
+      margin-bottom: $space-6 - $space-2 - 5px;
+    }
   }
 }
 
