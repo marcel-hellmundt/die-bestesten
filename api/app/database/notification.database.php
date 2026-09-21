@@ -87,8 +87,28 @@ trait NotificationTrait
 
     // Bulk notification creators
 
-    public function createMatchdayCompletedNotifications(int $matchdayNumber): void
+    /**
+     * Benachrichtigt nach dem Abschluss eines Spieltags jeden Manager, der in der aktuellen Liga ein Team
+     * hat, mit einer persönlichen Zusammenfassung: Titel mit Spieltag + Liganame, Body mit Spieltag/Liga,
+     * geholten Punkten, Platz am Spieltag (Standard-Wettkampf-Rang unter den gewerteten Teams) und darunter
+     * einer knappen Stats-Zeile. Läuft im Kontext der Liga, in der der Spieltag abgeschlossen wurde
+     * (con_league) — ein Manager in mehreren Ligen bekommt so je Liga eine eigene Nachricht. Managern ohne
+     * Team in dieser Liga wird nichts geschickt (sie haben an dem Spieltag nichts geholt).
+     */
+    public function createMatchdayCompletedNotifications(string $matchdayId, int $matchdayNumber): void
     {
+        $rq = $this->con_league->prepare(
+            "SELECT t.manager_id, tr.points, tr.goals, tr.assists, tr.red_cards, tr.yellow_red_cards,
+                    tr.clean_sheet, tr.sds, tr.invalid
+             FROM team_rating tr
+             JOIN team t ON t.id = tr.team_id
+             WHERE tr.matchday_id = ?"
+        );
+        $rq->execute([$matchdayId]);
+        $rows = $rq->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) return;
+
+        // Nur Manager, die aktiv sind und diese Benachrichtigung nicht abgeschaltet haben
         $q = $this->con->prepare(
             "SELECT id FROM manager WHERE status = 'active'
              AND id NOT IN (
@@ -97,18 +117,57 @@ trait NotificationTrait
              )"
         );
         $q->execute();
-        $managerIds = $q->fetchAll(PDO::FETCH_COLUMN);
+        $enabled = array_flip($q->fetchAll(PDO::FETCH_COLUMN));
 
-        if (empty($managerIds)) return;
+        $leagueName = $this->getCurrentLeagueName();
+        $title = "Spieltag $matchdayNumber abgeschlossen" . ($leagueName ? " – $leagueName" : '');
+
+        // Platz am Spieltag: Standard-Wettkampf-Rang (1224) unter den gewerteten (nicht ungültigen) Teams
+        $valid       = array_values(array_filter($rows, fn($r) => !(bool) $r['invalid']));
+        $validCount  = count($valid);
+        $rankOf      = function (int $points) use ($valid): int {
+            return 1 + count(array_filter($valid, fn($r) => (int) $r['points'] > $points));
+        };
 
         $insert = $this->con->prepare(
-            "INSERT INTO notification (id, receiver_id, title, created_at)
-             VALUES (UUID(), ?, ?, NOW())"
+            "INSERT INTO notification (id, receiver_id, title, message, created_at)
+             VALUES (UUID(), ?, ?, ?, NOW())"
         );
-        $title = "Spieltag $matchdayNumber abgeschlossen";
-        foreach ($managerIds as $managerId) {
-            $insert->execute([$managerId, $title]);
+        foreach ($rows as $r) {
+            if (!isset($enabled[$r['manager_id']])) continue;
+
+            $lead = "Spieltag $matchdayNumber" . ($leagueName ? " in der Liga „{$leagueName}“" : '') . ' wurde abgeschlossen.';
+            if ((bool) $r['invalid']) {
+                $body = "$lead\n\nDein Team wurde für diesen Spieltag nicht gewertet (ungültige Aufstellung).";
+            } else {
+                $points = (int) $r['points'];
+                $cards  = [];
+                if ((int) $r['red_cards'] > 0)        $cards[] = (int) $r['red_cards'] . '× Rot';
+                if ((int) $r['yellow_red_cards'] > 0) $cards[] = (int) $r['yellow_red_cards'] . '× Gelb-Rot';
+                $stats = 'SdS: ' . (int) $r['sds']
+                    . ' · Tore: ' . (int) $r['goals']
+                    . ' · Assists: ' . (int) $r['assists']
+                    . ' · Weiße Westen: ' . (int) $r['clean_sheet']
+                    . ' · Karten: ' . (empty($cards) ? '0' : implode(', ', $cards));
+                $body = "$lead\n\nDu hast $points " . ($points === 1 ? 'Punkt' : 'Punkte') . ' geholt und damit Platz '
+                    . $rankOf($points) . " von $validCount belegt.\n\n$stats";
+            }
+            $insert->execute([$r['manager_id'], $title, $body]);
         }
+    }
+
+    /** Name der aktuellen Liga (aus dem JWT, sonst die per DB_NAME_LEAGUE konfigurierte Deployment-Liga). */
+    private function getCurrentLeagueName(): ?string
+    {
+        $leagueId = $GLOBALS['auth_league_id'] ?? null;
+        if ($leagueId) {
+            $q = $this->con->prepare("SELECT name FROM league WHERE id = :id LIMIT 1");
+            $q->execute([':id' => $leagueId]);
+        } else {
+            $q = $this->con->prepare("SELECT name FROM league WHERE db_name = :db_name LIMIT 1");
+            $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE'] ?? '']);
+        }
+        return $q->fetchColumn() ?: null;
     }
 
     public function createAchievementNotification(string $managerId, string $achievementName, string $level, ?string $reason, ?string $earnedAt = null): void

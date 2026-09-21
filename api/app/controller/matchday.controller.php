@@ -90,7 +90,7 @@ class MatchdayController extends _BaseController
             $this->db->evaluateH2HPredictionResults($this->id);
             $achResult   = $this->db->evaluateAchievements(true);
             $achievements = $achResult['count'];
-            $this->db->createMatchdayCompletedNotifications((int) $matchday['number']);
+            $this->db->createMatchdayCompletedNotifications($this->id, (int) $matchday['number']);
             $this->db->sendMatchdayCompletedAdminEmail($this->id, $teamRatings, $achResult['new'], (int) $matchday['number'], $pointsBonus);
             if ((int) $matchday['number'] === 34) {
                 $leagueId = $GLOBALS['auth_league_id'] ?? null;
