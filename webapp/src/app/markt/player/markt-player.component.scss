@@ -534,6 +534,10 @@
 .offer-btn {
   color: var(--flat-river);
   border: 1px solid var(--flat-river);
+  // "Gebot abgeben" (freie Spieler) und "Angebot machen" (Spieler in Teams) sollen gleich breit sein.
+  // Mobile zeigt nur das Icon (Label ausgeblendet) — dort bleibt die Breite unverändert.
+  justify-content: center;
+  @media (min-width: #{$mobile-breakpoint + 1}) { min-width: 9.5rem; }
   &:hover:not(:disabled) { background: rgba(52, 152, 219, 0.08); }
   &:disabled {
     color: $color-text-muted;
