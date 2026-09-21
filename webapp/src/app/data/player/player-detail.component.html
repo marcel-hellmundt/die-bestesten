@@ -747,6 +747,40 @@
       }
     </div>
 
+    <!-- Herkunft der Punkte -->
+    @if (pointsSourceData(); as src) {
+      <section class="detail-section section-stats section-points-source">
+        <div class="section-header-row">
+          <h2 class="section-header">Punkte-Herkunft</h2>
+        </div>
+        <div class="points-source">
+          <svg class="points-source__pie" viewBox="0 0 120 120" aria-hidden="true">
+            <g transform="rotate(-90 60 60)" fill="none" stroke-width="20">
+              <circle cx="60" cy="60" [attr.r]="src.radius" stroke="var(--flat-sunflower)"
+                [attr.stroke-dasharray]="src.noteLen + ' ' + src.circumference" />
+              <circle cx="60" cy="60" [attr.r]="src.radius" stroke="var(--flat-river)"
+                [attr.stroke-dasharray]="src.statsLen + ' ' + src.circumference"
+                [attr.stroke-dashoffset]="-src.noteLen" />
+            </g>
+          </svg>
+          <ul class="points-source__legend">
+            @for (s of src.slices; track s.key) {
+              <li>
+                <span class="points-source__dot" [style.background]="s.color"></span>
+                <span class="points-source__name">{{ s.label }}</span>
+                <span class="points-source__value">
+                  {{ s.points }} Pkt · {{ s.pct }}%
+                  @if (s.deductions < 0) {
+                    <span class="points-source__deduction">({{ s.deductions }})</span>
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+    }
+
     <!-- Noten / Spieltags-Ergebnisse -->
     <section class="detail-section section-noten">
       <div class="section-header-row">

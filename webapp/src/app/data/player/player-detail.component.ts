@@ -1008,6 +1008,39 @@ export class PlayerDetailComponent {
     return p.seasons.find(s => s.season_id === seasonId)?.position === 'GOALKEEPER';
   });
 
+  // Herkunft der Punkte: Note vs. Stats (Einsatz, Tore, Vorlagen, SdS, Weiße Weste, Karten).
+  // Notenpunkte = round((3,5 - Note) * 4) wie in player_rating.database.php calculatePoints();
+  // Stats ergeben sich als Rest (points - Notenpunkte) und bleiben so auch bei geänderten
+  // Torpunkten je Position korrekt, ohne die Positionslogik im Frontend zu duplizieren.
+  // Das Kreisdiagramm zeigt nur die positiven Anteile — Abzüge (schlechte Note, Karten) stehen
+  // separat, da ein negativer Anteil kein Kuchenstück sein kann.
+  pointsSourceData = computed(() => {
+    const ratings = this.player()?.ratings ?? [];
+    let notePos = 0, noteNeg = 0, statsPos = 0, statsNeg = 0;
+    for (const r of ratings) {
+      const total = +(r.points ?? 0);
+      const note  = r.grade !== null ? Math.round((3.5 - +r.grade) * 4) : 0;
+      const stats = total - note;
+      if (note  >= 0) notePos  += note;  else noteNeg  += note;
+      if (stats >= 0) statsPos += stats; else statsNeg += stats;
+    }
+    const gross = notePos + statsPos;
+    if (gross <= 0) return null;
+
+    const r = 50, circumference = 2 * Math.PI * r;
+    const noteShare = notePos / gross;
+    return {
+      radius: r,
+      circumference,
+      noteLen: noteShare * circumference,
+      statsLen: (1 - noteShare) * circumference,
+      slices: [
+        { key: 'note',  label: 'Note',  color: 'var(--flat-sunflower)', points: notePos,  deductions: noteNeg,  pct: Math.round(noteShare * 100) },
+        { key: 'stats', label: 'Stats', color: 'var(--flat-river)',     points: statsPos, deductions: statsNeg, pct: 100 - Math.round(noteShare * 100) },
+      ],
+    };
+  });
+
   // Feste Saisonlänge (1. Bundesliga) — die X-Achse zeigt immer alle 34 Spieltage, unabhängig
   // davon, wie viele davon bereits eine Bewertung haben (fehlende Spieltage bleiben als leere
   // Slots stehen statt die Achse auf die tatsächlich vorhandenen Bewertungen zu stauchen).
