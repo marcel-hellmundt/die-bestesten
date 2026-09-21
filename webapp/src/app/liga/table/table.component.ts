@@ -315,9 +315,9 @@ export class TableComponent {
     { key: 'note',          label: 'Note',        color: 'var(--flat-sunflower)' },
     { key: 'goals',         label: 'Tore',        color: 'color-mix(in srgb, var(--flat-river) 100%, black 35%)' },
     { key: 'assists',       label: 'Assists',     color: 'var(--flat-river)' },
-    { key: 'sds',           label: 'SdS',         color: 'color-mix(in srgb, var(--flat-river) 70%, white)' },
-    { key: 'clean_sheet',   label: 'Weiße Weste', color: 'color-mix(in srgb, var(--flat-river) 45%, white)' },
-    { key: 'participation', label: 'Einsatz',     color: 'color-mix(in srgb, var(--flat-river) 22%, white)' },
+    { key: 'sds',           label: 'SdS',         color: 'color-mix(in srgb, var(--flat-river) 78%, white)' },
+    { key: 'clean_sheet',   label: 'Weiße Weste', color: 'color-mix(in srgb, var(--flat-river) 60%, white)' },
+    { key: 'participation', label: 'Einsatz',     color: 'color-mix(in srgb, var(--flat-river) 42%, white)' },
   ];
 
   // false = jeder Balken auf 100 % skaliert (Anteile), true = Balkenlänge relativ zum Team mit den
