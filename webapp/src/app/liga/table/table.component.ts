@@ -321,7 +321,7 @@ export class TableComponent {
   ];
   // Minuspunkte (schlechte Noten, Karten) als rotes Segment am Balkenende — Brutto minus dieses
   // Segment = Nettopunkte des Teams.
-  readonly deductionSegment = { key: 'deductions', label: 'Abzüge', color: 'var(--flat-alizarin)' };
+  readonly deductionSegment = { key: 'deductions', label: 'Minuspunkte', color: 'var(--flat-alizarin)' };
 
   // false = jeder Balken auf 100 % skaliert (Anteile), true = Balkenlänge relativ zum Team mit den
   // meisten Gesamtpunkten (macht Punkteunterschiede zwischen Teams sichtbar).
