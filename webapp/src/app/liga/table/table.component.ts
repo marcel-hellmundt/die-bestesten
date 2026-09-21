@@ -313,11 +313,11 @@ export class TableComponent {
   // Punkte-Herkunft: Note (eine Farbe) vs. Stats (Schattierungen einer zweiten Farbe, je Quelle).
   readonly pointSourceSegments = [
     { key: 'note',          label: 'Note',        color: 'var(--flat-sunflower)' },
-    { key: 'participation', label: 'Einsatz',     color: 'color-mix(in srgb, var(--flat-river) 42%, white)' },
-    { key: 'sds',           label: 'SdS',         color: 'color-mix(in srgb, var(--flat-river) 78%, white)' },
-    { key: 'goals',         label: 'Tore',        color: 'color-mix(in srgb, var(--flat-river) 100%, black 35%)' },
-    { key: 'assists',       label: 'Assists',     color: 'var(--flat-river)' },
-    { key: 'clean_sheet',   label: 'Weiße Weste', color: 'color-mix(in srgb, var(--flat-river) 60%, white)' },
+    { key: 'participation', label: 'Einsatz',     color: 'color-mix(in srgb, var(--flat-river) 100%, black 35%)' },
+    { key: 'sds',           label: 'SdS',         color: 'var(--flat-river)' },
+    { key: 'goals',         label: 'Tore',        color: 'color-mix(in srgb, var(--flat-river) 78%, white)' },
+    { key: 'assists',       label: 'Assists',     color: 'color-mix(in srgb, var(--flat-river) 60%, white)' },
+    { key: 'clean_sheet',   label: 'Weiße Weste', color: 'color-mix(in srgb, var(--flat-river) 42%, white)' },
   ];
   // Minuspunkte (schlechte Noten, Karten) als rotes Segment am Balkenende — Brutto minus dieses
   // Segment = Nettopunkte des Teams.
