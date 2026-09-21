@@ -585,6 +585,18 @@
   &--none       { background: #ff3f34; }
 }
 
+.point-source-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1 $space-3;
+  margin-bottom: $space-3;
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  &__item { display: inline-flex; align-items: center; gap: 4px; }
+  &__dot  { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+}
+
 // ── Punkte nach Mannschaftsteil ─────────────────────────────────────────────
 // Sitzt in .chart-row__main statt direkt in .chart-row — dadurch genau so breit wie
 // Saisonverlauf+Einsatzquote zusammen, nicht die ganze .chart-row inkl. .wins-card.

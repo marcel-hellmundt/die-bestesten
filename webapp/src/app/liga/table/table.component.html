@@ -318,6 +318,44 @@
           </div>
         }
 
+        @if (pointSourceRows().length > 0) {
+          <div class="card chart-card">
+            <span class="chart-card__label">Punkte-Herkunft</span>
+            <div class="point-source-legend">
+              @for (seg of pointSourceSegments; track seg.key) {
+                <span class="point-source-legend__item">
+                  <span class="point-source-legend__dot" [style.background]="seg.color"></span>{{ seg.label }}
+                </span>
+              }
+            </div>
+            <div class="participation-list">
+              @for (r of pointSourceRows(); track r.team_id) {
+                <a
+                  class="participation-row"
+                  [routerLink]="['/team', r.team_id]"
+                  (click)="setTeamNavContext()"
+                  (mouseenter)="onParticipationHover($event, r)"
+                  (mouseleave)="onParticipationLeave()"
+                >
+                  <img
+                    class="participation-row__logo"
+                    [src]="logoErrors.has(r.team_id) ? 'img/placeholders/club.png' : 'https://img.die-bestesten.de/team/' + r.season_id + '/' + r.team_id + '.png'"
+                    [class.logo--placeholder]="logoErrors.has(r.team_id)"
+                    [alt]="r.team_name"
+                    (error)="onLogoError(r.team_id)"
+                  />
+                  <span class="participation-row__name">{{ r.team_name }}</span>
+                  <span class="participation-bar" [class.participation-bar--hovered]="tooltipRow()?.team_id === r.team_id">
+                    @for (seg of r.segments; track seg.key) {
+                      <span class="participation-bar__seg" [style.width.%]="seg.share" [style.background]="seg.color"></span>
+                    }
+                  </span>
+                </a>
+              }
+            </div>
+          </div>
+        }
+
         <ng-template #positionTableTpl let-g="g">
           <img class="position-points-col__icon" [src]="g.icon" alt="" aria-hidden="true" />
           <div class="position-points-col__label" [style.color]="g.color">{{ g.label }}</div>
@@ -521,9 +559,20 @@
     #participationTooltipEl
   >
     <span class="participation-tooltip__name">{{ r.team_name }}</span>
-    <span class="participation-tooltip__detail participation-tooltip__detail--starting">{{ r.starting }}× Startelf ({{ r.starting_pct }}%)</span>
-    <span class="participation-tooltip__detail participation-tooltip__detail--substitute">{{ r.substitute }}× Eingewechselt ({{ r.substitute_pct }}%)</span>
-    <span class="participation-tooltip__detail participation-tooltip__detail--none">{{ r.none }}× kein Einsatz ({{ r.none_pct }}%)</span>
+    @if (r.segments) {
+      @for (seg of r.segments; track seg.key) {
+        <span class="participation-tooltip__detail">
+          <span class="point-source-legend__dot" [style.background]="seg.color"></span>{{ seg.label }}: {{ seg.points }} Pkt ({{ seg.pct }}%)
+        </span>
+      }
+      @if (r.deductions < 0) {
+        <span class="participation-tooltip__detail participation-tooltip__detail--none">Abzüge: {{ r.deductions }} Pkt</span>
+      }
+    } @else {
+      <span class="participation-tooltip__detail participation-tooltip__detail--starting">{{ r.starting }}× Startelf ({{ r.starting_pct }}%)</span>
+      <span class="participation-tooltip__detail participation-tooltip__detail--substitute">{{ r.substitute }}× Eingewechselt ({{ r.substitute_pct }}%)</span>
+      <span class="participation-tooltip__detail participation-tooltip__detail--none">{{ r.none }}× kein Einsatz ({{ r.none_pct }}%)</span>
+    }
   </div>
 }
 

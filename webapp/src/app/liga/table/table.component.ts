@@ -310,6 +310,32 @@ export class TableComponent {
   matchdayWins   = computed(() => (this.state().data?.luck?.matchday_wins    ?? []) as any[]);
   participationStats = computed(() => (this.state().data?.participation ?? []) as any[]);
 
+  // Punkte-Herkunft: Note (eine Farbe) vs. Stats (Schattierungen einer zweiten Farbe, je Quelle).
+  readonly pointSourceSegments = [
+    { key: 'note',          label: 'Note',        color: 'var(--flat-sunflower)' },
+    { key: 'goals',         label: 'Tore',        color: 'color-mix(in srgb, var(--flat-river) 100%, black 35%)' },
+    { key: 'assists',       label: 'Assists',     color: 'var(--flat-river)' },
+    { key: 'sds',           label: 'SdS',         color: 'color-mix(in srgb, var(--flat-river) 70%, white)' },
+    { key: 'clean_sheet',   label: 'Weiße Weste', color: 'color-mix(in srgb, var(--flat-river) 45%, white)' },
+    { key: 'participation', label: 'Einsatz',     color: 'color-mix(in srgb, var(--flat-river) 22%, white)' },
+  ];
+
+  pointSourceRows = computed(() =>
+    ((this.state().data?.point_sources ?? []) as any[])
+      .map(r => {
+        const gross = this.pointSourceSegments.reduce((sum, s) => sum + +r[s.key], 0);
+        if (gross <= 0) return null;
+        const segments = this.pointSourceSegments.map(s => ({
+          ...s,
+          points: +r[s.key],
+          share: +r[s.key] / gross * 100,
+          pct: Math.round(+r[s.key] / gross * 100),
+        }));
+        return { ...r, deductions: +r.deductions, segments };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+  );
+
   // Mobile: Hölzerne Bank/Goldene Bürste/Glückspilze/Pechvögel als eigenes Swipe-Karussell (siehe
   // .position-points-carousel weiter unten, gleiches Muster) — Desktop bleibt unverändert im
   // .sidebar als gestapelte Cards. Nur Karten mit tatsächlich vorhandenen Daten werden aufgenommen

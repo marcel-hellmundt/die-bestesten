@@ -99,7 +99,7 @@ trait TeamRatingTrait
             }
             unset($t);
 
-            return ['standings' => $teams, 'luck' => ['lucky' => [], 'unlucky' => []], 'chart' => [], 'participation' => []];
+            return ['standings' => $teams, 'luck' => ['lucky' => [], 'unlucky' => []], 'chart' => [], 'participation' => [], 'point_sources' => []];
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -191,11 +191,34 @@ trait TeamRatingTrait
         }
         usort($participationRows, fn($a, $b) => $b['starting_pct'] <=> $a['starting_pct']);
 
+        $pointSourceCounts = $this->getSeasonPointSources($ids);
+        $pointSourceRows = [];
+        foreach ($rows as $row) {
+            $tid = $row['team_id'];
+            if (!isset($pointSourceCounts[$tid])) continue;
+            $pointSourceRows[] = array_merge(
+                [
+                    'team_id'   => $tid,
+                    'team_name' => $row['team_name'],
+                    'color'     => $row['color'],
+                    'season_id' => $row['season_id'],
+                ],
+                $pointSourceCounts[$tid]
+            );
+        }
+        // Absteigend nach Noten-Anteil an den positiven Punkten (Team mit den "notenlastigsten" Punkten oben)
+        $noteShare = function (array $r): float {
+            $gross = $r['note'] + $r['goals'] + $r['assists'] + $r['sds'] + $r['clean_sheet'] + $r['participation'];
+            return $gross > 0 ? $r['note'] / $gross : 0.0;
+        };
+        usort($pointSourceRows, fn($a, $b) => $noteShare($b) <=> $noteShare($a));
+
         return [
             'standings' => $rows,
             'luck' => $luckData,
             'chart' => array_values($chartByTeam),
             'participation' => $participationRows,
+            'point_sources' => $pointSourceRows,
         ];
     }
 
@@ -362,6 +385,80 @@ trait TeamRatingTrait
         unset($c);
 
         return $counts;
+    }
+
+    /**
+     * Woher die Punkte jedes Teams stammen (nur die pro Spieltag nominierten Spieler, also genau
+     * die Spieler, deren Punkte in team_rating einfließen): Note vs. Stats (Tore, Vorlagen, SdS,
+     * Weiße Weste) plus Einsatz. Zerlegt player_rating wie calculatePoints() in
+     * player_rating.database.php — gleiche Position-zum-Ratingzeitpunkt-Auflösung, gleiche
+     * Punktwerte. Zeigt nur positive Beiträge je Spieler+Spieltag (Grundlage für Prozentanteile);
+     * Minuspunkte (schlechte Note, Karten) kommen gesammelt als 'deductions' zurück, da ein
+     * negativer Anteil kein Balkensegment sein kann.
+     */
+    private function getSeasonPointSources(array $matchdayIds): array
+    {
+        if (empty($matchdayIds)) return [];
+
+        $mph = implode(',', array_fill(0, count($matchdayIds), '?'));
+        $lq = $this->con_league->prepare(
+            "SELECT team_id, player_id, matchday_id FROM team_lineup
+             WHERE matchday_id IN ($mph) AND nominated = 1"
+        );
+        $lq->execute($matchdayIds);
+        $lineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($lineupRows)) return [];
+
+        $playerIds = array_values(array_unique(array_column($lineupRows, 'player_id')));
+        $pph = implode(',', array_fill(0, count($playerIds), '?'));
+        $prq = $this->con->prepare(
+            "SELECT pr.player_id, pr.matchday_id, pr.grade, pr.participation, pr.goals, pr.assists,
+                    pr.clean_sheet, pr.sds, pr.red_card, pr.yellow_red_card, pis.position
+             FROM player_rating pr
+             JOIN matchday md ON md.id = pr.matchday_id
+             LEFT JOIN player_in_season pis
+                    ON pis.player_id = pr.player_id
+                   AND pis.season_id = md.season_id
+                   AND pis.division_id = COALESCE(
+                         (SELECT cis.division_id FROM club_in_season cis
+                          WHERE cis.club_id = pr.club_id AND cis.season_id = md.season_id LIMIT 1),
+                         md.division_id)
+             WHERE pr.matchday_id IN ($mph) AND pr.player_id IN ($pph)"
+        );
+        $prq->execute(array_merge($matchdayIds, $playerIds));
+        $ratingByKey = [];
+        foreach ($prq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $ratingByKey[$r['player_id'] . '|' . $r['matchday_id']] = $r;
+        }
+
+        $goalPts = ['GOALKEEPER' => 6, 'DEFENDER' => 5, 'MIDFIELDER' => 4, 'FORWARD' => 3];
+        $sources = [];
+        foreach ($lineupRows as $row) {
+            $r = $ratingByKey[$row['player_id'] . '|' . $row['matchday_id']] ?? null;
+            if (!$r) continue;
+
+            $tid = $row['team_id'];
+            if (!isset($sources[$tid])) {
+                $sources[$tid] = ['note' => 0, 'goals' => 0, 'assists' => 0, 'sds' => 0,
+                                  'clean_sheet' => 0, 'participation' => 0, 'deductions' => 0];
+            }
+            $s = &$sources[$tid];
+
+            $note = $r['grade'] !== null ? (int) round((3.5 - (float) $r['grade']) * 4) : 0;
+            if ($note >= 0) $s['note'] += $note; else $s['deductions'] += $note;
+
+            $s['participation'] += $r['participation'] === 'starting' ? 2 : ($r['participation'] === 'substitute' ? 1 : 0);
+            $s['goals']         += (int) $r['goals'] * ($goalPts[$r['position'] ?? ''] ?? 3);
+            $s['assists']       += (int) $r['assists'];
+            $s['sds']           += (int) $r['sds'] * 3;
+            if (($r['position'] ?? null) === 'GOALKEEPER') {
+                $s['clean_sheet'] += (int) $r['clean_sheet'] * 2;
+            }
+            $s['deductions'] -= (int) $r['red_card'] * 6 + (int) $r['yellow_red_card'] * 3;
+            unset($s);
+        }
+
+        return $sources;
     }
 
     public function getTeamRatingsByActiveSeason(string $seasonId, ?int $matchdayNumber = null): array|false
