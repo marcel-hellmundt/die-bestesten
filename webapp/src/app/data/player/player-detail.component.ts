@@ -67,9 +67,19 @@ interface DirectQuote {
   reason: string | null;
   market_value: number | null;
   available_budget: number;
+  position: string | null;
+  position_full: boolean;
   seller_team: { team_id: string; team_name: string } | null;
   target_window: { id: string; start_date: string; end_date: string; is_open: boolean } | null;
   existing_offer_id: string | null;
+}
+
+// Eigener Kaderspieler als möglicher Gegenwert im Direktangebot (GET /player_offer/squad)
+interface SquadOption {
+  player_id: string;
+  displayname: string;
+  position: string;
+  market_value: number;
 }
 
 interface PlayerDetail {
@@ -723,6 +733,29 @@ export class PlayerDetailComponent {
     { initialValue: null as DirectQuote | null }
   );
 
+  // ── Spieler als Gegenwert: eigene Kaderspieler, deren Marktwert als Geldäquivalent zählt. Geld darf 0 sein
+  // (reiner Tausch); Gesamtwert (Geld + Spieler) muss den Marktwert des Zielspielers erreichen.
+  squadOptions = signal<SquadOption[]>([]);
+  offeredIds   = signal<string[]>([]);
+
+  playersValue = computed(() =>
+    this.squadOptions().filter(o => this.offeredIds().includes(o.player_id)).reduce((s, o) => s + o.market_value, 0)
+  );
+  requiredCash = computed(() => Math.max(0, this.marketValue() - this.playersValue()));
+
+  // Volle Position: das Angebot ist nur gültig, wenn ein Spieler derselben Position mitgeboten wird.
+  directPositionBlocked = computed(() => {
+    const q = this.directQuote();
+    if (this.offerMode() !== 'direct' || !q?.position_full) return false;
+    return !this.squadOptions().some(o => this.offeredIds().includes(o.player_id) && o.position === q.position);
+  });
+
+  toggleOffered(playerId: string): void {
+    this.offeredIds.update(ids => ids.includes(playerId) ? ids.filter(i => i !== playerId) : [...ids, playerId]);
+    // Geldbetrag auf das nötige Minimum (auf 10.000 aufgerundet) setzen
+    this.setDigitsFromValue(Math.ceil(this.requiredCash() / 10_000) * 10_000);
+  }
+
   directReasonText(reason: string | null): string {
     return ({
       no_season: 'Keine aktive Saison',
@@ -746,6 +779,14 @@ export class PlayerDetailComponent {
 
   isValidOffer = computed(() => {
     const mv = this.marketValue();
+    if (this.offerMode() === 'direct') {
+      const cash = this.offerValue();
+      return mv > 0
+        && cash >= this.requiredCash()
+        && cash <= this.availableBudget()
+        && (cash > 0 || this.offeredIds().length > 0)
+        && !this.directPositionBlocked();
+    }
     return mv > 0
       && this.offerValue() >= mv
       && this.offerValue() <= this.availableBudget();
@@ -774,6 +815,14 @@ export class PlayerDetailComponent {
     this.offerMode.set('direct');
     this.offerSuccess.set(false);
     this.offerError.set(null);
+    this.offeredIds.set([]);
+    this.squadOptions.set([]);
+    const teamId = this.myTeam()?.id;
+    if (teamId) {
+      this.api.get<SquadOption[]>(`player_offer/squad?team_id=${teamId}`).pipe(
+        catchError(() => of([] as SquadOption[]))
+      ).subscribe(list => this.squadOptions.set(list));
+    }
     this.setDigitsFromValue(q.market_value);
     this.bottomSheet.open(this.offerSheet, { title: 'Angebot abgeben' });
   }
@@ -820,7 +869,9 @@ export class PlayerDetailComponent {
       if (!team || !p || !this.isValidOffer()) return;
       this.offerSubmitting.set(true);
       this.offerError.set(null);
-      this.api.post<any>('player_offer', { team_id: team.id, player_id: p.id, offer_value: this.offerValue() }).subscribe({
+      this.api.post<any>('player_offer', {
+        team_id: team.id, player_id: p.id, offer_value: this.offerValue(), offered_player_ids: this.offeredIds(),
+      }).subscribe({
         next: () => {
           this.offerSubmitting.set(false);
           this.offerSuccess.set(true);

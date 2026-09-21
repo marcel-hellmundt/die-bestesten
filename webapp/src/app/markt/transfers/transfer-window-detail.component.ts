@@ -48,6 +48,7 @@ interface DirectDeal {
   club_logo_uploaded: boolean;
   seller: DealTeam | null;
   buyer: DealTeam | null;
+  offered_players?: { player_id: string; displayname: string | null; position: string | null }[]; // Spieler als Gegenwert
   price: number;
   price_snapshot: number;
   accepted_at: string | null;
@@ -130,6 +131,13 @@ export class TransferWindowDetailComponent {
 
   teamLogoUrl(bid: Bid): string {
     return `https://img.die-bestesten.de/team/${bid.team_season_id}/${bid.team_id}.png`;
+  }
+
+  /** Zusätzlich zum Geld getauschte Spieler, z. B. "Müller (MIT), Schmidt (ABW)". */
+  dealPlayersText(deal: DirectDeal): string {
+    return (deal.offered_players ?? [])
+      .map(p => `${p.displayname ?? '–'}${p.position ? ' (' + this.positionLabel[p.position] + ')' : ''}`)
+      .join(', ');
   }
 
   dealTeamLogoUrl(team: DealTeam): string {

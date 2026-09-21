@@ -678,3 +678,53 @@
   opacity: 0.5;
   font-size: 11px;
 }
+
+// ── Spieler als Gegenwert im Angebot ("Spieler anbieten") ─────────────────────
+.offer-players {
+  margin-bottom: $space-3;
+
+  &__title {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+    margin-bottom: $space-2;
+  }
+
+  &__hint {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    margin: 0 0 $space-2;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  &__sum {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    margin: $space-2 0 0;
+  }
+}
+
+.offer-player {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: 4px $space-2;
+  border-radius: $radius-sm;
+  font-size: $font-sm;
+  cursor: pointer;
+
+  &:hover { background: $color-surface-alt; }
+  &--on { background: color-mix(in srgb, var(--flat-river) 10%, transparent); }
+
+  &__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  &__value { color: $color-text-muted; font-size: $font-xs; white-space: nowrap; }
+}

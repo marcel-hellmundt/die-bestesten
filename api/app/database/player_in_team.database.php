@@ -235,7 +235,8 @@ trait PlayerInTeamTrait
                          CONCAT('Spielerkauf: ', :dn1),
                          CONCAT('Spielerkauf (Gebot): ', :dn2),
                          CONCAT('Draft-Zuweisung: ', :dn3),
-                         CONCAT('Spielerkauf (Angebot): ', :dn4)
+                         CONCAT('Spielerkauf (Angebot): ', :dn4),
+                         CONCAT('Spielertausch: ', :dn5)
                        )
              WHERE pit.player_id = :player_id AND t.season_id = :season_id
              ORDER BY pit.from_matchday_id"
@@ -245,6 +246,7 @@ trait PlayerInTeamTrait
             ':dn2'       => $displayname,
             ':dn3'       => $displayname,
             ':dn4'       => $displayname,
+            ':dn5'       => $displayname,
             ':player_id' => $playerId,
             ':season_id' => $seasonId,
         ]);

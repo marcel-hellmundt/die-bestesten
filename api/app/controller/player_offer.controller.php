@@ -22,6 +22,10 @@ class PlayerOfferController extends _BaseController
             return ['status' => false, 'message' => 'Not your team'];
         }
 
+        if ($this->id === 'squad') {
+            return $this->db->getOfferableSquad($teamId);
+        }
+
         if ($this->id === 'eligibility') {
             return $this->db->getPlayerOfferEligibility($teamId);
         }
@@ -45,6 +49,7 @@ class PlayerOfferController extends _BaseController
         $teamId   = $body['team_id']   ?? null;
         $playerId = $body['player_id'] ?? null;
         $value    = isset($body['offer_value']) ? (int) $body['offer_value'] : null;
+        $offered  = isset($body['offered_player_ids']) && is_array($body['offered_player_ids']) ? $body['offered_player_ids'] : [];
 
         if (!$teamId || !$playerId || $value === null) {
             http_response_code(400);
@@ -55,7 +60,7 @@ class PlayerOfferController extends _BaseController
             return ['status' => false, 'message' => 'Not your team'];
         }
 
-        $result = $this->db->createPlayerOffer($teamId, $playerId, $value);
+        $result = $this->db->createPlayerOffer($teamId, $playerId, $value, $offered);
         if (!empty($result['error'])) return $this->fail($result);
         return ['status' => true, 'offer_id' => $result['id']];
     }

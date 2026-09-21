@@ -36,6 +36,7 @@ interface DirectOffer {
   price_snapshot: number;
   market_value: number | null;
   kind: 'offer' | 'counter';   // counter = Gegenangebot des Verkäufers auf ein Angebot (Phase 2)
+  offered_players: { player_id: string; displayname: string | null; position: string | null; market_value: number | null }[]; // Spieler als Gegenwert (Phase 3)
   parent_offer_id: string | null;
   status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired' | 'void' | 'countered';
   expires_at: string | null;
@@ -122,9 +123,12 @@ export class BidsComponent {
     if (action === 'accept') {
       const who = offer.counterpart?.team_name ?? 'dem anderen Manager';
       // Beim Gegenangebot bin ich der Käufer (der Verkäufer hat den Preis vorgeschlagen), sonst der Verkäufer.
+      const price = offer.offered_players?.length
+        ? `${offer.offer_value > 0 ? this.formatPrice(offer.offer_value) + ' plus ' : ''}${this.offeredText(offer)}`
+        : this.formatPrice(offer.offer_value);
       const question = offer.kind === 'counter'
-        ? `${offer.displayname} für ${this.formatPrice(offer.offer_value)} von ${who} kaufen?`
-        : `${offer.displayname} für ${this.formatPrice(offer.offer_value)} an ${who} verkaufen?`;
+        ? `${offer.displayname} für ${price} von ${who} kaufen?`
+        : `${offer.displayname} für ${price} an ${who} verkaufen?`;
       if (!confirm(`${question} Der Wechsel wird sofort vollzogen.`)) return;
     }
     this.directBusyId.set(offer.id);
@@ -156,7 +160,19 @@ export class BidsComponent {
 
   /** Mindestbetrag: über dem ursprünglichen Angebot und mindestens der aktuelle Marktwert. */
   counterMin(o: DirectOffer): number {
-    return Math.max(o.offer_value + 10_000, o.market_value ?? 0);
+    // Geld muss über dem bisherigen Geldanteil liegen; Geld + angebotene Spieler mindestens der Marktwert.
+    const legsValue = (o.offered_players ?? []).reduce((s, p) => s + (p.market_value ?? 0), 0);
+    return Math.max(o.offer_value + 10_000, (o.market_value ?? 0) - legsValue);
+  }
+
+  /** Text der zusätzlich angebotenen Spieler, z. B. "Müller (MIT), Schmidt (ABW)" — leer ohne Spieler. */
+  offeredText(o: DirectOffer): string {
+    return (o.offered_players ?? []).map(p => `${p.displayname ?? '–'}${p.position ? ' (' + this.posLabel(p.position) + ')' : ''}`).join(', ');
+  }
+
+  /** Geldanteil eines Angebots — bei einem reinen Tausch (0 € + Spieler) "Tausch" statt "0 €". */
+  cashLabel(o: DirectOffer): string {
+    return o.offer_value === 0 && o.offered_players?.length ? 'Tausch' : this.formatPrice(o.offer_value);
   }
 
   startCounter(o: DirectOffer): void {
@@ -214,7 +230,8 @@ export class BidsComponent {
   // Prozent vs. AKTUELLEM Marktwert (bei pending vom Server), sonst dem Marktwert bei Anlage.
   directPct(o: DirectOffer): number {
     const ref = o.market_value ?? o.price_snapshot;
-    return ref ? Math.round(o.offer_value / ref * 100) : 0;
+    const legsValue = (o.offered_players ?? []).reduce((s, p) => s + (p.market_value ?? 0), 0);
+    return ref ? Math.round((o.offer_value + legsValue) / ref * 100) : 0;
   }
 
   directStatusLabel(status: string): string {

@@ -62,11 +62,14 @@
             </div>
 
             <div class="winner-bid__price">
-              <span class="winner-bid__amount">{{ formatPrice(deal.price) }}</span>
-              @if (bidPct(deal.price, deal.price_snapshot); as pct) {
+              <span class="winner-bid__amount">{{ deal.price === 0 && deal.offered_players?.length ? 'Tausch' : formatPrice(deal.price) }}</span>
+              @if (!deal.offered_players?.length && bidPct(deal.price, deal.price_snapshot); as pct) {
                 <span class="winner-bid__pct" [ngClass]="bidPctClass(deal.price, deal.price_snapshot)">{{ pct }}</span>
               }
             </div>
+            @if (deal.offered_players?.length) {
+              <div class="deal-players">+ {{ dealPlayersText(deal) }}</div>
+            }
           </div>
         }
       </div>

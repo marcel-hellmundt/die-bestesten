@@ -215,9 +215,12 @@
                 @if (o.market_value) { · Marktwert {{ formatPrice(o.market_value) }} }
                 @if (o.expires_at) { · bis {{ o.expires_at | date:'dd.MM. HH:mm' }} }
               </span>
+              @if (o.offered_players.length) {
+                <span class="direct-row__sub">+ Spieler: {{ offeredText(o) }}</span>
+              }
             </div>
             <div class="direct-row__value">
-              <strong>{{ formatPrice(o.offer_value) }}</strong>
+              <strong>{{ cashLabel(o) }}</strong>
               <span class="bid-pct" [class.bid-pct--success]="directPct(o) <= 100" [class.bid-pct--warning]="directPct(o) > 100 && directPct(o) < 200" [class.bid-pct--danger]="directPct(o) >= 200">{{ directPct(o) }}%</span>
             </div>
             <div class="bid-actions">
@@ -282,9 +285,12 @@
                 {{ o.kind === 'counter' ? 'Gegenangebot an' : 'an' }} {{ o.counterpart?.team_name ?? '–' }}
                 @if (o.status === 'pending' && o.expires_at) { · gültig bis {{ o.expires_at | date:'dd.MM. HH:mm' }} }
               </span>
+              @if (o.offered_players.length) {
+                <span class="direct-row__sub">+ Spieler: {{ offeredText(o) }}</span>
+              }
             </div>
             <div class="direct-row__value">
-              <strong>{{ formatPrice(o.offer_value) }}</strong>
+              <strong>{{ cashLabel(o) }}</strong>
               <span class="bid-status bid-status--{{ o.status }}">{{ directStatusLabel(o.status) }}</span>
             </div>
             <div class="bid-actions">

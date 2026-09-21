@@ -699,7 +699,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_offer',
-                        'description' => 'Direktangebote eines Teams (nur eigenes Team) — gibt {offers:[{id,player_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,season_id,counterpart:{team_id,team_name,color,season_id,manager_name}|null,kind:offer|counter,parent_offer_id,offer_value,price_snapshot,market_value (aktueller Marktwert, nur bei pending),status,expires_at,created_at,responded_at}],window_open} zurück; counterpart = Initiator (incoming) bzw. Empfänger (outgoing); kind=counter = Gegenangebot des Verkäufers (Phase 2); abgelaufene Angebote werden dabei live auf expired gesetzt — Auth',
+                        'description' => 'Direktangebote eines Teams (nur eigenes Team) — gibt {offers:[{id,player_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,season_id,counterpart:{team_id,team_name,color,season_id,manager_name}|null,kind:offer|counter,parent_offer_id,offered_players:[{player_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,market_value}] (Phase 3: zusätzlich angebotene eigene Spieler des Bieters),offer_value,price_snapshot,market_value (aktueller Marktwert, nur bei pending),status,expires_at,created_at,responded_at}],window_open} zurück; counterpart = Initiator (incoming) bzw. Empfänger (outgoing); kind=counter = Gegenangebot des Verkäufers (Phase 2); abgelaufene Angebote werden dabei live auf expired gesetzt — Auth',
                         'query_params' => [
                             'team_id' => 'UUID des eigenen Teams (erforderlich)',
                             'direction' => 'incoming (Default) = offene Angebote anderer Manager für Spieler dieses Teams (nur pending); outgoing = alle von diesem Team abgegebenen Angebote/Gegenangebote außer selbst stornierten (jeder andere Status inkl. countered, neueste zuerst, max. 50); incoming = offene Angebote, auf die dieses Team antworten darf (beim Gegenangebot ist das der Bieter)',
@@ -708,8 +708,14 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_offer/quote',
-                        'description' => 'Grundlage für den "Angebot machen"-Button auf der Spielerseite — gibt {can_offer,reason,market_value (serverseitig, Verkaufsformel: Grundpreis + Saisonpunkte * points_bonus),available_budget (Budget − Reservierungen),seller_team|null,target_window:{id,start_date,end_date,is_open}|null,existing_offer_id|null} zurück; reason (wenn can_offer=false): no_season|not_owned|own_player|no_market_value|already_offered|no_window|position_full|insufficient_budget — Auth',
+                        'description' => 'Grundlage für den "Angebot machen"-Button auf der Spielerseite — gibt {can_offer,reason,market_value (serverseitig, Verkaufsformel: Grundpreis + Saisonpunkte * points_bonus),available_budget (Budget − Reservierungen),seller_team|null,target_window:{id,start_date,end_date,is_open}|null,existing_offer_id|null} zurück; position,position_full (Kader des eigenen Teams auf dieser Position voll — sperrt nicht mehr, ein Tausch mit einem Spieler derselben Position behebt es); reason (wenn can_offer=false): no_season|not_owned|own_player|no_market_value|already_offered|no_window — Auth',
                         'query_params' => ['team_id' => 'UUID des eigenen Teams', 'player_id' => 'UUID des Spielers'],
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/player_offer/squad',
+                        'description' => 'Aktueller Kader des eigenen Teams als Auswahl für "Spieler anbieten" (Phase 3) — gibt [{player_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,season_id,market_value}] zurück, sortiert nach Position, dann Marktwert; market_value serverseitig (Verkaufsformel) — nur eigenes Team — Auth',
+                        'query_params' => ['team_id' => 'UUID des eigenen Teams'],
                     ],
                     [
                         'method' => 'GET',
@@ -720,11 +726,12 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/player_offer',
-                        'description' => 'Direktangebot abgeben — Betrag min. Marktwert (Verkaufsformel), max. verfügbares Budget (Budget − offene Gebote − offene Direktangebote); 409 wenn Spieler in keinem Team / bereits ein offenes Angebot des Teams für den Spieler / Positionslimit (inkl. offener Gebote und Direktangebote); 422 wenn eigener Spieler, unter Marktwert, Budget nicht ausreichend oder keine offene/kommende Transferphase geplant (Ablauf-Fenster nicht bestimmbar); benachrichtigt den Verkäufer (Event direct_offer) — Auth',
+                        'description' => 'Direktangebot abgeben — Betrag min. Marktwert (Verkaufsformel), max. verfügbares Budget (Budget − offene Gebote − offene Direktangebote); 409 wenn Spieler in keinem Team / bereits ein offenes Angebot des Teams für den Spieler / Positionslimit des Bieters (Nettoeffekt: angebotene Spieler derselben Position machen Plätze frei, inkl. offener Gebote und Direktangebote) oder des Verkäufers (bekommt die angebotenen Spieler); 422 wenn eigener Spieler, unter Marktwert, Budget nicht ausreichend oder keine offene/kommende Transferphase geplant (Ablauf-Fenster nicht bestimmbar); benachrichtigt den Verkäufer (Event direct_offer) — Auth',
                         'body' => [
                             'team_id' => 'UUID des bietenden Teams',
                             'player_id' => 'UUID des Spielers',
-                            'offer_value' => 'Betrag in € (INT, unveränderlich nach dem Anlegen)',
+                            'offer_value' => 'Geldbetrag in € (INT, unveränderlich nach dem Anlegen; 0 erlaubt, wenn offered_player_ids gesetzt ist = reiner Tausch)',
+                            'offered_player_ids' => 'optional: [UUID] eigene Kaderspieler als Gegenwert (Phase 3) — ihr Marktwert zählt als Geldäquivalent: Geld + Marktwerte müssen den Marktwert des Zielspielers erreichen; beim Annehmen wechseln sie zum Verkäufer-Team (Positionslimits als Nettoeffekt für beide Teams, Buchungen "Spielertausch: {displayname}" über 0 €, Lineups beider Teams bereinigt); ein Spielerwechsel macht andere offene Angebote, die den Spieler als Ziel oder als angebotenen Spieler enthalten, hinfällig',
                         ],
                     ],
                     [

@@ -358,7 +358,31 @@
         <span>Budget: <strong>{{ formatPrice(remainingBudget() ?? 0) }}</strong></span>
         <span>Marktwert: <strong>{{ formatPrice(offerMarketValue()) }}</strong></span>
       </div>
-      <div class="offer-slider">
+      @if (offerMode() === 'direct') {
+        <div class="offer-players">
+          <div class="offer-players__title">Eigene Spieler mitbieten (optional)</div>
+          @if (directPositionFull()) {
+            <p class="offer-players__hint">Auf dieser Position ist dein Kader voll — biete einen Spieler derselben Position mit an.</p>
+          }
+          <div class="offer-players__list">
+            @for (o of squadOptions(); track o.player_id) {
+              <label class="offer-player" [class.offer-player--on]="offeredIds().includes(o.player_id)">
+                <input type="checkbox" [checked]="offeredIds().includes(o.player_id)" (change)="toggleOffered(o.player_id)" />
+                <span class="position-badge" [style.background-color]="'var(--position-' + o.position.toLowerCase() + ')'">{{ POS_LABEL[o.position] }}</span>
+                <span class="offer-player__name">{{ o.displayname }}</span>
+                <span class="offer-player__value">{{ formatPriceShort(o.market_value) }}</span>
+              </label>
+            }
+          </div>
+          @if (offeredIds().length) {
+            <p class="offer-players__sum">Wert der Spieler: {{ formatPrice(playersValue()) }} · Geld mindestens: {{ formatPrice(requiredCash()) }}</p>
+          }
+          @if (directPositionBlocked()) {
+            <p class="offer-panel__error">Wähle einen Spieler derselben Position aus.</p>
+          }
+        </div>
+      }
+      <div class="offer-slider" [style.display]="offerMode() === 'direct' && offeredIds().length ? 'none' : null">
         <input
           type="range"
           min="100"

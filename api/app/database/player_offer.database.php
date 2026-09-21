@@ -325,11 +325,14 @@ trait PlayerOfferTrait
     {
         if (!$this->hasPlayerOfferTable()) return [];
 
+        // Hinfällig werden Angebote AUF den Spieler und Angebote, die ihn als angebotenen Spieler enthalten.
         $q = $this->con_league->prepare(
-            "SELECT id, buyer_team_id FROM player_offer
-             WHERE player_id = :pid AND status = 'pending' AND (:ex IS NULL OR id != :ex2)"
+            "SELECT id, buyer_team_id FROM player_offer po
+             WHERE po.status = 'pending'
+               AND (po.player_id = :pid OR po.id IN (SELECT player_offer_id FROM player_offer_player WHERE player_id = :pid2))
+               AND (:ex IS NULL OR po.id != :ex2)"
         );
-        $q->execute([':pid' => $playerId, ':ex' => $exceptOfferId, ':ex2' => $exceptOfferId]);
+        $q->execute([':pid' => $playerId, ':pid2' => $playerId, ':ex' => $exceptOfferId, ':ex2' => $exceptOfferId]);
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
         if (empty($rows)) return [];
 
@@ -341,13 +344,140 @@ trait PlayerOfferTrait
         return $rows;
     }
 
+    // ─── Spieler als Gegenwert (Phase 3) ───────────────────────────────────────────
+
+    /** IDs der vom Bieter zusätzlich angebotenen Spieler (player_offer_player). */
+    private function getOfferLegIds(string $offerId): array
+    {
+        $q = $this->con_league->prepare("SELECT player_id FROM player_offer_player WHERE player_offer_id = :id");
+        $q->execute([':id' => $offerId]);
+        return $q->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    private function insertOfferLegs(string $offerId, array $playerIds): void
+    {
+        $st = $this->con_league->prepare("INSERT INTO player_offer_player (player_offer_id, player_id) VALUES (:oid, :pid)");
+        foreach ($playerIds as $pid) $st->execute([':oid' => $offerId, ':pid' => $pid]);
+    }
+
+    /** Angebotene Spieler mehrerer Angebote für die Anzeige: offerId → [{player_id,displayname,position,…,market_value}]. */
+    private function getOfferLegsMap(array $offerIds, ?string $seasonId): array
+    {
+        if (empty($offerIds) || !$seasonId) return [];
+        $ph = implode(',', array_fill(0, count($offerIds), '?'));
+        $q  = $this->con_league->prepare("SELECT player_offer_id, player_id FROM player_offer_player WHERE player_offer_id IN ($ph)");
+        $q->execute(array_values($offerIds));
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) return [];
+
+        $cards = $this->getPlayerCardInfoMap(array_column($rows, 'player_id'), $seasonId);
+        $map = [];
+        foreach ($rows as $r) {
+            $pm = $cards[$r['player_id']] ?? [];
+            $map[$r['player_offer_id']][] = [
+                'player_id'          => $r['player_id'],
+                'displayname'        => $pm['displayname']        ?? null,
+                'position'           => $pm['position']           ?? null,
+                'photo_uploaded'     => $pm['photo_uploaded']     ?? false,
+                'club_id'            => $pm['club_id']            ?? null,
+                'club_logo_uploaded' => $pm['club_logo_uploaded'] ?? false,
+                'market_value'       => $this->getPlayerMarketValueInfo($r['player_id'], $seasonId)['market_value'] ?? null,
+            ];
+        }
+        return $map;
+    }
+
+    /** Aktueller Kader eines Teams als Anzahl je Position (Zeile der aktuellen Division je Spieler). */
+    private function getTeamPositionCounts(string $teamId, string $seasonId): array
+    {
+        $sq = $this->con_league->prepare("SELECT player_id FROM player_in_team WHERE team_id = :tid AND to_matchday_id IS NULL");
+        $sq->execute([':tid' => $teamId]);
+        $counts = [];
+        foreach ($this->getPlayerCardInfoMap($sq->fetchAll(PDO::FETCH_COLUMN), $seasonId) as $c) {
+            if ($c['position']) $counts[$c['position']] = ($counts[$c['position']] ?? 0) + 1;
+        }
+        return $counts;
+    }
+
+    /**
+     * Positionslimits (GK≤2/DEF≤6/MID≤6/FWD≤4) für einen Tausch als Nettoeffekt: der Käufer bekommt den
+     * Zielspieler und gibt die angebotenen Spieler ab, der Verkäufer umgekehrt. Bei der Anlage zählen für den
+     * Käufer auch seine offenen Gebote/Direktangebote als belegte Plätze ($forCreation), beim Annehmen nur
+     * der aktuelle Kader. Gibt null zurück, wenn alles passt, sonst ['who' => buyer|seller, 'position' => …].
+     */
+    private function swapLimitError(string $buyerId, string $sellerId, string $targetId, array $legIds, string $seasonId, bool $forCreation): ?array
+    {
+        $cards     = $this->getPlayerCardInfoMap(array_merge([$targetId], $legIds), $seasonId);
+        $targetPos = $cards[$targetId]['position'] ?? null;
+        $legByPos  = [];
+        foreach ($legIds as $lid) {
+            $p = $cards[$lid]['position'] ?? null;
+            if ($p) $legByPos[$p] = ($legByPos[$p] ?? 0) + 1;
+        }
+
+        // Käufer: nur die Position des Zielspielers wächst (die abgegebenen Spieler machen Plätze frei).
+        if ($targetPos && isset(self::SQUAD_MAX[$targetPos])) {
+            $buyerCount = $forCreation
+                ? $this->countTeamPositionSlots($buyerId, $seasonId, $targetPos)
+                : ($this->getTeamPositionCounts($buyerId, $seasonId)[$targetPos] ?? 0);
+            if ($buyerCount - ($legByPos[$targetPos] ?? 0) + 1 > self::SQUAD_MAX[$targetPos]) {
+                return ['who' => 'buyer', 'position' => $targetPos];
+            }
+        }
+
+        // Verkäufer: verliert den Zielspieler, bekommt die angebotenen Spieler.
+        $sellerCounts = $this->getTeamPositionCounts($sellerId, $seasonId);
+        foreach ($legByPos as $pos => $n) {
+            if (!isset(self::SQUAD_MAX[$pos])) continue;
+            if (($sellerCounts[$pos] ?? 0) - ($pos === $targetPos ? 1 : 0) + $n > self::SQUAD_MAX[$pos]) {
+                return ['who' => 'seller', 'position' => $pos];
+            }
+        }
+        return null;
+    }
+
+    /** Kader des eigenen Teams als Auswahl für "Spieler anbieten" (mit serverseitigem Marktwert). */
+    public function getOfferableSquad(string $teamId): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if (!$seasonId) return [];
+
+        $sq = $this->con_league->prepare("SELECT player_id FROM player_in_team WHERE team_id = :tid AND to_matchday_id IS NULL");
+        $sq->execute([':tid' => $teamId]);
+        $ids   = $sq->fetchAll(PDO::FETCH_COLUMN);
+        $cards = $this->getPlayerCardInfoMap($ids, $seasonId);
+
+        $order = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
+        $out = [];
+        foreach ($ids as $pid) {
+            $pm = $cards[$pid] ?? null;
+            if (!$pm) continue;
+            $out[] = [
+                'player_id'          => $pid,
+                'displayname'        => $pm['displayname'],
+                'position'           => $pm['position'],
+                'photo_uploaded'     => $pm['photo_uploaded'],
+                'club_id'            => $pm['club_id'],
+                'club_logo_uploaded' => $pm['club_logo_uploaded'],
+                'season_id'          => $seasonId,
+                'market_value'       => $this->getPlayerMarketValueInfo($pid, $seasonId)['market_value'] ?? 0,
+            ];
+        }
+        usort($out, fn($a, $b) => (($order[$a['position']] ?? 9) <=> ($order[$b['position']] ?? 9)) ?: ($b['market_value'] <=> $a['market_value']));
+        return $out;
+    }
+
     // ─── Anlegen ───────────────────────────────────────────────────────────────────
 
-    public function createPlayerOffer(string $buyerTeamId, string $playerId, int $offerValue): array
+    public function createPlayerOffer(string $buyerTeamId, string $playerId, int $offerValue, array $offeredPlayerIds = []): array
     {
         $seasonId = $this->getActiveSeasonId();
         if (!$seasonId) return $this->dealError(422, 'Keine aktive Saison');
-        if ($offerValue <= 0) return $this->dealError(422, 'Ungültiger Betrag');
+
+        $offeredPlayerIds = array_values(array_unique(array_filter(array_map('strval', $offeredPlayerIds))));
+        // Geld darf 0 sein, wenn stattdessen Spieler angeboten werden (reiner Tausch).
+        if ($offerValue < 0 || ($offerValue === 0 && empty($offeredPlayerIds))) return $this->dealError(422, 'Ungültiger Betrag');
+        if (!empty($offeredPlayerIds) && !$this->hasPlayerOfferTable()) return $this->dealError(422, 'Nicht verfügbar');
 
         // Budget-/Slot-Prüfung und Insert müssen pro Bieter serialisiert laufen, sonst könnten zwei
         // parallele Angebote dieselbe Budgetreserve doppelt nutzen.
@@ -370,18 +500,36 @@ trait PlayerOfferTrait
 
             $info = $this->getPlayerMarketValueInfo($playerId, $seasonId);
             if (!$info) return $this->dealError(422, 'Spieler hat in dieser Saison keinen Marktwert');
-            if ($offerValue < $info['market_value']) return $this->dealError(422, 'Angebot liegt unter dem Marktwert');
 
-            $position = $info['position'] ?? '';
-            if (isset(self::SQUAD_MAX[$position])
-                && $this->countTeamPositionSlots($buyerTeamId, $seasonId, $position) >= self::SQUAD_MAX[$position]) {
-                return $this->dealError(409, 'Positionslimit erreicht');
+            // Angebotene Spieler: müssen zum eigenen Kader gehören; ihr Marktwert zählt als Geldäquivalent.
+            $legsValue = 0;
+            foreach ($offeredPlayerIds as $legId) {
+                if ($legId === $playerId) return $this->dealError(422, 'Der Zielspieler kann nicht selbst angeboten werden');
+                if ($this->getActiveOwnerTeamId($legId, $seasonId) !== $buyerTeamId) {
+                    return $this->dealError(422, 'Du kannst nur Spieler aus deinem eigenen Kader anbieten');
+                }
+                $legInfo = $this->getPlayerMarketValueInfo($legId, $seasonId);
+                if (!$legInfo) return $this->dealError(422, 'Ein angebotener Spieler hat keinen Marktwert');
+                $legsValue += $legInfo['market_value'];
+            }
+            if ($offerValue + $legsValue < $info['market_value']) {
+                return $this->dealError(422, empty($offeredPlayerIds)
+                    ? 'Angebot liegt unter dem Marktwert'
+                    : 'Der Gesamtwert (Geld + angebotene Spieler) liegt unter dem Marktwert');
+            }
+
+            $limit = $this->swapLimitError($buyerTeamId, $sellerTeamId, $playerId, $offeredPlayerIds, $seasonId, true);
+            if ($limit) {
+                return $this->dealError(409, $limit['who'] === 'buyer'
+                    ? 'Positionslimit erreicht' . (empty($offeredPlayerIds) ? '' : ' — biete zusätzlich einen Spieler dieser Position an')
+                    : 'Der Verkäufer hätte durch die angebotenen Spieler auf einer Position zu viele Spieler');
             }
 
             $available = $this->getTeamBudgetValue($buyerTeamId) - $this->getReservedBudget($buyerTeamId);
             if ($offerValue > $available) return $this->dealError(422, 'Nicht genug verfügbares Budget');
 
             $id = $this->con_league->query("SELECT UUID()")->fetchColumn();
+            $this->con_league->beginTransaction();
             try {
                 $this->con_league->prepare(
                     "INSERT INTO player_offer (id, player_id, buyer_team_id, seller_team_id, offer_value, price_snapshot, status, expires_window_id)
@@ -390,7 +538,10 @@ trait PlayerOfferTrait
                     ':id' => $id, ':pid' => $playerId, ':buyer' => $buyerTeamId, ':seller' => $sellerTeamId,
                     ':val' => $offerValue, ':snap' => $info['market_value'], ':wid' => $window['id'],
                 ]);
+                $this->insertOfferLegs($id, $offeredPlayerIds);
+                $this->con_league->commit();
             } catch (\PDOException $e) {
+                $this->con_league->rollBack();
                 if ($e->getCode() === '23000') return $this->dealError(409, 'Für diesen Spieler hast du bereits ein offenes Angebot');
                 throw $e;
             }
@@ -399,10 +550,14 @@ trait PlayerOfferTrait
         }
 
         $buyerName = $this->getTeamName($buyerTeamId);
+        $offerText = number_format($offerValue, 0, ',', '.') . ' €';
+        if (!empty($offeredPlayerIds)) {
+            $offerText = ($offerValue > 0 ? "$offerText plus " : '') . count($offeredPlayerIds) . ' Spieler';
+        }
         $this->notifyTeamManager(
             $sellerTeamId,
             'Neues Angebot für einen deiner Spieler',
-            "$buyerName bietet " . number_format($offerValue, 0, ',', '.') . " € für {$info['displayname']}. "
+            "$buyerName bietet $offerText für {$info['displayname']}. "
             . 'Du findest das Angebot unter Markt → Gebote und kannst es in einer Transferphase annehmen oder ablehnen.'
         );
 
@@ -503,6 +658,7 @@ trait PlayerOfferTrait
             return $direction === 'incoming' ? $parties['initiator'] : $parties['recipient'];
         };
         $teamMap = $this->getTeamInfoMap(array_map($counterpartOf, $rows));
+        $legMap  = $this->getOfferLegsMap(array_column($rows, 'id'), $seasonId);
 
         $wids = array_values(array_unique(array_column($rows, 'expires_window_id')));
         $wph  = implode(',', array_fill(0, count($wids), '?'));
@@ -528,6 +684,7 @@ trait PlayerOfferTrait
                 'counterpart'        => $teamMap[$counterpartOf($r)] ?? null,
                 'kind'               => ($r['proposed_by'] ?? 'buyer') === 'seller' ? 'counter' : 'offer',
                 'parent_offer_id'    => $r['parent_offer_id'] ?? null,
+                'offered_players'    => $legMap[$r['id']] ?? [],
                 'offer_value'        => (int) $r['offer_value'],
                 'price_snapshot'     => (int) $r['price_snapshot'],
                 'market_value'       => $mv,
@@ -550,6 +707,7 @@ trait PlayerOfferTrait
         $seasonId = $this->getActiveSeasonId();
         $out = [
             'can_offer' => false, 'reason' => null, 'market_value' => null, 'available_budget' => 0,
+            'position' => null, 'position_full' => false,
             'seller_team' => null, 'target_window' => null, 'existing_offer_id' => null,
         ];
         if (!$seasonId) { $out['reason'] = 'no_season'; return $out; }
@@ -558,7 +716,12 @@ trait PlayerOfferTrait
 
         $info = $this->getPlayerMarketValueInfo($playerId, $seasonId);
         $out['market_value']     = $info['market_value'] ?? null;
+        $out['position']         = $info['position'] ?? null;
         $out['available_budget'] = $this->getTeamBudgetValue($buyerTeamId) - $this->getReservedBudget($buyerTeamId);
+        // Volle Position / zu wenig Budget sperren den Button nicht mehr: ein Tausch (eigene Spieler mitbieten)
+        // kann beides beheben — der Dialog erzwingt dann einen Spieler derselben Position bzw. deckt den Marktwert.
+        $out['position_full'] = isset(self::SQUAD_MAX[$out['position'] ?? ''])
+            && $this->countTeamPositionSlots($buyerTeamId, $seasonId, $out['position']) >= self::SQUAD_MAX[$out['position']];
 
         $sellerTeamId = $this->getActiveOwnerTeamId($playerId, $seasonId);
         if ($sellerTeamId !== null) $out['seller_team'] = $this->getTeamInfoMap([$sellerTeamId])[$sellerTeamId] ?? null;
@@ -572,16 +735,12 @@ trait PlayerOfferTrait
         $eq->execute([':tid' => $buyerTeamId, ':pid' => $playerId]);
         $out['existing_offer_id'] = $eq->fetchColumn() ?: null;
 
-        if ($sellerTeamId === null)                     $out['reason'] = 'not_owned';
-        elseif ($sellerTeamId === $buyerTeamId)         $out['reason'] = 'own_player';
-        elseif (!$info)                                 $out['reason'] = 'no_market_value';
-        elseif ($out['existing_offer_id'])              $out['reason'] = 'already_offered';
-        elseif (!$window)                               $out['reason'] = 'no_window';
-        elseif (isset(self::SQUAD_MAX[$info['position'] ?? ''])
-                && $this->countTeamPositionSlots($buyerTeamId, $seasonId, $info['position']) >= self::SQUAD_MAX[$info['position']])
-                                                        $out['reason'] = 'position_full';
-        elseif ($out['available_budget'] < $info['market_value']) $out['reason'] = 'insufficient_budget';
-        else                                            $out['can_offer'] = true;
+        if ($sellerTeamId === null)             $out['reason'] = 'not_owned';
+        elseif ($sellerTeamId === $buyerTeamId) $out['reason'] = 'own_player';
+        elseif (!$info)                         $out['reason'] = 'no_market_value';
+        elseif ($out['existing_offer_id'])      $out['reason'] = 'already_offered';
+        elseif (!$window)                       $out['reason'] = 'no_window';
+        else                                    $out['can_offer'] = true;
 
         return $out;
     }
@@ -762,7 +921,11 @@ trait PlayerOfferTrait
 
             $info = $this->getPlayerMarketValueInfo($playerId, $seasonId);
             if (!$info) return $this->dealError(422, 'Spieler hat in dieser Saison keinen Marktwert');
-            if ($value < $info['market_value']) return $this->dealError(422, 'Gegenangebot liegt unter dem Marktwert');
+            // Ein Gegenangebot passt nur den Geldbetrag an; die vom Bieter angebotenen Spieler bleiben Teil des Angebots.
+            $legIds = $this->getOfferLegIds($offerId);
+            $legsValue = 0;
+            foreach ($legIds as $legId) $legsValue += $this->getPlayerMarketValueInfo($legId, $seasonId)['market_value'] ?? 0;
+            if ($value + $legsValue < $info['market_value']) return $this->dealError(422, 'Gegenangebot liegt unter dem Marktwert');
 
             $newId = $this->con_league->query("SELECT UUID()")->fetchColumn();
             $this->con_league->beginTransaction();
@@ -780,6 +943,7 @@ trait PlayerOfferTrait
                     ':id' => $newId, ':pid' => $playerId, ':buyer' => $buyerId, ':seller' => $sellerTeamId,
                     ':val' => $value, ':snap' => $info['market_value'], ':wid' => $window['id'], ':parent' => $offerId,
                 ]);
+                $this->insertOfferLegs($newId, $legIds);
                 $this->con_league->commit();
             } catch (\Throwable $e) {
                 $this->con_league->rollBack();
@@ -812,7 +976,8 @@ trait PlayerOfferTrait
         if (!$seasonId) return $this->dealError(422, 'Keine aktive Saison');
 
         // Empfänger antwortet: beim normalen Angebot der Verkäufer, beim Gegenangebot der Käufer. Gezahlt
-        // wird in beiden Fällen vom Käuferteam an das Verkäuferteam.
+        // wird in beiden Fällen vom Käuferteam an das Verkäuferteam; angebotene Spieler wechseln vom
+        // Käufer- zum Verkäuferteam (Phase 3).
         $pre = $this->con_league->prepare("SELECT * FROM player_offer WHERE id = :id LIMIT 1");
         $pre->execute([':id' => $offerId]);
         $preOffer = $pre->fetch(PDO::FETCH_ASSOC);
@@ -820,12 +985,14 @@ trait PlayerOfferTrait
             return $this->dealError(404, 'Angebot nicht gefunden');
         }
 
+        // Jeder beteiligte Spieler (Ziel + angebotene) und beide Teams werden gesperrt.
         $lockNames = [
             'deal_player_' . $preOffer['player_id'],
             'deal_team_' . $preOffer['buyer_team_id'],
             'deal_team_' . $preOffer['seller_team_id'],
         ];
-        if (!$this->acquireDealLocks($lockNames)) return $this->dealError(409, 'Bitte gleich nochmal versuchen');
+        foreach ($this->getOfferLegIds($offerId) as $legId) $lockNames[] = 'deal_player_' . $legId;
+        if (!$this->acquireDealLocks(array_values(array_unique($lockNames)))) return $this->dealError(409, 'Bitte gleich nochmal versuchen');
 
         $voided = [];
         try {
@@ -847,10 +1014,17 @@ trait PlayerOfferTrait
             $value        = (int) $offer['offer_value'];
             $initiatorId  = $this->offerParties($offer)['initiator'];
             $isCounter    = ($offer['proposed_by'] ?? 'buyer') === 'seller';
+            $legIds       = $this->getOfferLegIds($offerId);
 
             if ($this->getActiveOwnerTeamId($playerId, $seasonId) !== $sellerTeamId) {
                 $this->voidPendingPlayerOffers($playerId);
                 return $this->dealError(409, $isCounter ? 'Der Spieler gehört dem Verkäufer nicht mehr' : 'Der Spieler gehört nicht mehr zu deinem Team');
+            }
+            foreach ($legIds as $legId) {
+                if ($this->getActiveOwnerTeamId($legId, $seasonId) !== $buyerId) {
+                    $this->con_league->prepare("UPDATE player_offer SET status = 'void', responded_at = NOW() WHERE id = :id AND status = 'pending'")->execute([':id' => $offerId]);
+                    return $this->dealError(409, 'Ein angebotener Spieler gehört dem Bieter nicht mehr — das Angebot ist hinfällig');
+                }
             }
 
             $bq = $this->con_league->prepare("SELECT season_id FROM team WHERE id = :id LIMIT 1");
@@ -861,13 +1035,20 @@ trait PlayerOfferTrait
             if ($this->getTeamBudgetValue($buyerId) - $othersReserved < $value) {
                 return $this->dealError(409, $isCounter ? 'Nicht genug verfügbares Budget für dieses Gegenangebot' : 'Der Bieter hat nicht mehr genug Budget');
             }
-            if ($this->isPositionFull($buyerId, $playerId)) {
-                return $this->dealError(409, $isCounter ? 'Auf dieser Position ist bei dir kein Platz mehr' : 'Der Bieter hat auf dieser Position keinen Platz mehr');
+
+            $limit = $this->swapLimitError($buyerId, $sellerTeamId, $playerId, $legIds, $seasonId, false);
+            if ($limit) {
+                $mine = ($limit['who'] === 'buyer') === $isCounter; // betrifft das Limit das antwortende Team?
+                return $this->dealError(409, $mine
+                    ? 'Auf dieser Position ist bei dir kein Platz mehr'
+                    : 'Das andere Team hat auf dieser Position keinen Platz mehr');
             }
 
             $info = $this->getPlayerMarketValueInfo($playerId, $seasonId);
             $displayname = $info['displayname'] ?? 'Spieler';
             $matchdayId  = $window['matchday_id'];
+            $legNames    = [];
+            foreach ($legIds as $legId) $legNames[$legId] = $this->getPlayerMarketValueInfo($legId, $seasonId)['displayname'] ?? 'Spieler';
 
             $this->con_league->beginTransaction();
             try {
@@ -878,26 +1059,37 @@ trait PlayerOfferTrait
                 $u->execute([':wid' => $window['id'], ':id' => $offerId]);
                 if ($u->rowCount() !== 1) throw new \RuntimeException('offer_not_pending');
 
-                $c = $this->con_league->prepare(
+                $closeStint = $this->con_league->prepare(
                     "UPDATE player_in_team SET to_matchday_id = :mid
                      WHERE team_id = :tid AND player_id = :pid AND to_matchday_id IS NULL"
                 );
-                $c->execute([':mid' => $matchdayId, ':tid' => $sellerTeamId, ':pid' => $playerId]);
-                if ($c->rowCount() !== 1) throw new \RuntimeException('seller_stint_missing');
-
-                $this->con_league->prepare(
+                $openStint = $this->con_league->prepare(
                     "INSERT INTO player_in_team (team_id, player_id, from_matchday_id, player_offer_id)
                      VALUES (:tid, :pid, :mid, :poid)"
-                )->execute([':tid' => $buyerId, ':pid' => $playerId, ':mid' => $matchdayId, ':poid' => $offerId]);
-
+                );
                 $tx = $this->con_league->prepare(
                     "INSERT INTO transaction (team_id, amount, reason, matchday_id) VALUES (:tid, :amount, :reason, :mid)"
                 );
+
+                // Zielspieler: Verkäufer → Käufer, Geld Käufer → Verkäufer
+                $closeStint->execute([':mid' => $matchdayId, ':tid' => $sellerTeamId, ':pid' => $playerId]);
+                if ($closeStint->rowCount() !== 1) throw new \RuntimeException('seller_stint_missing');
+                $openStint->execute([':tid' => $buyerId, ':pid' => $playerId, ':mid' => $matchdayId, ':poid' => $offerId]);
                 $tx->execute([':tid' => $buyerId, ':amount' => -$value, ':reason' => "Spielerkauf (Angebot): $displayname", ':mid' => $matchdayId]);
                 $tx->execute([':tid' => $sellerTeamId, ':amount' => $value, ':reason' => "Spielerverkauf (Angebot): $displayname", ':mid' => $matchdayId]);
-
                 $this->removePlayerFromOpenLineups($sellerTeamId, $playerId);
                 $voided = $this->voidPendingPlayerOffers($playerId, $offerId);
+
+                // Angebotene Spieler: Käufer → Verkäufer (Buchung über 0 € dokumentiert den Tausch im Kontoverlauf)
+                foreach ($legIds as $legId) {
+                    $closeStint->execute([':mid' => $matchdayId, ':tid' => $buyerId, ':pid' => $legId]);
+                    if ($closeStint->rowCount() !== 1) throw new \RuntimeException('buyer_stint_missing');
+                    $openStint->execute([':tid' => $sellerTeamId, ':pid' => $legId, ':mid' => $matchdayId, ':poid' => $offerId]);
+                    $tx->execute([':tid' => $buyerId, ':amount' => 0, ':reason' => 'Spielertausch: ' . $legNames[$legId], ':mid' => $matchdayId]);
+                    $tx->execute([':tid' => $sellerTeamId, ':amount' => 0, ':reason' => 'Spielertausch: ' . $legNames[$legId], ':mid' => $matchdayId]);
+                    $this->removePlayerFromOpenLineups($buyerId, $legId);
+                    $voided = array_merge($voided, $this->voidPendingPlayerOffers($legId, $offerId));
+                }
 
                 $this->con_league->commit();
             } catch (\Throwable $e) {
@@ -906,7 +1098,7 @@ trait PlayerOfferTrait
                 throw $e;
             }
         } finally {
-            $this->releaseDealLocks($lockNames);
+            $this->releaseDealLocks(array_values(array_unique($lockNames)));
         }
 
         // Nach dem Commit — Fehler hier dürfen den vollzogenen Deal nicht zurückrollen.
@@ -914,13 +1106,16 @@ trait PlayerOfferTrait
             $actorName = $this->getTeamName($actingTeamId);
             $buyerName = $this->getTeamName($buyerId);
             $valueText = number_format($value, 0, ',', '.') . ' €';
+            if (!empty($legNames)) {
+                $valueText = ($value > 0 ? "$valueText plus " : '') . implode(', ', array_values($legNames));
+            }
             $this->notifyTeamManager(
                 $initiatorId,
                 $isCounter ? 'Gegenangebot angenommen' : 'Angebot angenommen',
                 "$actorName hat dein " . ($isCounter ? 'Gegenangebot' : 'Angebot') . " für $displayname ($valueText) angenommen."
             );
             foreach ($voided as $v) {
-                $this->notifyTeamManager($v['buyer_team_id'], 'Angebot hinfällig', "$displayname wurde anderweitig vergeben — das Angebot ist hinfällig.");
+                $this->notifyTeamManager($v['buyer_team_id'], 'Angebot hinfällig', "Ein beteiligter Spieler wurde anderweitig vergeben — das Angebot ist hinfällig.");
             }
             $this->notifyWatchersPlayerSold($playerId, $sellerTeamId, $displayname);
             $this->notifyWatchersPlayerBought($playerId, $buyerId, $displayname, $buyerName);
@@ -950,8 +1145,9 @@ trait PlayerOfferTrait
         $seasonId  = $this->getActiveSeasonId();
         $playerMap = $seasonId ? $this->getPlayerCardInfoMap(array_column($rows, 'player_id'), $seasonId) : [];
         $teamMap   = $this->getTeamInfoMap(array_merge(array_column($rows, 'buyer_team_id'), array_column($rows, 'seller_team_id')));
+        $legMap    = $this->getOfferLegsMap(array_column($rows, 'id'), $seasonId);
 
-        return array_map(function ($r) use ($playerMap, $teamMap, $seasonId) {
+        return array_map(function ($r) use ($playerMap, $teamMap, $seasonId, $legMap) {
             $pm = $playerMap[$r['player_id']] ?? [];
             return [
                 'id'                 => $r['id'],
@@ -964,6 +1160,7 @@ trait PlayerOfferTrait
                 'club_logo_uploaded' => $pm['club_logo_uploaded'] ?? false,
                 'seller'             => $teamMap[$r['seller_team_id']] ?? null,
                 'buyer'              => $teamMap[$r['buyer_team_id']]  ?? null,
+                'offered_players'    => $legMap[$r['id']] ?? [],
                 'price'              => (int) $r['offer_value'],
                 'price_snapshot'     => (int) $r['price_snapshot'],
                 'accepted_at'        => $r['responded_at'],

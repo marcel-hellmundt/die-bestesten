@@ -289,8 +289,8 @@ export class MarktPlayerComponent {
     if (!el) return 'Bedingungen werden geladen…';
     if (el.open_player_ids.includes(p.id)) return 'Du hast bereits ein offenes Angebot für diesen Spieler';
     if (!el.target_window) return 'Keine offene oder kommende Transferphase geplant';
-    if (el.full_positions.includes(p.position)) return 'Positionslimit voll';
-    if (el.available_budget < this.dynamicPrice(p)) return 'Nicht genug verfügbares Budget für den Marktwert';
+    // Volle Position / zu wenig Budget sperren den Button nicht: ein Tausch (eigene Spieler mitbieten) kann
+    // beides beheben — der Dialog erzwingt dann einen Spieler derselben Position bzw. deckt den Marktwert.
     return '';
   }
 
@@ -322,6 +322,28 @@ export class MarktPlayerComponent {
     this.digitE10000()    *     10_000
   );
 
+  // Spieler als Gegenwert (siehe player-detail): Geld darf 0 sein, Gesamtwert muss den Marktwert erreichen.
+  squadOptions = signal<{ player_id: string; displayname: string; position: string; market_value: number }[]>([]);
+  offeredIds   = signal<string[]>([]);
+  directPosition     = signal<string | null>(null);
+  directPositionFull = signal(false);
+
+  playersValue = computed(() =>
+    this.squadOptions().filter(o => this.offeredIds().includes(o.player_id)).reduce((s, o) => s + o.market_value, 0)
+  );
+  requiredCash = computed(() => Math.max(0, this.offerMarketValue() - this.playersValue()));
+
+  directPositionBlocked = computed(() => {
+    if (this.offerMode() !== 'direct' || !this.directPositionFull()) return false;
+    const pos = this.directPosition();
+    return !this.squadOptions().some(o => this.offeredIds().includes(o.player_id) && o.position === pos);
+  });
+
+  toggleOffered(playerId: string): void {
+    this.offeredIds.update(ids => ids.includes(playerId) ? ids.filter(i => i !== playerId) : [...ids, playerId]);
+    this.setDigitsFromValue(Math.ceil(this.requiredCash() / 10_000) * 10_000);
+  }
+
   // 'market' = Gebot auf einen freien Spieler (POST /offer), 'direct' = Direktangebot (POST /player_offer,
   // Marktwert kommt dann serverseitig aus /player_offer/quote).
   offerMode        = signal<'market' | 'direct'>('market');
@@ -346,6 +368,14 @@ export class MarktPlayerComponent {
   isValidOffer = computed(() => {
     const mv     = this.offerMarketValue();
     const budget = this.remainingBudget() ?? 0;
+    if (this.offerMode() === 'direct') {
+      const cash = this.offerValue();
+      return mv > 0
+        && cash >= this.requiredCash()
+        && cash <= budget
+        && (cash > 0 || this.offeredIds().length > 0)
+        && !this.directPositionBlocked();
+    }
     return mv > 0 && this.offerValue() >= mv && this.offerValue() <= budget;
   });
 
@@ -362,7 +392,7 @@ export class MarktPlayerComponent {
     if (!teamId || !this.canDirectOffer(p) || this.directLoadingId()) return;
     this.directLoadingId.set(p.id);
     this.directError.set(null);
-    this.api.get<{ can_offer: boolean; reason: string | null; market_value: number | null }>(
+    this.api.get<{ can_offer: boolean; reason: string | null; market_value: number | null; position: string | null; position_full: boolean }>(
       `player_offer/quote?team_id=${teamId}&player_id=${p.id}`
     ).subscribe({
       next: q => {
@@ -374,6 +404,13 @@ export class MarktPlayerComponent {
         }
         this.offerMode.set('direct');
         this.directMarketValue.set(q.market_value);
+        this.directPosition.set(q.position);
+        this.directPositionFull.set(q.position_full);
+        this.offeredIds.set([]);
+        this.squadOptions.set([]);
+        this.api.get<{ player_id: string; displayname: string; position: string; market_value: number }[]>(
+          `player_offer/squad?team_id=${teamId}`
+        ).pipe(catchError(() => of([]))).subscribe(list => this.squadOptions.set(list));
         this.selectedOfferPlayer.set(p);
         this.offerSuccess.set(false);
         this.offerError.set(null);
@@ -439,7 +476,9 @@ export class MarktPlayerComponent {
       if (!teamId || !p || !this.isValidOffer()) return;
       this.offerSubmitting.set(true);
       this.offerError.set(null);
-      this.api.post<any>('player_offer', { team_id: teamId, player_id: p.id, offer_value: this.offerValue() }).subscribe({
+      this.api.post<any>('player_offer', {
+        team_id: teamId, player_id: p.id, offer_value: this.offerValue(), offered_player_ids: this.offeredIds(),
+      }).subscribe({
         next: () => {
           this.offerSubmitting.set(false);
           this.offerSuccess.set(true);
