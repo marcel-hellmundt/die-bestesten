@@ -94,8 +94,8 @@ export class MarktPlayerComponent {
       if (!leagueId) return;
       const saved = this.loadFiltersFor(leagueId);
       this.searchQuery.set(saved.search ?? '');
-      this.positionFilter.set(saved.position ?? null);
-      this.clubFilter.set(saved.club ?? null);
+      this.positionFilters.set(MarktPlayerComponent.toArray(saved.position));
+      this.clubFilters.set(MarktPlayerComponent.toArray(saved.club));
       this.maxPrice.set(saved.maxPrice ?? null);
       this.showAllPlayers.set(saved.showAll ?? false);
       this.newOnMarketOnly.set(saved.newOnly ?? false);
@@ -112,8 +112,8 @@ export class MarktPlayerComponent {
       if (!leagueId) return;
       this.saveFiltersFor(leagueId, {
         search:   this.searchQuery(),
-        position: this.positionFilter(),
-        club:     this.clubFilter(),
+        position: this.positionFilters(),
+        club:     this.clubFilters(),
         maxPrice: this.maxPrice(),
         showAll:  this.showAllPlayers(),
         newOnly:  this.newOnMarketOnly(),
@@ -514,8 +514,16 @@ export class MarktPlayerComponent {
   }
 
   searchQuery    = signal<string>('');
-  positionFilter = signal<string | null>(null);
-  clubFilter     = signal<string | null>(null);
+  // Mehrfachauswahl (statt bisher nur eine Position/ein Verein gleichzeitig) — je ein Array der
+  // gewählten IDs; leeres Array = kein Filter aktiv (wie zuvor null).
+  positionFilters = signal<string[]>([]);
+  clubFilters     = signal<string[]>([]);
+
+  /** localStorage kann noch den alten Einzelwert (string|null) enthalten — beides toleriert. */
+  private static toArray(v: unknown): string[] {
+    if (Array.isArray(v)) return v as string[];
+    return typeof v === 'string' ? [v] : [];
+  }
   maxPrice       = signal<number | null>(null);
 
   dynamicPrice(p: FreeAgent): number { return p.price + this.cache.pointsBonus() * p.season_points; }
@@ -584,17 +592,17 @@ export class MarktPlayerComponent {
 
   filteredPlayers = computed(() => {
     const q       = this.searchQuery().trim().toLowerCase();
-    const pos     = this.positionFilter();
-    const club    = this.clubFilter();
+    const pos     = this.positionFilters();
+    const club    = this.clubFilters();
     const max     = this.maxPrice();
     const newOnly = this.newOnMarketOnly();
     const col     = this.sortCol();
     const dir     = this.sortDir();
 
     const filtered = this.players().filter(p =>
-      (!q       || p.displayname.toLowerCase().includes(q)) &&
-      (!pos     || p.position === pos) &&
-      (!club    || p.club_id === club) &&
+      (!q            || p.displayname.toLowerCase().includes(q)) &&
+      (pos.length === 0  || pos.includes(p.position)) &&
+      (club.length === 0 || club.includes(p.club_id)) &&
       (max === null || this.dynamicPrice(p) <= max) &&
       (!newOnly || p.new_on_market)
     );
@@ -608,7 +616,7 @@ export class MarktPlayerComponent {
   });
 
   hasFilters = computed(() =>
-    !!this.searchQuery() || !!this.positionFilter() || !!this.clubFilter() || this.maxPrice() !== null
+    !!this.searchQuery() || this.positionFilters().length > 0 || this.clubFilters().length > 0 || this.maxPrice() !== null
     || this.newOnMarketOnly() || this.soonAvailableOnly()
   );
 
@@ -649,11 +657,11 @@ export class MarktPlayerComponent {
   }
 
   togglePosition(pos: string): void {
-    this.positionFilter.set(this.positionFilter() === pos ? null : pos);
+    this.positionFilters.update(ids => ids.includes(pos) ? ids.filter(i => i !== pos) : [...ids, pos]);
   }
 
   toggleClub(id: string): void {
-    this.clubFilter.set(this.clubFilter() === id ? null : id);
+    this.clubFilters.update(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id]);
   }
 
   setShowAllPlayers(checked: boolean): void {
@@ -685,8 +693,8 @@ export class MarktPlayerComponent {
 
   resetFilters(): void {
     this.searchQuery.set('');
-    this.positionFilter.set(null);
-    this.clubFilter.set(null);
+    this.positionFilters.set([]);
+    this.clubFilters.set([]);
     this.maxPrice.set(null);
     this.newOnMarketOnly.set(false);
     this.soonAvailableOnly.set(false);
