@@ -178,9 +178,15 @@ trait LeagueTrait
             }
 
             // Rating-Zeitpunkt-bezogen (Fragment B): posMap wird pro Matchday nachgeschlagen, daher
-            // nach division_id (nicht season_id) gekeyt — ein Spieler mit 2 player_in_season-Zeilen
-            // (Divisionswechsel) muss hier die Position der Division bekommen, in der der jeweilige
-            // Spieltag tatsächlich stattfand, nicht irgendeine der beiden.
+            // nach season_id UND division_id gekeyt — ein Spieler mit 2 player_in_season-Zeilen in
+            // DERSELBEN Saison (Divisionswechsel) muss die Position der Division bekommen, in der
+            // der jeweilige Spieltag tatsächlich stattfand. Season_id ist im Key zwingend nötig:
+            // ohne sie würden sich Zeilen verschiedener Saisons mit derselben division_id (z.B. ein
+            // Spieler, der zwei Spielzeiten in Folge in derselben Division stand) gegenseitig
+            // überschreiben — je nach zufälliger SQL-Ergebnisreihenfolge könnte dann die Position
+            // einer LETZTEN Saison verwendet werden, obwohl sich die reale Positionszuordnung eines
+            // Spielers zwischen Saisons ändern kann (z.B. offensiver Mittelfeldspieler → Stürmer),
+            // was genau die beobachteten points_forward/points_goalkeeper-Fehlalarme erklärte.
             $allSeasonIds = array_values(array_unique(array_column($matchdayMap, 'season_id')));
             if (!empty($allSeasonIds)) {
                 $phS  = implode(',', array_fill(0, count($allSeasonIds), '?'));
@@ -190,7 +196,7 @@ trait LeagueTrait
                 );
                 $pisQ->execute(array_merge($allPlayerIds, $allSeasonIds));
                 foreach ($pisQ->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                    $posMap[$r['player_id']][$r['division_id']] = $r['position'];
+                    $posMap[$r['player_id']][$r['season_id']][$r['division_id']] = $r['position'];
                 }
             }
         }
@@ -210,7 +216,7 @@ trait LeagueTrait
             foreach ($players as $pid) {
                 $pr  = $prMap[$pid][$tr['matchday_id']] ?? null;
                 if (!$pr) continue;
-                $pos = $posMap[$pid][$divisionId] ?? null;
+                $pos = $posMap[$pid][$md['season_id']][$divisionId] ?? null;
                 $calcPoints += (int) $pr['points'];
                 $calcGoals  += (int) $pr['goals'];
                 $calcAssists += (int) $pr['assists'];
