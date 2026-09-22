@@ -181,10 +181,15 @@
 <ng-template #directOffersTpl>
   @if (directIncoming().length) {
     <section class="card direct-card">
-      <h2 class="direct-card__title">Angebote von anderen Managern</h2>
+      <div class="direct-card__header">
+        <h2 class="direct-card__title">Angebote von anderen Managern</h2>
+        @if (!cache.dealSystemEnabled()) {
+          <span class="direct-card__badge">Deal-System nicht verfügbar</span>
+        }
+      </div>
       <p class="direct-card__hint">
         @if (!cache.dealSystemEnabled()) {
-          Direktangebote sind in dieser Liga deaktiviert — bestehende Angebote laufen unbeantwortet bis zu ihrem Ablauf weiter.
+          Bestehende Angebote laufen unbeantwortet bis zu ihrem Ablauf weiter.
         } @else if (directWindowOpen()) {
           Annehmen vollzieht den Wechsel sofort — das Geld steht dir noch in dieser Transferphase zur Verfügung. Mit einem Gegenangebot schlägst du einen höheren Preis vor.
         } @else {
@@ -264,7 +269,12 @@
 
   @if (directOutgoing().length) {
     <section class="card direct-card">
-      <h2 class="direct-card__title">Meine Direktangebote</h2>
+      <div class="direct-card__header">
+        <h2 class="direct-card__title">Meine Direktangebote</h2>
+        @if (!cache.dealSystemEnabled()) {
+          <span class="direct-card__badge">Deal-System nicht verfügbar</span>
+        }
+      </div>
       <ul class="direct-list">
         @for (o of directOutgoing(); track o.id) {
           <li class="direct-row" [class.direct-row--disabled]="!cache.dealSystemEnabled()">
