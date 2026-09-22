@@ -20,11 +20,7 @@
         [disabled]="validateState() === 'loading'"
         (click)="validate()"
       >{{ validateState() === 'loading' ? 'Prüft…' : 'Prüfen' }}</button>
-    </div>
-  }
 
-  @if (isAdmin()) {
-    <div class="season-list-toolbar">
       <button
         class="btn-icon-only"
         title="Liga-Einstellungen"

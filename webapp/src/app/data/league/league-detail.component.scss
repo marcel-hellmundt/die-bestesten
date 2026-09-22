@@ -54,21 +54,17 @@
 }
 
 // ── Liga-Einstellungen-Dialog (via BottomSheetService, siehe #settingsSheet) ────────────────────
-// Der Zahnrad-Button sitzt oben rechts über der Saisonliste statt in .admin-actions, damit er von
-// der (rein informativen) "Prüfen"-Zeile abgesetzt ist — Klick öffnet den Dialog, Werte werden erst
-// mit "Speichern" per PATCH geschrieben (siehe openSettingsDialog()/saveSettings() im TS).
-.season-list-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: $space-2;
-}
-
+// Zahnrad-Button sitzt in derselben Zeile wie "Prüfen" (.admin-actions), rechtsbündig per
+// margin-left:auto, und ist genauso hoch ($control-height, wie jeder .btn-sm — dessen Höhe kommt
+// von der Basisklasse .btn, .btn-sm ändert nur Padding/Schriftgröße). Klick öffnet den Dialog,
+// Werte werden erst mit "Speichern" per PATCH geschrieben (siehe openSettingsDialog()/saveSettings()).
 .btn-icon-only {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: $control-height;
+  height: $control-height;
+  margin-left: auto;
   border: 1px solid $color-border;
   border-radius: $radius-sm;
   background: transparent;
@@ -79,6 +75,13 @@
   &:hover {
     color: $color-text;
     border-color: $color-text;
+  }
+
+  // Das "settings"-Icon selbst ist als 16x16-SVG definiert (icons.ts, geteilt mit anderen
+  // Stellen) — hier größer skaliert, ohne die geteilte Definition anzufassen.
+  svg {
+    width: 24px;
+    height: 24px;
   }
 }
 
