@@ -55,9 +55,10 @@
 
 // ── Liga-Einstellungen-Dialog (via BottomSheetService, siehe #settingsSheet) ────────────────────
 // Zahnrad-Button sitzt in derselben Zeile wie "Prüfen" (.admin-actions), rechtsbündig per
-// margin-left:auto, und ist genauso hoch ($control-height, wie jeder .btn-sm — dessen Höhe kommt
-// von der Basisklasse .btn, .btn-sm ändert nur Padding/Schriftgröße). Klick öffnet den Dialog,
-// Werte werden erst mit "Speichern" per PATCH geschrieben (siehe openSettingsDialog()/saveSettings()).
+// margin-left:auto, gleiche Höhe/Radius/Hover wie .btn.btn-sm.btn-ghost (_buttons.scss) — hier
+// dupliziert statt der Klassen selbst, da .btn-sm's horizontales Padding ($space-3) einen reinen
+// Icon-Button nicht quadratisch hielte. Klick öffnet den Dialog, Werte werden erst mit "Speichern"
+// per PATCH geschrieben (siehe openSettingsDialog()/saveSettings()).
 .btn-icon-only {
   display: inline-flex;
   align-items: center;
@@ -66,19 +67,20 @@
   height: $control-height;
   margin-left: auto;
   border: 1px solid $color-border;
-  border-radius: $radius-sm;
+  border-radius: $radius-full;
   background: transparent;
   color: $color-text-muted;
   cursor: pointer;
-  transition: color $transition-fast, border-color $transition-fast;
+  transition: background-color $transition-fast, color $transition-fast, border-color $transition-fast;
 
   &:hover {
+    background-color: $color-surface-alt;
     color: $color-text;
-    border-color: $color-text;
+    border-color: $color-surface-alt;
   }
 
-  // Das "settings"-Icon selbst ist als 16x16-SVG definiert (icons.ts, geteilt mit anderen
-  // Stellen) — hier größer skaliert, ohne die geteilte Definition anzufassen.
+  // Icon in derselben Zeichnung wie im linken Menü (icons.ts 'settings') — hier größer als dessen
+  // 18x18-Standardgröße.
   svg {
     width: 24px;
     height: 24px;
