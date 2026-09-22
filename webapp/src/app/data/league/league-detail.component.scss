@@ -94,9 +94,6 @@
 }
 
 .league-settings__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: $space-3;
 }
 
@@ -106,10 +103,61 @@
   color: $color-text;
 }
 
-.league-settings__toggle {
+// Gleicher Toggle-Switch wie der Filter-Umschalter auf /markt/spieler (markt-player.component.scss)
+// — dort lokal definiert statt global, hier bewusst dupliziert statt geteilt, damit beide
+// Stellen unabhängig bleiben. $color-accent ist dasselbe Rot wie dort.
+.filter-checkbox {
   display: flex;
   align-items: center;
-  gap: $space-2;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.filter-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 22px;
+  display: inline-block;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+
+    &:checked + .filter-toggle__track {
+      background: $color-accent;
+
+      &::after {
+        transform: translateX(18px);
+      }
+    }
+  }
+
+  &__track {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: $radius-full;
+    background: $color-border;
+    transition: background $transition-fast;
+    cursor: pointer;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+      transition: transform $transition-fast;
+    }
+  }
 }
 
 .league-settings__error {

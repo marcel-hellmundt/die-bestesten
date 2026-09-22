@@ -370,59 +370,32 @@
 
   <ng-template #settingsSheet>
     <div class="league-settings">
-      <div class="league-settings__row">
-        <span class="league-settings__label">Strafen</span>
-        <span class="league-settings__toggle">
-          <button
-            class="btn btn-sm"
-            [class.btn-primary]="draftFineRuleset() === 'classic'"
-            [class.btn-ghost]="draftFineRuleset() !== 'classic'"
-            (click)="draftFineRuleset.set('classic')"
-          >Classic</button>
-          <button
-            class="btn btn-sm"
-            [class.btn-primary]="draftFineRuleset() === 'none'"
-            [class.btn-ghost]="draftFineRuleset() !== 'none'"
-            (click)="draftFineRuleset.set('none')"
-          >Keine Strafen</button>
+      <label class="league-settings__row filter-checkbox">
+        <span class="league-settings__label">Kegelstrafen</span>
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="draftFineRuleset() === 'classic'"
+                 (change)="draftFineRuleset.set($any($event.target).checked ? 'classic' : 'none')" />
+          <span class="filter-toggle__track"></span>
         </span>
-      </div>
+      </label>
 
-      <div class="league-settings__row">
+      <label class="league-settings__row filter-checkbox">
         <span class="league-settings__label">Powerranking</span>
-        <span class="league-settings__toggle">
-          <button
-            class="btn btn-sm"
-            [class.btn-primary]="draftPowerranking()"
-            [class.btn-ghost]="!draftPowerranking()"
-            (click)="draftPowerranking.set(true)"
-          >An</button>
-          <button
-            class="btn btn-sm"
-            [class.btn-primary]="!draftPowerranking()"
-            [class.btn-ghost]="draftPowerranking()"
-            (click)="draftPowerranking.set(false)"
-          >Aus</button>
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="draftPowerranking()"
+                 (change)="draftPowerranking.set($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
         </span>
-      </div>
+      </label>
 
-      <div class="league-settings__row">
-        <span class="league-settings__label">Direktangebote</span>
-        <span class="league-settings__toggle">
-          <button
-            class="btn btn-sm"
-            [class.btn-primary]="draftDealSystem()"
-            [class.btn-ghost]="!draftDealSystem()"
-            (click)="draftDealSystem.set(true)"
-          >An</button>
-          <button
-            class="btn btn-sm"
-            [class.btn-primary]="!draftDealSystem()"
-            [class.btn-ghost]="draftDealSystem()"
-            (click)="draftDealSystem.set(false)"
-          >Aus</button>
+      <label class="league-settings__row filter-checkbox">
+        <span class="league-settings__label">Deal-System</span>
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="draftDealSystem()"
+                 (change)="draftDealSystem.set($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
         </span>
-      </div>
+      </label>
 
       @if (settingsSaveError()) {
         <p class="league-settings__error">{{ settingsSaveError() }}</p>
