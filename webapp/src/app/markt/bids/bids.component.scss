@@ -325,6 +325,17 @@
     gap: 2px;
     white-space: nowrap;
   }
+
+  // Deal-System für die Liga deaktiviert (siehe cache.dealSystemEnabled()) — die Buttons sind
+  // bereits per [disabled] gesperrt, zusätzlich auch die Zeilenschrift selbst abschwächen statt
+  // nur die Buttons, damit die Zeile insgesamt als "nicht mehr aktiv" erkennbar ist.
+  &--disabled {
+    opacity: 0.55;
+
+    .bid-player-link {
+      color: $color-text-muted;
+    }
+  }
 }
 
 // Gegenangebot-Eingabe unter einer Zeile der eingehenden Angebote

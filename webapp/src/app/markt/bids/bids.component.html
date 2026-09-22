@@ -196,7 +196,7 @@
       }
       <ul class="direct-list">
         @for (o of directIncoming(); track o.id) {
-          <li class="direct-row">
+          <li class="direct-row" [class.direct-row--disabled]="!cache.dealSystemEnabled()">
             @if (o.position) {
               <span class="position-badge" [style.background-color]="'var(--position-' + o.position.toLowerCase() + ')'">{{ posLabel(o.position) }}</span>
             }
@@ -267,7 +267,7 @@
       <h2 class="direct-card__title">Meine Direktangebote</h2>
       <ul class="direct-list">
         @for (o of directOutgoing(); track o.id) {
-          <li class="direct-row">
+          <li class="direct-row" [class.direct-row--disabled]="!cache.dealSystemEnabled()">
             @if (o.position) {
               <span class="position-badge" [style.background-color]="'var(--position-' + o.position.toLowerCase() + ')'">{{ posLabel(o.position) }}</span>
             }
