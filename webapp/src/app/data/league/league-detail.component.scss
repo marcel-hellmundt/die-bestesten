@@ -53,6 +53,72 @@
   color: $color-text-muted;
 }
 
+// ── Liga-Einstellungen-Dialog (via BottomSheetService, siehe #settingsSheet) ────────────────────
+// Der Zahnrad-Button sitzt oben rechts über der Saisonliste statt in .admin-actions, damit er von
+// der (rein informativen) "Prüfen"-Zeile abgesetzt ist — Klick öffnet den Dialog, Werte werden erst
+// mit "Speichern" per PATCH geschrieben (siehe openSettingsDialog()/saveSettings() im TS).
+.season-list-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: $space-2;
+}
+
+.btn-icon-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: color $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-text;
+  }
+}
+
+.league-settings {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.league-settings__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.league-settings__label {
+  font-size: $font-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text;
+}
+
+.league-settings__toggle {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.league-settings__error {
+  font-size: $font-sm;
+  color: $color-danger;
+  margin: 0;
+}
+
+.league-settings__actions {
+  display: flex;
+  gap: $space-2;
+  margin-top: $space-2;
+}
+
 // ── Season list ──────────────────────────────────────────────────────────────
 
 .season-list {

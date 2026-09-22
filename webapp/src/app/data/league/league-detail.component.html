@@ -20,60 +20,19 @@
         [disabled]="validateState() === 'loading'"
         (click)="validate()"
       >{{ validateState() === 'loading' ? 'Prüft…' : 'Prüfen' }}</button>
+    </div>
+  }
 
-      <span class="fine-ruleset-toggle">
-        <span class="fine-ruleset-toggle__label">Strafen:</span>
-        <button
-          class="btn btn-sm"
-          [class.btn-primary]="fineRuleset() === 'classic'"
-          [class.btn-ghost]="fineRuleset() !== 'classic'"
-          [disabled]="fineRulesetSaving()"
-          (click)="setFineRuleset('classic')"
-        >Classic</button>
-        <button
-          class="btn btn-sm"
-          [class.btn-primary]="fineRuleset() === 'none'"
-          [class.btn-ghost]="fineRuleset() !== 'none'"
-          [disabled]="fineRulesetSaving()"
-          (click)="setFineRuleset('none')"
-        >Keine Strafen</button>
-      </span>
-
-      <span class="fine-ruleset-toggle">
-        <span class="fine-ruleset-toggle__label">Powerranking:</span>
-        <button
-          class="btn btn-sm"
-          [class.btn-primary]="powerrankingEnabled()"
-          [class.btn-ghost]="!powerrankingEnabled()"
-          [disabled]="powerrankingSaving()"
-          (click)="setPowerrankingEnabled(true)"
-        >An</button>
-        <button
-          class="btn btn-sm"
-          [class.btn-primary]="!powerrankingEnabled()"
-          [class.btn-ghost]="powerrankingEnabled()"
-          [disabled]="powerrankingSaving()"
-          (click)="setPowerrankingEnabled(false)"
-        >Aus</button>
-      </span>
-
-      <span class="fine-ruleset-toggle">
-        <span class="fine-ruleset-toggle__label">Direktangebote:</span>
-        <button
-          class="btn btn-sm"
-          [class.btn-primary]="dealSystemEnabled()"
-          [class.btn-ghost]="!dealSystemEnabled()"
-          [disabled]="dealSystemSaving()"
-          (click)="setDealSystemEnabled(true)"
-        >An</button>
-        <button
-          class="btn btn-sm"
-          [class.btn-primary]="!dealSystemEnabled()"
-          [class.btn-ghost]="dealSystemEnabled()"
-          [disabled]="dealSystemSaving()"
-          (click)="setDealSystemEnabled(false)"
-        >Aus</button>
-      </span>
+  @if (isAdmin()) {
+    <div class="season-list-toolbar">
+      <button
+        class="btn-icon-only"
+        title="Liga-Einstellungen"
+        aria-label="Liga-Einstellungen"
+        (click)="openSettingsDialog()"
+      >
+        <app-icon name="settings" />
+      </button>
     </div>
   }
 
@@ -412,4 +371,77 @@
   } @else if (validateState() === 'error') {
     <p class="state-msg state-msg--error">Fehler beim Prüfen</p>
   }
+
+  <ng-template #settingsSheet>
+    <div class="league-settings">
+      <div class="league-settings__row">
+        <span class="league-settings__label">Strafen</span>
+        <span class="league-settings__toggle">
+          <button
+            class="btn btn-sm"
+            [class.btn-primary]="draftFineRuleset() === 'classic'"
+            [class.btn-ghost]="draftFineRuleset() !== 'classic'"
+            (click)="draftFineRuleset.set('classic')"
+          >Classic</button>
+          <button
+            class="btn btn-sm"
+            [class.btn-primary]="draftFineRuleset() === 'none'"
+            [class.btn-ghost]="draftFineRuleset() !== 'none'"
+            (click)="draftFineRuleset.set('none')"
+          >Keine Strafen</button>
+        </span>
+      </div>
+
+      <div class="league-settings__row">
+        <span class="league-settings__label">Powerranking</span>
+        <span class="league-settings__toggle">
+          <button
+            class="btn btn-sm"
+            [class.btn-primary]="draftPowerranking()"
+            [class.btn-ghost]="!draftPowerranking()"
+            (click)="draftPowerranking.set(true)"
+          >An</button>
+          <button
+            class="btn btn-sm"
+            [class.btn-primary]="!draftPowerranking()"
+            [class.btn-ghost]="draftPowerranking()"
+            (click)="draftPowerranking.set(false)"
+          >Aus</button>
+        </span>
+      </div>
+
+      <div class="league-settings__row">
+        <span class="league-settings__label">Direktangebote</span>
+        <span class="league-settings__toggle">
+          <button
+            class="btn btn-sm"
+            [class.btn-primary]="draftDealSystem()"
+            [class.btn-ghost]="!draftDealSystem()"
+            (click)="draftDealSystem.set(true)"
+          >An</button>
+          <button
+            class="btn btn-sm"
+            [class.btn-primary]="!draftDealSystem()"
+            [class.btn-ghost]="draftDealSystem()"
+            (click)="draftDealSystem.set(false)"
+          >Aus</button>
+        </span>
+      </div>
+
+      @if (settingsSaveError()) {
+        <p class="league-settings__error">{{ settingsSaveError() }}</p>
+      }
+
+      <div class="league-settings__actions">
+        <button
+          class="btn btn-sm btn-primary"
+          [disabled]="!settingsChanged() || settingsSaving()"
+          (click)="saveSettings()"
+        >{{ settingsSaving() ? 'Speichert…' : 'Speichern' }}</button>
+        <button class="btn btn-sm btn-ghost" [disabled]="settingsSaving()" (click)="bottomSheet.close()">
+          Abbrechen
+        </button>
+      </div>
+    </div>
+  </ng-template>
 }

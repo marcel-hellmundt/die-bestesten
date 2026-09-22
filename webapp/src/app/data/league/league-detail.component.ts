@@ -1,10 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, TemplateRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { environment } from '../../../environments/environment';
 
 interface DraftPlayer {
@@ -40,6 +41,7 @@ export class LeagueDetailComponent {
   private route  = inject(ActivatedRoute);
   private router = inject(Router);
   cache          = inject(DataCacheService);
+  bottomSheet    = inject(BottomSheetService);
 
   isAdmin = computed(() => this.auth.isAdmin());
 
@@ -170,54 +172,68 @@ export class LeagueDetailComponent {
     });
   }
 
-  // Overridden nach erfolgreichem PATCH, damit die Auswahl sofort umschaltet ohne die ganze
+  // Overridden nach erfolgreichem PATCH, damit die Anzeige sofort umschaltet ohne die ganze
   // Detail-Pipeline (und damit den aufgeklappten Saison/Team-UI-State) neu zu laden.
-  private fineRulesetOverride = signal<'classic' | 'none' | null>(null);
-  fineRulesetSaving = signal(false);
+  private fineRulesetOverride     = signal<'classic' | 'none' | null>(null);
+  private powerrankingOverride    = signal<boolean | null>(null);
+  private dealSystemOverride      = signal<boolean | null>(null);
 
   fineRuleset = computed<'classic' | 'none'>(() =>
     this.fineRulesetOverride() ?? (this.league()?.fine_ruleset === 'none' ? 'none' : 'classic')
   );
-
-  setFineRuleset(value: 'classic' | 'none'): void {
-    if (this.fineRuleset() === value || this.fineRulesetSaving()) return;
-    this.fineRulesetSaving.set(true);
-    this.api.patch<any>(`league/${this.leagueId}`, { fine_ruleset: value }).subscribe({
-      next: () => { this.fineRulesetOverride.set(value); this.fineRulesetSaving.set(false); },
-      error: () => this.fineRulesetSaving.set(false),
-    });
-  }
-
-  private powerrankingOverride = signal<boolean | null>(null);
-  powerrankingSaving = signal(false);
-
   powerrankingEnabled = computed<boolean>(() =>
     this.powerrankingOverride() ?? (this.league()?.powerranking_enabled ?? true)
   );
-
-  setPowerrankingEnabled(value: boolean): void {
-    if (this.powerrankingEnabled() === value || this.powerrankingSaving()) return;
-    this.powerrankingSaving.set(true);
-    this.api.patch<any>(`league/${this.leagueId}`, { powerranking_enabled: value }).subscribe({
-      next: () => { this.powerrankingOverride.set(value); this.powerrankingSaving.set(false); },
-      error: () => this.powerrankingSaving.set(false),
-    });
-  }
-
-  // Direktangebote ("Hinterzimmerdeals", siehe /player_offer) — Default false, anders als Powerranking.
-  private dealSystemOverride = signal<boolean | null>(null);
-  dealSystemSaving = signal(false);
-
   dealSystemEnabled = computed<boolean>(() =>
     this.dealSystemOverride() ?? (this.league()?.deal_system_enabled ?? false)
   );
 
-  setDealSystemEnabled(value: boolean): void {
-    if (this.dealSystemEnabled() === value || this.dealSystemSaving()) return;
-    this.dealSystemSaving.set(true);
-    this.api.patch<any>(`league/${this.leagueId}`, { deal_system_enabled: value }).subscribe({
-      next: () => { this.dealSystemOverride.set(value); this.dealSystemSaving.set(false); },
-      error: () => this.dealSystemSaving.set(false),
+  // ── Liga-Einstellungen-Dialog: Strafen/Powerranking/Direktangebote werden erst mit "Speichern" in
+  // die DB geschrieben, nicht mehr sofort per Klick. Draft-Signale halten die im Dialog gewählten,
+  // noch nicht gespeicherten Werte; sie werden beim Öffnen aus dem aktuellen (gespeicherten) Stand
+  // vorbelegt und beim Schließen ohne Speichern verworfen.
+  @ViewChild('settingsSheet') settingsSheet!: TemplateRef<any>;
+
+  draftFineRuleset     = signal<'classic' | 'none'>('classic');
+  draftPowerranking    = signal(true);
+  draftDealSystem      = signal(false);
+  settingsSaving       = signal(false);
+  settingsSaveError    = signal<string | null>(null);
+
+  settingsChanged = computed(() =>
+    this.draftFineRuleset() !== this.fineRuleset()
+    || this.draftPowerranking() !== this.powerrankingEnabled()
+    || this.draftDealSystem() !== this.dealSystemEnabled()
+  );
+
+  openSettingsDialog(): void {
+    this.draftFineRuleset.set(this.fineRuleset());
+    this.draftPowerranking.set(this.powerrankingEnabled());
+    this.draftDealSystem.set(this.dealSystemEnabled());
+    this.settingsSaveError.set(null);
+    this.bottomSheet.open(this.settingsSheet, { title: 'Liga-Einstellungen' });
+  }
+
+  saveSettings(): void {
+    if (!this.settingsChanged() || this.settingsSaving()) return;
+    this.settingsSaving.set(true);
+    this.settingsSaveError.set(null);
+    this.api.patch<any>(`league/${this.leagueId}`, {
+      fine_ruleset: this.draftFineRuleset(),
+      powerranking_enabled: this.draftPowerranking(),
+      deal_system_enabled: this.draftDealSystem(),
+    }).subscribe({
+      next: () => {
+        this.fineRulesetOverride.set(this.draftFineRuleset());
+        this.powerrankingOverride.set(this.draftPowerranking());
+        this.dealSystemOverride.set(this.draftDealSystem());
+        this.settingsSaving.set(false);
+        this.bottomSheet.close();
+      },
+      error: (err: any) => {
+        this.settingsSaving.set(false);
+        this.settingsSaveError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
     });
   }
 
