@@ -56,6 +56,24 @@
           (click)="setPowerrankingEnabled(false)"
         >Aus</button>
       </span>
+
+      <span class="fine-ruleset-toggle">
+        <span class="fine-ruleset-toggle__label">Direktangebote:</span>
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="dealSystemEnabled()"
+          [class.btn-ghost]="!dealSystemEnabled()"
+          [disabled]="dealSystemSaving()"
+          (click)="setDealSystemEnabled(true)"
+        >An</button>
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="!dealSystemEnabled()"
+          [class.btn-ghost]="dealSystemEnabled()"
+          [disabled]="dealSystemSaving()"
+          (click)="setDealSystemEnabled(false)"
+        >Aus</button>
+      </span>
     </div>
   }
 

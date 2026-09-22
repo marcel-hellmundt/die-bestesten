@@ -53,7 +53,7 @@ interface DirectOffersResponse { offers: DirectOffer[]; window_open: boolean; }
 })
 export class BidsComponent {
   private api   = inject(ApiService);
-  private cache = inject(DataCacheService);
+  cache = inject(DataCacheService); // im Template referenziert (dealSystemEnabled)
 
   private refresh$ = new Subject<void>();
 
@@ -292,6 +292,7 @@ export class BidsComponent {
 
   constructor() {
     this.cache.ensureMyTeam();
+    this.cache.ensureLeague();
     effect(() => {
       if (this.offersData() !== undefined) this.loadingSignal.set(false);
     });

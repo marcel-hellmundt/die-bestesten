@@ -204,6 +204,23 @@ export class LeagueDetailComponent {
     });
   }
 
+  // Direktangebote ("Hinterzimmerdeals", siehe /player_offer) — Default false, anders als Powerranking.
+  private dealSystemOverride = signal<boolean | null>(null);
+  dealSystemSaving = signal(false);
+
+  dealSystemEnabled = computed<boolean>(() =>
+    this.dealSystemOverride() ?? (this.league()?.deal_system_enabled ?? false)
+  );
+
+  setDealSystemEnabled(value: boolean): void {
+    if (this.dealSystemEnabled() === value || this.dealSystemSaving()) return;
+    this.dealSystemSaving.set(true);
+    this.api.patch<any>(`league/${this.leagueId}`, { deal_system_enabled: value }).subscribe({
+      next: () => { this.dealSystemOverride.set(value); this.dealSystemSaving.set(false); },
+      error: () => this.dealSystemSaving.set(false),
+    });
+  }
+
   groupedMismatches(mismatches: any[]): { seasonId: string; matchdays: { matchdayNumber: number; items: any[] }[] }[] {
     const seasonMap = new Map<string, Map<number, any[]>>();
     for (const mm of mismatches) {

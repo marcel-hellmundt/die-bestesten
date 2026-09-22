@@ -26,7 +26,7 @@ export class DataCacheService {
   private myTeamState    = signal<{ data: { id: string; team_name: string; season_id: string; color: string | null; color_secondary: string | null } | null; loaded: boolean }>({ data: null, loaded: false });
   private squadState     = signal<{ players: any[]; loaded: boolean }>({ players: [], loaded: false });
   private lineupState    = signal<{ hasMatchday: boolean; nominated: any[]; loaded: boolean }>({ hasMatchday: false, nominated: [], loaded: false });
-  private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; fineRuleset: string | null; powerrankingEnabled: boolean; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, loaded: false });
+  private leagueState    = signal<{ id: string | null; slug: string | null; name: string | null; divisionId: string | null; fineRuleset: string | null; powerrankingEnabled: boolean; dealSystemEnabled: boolean; loaded: boolean }>({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, dealSystemEnabled: false, loaded: false });
   private h2hStatusState = signal<{ exists: boolean; loaded: boolean }>({ exists: false, loaded: false });
 
   seasons        = computed(() => this.seasonsState().data);
@@ -50,6 +50,9 @@ export class DataCacheService {
   finesEnabled = computed(() => this.leagueState().fineRuleset !== 'none');
   // Default true solange nicht geladen — entspricht dem DB-Default für league.powerranking_enabled.
   powerrankingEnabled = computed(() => this.leagueState().powerrankingEnabled);
+  // Default false solange nicht geladen — entspricht dem DB-Default für league.deal_system_enabled
+  // (Direktangebote/"Hinterzimmerdeals", siehe /player_offer, sind opt-in).
+  dealSystemEnabled = computed(() => this.leagueState().dealSystemEnabled);
 
   // "Hot-Takes & Wetten" ist rein hartkodierter, saisonaler Inhalt für die eigene Liga — andere
   // Ligen, die diese Webapp nutzen, sollen weder den Menüpunkt noch die Seite sehen.
@@ -148,13 +151,13 @@ export class DataCacheService {
   ensureLeague(): void {
     if (this.leagueState().loaded) return;
     this.api.get<any>('league/mine').subscribe({
-      next: data => this.leagueState.set({ id: data.id ?? null, slug: data.slug ?? null, name: data.name ?? null, divisionId: data.division_id ?? null, fineRuleset: data.fine_ruleset ?? null, powerrankingEnabled: data.powerranking_enabled ?? true, loaded: true }),
-      error: ()   => this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, loaded: true }),
+      next: data => this.leagueState.set({ id: data.id ?? null, slug: data.slug ?? null, name: data.name ?? null, divisionId: data.division_id ?? null, fineRuleset: data.fine_ruleset ?? null, powerrankingEnabled: data.powerranking_enabled ?? true, dealSystemEnabled: data.deal_system_enabled ?? false, loaded: true }),
+      error: ()   => this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, dealSystemEnabled: false, loaded: true }),
     });
   }
 
   invalidateLeague(): void {
-    this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, loaded: false });
+    this.leagueState.set({ id: null, slug: null, name: null, divisionId: null, fineRuleset: null, powerrankingEnabled: true, dealSystemEnabled: false, loaded: false });
   }
 
   h2hTournamentEverExisted = computed(() => this.h2hStatusState().exists);

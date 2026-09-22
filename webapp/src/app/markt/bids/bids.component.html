@@ -183,7 +183,9 @@
     <section class="card direct-card">
       <h2 class="direct-card__title">Angebote von anderen Managern</h2>
       <p class="direct-card__hint">
-        @if (directWindowOpen()) {
+        @if (!cache.dealSystemEnabled()) {
+          Direktangebote sind in dieser Liga deaktiviert — bestehende Angebote laufen unbeantwortet bis zu ihrem Ablauf weiter.
+        } @else if (directWindowOpen()) {
           Annehmen vollzieht den Wechsel sofort — das Geld steht dir noch in dieser Transferphase zur Verfügung. Mit einem Gegenangebot schlägst du einen höheren Preis vor.
         } @else {
           Antworten ist nur innerhalb einer Transferphase möglich. Angebote laufen am Ende der Phase automatisch ab.
@@ -224,16 +226,16 @@
               <span class="bid-pct" [class.bid-pct--success]="directPct(o) <= 100" [class.bid-pct--warning]="directPct(o) > 100 && directPct(o) < 200" [class.bid-pct--danger]="directPct(o) >= 200">{{ directPct(o) }}%</span>
             </div>
             <div class="bid-actions">
-              <button class="btn btn-sm btn-primary" [disabled]="!directWindowOpen() || directBusyId() !== null"
-                      [title]="directWindowOpen() ? '' : 'Nur innerhalb einer Transferphase möglich'"
+              <button class="btn btn-sm btn-primary" [disabled]="!cache.dealSystemEnabled() || !directWindowOpen() || directBusyId() !== null"
+                      [title]="!cache.dealSystemEnabled() ? 'Direktangebote sind in dieser Liga deaktiviert' : (directWindowOpen() ? '' : 'Nur innerhalb einer Transferphase möglich')"
                       (click)="respondDirect(o, 'accept')">Annehmen</button>
               @if (o.kind === 'offer') {
-                <button class="btn btn-sm btn-ghost" [disabled]="!directWindowOpen() || directBusyId() !== null"
-                        [title]="directWindowOpen() ? 'Höheren Preis vorschlagen' : 'Nur innerhalb einer Transferphase möglich'"
+                <button class="btn btn-sm btn-ghost" [disabled]="!cache.dealSystemEnabled() || !directWindowOpen() || directBusyId() !== null"
+                        [title]="!cache.dealSystemEnabled() ? 'Direktangebote sind in dieser Liga deaktiviert' : (directWindowOpen() ? 'Höheren Preis vorschlagen' : 'Nur innerhalb einer Transferphase möglich')"
                         (click)="startCounter(o)">Gegenangebot</button>
               }
-              <button class="btn btn-sm btn-danger" [disabled]="!directWindowOpen() || directBusyId() !== null"
-                      [title]="directWindowOpen() ? '' : 'Nur innerhalb einer Transferphase möglich'"
+              <button class="btn btn-sm btn-danger" [disabled]="!cache.dealSystemEnabled() || !directWindowOpen() || directBusyId() !== null"
+                      [title]="!cache.dealSystemEnabled() ? 'Direktangebote sind in dieser Liga deaktiviert' : (directWindowOpen() ? '' : 'Nur innerhalb einer Transferphase möglich')"
                       (click)="respondDirect(o, 'decline')">Ablehnen</button>
             </div>
 
@@ -295,7 +297,9 @@
             </div>
             <div class="bid-actions">
               @if (o.status === 'pending') {
-                <button class="btn btn-sm btn-danger" [disabled]="directBusyId() !== null" (click)="cancelDirect(o)">Stornieren</button>
+                <button class="btn btn-sm btn-danger" [disabled]="!cache.dealSystemEnabled() || directBusyId() !== null"
+                        [title]="cache.dealSystemEnabled() ? '' : 'Direktangebote sind in dieser Liga deaktiviert'"
+                        (click)="cancelDirect(o)">Stornieren</button>
               }
             </div>
           </li>

@@ -268,6 +268,28 @@ class Database
     }
 
     /**
+     * Ob Direktangebote ("Hinterzimmerdeals", siehe /player_offer) für die aktuelle Liga aktiv sind.
+     * Default FALSE (deckt fehlende Spalte auf einer noch nicht migrierten DB und einen NULL-Wert
+     * gleichermaßen ab) — anders als z.B. Powerranking ist das Deal-System bewusst opt-in.
+     */
+    protected function getLeagueDealSystemEnabled(): bool
+    {
+        $leagueId = $GLOBALS['auth_league_id'] ?? null;
+        try {
+            if ($leagueId) {
+                $q = $this->con->prepare("SELECT deal_system_enabled FROM league WHERE id = :id LIMIT 1");
+                $q->execute([':id' => $leagueId]);
+            } else {
+                $q = $this->con->prepare("SELECT deal_system_enabled FROM league WHERE db_name = :db_name LIMIT 1");
+                $q->execute([':db_name' => $_ENV['DB_NAME_LEAGUE']]);
+            }
+            return (bool) $q->fetchColumn();
+        } catch (\Throwable $e) {
+            return false; // z.B. Spalte fehlt noch (Migration nicht eingespielt)
+        }
+    }
+
+    /**
      * Startbudget + Punkte-Bonus der Division, aus der sich die aktuelle Liga bedient (Fallback:
      * höchste deutsche Division, falls die Liga keine division_id konfiguriert hat — dasselbe
      * Fallback-Muster wie in player_in_season.database.php::getAvailablePlayers()). Zentral hier

@@ -471,6 +471,8 @@ trait PlayerOfferTrait
 
     public function createPlayerOffer(string $buyerTeamId, string $playerId, int $offerValue, array $offeredPlayerIds = []): array
     {
+        if (!$this->getLeagueDealSystemEnabled()) return $this->dealError(403, 'Direktangebote sind in dieser Liga deaktiviert');
+
         $seasonId = $this->getActiveSeasonId();
         if (!$seasonId) return $this->dealError(422, 'Keine aktive Saison');
 
@@ -710,6 +712,7 @@ trait PlayerOfferTrait
             'position' => null, 'position_full' => false,
             'seller_team' => null, 'target_window' => null, 'existing_offer_id' => null,
         ];
+        if (!$this->getLeagueDealSystemEnabled()) { $out['reason'] = 'disabled'; return $out; }
         if (!$seasonId) { $out['reason'] = 'no_season'; return $out; }
 
         $this->expireStalePlayerOffers();
@@ -753,11 +756,14 @@ trait PlayerOfferTrait
      */
     public function getPlayerOfferEligibility(string $buyerTeamId): array
     {
-        $seasonId = $this->getActiveSeasonId();
         $out = [
+            'enabled' => $this->getLeagueDealSystemEnabled(),
             'target_window' => null, 'available_budget' => 0, 'full_positions' => [],
             'open_player_ids' => [],
         ];
+        if (!$out['enabled']) return $out;
+
+        $seasonId = $this->getActiveSeasonId();
         if (!$seasonId) return $out;
 
         $this->expireStalePlayerOffers();
@@ -786,6 +792,7 @@ trait PlayerOfferTrait
     public function getIncomingPlayerOfferCount(string $managerId): int
     {
         try {
+            if (!$this->getLeagueDealSystemEnabled()) return 0; // deaktiviert → keine Handlungsaufforderung im Menü
             if (!$this->hasPlayerOfferTable()) return 0;
             $seasonId = $this->getActiveSeasonId();
             if (!$seasonId) return 0;
@@ -841,6 +848,8 @@ trait PlayerOfferTrait
     // Der Empfänger (Verkäufer beim normalen Angebot, Käufer beim Gegenangebot) lehnt ab.
     public function declinePlayerOffer(string $offerId, string $teamId): array
     {
+        if (!$this->getLeagueDealSystemEnabled()) return $this->dealError(403, 'Direktangebote sind in dieser Liga deaktiviert');
+
         $this->expireStalePlayerOffers();
         $seasonId = $this->getActiveSeasonId();
         if (!$seasonId || !$this->findTransferwindow($seasonId, true)) {
@@ -881,6 +890,7 @@ trait PlayerOfferTrait
      */
     public function counterPlayerOffer(string $offerId, string $sellerTeamId, int $value): array
     {
+        if (!$this->getLeagueDealSystemEnabled()) return $this->dealError(403, 'Direktangebote sind in dieser Liga deaktiviert');
         if (!$this->hasCounterSupport()) return $this->dealError(422, 'Gegenangebote sind auf dieser Liga noch nicht verfügbar');
         $seasonId = $this->getActiveSeasonId();
         if (!$seasonId) return $this->dealError(422, 'Keine aktive Saison');
@@ -972,6 +982,8 @@ trait PlayerOfferTrait
      */
     public function acceptPlayerOffer(string $offerId, string $actingTeamId): array
     {
+        if (!$this->getLeagueDealSystemEnabled()) return $this->dealError(403, 'Direktangebote sind in dieser Liga deaktiviert');
+
         $seasonId = $this->getActiveSeasonId();
         if (!$seasonId) return $this->dealError(422, 'Keine aktive Saison');
 

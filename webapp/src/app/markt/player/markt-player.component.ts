@@ -266,6 +266,7 @@ export class MarktPlayerComponent {
           startWith(null),
           switchMap(() =>
             this.api.get<{
+              enabled: boolean;
               target_window: { id: string; end_date: string } | null;
               available_budget: number;
               full_positions: string[];
@@ -287,6 +288,7 @@ export class MarktPlayerComponent {
     if (!p.current_team_id) return 'Spieler ist in keinem Team';
     if (p.current_team_id === this.cache.myTeamId()) return 'Das ist dein eigener Spieler';
     if (!el) return 'Bedingungen werden geladen…';
+    if (!el.enabled) return 'Direktangebote sind in dieser Liga deaktiviert';
     if (el.open_player_ids.includes(p.id)) return 'Du hast bereits ein offenes Angebot für diesen Spieler';
     if (!el.target_window) return 'Keine offene oder kommende Transferphase geplant';
     // Volle Position / zu wenig Budget sperren den Button nicht: ein Tausch (eigene Spieler mitbieten) kann

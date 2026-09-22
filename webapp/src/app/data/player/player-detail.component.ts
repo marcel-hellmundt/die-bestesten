@@ -758,6 +758,7 @@ export class PlayerDetailComponent {
 
   directReasonText(reason: string | null): string {
     return ({
+      disabled: 'Direktangebote sind in dieser Liga deaktiviert',
       no_season: 'Keine aktive Saison',
       not_owned: 'Spieler ist in keinem Team',
       own_player: 'Das ist dein eigener Spieler',

@@ -77,7 +77,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/league/:id',
-                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) oder Strafen-Regelsatz setzen ({fine_ruleset: "classic"|"none"}) oder Powerranking an/aus schalten ({powerranking_enabled: bool}) — Admin',
+                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) oder Strafen-Regelsatz setzen ({fine_ruleset: "classic"|"none"}) oder Powerranking an/aus schalten ({powerranking_enabled: bool}) oder Direktangebote ("Hinterzimmerdeals", siehe /player_offer) an/aus schalten ({deal_system_enabled: bool}, default false — deaktiviert: kein Anlegen/Annehmen/Ablehnen/Gegenangebot mehr möglich (403), bereits offene Angebote laufen unbeantwortbar bis zu ihrem Ablauf weiter, Frontend zeigt sie ausgegraut) — Admin',
                         'path_params' => [':id' => 'UUID der Liga'],
                         'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)', 'visibility' => '"public" oder "private"', 'fine_ruleset' => '"classic" (Kegelstrafen) oder "none" (keine Strafen)'],
                     ],
@@ -708,7 +708,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_offer/quote',
-                        'description' => 'Grundlage für den "Angebot machen"-Button auf der Spielerseite — gibt {can_offer,reason,market_value (serverseitig, Verkaufsformel: Grundpreis + Saisonpunkte * points_bonus),available_budget (Budget − Reservierungen),seller_team|null,target_window:{id,start_date,end_date,is_open}|null,existing_offer_id|null} zurück; position,position_full (Kader des eigenen Teams auf dieser Position voll — sperrt nicht mehr, ein Tausch mit einem Spieler derselben Position behebt es); reason (wenn can_offer=false): no_season|not_owned|own_player|no_market_value|already_offered|no_window — Auth',
+                        'description' => 'Grundlage für den "Angebot machen"-Button auf der Spielerseite — gibt {can_offer,reason,market_value (serverseitig, Verkaufsformel: Grundpreis + Saisonpunkte * points_bonus),available_budget (Budget − Reservierungen),seller_team|null,target_window:{id,start_date,end_date,is_open}|null,existing_offer_id|null} zurück; position,position_full (Kader des eigenen Teams auf dieser Position voll — sperrt nicht mehr, ein Tausch mit einem Spieler derselben Position behebt es); reason (wenn can_offer=false): disabled (siehe league.deal_system_enabled)|no_season|not_owned|own_player|no_market_value|already_offered|no_window — Auth',
                         'query_params' => ['team_id' => 'UUID des eigenen Teams', 'player_id' => 'UUID des Spielers'],
                     ],
                     [
@@ -720,7 +720,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_offer/eligibility',
-                        'description' => 'Team-weite Bedingungen für Direktangebote, gebündelt für Listen (z.B. /markt/spieler) — gibt {target_window:{id,start_date,end_date,is_open}|null,available_budget,full_positions:[GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD],open_player_ids:[UUID]} zurück; die spielerbezogenen Bedingungen (Besitzer, Marktwert) prüft der Client anhand seiner Listendaten, maßgeblich bleiben /player_offer/quote und POST /player_offer — Auth',
+                        'description' => 'Team-weite Bedingungen für Direktangebote, gebündelt für Listen (z.B. /markt/spieler) — gibt {enabled (league.deal_system_enabled — false: alle übrigen Felder leer/null),target_window:{id,start_date,end_date,is_open}|null,available_budget,full_positions:[GOALKEEPER|DEFENDER|MIDFIELDER|FORWARD],open_player_ids:[UUID]} zurück; die spielerbezogenen Bedingungen (Besitzer, Marktwert) prüft der Client anhand seiner Listendaten, maßgeblich bleiben /player_offer/quote und POST /player_offer — Auth',
                         'query_params' => ['team_id' => 'UUID des eigenen Teams'],
                     ],
                     [

@@ -211,6 +211,7 @@ CREATE TABLE IF NOT EXISTS league (
     visibility  ENUM('public','private') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'public',  -- public = Beitritt per Anfrage möglich; private = nur Einladung
     fine_ruleset ENUM('classic','none') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'classic',  -- classic = Spieltags-/Saisonstrafen (Kegelstrafen); none = keine Strafen
     powerranking_enabled BOOLEAN NOT NULL DEFAULT TRUE,  -- Kicker-Stecktabelle-Tippspiel für diese Liga aktiv?
+    deal_system_enabled BOOLEAN NOT NULL DEFAULT FALSE,  -- Direktangebote zwischen Managern ("Hinterzimmerdeals", siehe /player_offer) für diese Liga aktiv? Default AUS
     FOREIGN KEY (division_id) REFERENCES division(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

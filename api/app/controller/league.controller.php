@@ -272,13 +272,22 @@ class LeagueController extends _BaseController
                 return ['status' => false, 'message' => 'powerranking_enabled muss ein Boolean sein'];
             }
             $this->db->updateLeaguePowerrankingEnabled($this->id, $enabled);
+        }
+
+        if (array_key_exists('deal_system_enabled', $body)) {
+            $enabled = $body['deal_system_enabled'];
+            if (!is_bool($enabled)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'deal_system_enabled muss ein Boolean sein'];
+            }
+            $this->db->updateLeagueDealSystemEnabled($this->id, $enabled);
             return ['status' => true];
         }
 
         $divisionId = array_key_exists('division_id', $body) ? ($body['division_id'] ?: null) : 'MISSING';
         if ($divisionId === 'MISSING') {
             http_response_code(400);
-            return ['status' => false, 'message' => 'division_id, visibility, fine_ruleset oder powerranking_enabled erforderlich'];
+            return ['status' => false, 'message' => 'division_id, visibility, fine_ruleset, powerranking_enabled oder deal_system_enabled erforderlich'];
         }
 
         $this->db->updateLeagueDivision($this->id, $divisionId);
