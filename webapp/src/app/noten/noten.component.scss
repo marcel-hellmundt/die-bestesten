@@ -358,3 +358,22 @@
   font-size: $font-sm;
   padding: $space-2 0;
 }
+
+.noten-footer {
+  display: flex;
+  justify-content: center;
+  gap: $space-4;
+  margin-top: $space-8;
+  padding-top: $space-4;
+  border-top: 1px solid $color-border;
+  font-size: $font-xs;
+
+  a {
+    color: $color-text-muted;
+    text-decoration: none;
+
+    &:hover {
+      color: $color-text;
+    }
+  }
+}

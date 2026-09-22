@@ -1,0 +1,98 @@
+@use '../../../styles/variables' as *;
+
+// Gleiches Grundlayout wie datenschutz.component.scss (bewusst dupliziert statt geteilt — zwei
+// kleine, unabhängige Seiten ohne gemeinsame Komponente).
+.legal-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: $space-8;
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: $space-5 $space-4;
+  }
+}
+
+.legal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-6;
+}
+
+.legal-brand {
+  font-family: $font-display;
+  font-weight: $font-weight-bold;
+  font-size: $font-sm;
+  color: $color-text-muted;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-accent;
+  }
+}
+
+.legal-nav {
+  display: flex;
+  gap: $space-4;
+  font-size: $font-sm;
+
+  a {
+    color: $color-text-muted;
+    text-decoration: none;
+
+    &:hover {
+      color: $color-text;
+    }
+  }
+
+  &__link--active {
+    color: $color-text;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.legal-content {
+  line-height: 1.6;
+}
+
+.legal-updated {
+  color: $color-text-muted;
+  font-size: $font-sm;
+  margin-bottom: $space-6;
+}
+
+.legal-section {
+  margin-bottom: $space-6;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h2 {
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $space-2;
+  }
+
+  p {
+    margin-bottom: $space-3;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  ul {
+    margin: 0 0 $space-3;
+    padding-left: $space-6;
+
+    li {
+      margin-bottom: $space-1;
+    }
+  }
+
+  a {
+    color: $color-accent;
+  }
+}
