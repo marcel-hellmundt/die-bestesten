@@ -3,6 +3,54 @@
 trait NotenTrait
 {
     /**
+     * Anonymes Aufruf-Tracking für die Gast-Seite /noten (siehe noten_guest_visit im Schema für die
+     * Consent-Begründung). $anonId kommt vom Client NUR nach Zustimmung im Consent-Banner
+     * (localStorage) — ohne Zustimmung wird ohne ID getrackt (reiner, nicht verknüpfbarer
+     * Seitenaufruf-Zähler, kein Wiedererkennen möglich). Gleiches Heartbeat-Muster wie
+     * SessionTrait::touchSession(), aber ohne Named-Lock: eine doppelt gezählte 0s-Zeile bei
+     * parallelen Requests ist hier unkritisch (nur eine grobe Besucherzahl, kein individuelles
+     * Nutzerkonto betroffen).
+     */
+    public function trackNotenGuestVisit(?string $anonId): void
+    {
+        [$deviceType, $os, $browser] = $this->parseUserAgent($_SERVER['HTTP_USER_AGENT'] ?? '');
+
+        if ($anonId === null) {
+            // Kein Consent — immer eine neue Zeile, da ohne ID keine Zuordnung zu früheren
+            // Aufrufen desselben Besuchers möglich (und gewollt) ist.
+            $this->con->prepare(
+                "INSERT INTO noten_guest_visit (anon_id, device_type, os, browser)
+                 VALUES (NULL, :device_type, :os, :browser)"
+            )->execute([':device_type' => $deviceType, ':os' => $os, ':browser' => $browser]);
+            return;
+        }
+
+        $find = $this->con->prepare(
+            "SELECT id, device_type, os, browser FROM noten_guest_visit
+             WHERE anon_id = :id AND ended_at >= (NOW() - INTERVAL 2 MINUTE)
+             ORDER BY ended_at DESC LIMIT 1"
+        );
+        $find->execute([':id' => $anonId]);
+        $open = $find->fetch(PDO::FETCH_ASSOC);
+
+        $sameDevice = $open
+            && $open['device_type'] === $deviceType
+            && $open['os'] === $os
+            && $open['browser'] === $browser;
+
+        if ($sameDevice) {
+            $this->con->prepare(
+                "UPDATE noten_guest_visit SET ended_at = NOW() WHERE id = :id"
+            )->execute([':id' => $open['id']]);
+        } else {
+            $this->con->prepare(
+                "INSERT INTO noten_guest_visit (anon_id, device_type, os, browser)
+                 VALUES (:id, :device_type, :os, :browser)"
+            )->execute([':id' => $anonId, ':device_type' => $deviceType, ':os' => $os, ':browser' => $browser]);
+        }
+    }
+
+    /**
      * Öffentliche Noten-Übersicht (/noten) — 1. Bundesliga (level=1, country=DE), fest, unabhängig
      * von einer evtl. konfigurierten Liga-Division, da die Seite auch Gästen ohne Liga-Kontext
      * dient. $matchdayId optional — Default: letzter bereits angepfiffener Spieltag der aktiven

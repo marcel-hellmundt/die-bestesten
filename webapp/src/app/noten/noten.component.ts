@@ -5,6 +5,19 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../auth/auth.service';
 
+// Anonymes Aufruf-Tracking für Gäste ohne Konto, siehe POST /noten/track und die
+// Datenschutzerklärung (Ziffer 10). Zwei localStorage-Schlüssel, unabhängig von der
+// Consent-Entscheidung selbst als "unbedingt notwendig" ohne Einwilligung gespeichert (sonst
+// müsste bei jedem Aufruf erneut gefragt werden):
+//  - CONSENT_KEY: 'accepted' | 'declined' — die getroffene Entscheidung, oder fehlt = noch nie gefragt.
+//  - ANON_ID_KEY: zufällige ID, NUR bei 'accepted' gesetzt, macht wiederkehrende Aufrufe desselben
+//    Browsers erkennbar (server-seitig in noten_guest_visit).
+// Bei 'declined' oder fehlender Entscheidung wird trotzdem ein Aufruf ohne ID getrackt (siehe
+// trackVisit()) — ein einzelner, mit keinem anderen Aufruf verknüpfbarer Zähler, der ohne
+// Einwilligung nach § 25 TDDDG zulässig ist (kein Wiedererkennen möglich).
+const CONSENT_KEY = 'noten_guest_consent';
+const ANON_ID_KEY = 'noten_guest_anon_id';
+
 interface NotenPlayer {
   id: string;
   displayname: string;
@@ -84,6 +97,11 @@ export class NotenComponent {
   matchday  = computed(() => this.data().matchday);
   clubs     = computed(() => this.data().clubs);
 
+  // Consent-Banner nur für echte Gäste (kein Konto/kein eingeloggter Manager) — angemeldete
+  // Manager werden bereits über manager_session erfasst, sobald sie authentifizierte Endpunkte
+  // aufrufen; /noten selbst ist ein Guest-Endpunkt und löst dort keinen Heartbeat aus.
+  showConsentBanner = signal(false);
+
   constructor() {
     // Erster Aufruf (ohne matchday_id) liefert den serverseitig gewählten Default-Spieltag —
     // selectedMatchdayId einmalig darauf synchronisieren, damit der Picker den richtigen Button
@@ -95,6 +113,51 @@ export class NotenComponent {
         this.selectedMatchdayId.set(md.id);
       }
     });
+
+    if (!this.isLoggedIn()) this.trackVisit();
+  }
+
+  /**
+   * Ein Tracking-Aufruf pro Seitenladung: mit anon_id bei erteiltem Consent, sonst ohne (siehe
+   * Kommentar zu CONSENT_KEY/ANON_ID_KEY oben). Fire-and-forget — ein Fehler hier darf die Seite
+   * nie beeinträchtigen, daher kein sichtbares Error-Handling.
+   */
+  private trackVisit(): void {
+    let decision: string | null = null;
+    let anonId: string | null = null;
+    try {
+      decision = localStorage.getItem(CONSENT_KEY);
+      if (decision === 'accepted') {
+        anonId = localStorage.getItem(ANON_ID_KEY);
+        if (!anonId) {
+          anonId = crypto.randomUUID();
+          localStorage.setItem(ANON_ID_KEY, anonId);
+        }
+      }
+    } catch {
+      // localStorage nicht verfügbar (z.B. privater Modus) — ohne ID weiter, wie "kein Consent".
+    }
+
+    this.api.post<{ status: boolean }>('noten/track', anonId ? { anon_id: anonId } : {}).subscribe({
+      error: () => {},
+    });
+
+    if (decision === null) this.showConsentBanner.set(true);
+  }
+
+  acceptTracking(): void {
+    try {
+      localStorage.setItem(CONSENT_KEY, 'accepted');
+      localStorage.setItem(ANON_ID_KEY, crypto.randomUUID());
+    } catch { /* siehe trackVisit() */ }
+    this.showConsentBanner.set(false);
+  }
+
+  declineTracking(): void {
+    try {
+      localStorage.setItem(CONSENT_KEY, 'declined');
+    } catch { /* siehe trackVisit() */ }
+    this.showConsentBanner.set(false);
   }
 
   selectMatchday(id: string): void {

@@ -135,3 +135,18 @@
     <a routerLink="/datenschutz">Datenschutz</a>
   </footer>
 </div>
+
+@if (showConsentBanner()) {
+  <div class="consent-banner" role="dialog" aria-label="Zustimmung zur Besucherzählung">
+    <p class="consent-banner__text">
+      Wir zählen anonyme Seitenaufrufe. Mit deiner Zustimmung merken wir uns eine zufällige
+      Kennung in deinem Browser, um wiederkehrende Besuche zu erkennen — ohne Zustimmung zählen
+      wir deinen Aufruf trotzdem, aber ohne dich wiederzuerkennen. Mehr dazu im
+      <a routerLink="/datenschutz">Datenschutz</a>.
+    </p>
+    <div class="consent-banner__actions">
+      <button class="btn btn-sm btn-ghost" (click)="declineTracking()">Ablehnen</button>
+      <button class="btn btn-sm btn-primary" (click)="acceptTracking()">Zustimmen</button>
+    </div>
+  </div>
+}

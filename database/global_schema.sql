@@ -315,6 +315,25 @@ CREATE TABLE IF NOT EXISTS manager_session (
     INDEX idx_manager_session_lookup (manager_id, ended_at)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: noten_guest_visit (anonymes Aufruf-Tracking für /noten, siehe POST /noten/track)
+-- anon_id = zufällige, clientseitig generierte ID aus localStorage, NUR nach Consent-Banner-
+-- Zustimmung gesetzt; ohne Zustimmung bleibt anon_id NULL — jede Zeile dann ein einzelner,
+-- nicht mit anderen Aufrufen verknüpfbarer anonymer Seitenaufruf (kein Wiedererkennen möglich,
+-- daher ohne Einwilligung nach §25 TDDDG zulässig, siehe Datenschutzerklärung Ziffer 3/10).
+-- Mit anon_id wird wie bei manager_session die jüngste offene Zeile verlängert statt eine neue
+-- angelegt (Heartbeat-Muster, 2-Minuten-Fenster) — ohne anon_id wird immer eine neue Zeile
+-- eingefügt (kein Wiedererkennen möglich, jede Zeile = 1 Seitenaufruf).
+CREATE TABLE IF NOT EXISTS noten_guest_visit (
+    id          CHAR(36)    NOT NULL DEFAULT (UUID()) PRIMARY KEY,
+    anon_id     CHAR(36)    NULL DEFAULT NULL,        -- NULL = Consent abgelehnt/noch nicht erteilt
+    started_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    device_type VARCHAR(10) NULL DEFAULT NULL, -- 'mobile' | 'tablet' | 'desktop', aus User-Agent geparst; NULL = nicht erkennbar
+    os          VARCHAR(20) NULL DEFAULT NULL,
+    browser     VARCHAR(20) NULL DEFAULT NULL,
+    INDEX idx_noten_guest_visit_lookup (anon_id, ended_at)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Tabelle: notification
 CREATE TABLE IF NOT EXISTS notification (
     id          CHAR(36)     NOT NULL DEFAULT (UUID()) PRIMARY KEY,
