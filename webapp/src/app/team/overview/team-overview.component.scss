@@ -13,6 +13,7 @@
 }
 
 .chart-card {
+  position: relative; // Anker für .chart-tip
   flex: 1;
   min-width: 0;
   padding: $space-4;
@@ -44,6 +45,93 @@
 .chart-grid {
   stroke: $color-border;
   stroke-width: 1;
+}
+
+// ── Hover ──────────────────────────────────────────────────────────────────
+.chart-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.chart-hover-band {
+  fill: $color-surface-alt;
+}
+
+.chart-mark {
+  transition: opacity $transition-fast;
+
+  &--dim { opacity: 0.45; }
+}
+
+.chart-dot {
+  transition: r $transition-fast;
+}
+
+.chart-tip {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, calc(-100% - 6px));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+  max-width: 180px;
+  padding: $space-2 $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  font-size: $font-xs;
+  color: $color-text;
+  pointer-events: none;
+  white-space: nowrap;
+
+  &__title {
+    font-size: 10px;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+  }
+
+  &__value {
+    display: flex;
+    align-items: baseline;
+    gap: $space-2;
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__muted {
+    font-weight: $font-weight-normal;
+    color: $color-text-muted;
+  }
+
+  &__warn { color: $color-danger; }
+
+  &__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px $space-2;
+    margin-top: 2px;
+    color: $color-text-muted;
+    white-space: normal;
+
+    b {
+      color: $color-text;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__change {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+
+    &--up   { color: $color-success; }
+    &--down { color: $color-danger; }
+  }
 }
 
 .chart-label {

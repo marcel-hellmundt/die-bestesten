@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, distinctUntilChanged, filter, map, of, startWith, switchMap } from 'rxjs';
@@ -133,36 +133,74 @@ export class TeamOverviewComponent {
   readonly padT = 8;
   readonly padB = 18;
 
+  // Beide Charts zeigen immer die komplette Saison (Spieltag 1–34), auch wenn erst ein Teil gespielt ist.
+  readonly matchdayCount = 34;
+  private readonly plotW = this.cW - this.padL - this.padR;
+  private readonly plotH = this.cH - this.padT - this.padB;
+  private readonly slotW = this.plotW / this.matchdayCount;
+
+  /** Mitte des Slots für Spieltag n (1-basiert). */
+  private slotCenter(n: number): number {
+    return this.padL + (n - 1) * this.slotW + this.slotW / 2;
+  }
+
+  /** Ein Slot je Spieltag 1–34: X-Achsen-Beschriftung (nur 1, 5, 10, … 34) + Hover-Fläche. */
+  slots = computed(() =>
+    Array.from({ length: this.matchdayCount }, (_, i) => {
+      const n = i + 1;
+      return {
+        number: n,
+        x:      this.padL + i * this.slotW,
+        width:  this.slotW,
+        center: this.slotCenter(n),
+        showLabel: n === 1 || n % 5 === 0 || n === this.matchdayCount,
+      };
+    })
+  );
+
+  /** Ratings je Spieltagsnummer, angereichert um kumulierte Punkte und Platzveränderung. */
+  private byMatchday = computed(() => {
+    const map = new Map<number, any>();
+    let cum = 0;
+    let prevRank: number | null = null;
+    for (const r of this.ratings()) {
+      if (!r.invalid) cum += Number(r.points);
+      const rank = r.running_rank != null ? Number(r.running_rank) : null;
+      map.set(Number(r.matchday_number), {
+        ...r,
+        cumulative_points: cum,
+        rank_change: rank != null && prevRank != null ? prevRank - rank : null, // >0 = verbessert
+      });
+      if (rank != null) prevRank = rank;
+    }
+    return map;
+  });
+
   // ── Chart 1: points bar chart ─────────────────────────────────────────────
   pointsChart = computed(() => {
     const rs = this.ratings();
     if (rs.length === 0) return null;
 
     const color  = this.teamColor() ?? '#bf1d00';
-    const allPts = rs.map(r => +r.points);
-    const maxPts = Math.max(...allPts, 1);
-    const plotW  = this.cW - this.padL - this.padR;
-    const plotH  = this.cH - this.padT - this.padB;
-    const slotW  = plotW / rs.length;
-    const barW   = Math.min(slotW * 0.72, 32);
+    const maxPts = Math.max(...rs.map(r => +r.points), 1);
+    const barW   = Math.min(this.slotW * 0.72, 32);
 
-    const bars = rs.map((r, i) => {
-      const pts  = +r.points;
-      const barH = (pts / maxPts) * plotH;
+    const bars = rs.map(r => {
+      const n    = Number(r.matchday_number);
+      const barH = (Math.max(+r.points, 0) / maxPts) * this.plotH;
       return {
-        x:      this.padL + i * slotW + (slotW - barW) / 2,
-        y:      this.padT + plotH - barH,
+        number: n,
+        x:      this.slotCenter(n) - barW / 2,
+        y:      this.padT + this.plotH - barH,
         width:  barW,
         height: Math.max(barH, 1),
         fill:   r.invalid ? '#d1d5db' : color,
-        labelX: this.padL + i * slotW + slotW / 2,
-        label:  r.matchday_number,
       };
     });
 
     const yTicks = [
-      { y: this.padT,          label: String(maxPts) },
-      { y: this.padT + plotH,  label: '0' },
+      { y: this.padT,              label: String(maxPts) },
+      { y: this.padT + this.plotH, label: '0' },
     ];
 
     return { bars, yTicks };
@@ -170,41 +208,55 @@ export class TeamOverviewComponent {
 
   // ── Chart 2: cumulative position line chart ───────────────────────────────
   positionChart = computed(() => {
-    const rs    = this.ratings();
-    const valid = rs.filter(r => r.running_rank != null);
-    if (valid.length < 2) return null;
+    const valid = this.ratings().filter(r => r.running_rank != null);
+    if (valid.length === 0) return null;
 
-    const color    = this.teamColor() ?? '#bf1d00';
+    const color     = this.teamColor() ?? '#bf1d00';
     const teamCount = this.teamCount();
-    const posR     = Math.max(teamCount - 1, 1);
-    const plotW    = this.cW - this.padL - this.padR;
-    const plotH    = this.cH - this.padT - this.padB;
-    const slotW    = plotW / rs.length;
+    const posR      = Math.max(teamCount - 1, 1);
+    const posY = (pos: number) => this.padT + ((pos - 1) / posR) * this.plotH;
 
-    const posY = (pos: number) =>
-      this.padT + ((pos - 1) / posR) * plotH;
-
-    const dots = valid.map(r => {
-      const i = rs.indexOf(r);
-      return {
-        x:   this.padL + i * slotW + slotW / 2,
-        y:   posY(+r.running_rank),
-        pos: +r.running_rank,
-      };
-    });
+    const dots = valid.map(r => ({
+      number: Number(r.matchday_number),
+      x:      this.slotCenter(Number(r.matchday_number)),
+      y:      posY(+r.running_rank),
+    }));
 
     const line = dots.map((d, i) => `${i === 0 ? 'M' : 'L'}${d.x.toFixed(1)},${d.y.toFixed(1)}`).join(' ');
-
-    const xLabels = rs.map((r, i) => ({
-      x:     this.padL + i * slotW + slotW / 2,
-      label: r.matchday_number,
-    }));
 
     const yTicks: { y: number; label: string }[] = [
       { y: posY(1),         label: '1' },
       { y: posY(teamCount), label: String(teamCount) },
     ];
 
-    return { dots, line, color, xLabels, yTicks };
+    return { dots, line, color, yTicks };
   });
+
+  // ── Hover-Tooltip (beide Charts) ──────────────────────────────────────────
+  tip = signal<{ chart: 'points' | 'position'; number: number; left: number; top: number } | null>(null);
+
+  tipData = computed(() => {
+    const t = this.tip();
+    return t ? (this.byMatchday().get(t.number) ?? null) : null;
+  });
+
+  /** Positioniert den Tooltip über der Mitte des gehoverten Spieltag-Slots, am Card-Rand geklemmt. */
+  showTip(event: Event, chart: 'points' | 'position', number: number): void {
+    const target = event.target as Element;
+    const card   = target.closest('.chart-card') as HTMLElement | null;
+    if (!card) return;
+    const cardRect = card.getBoundingClientRect();
+    const slotRect = target.getBoundingClientRect();
+    const margin   = 80; // halbe Tooltip-Breite, damit er nicht aus der Card ragt
+    const center   = slotRect.left + slotRect.width / 2 - cardRect.left;
+    const left     = Math.min(Math.max(center, margin), cardRect.width - margin);
+    this.tip.set({ chart, number, left, top: slotRect.top - cardRect.top });
+  }
+
+  hideTip(): void { this.tip.set(null); }
+
+  rankChangeLabel(change: number | null): string {
+    if (change == null || change === 0) return '±0';
+    return change > 0 ? `▲ ${change}` : `▼ ${-change}`;
+  }
 }
