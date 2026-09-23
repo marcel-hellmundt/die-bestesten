@@ -11,7 +11,7 @@ interface Transferwindow {
   matchday_id: string;
   start_date: string;
   end_date: string;
-  bid_count: number;
+  bid_count: number | null; // null bei laufender/kommender Phase (geheim)
   deal_count: number;
 }
 
