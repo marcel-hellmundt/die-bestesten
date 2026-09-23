@@ -31,7 +31,7 @@
         <tbody>
           @for (r of ratings(); track r.id) {
             <tr [class.row--invalid]="r.invalid" [class.row--first]="r.placement === 1">
-              <td class="col-st"><a routerLink="/liga/spieltag" [queryParams]="{number: r.matchday_number}" class="matchday-link">{{ r.matchday_number }}</a></td>
+              <td class="col-st"><a routerLink="/liga/spieltag" [queryParams]="{season_id: seasonId(), number: r.matchday_number}" class="matchday-link">{{ r.matchday_number }}</a></td>
               <td class="col-rank">{{ r.placement ?? '–' }}</td>
               <td class="col-icons">
                 <span class="icons-wrap">
@@ -135,37 +135,122 @@
 
   <div class="charts-row">
     @if (pointsChart(); as chart) {
-      <div class="card chart-card">
+      <div class="card chart-card" (pointerleave)="hideTip()">
         <span class="chart-title">Punkte pro Spieltag</span>
         <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" [attr.height]="cH" aria-hidden="true">
+          <!-- Hover-Band hinter den Balken -->
+          @if (tip()?.chart === 'points') {
+            @for (s of slots(); track s.number) {
+              @if (s.number === tip()!.number) {
+                <rect class="chart-hover-band" [attr.x]="s.x" [attr.y]="padT" [attr.width]="s.width" [attr.height]="cH - padT - padB" />
+              }
+            }
+          }
           @for (t of chart.yTicks; track t.label) {
             <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
             <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
           }
-          @for (b of chart.bars; track b.labelX) {
-            <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.width" [attr.height]="b.height" [attr.fill]="b.fill" rx="2" />
-            <text [attr.x]="b.labelX" [attr.y]="cH - padB + 12" class="chart-label chart-label--x">{{ b.label }}</text>
+          @for (b of chart.bars; track b.number) {
+            <rect [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.width" [attr.height]="b.height" [attr.fill]="b.fill" rx="2"
+                  [class.chart-mark--dim]="tip()?.chart === 'points' && tip()!.number !== b.number" class="chart-mark" />
+          }
+          @for (s of slots(); track s.number) {
+            @if (s.showLabel) {
+              <text [attr.x]="s.center" [attr.y]="cH - padB + 12" class="chart-label chart-label--x">{{ s.number }}</text>
+            }
+          }
+          <!-- Hit-Flächen: ganzer Spieltag-Slot (größer als der Balken) -->
+          @for (s of slots(); track s.number) {
+            <rect class="chart-hit" [attr.x]="s.x" [attr.y]="padT" [attr.width]="s.width" [attr.height]="cH - padT - padB"
+                  (pointerenter)="showTip($event, 'points', s.number)" (click)="showTip($event, 'points', s.number)" />
           }
         </svg>
+
+        @if (tip()?.chart === 'points') {
+          <div class="chart-tip" [style.left.px]="tip()!.left" [style.top.px]="tip()!.top">
+            <span class="chart-tip__title">Spieltag {{ tip()!.number }}</span>
+            @if (tipData(); as r) {
+              <span class="chart-tip__value">
+                {{ r.points }} Pkt.
+                @if (r.max_points != null) { <span class="chart-tip__muted">/ {{ r.max_points }} max.</span> }
+              </span>
+              @if (r.invalid) {
+                <span class="chart-tip__warn">Nicht gewertet (ungültige Aufstellung)</span>
+              } @else if (r.placement != null) {
+                <span class="chart-tip__row">Platz {{ r.placement }} am Spieltag</span>
+              }
+              <span class="chart-tip__stats">
+                <span><b>{{ r.goals ?? 0 }}</b> Tore</span>
+                <span><b>{{ r.assists ?? 0 }}</b> Vorl.</span>
+                <span><b>{{ r.sds ?? 0 }}</b> SdS</span>
+                <span><b>{{ r.clean_sheet ?? 0 }}</b> WW</span>
+                @if (+r.red_cards || +r.yellow_red_cards) {
+                  <span><b>{{ +r.red_cards + +r.yellow_red_cards }}</b> Platzverw.</span>
+                }
+              </span>
+              @if (+r.fine > 0) {
+                <span class="chart-tip__row chart-tip__muted">Strafe {{ +r.fine | number:'1.2-2' }} €</span>
+              }
+            } @else {
+              <span class="chart-tip__muted">Noch nicht gespielt</span>
+            }
+          </div>
+        }
       </div>
     }
 
     @if (positionChart(); as chart) {
-      <div class="card chart-card">
+      <div class="card chart-card" (pointerleave)="hideTip()">
         <span class="chart-title">Tabellenplatz (kumulativ)</span>
         <svg class="chart-svg" [attr.viewBox]="'0 0 ' + cW + ' ' + cH" width="100%" [attr.height]="cH" aria-hidden="true">
+          @if (tip()?.chart === 'position') {
+            @for (s of slots(); track s.number) {
+              @if (s.number === tip()!.number) {
+                <rect class="chart-hover-band" [attr.x]="s.x" [attr.y]="padT" [attr.width]="s.width" [attr.height]="cH - padT - padB" />
+              }
+            }
+          }
           @for (t of chart.yTicks; track t.label) {
             <line [attr.x1]="padL" [attr.x2]="cW - padR" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-grid" />
             <text [attr.x]="padL - 4" [attr.y]="t.y + 4" class="chart-label chart-label--y">{{ t.label }}</text>
           }
-          @for (l of chart.xLabels; track l.x) {
-            <text [attr.x]="l.x" [attr.y]="cH - padB + 12" class="chart-label chart-label--x">{{ l.label }}</text>
+          @for (s of slots(); track s.number) {
+            @if (s.showLabel) {
+              <text [attr.x]="s.center" [attr.y]="cH - padB + 12" class="chart-label chart-label--x">{{ s.number }}</text>
+            }
           }
           <path [attr.d]="chart.line" fill="none" [attr.stroke]="chart.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-          @for (d of chart.dots; track d.x) {
-            <circle [attr.cx]="d.x" [attr.cy]="d.y" r="3" [attr.fill]="chart.color" />
+          @for (d of chart.dots; track d.number) {
+            <circle [attr.cx]="d.x" [attr.cy]="d.y" [attr.r]="tip()?.chart === 'position' && tip()!.number === d.number ? 5 : 3"
+                    [attr.fill]="chart.color" class="chart-dot" />
+          }
+          @for (s of slots(); track s.number) {
+            <rect class="chart-hit" [attr.x]="s.x" [attr.y]="padT" [attr.width]="s.width" [attr.height]="cH - padT - padB"
+                  (pointerenter)="showTip($event, 'position', s.number)" (click)="showTip($event, 'position', s.number)" />
           }
         </svg>
+
+        @if (tip()?.chart === 'position') {
+          <div class="chart-tip" [style.left.px]="tip()!.left" [style.top.px]="tip()!.top">
+            <span class="chart-tip__title">Spieltag {{ tip()!.number }}</span>
+            @if (tipData(); as r) {
+              <span class="chart-tip__value">
+                Platz {{ r.running_rank ?? '–' }}
+                @if (r.rank_change != null) {
+                  <span class="chart-tip__change"
+                        [class.chart-tip__change--up]="r.rank_change > 0"
+                        [class.chart-tip__change--down]="r.rank_change < 0">{{ rankChangeLabel(r.rank_change) }}</span>
+                }
+              </span>
+              <span class="chart-tip__row">{{ r.cumulative_points }} Pkt. gesamt</span>
+              <span class="chart-tip__row chart-tip__muted">
+                {{ r.invalid ? 'Spieltag nicht gewertet' : '+' + r.points + ' an diesem Spieltag' }}
+              </span>
+            } @else {
+              <span class="chart-tip__muted">Noch nicht gespielt</span>
+            }
+          </div>
+        }
       </div>
     }
   </div>
