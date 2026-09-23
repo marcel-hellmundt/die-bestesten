@@ -15,7 +15,7 @@
   @if (directDeals().length) {
     <section class="deals">
       <h2 class="deals__title">Hinterzimmerdeals</h2>
-      <div class="player-list">
+      <div class="deals__list">
         @for (deal of directDeals(); track deal.id) {
           <app-direct-deal-card [deal]="deal" />
         }

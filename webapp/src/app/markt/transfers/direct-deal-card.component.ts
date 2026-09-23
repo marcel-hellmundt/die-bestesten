@@ -43,6 +43,12 @@ export class DirectDealCardComponent {
     return `https://img.die-bestesten.de/player/${seasonId}/${playerId}.png`;
   }
 
+  /** Reiner Spielertausch ohne Geld → "Tausch" über dem Pfeil statt eines 0-€-Betrags. */
+  isPureSwap(): boolean {
+    const d = this.deal();
+    return d.price === 0 && !!d.offered_players?.length;
+  }
+
   formatPrice(value: number): string {
     return value.toLocaleString('de-DE') + ' €';
   }

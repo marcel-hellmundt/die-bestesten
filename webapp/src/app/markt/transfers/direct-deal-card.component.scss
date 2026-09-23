@@ -1,9 +1,16 @@
 @use '../../../styles/variables' as *;
 
-:host { display: block; }
+// Card nur so breit wie ihr Inhalt; die Liste darum herum wrappt (flex-wrap)
+:host {
+  display: block;
+  flex: 0 1 auto;
+  max-width: 100%;
+}
 
 .deal-card {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: $space-3;
   padding: $space-3 $space-4;
@@ -21,10 +28,7 @@
   display: flex;
   align-items: center;
   gap: $space-3;
-  flex: 1 1 0;
   min-width: 0;
-
-  &--right { justify-content: flex-end; }
 
   @media (max-width: $mobile-breakpoint) { gap: $space-2; }
 }
@@ -32,7 +36,16 @@
 .deal-swap {
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   color: $color-text-muted;
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
 }
 
 // Bild oben, Name darunter — für Teams und Spieler

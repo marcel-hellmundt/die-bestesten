@@ -14,7 +14,9 @@
     }
 
     <div class="deal-offer">
-      <span class="deal-offer__amount">{{ d.price === 0 && d.offered_players?.length ? 'Tausch' : formatPrice(d.price) }}</span>
+      @if (!isPureSwap()) {
+        <span class="deal-offer__amount">{{ formatPrice(d.price) }}</span>
+      }
       @if (d.offered_players?.length) {
         <div class="deal-offer__players">
           @for (p of d.offered_players; track p.player_id) {
@@ -32,7 +34,12 @@
     </div>
   </div>
 
-  <app-icon class="deal-swap" name="swap" />
+  <div class="deal-swap">
+    @if (isPureSwap()) {
+      <span class="deal-swap__label">Tausch</span>
+    }
+    <app-icon name="swap" />
+  </div>
 
   <!-- Rechts: der gehandelte Spieler + abgebendes Team -->
   <div class="deal-side deal-side--right">

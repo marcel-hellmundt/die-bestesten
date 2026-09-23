@@ -286,4 +286,10 @@
     font-weight: $font-weight-semibold;
     margin: 0 0 $space-3;
   }
+
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-3;
+  }
 }
