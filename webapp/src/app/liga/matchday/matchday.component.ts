@@ -44,12 +44,13 @@ export class MatchdayComponent {
       filter((id): id is string => !!id),
       switchMap(id =>
         this.api.get<any[]>(`matchday?season_id=${id}`).pipe(
+          // id direkt mitführen: bei ?season_id-Deep-Link kann der Saison-Cache noch leer sein
           map(data => ({
-            season: this.cache.seasons().find(s => s.id === id) ?? null,
+            id,
             matchdays: data.map(Matchday.from) as Matchday[],
           })),
           catchError(() => of({
-            season: this.cache.seasons().find(s => s.id === id) ?? null,
+            id,
             matchdays: [] as Matchday[],
           }))
         )
@@ -84,10 +85,10 @@ export class MatchdayComponent {
       toObservable(this.seasonData).pipe(filter((sd): sd is NonNullable<typeof sd> => sd !== undefined)),
       toObservable(this.effectiveNumber),
     ]).pipe(
-      switchMap(([{ season }, effectiveNumber]) => {
+      switchMap(([{ id }, effectiveNumber]) => {
         const url = effectiveNumber !== null
-          ? `team_rating?season_id=${season!.id}&matchday_number=${effectiveNumber}`
-          : `team_rating?season_id=${season!.id}`;
+          ? `team_rating?season_id=${id}&matchday_number=${effectiveNumber}`
+          : `team_rating?season_id=${id}`;
         return this.api.get<any>(url).pipe(
           map(data => ({ data, loading: false, error: null as string | null })),
           startWith({ data: null as any, loading: true, error: null as string | null }),
@@ -98,7 +99,7 @@ export class MatchdayComponent {
     { initialValue: { data: null as any, loading: true, error: null as string | null } }
   );
 
-  seasonId       = computed(() => this.seasonData()?.season?.id ?? null);
+  seasonId       = computed(() => this.seasonData()?.id ?? null);
   matchday       = computed(() => this.ratingsState().data?.matchday ?? null);
   maxNumber      = computed(() => this.ratingsState().data?.max_matchday_number ?? 1);
   ratings        = computed(() => (this.ratingsState().data?.ratings ?? []) as any[]);
@@ -189,7 +190,12 @@ export class MatchdayComponent {
   constructor() {
     this.cache.ensureSeasons();
     this.cache.ensureLeague();
-    const n = inject(ActivatedRoute).snapshot.queryParamMap.get('number');
+    const params = inject(ActivatedRoute).snapshot.queryParamMap;
+    // ?season_id: Deep-Link in eine bestimmte Saison (z.B. von der Team-Seite eines Vorsaison-Teams),
+    // sonst wäre ?number immer relativ zur neuesten Saison.
+    const sid = params.get('season_id');
+    if (sid) this.selectedSeasonId.set(sid);
+    const n = params.get('number');
     if (n) this.selectedNumber.set(parseInt(n, 10));
   }
 }
