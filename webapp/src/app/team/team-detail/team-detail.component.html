@@ -25,6 +25,7 @@
               [disabled]="!canGoPrevTeam()"
               (click)="goPrevTeam()"
               aria-label="Vorheriges Team"
+              title="Vorheriges Team (←)"
             >
               &lsaquo;
             </button>
@@ -34,6 +35,7 @@
               [disabled]="!canGoNextTeam()"
               (click)="goNextTeam()"
               aria-label="Nächstes Team"
+              title="Nächstes Team (→)"
             >&rsaquo;</button></span></h1>
           </div>
         } @else {

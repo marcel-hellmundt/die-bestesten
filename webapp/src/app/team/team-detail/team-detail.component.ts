@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, HostListener, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, distinctUntilChanged, filter, map, of, startWith, switchMap } from 'rxjs';
@@ -79,6 +79,24 @@ export class TeamDetailComponent {
 
   goPrevTeam(): void { this.goToTeamOffset(-1); }
   goNextTeam(): void { this.goToTeamOffset(1); }
+
+  /** Desktop: Pfeiltasten ←/→ wie die beiden Pfeil-Buttons neben dem Teamnamen. */
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    // Nicht beim Tippen in Feldern (Cursor bewegen) oder in eigenen Tastatur-Widgets
+    const el = event.target as HTMLElement | null;
+    if (el && (el.isContentEditable || el.closest('input, textarea, select, [role="slider"], [role="listbox"]'))) return;
+
+    if (event.key === 'ArrowLeft' && this.canGoPrevTeam()) {
+      event.preventDefault();
+      this.goPrevTeam();
+    } else if (event.key === 'ArrowRight' && this.canGoNextTeam()) {
+      event.preventDefault();
+      this.goNextTeam();
+    }
+  }
 
   private state = toSignal(
     this.id$.pipe(
