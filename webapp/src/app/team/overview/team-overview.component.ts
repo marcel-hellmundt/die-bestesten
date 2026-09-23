@@ -182,26 +182,32 @@ export class TeamOverviewComponent {
     if (rs.length === 0) return null;
 
     const color  = this.teamColor() ?? '#bf1d00';
-    const maxPts = Math.max(...rs.map(r => +r.points), 1);
+    const pts    = rs.map(r => +r.points);
+    const maxPts = Math.max(...pts, 1);
+    const minPts = Math.min(...pts, 0);   // Minuspunkte: Achse reicht unter 0, Balken hängen nach unten
     const barW   = Math.min(this.slotW * 0.72, 32);
 
-    const bars = rs.map(r => {
-      const n    = Number(r.matchday_number);
-      const barH = (Math.max(+r.points, 0) / maxPts) * this.plotH;
+    const valueY = (v: number) => this.padT + ((maxPts - v) / (maxPts - minPts)) * this.plotH;
+    const zeroY  = valueY(0);
+
+    const bars = rs.map((r, i) => {
+      const n  = Number(r.matchday_number);
+      const vY = valueY(pts[i]);
       return {
         number: n,
         x:      this.slotCenter(n) - barW / 2,
-        y:      this.padT + this.plotH - barH,
+        y:      Math.min(vY, zeroY),
         width:  barW,
-        height: Math.max(barH, 1),
+        height: Math.max(Math.abs(zeroY - vY), 1),
         fill:   r.invalid ? '#d1d5db' : color,
       };
     });
 
     const yTicks = [
-      { y: this.padT,              label: String(maxPts) },
-      { y: this.padT + this.plotH, label: '0' },
+      { y: valueY(maxPts), label: String(maxPts) },
+      { y: zeroY,          label: '0' },
     ];
+    if (minPts < 0) yTicks.push({ y: valueY(minPts), label: String(minPts) });
 
     return { bars, yTicks };
   });
