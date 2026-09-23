@@ -1,55 +1,59 @@
 @let d = deal();
 <div class="deal-card">
-  <div class="deal-card__player">
-    @if (d.position) {
-      <span class="position-badge position-badge--text" [style.background-color]="positionColors[d.position]">
-        {{ positionLabel[d.position] }}
-      </span>
+  <!-- Links: Bieter-Team + was es gegeben hat (Geld + ggf. Spieler) -->
+  <div class="deal-side">
+    @if (d.buyer; as b) {
+      <a class="tile" [routerLink]="['/team', b.team_id]" [title]="b.team_name">
+        @if (!logoErrors.has(b.team_id)) {
+          <img class="tile__img tile__img--logo" [src]="teamLogoUrl(b)" [alt]="b.team_name" (error)="onLogoError(b.team_id)" />
+        } @else {
+          <span class="tile__img"></span>
+        }
+        <span class="tile__name">{{ b.team_name }}</span>
+      </a>
     }
-    <a class="player-photo-wrap" [routerLink]="['/daten/player', d.player_id]">
-      @if (photoUrl(); as url) {
-        <img class="player-photo" [src]="url" [alt]="d.displayname ?? ''" />
-      } @else {
-        <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
+
+    <div class="deal-offer">
+      <span class="deal-offer__amount">{{ d.price === 0 && d.offered_players?.length ? 'Tausch' : formatPrice(d.price) }}</span>
+      @if (d.offered_players?.length) {
+        <div class="deal-offer__players">
+          @for (p of d.offered_players; track p.player_id) {
+            <a class="tile tile--sm" [routerLink]="['/daten/player', p.player_id]" [title]="p.displayname ?? ''">
+              @if (playerPhotoUrl(p.player_id, p.photo_uploaded); as url) {
+                <img class="tile__img" [src]="url" [alt]="p.displayname ?? ''" />
+              } @else {
+                <img class="tile__img tile__img--placeholder" src="img/placeholders/player.png" alt="" />
+              }
+              <span class="tile__name">{{ p.displayname }}</span>
+            </a>
+          }
+        </div>
       }
-    </a>
-    <div class="deal-card__info">
-      <a class="deal-card__name" [routerLink]="['/daten/player', d.player_id]">{{ d.displayname }}</a>
-      <span class="deal-card__club">
-        <a [routerLink]="d.club_id ? ['/daten/club', d.club_id] : null">
-          <img class="club-logo" [src]="clubLogoUrl()" [class.logo--placeholder]="!d.club_logo_uploaded" alt="" />
-        </a>
-      </span>
     </div>
   </div>
 
-  <div class="deal-flow">
-    @if (d.seller; as s) {
-      <a class="deal-team" [routerLink]="['/team', s.team_id]" [title]="s.team_name">
-        @if (!logoErrors.has(s.team_id)) {
-          <img class="team-logo" [src]="teamLogoUrl(s)" [alt]="s.team_name" (error)="onLogoError(s.team_id)" />
-        }
-        <span class="deal-team__name">{{ s.team_name }}</span>
-      </a>
-    }
-    <span class="deal-flow__arrow">→</span>
-    @if (d.buyer; as b) {
-      <a class="deal-team" [routerLink]="['/team', b.team_id]" [title]="b.team_name">
-        @if (!logoErrors.has(b.team_id)) {
-          <img class="team-logo" [src]="teamLogoUrl(b)" [alt]="b.team_name" (error)="onLogoError(b.team_id)" />
-        }
-        <span class="deal-team__name">{{ b.team_name }}</span>
-      </a>
-    }
-  </div>
+  <app-icon class="deal-swap" name="swap" />
 
-  <div class="deal-price">
-    <span class="deal-price__amount">{{ d.price === 0 && d.offered_players?.length ? 'Tausch' : formatPrice(d.price) }}</span>
-    @if (!d.offered_players?.length && pct(); as p) {
-      <span class="deal-price__pct" [ngClass]="pctClass()">{{ p }}</span>
+  <!-- Rechts: der gehandelte Spieler + abgebendes Team -->
+  <div class="deal-side deal-side--right">
+    <a class="tile" [routerLink]="['/daten/player', d.player_id]" [title]="d.displayname ?? ''">
+      @if (playerPhotoUrl(d.player_id, d.photo_uploaded); as url) {
+        <img class="tile__img" [src]="url" [alt]="d.displayname ?? ''" />
+      } @else {
+        <img class="tile__img tile__img--placeholder" src="img/placeholders/player.png" alt="" />
+      }
+      <span class="tile__name tile__name--strong">{{ d.displayname }}</span>
+    </a>
+
+    @if (d.seller; as s) {
+      <a class="tile" [routerLink]="['/team', s.team_id]" [title]="s.team_name">
+        @if (!logoErrors.has(s.team_id)) {
+          <img class="tile__img tile__img--logo" [src]="teamLogoUrl(s)" [alt]="s.team_name" (error)="onLogoError(s.team_id)" />
+        } @else {
+          <span class="tile__img"></span>
+        }
+        <span class="tile__name">{{ s.team_name }}</span>
+      </a>
     }
   </div>
-  @if (d.offered_players?.length) {
-    <div class="deal-players">+ {{ playersText() }}</div>
-  }
 </div>

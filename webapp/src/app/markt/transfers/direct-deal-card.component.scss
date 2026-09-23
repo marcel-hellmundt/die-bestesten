@@ -5,129 +5,102 @@
 .deal-card {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: $space-3 $space-4;
+  gap: $space-3;
   padding: $space-3 $space-4;
   border: 1px solid $color-border;
   border-radius: $radius-lg;
   background: $color-surface;
 
-  &__player {
-    display: flex;
-    align-items: center;
+  @media (max-width: $mobile-breakpoint) {
     gap: $space-2;
-    min-width: 0;
-    flex: 1 1 180px;
-  }
-
-  &__info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  &__name {
-    font-weight: $font-weight-semibold;
-    font-size: $font-sm;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-decoration: none;
-    color: $color-text;
-
-    &:hover { text-decoration: underline; }
-  }
-
-  &__club {
-    display: flex;
-    align-items: center;
+    padding: $space-3;
   }
 }
 
-.player-photo-wrap {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  display: block;
-}
-
-.player-photo {
-  width: 36px;
-  height: 36px;
-  object-fit: cover;
-  border-radius: $radius-sm;
-
-  &--placeholder { opacity: 0.3; }
-}
-
-.club-logo {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-
-  &.logo--placeholder { opacity: 0.3; }
-}
-
-.team-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.deal-flow {
+.deal-side {
   display: flex;
   align-items: center;
-  gap: $space-2;
-  flex: 1 1 auto;
+  gap: $space-3;
+  flex: 1 1 0;
   min-width: 0;
 
-  &__arrow { color: $color-text-muted; }
+  &--right { justify-content: flex-end; }
+
+  @media (max-width: $mobile-breakpoint) { gap: $space-2; }
 }
 
-.deal-team {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  text-decoration: none;
-  color: $color-text;
-  min-width: 0;
-
-  &__name {
-    font-size: $font-sm;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    @media (max-width: $mobile-breakpoint) { display: none; }
-  }
+.deal-swap {
+  flex-shrink: 0;
+  display: flex;
+  color: $color-text-muted;
 }
 
-.deal-price {
+// Bild oben, Name darunter — für Teams und Spieler
+.tile {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  margin-left: auto;
-  font-size: $font-xs;
-  color: $color-text-muted;
-  font-variant-numeric: tabular-nums;
+  align-items: center;
+  gap: 4px;
+  width: 72px;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: $color-text;
 
-  &__amount { white-space: nowrap; }
+  &:hover .tile__name { text-decoration: underline; }
 
-  &__pct {
-    font-weight: $font-weight-semibold;
+  &__img {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: $radius-sm;
+    object-fit: cover;
+
+    &--logo { object-fit: contain; border-radius: 0; }
+    &--placeholder { opacity: 0.3; }
+  }
+
+  &__name {
+    max-width: 100%;
+    font-size: $font-xs;
+    text-align: center;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
-    &--success { color: $color-success; }
-    &--warning { color: $color-warning; }
-    &--danger  { color: $color-danger; }
+    &--strong { font-weight: $font-weight-semibold; }
+  }
+
+  &--sm {
+    width: 56px;
+
+    .tile__img { width: 28px; height: 28px; }
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 56px;
+
+    &__img { width: 32px; height: 32px; }
+    &--sm { width: 48px; }
   }
 }
 
-.deal-players {
-  flex: 1 1 100%;
-  font-size: $font-xs;
-  color: $color-text-muted;
+.deal-offer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-2;
+  min-width: 0;
+
+  &__amount {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-1;
+  }
 }
