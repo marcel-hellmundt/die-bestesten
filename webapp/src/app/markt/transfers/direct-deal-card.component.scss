@@ -8,9 +8,9 @@
   flex-wrap: wrap;
   gap: $space-3 $space-4;
   padding: $space-3 $space-4;
-  border: 1px solid var(--flat-sunflower);
+  border: 1px solid $color-border;
   border-radius: $radius-lg;
-  background: color-mix(in srgb, var(--flat-sunflower) 8%, $color-surface);
+  background: $color-surface;
 
   &__player {
     display: flex;
