@@ -234,6 +234,11 @@ export class BidsComponent {
     return ref ? Math.round((o.offer_value + legsValue) / ref * 100) : 0;
   }
 
+  /** Abgelehnte und hinfällige Direktangebote werden in der Liste ausgegraut. */
+  isDeadDirect(o: { status: string }): boolean {
+    return o.status === 'declined' || o.status === 'void';
+  }
+
   directStatusLabel(status: string): string {
     return ({
       pending: 'Ausstehend', accepted: 'Angenommen', declined: 'Abgelehnt',
