@@ -412,7 +412,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/transferwindow',
-                        'description' => 'Alle Transferfenster, optional gefiltert nach Spieltag oder Saison; jedes Fenster enthält offer_count (Anzahl Gebote)',
+                        'description' => 'Alle Transferfenster, optional gefiltert nach Spieltag oder Saison; jedes Fenster enthält offer_count (Anzahl Gebote) und deal_count (Anzahl in diesem Fenster angenommener Direktdeals, siehe /player_offer)',
                         'query_params' => [
                             'matchday_id' => 'UUID des Spieltags (optional)',
                             'season_id' => 'UUID der Saison (optional) — gibt alle TF der Saison zurück',

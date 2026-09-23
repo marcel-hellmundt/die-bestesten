@@ -18,6 +18,10 @@
           <span class="window-row__dates">
             {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
           </span>
+          <span class="window-row__counts">
+            <span [title]="w.offer_count + ' Gebote'"><app-icon name="gavel" /> {{ w.offer_count }}</span>
+            <span [title]="w.deal_count + ' Direktdeals'"><app-icon name="swap" /> {{ w.deal_count }}</span>
+          </span>
           <span class="window-row__badge"
                 [class.window-row__badge--open]="isOpen(w)"
                 [class.window-row__badge--soon]="!isClosed(w) && !isOpen(w)">

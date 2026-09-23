@@ -43,8 +43,21 @@ trait TransferwindowTrait
             );
             $countQuery->execute($ids);
             $counts = array_column($countQuery->fetchAll(PDO::FETCH_ASSOC), 'cnt', 'transferwindow_id');
+
+            // Vollzogene Direktdeals ("Hinterzimmerdeals") je Fenster der Annahme
+            $dealCounts = [];
+            if ($this->hasPlayerOfferTable()) {
+                $dealQuery = $this->con_league->prepare(
+                    "SELECT settled_window_id, COUNT(*) AS cnt FROM player_offer
+                     WHERE status = 'accepted' AND settled_window_id IN ($ph) GROUP BY settled_window_id"
+                );
+                $dealQuery->execute($ids);
+                $dealCounts = array_column($dealQuery->fetchAll(PDO::FETCH_ASSOC), 'cnt', 'settled_window_id');
+            }
+
             foreach ($rows as &$row) {
                 $row['offer_count'] = (int) ($counts[$row['id']] ?? 0);
+                $row['deal_count']  = (int) ($dealCounts[$row['id']] ?? 0);
             }
             unset($row);
         }

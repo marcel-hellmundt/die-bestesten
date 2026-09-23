@@ -82,6 +82,22 @@
     font-size: $font-sm;
   }
 
+  &__counts {
+    display: flex;
+    gap: $space-3;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+
+    > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    ::ng-deep svg { width: 14px; height: 14px; }
+  }
+
   &__badge {
     font-size: $font-xs;
     font-weight: $font-weight-medium;

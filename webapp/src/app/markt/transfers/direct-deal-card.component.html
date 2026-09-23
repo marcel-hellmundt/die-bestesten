@@ -24,6 +24,9 @@
                 <img class="tile__img tile__img--placeholder" src="img/placeholders/player.png" alt="" />
               }
               <span class="tile__name">{{ p.displayname }}</span>
+              @if (p.position) {
+                <span class="position-badge position-badge--text" [style.background-color]="positionColors[p.position]">{{ positionLabel[p.position] }}</span>
+              }
             </a>
           }
         </div>
@@ -47,6 +50,9 @@
         <img class="tile__img tile__img--placeholder" src="img/placeholders/player.png" alt="" />
       }
       <span class="tile__name">{{ d.displayname }}</span>
+      @if (d.position) {
+        <span class="position-badge position-badge--text" [style.background-color]="positionColors[d.position]">{{ positionLabel[d.position] }}</span>
+      }
     </a>
 
     @if (d.seller; as s) {

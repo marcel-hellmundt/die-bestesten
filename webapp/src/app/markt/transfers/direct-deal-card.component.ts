@@ -30,6 +30,20 @@ export interface DirectDeal {
 export class DirectDealCardComponent {
   deal = input.required<DirectDeal>();
 
+  readonly positionColors: Record<string, string> = {
+    GOALKEEPER: 'var(--position-goalkeeper)',
+    DEFENDER:   'var(--position-defender)',
+    MIDFIELDER: 'var(--position-midfielder)',
+    FORWARD:    'var(--position-forward)',
+  };
+
+  readonly positionLabel: Record<string, string> = {
+    GOALKEEPER: 'TOR',
+    DEFENDER:   'ABW',
+    MIDFIELDER: 'MIT',
+    FORWARD:    'STU',
+  };
+
   logoErrors = new Set<string>();
   onLogoError(teamId: string): void { this.logoErrors.add(teamId); }
 
