@@ -19,7 +19,7 @@
             {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
           </span>
           <span class="window-row__counts">
-            <span [title]="w.offer_count + ' Gebote'"><app-icon name="gavel" /> {{ w.offer_count }}</span>
+            <span [title]="w.bid_count + ' Gebote'"><app-icon name="gavel" /> {{ w.bid_count }}</span>
             <span [title]="w.deal_count + ' Direktdeals'"><app-icon name="swap" /> {{ w.deal_count }}</span>
           </span>
           <span class="window-row__badge"

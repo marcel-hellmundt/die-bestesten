@@ -124,7 +124,7 @@ POST     /league/:id/draft_assign  — {season_id, assignments:[{team_id, player
 POST     /league/validate_ratings  — {league_id} — prüft team_ratings ab 2020/21 gegen team_lineup + player_rating — Admin
 POST     /league/fix_rating        — {league_id, team_id, matchday_id, field, value} — korrigiert ein Feld in team_rating (Liga-DB) — Admin
 POST     /league/conclude_season   — {league_id, season_id} — Saisonauszeichnungen vergeben (Meister, Goldene Bürste, Hölzerne Bank); idempotent; wird auch automatisch bei Spieltag 34 ausgeführt — Admin
-GET      /transferwindow[/:id] — ?matchday_id|season_id (+ optional ?division_id überschreibt Division der aktiven Liga); jedes Fenster enthält offer_count (Anzahl Gebote) und deal_count (Anzahl in diesem Fenster angenommener Direktdeals, siehe /player_offer)
+GET      /transferwindow[/:id] — ?matchday_id|season_id (+ optional ?division_id überschreibt Division der aktiven Liga); jedes Fenster enthält offer_count (Anzahl Gebote inkl. stornierter), bid_count (Anzahl Gebote ohne stornierte — bei geschlossenen Fenstern = erfolgreiche + unterlegene) und deal_count (Anzahl in diesem Fenster angenommener Direktdeals, siehe /player_offer)
 POST     /transferwindow       — {matchday_id,start_date,end_date} — Maintainer+
 PATCH    /transferwindow/:id   — beliebige Kombination aus {start_date,end_date}; 422 bei Regelverstoß (außerhalb Spieltag-Zeitraum), 409 bei Überschneidung — Admin
 DELETE   /transferwindow/:id   — 409 wenn bereits Gebote (offer), Direktangebote (player_offer) oder Verkäufe (sell) existieren — Admin

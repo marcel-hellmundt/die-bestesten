@@ -39,10 +39,15 @@ trait TransferwindowTrait
             $ids = array_column($rows, 'id');
             $ph  = implode(',', array_fill(0, count($ids), '?'));
             $countQuery = $this->con_league->prepare(
-                "SELECT transferwindow_id, COUNT(*) AS cnt FROM offer WHERE transferwindow_id IN ($ph) GROUP BY transferwindow_id"
+                "SELECT transferwindow_id, COUNT(*) AS cnt, SUM(status != 'cancelled') AS bids
+                 FROM offer WHERE transferwindow_id IN ($ph) GROUP BY transferwindow_id"
             );
             $countQuery->execute($ids);
-            $counts = array_column($countQuery->fetchAll(PDO::FETCH_ASSOC), 'cnt', 'transferwindow_id');
+            $countRows = $countQuery->fetchAll(PDO::FETCH_ASSOC);
+            $counts    = array_column($countRows, 'cnt', 'transferwindow_id');
+            // Ohne stornierte Gebote — bei geschlossenen Fenstern = erfolgreiche + unterlegene
+            // (noch pending-Gebote werden beim Lazy Settlement vollständig zu success/lost)
+            $bidCounts = array_column($countRows, 'bids', 'transferwindow_id');
 
             // Vollzogene Direktdeals ("Hinterzimmerdeals") je Fenster der Annahme
             $dealCounts = [];
@@ -57,6 +62,7 @@ trait TransferwindowTrait
 
             foreach ($rows as &$row) {
                 $row['offer_count'] = (int) ($counts[$row['id']] ?? 0);
+                $row['bid_count']   = (int) ($bidCounts[$row['id']] ?? 0);
                 $row['deal_count']  = (int) ($dealCounts[$row['id']] ?? 0);
             }
             unset($row);
