@@ -86,13 +86,19 @@
     display: flex;
     gap: $space-3;
     font-size: $font-xs;
-    color: $color-text-muted;
+    color: $color-text;
     font-variant-numeric: tabular-nums;
 
     > span {
       display: inline-flex;
       align-items: center;
       gap: 4px;
+
+      // 0 Gebote / 0 Deals ausgegraut
+      &.is-zero {
+        color: $color-text-muted;
+        opacity: 0.5;
+      }
     }
 
     ::ng-deep svg { width: 14px; height: 14px; }
