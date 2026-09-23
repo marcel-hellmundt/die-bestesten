@@ -47,11 +47,19 @@
         } @else if (!currentDeals().length) {
           <p class="state-msg">Noch keine Hinterzimmerdeals in dieser Phase.</p>
         } @else {
-          <div class="deals__list">
+          <!-- Mobile: horizontales Karussell (scroll-snap), Desktop: wrappende Liste -->
+          <div class="deals__list" (scroll)="onDealsScroll($event)">
             @for (deal of currentDeals(); track deal.id) {
               <app-direct-deal-card [deal]="deal" />
             }
           </div>
+          @if (currentDeals().length > 1) {
+            <div class="deals__dots">
+              @for (deal of currentDeals(); track deal.id; let i = $index) {
+                <span class="deals__dot" [class.deals__dot--active]="i === activeDeal()"></span>
+              }
+            </div>
+          }
         }
       </aside>
     }

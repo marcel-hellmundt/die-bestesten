@@ -40,6 +40,39 @@
     display: flex;
     flex-wrap: wrap;
     gap: $space-3;
+
+    // Mobile: Karussell — eine Card in voller Breite pro "Seite", horizontal wischen
+    @media (max-width: $mobile-breakpoint) {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      &::-webkit-scrollbar { display: none; }
+
+      app-direct-deal-card {
+        flex: 0 0 100%;
+        scroll-snap-align: start;
+      }
+    }
+  }
+
+  &__dots {
+    display: none;
+    justify-content: center;
+    gap: 6px;
+    margin-top: $space-2;
+
+    @media (max-width: $mobile-breakpoint) { display: flex; }
+  }
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: $color-border;
+    transition: background $transition-fast;
+
+    &--active { background: $color-text-muted; }
   }
 }
 

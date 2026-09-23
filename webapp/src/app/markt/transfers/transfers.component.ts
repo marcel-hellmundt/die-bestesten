@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, switchMap } from 'rxjs';
@@ -76,6 +76,14 @@ export class TransfersComponent {
 
   currentDeals = computed(() => this.dealsState().deals);
   dealsLoading = computed(() => this.dealsState().loading);
+
+  /** Aktive Karte im Mobile-Karussell (für die Punkte-Anzeige). */
+  activeDeal = signal(0);
+  onDealsScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (!el.clientWidth) return;
+    this.activeDeal.set(Math.round(el.scrollLeft / el.clientWidth));
+  }
 
   isClosed(w: Transferwindow): boolean {
     return new Date(w.end_date) < new Date();
