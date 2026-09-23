@@ -1,10 +1,46 @@
 @use '../../../styles/variables' as *;
 @use 'sass:color';
 
+.transfers-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: $space-6;
+  align-items: start;
+
+  @media (max-width: $mobile-breakpoint) {
+    grid-template-columns: minmax(0, 1fr);
+
+    // Mobile: die aktuellen Deals sind das Spannendste → über der Phasenliste
+    .deals { order: -1; }
+  }
+}
+
 .window-list {
   display: flex;
   flex-direction: column;
   gap: $space-2;
+}
+
+.deals {
+  &__title {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    margin: 0 0 $space-3;
+  }
+
+  &__sub {
+    display: block;
+    font-size: $font-xs;
+    font-weight: $font-weight-normal;
+    color: $color-text-muted;
+    margin-top: 2px;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
 }
 
 .window-row {
@@ -17,7 +53,7 @@
   background: $color-surface;
   transition: background $transition-fast, border-color $transition-fast;
 
-  &--closed {
+  &--clickable {
     cursor: pointer;
 
     &:hover {
@@ -26,9 +62,13 @@
     }
   }
 
-  &--open {
+  &--disabled {
     cursor: default;
     opacity: 0.55;
+  }
+
+  &--current {
+    border-color: var(--flat-sunflower);
   }
 
   &__index {

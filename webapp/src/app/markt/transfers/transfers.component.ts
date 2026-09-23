@@ -1,8 +1,10 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of, switchMap } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { DirectDeal } from './direct-deal-card.component';
+import { WindowOffersResponse } from './transfer-window-detail.component';
 
 interface Transferwindow {
   id: string;
@@ -37,6 +39,30 @@ export class TransfersComponent {
 
   sortedWindows = computed(() => [...this.windows()].reverse());
 
+  /** Aktuelle Phase: die gerade offene, sonst die zuletzt begonnene. */
+  currentWindow = computed<Transferwindow | null>(() => {
+    const now = new Date();
+    return this.sortedWindows().find(w => this.isOpen(w))
+      ?? this.sortedWindows().find(w => new Date(w.start_date) <= now)
+      ?? null;
+  });
+
+  private dealsState = toSignal(
+    toObservable(this.currentWindow).pipe(
+      switchMap(w => w
+        ? this.api.get<WindowOffersResponse>(`offer?transferwindow_id=${w.id}`).pipe(
+            map(res => ({ deals: res.direct_deals ?? [], loading: false })),
+            catchError(() => of({ deals: [] as DirectDeal[], loading: false }))
+          )
+        : of({ deals: [] as DirectDeal[], loading: false })
+      )
+    ),
+    { initialValue: { deals: [] as DirectDeal[], loading: true } }
+  );
+
+  currentDeals = computed(() => this.dealsState().deals);
+  dealsLoading = computed(() => this.dealsState().loading);
+
   isClosed(w: Transferwindow): boolean {
     return new Date(w.end_date) < new Date();
   }
@@ -46,6 +72,11 @@ export class TransfersComponent {
     return new Date(w.start_date) <= now && now < new Date(w.end_date);
   }
 
+  /** Geschlossene Phasen (Gebote + Deals) und die offene Phase (nur Deals) haben eine Detailseite. */
+  isClickable(w: Transferwindow): boolean {
+    return this.isClosed(w) || this.isOpen(w);
+  }
+
   windowLabel(w: Transferwindow): string {
     if (this.isClosed(w)) return 'Geschlossen';
     if (this.isOpen(w))   return 'Offen';
@@ -53,7 +84,7 @@ export class TransfersComponent {
   }
 
   selectWindow(w: Transferwindow): void {
-    if (!this.isClosed(w)) return;
+    if (!this.isClickable(w)) return;
     this.router.navigate(['/markt/transferphasen', w.id]);
   }
 }

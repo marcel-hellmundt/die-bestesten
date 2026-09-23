@@ -10,167 +10,124 @@
     </span>
   </h1>
 
-  <!-- Hinterzimmerdeals: vollzogene Direktangebote zwischen Managern, bewusst prominent ganz oben -->
+  <!-- Hinterzimmerdeals: vollzogene Direktangebote zwischen Managern, bewusst prominent ganz oben —
+       auch schon während der laufenden Phase sichtbar (Deals sind sofort final) -->
   @if (directDeals().length) {
     <section class="deals">
       <h2 class="deals__title">Hinterzimmerdeals</h2>
       <div class="player-list">
         @for (deal of directDeals(); track deal.id) {
-          <div class="player-card player-card--deal">
-            <div class="player-card__player">
-              @if (deal.position) {
-                <span class="position-badge position-badge--text" [style.background-color]="positionColors[deal.position]">
-                  {{ positionLabel[deal.position] }}
-                </span>
-              }
-              <a class="player-photo-wrap" [routerLink]="['/daten/player', deal.player_id]">
-                @if (dealPhotoUrl(deal); as url) {
-                  <img class="player-photo" [src]="url" [alt]="deal.displayname ?? ''" />
-                } @else {
-                  <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
-                }
-              </a>
-              <div class="player-card__info">
-                <a class="player-card__name" [routerLink]="['/daten/player', deal.player_id]">{{ deal.displayname }}</a>
-                <span class="player-card__club">
-                  <a [routerLink]="deal.club_id ? ['/daten/club', deal.club_id] : null">
-                    <img class="club-logo" [src]="clubLogoUrl(deal.club_id, deal.club_logo_uploaded)"
-                         [class.logo--placeholder]="!deal.club_logo_uploaded" alt="" />
-                  </a>
-                </span>
-              </div>
-            </div>
-
-            <div class="deal-flow">
-              @if (deal.seller; as s) {
-                <a class="deal-team" [routerLink]="['/team', s.team_id]" [title]="s.team_name">
-                  @if (!logoErrors.has(s.team_id)) {
-                    <img class="team-logo" [src]="dealTeamLogoUrl(s)" [alt]="s.team_name" (error)="onLogoError(s.team_id)" />
-                  }
-                  <span class="deal-team__name">{{ s.team_name }}</span>
-                </a>
-              }
-              <span class="deal-flow__arrow">→</span>
-              @if (deal.buyer; as b) {
-                <a class="deal-team" [routerLink]="['/team', b.team_id]" [title]="b.team_name">
-                  @if (!logoErrors.has(b.team_id)) {
-                    <img class="team-logo" [src]="dealTeamLogoUrl(b)" [alt]="b.team_name" (error)="onLogoError(b.team_id)" />
-                  }
-                  <span class="deal-team__name">{{ b.team_name }}</span>
-                </a>
-              }
-            </div>
-
-            <div class="winner-bid__price">
-              <span class="winner-bid__amount">{{ deal.price === 0 && deal.offered_players?.length ? 'Tausch' : formatPrice(deal.price) }}</span>
-              @if (!deal.offered_players?.length && bidPct(deal.price, deal.price_snapshot); as pct) {
-                <span class="winner-bid__pct" [ngClass]="bidPctClass(deal.price, deal.price_snapshot)">{{ pct }}</span>
-              }
-            </div>
-            @if (deal.offered_players?.length) {
-              <div class="deal-players">+ {{ dealPlayersText(deal) }}</div>
-            }
-          </div>
+          <app-direct-deal-card [deal]="deal" />
         }
       </div>
     </section>
   }
 
-  @if (cache.myTeamId()) {
-    <label class="filter-checkbox">
-      Nur eigene Gebote
-      <span class="filter-toggle">
-        <input type="checkbox" [checked]="onlyOwnBids()"
-               (change)="setOnlyOwnBids($any($event.target).checked)" />
-        <span class="filter-toggle__track"></span>
-      </span>
-    </label>
-  }
-
-  @if (!offers().length) {
+  @if (isOpen()) {
     <p class="state-msg">
-      {{ onlyOwnBids() ? 'Keine eigenen Gebote für diese Transferphase.' : 'Keine Gebote für diese Transferphase.' }}
+      @if (directDeals().length) {
+        Gebote werden erst nach Ende der Transferphase ausgewertet und angezeigt.
+      } @else {
+        Noch keine Hinterzimmerdeals in dieser Transferphase. Gebote werden erst nach Ende der Phase ausgewertet und angezeigt.
+      }
     </p>
   } @else {
-    <div class="player-list">
-      @for (entry of offers(); track entry.player_id) {
-        <div class="player-card" [class.player-card--no-winner]="!winner(entry)">
+    @if (cache.myTeamId()) {
+      <label class="filter-checkbox">
+        Nur eigene Gebote
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="onlyOwnBids()"
+                 (change)="setOnlyOwnBids($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+    }
 
-          <div class="player-card__player">
-            @if (entry.position) {
-              <span class="position-badge position-badge--text" [style.background-color]="positionColors[entry.position]">
-                {{ positionLabel[entry.position] }}
-              </span>
-            }
+    @if (!offers().length) {
+      <p class="state-msg">
+        {{ onlyOwnBids() ? 'Keine eigenen Gebote für diese Transferphase.' : 'Keine Gebote für diese Transferphase.' }}
+      </p>
+    } @else {
+      <div class="player-list">
+        @for (entry of offers(); track entry.player_id) {
+          <div class="player-card" [class.player-card--no-winner]="!winner(entry)">
 
-            <a class="player-photo-wrap" [routerLink]="['/daten/player', entry.player_id]">
-              @if (photoUrl(entry); as url) {
-                <img class="player-photo" [src]="url" [alt]="entry.displayname ?? ''" />
-              } @else {
-                <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
+            <div class="player-card__player">
+              @if (entry.position) {
+                <span class="position-badge position-badge--text" [style.background-color]="positionColors[entry.position]">
+                  {{ positionLabel[entry.position] }}
+                </span>
               }
-            </a>
 
-            <div class="player-card__info">
-              <a class="player-card__name" [routerLink]="['/daten/player', entry.player_id]">{{ entry.displayname }}</a>
-              <span class="player-card__club">
-                <a [routerLink]="entry.club_id ? ['/daten/club', entry.club_id] : null">
-                  <img
-                    class="club-logo"
-                    [src]="clubLogoUrl(entry.club_id, entry.club_logo_uploaded)"
-                    [class.logo--placeholder]="!entry.club_logo_uploaded"
-                    alt=""
-                  />
-                </a>
-              </span>
-            </div>
-          </div>
-
-          @if (winner(entry); as w) {
-            <div class="winner-bid">
-              <a class="team-logo-wrap" [routerLink]="['/team', w.team_id]">
-                @if (!logoErrors.has(w.team_id)) {
-                  <img
-                    class="team-logo"
-                    [src]="teamLogoUrl(w)"
-                    [alt]="w.team_name ?? ''"
-                    (error)="onLogoError(w.team_id)"
-                  />
+              <a class="player-photo-wrap" [routerLink]="['/daten/player', entry.player_id]">
+                @if (photoUrl(entry); as url) {
+                  <img class="player-photo" [src]="url" [alt]="entry.displayname ?? ''" />
+                } @else {
+                  <img class="player-photo player-photo--placeholder" src="img/placeholders/player.png" alt="" />
                 }
               </a>
-              <div class="winner-bid__info">
-                <a class="winner-bid__team" [routerLink]="['/team', w.team_id]">{{ w.team_name }}</a>
-                <div class="winner-bid__price">
-                  <span class="winner-bid__amount">{{ formatPrice(w.offer_value!) }}</span>
-                  @if (bidPct(w.offer_value, w.price_snapshot); as pct) {
-                    <span class="winner-bid__pct" [ngClass]="bidPctClass(w.offer_value, w.price_snapshot)">{{ pct }}</span>
-                  }
-                </div>
+
+              <div class="player-card__info">
+                <a class="player-card__name" [routerLink]="['/daten/player', entry.player_id]">{{ entry.displayname }}</a>
+                <span class="player-card__club">
+                  <a [routerLink]="entry.club_id ? ['/daten/club', entry.club_id] : null">
+                    <img
+                      class="club-logo"
+                      [src]="clubLogoUrl(entry.club_id, entry.club_logo_uploaded)"
+                      [class.logo--placeholder]="!entry.club_logo_uploaded"
+                      alt=""
+                    />
+                  </a>
+                </span>
               </div>
             </div>
-            @if (losers(entry).length) {
-              <div class="loser-logos">
-                @for (l of losers(entry); track l.id) {
-                  <div class="loser-logo-wrap" [title]="l.team_name ?? ''">
-                    @if (!logoErrors.has(l.team_id)) {
-                      <img
-                        class="team-logo team-logo--sm"
-                        [src]="teamLogoUrl(l)"
-                        [alt]="l.team_name ?? ''"
-                        (error)="onLogoError(l.team_id)"
-                      />
+
+            @if (winner(entry); as w) {
+              <div class="winner-bid">
+                <a class="team-logo-wrap" [routerLink]="['/team', w.team_id]">
+                  @if (!logoErrors.has(w.team_id)) {
+                    <img
+                      class="team-logo"
+                      [src]="teamLogoUrl(w)"
+                      [alt]="w.team_name ?? ''"
+                      (error)="onLogoError(w.team_id)"
+                    />
+                  }
+                </a>
+                <div class="winner-bid__info">
+                  <a class="winner-bid__team" [routerLink]="['/team', w.team_id]">{{ w.team_name }}</a>
+                  <div class="winner-bid__price">
+                    <span class="winner-bid__amount">{{ formatPrice(w.offer_value!) }}</span>
+                    @if (bidPct(w.offer_value, w.price_snapshot); as pct) {
+                      <span class="winner-bid__pct" [ngClass]="bidPctClass(w.offer_value, w.price_snapshot)">{{ pct }}</span>
                     }
                   </div>
-                }
+                </div>
               </div>
+              @if (losers(entry).length) {
+                <div class="loser-logos">
+                  @for (l of losers(entry); track l.id) {
+                    <div class="loser-logo-wrap" [title]="l.team_name ?? ''">
+                      @if (!logoErrors.has(l.team_id)) {
+                        <img
+                          class="team-logo team-logo--sm"
+                          [src]="teamLogoUrl(l)"
+                          [alt]="l.team_name ?? ''"
+                          (error)="onLogoError(l.team_id)"
+                        />
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            } @else {
+              <div class="no-winner">Kein Sieger</div>
             }
-          } @else {
-            <div class="no-winner">Kein Sieger</div>
-          }
 
-        </div>
-      }
-    </div>
+          </div>
+        }
+      </div>
+    }
   }
 } @else {
   <p class="state-msg">Transferphase nicht gefunden.</p>

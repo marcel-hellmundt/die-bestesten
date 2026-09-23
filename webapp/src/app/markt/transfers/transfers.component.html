@@ -3,24 +3,50 @@
 @if (!windows().length) {
   <p class="state-msg">Keine Transferphasen gefunden.</p>
 } @else {
-  <div class="window-list">
-    @for (w of sortedWindows(); track w.id; let i = $index) {
-      <div
-        class="window-row"
-        [class.window-row--closed]="isClosed(w)"
-        [class.window-row--open]="!isClosed(w)"
-        (click)="selectWindow(w)"
-      >
-        <span class="window-row__index">#{{ sortedWindows().length - i }}</span>
-        <span class="window-row__dates">
-          {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
-        </span>
-        <span class="window-row__badge"
-              [class.window-row__badge--open]="isOpen(w)"
-              [class.window-row__badge--soon]="!isClosed(w) && !isOpen(w)">
-          {{ windowLabel(w) }}
-        </span>
-      </div>
+  <div class="transfers-layout">
+    <div class="window-list">
+      @for (w of sortedWindows(); track w.id; let i = $index) {
+        <div
+          class="window-row"
+          [class.window-row--clickable]="isClickable(w)"
+          [class.window-row--disabled]="!isClickable(w)"
+          [class.window-row--current]="w.id === currentWindow()?.id"
+          (click)="selectWindow(w)"
+        >
+          <span class="window-row__index">#{{ sortedWindows().length - i }}</span>
+          <span class="window-row__dates">
+            {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
+          </span>
+          <span class="window-row__badge"
+                [class.window-row__badge--open]="isOpen(w)"
+                [class.window-row__badge--soon]="!isClosed(w) && !isOpen(w)">
+            {{ windowLabel(w) }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <!-- Hinterzimmerdeals der aktuellen Phase (offen, sonst zuletzt begonnen) — live, da sofort final -->
+    @if (currentWindow(); as cw) {
+      <aside class="deals">
+        <h2 class="deals__title">
+          Hinterzimmerdeals
+          <span class="deals__sub">
+            {{ isOpen(cw) ? 'Laufende Phase' : 'Letzte Phase' }} · {{ cw.start_date | date:'dd.MM.' }} – {{ cw.end_date | date:'dd.MM.' }}
+          </span>
+        </h2>
+        @if (dealsLoading()) {
+          <p class="state-msg">Lädt…</p>
+        } @else if (!currentDeals().length) {
+          <p class="state-msg">Noch keine Hinterzimmerdeals in dieser Phase.</p>
+        } @else {
+          <div class="deals__list">
+            @for (deal of currentDeals(); track deal.id) {
+              <app-direct-deal-card [deal]="deal" />
+            }
+          </div>
+        }
+      </aside>
     }
   </div>
 }
