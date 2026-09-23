@@ -5,7 +5,8 @@
 } @else {
   <div class="transfers-layout">
     <div class="window-list">
-      @for (w of sortedWindows(); track w.id; let i = $index) {
+      @for (item of visibleWindows(); track item.w.id) {
+        @let w = item.w;
         <div
           class="window-row"
           [class.window-row--clickable]="isClickable(w)"
@@ -13,7 +14,7 @@
           [class.window-row--current]="w.id === currentWindow()?.id"
           (click)="selectWindow(w)"
         >
-          <span class="window-row__index">#{{ sortedWindows().length - i }}</span>
+          <span class="window-row__index">#{{ item.nr }}</span>
           <span class="window-row__dates">
             {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
           </span>

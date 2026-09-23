@@ -39,6 +39,18 @@ export class TransfersComponent {
 
   sortedWindows = computed(() => [...this.windows()].reverse());
 
+  /** Anzeigeliste (neueste zuerst): von den kommenden Phasen nur die nächsten beiden; nr = fortlaufende Nummer in der Saison. */
+  visibleWindows = computed(() => {
+    const now = new Date();
+    const numbered = this.windows().map((w, i) => ({ w, nr: i + 1 }));
+    const upcoming = numbered
+      .filter(({ w }) => new Date(w.start_date) > now)
+      .sort((a, b) => a.w.start_date.localeCompare(b.w.start_date))
+      .slice(2);
+    const hidden = new Set(upcoming.map(({ w }) => w.id));
+    return numbered.filter(({ w }) => !hidden.has(w.id)).reverse();
+  });
+
   /** Aktuelle Phase: die gerade offene, sonst die zuletzt begonnene. */
   currentWindow = computed<Transferwindow | null>(() => {
     const now = new Date();
