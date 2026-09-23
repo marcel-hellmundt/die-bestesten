@@ -15,11 +15,23 @@ class TransferwindowController extends _BaseController
             return $tw;
         }
 
-        return $this->db->getTransferwindowList(
+        $windows = $this->db->getTransferwindowList(
             $this->params['matchday_id'] ?? null,
             $this->params['season_id']   ?? null,
             $this->params['division_id'] ?? null
         );
+
+        // Gebotsanzahl laufender/kommender Phasen ist geheim (Rückschluss auf Marktaktivität) —
+        // nur Admins sehen offer_count weiterhin (Saison-Verwaltung), bid_count für niemanden.
+        $isAdmin = $this->isAdmin();
+        foreach ($windows as &$w) {
+            if (strtotime($w['end_date']) >= time()) {
+                $w['bid_count'] = null;
+                if (!$isAdmin) $w['offer_count'] = null;
+            }
+        }
+        unset($w);
+        return $windows;
     }
 
     protected function post(): mixed

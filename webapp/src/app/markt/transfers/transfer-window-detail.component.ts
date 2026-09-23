@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { DirectDeal } from './direct-deal-card.component';
 
 interface Transferwindow {
   id: string;
@@ -35,29 +36,11 @@ interface PlayerOffers {
   bids: Bid[];
 }
 
-// Vollzogenes Direktangebot ("Hinterzimmerdeal", siehe /player_offer) — nur angenommene Deals des Fensters.
-interface DealTeam { team_id: string; team_name: string; color: string | null; season_id: string; manager_name: string; }
-interface DirectDeal {
-  id: string;
-  player_id: string;
-  season_id: string | null;
-  displayname: string | null;
-  position: 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD' | null;
-  photo_uploaded: boolean;
-  club_id: string | null;
-  club_logo_uploaded: boolean;
-  seller: DealTeam | null;
-  buyer: DealTeam | null;
-  offered_players?: { player_id: string; displayname: string | null; position: string | null }[]; // Spieler als Gegenwert
-  price: number;
-  price_snapshot: number;
-  accepted_at: string | null;
-}
-
-interface WindowOffersResponse {
+export interface WindowOffersResponse {
   window: Transferwindow;
   offers: PlayerOffers[];
   direct_deals?: DirectDeal[];
+  is_open?: boolean; // laufende/kommende Phase: offers leer (Gebote geheim), direct_deals schon live
 }
 
 interface State {
@@ -92,6 +75,7 @@ export class TransferWindowDetailComponent {
 
   window  = computed(() => this.response().res?.window ?? null);
   directDeals = computed(() => this.response().res?.direct_deals ?? []);
+  isOpen      = computed(() => !!this.response().res?.is_open);
   loading = computed(() => this.response().loading);
 
   onlyOwnBids = signal(false);
@@ -131,22 +115,6 @@ export class TransferWindowDetailComponent {
 
   teamLogoUrl(bid: Bid): string {
     return `https://img.die-bestesten.de/team/${bid.team_season_id}/${bid.team_id}.png`;
-  }
-
-  /** Zusätzlich zum Geld getauschte Spieler, z. B. "Müller (MIT), Schmidt (ABW)". */
-  dealPlayersText(deal: DirectDeal): string {
-    return (deal.offered_players ?? [])
-      .map(p => `${p.displayname ?? '–'}${p.position ? ' (' + this.positionLabel[p.position] + ')' : ''}`)
-      .join(', ');
-  }
-
-  dealTeamLogoUrl(team: DealTeam): string {
-    return `https://img.die-bestesten.de/team/${team.season_id}/${team.team_id}.png`;
-  }
-
-  dealPhotoUrl(deal: DirectDeal): string | null {
-    if (!deal.photo_uploaded || !deal.season_id) return null;
-    return `https://img.die-bestesten.de/player/${deal.season_id}/${deal.player_id}.png`;
   }
 
   photoUrl(entry: PlayerOffers): string | null {

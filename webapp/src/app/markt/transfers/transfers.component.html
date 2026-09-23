@@ -3,24 +3,65 @@
 @if (!windows().length) {
   <p class="state-msg">Keine Transferphasen gefunden.</p>
 } @else {
-  <div class="window-list">
-    @for (w of sortedWindows(); track w.id; let i = $index) {
-      <div
-        class="window-row"
-        [class.window-row--closed]="isClosed(w)"
-        [class.window-row--open]="!isClosed(w)"
-        (click)="selectWindow(w)"
-      >
-        <span class="window-row__index">#{{ sortedWindows().length - i }}</span>
-        <span class="window-row__dates">
-          {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
-        </span>
-        <span class="window-row__badge"
-              [class.window-row__badge--open]="isOpen(w)"
-              [class.window-row__badge--soon]="!isClosed(w) && !isOpen(w)">
-          {{ windowLabel(w) }}
-        </span>
-      </div>
+  <div class="transfers-layout">
+    <div class="window-list">
+      @for (item of visibleWindows(); track item.w.id) {
+        @let w = item.w;
+        <div
+          class="window-row"
+          [class.window-row--clickable]="isClickable(w)"
+          [class.window-row--disabled]="!isClickable(w)"
+          [class.window-row--current]="w.id === currentWindow()?.id"
+          (click)="selectWindow(w)"
+        >
+          <span class="window-row__index">#{{ item.nr }}</span>
+          <span class="window-row__dates">
+            {{ w.start_date | date:'dd.MM. HH:mm' }} – {{ w.end_date | date:'dd.MM. HH:mm' }}
+          </span>
+          <span class="window-row__counts">
+            @if (isClosed(w) && w.bid_count !== null) {
+              <span [class.is-zero]="w.bid_count === 0" [title]="w.bid_count + ' Gebote'"><app-icon name="gavel" /> {{ w.bid_count }}</span>
+            }
+            <span [class.is-zero]="w.deal_count === 0" [title]="w.deal_count + ' Direktdeals'"><app-icon name="swap" /> {{ w.deal_count }}</span>
+          </span>
+          <span class="window-row__badge"
+                [class.window-row__badge--open]="isOpen(w)"
+                [class.window-row__badge--soon]="!isClosed(w) && !isOpen(w)">
+            {{ windowLabel(w) }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <!-- Hinterzimmerdeals der aktuellen Phase (offen, sonst zuletzt begonnen) — live, da sofort final -->
+    @if (currentWindow(); as cw) {
+      <aside class="deals">
+        <h2 class="deals__title">
+          Hinterzimmerdeals
+          <span class="deals__sub">
+            {{ isOpen(cw) ? 'Laufende Phase' : 'Letzte Phase' }} · {{ cw.start_date | date:'dd.MM.' }} – {{ cw.end_date | date:'dd.MM.' }}
+          </span>
+        </h2>
+        @if (dealsLoading()) {
+          <p class="state-msg">Lädt…</p>
+        } @else if (!currentDeals().length) {
+          <p class="state-msg">Noch keine Hinterzimmerdeals in dieser Phase.</p>
+        } @else {
+          <!-- Mobile: horizontales Karussell (scroll-snap), Desktop: wrappende Liste -->
+          <div class="deals__list" (scroll)="onDealsScroll($event)">
+            @for (deal of currentDeals(); track deal.id) {
+              <app-direct-deal-card [deal]="deal" />
+            }
+          </div>
+          @if (currentDeals().length > 1) {
+            <div class="deals__dots">
+              @for (deal of currentDeals(); track deal.id; let i = $index) {
+                <span class="deals__dot" [class.deals__dot--active]="i === activeDeal()"></span>
+              }
+            </div>
+          }
+        }
+      </aside>
     }
   </div>
 }

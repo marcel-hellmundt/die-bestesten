@@ -412,7 +412,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/transferwindow',
-                        'description' => 'Alle Transferfenster, optional gefiltert nach Spieltag oder Saison; jedes Fenster enthält offer_count (Anzahl Gebote)',
+                        'description' => 'Alle Transferfenster, optional gefiltert nach Spieltag oder Saison; jedes Fenster enthält offer_count (Anzahl Gebote inkl. stornierter), bid_count (Anzahl Gebote ohne stornierte — bei geschlossenen Fenstern = erfolgreiche + unterlegene; bei laufenden/kommenden Fenstern ist die Gebotsanzahl geheim: bid_count immer null, offer_count null außer für Admins) und deal_count (Anzahl in diesem Fenster angenommener Direktdeals, siehe /player_offer)',
                         'query_params' => [
                             'matchday_id' => 'UUID des Spieltags (optional)',
                             'season_id' => 'UUID der Saison (optional) — gibt alle TF der Saison zurück',
@@ -657,10 +657,10 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/offer',
-                        'description' => 'Eigene Gebote abrufen + pending_sum (?team_id) — oder alle Gebote einer geschlossenen Transferphase (?transferwindow_id); triggert Lazy Settlement falls noch pending-Gebote vorhanden — Auth',
+                        'description' => 'Eigene Gebote abrufen + pending_sum (?team_id) — oder alle Gebote einer geschlossenen Transferphase (?transferwindow_id); triggert Lazy Settlement falls noch pending-Gebote vorhanden; bei noch offener/kommender Phase nur die bereits vollzogenen Direktdeals (Gebote geheim, kein Settlement) — Auth',
                         'query_params' => [
                             'team_id' => 'UUID des Teams → eigene Gebote + pending_sum; jedes Gebot enthält displayname, position, photo_uploaded, club_id, club_logo_uploaded, season_id, losers (für success/lost: [{team_id,team_color,team_season_id,is_winner}]); stornierte Gebote (status=cancelled) werden nicht zurückgegeben',
-                            'transferwindow_id' => 'UUID der Transferphase → alle Gebote gruppiert nach Spieler; 422 wenn Fenster noch offen; enthält zusätzlich direct_deals:[{id,player_id,season_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,seller:{team_id,team_name,color,season_id,manager_name},buyer:{…},price,price_snapshot,accepted_at}] — nur VOLLZOGENE Direktdeals (siehe /player_offer), die in diesem Fenster angenommen wurden ("Hinterzimmerdeals"); abgelehnte/abgelaufene bleiben privat',
+                            'transferwindow_id' => 'UUID der Transferphase → {window,offers,direct_deals,is_open}: alle Gebote gruppiert nach Spieler; ist das Fenster noch offen (oder hat noch nicht begonnen), is_open=true und offers=[] (Gebote bleiben bis Phasenende geheim, kein Lazy Settlement), direct_deals aber bereits live gefüllt; enthält zusätzlich direct_deals:[{id,player_id,season_id,displayname,position,photo_uploaded,club_id,club_logo_uploaded,seller:{team_id,team_name,color,season_id,manager_name},buyer:{…},price,price_snapshot,accepted_at}] — nur VOLLZOGENE Direktdeals (siehe /player_offer), die in diesem Fenster angenommen wurden ("Hinterzimmerdeals"); abgelehnte/abgelaufene bleiben privat',
                         ],
                     ],
                     [

@@ -1,0 +1,124 @@
+@use '../../../styles/variables' as *;
+
+// Card nur so breit wie ihr Inhalt; die Liste darum herum wrappt (flex-wrap)
+:host {
+  display: block;
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.deal-card {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+
+  @media (max-width: $mobile-breakpoint) {
+    gap: $space-2;
+    padding: $space-3;
+  }
+}
+
+.deal-side {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  min-width: 0;
+
+  @media (max-width: $mobile-breakpoint) { gap: $space-2; }
+}
+
+.deal-swap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: $color-text-muted;
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+  }
+}
+
+// Team nur als kleines Logo (Name als Tooltip)
+.team-logo {
+  display: block;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+// Spieler: Foto oben, Name darunter
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 72px;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: $color-text;
+
+  &:hover .tile__name { text-decoration: underline; }
+
+  &__img {
+    display: block;
+    width: 56px;
+    height: 56px;
+    border-radius: $radius-sm;
+    object-fit: cover;
+
+    &--placeholder { opacity: 0.3; }
+  }
+
+  &__name {
+    max-width: 100%;
+    font-size: $font-xs;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 60px;
+
+    &__img { width: 44px; height: 44px; }
+  }
+}
+
+.deal-offer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-2;
+  min-width: 0;
+
+  &__amount {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-1;
+  }
+}

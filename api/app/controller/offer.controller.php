@@ -23,12 +23,18 @@ class OfferController extends _BaseController
                 http_response_code(404);
                 return ['status' => false, 'message' => 'Transferwindow not found'];
             }
+            // Laufende/kommende Phase: Gebote bleiben geheim (kein Settlement), vollzogene
+            // Direktdeals sind dagegen sofort final und deshalb schon jetzt für alle sichtbar.
             if (strtotime($window['end_date']) >= time()) {
-                http_response_code(422);
-                return ['status' => false, 'message' => 'Transferphase noch offen'];
+                return [
+                    'window'       => $window,
+                    'offers'       => [],
+                    'direct_deals' => $this->db->getWindowDirectDeals($windowId),
+                    'is_open'      => true,
+                ];
             }
             $this->db->settleWindow($windowId);
-            return $this->db->getWindowOffers($windowId);
+            return $this->db->getWindowOffers($windowId) + ['is_open' => false];
         }
 
         http_response_code(400);

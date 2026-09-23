@@ -4,7 +4,7 @@ export class Transferwindow {
     public matchday_id: string,
     public start_date: string,
     public end_date: string,
-    public offer_count: number = 0,
+    public offer_count: number | null = 0, // null = geheim (laufende/kommende Phase, Nicht-Admin)
   ) {}
 
   static from(data: any): Transferwindow {
@@ -13,7 +13,7 @@ export class Transferwindow {
       data.matchday_id,
       data.start_date,
       data.end_date,
-      Number(data.offer_count ?? 0),
+      data.offer_count === null ? null : Number(data.offer_count ?? 0),
     );
   }
 }

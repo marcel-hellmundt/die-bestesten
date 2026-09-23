@@ -286,47 +286,10 @@
     font-weight: $font-weight-semibold;
     margin: 0 0 $space-3;
   }
-}
 
-.player-card--deal {
-  border-color: var(--flat-sunflower);
-  background: color-mix(in srgb, var(--flat-sunflower) 8%, $color-surface);
-}
-
-.deal-flow {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-  flex: 1 1 auto;
-  min-width: 0;
-
-  &__arrow {
-    color: $color-text-muted;
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-3;
   }
-}
-
-.deal-team {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  text-decoration: none;
-  color: $color-text;
-  min-width: 0;
-
-  &__name {
-    font-size: $font-sm;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    @media (max-width: $mobile-breakpoint) {
-      display: none;
-    }
-  }
-}
-
-.deal-players {
-  flex: 1 1 100%;
-  font-size: $font-xs;
-  color: $color-text-muted;
 }
