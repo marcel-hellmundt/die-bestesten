@@ -239,11 +239,17 @@ class LeagueController extends _BaseController
         return $this->methodNotAllowed();
     }
 
+    // Verarbeitet ALLE im Body vorhandenen Felder (nicht nur das erste gefundene) — der
+    // Liga-Einstellungen-Dialog im Frontend schickt fine_ruleset, powerranking_enabled und
+    // deal_system_enabled gebündelt in einem einzigen PATCH; ein früher return nach dem ersten
+    // Treffer (wie früher, als jede Einstellung einzeln gepatcht wurde) würde die übrigen Felder
+    // stillschweigend ignorieren, obwohl {"status":true} zurückkommt.
     protected function patch(): mixed
     {
         if (!$this->id || $this->id === 'mine') return $this->methodNotAllowed();
 
         $body = $this->body();
+        $handled = false;
 
         if (array_key_exists('visibility', $body)) {
             $visibility = $body['visibility'];
@@ -252,7 +258,7 @@ class LeagueController extends _BaseController
                 return ['status' => false, 'message' => 'visibility muss "public" oder "private" sein'];
             }
             $this->db->updateLeagueVisibility($this->id, $visibility);
-            return ['status' => true];
+            $handled = true;
         }
 
         if (array_key_exists('fine_ruleset', $body)) {
@@ -262,7 +268,7 @@ class LeagueController extends _BaseController
                 return ['status' => false, 'message' => 'fine_ruleset muss "classic" oder "none" sein'];
             }
             $this->db->updateLeagueFineRuleset($this->id, $fineRuleset);
-            return ['status' => true];
+            $handled = true;
         }
 
         if (array_key_exists('powerranking_enabled', $body)) {
@@ -272,6 +278,7 @@ class LeagueController extends _BaseController
                 return ['status' => false, 'message' => 'powerranking_enabled muss ein Boolean sein'];
             }
             $this->db->updateLeaguePowerrankingEnabled($this->id, $enabled);
+            $handled = true;
         }
 
         if (array_key_exists('deal_system_enabled', $body)) {
@@ -281,8 +288,10 @@ class LeagueController extends _BaseController
                 return ['status' => false, 'message' => 'deal_system_enabled muss ein Boolean sein'];
             }
             $this->db->updateLeagueDealSystemEnabled($this->id, $enabled);
-            return ['status' => true];
+            $handled = true;
         }
+
+        if ($handled) return ['status' => true];
 
         $divisionId = array_key_exists('division_id', $body) ? ($body['division_id'] ?: null) : 'MISSING';
         if ($divisionId === 'MISSING') {
