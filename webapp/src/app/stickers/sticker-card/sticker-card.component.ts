@@ -70,9 +70,9 @@ export class StickerCardComponent {
   glareY = signal(30);
   /** 0 = gerade, 1 = maximal geneigt — steuert, wie stark das Holo leuchtet. */
   fromCenter = signal(0);
-  /** Verschiebung der Holo-Muster (Regenbogen/Streifen/Glitzer), folgt der Neigung. */
-  holoX = computed(() => 50 + (this.glareX() - 50) * 0.7);
-  holoY = computed(() => 50 + (this.glareY() - 50) * 0.7);
+  /** Hintergrund-Position der Shine-Muster (37–63 %, wie im Pokémon-Card-CSS), folgt der Neigung. */
+  posX = computed(() => 50 + (this.glareX() - 50) * 0.325);
+  posY = computed(() => 50 + (this.glareY() - 50) * 0.325);
   photoFailed = signal(false);
   logoFailed = signal(false);
 

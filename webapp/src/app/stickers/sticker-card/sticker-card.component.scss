@@ -2,22 +2,21 @@
 
 :host { display: block; }
 
-// Neigungswerte kommen als CSS-Variablen aus der Komponente (Default = gerade gehalten)
+// Neigungswerte als CSS-Variablen aus der Komponente (Namen wie im Pokémon-Card-CSS):
+// --mx/--my = Lichtpunkt (%), --posx/--posy = Muster-Position (37–63 %), --hyp = Neigungsstärke 0–1,
+// --o = Deckkraft des Shine (1 interaktiv; statisch per Animation)
 .card-3d {
-  --pointer-x: 50%;
-  --pointer-y: 30%;
-  --holo-x: 50%;
-  --holo-y: 50%;
-  --from-center: 0;
+  --mx: 50%;
+  --my: 30%;
+  --posx: 50%;
+  --posy: 50%;
+  --hyp: 0;
+  --o: 0;
   transform-style: preserve-3d;
   will-change: transform;
 
   &--interactive { transition: transform 90ms linear; }
 }
-
-// Wanderndes Lichtband (Shiny-Folie + Rahmen) — Position folgt der Neigung
-$shiny-sweep: linear-gradient(115deg,
-  transparent calc(var(--holo-x) - 22%), rgba(255, 255, 255, 0.95) var(--holo-x), transparent calc(var(--holo-x) + 22%));
 
 // Seitenverhältnis 5:7 (klassische Sammelkarte, hochkant); Rahmenfarbe = Seltenheit
 .sticker-card {
@@ -43,58 +42,13 @@ $shiny-sweep: linear-gradient(115deg,
     height: 100%;
     overflow: hidden;
     border-radius: 5% / 3.6%;
-    background:
-      radial-gradient(circle at 50% 35%, #ffffff 0%, #eef0f3 45%, #d5d9df 100%);
+    container-type: inline-size; // cqw-Einheiten (Namensgröße relativ zur Kartenbreite)
+    background: radial-gradient(circle at 50% 35%, #ffffff 0%, #eef0f3 45%, #d5d9df 100%);
   }
 
-  // ── Shiny: silberner Grund mit Ring-Moiré, Hauch Regenbogen und wanderndem Lichtband
+  // Shiny: mittelgrauer Silbergrund — color-dodge braucht Mitteltöne, auf Weiß würde alles nur weiß
   &--shiny &__inner {
-    background: linear-gradient(160deg, #d9dce1 0%, #a3a9b3 45%, #c7cbd2 70%, #8a919c 100%);
-  }
-
-  // Rahmen: behält seine Tier-Farbe, nur das Lichtband huscht darüber
-  &--shiny::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background-image: $shiny-sweep;
-    mix-blend-mode: soft-light;
-    opacity: calc(0.3 + var(--from-center) * 0.6);
-  }
-
-  // Zwei Ringsysteme (hell + dunkel) mit versetzten Zentren → Moiré-Wellen. Die Zentren wandern
-  // gegenläufig mit der Neigung, dadurch bewegen sich die Wellen beim Kippen über die Karte.
-  &__rings {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background-image:
-      repeating-radial-gradient(circle at calc(20% + var(--holo-x) * 0.6) calc(10% + var(--holo-y) * 0.5),
-        rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.55) 1.5px, rgba(255, 255, 255, 0) 3px, rgba(255, 255, 255, 0) 5px),
-      repeating-radial-gradient(circle at calc(90% - var(--holo-x) * 0.6) calc(95% - var(--holo-y) * 0.5),
-        rgba(40, 48, 60, 0) 0, rgba(40, 48, 60, 0.45) 1.5px, rgba(40, 48, 60, 0) 3px, rgba(40, 48, 60, 0) 5.4px);
-    mix-blend-mode: overlay;
-    opacity: calc(0.55 + var(--from-center) * 0.35);
-  }
-
-  // Lichtband + dezenter Regenbogen, der mit der Neigung wandert
-  &__tint {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background-image:
-      $shiny-sweep,
-      linear-gradient(125deg, hsla(330, 90%, 70%, 0.6), hsla(50, 90%, 65%, 0.45), hsla(160, 80%, 60%, 0.45),
-        hsla(210, 90%, 65%, 0.55), hsla(285, 85%, 68%, 0.6));
-    background-size: 100% 100%, 300% 300%;
-    background-position: 0 0, var(--holo-x) var(--holo-y);
-    mix-blend-mode: overlay;
-    opacity: calc(0.45 + var(--from-center) * 0.45);
+    background: linear-gradient(160deg, #a1a8b3 0%, #6f7784 45%, #939aa6 70%, #5f6673 100%);
   }
 
   // hinter dem Foto, oben links
@@ -105,7 +59,7 @@ $shiny-sweep: linear-gradient(115deg,
     width: 24%;
     aspect-ratio: 1;
     object-fit: contain;
-    z-index: 2;
+    z-index: 1;
   }
 
   &__photo {
@@ -117,9 +71,54 @@ $shiny-sweep: linear-gradient(115deg,
     max-width: 100%;
     object-fit: contain;
     object-position: bottom;
-    z-index: 3;
+    z-index: 2;
 
     &--placeholder { opacity: 0.35; height: 70%; }
+  }
+
+  // ── Shine, nachgebaut nach "rare ultra" aus pokemon-cards-css ─────────────────
+  // 4 Ebenen: Illusions-Ringe (als CSS-Kacheln statt Bild → viele Ringzentren), vertikaler
+  // Regenbogen, diagonale Folienstreifen, Abdunklung um den Lichtpunkt. ::after = dieselben
+  // Ebenen, aber gegenläufig verschoben (Parallaxe) und per exclusion verrechnet. Das Ganze liegt
+  // per color-dodge ÜBER dem Foto → Bild leuchtet mit, wirkt dreidimensional.
+  &__shine,
+  &__shine::after {
+    --space: 5%;
+    background-image:
+      repeating-radial-gradient(circle at 50% 50%, #0b0b0b 0, #0b0b0b 3%, #e8e8e8 6%, #0b0b0b 9%),
+      repeating-linear-gradient(0deg,
+        rgb(255, 119, 115) calc(var(--space) * 1), rgb(255, 237, 95) calc(var(--space) * 2),
+        rgb(168, 255, 95) calc(var(--space) * 3), rgb(131, 255, 247) calc(var(--space) * 4),
+        rgb(120, 148, 255) calc(var(--space) * 5), rgb(216, 117, 255) calc(var(--space) * 6),
+        rgb(255, 119, 115) calc(var(--space) * 7)),
+      repeating-linear-gradient(133deg,
+        #0e152e 0%, hsl(180, 10%, 60%) 3.8%, hsl(180, 29%, 66%) 4.5%, hsl(180, 10%, 60%) 5.2%,
+        #0e152e 10%, #0e152e 12%),
+      radial-gradient(farthest-corner circle at var(--mx) var(--my),
+        rgba(0, 0, 0, 0.1) 12%, rgba(0, 0, 0, 0.15) 20%, rgba(0, 0, 0, 0.25) 120%);
+    background-blend-mode: exclusion, hue, hard-light;
+  }
+
+  &__shine {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background-size: 50% 42%, 200% 700%, 300% 100%, 200% 100%;
+    background-position: center center, 0% var(--posy), var(--posx) var(--posy), var(--posx) var(--posy);
+    mix-blend-mode: color-dodge;
+    filter: brightness(calc((var(--hyp) * 0.3) + 0.5)) contrast(2) saturate(1.5);
+    opacity: var(--o);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-size: 50% 42%, 200% 400%, 195% 100%, 200% 100%;
+      background-position: center center, 0% var(--posy), calc(var(--posx) * -1) calc(var(--posy) * -1), var(--posx) var(--posy);
+      filter: brightness(calc((var(--hyp) * 0.5) + 0.8)) contrast(1.6) saturate(1.4);
+      mix-blend-mode: exclusion;
+    }
   }
 
   // Namens-Banner unten links (Sammelkarten-Look): weißes Band, rechts schräg angeschnitten,
@@ -184,40 +183,41 @@ $shiny-sweep: linear-gradient(115deg,
     text-overflow: ellipsis;
   }
 
-  // Glanzlicht folgt der Neigung (nur interaktiv); bei shiny etwas kräftiger
+  // Glanzlicht folgt der Neigung (nur interaktiv); bei shiny wie im Original per overlay
   &__glare {
     position: absolute;
     inset: 0;
     z-index: 5;
     pointer-events: none;
     mix-blend-mode: soft-light;
-    background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%);
+    background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%);
   }
 
   &--shiny &__glare {
-    background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 55%);
+    mix-blend-mode: overlay;
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my),
+      rgba(255, 255, 255, 0.8) 10%, rgba(255, 255, 255, 0.65) 20%, rgba(0, 0, 0, 0.5) 90%);
+    opacity: calc(var(--o) * 0.8);
   }
 }
 
 // Statisch (z.B. im Album, ohne Neigung): Shiny-Karten schimmern langsam von selbst — die
-// Animation setzt die Variablen direkt an der Karte, Folie/Lichtband/Rahmen erben sie.
+// Animation setzt die Variablen direkt an der Karte, Shine/::after erben sie.
 .card-3d:not(.card-3d--interactive) .sticker-card--shiny {
+  --o: 0.75;
   animation: shiny-drift 7s ease-in-out infinite alternate;
 }
 
 @keyframes shiny-drift {
-  from { --holo-x: 15%; --holo-y: 30%; --from-center: 0.15; }
-  to   { --holo-x: 85%; --holo-y: 70%; --from-center: 0.5; }
+  from { --posx: 40%; --posy: 42%; --hyp: 0.2; }
+  to   { --posx: 60%; --posy: 58%; --hyp: 0.6; }
 }
 
 // Damit die Custom Properties in der Animation interpoliert werden (statt zu springen)
-@property --holo-x       { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
-@property --holo-y       { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
-@property --from-center  { syntax: '<number>';     inherits: true; initial-value: 0; }
+@property --posx { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
+@property --posy { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
+@property --hyp  { syntax: '<number>';     inherits: true; initial-value: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .card-3d:not(.card-3d--interactive) .sticker-card--shiny { animation: none; }
 }
-
-// Container für cqw-Einheiten (Namensgröße relativ zur Kartenbreite)
-.sticker-card__inner { container-type: inline-size; }
