@@ -430,3 +430,64 @@
   gap: $space-2;
 }
 
+
+// ── Vereinsfarben ────────────────────────────────────────────────────────────
+.club-colors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-4;
+  margin-top: $space-2;
+  transition: opacity $transition-fast;
+
+  &--saving { opacity: 0.5; pointer-events: none; }
+
+  &__error {
+    font-size: $font-xs;
+    color: $color-danger;
+  }
+}
+
+.club-color {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  // Farbfeld = Label um den (unsichtbaren) nativen Color-Picker
+  &__swatch {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    border-radius: $radius-sm;
+    border: 1px solid $color-border;
+    cursor: pointer;
+    overflow: hidden;
+
+    input[type='color'] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    // nicht gesetzt: gestrichelt + diagonaler Strich
+    &--empty {
+      border-style: dashed;
+      background: linear-gradient(135deg, transparent 45%, $color-border 45% 55%, transparent 55%);
+    }
+  }
+
+  &__clear {
+    padding: 0 4px;
+    border: none;
+    background: none;
+    color: $color-text-muted;
+    font-size: $font-md;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover { color: $color-danger; }
+  }
+}

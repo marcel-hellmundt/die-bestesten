@@ -8,7 +8,9 @@
      [style.--posy]="posY() + '%'"
      [style.--hyp]="fromCenter()"
      [style.--o]="interactive() ? 1 : null">
-  <div class="sticker-card sticker-card--{{ d.tier }}" [class.sticker-card--shiny]="d.shiny">
+  <div class="sticker-card sticker-card--{{ d.tier }}" [class.sticker-card--shiny]="d.shiny"
+       [style.--club-primary]="d.clubPrimaryColor || null"
+       [style.--club-secondary]="d.clubSecondaryColor || d.clubPrimaryColor || null">
     <div class="sticker-card__inner">
       <!-- Optionales Hintergrundbild (geblurrt), liegt ganz hinten und wird vom Shine überlagert -->
       @if (d.backgroundUrl) {
@@ -41,6 +43,11 @@
           <span class="sticker-card__last" [style.font-size]="mainSize() + 'cqw'">{{ mainLine() }}</span>
         </div>
       </div>
+
+      <!-- Seltenheit als dezentes Label unten rechts -->
+      <span class="sticker-card__tier">
+        <span class="sticker-card__tier-dot"></span>{{ tierLabel[d.tier] }}@if (d.shiny) { · Shiny }
+      </span>
 
       @if (interactive()) {
         <div class="sticker-card__glare"></div>

@@ -11,7 +11,11 @@ interface AlbumPlayer {
   id: string; displayname: string; first_name: string | null; last_name: string | null;
   position: string | null; price: number | null; photo_uploaded: boolean;
 }
-interface AlbumClub { id: string; name: string; short_name: string; logo_uploaded: boolean; players: AlbumPlayer[]; }
+interface AlbumClub {
+  id: string; name: string; short_name: string; logo_uploaded: boolean;
+  primary_color: string | null; secondary_color: string | null;
+  players: AlbumPlayer[];
+}
 interface AlbumPreview {
   season_id: string | null;
   cutoff_date: string | null;
@@ -333,6 +337,8 @@ export class StickerSimulationComponent {
       photoUrl: this.photoUrl(s),
       clubLogoUrl: club.logo_uploaded ? this.clubLogoUrl(club) : null,
       clubName: club.name,
+      clubPrimaryColor: club.primary_color,
+      clubSecondaryColor: club.secondary_color,
       tier: s.tier,
       shiny: this.openShiny(),
       backgroundUrl: TEST_CARD_BACKGROUND,

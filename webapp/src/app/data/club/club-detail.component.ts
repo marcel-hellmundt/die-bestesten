@@ -67,13 +67,45 @@ export class ClubDetailComponent {
   // Keyed by clubId so it doesn't leak onto a different club after navigating (the
   // component instance is reused when the route param changes, e.g. via search).
   private stadiumOverride = signal<{ clubId: string; stadium: Stadium } | null>(null);
+  // Gleiches Prinzip für frisch gespeicherte Vereinsfarben
+  private colorOverride = signal<{ clubId: string; primary_color: string | null; secondary_color: string | null } | null>(null);
 
   club = computed(() => {
     const c = this.clubState()?.data ?? null;
-    const override = this.stadiumOverride();
-    if (!c || !override || override.clubId !== c.id) return c;
-    return new Club(c.id, c.country_id, c.name, c.short_name, c.logo_uploaded, override.stadium);
+    if (!c) return c;
+    const so = this.stadiumOverride();
+    const co = this.colorOverride();
+    const stadium = so && so.clubId === c.id ? so.stadium : c.stadium;
+    const colors = co && co.clubId === c.id ? co : c;
+    if (stadium === c.stadium && colors === c) return c;
+    return new Club(c.id, c.country_id, c.name, c.short_name, c.logo_uploaded, stadium, colors.primary_color, colors.secondary_color);
   });
+
+  // ── Vereinsfarben (primary = Rand der Sticker-Karte) ────────────────────
+  readonly colorSlots = [
+    { key: 'primary_color' as const, label: 'Primärfarbe' },
+    { key: 'secondary_color' as const, label: 'Sekundärfarbe' },
+  ];
+  colorSaving = signal(false);
+  colorError = signal<string | null>(null);
+
+  setColor(key: 'primary_color' | 'secondary_color', value: string | null): void {
+    const c = this.club();
+    if (!c) return;
+    const next = { clubId: c.id, primary_color: c.primary_color, secondary_color: c.secondary_color, [key]: value };
+    this.colorSaving.set(true);
+    this.colorError.set(null);
+    this.api.patch(`club/${c.id}`, { [key]: value }).subscribe({
+      next: () => {
+        this.colorOverride.set(next);
+        this.colorSaving.set(false);
+      },
+      error: (err: any) => {
+        this.colorSaving.set(false);
+        this.colorError.set(err?.error?.message ?? 'Fehler beim Speichern');
+      },
+    });
+  }
   loading = computed(() => this.clubState()?.loading ?? true);
   error = computed(() => this.clubState()?.error ?? null);
   seasons = computed(() => this.seasonsState()?.data ?? []);

@@ -50,6 +50,24 @@
         <button class="id-copy-btn" (click)="copyId(c.id)" title="ID kopieren">
           {{ idCopied() ? 'Kopiert!' : c.id }}
         </button>
+
+        <!-- Vereinsfarben: Primärfarbe = Rand der Sticker-Karte ("Die Klebrigsten") -->
+        <div class="club-colors" [class.club-colors--saving]="colorSaving()">
+          @for (slot of colorSlots; track slot.key) {
+            @let value = c[slot.key];
+            <div class="club-color">
+              <label class="club-color__swatch" [class.club-color__swatch--empty]="!value"
+                     [style.background]="value ?? null" [title]="slot.label + (value ? ': ' + value : ' – nicht gesetzt')">
+                <input type="color" [value]="value ?? '#ffffff'" (change)="setColor(slot.key, $any($event.target).value)" />
+              </label>
+              <span class="club-color__label">{{ slot.label }}</span>
+              @if (value) {
+                <button class="club-color__clear" (click)="setColor(slot.key, null)" title="Farbe entfernen">×</button>
+              }
+            </div>
+          }
+          @if (colorError(); as err) { <span class="club-colors__error">{{ err }}</span> }
+        </div>
       </div>
 
       @if (c.stadium) {

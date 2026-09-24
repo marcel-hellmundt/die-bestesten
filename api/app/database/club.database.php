@@ -3,7 +3,7 @@
 trait ClubTrait
 {
     private const CLUB_STADIUM_SELECT = "
-        c.id, c.country_id, c.name, c.short_name, c.logo_uploaded,
+        c.id, c.country_id, c.name, c.short_name, c.logo_uploaded, c.primary_color, c.secondary_color,
         s.id             AS stadium_id,
         s.official_name  AS stadium_official_name,
         s.name           AS stadium_name,
@@ -56,8 +56,26 @@ trait ClubTrait
             'name'          => $row['name'],
             'short_name'    => $row['short_name'],
             'logo_uploaded' => (bool) $row['logo_uploaded'],
+            'primary_color'   => $row['primary_color'],
+            'secondary_color' => $row['secondary_color'],
             'stadium'       => $stadium,
         ];
+    }
+
+    /** Vereinsfarben setzen; nur übergebene Felder werden geändert, null löscht die Farbe. */
+    public function updateClubColors(string $id, array $fields): void
+    {
+        $allowed = ['primary_color', 'secondary_color'];
+        $sets = [];
+        $params = [':id' => $id];
+        foreach ($allowed as $col) {
+            if (array_key_exists($col, $fields)) {
+                $sets[] = "$col = :$col";
+                $params[":$col"] = $fields[$col];
+            }
+        }
+        if (!$sets) return;
+        $this->con->prepare("UPDATE club SET " . implode(', ', $sets) . " WHERE id = :id")->execute($params);
     }
 
     public function setClubLogoUploaded(string $id): void

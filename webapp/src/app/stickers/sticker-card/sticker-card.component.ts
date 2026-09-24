@@ -9,6 +9,8 @@ export interface StickerCardData {
   photoUrl: string | null;
   clubLogoUrl: string | null;
   clubName?: string;
+  clubPrimaryColor?: string | null;   // Rand der Karte (Gradient); ohne → neutrales Silbergrau
+  clubSecondaryColor?: string | null; // Akzentstreifen unter dem Namen; ohne → Primärfarbe
   tier: StickerTier;
   backgroundUrl?: string | null; // optionales Hintergrundbild hinter dem Spieler (geblurrt, vom Shine betroffen)
   shiny?: boolean;             // Shiny-Variante: Silberfolie mit Ring-Moiré, schimmert abhängig von der Neigung
@@ -58,6 +60,10 @@ export class StickerCardComponent {
     const { displayname } = this.data();
     return this.firstLine() ? displayname.replace(/^[A-ZÄÖÜ]\.\s+/, '') : displayname;
   });
+
+  readonly tierLabel: Record<StickerTier, string> = {
+    common: 'Häufig', rare: 'Selten', epic: 'Episch', legendary: 'Legendär',
+  };
 
   /** Schriftgröße der großen Zeile in cqw — lange Namen ("Chukwuemeka") schrumpfen statt abgeschnitten zu werden. */
   mainSize = computed(() => {

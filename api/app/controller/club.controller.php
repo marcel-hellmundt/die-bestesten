@@ -2,7 +2,7 @@
 
 class ClubController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'manager']; // further restricted per action inside
+    public static array $methodRoles = ['GET' => 'guest', 'POST' => 'manager', 'PATCH' => 'maintainer']; // POST further restricted per action inside
 
     protected function get(): mixed
     {
@@ -84,6 +84,39 @@ class ClubController extends _BaseController
         return ['status' => true];
     }
 
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
+    // PATCH /club/:id — {primary_color?, secondary_color?} Vereinsfarben (Hex #rrggbb oder null zum Löschen)
+    protected function patch(): mixed
+    {
+        if (!$this->id || $this->sub) return $this->methodNotAllowed();
+
+        if (!$this->db->getClubById($this->id)) {
+            http_response_code(404);
+            return ['status' => false, 'message' => 'Club not found'];
+        }
+
+        $body = $this->body();
+        $fields = [];
+        foreach (['primary_color', 'secondary_color'] as $key) {
+            if (!array_key_exists($key, $body)) continue;
+            $value = $body[$key];
+            if ($value === null || $value === '') {
+                $fields[$key] = null;
+            } elseif (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value)) {
+                $fields[$key] = strtolower($value);
+            } else {
+                http_response_code(422);
+                return ['status' => false, 'message' => "$key muss ein Hex-Farbwert (#rrggbb) oder null sein"];
+            }
+        }
+
+        if (!$fields) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'primary_color und/oder secondary_color erforderlich'];
+        }
+
+        $this->db->updateClubColors($this->id, $fields);
+        return ['status' => true];
+    }
+
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 }

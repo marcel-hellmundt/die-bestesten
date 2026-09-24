@@ -25,16 +25,19 @@
   &--interactive { transition: transform 90ms linear; }
 }
 
-// Seitenverhältnis 5:7 (klassische Sammelkarte, hochkant); Rahmenfarbe = Seltenheit
+// Seitenverhältnis 5:7 (klassische Sammelkarte, hochkant). Rahmen = Primärfarbe des Vereins
+// (--club-primary, per Style-Binding; ohne Vereinsfarbe neutrales Silbergrau); die Seltenheit
+// (--tier) zeigt nur noch das Label unten rechts.
 .sticker-card {
   --tier: #9ca3af;
+  --frame: var(--club-primary, #8b929e);
   position: relative;
   isolation: isolate; // Blend-Modes nur innerhalb der Karte mischen
   aspect-ratio: 5 / 7;
   width: 100%;
   padding: 3%;
   border-radius: 7% / 5%;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--tier) 70%, #fff), var(--tier) 55%, color-mix(in srgb, var(--tier) 75%, #000));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--frame) 70%, #fff), var(--frame) 55%, color-mix(in srgb, var(--frame) 75%, #000));
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 
   &--common    { --tier: #15803d; }
@@ -58,7 +61,7 @@
     background: linear-gradient(160deg, #a1a8b3 0%, #6f7784 45%, #939aa6 70%, #5f6673 100%);
   }
 
-  // Ebenen (von hinten): Hintergrundbild 0 → Vereinslogo 1 → Shine 2 → Spielerfoto 3 → Banner 4 → Glare 5
+  // Ebenen (von hinten): Hintergrundbild 0 → Vereinslogo 1 → Shine 2 → Spielerfoto 3 → Banner/Tier-Label 4 → Glare 5
 
   // Optionales Hintergrundbild: füllt die Karte, leicht geblurrt; minimal vergrößert, damit der Blur
   // an den Rändern keine hellen Säume erzeugt
@@ -164,7 +167,7 @@
     clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 
-    // Akzentstreifen unten in der Tier-Farbe
+    // Akzentstreifen unten in der Sekundärfarbe des Vereins (Fallback: Rahmenfarbe)
     &::after {
       content: '';
       position: absolute;
@@ -172,7 +175,7 @@
       right: 9%;
       bottom: 0;
       height: 1.6cqw;
-      background: var(--tier);
+      background: var(--club-secondary, var(--frame));
     }
   }
 
@@ -205,6 +208,35 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  // Seltenheit: kleines, dezentes Label unten rechts (Punkt in der Tier-Farbe)
+  &__tier {
+    position: absolute;
+    right: 4%;
+    bottom: 3%;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 1.2cqw;
+    padding: 0.8cqw 2.2cqw;
+    border-radius: 999px;
+    background: rgba(17, 24, 39, 0.55);
+    color: rgba(255, 255, 255, 0.9);
+    font-family: $font-display;
+    font-size: 3.4cqw;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  &__tier-dot {
+    width: 1.8cqw;
+    height: 1.8cqw;
+    border-radius: 50%;
+    background: var(--tier);
   }
 
   // Glanzlicht folgt der Neigung (nur interaktiv); bei shiny wie im Original per overlay

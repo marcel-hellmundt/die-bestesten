@@ -37,7 +37,7 @@ trait StickerTrait
         $prevSeasonId = $prevStmt->fetchColumn() ?: null;
 
         $clubQuery = $this->con->prepare(
-            "SELECT c.id, c.name, c.short_name, c.logo_uploaded
+            "SELECT c.id, c.name, c.short_name, c.logo_uploaded, c.primary_color, c.secondary_color
              FROM club_in_season cis
              JOIN club c ON c.id = cis.club_id
              LEFT JOIN club_in_season cis_prev
@@ -53,6 +53,8 @@ trait StickerTrait
                 'name'          => $c['name'],
                 'short_name'    => $c['short_name'],
                 'logo_uploaded' => (bool) $c['logo_uploaded'],
+                'primary_color'   => $c['primary_color'],
+                'secondary_color' => $c['secondary_color'],
                 'players'       => [],
             ];
         }

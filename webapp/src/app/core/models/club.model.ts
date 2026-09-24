@@ -14,7 +14,9 @@ export class Club {
     public name: string,
     public short_name: string | null,
     public logo_uploaded: boolean,
-    public stadium: Stadium | null = null
+    public stadium: Stadium | null = null,
+    public primary_color: string | null = null,   // Vereinsfarbe (#rrggbb), null = nicht gepflegt
+    public secondary_color: string | null = null,
   ) {}
 
   get logoUrl(): string {
@@ -42,7 +44,9 @@ export class Club {
       data.name,
       data.short_name ?? null,
       !!data.logo_uploaded,
-      data.stadium ?? null
+      data.stadium ?? null,
+      data.primary_color ?? null,
+      data.secondary_color ?? null,
     );
   }
 }

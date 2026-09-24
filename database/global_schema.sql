@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS club (
     name VARCHAR(100) NOT NULL UNIQUE,          -- Name des Clubs
     short_name VARCHAR(10) DEFAULT NULL,        -- Kurzname/Kürzel, z.B. 'FCB', 'BVB'
     logo_uploaded BOOLEAN DEFAULT FALSE,        -- Gibt an, ob ein Logo für den Club hochgeladen wurde
+    primary_color VARCHAR(7) DEFAULT NULL,      -- Vereinsfarbe als Hex (#rrggbb), NULL = keine gepflegt; z.B. Rand der Sticker-Karte
+    secondary_color VARCHAR(7) DEFAULT NULL,    -- Zweitfarbe als Hex (#rrggbb), NULL = keine gepflegt
     FOREIGN KEY (country_id) REFERENCES country(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
