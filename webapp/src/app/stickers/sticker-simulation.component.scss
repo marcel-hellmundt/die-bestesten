@@ -223,17 +223,17 @@ input[type='range'] {
   display: inline-block;
   width: 22px;
   height: 30px;
-  border: 1.5px solid color-mix(in srgb, var(--tier) 45%, transparent);
+  border: 2px solid color-mix(in srgb, var(--tier) 45%, transparent);
   border-radius: 3px;
   background: transparent;
   transition: background $transition-fast, border-color $transition-fast;
   flex-shrink: 0;
 
-  // Dunkelgrün → Gelb → Orange → Rot (bewusst ohne Blau/Lila, die schwer unterscheidbar sind)
+  // Dunkelgrün → Hellgelb → Rot → Lila (kein Blau neben Lila, schwer unterscheidbar)
   &--common    { --tier: #15803d; }
-  &--rare      { --tier: #eab308; }
-  &--epic      { --tier: #f97316; }
-  &--legendary { --tier: #dc2626; }
+  &--rare      { --tier: #fde047; }
+  &--epic      { --tier: #dc2626; }
+  &--legendary { --tier: #9333ea; }
 
   &--owned {
     background: var(--tier);
