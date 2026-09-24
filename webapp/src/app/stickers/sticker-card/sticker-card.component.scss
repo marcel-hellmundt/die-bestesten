@@ -25,7 +25,7 @@
   isolation: isolate; // Blend-Modes nur innerhalb der Karte mischen
   aspect-ratio: 5 / 7;
   width: 100%;
-  padding: 4%;
+  padding: 3%;
   border-radius: 7% / 5%;
   background: linear-gradient(145deg, color-mix(in srgb, var(--tier) 70%, #fff), var(--tier) 55%, color-mix(in srgb, var(--tier) 75%, #000));
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
@@ -53,7 +53,7 @@
 
   // Ebenen (von hinten): Hintergrundbild 0 → Vereinslogo 1 → Shine 2 → Spielerfoto 3 → Banner 4 → Glare 5
 
-  // Optionales Hintergrundbild: füllt die Karte, stark geblurrt; leicht vergrößert, damit der Blur
+  // Optionales Hintergrundbild: füllt die Karte, leicht geblurrt; minimal vergrößert, damit der Blur
   // an den Rändern keine hellen Säume erzeugt
   &__bg {
     position: absolute;
@@ -62,8 +62,8 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: blur(20px);
-    transform: scale(1.15);
+    filter: blur(2px);
+    transform: scale(1.03);
   }
 
   // hinter dem Foto, oben links
@@ -182,6 +182,7 @@
   }
 
   &__first {
+    margin-left: 8px;
     font-size: 5.2cqw;
     font-weight: $font-weight-semibold;
     letter-spacing: 0.04em;
