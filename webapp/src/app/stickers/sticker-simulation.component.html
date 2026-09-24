@@ -9,22 +9,19 @@
   } @else if (error()) {
     <p class="state-msg">{{ error() }}</p>
   } @else {
-    @let p = params();
+    @let r = shared();
+    @let pr = profile();
 
-    <!-- ── Parameter ─────────────────────────────────────────────────── -->
+    <!-- ── Regeln (für alle Manager gleich) ──────────────────────────── -->
     <section class="card controls">
       <div class="control-group">
         <h2 class="control-group__title">Tägliches Pack</h2>
         <label class="control">
-          <span class="control__label">Pack-Größe <b>{{ p.dailyPackSize }}</b></span>
-          <input type="range" min="0" max="10" step="1" [value]="p.dailyPackSize" (input)="setParam('dailyPackSize', num($event))" />
-        </label>
-        <label class="control">
-          <span class="control__label">Einlog-Wahrscheinlichkeit <b>{{ p.loginChance * 100 | number:'1.0-0' }} %</b></span>
-          <input type="range" min="0" max="100" step="1" [value]="p.loginChance * 100" (input)="setParam('loginChance', num($event) / 100)" />
+          <span class="control__label">Pack-Größe <b>{{ r.dailyPackSize }}</b></span>
+          <input type="range" min="0" max="10" step="1" [value]="r.dailyPackSize" (input)="setShared('dailyPackSize', num($event))" />
         </label>
         <label class="control control--check">
-          <input type="checkbox" [checked]="p.guaranteeNew" (change)="setParam('guaranteeNew', checked($event))" />
+          <input type="checkbox" [checked]="r.guaranteeNew" (change)="setShared('guaranteeNew', checked($event))" />
           <span>1 Sticker pro Pack garantiert neu</span>
         </label>
       </div>
@@ -32,36 +29,28 @@
       <div class="control-group">
         <h2 class="control-group__title">Meilensteine</h2>
         <label class="control">
-          <span class="control__label">Abstand <b>{{ p.milestoneInterval }} Pkt.</b></span>
-          <input type="range" min="25" max="500" step="25" [value]="p.milestoneInterval" (input)="setParam('milestoneInterval', num($event))" />
+          <span class="control__label">Abstand <b>{{ r.milestoneInterval }} Pkt.</b></span>
+          <input type="range" min="25" max="500" step="25" [value]="r.milestoneInterval" (input)="setShared('milestoneInterval', num($event))" />
         </label>
         <label class="control">
-          <span class="control__label">Pack-Größe <b>{{ p.milestonePackSize }}</b></span>
-          <input type="range" min="0" max="10" step="1" [value]="p.milestonePackSize" (input)="setParam('milestonePackSize', num($event))" />
-        </label>
-        <label class="control">
-          <span class="control__label">Ø Punkte pro Spieltag <b>{{ p.avgPoints }}</b></span>
-          <input type="range" min="10" max="80" step="1" [value]="p.avgPoints" (input)="setParam('avgPoints', num($event))" />
+          <span class="control__label">Pack-Größe <b>{{ r.milestonePackSize }}</b></span>
+          <input type="range" min="0" max="10" step="1" [value]="r.milestonePackSize" (input)="setShared('milestonePackSize', num($event))" />
         </label>
       </div>
 
       <div class="control-group">
         <h2 class="control-group__title">Spieltagsbester</h2>
         <label class="control">
-          <span class="control__label">Pack-Größe <b>{{ p.bestPackSize }}</b></span>
-          <input type="range" min="0" max="10" step="1" [value]="p.bestPackSize" (input)="setParam('bestPackSize', num($event))" />
-        </label>
-        <label class="control">
-          <span class="control__label">Teams in der Liga <b>{{ p.teamCount }}</b> <small>(Chance 1/{{ p.teamCount }})</small></span>
-          <input type="range" min="2" max="20" step="1" [value]="p.teamCount" (input)="setParam('teamCount', num($event))" />
+          <span class="control__label">Pack-Größe <b>{{ r.bestPackSize }}</b></span>
+          <input type="range" min="0" max="10" step="1" [value]="r.bestPackSize" (input)="setShared('bestPackSize', num($event))" />
         </label>
       </div>
 
       <div class="control-group">
         <h2 class="control-group__title">Seltenheit</h2>
         <label class="control">
-          <span class="control__label">Kurve α <b>{{ p.rarityAlpha | number:'1.2-2' }}</b></span>
-          <input type="range" min="0" max="2" step="0.05" [value]="p.rarityAlpha" (input)="setParam('rarityAlpha', num($event))" />
+          <span class="control__label">Kurve α <b>{{ r.rarityAlpha | number:'1.2-2' }}</b></span>
+          <input type="range" min="0" max="2" step="0.05" [value]="r.rarityAlpha" (input)="setShared('rarityAlpha', num($event))" />
         </label>
         <p class="control__hint">
           Gewicht = Marktwert<sup>−α</sup> · α = 0: alle gleich häufig ·
@@ -71,6 +60,32 @@
           <span class="control__label">Seed <b>{{ seed() }}</b></span>
           <button class="btn btn-sm btn-secondary" (click)="reroll()">Neu würfeln</button>
         </div>
+      </div>
+    </section>
+
+    <!-- ── Manager-Profil (wer wird simuliert) ───────────────────────── -->
+    <section class="card profile">
+      <div class="profile__head">
+        <h2 class="control-group__title">Manager-Profil</h2>
+        <div class="profile__chips">
+          @for (x of profiles(); track x.key) {
+            <button class="chip" [class.chip--active]="x.key === profileKey()" (click)="profileKey.set(x.key)">{{ x.label }}</button>
+          }
+        </div>
+      </div>
+      <div class="profile__controls">
+        <label class="control">
+          <span class="control__label">Einlog-Wahrscheinlichkeit <b>{{ pr.loginChance * 100 | number:'1.0-0' }} %</b></span>
+          <input type="range" min="0" max="100" step="1" [value]="pr.loginChance * 100" (input)="setProfile('loginChance', num($event) / 100)" />
+        </label>
+        <label class="control">
+          <span class="control__label">Ø Punkte pro Spieltag <b>{{ pr.avgPoints }}</b> <small>(→ Meilensteine)</small></span>
+          <input type="range" min="10" max="80" step="1" [value]="pr.avgPoints" (input)="setProfile('avgPoints', num($event))" />
+        </label>
+        <label class="control">
+          <span class="control__label">Spieltagssieg-Chance <b>{{ pr.bestChance * 100 | number:'1.0-0' }} %</b> <small>(≈ {{ pr.bestChance * 34 | number:'1.0-1' }} Siege/Saison)</small></span>
+          <input type="range" min="0" max="40" step="1" [value]="pr.bestChance * 100" (input)="setProfile('bestChance', num($event) / 100)" />
+        </label>
       </div>
     </section>
 
@@ -106,17 +121,39 @@
 
     <section class="card mc">
       <div class="mc__head">
-        <span class="mc__title">Monte-Carlo: {{ mcRuns }} Saisons mit diesen Parametern</span>
+        <span class="mc__title">Monte-Carlo: je Profil {{ mcRuns }} Saisons mit diesen Regeln</span>
         <button class="btn btn-sm btn-secondary" [disabled]="mcBusy()" (click)="runMonteCarlo()">{{ mcBusy() ? 'läuft…' : 'Berechnen' }}</button>
       </div>
       @if (monteCarlo(); as mc) {
-        <div class="mc__grid">
-          <span>Album am Saisonende <b>{{ mc.albumP50 * 100 | number:'1.0-0' }} %</b>
-            <small>(10–90 %: {{ mc.albumP10 * 100 | number:'1.0-0' }}–{{ mc.albumP90 * 100 | number:'1.0-0' }} %)</small></span>
-          <span>≥ 1 Verein komplett <b>{{ mc.anyClub * 100 | number:'1.0-0' }} %</b></span>
-          <span>Ø Vereine komplett <b>{{ mc.avgClubs | number:'1.1-1' }}</b></span>
-          <span>Album komplett <b>{{ mc.full * 100 | number:'1.0-0' }} %</b></span>
-          <span>Ø Packs <b>{{ mc.packs | number:'1.0-0' }}</b></span>
+        <div class="table-container mc__table">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Profil</th>
+                <th class="num">Ø Packs</th>
+                <th class="num">Album (Median)</th>
+                <th class="num hide-mobile">10–90 %</th>
+                <th class="num">≥ 1 Verein</th>
+                <th class="num hide-mobile">Ø Vereine</th>
+                <th class="num hide-mobile">1. Verein (Tag)</th>
+                <th class="num">Album voll</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of mc; track m.label) {
+                <tr>
+                  <td>{{ m.label }}</td>
+                  <td class="num">{{ m.packs | number:'1.0-0' }}</td>
+                  <td class="num"><b>{{ m.albumP50 * 100 | number:'1.0-0' }} %</b></td>
+                  <td class="num hide-mobile">{{ m.albumP10 * 100 | number:'1.0-0' }}–{{ m.albumP90 * 100 | number:'1.0-0' }} %</td>
+                  <td class="num">{{ m.anyClub * 100 | number:'1.0-0' }} %</td>
+                  <td class="num hide-mobile">{{ m.avgClubs | number:'1.1-1' }}</td>
+                  <td class="num hide-mobile">{{ m.firstClubDay ?? '–' }}</td>
+                  <td class="num">{{ m.full * 100 | number:'1.0-0' }} %</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
       }
     </section>

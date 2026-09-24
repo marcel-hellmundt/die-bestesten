@@ -81,6 +81,52 @@ input[type='range'] {
   }
 }
 
+// ── Manager-Profil ───────────────────────────────────────────────────────────
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $space-3;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
+
+  &__controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: $space-6;
+
+    @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); gap: $space-3; }
+  }
+}
+
+.chip {
+  padding: 4px 12px;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-surface;
+  color: $color-text-muted;
+  font-size: $font-sm;
+  cursor: pointer;
+  transition: background $transition-fast, color $transition-fast;
+
+  &--active {
+    background: $color-text;
+    border-color: $color-text;
+    color: $color-surface;
+  }
+}
+
 // ── Wiedergabe ───────────────────────────────────────────────────────────────
 .player-bar {
   display: flex;
@@ -186,15 +232,18 @@ input[type='range'] {
     font-weight: $font-weight-semibold;
   }
 
-  &__grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: $space-2 $space-6;
+  &__table {
     margin-top: $space-3;
-    font-size: $font-sm;
 
-    b { font-variant-numeric: tabular-nums; }
-    small { color: $color-text-muted; }
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .hide-mobile {
+      @media (max-width: $mobile-breakpoint) { display: none; }
+    }
   }
 }
 

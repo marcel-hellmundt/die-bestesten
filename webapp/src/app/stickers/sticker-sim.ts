@@ -8,8 +8,17 @@ export interface SimParams {
   milestonePackSize: number;    // Sticker pro Meilenstein-Pack (0 = aus)
   avgPoints: number;            // Ø Teampunkte pro Spieltag
   bestPackSize: number;         // Sticker pro Spieltagsbester-Pack (0 = aus)
-  teamCount: number;            // Teams in der Liga → Chance Spieltagsbester = 1/teamCount
+  bestChance: number;           // 0–1, Chance, an einem Spieltag Spieltagsbester zu sein (profilabhängig)
   rarityAlpha: number;          // Gewicht je Sticker = Marktwert^-α (0 = alle gleich häufig)
+}
+
+/** Manager-Typ: die Werte, in denen sich aktive und inaktive Manager unterscheiden. */
+export interface SimProfile {
+  key: string;
+  label: string;
+  loginChance: number;
+  avgPoints: number;
+  bestChance: number;
 }
 
 export type PackSource = 'daily' | 'milestone' | 'best';
@@ -105,7 +114,7 @@ export function simulateSeason(params: SimParams, weights: number[], timeline: T
           open(day, 'milestone', params.milestonePackSize);
         }
       }
-      if (random() < 1 / Math.max(params.teamCount, 1)) open(day, 'best', params.bestPackSize);
+      if (random() < params.bestChance) open(day, 'best', params.bestPackSize);
     }
   }
   return packs;
