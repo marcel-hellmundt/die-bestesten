@@ -9,16 +9,16 @@
   --holo-x: 50%;
   --holo-y: 50%;
   --from-center: 0;
+  --facet-angle: 45deg;
   transform-style: preserve-3d;
   will-change: transform;
 
   &--interactive { transition: transform 90ms linear; }
 }
 
-// Regenbogen des Holo-Effekts (Hintergrund + Rahmen)
-$holo-rainbow: repeating-linear-gradient(110deg,
-  hsl(2, 100%, 73%) 0%, hsl(53, 100%, 69%) 5%, hsl(93, 100%, 69%) 10%,
-  hsl(176, 100%, 76%) 15%, hsl(228, 100%, 74%) 20%, hsl(283, 100%, 73%) 25%, hsl(2, 100%, 73%) 30%);
+// Wanderndes Lichtband (Shiny-Folie + Rahmen) — Position folgt der Neigung
+$shiny-sweep: linear-gradient(115deg,
+  transparent calc(var(--holo-x) - 22%), rgba(255, 255, 255, 0.95) var(--holo-x), transparent calc(var(--holo-x) + 22%));
 
 // Seitenverhältnis 5:7 (klassische Sammelkarte, hochkant); Rahmenfarbe = Seltenheit
 .sticker-card {
@@ -48,12 +48,12 @@ $holo-rainbow: repeating-linear-gradient(110deg,
       radial-gradient(circle at 50% 35%, #ffffff 0%, #eef0f3 45%, #d5d9df 100%);
   }
 
-  // ── Shiny: metallisch-grauer Grund (color-dodge braucht Mitteltöne — auf Weiß wird alles nur weiß)
+  // ── Shiny: silberner Grund mit Rauten-Folie (Diamond-Plate) und wanderndem Lichtband, kaum Farbe
   &--shiny &__inner {
-    background: linear-gradient(135deg, #a7afbd 0%, #6b7280 45%, #9aa3b2 70%, #5b6270 100%);
+    background: linear-gradient(160deg, #d9dce1 0%, #a3a9b3 45%, #c7cbd2 70%, #8a919c 100%);
   }
 
-  // Rahmen schimmert dezent mit, behält aber seine Tier-Farbe
+  // Rahmen: behält seine Tier-Farbe, nur das Lichtband huscht darüber
   &--shiny::before {
     content: '';
     position: absolute;
@@ -61,37 +61,39 @@ $holo-rainbow: repeating-linear-gradient(110deg,
     z-index: 0;
     border-radius: inherit;
     pointer-events: none;
-    background-image: $holo-rainbow;
-    background-size: 400% 400%;
-    background-position: var(--holo-x) var(--holo-y);
-    mix-blend-mode: color-dodge;
-    opacity: calc(0.15 + var(--from-center) * 0.3);
+    background-image: $shiny-sweep;
+    mix-blend-mode: soft-light;
+    opacity: calc(0.3 + var(--from-center) * 0.6);
   }
 
-  // Holo-Hintergrund: Glitzerpunkte (2 versetzte Raster) + Regenbogen + Folienstreifen,
-  // Positionen folgen der Neigung, Helligkeit/Deckkraft steigen mit der Neigungsstärke
-  &__holo {
+  // Rauten-Facetten: je Kachel ein conic-gradient mit 4 Flächen (hell/dunkel), um 45° gedreht →
+  // Diamanten; --facet-angle (Neigungsrichtung) bestimmt, welche Flächen das Licht fangen.
+  // inset -30%, damit die Drehung keine leeren Ecken lässt.
+  &__foil {
+    position: absolute;
+    inset: -30%;
+    z-index: 1;
+    pointer-events: none;
+    transform: rotate(45deg);
+    background-image: conic-gradient(from var(--facet-angle),
+      rgba(255, 255, 255, 0.75) 0 25%, rgba(150, 158, 170, 0.5) 0 50%,
+      rgba(232, 235, 240, 0.6) 0 75%, rgba(105, 112, 125, 0.5) 0);
+    background-size: 16px 16px;
+    mix-blend-mode: overlay;
+    opacity: calc(0.35 + var(--from-center) * 0.3);
+  }
+
+  // Lichtband + ein Hauch kühler Farbe (sehr dezent)
+  &__sweep {
     position: absolute;
     inset: 0;
     z-index: 1;
     pointer-events: none;
     background-image:
-      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.9) 0 0.6px, transparent 1.2px),
-      radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.8) 0 0.5px, transparent 1px),
-      $holo-rainbow,
-      repeating-linear-gradient(-45deg,
-        rgba(14, 21, 46, 0.5) 0%, hsl(180, 10%, 60%) 3.8%, hsl(180, 29%, 66%) 4.5%,
-        hsl(180, 10%, 60%) 5.2%, rgba(14, 21, 46, 0.5) 10%, rgba(14, 21, 46, 0.5) 12%);
-    background-size: 9px 9px, 13px 13px, 400% 400%, 300% 300%;
-    background-position:
-      calc(var(--holo-x) * 0.1) calc(var(--holo-y) * 0.1),
-      calc(var(--holo-x) * -0.08) calc(var(--holo-y) * -0.08),
-      var(--holo-x) var(--holo-y),
-      var(--holo-x) var(--holo-y);
-    background-blend-mode: screen, screen, hue, hard-light;
-    mix-blend-mode: color-dodge;
-    filter: brightness(calc(0.5 + var(--from-center) * 0.3)) contrast(1.5) saturate(1.6);
-    opacity: calc(0.5 + var(--from-center) * 0.35);
+      $shiny-sweep,
+      linear-gradient(115deg, hsla(200, 80%, 70%, 0.25), hsla(280, 70%, 75%, 0.2), hsla(40, 80%, 70%, 0.2));
+    mix-blend-mode: soft-light;
+    opacity: calc(0.35 + var(--from-center) * 0.65);
   }
 
   // hinter dem Foto, oben links
@@ -192,34 +194,28 @@ $holo-rainbow: repeating-linear-gradient(110deg,
   }
 
   &--shiny &__glare {
-    mix-blend-mode: overlay;
-    background: radial-gradient(farthest-corner circle at var(--pointer-x) var(--pointer-y),
-      rgba(255, 255, 255, 0.8) 10%, rgba(255, 255, 255, 0.35) 25%, rgba(0, 0, 0, 0.4) 90%);
-    opacity: calc(0.15 + var(--from-center) * 0.35);
+    background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 55%);
   }
 }
 
-// Statisch (z.B. im Album, ohne Neigung): Shiny-Karten schimmern langsam von selbst
+// Statisch (z.B. im Album, ohne Neigung): Shiny-Karten schimmern langsam von selbst — die
+// Animation setzt die Variablen direkt an der Karte, Folie/Lichtband/Rahmen erben sie.
 .card-3d:not(.card-3d--interactive) .sticker-card--shiny {
-  .sticker-card__holo,
-  &::before { animation: holo-drift 7s ease-in-out infinite alternate; }
+  animation: shiny-drift 7s ease-in-out infinite alternate;
 }
 
-@keyframes holo-drift {
-  from { --holo-x: 30%; --holo-y: 35%; --from-center: 0.15; }
-  to   { --holo-x: 70%; --holo-y: 65%; --from-center: 0.5; }
+@keyframes shiny-drift {
+  from { --holo-x: 15%; --facet-angle: 20deg;  --from-center: 0.15; }
+  to   { --holo-x: 85%; --facet-angle: 110deg; --from-center: 0.5; }
 }
 
 // Damit die Custom Properties in der Animation interpoliert werden (statt zu springen)
-@property --holo-x      { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
-@property --holo-y      { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
-@property --from-center { syntax: '<number>';     inherits: true; initial-value: 0; }
+@property --holo-x       { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
+@property --facet-angle  { syntax: '<angle>';      inherits: true; initial-value: 45deg; }
+@property --from-center  { syntax: '<number>';     inherits: true; initial-value: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .card-3d:not(.card-3d--interactive) .sticker-card--shiny {
-    .sticker-card__holo,
-    &::before { animation: none; }
-  }
+  .card-3d:not(.card-3d--interactive) .sticker-card--shiny { animation: none; }
 }
 
 // Container für cqw-Einheiten (Namensgröße relativ zur Kartenbreite)

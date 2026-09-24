@@ -6,12 +6,14 @@
      [style.--pointer-y]="glareY() + '%'"
      [style.--holo-x]="holoX() + '%'"
      [style.--holo-y]="holoY() + '%'"
-     [style.--from-center]="fromCenter()">
+     [style.--from-center]="fromCenter()"
+     [style.--facet-angle]="facetAngle() + 'deg'">
   <div class="sticker-card sticker-card--{{ d.tier }}" [class.sticker-card--shiny]="d.shiny">
     <div class="sticker-card__inner">
       @if (d.shiny) {
-        <!-- Holo-Hintergrund hinter Logo/Foto: Regenbogen + Folienstreifen + Glitzer (color-dodge) -->
-        <div class="sticker-card__holo"></div>
+        <!-- Silberne Rauten-Folie hinter Logo/Foto + wanderndes Lichtband -->
+        <div class="sticker-card__foil"></div>
+        <div class="sticker-card__sweep"></div>
       }
       <!-- Vereinslogo oben links, hinter dem Spielerfoto -->
       @if (d.clubLogoUrl && !logoFailed()) {
