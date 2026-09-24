@@ -1,0 +1,330 @@
+@use '../../styles/variables' as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-4;
+}
+
+.page-title__sub {
+  display: block;
+  font-size: $font-sm;
+  font-weight: $font-weight-normal;
+  color: $color-text-muted;
+  margin-top: $space-1;
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--flat-river);
+  cursor: pointer;
+}
+
+// ── Parameter ────────────────────────────────────────────────────────────────
+.controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $space-6;
+  padding: $space-4;
+
+  @media (max-width: 1100px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); gap: $space-4; }
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &__title {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+    margin: 0;
+  }
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__label {
+    font-size: $font-sm;
+
+    b { font-variant-numeric: tabular-nums; }
+    small { color: $color-text-muted; }
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+  }
+
+  &--check {
+    flex-direction: row;
+    align-items: center;
+    gap: $space-2;
+    font-size: $font-sm;
+    cursor: pointer;
+  }
+}
+
+// ── Wiedergabe ───────────────────────────────────────────────────────────────
+.player-bar {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-3 $space-4;
+  position: sticky;
+  top: 0;
+  z-index: $z-raised;
+
+  @media (max-width: $mobile-breakpoint) { flex-wrap: wrap; gap: $space-2; }
+
+  &__timeline {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+
+  &__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: $space-2;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+
+    b { color: $color-text; }
+  }
+}
+
+.play-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: $font-md;
+  flex-shrink: 0;
+}
+
+.speed {
+  display: flex;
+  gap: 2px;
+
+  &__btn {
+    padding: 4px 8px;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    background: $color-surface;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+
+    &--active {
+      background: $color-text;
+      border-color: $color-text;
+      color: $color-surface;
+    }
+  }
+}
+
+// ── Kennzahlen ───────────────────────────────────────────────────────────────
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: $space-3;
+
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+
+  &__value {
+    font-size: $font-xl;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__label {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+.mc {
+  padding: $space-3 $space-4;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+  }
+
+  &__title {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2 $space-6;
+    margin-top: $space-3;
+    font-size: $font-sm;
+
+    b { font-variant-numeric: tabular-nums; }
+    small { color: $color-text-muted; }
+  }
+}
+
+// ── Legende + Sticker ────────────────────────────────────────────────────────
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-4;
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+// Farbe je Seltenheit — gefüllt nur wenn gesammelt, sonst nur Rahmen
+.sticker {
+  --tier: #9ca3af;
+  position: relative;
+  display: inline-block;
+  width: 22px;
+  height: 30px;
+  border: 1.5px solid color-mix(in srgb, var(--tier) 45%, transparent);
+  border-radius: 3px;
+  background: transparent;
+  transition: background $transition-fast, border-color $transition-fast;
+  flex-shrink: 0;
+
+  &--common    { --tier: #84cc16; }
+  &--rare      { --tier: #3b82f6; }
+  &--epic      { --tier: #a855f7; }
+  &--legendary { --tier: #f59e0b; }
+
+  &--owned {
+    background: var(--tier);
+    border-color: var(--tier);
+  }
+
+  &--new {
+    box-shadow: 0 0 0 2px $color-surface, 0 0 0 4px var(--tier);
+    animation: sticker-pop 400ms ease;
+  }
+
+  &__count {
+    position: absolute;
+    right: -6px;
+    top: -6px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: $radius-full;
+    background: $color-text;
+    color: $color-surface;
+    font-size: 9px;
+    font-weight: $font-weight-bold;
+    line-height: 14px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes sticker-pop {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+// ── Album ────────────────────────────────────────────────────────────────────
+.album {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.club-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+
+  &--complete {
+    border-color: $color-success;
+    background: color-mix(in srgb, #{$color-success} 6%, #{$color-surface});
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    width: 110px;
+    flex-shrink: 0;
+
+    @media (max-width: $mobile-breakpoint) { width: auto; }
+  }
+
+  &__logo {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__count {
+    margin-left: auto;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__stickers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 6px; // Platz für den Doppelten-Zähler oben rechts
+    min-width: 0;
+  }
+}

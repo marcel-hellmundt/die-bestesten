@@ -1,0 +1,160 @@
+<div class="page">
+  <h1 class="page-title">
+    Die Klebrigsten
+    <span class="page-title__sub">Simulation · eine Saison im Sticker-Album, Tag für Tag</span>
+  </h1>
+
+  @if (loading()) {
+    <p class="state-msg">Album wird geladen…</p>
+  } @else if (error()) {
+    <p class="state-msg">{{ error() }}</p>
+  } @else {
+    @let p = params();
+
+    <!-- ── Parameter ─────────────────────────────────────────────────── -->
+    <section class="card controls">
+      <div class="control-group">
+        <h2 class="control-group__title">Tägliches Pack</h2>
+        <label class="control">
+          <span class="control__label">Pack-Größe <b>{{ p.dailyPackSize }}</b></span>
+          <input type="range" min="0" max="10" step="1" [value]="p.dailyPackSize" (input)="setParam('dailyPackSize', num($event))" />
+        </label>
+        <label class="control">
+          <span class="control__label">Einlog-Wahrscheinlichkeit <b>{{ p.loginChance * 100 | number:'1.0-0' }} %</b></span>
+          <input type="range" min="0" max="100" step="1" [value]="p.loginChance * 100" (input)="setParam('loginChance', num($event) / 100)" />
+        </label>
+        <label class="control control--check">
+          <input type="checkbox" [checked]="p.guaranteeNew" (change)="setParam('guaranteeNew', checked($event))" />
+          <span>1 Sticker pro Pack garantiert neu</span>
+        </label>
+      </div>
+
+      <div class="control-group">
+        <h2 class="control-group__title">Meilensteine</h2>
+        <label class="control">
+          <span class="control__label">Abstand <b>{{ p.milestoneInterval }} Pkt.</b></span>
+          <input type="range" min="25" max="500" step="25" [value]="p.milestoneInterval" (input)="setParam('milestoneInterval', num($event))" />
+        </label>
+        <label class="control">
+          <span class="control__label">Pack-Größe <b>{{ p.milestonePackSize }}</b></span>
+          <input type="range" min="0" max="10" step="1" [value]="p.milestonePackSize" (input)="setParam('milestonePackSize', num($event))" />
+        </label>
+        <label class="control">
+          <span class="control__label">Ø Punkte pro Spieltag <b>{{ p.avgPoints }}</b></span>
+          <input type="range" min="10" max="80" step="1" [value]="p.avgPoints" (input)="setParam('avgPoints', num($event))" />
+        </label>
+      </div>
+
+      <div class="control-group">
+        <h2 class="control-group__title">Spieltagsbester</h2>
+        <label class="control">
+          <span class="control__label">Pack-Größe <b>{{ p.bestPackSize }}</b></span>
+          <input type="range" min="0" max="10" step="1" [value]="p.bestPackSize" (input)="setParam('bestPackSize', num($event))" />
+        </label>
+        <label class="control">
+          <span class="control__label">Teams in der Liga <b>{{ p.teamCount }}</b> <small>(Chance 1/{{ p.teamCount }})</small></span>
+          <input type="range" min="2" max="20" step="1" [value]="p.teamCount" (input)="setParam('teamCount', num($event))" />
+        </label>
+      </div>
+
+      <div class="control-group">
+        <h2 class="control-group__title">Seltenheit</h2>
+        <label class="control">
+          <span class="control__label">Kurve α <b>{{ p.rarityAlpha | number:'1.2-2' }}</b></span>
+          <input type="range" min="0" max="2" step="0.05" [value]="p.rarityAlpha" (input)="setParam('rarityAlpha', num($event))" />
+        </label>
+        <p class="control__hint">
+          Gewicht = Marktwert<sup>−α</sup> · α = 0: alle gleich häufig ·
+          seltenster Sticker {{ odds(rarestIdx()) }}, häufigster {{ odds(commonestIdx()) }} (je gezogenem Sticker)
+        </p>
+        <div class="control__row">
+          <span class="control__label">Seed <b>{{ seed() }}</b></span>
+          <button class="btn btn-sm btn-secondary" (click)="reroll()">Neu würfeln</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Wiedergabe ────────────────────────────────────────────────── -->
+    <section class="card player-bar">
+      <button class="btn btn-primary play-btn" (click)="togglePlay()" [attr.aria-label]="playing() ? 'Pause' : 'Abspielen'">
+        {{ playing() ? '❚❚' : '▶' }}
+      </button>
+      <div class="player-bar__timeline">
+        <input type="range" min="0" [max]="timeline().days" step="1" [value]="day()" (input)="scrub(num($event))" />
+        <div class="player-bar__meta">
+          <span>Tag <b>{{ day() }}</b> / {{ timeline().days }}</span>
+          @if (dateOf(day()); as d) { <span>{{ d | date:'EE, dd.MM.yyyy' }}</span> }
+        </div>
+      </div>
+      <div class="speed">
+        @for (s of speeds; track s) {
+          <button class="speed__btn" [class.speed__btn--active]="speed() === s" (click)="setSpeed(s)">{{ s }}×</button>
+        }
+      </div>
+      <button class="btn btn-sm btn-secondary" (click)="jumpToEnd()">Saisonende</button>
+    </section>
+
+    <!-- ── Kennzahlen ────────────────────────────────────────────────── -->
+    @let st = stats();
+    <section class="stats">
+      <div class="stat"><span class="stat__value">{{ st.pct * 100 | number:'1.0-0' }} %</span><span class="stat__label">Album ({{ st.unique }}/{{ st.n }})</span></div>
+      <div class="stat"><span class="stat__value">{{ st.complete }}</span><span class="stat__label">Vereine komplett</span></div>
+      <div class="stat"><span class="stat__value">{{ st.packs }}</span><span class="stat__label">Packs ({{ st.bySource.daily }} täglich · {{ st.bySource.milestone }} Meilenstein · {{ st.bySource.best }} Spieltagsbester)</span></div>
+      <div class="stat"><span class="stat__value">{{ st.total }}</span><span class="stat__label">Sticker gezogen</span></div>
+      <div class="stat"><span class="stat__value">{{ st.duplicates }}</span><span class="stat__label">Doppelte</span></div>
+    </section>
+
+    <section class="card mc">
+      <div class="mc__head">
+        <span class="mc__title">Monte-Carlo: {{ mcRuns }} Saisons mit diesen Parametern</span>
+        <button class="btn btn-sm btn-secondary" [disabled]="mcBusy()" (click)="runMonteCarlo()">{{ mcBusy() ? 'läuft…' : 'Berechnen' }}</button>
+      </div>
+      @if (monteCarlo(); as mc) {
+        <div class="mc__grid">
+          <span>Album am Saisonende <b>{{ mc.albumP50 * 100 | number:'1.0-0' }} %</b>
+            <small>(10–90 %: {{ mc.albumP10 * 100 | number:'1.0-0' }}–{{ mc.albumP90 * 100 | number:'1.0-0' }} %)</small></span>
+          <span>≥ 1 Verein komplett <b>{{ mc.anyClub * 100 | number:'1.0-0' }} %</b></span>
+          <span>Ø Vereine komplett <b>{{ mc.avgClubs | number:'1.1-1' }}</b></span>
+          <span>Album komplett <b>{{ mc.full * 100 | number:'1.0-0' }} %</b></span>
+          <span>Ø Packs <b>{{ mc.packs | number:'1.0-0' }}</b></span>
+        </div>
+      }
+    </section>
+
+    <!-- ── Legende ───────────────────────────────────────────────────── -->
+    <div class="legend">
+      @for (t of tiers; track t) {
+        <span class="legend__item"><span class="sticker sticker--owned sticker--{{ t }}"></span>{{ tierLabel[t] }}</span>
+      }
+      <span class="legend__item"><span class="sticker"></span>fehlt</span>
+      <span class="legend__item legend__hint">Tier nach Marktwert: ≤ 1 Mio · ≤ 2,5 Mio · ≤ 5 Mio · darüber</span>
+    </div>
+
+    <!-- ── Album: eine Zeile je Verein ───────────────────────────────── -->
+    @let cnt = counts();
+    @let fresh = newToday();
+    <section class="album">
+      @for (row of rows(); track row.club.id) {
+        @let have = clubProgress(row.stickers);
+        <div class="club-row" [class.club-row--complete]="have === row.stickers.length">
+          <div class="club-row__head">
+            <img class="club-row__logo" [src]="clubLogoUrl(row.club)" [alt]="row.club.name" />
+            <span class="club-row__name">{{ row.club.short_name }}</span>
+            <span class="club-row__count">{{ have }}/{{ row.stickers.length }}</span>
+          </div>
+          <div class="club-row__stickers">
+            @for (s of row.stickers; track s.id) {
+              @let c = cnt[s.idx];
+              <span class="sticker sticker--{{ s.tier }}"
+                    [class.sticker--owned]="c > 0"
+                    [class.sticker--new]="fresh.has(s.idx)"
+                    [title]="s.displayname + ' · ' + (s.position ? positionLabel[s.position] + ' · ' : '') + priceLabel(s.price) + ' · ' + tierLabel[s.tier] + ' · ' + odds(s.idx) + (c > 0 ? ' · ' + c + '×' : '')">
+                @if (c > 1) { <span class="sticker__count">{{ c }}</span> }
+              </span>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  }
+</div>

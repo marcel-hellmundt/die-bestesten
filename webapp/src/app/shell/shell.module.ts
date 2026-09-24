@@ -23,6 +23,7 @@ const routes: Routes = [
       { path: 'manager',       loadChildren: () => import('../manager/manager.module').then(m => m.ManagerModule) },
       { path: 'daten',         loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
       { path: 'karte',         loadChildren: () => import('../map/map.module').then(m => m.MapModule) },
+      { path: 'klebrigsten',   loadChildren: () => import('../stickers/stickers.module').then(m => m.StickersModule) },
       { path: 'einstellungen',  loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },
       { path: 'achievements',    loadChildren: () => import('../achievements/achievements.module').then(m => m.AchievementsModule) },
       { path: 'benachrichtigungen', loadChildren: () => import('../notifications/notifications.module').then(m => m.NotificationsModule) },

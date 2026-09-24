@@ -36,6 +36,7 @@ require_once 'h2h_prediction.database.php';
 require_once 'powerranking.database.php';
 require_once 'session.database.php';
 require_once 'noten.database.php';
+require_once 'sticker.database.php';
 
 class Database
 {
@@ -76,6 +77,7 @@ class Database
     use PowerrankingTrait;
     use SessionTrait;
     use NotenTrait;
+    use StickerTrait;
 
     private $con;
     private $con_league;

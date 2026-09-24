@@ -222,6 +222,20 @@
       <app-icon name="map"></app-icon>
     </a>
 
+    <!-- "Die Klebrigsten" (Sticker-Album) — V0 = Parameter-Simulation, vorerst nur für Admins -->
+    @if (isAdmin()) {
+      <a
+        class="topbar-icon-btn topbar-bell"
+        [class.active]="currentUrl().startsWith('/klebrigsten')"
+        routerLink="/klebrigsten"
+        (click)="closeDropdown()"
+        aria-label="Die Klebrigsten"
+        data-tooltip="Die Klebrigsten"
+      >
+        <app-icon name="sticker"></app-icon>
+      </a>
+    }
+
     <a
       class="topbar-icon-btn topbar-bell"
       [class.active]="currentUrl().startsWith('/achievements')"
@@ -286,6 +300,14 @@
             <app-icon name="map"></app-icon>
             Karte
           </a>
+          @if (isAdmin()) {
+            <a class="dropdown-item dropdown-item--mobile-only"
+               [class.dropdown-item--active]="currentUrl().startsWith('/klebrigsten')"
+               routerLink="/klebrigsten" (click)="closeDropdown()">
+              <app-icon name="sticker"></app-icon>
+              Die Klebrigsten
+            </a>
+          }
           <a class="dropdown-item dropdown-item--mobile-only"
              [class.dropdown-item--active]="currentUrl().startsWith('/achievements')"
              routerLink="/achievements" (click)="closeDropdown()">
