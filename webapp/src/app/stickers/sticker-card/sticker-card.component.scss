@@ -9,7 +9,6 @@
   --holo-x: 50%;
   --holo-y: 50%;
   --from-center: 0;
-  --facet-angle: 45deg;
   transform-style: preserve-3d;
   will-change: transform;
 
@@ -48,7 +47,7 @@ $shiny-sweep: linear-gradient(115deg,
       radial-gradient(circle at 50% 35%, #ffffff 0%, #eef0f3 45%, #d5d9df 100%);
   }
 
-  // ── Shiny: silberner Grund mit Rauten-Folie (Diamond-Plate) und wanderndem Lichtband, kaum Farbe
+  // ── Shiny: silberner Grund mit Ring-Moiré, Hauch Regenbogen und wanderndem Lichtband
   &--shiny &__inner {
     background: linear-gradient(160deg, #d9dce1 0%, #a3a9b3 45%, #c7cbd2 70%, #8a919c 100%);
   }
@@ -66,34 +65,36 @@ $shiny-sweep: linear-gradient(115deg,
     opacity: calc(0.3 + var(--from-center) * 0.6);
   }
 
-  // Rauten-Facetten: je Kachel ein conic-gradient mit 4 Flächen (hell/dunkel), um 45° gedreht →
-  // Diamanten; --facet-angle (Neigungsrichtung) bestimmt, welche Flächen das Licht fangen.
-  // inset -30%, damit die Drehung keine leeren Ecken lässt.
-  &__foil {
+  // Zwei Ringsysteme (hell + dunkel) mit versetzten Zentren → Moiré-Wellen. Die Zentren wandern
+  // gegenläufig mit der Neigung, dadurch bewegen sich die Wellen beim Kippen über die Karte.
+  &__rings {
     position: absolute;
-    inset: -30%;
+    inset: 0;
     z-index: 1;
     pointer-events: none;
-    transform: rotate(45deg);
-    background-image: conic-gradient(from var(--facet-angle),
-      rgba(255, 255, 255, 0.75) 0 25%, rgba(150, 158, 170, 0.5) 0 50%,
-      rgba(232, 235, 240, 0.6) 0 75%, rgba(105, 112, 125, 0.5) 0);
-    background-size: 16px 16px;
+    background-image:
+      repeating-radial-gradient(circle at calc(20% + var(--holo-x) * 0.6) calc(10% + var(--holo-y) * 0.5),
+        rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.55) 1.5px, rgba(255, 255, 255, 0) 3px, rgba(255, 255, 255, 0) 5px),
+      repeating-radial-gradient(circle at calc(90% - var(--holo-x) * 0.6) calc(95% - var(--holo-y) * 0.5),
+        rgba(40, 48, 60, 0) 0, rgba(40, 48, 60, 0.45) 1.5px, rgba(40, 48, 60, 0) 3px, rgba(40, 48, 60, 0) 5.4px);
     mix-blend-mode: overlay;
-    opacity: calc(0.35 + var(--from-center) * 0.3);
+    opacity: calc(0.55 + var(--from-center) * 0.35);
   }
 
-  // Lichtband + ein Hauch kühler Farbe (sehr dezent)
-  &__sweep {
+  // Lichtband + dezenter Regenbogen, der mit der Neigung wandert
+  &__tint {
     position: absolute;
     inset: 0;
     z-index: 1;
     pointer-events: none;
     background-image:
       $shiny-sweep,
-      linear-gradient(115deg, hsla(200, 80%, 70%, 0.25), hsla(280, 70%, 75%, 0.2), hsla(40, 80%, 70%, 0.2));
-    mix-blend-mode: soft-light;
-    opacity: calc(0.35 + var(--from-center) * 0.65);
+      linear-gradient(125deg, hsla(330, 90%, 70%, 0.6), hsla(50, 90%, 65%, 0.45), hsla(160, 80%, 60%, 0.45),
+        hsla(210, 90%, 65%, 0.55), hsla(285, 85%, 68%, 0.6));
+    background-size: 100% 100%, 300% 300%;
+    background-position: 0 0, var(--holo-x) var(--holo-y);
+    mix-blend-mode: overlay;
+    opacity: calc(0.45 + var(--from-center) * 0.45);
   }
 
   // hinter dem Foto, oben links
@@ -205,13 +206,13 @@ $shiny-sweep: linear-gradient(115deg,
 }
 
 @keyframes shiny-drift {
-  from { --holo-x: 15%; --facet-angle: 20deg;  --from-center: 0.15; }
-  to   { --holo-x: 85%; --facet-angle: 110deg; --from-center: 0.5; }
+  from { --holo-x: 15%; --holo-y: 30%; --from-center: 0.15; }
+  to   { --holo-x: 85%; --holo-y: 70%; --from-center: 0.5; }
 }
 
 // Damit die Custom Properties in der Animation interpoliert werden (statt zu springen)
 @property --holo-x       { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
-@property --facet-angle  { syntax: '<angle>';      inherits: true; initial-value: 45deg; }
+@property --holo-y       { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
 @property --from-center  { syntax: '<number>';     inherits: true; initial-value: 0; }
 
 @media (prefers-reduced-motion: reduce) {

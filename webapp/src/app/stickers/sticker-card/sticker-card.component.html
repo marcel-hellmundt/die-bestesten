@@ -6,14 +6,13 @@
      [style.--pointer-y]="glareY() + '%'"
      [style.--holo-x]="holoX() + '%'"
      [style.--holo-y]="holoY() + '%'"
-     [style.--from-center]="fromCenter()"
-     [style.--facet-angle]="facetAngle() + 'deg'">
+     [style.--from-center]="fromCenter()">
   <div class="sticker-card sticker-card--{{ d.tier }}" [class.sticker-card--shiny]="d.shiny">
     <div class="sticker-card__inner">
       @if (d.shiny) {
-        <!-- Silberne Rauten-Folie hinter Logo/Foto + wanderndes Lichtband -->
-        <div class="sticker-card__foil"></div>
-        <div class="sticker-card__sweep"></div>
+        <!-- Silberfolie hinter Logo/Foto: Ring-Moiré + Hauch Regenbogen + wanderndes Lichtband -->
+        <div class="sticker-card__rings"></div>
+        <div class="sticker-card__tint"></div>
       }
       <!-- Vereinslogo oben links, hinter dem Spielerfoto -->
       @if (d.clubLogoUrl && !logoFailed()) {
