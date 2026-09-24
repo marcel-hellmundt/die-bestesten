@@ -263,6 +263,108 @@ input[type='range'] {
   }
 }
 
+.sticker {
+  cursor: pointer;
+
+  &--hover { transform: scale(1.2); }
+}
+
+// ── Custom-Tooltip ───────────────────────────────────────────────────────────
+.sticker-tip {
+  --tier: #9ca3af;
+  position: fixed;
+  z-index: $z-dropdown;
+  transform: translate(-50%, calc(-100% - 8px));
+  display: flex;
+  gap: $space-3;
+  width: 260px;
+  padding: $space-3;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-top: 4px solid var(--tier);
+  border-radius: $radius-md;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  font-size: $font-xs;
+  color: $color-text;
+
+  &--below { transform: translate(-50%, 8px); }
+
+  &--common    { --tier: #15803d; }
+  &--rare      { --tier: #fde047; }
+  &--epic      { --tier: #dc2626; }
+  &--legendary { --tier: #9333ea; }
+
+  &__photo {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: $radius-sm;
+    overflow: hidden;
+    background: $color-surface-alt;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+  }
+
+  &__placeholder { opacity: 0.3; }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: $color-text-muted;
+  }
+
+  &__club {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+  }
+
+  &__row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+
+    b { font-variant-numeric: tabular-nums; }
+  }
+
+  &__tier {
+    font-weight: $font-weight-semibold;
+    padding: 0 6px;
+    border-radius: $radius-full;
+    background: color-mix(in srgb, var(--tier) 25%, transparent);
+  }
+
+  &__muted { color: $color-text-muted; }
+
+  &__status { font-weight: $font-weight-semibold; }
+
+  &__new {
+    padding: 0 5px;
+    border-radius: $radius-sm;
+    background: $color-success;
+    color: #fff;
+    font-size: 10px;
+  }
+}
+
 @keyframes sticker-pop {
   0%   { transform: scale(0.6); }
   60%  { transform: scale(1.15); }

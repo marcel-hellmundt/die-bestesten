@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
 import { ApiService } from '../core/api.service';
@@ -235,6 +235,30 @@ export class StickerSimulationComponent {
       });
       this.mcBusy.set(false);
     });
+  }
+
+  // ── Tooltip ───────────────────────────────────────────────────────────────
+  /** x/y = Viewport-Koordinaten (position: fixed); below = unter statt über dem Sticker (oben zu wenig Platz). */
+  tip = signal<{ idx: number; x: number; y: number; below: boolean } | null>(null);
+
+  showTip(event: Event, idx: number): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const halfWidth = 130; // halbe Tooltip-Breite, damit er nicht aus dem Viewport ragt
+    const x = Math.min(Math.max(rect.left + rect.width / 2, halfWidth + 8), window.innerWidth - halfWidth - 8);
+    const below = rect.top < 170;
+    this.tip.set({ idx, x, y: below ? rect.bottom : rect.top, below });
+  }
+
+  // Beim Scrollen ausblenden (fixed-Position würde sonst vom Sticker wegdriften) — wheel/touchmove
+  // zusätzlich, da der Shell-Content ggf. in einem eigenen Container statt im window scrollt.
+  @HostListener('window:scroll')
+  @HostListener('window:wheel')
+  @HostListener('window:touchmove')
+  hideTip(): void { if (this.tip()) this.tip.set(null); }
+
+  photoUrl(s: Sticker): string | null {
+    const seasonId = this.state().data?.season_id;
+    return s.photo_uploaded && seasonId ? `https://img.die-bestesten.de/player/${seasonId}/${s.id}.png` : null;
   }
 
   // ── Bilder ────────────────────────────────────────────────────────────────

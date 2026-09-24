@@ -150,7 +150,10 @@
               <span class="sticker sticker--{{ s.tier }}"
                     [class.sticker--owned]="c > 0"
                     [class.sticker--new]="fresh.has(s.idx)"
-                    [title]="s.displayname + ' · ' + (s.position ? positionLabel[s.position] + ' · ' : '') + priceLabel(s.price) + ' · ' + tierLabel[s.tier] + ' · ' + odds(s.idx) + (c > 0 ? ' · ' + c + '×' : '')">
+                    [class.sticker--hover]="tip()?.idx === s.idx"
+                    (pointerenter)="showTip($event, s.idx)"
+                    (pointerleave)="hideTip()"
+                    (click)="showTip($event, s.idx)">
                 @if (c > 1) { <span class="sticker__count">{{ c }}</span> }
               </span>
             }
@@ -158,5 +161,44 @@
         </div>
       }
     </section>
+
+    <!-- Custom-Tooltip: ein einziges Element, fixed am gehoverten Sticker positioniert -->
+    @if (tip(); as t) {
+      @let s = stickers()[t.idx];
+      @let owned = cnt[t.idx];
+      <div class="sticker-tip sticker-tip--{{ s.tier }}" [class.sticker-tip--below]="t.below"
+           [style.left.px]="t.x" [style.top.px]="t.y">
+        <div class="sticker-tip__photo">
+          @if (photoUrl(s); as url) {
+            <img [src]="url" [alt]="s.displayname" />
+          } @else {
+            <img class="sticker-tip__placeholder" src="img/placeholders/player.png" alt="" />
+          }
+        </div>
+        <div class="sticker-tip__body">
+          <span class="sticker-tip__name">{{ s.displayname }}</span>
+          <span class="sticker-tip__meta">
+            @if (s.position) {
+              <span class="position-badge position-badge--text" [style.background-color]="'var(--position-' + s.position.toLowerCase() + ')'">{{ positionLabel[s.position] }}</span>
+            }
+            <img class="sticker-tip__club" [src]="clubLogoUrl(rows()[s.clubIdx].club)" alt="" />
+            {{ rows()[s.clubIdx].club.short_name }}
+          </span>
+          <span class="sticker-tip__row">Marktwert <b>{{ priceLabel(s.price) }}</b></span>
+          <span class="sticker-tip__row">
+            <span class="sticker-tip__tier">{{ tierLabel[s.tier] }}</span>
+            <span class="sticker-tip__muted">{{ tierRange[s.tier] }} · Chance {{ odds(t.idx) }}</span>
+          </span>
+          <span class="sticker-tip__row sticker-tip__status">
+            @if (owned > 0) {
+              Gesammelt{{ owned > 1 ? ' · ' + owned + '× (' + (owned - 1) + ' doppelt)' : '' }}
+              @if (fresh.has(t.idx)) { <span class="sticker-tip__new">NEU</span> }
+            } @else {
+              <span class="sticker-tip__muted">Fehlt noch</span>
+            }
+          </span>
+        </div>
+      </div>
+    }
   }
 </div>
