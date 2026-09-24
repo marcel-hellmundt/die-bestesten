@@ -10,21 +10,27 @@
      [style.--o]="interactive() ? 1 : null">
   <div class="sticker-card sticker-card--{{ d.tier }}" [class.sticker-card--shiny]="d.shiny">
     <div class="sticker-card__inner">
+      <!-- Optionales Hintergrundbild (geblurrt), liegt ganz hinten und wird vom Shine überlagert -->
+      @if (d.backgroundUrl) {
+        <img class="sticker-card__bg" [src]="d.backgroundUrl" alt="" />
+      }
+
       <!-- Vereinslogo oben links, hinter dem Spielerfoto -->
       @if (d.clubLogoUrl && !logoFailed()) {
         <img class="sticker-card__club" [src]="d.clubLogoUrl" [alt]="d.clubName ?? ''" (error)="logoFailed.set(true)" />
+      }
+
+      @if (d.shiny) {
+        <!-- Shine ("rare ultra"): Ring-Illusion + Regenbogen + Folienstreifen über Hintergrund + Logo
+             (color-dodge), zweite Ebene (::after) läuft gegenläufig → Parallaxe/Tiefe.
+             Das Spielerfoto liegt darüber und ist vom Effekt ausgenommen. -->
+        <div class="sticker-card__shine"></div>
       }
 
       @if (d.photoUrl && !photoFailed()) {
         <img class="sticker-card__photo" [src]="d.photoUrl" [alt]="d.displayname" (error)="photoFailed.set(true)" />
       } @else {
         <img class="sticker-card__photo sticker-card__photo--placeholder" src="img/placeholders/player.png" alt="" />
-      }
-
-      @if (d.shiny) {
-        <!-- Shine ("rare ultra"): Ring-Illusion + Regenbogen + Folienstreifen über dem Foto (color-dodge),
-             zweite Ebene (::after) läuft gegenläufig → Parallaxe/Tiefe. Unter dem Namens-Banner. -->
-        <div class="sticker-card__shine"></div>
       }
 
       <!-- Namens-Banner unten links: schräg angeschnittenes weißes Band, Vorname klein, Name groß -->

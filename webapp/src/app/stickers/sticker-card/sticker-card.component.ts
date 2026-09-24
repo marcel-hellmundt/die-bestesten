@@ -10,6 +10,7 @@ export interface StickerCardData {
   clubLogoUrl: string | null;
   clubName?: string;
   tier: StickerTier;
+  backgroundUrl?: string | null; // optionales Hintergrundbild hinter dem Spieler (geblurrt, vom Shine betroffen)
   shiny?: boolean;             // Shiny-Variante: Silberfolie mit Ring-Moiré, schimmert abhängig von der Neigung
 }
 

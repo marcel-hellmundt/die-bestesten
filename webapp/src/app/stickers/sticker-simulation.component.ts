@@ -26,6 +26,8 @@ type Tier = 'common' | 'rare' | 'epic' | 'legendary';
 type SharedParams = Omit<SimParams, 'loginChance' | 'avgPoints' | 'bestChance'>;
 
 const DAY_MS = 86_400_000;
+// Test: Hintergrundbild für geöffnete Sticker-Karten (Stadion-Foto), siehe StickerCardData.backgroundUrl
+const TEST_CARD_BACKGROUND = 'https://www.sv98.de/wordpress/wp-content/uploads/2023/11/230810_EP_VER_eer151017-1200x801.jpg';
 const FALLBACK_DAYS = 255;
 
 @Component({
@@ -333,6 +335,7 @@ export class StickerSimulationComponent {
       clubName: club.name,
       tier: s.tier,
       shiny: this.openShiny(),
+      backgroundUrl: TEST_CARD_BACKGROUND,
     };
   });
 
