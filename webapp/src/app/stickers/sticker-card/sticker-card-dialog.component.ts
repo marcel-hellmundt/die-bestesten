@@ -1,4 +1,4 @@
-import { Component, HostListener, input, output } from '@angular/core';
+import { Component, DestroyRef, HostListener, inject, input, output } from '@angular/core';
 import { StickerCardData } from './sticker-card.component';
 
 /**
@@ -26,6 +26,9 @@ import { StickerCardData } from './sticker-card.component';
       justify-content: center;
       background: rgba(0, 0, 0, 0.72);
       animation: fade-in 180ms ease;
+      /* iOS Safari ignoriert overflow:hidden am body teilweise — Touch-Scrollen über dem Overlay direkt unterbinden */
+      touch-action: none;
+      overscroll-behavior: contain;
     }
     .float {
       /* hochkant 5:7 — Breite so, dass die Karte auch in der Höhe auf den Screen passt */
@@ -39,6 +42,15 @@ import { StickerCardData } from './sticker-card.component';
 export class StickerCardDialogComponent {
   data = input.required<StickerCardData>();
   closed = output<void>();
+
+  // Hintergrund-Scrollen sperren, solange der Dialog offen ist (gleiches Muster wie bottom-sheet.service.ts);
+  // vorherigen Wert merken, falls z.B. ein Bottom-Sheet ihn schon gesetzt hat.
+  private prevOverflow = document.body.style.overflow;
+
+  constructor() {
+    document.body.style.overflow = 'hidden';
+    inject(DestroyRef).onDestroy(() => { document.body.style.overflow = this.prevOverflow; });
+  }
 
   @HostListener('document:keydown.escape')
   onEscape(): void { this.closed.emit(); }
