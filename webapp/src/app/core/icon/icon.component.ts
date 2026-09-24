@@ -128,8 +128,10 @@ const ICONS: Record<string, string> = {
     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
   </svg>`,
 
+  // "Die Klebrigsten": unregelmäßiger Klecks mit kleinem Glanzlicht im oberen linken Ausläufer
   sticker: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/><path d="M8 13h.01"/><path d="M16 13h.01"/><path d="M10 16s.8 1 2 1c1.3 0 2-1 2-1"/>
+    <path d="M5.6 2.2C7.8 1.8 9 4.2 10.2 5.8C11.2 7 12.6 5.6 14 4.6C15.8 3.3 18 4.4 17.6 6.4C17.3 7.9 17.6 8.9 18.8 9.3C20.4 9.9 21.4 11.1 20.9 12.6C20.4 14.1 18.6 14 17.8 14.9C16.9 16 17.6 18.6 16.4 20.4C15.2 22.2 12.6 21.8 12 20C11.5 18.6 10.4 18.8 9.2 19.6C7.6 20.6 5.4 19.6 5.8 17.6C6.1 16.2 5.6 15.3 4.3 14.7C2.6 13.9 2.6 11.4 4.4 11C5.8 10.7 6.4 9.9 5.7 8.7C4.9 7.3 3.5 6 3.6 4.4C3.7 3.1 4.6 2.3 5.6 2.2Z"/>
+    <path d="M6.5 6.9a1.5 1.5 0 0 1 1.1-1.8" stroke-width="1.5"/>
   </svg>`,
 
   zap: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
