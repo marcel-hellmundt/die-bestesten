@@ -1,0 +1,96 @@
+@use '../../../styles/variables' as *;
+
+:host { display: block; }
+
+.card-3d {
+  transform-style: preserve-3d;
+  will-change: transform;
+
+  &--interactive { transition: transform 90ms linear; }
+}
+
+// Seitenverhältnis 5:7 (klassische Sammelkarte, hochkant); Rahmenfarbe = Seltenheit
+.sticker-card {
+  --tier: #9ca3af;
+  aspect-ratio: 5 / 7;
+  width: 100%;
+  padding: 4%;
+  border-radius: 7% / 5%;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--tier) 70%, #fff), var(--tier) 55%, color-mix(in srgb, var(--tier) 75%, #000));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+  &--common    { --tier: #15803d; }
+  &--rare      { --tier: #fde047; }
+  &--epic      { --tier: #dc2626; }
+  &--legendary { --tier: #9333ea; }
+
+  &__inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 5% / 3.6%;
+    background:
+      radial-gradient(circle at 50% 35%, #ffffff 0%, #eef0f3 45%, #d5d9df 100%);
+  }
+
+  // hinter dem Foto, oben rechts, groß und leicht transparent
+  &__club {
+    position: absolute;
+    top: 5%;
+    right: 5%;
+    width: 42%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    opacity: 0.9;
+    z-index: 1;
+  }
+
+  &__photo {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 86%;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: bottom;
+    z-index: 2;
+
+    &--placeholder { opacity: 0.35; height: 70%; }
+  }
+
+  // Name überlagert unten
+  &__name {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    padding: 18% 6% 6%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+    color: #fff;
+    font-family: $font-display;
+    font-weight: $font-weight-bold;
+    // skaliert mit der Kartenbreite (Container Query Units)
+    font-size: clamp(11px, 9cqw, 30px);
+    line-height: 1.1;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__glare {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    mix-blend-mode: soft-light;
+  }
+}
+
+// Container für cqw-Einheiten (Namensgröße relativ zur Kartenbreite)
+.sticker-card__inner { container-type: inline-size; }

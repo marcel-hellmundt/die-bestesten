@@ -190,7 +190,7 @@
                     [class.sticker--hover]="tip()?.idx === s.idx"
                     (pointerenter)="showTip($event, s.idx)"
                     (pointerleave)="hideTip()"
-                    (click)="showTip($event, s.idx)">
+                    (click)="openCard(s.idx)">
                 @if (c > 1) { <span class="sticker__count">{{ c }}</span> }
               </span>
             }
@@ -198,6 +198,11 @@
         </div>
       }
     </section>
+
+    <!-- Test: Klick auf einen Sticker öffnet die Sticker-Karte schwebend über dem Screen -->
+    @if (openCardData(); as card) {
+      <app-sticker-card-dialog [data]="card" (closed)="openCardIdx.set(null)" />
+    }
 
     <!-- Custom-Tooltip: ein einziges Element, fixed am gehoverten Sticker positioniert -->
     @if (tip(); as t) {

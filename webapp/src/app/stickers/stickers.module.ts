@@ -5,6 +5,8 @@ import { MaintainerGuard } from '../auth/maintainer.guard';
 import { StickersComponent } from './stickers.component';
 import { StickerAlbumComponent } from './sticker-album.component';
 import { StickerSimulationComponent } from './sticker-simulation.component';
+import { StickerCardComponent } from './sticker-card/sticker-card.component';
+import { StickerCardDialogComponent } from './sticker-card/sticker-card-dialog.component';
 
 // "Die Klebrigsten" (Sticker-Album): /klebrigsten/sammelalbum + /klebrigsten/simulation (Maintainer+)
 const routes: Routes = [
@@ -19,7 +21,10 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [StickersComponent, StickerAlbumComponent, StickerSimulationComponent],
+  declarations: [
+    StickersComponent, StickerAlbumComponent, StickerSimulationComponent,
+    StickerCardComponent, StickerCardDialogComponent,
+  ],
   imports: [CommonModule, RouterModule.forChild(routes)],
 })
 export class StickersModule {}

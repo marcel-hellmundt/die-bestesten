@@ -39,7 +39,7 @@ webapp/src/app/
 │   └── models/                  — club, country, division, matchday, player, season, transferwindow (je from()-Factory)
 ├── data/              — /app/data: club, country, division, player, season (Liste + Detail je)
 ├── noten/             — /noten: öffentliche Noten-Übersicht, Top-Level-Route außerhalb ShellModule/AuthGuard (kein Login nötig, wie auth/) — kein Sidebar/Topbar
-├── stickers/          — /klebrigsten: "Die Klebrigsten" (Sticker-Album), Pill-Menü: /sammelalbum (noch Platzhalter) + /simulation (interaktive Parameter-Simulation, Maintainer+); Link in der Topbar neben /karte, vorerst nur Maintainer+
+├── stickers/          — /klebrigsten: "Die Klebrigsten" (Sticker-Album), Pill-Menü: /sammelalbum (noch Platzhalter) + /simulation (interaktive Parameter-Simulation, Maintainer+); Link in der Topbar neben /karte, vorerst nur Maintainer+; sticker-card/ = wiederverwendbare Sticker-Karte (app-sticker-card: statisch fürs Album oder interactive mit Neigung per Maus/Geräteneigung) + app-sticker-card-dialog (schwebend über abgedunkeltem Hintergrund)
 └── shell/             — Layout: Sidebar (Desktop vertikal, Mobile bottom-bar) + Topbar
 styles/
 ├── _variables.scss    — Design-Tokens: Farben, Abstände, Radii, Typografie, Breakpoints

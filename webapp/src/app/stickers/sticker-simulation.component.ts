@@ -5,6 +5,7 @@ import { ApiService } from '../core/api.service';
 import {
   MIN_PRICE, SimParams, SimProfile, Timeline, countsAtDay, simulateSeason, stickerWeights,
 } from './sticker-sim';
+import { StickerCardData, requestTiltPermission } from './sticker-card/sticker-card.component';
 
 interface AlbumPlayer { id: string; displayname: string; position: string | null; price: number | null; photo_uploaded: boolean; }
 interface AlbumClub { id: string; name: string; short_name: string; logo_uploaded: boolean; players: AlbumPlayer[]; }
@@ -309,6 +310,30 @@ export class StickerSimulationComponent {
   photoUrl(s: Sticker): string | null {
     const seasonId = this.state().data?.season_id;
     return s.photo_uploaded && seasonId ? `https://img.die-bestesten.de/player/${seasonId}/${s.id}.png` : null;
+  }
+
+  // ── Sticker-Karte (Test) ──────────────────────────────────────────────────
+  openCardIdx = signal<number | null>(null);
+
+  openCardData = computed<StickerCardData | null>(() => {
+    const idx = this.openCardIdx();
+    if (idx === null) return null;
+    const s = this.stickers()[idx];
+    const club = this.rows()[s.clubIdx].club;
+    return {
+      displayname: s.displayname,
+      photoUrl: this.photoUrl(s),
+      clubLogoUrl: club.logo_uploaded ? this.clubLogoUrl(club) : null,
+      clubName: club.name,
+      tier: s.tier,
+    };
+  });
+
+  openCard(idx: number): void {
+    requestTiltPermission(); // muss synchron in der Klick-Geste passieren (iOS)
+    this.tip.set(null);
+    this.pause();
+    this.openCardIdx.set(idx);
   }
 
   // ── Bilder ────────────────────────────────────────────────────────────────

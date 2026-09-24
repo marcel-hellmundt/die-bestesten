@@ -1,0 +1,25 @@
+@let d = data();
+<div class="card-3d" [class.card-3d--interactive]="interactive()"
+     [style.transform]="interactive() ? 'perspective(900px) rotateX(' + rotateX() + 'deg) rotateY(' + rotateY() + 'deg)' : null">
+  <div class="sticker-card sticker-card--{{ d.tier }}">
+    <div class="sticker-card__inner">
+      <!-- Vereinslogo oben rechts, hinter dem Spielerfoto -->
+      @if (d.clubLogoUrl && !logoFailed()) {
+        <img class="sticker-card__club" [src]="d.clubLogoUrl" [alt]="d.clubName ?? ''" (error)="logoFailed.set(true)" />
+      }
+
+      @if (d.photoUrl && !photoFailed()) {
+        <img class="sticker-card__photo" [src]="d.photoUrl" [alt]="d.displayname" (error)="photoFailed.set(true)" />
+      } @else {
+        <img class="sticker-card__photo sticker-card__photo--placeholder" src="img/placeholders/player.png" alt="" />
+      }
+
+      <div class="sticker-card__name">{{ d.displayname }}</div>
+
+      @if (interactive()) {
+        <div class="sticker-card__glare"
+             [style.background]="'radial-gradient(circle at ' + glareX() + '% ' + glareY() + '%, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%)'"></div>
+      }
+    </div>
+  </div>
+</div>
