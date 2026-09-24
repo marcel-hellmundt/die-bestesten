@@ -128,10 +128,9 @@ const ICONS: Record<string, string> = {
     <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
   </svg>`,
 
-  // "Die Klebrigsten": unregelmäßiger Klecks mit kleinem Glanzlicht im oberen linken Ausläufer
+  // "Die Klebrigsten": unregelmäßiger Klecks — 6 unterschiedlich lange Arme mit runden, tropfenförmigen Spitzen
   sticker: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M5.6 2.2C7.8 1.8 9 4.2 10.2 5.8C11.2 7 12.6 5.6 14 4.6C15.8 3.3 18 4.4 17.6 6.4C17.3 7.9 17.6 8.9 18.8 9.3C20.4 9.9 21.4 11.1 20.9 12.6C20.4 14.1 18.6 14 17.8 14.9C16.9 16 17.6 18.6 16.4 20.4C15.2 22.2 12.6 21.8 12 20C11.5 18.6 10.4 18.8 9.2 19.6C7.6 20.6 5.4 19.6 5.8 17.6C6.1 16.2 5.6 15.3 4.3 14.7C2.6 13.9 2.6 11.4 4.4 11C5.8 10.7 6.4 9.9 5.7 8.7C4.9 7.3 3.5 6 3.6 4.4C3.7 3.1 4.6 2.3 5.6 2.2Z"/>
-    <path d="M6.5 6.9a1.5 1.5 0 0 1 1.1-1.8" stroke-width="1.5"/>
+    <path d="M7.64 10.84C7.99 9.8 5.99 8.13 3.66 6.78A2 2 0 0 1 6.48 3.96C7.83 6.29 9.93 8.05 11 7.81C12.08 7.57 12.88 6.66 13.21 4.01A1.7 1.7 0 0 1 16.4 5.18C14.95 7.42 14.75 8.45 15.47 9.28C16.19 10.11 18.02 9.82 20.43 8.67A1.8 1.8 0 0 1 21.18 12.19C18.5 12.11 16.71 12.76 16.35 13.8C15.99 14.84 17.69 17.06 19.9 18.6A2 2 0 0 1 16.83 21.17C15.7 18.73 13.81 16.67 12.72 16.84C11.63 17.02 11.09 17.33 10.64 19.95A1.6 1.6 0 0 1 7.67 18.75C9.16 16.55 9.05 16 8.38 15.13C7.7 14.27 6.02 14.32 3.54 15.31A1.8 1.8 0 0 1 3.04 11.74C5.7 12 7.29 11.88 7.64 10.84Z"/>
   </svg>`,
 
   zap: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
