@@ -85,7 +85,7 @@
     position: absolute;
     top: 5%;
     left: 6%;
-    width: 24%;
+    width: 18%;
     aspect-ratio: 1;
     object-fit: contain;
     z-index: 1;
@@ -240,7 +240,7 @@
   }
 
   // Seltenheit oben rechts: kleines Band im Stil des Namens-Banners, gespiegelt (links schräg
-  // angeschnitten, am rechten Rand anliegend), Akzentstreifen in der Tier-Farbe
+  // angeschnitten, am rechten Rand anliegend), ohne Akzentstreifen
   &__tier {
     position: absolute;
     right: -2%;
@@ -256,25 +256,15 @@
     background: #fff;
     clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-
-    &::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 1cqw;
-      background: var(--tier);
-    }
   }
 
   &__tier-text {
     position: relative;
     display: block;
-    padding: 1.4cqw 5cqw 2cqw 5.5cqw;
+    padding: 1.4cqw 5cqw 1.4cqw 5.5cqw;
     color: #111827;
     font-family: $font-display;
-    font-size: 4.2cqw;
+    font-size: 3.5cqw;
     font-style: italic;
     font-weight: 800;
     letter-spacing: 0.02em;
