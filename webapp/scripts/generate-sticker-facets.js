@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const W = 500, H = 700;
-const CELLS = 110;
+const CELLS = 500;
 const LLOYD_ITERATIONS = 10;
 const SEED = 20260925;
 const OUT = path.join(__dirname, '..', 'public', 'img', 'stickers');
@@ -86,12 +86,13 @@ const hex = v => {
   const c = Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0');
   return `#${c}${c}${c}`;
 };
-const points = poly => poly.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+// ganze Pixel reichen bei 500×700 (Karte wird ohnehin skaliert) und halten die SVGs klein
+const points = poly => poly.map(([x, y]) => `${Math.round(x)},${Math.round(y)}`).join(' ');
 
 function svg(fill, edges) {
   const body = facets.map(f => `<polygon points="${points(f.poly)}" fill="${fill(f)}"/>`).join('');
   const stroke = edges
-    ? `<g fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="1.4" stroke-linejoin="round">${facets.map(f => `<polygon points="${points(f.poly)}"/>`).join('')}</g>`
+    ? `<g fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="0.8" stroke-linejoin="round">${facets.map(f => `<polygon points="${points(f.poly)}"/>`).join('')}</g>`
     : '';
   // shape-rendering crispEdges würde Zacken erzeugen — Standard-Antialiasing, aber gleiche Farbe als
   // Kontur (stroke) je Zelle schließt die feinen Haarlinien zwischen benachbarten Polygonen
