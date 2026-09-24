@@ -211,6 +211,8 @@ input[type='range'] {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+
+    b { color: $color-text; font-weight: $font-weight-semibold; }
   }
 }
 
@@ -227,10 +229,11 @@ input[type='range'] {
   transition: background $transition-fast, border-color $transition-fast;
   flex-shrink: 0;
 
-  &--common    { --tier: #84cc16; }
-  &--rare      { --tier: #3b82f6; }
-  &--epic      { --tier: #a855f7; }
-  &--legendary { --tier: #f59e0b; }
+  // Dunkelgrün → Gelb → Orange → Rot (bewusst ohne Blau/Lila, die schwer unterscheidbar sind)
+  &--common    { --tier: #15803d; }
+  &--rare      { --tier: #eab308; }
+  &--epic      { --tier: #f97316; }
+  &--legendary { --tier: #dc2626; }
 
   &--owned {
     background: var(--tier);

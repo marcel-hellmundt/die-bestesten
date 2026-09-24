@@ -124,10 +124,12 @@
     <!-- ── Legende ───────────────────────────────────────────────────── -->
     <div class="legend">
       @for (t of tiers; track t) {
-        <span class="legend__item"><span class="sticker sticker--owned sticker--{{ t }}"></span>{{ tierLabel[t] }}</span>
+        <span class="legend__item">
+          <span class="sticker sticker--owned sticker--{{ t }}"></span>
+          <span><b>{{ tierLabel[t] }}</b> {{ tierRange[t] }}</span>
+        </span>
       }
       <span class="legend__item"><span class="sticker"></span>fehlt</span>
-      <span class="legend__item legend__hint">Tier nach Marktwert: ≤ 1 Mio · ≤ 2,5 Mio · ≤ 5 Mio · darüber</span>
     </div>
 
     <!-- ── Album: eine Zeile je Verein ───────────────────────────────── -->

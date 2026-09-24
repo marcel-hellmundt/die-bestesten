@@ -247,6 +247,10 @@ export class StickerSimulationComponent {
   }
 
   readonly tierLabel: Record<Tier, string> = { common: 'Häufig', rare: 'Selten', epic: 'Episch', legendary: 'Legendär' };
+  // Marktwert-Spannen je Tier — müssen zu tierOf() passen
+  readonly tierRange: Record<Tier, string> = {
+    common: '≤ 1 Mio', rare: '1–2,5 Mio', epic: '2,5–5 Mio', legendary: '> 5 Mio',
+  };
   readonly tiers: Tier[] = ['common', 'rare', 'epic', 'legendary'];
   readonly positionLabel: Record<string, string> = { GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU' };
 }
