@@ -82,6 +82,16 @@ export class StickerCardComponent {
   /** Hintergrund-Position der Shine-Muster (37–63 %, wie im Pokémon-Card-CSS), folgt der Neigung. */
   posX = computed(() => 50 + (this.glareX() - 50) * 0.325);
   posY = computed(() => 50 + (this.glareY() - 50) * 0.325);
+  /** Neigung je Achse, -1…1 (links/oben negativ) — steuert das Facetten-Licht der Shiny-Karte. */
+  tiltX = computed(() => (this.glareX() - 50) / 40);
+  tiltY = computed(() => (this.glareY() - 50) / 40);
+
+  /** Facetten-Texturen (Voronoi, generiert per scripts/generate-sticker-facets.js), relativ zur base href. */
+  readonly facetUrls = {
+    base: 'url(img/stickers/facets-base.svg)',
+    x: 'url(img/stickers/facets-x.svg)',
+    y: 'url(img/stickers/facets-y.svg)',
+  };
   photoFailed = signal(false);
   logoFailed = signal(false);
 

@@ -7,7 +7,14 @@
      [style.--posx]="posX() + '%'"
      [style.--posy]="posY() + '%'"
      [style.--hyp]="fromCenter()"
-     [style.--o]="interactive() ? 1 : null">
+     [style.--o]="interactive() ? 1 : null"
+     [style.--fx]="interactive() ? (tiltX() < 0 ? -tiltX() : tiltX()) : null"
+     [style.--fy]="interactive() ? (tiltY() < 0 ? -tiltY() : tiltY()) : null"
+     [style.--invx]="tiltX() < 0 ? 1 : 0"
+     [style.--invy]="tiltY() < 0 ? 1 : 0"
+     [style.--facets-base]="facetUrls.base"
+     [style.--facets-x]="facetUrls.x"
+     [style.--facets-y]="facetUrls.y">
   <div class="sticker-card sticker-card--{{ d.tier }}" [class.sticker-card--shiny]="d.shiny"
        [style.--club-primary]="d.clubPrimaryColor || null"
        [style.--club-secondary]="d.clubSecondaryColor || d.clubPrimaryColor || null">
@@ -23,8 +30,12 @@
       }
 
       @if (d.shiny) {
-        <!-- Shine ("rare ultra"): Ring-Illusion + Regenbogen + Folienstreifen über Hintergrund + Logo
-             (color-dodge), zweite Ebene (::after) läuft gegenläufig → Parallaxe/Tiefe.
+        <!-- Facetten-Licht: unregelmäßige Voronoi-Facetten mit zufälligen Normalen — je nach
+             Neigungsrichtung hellen andere Zellen auf (X- und Y-Anteil als eigene Ebene) -->
+        <div class="sticker-card__facets sticker-card__facets--x"></div>
+        <div class="sticker-card__facets sticker-card__facets--y"></div>
+        <!-- Shine ("rare ultra"-Prinzip): Facetten-Textur + Regenbogen + Folienstreifen über Hintergrund
+             + Logo (color-dodge), zweite Ebene (::after) läuft gegenläufig → Parallaxe/Tiefe.
              Das Spielerfoto liegt darüber und ist vom Effekt ausgenommen. -->
         <div class="sticker-card__shine"></div>
       }
