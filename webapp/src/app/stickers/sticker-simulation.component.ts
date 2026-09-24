@@ -29,10 +29,7 @@ type Tier = 'common' | 'rare' | 'epic' | 'legendary';
 /** Regeln, die für alle Manager gleich sind — der Rest von SimParams kommt aus dem Profil. */
 type SharedParams = Omit<SimParams, 'loginChance' | 'avgPoints' | 'bestChance'>;
 
-const DAY_MS = 86_400_000;
-// Test: Hintergrundbild für geöffnete Sticker-Karten (Stadion-Foto), siehe StickerCardData.backgroundUrl
-const TEST_CARD_BACKGROUND = 'https://www.sv98.de/wordpress/wp-content/uploads/2023/11/230810_EP_VER_eer151017-1200x801.jpg';
-const FALLBACK_DAYS = 255;
+const DAY_MS = 86_400_000;const FALLBACK_DAYS = 255;
 
 @Component({
   selector: 'app-sticker-simulation',
@@ -341,7 +338,7 @@ export class StickerSimulationComponent {
       clubSecondaryColor: club.secondary_color,
       tier: s.tier,
       shiny: this.openShiny(),
-      backgroundUrl: TEST_CARD_BACKGROUND,
+      backgroundUrls: this.clubStadiumUrls(club.id),
     };
   });
 
@@ -353,6 +350,12 @@ export class StickerSimulationComponent {
   }
 
   // ── Bilder ────────────────────────────────────────────────────────────────
+  /** Stadion-Foto des Vereins als Karten-Hintergrund (Asset-Server club/{id}_stadium, .jpg oder .png). */
+  private clubStadiumUrls(clubId: string): string[] {
+    const base = `https://img.die-bestesten.de/club/${clubId}_stadium`;
+    return [`${base}.jpg`, `${base}.png`];
+  }
+
   clubLogoUrl(c: AlbumClub): string {
     return c.logo_uploaded ? `https://img.die-bestesten.de/club/${c.id}.png` : 'img/placeholders/club.png';
   }

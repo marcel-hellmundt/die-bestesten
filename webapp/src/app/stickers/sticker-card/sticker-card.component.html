@@ -13,8 +13,8 @@
        [style.--club-secondary]="d.clubSecondaryColor || d.clubPrimaryColor || null">
     <div class="sticker-card__inner">
       <!-- Optionales Hintergrundbild (geblurrt), liegt ganz hinten und wird vom Shine überlagert -->
-      @if (d.backgroundUrl) {
-        <img draggable="false" class="sticker-card__bg" [src]="d.backgroundUrl" alt="" />
+      @if (backgroundUrl(); as bg) {
+        <img draggable="false" class="sticker-card__bg" [src]="bg" alt="" (error)="onBackgroundError()" />
       }
 
       <!-- Vereinslogo oben links, hinter dem Spielerfoto -->

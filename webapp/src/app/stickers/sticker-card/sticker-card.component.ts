@@ -12,7 +12,9 @@ export interface StickerCardData {
   clubPrimaryColor?: string | null;   // Rand der Karte (Gradient); ohne → neutrales Silbergrau
   clubSecondaryColor?: string | null; // Akzentstreifen unter dem Namen; ohne → Primärfarbe
   tier: StickerTier;
-  backgroundUrl?: string | null; // optionales Hintergrundbild hinter dem Spieler (geblurrt, vom Shine betroffen)
+  // Hintergrundbild(er) hinter dem Spieler (geblurrt, vom Shine betroffen) — Kandidaten der Reihe nach,
+  // bei Ladefehler wird der nächste versucht (z.B. .jpg, dann .png); keiner verfügbar → kein Hintergrund
+  backgroundUrls?: string[];
   shiny?: boolean;             // Shiny-Variante: Silberfolie mit Ring-Moiré, schimmert abhängig von der Neigung
 }
 
@@ -83,9 +85,22 @@ export class StickerCardComponent {
   photoFailed = signal(false);
   logoFailed = signal(false);
 
+  /** Index des aktuell versuchten Hintergrund-Kandidaten (bei Ladefehler → nächster). */
+  private bgIndex = signal(0);
+  backgroundUrl = computed(() => this.data().backgroundUrls?.[this.bgIndex()] ?? null);
+  onBackgroundError(): void { this.bgIndex.update(i => i + 1); }
+
   constructor() {
     const destroyRef = inject(DestroyRef);
     let cleanup: (() => void) | null = null;
+
+    // Neue Kartendaten (z.B. im Album wiederverwendete Komponente) → Bild-Fehlerzustände zurücksetzen
+    effect(() => {
+      this.data();
+      this.bgIndex.set(0);
+      this.photoFailed.set(false);
+      this.logoFailed.set(false);
+    });
 
     effect(() => {
       cleanup?.();
