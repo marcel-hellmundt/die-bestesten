@@ -10,6 +10,7 @@ export interface StickerCardData {
   clubLogoUrl: string | null;
   clubName?: string;
   tier: StickerTier;
+  shiny?: boolean;             // Holo-Variante: glitzernder Regenbogen-Hintergrund, abhängig von der Neigung
 }
 
 const MAX_TILT = 18; // Grad
@@ -67,6 +68,11 @@ export class StickerCardComponent {
   rotateY = signal(0);
   glareX = signal(50); // % — Position des Glanzlichts
   glareY = signal(30);
+  /** 0 = gerade, 1 = maximal geneigt — steuert, wie stark das Holo leuchtet. */
+  fromCenter = signal(0);
+  /** Verschiebung der Holo-Muster (Regenbogen/Streifen/Glitzer), folgt der Neigung. */
+  holoX = computed(() => 50 + (this.glareX() - 50) * 0.7);
+  holoY = computed(() => 50 + (this.glareY() - 50) * 0.7);
   photoFailed = signal(false);
   logoFailed = signal(false);
 
@@ -85,7 +91,7 @@ export class StickerCardComponent {
   }
 
   private reset(): void {
-    this.rotateX.set(0); this.rotateY.set(0); this.glareX.set(50); this.glareY.set(30);
+    this.rotateX.set(0); this.rotateY.set(0); this.glareX.set(50); this.glareY.set(30); this.fromCenter.set(0);
   }
 
   private apply(nx: number, ny: number): void {
@@ -96,6 +102,7 @@ export class StickerCardComponent {
     this.rotateX.set(-cy * MAX_TILT);
     this.glareX.set(50 + cx * 40);
     this.glareY.set(50 + cy * 40);
+    this.fromCenter.set(Math.min(1, Math.hypot(cx, cy)));
   }
 
   /** Desktop: Mausposition relativ zur Kartenmitte, normiert auf die halbe Viewport-Größe. */

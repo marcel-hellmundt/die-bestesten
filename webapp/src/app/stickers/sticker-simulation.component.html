@@ -167,6 +167,10 @@
         </span>
       }
       <span class="legend__item"><span class="sticker"></span>fehlt</span>
+      <label class="legend__item legend__toggle">
+        <input type="checkbox" [checked]="openShiny()" (change)="openShiny.set(checked($event))" />
+        Karte beim Klick als <b>Shiny</b> öffnen
+      </label>
     </div>
 
     <!-- ── Album: eine Zeile je Verein ───────────────────────────────── -->

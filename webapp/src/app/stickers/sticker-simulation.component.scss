@@ -263,6 +263,11 @@ input[type='range'] {
 
     b { color: $color-text; font-weight: $font-weight-semibold; }
   }
+
+  &__toggle {
+    margin-left: auto;
+    cursor: pointer;
+  }
 }
 
 // Farbe je Seltenheit — gefüllt nur wenn gesammelt, sonst nur Rahmen

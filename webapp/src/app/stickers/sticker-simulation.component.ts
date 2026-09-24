@@ -317,6 +317,8 @@ export class StickerSimulationComponent {
 
   // ── Sticker-Karte (Test) ──────────────────────────────────────────────────
   openCardIdx = signal<number | null>(null);
+  /** Test-Schalter: geöffnete Karte als Shiny (Holo) anzeigen. */
+  openShiny = signal(false);
 
   openCardData = computed<StickerCardData | null>(() => {
     const idx = this.openCardIdx();
@@ -330,6 +332,7 @@ export class StickerSimulationComponent {
       clubLogoUrl: club.logo_uploaded ? this.clubLogoUrl(club) : null,
       clubName: club.name,
       tier: s.tier,
+      shiny: this.openShiny(),
     };
   });
 
