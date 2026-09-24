@@ -16,6 +16,7 @@ trait StickerTrait
      * der aktiven Saison waren, gruppiert nach Verein (Reihenfolge wie /noten: Vorsaison-Tabellenplatz).
      * Dubletten (überlappende Vereins-Stints am Stichtag, z.B. Wechsel exakt am 1.9.) werden auf den
      * jüngsten Stint (größtes from_date) reduziert — jeder Spieler kommt genau einmal vor.
+     * Nur Spieler mit Foto (player_in_season.photo_uploaded der Bundesliga-Zeile) bekommen einen Sticker.
      * price = player_in_season.price der Bundesliga-Zeile; Platzhalter-Marktwerte > 50 Mio
      * (POST /player/create_manual setzt 99 Mio) und fehlende Werte → null (Frontend: wie Minimum).
      * matchdays = alle Spieltage der Saison (Division 1. Bundesliga) für die Zeitachse der Simulation.
@@ -76,6 +77,8 @@ trait StickerTrait
         foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $r) {
             if (isset($seen[$r['id']]) || !isset($clubs[$r['club_id']])) continue;
             $seen[$r['id']] = true;
+            // Nur Spieler mit Foto bekommen einen Sticker (photo_uploaded der Bundesliga-Zeile dieser Saison)
+            if (!$r['photo_uploaded']) continue;
             $price = $r['price'] !== null ? (int) $r['price'] : null;
             $clubs[$r['club_id']]['players'][] = [
                 'id'             => $r['id'],
