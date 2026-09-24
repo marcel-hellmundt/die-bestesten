@@ -12,12 +12,12 @@
     <div class="sticker-card__inner">
       <!-- Optionales Hintergrundbild (geblurrt), liegt ganz hinten und wird vom Shine überlagert -->
       @if (d.backgroundUrl) {
-        <img class="sticker-card__bg" [src]="d.backgroundUrl" alt="" />
+        <img draggable="false" class="sticker-card__bg" [src]="d.backgroundUrl" alt="" />
       }
 
       <!-- Vereinslogo oben links, hinter dem Spielerfoto -->
       @if (d.clubLogoUrl && !logoFailed()) {
-        <img class="sticker-card__club" [src]="d.clubLogoUrl" [alt]="d.clubName ?? ''" (error)="logoFailed.set(true)" />
+        <img draggable="false" class="sticker-card__club" [src]="d.clubLogoUrl" [alt]="d.clubName ?? ''" (error)="logoFailed.set(true)" />
       }
 
       @if (d.shiny) {
@@ -28,9 +28,9 @@
       }
 
       @if (d.photoUrl && !photoFailed()) {
-        <img class="sticker-card__photo" [src]="d.photoUrl" [alt]="d.displayname" (error)="photoFailed.set(true)" />
+        <img draggable="false" class="sticker-card__photo" [src]="d.photoUrl" [alt]="d.displayname" (error)="photoFailed.set(true)" />
       } @else {
-        <img class="sticker-card__photo sticker-card__photo--placeholder" src="img/placeholders/player.png" alt="" />
+        <img draggable="false" class="sticker-card__photo sticker-card__photo--placeholder" src="img/placeholders/player.png" alt="" />
       }
 
       <!-- Namens-Banner unten links: schräg angeschnittenes weißes Band, Vorname klein, Name groß -->

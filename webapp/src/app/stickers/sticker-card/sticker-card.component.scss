@@ -1,6 +1,13 @@
 @use '../../../styles/variables' as *;
 
-:host { display: block; }
+// Kein versehentliches Ziehen/Markieren von Bildern oder Text auf der Karte (Desktop Drag & Drop-Vorschau)
+:host {
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+
+  img { -webkit-user-drag: none; }
+}
 
 // Neigungswerte als CSS-Variablen aus der Komponente (Namen wie im Pokémon-Card-CSS):
 // --mx/--my = Lichtpunkt (%), --posx/--posy = Muster-Position (37–63 %), --hyp = Neigungsstärke 0–1,
