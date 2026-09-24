@@ -89,7 +89,6 @@ export class TopbarComponent implements OnDestroy {
     const roles = ['manager', ...this.auth.getRoles()];
     return [...roles].sort((a, b) => this.roleOrder.indexOf(a) - this.roleOrder.indexOf(b));
   });
-  isAdmin       = computed(() => this.auth.isAdmin());
   isMaintainer  = computed(() => this.auth.isMaintainer());
   isContributor = computed(() => this.auth.isContributor());
   avatarUrl     = computed(() => this.cache.managerPhotoUrl(this.auth.getManagerId()));

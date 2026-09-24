@@ -1290,12 +1290,12 @@ class Routing
 
             new Route('sticker', 'Sticker', [
                 'title' => 'Sticker ("Die Klebrigsten")',
-                'description' => 'Sticker-Album-Feature — V0: nur Album-Vorschau für die Parameter-Simulation im Frontend (/klebrigsten)',
+                'description' => 'Sticker-Album-Feature — V0: nur Album-Vorschau für die Parameter-Simulation im Frontend (/klebrigsten/simulation)',
                 'endpoints' => [
                     [
                         'method' => 'GET',
                         'path' => '/sticker/album_preview',
-                        'description' => 'Album der aktiven Saison: alle Spieler, die am Stichtag 1.9. (Startjahr der Saison) laut player_in_club bei einem Verein der 1. Bundesliga (level=1, country=DE) waren → {season_id, cutoff_date, matchdays:[{number,kickoff_date}], clubs:[{id,name,short_name,logo_uploaded,players:[{id,displayname,position,price,photo_uploaded}]}]}; clubs nach Vorsaison-Tabellenplatz (wie /noten), players nach Position, dann price absteigend; jeder Spieler genau einmal (bei überlappenden Vereins-Stints am Stichtag zählt der jüngste); price = player_in_season.price der Bundesliga-Zeile, null wenn fehlend oder Platzhalter > 50 Mio (POST /player/create_manual); matchdays = alle Spieltage der Saison in der 1. Bundesliga (Zeitachse der Simulation) — Admin',
+                        'description' => 'Album der aktiven Saison: alle Spieler, die am Stichtag 1.9. (Startjahr der Saison) laut player_in_club bei einem Verein der 1. Bundesliga (level=1, country=DE) waren → {season_id, cutoff_date, matchdays:[{number,kickoff_date}], clubs:[{id,name,short_name,logo_uploaded,players:[{id,displayname,position,price,photo_uploaded}]}]}; clubs nach Vorsaison-Tabellenplatz (wie /noten), players nach Position, dann price absteigend; jeder Spieler genau einmal (bei überlappenden Vereins-Stints am Stichtag zählt der jüngste); price = player_in_season.price der Bundesliga-Zeile, null wenn fehlend oder Platzhalter > 50 Mio (POST /player/create_manual); matchdays = alle Spieltage der Saison in der 1. Bundesliga (Zeitachse der Simulation) — Maintainer+',
                     ],
                 ],
             ]),

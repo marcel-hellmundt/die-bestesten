@@ -2,8 +2,8 @@
 
 class StickerController extends _BaseController
 {
-    // V0: nur die Album-Vorschau für die Parameter-Simulation — Admin.
-    public static array $methodRoles = ['GET' => 'admin'];
+    // V0: nur die Album-Vorschau für die Parameter-Simulation (/klebrigsten/simulation) — Maintainer+.
+    public static array $methodRoles = ['GET' => 'maintainer'];
 
     protected function get(): mixed
     {

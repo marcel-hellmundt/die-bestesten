@@ -1,0 +1,8 @@
+<nav class="pill-nav">
+  <a class="pill" routerLink="sammelalbum" routerLinkActive="pill--active">Sammelalbum</a>
+  @if (isMaintainer()) {
+    <a class="pill" routerLink="simulation" routerLinkActive="pill--active">Simulation</a>
+  }
+</nav>
+
+<router-outlet />

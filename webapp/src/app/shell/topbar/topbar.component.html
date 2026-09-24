@@ -222,8 +222,8 @@
       <app-icon name="map"></app-icon>
     </a>
 
-    <!-- "Die Klebrigsten" (Sticker-Album) — V0 = Parameter-Simulation, vorerst nur für Admins -->
-    @if (isAdmin()) {
+    <!-- "Die Klebrigsten" (Sticker-Album) — noch nicht live, vorerst nur für Maintainer+ (Simulation) -->
+    @if (isMaintainer()) {
       <a
         class="topbar-icon-btn topbar-bell"
         [class.active]="currentUrl().startsWith('/klebrigsten')"
@@ -300,7 +300,7 @@
             <app-icon name="map"></app-icon>
             Karte
           </a>
-          @if (isAdmin()) {
+          @if (isMaintainer()) {
             <a class="dropdown-item dropdown-item--mobile-only"
                [class.dropdown-item--active]="currentUrl().startsWith('/klebrigsten')"
                routerLink="/klebrigsten" (click)="closeDropdown()">
