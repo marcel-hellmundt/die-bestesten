@@ -7,7 +7,10 @@ import {
 } from './sticker-sim';
 import { StickerCardData, requestTiltPermission } from './sticker-card/sticker-card.component';
 
-interface AlbumPlayer { id: string; displayname: string; position: string | null; price: number | null; photo_uploaded: boolean; }
+interface AlbumPlayer {
+  id: string; displayname: string; first_name: string | null; last_name: string | null;
+  position: string | null; price: number | null; photo_uploaded: boolean;
+}
 interface AlbumClub { id: string; name: string; short_name: string; logo_uploaded: boolean; players: AlbumPlayer[]; }
 interface AlbumPreview {
   season_id: string | null;
@@ -322,6 +325,7 @@ export class StickerSimulationComponent {
     const club = this.rows()[s.clubIdx].club;
     return {
       displayname: s.displayname,
+      firstName: s.first_name,
       photoUrl: this.photoUrl(s),
       clubLogoUrl: club.logo_uploaded ? this.clubLogoUrl(club) : null,
       clubName: club.name,

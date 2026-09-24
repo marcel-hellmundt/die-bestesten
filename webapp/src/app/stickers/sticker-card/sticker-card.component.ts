@@ -1,10 +1,11 @@
-import { Component, DestroyRef, ElementRef, effect, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, input, signal } from '@angular/core';
 
 export type StickerTier = 'common' | 'rare' | 'epic' | 'legendary';
 
 /** Alles, was eine Sticker-Karte zum Rendern braucht. */
 export interface StickerCardData {
   displayname: string;
+  firstName?: string | null;   // klein über dem Namen (wie auf Panini-/Topps-Stickern)
   photoUrl: string | null;
   clubLogoUrl: string | null;
   clubName?: string;
@@ -42,6 +43,25 @@ export class StickerCardComponent {
   interactive = input(false);
 
   private host = inject(ElementRef<HTMLElement>);
+
+  /** Kleine Zeile (Vorname) — nur wenn vorhanden und nicht schon im Anzeigenamen enthalten. */
+  firstLine = computed(() => {
+    const { firstName, displayname } = this.data();
+    if (!firstName || displayname.toLowerCase().includes(firstName.toLowerCase())) return null;
+    return firstName;
+  });
+
+  /** Große Zeile: Anzeigename, ein führendes Initial ("J. Hofmann") entfällt, wenn der Vorname darüber steht. */
+  mainLine = computed(() => {
+    const { displayname } = this.data();
+    return this.firstLine() ? displayname.replace(/^[A-ZÄÖÜ]\.\s+/, '') : displayname;
+  });
+
+  /** Schriftgröße der großen Zeile in cqw — lange Namen ("Chukwuemeka") schrumpfen statt abgeschnitten zu werden. */
+  mainSize = computed(() => {
+    const len = this.mainLine().length;
+    return len <= 8 ? 10.5 : Math.max(5.5, (10.5 * 8) / len);
+  });
 
   rotateX = signal(0);
   rotateY = signal(0);

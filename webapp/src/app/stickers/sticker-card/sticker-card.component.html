@@ -3,7 +3,7 @@
      [style.transform]="interactive() ? 'perspective(900px) rotateX(' + rotateX() + 'deg) rotateY(' + rotateY() + 'deg)' : null">
   <div class="sticker-card sticker-card--{{ d.tier }}">
     <div class="sticker-card__inner">
-      <!-- Vereinslogo oben rechts, hinter dem Spielerfoto -->
+      <!-- Vereinslogo oben links, hinter dem Spielerfoto -->
       @if (d.clubLogoUrl && !logoFailed()) {
         <img class="sticker-card__club" [src]="d.clubLogoUrl" [alt]="d.clubName ?? ''" (error)="logoFailed.set(true)" />
       }
@@ -14,7 +14,14 @@
         <img class="sticker-card__photo sticker-card__photo--placeholder" src="img/placeholders/player.png" alt="" />
       }
 
-      <div class="sticker-card__name">{{ d.displayname }}</div>
+      <!-- Namens-Banner unten links: schräg angeschnittenes weißes Band, Vorname klein, Name groß -->
+      <div class="sticker-card__banner">
+        <div class="sticker-card__banner-bg"></div>
+        <div class="sticker-card__banner-text">
+          @if (firstLine(); as first) { <span class="sticker-card__first">{{ first }}</span> }
+          <span class="sticker-card__last" [style.font-size]="mainSize() + 'cqw'">{{ mainLine() }}</span>
+        </div>
+      </div>
 
       @if (interactive()) {
         <div class="sticker-card__glare"

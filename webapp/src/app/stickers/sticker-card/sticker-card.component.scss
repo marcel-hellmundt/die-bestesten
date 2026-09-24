@@ -34,15 +34,14 @@
       radial-gradient(circle at 50% 35%, #ffffff 0%, #eef0f3 45%, #d5d9df 100%);
   }
 
-  // hinter dem Foto, oben rechts, groß und leicht transparent
+  // hinter dem Foto, oben links
   &__club {
     position: absolute;
     top: 5%;
-    right: 5%;
-    width: 42%;
+    left: 6%;
+    width: 24%;
     aspect-ratio: 1;
     object-fit: contain;
-    opacity: 0.9;
     z-index: 1;
   }
 
@@ -60,24 +59,63 @@
     &--placeholder { opacity: 0.35; height: 70%; }
   }
 
-  // Name überlagert unten
-  &__name {
+  // Namens-Banner unten links (Sammelkarten-Look): weißes Band, rechts schräg angeschnitten,
+  // leicht gekippt, mit Akzentstreifen in der Tier-Farbe; Text kursiv, Name groß + fett.
+  // Alle Größen in cqw (relativ zur Kartenbreite), damit Album-Thumbnail und Dialog gleich aussehen.
+  &__banner {
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: -2%;
+    bottom: 6%;
+    width: 80%;
     z-index: 3;
-    padding: 18% 6% 6%;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
-    color: #fff;
+    transform: rotate(-4deg);
+    transform-origin: left bottom;
+  }
+
+  &__banner-bg {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+
+    // Akzentstreifen unten in der Tier-Farbe
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 9%;
+      bottom: 0;
+      height: 1.6cqw;
+      background: var(--tier);
+    }
+  }
+
+  &__banner-text {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 2.5cqw 14% 3.6cqw 8%;
+    color: #111827;
     font-family: $font-display;
-    font-weight: $font-weight-bold;
-    // skaliert mit der Kartenbreite (Container Query Units)
-    font-size: clamp(11px, 9cqw, 30px);
-    line-height: 1.1;
-    text-align: center;
+    font-style: italic;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    line-height: 1;
+  }
+
+  &__first {
+    font-size: 5.2cqw;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__last {
+    font-size: 10.5cqw;
+    font-weight: 800;
+    letter-spacing: -0.01em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

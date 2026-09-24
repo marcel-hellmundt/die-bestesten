@@ -58,7 +58,7 @@ trait StickerTrait
         }
 
         $pq = $this->con->prepare(
-            "SELECT p.id, p.displayname, pic.club_id, pis.position, pis.price, pis.photo_uploaded
+            "SELECT p.id, p.displayname, p.first_name, p.last_name, pic.club_id, pis.position, pis.price, pis.photo_uploaded
              FROM player_in_club pic
              JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = :season AND cis.division_id = :division
              JOIN player p ON p.id = pic.player_id
@@ -83,6 +83,8 @@ trait StickerTrait
             $clubs[$r['club_id']]['players'][] = [
                 'id'             => $r['id'],
                 'displayname'    => $r['displayname'],
+                'first_name'     => $r['first_name'],
+                'last_name'      => $r['last_name'],
                 'position'       => $r['position'],
                 'price'          => $price !== null && $price > 0 && $price <= 50000000 ? $price : null,
                 'photo_uploaded' => (bool) $r['photo_uploaded'],
