@@ -239,33 +239,48 @@
     text-overflow: ellipsis;
   }
 
-  // Seltenheit: kleines, dezentes Label unten rechts (Punkt in der Tier-Farbe)
+  // Seltenheit oben rechts: kleines Band im Stil des Namens-Banners, gespiegelt (links schräg
+  // angeschnitten, am rechten Rand anliegend), Akzentstreifen in der Tier-Farbe
   &__tier {
     position: absolute;
-    right: 4%;
-    bottom: 3%;
+    right: -2%;
+    top: 5%;
     z-index: 4;
-    display: inline-flex;
-    align-items: center;
-    gap: 1.2cqw;
-    padding: 0.8cqw 2.2cqw;
-    border-radius: 999px;
-    background: rgba(17, 24, 39, 0.55);
-    color: rgba(255, 255, 255, 0.9);
+    transform: rotate(-4deg);
+    transform-origin: right top;
+  }
+
+  &__tier-bg {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1cqw;
+      background: var(--tier);
+    }
+  }
+
+  &__tier-text {
+    position: relative;
+    display: block;
+    padding: 1.4cqw 5cqw 2cqw 5.5cqw;
+    color: #111827;
     font-family: $font-display;
-    font-size: 3.4cqw;
-    font-weight: $font-weight-semibold;
-    letter-spacing: 0.04em;
+    font-size: 4.2cqw;
+    font-style: italic;
+    font-weight: 800;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     line-height: 1;
     white-space: nowrap;
-  }
-
-  &__tier-dot {
-    width: 1.8cqw;
-    height: 1.8cqw;
-    border-radius: 50%;
-    background: var(--tier);
   }
 
   // Glanzlicht folgt der Neigung (nur interaktiv); bei shiny wie im Original per overlay

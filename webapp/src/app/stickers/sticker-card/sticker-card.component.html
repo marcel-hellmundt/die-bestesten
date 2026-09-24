@@ -55,10 +55,11 @@
         </div>
       </div>
 
-      <!-- Seltenheit als dezentes Label unten rechts -->
-      <span class="sticker-card__tier">
-        <span class="sticker-card__tier-dot"></span>{{ tierLabel[d.tier] }}@if (d.shiny) { · Shiny }
-      </span>
+      <!-- Seltenheit oben rechts: kleines Band im Stil des Namens-Banners (gespiegelt), Akzent in Tier-Farbe -->
+      <div class="sticker-card__tier">
+        <div class="sticker-card__tier-bg"></div>
+        <span class="sticker-card__tier-text">{{ tierLabel[d.tier] }}@if (d.shiny) { · Shiny }</span>
+      </div>
 
       @if (interactive()) {
         <div class="sticker-card__glare"></div>

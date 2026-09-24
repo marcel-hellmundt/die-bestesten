@@ -1,7 +1,7 @@
 // Generiert die Facetten-Texturen der Shiny-Sticker-Karte ("Die Klebrigsten"):
 // ein unregelmäßiges Voronoi-Muster (Lloyd-relaxiert → Zellen ungefähr gleich groß), jede Zelle
 // eine "Facette" mit zufälliger Normalen. Ausgabe (SVG, viewBox 500×700 = Kartenformat 5:7):
-//   facets-base.svg — zufälliger Grauwert je Zelle + feine Kanten (Textur für den Regenbogen-Shine)
+//   facets-base.svg — zufälliger Grauwert je Zelle, ohne Kanten (Textur für den Regenbogen-Shine)
 //   facets-x.svg    — Grau = X-Anteil der Normalen (50 % = neutral)  → Licht bei Links/Rechts-Neigung
 //   facets-y.svg    — Grau = Y-Anteil der Normalen (50 % = neutral)  → Licht bei Hoch/Runter-Neigung
 // Aufruf: node scripts/generate-sticker-facets.js   (deterministisch per SEED)
@@ -101,7 +101,8 @@ function svg(fill, edges) {
 }
 
 fs.mkdirSync(OUT, { recursive: true });
-fs.writeFileSync(path.join(OUT, 'facets-base.svg'), svg(f => hex(f.base), true));
+// Keine sichtbaren Kanten: die Zellen unterscheiden sich allein über Grauwert und Facetten-Licht
+fs.writeFileSync(path.join(OUT, 'facets-base.svg'), svg(f => hex(f.base), false));
 fs.writeFileSync(path.join(OUT, 'facets-x.svg'), svg(f => hex(0.5 + 0.5 * f.nx), false));
 fs.writeFileSync(path.join(OUT, 'facets-y.svg'), svg(f => hex(0.5 + 0.5 * f.ny), false));
 
