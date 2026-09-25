@@ -390,10 +390,9 @@ export class StickerSimulationComponent {
   }
 
   // ── Bilder ────────────────────────────────────────────────────────────────
-  /** Stadion-Foto des Vereins als Karten-Hintergrund (Asset-Server club/{id}_stadium, .jpg oder .png). */
+  /** Stadion-Foto des Vereins als Karten-Hintergrund (Asset-Server club/stadium/{id}.jpg). */
   private clubStadiumUrls(clubId: string): string[] {
-    const base = `https://img.die-bestesten.de/club/${clubId}_stadium`;
-    return [`${base}.jpg`, `${base}.png`];
+    return [`https://img.die-bestesten.de/club/stadium/${clubId}.jpg`];
   }
 
   clubLogoUrl(c: AlbumClub): string {
