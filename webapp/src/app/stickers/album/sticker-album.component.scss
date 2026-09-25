@@ -150,6 +150,12 @@ $desktop: $mobile-breakpoint + 1;
   color: $color-text-muted;
 
   &__result { margin-right: auto; }
+
+  &__label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: $font-weight-semibold;
+  }
 }
 
 // ── Seitenliste (Desktop) + Auswahl (Mobile) ─────────────────────────────────

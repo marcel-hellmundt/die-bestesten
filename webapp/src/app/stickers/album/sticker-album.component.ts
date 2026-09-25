@@ -4,12 +4,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
-import { PACK_SOURCE_LABEL, StickerPack, StickerStatusService, packDetail } from '../../core/sticker-status.service';
+import { PACK_SOURCE_LABEL, StickerPack, StickerPackSource, StickerStatusService, packDetail } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
-import { AlbumClub, DEFAULT_SHARED_PARAMS, Sticker } from './album.model';
-import { stickerWeights } from '../sticker-sim';
+import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
-import { PackCard } from './pack-open-dialog.component';
+import { PackCard, packInfo } from './pack.model';
+import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 import { seasonTheme } from './season-theme';
 
@@ -24,10 +24,11 @@ import { seasonTheme } from './season-theme';
   templateUrl: './sticker-album.component.html',
   styleUrl: './sticker-album.component.scss',
   // Album aus der eingefrorenen Tabelle sticker — die Kind-Komponenten teilen sich diese Instanz
-  providers: [{ provide: ALBUM_SOURCE, useValue: 'sticker/album' }, StickerAlbumService],
+  providers: [{ provide: ALBUM_SOURCE, useValue: 'sticker/album' }, StickerAlbumService, PackOpener],
 })
 export class StickerAlbumComponent {
   private album = inject(StickerAlbumService);
+  opener = inject(PackOpener);
   private auth = inject(AuthService);
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
@@ -60,57 +61,22 @@ export class StickerAlbumComponent {
     }
     return [...counts].map(([label, n]) => (n > 1 ? `${n}× ${label}` : label)).join(', ');
   });
-  opened = signal<{ title: string; cards: PackCard[]; test?: boolean } | null>(null);
-  packBusy = signal(false);
-  packError = signal<string | null>(null);
-
   packListOpen = signal(false);
   readonly packLabel = PACK_SOURCE_LABEL;
   readonly detail = packDetail;
 
+  /** Ältestes ungeöffnetes Pack zeigen (geschlossen — geöffnet wird erst beim Aufreißen). */
   openNextPack(): void {
     const pack = this.packs()[0];
-    if (!pack || this.packBusy()) return;
+    if (!pack) return;
     requestTiltPermission(); // synchron in der Klick-Geste (iOS), falls danach eine Karte groß geöffnet wird
-    this.openPack(pack);
+    this.opener.show(packInfo(pack));
   }
 
-  /** Ein bestimmtes Pack aus der Detail-Liste öffnen. */
+  /** Ein bestimmtes Pack aus der Detail-Liste zeigen. */
   openSpecificPack(pack: StickerPack): void {
-    if (this.packBusy()) return;
     requestTiltPermission();
-    this.openPack(pack);
-  }
-
-  private openPack(pack: Pick<StickerPack, 'id' | 'source' | 'league_name'>): void {
-    this.packBusy.set(true);
-    this.packError.set(null);
-    const before = this.collection().counts;
-    const byKey = new Map(this.album.stickers().map(s => [s.id, s]));
-    this.status.openPack(pack.id).subscribe({
-      next: res => {
-        const seen = new Map<number, number>();
-        const cards: PackCard[] = [];
-        for (const c of res.cards) {
-          const s = byKey.get(c.key);
-          if (!s) continue;
-          const n = (seen.get(s.idx) ?? before[s.idx]) + 1;
-          seen.set(s.idx, n);
-          cards.push({ sticker: s, card: this.album.cardData(s, c.holo), isNew: c.is_new, count: n });
-        }
-        const title = PACK_SOURCE_LABEL[pack.source] + (pack.league_name ? ` · ${pack.league_name}` : '');
-        this.opened.set({ title, cards });
-        this.packBusy.set(false);
-      },
-      error: err => {
-        this.packBusy.set(false);
-        this.packError.set(err?.error?.message ?? 'Pack konnte nicht geöffnet werden');
-      },
-    });
-  }
-
-  closePack(): void {
-    this.opened.set(null);
+    this.opener.show(packInfo(pack));
   }
 
   openPulled(c: PackCard): void {
@@ -118,35 +84,28 @@ export class StickerAlbumComponent {
     this.openCard.set(c.card);
   }
 
-  // ── Admin: Album einfrieren/ergänzen + Test-Pack ──────────────────────────
+  // ── Admin: Album einfrieren/ergänzen + Test-Packs ─────────────────────────
   syncBusy = signal(false);
   syncResult = signal<string | null>(null);
 
+  readonly testSources: { source: StickerPackSource; label: string }[] = [
+    { source: 'daily', label: 'Tages-Pack' },
+    { source: 'milestone', label: 'Meilenstein' },
+    { source: 'matchday_best', label: 'Spieltagssieger' },
+  ];
+
   /**
-   * Test-Pack zum Ausprobieren der Öffnen-Animation: 3 Sticker werden nur im Browser gewürfelt (gleiche
-   * Gewichtung/Holo-Chancen wie serverseitig) — nichts wird gespeichert, die Sammlung bleibt unverändert.
+   * Test-Pack zum Ausprobieren von Pack-Optik und Öffnen-Animation: die 3 Sticker werden erst beim
+   * Aufreißen und nur im Browser gewürfelt — nichts wird gespeichert, die Sammlung bleibt unverändert.
    */
-  openTestPack(): void {
-    const stickers = this.album.stickers();
-    if (stickers.length === 0) return;
+  openTestPack(source: StickerPackSource): void {
     requestTiltPermission(); // synchron in der Klick-Geste (iOS)
-    const rules = DEFAULT_SHARED_PARAMS;
-    const weights = stickerWeights(stickers.map(s => s.price), rules.rarityAlpha);
-    const counts = this.collection().counts;
-    const seen = new Map<number, number>();
-    const cards: PackCard[] = [];
-    for (let k = 0; k < 3; k++) {
-      let r = Math.random();
-      let i = 0;
-      while (i < weights.length - 1 && (r -= weights[i]) > 0) i++;
-      const s = stickers[i];
-      const h = Math.random();
-      const holo = h < rules.holoGoldChance ? 'gold' : h < rules.holoGoldChance + rules.holoSilverChance ? 'silver' : null;
-      const n = (seen.get(i) ?? counts[i]) + 1;
-      seen.set(i, n);
-      cards.push({ sticker: s, card: this.album.cardData(s, holo), isNew: n === 1, count: n });
-    }
-    this.opened.set({ title: 'Test-Pack (nicht gespeichert)', cards, test: true });
+    this.opener.show({
+      id: null, source, size: 3,
+      milestonePoints: source === 'milestone' ? 100 * (1 + Math.floor(Math.random() * 15)) : null,
+      matchdayNumber: source === 'matchday_best' ? 1 + Math.floor(Math.random() * 34) : null,
+      leagueName: source === 'daily' ? null : 'Test-Liga',
+    });
   }
 
   syncAlbum(): void {
@@ -224,7 +183,7 @@ export class StickerAlbumComponent {
   /** Desktop: mit den Pfeiltasten blättern (nicht bei offenem Dialog / in Eingabefeldern). */
   @HostListener('document:keydown', ['$event'])
   onKey(e: KeyboardEvent): void {
-    if (this.openCard() || this.opened() || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (this.openCard() || this.opener.info() || e.altKey || e.ctrlKey || e.metaKey) return;
     const el = e.target as HTMLElement | null;
     if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
     if (e.key === 'ArrowLeft') { this.prev(); e.preventDefault(); }

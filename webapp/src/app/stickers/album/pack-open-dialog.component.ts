@@ -1,24 +1,14 @@
-import { Component, DestroyRef, HostListener, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { StickerCardData } from '../sticker-card/sticker-card.component';
-import { Sticker } from './album.model';
-
-export interface PackCard {
-  sticker: Sticker;
-  card: StickerCardData;
-  isNew: boolean;
-  count: number;   // Anzahl nach diesem Pack (inkl. Doppelter)
-}
-
-/** sealed = geschlossenes Pack (Tippen zum Aufreißen) → tearing = Animation → revealed = Karten aufgedeckt */
-type Phase = 'sealed' | 'tearing' | 'revealed';
+import { Component, DestroyRef, HostListener, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { PackCard, PackInfo, packFace } from './pack.model';
 
 /** Dauer der Aufreiß-Animation bis zum Aufdecken (muss zu den Delays im SCSS passen). */
 const TEAR_MS = 1750;
 
 /**
- * Geöffnetes Pack: zuerst das geschlossene Folien-Pack — Tippen reißt es auf (wackeln, Lasche fliegt ab,
- * Karten schieben sich verdeckt heraus), danach erscheinen die Karten nacheinander (umdrehen) mit
- * "Neu"/"Doppelt"-Marke. Klick auf eine Karte → große Karte (open); "Nächstes Pack" öffnet direkt das nächste.
+ * Pack-Dialog: zuerst das geschlossene Folien-Pack (Art + Anlass aufgedruckt, Farbe je Art) mit
+ * "Tippen zum Aufreißen" und "Später öffnen". Tippen startet die Aufreiß-Animation und meldet `tear` —
+ * erst dann öffnet der Aufrufer das Pack (Server bzw. Test) und reicht `cards` nach; aufgedeckt wird,
+ * sobald Animation UND Karten da sind. Klick auf eine Karte → große Karte (open).
  */
 @Component({
   selector: 'app-pack-open-dialog',
@@ -27,21 +17,32 @@ const TEAR_MS = 1750;
   styleUrl: './pack-open-dialog.component.scss',
 })
 export class PackOpenDialogComponent {
-  title = input.required<string>();
-  cards = input.required<PackCard[]>();
+  heading = input('');
+  pack = input.required<PackInfo>();
+  /** null, solange das Pack noch nicht geöffnet ist */
+  cards = input<PackCard[] | null>(null);
+  error = input<string | null>(null);
   remaining = input(0);
   busy = input(false);
   /** true, solange darüber die große Karte offen ist — Esc schließt dann nur die. */
   covered = input(false);
 
+  tear = output<void>();
   next = output<void>();
   open = output<PackCard>();
   closed = output<void>();
 
-  phase = signal<Phase>('sealed');
+  face = computed(() => packFace(this.pack()));
+  backs = computed(() => Array.from({ length: this.pack().size }, (_, i) => i));
+
+  private torn = signal(false);
+  private timerDone = signal(false);
+  phase = computed<'sealed' | 'tearing' | 'revealed'>(() =>
+    !this.torn() ? 'sealed' : this.timerDone() && this.cards() ? 'revealed' : 'tearing'
+  );
+
   private tearTimer: ReturnType<typeof setTimeout> | null = null;
   private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   private prevOverflow = document.body.style.overflow;
 
   constructor() {
@@ -53,16 +54,21 @@ export class PackOpenDialogComponent {
 
     // Jedes neue Pack ("Nächstes Pack öffnen") beginnt wieder geschlossen
     effect(() => {
-      this.cards();
-      untracked(() => this.phase.set('sealed'));
+      this.pack();
+      untracked(() => {
+        if (this.tearTimer) clearTimeout(this.tearTimer);
+        this.torn.set(false);
+        this.timerDone.set(false);
+      });
     });
   }
 
-  tear(): void {
-    if (this.phase() !== 'sealed') return;
-    if (this.reducedMotion) { this.phase.set('revealed'); return; }
-    this.phase.set('tearing');
-    this.tearTimer = setTimeout(() => this.phase.set('revealed'), TEAR_MS);
+  onTear(): void {
+    if (this.torn()) return;
+    this.torn.set(true);
+    this.tear.emit();
+    if (this.reducedMotion) { this.timerDone.set(true); return; }
+    this.tearTimer = setTimeout(() => this.timerDone.set(true), TEAR_MS);
   }
 
   @HostListener('document:keydown.escape')

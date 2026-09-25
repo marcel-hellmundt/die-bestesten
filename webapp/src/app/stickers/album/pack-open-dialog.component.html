@@ -1,25 +1,37 @@
-<div class="backdrop" (click)="closed.emit()">
+<div class="backdrop" (click)="phase() !== 'tearing' && closed.emit()">
   <div class="panel" (click)="$event.stopPropagation()">
-    <h2 class="panel__title">{{ title() }}</h2>
+    @if (heading()) { <h2 class="panel__title">{{ heading() }}</h2> }
 
-    @if (phase() !== 'revealed') {
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" (click)="closed.emit()">Schließen</button>
+      </div>
+    } @else if (phase() !== 'revealed') {
       <!-- Geschlossenes Folien-Pack: Lasche oben (reißt ab), Körper vorne, Karten verdeckt dahinter -->
-      <button type="button" class="pack" [class.pack--tearing]="phase() === 'tearing'" (click)="tear()"
-              [style.--n]="cards().length" aria-label="Pack aufreißen">
+      <button type="button" class="pack pack--{{ pack().source }}" [class.pack--tearing]="phase() === 'tearing'"
+              (click)="onTear()" [style.--n]="pack().size" aria-label="Pack aufreißen">
         <span class="pack__cards" aria-hidden="true">
-          @for (c of cards(); track $index) {
-            <span class="back" [style.--i]="$index">
+          @for (i of backs(); track i) {
+            <span class="back" [style.--i]="i">
               <span class="back__mark">DK</span>
             </span>
           }
         </span>
         <span class="pack__body">
-          <span class="pack__title">Die<br />Klebrigsten</span>
-          <span class="pack__count">{{ cards().length }} Sticker</span>
+          <span class="pack__brand">Die Klebrigsten</span>
+          <span class="pack__kind">{{ face().kind }}</span>
+          <span class="pack__headline">{{ face().headline }}</span>
+          <span class="pack__count">{{ pack().size }} Sticker</span>
+          @if (pack().leagueName) { <span class="pack__league">{{ pack().leagueName }}</span> }
         </span>
         <span class="pack__top"></span>
       </button>
-      <p class="hint" [class.hint--hidden]="phase() === 'tearing'">Tippen zum Aufreißen</p>
+
+      <div class="sealed-actions" [class.sealed-actions--hidden]="phase() === 'tearing'">
+        <p class="hint">Tippen zum Aufreißen</p>
+        <button class="btn btn-ghost btn-sm" type="button" (click)="closed.emit()">Später öffnen</button>
+      </div>
     } @else {
       <div class="cards">
         @for (c of cards(); track $index) {
@@ -33,7 +45,7 @@
       <div class="actions">
         @if (remaining() > 0) {
           <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="next.emit()">
-            {{ busy() ? 'Öffnet…' : 'Nächstes Pack öffnen (' + remaining() + ')' }}
+            Nächstes Pack ({{ remaining() }})
           </button>
         }
         <button class="btn btn-ghost" type="button" (click)="closed.emit()">Fertig</button>

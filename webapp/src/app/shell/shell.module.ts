@@ -9,6 +9,7 @@ import { IconComponent } from '../core/icon/icon.component';
 import { AchievementNotificationComponent } from './achievement-notification/achievement-notification.component';
 import { BottomSheetComponent } from './bottom-sheet/bottom-sheet.component';
 import { CreateTeamComponent } from './create-team/create-team.component';
+import { StickerSharedModule } from '../stickers/sticker-shared.module';
 
 const routes: Routes = [
   {
@@ -35,7 +36,8 @@ const routes: Routes = [
   declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent, CreateTeamComponent],
   imports: [
     CommonModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    StickerSharedModule, // "Die Klebrigsten": globale Ankündigung neuer Packs
   ]
 })
 export class ShellModule {}

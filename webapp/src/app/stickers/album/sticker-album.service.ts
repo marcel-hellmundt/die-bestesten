@@ -2,10 +2,11 @@ import { Injectable, InjectionToken, computed, inject, signal } from '@angular/c
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { StickerCollectionEntry } from '../../core/sticker-status.service';
-import { Timeline } from '../sticker-sim';
+import { OpenedPack, StickerCollectionEntry } from '../../core/sticker-status.service';
+import { Timeline, stickerWeights } from '../sticker-sim';
 import { StickerCardData, StickerHolo } from '../sticker-card/sticker-card.component';
-import { AlbumClub, AlbumPreview, Sticker, Tier, clubStickerPrice, tierOf } from './album.model';
+import { AlbumClub, AlbumPreview, DEFAULT_SHARED_PARAMS, Sticker, Tier, clubStickerPrice, tierOf } from './album.model';
+import { PackCard } from './pack.model';
 
 const DAY_MS = 86_400_000;
 const FALLBACK_DAYS = 255;
@@ -160,6 +161,46 @@ export class StickerAlbumService {
       photoUrl: this.playerPhotoUrl(s),
       backgroundUrls: [this.clubStadiumUrl(club.id)], // Holo-Karten ignorieren das Hintergrundbild selbst
     };
+  }
+
+  /** Aufgedeckte Karten eines serverseitig geöffneten Packs; `before` = Sammlungsstand vor dem Öffnen. */
+  packCards(opened: OpenedPack, before: Uint16Array): PackCard[] {
+    const byKey = new Map(this.stickers().map(s => [s.id, s]));
+    return this.toPackCards(
+      opened.cards.flatMap(c => { const s = byKey.get(c.key); return s ? [{ sticker: s, holo: c.holo, isNew: c.is_new }] : []; }),
+      before,
+    );
+  }
+
+  /**
+   * Test-Pack: Sticker nur im Browser gewürfelt (gleiche Gewichtung/Holo-Chancen wie serverseitig) —
+   * nichts wird gespeichert; "Neu"/"Doppelt" relativ zur echten Sammlung `before`.
+   */
+  randomPackCards(size: number, before: Uint16Array): PackCard[] {
+    const stickers = this.stickers();
+    if (stickers.length === 0) return [];
+    const rules = DEFAULT_SHARED_PARAMS;
+    const weights = stickerWeights(stickers.map(s => s.price), rules.rarityAlpha);
+    const draws: { sticker: Sticker; holo: StickerHolo | null }[] = [];
+    for (let k = 0; k < size; k++) {
+      let r = Math.random();
+      let i = 0;
+      while (i < weights.length - 1 && (r -= weights[i]) > 0) i++;
+      const h = Math.random();
+      const holo = h < rules.holoGoldChance ? 'gold' : h < rules.holoGoldChance + rules.holoSilverChance ? 'silver' : null;
+      draws.push({ sticker: stickers[i], holo });
+    }
+    return this.toPackCards(draws, before);
+  }
+
+  /** isNew vom Server hat Vorrang (kennt die Sammlung sicher), sonst aus `before` abgeleitet. */
+  private toPackCards(draws: { sticker: Sticker; holo: StickerHolo | null; isNew?: boolean }[], before: Uint16Array): PackCard[] {
+    const seen = new Map<number, number>();
+    return draws.map(({ sticker, holo, isNew }) => {
+      const n = (seen.get(sticker.idx) ?? before[sticker.idx] ?? 0) + 1;
+      seen.set(sticker.idx, n);
+      return { sticker, card: this.cardData(sticker, holo), isNew: isNew ?? n === 1, count: n };
+    });
   }
 
   /** Echte Sammlung aus GET /sticker/me (key = Sticker-ID im Album). */

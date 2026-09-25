@@ -1,5 +1,5 @@
 <div class="album">
-  <!-- Admin: Album einfrieren/ergänzen + Test-Pack (Pack-Öffnen/Animationen ausprobieren) -->
+  <!-- Admin: Album einfrieren/ergänzen + Test-Packs je Art (Optik/Animation ausprobieren, nichts gespeichert) -->
   @if (isAdmin) {
     <div class="tools">
       @if (syncResult()) {
@@ -7,10 +7,13 @@
       } @else if (status.state() && !status.enabled()) {
         <span class="tools__result">In keiner deiner Ligen aktiv — Packs und Sammlung werden dir nicht angezeigt (Liga-Einstellungen).</span>
       }
-      <button type="button" class="btn btn-ghost btn-sm" [disabled]="rows().length === 0" (click)="openTestPack()"
-              title="Pack-Animation ausprobieren — wird nicht gespeichert">
-        Test-Pack (3)
-      </button>
+      <span class="tools__label">Test:</span>
+      @for (t of testSources; track t.source) {
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="rows().length === 0" (click)="openTestPack(t.source)"
+                title="Pack ausprobieren — wird nicht gespeichert">
+          {{ t.label }}
+        </button>
+      }
       <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
         {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}
       </button>
@@ -44,9 +47,7 @@
               {{ packSummary() }} <span class="packs__caret" [class.packs__caret--open]="packListOpen()">▾</span>
             </button>
           </div>
-          <button type="button" class="btn btn-primary" [disabled]="packBusy()" (click)="openNextPack()">
-            {{ packBusy() ? 'Öffnet…' : 'Pack öffnen' }}
-          </button>
+          <button type="button" class="btn btn-primary" (click)="openNextPack()">Pack öffnen</button>
         </div>
 
         <!-- Details: jedes Pack mit Anlass und Zeitpunkt, einzeln zu öffnen -->
@@ -59,14 +60,13 @@
                   <span>{{ detail(p) }}</span>
                 </div>
                 <span class="packs__time">{{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }}</span>
-                <button type="button" class="btn btn-ghost btn-sm" [disabled]="packBusy()" (click)="openSpecificPack(p)">Öffnen</button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="openSpecificPack(p)">Öffnen</button>
               </li>
             }
           </ul>
         }
       </div>
     }
-    @if (packError()) { <p class="packs__error">{{ packError() }}</p> }
 
     <div class="album__layout">
       <!-- Desktop: Seitenliste links -->
@@ -139,10 +139,11 @@
     </div>
   }
 
-  @if (opened(); as o) {
-    <app-pack-open-dialog [title]="o.title" [cards]="o.cards" [remaining]="o.test ? 0 : packs().length" [busy]="packBusy()"
-                          [covered]="openCard() !== null"
-                          (next)="openNextPack()" (open)="openPulled($event)" (closed)="closePack()" />
+  @if (opener.info(); as info) {
+    <app-pack-open-dialog [heading]="info.id === null ? 'Test-Pack (nicht gespeichert)' : ''"
+                          [pack]="info" [cards]="opener.cards()" [error]="opener.error()"
+                          [remaining]="opener.remaining()" [busy]="opener.busy()" [covered]="openCard() !== null"
+                          (tear)="opener.tear()" (next)="opener.showNext()" (open)="openPulled($event)" (closed)="opener.close()" />
   }
 
   @if (openCard(); as card) {

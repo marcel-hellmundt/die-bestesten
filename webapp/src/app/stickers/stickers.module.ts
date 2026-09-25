@@ -6,10 +6,8 @@ import { StickersComponent } from './stickers.component';
 import { StickerAlbumComponent } from './album/sticker-album.component';
 import { AlbumOverviewComponent } from './album/album-overview.component';
 import { AlbumClubPageComponent } from './album/album-club-page.component';
-import { PackOpenDialogComponent } from './album/pack-open-dialog.component';
 import { StickerSimulationComponent } from './sticker-simulation.component';
-import { StickerCardComponent } from './sticker-card/sticker-card.component';
-import { StickerCardDialogComponent } from './sticker-card/sticker-card-dialog.component';
+import { StickerSharedModule } from './sticker-shared.module';
 
 // "Die Klebrigsten" (Sticker-Album): /klebrigsten/sammelalbum + /klebrigsten/simulation (Maintainer+)
 const routes: Routes = [
@@ -25,9 +23,9 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [
-    StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent, PackOpenDialogComponent,
-    StickerSimulationComponent, StickerCardComponent, StickerCardDialogComponent,
+    StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent,
+    StickerSimulationComponent,
   ],
-  imports: [CommonModule, RouterModule.forChild(routes)],
+  imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule],
 })
 export class StickersModule {}

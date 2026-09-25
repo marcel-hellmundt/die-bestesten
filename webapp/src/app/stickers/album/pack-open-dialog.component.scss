@@ -3,8 +3,7 @@
 // Reihenfolge der Aufreiß-Animation (gesamt ≈ TEAR_MS im TS):
 //   0–420ms Pack wackelt · 380–980ms Lasche reißt ab · 750–1450ms Lichtschein aus der Öffnung
 //   820ms+ Karten schieben sich (verdeckt) nacheinander heraus · 1450ms Pack fällt weg · 1750ms Karten drehen sich um
-$foil-light: #e0492c;
-$foil-dark: #7d1300;
+// Folienfarbe je Pack-Art (CSS-Variablen auf .pack, siehe .pack--{source})
 
 .backdrop {
   position: fixed;
@@ -41,6 +40,12 @@ $foil-dark: #7d1300;
 
 // ── Geschlossenes Pack ───────────────────────────────────────────────────────
 .pack {
+  // Tages-Pack: Rot (Standard)
+  --foil-light: #e0492c;
+  --foil: #{$color-accent};
+  --foil-dark: #7d1300;
+  --ink: #{$color-accent};   // Schrift auf der weißen Anzahl-Pille
+
   position: relative;
   width: min(230px, 58vw);
   aspect-ratio: 5 / 7.8;
@@ -50,6 +55,30 @@ $foil-dark: #7d1300;
   cursor: pointer;
   container-type: inline-size;
   animation: float 2.6s ease-in-out infinite;
+
+  // Meilenstein: Gold
+  &--milestone {
+    --foil-light: #f6d36b;
+    --foil: #c99416;
+    --foil-dark: #6b4705;
+    --ink: #8a5d06;
+  }
+
+  // Spieltagssieger: Blau
+  &--matchday_best {
+    --foil-light: #5b9bf5;
+    --foil: #1d4ed8;
+    --foil-dark: #0c1f5e;
+    --ink: #1d4ed8;
+  }
+
+  // Bonus: Graphit
+  &--admin {
+    --foil-light: #9ca3af;
+    --foil: #4b5563;
+    --foil-dark: #111827;
+    --ink: #374151;
+  }
 
   // Lichtschein aus der aufgerissenen Öffnung
   &::before {
@@ -82,7 +111,7 @@ $foil-dark: #7d1300;
     background:
       linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.3) 38%, transparent 52%),
       repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 6px),
-      linear-gradient(160deg, $foil-light, $color-accent 42%, $foil-dark);
+      linear-gradient(160deg, var(--foil-light), var(--foil) 42%, var(--foil-dark));
     background-size: 260% 100%, auto, auto;
     // Glanz-Layer nicht kacheln — sonst steht am Ende der Animation der Streifen der Nachbarkachel mitten
     // im Pack und springt beim Neustart weg; so läuft er links unsichtbar ein und rechts unsichtbar aus
@@ -98,7 +127,7 @@ $foil-dark: #7d1300;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6cqw;
+    gap: 2.5cqw;
     box-shadow: inset 0 -12px 20px rgba(0, 0, 0, 0.2);
     // gezackte Siegelnaht unten
     mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 14px 100%;
@@ -124,10 +153,31 @@ $foil-dark: #7d1300;
     }
   }
 
-  &__title {
+  // Vorderseite: Marke klein, Art, große Überschrift (Anlass), Anzahl, Liga
+  &__brand {
+    color: rgba(255, 255, 255, 0.85);
+    font-family: $font-display;
+    font-size: 5.5cqw;
+    font-weight: 800;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__kind {
+    margin-top: 2cqw;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 5.5cqw;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  &__headline {
+    max-width: 90%;
     color: #fff;
     font-family: $font-display;
-    font-size: 12.5cqw;
+    font-size: 13cqw;
     font-weight: 800;
     font-style: italic;
     line-height: 0.95;
@@ -138,12 +188,23 @@ $foil-dark: #7d1300;
   }
 
   &__count {
+    margin-top: 3cqw;
     padding: 1.5cqw 5cqw;
     border-radius: $radius-full;
     background: rgba(255, 255, 255, 0.92);
-    color: $color-accent;
+    color: var(--ink);
     font-size: 6cqw;
     font-weight: $font-weight-bold;
+  }
+
+  &__league {
+    max-width: 85%;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 4.8cqw;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   // ── Aufreißen ──
@@ -196,13 +257,29 @@ $foil-dark: #7d1300;
   }
 }
 
+.sealed-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  transition: opacity $transition-normal;
+
+  &--hidden { opacity: 0; pointer-events: none; }
+
+  .btn-ghost { color: rgba(255, 255, 255, 0.8); }
+}
+
 .hint {
   margin: 0;
   color: rgba(255, 255, 255, 0.7);
   font-size: $font-sm;
-  transition: opacity $transition-normal;
+}
 
-  &--hidden { opacity: 0; }
+.error {
+  margin: 0;
+  color: #fff;
+  font-size: $font-sm;
+  text-align: center;
 }
 
 // ── Aufgedeckte Karten ───────────────────────────────────────────────────────
