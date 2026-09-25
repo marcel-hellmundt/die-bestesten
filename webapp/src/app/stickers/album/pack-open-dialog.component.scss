@@ -84,6 +84,9 @@ $foil-dark: #7d1300;
       repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 6px),
       linear-gradient(160deg, $foil-light, $color-accent 42%, $foil-dark);
     background-size: 260% 100%, auto, auto;
+    // Glanz-Layer nicht kacheln — sonst steht am Ende der Animation der Streifen der Nachbarkachel mitten
+    // im Pack und springt beim Neustart weg; so läuft er links unsichtbar ein und rechts unsichtbar aus
+    background-repeat: no-repeat, repeat, no-repeat;
     animation: sheen 3.2s linear infinite;
   }
 
