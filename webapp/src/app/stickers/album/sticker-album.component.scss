@@ -30,9 +30,73 @@ $desktop: $mobile-breakpoint + 1;
 // ── Ungeöffnete Packs ────────────────────────────────────────────────────────
 .packs {
   display: flex;
-  align-items: center;
-  gap: $space-3;
+  flex-direction: column;
+  gap: $space-2;
   padding: $space-3 $space-4;
+
+  &__main {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__toggle {
+    align-self: flex-start;
+    padding: 0;
+    border: none;
+    background: none;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { color: $color-text; }
+  }
+
+  &__caret {
+    display: inline-block;
+    transition: transform $transition-fast;
+
+    &--open { transform: rotate(180deg); }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: $space-2 0 0;
+    list-style: none;
+    border-top: 1px solid color-mix(in srgb, #{$color-accent} 20%, #{$color-border});
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    padding: 6px 0;
+    font-size: $font-sm;
+
+    & + & { border-top: 1px solid $color-border; }
+  }
+
+  &__row-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+
+    span {
+      font-size: $font-xs;
+      color: $color-text-muted;
+    }
+  }
+
+  &__time {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
   border-radius: $radius-lg;
   background: linear-gradient(120deg, color-mix(in srgb, #{$color-accent} 12%, #{$color-surface}), $color-surface 70%);
   border: 1px solid color-mix(in srgb, #{$color-accent} 30%, #{$color-border});

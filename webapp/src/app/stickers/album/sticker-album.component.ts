@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
-import { PACK_SOURCE_LABEL, StickerPack, StickerStatusService } from '../../core/sticker-status.service';
+import { PACK_SOURCE_LABEL, StickerPack, StickerStatusService, packDetail } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
@@ -63,10 +63,21 @@ export class StickerAlbumComponent {
   packBusy = signal(false);
   packError = signal<string | null>(null);
 
+  packListOpen = signal(false);
+  readonly packLabel = PACK_SOURCE_LABEL;
+  readonly detail = packDetail;
+
   openNextPack(): void {
     const pack = this.packs()[0];
     if (!pack || this.packBusy()) return;
     requestTiltPermission(); // synchron in der Klick-Geste (iOS), falls danach eine Karte groß geöffnet wird
+    this.openPack(pack);
+  }
+
+  /** Ein bestimmtes Pack aus der Detail-Liste öffnen. */
+  openSpecificPack(pack: StickerPack): void {
+    if (this.packBusy()) return;
+    requestTiltPermission();
     this.openPack(pack);
   }
 

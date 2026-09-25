@@ -35,14 +35,34 @@
     <!-- Ungeöffnete Packs -->
     @if (packs().length > 0) {
       <div class="packs">
-        <div class="packs__icon" aria-hidden="true">{{ packs().length }}</div>
-        <div class="packs__text">
-          <b>{{ packs().length === 1 ? '1 ungeöffnetes Pack' : packs().length + ' ungeöffnete Packs' }}</b>
-          <span>{{ packSummary() }}</span>
+        <div class="packs__main">
+          <div class="packs__icon" aria-hidden="true">{{ packs().length }}</div>
+          <div class="packs__text">
+            <b>{{ packs().length === 1 ? '1 ungeöffnetes Pack' : packs().length + ' ungeöffnete Packs' }}</b>
+            <button type="button" class="packs__toggle" (click)="packListOpen.set(!packListOpen())" [attr.aria-expanded]="packListOpen()">
+              {{ packSummary() }} <span class="packs__caret" [class.packs__caret--open]="packListOpen()">▾</span>
+            </button>
+          </div>
+          <button type="button" class="btn btn-primary" [disabled]="packBusy()" (click)="openNextPack()">
+            {{ packBusy() ? 'Öffnet…' : 'Pack öffnen' }}
+          </button>
         </div>
-        <button type="button" class="btn btn-primary" [disabled]="packBusy()" (click)="openNextPack()">
-          {{ packBusy() ? 'Öffnet…' : 'Pack öffnen' }}
-        </button>
+
+        <!-- Details: jedes Pack mit Anlass und Zeitpunkt, einzeln zu öffnen -->
+        @if (packListOpen()) {
+          <ul class="packs__list">
+            @for (p of packs(); track p.id) {
+              <li class="packs__row">
+                <div class="packs__row-text">
+                  <b>{{ packLabel[p.source] }}</b>
+                  <span>{{ detail(p) }}</span>
+                </div>
+                <span class="packs__time">{{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }}</span>
+                <button type="button" class="btn btn-ghost btn-sm" [disabled]="packBusy()" (click)="openSpecificPack(p)">Öffnen</button>
+              </li>
+            }
+          </ul>
+        }
       </div>
     }
     @if (packError()) { <p class="packs__error">{{ packError() }}</p> }

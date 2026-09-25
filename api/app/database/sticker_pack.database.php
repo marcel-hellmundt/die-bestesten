@@ -100,16 +100,37 @@ trait StickerPackTrait
         $this->grantStickerPack($managerId, $seasonId, 'daily', "daily:{$today}", null, $this->stickerConfig()['daily_pack_size']);
 
         $pq = $this->con->prepare(
-            "SELECT sp.id, sp.source, sp.size, sp.created_at, l.name AS league_name
+            "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, l.name AS league_name
              FROM sticker_pack sp LEFT JOIN league l ON l.id = sp.league_id
              WHERE sp.manager_id = ? AND sp.season_id = ? AND sp.opened_at IS NULL
              ORDER BY sp.created_at ASC"
         );
         $pq->execute([$managerId, $seasonId]);
-        $state['packs'] = array_map(fn($p) => [
-            'id' => $p['id'], 'source' => $p['source'], 'size' => (int) $p['size'],
-            'created_at' => $p['created_at'], 'league_name' => $p['league_name'],
-        ], $pq->fetchAll(PDO::FETCH_ASSOC));
+        $rows = $pq->fetchAll(PDO::FETCH_ASSOC);
+
+        // Anlass aus dem source_key: Meilenstein-Schwelle bzw. Spieltag (Nummer per matchday_id nachschlagen)
+        $matchdayIds = [];
+        foreach ($rows as $p) {
+            if ($p['source'] === 'matchday_best') $matchdayIds[] = explode(':', $p['source_key'])[2] ?? '';
+        }
+        $mdNumbers = [];
+        if ($matchdayIds) {
+            $in = implode(',', array_fill(0, count($matchdayIds), '?'));
+            $mq = $this->con->prepare("SELECT id, number FROM matchday WHERE id IN ($in)");
+            $mq->execute($matchdayIds);
+            $mdNumbers = array_column($mq->fetchAll(PDO::FETCH_ASSOC), 'number', 'id');
+        }
+
+        $state['packs'] = array_map(function ($p) use ($mdNumbers) {
+            $parts = explode(':', $p['source_key']);
+            return [
+                'id' => $p['id'], 'source' => $p['source'], 'size' => (int) $p['size'],
+                'created_at' => $p['created_at'], 'league_name' => $p['league_name'],
+                'milestone_points' => $p['source'] === 'milestone' ? (int) ($parts[2] ?? 0) : null,
+                'matchday_number'  => $p['source'] === 'matchday_best' && isset($mdNumbers[$parts[2] ?? ''])
+                    ? (int) $mdNumbers[$parts[2]] : null,
+            ];
+        }, $rows);
 
         $state['collection'] = $this->getStickerCollection($managerId, $seasonId);
         return $state;

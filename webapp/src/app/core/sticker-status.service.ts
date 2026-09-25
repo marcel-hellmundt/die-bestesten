@@ -11,6 +11,8 @@ export interface StickerPack {
   size: number;
   created_at: string;
   league_name: string | null;
+  milestone_points: number | null;  // Meilenstein-Pack: erreichte Punkte-Schwelle
+  matchday_number: number | null;   // Spieltagsbester-Pack: Spieltag
 }
 
 /** Je gezogenem Sticker: key = player_id bzw. '{club_id}-logo' / '{club_id}-stadium'. */
@@ -40,8 +42,19 @@ export const PACK_SOURCE_LABEL: Record<StickerPackSource, string> = {
   daily: 'Tages-Pack',
   milestone: 'Meilenstein-Pack',
   matchday_best: 'Spieltagsbester-Pack',
-  admin: 'Bonus-Pack',
+  admin: 'Test-Pack',
 };
+
+/** Anlass eines Packs in Worten, z.B. "200 Punkte erreicht · Liga" oder "Spieltag 5 · Liga". */
+export function packDetail(p: Pick<StickerPack, 'source' | 'milestone_points' | 'matchday_number' | 'league_name'>): string {
+  const parts: string[] = [];
+  if (p.source === 'daily') parts.push('fürs Vorbeischauen');
+  if (p.source === 'milestone' && p.milestone_points) parts.push(`${p.milestone_points} Saisonpunkte erreicht`);
+  if (p.source === 'matchday_best') parts.push(p.matchday_number ? `bestes Team an Spieltag ${p.matchday_number}` : 'bestes Team des Spieltags');
+  if (p.source === 'admin') parts.push('vom Admin angelegt');
+  if (p.league_name) parts.push(p.league_name);
+  return parts.join(' · ');
+}
 
 /**
  * "Die Klebrigsten" — eigener Album-Status (GET /sticker/me). Beim App-Start abgefragt (Topbar) und
