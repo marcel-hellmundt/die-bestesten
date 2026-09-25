@@ -15,7 +15,7 @@
      [style.--facets-base]="facetUrls.base"
      [style.--facets-x]="facetUrls.x"
      [style.--facets-y]="facetUrls.y">
-  <div class="sticker-card sticker-card--{{ d.tier }}"
+  <div class="sticker-card sticker-card--{{ d.tier }} sticker-card--kind-{{ kind() }}"
        [class.sticker-card--holo]="!!d.holo"
        [class.sticker-card--holo-gold]="d.holo === 'gold'"
        [style.--club-primary]="d.clubPrimaryColor || null"
@@ -26,8 +26,8 @@
         <img draggable="false" class="sticker-card__bg" [src]="bg" alt="" (error)="onBackgroundError()" />
       }
 
-      <!-- Vereinslogo oben links, hinter dem Spielerfoto -->
-      @if (d.clubLogoUrl && !logoFailed()) {
+      <!-- Vereinslogo oben links, hinter dem Spielerfoto (beim Wappen-Sticker ist das Wappen selbst das Motiv) -->
+      @if (kind() !== 'logo' && d.clubLogoUrl && !logoFailed()) {
         <img draggable="false" class="sticker-card__club" [src]="d.clubLogoUrl" [alt]="d.clubName ?? ''" (error)="logoFailed.set(true)" />
       }
 
@@ -42,10 +42,30 @@
         <div class="sticker-card__shine"></div>
       }
 
-      @if (d.photoUrl && !photoFailed()) {
-        <img draggable="false" class="sticker-card__photo" [src]="d.photoUrl" [alt]="d.displayname" (error)="photoFailed.set(true)" />
-      } @else {
-        <img draggable="false" class="sticker-card__photo sticker-card__photo--placeholder" src="img/placeholders/player.png" alt="" />
+      @switch (kind()) {
+        @case ('logo') {
+          <!-- Wappen-Sticker: großes Vereinswappen mittig -->
+          <img draggable="false" class="sticker-card__crest" [class.sticker-card__crest--placeholder]="!d.clubLogoUrl || logoFailed()"
+               [src]="d.clubLogoUrl && !logoFailed() ? d.clubLogoUrl : 'img/placeholders/club.png'" [alt]="d.clubName ?? ''"
+               (error)="logoFailed.set(true)" />
+        }
+        @case ('stadium') {
+          <!-- Stadion-Sticker: Stadion-Foto scharf als Bildfenster (Vereinsfarbe bzw. Holo-Folie bleibt drumherum sichtbar) -->
+          <div class="sticker-card__window">
+            @if (d.stadiumUrl && !stadiumFailed()) {
+              <img draggable="false" [src]="d.stadiumUrl" [alt]="d.displayname" (error)="stadiumFailed.set(true)" />
+            } @else {
+              <span class="sticker-card__window-empty">Stadion</span>
+            }
+          </div>
+        }
+        @default {
+          @if (d.photoUrl && !photoFailed()) {
+            <img draggable="false" class="sticker-card__photo" [src]="d.photoUrl" [alt]="d.displayname" (error)="photoFailed.set(true)" />
+          } @else {
+            <img draggable="false" class="sticker-card__photo sticker-card__photo--placeholder" src="img/placeholders/player.png" alt="" />
+          }
+        }
       }
 
       <!-- Namens-Banner unten links: schräg angeschnittenes weißes Band, Vorname klein, Name groß -->

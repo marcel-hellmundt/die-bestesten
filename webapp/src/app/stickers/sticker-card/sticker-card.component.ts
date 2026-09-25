@@ -6,6 +6,9 @@ export type StickerHolo = 'silver' | 'gold';
 
 /** Alles, was eine Sticker-Karte zum Rendern braucht. */
 export interface StickerCardData {
+  // player = Spielerfoto (Standard); logo = großes Vereinswappen; stadium = Stadion-Foto als Bildfenster
+  kind?: 'player' | 'logo' | 'stadium';
+  stadiumUrl?: string | null;  // nur kind=stadium
   displayname: string;
   firstName?: string | null;   // klein über dem Namen (wie auf Panini-/Topps-Stickern)
   photoUrl: string | null;
@@ -96,10 +99,16 @@ export class StickerCardComponent {
   };
   photoFailed = signal(false);
   logoFailed = signal(false);
+  stadiumFailed = signal(false);
+  kind = computed(() => this.data().kind ?? 'player');
 
   /** Index des aktuell versuchten Hintergrund-Kandidaten (bei Ladefehler → nächster). */
   private bgIndex = signal(0);
-  backgroundUrl = computed(() => this.data().holo ? null : (this.data().backgroundUrls?.[this.bgIndex()] ?? null));
+  backgroundUrl = computed(() => {
+    const d = this.data();
+    if (d.holo || (d.kind ?? 'player') !== 'player') return null; // Holo + Vereins-Sticker ohne Hintergrundbild
+    return d.backgroundUrls?.[this.bgIndex()] ?? null;
+  });
   onBackgroundError(): void { this.bgIndex.update(i => i + 1); }
 
   constructor() {
@@ -112,6 +121,7 @@ export class StickerCardComponent {
       this.bgIndex.set(0);
       this.photoFailed.set(false);
       this.logoFailed.set(false);
+      this.stadiumFailed.set(false);
     });
 
     effect(() => {

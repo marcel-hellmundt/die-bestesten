@@ -1,35 +1,11 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith } from 'rxjs';
-import { ApiService } from '../core/api.service';
-import {
-  MIN_PRICE, SimParams, SimProfile, Timeline, countsAtDay, holoAtDay, simulateSeason, stickerWeights,
-} from './sticker-sim';
+import { SimParams, SimProfile, countsAtDay, holoAtDay, simulateSeason, stickerWeights } from './sticker-sim';
 import { StickerCardData, StickerHolo, requestTiltPermission } from './sticker-card/sticker-card.component';
-
-interface AlbumPlayer {
-  id: string; displayname: string; first_name: string | null; last_name: string | null;
-  position: string | null; price: number | null; photo_uploaded: boolean;
-}
-interface AlbumClub {
-  id: string; name: string; short_name: string; logo_uploaded: boolean;
-  primary_color: string | null; secondary_color: string | null;
-  players: AlbumPlayer[];
-}
-interface AlbumPreview {
-  season_id: string | null;
-  cutoff_date: string | null;
-  matchdays: { number: number; kickoff_date: string }[];
-  clubs: AlbumClub[];
-}
-
-/** Sticker im flachen Album (Index = Position in weights/counts). */
-interface Sticker extends AlbumPlayer { idx: number; clubIdx: number; tier: Tier; }
-type Tier = 'common' | 'rare' | 'epic' | 'legendary';
-/** Regeln, die für alle Manager gleich sind — der Rest von SimParams kommt aus dem Profil. */
-type SharedParams = Omit<SimParams, 'loginChance' | 'avgPoints' | 'bestChance'>;
-
-const DAY_MS = 86_400_000;const FALLBACK_DAYS = 255;
+import { StickerAlbumService } from './album/sticker-album.service';
+import {
+  AlbumClub, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS, POSITION_LABEL, SharedParams, Sticker,
+  TIERS, TIER_LABEL, TIER_RANGE, paramsFor,
+} from './album/album.model';
 
 @Component({
   selector: 'app-sticker-simulation',
@@ -38,106 +14,28 @@ const DAY_MS = 86_400_000;const FALLBACK_DAYS = 255;
   styleUrl: './sticker-simulation.component.scss',
 })
 export class StickerSimulationComponent {
-  private api = inject(ApiService);
+  private album = inject(StickerAlbumService);
 
-  private state = toSignal(
-    this.api.get<AlbumPreview>('sticker/album_preview').pipe(
-      map(data => ({ data, loading: false, error: null as string | null })),
-      startWith({ data: null as AlbumPreview | null, loading: true, error: null as string | null }),
-      catchError(() => of({ data: null as AlbumPreview | null, loading: false, error: 'Album konnte nicht geladen werden' })),
-    ),
-    { initialValue: { data: null as AlbumPreview | null, loading: true, error: null as string | null } },
-  );
-  loading = computed(() => this.state().loading);
-  error   = computed(() => this.state().error);
+  loading = this.album.loading;
+  error   = this.album.error;
 
-  // ── Album ─────────────────────────────────────────────────────────────────
-  clubs = computed(() => this.state().data?.clubs ?? []);
-
-  stickers = computed<Sticker[]>(() => {
-    const out: Sticker[] = [];
-    this.clubs().forEach((c, clubIdx) =>
-      c.players.forEach(p => out.push({ ...p, idx: out.length, clubIdx, tier: this.tierOf(p.price) })),
-    );
-    return out;
-  });
-
-  /** Je Verein die Sticker-Indizes (für die Zeilen). */
-  rows = computed(() => {
-    const byClub = this.clubs().map(c => ({ club: c, stickers: [] as Sticker[] }));
-    for (const s of this.stickers()) byClub[s.clubIdx].stickers.push(s);
-    return byClub;
-  });
-
-  /** Anzahl Sticker je Seltenheit im Album (für die Legende). */
-  tierCounts = computed(() => {
-    const counts: Record<Tier, number> = { common: 0, rare: 0, epic: 0, legendary: 0 };
-    for (const s of this.stickers()) counts[s.tier]++;
-    return counts;
-  });
-
-  private tierOf(price: number | null): Tier {
-    const p = price ?? MIN_PRICE;
-    if (p > 5_000_000) return 'legendary';
-    if (p > 2_500_000) return 'epic';
-    if (p > 1_000_000) return 'rare';
-    return 'common';
-  }
-
-  // ── Zeitachse: Stichtag bis Auswertung des letzten Spieltags ──────────────
-  private cutoff = computed(() => {
-    const c = this.state().data?.cutoff_date;
-    return c ? new Date(c + 'T00:00:00') : null;
-  });
-
-  timeline = computed<Timeline>(() => {
-    const cutoff = this.cutoff();
-    const mds = this.state().data?.matchdays ?? [];
-    if (!cutoff || mds.length === 0) {
-      // Fallback: 31 Spieltage gleichmäßig verteilt
-      const days = FALLBACK_DAYS;
-      return { days, matchdayDays: Array.from({ length: 31 }, (_, i) => Math.round((i + 1) * days / 31)) };
-    }
-    // Spieltag gilt 2 Tage nach Anpfiff als abgeschlossen (Meilenstein-/Spieltagsbester-Packs)
-    const matchdayDays = mds.map(m => Math.floor((new Date(m.kickoff_date.replace(' ', 'T')).getTime() + 2 * DAY_MS - cutoff.getTime()) / DAY_MS));
-    return { days: Math.max(...matchdayDays, 1), matchdayDays };
-  });
-
-  dateOf(day: number): Date | null {
-    const c = this.cutoff();
-    return c ? new Date(c.getTime() + day * DAY_MS) : null;
-  }
+  // ── Album (gemeinsam mit dem Sammelalbum, inkl. Wappen- + Stadion-Sticker je Club) ──
+  stickers   = this.album.stickers;
+  rows       = this.album.rows;
+  tierCounts = this.album.tierCounts;
+  timeline   = this.album.timeline;
+  dateOf(day: number): Date | null { return this.album.dateOf(day); }
 
   // ── Parameter ─────────────────────────────────────────────────────────────
-  /** Für alle Manager gleiche Regeln (Pack-Größen, Meilensteine, Seltenheit). */
-  shared = signal<SharedParams>({
-    dailyPackSize: 3,
-    guaranteeNew: true,
-    milestoneInterval: 100,
-    milestonePackSize: 3,
-    bestPackSize: 3,
-    rarityAlpha: 0.5,
-    holoSilverChance: 0.01,   // 1 %  → bei ~1.000 Stickern pro Saison ≈ 10 Holo Silber
-    holoGoldChance: 0.001,    // 0,1 % → ≈ 1 Holo Gold
-  });
+  /** Für alle Manager gleiche Regeln (Pack-Größen, Meilensteine, Seltenheit, Holo). */
+  shared = signal<SharedParams>({ ...DEFAULT_SHARED_PARAMS });
 
-  /**
-   * Manager-Typen — Startwerte aus den echten Daten: Einlog-Tage der letzten 33 Tage (manager_session),
-   * Saisonpunkte der Vorsaison (679–1.455 Pkt. → 20–43 Pkt./Spieltag), Spieltagssiege (vorläufig).
-   */
-  profiles = signal<SimProfile[]>([
-    { key: 'active',   label: 'Aktiv & stark',    loginChance: 1,    avgPoints: 43, bestChance: 0.15 },
-    { key: 'average',  label: 'Durchschnitt',     loginChance: 0.95, avgPoints: 33, bestChance: 0.08 },
-    { key: 'inactive', label: 'Inaktiv & schwach', loginChance: 0.36, avgPoints: 20, bestChance: 0.03 },
-  ]);
+  profiles = signal<SimProfile[]>(DEFAULT_PROFILES.map(p => ({ ...p })));
   profileKey = signal('average');
   profile = computed(() => this.profiles().find(p => p.key === this.profileKey()) ?? this.profiles()[0]);
 
   /** Effektive Parameter für die abgespielte Saison = gemeinsame Regeln + gewähltes Profil. */
-  params = computed<SimParams>(() => this.paramsFor(this.profile()));
-  private paramsFor(p: SimProfile): SimParams {
-    return { ...this.shared(), loginChance: p.loginChance, avgPoints: p.avgPoints, bestChance: p.bestChance };
-  }
+  params = computed<SimParams>(() => paramsFor(this.shared(), this.profile()));
 
   seed = signal(1);
 
@@ -271,7 +169,7 @@ export class StickerSimulationComponent {
       const rows = this.rows();
       const q = (arr: number[], p: number) => [...arr].sort((a, b) => a - b)[Math.min(arr.length - 1, Math.floor(p * arr.length))];
       const results = this.profiles().map(profile => {
-        const params = this.paramsFor(profile);
+        const params = paramsFor(this.shared(), profile);
         const album: number[] = [], clubs: number[] = [], packsN: number[] = [], firstDays: number[] = [];
         let full = 0, stickersSum = 0, silverSum = 0, goldSum = 0, anyGold = 0;
         for (let r = 0; r < this.mcRuns; r++) {
@@ -346,10 +244,8 @@ export class StickerSimulationComponent {
   @HostListener('window:touchmove')
   hideTip(): void { if (this.tip()) this.tip.set(null); }
 
-  photoUrl(s: Sticker): string | null {
-    const seasonId = this.state().data?.season_id;
-    return s.photo_uploaded && seasonId ? `https://img.die-bestesten.de/player/${seasonId}/${s.id}.png` : null;
-  }
+  /** Vorschaubild im Tooltip: Spielerfoto, Wappen bzw. Stadion. */
+  photoUrl(s: Sticker): string | null { return this.album.stickerImageUrl(s); }
 
   // ── Sticker-Karte (Test) ──────────────────────────────────────────────────
   openCardIdx = signal<number | null>(null);
@@ -366,20 +262,9 @@ export class StickerSimulationComponent {
   openCardData = computed<StickerCardData | null>(() => {
     const idx = this.openCardIdx();
     if (idx === null) return null;
-    const s = this.stickers()[idx];
-    const club = this.rows()[s.clubIdx].club;
-    return {
-      displayname: s.displayname,
-      firstName: s.first_name,
-      photoUrl: this.photoUrl(s),
-      clubLogoUrl: club.logo_uploaded ? this.clubLogoUrl(club) : null,
-      clubName: club.name,
-      clubPrimaryColor: club.primary_color,
-      clubSecondaryColor: club.secondary_color,
-      tier: s.tier,
-      holo: this.openAs() === 'collected' ? this.bestHolo(idx) : this.openAs() === 'normal' ? null : this.openAs() as StickerHolo,
-      backgroundUrls: this.clubStadiumUrls(club.id), // Holo-Karten ignorieren das Hintergrundbild selbst
-    };
+    const as = this.openAs();
+    const holo = as === 'collected' ? this.bestHolo(idx) : as === 'normal' ? null : as;
+    return this.album.cardData(this.stickers()[idx], holo);
   });
 
   openCard(idx: number): void {
@@ -389,25 +274,16 @@ export class StickerSimulationComponent {
     this.openCardIdx.set(idx);
   }
 
-  // ── Bilder ────────────────────────────────────────────────────────────────
-  /** Stadion-Foto des Vereins als Karten-Hintergrund (Asset-Server club/stadium/{id}.jpg). */
-  private clubStadiumUrls(clubId: string): string[] {
-    return [`https://img.die-bestesten.de/club/stadium/${clubId}.jpg`];
+  // ── Anzeige ───────────────────────────────────────────────────────────────
+  clubLogoUrl(c: AlbumClub): string { return this.album.clubLogoUrl(c); }
+
+  priceLabel(s: Sticker): string {
+    if (s.kind !== 'player') return s.kind === 'logo' ? 'Vereins-Sticker (Wappen)' : 'Vereins-Sticker (Stadion)';
+    return s.price == null ? 'kein Marktwert' : (s.price / 1e6).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' Mio';
   }
 
-  clubLogoUrl(c: AlbumClub): string {
-    return c.logo_uploaded ? `https://img.die-bestesten.de/club/${c.id}.png` : 'img/placeholders/club.png';
-  }
-
-  priceLabel(price: number | null): string {
-    return price == null ? 'kein Marktwert' : (price / 1e6).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' Mio';
-  }
-
-  readonly tierLabel: Record<Tier, string> = { common: 'Häufig', rare: 'Selten', epic: 'Episch', legendary: 'Legendär' };
-  // Marktwert-Spannen je Tier — müssen zu tierOf() passen
-  readonly tierRange: Record<Tier, string> = {
-    common: '≤ 1 Mio', rare: '1–2,5 Mio', epic: '2,5–5 Mio', legendary: '> 5 Mio',
-  };
-  readonly tiers: Tier[] = ['common', 'rare', 'epic', 'legendary'];
-  readonly positionLabel: Record<string, string> = { GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU' };
+  readonly tierLabel = TIER_LABEL;
+  readonly tierRange = TIER_RANGE;
+  readonly tiers = TIERS;
+  readonly positionLabel = POSITION_LABEL;
 }

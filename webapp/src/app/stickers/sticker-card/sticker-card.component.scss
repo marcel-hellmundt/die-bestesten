@@ -60,6 +60,55 @@
     background: radial-gradient(circle at 50% 35%, #ffffff 0%, #eef0f3 45%, #d5d9df 100%);
   }
 
+  // Wappen-Sticker: großes Wappen mittig (über der Folie wie das Spielerfoto → vom Holo ausgenommen)
+  &__crest {
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    width: 64%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
+    z-index: 3;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+
+    &--placeholder { opacity: 0.35; }
+  }
+
+  // Stadion-Sticker: Foto als abgerundetes Bildfenster mit weißem Rand (wie eingeklebtes Foto)
+  &__window {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 16%;
+    bottom: 26%;
+    z-index: 3;
+    overflow: hidden;
+    border: 1.2cqw solid #fff;
+    border-radius: 3cqw;
+    background: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__window-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: $font-display;
+    font-size: 6cqw;
+    font-weight: 800;
+    font-style: italic;
+    text-transform: uppercase;
+  }
+
   // Holo: metallischer Grund unter der Facetten-Folie (color-dodge braucht Mitteltöne, auf Weiß würde
   // alles nur weiß). Silber = kühles Grau, Gold = warmes Messing; beim Gold zusätzlich den
   // Regenbogen-Shine entsättigen + sepia, damit die Reflexe golden statt bunt wirken.
@@ -302,6 +351,13 @@
       rgba(255, 255, 255, 0.8) 10%, rgba(255, 255, 255, 0.65) 20%, rgba(0, 0, 0, 0.5) 90%);
     opacity: calc(var(--o) * 0.8);
   }
+}
+
+// Vereins-Sticker (Wappen/Stadion), normal: Grund im Verlauf der Vereinsfarbe statt Weiß
+.sticker-card--kind-logo:not(.sticker-card--holo) .sticker-card__inner,
+.sticker-card--kind-stadium:not(.sticker-card--holo) .sticker-card__inner {
+  background: linear-gradient(160deg,
+    color-mix(in srgb, var(--frame) 55%, #fff) 0%, var(--frame) 60%, color-mix(in srgb, var(--frame) 70%, #000) 100%);
 }
 
 // Statisch (z.B. im Album, ohne Neigung): Holo-Karten schimmern langsam von selbst — die

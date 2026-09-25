@@ -260,7 +260,7 @@
             <img class="sticker-tip__club" [src]="clubLogoUrl(rows()[s.clubIdx].club)" alt="" />
             {{ rows()[s.clubIdx].club.short_name }}
           </span>
-          <span class="sticker-tip__row">Marktwert <b>{{ priceLabel(s.price) }}</b></span>
+          <span class="sticker-tip__row">@if (s.kind === 'player') { Marktwert } <b>{{ priceLabel(s) }}</b></span>
           <span class="sticker-tip__row">
             <span class="sticker-tip__tier">{{ tierLabel[s.tier] }}</span>
             <span class="sticker-tip__muted">{{ tierRange[s.tier] }} · Chance {{ odds(t.idx) }}</span>

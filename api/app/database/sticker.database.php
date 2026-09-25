@@ -37,9 +37,12 @@ trait StickerTrait
         $prevSeasonId = $prevStmt->fetchColumn() ?: null;
 
         $clubQuery = $this->con->prepare(
-            "SELECT c.id, c.name, c.short_name, c.logo_uploaded, c.primary_color, c.secondary_color
+            "SELECT c.id, c.name, c.short_name, c.logo_uploaded, c.primary_color, c.secondary_color,
+                    COALESCE(s.name, s.official_name) AS stadium_name
              FROM club_in_season cis
              JOIN club c ON c.id = cis.club_id
+             LEFT JOIN club_stadium cst ON cst.club_id = c.id AND cst.to_date IS NULL
+             LEFT JOIN stadium s ON s.id = cst.stadium_id
              LEFT JOIN club_in_season cis_prev
                  ON cis_prev.club_id = cis.club_id AND cis_prev.season_id = ?
              WHERE cis.season_id = ? AND cis.division_id = ?
@@ -55,6 +58,7 @@ trait StickerTrait
                 'logo_uploaded' => (bool) $c['logo_uploaded'],
                 'primary_color'   => $c['primary_color'],
                 'secondary_color' => $c['secondary_color'],
+                'stadium_name'    => $c['stadium_name'],
                 'players'       => [],
             ];
         }
