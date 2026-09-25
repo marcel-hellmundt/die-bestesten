@@ -69,8 +69,6 @@ export class StickerCardComponent {
   readonly tierLabel: Record<StickerTier, string> = {
     common: 'Häufig', rare: 'Selten', epic: 'Episch', legendary: 'Legendär',
   };
-  readonly holoLabel: Record<StickerHolo, string> = { silver: 'Holo Silber', gold: 'Holo Gold' };
-
   /** Schriftgröße der großen Zeile in cqw — lange Namen ("Chukwuemeka") schrumpfen statt abgeschnitten zu werden. */
   mainSize = computed(() => {
     const len = this.mainLine().length;
