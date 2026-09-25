@@ -234,8 +234,8 @@
         data-tooltip="Die Klebrigsten"
       >
         <app-icon name="sticker"></app-icon>
-        @if (stickerStatus.unopenedCount() > 0) {
-          <span class="notif-badge">{{ stickerStatus.unopenedCount() }}</span>
+        @if (stickerBadgeCount() > 0) {
+          <span class="notif-badge">{{ stickerBadgeCount() }}</span>
         }
       </a>
     }
@@ -310,8 +310,8 @@
                routerLink="/klebrigsten" (click)="closeDropdown()">
               <app-icon name="sticker"></app-icon>
               Die Klebrigsten
-              @if (stickerStatus.unopenedCount() > 0) {
-                <span class="dropdown-item-badge">{{ stickerStatus.unopenedCount() }}</span>
+              @if (stickerBadgeCount() > 0) {
+                <span class="dropdown-item-badge">{{ stickerBadgeCount() }}</span>
               }
             </a>
           }

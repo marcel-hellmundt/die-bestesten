@@ -94,11 +94,13 @@ export class TopbarComponent implements OnDestroy {
   isMaintainer  = computed(() => this.auth.isMaintainer());
   isContributor = computed(() => this.auth.isContributor());
   showStickers  = computed(() => this.isMaintainer() || this.stickerStatus.enabled());
+  // Zähler ungeöffneter Sticker-Packs — abschaltbar unter Einstellungen → Benachrichtigungen (sticker_pack)
+  stickerBadgeCount = computed(() =>
+    this.showStickers() && this.notifService.isEnabled('sticker_pack') ? this.stickerStatus.unopenedCount() : 0
+  );
   // Avatar-Badge: ungelesene Benachrichtigungen + ungeöffnete Sticker-Packs — auf Mobile sitzen beide
   // Menüpunkte nur im Dropdown hinter dem Avatar
-  avatarBadgeCount = computed(() =>
-    this.notifService.unreadCount() + (this.showStickers() ? this.stickerStatus.unopenedCount() : 0)
-  );
+  avatarBadgeCount = computed(() => this.notifService.unreadCount() + this.stickerBadgeCount());
   avatarUrl     = computed(() => this.cache.managerPhotoUrl(this.auth.getManagerId()));
   initials     = computed(() => {
     const name = this.managerName();

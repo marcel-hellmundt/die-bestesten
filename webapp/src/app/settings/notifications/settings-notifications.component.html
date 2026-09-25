@@ -61,6 +61,23 @@
         <span class="toggle__track"></span>
       </span>
     </label>
+
+    @if (showPackOverlay()) {
+      <label class="pref-item">
+        <div class="pref-text">
+          <span class="pref-name">Sticker-Pack erhalten</span>
+          <span class="pref-desc">Zähler für ungeöffnete Packs oben in der Topbar</span>
+        </div>
+        <span class="toggle">
+          <input type="checkbox"
+                 class="toggle__input"
+                 [checked]="pref('sticker_pack')"
+                 (click)="$event.stopPropagation()"
+                 (change)="setPreference('sticker_pack', $any($event.target).checked)" />
+          <span class="toggle__track"></span>
+        </span>
+      </label>
+    }
   </div>
 </section>
 

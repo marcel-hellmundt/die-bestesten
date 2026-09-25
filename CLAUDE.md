@@ -243,8 +243,8 @@ GET      /notification/unread_count — {count: N, incoming_offers: M} — leich
 PATCH    /notification/:id     — Einzelne Notification als gelesen markieren (read_at = NOW()); 403 wenn nicht eigene — Auth
 PATCH    /notification/read_all — Alle ungelesenen Notifications als gelesen markieren — Auth
 POST     /notification         — {receiver_id, title, message?, sender_id?} erstellen; sender_id=null → Systemnachricht — Admin
-GET      /notification/preferences — {matchday_completed, achievement_earned, h2h_draw, direct_offer, overlay_achievement, overlay_pack} (je bool); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack), Einstellung unter /einstellungen/benachrichtigungen → "Einblendungen"; fehlende DB-Einträge = true (default ON) — Auth
-PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|overlay_achievement|overlay_pack, enabled: bool} — Auth
+GET      /notification/preferences — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, overlay_achievement, overlay_pack} (je bool); sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack), Einstellung unter /einstellungen/benachrichtigungen → "Einblendungen"; fehlende DB-Einträge = true (default ON) — Auth
+PATCH    /notification/preferences — {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|overlay_achievement|overlay_pack, enabled: bool} — Auth
 GET      /session               — ?range=day|month|year|all (optional, default day) → {range, managers[{manager_id,manager_name,alias,buckets:{key:Sekunden},mobile_seconds:{key:Sekunden},desktop_seconds:{key:Sekunden}}]} sortiert nach Gesamtnutzung DESC — Nutzungsdauer je Manager gebucketed nach Zeitraum (Heatmap-Rohdaten); Bucket-Schlüssel: day=Stunde "YYYY-MM-DDTHH:00:00", month=Tag "YYYY-MM-DD", year=Montag der Woche "YYYY-MM-DD", all=1. des Monats "YYYY-MM-DD" (kein festes Fenster — seit der allerersten manager_session); mobile_seconds/desktop_seconds = dieselben Buckets, aber nur je eine Gerätekategorie (device_type mobile/tablet bzw. desktop/unbekannt), unabhängig voneinander dedupliziert — Mobile-Anteil für die Heatmap-Färbung ist mobile_seconds/(mobile_seconds+desktop_seconds), nicht gegen buckets (kann bei gleichzeitiger Mehrgeräte-Nutzung > buckets-Wert liegen) — Admin
 ```
 
@@ -262,7 +262,7 @@ GET      /session               — ?range=day|month|year|all (optional, default
 
 **notification**: id PK, sender_id CHAR(36)? (NULL = Systemnachricht; kein FK), receiver_id FK → manager, title VARCHAR(255), message TEXT?, created_at DATETIME, read_at DATETIME? (NULL = ungelesen)
 
-**notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned, h2h_draw, direct_offer, scouted_player_update, overlay_achievement, overlay_pack (overlay_* = Einblendungen im Frontend)
+**notification_preference**: manager_id FK + event_type VARCHAR(50) PK — enabled BOOL DEFAULT 1 — fehlender Eintrag = default ON; event_types: matchday_completed, achievement_earned, h2h_draw, direct_offer, scouted_player_update, sticker_pack (Topbar-Zähler ungeöffneter Packs), overlay_achievement, overlay_pack (overlay_* = Einblendungen im Frontend)
 
 **manager_achievement**: id PK, manager_id FK, achievement_id FK → achievement (echtes FK, gleiche DB!), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen
 
