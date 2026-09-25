@@ -69,6 +69,13 @@ export class StickerSimulationComponent {
     return byClub;
   });
 
+  /** Anzahl Sticker je Seltenheit im Album (für die Legende). */
+  tierCounts = computed(() => {
+    const counts: Record<Tier, number> = { common: 0, rare: 0, epic: 0, legendary: 0 };
+    for (const s of this.stickers()) counts[s.tier]++;
+    return counts;
+  });
+
   private tierOf(price: number | null): Tier {
     const p = price ?? MIN_PRICE;
     if (p > 5_000_000) return 'legendary';

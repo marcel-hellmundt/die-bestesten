@@ -184,12 +184,12 @@
       @for (t of tiers; track t) {
         <span class="legend__item">
           <span class="sticker sticker--owned sticker--{{ t }}"></span>
-          <span><b>{{ tierLabel[t] }}</b> {{ tierRange[t] }}</span>
+          <span><b>{{ tierLabel[t] }}</b> {{ tierRange[t] }} ({{ tierCounts()[t] }})</span>
         </span>
       }
       <span class="legend__item"><span class="sticker"></span>fehlt</span>
-      <span class="legend__item"><span class="sticker sticker--owned sticker--common sticker--holo-silver"></span>Holo Silber</span>
-      <span class="legend__item"><span class="sticker sticker--owned sticker--common sticker--holo-gold"></span>Holo Gold</span>
+      <span class="legend__item"><span class="sticker sticker--owned sticker--common sticker--holo-silver"></span>Holo Silber ({{ st.holoSilver }})</span>
+      <span class="legend__item"><span class="sticker sticker--owned sticker--common sticker--holo-gold"></span>Holo Gold ({{ st.holoGold }})</span>
       <label class="legend__item legend__toggle">
         Karte öffnen als
         <select class="select legend__select" [value]="openAs()" (change)="setOpenAs($event)">
