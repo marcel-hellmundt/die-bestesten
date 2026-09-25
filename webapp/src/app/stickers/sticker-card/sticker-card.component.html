@@ -1,5 +1,5 @@
 @let d = data();
-<!-- Neigung als CSS-Variablen: steuern Glanzlicht und (bei shiny) das Holo -->
+<!-- Neigung als CSS-Variablen: steuern Glanzlicht und (bei Holo-Karten) die Facetten-Folie -->
 <div class="card-3d" [class.card-3d--interactive]="interactive()"
      [style.transform]="interactive() ? 'perspective(900px) rotateX(' + rotateX() + 'deg) rotateY(' + rotateY() + 'deg)' : null"
      [style.--mx]="glareX() + '%'"
@@ -15,11 +15,13 @@
      [style.--facets-base]="facetUrls.base"
      [style.--facets-x]="facetUrls.x"
      [style.--facets-y]="facetUrls.y">
-  <div class="sticker-card sticker-card--{{ d.tier }}" [class.sticker-card--shiny]="d.shiny"
+  <div class="sticker-card sticker-card--{{ d.tier }}"
+       [class.sticker-card--holo]="!!d.holo"
+       [class.sticker-card--holo-gold]="d.holo === 'gold'"
        [style.--club-primary]="d.clubPrimaryColor || null"
        [style.--club-secondary]="d.clubSecondaryColor || d.clubPrimaryColor || null">
     <div class="sticker-card__inner">
-      <!-- Optionales Hintergrundbild (geblurrt), liegt ganz hinten und wird vom Shine überlagert -->
+      <!-- Optionales Hintergrundbild (leicht geblurrt), ganz hinten — nur bei normalen Karten, nie bei Holo -->
       @if (backgroundUrl(); as bg) {
         <img draggable="false" class="sticker-card__bg" [src]="bg" alt="" (error)="onBackgroundError()" />
       }
@@ -29,13 +31,13 @@
         <img draggable="false" class="sticker-card__club" [src]="d.clubLogoUrl" [alt]="d.clubName ?? ''" (error)="logoFailed.set(true)" />
       }
 
-      @if (d.shiny) {
-        <!-- Facetten-Licht: unregelmäßige Voronoi-Facetten mit zufälligen Normalen — je nach
+      @if (d.holo) {
+        <!-- Holo-Folie (Silber/Gold): unregelmäßige Voronoi-Facetten mit zufälligen Normalen — je nach
              Neigungsrichtung hellen andere Zellen auf (X- und Y-Anteil als eigene Ebene) -->
         <div class="sticker-card__facets sticker-card__facets--x"></div>
         <div class="sticker-card__facets sticker-card__facets--y"></div>
-        <!-- Shine ("rare ultra"-Prinzip): Facetten-Textur + Regenbogen + Folienstreifen über Hintergrund
-             + Logo (color-dodge), zweite Ebene (::after) läuft gegenläufig → Parallaxe/Tiefe.
+        <!-- Shine ("rare ultra"-Prinzip): Facetten-Textur + Regenbogen + Folienstreifen über Folie + Logo
+             (color-dodge), zweite Ebene (::after) läuft gegenläufig → Parallaxe/Tiefe.
              Das Spielerfoto liegt darüber und ist vom Effekt ausgenommen. -->
         <div class="sticker-card__shine"></div>
       }
@@ -58,7 +60,7 @@
       <!-- Seltenheit oben rechts: kleines Band im Stil des Namens-Banners (gespiegelt) -->
       <div class="sticker-card__tier">
         <div class="sticker-card__tier-bg"></div>
-        <span class="sticker-card__tier-text">{{ tierLabel[d.tier] }}@if (d.shiny) { · Shiny }</span>
+        <span class="sticker-card__tier-text">{{ tierLabel[d.tier] }}@if (d.holo) { · {{ holoLabel[d.holo] }} }</span>
       </div>
 
       @if (interactive()) {

@@ -10,7 +10,12 @@ export interface SimParams {
   bestPackSize: number;         // Sticker pro Spieltagsbester-Pack (0 = aus)
   bestChance: number;           // 0–1, Chance, an einem Spieltag Spieltagsbester zu sein (profilabhängig)
   rarityAlpha: number;          // Gewicht je Sticker = Marktwert^-α (0 = alle gleich häufig)
+  holoSilverChance: number;     // 0–1, Chance je gezogenem Sticker, dass er eine Holo-Silber-Karte ist
+  holoGoldChance: number;       // 0–1, Chance je gezogenem Sticker, dass er eine Holo-Gold-Karte ist
 }
+
+/** Variante eines gezogenen Stickers: null = normal. */
+export type HoloVariant = 'silver' | 'gold' | null;
 
 /** Manager-Typ: die Werte, in denen sich aktive und inaktive Manager unterscheiden. */
 export interface SimProfile {
@@ -27,6 +32,7 @@ export interface SimPack {
   day: number;
   source: PackSource;
   stickers: number[];           // Indizes ins flache Album
+  holo: HoloVariant[];          // je Sticker (gleicher Index): Holo-Variante oder null
 }
 
 export interface Timeline {
@@ -81,14 +87,26 @@ export function simulateSeason(params: SimParams, weights: number[], timeline: T
   };
   const take = (i: number) => { if (!owned[i]) { owned[i] = 1; missing--; } return i; };
 
+  // Holo-Wurf mit eigenem Zufallsstrom: gleiche Seed → identische Sticker-Züge, auch wenn nur die
+  // Holo-Chancen verstellt werden (sonst würde jede Holo-Änderung die komplette Saison umwürfeln)
+  const holoRandom = rng(seed ^ 0x9e3779b9);
+  const rollHolo = (): HoloVariant => {
+    const r = holoRandom();
+    if (r < params.holoGoldChance) return 'gold';
+    if (r < params.holoGoldChance + params.holoSilverChance) return 'silver';
+    return null;
+  };
+
   const packs: SimPack[] = [];
   const open = (day: number, source: PackSource, size: number) => {
     if (size <= 0 || n === 0) return;
     const stickers: number[] = [];
+    const holo: HoloVariant[] = [];
     for (let k = 0; k < size; k++) {
       stickers.push(take(params.guaranteeNew && k === 0 && missing > 0 ? drawMissing() : drawAny()));
+      holo.push(rollHolo());
     }
-    packs.push({ day: Math.max(day, 0), source, stickers });
+    packs.push({ day: Math.max(day, 0), source, stickers, holo });
   };
 
   // Teampunkte je Spieltag: Normalverteilung um avgPoints (±35 %), nie negativ
@@ -118,6 +136,19 @@ export function simulateSeason(params: SimParams, weights: number[], timeline: T
     }
   }
   return packs;
+}
+
+/** Holo-Karten je Sticker (Silber/Gold getrennt) nach allen Packs bis einschließlich `day`. */
+export function holoAtDay(packs: SimPack[], n: number, day: number): { silver: Uint16Array; gold: Uint16Array } {
+  const silver = new Uint16Array(n), gold = new Uint16Array(n);
+  for (const p of packs) {
+    if (p.day > day) break;
+    p.stickers.forEach((s, k) => {
+      if (p.holo[k] === 'silver') silver[s]++;
+      else if (p.holo[k] === 'gold') gold[s]++;
+    });
+  }
+  return { silver, gold };
 }
 
 /** Zählerstand je Sticker nach allen Packs bis einschließlich `day`. */

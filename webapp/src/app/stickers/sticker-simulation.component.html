@@ -61,6 +61,18 @@
           <button class="btn btn-sm btn-secondary" (click)="reroll()">Neu würfeln</button>
         </div>
       </div>
+
+      <div class="control-group">
+        <h2 class="control-group__title">Holo-Karten</h2>
+        <label class="control">
+          <span class="control__label">Holo Silber <b>{{ r.holoSilverChance * 100 | number:'1.1-1' }} %</b> <small>je Sticker</small></span>
+          <input type="range" min="0" max="5" step="0.1" [value]="r.holoSilverChance * 100" (input)="setShared('holoSilverChance', num($event) / 100)" />
+        </label>
+        <label class="control">
+          <span class="control__label">Holo Gold <b>{{ r.holoGoldChance * 100 | number:'1.2-2' }} %</b> <small>je Sticker</small></span>
+          <input type="range" min="0" max="1" step="0.01" [value]="r.holoGoldChance * 100" (input)="setShared('holoGoldChance', num($event) / 100)" />
+        </label>
+      </div>
     </section>
 
     <!-- ── Manager-Profil (wer wird simuliert) ───────────────────────── -->
@@ -117,6 +129,7 @@
       <div class="stat"><span class="stat__value">{{ st.packs }}</span><span class="stat__label">Packs ({{ st.bySource.daily }} täglich · {{ st.bySource.milestone }} Meilenstein · {{ st.bySource.best }} Spieltagsbester)</span></div>
       <div class="stat"><span class="stat__value">{{ st.total }}</span><span class="stat__label">Sticker gezogen</span></div>
       <div class="stat"><span class="stat__value">{{ st.duplicates }}</span><span class="stat__label">Doppelte</span></div>
+      <div class="stat"><span class="stat__value">{{ st.holoSilver }} · {{ st.holoGold }}</span><span class="stat__label">Holo Silber · Holo Gold</span></div>
     </section>
 
     <section class="card mc">
@@ -137,6 +150,10 @@
                 <th class="num hide-mobile">Ø Vereine</th>
                 <th class="num hide-mobile">1. Verein (Tag)</th>
                 <th class="num">Album voll</th>
+                <th class="num hide-mobile">Ø Sticker</th>
+                <th class="num">Ø Holo Silber</th>
+                <th class="num">Ø Holo Gold</th>
+                <th class="num hide-mobile">≥ 1 Gold</th>
               </tr>
             </thead>
             <tbody>
@@ -150,6 +167,10 @@
                   <td class="num hide-mobile">{{ m.avgClubs | number:'1.1-1' }}</td>
                   <td class="num hide-mobile">{{ m.firstClubDay ?? '–' }}</td>
                   <td class="num">{{ m.full * 100 | number:'1.0-0' }} %</td>
+                  <td class="num hide-mobile">{{ m.stickers | number:'1.0-0' }}</td>
+                  <td class="num">{{ m.holoSilver | number:'1.1-1' }}</td>
+                  <td class="num">{{ m.holoGold | number:'1.2-2' }}</td>
+                  <td class="num hide-mobile">{{ m.anyGold * 100 | number:'1.0-0' }} %</td>
                 </tr>
               }
             </tbody>
@@ -167,9 +188,15 @@
         </span>
       }
       <span class="legend__item"><span class="sticker"></span>fehlt</span>
+      <span class="legend__item"><span class="sticker sticker--owned sticker--common sticker--holo-silver"></span>Holo Silber</span>
+      <span class="legend__item"><span class="sticker sticker--owned sticker--common sticker--holo-gold"></span>Holo Gold</span>
       <label class="legend__item legend__toggle">
-        <input type="checkbox" [checked]="openShiny()" (change)="openShiny.set(checked($event))" />
-        Karte beim Klick als <b>Shiny</b> öffnen
+        Karte öffnen als
+        <select class="select legend__select" [value]="openAs()" (change)="setOpenAs($event)">
+          @for (o of openAsOptions; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
       </label>
     </div>
 
@@ -188,8 +215,11 @@
           <div class="club-row__stickers">
             @for (s of row.stickers; track s.id) {
               @let c = cnt[s.idx];
+              @let hv = bestHolo(s.idx);
               <span class="sticker sticker--{{ s.tier }}"
                     [class.sticker--owned]="c > 0"
+                    [class.sticker--holo-silver]="hv === 'silver'"
+                    [class.sticker--holo-gold]="hv === 'gold'"
                     [class.sticker--new]="fresh.has(s.idx)"
                     [class.sticker--hover]="tip()?.idx === s.idx"
                     (pointerenter)="showTip($event, s.idx)"
@@ -239,6 +269,13 @@
             @if (owned > 0) {
               Gesammelt{{ owned > 1 ? ' · ' + owned + '× (' + (owned - 1) + ' doppelt)' : '' }}
               @if (fresh.has(t.idx)) { <span class="sticker-tip__new">NEU</span> }
+              @let hs = holo().silver[t.idx];
+              @let hg = holo().gold[t.idx];
+              @if (hs || hg) {
+                <span class="sticker-tip__holo">
+                  davon{{ hg ? ' ' + hg + '× Holo Gold' : '' }}{{ hg && hs ? ',' : '' }}{{ hs ? ' ' + hs + '× Holo Silber' : '' }}
+                </span>
+              }
             } @else {
               <span class="sticker-tip__muted">Fehlt noch</span>
             }

@@ -60,9 +60,15 @@
     background: radial-gradient(circle at 50% 35%, #ffffff 0%, #eef0f3 45%, #d5d9df 100%);
   }
 
-  // Shiny: mittelgrauer Silbergrund — color-dodge braucht Mitteltöne, auf Weiß würde alles nur weiß
-  &--shiny &__inner {
+  // Holo: metallischer Grund unter der Facetten-Folie (color-dodge braucht Mitteltöne, auf Weiß würde
+  // alles nur weiß). Silber = kühles Grau, Gold = warmes Messing; beim Gold zusätzlich den
+  // Regenbogen-Shine entsättigen + sepia, damit die Reflexe golden statt bunt wirken.
+  &--holo &__inner {
     background: linear-gradient(160deg, #a1a8b3 0%, #6f7784 45%, #939aa6 70%, #5f6673 100%);
+  }
+
+  &--holo-gold &__inner {
+    background: linear-gradient(160deg, #d9bb62 0%, #9c7a26 45%, #c9a64a 70%, #7a5c18 100%);
   }
 
   // Ebenen (von hinten): Hintergrundbild 0 → Vereinslogo 1 → Shine 2 → Spielerfoto 3 → Banner/Tier-Label 4 → Glare 5
@@ -176,6 +182,13 @@
     }
   }
 
+  // Gold: Regenbogen entsättigt + sepia → goldene statt bunte Reflexe
+  &--holo-gold &__shine {
+    filter: brightness(calc((var(--hyp) * 0.3) + 0.5)) contrast(1.6) saturate(0.55) sepia(0.45);
+
+    &::after { filter: brightness(calc((var(--hyp) * 0.5) + 0.8)) contrast(1.6) saturate(0.6) sepia(0.4); }
+  }
+
   // Namens-Banner unten links (Sammelkarten-Look): weißes Band, rechts schräg angeschnitten,
   // leicht gekippt, mit Akzentstreifen in der Tier-Farbe; Text kursiv, Name groß + fett.
   // Alle Größen in cqw (relativ zur Kartenbreite), damit Album-Thumbnail und Dialog gleich aussehen.
@@ -273,7 +286,7 @@
     white-space: nowrap;
   }
 
-  // Glanzlicht folgt der Neigung (nur interaktiv); bei shiny wie im Original per overlay
+  // Glanzlicht folgt der Neigung (nur interaktiv); bei Holo wie im Original per overlay
   &__glare {
     position: absolute;
     inset: 0;
@@ -283,7 +296,7 @@
     background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%);
   }
 
-  &--shiny &__glare {
+  &--holo &__glare {
     mix-blend-mode: overlay;
     background: radial-gradient(farthest-corner circle at var(--mx) var(--my),
       rgba(255, 255, 255, 0.8) 10%, rgba(255, 255, 255, 0.65) 20%, rgba(0, 0, 0, 0.5) 90%);
@@ -291,14 +304,14 @@
   }
 }
 
-// Statisch (z.B. im Album, ohne Neigung): Shiny-Karten schimmern langsam von selbst — die
+// Statisch (z.B. im Album, ohne Neigung): Holo-Karten schimmern langsam von selbst — die
 // Animation setzt die Variablen direkt an der Karte, Shine/::after erben sie.
-.card-3d:not(.card-3d--interactive) .sticker-card--shiny {
+.card-3d:not(.card-3d--interactive) .sticker-card--holo {
   --o: 0.75;
-  animation: shiny-drift 7s ease-in-out infinite alternate;
+  animation: holo-drift 7s ease-in-out infinite alternate;
 }
 
-@keyframes shiny-drift {
+@keyframes holo-drift {
   from { --posx: 40%; --posy: 42%; --hyp: 0.2; --fx: 0.5; --fy: 0.15; }
   to   { --posx: 60%; --posy: 58%; --hyp: 0.6; --fx: 0.15; --fy: 0.5; }
 }
@@ -311,5 +324,5 @@
 @property --fy   { syntax: '<number>';     inherits: true; initial-value: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .card-3d:not(.card-3d--interactive) .sticker-card--shiny { animation: none; }
+  .card-3d:not(.card-3d--interactive) .sticker-card--holo { animation: none; }
 }

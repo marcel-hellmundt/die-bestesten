@@ -3,9 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import {
-  MIN_PRICE, SimParams, SimProfile, Timeline, countsAtDay, simulateSeason, stickerWeights,
+  MIN_PRICE, SimParams, SimProfile, Timeline, countsAtDay, holoAtDay, simulateSeason, stickerWeights,
 } from './sticker-sim';
-import { StickerCardData, requestTiltPermission } from './sticker-card/sticker-card.component';
+import { StickerCardData, StickerHolo, requestTiltPermission } from './sticker-card/sticker-card.component';
 
 interface AlbumPlayer {
   id: string; displayname: string; first_name: string | null; last_name: string | null;
@@ -110,6 +110,8 @@ export class StickerSimulationComponent {
     milestonePackSize: 3,
     bestPackSize: 3,
     rarityAlpha: 0.5,
+    holoSilverChance: 0.01,   // 1 %  → bei ~1.000 Stickern pro Saison ≈ 10 Holo Silber
+    holoGoldChance: 0.001,    // 0,1 % → ≈ 1 Holo Gold
   });
 
   /**
@@ -197,6 +199,14 @@ export class StickerSimulationComponent {
 
   // ── Zustand am gewählten Tag ──────────────────────────────────────────────
   counts = computed(() => countsAtDay(this.packs(), this.stickers().length, this.day()));
+  /** Holo-Karten je Sticker am gewählten Tag (Silber/Gold getrennt). */
+  holo = computed(() => holoAtDay(this.packs(), this.stickers().length, this.day()));
+
+  /** Beste bisher gesammelte Variante eines Stickers: gold > silver > normal. */
+  bestHolo(idx: number): StickerHolo | null {
+    const h = this.holo();
+    return h.gold[idx] > 0 ? 'gold' : h.silver[idx] > 0 ? 'silver' : null;
+  }
 
   /** Sticker, die am aktuellen Tag erstmals gezogen wurden (Hervorhebung). */
   newToday = computed(() => {
@@ -216,6 +226,9 @@ export class StickerSimulationComponent {
     const bySource = { daily: 0, milestone: 0, best: 0 };
     for (const p of this.packs()) { if (p.day > d) break; bySource[p.source]++; }
     const complete = this.rows().filter(r => r.stickers.length > 0 && r.stickers.every(s => counts[s.idx] > 0)).length;
+    const h = this.holo();
+    const holoSilver = h.silver.reduce((a, b) => a + b, 0);
+    const holoGold = h.gold.reduce((a, b) => a + b, 0);
     return {
       unique, total, n,
       pct: n ? unique / n : 0,
@@ -223,6 +236,7 @@ export class StickerSimulationComponent {
       packs: bySource.daily + bySource.milestone + bySource.best,
       bySource,
       complete,
+      holoSilver, holoGold,
     };
   });
 
@@ -236,6 +250,7 @@ export class StickerSimulationComponent {
   monteCarlo = signal<{
     label: string; albumP10: number; albumP50: number; albumP90: number;
     anyClub: number; avgClubs: number; full: number; packs: number; firstClubDay: number | null;
+    stickers: number; holoSilver: number; holoGold: number; anyGold: number;
   }[] | null>(null);
   mcBusy = signal(false);
 
@@ -251,12 +266,19 @@ export class StickerSimulationComponent {
       const results = this.profiles().map(profile => {
         const params = this.paramsFor(profile);
         const album: number[] = [], clubs: number[] = [], packsN: number[] = [], firstDays: number[] = [];
-        let full = 0;
+        let full = 0, stickersSum = 0, silverSum = 0, goldSum = 0, anyGold = 0;
         for (let r = 0; r < this.mcRuns; r++) {
           const packs = simulateSeason(params, weights, timeline, 1000 + r * 7919);
           const counts = countsAtDay(packs, n, timeline.days);
           let unique = 0;
           for (const c of counts) if (c) unique++;
+          let gold = 0;
+          for (const p of packs) {
+            stickersSum += p.stickers.length;
+            for (const v of p.holo) { if (v === 'silver') silverSum++; else if (v === 'gold') gold++; }
+          }
+          goldSum += gold;
+          if (gold > 0) anyGold++;
           album.push(n ? unique / n : 0);
           clubs.push(rows.filter(row => row.stickers.length > 0 && row.stickers.every(s => counts[s.idx] > 0)).length);
           packsN.push(packs.length);
@@ -273,6 +295,10 @@ export class StickerSimulationComponent {
           packs: packsN.reduce((a, b) => a + b, 0) / this.mcRuns,
           // Median nur, wenn in mind. der Hälfte der Saisons überhaupt ein Verein komplett wurde
           firstClubDay: firstDays.length >= this.mcRuns / 2 ? q(firstDays, 0.5) : null,
+          stickers: stickersSum / this.mcRuns,
+          holoSilver: silverSum / this.mcRuns,
+          holoGold: goldSum / this.mcRuns,
+          anyGold: anyGold / this.mcRuns,
         };
       });
       this.monteCarlo.set(results);
@@ -320,8 +346,15 @@ export class StickerSimulationComponent {
 
   // ── Sticker-Karte (Test) ──────────────────────────────────────────────────
   openCardIdx = signal<number | null>(null);
-  /** Test-Schalter: geöffnete Karte als Shiny (Holo) anzeigen. */
-  openShiny = signal(false);
+  /** Test-Auswahl: Variante der geöffneten Karte — "collected" = beste gesammelte (Gold > Silber > normal). */
+  openAs = signal<'collected' | 'normal' | StickerHolo>('collected');
+  readonly openAsOptions: { value: 'collected' | 'normal' | StickerHolo; label: string }[] = [
+    { value: 'collected', label: 'wie gesammelt' },
+    { value: 'normal', label: 'Normal' },
+    { value: 'silver', label: 'Holo Silber' },
+    { value: 'gold', label: 'Holo Gold' },
+  ];
+  setOpenAs(event: Event): void { this.openAs.set((event.target as HTMLSelectElement).value as any); }
 
   openCardData = computed<StickerCardData | null>(() => {
     const idx = this.openCardIdx();
@@ -337,8 +370,8 @@ export class StickerSimulationComponent {
       clubPrimaryColor: club.primary_color,
       clubSecondaryColor: club.secondary_color,
       tier: s.tier,
-      shiny: this.openShiny(),
-      backgroundUrls: this.clubStadiumUrls(club.id),
+      holo: this.openAs() === 'collected' ? this.bestHolo(idx) : this.openAs() === 'normal' ? null : this.openAs() as StickerHolo,
+      backgroundUrls: this.clubStadiumUrls(club.id), // Holo-Karten ignorieren das Hintergrundbild selbst
     };
   });
 

@@ -1,4 +1,4 @@
-// Generiert die Facetten-Texturen der Shiny-Sticker-Karte ("Die Klebrigsten"):
+// Generiert die Facetten-Texturen der Holo-Sticker-Karte ("Die Klebrigsten", Holo Silber/Gold):
 // ein unregelmäßiges Voronoi-Muster (Lloyd-relaxiert → Zellen ungefähr gleich groß), jede Zelle
 // eine "Facette" mit zufälliger Normalen. Ausgabe (SVG, viewBox 500×700 = Kartenformat 5:7):
 //   facets-base.svg — zufälliger Grauwert je Zelle, ohne Kanten (Textur für den Regenbogen-Shine)

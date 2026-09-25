@@ -1,6 +1,8 @@
 import { Component, DestroyRef, ElementRef, computed, effect, inject, input, signal } from '@angular/core';
 
 export type StickerTier = 'common' | 'rare' | 'epic' | 'legendary';
+/** Holo-Variante einer Karte: glitzernde Facetten-Folie in Silber oder Gold (sonst normale Karte). */
+export type StickerHolo = 'silver' | 'gold';
 
 /** Alles, was eine Sticker-Karte zum Rendern braucht. */
 export interface StickerCardData {
@@ -12,10 +14,11 @@ export interface StickerCardData {
   clubPrimaryColor?: string | null;   // Rand der Karte (Gradient); ohne → neutrales Silbergrau
   clubSecondaryColor?: string | null; // Akzentstreifen unter dem Namen; ohne → Primärfarbe
   tier: StickerTier;
-  // Hintergrundbild(er) hinter dem Spieler (geblurrt, vom Shine betroffen) — Kandidaten der Reihe nach,
-  // bei Ladefehler wird der nächste versucht (z.B. .jpg, dann .png); keiner verfügbar → kein Hintergrund
+  // Hintergrundbild(er) hinter dem Spieler (leicht geblurrt) — Kandidaten der Reihe nach, bei Ladefehler
+  // wird der nächste versucht (z.B. .jpg, dann .png); keiner verfügbar → kein Hintergrund.
+  // Holo-Karten haben nie ein Hintergrundbild (dort ist die Folie der Hintergrund).
   backgroundUrls?: string[];
-  shiny?: boolean;             // Shiny-Variante: Silberfolie mit Ring-Moiré, schimmert abhängig von der Neigung
+  holo?: StickerHolo | null;   // Holo-Variante (Silber/Gold): Voronoi-Facetten-Folie, schimmert mit der Neigung
 }
 
 const MAX_TILT = 18; // Grad
@@ -66,6 +69,7 @@ export class StickerCardComponent {
   readonly tierLabel: Record<StickerTier, string> = {
     common: 'Häufig', rare: 'Selten', epic: 'Episch', legendary: 'Legendär',
   };
+  readonly holoLabel: Record<StickerHolo, string> = { silver: 'Holo Silber', gold: 'Holo Gold' };
 
   /** Schriftgröße der großen Zeile in cqw — lange Namen ("Chukwuemeka") schrumpfen statt abgeschnitten zu werden. */
   mainSize = computed(() => {
@@ -77,12 +81,12 @@ export class StickerCardComponent {
   rotateY = signal(0);
   glareX = signal(50); // % — Position des Glanzlichts
   glareY = signal(30);
-  /** 0 = gerade, 1 = maximal geneigt — steuert, wie stark das Holo leuchtet. */
+  /** 0 = gerade, 1 = maximal geneigt — steuert, wie stark die Holo-Folie leuchtet. */
   fromCenter = signal(0);
   /** Hintergrund-Position der Shine-Muster (37–63 %, wie im Pokémon-Card-CSS), folgt der Neigung. */
   posX = computed(() => 50 + (this.glareX() - 50) * 0.325);
   posY = computed(() => 50 + (this.glareY() - 50) * 0.325);
-  /** Neigung je Achse, -1…1 (links/oben negativ) — steuert das Facetten-Licht der Shiny-Karte. */
+  /** Neigung je Achse, -1…1 (links/oben negativ) — steuert das Facetten-Licht der Holo-Karte. */
   tiltX = computed(() => (this.glareX() - 50) / 40);
   tiltY = computed(() => (this.glareY() - 50) / 40);
 
@@ -97,7 +101,7 @@ export class StickerCardComponent {
 
   /** Index des aktuell versuchten Hintergrund-Kandidaten (bei Ladefehler → nächster). */
   private bgIndex = signal(0);
-  backgroundUrl = computed(() => this.data().backgroundUrls?.[this.bgIndex()] ?? null);
+  backgroundUrl = computed(() => this.data().holo ? null : (this.data().backgroundUrls?.[this.bgIndex()] ?? null));
   onBackgroundError(): void { this.bgIndex.update(i => i + 1); }
 
   constructor() {
