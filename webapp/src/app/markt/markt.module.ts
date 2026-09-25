@@ -9,6 +9,7 @@ import { DirectDealCardComponent } from './transfers/direct-deal-card.component'
 import { BidsComponent } from './bids/bids.component';
 import { ScoutingComponent } from './scouting/scouting.component';
 import { IconModule } from '../shared/icon/icon.module';
+import { StuckDirective } from '../core/stuck.directive';
 
 const routes: Routes = [
   {
@@ -26,6 +27,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [MarktComponent, MarktPlayerComponent, TransfersComponent, TransferWindowDetailComponent, DirectDealCardComponent, BidsComponent, ScoutingComponent],
-  imports: [CommonModule, RouterModule.forChild(routes), IconModule]
+  imports: [CommonModule, RouterModule.forChild(routes), IconModule, StuckDirective]
 })
 export class MarktModule {}

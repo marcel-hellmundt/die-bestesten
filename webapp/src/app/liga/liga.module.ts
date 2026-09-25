@@ -13,7 +13,7 @@ import { H2HModeComponent } from './h2h/h2h-mode.component';
 import { BettingOfficeComponent } from './h2h/betting-office.component';
 import { PowerrankingComponent } from './powerranking/powerranking.component';
 import { HotTakesComponent } from './hot-takes/hot-takes.component';
-import { StuckDirective } from './stuck.directive';
+import { StuckDirective } from '../core/stuck.directive';
 
 const routes: Routes = [
   {
@@ -36,7 +36,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [LigaComponent, MatchdayComponent, TableComponent, LigaTeamsComponent, HallOfFameComponent, H2HComponent, H2HMatchComponent, H2HModeComponent, BettingOfficeComponent, PowerrankingComponent, HotTakesComponent, StuckDirective],
-  imports: [CommonModule, RouterModule.forChild(routes), DragDropModule]
+  declarations: [LigaComponent, MatchdayComponent, TableComponent, LigaTeamsComponent, HallOfFameComponent, H2HComponent, H2HMatchComponent, H2HModeComponent, BettingOfficeComponent, PowerrankingComponent, HotTakesComponent],
+  imports: [CommonModule, RouterModule.forChild(routes), DragDropModule, StuckDirective]
 })
 export class LigaModule {}

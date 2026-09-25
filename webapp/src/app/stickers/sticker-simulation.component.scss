@@ -133,8 +133,11 @@ input[type='range'] {
   gap: $space-4;
   padding: $space-3 $space-4;
   position: sticky;
-  top: 0;
+  top: $topbar-height;
   z-index: $z-raised;
+
+  // Desktop: unter dem gepinnten Sub-Menü
+  @media (min-width: $mobile-breakpoint + 1) { top: $subnav-stuck-bottom; }
 
   @media (max-width: $mobile-breakpoint) { flex-wrap: wrap; gap: $space-2; }
 

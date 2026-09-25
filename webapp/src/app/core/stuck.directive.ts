@@ -4,10 +4,11 @@ import { AfterViewInit, Directive, ElementRef, HostListener, Renderer2, inject }
  * Setzt die Klasse "is-stuck", sobald ein position:sticky-Element beim Scrollen tatsächlich an
  * seiner top-Kante klebt (Top-Kante des Elements <= sein sticky-top). Auf Mobile (dort nicht
  * sticky) bleibt die Klasse aus. Reines Klassen-Toggle per Renderer2, ohne eigenes Signal/CD.
+ * Standalone, damit jedes Modul mit gepinntem Sub-Menü (.pill-nav--sticky) es importieren kann.
  */
 @Directive({
   selector: '[appStuck]',
-  standalone: false,
+  standalone: true,
 })
 export class StuckDirective implements AfterViewInit {
   private el       = inject<ElementRef<HTMLElement>>(ElementRef);

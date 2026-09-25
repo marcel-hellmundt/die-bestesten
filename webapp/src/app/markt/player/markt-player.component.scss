@@ -19,7 +19,7 @@
 
 .players-filters {
   position: sticky;
-  top: calc(60px + #{$space-4});
+  top: $subnav-stuck-bottom + $space-4; // unter dem gepinnten Markt-Sub-Menü
   display: flex;
   flex-direction: column;
   gap: $space-5;

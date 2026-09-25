@@ -622,6 +622,31 @@
   }
 }
 
+// Sub-Menü, das beim Scrollen unter der Topbar gepinnt bleibt — für JEDES Sub-Menü einer Seite mit
+// Unterseiten verwenden: <nav class="pill-nav pill-nav--sticky pill-nav--last" appStuck> (StuckDirective
+// aus core/ importieren). Nur Desktop (sticky statt fixed — behält seinen Platz im Layout); Mobile
+// bleibt unverändert, dort setzt .shell-content overflow-x:hidden, was sticky wirkungslos machen würde.
+// pill-nav--last = das Menü ist die untere Kante des gepinnten Kopfbereichs (Regelfall); weglassen,
+// wenn eine Unterseite selbst einen gepinnten Bereich direkt darunter hat (z.B. /liga/tabelle).
+@media (min-width: #{$mobile-breakpoint + 1}) {
+  .pill-nav--sticky {
+    position: sticky;
+    top: $topbar-height;
+    z-index: $z-sticky - 10;
+    background: $color-bg;
+    padding-bottom: $space-2;
+
+    // Gepinnt UND letzte Kante des Headers: Border unten + etwas mehr Luft. Die Margin-Verkleinerung
+    // gleicht die zusätzlichen 5px (4px Padding + 1px Border) aus, damit der Inhalt darunter beim
+    // Anheften nicht springt.
+    &.pill-nav--last.is-stuck {
+      padding-bottom: $space-3;
+      border-bottom: 1px solid $color-border;
+      margin-bottom: $space-6 - 5px;
+    }
+  }
+}
+
 .pill {
   position: relative;
   padding: $space-1 $space-4;

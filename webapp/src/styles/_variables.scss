@@ -123,4 +123,7 @@ $control-height: 38px;
 $sidebar-width: 220px;
 $topbar-height: 60px;
 $mobile-breakpoint: 768px;
+// Unterkante eines gepinnten Sub-Menüs (.pill-nav--sticky, Desktop): Topbar + Padding oben + Pill +
+// Padding unten + Border — für Elemente, die beim Scrollen direkt darunter andocken sollen
+$subnav-stuck-bottom: $topbar-height + $space-2 + $control-height + $space-3 + 1px;
 $container-max: 1200px;

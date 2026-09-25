@@ -53,6 +53,7 @@ styles/
 - **Komponenten**: `standalone: false`, SCSS mit `@use '../../../styles/variables' as *`
 - **Routing**: Lazy-loaded Module; Detail-Routen als Kind-Routen im selben Modul
 - **Styles**: Globale Klassen aus `_layout.scss` verwenden (`.row-link`, `.data-table`, `.col-id`) statt eigene SCSS schreiben
+- **Sub-Menüs** (Pill-Buttons über Unterseiten): immer `<nav class="pill-nav pill-nav--sticky pill-nav--last" appStuck>` — bleibt auf Desktop beim Scrollen unter der Topbar gepinnt (Standalone-Direktive `core/stuck.directive.ts` im Modul importieren); darunter gepinnte Elemente docken bei `$subnav-stuck-bottom` an
 
 ## API-Autorisierung (RBAC)
 

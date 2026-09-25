@@ -189,8 +189,8 @@ $desktop: $mobile-breakpoint + 1;
     flex-direction: column;
     gap: 2px;
     position: sticky;
-    top: $topbar-height + $space-4;
-    max-height: calc(100vh - #{$topbar-height} - #{$space-8});
+    top: $subnav-stuck-bottom + $space-4; // unter dem gepinnten Sub-Menü
+    max-height: calc(100vh - #{$subnav-stuck-bottom} - #{$space-8});
     overflow-y: auto;
   }
 

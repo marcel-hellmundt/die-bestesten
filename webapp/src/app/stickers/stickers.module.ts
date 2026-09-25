@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { MaintainerGuard } from '../auth/maintainer.guard';
+import { StuckDirective } from '../core/stuck.directive';
 import { StickersComponent } from './stickers.component';
 import { StickerAlbumComponent } from './album/sticker-album.component';
 import { AlbumOverviewComponent } from './album/album-overview.component';
@@ -31,6 +32,6 @@ const routes: Routes = [
     StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent,
     StickerSimulationComponent, StickerCollectorsComponent,
   ],
-  imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule],
+  imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule, StuckDirective],
 })
 export class StickersModule {}
