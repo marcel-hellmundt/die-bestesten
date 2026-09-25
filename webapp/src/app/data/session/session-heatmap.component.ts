@@ -460,12 +460,24 @@ export class SessionHeatmapComponent {
     return { line, values };
   });
 
+  // Immer ALLE Manager (jeder mit mind. einer Session seit Beginn, aus globalTotals), egal welcher
+  // Zeitraum gewählt ist — wer im Zeitraum nicht aktiv war, bekommt eine leere Zeile statt zu fehlen.
   // Absteigend nach globaler Gesamtnutzung (siehe globalTotalSeconds — unabhängig vom gewählten
   // Intervall, damit die Reihenfolge beim Wechsel zwischen Tag/Monat/Jahr stabil bleibt), bei
   // Gleichstand alphabetisch als stabiler Tiebreaker.
   managers = computed(() => {
     const totals = this.globalTotalSeconds();
-    return [...(this.data()?.managers ?? [])].sort((a, b) =>
+    const inRange = this.data()?.managers ?? [];
+    const byId = new Map(inRange.map(m => [m.manager_id, m]));
+    for (const g of this.globalTotals()?.managers ?? []) {
+      if (!byId.has(g.manager_id)) {
+        byId.set(g.manager_id, {
+          manager_id: g.manager_id, manager_name: g.manager_name, alias: g.alias,
+          buckets: {}, mobile_seconds: {}, desktop_seconds: {},
+        });
+      }
+    }
+    return [...byId.values()].sort((a, b) =>
       (totals.get(b.manager_id) ?? 0) - (totals.get(a.manager_id) ?? 0)
         || a.manager_name.localeCompare(b.manager_name),
     );
