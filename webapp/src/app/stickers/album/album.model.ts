@@ -95,7 +95,7 @@ export const DEFAULT_SHARED_PARAMS: SharedParams = {
  */
 export const DEFAULT_PROFILES: SimProfile[] = [
   { key: 'active',   label: 'Aktiv & stark',     loginChance: 1,    avgPoints: 43, bestChance: 0.15 },
-  { key: 'average',  label: 'Durchschnitt',      loginChance: 0.95, avgPoints: 33, bestChance: 0.08 },
+  { key: 'average',  label: 'Durchschnitt',      loginChance: 0.9,  avgPoints: 33, bestChance: 0.08 },  // übers Jahr inkl. Ferien eher 90 %
   { key: 'inactive', label: 'Inaktiv & schwach', loginChance: 0.36, avgPoints: 20, bestChance: 0.03 },
 ];
 
