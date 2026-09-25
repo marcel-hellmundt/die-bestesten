@@ -176,7 +176,12 @@ export class MapComponent {
     return map;
   });
 
-  divisions = computed(() => [...this.cache.divisions()].sort((a, b) => a.level - b.level));
+  // Nur deutsche Ligen — Filter-Buttons und Marker (Marker nur für Clubs einer aktiven Division)
+  divisions = computed(() =>
+    this.cache.divisions()
+      .filter((d) => d.country_id?.toLowerCase() === 'de')
+      .sort((a, b) => a.level - b.level)
+  );
 
   // Mobile: the division buttons collapse behind this toggle instead of showing all at once.
   filtersMenuOpen = signal(false);
@@ -488,7 +493,7 @@ export class MapComponent {
     });
 
     effect(() => {
-      const divs = this.cache.divisions();
+      const divs = this.divisions(); // nur deutsche Ligen — gespeicherte ausländische Auswahl fällt so heraus
       if (divs.length && !this.divisionsInitialized) {
         this.divisionsInitialized = true;
         const stored = this.loadStoredActiveDivisions();
