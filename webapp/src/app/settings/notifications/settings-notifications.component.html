@@ -2,81 +2,8 @@
   <div class="section-header-row"><h2 class="section-header">Benachrichtigungen</h2></div>
 
   <div class="pref-list">
-    <label class="pref-item">
-      <div class="pref-text">
-        <span class="pref-name">Spieltag abgeschlossen</span>
-        <span class="pref-desc">Wenn ein Spieltag ausgewertet wurde</span>
-      </div>
-      <span class="toggle">
-        <input type="checkbox"
-               class="toggle__input"
-               [checked]="pref('matchday_completed')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('matchday_completed', $any($event.target).checked)" />
-        <span class="toggle__track"></span>
-      </span>
-    </label>
-
-    <label class="pref-item">
-      <div class="pref-text">
-        <span class="pref-name">Achievement erhalten</span>
-        <span class="pref-desc">Wenn du ein neues Achievement freischaltest</span>
-      </div>
-      <span class="toggle">
-        <input type="checkbox"
-               class="toggle__input"
-               [checked]="pref('achievement_earned')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('achievement_earned', $any($event.target).checked)" />
-        <span class="toggle__track"></span>
-      </span>
-    </label>
-
-    <label class="pref-item">
-      <div class="pref-text">
-        <span class="pref-name">H2H-Auslosung</span>
-        <span class="pref-desc">Bei Auslosung der Gruppenphase, des Viertelfinales oder Halbfinales</span>
-      </div>
-      <span class="toggle">
-        <input type="checkbox"
-               class="toggle__input"
-               [checked]="pref('h2h_draw')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('h2h_draw', $any($event.target).checked)" />
-        <span class="toggle__track"></span>
-      </span>
-    </label>
-
-    <label class="pref-item">
-      <div class="pref-text">
-        <span class="pref-name">Direktangebote</span>
-        <span class="pref-desc">Wenn jemand ein Angebot für einen deiner Spieler abgibt oder auf dein Angebot antwortet</span>
-      </div>
-      <span class="toggle">
-        <input type="checkbox"
-               class="toggle__input"
-               [checked]="pref('direct_offer')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('direct_offer', $any($event.target).checked)" />
-        <span class="toggle__track"></span>
-      </span>
-    </label>
-
-    @if (showPackOverlay()) {
-      <label class="pref-item">
-        <div class="pref-text">
-          <span class="pref-name">Sticker-Pack erhalten</span>
-          <span class="pref-desc">Zähler für ungeöffnete Packs oben in der Topbar</span>
-        </div>
-        <span class="toggle">
-          <input type="checkbox"
-                 class="toggle__input"
-                 [checked]="pref('sticker_pack')"
-                 (click)="$event.stopPropagation()"
-                 (change)="setPreference('sticker_pack', $any($event.target).checked)" />
-          <span class="toggle__track"></span>
-        </span>
-      </label>
+    @for (row of notificationRows(); track row.key) {
+      <ng-container *ngTemplateOutlet="prefRow; context: { $implicit: row }" />
     }
   </div>
 </section>
@@ -87,36 +14,26 @@
   <p class="section-desc">Große Hinweise, die direkt über der Seite erscheinen. Ausgeschaltet findest du alles trotzdem an seinem Platz.</p>
 
   <div class="pref-list">
-    <label class="pref-item">
-      <div class="pref-text">
-        <span class="pref-name">Neues Achievement</span>
-        <span class="pref-desc">Sobald du ein Achievement freigeschaltet hast — sonst nur unter Achievements</span>
-      </div>
-      <span class="toggle">
-        <input type="checkbox"
-               class="toggle__input"
-               [checked]="pref('overlay_achievement')"
-               (click)="$event.stopPropagation()"
-               (change)="setPreference('overlay_achievement', $any($event.target).checked)" />
-        <span class="toggle__track"></span>
-      </span>
-    </label>
-
-    @if (showPackOverlay()) {
-      <label class="pref-item">
-        <div class="pref-text">
-          <span class="pref-name">Neues Sticker-Pack</span>
-          <span class="pref-desc">Neue Packs direkt zum Aufreißen anzeigen — sonst nur im Sammelalbum</span>
-        </div>
-        <span class="toggle">
-          <input type="checkbox"
-                 class="toggle__input"
-                 [checked]="pref('overlay_pack')"
-                 (click)="$event.stopPropagation()"
-                 (change)="setPreference('overlay_pack', $any($event.target).checked)" />
-          <span class="toggle__track"></span>
-        </span>
-      </label>
+    @for (row of overlayRows(); track row.key) {
+      <ng-container *ngTemplateOutlet="prefRow; context: { $implicit: row }" />
     }
   </div>
 </section>
+
+<ng-template #prefRow let-row>
+  <label class="pref-item">
+    <span class="pref-icon"><app-icon [name]="row.icon" /></span>
+    <div class="pref-text">
+      <span class="pref-name">{{ row.name }}</span>
+      <span class="pref-desc">{{ row.desc }}</span>
+    </div>
+    <span class="toggle">
+      <input type="checkbox"
+             class="toggle__input"
+             [checked]="pref(row.key)"
+             (click)="$event.stopPropagation()"
+             (change)="setPreference(row.key, $any($event.target).checked)" />
+      <span class="toggle__track"></span>
+    </span>
+  </label>
+</ng-template>

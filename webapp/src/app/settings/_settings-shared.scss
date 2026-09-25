@@ -212,8 +212,17 @@
   &:last-child { border-bottom: none; }
 }
 
+.pref-icon {
+  flex-shrink: 0;
+  align-self: flex-start;
+  display: flex;
+  margin-top: 1px;
+  color: $color-text-muted;
+}
+
 .pref-text {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 2px;
 }

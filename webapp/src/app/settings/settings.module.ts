@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { StuckDirective } from '../core/stuck.directive';
+import { IconModule } from '../shared/icon/icon.module';
 import { SettingsComponent } from './settings.component';
 import { SettingsGeneralComponent } from './general/settings-general.component';
 import { SettingsNotificationsComponent } from './notifications/settings-notifications.component';
@@ -24,6 +25,7 @@ const routes: Routes = [
     CommonModule,
     RouterModule.forChild(routes),
     StuckDirective,
+    IconModule,
   ]
 })
 export class SettingsModule {}
