@@ -136,6 +136,7 @@
   gap: 4px $space-2;
   padding: $space-2 $space-3;
   border: 1px solid $color-border;
+  border-radius: $radius-md;
   background: $color-surface;
   color: $color-text; // sonst färbt iOS Safari Button-Text blau
   text-align: left;
