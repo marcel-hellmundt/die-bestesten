@@ -63,7 +63,11 @@ trait NotificationTrait
 
     public function getNotificationPreferences(string $managerId): array
     {
-        $defined = ['matchday_completed' => true, 'achievement_earned' => true, 'h2h_draw' => true, 'direct_offer' => true];
+        // overlay_* = Einblendungen im Frontend (groß über der Seite), keine Benachrichtigungen im engeren Sinn
+        $defined = [
+            'matchday_completed' => true, 'achievement_earned' => true, 'h2h_draw' => true, 'direct_offer' => true,
+            'overlay_achievement' => true, 'overlay_pack' => true,
+        ];
         $q = $this->con->prepare(
             "SELECT event_type, enabled FROM notification_preference WHERE manager_id = ?"
         );

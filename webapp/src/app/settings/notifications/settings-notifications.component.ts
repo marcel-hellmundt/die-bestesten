@@ -1,5 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { NotificationService } from '../../core/notification.service';
+import { StickerStatusService } from '../../core/sticker-status.service';
+import { AuthService } from '../../auth/auth.service';
 
 /** /einstellungen/benachrichtigungen — welche Ereignisse eine Benachrichtigung auslösen. */
 @Component({
@@ -10,7 +12,12 @@ import { NotificationService } from '../../core/notification.service';
 })
 export class SettingsNotificationsComponent {
   private notifSvc = inject(NotificationService);
+  private auth = inject(AuthService);
+  private stickerStatus = inject(StickerStatusService);
   preferences = this.notifSvc.preferences;
+
+  /** Sticker-Pack-Einblendung nur für Manager mit Album ("Die Klebrigsten" in einer ihrer Ligen) */
+  showPackOverlay = computed(() => this.stickerStatus.enabled() || this.auth.isMaintainer());
 
   constructor() {
     this.notifSvc.loadPreferences();

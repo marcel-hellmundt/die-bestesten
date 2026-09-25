@@ -577,12 +577,12 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/notification/preferences',
-                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed: bool, achievement_earned: bool}; fehlende Einträge = true (default ON) — Auth',
+                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, overlay_achievement, overlay_pack} (je bool); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack); fehlende Einträge = true (default ON) — Auth',
                     ],
                     [
                         'method' => 'PATCH',
                         'path' => '/notification/preferences',
-                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned, enabled: bool} — Auth',
+                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|overlay_achievement|overlay_pack, enabled: bool}; 422 bei unbekanntem event_type — Auth',
                     ],
                 ],
             ]),

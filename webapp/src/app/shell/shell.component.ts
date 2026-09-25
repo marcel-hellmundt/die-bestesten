@@ -25,6 +25,10 @@ export class ShellComponent {
   private router       = inject(Router);
 
   unseenAchievements = signal<Achievement[]>([]);
+  /** Einblendung neuer Achievements — abschaltbar unter Einstellungen → Benachrichtigungen → Einblendungen */
+  overlayAchievements = computed(() =>
+    this.notifService.overlayAllowed('overlay_achievement') ? this.unseenAchievements() : []
+  );
 
   private currentUrl = signal(this.router.url);
   isFullBleed = computed(() => FULL_BLEED_ROUTES.some(r => this.currentUrl().startsWith(r)));
@@ -43,6 +47,7 @@ export class ShellComponent {
       this.unseenAchievements.set(unseen);
     });
     this.notifService.load();
+    this.notifService.loadPreferences(); // steuert u.a. die Einblendungen (Achievements, Sticker-Packs)
     this.notifService.startPolling();
 
     this.cache.ensureMyTeam();

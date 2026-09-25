@@ -26,8 +26,12 @@ export class NotificationService {
   // Offene Direktangebote anderer Manager für eigene Spieler (kommt mit dem Polling, für den Menü-Hinweis)
   private _incomingOffers = signal<number>(0);
 
+  private _preferencesLoaded = signal(false);
+
   notifications = this._notifications.asReadonly();
   preferences = this._preferences.asReadonly();
+  /** true, sobald die Einstellungen (einmal) geladen sind — Einblendungen warten darauf, damit nichts aufblitzt */
+  preferencesLoaded = this._preferencesLoaded.asReadonly();
   unreadCount = this._unreadCount.asReadonly();
   incomingOffers = this._incomingOffers.asReadonly();
 
@@ -92,7 +96,20 @@ export class NotificationService {
     this.api
       .get<NotificationPreferences>('notification/preferences')
       .pipe(catchError(() => of({} as NotificationPreferences)))
-      .subscribe((prefs) => this._preferences.set(prefs));
+      .subscribe((prefs) => {
+        this._preferences.set(prefs);
+        this._preferencesLoaded.set(true);
+      });
+  }
+
+  /** Einstellung aktiv? Fehlender Eintrag = an (wie im Backend). */
+  isEnabled(eventType: string): boolean {
+    return this._preferences()[eventType] ?? true;
+  }
+
+  /** Einblendung (overlay_achievement / overlay_pack) erlaubt — erst nachdem die Einstellungen geladen sind. */
+  overlayAllowed(eventType: 'overlay_achievement' | 'overlay_pack'): boolean {
+    return this._preferencesLoaded() && this.isEnabled(eventType);
   }
 
   setPreference(eventType: string, enabled: boolean): void {

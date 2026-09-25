@@ -63,3 +63,43 @@
     </label>
   </div>
 </section>
+
+<!-- Einblendungen: große Hinweise direkt über der Seite -->
+<section class="settings-section">
+  <div class="section-header-row"><h2 class="section-header">Einblendungen</h2></div>
+  <p class="section-desc">Große Hinweise, die direkt über der Seite erscheinen. Ausgeschaltet findest du alles trotzdem an seinem Platz.</p>
+
+  <div class="pref-list">
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Neues Achievement</span>
+        <span class="pref-desc">Sobald du ein Achievement freigeschaltet hast — sonst nur unter Achievements</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('overlay_achievement')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('overlay_achievement', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
+
+    @if (showPackOverlay()) {
+      <label class="pref-item">
+        <div class="pref-text">
+          <span class="pref-name">Neues Sticker-Pack</span>
+          <span class="pref-desc">Neue Packs direkt zum Aufreißen anzeigen — sonst nur im Sammelalbum</span>
+        </div>
+        <span class="toggle">
+          <input type="checkbox"
+                 class="toggle__input"
+                 [checked]="pref('overlay_pack')"
+                 (click)="$event.stopPropagation()"
+                 (change)="setPreference('overlay_pack', $any($event.target).checked)" />
+          <span class="toggle__track"></span>
+        </span>
+      </label>
+    }
+  </div>
+</section>
