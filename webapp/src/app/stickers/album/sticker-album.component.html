@@ -27,7 +27,7 @@
         </button>
         @for (p of pages(); track p.club.id) {
           <button type="button" class="toc__item" [class.toc__item--active]="idx === p.index"
-                  [class.toc__item--complete]="p.have === p.total" (click)="goTo(p.index)">
+                  [class.toc__item--complete]="p.have === p.total" [style.--club]="p.club.primary_color" (click)="goTo(p.index)">
             <img class="toc__logo" [src]="p.logo" alt="" draggable="false" />
             <span class="toc__name">{{ p.club.name }}</span>
             <span class="toc__count">{{ p.have }}/{{ p.total }}</span>
@@ -60,7 +60,8 @@
                 <span class="toc__count">{{ ov.have }}/{{ ov.total }}</span>
               </button>
               @for (p of pages(); track p.club.id) {
-                <button type="button" class="picker__item" [class.picker__item--active]="idx === p.index" (click)="goTo(p.index)">
+                <button type="button" class="picker__item" [class.picker__item--active]="idx === p.index"
+                        [style.--club]="p.club.primary_color" (click)="goTo(p.index)">
                   <img class="toc__logo" [src]="p.logo" alt="" draggable="false" />
                   <span class="toc__name">{{ p.club.name }}</span>
                   <span class="toc__count">{{ p.have }}/{{ p.total }}</span>

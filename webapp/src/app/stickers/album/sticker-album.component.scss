@@ -85,22 +85,26 @@ $desktop: $mobile-breakpoint + 1;
     gap: $space-2;
     padding: 6px $space-2;
     border: none;
-    border-radius: $radius-md;
     background: none;
     text-align: left;
     cursor: pointer;
     color: $color-text;
-    transition: background $transition-fast;
+    transition: background $transition-fast, color $transition-fast;
 
     &:hover { background: $color-surface-alt; }
 
-    &--active {
-      background: $color-surface-alt;
-      font-weight: $font-weight-semibold;
-      box-shadow: inset 3px 0 0 $color-accent;
-    }
-
     &--complete .toc__count { color: $color-success; font-weight: $font-weight-semibold; }
+
+    // Ausgewählt: Vereinsfarbe als Fläche, Schrift immer weiß (Übersicht ohne Verein: dunkel)
+    &--active,
+    &--active:hover {
+      background: var(--club, #{$color-text});
+      color: #fff;
+      font-weight: $font-weight-semibold;
+
+      .toc__icon,
+      .toc__count { color: #fff; }
+    }
   }
 
   &__icon {
@@ -223,13 +227,19 @@ $desktop: $mobile-breakpoint + 1;
     width: 100%;
     padding: 10px $space-2;
     border: none;
-    border-radius: $radius-md;
     background: none;
     text-align: left;
     color: $color-text;
     cursor: pointer;
 
-    &--active { background: $color-surface-alt; font-weight: $font-weight-semibold; }
+    &--active {
+      background: var(--club, #{$color-text});
+      color: #fff;
+      font-weight: $font-weight-semibold;
+
+      .toc__icon,
+      .toc__count { color: #fff; }
+    }
   }
 }
 

@@ -98,12 +98,14 @@
   }
 }
 
-// Zuletzt eingeklebt: horizontale Reihe kleiner Karten (mobile scrollbar)
+// Zuletzt eingeklebt: horizontale Reihe kleiner Karten (mobile scrollbar).
+// Das Scroll-Overflow schneidet auch vertikal ab → oben Luft für den Hover-Lift, per negativem Margin ausgeglichen.
 .recent {
   display: flex;
   gap: $space-3;
   overflow-x: auto;
-  padding-bottom: $space-2;
+  margin-top: -$space-2;
+  padding: $space-2 0;
 
   &__item {
     flex: 0 0 96px;
@@ -134,8 +136,6 @@
   gap: 4px $space-2;
   padding: $space-2 $space-3;
   border: 1px solid $color-border;
-  border-left: 4px solid var(--club);
-  border-radius: $radius-md;
   background: $color-surface;
   text-align: left;
   cursor: pointer;
