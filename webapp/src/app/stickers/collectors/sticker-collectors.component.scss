@@ -1,0 +1,130 @@
+@use '../../../styles/variables' as *;
+
+.gang {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  max-width: 720px;
+  padding: $space-4;
+
+  @media (max-width: $mobile-breakpoint) { padding: $space-3; }
+}
+
+.page-title__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: $font-sm;
+  font-weight: normal;
+  color: $color-text-muted;
+}
+
+.collectors {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: $space-2;
+  list-style: none;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+}
+
+.collector {
+  display: grid;
+  grid-template-columns: 26px 36px minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: $space-2;
+  row-gap: 4px;
+  padding: $space-2;
+  border-radius: $radius-md;
+  color: $color-text;
+  text-decoration: none;
+  transition: background $transition-fast;
+
+  &:hover { background: $color-surface-alt; }
+
+  &--me { background: color-mix(in srgb, #{$color-accent} 6%, #{$color-surface}); }
+
+  &__rank {
+    grid-row: span 2;
+    font-size: $font-sm;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__avatar {
+    grid-row: span 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: $color-surface-alt;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    font-weight: $font-weight-bold;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__me {
+    font-weight: normal;
+    color: $color-text-muted;
+  }
+
+  &__holo {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__count {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__bar {
+    grid-column: 3 / span 3;
+    height: 5px;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: $color-accent;
+    }
+  }
+}
+
+.holo-dot {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: $radius-full;
+  font-size: 11px;
+  font-weight: $font-weight-bold;
+  line-height: 16px;
+  text-align: center;
+  color: #1f2937;
+
+  &--silver { background: linear-gradient(135deg, #eef0f3, #bfc5ce); }
+  &--gold   { background: linear-gradient(135deg, #fbf1cf, #e0bb4f); }
+}

@@ -2,7 +2,6 @@ import { Component, computed, inject, input, output } from '@angular/core';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker, TIERS, TIER_LABEL } from './album.model';
 import { Collection, StickerAlbumService } from './sticker-album.service';
-import { StickerCollectors } from '../../core/sticker-status.service';
 
 /** Erste Seite des Sammelalbums: Gesamtfortschritt, Holo-/Doppelte-Zähler, Vereins-Kacheln, zuletzt eingeklebt. */
 @Component({
@@ -18,25 +17,8 @@ export class AlbumOverviewComponent {
   collection = input.required<Collection>();
   /** Besitzer des angezeigten Albums — null = eigenes Album */
   ownerName = input<string | null>(null);
-  collectors = input<StickerCollectors | null>(null);
-  /** ID des gerade angezeigten Albums (für die Markierung in der Rangliste) */
-  viewedId = input<string | null>(null);
-  myId = input<string | null>(null);
   goTo = output<number>();          // Index der Vereinsseite (0-basiert)
   open = output<Sticker>();
-  showManager = output<string>();
-
-  /** Sammler-Rangliste mit Platz (gleiche Anzahl = gleicher Platz) */
-  ranking = computed(() => {
-    const c = this.collectors();
-    if (!c || c.total === 0) return [];
-    let lastHave = -1, lastRank = 0;
-    return c.collectors.map((m, i) => {
-      const rank = m.have === lastHave ? lastRank : i + 1;
-      lastHave = m.have; lastRank = rank;
-      return { ...m, rank, pct: m.have / c.total };
-    });
-  });
 
   totals = computed(() => {
     const col = this.collection();

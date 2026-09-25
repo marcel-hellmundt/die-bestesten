@@ -43,7 +43,10 @@
           @if (otherError()) { {{ otherError() }} }
           @else { Album von <b>{{ otherName() ?? '…' }}</b> }
         </span>
-        <button type="button" class="btn btn-ghost btn-sm" (click)="viewManager(null)">Zu meinem Album</button>
+        <span class="viewing__actions">
+          <a class="btn btn-ghost btn-sm" routerLink="/klebrigsten/klebebande">Klebebande</a>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="viewOwnAlbum()">Zu meinem Album</button>
+        </span>
       </div>
     }
 
@@ -138,8 +141,7 @@
                                [theme]="theme()" (open)="openSlot($event)" />
         } @else {
           <app-album-overview [rows]="rows()" [collection]="collection()" [ownerName]="isOwn() ? null : otherName()"
-                              [collectors]="collectors()" [viewedId]="viewId() ?? myId" [myId]="myId"
-                              (goTo)="goTo($event + 1)" (open)="openSticker($event)" (showManager)="viewManager($event)" />
+                              (goTo)="goTo($event + 1)" (open)="openSticker($event)" />
         }
 
         <!-- Desktop: Blättern unter der Seite -->

@@ -1,0 +1,39 @@
+<div class="gang">
+  <h1 class="page-title">
+    Klebebande
+    <span class="page-title__sub">Alle Sammelalben der Saison — tippe auf einen Namen, um reinzuschauen</span>
+  </h1>
+
+  @if (loading()) {
+    <p class="state-msg">Wird geladen…</p>
+  } @else if (ranking().length === 0) {
+    <p class="state-msg">Noch keine Sammelalben in dieser Saison.</p>
+  } @else {
+    <ol class="collectors">
+      @for (m of ranking(); track m.manager_id) {
+        <li>
+          <a class="collector" [class.collector--me]="m.manager_id === myId" [routerLink]="m.link">
+            <span class="collector__rank">{{ m.rank }}.</span>
+            <span class="collector__avatar">
+              @if (m.photo && !photoFailed().has(m.manager_id)) {
+                <img [src]="m.photo" alt="" (error)="onPhotoError(m.manager_id)" />
+              } @else {
+                {{ m.initials }}
+              }
+            </span>
+            <span class="collector__name">
+              {{ m.manager_name }}
+              @if (m.manager_id === myId) { <span class="collector__me">(du)</span> }
+            </span>
+            <span class="collector__holo">
+              @if (m.gold > 0) { <span class="holo-dot holo-dot--gold" title="Holo Gold">{{ m.gold }}</span> }
+              @if (m.silver > 0) { <span class="holo-dot holo-dot--silver" title="Holo Silber">{{ m.silver }}</span> }
+            </span>
+            <span class="collector__count">{{ m.have }}/{{ total() }}</span>
+            <span class="collector__bar"><span [style.width.%]="m.pct * 100"></span></span>
+          </a>
+        </li>
+      }
+    </ol>
+  }
+</div>

@@ -5,7 +5,7 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import {
-  OtherCollection, PACK_SOURCE_LABEL, StickerCollectors, StickerPack, StickerPackSource, StickerStatusService, packDetail,
+  OtherCollection, PACK_SOURCE_LABEL, StickerPack, StickerPackSource, StickerStatusService, packDetail,
 } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
@@ -51,9 +51,9 @@ export class StickerAlbumComponent {
 
   theme = computed(() => seasonTheme(this.album.seasonId() ?? ''));
 
-  // ── Wessen Album? (?manager=<id>; ohne bzw. eigene ID = eigenes Album) ─────
+  // ── Wessen Album? (/klebrigsten/klebebande/:managerId; sonst bzw. eigene ID = eigenes Album) ─
   readonly myId = this.auth.getManagerId();
-  private managerParam = toSignal(this.route.queryParamMap.pipe(map(p => p.get('manager'))), { initialValue: null });
+  private managerParam = toSignal(this.route.paramMap.pipe(map(p => p.get('managerId'))), { initialValue: null });
   /** ID des angezeigten fremden Albums, null = eigenes */
   viewId = computed(() => { const id = this.managerParam(); return id && id !== this.myId ? id : null; });
   isOwn = computed(() => this.viewId() === null);
@@ -75,21 +75,9 @@ export class StickerAlbumComponent {
     ? this.album.collectionFrom(this.status.state()?.collection ?? [])
     : this.album.collectionFrom(this.other()?.data?.collection ?? []));
 
-  /** Sammler-Rangliste — neu geladen, sobald sich die eigene Sammlung ändert (Pack geöffnet) */
-  collectors = toSignal(
-    toObservable(this.status.state).pipe(
-      switchMap(() => this.api.get<StickerCollectors>('sticker/collectors').pipe(catchError(() => of(null)))),
-    ),
-    { initialValue: null },
-  );
-
-  /** Album eines Managers anzeigen (eigene ID / null = eigenes); die aktuelle Seite bleibt erhalten. */
-  viewManager(id: string | null): void {
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { manager: id && id !== this.myId ? id : null },
-      queryParamsHandling: 'merge',
-    });
+  /** Zum eigenen Album wechseln — die aktuelle Seite (?seite) bleibt erhalten. */
+  viewOwnAlbum(): void {
+    this.router.navigate(['/klebrigsten/sammelalbum'], { queryParamsHandling: 'preserve' });
   }
 
   // ── Packs ─────────────────────────────────────────────────────────────────
@@ -213,7 +201,7 @@ export class StickerAlbumComponent {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { seite: row ? this.pageKey(row.club) : null },
-      queryParamsHandling: 'merge', // ?manager bleibt erhalten
+      queryParamsHandling: 'merge',
       replaceUrl: true,
     });
     window.scrollTo({ top: 0 });

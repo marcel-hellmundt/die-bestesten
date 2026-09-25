@@ -8,14 +8,19 @@ import { AlbumOverviewComponent } from './album/album-overview.component';
 import { AlbumClubPageComponent } from './album/album-club-page.component';
 import { StickerSimulationComponent } from './sticker-simulation.component';
 import { StickerSharedModule } from './sticker-shared.module';
+import { StickerCollectorsComponent } from './collectors/sticker-collectors.component';
 
-// "Die Klebrigsten" (Sticker-Album): /klebrigsten/sammelalbum + /klebrigsten/simulation (Maintainer+)
+// "Die Klebrigsten" (Sticker-Album): /klebrigsten/sammelalbum (eigenes Album), /klebrigsten/klebebande
+// (alle Sammler, Klick → deren Album) + /klebrigsten/simulation (Maintainer+)
 const routes: Routes = [
   {
     path: '', component: StickersComponent,
     children: [
       { path: '',            redirectTo: 'sammelalbum', pathMatch: 'full' },
       { path: 'sammelalbum', component: StickerAlbumComponent },
+      { path: 'klebebande',  component: StickerCollectorsComponent },
+      // Album eines anderen Managers (nur ansehen) — dieselbe Album-Komponente, Manager aus dem Pfad
+      { path: 'klebebande/:managerId', component: StickerAlbumComponent },
       { path: 'simulation',  component: StickerSimulationComponent, canActivate: [MaintainerGuard] },
     ],
   },
@@ -24,7 +29,7 @@ const routes: Routes = [
 @NgModule({
   declarations: [
     StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent,
-    StickerSimulationComponent,
+    StickerSimulationComponent, StickerCollectorsComponent,
   ],
   imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule],
 })

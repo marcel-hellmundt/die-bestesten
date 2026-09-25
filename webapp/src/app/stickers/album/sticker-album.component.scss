@@ -40,6 +40,13 @@ $desktop: $mobile-breakpoint + 1;
   font-size: $font-sm;
 
   .btn-ghost { color: #fff; }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: $space-1;
+  }
 }
 
 // ── Ungeöffnete Packs ────────────────────────────────────────────────────────
