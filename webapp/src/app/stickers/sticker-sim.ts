@@ -6,8 +6,10 @@ export interface SimParams {
   guaranteeNew: boolean;        // 1. Sticker jedes Packs garantiert neu (solange welche fehlen)
   milestoneInterval: number;    // Saisonpunkte-Abstand zwischen Meilenstein-Packs
   milestonePackSize: number;    // Sticker pro Meilenstein-Pack (0 = aus)
+  milestoneAllNew: boolean;     // alle Sticker eines Meilenstein-Packs garantiert neu (solange welche fehlen)
   avgPoints: number;            // Ø Teampunkte pro Spieltag
   bestPackSize: number;         // Sticker pro Spieltagsbester-Pack (0 = aus)
+  bestAllNew: boolean;          // alle Sticker eines Spieltagsbester-Packs garantiert neu
   bestChance: number;           // 0–1, Chance, an einem Spieltag Spieltagsbester zu sein (profilabhängig)
   rarityAlpha: number;          // Gewicht je Sticker = Marktwert^-α (0 = alle gleich häufig)
   holoSilverChance: number;     // 0–1, Chance je gezogenem Sticker, dass er eine Holo-Silber-Karte ist
@@ -98,12 +100,13 @@ export function simulateSeason(params: SimParams, weights: number[], timeline: T
   };
 
   const packs: SimPack[] = [];
-  const open = (day: number, source: PackSource, size: number) => {
+  const open = (day: number, source: PackSource, size: number, allNew = false) => {
     if (size <= 0 || n === 0) return;
     const stickers: number[] = [];
     const holo: HoloVariant[] = [];
     for (let k = 0; k < size; k++) {
-      stickers.push(take(params.guaranteeNew && k === 0 && missing > 0 ? drawMissing() : drawAny()));
+      const guaranteed = allNew || (params.guaranteeNew && k === 0);
+      stickers.push(take(guaranteed && missing > 0 ? drawMissing() : drawAny()));
       holo.push(rollHolo());
     }
     packs.push({ day: Math.max(day, 0), source, stickers, holo });
@@ -129,10 +132,10 @@ export function simulateSeason(params: SimParams, weights: number[], timeline: T
       if (params.milestoneInterval > 0) {
         while ((milestonesGiven + 1) * params.milestoneInterval <= cumPoints) {
           milestonesGiven++;
-          open(day, 'milestone', params.milestonePackSize);
+          open(day, 'milestone', params.milestonePackSize, params.milestoneAllNew);
         }
       }
-      if (random() < params.bestChance) open(day, 'best', params.bestPackSize);
+      if (random() < params.bestChance) open(day, 'best', params.bestPackSize, params.bestAllNew);
     }
   }
   return packs;
