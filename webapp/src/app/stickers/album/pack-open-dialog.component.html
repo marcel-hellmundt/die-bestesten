@@ -22,7 +22,7 @@
           <span class="pack__brand">Die Klebrigsten</span>
           <span class="pack__kind">{{ face().kind }}</span>
           <span class="pack__headline">{{ face().headline }}</span>
-          <span class="pack__count">{{ pack().size }} Sticker</span>
+          <span class="pack__count">{{ countLabel() }}</span>
           @if (pack().leagueName) { <span class="pack__league">{{ pack().leagueName }}</span> }
         </span>
         <span class="pack__top"></span>

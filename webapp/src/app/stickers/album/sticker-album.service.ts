@@ -173,19 +173,32 @@ export class StickerAlbumService {
   }
 
   /**
-   * Test-Pack: Sticker nur im Browser gewürfelt (gleiche Gewichtung/Holo-Chancen wie serverseitig) —
-   * nichts wird gespeichert; "Neu"/"Doppelt" relativ zur echten Sammlung `before`.
+   * Test-Pack: Sticker nur im Browser gewürfelt, nach denselben Regeln wie serverseitig (Gewichtung,
+   * garantiert neue Karten — `allNew` alle, sonst die erste —, Holo-Chancen) — nichts wird gespeichert;
+   * "Neu"/"Doppelt" relativ zur echten Sammlung `before`.
    */
-  randomPackCards(size: number, before: Uint16Array): PackCard[] {
+  randomPackCards(size: number, before: Uint16Array, allNew = false): PackCard[] {
     const stickers = this.stickers();
     if (stickers.length === 0) return [];
     const rules = DEFAULT_SHARED_PARAMS;
     const weights = stickerWeights(stickers.map(s => s.price), rules.rarityAlpha);
+    const owned = new Uint8Array(stickers.length);
+    stickers.forEach((s, i) => { if ((before[s.idx] ?? 0) > 0) owned[i] = 1; });
+    const draw = (onlyMissing: boolean): number => {
+      const total = weights.reduce((a, w, i) => a + (onlyMissing && owned[i] ? 0 : w), 0);
+      if (total <= 0) return draw(false); // nichts mehr fehlt → normal ziehen
+      let r = Math.random() * total;
+      for (let i = 0; i < weights.length; i++) {
+        if (onlyMissing && owned[i]) continue;
+        r -= weights[i];
+        if (r <= 0) return i;
+      }
+      return weights.length - 1;
+    };
     const draws: { sticker: Sticker; holo: StickerHolo | null }[] = [];
     for (let k = 0; k < size; k++) {
-      let r = Math.random();
-      let i = 0;
-      while (i < weights.length - 1 && (r -= weights[i]) > 0) i++;
+      const i = draw(allNew || (rules.guaranteeNew && k === 0));
+      owned[i] = 1;
       const h = Math.random();
       const holo = h < rules.holoGoldChance ? 'gold' : h < rules.holoGoldChance + rules.holoSilverChance ? 'silver' : null;
       draws.push({ sticker: stickers[i], holo });

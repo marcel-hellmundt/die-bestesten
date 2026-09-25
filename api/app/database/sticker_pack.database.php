@@ -14,12 +14,15 @@ trait StickerPackTrait
     protected function stickerConfig(): array
     {
         return [
+            // Werte aus der Simulation: aktive Manager meist komplett (≈80 %, gegen Saisonende), Ø ≈93 %, inaktiv ≈50 %
             'daily_pack_size'         => 3,       // Sticker im täglichen Pack (0 = kein Tages-Pack)
             'milestone_interval'      => 100,     // alle X Saisonpunkte eines Teams ein Pack
             'milestone_pack_size'     => 3,       // Sticker im Meilenstein-Pack (0 = aus)
-            'matchday_best_pack_size' => 3,       // Sticker im Spieltagsbester-Pack (0 = aus)
+            'matchday_best_pack_size' => 5,       // Sticker im Spieltagsbester-Pack (0 = aus)
             'guarantee_new'           => true,    // 1. Sticker jedes Packs garantiert neu (solange welche fehlen)
-            'rarity_alpha'            => 0.5,     // Ziehgewicht = Marktwert^-α
+            'milestone_all_new'       => true,    // Meilenstein-Pack: alle Sticker garantiert neu
+            'matchday_best_all_new'   => true,    // Spieltagsbester-Pack: alle Sticker garantiert neu
+            'rarity_alpha'            => 0.8,     // Ziehgewicht = Marktwert^-α
             'holo_silver_chance'      => 0.01,    // je gezogenem Sticker
             'holo_gold_chance'        => 0.001,
             'min_price'               => 500_000, // Untergrenze der Gewichtung (wie MIN_PRICE im Frontend)
@@ -234,7 +237,8 @@ trait StickerPackTrait
 
     /**
      * Öffnet ein eigenes, ungeöffnetes Pack: würfelt die Karten serverseitig (Gewicht = Marktwert^-α;
-     * 1. Karte garantiert neu, solange Sticker fehlen; Holo je Karte) und speichert sie.
+     * garantiert neu, solange Sticker fehlen: bei Meilenstein-/Spieltagsbester-Packs alle Karten, sonst die
+     * erste; Holo je Karte) und speichert sie.
      * Rückgabe ['error' => HTTP-Code, 'message'] oder ['pack' => …, 'cards' => [{key, holo, is_new}]].
      */
     public function openStickerPack(string $managerId, string $packId): array
@@ -280,9 +284,13 @@ trait StickerPackTrait
             return $drawAny();
         };
 
+        // Wie viele Karten dieses Packs sind garantiert neu? Meilenstein/Spieltagsbester: alle, sonst die erste
+        $allNew = ($pack['source'] === 'milestone' && $cfg['milestone_all_new'])
+            || ($pack['source'] === 'matchday_best' && $cfg['matchday_best_all_new']);
+
         $cards = [];
         for ($k = 0; $k < (int) $pack['size']; $k++) {
-            $i = ($cfg['guarantee_new'] && $k === 0) ? $drawMissing() : $drawAny();
+            $i = ($allNew || ($cfg['guarantee_new'] && $k === 0)) ? $drawMissing() : $drawAny();
             $sticker = $stickers[$i];
             $isNew = !isset($owned[$sticker['id']]);
             $owned[$sticker['id']] = true;

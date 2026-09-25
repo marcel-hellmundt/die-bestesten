@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { OpenedPack, StickerStatusService } from '../../core/sticker-status.service';
-import { PackCard, PackInfo, packInfo } from './pack.model';
+import { PackCard, PackInfo, packInfo, packRules } from './pack.model';
 import { StickerAlbumService } from './sticker-album.service';
 
 /**
@@ -55,7 +55,7 @@ export class PackOpener {
     if (!info || this.result() || this.busy()) return;
     const before = this.album.collectionFrom(this.status.state()?.collection ?? []).counts;
     if (info.id === null) {
-      this.result.set({ test: this.album.randomPackCards(info.size, before), before });
+      this.result.set({ test: this.album.randomPackCards(info.size, before, packRules(info.source).allNew), before });
       return;
     }
     const id = info.id;

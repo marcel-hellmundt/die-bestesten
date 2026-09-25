@@ -76,15 +76,16 @@ export function initials(s: Pick<Sticker, 'first_name' | 'last_name' | 'displayn
 /** Regeln, die für alle Manager gleich sind — der Rest von SimParams kommt aus dem Profil. */
 export type SharedParams = Omit<SimParams, 'loginChance' | 'avgPoints' | 'bestChance'>;
 
+// Echte Regeln — müssen zu StickerPackTrait::stickerConfig() im Backend passen (Test-Packs + Simulations-Start)
 export const DEFAULT_SHARED_PARAMS: SharedParams = {
   dailyPackSize: 3,
   guaranteeNew: true,
   milestoneInterval: 100,
   milestonePackSize: 3,
-  milestoneAllNew: false,
-  bestPackSize: 3,
-  bestAllNew: false,
-  rarityAlpha: 0.5,
+  milestoneAllNew: true,
+  bestPackSize: 5,
+  bestAllNew: true,
+  rarityAlpha: 0.8,
   holoSilverChance: 0.01,   // 1 %  → bei ~1.000 Stickern pro Saison ≈ 10 Holo Silber
   holoGoldChance: 0.001,    // 0,1 % → ≈ 1 Holo Gold
 };

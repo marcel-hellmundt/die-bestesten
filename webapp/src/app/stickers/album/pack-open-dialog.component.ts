@@ -1,5 +1,5 @@
 import { Component, DestroyRef, HostListener, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { PackCard, PackInfo, packFace } from './pack.model';
+import { PackCard, PackInfo, packFace, packRules } from './pack.model';
 
 /** Dauer der Aufreiß-Animation bis zum Aufdecken (muss zu den Delays im SCSS passen). */
 const TEAR_MS = 1750;
@@ -33,6 +33,11 @@ export class PackOpenDialogComponent {
   closed = output<void>();
 
   face = computed(() => packFace(this.pack()));
+  /** "3 Sticker" bzw. "5 neue Sticker", wenn die Pack-Art nur garantiert neue Karten enthält */
+  countLabel = computed(() => {
+    const p = this.pack();
+    return `${p.size} ${packRules(p.source).allNew ? 'neue ' : ''}Sticker`;
+  });
   backs = computed(() => Array.from({ length: this.pack().size }, (_, i) => i));
 
   private torn = signal(false);

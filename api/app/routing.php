@@ -1297,7 +1297,7 @@ class Routing
 
             new Route('sticker', 'Sticker', [
                 'title' => 'Sticker ("Die Klebrigsten")',
-                'description' => 'Sticker-Album-Feature: ein globales Album je Manager + Saison, aktiv für Manager in mind. einer Liga mit league.sticker_enabled. Packs aus drei Quellen (tägliches Pack beim App-Öffnen, Punkte-Meilensteine je Team, Spieltagsbester) — Karten werden erst beim Öffnen serverseitig gewürfelt (Gewicht = Marktwert^-α, 1. Karte garantiert neu, Holo Silber/Gold je Karte). Regeln (Packgrößen, Meilenstein-Intervall, α, Holo-Chancen) vorerst als Variablen in StickerPackTrait::stickerConfig(). Vergabe erst, wenn das Album der Saison eingefroren ist (POST /sticker/album/sync), nicht rückwirkend.',
+                'description' => 'Sticker-Album-Feature: ein globales Album je Manager + Saison, aktiv für Manager in mind. einer Liga mit league.sticker_enabled. Packs aus drei Quellen (tägliches Pack beim App-Öffnen, Punkte-Meilensteine je Team, Spieltagsbester) — Karten werden erst beim Öffnen serverseitig gewürfelt (Gewicht = Marktwert^-α, garantiert neu: bei Meilenstein-/Spieltagsbester-Packs alle Karten, sonst die 1., Holo Silber/Gold je Karte). Regeln (Packgrößen, Meilenstein-Intervall, α, Holo-Chancen) vorerst als Variablen in StickerPackTrait::stickerConfig(). Vergabe erst, wenn das Album der Saison eingefroren ist (POST /sticker/album/sync), nicht rückwirkend.',
                 'endpoints' => [
                     [
                         'method' => 'GET',

@@ -8,7 +8,7 @@ import { PACK_SOURCE_LABEL, StickerPack, StickerPackSource, StickerStatusService
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
-import { PackCard, packInfo } from './pack.model';
+import { PackCard, packInfo, packRules } from './pack.model';
 import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 import { seasonTheme } from './season-theme';
@@ -95,13 +95,13 @@ export class StickerAlbumComponent {
   ];
 
   /**
-   * Test-Pack zum Ausprobieren von Pack-Optik und Öffnen-Animation: die 3 Sticker werden erst beim
-   * Aufreißen und nur im Browser gewürfelt — nichts wird gespeichert, die Sammlung bleibt unverändert.
+   * Test-Pack zum Ausprobieren von Pack-Optik und Öffnen-Animation: Größe + Garantie wie die echte Pack-Art,
+   * die Sticker werden erst beim Aufreißen und nur im Browser gewürfelt — nichts wird gespeichert.
    */
   openTestPack(source: StickerPackSource): void {
     requestTiltPermission(); // synchron in der Klick-Geste (iOS)
     this.opener.show({
-      id: null, source, size: 3,
+      id: null, source, size: packRules(source).size,
       milestonePoints: source === 'milestone' ? 100 * (1 + Math.floor(Math.random() * 15)) : null,
       matchdayNumber: source === 'matchday_best' ? 1 + Math.floor(Math.random() * 34) : null,
       leagueName: source === 'daily' ? null : 'Test-Liga',

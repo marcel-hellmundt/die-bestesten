@@ -1,7 +1,7 @@
 // "Die Klebrigsten" — Packs: Metadaten fürs geschlossene Pack + aufgedeckte Karten.
 import { StickerPack, StickerPackSource } from '../../core/sticker-status.service';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
-import { Sticker } from './album.model';
+import { DEFAULT_SHARED_PARAMS, Sticker } from './album.model';
 
 /** Was vor dem Öffnen auf dem Pack steht (Art, Anlass, Anzahl). */
 export interface PackInfo {
@@ -25,6 +25,16 @@ export function packInfo(p: StickerPack): PackInfo {
     id: p.id, source: p.source, size: p.size,
     milestonePoints: p.milestone_points, matchdayNumber: p.matchday_number, leagueName: p.league_name,
   };
+}
+
+/** Größe + Garantie je Pack-Art nach den echten Regeln (für Test-Packs und die Pack-Beschriftung). */
+export function packRules(source: StickerPackSource): { size: number; allNew: boolean } {
+  const r = DEFAULT_SHARED_PARAMS;
+  switch (source) {
+    case 'milestone':     return { size: r.milestonePackSize, allNew: r.milestoneAllNew };
+    case 'matchday_best': return { size: r.bestPackSize, allNew: r.bestAllNew };
+    default:              return { size: r.dailyPackSize, allNew: false };
+  }
 }
 
 /** Beschriftung der Pack-Vorderseite: kleine Art-Zeile + große Überschrift. */
