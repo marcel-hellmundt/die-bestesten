@@ -142,8 +142,31 @@ trait StickerPackTrait
             ];
         }, $rows);
 
-        $state['collection'] = $this->getStickerCollection($managerId, $seasonId);
+        $state['collection']   = $this->getStickerCollection($managerId, $seasonId);
+        $state['ignored_days'] = $this->stickerIgnoredDays($managerId);
         return $state;
+    }
+
+    /**
+     * Desinteresse-Signal fürs Frontend: an wie vielen verschiedenen Tagen wurden eingeblendete Packs
+     * weggeklickt (angekündigt, aber bis heute ungeöffnet) — gezählt nur seit dem zuletzt geöffneten
+     * Pack. Wer ein Pack öffnet (aus der Einblendung oder später im Album), setzt den Zähler zurück.
+     * Ab einer Schwelle bietet die Einblendung "Nicht mehr anzeigen" an.
+     */
+    private function stickerIgnoredDays(string $managerId): int
+    {
+        try {
+            $q = $this->con->prepare(
+                "SELECT COUNT(DISTINCT DATE(announced_at)) FROM sticker_pack
+                 WHERE manager_id = :m AND announced_at IS NOT NULL AND opened_at IS NULL
+                   AND announced_at > COALESCE(
+                       (SELECT MAX(opened_at) FROM sticker_pack WHERE manager_id = :m2), '1970-01-01')"
+            );
+            $q->execute([':m' => $managerId, ':m2' => $managerId]);
+            return (int) $q->fetchColumn();
+        } catch (\Throwable $e) {
+            return 0; // Spalte announced_at fehlt noch (Migration)
+        }
     }
 
     /**

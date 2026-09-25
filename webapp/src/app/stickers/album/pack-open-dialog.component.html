@@ -2,7 +2,15 @@
   <div class="panel" (click)="$event.stopPropagation()">
     @if (heading()) { <h2 class="panel__title">{{ heading() }}</h2> }
 
-    @if (error()) {
+    @if (optedOut()) {
+      <p class="opted-out">
+        Alles klar – neue Packs landen ab jetzt still in deinem Sammelalbum.<br />
+        <span>Wieder einschalten: Einstellungen → Benachrichtigungen</span>
+      </p>
+      <div class="actions">
+        <button class="btn btn-primary" type="button" (click)="closed.emit()">OK</button>
+      </div>
+    } @else if (error()) {
       <p class="error">{{ error() }}</p>
       <div class="actions">
         <button class="btn btn-ghost" type="button" (click)="closed.emit()">Schließen</button>
@@ -31,6 +39,9 @@
       <div class="sealed-actions" [class.sealed-actions--hidden]="phase() === 'tearing'">
         <p class="hint">Tippen zum Aufreißen</p>
         <button class="btn btn-ghost btn-sm" type="button" (click)="closed.emit()">Später öffnen</button>
+        @if (offerOptOut()) {
+          <button class="opt-out" type="button" (click)="onOptOut()">Nicht mehr anzeigen</button>
+        }
       </div>
     } @else {
       <div class="cards">

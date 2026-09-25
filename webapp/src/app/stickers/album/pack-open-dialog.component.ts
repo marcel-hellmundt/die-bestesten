@@ -26,8 +26,11 @@ export class PackOpenDialogComponent {
   busy = input(false);
   /** true, solange darüber die große Karte offen ist — Esc schließt dann nur die. */
   covered = input(false);
+  /** "Nicht mehr anzeigen" anbieten (nur in der Einblendung, wenn jemand Packs wiederholt ignoriert) */
+  offerOptOut = input(false);
 
   tear = output<void>();
+  optOut = output<void>();
   next = output<void>();
   open = output<PackCard>();
   closed = output<void>();
@@ -66,6 +69,14 @@ export class PackOpenDialogComponent {
         this.timerDone.set(false);
       });
     });
+  }
+
+  /** nach "Nicht mehr anzeigen": Bestätigung statt Pack */
+  optedOut = signal(false);
+
+  onOptOut(): void {
+    this.optedOut.set(true);
+    this.optOut.emit();
   }
 
   onTear(): void {

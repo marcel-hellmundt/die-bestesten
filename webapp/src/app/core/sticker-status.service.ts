@@ -32,6 +32,8 @@ export interface StickerState {
   season_id: string | null;
   packs: StickerPack[];
   collection: StickerCollectionEntry[];
+  /** an wie vielen Tagen eingeblendete Packs ungeöffnet weggeklickt wurden (seit dem letzten geöffneten) */
+  ignored_days?: number;
 }
 
 /** Response von GET /sticker/collectors (Sammler-Rangliste). */

@@ -269,6 +269,31 @@
   .btn-ghost { color: rgba(255, 255, 255, 0.8); }
 }
 
+// dezenter Text-Button unter "Später öffnen" — nur für Manager, die Packs wiederholt ignorieren
+.opt-out {
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: $font-xs;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+
+  &:hover { color: #fff; }
+}
+
+.opted-out {
+  max-width: 320px;
+  margin: 0;
+  color: #fff;
+  font-size: $font-sm;
+  line-height: 1.5;
+  text-align: center;
+
+  span { color: rgba(255, 255, 255, 0.65); font-size: $font-xs; }
+}
+
 .hint {
   margin: 0;
   color: rgba(255, 255, 255, 0.7);

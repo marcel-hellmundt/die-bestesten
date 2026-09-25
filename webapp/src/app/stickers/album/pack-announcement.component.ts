@@ -6,6 +6,9 @@ import { PackCard, PackInfo, packInfo } from './pack.model';
 import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 
+/** Ab so vielen Tagen mit ungeöffnet weggeklickten Packs bietet die Einblendung "Nicht mehr anzeigen" an */
+const OPT_OUT_AFTER_IGNORED_DAYS = 3;
+
 /**
  * "Die Klebrigsten" — neu erhaltene Packs (z.B. Tages-Pack beim App-Öffnen, Meilenstein nach dem Spieltag)
  * erscheinen auf jeder Seite sofort groß in der Mitte: aufreißen oder "Später öffnen" (dann bleibt das Pack
@@ -18,7 +21,7 @@ import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
   standalone: false,
   template: `
     @if (active(); as info) {
-      <app-pack-announcement-dialog [first]="info" (done)="dismiss()" />
+      <app-pack-announcement-dialog [first]="info" [offerOptOut]="offerOptOut()" (optOut)="optOut()" (done)="dismiss()" />
     }
   `,
 })
@@ -29,6 +32,12 @@ export class PackAnnouncementComponent {
   private dismissed = signal(new Set<string>());
 
   readonly active = signal<PackInfo | null>(null);
+  /**
+   * "Nicht mehr anzeigen" nur für Manager, die Packs an mind. OPT_OUT_AFTER_IGNORED_DAYS verschiedenen Tagen
+   * ungeöffnet weggeklickt haben (seit dem letzten geöffneten Pack) — wer Packs öffnet, sieht den Button nie.
+   * Beim Einblenden festgehalten, damit er nicht mitten im Dialog auftaucht oder verschwindet.
+   */
+  readonly offerOptOut = signal(false);
   // Abschaltbar unter Einstellungen → Benachrichtigungen → Einblendungen (overlay_pack); dann bleiben
   // neue Packs einfach in der Pack-Leiste im Sammelalbum (+ Badge), ohne groß zu erscheinen
   private pending = computed(() => !this.notif.overlayAllowed('overlay_pack') ? []
@@ -38,8 +47,18 @@ export class PackAnnouncementComponent {
     // Neues, noch nicht angekündigtes Pack → Dialog zeigen (einer zur Zeit)
     effect(() => {
       const next = this.pending()[0];
-      untracked(() => { if (next && !this.active()) this.active.set(packInfo(next)); });
+      untracked(() => {
+        if (!next || this.active()) return;
+        this.offerOptOut.set((this.status.state()?.ignored_days ?? 0) >= OPT_OUT_AFTER_IGNORED_DAYS);
+        this.active.set(packInfo(next));
+      });
     });
+  }
+
+  /** "Nicht mehr anzeigen": Einblendung + Topbar-Zähler aus (wieder einschaltbar in den Einstellungen) */
+  optOut(): void {
+    this.notif.setPreference('overlay_pack', false);
+    this.notif.setPreference('sticker_pack', false);
   }
 
   /** Dialog zu: alle bis jetzt bekannten Packs gelten als angekündigt (auch übersprungene) — in der DB. */
@@ -62,6 +81,7 @@ export class PackAnnouncementComponent {
     @if (opener.info(); as info) {
       <app-pack-open-dialog heading="Neues Pack!" [pack]="info" [cards]="opener.cards()" [error]="opener.error()"
                             [remaining]="opener.remaining()" [busy]="opener.busy()" [covered]="openCard() !== null"
+                            [offerOptOut]="offerOptOut()" (optOut)="optOut.emit()"
                             (tear)="onTear()" (next)="opener.showNext()" (open)="openPulled($event)" (closed)="finish()" />
     }
     @if (openCard(); as card) {
@@ -72,6 +92,8 @@ export class PackAnnouncementComponent {
 export class PackAnnouncementDialogComponent implements OnInit {
   opener = inject(PackOpener);
   first = input.required<PackInfo>();
+  offerOptOut = input(false);
+  optOut = output<void>();
   done = output<void>();
   openCard = signal<StickerCardData | null>(null);
 
