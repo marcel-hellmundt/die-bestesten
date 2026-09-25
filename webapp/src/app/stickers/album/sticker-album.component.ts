@@ -1,10 +1,12 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map } from 'rxjs';
+import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
-import { PACK_SOURCE_LABEL, StickerPack, StickerPackSource, StickerStatusService, packDetail } from '../../core/sticker-status.service';
+import {
+  OtherCollection, PACK_SOURCE_LABEL, StickerCollectors, StickerPack, StickerPackSource, StickerStatusService, packDetail,
+} from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
@@ -49,7 +51,46 @@ export class StickerAlbumComponent {
 
   theme = computed(() => seasonTheme(this.album.seasonId() ?? ''));
 
-  collection = computed(() => this.album.collectionFrom(this.status.state()?.collection ?? []));
+  // ── Wessen Album? (?manager=<id>; ohne bzw. eigene ID = eigenes Album) ─────
+  readonly myId = this.auth.getManagerId();
+  private managerParam = toSignal(this.route.queryParamMap.pipe(map(p => p.get('manager'))), { initialValue: null });
+  /** ID des angezeigten fremden Albums, null = eigenes */
+  viewId = computed(() => { const id = this.managerParam(); return id && id !== this.myId ? id : null; });
+  isOwn = computed(() => this.viewId() === null);
+
+  private other = toSignal(
+    toObservable(this.viewId).pipe(
+      switchMap(id => !id ? of(null) : this.api.get<OtherCollection>(`sticker/collection/${id}`).pipe(
+        map(data => ({ data, error: null as string | null })),
+        catchError(err => of({ data: null, error: (err?.error?.message as string) ?? 'Album konnte nicht geladen werden' })),
+        startWith({ data: null, error: null }),
+      )),
+    ),
+    { initialValue: null },
+  );
+  otherName = computed(() => this.other()?.data?.manager_name ?? null);
+  otherError = computed(() => this.other()?.error ?? null);
+
+  collection = computed(() => this.isOwn()
+    ? this.album.collectionFrom(this.status.state()?.collection ?? [])
+    : this.album.collectionFrom(this.other()?.data?.collection ?? []));
+
+  /** Sammler-Rangliste — neu geladen, sobald sich die eigene Sammlung ändert (Pack geöffnet) */
+  collectors = toSignal(
+    toObservable(this.status.state).pipe(
+      switchMap(() => this.api.get<StickerCollectors>('sticker/collectors').pipe(catchError(() => of(null)))),
+    ),
+    { initialValue: null },
+  );
+
+  /** Album eines Managers anzeigen (eigene ID / null = eigenes); die aktuelle Seite bleibt erhalten. */
+  viewManager(id: string | null): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { manager: id && id !== this.myId ? id : null },
+      queryParamsHandling: 'merge',
+    });
+  }
 
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs = this.status.packs;
@@ -172,6 +213,7 @@ export class StickerAlbumComponent {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { seite: row ? this.pageKey(row.club) : null },
+      queryParamsHandling: 'merge', // ?manager bleibt erhalten
       replaceUrl: true,
     });
     window.scrollTo({ top: 0 });

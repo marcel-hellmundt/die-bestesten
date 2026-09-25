@@ -1310,6 +1310,17 @@ class Routing
                         'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,announced,milestone_points,matchday_number}], collection:[{key,count,silver,gold,first_at}]}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null; announced = bereits groß angekündigt, siehe PATCH /sticker/pack/announced) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready — Auth',
                     ],
                     [
+                        'method' => 'GET',
+                        'path' => '/sticker/collectors',
+                        'description' => 'Sammler-Rangliste der aktiven Saison: alle aktiven Manager mit Album (aktiv in mind. einer Liga mit sticker_enabled) → {season_id, total (Sticker im Album), collectors:[{manager_id,manager_name,have (verschiedene Sticker),pulled (alle gezogenen Karten inkl. Doppelter),silver,gold}]}, sortiert nach have absteigend, dann Name; collectors=[] solange das Album nicht eingefroren ist — Auth',
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/sticker/collection/:manager_id',
+                        'description' => 'Sammlung eines anderen Managers (nur ansehen) → {manager_id, manager_name, season_id, collection:[{key,count,silver,gold,first_at}]} (Format wie /sticker/me); 404 wenn der Manager kein Album hat — Auth',
+                        'path_params' => [':manager_id' => 'UUID des Managers'],
+                    ],
+                    [
                         'method' => 'POST',
                         'path' => '/sticker/album/sync',
                         'description' => 'Friert das Album der aktiven Saison ein bzw. ergänzt es (Grundlage: /sticker/album_preview): fehlende Spieler (z.B. Foto erst später hochgeladen) und Vereins-Sticker werden hinzugefügt, bestehende nie geändert oder gelöscht — Seltenheit bleibt stabil, gesammelte Karten bleiben gültig → {status, season_id, added, total} — Admin',

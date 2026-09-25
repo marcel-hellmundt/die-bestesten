@@ -163,6 +163,60 @@ trait StickerPackTrait
         return $q->rowCount();
     }
 
+    /**
+     * Alle Manager mit Album (aktiv in mind. einer Liga mit sticker_enabled) und ihr Fortschritt in der
+     * aktiven Saison — für die Sammler-Rangliste; sortiert nach Anzahl verschiedener Sticker.
+     */
+    public function getStickerCollectors(): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if ($seasonId === null || !$this->stickerAlbumReady($seasonId)) return ['season_id' => $seasonId, 'total' => 0, 'collectors' => []];
+
+        $t = $this->con->prepare("SELECT COUNT(*) FROM sticker WHERE season_id = ?");
+        $t->execute([$seasonId]);
+        $q = $this->con->prepare(
+            "SELECT m.id, m.manager_name,
+                    COUNT(DISTINCT p.sticker_id) AS have, COUNT(p.id) AS pulled,
+                    COALESCE(SUM(p.holo = 'silver'), 0) AS silver, COALESCE(SUM(p.holo = 'gold'), 0) AS gold
+             FROM manager m
+             LEFT JOIN sticker_pull p
+                 ON p.manager_id = m.id AND p.sticker_id IN (SELECT id FROM sticker WHERE season_id = ?)
+             WHERE m.status = 'active'
+               AND EXISTS (SELECT 1 FROM manager_league ml JOIN league l ON l.id = ml.league_id
+                           WHERE ml.manager_id = m.id AND ml.status = 'active' AND l.sticker_enabled = 1)
+             GROUP BY m.id, m.manager_name
+             ORDER BY have DESC, m.manager_name ASC"
+        );
+        $q->execute([$seasonId]);
+        return [
+            'season_id'  => $seasonId,
+            'total'      => (int) $t->fetchColumn(),
+            'collectors' => array_map(fn($r) => [
+                'manager_id' => $r['id'], 'manager_name' => $r['manager_name'],
+                'have' => (int) $r['have'], 'pulled' => (int) $r['pulled'],
+                'silver' => (int) $r['silver'], 'gold' => (int) $r['gold'],
+            ], $q->fetchAll(PDO::FETCH_ASSOC)),
+        ];
+    }
+
+    /** Sammlung eines (anderen) Managers der aktiven Saison — null, wenn er kein Album hat. */
+    public function getStickerCollectionOf(string $managerId): ?array
+    {
+        if (!$this->isStickerEnabledForManager($managerId)) return null;
+        $seasonId = $this->getActiveSeasonId();
+        $m = $this->con->prepare("SELECT manager_name FROM manager WHERE id = ?");
+        $m->execute([$managerId]);
+        $name = $m->fetchColumn();
+        if ($name === false) return null;
+        $ready = $seasonId !== null && $this->stickerAlbumReady($seasonId);
+        return [
+            'manager_id'   => $managerId,
+            'manager_name' => $name,
+            'season_id'    => $seasonId,
+            'collection'   => $ready ? $this->getStickerCollection($managerId, $seasonId) : [],
+        ];
+    }
+
     /** Sammlung: je gezogenem Sticker Anzahl, Holo-Anzahlen und Zeitpunkt des ersten Zugs. */
     private function getStickerCollection(string $managerId, string $seasonId): array
     {

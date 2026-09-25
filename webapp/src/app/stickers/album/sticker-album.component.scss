@@ -27,6 +27,21 @@ $desktop: $mobile-breakpoint + 1;
   }
 }
 
+// ── Fremdes Album (nur ansehen) ──────────────────────────────────────────────
+.viewing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-2 $space-3 $space-2 $space-4;
+  border-radius: $radius-lg;
+  background: $color-text;
+  color: #fff;
+  font-size: $font-sm;
+
+  .btn-ghost { color: #fff; }
+}
+
 // ── Ungeöffnete Packs ────────────────────────────────────────────────────────
 .packs {
   display: flex;

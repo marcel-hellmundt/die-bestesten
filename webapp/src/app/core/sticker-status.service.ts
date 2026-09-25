@@ -34,6 +34,21 @@ export interface StickerState {
   collection: StickerCollectionEntry[];
 }
 
+/** Response von GET /sticker/collectors (Sammler-Rangliste). */
+export interface StickerCollectors {
+  season_id: string | null;
+  total: number;
+  collectors: { manager_id: string; manager_name: string; have: number; pulled: number; silver: number; gold: number }[];
+}
+
+/** Response von GET /sticker/collection/:manager_id (fremdes Album, nur ansehen). */
+export interface OtherCollection {
+  manager_id: string;
+  manager_name: string;
+  season_id: string | null;
+  collection: StickerCollectionEntry[];
+}
+
 export interface OpenedPack {
   pack: { id: string; source: StickerPackSource; size: number };
   cards: { key: string; holo: 'silver' | 'gold' | null; is_new: boolean }[];

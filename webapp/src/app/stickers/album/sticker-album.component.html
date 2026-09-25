@@ -1,6 +1,6 @@
 <div class="album">
   <!-- Admin: Album einfrieren/ergänzen + Test-Packs je Art (Optik/Animation ausprobieren, nichts gespeichert) -->
-  @if (isAdmin) {
+  @if (isAdmin && isOwn()) {
     <div class="tools">
       @if (syncResult()) {
         <span class="tools__result">{{ syncResult() }}</span>
@@ -36,8 +36,19 @@
     @let row = currentRow();
     @let ov = overviewProgress();
 
+    <!-- Fremdes Album: nur ansehen -->
+    @if (!isOwn()) {
+      <div class="viewing">
+        <span class="viewing__text">
+          @if (otherError()) { {{ otherError() }} }
+          @else { Album von <b>{{ otherName() ?? '…' }}</b> }
+        </span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="viewManager(null)">Zu meinem Album</button>
+      </div>
+    }
+
     <!-- Ungeöffnete Packs -->
-    @if (packs().length > 0) {
+    @if (isOwn() && packs().length > 0) {
       <div class="packs">
         <div class="packs__main">
           <div class="packs__icon" aria-hidden="true">{{ packs().length }}</div>
@@ -126,7 +137,9 @@
           <app-album-club-page [club]="row.club" [stickers]="row.stickers" [collection]="collection()"
                                [theme]="theme()" (open)="openSlot($event)" />
         } @else {
-          <app-album-overview [rows]="rows()" [collection]="collection()" (goTo)="goTo($event + 1)" (open)="openSticker($event)" />
+          <app-album-overview [rows]="rows()" [collection]="collection()" [ownerName]="isOwn() ? null : otherName()"
+                              [collectors]="collectors()" [viewedId]="viewId() ?? myId" [myId]="myId"
+                              (goTo)="goTo($event + 1)" (open)="openSticker($event)" (showManager)="viewManager($event)" />
         }
 
         <!-- Desktop: Blättern unter der Seite -->

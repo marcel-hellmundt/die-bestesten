@@ -2,7 +2,7 @@
 @let col = collection();
 <article class="overview">
   <header class="overview__head">
-    <h2 class="overview__title">Mein Sammelalbum</h2>
+    <h2 class="overview__title">{{ ownerName() ? 'Album von ' + ownerName() : 'Mein Sammelalbum' }}</h2>
     <span class="overview__sub">{{ t.have }} von {{ t.total }} Stickern eingeklebt</span>
     <div class="overview__bar"><span [style.width.%]="t.pct * 100"></span></div>
   </header>
@@ -31,6 +31,33 @@
           </button>
         }
       </div>
+    </section>
+  }
+
+  <!-- Sammler-Rangliste: Klick öffnet das Album des Managers -->
+  @if (ranking().length > 0) {
+    <section class="block">
+      <h3 class="block__title">Sammler</h3>
+      <ol class="collectors">
+        @for (m of ranking(); track m.manager_id) {
+          <li>
+            <button type="button" class="collector" [class.collector--viewed]="m.manager_id === viewedId()"
+                    (click)="showManager.emit(m.manager_id)">
+              <span class="collector__rank">{{ m.rank }}.</span>
+              <span class="collector__name">
+                {{ m.manager_name }}
+                @if (m.manager_id === myId()) { <span class="collector__me">(du)</span> }
+              </span>
+              <span class="collector__holo">
+                @if (m.gold > 0) { <span class="holo-dot holo-dot--gold" title="Holo Gold">{{ m.gold }}</span> }
+                @if (m.silver > 0) { <span class="holo-dot holo-dot--silver" title="Holo Silber">{{ m.silver }}</span> }
+              </span>
+              <span class="collector__count">{{ m.have }}/{{ collectors()!.total }}</span>
+              <span class="collector__bar"><span [style.width.%]="m.pct * 100"></span></span>
+            </button>
+          </li>
+        }
+      </ol>
     </section>
   }
 
