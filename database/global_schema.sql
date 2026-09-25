@@ -427,6 +427,7 @@ CREATE TABLE IF NOT EXISTS sticker_pack (
     league_id  CHAR(36)     NULL,      -- Liga des Ereignisses (Meilenstein/Spieltagsbester)
     size       TINYINT UNSIGNED NOT NULL,
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    announced_at DATETIME   NULL,      -- NULL = noch nicht groß angekündigt (Migration: migrate_sticker_pack_announced.sql)
     opened_at  DATETIME     NULL,      -- NULL = ungeöffnet
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     FOREIGN KEY (season_id)  REFERENCES season(id),

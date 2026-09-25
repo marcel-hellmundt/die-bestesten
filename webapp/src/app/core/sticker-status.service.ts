@@ -11,6 +11,7 @@ export interface StickerPack {
   size: number;
   created_at: string;
   league_name: string | null;
+  announced: boolean;               // schon groß angekündigt (auf irgendeinem Gerät)
   milestone_points: number | null;  // Meilenstein-Pack: erreichte Punkte-Schwelle
   matchday_number: number | null;   // Spieltagsbester-Pack: Spieltag
 }
@@ -88,6 +89,12 @@ export class StickerStatusService {
       next: s => this.state.set(s),
       error: () => {}, // z.B. API ohne Sticker-Migration — Feature bleibt dann einfach aus
     });
+  }
+
+  /** Packs als groß angekündigt markieren (geräteübergreifend, siehe PATCH /sticker/pack/announced). */
+  markAnnounced(ids: string[]): void {
+    if (ids.length === 0) return;
+    this.api.patch('sticker/pack/announced', { ids }).subscribe({ next: () => this.refresh(), error: () => {} });
   }
 
   openPack(packId: string): Observable<OpenedPack> {

@@ -5,29 +5,12 @@ import { PackCard, PackInfo, packInfo } from './pack.model';
 import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 
-const STORAGE_KEY = 'klebrigsten-announced-packs';
-const STORAGE_MAX = 300;
-
-function loadAnnounced(): Set<string> {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]'));
-  } catch {
-    return new Set();
-  }
-}
-
-function saveAnnounced(ids: Set<string>): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids].slice(-STORAGE_MAX)));
-  } catch { /* z.B. privater Modus — dann wird eben erneut angekündigt */ }
-}
-
 /**
  * "Die Klebrigsten" — neu erhaltene Packs (z.B. Tages-Pack beim App-Öffnen, Meilenstein nach dem Spieltag)
  * erscheinen auf jeder Seite sofort groß in der Mitte: aufreißen oder "Später öffnen" (dann bleibt das Pack
- * ungeöffnet und kann unter /klebrigsten/sammelalbum geöffnet werden). Welche Packs schon angekündigt
- * wurden, merkt sich der Browser (localStorage) — jedes Pack erscheint nur einmal von selbst.
- * Liegt in der Shell; die eigentliche Dialog-Logik (inkl. Album-Daten) wird erst bei Bedarf erzeugt.
+ * ungeöffnet und kann unter /klebrigsten/sammelalbum geöffnet werden). Beim Schließen werden die Packs
+ * serverseitig als angekündigt markiert (announced) — jedes Pack erscheint nur einmal von selbst, auch
+ * über mehrere Geräte hinweg. Liegt in der Shell; die Dialog-Logik (inkl. Album-Daten) entsteht erst bei Bedarf.
  */
 @Component({
   selector: 'app-pack-announcement',
@@ -40,10 +23,11 @@ function saveAnnounced(ids: Set<string>): void {
 })
 export class PackAnnouncementComponent {
   private status = inject(StickerStatusService);
-  private announced = signal(loadAnnounced());
+  /** in dieser Sitzung schon geschlossen — bis GET /sticker/me die Markierung zurückliefert */
+  private dismissed = signal(new Set<string>());
 
   readonly active = signal<PackInfo | null>(null);
-  private pending = computed(() => this.status.packs().filter(p => !this.announced().has(p.id)));
+  private pending = computed(() => this.status.packs().filter(p => !p.announced && !this.dismissed().has(p.id)));
 
   constructor() {
     // Neues, noch nicht angekündigtes Pack → Dialog zeigen (einer zur Zeit)
@@ -53,14 +37,13 @@ export class PackAnnouncementComponent {
     });
   }
 
-  /** Dialog zu: alle bis jetzt bekannten Packs gelten als angekündigt (auch übersprungene). */
+  /** Dialog zu: alle bis jetzt bekannten Packs gelten als angekündigt (auch übersprungene) — in der DB. */
   dismiss(): void {
-    const ids = new Set(this.announced());
-    for (const p of this.status.packs()) ids.add(p.id);
+    const ids = new Set(this.status.packs().filter(p => !p.announced).map(p => p.id));
     const first = this.active()?.id;
     if (first) ids.add(first);
-    saveAnnounced(ids);
-    this.announced.set(ids);
+    this.dismissed.set(new Set([...this.dismissed(), ...ids]));
+    this.status.markAnnounced([...ids]);
     this.active.set(null);
   }
 }

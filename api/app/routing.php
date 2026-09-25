@@ -1307,12 +1307,18 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/me',
-                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,milestone_points,matchday_number}], collection:[{key,count,silver,gold,first_at}]}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready — Auth',
+                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,announced,milestone_points,matchday_number}], collection:[{key,count,silver,gold,first_at}]}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null; announced = bereits groß angekündigt, siehe PATCH /sticker/pack/announced) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready — Auth',
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/sticker/album/sync',
                         'description' => 'Friert das Album der aktiven Saison ein bzw. ergänzt es (Grundlage: /sticker/album_preview): fehlende Spieler (z.B. Foto erst später hochgeladen) und Vereins-Sticker werden hinzugefügt, bestehende nie geändert oder gelöscht — Seltenheit bleibt stabil, gesammelte Karten bleiben gültig → {status, season_id, added, total} — Admin',
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/sticker/pack/announced',
+                        'description' => 'Eigene Packs als "groß angekündigt" markieren (sticker_pack.announced_at = jetzt) — der Ankündigungs-Dialog neuer Packs ruft das beim Schließen auf (aufgerissen oder "Später öffnen"), damit dasselbe Pack auf anderen Geräten nicht erneut groß erscheint; fremde/bereits markierte IDs werden ignoriert → {status, updated}; 400 ohne ids-Array — Auth',
+                        'body' => ['ids' => 'Array von Pack-UUIDs (max. 500)'],
                     ],
                     [
                         'method' => 'POST',

@@ -99,13 +99,19 @@ trait StickerPackTrait
         $today = (new DateTime('now', new DateTimeZone('Europe/Berlin')))->format('Y-m-d');
         $this->grantStickerPack($managerId, $seasonId, 'daily', "daily:{$today}", null, $this->stickerConfig()['daily_pack_size']);
 
-        $pq = $this->con->prepare(
-            "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, l.name AS league_name
+        $packSql = fn(string $announced) =>
+            "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, $announced AS announced, l.name AS league_name
              FROM sticker_pack sp LEFT JOIN league l ON l.id = sp.league_id
              WHERE sp.manager_id = ? AND sp.season_id = ? AND sp.opened_at IS NULL
-             ORDER BY sp.created_at ASC"
-        );
-        $pq->execute([$managerId, $seasonId]);
+             ORDER BY sp.created_at ASC";
+        try {
+            $pq = $this->con->prepare($packSql('sp.announced_at IS NOT NULL'));
+            $pq->execute([$managerId, $seasonId]);
+        } catch (\Throwable $e) {
+            // Spalte announced_at fehlt noch (Migration nicht eingespielt) → nichts groß ankündigen
+            $pq = $this->con->prepare($packSql('1'));
+            $pq->execute([$managerId, $seasonId]);
+        }
         $rows = $pq->fetchAll(PDO::FETCH_ASSOC);
 
         // Anlass aus dem source_key: Meilenstein-Schwelle bzw. Spieltag (Nummer per matchday_id nachschlagen)
@@ -126,6 +132,7 @@ trait StickerPackTrait
             return [
                 'id' => $p['id'], 'source' => $p['source'], 'size' => (int) $p['size'],
                 'created_at' => $p['created_at'], 'league_name' => $p['league_name'],
+                'announced' => (bool) $p['announced'],
                 'milestone_points' => $p['source'] === 'milestone' ? (int) ($parts[2] ?? 0) : null,
                 'matchday_number'  => $p['source'] === 'matchday_best' && isset($mdNumbers[$parts[2] ?? ''])
                     ? (int) $mdNumbers[$parts[2]] : null,
@@ -134,6 +141,23 @@ trait StickerPackTrait
 
         $state['collection'] = $this->getStickerCollection($managerId, $seasonId);
         return $state;
+    }
+
+    /**
+     * Packs als "groß angekündigt" markieren (Ankündigungs-Dialog geschlossen: aufgerissen oder "Später
+     * öffnen") — gilt geräteübergreifend. Nur eigene Packs; bereits markierte bleiben unverändert.
+     */
+    public function markStickerPacksAnnounced(string $managerId, array $packIds): int
+    {
+        $packIds = array_values(array_filter($packIds, 'is_string'));
+        if (!$packIds) return 0;
+        $in = implode(',', array_fill(0, count($packIds), '?'));
+        $q = $this->con->prepare(
+            "UPDATE sticker_pack SET announced_at = NOW()
+             WHERE manager_id = ? AND announced_at IS NULL AND id IN ($in)"
+        );
+        $q->execute([$managerId, ...$packIds]);
+        return $q->rowCount();
     }
 
     /** Sammlung: je gezogenem Sticker Anzahl, Holo-Anzahlen und Zeitpunkt des ersten Zugs. */

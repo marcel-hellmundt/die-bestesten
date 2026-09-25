@@ -6,10 +6,11 @@
  *   GET  /sticker/album              — eingefrorenes Album der aktiven Saison (Auth)
  *   GET  /sticker/me                 — eigener Status: tägliches Pack vergeben, ungeöffnete Packs, Sammlung (Auth)
  *   POST /sticker/album/sync         — Album einfrieren/ergänzen (Admin) *   POST /sticker/pack/:id/open      — eigenes Pack öffnen (Auth)
+ *   PATCH /sticker/pack/announced    — eigene Packs als groß angekündigt markieren (Auth)
  */
 class StickerController extends _BaseController
 {
-    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'manager'];
+    public static array $methodRoles = ['GET' => 'manager', 'POST' => 'manager', 'PATCH' => 'manager'];
 
     protected function get(): mixed
     {
@@ -43,7 +44,22 @@ class StickerController extends _BaseController
         return $this->methodNotAllowed();
     }
 
-    protected function patch(): mixed  { return $this->methodNotAllowed(); }
+    protected function patch(): mixed
+    {
+        if ($this->id === 'pack' && $this->sub === 'announced') {
+            $ids = $this->body()['ids'] ?? null;
+            if (!is_array($ids) || count($ids) > 500) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'ids (Array von Pack-IDs) erforderlich'];
+            }
+            try {
+                return ['status' => true, 'updated' => $this->db->markStickerPacksAnnounced($GLOBALS['auth_manager_id'], $ids)];
+            } catch (\Throwable $e) {
+                return ['status' => true, 'updated' => 0]; // Spalte announced_at fehlt noch (Migration)
+            }
+        }
+        return $this->methodNotAllowed();
+    }
     protected function delete(): mixed { return $this->methodNotAllowed(); }
 
     private function forbidden(): array
