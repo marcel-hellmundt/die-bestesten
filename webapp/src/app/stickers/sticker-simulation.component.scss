@@ -17,7 +17,7 @@
 
 input[type='range'] {
   width: 100%;
-  accent-color: var(--flat-river);
+  accent-color: $color-accent;
   cursor: pointer;
 }
 
