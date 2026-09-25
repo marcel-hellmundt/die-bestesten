@@ -134,13 +134,14 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: $space-2;
 
-  // Desktop: freier — Flex-Reihen mit fester Kartenbreite, leicht schräg "eingeklebt"
+  // Desktop: freier — Flex-Reihen mit fester Kartenbreite; eingeklebte Sticker leicht schräg, leere Slots gerade
   @media (min-width: $mobile-breakpoint + 1) {
     display: flex;
     flex-wrap: wrap;
     gap: $space-4 $space-3;
 
-    .slot { width: 118px; transform: rotate(var(--tilt)); }
+    .slot { width: 118px; }
+    .slot__card { transform: rotate(var(--tilt)); }
 
     &--club .slot { width: 150px; }
   }
@@ -148,9 +149,6 @@
 
 .slot {
   position: relative;
-  transition: transform $transition-fast;
-
-  &:hover { transform: rotate(0deg) scale(1.03); }
 
   &__card {
     display: block;
@@ -159,6 +157,9 @@
     border: none;
     background: none;
     cursor: pointer;
+    transition: transform $transition-fast;
+
+    &:hover { transform: rotate(0deg) scale(1.03); }
   }
 
   &__count {

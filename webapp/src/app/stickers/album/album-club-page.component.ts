@@ -51,7 +51,7 @@ export class AlbumClubPageComponent {
         count,
         card: count > 0 ? this.album.cardData(s, col.holo[s.idx]) : null,
         initials: initials(s),
-        tilt: ((hashSeed(s.id) % 7) - 3) * 0.6,
+        tilt: ((hashSeed(s.id) % 11) - 5) * 0.5,   // −2,5° … +2,5°, stabil je Sticker
       };
     });
   });
