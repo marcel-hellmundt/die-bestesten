@@ -1,0 +1,182 @@
+@use '../../../styles/variables' as *;
+
+:host { display: block; }
+
+.overview {
+  padding: $space-4;
+  border-radius: $radius-lg;
+  background: $color-surface;
+  border: 1px solid $color-border;
+
+  @media (min-width: $mobile-breakpoint + 1) { padding: $space-6; min-height: 720px; }
+
+  &__title {
+    margin: 0;
+    font-family: $font-display;
+    font-size: $font-xl;
+    font-weight: 800;
+    font-style: italic;
+    text-transform: uppercase;
+  }
+
+  &__sub {
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+
+  &__bar {
+    height: 8px;
+    margin-top: $space-3;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: $color-accent;
+      transition: width $transition-normal;
+    }
+  }
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: $space-3;
+  margin-top: $space-4;
+
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: $space-2; }
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-3;
+  border-radius: $radius-md;
+  background: $color-surface-alt;
+
+  &__value {
+    font-size: $font-xl;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__label {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &--silver { background: linear-gradient(135deg, #eef0f3, #cfd4dc); }
+  &--gold   { background: linear-gradient(135deg, #fbf1cf, #e6c766); }
+}
+
+.tiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2 $space-4;
+  margin-top: $space-3;
+  font-size: $font-xs;
+  color: $color-text-muted;
+  font-variant-numeric: tabular-nums;
+
+  b { color: $color-text; }
+}
+
+.block {
+  margin-top: $space-6;
+
+  &__title {
+    margin: 0 0 $space-3;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+  }
+}
+
+// Zuletzt eingeklebt: horizontale Reihe kleiner Karten (mobile scrollbar)
+.recent {
+  display: flex;
+  gap: $space-3;
+  overflow-x: auto;
+  padding-bottom: $space-2;
+
+  &__item {
+    flex: 0 0 96px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: transform $transition-fast;
+
+    &:hover { transform: translateY(-3px); }
+  }
+}
+
+// Vereins-Kacheln
+.clubs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: $space-2;
+
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.club {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 4px $space-2;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-left: 4px solid var(--club);
+  border-radius: $radius-md;
+  background: $color-surface;
+  text-align: left;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover { background: $color-surface-alt; }
+
+  &--complete { background: color-mix(in srgb, #{$color-success} 8%, #{$color-surface}); }
+
+  &__logo {
+    grid-row: span 2;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__count {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__bar {
+    grid-column: 2 / span 2;
+    height: 4px;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: var(--club);
+    }
+  }
+}

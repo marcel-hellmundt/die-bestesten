@@ -1,0 +1,52 @@
+@let p = progress();
+<!-- Albumseite: Vereinsfarben + Saison-Muster, großes halbtransparentes Wappen in einer Ecke -->
+<article class="page" [style]="pageStyle()">
+  <img class="page__watermark page__watermark--{{ theme().logoCorner }}" [src]="logoUrl()" alt="" draggable="false" />
+
+  <header class="page__head">
+    <div class="page__title">
+      <img class="page__logo" [src]="logoUrl()" alt="" draggable="false" />
+      <div>
+        <h2 class="page__name">{{ club().name }}</h2>
+        <span class="page__count">{{ p.have }} / {{ p.total }} Sticker</span>
+      </div>
+    </div>
+    <div class="page__bar"><span [style.width.%]="p.total ? (p.have / p.total) * 100 : 0"></span></div>
+  </header>
+
+  <!-- Vereins-Sticker (Wappen + Stadion), auf Desktop etwas größer -->
+  <section class="section section--club">
+    <div class="slots slots--club">
+      @for (slot of clubSlots(); track slot.sticker.id) {
+        <ng-container *ngTemplateOutlet="slotTpl; context: { $implicit: slot }" />
+      }
+    </div>
+  </section>
+
+  @for (sec of sections(); track sec.label) {
+    <section class="section">
+      <h3 class="section__label">{{ sec.label }}</h3>
+      <div class="slots">
+        @for (slot of sec.slots; track slot.sticker.id) {
+          <ng-container *ngTemplateOutlet="slotTpl; context: { $implicit: slot }" />
+        }
+      </div>
+    </section>
+  }
+</article>
+
+<ng-template #slotTpl let-slot>
+  <div class="slot" [style.--tilt]="slot.tilt + 'deg'">
+    @if (slot.card; as card) {
+      <button class="slot__card" type="button" (click)="open.emit(slot)" [attr.aria-label]="slot.sticker.displayname">
+        <app-sticker-card [data]="card" />
+        @if (slot.count > 1) { <span class="slot__count">×{{ slot.count }}</span> }
+      </button>
+    } @else {
+      <!-- leerer Slot: Initialen mittig (Vereins-Sticker: Bezeichnung) -->
+      <div class="slot__empty">
+        <span class="slot__initials">{{ label(slot.sticker) || slot.initials }}</span>
+      </div>
+    }
+  </div>
+</ng-template>

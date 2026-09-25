@@ -1,0 +1,251 @@
+@use '../../../styles/variables' as *;
+
+$desktop: $mobile-breakpoint + 1;
+
+.album {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4;
+
+  @media (max-width: $mobile-breakpoint) { padding: $space-3; }
+
+  &__layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $space-4;
+    align-items: start;
+
+    @media (min-width: $desktop) { grid-template-columns: 240px minmax(0, 1fr); }
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    min-width: 0;
+  }
+}
+
+// ── Demo-Umschalter ──────────────────────────────────────────────────────────
+.demo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-2;
+  font-size: $font-xs;
+  color: $color-text-muted;
+
+  &__label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__toggle {
+    display: inline-flex;
+    border: 1px solid $color-border;
+    border-radius: $radius-full;
+    overflow: hidden;
+
+    button {
+      padding: 4px 12px;
+      border: none;
+      background: $color-surface;
+      color: $color-text-muted;
+      font-size: $font-xs;
+      cursor: pointer;
+
+      &.active {
+        background: $color-text;
+        color: $color-surface;
+      }
+    }
+  }
+}
+
+// ── Seitenliste (Desktop) + Auswahl (Mobile) ─────────────────────────────────
+.toc {
+  display: none;
+
+  @media (min-width: $desktop) {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: sticky;
+    top: $topbar-height + $space-4;
+    max-height: calc(100vh - #{$topbar-height} - #{$space-8});
+    overflow-y: auto;
+  }
+
+  &__item {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: $space-2;
+    padding: 6px $space-2;
+    border: none;
+    border-radius: $radius-md;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    color: $color-text;
+    transition: background $transition-fast;
+
+    &:hover { background: $color-surface-alt; }
+
+    &--active {
+      background: $color-surface-alt;
+      font-weight: $font-weight-semibold;
+      box-shadow: inset 3px 0 0 $color-accent;
+    }
+
+    &--complete .toc__count { color: $color-success; font-weight: $font-weight-semibold; }
+  }
+
+  &__icon {
+    width: 24px;
+    text-align: center;
+    color: $color-accent;
+  }
+
+  &__logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__count {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ── Mobile: sticky Blätter-Leiste ────────────────────────────────────────────
+.pager {
+  position: sticky;
+  top: $topbar-height;
+  z-index: $z-sticky - 1;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-1;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, #{$color-surface} 92%, transparent);
+  backdrop-filter: blur(8px);
+
+  @media (min-width: $desktop) { display: none; }
+
+  &__arrow {
+    height: 40px;
+    border: none;
+    border-radius: $radius-md;
+    background: none;
+    font-size: 26px;
+    line-height: 1;
+    color: $color-text;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.25; cursor: default; }
+  }
+
+  &__current {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-2;
+    min-width: 0;
+    height: 40px;
+    border: none;
+    border-radius: $radius-md;
+    background: $color-surface-alt;
+    color: $color-text;
+    cursor: pointer;
+  }
+
+  &__logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
+
+  &__name {
+    font-weight: $font-weight-semibold;
+    font-size: $font-sm;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__count {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__caret {
+    font-size: 11px;
+    color: $color-text-muted;
+    transition: transform $transition-fast;
+
+    &--open { transform: rotate(180deg); }
+  }
+}
+
+.picker {
+  position: absolute;
+  top: calc(100% + #{$space-1});
+  left: 0;
+  right: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: $space-1;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+
+  &__item {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: $space-2;
+    width: 100%;
+    padding: 10px $space-2;
+    border: none;
+    border-radius: $radius-md;
+    background: none;
+    text-align: left;
+    color: $color-text;
+    cursor: pointer;
+
+    &--active { background: $color-surface-alt; font-weight: $font-weight-semibold; }
+  }
+}
+
+// ── Desktop: Blättern unter der Seite ────────────────────────────────────────
+.turn {
+  display: none;
+
+  @media (min-width: $desktop) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__page {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+}

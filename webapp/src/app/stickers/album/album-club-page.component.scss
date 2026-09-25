@@ -1,0 +1,189 @@
+@use '../../../styles/variables' as *;
+
+:host { display: block; }
+
+// ── Seite ────────────────────────────────────────────────────────────────────
+// Mobile: schlicht (leichte Tönung in Vereinsfarbe, kein Wasserzeichen/Muster → Platz + Performance).
+// Desktop: "Buchseite" mit Verlauf in Vereinsfarben, Saison-Muster und großem halbtransparentem Wappen.
+.page {
+  position: relative;
+  overflow: hidden;
+  padding: $space-3;
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, var(--page-a) 8%, $color-surface);
+  border: 1px solid color-mix(in srgb, var(--page-a) 25%, $color-border);
+
+  @media (min-width: $mobile-breakpoint + 1) {
+    padding: $space-6;
+    min-height: 720px;
+    background:
+      var(--pattern-image),
+      linear-gradient(var(--sweep),
+        color-mix(in srgb, var(--page-a) 22%, $color-surface) 0%,
+        color-mix(in srgb, var(--page-a) 8%, $color-surface) 55%,
+        color-mix(in srgb, var(--page-b) 14%, $color-surface) 100%);
+    background-size: var(--pattern-size), auto;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  }
+
+  &__watermark {
+    display: none;
+
+    @media (min-width: $mobile-breakpoint + 1) {
+      display: block;
+      position: absolute;
+      width: 62%;
+      aspect-ratio: 1;
+      object-fit: contain;
+      opacity: 0.1;
+      transform: rotate(var(--logo-rotation));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    &--top-left     { top: -12%; left: -12%; }
+    &--top-right    { top: -12%; right: -12%; }
+    &--bottom-left  { bottom: -12%; left: -12%; }
+    &--bottom-right { bottom: -12%; right: -12%; }
+  }
+
+  &__head {
+    position: relative;
+    z-index: 1;
+    margin-bottom: $space-3;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+  }
+
+  &__name {
+    margin: 0;
+    font-family: $font-display;
+    font-size: $font-lg;
+    font-weight: 800;
+    font-style: italic;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+
+  &__count {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__bar {
+    height: 6px;
+    margin-top: $space-2;
+    border-radius: $radius-full;
+    background: color-mix(in srgb, var(--page-a) 15%, $color-surface-alt);
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--page-a);
+      transition: width $transition-normal;
+    }
+  }
+}
+
+// ── Abschnitte + Slots ───────────────────────────────────────────────────────
+.section {
+  position: relative;
+  z-index: 1;
+  margin-top: $space-4;
+
+  &__label {
+    margin: 0 0 $space-2;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+  }
+
+  &--club { margin-top: 0; }
+}
+
+// Mobile: 3 Sticker nebeneinander im Raster
+.slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-2;
+
+  // Desktop: freier — Flex-Reihen mit fester Kartenbreite, leicht schräg "eingeklebt"
+  @media (min-width: $mobile-breakpoint + 1) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-4 $space-3;
+
+    .slot { width: 118px; transform: rotate(var(--tilt)); }
+
+    &--club .slot { width: 150px; }
+  }
+}
+
+.slot {
+  position: relative;
+  transition: transform $transition-fast;
+
+  &:hover { transform: rotate(0deg) scale(1.03); }
+
+  &__card {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+
+  &__count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    z-index: 2;
+    padding: 1px 6px;
+    border-radius: $radius-full;
+    background: $color-text;
+    color: $color-surface;
+    font-size: 11px;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Leerer Slot: gestrichelter Platzhalter im Kartenformat, Initialen mittig
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 5 / 7;
+    border: 2px dashed color-mix(in srgb, var(--page-a) 40%, $color-border);
+    border-radius: 7% / 5%;
+    background: color-mix(in srgb, $color-surface 70%, transparent);
+  }
+
+  &__initials {
+    font-family: $font-display;
+    font-size: clamp(14px, 4.5vw, 22px);
+    font-weight: 800;
+    font-style: italic;
+    color: color-mix(in srgb, var(--page-a) 55%, $color-text-muted);
+    letter-spacing: 0.04em;
+    text-align: center;
+    padding: 0 4px;
+
+    @media (min-width: $mobile-breakpoint + 1) { font-size: $font-lg; }
+  }
+}

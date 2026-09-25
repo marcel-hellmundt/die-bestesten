@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { MaintainerGuard } from '../auth/maintainer.guard';
 import { StickersComponent } from './stickers.component';
-import { StickerAlbumComponent } from './sticker-album.component';
+import { StickerAlbumComponent } from './album/sticker-album.component';
+import { AlbumOverviewComponent } from './album/album-overview.component';
+import { AlbumClubPageComponent } from './album/album-club-page.component';
 import { StickerSimulationComponent } from './sticker-simulation.component';
 import { StickerCardComponent } from './sticker-card/sticker-card.component';
 import { StickerCardDialogComponent } from './sticker-card/sticker-card-dialog.component';
@@ -22,8 +24,8 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [
-    StickersComponent, StickerAlbumComponent, StickerSimulationComponent,
-    StickerCardComponent, StickerCardDialogComponent,
+    StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent,
+    StickerSimulationComponent, StickerCardComponent, StickerCardDialogComponent,
   ],
   imports: [CommonModule, RouterModule.forChild(routes)],
 })

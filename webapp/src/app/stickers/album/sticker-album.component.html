@@ -1,0 +1,93 @@
+<div class="album">
+  @if (loading()) {
+    <p class="state-msg">Album wird geladen…</p>
+  } @else if (error()) {
+    <p class="state-msg">{{ error() }}</p>
+  } @else {
+    @let idx = pageIndex();
+    @let row = currentRow();
+    @let ov = overviewProgress();
+
+    <!-- Demo-Hinweis: noch keine echten Packs -->
+    <div class="demo">
+      <span class="demo__label">Demo-Sammlung</span>
+      <div class="demo__toggle" role="group" aria-label="Sammelstand">
+        <button type="button" [class.active]="demoMode() === 'today'" (click)="setDemoMode('today')">Heute</button>
+        <button type="button" [class.active]="demoMode() === 'end'" (click)="setDemoMode('end')">Saisonende</button>
+      </div>
+    </div>
+
+    <div class="album__layout">
+      <!-- Desktop: Seitenliste links -->
+      <nav class="toc" aria-label="Albumseiten">
+        <button type="button" class="toc__item" [class.toc__item--active]="idx === 0" (click)="goTo(0)">
+          <span class="toc__icon">★</span>
+          <span class="toc__name">Übersicht</span>
+          <span class="toc__count">{{ ov.have }}/{{ ov.total }}</span>
+        </button>
+        @for (p of pages(); track p.club.id) {
+          <button type="button" class="toc__item" [class.toc__item--active]="idx === p.index"
+                  [class.toc__item--complete]="p.have === p.total" (click)="goTo(p.index)">
+            <img class="toc__logo" [src]="p.logo" alt="" draggable="false" />
+            <span class="toc__name">{{ p.club.name }}</span>
+            <span class="toc__count">{{ p.have }}/{{ p.total }}</span>
+          </button>
+        }
+      </nav>
+
+      <div class="album__main">
+        <!-- Mobile: sticky Blätter-Leiste mit Seitenauswahl -->
+        <div class="pager">
+          <button type="button" class="pager__arrow" (click)="prev()" [disabled]="idx === 0" aria-label="Vorherige Seite">‹</button>
+          <button type="button" class="pager__current" (click)="pickerOpen.set(!pickerOpen())" [attr.aria-expanded]="pickerOpen()">
+            @if (row) {
+              <img class="pager__logo" [src]="pages()[idx - 1].logo" alt="" draggable="false" />
+              <span class="pager__name">{{ row.club.short_name || row.club.name }}</span>
+              <span class="pager__count">{{ pages()[idx - 1].have }}/{{ pages()[idx - 1].total }}</span>
+            } @else {
+              <span class="pager__name">Übersicht</span>
+              <span class="pager__count">{{ ov.have }}/{{ ov.total }}</span>
+            }
+            <span class="pager__caret" [class.pager__caret--open]="pickerOpen()">▾</span>
+          </button>
+          <button type="button" class="pager__arrow" (click)="next()" [disabled]="idx === pageCount() - 1" aria-label="Nächste Seite">›</button>
+
+          @if (pickerOpen()) {
+            <div class="picker">
+              <button type="button" class="picker__item" [class.picker__item--active]="idx === 0" (click)="goTo(0)">
+                <span class="toc__icon">★</span>
+                <span class="toc__name">Übersicht</span>
+                <span class="toc__count">{{ ov.have }}/{{ ov.total }}</span>
+              </button>
+              @for (p of pages(); track p.club.id) {
+                <button type="button" class="picker__item" [class.picker__item--active]="idx === p.index" (click)="goTo(p.index)">
+                  <img class="toc__logo" [src]="p.logo" alt="" draggable="false" />
+                  <span class="toc__name">{{ p.club.name }}</span>
+                  <span class="toc__count">{{ p.have }}/{{ p.total }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (row) {
+          <app-album-club-page [club]="row.club" [stickers]="row.stickers" [collection]="collection()"
+                               [theme]="theme()" (open)="openSlot($event)" />
+        } @else {
+          <app-album-overview [rows]="rows()" [collection]="collection()" (goTo)="goTo($event + 1)" (open)="openSticker($event)" />
+        }
+
+        <!-- Desktop: Blättern unter der Seite -->
+        <div class="turn">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="prev()" [disabled]="idx === 0">‹ Zurück</button>
+          <span class="turn__page">Seite {{ idx + 1 }} / {{ pageCount() }}</span>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="next()" [disabled]="idx === pageCount() - 1">Weiter ›</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (openCard(); as card) {
+    <app-sticker-card-dialog [data]="card" (closed)="openCard.set(null)" />
+  }
+</div>

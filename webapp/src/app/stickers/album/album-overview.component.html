@@ -1,0 +1,51 @@
+@let t = totals();
+@let col = collection();
+<article class="overview">
+  <header class="overview__head">
+    <h2 class="overview__title">Mein Sammelalbum</h2>
+    <span class="overview__sub">{{ t.have }} von {{ t.total }} Stickern eingeklebt</span>
+    <div class="overview__bar"><span [style.width.%]="t.pct * 100"></span></div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><span class="kpi__value">{{ t.pct * 100 | number:'1.0-0' }} %</span><span class="kpi__label">Album</span></div>
+    <div class="kpi"><span class="kpi__value">{{ t.clubsComplete }}</span><span class="kpi__label">Vereine komplett</span></div>
+    <div class="kpi"><span class="kpi__value">{{ t.duplicates }}</span><span class="kpi__label">Doppelte</span></div>
+    <div class="kpi kpi--silver"><span class="kpi__value">{{ col.holoSilver }}</span><span class="kpi__label">Holo Silber</span></div>
+    <div class="kpi kpi--gold"><span class="kpi__value">{{ col.holoGold }}</span><span class="kpi__label">Holo Gold</span></div>
+  </section>
+
+  <section class="tiers">
+    @for (tier of t.tiers; track tier.label) {
+      <span class="tiers__item"><b>{{ tier.label }}</b> {{ tier.have }}/{{ tier.total }}</span>
+    }
+  </section>
+
+  @if (recent().length) {
+    <section class="block">
+      <h3 class="block__title">Zuletzt eingeklebt</h3>
+      <div class="recent">
+        @for (r of recent(); track r.sticker.id) {
+          <button class="recent__item" type="button" (click)="open.emit(r.sticker)" [attr.aria-label]="r.sticker.displayname">
+            <app-sticker-card [data]="r.card" />
+          </button>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="block">
+    <h3 class="block__title">Vereine</h3>
+    <div class="clubs">
+      @for (c of clubTiles(); track c.club.id) {
+        <button class="club" type="button" (click)="goTo.emit(c.index)" [class.club--complete]="c.have === c.total"
+                [style.--club]="c.club.primary_color ?? '#8b929e'">
+          <img class="club__logo" [src]="c.logo" alt="" draggable="false" />
+          <span class="club__name">{{ c.club.short_name || c.club.name }}</span>
+          <span class="club__count">{{ c.have }}/{{ c.total }}</span>
+          <span class="club__bar"><span [style.width.%]="c.total ? (c.have / c.total) * 100 : 0"></span></span>
+        </button>
+      }
+    </div>
+  </section>
+</article>
