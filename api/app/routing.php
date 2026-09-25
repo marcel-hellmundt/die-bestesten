@@ -77,9 +77,9 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/league/:id',
-                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) oder Strafen-Regelsatz setzen ({fine_ruleset: "classic"|"none"}) oder Powerranking an/aus schalten ({powerranking_enabled: bool}) oder Direktangebote ("Hinterzimmerdeals", siehe /player_offer) an/aus schalten ({deal_system_enabled: bool}, default false — deaktiviert: kein Anlegen/Annehmen/Ablehnen/Gegenangebot mehr möglich (403), bereits offene Angebote laufen unbeantwortbar bis zu ihrem Ablauf weiter, Frontend zeigt sie ausgegraut) — Admin',
+                        'description' => 'Spielerpool-Division setzen ({division_id: UUID|null}) oder Sichtbarkeit setzen ({visibility: "public"|"private"}) oder Strafen-Regelsatz setzen ({fine_ruleset: "classic"|"none"}) oder Powerranking an/aus schalten ({powerranking_enabled: bool}) oder Direktangebote ("Hinterzimmerdeals", siehe /player_offer) an/aus schalten ({deal_system_enabled: bool}, default false — deaktiviert: kein Anlegen/Annehmen/Ablehnen/Gegenangebot mehr möglich (403), bereits offene Angebote laufen unbeantwortbar bis zu ihrem Ablauf weiter, Frontend zeigt sie ausgegraut) oder "Die Klebrigsten" (Sticker-Album, siehe /sticker) an/aus schalten ({sticker_enabled: bool}, default false — Meilenstein-/Spieltagsbester-Packs nur aus Ligen mit aktivem Feature, Album nur für Manager in mind. einer solchen Liga); mehrere Felder in einem PATCH möglich — Admin',
                         'path_params' => [':id' => 'UUID der Liga'],
-                        'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)', 'visibility' => '"public" oder "private"', 'fine_ruleset' => '"classic" (Kegelstrafen) oder "none" (keine Strafen)'],
+                        'body' => ['division_id' => 'CHAR(36) UUID oder null (kein Filter)', 'visibility' => '"public" oder "private"', 'fine_ruleset' => '"classic" (Kegelstrafen) oder "none" (keine Strafen)', 'powerranking_enabled' => 'bool', 'deal_system_enabled' => 'bool', 'sticker_enabled' => 'bool'],
                     ],
                     [
                         'method' => 'POST',
@@ -1297,8 +1297,29 @@ class Routing
 
             new Route('sticker', 'Sticker', [
                 'title' => 'Sticker ("Die Klebrigsten")',
-                'description' => 'Sticker-Album-Feature — V0: nur Album-Vorschau für die Parameter-Simulation im Frontend (/klebrigsten/simulation)',
+                'description' => 'Sticker-Album-Feature: ein globales Album je Manager + Saison, aktiv für Manager in mind. einer Liga mit league.sticker_enabled. Packs aus drei Quellen (tägliches Pack beim App-Öffnen, Punkte-Meilensteine je Team, Spieltagsbester) — Karten werden erst beim Öffnen serverseitig gewürfelt (Gewicht = Marktwert^-α, 1. Karte garantiert neu, Holo Silber/Gold je Karte). Regeln (Packgrößen, Meilenstein-Intervall, α, Holo-Chancen) vorerst als Variablen in StickerPackTrait::stickerConfig(). Vergabe erst, wenn das Album der Saison eingefroren ist (POST /sticker/album/sync), nicht rückwirkend.',
                 'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/sticker/album',
+                        'description' => 'Eingefrorenes Album der aktiven Saison (Tabelle sticker) im selben Format wie /sticker/album_preview; players[].price = eingefrorener Gewichtungs-Marktwert, clubs[].sticker_price = Gewichtungs-Marktwert der Vereins-Sticker (Wappen/Stadion); clubs=[] solange das Album noch nicht eingefroren wurde — Auth',
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/sticker/me',
+                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name}], collection:[{key,count,silver,gold,first_at}]}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/sticker/album/sync',
+                        'description' => 'Friert das Album der aktiven Saison ein bzw. ergänzt es (Grundlage: /sticker/album_preview): fehlende Spieler (z.B. Foto erst später hochgeladen) und Vereins-Sticker werden hinzugefügt, bestehende nie geändert oder gelöscht — Seltenheit bleibt stabil, gesammelte Karten bleiben gültig → {status, season_id, added, total} — Admin',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/sticker/pack/:id/open',
+                        'description' => 'Eigenes, ungeöffnetes Pack öffnen: Karten werden jetzt serverseitig gewürfelt und gespeichert → {status, pack:{id,source,size}, cards:[{key,holo:"silver"|"gold"|null,is_new}]}; 404 fremdes/unbekanntes Pack, 409 bereits geöffnet (auch bei gleichzeitigem Doppelklick) oder Album der Saison fehlt — Auth',
+                        'path_params' => [':id' => 'UUID des Packs'],
+                    ],
                     [
                         'method' => 'GET',
                         'path' => '/sticker/album_preview',

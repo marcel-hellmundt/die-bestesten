@@ -222,8 +222,9 @@
       <app-icon name="map"></app-icon>
     </a>
 
-    <!-- "Die Klebrigsten" (Sticker-Album) — noch nicht live, vorerst nur für Maintainer+ (Simulation) -->
-    @if (isMaintainer()) {
+    <!-- "Die Klebrigsten" (Sticker-Album) — für Manager mit aktivem Album (Liga mit sticker_enabled)
+         + Maintainer (Simulation); Badge = ungeöffnete Packs -->
+    @if (showStickers()) {
       <a
         class="topbar-icon-btn topbar-bell"
         [class.active]="currentUrl().startsWith('/klebrigsten')"
@@ -233,6 +234,9 @@
         data-tooltip="Die Klebrigsten"
       >
         <app-icon name="sticker"></app-icon>
+        @if (stickerStatus.unopenedCount() > 0) {
+          <span class="notif-badge">{{ stickerStatus.unopenedCount() }}</span>
+        }
       </a>
     }
 
@@ -300,12 +304,15 @@
             <app-icon name="map"></app-icon>
             Karte
           </a>
-          @if (isMaintainer()) {
+          @if (showStickers()) {
             <a class="dropdown-item dropdown-item--mobile-only"
                [class.dropdown-item--active]="currentUrl().startsWith('/klebrigsten')"
                routerLink="/klebrigsten" (click)="closeDropdown()">
               <app-icon name="sticker"></app-icon>
               Die Klebrigsten
+              @if (stickerStatus.unopenedCount() > 0) {
+                <span class="dropdown-item-badge">{{ stickerStatus.unopenedCount() }}</span>
+              }
             </a>
           }
           <a class="dropdown-item dropdown-item--mobile-only"

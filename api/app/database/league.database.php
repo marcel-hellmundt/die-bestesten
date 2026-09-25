@@ -24,6 +24,8 @@ trait LeagueTrait
         if ($league) {
             $league['powerranking_enabled'] = (bool) $league['powerranking_enabled'];
             $league['deal_system_enabled']  = (bool) $league['deal_system_enabled'];
+            // separat + fehlertolerant, damit /league/mine auch vor der Sticker-Migration funktioniert
+            $league['sticker_enabled']      = $this->isStickerEnabledForLeague($league['id']);
         }
         return $league;
     }
@@ -71,6 +73,7 @@ trait LeagueTrait
             $league['team_count']           = $activeSeasonId ? $this->getLeagueTeamCount($league['db_name'], $activeSeasonId) : 0;
             $league['powerranking_enabled'] = (bool) $league['powerranking_enabled'];
             $league['deal_system_enabled']  = (bool) $league['deal_system_enabled'];
+            $league['sticker_enabled']      = (bool) ($league['sticker_enabled'] ?? false);
         }
 
         return $leagues;
@@ -86,6 +89,7 @@ trait LeagueTrait
             $league['teams']                = $this->getLeagueTeamList($league['db_name'], $league['division_id'] ?? null);
             $league['powerranking_enabled'] = (bool) $league['powerranking_enabled'];
             $league['deal_system_enabled']  = (bool) $league['deal_system_enabled'];
+            $league['sticker_enabled']      = (bool) ($league['sticker_enabled'] ?? false);
         }
         return $league;
     }

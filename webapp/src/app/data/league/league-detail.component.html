@@ -397,6 +397,15 @@
         </span>
       </label>
 
+      <label class="league-settings__row filter-checkbox">
+        <span class="league-settings__label">Die Klebrigsten</span>
+        <span class="filter-toggle">
+          <input type="checkbox" [checked]="draftSticker()"
+                 (change)="draftSticker.set($any($event.target).checked)" />
+          <span class="filter-toggle__track"></span>
+        </span>
+      </label>
+
       @if (settingsSaveError()) {
         <p class="league-settings__error">{{ settingsSaveError() }}</p>
       }

@@ -51,8 +51,8 @@ export class AlbumOverviewComponent {
   recent = computed<{ sticker: Sticker; card: StickerCardData }[]>(() => {
     const col = this.collection();
     return this.album.stickers()
-      .filter(s => col.firstDay[s.idx] >= 0)
-      .sort((a, b) => col.firstDay[b.idx] - col.firstDay[a.idx] || b.idx - a.idx)
+      .filter(s => col.firstAt[s.idx] >= 0)
+      .sort((a, b) => col.firstAt[b.idx] - col.firstAt[a.idx] || b.idx - a.idx)
       .slice(0, 8)
       .map(s => ({ sticker: s, card: this.album.cardData(s, col.holo[s.idx]) }));
   });

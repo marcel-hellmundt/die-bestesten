@@ -27,20 +27,65 @@ $desktop: $mobile-breakpoint + 1;
   }
 }
 
-// ── Demo-Umschalter ──────────────────────────────────────────────────────────
-.demo {
+// ── Ungeöffnete Packs ────────────────────────────────────────────────────────
+.packs {
   display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  background: linear-gradient(120deg, color-mix(in srgb, #{$color-accent} 12%, #{$color-surface}), $color-surface 70%);
+  border: 1px solid color-mix(in srgb, #{$color-accent} 30%, #{$color-border});
+
+  &__icon {
+    // kleines "Pack": gekipptes Kärtchen mit der Anzahl
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px;
+    height: 46px;
+    border-radius: 5px;
+    background: linear-gradient(160deg, #{$color-accent}, color-mix(in srgb, #{$color-accent} 60%, #000));
+    color: #fff;
+    font-family: $font-display;
+    font-weight: 800;
+    font-style: italic;
+    font-size: $font-lg;
+    transform: rotate(-6deg);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    font-size: $font-sm;
+
+    span {
+      font-size: $font-xs;
+      color: $color-text-muted;
+    }
+  }
+
+  &__error {
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-accent;
+  }
+}
+
+// ── Admin/Maintainer-Werkzeuge (Album abgleichen, Demo-Sammlungen) ──────────
+.tools {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: $space-2;
   font-size: $font-xs;
   color: $color-text-muted;
 
-  &__label {
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: $font-weight-semibold;
-  }
+  &__result { margin-right: auto; }
 
   &__toggle {
     display: inline-flex;

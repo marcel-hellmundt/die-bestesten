@@ -88,6 +88,7 @@ class MatchdayController extends _BaseController
             $pointsBonus = $this->db->resolvePointsBonus();
             $teamRatings = $this->db->finalizeMatchday($this->id, $pointsBonus);
             $this->db->evaluateH2HPredictionResults($this->id);
+            $this->db->grantStickerMatchdayPacks($this->id);
             $achResult   = $this->db->evaluateAchievements(true);
             $achievements = $achResult['count'];
             $this->db->createMatchdayCompletedNotifications($this->id, (int) $matchday['number']);

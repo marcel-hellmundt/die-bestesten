@@ -1,7 +1,7 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { SimParams, SimProfile, countsAtDay, holoAtDay, simulateSeason, stickerWeights } from './sticker-sim';
 import { StickerCardData, StickerHolo, requestTiltPermission } from './sticker-card/sticker-card.component';
-import { StickerAlbumService } from './album/sticker-album.service';
+import { ALBUM_SOURCE, StickerAlbumService } from './album/sticker-album.service';
 import {
   AlbumClub, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS, POSITION_LABEL, SharedParams, Sticker,
   TIERS, TIER_LABEL, TIER_RANGE, paramsFor,
@@ -12,6 +12,8 @@ import {
   standalone: false,
   templateUrl: './sticker-simulation.component.html',
   styleUrl: './sticker-simulation.component.scss',
+  // Simulation arbeitet auf dem live berechneten Album (funktioniert auch vor dem Einfrieren)
+  providers: [{ provide: ALBUM_SOURCE, useValue: 'sticker/album_preview' }, StickerAlbumService],
 })
 export class StickerSimulationComponent {
   private album = inject(StickerAlbumService);

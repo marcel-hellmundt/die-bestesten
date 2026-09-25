@@ -37,6 +37,7 @@ require_once 'powerranking.database.php';
 require_once 'session.database.php';
 require_once 'noten.database.php';
 require_once 'sticker.database.php';
+require_once 'sticker_pack.database.php';
 
 class Database
 {
@@ -78,6 +79,7 @@ class Database
     use SessionTrait;
     use NotenTrait;
     use StickerTrait;
+    use StickerPackTrait;
 
     private $con;
     private $con_league;

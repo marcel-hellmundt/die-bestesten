@@ -7,6 +7,7 @@ import { AuthService, League } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { ApiService } from '../../core/api.service';
 import { NotificationService } from '../../core/notification.service';
+import { StickerStatusService } from '../../core/sticker-status.service';
 import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
 
 interface SearchResults {
@@ -28,6 +29,7 @@ export class TopbarComponent implements OnDestroy {
   private cache  = inject(DataCacheService);
   private api    = inject(ApiService);
   notifService   = inject(NotificationService);
+  stickerStatus  = inject(StickerStatusService);
 
   isDropdownOpen       = signal(false);
   isLeagueDropdownOpen = signal(false);
@@ -91,6 +93,7 @@ export class TopbarComponent implements OnDestroy {
   });
   isMaintainer  = computed(() => this.auth.isMaintainer());
   isContributor = computed(() => this.auth.isContributor());
+  showStickers  = computed(() => this.isMaintainer() || this.stickerStatus.enabled());
   avatarUrl     = computed(() => this.cache.managerPhotoUrl(this.auth.getManagerId()));
   initials     = computed(() => {
     const name = this.managerName();
@@ -152,6 +155,9 @@ export class TopbarComponent implements OnDestroy {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
       this.currentUrl.set(e.urlAfterRedirects);
     });
+
+    // "Die Klebrigsten": Album-Status laden — vergibt dabei das tägliche Pack ("App öffnen")
+    this.stickerStatus.start();
 
     this.api.get<{ leagues: League[] }>('manager/leagues').subscribe({
       next: data => this.leagues.set(data.leagues ?? []),

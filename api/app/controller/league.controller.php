@@ -240,8 +240,8 @@ class LeagueController extends _BaseController
     }
 
     // Verarbeitet ALLE im Body vorhandenen Felder (nicht nur das erste gefundene) — der
-    // Liga-Einstellungen-Dialog im Frontend schickt fine_ruleset, powerranking_enabled und
-    // deal_system_enabled gebündelt in einem einzigen PATCH; ein früher return nach dem ersten
+    // Liga-Einstellungen-Dialog im Frontend schickt fine_ruleset, powerranking_enabled,
+    // deal_system_enabled und sticker_enabled gebündelt in einem einzigen PATCH; ein früher return nach dem ersten
     // Treffer (wie früher, als jede Einstellung einzeln gepatcht wurde) würde die übrigen Felder
     // stillschweigend ignorieren, obwohl {"status":true} zurückkommt.
     protected function patch(): mixed
@@ -291,12 +291,22 @@ class LeagueController extends _BaseController
             $handled = true;
         }
 
+        if (array_key_exists('sticker_enabled', $body)) {
+            $enabled = $body['sticker_enabled'];
+            if (!is_bool($enabled)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'sticker_enabled muss ein Boolean sein'];
+            }
+            $this->db->updateLeagueStickerEnabled($this->id, $enabled);
+            $handled = true;
+        }
+
         if ($handled) return ['status' => true];
 
         $divisionId = array_key_exists('division_id', $body) ? ($body['division_id'] ?: null) : 'MISSING';
         if ($divisionId === 'MISSING') {
             http_response_code(400);
-            return ['status' => false, 'message' => 'division_id, visibility, fine_ruleset, powerranking_enabled oder deal_system_enabled erforderlich'];
+            return ['status' => false, 'message' => 'division_id, visibility, fine_ruleset, powerranking_enabled, deal_system_enabled oder sticker_enabled erforderlich'];
         }
 
         $this->db->updateLeagueDivision($this->id, $divisionId);

@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
+import { StickerStatusService } from '../../core/sticker-status.service';
 import { environment } from '../../../environments/environment';
 
 interface DraftPlayer {
@@ -42,6 +43,7 @@ export class LeagueDetailComponent {
   private router = inject(Router);
   cache          = inject(DataCacheService);
   bottomSheet    = inject(BottomSheetService);
+  private stickerStatus = inject(StickerStatusService);
 
   isAdmin = computed(() => this.auth.isAdmin());
 
@@ -177,6 +179,7 @@ export class LeagueDetailComponent {
   private fineRulesetOverride     = signal<'classic' | 'none' | null>(null);
   private powerrankingOverride    = signal<boolean | null>(null);
   private dealSystemOverride      = signal<boolean | null>(null);
+  private stickerOverride         = signal<boolean | null>(null);
 
   fineRuleset = computed<'classic' | 'none'>(() =>
     this.fineRulesetOverride() ?? (this.league()?.fine_ruleset === 'none' ? 'none' : 'classic')
@@ -186,6 +189,9 @@ export class LeagueDetailComponent {
   );
   dealSystemEnabled = computed<boolean>(() =>
     this.dealSystemOverride() ?? (this.league()?.deal_system_enabled ?? false)
+  );
+  stickerEnabled = computed<boolean>(() =>
+    this.stickerOverride() ?? (this.league()?.sticker_enabled ?? false)
   );
 
   // ── Liga-Einstellungen-Dialog: Strafen/Powerranking/Direktangebote werden erst mit "Speichern" in
@@ -197,6 +203,7 @@ export class LeagueDetailComponent {
   draftFineRuleset     = signal<'classic' | 'none'>('classic');
   draftPowerranking    = signal(true);
   draftDealSystem      = signal(false);
+  draftSticker         = signal(false);
   settingsSaving       = signal(false);
   settingsSaveError    = signal<string | null>(null);
 
@@ -204,12 +211,14 @@ export class LeagueDetailComponent {
     this.draftFineRuleset() !== this.fineRuleset()
     || this.draftPowerranking() !== this.powerrankingEnabled()
     || this.draftDealSystem() !== this.dealSystemEnabled()
+    || this.draftSticker() !== this.stickerEnabled()
   );
 
   openSettingsDialog(): void {
     this.draftFineRuleset.set(this.fineRuleset());
     this.draftPowerranking.set(this.powerrankingEnabled());
     this.draftDealSystem.set(this.dealSystemEnabled());
+    this.draftSticker.set(this.stickerEnabled());
     this.settingsSaveError.set(null);
     this.bottomSheet.open(this.settingsSheet, { title: 'Liga-Einstellungen' });
   }
@@ -222,11 +231,14 @@ export class LeagueDetailComponent {
       fine_ruleset: this.draftFineRuleset(),
       powerranking_enabled: this.draftPowerranking(),
       deal_system_enabled: this.draftDealSystem(),
+      sticker_enabled: this.draftSticker(),
     }).subscribe({
       next: () => {
         this.fineRulesetOverride.set(this.draftFineRuleset());
         this.powerrankingOverride.set(this.draftPowerranking());
         this.dealSystemOverride.set(this.draftDealSystem());
+        this.stickerOverride.set(this.draftSticker());
+        this.stickerStatus.refresh(); // eigenes Album sofort (de)aktivieren (Topbar-Link, Tages-Pack)
         this.settingsSaving.set(false);
         this.bottomSheet.close();
       },

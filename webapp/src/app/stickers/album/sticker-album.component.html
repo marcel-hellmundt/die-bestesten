@@ -1,21 +1,51 @@
 <div class="album">
+  <!-- Admin/Maintainer: Album einfrieren + Demo-Sammlungen zum Testen der Oberfläche -->
+  @if (isMaintainer) {
+    <div class="tools">
+      @if (isAdmin) {
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
+          {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}
+        </button>
+        @if (syncResult()) { <span class="tools__result">{{ syncResult() }}</span> }
+      }
+      <div class="tools__toggle" role="group" aria-label="Sammlung">
+        <button type="button" [class.active]="mode() === 'real'" (click)="mode.set('real')">Meine</button>
+        <button type="button" [class.active]="mode() === 'demo-today'" (click)="mode.set('demo-today')">Demo heute</button>
+        <button type="button" [class.active]="mode() === 'demo-end'" (click)="mode.set('demo-end')">Demo Saisonende</button>
+      </div>
+    </div>
+  }
+
   @if (loading()) {
     <p class="state-msg">Album wird geladen…</p>
   } @else if (error()) {
     <p class="state-msg">{{ error() }}</p>
+  } @else if (!canSee()) {
+    <p class="state-msg">„Die Klebrigsten“ ist in deinen Ligen nicht aktiv.</p>
+  } @else if (rows().length === 0) {
+    <p class="state-msg">
+      Das Album dieser Saison wurde noch nicht erstellt.
+      @if (isAdmin) { Mit „Album abgleichen“ wird es aus den Bundesliga-Kadern am Stichtag 1.9. angelegt. }
+    </p>
   } @else {
     @let idx = pageIndex();
     @let row = currentRow();
     @let ov = overviewProgress();
 
-    <!-- Demo-Hinweis: noch keine echten Packs -->
-    <div class="demo">
-      <span class="demo__label">Demo-Sammlung</span>
-      <div class="demo__toggle" role="group" aria-label="Sammelstand">
-        <button type="button" [class.active]="demoMode() === 'today'" (click)="setDemoMode('today')">Heute</button>
-        <button type="button" [class.active]="demoMode() === 'end'" (click)="setDemoMode('end')">Saisonende</button>
+    <!-- Ungeöffnete Packs -->
+    @if (packs().length > 0) {
+      <div class="packs">
+        <div class="packs__icon" aria-hidden="true">{{ packs().length }}</div>
+        <div class="packs__text">
+          <b>{{ packs().length === 1 ? '1 ungeöffnetes Pack' : packs().length + ' ungeöffnete Packs' }}</b>
+          <span>{{ packSummary() }}</span>
+        </div>
+        <button type="button" class="btn btn-primary" [disabled]="packBusy()" (click)="openNextPack()">
+          {{ packBusy() ? 'Öffnet…' : 'Pack öffnen' }}
+        </button>
       </div>
-    </div>
+    }
+    @if (packError()) { <p class="packs__error">{{ packError() }}</p> }
 
     <div class="album__layout">
       <!-- Desktop: Seitenliste links -->
@@ -86,6 +116,12 @@
         </div>
       </div>
     </div>
+  }
+
+  @if (opened(); as o) {
+    <app-pack-open-dialog [title]="o.title" [cards]="o.cards" [remaining]="packs().length" [busy]="packBusy()"
+                          [covered]="openCard() !== null"
+                          (next)="openNextPack()" (open)="openPulled($event)" (closed)="closePack()" />
   }
 
   @if (openCard(); as card) {

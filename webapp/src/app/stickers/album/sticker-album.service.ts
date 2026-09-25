@@ -1,7 +1,8 @@
-import { Injectable, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, startWith } from 'rxjs';
+import { Injectable, InjectionToken, computed, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { StickerCollectionEntry } from '../../core/sticker-status.service';
 import { HoloVariant, Timeline, simulateSeason, stickerWeights } from '../sticker-sim';
 import { StickerCardData, StickerHolo } from '../sticker-card/sticker-card.component';
 import {
@@ -13,32 +14,45 @@ const DAY_MS = 86_400_000;
 const FALLBACK_DAYS = 255;
 const IMG = 'https://img.die-bestesten.de';
 
-/** Demo-Sammlung eines Managers: je Sticker Anzahl, beste Holo-Variante und Tag des ersten Zugs. */
+/** Sammlung eines Managers: je Sticker Anzahl, beste Holo-Variante und Zeitpunkt des ersten Zugs. */
 export interface Collection {
   counts: Uint16Array;
   holo: (StickerHolo | null)[];
-  firstDay: Int16Array;   // -1 = noch nicht gezogen
+  firstAt: Float64Array;  // sortierbarer Zeitpunkt des ersten Zugs (Demo: Saisontag, echt: ms), -1 = noch nicht gezogen
   holoSilver: number;
   holoGold: number;
 }
 
+/** Datenquelle des Albums — je Seite per Provider gesetzt: eingefrorenes Album bzw. Live-Vorschau (Simulation). */
+export const ALBUM_SOURCE = new InjectionToken<'sticker/album' | 'sticker/album_preview'>('ALBUM_SOURCE');
+
 /**
- * Album der aktiven Saison (GET /sticker/album_preview) als gemeinsame Grundlage für Sammelalbum
- * und Simulation: flache Sticker-Liste inkl. 2 Vereins-Sticker (Wappen, Stadion) je Club,
- * Zeitachse, Bild-URLs, Kartendaten — und (bis es echte Sammlungen gibt) eine Demo-Sammlung.
+ * Album der aktiven Saison als gemeinsame Grundlage für Sammelalbum (GET /sticker/album, eingefroren)
+ * und Simulation (GET /sticker/album_preview, live): flache Sticker-Liste inkl. 2 Vereins-Sticker
+ * (Wappen, Stadion) je Club, Zeitachse, Bild-URLs, Kartendaten, Sammlungen (echt + Demo).
+ * Nicht root-weit: jede Seite stellt die Instanz selbst bereit ({ provide: ALBUM_SOURCE, … }, StickerAlbumService).
  */
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class StickerAlbumService {
   private api = inject(ApiService);
+  private source = inject(ALBUM_SOURCE);
+  private reloadTick = signal(0);
 
   private state = toSignal(
-    this.api.get<AlbumPreview>('sticker/album_preview').pipe(
-      map(data => ({ data, loading: false, error: null as string | null })),
-      startWith({ data: null as AlbumPreview | null, loading: true, error: null as string | null }),
-      catchError(() => of({ data: null as AlbumPreview | null, loading: false, error: 'Album konnte nicht geladen werden' })),
+    toObservable(this.reloadTick).pipe(
+      switchMap(() => this.api.get<AlbumPreview>(this.source).pipe(
+        map(data => ({ data, loading: false, error: null as string | null })),
+        startWith({ data: null as AlbumPreview | null, loading: true, error: null as string | null }),
+        catchError(() => of({ data: null as AlbumPreview | null, loading: false, error: 'Album konnte nicht geladen werden' })),
+      )),
     ),
     { initialValue: { data: null as AlbumPreview | null, loading: true, error: null as string | null } },
   );
+
+  /** Album neu laden (z.B. nach dem Einfrieren per POST /sticker/album/sync). */
+  reload(): void {
+    this.reloadTick.update(n => n + 1);
+  }
   loading  = computed(() => this.state().loading);
   error    = computed(() => this.state().error);
   seasonId = computed(() => this.state().data?.season_id ?? null);
@@ -49,8 +63,9 @@ export class StickerAlbumService {
     const out: Sticker[] = [];
     const clubs = this.clubs();
     clubs.forEach((c, clubIdx) => {
-      // Seltenheit der Vereins-Sticker nach Vorsaison-Platz (Clubs kommen bereits in dieser Reihenfolge)
-      const price = clubStickerPrice(clubIdx, clubs.length);
+      // Seltenheit der Vereins-Sticker nach Vorsaison-Platz (Clubs kommen bereits in dieser Reihenfolge);
+      // beim eingefrorenen Album liefert die API den gespeicherten Wert
+      const price = c.sticker_price ?? clubStickerPrice(clubIdx, clubs.length);
       const club = (kind: 'logo' | 'stadium', name: string): Sticker => ({
         id: `${c.id}-${kind}`, displayname: name, first_name: null, last_name: null,
         position: null, price, photo_uploaded: false,
@@ -167,7 +182,7 @@ export class StickerAlbumService {
     const stickers = this.stickers();
     const n = stickers.length;
     const counts = new Uint16Array(n);
-    const firstDay = new Int16Array(n).fill(-1);
+    const firstDay = new Float64Array(n).fill(-1);
     const silver = new Uint16Array(n), gold = new Uint16Array(n);
     let holoSilver = 0, holoGold = 0;
 
@@ -188,7 +203,28 @@ export class StickerAlbumService {
     }
 
     const holo = Array.from({ length: n }, (_, i) => (gold[i] ? 'gold' : silver[i] ? 'silver' : null) as StickerHolo | null);
-    return { counts, holo, firstDay, holoSilver, holoGold };
+    return { counts, holo, firstAt: firstDay, holoSilver, holoGold };
+  }
+
+  /** Echte Sammlung aus GET /sticker/me (key = Sticker-ID im Album). */
+  collectionFrom(entries: StickerCollectionEntry[]): Collection {
+    const stickers = this.stickers();
+    const n = stickers.length;
+    const idxByKey = new Map(stickers.map(s => [s.id, s.idx]));
+    const counts = new Uint16Array(n);
+    const firstAt = new Float64Array(n).fill(-1);
+    const holo: (StickerHolo | null)[] = new Array(n).fill(null);
+    let holoSilver = 0, holoGold = 0;
+    for (const e of entries) {
+      const i = idxByKey.get(e.key);
+      if (i === undefined) continue;
+      counts[i] = e.count;
+      firstAt[i] = new Date(e.first_at.replace(' ', 'T')).getTime();
+      holo[i] = e.gold > 0 ? 'gold' : e.silver > 0 ? 'silver' : null;
+      holoSilver += e.silver;
+      holoGold += e.gold;
+    }
+    return { counts, holo, firstAt, holoSilver, holoGold };
   }
 }
 

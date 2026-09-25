@@ -2,46 +2,137 @@ import { Component, HostListener, computed, inject, signal } from '@angular/core
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
+import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { PACK_SOURCE_LABEL, StickerStatusService } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
-import { StickerAlbumService } from './sticker-album.service';
+import { PackCard } from './pack-open-dialog.component';
+import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 import { seasonTheme } from './season-theme';
 
-type DemoMode = 'today' | 'end';
+/** Echte Sammlung oder (nur Maintainer, zum Testen der Oberfläche) simulierte Demo-Sammlung. */
+type CollectionMode = 'real' | 'demo-today' | 'demo-end';
 
 /**
  * Sammelalbum (/klebrigsten/sammelalbum): Seite 0 = Übersicht, danach eine Seite je Verein
  * (Vorsaison-Reihenfolge). Aktuelle Seite als ?seite=<Kurzname> in der URL.
- * Bis es echte Packs gibt, zeigt das Album eine Demo-Sammlung (simulierte Saison je Manager).
+ * Oben: ungeöffnete Packs (GET /sticker/me) → Öffnen-Dialog.
  */
 @Component({
   selector: 'app-sticker-album',
   standalone: false,
   templateUrl: './sticker-album.component.html',
   styleUrl: './sticker-album.component.scss',
+  // Album aus der eingefrorenen Tabelle sticker — die Kind-Komponenten teilen sich diese Instanz
+  providers: [{ provide: ALBUM_SOURCE, useValue: 'sticker/album' }, StickerAlbumService],
 })
 export class StickerAlbumComponent {
   private album = inject(StickerAlbumService);
   private auth = inject(AuthService);
+  private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  status = inject(StickerStatusService);
 
   loading = this.album.loading;
   error = this.album.error;
   rows = this.album.rows;
 
-  demoMode = signal<DemoMode>('today');
+  isMaintainer = this.auth.isMaintainer();
+  isAdmin = this.auth.isAdmin();
+  /** Album sichtbar: Manager in einer Liga mit aktivem Feature — Maintainer immer (Demo/Test). */
+  canSee = computed(() => this.isMaintainer || this.status.enabled());
+
+  mode = signal<CollectionMode>('real');
   pickerOpen = signal(false);
   openCard = signal<StickerCardData | null>(null);
 
   theme = computed(() => seasonTheme(this.album.seasonId() ?? ''));
 
   collection = computed(() => {
-    const day = this.demoMode() === 'end' ? this.album.timeline().days : this.album.todayDay();
+    const mode = this.mode();
+    if (mode === 'real') return this.album.collectionFrom(this.status.state()?.collection ?? []);
+    const day = mode === 'demo-end' ? this.album.timeline().days : this.album.todayDay();
     return this.album.demoCollection(this.auth.getManagerId() ?? 'guest', day);
   });
+
+  // ── Packs ─────────────────────────────────────────────────────────────────
+  packs = this.status.packs;
+  packSummary = computed(() => {
+    const counts = new Map<string, number>();
+    for (const p of this.packs()) {
+      const label = PACK_SOURCE_LABEL[p.source];
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    return [...counts].map(([label, n]) => (n > 1 ? `${n}× ${label}` : label)).join(', ');
+  });
+  opened = signal<{ title: string; cards: PackCard[] } | null>(null);
+  packBusy = signal(false);
+  packError = signal<string | null>(null);
+
+  openNextPack(): void {
+    const pack = this.packs()[0];
+    if (!pack || this.packBusy()) return;
+    requestTiltPermission(); // synchron in der Klick-Geste (iOS), falls danach eine Karte groß geöffnet wird
+    this.packBusy.set(true);
+    this.packError.set(null);
+    const before = this.album.collectionFrom(this.status.state()?.collection ?? []).counts;
+    const byKey = new Map(this.album.stickers().map(s => [s.id, s]));
+    this.status.openPack(pack.id).subscribe({
+      next: res => {
+        const seen = new Map<number, number>();
+        const cards: PackCard[] = [];
+        for (const c of res.cards) {
+          const s = byKey.get(c.key);
+          if (!s) continue;
+          const n = (seen.get(s.idx) ?? before[s.idx]) + 1;
+          seen.set(s.idx, n);
+          cards.push({ sticker: s, card: this.album.cardData(s, c.holo), isNew: c.is_new, count: n });
+        }
+        const title = PACK_SOURCE_LABEL[pack.source] + (pack.league_name ? ` · ${pack.league_name}` : '');
+        this.opened.set({ title, cards });
+        this.mode.set('real');
+        this.packBusy.set(false);
+      },
+      error: err => {
+        this.packBusy.set(false);
+        this.packError.set(err?.error?.message ?? 'Pack konnte nicht geöffnet werden');
+      },
+    });
+  }
+
+  closePack(): void {
+    this.opened.set(null);
+  }
+
+  openPulled(c: PackCard): void {
+    requestTiltPermission();
+    this.openCard.set(c.card);
+  }
+
+  // ── Admin: Album einfrieren/ergänzen ──────────────────────────────────────
+  syncBusy = signal(false);
+  syncResult = signal<string | null>(null);
+
+  syncAlbum(): void {
+    if (this.syncBusy()) return;
+    this.syncBusy.set(true);
+    this.syncResult.set(null);
+    this.api.post<{ added: number; total: number }>('sticker/album/sync').subscribe({
+      next: res => {
+        this.syncBusy.set(false);
+        this.syncResult.set(res.added > 0 ? `${res.added} Sticker hinzugefügt (${res.total} insgesamt)` : `Album ist aktuell (${res.total} Sticker)`);
+        this.album.reload();
+        this.status.refresh();
+      },
+      error: err => {
+        this.syncBusy.set(false);
+        this.syncResult.set(err?.error?.message ?? 'Abgleich fehlgeschlagen');
+      },
+    });
+  }
 
   // ── Seiten ────────────────────────────────────────────────────────────────
   private seite = toSignal(this.route.queryParamMap.pipe(map(p => p.get('seite'))), { initialValue: null });
@@ -100,14 +191,14 @@ export class StickerAlbumComponent {
   /** Desktop: mit den Pfeiltasten blättern (nicht bei offenem Dialog / in Eingabefeldern). */
   @HostListener('document:keydown', ['$event'])
   onKey(e: KeyboardEvent): void {
-    if (this.openCard() || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (this.openCard() || this.opened() || e.altKey || e.ctrlKey || e.metaKey) return;
     const el = e.target as HTMLElement | null;
     if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
     if (e.key === 'ArrowLeft') { this.prev(); e.preventDefault(); }
     else if (e.key === 'ArrowRight') { this.next(); e.preventDefault(); }
   }
 
-  // ── Dialog ────────────────────────────────────────────────────────────────
+  // ── Große Karte ───────────────────────────────────────────────────────────
   openSlot(slot: AlbumSlot): void {
     if (!slot.card) return;
     requestTiltPermission(); // muss synchron in der Klick-Geste passieren (iOS)
@@ -119,9 +210,5 @@ export class StickerAlbumComponent {
     if (!col.counts[s.idx]) return;
     requestTiltPermission();
     this.openCard.set(this.album.cardData(s, col.holo[s.idx]));
-  }
-
-  setDemoMode(mode: DemoMode): void {
-    this.demoMode.set(mode);
   }
 }

@@ -14,10 +14,11 @@ export interface AlbumClub {
   id: string; name: string; short_name: string; logo_uploaded: boolean;
   primary_color: string | null; secondary_color: string | null;
   stadium_name: string | null;
+  sticker_price?: number;  // nur /sticker/album: eingefrorener Gewichtungs-Marktwert der Vereins-Sticker
   players: AlbumPlayer[];
 }
 
-/** Response von GET /sticker/album_preview. */
+/** Response von GET /sticker/album (eingefroren) bzw. /sticker/album_preview (live). */
 export interface AlbumPreview {
   season_id: string | null;
   cutoff_date: string | null;
