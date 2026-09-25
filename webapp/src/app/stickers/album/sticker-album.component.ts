@@ -6,7 +6,8 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { PACK_SOURCE_LABEL, StickerPack, StickerStatusService, packDetail } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
-import { AlbumClub, Sticker } from './album.model';
+import { AlbumClub, DEFAULT_SHARED_PARAMS, Sticker } from './album.model';
+import { stickerWeights } from '../sticker-sim';
 import { AlbumSlot } from './album-club-page.component';
 import { PackCard } from './pack-open-dialog.component';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
@@ -59,7 +60,7 @@ export class StickerAlbumComponent {
     }
     return [...counts].map(([label, n]) => (n > 1 ? `${n}× ${label}` : label)).join(', ');
   });
-  opened = signal<{ title: string; cards: PackCard[] } | null>(null);
+  opened = signal<{ title: string; cards: PackCard[]; test?: boolean } | null>(null);
   packBusy = signal(false);
   packError = signal<string | null>(null);
 
@@ -120,27 +121,32 @@ export class StickerAlbumComponent {
   // ── Admin: Album einfrieren/ergänzen + Test-Pack ──────────────────────────
   syncBusy = signal(false);
   syncResult = signal<string | null>(null);
-  testPackBusy = signal(false);
 
   /**
-   * Legt sich selbst ein Pack mit 3 Stickern an und öffnet es direkt im Pack-Dialog — funktioniert auch,
-   * wenn das Feature in keiner eigenen Liga aktiv ist (dann zeigt GET /sticker/me keine Packs an).
+   * Test-Pack zum Ausprobieren der Öffnen-Animation: 3 Sticker werden nur im Browser gewürfelt (gleiche
+   * Gewichtung/Holo-Chancen wie serverseitig) — nichts wird gespeichert, die Sammlung bleibt unverändert.
    */
-  grantTestPack(): void {
-    if (this.testPackBusy()) return;
+  openTestPack(): void {
+    const stickers = this.album.stickers();
+    if (stickers.length === 0) return;
     requestTiltPermission(); // synchron in der Klick-Geste (iOS)
-    this.testPackBusy.set(true);
-    this.syncResult.set(null);
-    this.api.post<{ id: string }>('sticker/pack', { size: 3 }).subscribe({
-      next: res => {
-        this.testPackBusy.set(false);
-        this.openPack({ id: res.id, source: 'admin', league_name: null });
-      },
-      error: err => {
-        this.testPackBusy.set(false);
-        this.syncResult.set(err?.error?.message ?? 'Test-Pack konnte nicht angelegt werden');
-      },
-    });
+    const rules = DEFAULT_SHARED_PARAMS;
+    const weights = stickerWeights(stickers.map(s => s.price), rules.rarityAlpha);
+    const counts = this.collection().counts;
+    const seen = new Map<number, number>();
+    const cards: PackCard[] = [];
+    for (let k = 0; k < 3; k++) {
+      let r = Math.random();
+      let i = 0;
+      while (i < weights.length - 1 && (r -= weights[i]) > 0) i++;
+      const s = stickers[i];
+      const h = Math.random();
+      const holo = h < rules.holoGoldChance ? 'gold' : h < rules.holoGoldChance + rules.holoSilverChance ? 'silver' : null;
+      const n = (seen.get(i) ?? counts[i]) + 1;
+      seen.set(i, n);
+      cards.push({ sticker: s, card: this.album.cardData(s, holo), isNew: n === 1, count: n });
+    }
+    this.opened.set({ title: 'Test-Pack (nicht gespeichert)', cards, test: true });
   }
 
   syncAlbum(): void {

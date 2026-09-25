@@ -7,8 +7,9 @@
       } @else if (status.state() && !status.enabled()) {
         <span class="tools__result">In keiner deiner Ligen aktiv — Packs und Sammlung werden dir nicht angezeigt (Liga-Einstellungen).</span>
       }
-      <button type="button" class="btn btn-ghost btn-sm" [disabled]="testPackBusy()" (click)="grantTestPack()">
-        {{ testPackBusy() ? 'Legt an…' : 'Test-Pack (3)' }}
+      <button type="button" class="btn btn-ghost btn-sm" [disabled]="rows().length === 0" (click)="openTestPack()"
+              title="Pack-Animation ausprobieren — wird nicht gespeichert">
+        Test-Pack (3)
       </button>
       <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
         {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}
@@ -139,7 +140,7 @@
   }
 
   @if (opened(); as o) {
-    <app-pack-open-dialog [title]="o.title" [cards]="o.cards" [remaining]="packs().length" [busy]="packBusy()"
+    <app-pack-open-dialog [title]="o.title" [cards]="o.cards" [remaining]="o.test ? 0 : packs().length" [busy]="packBusy()"
                           [covered]="openCard() !== null"
                           (next)="openNextPack()" (open)="openPulled($event)" (closed)="closePack()" />
   }

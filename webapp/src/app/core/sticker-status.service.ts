@@ -42,7 +42,7 @@ export const PACK_SOURCE_LABEL: Record<StickerPackSource, string> = {
   daily: 'Tages-Pack',
   milestone: 'Meilenstein-Pack',
   matchday_best: 'Spieltagsbester-Pack',
-  admin: 'Test-Pack',
+  admin: 'Bonus-Pack',
 };
 
 /** Anlass eines Packs in Worten, z.B. "200 Punkte erreicht · Liga" oder "Spieltag 5 · Liga". */
@@ -51,7 +51,7 @@ export function packDetail(p: Pick<StickerPack, 'source' | 'milestone_points' | 
   if (p.source === 'daily') parts.push('fürs Vorbeischauen');
   if (p.source === 'milestone' && p.milestone_points) parts.push(`${p.milestone_points} Saisonpunkte erreicht`);
   if (p.source === 'matchday_best') parts.push(p.matchday_number ? `bestes Team an Spieltag ${p.matchday_number}` : 'bestes Team des Spieltags');
-  if (p.source === 'admin') parts.push('vom Admin angelegt');
+  if (p.source === 'admin') parts.push('vom Admin vergeben');
   if (p.league_name) parts.push(p.league_name);
   return parts.join(' · ');
 }

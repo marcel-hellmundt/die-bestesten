@@ -1316,12 +1316,6 @@ class Routing
                     ],
                     [
                         'method' => 'POST',
-                        'path' => '/sticker/pack',
-                        'description' => 'Test-Pack: legt dem eingeloggten Admin ein zusätzliches, ungeöffnetes Pack der aktiven Saison an (source admin, "Bonus-Pack") → {status, id}; 400 bei size außerhalb 1–10, 409 wenn das Album der Saison noch nicht eingefroren ist — Admin',
-                        'body' => ['size' => 'INT (optional, default 3, 1–10) — Sticker im Pack'],
-                    ],
-                    [
-                        'method' => 'POST',
                         'path' => '/sticker/pack/:id/open',
                         'description' => 'Eigenes, ungeöffnetes Pack öffnen: Karten werden jetzt serverseitig gewürfelt und gespeichert → {status, pack:{id,source,size}, cards:[{key,holo:"silver"|"gold"|null,is_new}]}; 404 fremdes/unbekanntes Pack, 409 bereits geöffnet (auch bei gleichzeitigem Doppelklick) oder Album der Saison fehlt — Auth',
                         'path_params' => [':id' => 'UUID des Packs'],
