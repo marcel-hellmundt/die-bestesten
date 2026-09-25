@@ -12,9 +12,6 @@ import { PackCard } from './pack-open-dialog.component';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 import { seasonTheme } from './season-theme';
 
-/** Echte Sammlung oder (nur Maintainer, zum Testen der Oberfläche) simulierte Demo-Sammlung. */
-type CollectionMode = 'real' | 'demo-today' | 'demo-end';
-
 /**
  * Sammelalbum (/klebrigsten/sammelalbum): Seite 0 = Übersicht, danach eine Seite je Verein
  * (Vorsaison-Reihenfolge). Aktuelle Seite als ?seite=<Kurzname> in der URL.
@@ -45,18 +42,12 @@ export class StickerAlbumComponent {
   /** Album sichtbar: Manager in einer Liga mit aktivem Feature — Maintainer immer (Demo/Test). */
   canSee = computed(() => this.isMaintainer || this.status.enabled());
 
-  mode = signal<CollectionMode>('real');
   pickerOpen = signal(false);
   openCard = signal<StickerCardData | null>(null);
 
   theme = computed(() => seasonTheme(this.album.seasonId() ?? ''));
 
-  collection = computed(() => {
-    const mode = this.mode();
-    if (mode === 'real') return this.album.collectionFrom(this.status.state()?.collection ?? []);
-    const day = mode === 'demo-end' ? this.album.timeline().days : this.album.todayDay();
-    return this.album.demoCollection(this.auth.getManagerId() ?? 'guest', day);
-  });
+  collection = computed(() => this.album.collectionFrom(this.status.state()?.collection ?? []));
 
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs = this.status.packs;
@@ -78,7 +69,7 @@ export class StickerAlbumComponent {
     requestTiltPermission(); // synchron in der Klick-Geste (iOS), falls danach eine Karte groß geöffnet wird
     this.packBusy.set(true);
     this.packError.set(null);
-    const before = this.album.collectionFrom(this.status.state()?.collection ?? []).counts;
+    const before = this.collection().counts;
     const byKey = new Map(this.album.stickers().map(s => [s.id, s]));
     this.status.openPack(pack.id).subscribe({
       next: res => {
@@ -93,7 +84,6 @@ export class StickerAlbumComponent {
         }
         const title = PACK_SOURCE_LABEL[pack.source] + (pack.league_name ? ` · ${pack.league_name}` : '');
         this.opened.set({ title, cards });
-        this.mode.set('real');
         this.packBusy.set(false);
       },
       error: err => {

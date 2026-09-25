@@ -75,7 +75,7 @@ $desktop: $mobile-breakpoint + 1;
   }
 }
 
-// ── Admin/Maintainer-Werkzeuge (Album abgleichen, Demo-Sammlungen) ──────────
+// ── Admin-Werkzeug: Album abgleichen ─────────────────────────────────────────
 .tools {
   display: flex;
   flex-wrap: wrap;
@@ -86,27 +86,6 @@ $desktop: $mobile-breakpoint + 1;
   color: $color-text-muted;
 
   &__result { margin-right: auto; }
-
-  &__toggle {
-    display: inline-flex;
-    border: 1px solid $color-border;
-    border-radius: $radius-full;
-    overflow: hidden;
-
-    button {
-      padding: 4px 12px;
-      border: none;
-      background: $color-surface;
-      color: $color-text-muted;
-      font-size: $font-xs;
-      cursor: pointer;
-
-      &.active {
-        background: $color-text;
-        color: $color-surface;
-      }
-    }
-  }
 }
 
 // ── Seitenliste (Desktop) + Auswahl (Mobile) ─────────────────────────────────

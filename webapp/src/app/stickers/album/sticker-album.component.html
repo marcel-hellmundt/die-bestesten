@@ -1,18 +1,11 @@
 <div class="album">
-  <!-- Admin/Maintainer: Album einfrieren + Demo-Sammlungen zum Testen der Oberfläche -->
-  @if (isMaintainer) {
+  <!-- Admin: Album einfrieren/ergänzen -->
+  @if (isAdmin) {
     <div class="tools">
-      @if (isAdmin) {
-        <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
-          {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}
-        </button>
-        @if (syncResult()) { <span class="tools__result">{{ syncResult() }}</span> }
-      }
-      <div class="tools__toggle" role="group" aria-label="Sammlung">
-        <button type="button" [class.active]="mode() === 'real'" (click)="mode.set('real')">Meine</button>
-        <button type="button" [class.active]="mode() === 'demo-today'" (click)="mode.set('demo-today')">Demo heute</button>
-        <button type="button" [class.active]="mode() === 'demo-end'" (click)="mode.set('demo-end')">Demo Saisonende</button>
-      </div>
+      @if (syncResult()) { <span class="tools__result">{{ syncResult() }}</span> }
+      <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
+        {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}
+      </button>
     </div>
   }
 

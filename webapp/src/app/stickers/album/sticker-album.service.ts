@@ -3,12 +3,9 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { StickerCollectionEntry } from '../../core/sticker-status.service';
-import { HoloVariant, Timeline, simulateSeason, stickerWeights } from '../sticker-sim';
+import { Timeline } from '../sticker-sim';
 import { StickerCardData, StickerHolo } from '../sticker-card/sticker-card.component';
-import {
-  AlbumClub, AlbumPreview, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS,
-  Sticker, Tier, clubStickerPrice, paramsFor, tierOf,
-} from './album.model';
+import { AlbumClub, AlbumPreview, Sticker, Tier, clubStickerPrice, tierOf } from './album.model';
 
 const DAY_MS = 86_400_000;
 const FALLBACK_DAYS = 255;
@@ -18,7 +15,7 @@ const IMG = 'https://img.die-bestesten.de';
 export interface Collection {
   counts: Uint16Array;
   holo: (StickerHolo | null)[];
-  firstAt: Float64Array;  // sortierbarer Zeitpunkt des ersten Zugs (Demo: Saisontag, echt: ms), -1 = noch nicht gezogen
+  firstAt: Float64Array;  // Zeitpunkt des ersten Zugs (ms), -1 = noch nicht gezogen
   holoSilver: number;
   holoGold: number;
 }
@@ -115,14 +112,6 @@ export class StickerAlbumService {
     return c ? new Date(c.getTime() + day * DAY_MS) : null;
   }
 
-  /** Heutiger Saisontag (seit Stichtag), auf die Saison begrenzt; vor dem Stichtag -1 (noch nichts gesammelt). */
-  todayDay = computed(() => {
-    const c = this.cutoff();
-    if (!c) return 0;
-    const d = Math.floor((Date.now() - c.getTime()) / DAY_MS);
-    return Math.min(d, this.timeline().days);
-  });
-
   // ── Bilder ────────────────────────────────────────────────────────────────
   playerPhotoUrl(s: Sticker): string | null {
     const seasonId = this.seasonId();
@@ -171,39 +160,6 @@ export class StickerAlbumService {
       photoUrl: this.playerPhotoUrl(s),
       backgroundUrls: [this.clubStadiumUrl(club.id)], // Holo-Karten ignorieren das Hintergrundbild selbst
     };
-  }
-
-  // ── Demo-Sammlung (bis es echte Packs gibt) ───────────────────────────────
-  /**
-   * Simulierte Saison mit den Standard-Regeln und dem Profil "Durchschnitt", Seed = Manager + Saison
-   * (stabil je Manager), ausgewertet bis `day` (inkl.).
-   */
-  demoCollection(managerId: string, day: number): Collection {
-    const stickers = this.stickers();
-    const n = stickers.length;
-    const counts = new Uint16Array(n);
-    const firstDay = new Float64Array(n).fill(-1);
-    const silver = new Uint16Array(n), gold = new Uint16Array(n);
-    let holoSilver = 0, holoGold = 0;
-
-    if (n > 0 && day >= 0) {
-      const profile = DEFAULT_PROFILES.find(p => p.key === 'average') ?? DEFAULT_PROFILES[0];
-      const params = paramsFor(DEFAULT_SHARED_PARAMS, profile);
-      const weights = stickerWeights(stickers.map(s => s.price), params.rarityAlpha);
-      const seed = hashSeed(`${managerId}:${this.seasonId() ?? ''}`);
-      for (const p of simulateSeason(params, weights, this.timeline(), seed)) {
-        if (p.day > day) break;
-        p.stickers.forEach((s, k) => {
-          if (counts[s]++ === 0) firstDay[s] = p.day;
-          const v: HoloVariant = p.holo[k];
-          if (v === 'silver') { silver[s]++; holoSilver++; }
-          else if (v === 'gold') { gold[s]++; holoGold++; }
-        });
-      }
-    }
-
-    const holo = Array.from({ length: n }, (_, i) => (gold[i] ? 'gold' : silver[i] ? 'silver' : null) as StickerHolo | null);
-    return { counts, holo, firstAt: firstDay, holoSilver, holoGold };
   }
 
   /** Echte Sammlung aus GET /sticker/me (key = Sticker-ID im Album). */
