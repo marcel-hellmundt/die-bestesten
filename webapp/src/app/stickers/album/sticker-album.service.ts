@@ -5,8 +5,8 @@ import { ApiService } from '../../core/api.service';
 import { HoloVariant, Timeline, simulateSeason, stickerWeights } from '../sticker-sim';
 import { StickerCardData, StickerHolo } from '../sticker-card/sticker-card.component';
 import {
-  AlbumClub, AlbumPreview, CLUB_STICKER_PRICE, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS,
-  Sticker, Tier, paramsFor, tierOf,
+  AlbumClub, AlbumPreview, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS,
+  Sticker, Tier, clubStickerPrice, paramsFor, tierOf,
 } from './album.model';
 
 const DAY_MS = 86_400_000;
@@ -47,11 +47,14 @@ export class StickerAlbumService {
   /** Flache Sticker-Liste: je Club zuerst Wappen, dann Stadion, dann Spieler (API-Reihenfolge: Position, Marktwert). */
   stickers = computed<Sticker[]>(() => {
     const out: Sticker[] = [];
-    this.clubs().forEach((c, clubIdx) => {
+    const clubs = this.clubs();
+    clubs.forEach((c, clubIdx) => {
+      // Seltenheit der Vereins-Sticker nach Vorsaison-Platz (Clubs kommen bereits in dieser Reihenfolge)
+      const price = clubStickerPrice(clubIdx, clubs.length);
       const club = (kind: 'logo' | 'stadium', name: string): Sticker => ({
         id: `${c.id}-${kind}`, displayname: name, first_name: null, last_name: null,
-        position: null, price: CLUB_STICKER_PRICE, photo_uploaded: false,
-        idx: out.length, clubIdx, kind, tier: tierOf(CLUB_STICKER_PRICE),
+        position: null, price, photo_uploaded: false,
+        idx: out.length, clubIdx, kind, tier: tierOf(price),
       });
       out.push(club('logo', c.name));
       out.push(club('stadium', c.stadium_name ?? c.name));

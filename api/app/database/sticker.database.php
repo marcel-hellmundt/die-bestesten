@@ -45,8 +45,9 @@ trait StickerTrait
              LEFT JOIN stadium s ON s.id = cst.stadium_id
              LEFT JOIN club_in_season cis_prev
                  ON cis_prev.club_id = cis.club_id AND cis_prev.season_id = ?
+             LEFT JOIN division d_prev ON d_prev.id = cis_prev.division_id
              WHERE cis.season_id = ? AND cis.division_id = ?
-             ORDER BY cis_prev.position IS NULL, cis_prev.position ASC, c.name ASC"
+             ORDER BY cis_prev.position IS NULL, d_prev.level ASC, cis_prev.position ASC, c.name ASC"
         );
         $clubQuery->execute([$prevSeasonId, $seasonId, $divisionId]);
         $clubs = [];

@@ -33,8 +33,18 @@ export interface Sticker extends AlbumPlayer {
   tier: Tier;
 }
 
-/** Vereins-Sticker (Wappen/Stadion) sind fest "Selten": intern wie ein Spieler mit 2 Mio Marktwert gewichtet. */
-export const CLUB_STICKER_PRICE = 2_000_000;
+/**
+ * Vereins-Sticker (Wappen/Stadion) werden intern wie ein Spieler mit fiktivem Marktwert gewichtet, abhängig vom
+ * Vorsaison-Tabellenplatz (= Album-Reihenfolge): Erster wie 3 Mio (etwas seltener), Letzter wie 0,5 Mio, linear dazwischen.
+ */
+export const CLUB_STICKER_PRICE_BEST = 3_000_000;
+export const CLUB_STICKER_PRICE_WORST = 500_000;
+
+export function clubStickerPrice(rank: number, clubCount: number): number {
+  if (clubCount <= 1) return CLUB_STICKER_PRICE_BEST;
+  const t = Math.min(Math.max(rank / (clubCount - 1), 0), 1);
+  return Math.round(CLUB_STICKER_PRICE_BEST - t * (CLUB_STICKER_PRICE_BEST - CLUB_STICKER_PRICE_WORST));
+}
 
 export function tierOf(price: number | null): Tier {
   const p = price ?? MIN_PRICE;

@@ -278,8 +278,11 @@ export class StickerSimulationComponent {
   clubLogoUrl(c: AlbumClub): string { return this.album.clubLogoUrl(c); }
 
   priceLabel(s: Sticker): string {
-    if (s.kind !== 'player') return s.kind === 'logo' ? 'Vereins-Sticker (Wappen)' : 'Vereins-Sticker (Stadion)';
-    return s.price == null ? 'kein Marktwert' : (s.price / 1e6).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' Mio';
+    const mio = (p: number) => (p / 1e6).toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' Mio';
+    if (s.kind !== 'player') {
+      return `Vereins-Sticker (${s.kind === 'logo' ? 'Wappen' : 'Stadion'}), gewichtet wie ${mio(s.price ?? 0)}`;
+    }
+    return s.price == null ? 'kein Marktwert' : mio(s.price);
   }
 
   readonly tierLabel = TIER_LABEL;
