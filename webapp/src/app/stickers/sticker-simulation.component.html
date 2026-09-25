@@ -34,7 +34,7 @@
         </label>
         <label class="control">
           <span class="control__label">Pack-Größe <b>{{ r.milestonePackSize }}</b></span>
-          <input type="range" min="0" max="10" step="1" [value]="r.milestonePackSize" (input)="setShared('milestonePackSize', num($event))" />
+          <input type="range" min="0" max="20" step="1" [value]="r.milestonePackSize" (input)="setShared('milestonePackSize', num($event))" />
         </label>
       </div>
 
@@ -42,7 +42,7 @@
         <h2 class="control-group__title">Spieltagsbester</h2>
         <label class="control">
           <span class="control__label">Pack-Größe <b>{{ r.bestPackSize }}</b></span>
-          <input type="range" min="0" max="10" step="1" [value]="r.bestPackSize" (input)="setShared('bestPackSize', num($event))" />
+          <input type="range" min="0" max="30" step="1" [value]="r.bestPackSize" (input)="setShared('bestPackSize', num($event))" />
         </label>
       </div>
 
