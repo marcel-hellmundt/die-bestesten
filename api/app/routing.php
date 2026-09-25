@@ -845,7 +845,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/manager/me',
-                        'description' => 'Eigenes Profil abrufen (id, manager_name, alias, roles[], status)',
+                        'description' => 'Eigenes Profil abrufen (id, manager_name, first_name, alias, email, roles[], status)',
                     ],
                     [
                         'method' => 'GET',
@@ -884,7 +884,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/manager/me',
-                        'description' => 'Profil aktualisieren — Body: { current_password, new_password } für Passwort; oder { email } allein für E-Mail-Update (kein Passwort nötig)',
+                        'description' => 'Profil aktualisieren — Body: { current_password, new_password } für Passwort; { current_password, email } für E-Mail (aktuelles Passwort als Bestätigung nötig, da die E-Mail den Passwort-Reset steuert; 422 ungültiges Format, 409 bereits bei einem anderen Manager hinterlegt); { first_name } allein ohne Passwort; 400 fehlende Felder / Passwort falsch',
                     ],
                     [
                         'method' => 'DELETE',

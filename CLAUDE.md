@@ -189,11 +189,11 @@ POST     /team/:id/logo/takeover — übernimmt Logo aus Vorsaison-Team desselbe
 GET      /manager              — [{id,manager_name,alias,status,email,last_activity,stadiums_visited,roles[],leagues[{id,name}]}] alle Manager global — stadiums_visited = Anzahl per manager_stadium als besucht markierter Stadien — Admin
 POST     /manager              — {manager_name,first_name?,email,league_id} → {id,invite_link}; legt Manager mit status=invited an (zufälliges Platzhalter-Passwort) und manager_league sofort status=active (Liga bereits zugewiesen); sendet Einladungs-Mail (Link zu /login/accept-invite, 7 Tage gültig) — nach Passwort-Setzen automatischer Login mit league_id im JWT; 400 fehlende/ungültige Felder, 404 Liga nicht gefunden, 409 manager_name/email bereits vergeben — Admin
 POST     /manager/:id/resend-invite — → {invite_link}; neuer Token (alter wird ungültig) — 409 wenn status != invited — Admin
-GET      /manager/me           — {id,manager_name,alias,role,status} — Auth
+GET      /manager/me           — {id,manager_name,first_name,alias,email,roles[],status} — Auth
 GET      /manager/birthdays   — [{id,manager_name}] — Manager mit heutigem Geburtstag (MONTH+DAY match) — Auth
 GET      /manager/leagues      — [{id,name,slug}] — alle Ligen des eingeloggten Managers — Auth
 POST     /manager/me/photo     — multipart/form-data, Feld "image" (JPEG) — eigenes Profilfoto — Auth
-PATCH    /manager/me           — {current_password,new_password} für Passwort; {email} oder {first_name} allein ohne Passwort — Auth
+PATCH    /manager/me           — {current_password,new_password} für Passwort; {current_password,email} für E-Mail (Passwort als Bestätigung, 422 ungültiges Format, 409 schon bei anderem Manager); {first_name} allein ohne Passwort — Auth
 DELETE   /manager/me           — {password} — Auth; löscht nicht, sendet stattdessen Mail an Admin
 GET      /transaction          — ?team_id (erforderlich) → {budget, transactions[]} — nur eigenes Team (403 sonst) — Auth
 GET      /search               — ?q (min. 3 Zeichen) → {players[], clubs[], teams[], managers[]} — max. 8 je Typ; teams enthalten season_label — Auth

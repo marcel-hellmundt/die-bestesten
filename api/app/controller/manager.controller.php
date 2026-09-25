@@ -55,39 +55,49 @@ class ManagerController extends _BaseController
         if ($this->id !== 'me') return $this->methodNotAllowed();
 
         $body            = $this->body();
+        $me              = $GLOBALS['auth_manager_id'];
         $currentPassword = $body['current_password'] ?? null;
         $newPassword     = $body['new_password'] ?? null;
         $email           = array_key_exists('email', $body)      ? $body['email']      : 'NOT_SET';
         $firstName       = array_key_exists('first_name', $body) ? $body['first_name'] : 'NOT_SET';
 
-        // Field-only updates — no password required
-        if (!$currentPassword && !$newPassword) {
-            if ($email !== 'NOT_SET') {
-                $this->db->updateManagerEmail($GLOBALS['auth_manager_id'], $email ?: null);
-            }
-            if ($firstName !== 'NOT_SET') {
-                $this->db->updateManagerFirstName($GLOBALS['auth_manager_id'], $firstName ?: null);
-            }
-            if ($email !== 'NOT_SET' || $firstName !== 'NOT_SET') {
-                return ['status' => true];
-            }
+        // Vorname — ohne Passwort
+        if ($firstName !== 'NOT_SET') {
+            $this->db->updateManagerFirstName($me, $firstName ?: null);
+            if ($email === 'NOT_SET' && !$newPassword) return ['status' => true];
         }
 
-        if (!$currentPassword || !$newPassword) {
+        if ($email === 'NOT_SET' && !$newPassword) {
             http_response_code(400);
             return ['status' => false, 'message' => 'Fehlende Felder'];
         }
 
-        $manager = $this->db->getAuthManagerById($GLOBALS['auth_manager_id']);
+        // E-Mail und Passwort nur mit aktuellem Passwort (E-Mail steuert den Passwort-Reset → Übernahmeschutz)
+        if (!$currentPassword) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'Aktuelles Passwort zur Bestätigung erforderlich'];
+        }
+        $manager = $this->db->getAuthManagerById($me);
         if (!$manager || !password_verify($currentPassword, $manager['password'])) {
             http_response_code(400);
             return ['status' => false, 'message' => 'Aktuelles Passwort inkorrekt'];
         }
 
-        $this->db->updateManagerPassword($GLOBALS['auth_manager_id'], password_hash($newPassword, PASSWORD_DEFAULT));
-
         if ($email !== 'NOT_SET') {
-            $this->db->updateManagerEmail($GLOBALS['auth_manager_id'], $email ?: null);
+            $email = trim((string) $email);
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                http_response_code(422);
+                return ['status' => false, 'message' => 'Ungültige E-Mail-Adresse'];
+            }
+            if ($this->db->managerEmailTakenByOther($email, $me)) {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Diese E-Mail-Adresse wird bereits verwendet'];
+            }
+            $this->db->updateManagerEmail($me, $email);
+        }
+
+        if ($newPassword) {
+            $this->db->updateManagerPassword($me, password_hash($newPassword, PASSWORD_DEFAULT));
         }
 
         return ['status' => true];

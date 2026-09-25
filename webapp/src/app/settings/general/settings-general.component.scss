@@ -1,0 +1,8 @@
+@use '../../../styles/variables' as *;
+@use '../settings-shared';
+
+.section-desc {
+  margin: (-$space-2) 0 $space-4;
+  font-size: $font-sm;
+  color: $color-text-muted;
+}

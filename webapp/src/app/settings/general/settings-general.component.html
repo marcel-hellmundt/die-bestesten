@@ -1,0 +1,186 @@
+<!-- Profil -->
+<section class="settings-section">
+  <div class="section-header-row"><h2 class="section-header">Mein Konto</h2></div>
+
+  @if (profileLoading()) {
+    <p class="state-msg">Laden…</p>
+  } @else if (profileError()) {
+    <p class="state-msg state-msg--error">{{ profileError() }}</p>
+  } @else if (profile(); as p) {
+    <div class="profile-card">
+      <input #photoInput type="file" accept="image/*" class="hidden-input" (change)="onPhotoSelected($event)" />
+      <button
+        class="profile-avatar"
+        [class.profile-avatar--loading]="photoState() === 'loading'"
+        [disabled]="photoState() === 'loading'"
+        (click)="triggerPhotoUpload()"
+        title="Profilbild ändern"
+      >
+        @if (avatarUrl() && !avatarFailed()) {
+          <img [src]="avatarUrl()!" class="avatar-img" (error)="avatarFailed.set(true)" alt="" />
+        } @else {
+          <span class="avatar-initials">{{ initials() }}</span>
+        }
+        <div class="avatar-overlay">
+          @if (photoState() === 'loading') {
+            <span class="avatar-overlay__spinner"></span>
+          } @else {
+            <span class="avatar-overlay__icon">✎</span>
+          }
+        </div>
+      </button>
+      <div class="profile-photo-col">
+        @if (photoState() === 'error') {
+          <span class="photo-error">Upload fehlgeschlagen</span>
+        }
+      </div>
+      <div class="profile-info">
+        <div class="info-row">
+          <span class="info-label">Anzeigename</span>
+          <span class="info-value">{{ p.manager_name }}</span>
+        </div>
+        @if (p.alias) {
+          <div class="info-row">
+            <span class="info-label">Alias</span>
+            <span class="info-value">{{ p.alias }}</span>
+          </div>
+        }
+        <div class="info-row">
+          <span class="info-label">E-Mail</span>
+          <span class="info-value">{{ currentEmail() ?? '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Rolle</span>
+          <span class="info-value role-badge role-badge--{{ primaryRole(p) }}">{{ primaryRole(p) }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status</span>
+          <span class="info-value">{{ p.status }}</span>
+        </div>
+      </div>
+    </div>
+  }
+</section>
+
+<!-- E-Mail ändern -->
+<section class="settings-section">
+  <div class="section-header-row"><h2 class="section-header">E-Mail ändern</h2></div>
+  <p class="section-desc">
+    An diese Adresse gehen Einladungen und der Link zum Zurücksetzen deines Passworts.
+    @if (currentEmail()) { Aktuell: <b>{{ currentEmail() }}</b> }
+  </p>
+
+  <div class="settings-form">
+    <div class="form-field">
+      <label class="form-label">Neue E-Mail-Adresse</label>
+      <input class="input"
+             type="email"
+             autocomplete="email"
+             placeholder="name@beispiel.de"
+             [value]="newEmail()"
+             (input)="newEmail.set($any($event.target).value)" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Aktuelles Passwort zur Bestätigung</label>
+      <input class="input"
+             type="password"
+             autocomplete="current-password"
+             placeholder="••••••••"
+             [value]="emailPw()"
+             (input)="emailPw.set($any($event.target).value)" />
+    </div>
+
+    @if (emailError()) {
+      <p class="state-msg state-msg--error">{{ emailError() }}</p>
+    }
+    @if (emailState() === 'success') {
+      <p class="state-msg state-msg--success">E-Mail-Adresse erfolgreich geändert</p>
+    }
+
+    <button class="btn btn-primary"
+            [disabled]="emailState() === 'loading' || !newEmail() || !emailPw()"
+            (click)="changeEmail()">
+      {{ emailState() === 'loading' ? 'Wird geändert…' : 'E-Mail ändern' }}
+    </button>
+  </div>
+</section>
+
+<!-- Passwort ändern -->
+<section class="settings-section">
+  <div class="section-header-row"><h2 class="section-header">Passwort ändern</h2></div>
+
+  <div class="settings-form">
+    <div class="form-field">
+      <label class="form-label">Aktuelles Passwort</label>
+      <input class="input"
+             type="password"
+             autocomplete="current-password"
+             placeholder="••••••••"
+             [value]="currentPw()"
+             (input)="currentPw.set($any($event.target).value)" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Neues Passwort</label>
+      <input class="input"
+             type="password"
+             autocomplete="new-password"
+             placeholder="••••••••"
+             [value]="newPw()"
+             (input)="newPw.set($any($event.target).value)" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Neues Passwort bestätigen</label>
+      <input class="input"
+             type="password"
+             autocomplete="new-password"
+             placeholder="••••••••"
+             [value]="confirmPw()"
+             (input)="confirmPw.set($any($event.target).value)" />
+    </div>
+
+    @if (pwError()) {
+      <p class="state-msg state-msg--error">{{ pwError() }}</p>
+    }
+    @if (pwState() === 'success') {
+      <p class="state-msg state-msg--success">Passwort erfolgreich geändert</p>
+    }
+
+    <button class="btn btn-primary"
+            [disabled]="pwState() === 'loading' || !currentPw() || !newPw() || !confirmPw()"
+            (click)="changePassword()">
+      {{ pwState() === 'loading' ? 'Wird geändert…' : 'Passwort ändern' }}
+    </button>
+  </div>
+</section>
+
+<!-- Konto löschen -->
+<section class="settings-section settings-section--danger">
+  <div class="section-header-row"><h2 class="section-header">Konto löschen</h2></div>
+  <p class="danger-description">Das Löschen deines Kontos ist endgültig und kann nicht rückgängig gemacht werden.</p>
+
+  @if (!deleteConfirmVisible()) {
+    <button class="btn btn-danger" (click)="showDeleteConfirm()">Konto löschen</button>
+  } @else {
+    <div class="delete-confirm">
+      <p class="delete-confirm__text">Gib dein Passwort ein, um dein Konto endgültig zu löschen.</p>
+      <input class="input"
+             type="password"
+             placeholder="Passwort zur Bestätigung"
+             [value]="deletePw()"
+             (input)="deletePw.set($any($event.target).value)" />
+
+      @if (deleteError()) {
+        <p class="state-msg state-msg--error">{{ deleteError() }}</p>
+      }
+
+      <div class="delete-confirm__actions">
+        <button class="btn" (click)="cancelDelete()">Abbrechen</button>
+        <button class="btn btn-danger"
+                [disabled]="deleteState() === 'loading' || !deletePw()"
+                (click)="deleteAccount()">
+          {{ deleteState() === 'loading' ? 'Wird gelöscht…' : 'Endgültig löschen' }}
+        </button>
+      </div>
+    </div>
+  }
+</section>

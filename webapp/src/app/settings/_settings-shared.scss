@@ -1,5 +1,7 @@
 @use '../../styles/variables' as *;
 
+// Gemeinsame Styles der Einstellungs-Unterseiten (allgemein, benachrichtigungen) — per @use in deren SCSS
+
 .settings-section {
   max-width: 560px;
   margin-bottom: $space-6;

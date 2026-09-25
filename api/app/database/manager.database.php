@@ -79,6 +79,14 @@ trait ManagerTrait
         return (bool) $q->fetch();
     }
 
+    /** E-Mail-Adresse bereits bei einem ANDEREN Manager hinterlegt? (eigene Adresse erneut speichern ist ok) */
+    public function managerEmailTakenByOther(string $email, string $managerId): bool
+    {
+        $q = $this->con->prepare("SELECT 1 FROM manager WHERE email = :email AND id <> :id LIMIT 1");
+        $q->execute([':email' => $email, ':id' => $managerId]);
+        return (bool) $q->fetch();
+    }
+
     public function createInvitedManager(
         string $id,
         string $managerName,

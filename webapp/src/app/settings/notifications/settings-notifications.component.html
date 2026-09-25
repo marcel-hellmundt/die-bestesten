@@ -1,0 +1,65 @@
+<section class="settings-section">
+  <div class="section-header-row"><h2 class="section-header">Benachrichtigungen</h2></div>
+
+  <div class="pref-list">
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Spieltag abgeschlossen</span>
+        <span class="pref-desc">Wenn ein Spieltag ausgewertet wurde</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('matchday_completed')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('matchday_completed', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
+
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Achievement erhalten</span>
+        <span class="pref-desc">Wenn du ein neues Achievement freischaltest</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('achievement_earned')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('achievement_earned', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
+
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">H2H-Auslosung</span>
+        <span class="pref-desc">Bei Auslosung der Gruppenphase, des Viertelfinales oder Halbfinales</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('h2h_draw')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('h2h_draw', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
+
+    <label class="pref-item">
+      <div class="pref-text">
+        <span class="pref-name">Direktangebote</span>
+        <span class="pref-desc">Wenn jemand ein Angebot für einen deiner Spieler abgibt oder auf dein Angebot antwortet</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="pref('direct_offer')"
+               (click)="$event.stopPropagation()"
+               (change)="setPreference('direct_offer', $any($event.target).checked)" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
+  </div>
+</section>
