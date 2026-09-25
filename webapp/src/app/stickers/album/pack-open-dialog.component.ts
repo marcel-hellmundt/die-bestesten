@@ -1,4 +1,4 @@
-import { Component, DestroyRef, HostListener, inject, input, output } from '@angular/core';
+import { Component, DestroyRef, HostListener, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { Sticker } from './album.model';
 
@@ -9,117 +9,22 @@ export interface PackCard {
   count: number;   // Anzahl nach diesem Pack (inkl. Doppelter)
 }
 
+/** sealed = geschlossenes Pack (Tippen zum Aufreißen) → tearing = Animation → revealed = Karten aufgedeckt */
+type Phase = 'sealed' | 'tearing' | 'revealed';
+
+/** Dauer der Aufreiß-Animation bis zum Aufdecken (muss zu den Delays im SCSS passen). */
+const TEAR_MS = 1750;
+
 /**
- * Geöffnetes Pack: die gezogenen Karten erscheinen nacheinander (umdrehen), mit "Neu"/"Doppelt"-Marke.
- * Klick auf eine Karte → große Karte (open); "Nächstes Pack" öffnet direkt das nächste ungeöffnete.
+ * Geöffnetes Pack: zuerst das geschlossene Folien-Pack — Tippen reißt es auf (wackeln, Lasche fliegt ab,
+ * Karten schieben sich verdeckt heraus), danach erscheinen die Karten nacheinander (umdrehen) mit
+ * "Neu"/"Doppelt"-Marke. Klick auf eine Karte → große Karte (open); "Nächstes Pack" öffnet direkt das nächste.
  */
 @Component({
   selector: 'app-pack-open-dialog',
   standalone: false,
-  template: `
-    <div class="backdrop" (click)="closed.emit()">
-      <div class="panel" (click)="$event.stopPropagation()">
-        <h2 class="panel__title">{{ title() }}</h2>
-        <div class="cards">
-          @for (c of cards(); track $index) {
-            <button class="pull" type="button" [style.animation-delay.ms]="$index * 380" (click)="open.emit(c)"
-                    [attr.aria-label]="c.sticker.displayname">
-              <app-sticker-card [data]="c.card" />
-              <span class="tag" [class.tag--new]="c.isNew">{{ c.isNew ? 'Neu' : 'Doppelt ×' + c.count }}</span>
-            </button>
-          }
-        </div>
-        <div class="actions">
-          @if (remaining() > 0) {
-            <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="next.emit()">
-              {{ busy() ? 'Öffnet…' : 'Nächstes Pack öffnen (' + remaining() + ')' }}
-            </button>
-          }
-          <button class="btn btn-ghost" type="button" (click)="closed.emit()">Fertig</button>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 400; /* $z-modal — die große Karte (sticker-card-dialog) liegt danach im DOM und damit darüber */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      background: rgba(0, 0, 0, 0.78);
-      animation: fade-in 180ms ease;
-      touch-action: none;
-      overscroll-behavior: contain;
-    }
-    .panel {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      width: min(100%, 720px);
-    }
-    .panel__title {
-      margin: 0;
-      color: #fff;
-      font-family: 'Euclid', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      font-style: italic;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-    }
-    .cards {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 16px;
-      width: 100%;
-    }
-    .pull {
-      position: relative;
-      width: min(200px, calc((100% - 32px) / 3));
-      padding: 0;
-      border: none;
-      background: none;
-      cursor: pointer;
-      text-align: left;
-      perspective: 800px;
-      /* backwards: während der Verzögerung unsichtbar, danach wieder normale Styles (Hover funktioniert) */
-      animation: reveal 520ms cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
-      transition: transform 150ms ease;
-    }
-    .pull:hover { transform: translateY(-4px); }
-    .tag {
-      position: absolute;
-      left: 50%;
-      bottom: -10px;
-      transform: translateX(-50%);
-      padding: 2px 10px;
-      border-radius: 9999px;
-      background: #374151;
-      color: #fff;
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .tag--new { background: #16a34a; }
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .actions .btn-ghost { color: #fff; }
-    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes reveal {
-      from { opacity: 0; transform: rotateY(90deg) scale(0.8); }
-      to   { opacity: 1; transform: none; }
-    }
-  `],
+  templateUrl: './pack-open-dialog.component.html',
+  styleUrl: './pack-open-dialog.component.scss',
 })
 export class PackOpenDialogComponent {
   title = input.required<string>();
@@ -133,11 +38,31 @@ export class PackOpenDialogComponent {
   open = output<PackCard>();
   closed = output<void>();
 
+  phase = signal<Phase>('sealed');
+  private tearTimer: ReturnType<typeof setTimeout> | null = null;
+  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   private prevOverflow = document.body.style.overflow;
 
   constructor() {
     document.body.style.overflow = 'hidden';
-    inject(DestroyRef).onDestroy(() => { document.body.style.overflow = this.prevOverflow; });
+    inject(DestroyRef).onDestroy(() => {
+      document.body.style.overflow = this.prevOverflow;
+      if (this.tearTimer) clearTimeout(this.tearTimer);
+    });
+
+    // Jedes neue Pack ("Nächstes Pack öffnen") beginnt wieder geschlossen
+    effect(() => {
+      this.cards();
+      untracked(() => this.phase.set('sealed'));
+    });
+  }
+
+  tear(): void {
+    if (this.phase() !== 'sealed') return;
+    if (this.reducedMotion) { this.phase.set('revealed'); return; }
+    this.phase.set('tearing');
+    this.tearTimer = setTimeout(() => this.phase.set('revealed'), TEAR_MS);
   }
 
   @HostListener('document:keydown.escape')
