@@ -102,9 +102,24 @@ export class StickerAlbumComponent {
     this.openCard.set(c.card);
   }
 
-  // ── Admin: Album einfrieren/ergänzen ──────────────────────────────────────
+  // ── Admin: Album einfrieren/ergänzen + Test-Pack ──────────────────────────
   syncBusy = signal(false);
   syncResult = signal<string | null>(null);
+  testPackBusy = signal(false);
+
+  /** Legt sich selbst ein Pack mit 3 Stickern an — erscheint danach in der Pack-Leiste. */
+  grantTestPack(): void {
+    if (this.testPackBusy()) return;
+    this.testPackBusy.set(true);
+    this.syncResult.set(null);
+    this.api.post<{ id: string }>('sticker/pack', { size: 3 }).subscribe({
+      next: () => { this.testPackBusy.set(false); this.status.refresh(); },
+      error: err => {
+        this.testPackBusy.set(false);
+        this.syncResult.set(err?.error?.message ?? 'Test-Pack konnte nicht angelegt werden');
+      },
+    });
+  }
 
   syncAlbum(): void {
     if (this.syncBusy()) return;

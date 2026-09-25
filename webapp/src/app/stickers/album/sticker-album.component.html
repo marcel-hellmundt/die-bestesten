@@ -1,8 +1,11 @@
 <div class="album">
-  <!-- Admin: Album einfrieren/ergänzen -->
+  <!-- Admin: Album einfrieren/ergänzen + Test-Pack (Pack-Öffnen/Animationen ausprobieren) -->
   @if (isAdmin) {
     <div class="tools">
       @if (syncResult()) { <span class="tools__result">{{ syncResult() }}</span> }
+      <button type="button" class="btn btn-ghost btn-sm" [disabled]="testPackBusy()" (click)="grantTestPack()">
+        {{ testPackBusy() ? 'Legt an…' : 'Test-Pack (3)' }}
+      </button>
       <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
         {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}
       </button>

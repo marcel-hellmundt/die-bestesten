@@ -115,6 +115,21 @@ trait StickerPackTrait
         return $state;
     }
 
+    /**
+     * Test-Pack für Admins (POST /sticker/pack): legt dem Manager ein zusätzliches, ungeöffnetes Pack der
+     * aktiven Saison an (source 'admin', eigener source_key je Klick). null wenn das Album noch fehlt.
+     */
+    public function grantAdminStickerPack(string $managerId, int $size): ?string
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if ($seasonId === null || !$this->stickerAlbumReady($seasonId)) return null;
+        $key = 'admin:' . bin2hex(random_bytes(8));
+        $this->grantStickerPack($managerId, $seasonId, 'admin', $key, null, $size);
+        $q = $this->con->prepare("SELECT id FROM sticker_pack WHERE manager_id = ? AND source_key = ?");
+        $q->execute([$managerId, $key]);
+        return $q->fetchColumn() ?: null;
+    }
+
     /** Sammlung: je gezogenem Sticker Anzahl, Holo-Anzahlen und Zeitpunkt des ersten Zugs. */
     private function getStickerCollection(string $managerId, string $seasonId): array
     {
