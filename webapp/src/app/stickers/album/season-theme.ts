@@ -1,63 +1,58 @@
 // "Die Klebrigsten" — Saison-Theme des Sammelalbums: deterministisch aus der Saison-ID abgeleitet
-// (jede Saison sieht anders aus, bleibt aber stabil — ohne DB). Liefert ein Hintergrundmuster als
-// reine CSS-Gradients; die Farben kommen je Seite aus dem Verein (CSS-Variablen --page-a / --page-b).
+// (jede Saison sieht anders aus, bleibt aber stabil — ohne DB). Bewusst ruhig: statt eines flächigen
+// Musters eine einzelne breite "Trikot-Schärpe" quer über die Seite plus ein feines Punkt-Raster
+// (Druck-Optik), das in einer Ecke ausläuft. Die Farben kommen je Seite aus dem Verein
+// (CSS-Variablen --page-a / --sash, siehe album-club-page).
 import { rng } from '../sticker-sim';
 import { hashSeed } from './sticker-album.service';
 
-export type ThemePattern = 'stripes' | 'dots' | 'chevron' | 'waves' | 'grid';
-export type LogoCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+export type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export interface SeasonTheme {
-  pattern: ThemePattern;
-  angle: number;         // Grad (Streifen)
-  scale: number;         // Kachelgröße in px
-  logoCorner: LogoCorner;
-  logoRotation: number;  // Grad, großes Wasserzeichen-Wappen
+  sashAngle: number;     // Grad — Richtung der Schärpe
+  sashOffset: number;    // % — wo die Schärpe die Seite kreuzt
+  sashWidth: number;     // % der Seitendiagonale
+  logoCorner: Corner;    // großes Wasserzeichen-Wappen
+  logoRotation: number;  // Grad
+  dotsCorner: Corner;    // Punkt-Raster läuft von dieser Ecke aus (immer gegenüber dem Wappen)
   sweepAngle: number;    // Richtung des Farbverlaufs der Seite
 }
 
-const PATTERNS: ThemePattern[] = ['stripes', 'dots', 'chevron', 'waves', 'grid'];
-const CORNERS: LogoCorner[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+const CORNERS: Corner[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+const OPPOSITE: Record<Corner, Corner> = {
+  'top-left': 'bottom-right', 'top-right': 'bottom-left', 'bottom-left': 'top-right', 'bottom-right': 'top-left',
+};
 
 export function seasonTheme(seasonId: string | null): SeasonTheme {
   const r = rng(hashSeed(`album-theme:${seasonId ?? 'none'}`));
-  const pick = <T>(list: T[]) => list[Math.floor(r() * list.length)];
+  const logoCorner = CORNERS[Math.floor(r() * CORNERS.length)];
+  // Schärpe diagonal, aber nie parallel zu einer Kante
+  const sashAngle = Math.round(r() < 0.5 ? 115 + r() * 30 : 35 + r() * 30);
   return {
-    pattern: pick(PATTERNS),
-    angle: Math.round(20 + r() * 140),
-    scale: Math.round(18 + r() * 22),
-    logoCorner: pick(CORNERS),
+    sashAngle,
+    sashOffset: Math.round(34 + r() * 22),
+    sashWidth: Math.round(14 + r() * 8),
+    logoCorner,
     logoRotation: Math.round(-25 + r() * 50),
+    dotsCorner: OPPOSITE[logoCorner],
     sweepAngle: Math.round(100 + r() * 70),
   };
 }
 
-/** Muster als background-image/-size (Farbe über --page-b, dezent per color-mix). */
-export function themePattern(t: SeasonTheme): { image: string; size: string } {
-  const c = 'color-mix(in srgb, var(--page-b) 22%, transparent)';
-  const s = t.scale;
-  switch (t.pattern) {
-    case 'stripes':
-      return {
-        image: `repeating-linear-gradient(${t.angle}deg, ${c} 0 ${Math.round(s * 0.35)}px, transparent ${Math.round(s * 0.35)}px ${s}px)`,
-        size: 'auto',
-      };
-    case 'dots':
-      return { image: `radial-gradient(circle, ${c} 22%, transparent 24%)`, size: `${s}px ${s}px` };
-    case 'chevron':
-      return {
-        image: `linear-gradient(135deg, ${c} 25%, transparent 25%), linear-gradient(225deg, ${c} 25%, transparent 25%)`,
-        size: `${s}px ${s}px`,
-      };
-    case 'waves':
-      return {
-        image: `repeating-radial-gradient(circle at 0 100%, transparent 0 ${Math.round(s * 0.35)}px, ${c} ${Math.round(s * 0.35)}px ${Math.round(s * 0.5)}px, transparent ${Math.round(s * 0.5)}px ${s}px)`,
-        size: `${s * 2}px ${s * 2}px`,
-      };
-    case 'grid':
-      return {
-        image: `linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`,
-        size: `${s}px ${s}px`,
-      };
-  }
+/** Schärpe als background-image: breites, weich begrenztes Band (--sash) mit feiner Begleitlinie (--page-a). */
+export function themeSash(t: SeasonTheme): string {
+  const band = 'color-mix(in srgb, var(--sash) 13%, transparent)';
+  const line = 'color-mix(in srgb, var(--page-a) 28%, transparent)';
+  const a = t.sashOffset, b = a + t.sashWidth;
+  return `linear-gradient(${t.sashAngle}deg,
+    transparent ${a}%, ${band} ${a + 0.6}%, ${band} ${b}%, transparent ${b + 0.6}%,
+    transparent ${b + 1.6}%, ${line} ${b + 1.8}%, ${line} ${b + 2.3}%, transparent ${b + 2.5}%)`;
+}
+
+/** Position (für mask/radial-gradient) der Ecke, aus der das Punkt-Raster ausläuft. */
+export function cornerPosition(c: Corner): string {
+  const pos: Record<Corner, string> = {
+    'top-left': '0% 0%', 'top-right': '100% 0%', 'bottom-left': '0% 100%', 'bottom-right': '100% 100%',
+  };
+  return pos[c];
 }

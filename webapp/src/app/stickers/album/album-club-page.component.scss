@@ -4,7 +4,8 @@
 
 // ── Seite ────────────────────────────────────────────────────────────────────
 // Mobile: schlicht (leichte Tönung in Vereinsfarbe, kein Wasserzeichen/Muster → Platz + Performance).
-// Desktop: "Buchseite" mit Verlauf in Vereinsfarben, Saison-Muster und großem halbtransparentem Wappen.
+// Desktop: "Buchseite" mit ruhigem Verlauf in Vereinsfarben, einer breiten Saison-Schärpe quer über die
+// Seite, feinem Punkt-Raster (Druck-Optik, läuft aus einer Ecke aus) und großem halbtransparentem Wappen.
 .page {
   position: relative;
   overflow: hidden;
@@ -17,13 +18,24 @@
     padding: $space-6;
     min-height: 720px;
     background:
-      var(--pattern-image),
+      var(--sash-image),
       linear-gradient(var(--sweep),
-        color-mix(in srgb, var(--page-a) 22%, $color-surface) 0%,
-        color-mix(in srgb, var(--page-a) 8%, $color-surface) 55%,
-        color-mix(in srgb, var(--page-b) 14%, $color-surface) 100%);
-    background-size: var(--pattern-size), auto;
+        color-mix(in srgb, var(--page-a) 14%, $color-surface) 0%,
+        color-mix(in srgb, var(--page-a) 5%, $color-surface) 60%,
+        color-mix(in srgb, var(--page-b) 9%, $color-surface) 100%);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+
+    // Punkt-Raster, das aus einer Ecke heraus ausläuft
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image: radial-gradient(circle, color-mix(in srgb, var(--page-a) 22%, transparent) 1.3px, transparent 1.6px);
+      background-size: 11px 11px;
+      mask-image: radial-gradient(circle at var(--dots-at), #000 0%, transparent 42%);
+    }
   }
 
   &__watermark {
