@@ -2,7 +2,11 @@
   <!-- Admin: Album einfrieren/ergänzen + Test-Pack (Pack-Öffnen/Animationen ausprobieren) -->
   @if (isAdmin) {
     <div class="tools">
-      @if (syncResult()) { <span class="tools__result">{{ syncResult() }}</span> }
+      @if (syncResult()) {
+        <span class="tools__result">{{ syncResult() }}</span>
+      } @else if (status.state() && !status.enabled()) {
+        <span class="tools__result">In keiner deiner Ligen aktiv — Packs und Sammlung werden dir nicht angezeigt (Liga-Einstellungen).</span>
+      }
       <button type="button" class="btn btn-ghost btn-sm" [disabled]="testPackBusy()" (click)="grantTestPack()">
         {{ testPackBusy() ? 'Legt an…' : 'Test-Pack (3)' }}
       </button>

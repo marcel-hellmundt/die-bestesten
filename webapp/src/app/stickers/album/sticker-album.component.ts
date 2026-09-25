@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
-import { PACK_SOURCE_LABEL, StickerStatusService } from '../../core/sticker-status.service';
+import { PACK_SOURCE_LABEL, StickerPack, StickerStatusService } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
@@ -67,6 +67,10 @@ export class StickerAlbumComponent {
     const pack = this.packs()[0];
     if (!pack || this.packBusy()) return;
     requestTiltPermission(); // synchron in der Klick-Geste (iOS), falls danach eine Karte groß geöffnet wird
+    this.openPack(pack);
+  }
+
+  private openPack(pack: Pick<StickerPack, 'id' | 'source' | 'league_name'>): void {
     this.packBusy.set(true);
     this.packError.set(null);
     const before = this.collection().counts;
@@ -107,13 +111,20 @@ export class StickerAlbumComponent {
   syncResult = signal<string | null>(null);
   testPackBusy = signal(false);
 
-  /** Legt sich selbst ein Pack mit 3 Stickern an — erscheint danach in der Pack-Leiste. */
+  /**
+   * Legt sich selbst ein Pack mit 3 Stickern an und öffnet es direkt im Pack-Dialog — funktioniert auch,
+   * wenn das Feature in keiner eigenen Liga aktiv ist (dann zeigt GET /sticker/me keine Packs an).
+   */
   grantTestPack(): void {
     if (this.testPackBusy()) return;
+    requestTiltPermission(); // synchron in der Klick-Geste (iOS)
     this.testPackBusy.set(true);
     this.syncResult.set(null);
     this.api.post<{ id: string }>('sticker/pack', { size: 3 }).subscribe({
-      next: () => { this.testPackBusy.set(false); this.status.refresh(); },
+      next: res => {
+        this.testPackBusy.set(false);
+        this.openPack({ id: res.id, source: 'admin', league_name: null });
+      },
       error: err => {
         this.testPackBusy.set(false);
         this.syncResult.set(err?.error?.message ?? 'Test-Pack konnte nicht angelegt werden');
