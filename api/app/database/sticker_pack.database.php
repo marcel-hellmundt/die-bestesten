@@ -240,7 +240,8 @@ trait StickerPackTrait
      * das Feature aktiv hat und das Album der Saison existiert: Meilenstein-Packs für jedes Team, dessen
      * Saisonpunkte mit diesem Spieltag eine neue Schwelle (Vielfache von milestone_interval) überschritten
      * haben, und ein Pack für den/die Spieltagsbesten (höchste Punkte unter den gewerteten Teams).
-     * Idempotent (source_key) — erneutes Abschließen vergibt nichts doppelt; nicht rückwirkend.
+     * Idempotent (source_key) — erneutes Abschließen vergibt nichts doppelt. Bereits zurückliegende
+     * Spieltage holt backfillStickerPacks() nach (beim Album-Abgleich).
      */
     public function grantStickerMatchdayPacks(string $matchdayId): array
     {
@@ -283,6 +284,72 @@ trait StickerPackTrait
                 if ((int) $r['points'] !== $best) continue;
                 if ($this->grantStickerPack($r['manager_id'], $seasonId, 'matchday_best', "matchday_best:{$r['team_id']}:{$matchdayId}", $leagueId, $cfg['matchday_best_pack_size'])) {
                     $result['matchday_best']++;
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Rückwirkende Vergabe für die Saison (beim Album-Abgleich, POST /sticker/album/sync): in jeder Liga mit
+     * sticker_enabled alle bisher erreichten Punkte-Meilensteine je Team und alle Spieltagssiege (höchste
+     * Punkte unter den gewerteten Teams, bei Gleichstand alle) aus den vorhandenen team_rating-Zeilen.
+     * Gleiche source_keys wie grantStickerMatchdayPacks() → idempotent und deckungsgleich mit der
+     * Live-Vergabe; bereits vergebene Packs werden übersprungen. Tages-Packs lassen sich nicht nachholen.
+     */
+    public function backfillStickerPacks(string $seasonId): array
+    {
+        $result = ['milestone' => 0, 'matchday_best' => 0];
+        if (!$this->stickerAlbumReady($seasonId)) return $result;
+        $cfg = $this->stickerConfig();
+        $interval = (int) $cfg['milestone_interval'];
+
+        try {
+            $leagues = $this->con->query("SELECT id, db_name FROM league WHERE sticker_enabled = 1")->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return $result; // Migration fehlt
+        }
+
+        foreach ($leagues as $league) {
+            $db = $this->createConnection($_ENV['DB_HOST'], $league['db_name'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+            $q = $db->prepare(
+                "SELECT t.id AS team_id, t.manager_id, tr.matchday_id, tr.points, tr.invalid
+                 FROM team t JOIN team_rating tr ON tr.team_id = t.id
+                 WHERE t.season_id = ?"
+            );
+            $q->execute([$seasonId]);
+            $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+
+            // Meilensteine: je Team alle Schwellen bis zur aktuellen Saisonpunktzahl
+            $teams = [];
+            foreach ($rows as $r) {
+                $teams[$r['team_id']] ??= ['manager_id' => $r['manager_id'], 'total' => 0];
+                $teams[$r['team_id']]['total'] += (int) $r['points'];
+            }
+            if ($interval > 0) {
+                foreach ($teams as $teamId => $t) {
+                    for ($threshold = $interval; $threshold <= $t['total']; $threshold += $interval) {
+                        if ($this->grantStickerPack($t['manager_id'], $seasonId, 'milestone', "milestone:{$teamId}:{$threshold}", $league['id'], $cfg['milestone_pack_size'])) {
+                            $result['milestone']++;
+                        }
+                    }
+                }
+            }
+
+            // Spieltagssiege: je Spieltag die gewerteten Teams mit der höchsten Punktzahl (> 0)
+            $byMatchday = [];
+            foreach ($rows as $r) {
+                if ((int) $r['invalid']) continue;
+                $byMatchday[$r['matchday_id']][] = $r;
+            }
+            foreach ($byMatchday as $matchdayId => $mdRows) {
+                $best = max(array_map(fn($r) => (int) $r['points'], $mdRows));
+                if ($best <= 0) continue;
+                foreach ($mdRows as $r) {
+                    if ((int) $r['points'] !== $best) continue;
+                    if ($this->grantStickerPack($r['manager_id'], $seasonId, 'matchday_best', "matchday_best:{$r['team_id']}:{$matchdayId}", $league['id'], $cfg['matchday_best_pack_size'])) {
+                        $result['matchday_best']++;
+                    }
                 }
             }
         }

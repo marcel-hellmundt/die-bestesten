@@ -44,7 +44,10 @@ class StickerController extends _BaseController
     {
         if ($this->id === 'album' && $this->sub === 'sync') {
             if (!$this->isAdmin()) return $this->forbidden();
-            return ['status' => true] + $this->db->syncStickerAlbum();
+            $sync = $this->db->syncStickerAlbum();
+            // bisherige Meilensteine + Spieltagssiege der Saison nachträglich belohnen (idempotent)
+            $packs = $sync['season_id'] ? $this->db->backfillStickerPacks($sync['season_id']) : ['milestone' => 0, 'matchday_best' => 0];
+            return ['status' => true] + $sync + ['packs' => $packs];
         }
         if ($this->id === 'pack' && $this->sub !== null && $this->sub_id === 'open') {
             $result = $this->db->openStickerPack($GLOBALS['auth_manager_id'], $this->sub);

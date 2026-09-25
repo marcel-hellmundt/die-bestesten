@@ -1297,7 +1297,7 @@ class Routing
 
             new Route('sticker', 'Sticker', [
                 'title' => 'Sticker ("Die Klebrigsten")',
-                'description' => 'Sticker-Album-Feature: ein globales Album je Manager + Saison, aktiv für Manager in mind. einer Liga mit league.sticker_enabled. Packs aus drei Quellen (tägliches Pack beim App-Öffnen, Punkte-Meilensteine je Team, Spieltagsbester) — Karten werden erst beim Öffnen serverseitig gewürfelt (Gewicht = Marktwert^-α, garantiert neu: bei Meilenstein-/Spieltagsbester-Packs alle Karten, sonst die 1., Holo Silber/Gold je Karte). Regeln (Packgrößen, Meilenstein-Intervall, α, Holo-Chancen) vorerst als Variablen in StickerPackTrait::stickerConfig(). Vergabe erst, wenn das Album der Saison eingefroren ist (POST /sticker/album/sync), nicht rückwirkend.',
+                'description' => 'Sticker-Album-Feature: ein globales Album je Manager + Saison, aktiv für Manager in mind. einer Liga mit league.sticker_enabled. Packs aus drei Quellen (tägliches Pack beim App-Öffnen, Punkte-Meilensteine je Team, Spieltagsbester) — Karten werden erst beim Öffnen serverseitig gewürfelt (Gewicht = Marktwert^-α, garantiert neu: bei Meilenstein-/Spieltagsbester-Packs alle Karten, sonst die 1., Holo Silber/Gold je Karte). Regeln (Packgrößen, Meilenstein-Intervall, α, Holo-Chancen) vorerst als Variablen in StickerPackTrait::stickerConfig(). Vergabe erst, wenn das Album der Saison eingefroren ist (POST /sticker/album/sync); der Abgleich holt zurückliegende Meilensteine und Spieltagssiege der Saison nach (Tages-Packs nicht).',
                 'endpoints' => [
                     [
                         'method' => 'GET',
@@ -1323,7 +1323,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/sticker/album/sync',
-                        'description' => 'Friert das Album der aktiven Saison ein bzw. ergänzt es (Grundlage: /sticker/album_preview): fehlende Spieler (z.B. Foto erst später hochgeladen) und Vereins-Sticker werden hinzugefügt, bestehende nie geändert oder gelöscht — Seltenheit bleibt stabil, gesammelte Karten bleiben gültig → {status, season_id, added, total} — Admin',
+                        'description' => 'Friert das Album der aktiven Saison ein bzw. ergänzt es (Grundlage: /sticker/album_preview): fehlende Spieler (z.B. Foto erst später hochgeladen) und Vereins-Sticker werden hinzugefügt, bestehende nie geändert oder gelöscht — Seltenheit bleibt stabil, gesammelte Karten bleiben gültig; danach werden in allen Ligen mit sticker_enabled die bisher erreichten Punkte-Meilensteine und Spieltagssiege der Saison rückwirkend als Packs vergeben (gleiche source_keys wie die Live-Vergabe → idempotent, nichts doppelt; Tages-Packs nicht nachholbar) → {status, season_id, added, total, packs:{milestone, matchday_best}} (packs = neu vergebene Packs) — Admin',
                     ],
                     [
                         'method' => 'PATCH',

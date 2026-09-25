@@ -141,10 +141,14 @@ export class StickerAlbumComponent {
     if (this.syncBusy()) return;
     this.syncBusy.set(true);
     this.syncResult.set(null);
-    this.api.post<{ added: number; total: number }>('sticker/album/sync').subscribe({
+    this.api.post<{ added: number; total: number; packs?: { milestone: number; matchday_best: number } }>('sticker/album/sync').subscribe({
       next: res => {
         this.syncBusy.set(false);
-        this.syncResult.set(res.added > 0 ? `${res.added} Sticker hinzugefügt (${res.total} insgesamt)` : `Album ist aktuell (${res.total} Sticker)`);
+        const album = res.added > 0 ? `${res.added} Sticker hinzugefügt (${res.total} insgesamt)` : `Album ist aktuell (${res.total} Sticker)`;
+        const m = res.packs?.milestone ?? 0, b = res.packs?.matchday_best ?? 0;
+        // rückwirkend vergebene Packs (bisherige Meilensteine + Spieltagssiege der Saison, alle Ligen mit Feature)
+        const packs = m + b > 0 ? ` · nachvergeben: ${m} Meilenstein-, ${b} Spieltagssieger-Packs` : '';
+        this.syncResult.set(album + packs);
         this.album.reload();
         this.status.refresh();
       },
