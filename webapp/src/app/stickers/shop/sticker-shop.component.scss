@@ -79,12 +79,15 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
     color: $color-text-muted;
   }
 
-  // Euro-Bereich vorerst: farblos, gedimmt, nicht klickbar (zusätzlich inert im Template)
+  // Euro-Bereich vorerst: farblos, gedimmt, nicht klickbar (zusätzlich inert im Template), ohne Glanz-Animation
   &--disabled {
     filter: grayscale(1);
-    opacity: 0.8;
+    opacity: 0.6;
     pointer-events: none;
     user-select: none;
+
+    .mini-pack__body,
+    .mini-pack__top { animation: none; }
   }
 }
 
