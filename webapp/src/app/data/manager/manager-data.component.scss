@@ -37,6 +37,17 @@
   display: flex;
   align-items: center;
   gap: $space-2;
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__activity {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
 }
 
 .manager-avatar {

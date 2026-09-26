@@ -90,8 +90,8 @@
       <thead>
         <tr>
           <th>Name</th>
-          <th>Alias</th>
-          <th>Status</th>
+          <th class="hidden-mobile">Alias</th>
+          <th class="hidden-mobile">Status</th>
           <th class="col-sortable hidden-mobile" (click)="sort('last_activity')">
             <span class="sort-indicator">{{ sortCol() === 'last_activity' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
             Zuletzt aktiv
@@ -120,11 +120,17 @@
                   />
                   <span class="manager-avatar__initials">{{ m.manager_name[0].toUpperCase() }}</span>
                 </div>
-                <span>{{ m.manager_name }}</span>
+                <div class="manager-name-cell__text">
+                  <span>{{ m.manager_name }}</span>
+                  <!-- Mobile: Spalte "Zuletzt aktiv" ist ausgeblendet → stattdessen unter dem Namen -->
+                  <span class="manager-name-cell__activity visible-mobile" [title]="lastActivityTitle(m.last_activity)">
+                    {{ m.last_activity ? 'zuletzt online ' + formatLastActivity(m.last_activity) : 'noch nie online' }}
+                  </span>
+                </div>
               </div>
             </td>
-            <td class="col-muted">{{ m.alias ?? '—' }}</td>
-            <td class="col-status" (click)="$event.stopPropagation()">
+            <td class="col-muted hidden-mobile">{{ m.alias ?? '—' }}</td>
+            <td class="col-status hidden-mobile" (click)="$event.stopPropagation()">
               <span class="status-badge status-badge--{{ m.status }}">{{ m.status }}</span>
               @if (m.status === 'invited' && isAdmin()) {
                 <button
