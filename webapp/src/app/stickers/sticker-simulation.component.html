@@ -325,6 +325,68 @@
       }
     </section>
 
+    <!-- Liga mit Tauschen: ganze Liga gemeinsam simuliert, Doppelte werden untereinander 1:1 getauscht -->
+    <section class="card mc">
+      <div class="mc__head">
+        <span class="mc__title">
+          Monte-Carlo: Liga mit Tauschen – {{ leagueRuns }} Saisons
+          <small class="mc__sub">
+            Wer am Tauschtag eingeloggt ist, tauscht 1:1 Doppelte, die dem anderen fehlen (seltenste zuerst) ·
+            Shop-Käufe wie oben eingestellt
+          </small>
+        </span>
+        <button class="btn btn-sm btn-secondary" [disabled]="leagueMcBusy()" (click)="runLeague()">{{ leagueMcBusy() ? 'läuft…' : 'Berechnen' }}</button>
+      </div>
+      <div class="league-controls">
+        @for (p of profiles(); track p.key) {
+          <label class="control">
+            <span class="control__label">{{ p.label }} <b>{{ leagueMix()[p.key] ?? 0 }}</b></span>
+            <input type="range" min="0" max="12" step="1" [value]="leagueMix()[p.key] ?? 0" (input)="setLeagueMix(p.key, num($event))" />
+          </label>
+        }
+        <div class="control">
+          <span class="control__label">Tauschrunde</span>
+          <span class="profile__chips">
+            @for (t of tradeIntervals; track t.value) {
+              <button class="chip" [class.chip--active]="tradeInterval() === t.value" (click)="tradeInterval.set(t.value)">{{ t.label }}</button>
+            }
+          </span>
+        </div>
+        <label class="control control--check">
+          <input type="checkbox" [checked]="tradeSameTier()" (change)="tradeSameTier.set(checked($event))" />
+          <span>nur gleiche Seltenheit tauschen</span>
+        </label>
+      </div>
+      @if (leagueMc(); as rows) {
+        <div class="table-container mc__table">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Profil</th>
+                <th class="num hide-mobile">Manager</th>
+                <th class="num">Album voll<br /><small>ohne → mit Tausch</small></th>
+                <th class="num">Album (Median)<br /><small>ohne → mit Tausch</small></th>
+                <th class="num">Ø getauscht</th>
+                <th class="num hide-mobile">Ø Doppelte am Ende</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of rows; track m.key) {
+                <tr>
+                  <td>{{ m.label }}</td>
+                  <td class="num hide-mobile">{{ m.count }}</td>
+                  <td class="num">{{ m.fullNoTrade * 100 | number:'1.0-0' }} % → <b>{{ m.full * 100 | number:'1.0-0' }} %</b></td>
+                  <td class="num">{{ m.albumNoTrade * 100 | number:'1.0-0' }} % → <b>{{ m.album * 100 | number:'1.0-0' }} %</b></td>
+                  <td class="num">{{ m.received | number:'1.0-0' }}</td>
+                  <td class="num hide-mobile">{{ m.duplicates | number:'1.0-0' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
     <!-- ── Legende ───────────────────────────────────────────────────── -->
     <div class="legend">
       @for (t of tiers; track t) {

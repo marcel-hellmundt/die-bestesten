@@ -364,6 +364,8 @@ input[type='range'] {
     background: $color-surface-alt;
   }
 
+  small { font-weight: $font-weight-normal; color: $color-text-muted; }
+
   &__plan {
     font-size: $font-xs;
     color: $color-text-muted;
@@ -383,6 +385,17 @@ input[type='range'] {
       @media (max-width: $mobile-breakpoint) { display: none; }
     }
   }
+}
+
+.league-controls {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
+  gap: $space-4;
+  margin-top: $space-3;
+
+  @media (max-width: 1100px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); gap: $space-3; }
 }
 
 // ── Legende + Sticker ────────────────────────────────────────────────────────

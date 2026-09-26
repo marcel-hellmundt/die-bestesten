@@ -2,6 +2,7 @@ import { Component, DestroyRef, HostListener, computed, inject, signal } from '@
 import {
   MIN_PRICE, ShopPlan, ShopTiming, SimParams, SimProfile, countsAtDay, holoAtDay, shopPlan, simulateSeason, stickerWeights,
 } from './sticker-sim';
+import { simulateLeague } from './sticker-trade-sim';
 import { StickerCardData, StickerHolo, requestTiltPermission } from './sticker-card/sticker-card.component';
 import { ALBUM_SOURCE, StickerAlbumService } from './album/sticker-album.service';
 import {
@@ -267,6 +268,61 @@ export class StickerSimulationComponent {
         }),
       })));
       this.shopMcBusy.set(false);
+    });
+  }
+
+  // ── Monte-Carlo: Liga mit Tauschen unter Managern ─────────────────────────
+  readonly leagueRuns = 100;
+  /** Zusammensetzung der simulierten Liga: Anzahl Manager je Profil. */
+  leagueMix = signal<Partial<Record<string, number>>>({ active: 4, average: 5, inactive: 3 });
+  tradeInterval = signal(7);   // Tage zwischen Tauschrunden (0 = kein Tauschen)
+  tradeSameTier = signal(true);
+  readonly tradeIntervals = [{ value: 1, label: 'täglich' }, { value: 7, label: 'wöchentlich' }, { value: 30, label: 'monatlich' }];
+
+  setLeagueMix(key: string, value: number): void { this.leagueMix.update(m => ({ ...m, [key]: value })); }
+
+  leagueMc = signal<{
+    key: string; label: string; count: number;
+    fullNoTrade: number; full: number; albumNoTrade: number; album: number; received: number; duplicates: number;
+  }[] | null>(null);
+  leagueMcBusy = signal(false);
+
+  runLeague(): void {
+    this.leagueMcBusy.set(true);
+    setTimeout(() => {
+      const weights = this.weights(), timeline = this.timeline(), clubOf = this.clubOf();
+      const tiers = this.stickers().map(s => s.tier);
+      const n = this.stickers().length;
+      const mix = this.leagueMix();
+      const members = this.profiles().flatMap(p =>
+        Array.from({ length: mix[p.key] ?? 0 }, () => ({ profileKey: p.key, params: paramsFor(this.shared(), p) })));
+      const acc = new Map<string, { full0: number; full: number; album0: number[]; album: number[]; received: number; dup: number; runs: number }>();
+      for (let r = 0; r < this.leagueRuns; r++) {
+        const results = simulateLeague(members, weights, tiers, timeline, 1000 + r * 7919, clubOf,
+          { interval: this.tradeInterval(), sameTier: this.tradeSameTier() });
+        for (const res of results) {
+          const a = acc.get(res.profileKey) ?? { full0: 0, full: 0, album0: [], album: [], received: 0, dup: 0, runs: 0 };
+          if (res.uniqueNoTrade === n) a.full0++;
+          if (res.unique === n) a.full++;
+          a.album0.push(res.uniqueNoTrade / n);
+          a.album.push(res.unique / n);
+          a.received += res.received;
+          a.dup += res.duplicates;
+          a.runs++;
+          acc.set(res.profileKey, a);
+        }
+      }
+      const median = (arr: number[]) => [...arr].sort((x, y) => x - y)[Math.floor(arr.length / 2)];
+      this.leagueMc.set(this.profiles().filter(p => acc.has(p.key)).map(p => {
+        const a = acc.get(p.key)!;
+        return {
+          key: p.key, label: p.label, count: mix[p.key] ?? 0,
+          fullNoTrade: a.full0 / a.runs, full: a.full / a.runs,
+          albumNoTrade: median(a.album0), album: median(a.album),
+          received: a.received / a.runs, duplicates: a.dup / a.runs,
+        };
+      }));
+      this.leagueMcBusy.set(false);
     });
   }
 
