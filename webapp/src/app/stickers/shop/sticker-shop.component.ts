@@ -1,4 +1,4 @@
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -143,7 +143,16 @@ export class StickerShopComponent {
   }
 
   @HostListener('document:keydown.escape')
-  closeConfirm(): void { if (!this.buying()) this.confirming.set(null); }
+  closeConfirm(): void {
+    if (this.buying()) return;
+    this.confirming.set(null);
+    // erst jetzt die neuen Packs groß einblenden (beim Euro-Kauf zuerst Code + PayPal-Link)
+    this.status.announcePaused.set(false);
+  }
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.status.announcePaused.set(false));
+  }
 
   // ── Kaufen ──
   buying = signal(false);
@@ -175,9 +184,12 @@ export class StickerShopComponent {
     };
     const fail = (err: any) => {
       this.buying.set(false);
+      this.status.announcePaused.set(false);
       this.buyError.set(err?.error?.message ?? 'Kauf fehlgeschlagen');
     };
     if (o.currency === 'eur') {
+      // Einblendung der neuen Packs erst nach dem Bezahl-Dialog (Code + PayPal-Link zuerst)
+      this.status.announcePaused.set(true);
       this.status.buyShopEur(o.key, clubId).subscribe({ next: r => { this.eurResult.set(r); done(); }, error: fail });
     } else {
       this.status.buyShopOffer(o.key, clubId).subscribe({ next: done, error: fail });

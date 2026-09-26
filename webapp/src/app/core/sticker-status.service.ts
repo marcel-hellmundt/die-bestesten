@@ -130,6 +130,8 @@ export class StickerStatusService {
   readonly packs = computed(() => this.state()?.packs ?? []);
   readonly unopenedCount = computed(() => this.packs().length);
   readonly tradesIncoming = computed(() => this.state()?.trades_incoming ?? 0);
+  /** Große Pack-Einblendung zurückhalten (z.B. solange der Bezahl-Dialog eines Euro-Kaufs offen ist). */
+  readonly announcePaused = signal(false);
 
   private started = false;
   private lastDay = '';
