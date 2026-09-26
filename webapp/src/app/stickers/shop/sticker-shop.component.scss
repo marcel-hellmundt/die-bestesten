@@ -78,6 +78,14 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
     font-size: $font-xs;
     color: $color-text-muted;
   }
+
+  // Euro-Bereich vorerst: farblos, gedimmt, nicht klickbar (zusätzlich inert im Template)
+  &--disabled {
+    filter: grayscale(1);
+    opacity: 0.8;
+    pointer-events: none;
+    user-select: none;
+  }
 }
 
 // ── Guthaben ─────────────────────────────────────────────────────────────────
