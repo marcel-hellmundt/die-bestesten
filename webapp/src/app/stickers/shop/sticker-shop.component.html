@@ -1,102 +1,217 @@
-<div class="shop">
-  <div class="shop__head">
-    <h1 class="page-title">
-      Shop
-      <span class="page-title__sub">Tausche deine Lukaten gegen Sticker-Packs</span>
-    </h1>
-
-    <!-- Guthaben -->
-    <div class="wallet">
-      <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
-      <span class="wallet__text">
-        <span class="wallet__label">Dein Guthaben</span>
-        <span class="wallet__value">
-          @if (loadingBudget()) { … }
-          @else if (budget() === null) { – }
-          @else { {{ formatLukaten(budget()) }} <small>Lukaten</small> }
-        </span>
-      </span>
-      <a class="wallet__link" routerLink="/liga/h2h/bestico">Mehr verdienen im Bestico ›</a>
-    </div>
-  </div>
-
-  <p class="draft-note">Entwurf – Preise und Pack-Inhalte sind Platzhalter, kaufen geht noch nicht.</p>
-
-  <!-- Angebote -->
-  <div class="offers">
-    @for (o of offers; track o.key) {
-      @let miss = missing(o);
-      <article class="offer" [class.offer--highlight]="o.highlight">
-        @if (o.highlight) { <span class="offer__ribbon">{{ o.highlight }}</span> }
-
-        <div class="offer__stage">
-          <div class="mini-pack mini-pack--{{ o.foil }}" aria-hidden="true">
-            <span class="mini-pack__body">
-              <span class="mini-pack__brand">Die Klebrigsten</span>
-              <span class="mini-pack__headline">{{ o.name }}</span>
-              <span class="mini-pack__count">{{ o.size }} Sticker</span>
-            </span>
-            <span class="mini-pack__top"></span>
-          </div>
-        </div>
-
-        <div class="offer__info">
-          <h2 class="offer__name">{{ o.name }}</h2>
-          <ul class="offer__perks">
-            <li>{{ o.size }} Sticker</li>
-            <li>{{ guaranteeLabel(o) }}</li>
-            <li>Holo-Chance wie in jedem Pack</li>
-          </ul>
-
-          <div class="offer__buy">
-            <span class="price">
-              <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
-              <b>{{ o.price }}</b> Lukaten
-            </span>
-            <button type="button" class="btn btn-primary btn-sm" [disabled]="miss > 0 || loadingBudget()" (click)="confirming.set(o)">
-              Eintauschen
-            </button>
-          </div>
-          @if (!loadingBudget() && miss > 0) {
-            <span class="offer__missing">Dir fehlen noch {{ miss }} Lukaten</span>
-          }
-        </div>
-      </article>
-    }
-  </div>
-
-  <!-- So funktioniert's -->
-  <section class="how">
-    <h2 class="how__title">So funktioniert's</h2>
-    <ol class="how__steps">
-      <li><b>Lukaten gewinnen</b><span>Setze im Bestico auf H2H-Duelle – richtige Tipps füllen dein Guthaben.</span></li>
-      <li><b>Pack eintauschen</b><span>Wähle ein Pack, die Lukaten werden sofort abgezogen.</span></li>
-      <li><b>Aufreißen</b><span>Das Pack liegt danach ungeöffnet in deinem Sammelalbum.</span></li>
-    </ol>
-  </section>
-
-  <!-- Kauf bestätigen -->
-  @if (confirming(); as o) {
-    <div class="confirm" (click)="closeConfirm()">
-      <div class="confirm__panel" role="dialog" aria-modal="true" [attr.aria-label]="o.name + ' eintauschen'" (click)="$event.stopPropagation()">
-        <div class="mini-pack mini-pack--{{ o.foil }} mini-pack--float" aria-hidden="true">
+<!-- Folien-Pack(s): bei mehreren Packs ein kleiner Stapel mit Anzahl -->
+<ng-template #packTpl let-o let-club="club">
+  <div class="pack-stack" [class.pack-stack--multi]="o.packs > 1">
+    @for (i of stackOf(o); track i) {
+      <div class="pack-stack__item" [style.--i]="i">
+        <div class="mini-pack mini-pack--{{ o.foil }}" [style]="o.foil === 'club' ? clubFoil(club) : null" aria-hidden="true">
           <span class="mini-pack__body">
-            <span class="mini-pack__brand">Die Klebrigsten</span>
-            <span class="mini-pack__headline">{{ o.name }}</span>
-            <span class="mini-pack__count">{{ o.size }} Sticker</span>
+            @if (club) {
+              <img class="mini-pack__logo" [src]="clubLogo(club)" alt="" />
+            } @else {
+              <span class="mini-pack__brand">Die Klebrigsten</span>
+            }
+            <span class="mini-pack__headline">{{ club ? club.short_name : o.name }}</span>
+            <span class="mini-pack__count">{{ o.packSize }} Sticker</span>
           </span>
           <span class="mini-pack__top"></span>
         </div>
+      </div>
+    }
+    @if (o.packs > 1) { <span class="pack-stack__badge">×{{ o.packs }}</span> }
+  </div>
+</ng-template>
 
-        <h2 class="confirm__title">{{ o.name }} eintauschen?</h2>
-        <dl class="confirm__calc">
-          <dt>Guthaben</dt><dd>{{ formatLukaten(budget()) }}</dd>
-          <dt>Preis</dt><dd>− {{ o.price }}</dd>
-          <dt class="confirm__total">Danach</dt><dd class="confirm__total">{{ formatLukaten(budgetAfter()) }} Lukaten</dd>
-        </dl>
+<div class="shop">
+  <h1 class="page-title">
+    Shop
+    <span class="page-title__sub">Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro</span>
+  </h1>
+
+  <p class="draft-note">Entwurf – Preise und Pack-Inhalte sind vorläufig, kaufen geht noch nicht.</p>
+
+  <!-- ── Lukaten ───────────────────────────────────────────────────────── -->
+  <section class="shelf">
+    <div class="shelf__head">
+      <div>
+        <h2 class="shelf__title">Mit Lukaten</h2>
+        <p class="shelf__sub">Jeder startet pro Saison mit 100 Lukaten – tippen oder kleben?</p>
+      </div>
+
+      <div class="wallet">
+        <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
+        <span class="wallet__text">
+          <span class="wallet__label">
+            @if (league(); as l) { Guthaben in {{ l.name }} } @else { Guthaben }
+          </span>
+          <span class="wallet__value">
+            @if (loading()) { … }
+            @else if (budget() === null) { – }
+            @else { {{ formatLukaten(budget()) }} <small>Lukaten</small> }
+          </span>
+        </span>
+        <a class="wallet__link" routerLink="/liga/h2h/bestico">Mehr verdienen im Bestico ›</a>
+      </div>
+    </div>
+
+    @if (!loading() && !league()) {
+      <p class="shelf__hint">Du spielst in keiner Liga mit Sticker-Album – Lukaten-Käufe sind nicht möglich.</p>
+    } @else if (league()) {
+      <p class="shelf__hint">Bezahlt wird immer aus deiner Hauptliga ({{ league()!.name }}), egal in welcher Liga du gerade bist.</p>
+    }
+
+    <div class="offers">
+      @for (o of lukatenOffers; track o.key) {
+        @let miss = missingLukaten(o);
+        <article class="offer" [class.offer--highlight]="o.highlight">
+          @if (o.highlight) { <span class="offer__ribbon">{{ o.highlight }}</span> }
+          <div class="offer__stage">
+            <ng-container *ngTemplateOutlet="packTpl; context: { $implicit: o, club: null }" />
+          </div>
+          <div class="offer__info">
+            <h3 class="offer__name">{{ o.name }}</h3>
+            <ul class="offer__perks">
+              <li>{{ o.packSize }} Sticker</li>
+              <li>{{ guaranteeLabel(o) }}</li>
+              @if (o.clubPick) { <li>Verein frei wählbar</li> }
+            </ul>
+            <div class="offer__buy">
+              <span class="price">
+                <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
+                <b>{{ o.price }}</b> Lukaten
+              </span>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="loading() || !league() || miss > 0" (click)="open(o)">
+                Eintauschen
+              </button>
+            </div>
+            @if (!loading() && league() && miss > 0) {
+              <span class="offer__note">Dir fehlen noch {{ miss }} Lukaten</span>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <!-- ── Euro ──────────────────────────────────────────────────────────── -->
+  <section class="shelf">
+    <div class="shelf__head">
+      <div>
+        <h2 class="shelf__title">Mit Euro</h2>
+        <p class="shelf__sub">Sichere Zahlung über PayPal · jedes Pack wie das Tages-Pack, 3 Sticker, 1 garantiert neu</p>
+      </div>
+    </div>
+
+    <!-- Starter: einmal pro Saison, bester Einstieg -->
+    <article class="starter">
+      <div class="starter__stage">
+        <ng-container *ngTemplateOutlet="packTpl; context: { $implicit: starter, club: null }" />
+      </div>
+      <div class="starter__info">
+        <span class="starter__tag">{{ starter.highlight }} pro Saison</span>
+        <h3 class="starter__name">{{ starter.name }}: {{ starter.packs }} Packs für {{ formatEur(starter.price) }}</h3>
+        <span class="starter__meta">
+          {{ stickerCount(starter) }} Sticker · {{ formatEur(perSticker(starter)) }} pro Sticker
+          <span class="saving">−{{ savingPct(starter) }} %</span>
+        </span>
+      </div>
+      <button type="button" class="btn btn-primary starter__btn" (click)="open(starter)">{{ formatEur(starter.price) }}</button>
+    </article>
+
+    <div class="offers offers--eur">
+      @for (o of eurOffers; track o.key) {
+        <article class="offer" [class.offer--highlight]="o.highlight">
+          @if (o.highlight) { <span class="offer__ribbon">{{ o.highlight }}</span> }
+          <div class="offer__stage">
+            <ng-container *ngTemplateOutlet="packTpl; context: { $implicit: o, club: null }" />
+          </div>
+          <div class="offer__info">
+            <h3 class="offer__name">{{ o.name }}</h3>
+            <ul class="offer__perks">
+              @if (o.packs > 1) {
+                <li>
+                  {{ o.bonusPacks ? (o.packs - o.bonusPacks) + ' + ' + o.bonusPacks + ' gratis' : o.packs }} Packs
+                  · {{ stickerCount(o) }} Sticker
+                </li>
+              } @else {
+                <li>{{ o.packSize }} Sticker</li>
+              }
+              <li>{{ guaranteeLabel(o) }}</li>
+              @if (o.clubPick) { <li>Verein frei wählbar</li> }
+            </ul>
+            <div class="offer__buy">
+              <span class="price"><b>{{ formatEur(o.price) }}</b></span>
+              <button type="button" class="btn btn-primary btn-sm" (click)="open(o)">Kaufen</button>
+            </div>
+            <span class="offer__note">
+              {{ formatEur(perSticker(o)) }} pro Sticker
+              @if (savingPct(o) > 0) { <span class="saving">−{{ savingPct(o) }} %</span> }
+            </span>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <!-- ── So funktioniert's ─────────────────────────────────────────────── -->
+  <section class="how">
+    <h2 class="how__title">So funktioniert's</h2>
+    <ol class="how__steps">
+      <li><b>Bezahlen</b><span>Mit Lukaten aus deiner Hauptliga oder mit Euro über PayPal.</span></li>
+      <li><b>Pack erhalten</b><span>Die Packs liegen sofort ungeöffnet in deinem Sammelalbum.</span></li>
+      <li><b>Aufreißen</b><span>Gleiche Chancen wie bei jedem Pack – inklusive Holo-Karten.</span></li>
+    </ol>
+  </section>
+
+  <!-- ── Kauf bestätigen ───────────────────────────────────────────────── -->
+  @if (confirming(); as o) {
+    @let pc = pickedClub();
+    <div class="confirm" (click)="closeConfirm()">
+      <div class="confirm__panel" role="dialog" aria-modal="true" [attr.aria-label]="o.name + ' kaufen'" (click)="$event.stopPropagation()">
+        <div class="confirm__pack">
+          <ng-container *ngTemplateOutlet="packTpl; context: { $implicit: o, club: pc?.club ?? null }" />
+        </div>
+
+        <h2 class="confirm__title">
+          {{ o.name }}@if (pc) { · {{ pc.club.short_name }} }
+        </h2>
+
+        <!-- Vereins-Pack: Verein wählen — fast komplette Vereine zuerst -->
+        @if (o.clubPick) {
+          <div class="club-pick">
+            <span class="club-pick__label">Welcher Verein?</span>
+            <div class="club-pick__grid">
+              @for (c of clubChoices(); track c.club.id) {
+                <button type="button" class="club-pick__item" [class.club-pick__item--active]="c.club.id === pickedClubId()"
+                        [disabled]="c.missing === 0" (click)="pickedClubId.set(c.club.id)"
+                        [title]="c.club.name + (c.missing === 0 ? ' – komplett' : ' – ' + c.missing + ' fehlen')">
+                  <img [src]="c.logo" alt="" />
+                  <span>{{ c.missing === 0 ? '✓' : c.missing }}</span>
+                </button>
+              }
+            </div>
+            @if (pc && pc.missing < o.packSize) {
+              <span class="club-pick__hint">Nur noch {{ pc.missing }} neue – der Rest sind Doppelte.</span>
+            }
+          </div>
+        }
+
+        @if (o.currency === 'lukaten') {
+          <dl class="confirm__calc">
+            <dt>Guthaben ({{ league()?.name }})</dt><dd>{{ formatLukaten(budget()) }}</dd>
+            <dt>Preis</dt><dd>− {{ o.price }}</dd>
+            <dt class="confirm__total">Danach</dt><dd class="confirm__total">{{ formatLukaten(budgetAfter()) }} Lukaten</dd>
+          </dl>
+        } @else {
+          <dl class="confirm__calc">
+            <dt>{{ o.packs > 1 ? o.packs + ' Packs · ' + stickerCount(o) + ' Sticker' : o.packSize + ' Sticker' }}</dt>
+            <dd class="confirm__total">{{ formatEur(o.price) }}</dd>
+          </dl>
+        }
 
         <div class="confirm__actions">
-          <button type="button" class="btn btn-primary" disabled title="Kauf ist noch nicht freigeschaltet">Eintauschen</button>
+          <button type="button" class="btn btn-primary" disabled title="Kauf ist noch nicht freigeschaltet">
+            {{ o.currency === 'lukaten' ? 'Eintauschen' : 'Weiter zu PayPal' }}
+          </button>
           <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Abbrechen</button>
         </div>
         <span class="confirm__hint">Kauf ist noch nicht freigeschaltet</span>

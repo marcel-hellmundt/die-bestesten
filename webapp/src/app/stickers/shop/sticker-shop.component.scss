@@ -1,21 +1,15 @@
 @use '../../../styles/variables' as *;
 
+$narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
+
 .shop {
   display: flex;
   flex-direction: column;
-  gap: $space-4;
-  max-width: 960px;
+  gap: $space-5;
+  max-width: 1040px;
   padding: $space-4;
 
-  @media (max-width: $mobile-breakpoint) { padding: $space-3; }
-
-  &__head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: $space-3;
-  }
+  @media (max-width: $mobile-breakpoint) { padding: $space-3; gap: $space-4; }
 }
 
 .page-title__sub {
@@ -33,13 +27,66 @@
   vertical-align: -3px;
 }
 
+.draft-note {
+  margin: 0;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: color-mix(in srgb, #{$color-warning} 12%, #{$color-surface});
+  color: $color-warning;
+  font-size: $font-xs;
+}
+
+.saving {
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: $radius-full;
+  background: color-mix(in srgb, #{$color-success} 15%, transparent);
+  color: $color-success;
+  font-size: 11px;
+  font-weight: $font-weight-bold;
+  white-space: nowrap;
+}
+
+// ── Abschnitt (Lukaten / Euro) ───────────────────────────────────────────────
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: $space-3;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-lg;
+    font-weight: $font-weight-bold;
+  }
+
+  &__sub {
+    margin: 2px 0 0;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
 // ── Guthaben ─────────────────────────────────────────────────────────────────
 .wallet {
   display: grid;
   grid-template-columns: auto auto;
   align-items: center;
   column-gap: $space-3;
-  padding: $space-3 $space-4;
+  padding: $space-2 $space-4;
   border: 1px solid $color-border;
   border-radius: $radius-lg;
   background: $color-surface;
@@ -48,8 +95,8 @@
 
   &__icon {
     grid-row: span 2;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     object-fit: contain;
   }
 
@@ -64,7 +111,7 @@
   }
 
   &__value {
-    font-size: $font-2xl;
+    font-size: $font-xl;
     font-weight: $font-weight-bold;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -85,22 +132,17 @@
   }
 }
 
-.draft-note {
-  margin: 0;
-  padding: $space-2 $space-3;
-  border-radius: $radius-md;
-  background: color-mix(in srgb, #{$color-warning} 12%, #{$color-surface});
-  color: $color-warning;
-  font-size: $font-xs;
-}
-
 // ── Angebote ─────────────────────────────────────────────────────────────────
 .offers {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: $space-4;
 
-  @media (max-width: 860px) { grid-template-columns: minmax(0, 1fr); gap: $space-3; }
+  &--eur { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  @media (max-width: $narrow) {
+    &, &--eur { grid-template-columns: minmax(0, 1fr); gap: $space-3; }
+  }
 }
 
 .offer {
@@ -114,22 +156,21 @@
 
   &--highlight { border-color: $color-accent; box-shadow: 0 0 0 1px $color-accent; }
 
-  // Mobile/schmal: Pack links, Infos rechts — spart Höhe
-  @media (max-width: 860px) {
+  @media (max-width: $narrow) {
     display: grid;
-    grid-template-columns: 110px minmax(0, 1fr);
+    grid-template-columns: 116px minmax(0, 1fr);
   }
 
   &__ribbon {
     position: absolute;
-    top: 12px;
-    right: -30px;
+    top: 14px;
+    right: -34px;
     z-index: 1;
-    width: 120px;
+    width: 130px;
     padding: 2px 0;
     background: $color-accent;
     color: #fff;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: $font-weight-bold;
     text-align: center;
     text-transform: uppercase;
@@ -147,7 +188,7 @@
       radial-gradient(ellipse at 50% 90%, rgba(0, 0, 0, 0.08), transparent 60%),
       $color-surface-alt;
 
-    @media (max-width: 860px) { padding: $space-3; }
+    @media (max-width: $narrow) { padding: $space-4 $space-2; }
   }
 
   &__info {
@@ -157,12 +198,12 @@
     flex: 1;
     padding: $space-4;
 
-    @media (max-width: 860px) { padding: $space-3; }
+    @media (max-width: $narrow) { padding: $space-3; }
   }
 
   &__name {
     margin: 0;
-    font-size: $font-lg;
+    font-size: $font-md;
     font-weight: $font-weight-bold;
   }
 
@@ -193,7 +234,7 @@
     padding-top: $space-2;
   }
 
-  &__missing {
+  &__note {
     font-size: $font-xs;
     color: $color-text-muted;
   }
@@ -211,6 +252,88 @@
   }
 }
 
+// ── Starter-Angebot (einmalig) ───────────────────────────────────────────────
+.starter {
+  display: flex;
+  align-items: center;
+  gap: $space-5;
+  padding: $space-4 $space-5;
+  border: 1px solid color-mix(in srgb, #0f766e 35%, transparent);
+  border-radius: $radius-lg;
+  background: linear-gradient(110deg, color-mix(in srgb, #2dd4bf 16%, #{$color-surface}), $color-surface 70%);
+
+  @media (max-width: $mobile-breakpoint) { flex-wrap: wrap; gap: $space-3; padding: $space-3; }
+
+  &__stage { flex-shrink: 0; padding: $space-2 $space-3; }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+
+    @media (max-width: $mobile-breakpoint) { flex-basis: calc(100% - 140px); }
+  }
+
+  &__tag {
+    align-self: flex-start;
+    padding: 1px 8px;
+    border-radius: $radius-full;
+    background: #0f766e;
+    color: #fff;
+    font-size: 11px;
+    font-weight: $font-weight-bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__name {
+    margin: 0;
+    font-size: $font-lg;
+    font-weight: $font-weight-bold;
+  }
+
+  &__meta {
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+
+  &__btn {
+    flex-shrink: 0;
+
+    @media (max-width: $mobile-breakpoint) { width: 100%; }
+  }
+}
+
+// ── Pack-Stapel ──────────────────────────────────────────────────────────────
+.pack-stack {
+  position: relative;
+  display: grid;
+
+  // alle Packs übereinander, hintere versetzt + gedreht
+  &__item {
+    grid-area: 1 / 1;
+    transform: translate(calc(var(--i) * 8px), calc(var(--i) * -5px)) rotate(calc(var(--i) * 6deg));
+  }
+
+  &--multi { margin-right: 16px; }
+
+  &__badge {
+    position: absolute;
+    right: -14px;
+    bottom: -6px;
+    z-index: 1;
+    padding: 1px 7px;
+    border-radius: $radius-full;
+    background: $color-text;
+    color: $color-surface;
+    font-size: $font-xs;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 // ── Mini-Pack (statische Variante des Folien-Packs aus pack-open-dialog) ─────
 .mini-pack {
   --foil-light: #2dd4bf;
@@ -218,24 +341,21 @@
   --foil-dark: #042f2e;
 
   position: relative;
-  width: 118px;
+  width: 104px;
   aspect-ratio: 5 / 7.8;
   container-type: inline-size;
   transform: rotate(-4deg);
-  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.22));
   transition: transform $transition-normal;
 
-  @media (max-width: 860px) { width: 84px; }
+  @media (max-width: $narrow) { width: 78px; }
 
   &--violet { --foil-light: #c084fc; --foil: #7c3aed; --foil-dark: #2e1065; }
   &--onyx   { --foil-light: #6b7280; --foil: #1f2937; --foil-dark: #030712; }
+  // --club: Farben kommen inline aus den Vereinsfarben (clubFoil())
 
-  .offer:hover & { transform: rotate(0deg) translateY(-4px) scale(1.04); }
-
-  &--float {
-    width: 140px;
-    animation: float 2.6s ease-in-out infinite;
-  }
+  .offer:hover &,
+  .starter:hover & { transform: rotate(0deg) translateY(-4px); }
 
   &__body,
   &__top {
@@ -277,6 +397,13 @@
     font-style: italic;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  &__logo {
+    width: 38cqw;
+    height: 38cqw;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
   }
 
   &__headline {
@@ -377,11 +504,18 @@
     flex-direction: column;
     align-items: center;
     gap: $space-3;
-    width: min(100%, 340px);
+    width: min(100%, 380px);
+    max-height: calc(100dvh - 2 * #{$space-4});
+    overflow-y: auto;
     padding: $space-6 $space-5 $space-5;
     border-radius: $radius-xl;
     background: $color-surface;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  }
+
+  &__pack .mini-pack {
+    width: 120px;
+    animation: float 2.6s ease-in-out infinite;
   }
 
   &__title {
@@ -419,6 +553,57 @@
   &__hint {
     font-size: $font-xs;
     color: $color-text-muted;
+  }
+}
+
+// Vereinswahl fürs Vereins-Pack: Wappen + Anzahl fehlender Sticker
+.club-pick {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  width: 100%;
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 2px 4px;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    background: $color-surface;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+
+    img { width: 26px; height: 26px; object-fit: contain; }
+
+    &--active {
+      border-color: $color-text;
+      background: $color-text;
+      color: $color-surface;
+    }
+
+    &:disabled { opacity: 0.35; cursor: default; }
+  }
+
+  &__hint {
+    font-size: $font-xs;
+    color: $color-warning;
   }
 }
 

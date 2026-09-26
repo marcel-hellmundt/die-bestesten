@@ -124,10 +124,14 @@ trait H2HPredictionTrait
      * eigene Budget-Anzeige und die Einsatz-Validierung beim Tippen bleibt es bei allen
      * gesetzten Einsätzen (lockedOnly=false) — sonst könnte über mehrere offene Tipps auf
      * zukünftige Matches mehr Budget gebunden werden, als tatsächlich verfügbar ist.
+     *
+     * $league = Verbindung zu einer anderen Liga-DB als der eingeloggten (Klebrigsten-Shop zahlt
+     * immer aus der Hauptliga, siehe StickerShopTrait); Default die Liga aus dem JWT.
      */
     public function getManagerLukatenBudget(
-        string $managerId, string $seasonId, ?string $excludeMatchId = null, bool $lockedOnly = false
+        string $managerId, string $seasonId, ?string $excludeMatchId = null, bool $lockedOnly = false, ?PDO $league = null
     ): float {
+        $db  = $league ?? $this->con_league;
         $sql = "SELECT hp.stake, hp.odds, hp.result, hm.matchday_id
                 FROM h2h_prediction hp
                 JOIN h2h_match hm ON hm.id = hp.match_id
@@ -137,7 +141,7 @@ trait H2HPredictionTrait
             $sql .= " AND hp.match_id != :exclude";
             $params[':exclude'] = $excludeMatchId;
         }
-        $q = $this->con_league->prepare($sql);
+        $q = $db->prepare($sql);
         $q->execute($params);
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
 
@@ -146,7 +150,7 @@ trait H2HPredictionTrait
         }
 
         // Shop-Käufe sind sofort endgültig → zählen immer, auch bei lockedOnly
-        $budget = 100.0 - $this->getShopLukatenSpent($seasonId, $managerId);
+        $budget = 100.0 - $this->getShopLukatenSpent($seasonId, $managerId, $db);
         foreach ($rows as $r) {
             $budget -= (float) $r['stake'];
             if ($r['result'] === 'won') {
@@ -216,7 +220,7 @@ trait H2HPredictionTrait
      * (Abzug vom Budget) bzw. ohne $managerId für alle (Kontostand der "Shop"-Zeile in der
      * Schatzkammer). 0, solange die Tabelle auf dieser Liga-DB noch fehlt (migrate_sticker_shop.sql).
      */
-    private function getShopLukatenSpent(string $seasonId, ?string $managerId = null): float
+    private function getShopLukatenSpent(string $seasonId, ?string $managerId = null, ?PDO $league = null): float
     {
         $sql    = "SELECT COALESCE(SUM(price), 0) FROM sticker_shop_purchase WHERE season_id = :season";
         $params = [':season' => $seasonId];
@@ -225,7 +229,7 @@ trait H2HPredictionTrait
             $params[':man'] = $managerId;
         }
         try {
-            $q = $this->con_league->prepare($sql);
+            $q = ($league ?? $this->con_league)->prepare($sql);
             $q->execute($params);
             return (float) $q->fetchColumn();
         } catch (PDOException) {

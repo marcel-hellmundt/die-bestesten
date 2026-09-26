@@ -38,6 +38,7 @@ require_once 'session.database.php';
 require_once 'noten.database.php';
 require_once 'sticker.database.php';
 require_once 'sticker_pack.database.php';
+require_once 'sticker_shop.database.php';
 
 class Database
 {
@@ -80,6 +81,7 @@ class Database
     use NotenTrait;
     use StickerTrait;
     use StickerPackTrait;
+    use StickerShopTrait;
 
     private $con;
     private $con_league;

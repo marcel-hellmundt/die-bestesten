@@ -7,7 +7,9 @@
  *   GET  /sticker/me                 — eigener Status: tägliches Pack vergeben, ungeöffnete Packs, Sammlung (Auth)
  *   GET  /sticker/collectors         — alle Manager mit Album + Fortschritt (Sammler-Rangliste, Auth)
  *   GET  /sticker/collection/:id     — Sammlung eines anderen Managers (Auth)
- *   POST /sticker/album/sync         — Album einfrieren/ergänzen (Admin) *   POST /sticker/pack/:id/open      — eigenes Pack öffnen (Auth)
+ *   GET  /sticker/shop               — Shop: Hauptliga + Lukaten-Guthaben dort (Auth)
+ *   POST /sticker/album/sync         — Album einfrieren/ergänzen (Admin)
+ *   POST /sticker/pack/:id/open      — eigenes Pack öffnen (Auth)
  *   PATCH /sticker/pack/announced    — eigene Packs als groß angekündigt markieren (Auth)
  */
 class StickerController extends _BaseController
@@ -28,6 +30,9 @@ class StickerController extends _BaseController
         }
         if ($this->id === 'collectors' && $this->sub === null) {
             return $this->db->getStickerCollectors();
+        }
+        if ($this->id === 'shop' && $this->sub === null) {
+            return $this->db->getStickerShop($GLOBALS['auth_manager_id']);
         }
         if ($this->id === 'collection' && $this->sub !== null) {
             $result = $this->db->getStickerCollectionOf($this->sub);

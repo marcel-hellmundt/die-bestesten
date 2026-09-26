@@ -1321,6 +1321,11 @@ class Routing
                         'path_params' => [':manager_id' => 'UUID des Managers'],
                     ],
                     [
+                        'method' => 'GET',
+                        'path' => '/sticker/shop',
+                        'description' => 'Shop (Lukaten gegen Packs) → {league:{id,name}|null, budget:float|null} — bezahlt wird immer aus der Hauptliga des Managers = seine oberste Liga mit Sticker-Album (Division mit niedrigstem level, bei Gleichstand zuerst beigetreten), unabhängig von der eingeloggten Liga; budget = Lukaten-Guthaben dort in der aktiven Saison (wie GET /h2h_prediction/budget); league=null ohne Liga mit Sticker-Album — Auth',
+                    ],
+                    [
                         'method' => 'POST',
                         'path' => '/sticker/album/sync',
                         'description' => 'Friert das Album der aktiven Saison ein bzw. ergänzt es (Grundlage: /sticker/album_preview): fehlende Spieler (z.B. Foto erst später hochgeladen) und Vereins-Sticker werden hinzugefügt, bestehende nie geändert oder gelöscht — Seltenheit bleibt stabil, gesammelte Karten bleiben gültig; danach werden in allen Ligen mit sticker_enabled die bisher erreichten Punkte-Meilensteine und Spieltagssiege der Saison rückwirkend als Packs vergeben (gleiche source_keys wie die Live-Vergabe → idempotent, nichts doppelt; Tages-Packs nicht nachholbar) → {status, season_id, added, total, packs:{milestone, matchday_best}} (packs = neu vergebene Packs) — Admin',
