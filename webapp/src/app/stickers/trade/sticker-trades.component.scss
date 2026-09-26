@@ -7,7 +7,7 @@
   max-width: 820px;
   padding: $space-4;
 
-  @media (max-width: $mobile-breakpoint) { padding: $space-3; }
+  @media (max-width: $mobile-breakpoint) { padding: $space-3 0; } // seitlicher Rand kommt von der Shell
 }
 
 .page-title__sub {

@@ -5,6 +5,8 @@
   flex-direction: column;
   gap: $space-4;
   padding: $space-4;
+
+  @media (max-width: $mobile-breakpoint) { padding: $space-4 0; } // seitlicher Rand kommt von der Shell
 }
 
 .page-title__sub {

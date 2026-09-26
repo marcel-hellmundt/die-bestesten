@@ -8,7 +8,7 @@ $desktop: $mobile-breakpoint + 1;
   gap: $space-3;
   padding: $space-4;
 
-  @media (max-width: $mobile-breakpoint) { padding: $space-3; }
+  @media (max-width: $mobile-breakpoint) { padding: $space-3 0; } // seitlicher Rand kommt von der Shell
 
   &__layout {
     display: grid;

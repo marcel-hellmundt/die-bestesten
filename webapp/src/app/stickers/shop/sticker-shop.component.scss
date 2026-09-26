@@ -9,7 +9,7 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
   max-width: 1040px;
   padding: $space-4;
 
-  @media (max-width: $mobile-breakpoint) { padding: $space-3; gap: $space-4; }
+  @media (max-width: $mobile-breakpoint) { padding: $space-3 0; gap: $space-4; } // seitlicher Rand kommt von der Shell
 }
 
 .page-title__sub {
