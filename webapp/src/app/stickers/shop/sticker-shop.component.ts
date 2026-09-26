@@ -181,6 +181,7 @@ export class StickerShopComponent {
       this.buying.set(false);
       this.bought.set(true);
       this.reloadTick.update(n => n + 1);
+      this.adminTick.update(n => n + 1); // Admin-Übersicht zeigt den neuen Kauf
     };
     const fail = (err: any) => {
       this.buying.set(false);
@@ -205,6 +206,17 @@ export class StickerShopComponent {
   ));
   purchases = computed(() => this.adminData()?.purchases ?? []);
   openPurchases = computed(() => this.purchases().filter(p => p.status === 'pending').length);
+  purchaseFilter = signal<'pending' | 'all'>('pending');
+  shownPurchases = computed(() => this.purchaseFilter() === 'pending'
+    ? this.purchases().filter(p => p.status === 'pending') : this.purchases());
+  /** Summen in Cent: ausstehend (offen) und bereits bestätigt */
+  purchaseSums = computed(() => this.purchases().reduce(
+    (s, p) => ({
+      pending: s.pending + (p.status === 'pending' ? p.amount_cents : 0),
+      paid: s.paid + (p.status === 'paid' ? p.amount_cents : 0),
+    }),
+    { pending: 0, paid: 0 },
+  ));
   adminBusyId = signal<string | null>(null);
   cancelAskId = signal<string | null>(null);
   adminError = signal<string | null>(null);

@@ -2,6 +2,8 @@
 
 $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
 
+$admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter unter dem Shop
+
 .shop {
   display: flex;
   flex-direction: column;
@@ -10,6 +12,130 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
   padding: $space-4;
 
   @media (max-width: $mobile-breakpoint) { padding: $space-3 0; gap: $space-4; } // seitlicher Rand kommt von der Shell
+
+  // Admins: Shop links, Übersicht der Euro-Käufe rechts
+  &--admin {
+    max-width: 1440px;
+
+    @media (min-width: $admin-wide) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      align-items: start;
+    }
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+    min-width: 0;
+
+    @media (max-width: $mobile-breakpoint) { gap: $space-4; }
+  }
+}
+
+// ── Admin: Euro-Käufe ────────────────────────────────────────────────────────
+.admin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+
+  // Desktop: mitlaufend unter dem gepinnten Sub-Menü, eigene Scrollleiste bei vielen Käufen
+  @media (min-width: $admin-wide) {
+    position: sticky;
+    top: calc(#{$subnav-stuck-bottom} + #{$space-3});
+    max-height: calc(100vh - #{$subnav-stuck-bottom} - #{$space-6});
+    overflow-y: auto;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-md;
+    font-weight: $font-weight-bold;
+  }
+
+  &__sums {
+    display: flex;
+    gap: $space-3;
+    font-size: $font-xs;
+    color: $color-text-muted;
+
+    b { color: $color-text; font-variant-numeric: tabular-nums; }
+  }
+
+  &__empty, &__hint {
+    margin: 0;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+.profile-chips {
+  display: flex;
+  gap: 4px;
+}
+
+.chip {
+  padding: 2px 10px;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-surface;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  cursor: pointer;
+
+  &--active {
+    background: $color-text;
+    border-color: $color-text;
+    color: $color-surface;
+  }
+}
+
+.purchase {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+
+  &--done { background: $color-surface-alt; }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+    font-size: $font-sm;
+  }
+
+  &__line { font-size: $font-sm; }
+
+  &__code { font-family: monospace; letter-spacing: 0.04em; }
+
+  &__meta {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
 }
 
 .page-title__sub {
@@ -518,27 +644,6 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
     letter-spacing: 0.08em;
     cursor: pointer;
   }
-}
-
-// ── Admin: Euro-Käufe ────────────────────────────────────────────────────────
-.num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.hide-mobile {
-  @media (max-width: $mobile-breakpoint) { display: none; }
-}
-
-.row-muted td { color: $color-text-muted; }
-
-.admin-actions {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 4px;
-  white-space: nowrap;
 }
 
 .status-pill {
