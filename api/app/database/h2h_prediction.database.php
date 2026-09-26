@@ -140,13 +140,13 @@ trait H2HPredictionTrait
         $q = $this->con_league->prepare($sql);
         $q->execute($params);
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
-        if (empty($rows)) return 100.0;
 
-        if ($lockedOnly) {
+        if ($lockedOnly && !empty($rows)) {
             $rows = $this->filterToLockedMatchdayRows($rows);
         }
 
-        $budget = 100.0;
+        // Shop-Käufe sind sofort endgültig → zählen immer, auch bei lockedOnly
+        $budget = 100.0 - $this->getShopLukatenSpent($seasonId, $managerId);
         foreach ($rows as $r) {
             $budget -= (float) $r['stake'];
             if ($r['result'] === 'won') {
@@ -209,6 +209,40 @@ trait H2HPredictionTrait
             }
         }
         return $balance;
+    }
+
+    /**
+     * Im "Die Klebrigsten"-Shop gegen Packs eingetauschte Lukaten einer Saison — für einen Manager
+     * (Abzug vom Budget) bzw. ohne $managerId für alle (Kontostand der "Shop"-Zeile in der
+     * Schatzkammer). 0, solange die Tabelle auf dieser Liga-DB noch fehlt (migrate_sticker_shop.sql).
+     */
+    private function getShopLukatenSpent(string $seasonId, ?string $managerId = null): float
+    {
+        $sql    = "SELECT COALESCE(SUM(price), 0) FROM sticker_shop_purchase WHERE season_id = :season";
+        $params = [':season' => $seasonId];
+        if ($managerId !== null) {
+            $sql .= " AND manager_id = :man";
+            $params[':man'] = $managerId;
+        }
+        try {
+            $q = $this->con_league->prepare($sql);
+            $q->execute($params);
+            return (float) $q->fetchColumn();
+        } catch (PDOException) {
+            return 0.0;
+        }
+    }
+
+    /** Manager mit mind. einem Shop-Kauf in der Saison (leer ohne Tabelle). */
+    private function getShopBuyerIds(string $seasonId): array
+    {
+        try {
+            $q = $this->con_league->prepare("SELECT DISTINCT manager_id FROM sticker_shop_purchase WHERE season_id = :season");
+            $q->execute([':season' => $seasonId]);
+            return $q->fetchAll(PDO::FETCH_COLUMN);
+        } catch (PDOException) {
+            return [];
+        }
     }
 
     /**
@@ -783,10 +817,12 @@ trait H2HPredictionTrait
     }
 
     /**
-     * Alle Manager mit mindestens einem gestakten Tipp (stake IS NOT NULL) in der aktiven
-     * Saison, mit ihrem aktuellen Lukaten-Budget — fürs Wettbüro (Bestico), "Schatzkammer"-
-     * Bestenliste neben den Sieg-Zählern. Zusätzlich eine synthetische "Bank"-Zeile (manager_id
-     * null) mit dem Kontostand der Gegenseite aller Wetten, siehe getBankLukatenBalance().
+     * Alle Manager mit mindestens einem gestakten Tipp (stake IS NOT NULL) oder Shop-Kauf in der
+     * aktiven Saison, mit ihrem aktuellen Lukaten-Budget — fürs Wettbüro (Bestico), "Schatzkammer"-
+     * Bestenliste neben den Sieg-Zählern. Zusätzlich zwei synthetische Zeilen (manager_id null,
+     * unterschieden per kind): "Bank" (kind=bank) mit dem Kontostand der Gegenseite aller Wetten,
+     * siehe getBankLukatenBalance(), und "Shop" (kind=shop) mit allen im Klebrigsten-Shop
+     * eingetauschten Lukaten; Manager-Zeilen haben kind=manager.
      * Absteigend nach Budget sortiert. Nutzt getManagerLukatenBudget() mit lockedOnly=true:
      * Einsätze auf noch nicht angepfiffene (weiterhin änderbare/löschbare) Matches fließen hier
      * bewusst noch nicht in die Wertung ein, erst nach Anpfiff gilt der Einsatz als "abgebucht".
@@ -803,7 +839,10 @@ trait H2HPredictionTrait
              WHERE hp.stake IS NOT NULL AND hm.season_id = :season"
         );
         $managerIdsQ->execute([':season' => $seasonId]);
-        $ids = $managerIdsQ->fetchAll(PDO::FETCH_COLUMN);
+        $ids = array_values(array_unique(array_merge(
+            $managerIdsQ->fetchAll(PDO::FETCH_COLUMN),
+            $this->getShopBuyerIds($seasonId),
+        )));
         if (empty($ids)) return [];
 
         $ph = implode(',', array_fill(0, count($ids), '?'));
@@ -814,6 +853,7 @@ trait H2HPredictionTrait
         $managers = $mq->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($managers as &$m) {
+            $m['kind']   = 'manager';
             $m['budget'] = $this->getManagerLukatenBudget($m['manager_id'], $seasonId, null, true);
         }
         unset($m);
@@ -822,9 +862,18 @@ trait H2HPredictionTrait
         // getBankLukatenBalance(). Nimmt an derselben Wertung/Sortierung teil wie die Manager.
         $managers[] = [
             'manager_id'   => null,
+            'kind'         => 'bank',
             'manager_name' => 'Bank',
             'alias'        => null,
             'budget'       => $this->getBankLukatenBalance($seasonId),
+        ];
+        // Shop: alle gegen Sticker-Packs eingetauschten Lukaten (bei den Managern bereits abgezogen)
+        $managers[] = [
+            'manager_id'   => null,
+            'kind'         => 'shop',
+            'manager_name' => 'Shop',
+            'alias'        => null,
+            'budget'       => $this->getShopLukatenSpent($seasonId),
         ];
 
         usort($managers, fn($a, $b) => $b['budget'] <=> $a['budget'] ?: strcmp($a['manager_name'], $b['manager_name']));

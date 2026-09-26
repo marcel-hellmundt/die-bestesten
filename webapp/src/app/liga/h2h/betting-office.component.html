@@ -337,7 +337,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (row of budgetStandings(); track row.manager_id) {
+            @for (row of budgetStandings(); track row.manager_id ?? row.manager_name) {
               <tr>
                 <td>
                   <span class="manager-cell">
@@ -348,10 +348,17 @@
                         (error)="$any($event.target).style.display = 'none'"
                         alt=""
                       />
+                    } @else if (row.kind === 'shop') {
+                      <!-- Shop: Mini-Folienpack statt Bild -->
+                      <a class="shop-avatar" routerLink="/klebrigsten/shop" title="Zum Shop" aria-label="Zum Shop"></a>
                     } @else {
                       <img class="player-avatar-sm player-avatar-sm--square" src="img/bestico/bank.png" alt="" />
                     }
-                    {{ row.manager_name }}
+                    @if (row.kind === 'shop') {
+                      <a class="shop-link" routerLink="/klebrigsten/shop">{{ row.manager_name }}</a>
+                    } @else {
+                      {{ row.manager_name }}
+                    }
                   </span>
                 </td>
                 <td class="col-value">

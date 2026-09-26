@@ -49,7 +49,8 @@ interface StandingRow {
 }
 
 interface BudgetStandingRow {
-  manager_id: string | null; // null = synthetische "Bank"-Zeile, siehe GET /h2h_prediction/budget_standings
+  manager_id: string | null; // null = synthetische Zeile ("Bank"/"Shop"), siehe GET /h2h_prediction/budget_standings
+  kind?: 'manager' | 'bank' | 'shop'; // fehlt bei älterer API → per manager_id unterscheiden
   manager_name: string;
   alias: string | null;
   budget: number;

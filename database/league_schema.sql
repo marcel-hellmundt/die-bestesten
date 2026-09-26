@@ -238,3 +238,18 @@ CREATE TABLE IF NOT EXISTS h2h_prediction (
     FOREIGN KEY (match_id) REFERENCES h2h_match(id) ON DELETE CASCADE,
     UNIQUE KEY uk_h2h_prediction (match_id, manager_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: sticker_shop_purchase (Lukaten gegen Sticker-Pack eingetauscht, "Die Klebrigsten"-Shop) —
+-- Lukaten sind je Liga, bezahlt wird also aus dem Budget dieser Liga-DB. Die Summe wird vom Lukaten-
+-- Budget des Managers abgezogen und in der Schatzkammer als eigene "Shop"-Zeile ausgewiesen
+-- (siehe H2HPredictionTrait). Migration: database/migrate_sticker_shop.sql
+CREATE TABLE IF NOT EXISTS sticker_shop_purchase (
+    id         CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id CHAR(36)    NOT NULL,             -- Referenz auf global_schema.manager.id (kein FK, cross-DB)
+    season_id  CHAR(36)    NOT NULL,             -- Referenz auf global_schema.season.id (kein FK, cross-DB)
+    offer_key  VARCHAR(30) NOT NULL,             -- gekauftes Angebot (Shop-Konfiguration)
+    price      INT         NOT NULL,             -- bezahlte Lukaten (Snapshot)
+    pack_id    CHAR(36)    NULL DEFAULT NULL,    -- Referenz auf global_schema.sticker_pack.id (kein FK, cross-DB)
+    created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_sticker_shop_purchase (season_id, manager_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
