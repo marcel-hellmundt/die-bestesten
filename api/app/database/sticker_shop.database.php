@@ -51,7 +51,8 @@ trait StickerShopTrait
         }
 
         $db   = $this->stickerShopConnection($league);
-        $lock = "lukaten:{$league['id']}:{$managerId}";
+        // MySQL-Lock-Namen max. 64 Zeichen → Liga+Manager gehasht (8 + 32 Zeichen)
+        $lock = 'lukaten:' . md5($league['id'] . ':' . $managerId);
         $db->prepare("SELECT GET_LOCK(?, 5)")->execute([$lock]);
         try {
             try {
