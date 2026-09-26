@@ -83,6 +83,68 @@
       </div>
     </section>
 
+    <!-- ── Seltenheitsstufen: Marktwert-Grenzen + Live-Verteilung ─────── -->
+    @let th = thresholds();
+    @let ts = tierStats();
+    <section class="card tiers">
+      <div class="tiers__head">
+        <h2 class="control-group__title">Seltenheitsstufen</h2>
+        @if (thresholdsChanged()) {
+          <button class="btn btn-sm btn-secondary" (click)="resetThresholds()">Zurücksetzen</button>
+        }
+      </div>
+
+      <div class="tiers__controls">
+        <label class="control">
+          <span class="control__label"><span class="sticker sticker--owned sticker--rare"></span> Selten über <b>{{ th.rare / 1e6 | number:'1.1-1' }} Mio</b></span>
+          <input type="range" [min]="thresholdMin / 1e6" [max]="thresholdMax() / 1e6" step="0.1"
+                 [value]="th.rare / 1e6" (input)="setThreshold('rare', num($event) * 1e6)" />
+        </label>
+        <label class="control">
+          <span class="control__label"><span class="sticker sticker--owned sticker--epic"></span> Episch über <b>{{ th.epic / 1e6 | number:'1.1-1' }} Mio</b></span>
+          <input type="range" [min]="thresholdMin / 1e6" [max]="thresholdMax() / 1e6" step="0.1"
+                 [value]="th.epic / 1e6" (input)="setThreshold('epic', num($event) * 1e6)" />
+        </label>
+        <label class="control">
+          <span class="control__label"><span class="sticker sticker--owned sticker--legendary"></span> Legendär über <b>{{ th.legendary / 1e6 | number:'1.1-1' }} Mio</b></span>
+          <input type="range" [min]="thresholdMin / 1e6" [max]="thresholdMax() / 1e6" step="0.1"
+                 [value]="th.legendary / 1e6" (input)="setThreshold('legendary', num($event) * 1e6)" />
+        </label>
+      </div>
+
+      <!-- Verteilung: Balken = Anteil am Album -->
+      <div class="tiers__bar">
+        @for (t of tiers; track t) {
+          @if (ts[t].total) {
+            <span class="tiers__seg tiers__seg--{{ t }}" [style.flex-grow]="ts[t].total"
+                  [title]="tierLabel[t] + ': ' + ts[t].total">{{ ts[t].total }}</span>
+          }
+        }
+      </div>
+
+      <div class="tiers__list">
+        @for (t of tiers; track t) {
+          <div class="tier-stat">
+            <span class="tier-stat__head">
+              <span class="sticker sticker--owned sticker--{{ t }}"></span>
+              <b>{{ tierLabel[t] }}</b>
+              <span class="tier-stat__range">{{ tierRange()[t] }}</span>
+            </span>
+            <span class="tier-stat__value">{{ ts[t].players }} <small>Spieler</small></span>
+            <span class="tier-stat__meta">
+              + {{ ts[t].clubs }} Vereins-Sticker · {{ ts[t].share * 100 | number:'1.0-0' }} % des Albums
+            </span>
+            <span class="tier-stat__meta">{{ ts[t].drawShare * 100 | number:'1.1-1' }} % aller gezogenen Sticker</span>
+          </div>
+        }
+      </div>
+
+      <p class="control__hint">
+        Die Stufe ist nur das Label auf dem Sticker; wie oft ein Sticker gezogen wird, hängt allein am Marktwert (Kurve α).
+        Die Einstellung gilt nur hier und wird nicht gespeichert.
+      </p>
+    </section>
+
     <!-- ── Manager-Profil (wer wird simuliert) ───────────────────────── -->
     <section class="card profile">
       <div class="profile__head">
@@ -192,7 +254,7 @@
       @for (t of tiers; track t) {
         <span class="legend__item">
           <span class="sticker sticker--owned sticker--{{ t }}"></span>
-          <span><b>{{ tierLabel[t] }}</b> {{ tierRange[t] }} ({{ tierCounts()[t] }})</span>
+          <span><b>{{ tierLabel[t] }}</b> {{ tierRange()[t] }} ({{ tierCounts()[t] }})</span>
         </span>
       }
       <span class="legend__item"><span class="sticker"></span>fehlt</span>
@@ -271,7 +333,7 @@
           <span class="sticker-tip__row">@if (s.kind === 'player') { Marktwert } <b>{{ priceLabel(s) }}</b></span>
           <span class="sticker-tip__row">
             <span class="sticker-tip__tier">{{ tierLabel[s.tier] }}</span>
-            <span class="sticker-tip__muted">{{ tierRange[s.tier] }} · Chance {{ odds(t.idx) }}</span>
+            <span class="sticker-tip__muted">{{ tierRange()[s.tier] }} · Chance {{ odds(t.idx) }}</span>
           </span>
           <span class="sticker-tip__row sticker-tip__status">
             @if (owned > 0) {

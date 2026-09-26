@@ -1,10 +1,10 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
-import { SimParams, SimProfile, countsAtDay, holoAtDay, simulateSeason, stickerWeights } from './sticker-sim';
+import { MIN_PRICE, SimParams, SimProfile, countsAtDay, holoAtDay, simulateSeason, stickerWeights } from './sticker-sim';
 import { StickerCardData, StickerHolo, requestTiltPermission } from './sticker-card/sticker-card.component';
 import { ALBUM_SOURCE, StickerAlbumService } from './album/sticker-album.service';
 import {
-  AlbumClub, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS, POSITION_LABEL, SharedParams, Sticker,
-  TIERS, TIER_LABEL, TIER_RANGE, paramsFor,
+  AlbumClub, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS, DEFAULT_TIER_THRESHOLDS, POSITION_LABEL, SharedParams, Sticker,
+  TIERS, TIER_LABEL, Tier, TierThresholds, paramsFor, tierRanges,
 } from './album/album.model';
 
 @Component({
@@ -53,7 +53,52 @@ export class StickerSimulationComponent {
 
   reroll(): void { this.seed.set(Math.floor(Math.random() * 1e9)); }
 
-  weights = computed(() => stickerWeights(this.stickers().map(s => s.price), this.shared().rarityAlpha));
+  // Gewichte hängen nur an Marktwert + α: Grenzen der Seltenheitsstufen ändern zwar die Sticker-Liste,
+  // dürfen die Saison aber nicht neu simulieren lassen → Vergleich per Inhalt statt Referenz
+  weights = computed(
+    () => stickerWeights(this.stickers().map(s => s.price), this.shared().rarityAlpha),
+    { equal: (a, b) => a.length === b.length && a.every((w, i) => w === b[i]) },
+  );
+
+  // ── Seltenheitsstufen (nur Anzeige, gelten nur auf dieser Seite) ──────────
+  thresholds = this.album.tierThresholds;
+  readonly thresholdStep = 100_000;
+  readonly thresholdMin = MIN_PRICE;
+  /** Obergrenze der Regler: höchster Marktwert im Album, auf ganze Mio aufgerundet. */
+  thresholdMax = computed(() => {
+    const max = Math.max(0, ...this.stickers().map(s => s.price ?? 0));
+    return Math.max(10, Math.ceil(max / 1e6)) * 1e6;
+  });
+  thresholdsChanged = computed(() => {
+    const t = this.thresholds(), d = DEFAULT_TIER_THRESHOLDS;
+    return t.rare !== d.rare || t.epic !== d.epic || t.legendary !== d.legendary;
+  });
+
+  /** Grenze setzen — bleibt zwischen den Nachbar-Grenzen, damit die Reihenfolge Selten < Episch < Legendär gilt. */
+  setThreshold(key: keyof TierThresholds, value: number): void {
+    const t = this.thresholds(), step = this.thresholdStep;
+    const lo = key === 'rare' ? this.thresholdMin : key === 'epic' ? t.rare + step : t.epic + step;
+    const hi = key === 'rare' ? t.epic - step : key === 'epic' ? t.legendary - step : this.thresholdMax();
+    const snapped = Math.round(value / step) * step; // Regler liefert Mio-Gleitkommawerte (1.1 * 1e6 ≠ 1_100_000)
+    this.thresholds.set({ ...t, [key]: Math.min(Math.max(snapped, lo), hi) });
+  }
+  resetThresholds(): void { this.thresholds.set({ ...DEFAULT_TIER_THRESHOLDS }); }
+
+  /** Je Stufe: Spieler- und Vereins-Sticker, Anteil am Album und Chance je gezogenem Sticker. */
+  tierStats = computed(() => {
+    const w = this.weights();
+    const out = Object.fromEntries(TIERS.map(t => [t, { players: 0, clubs: 0, total: 0, share: 0, drawShare: 0 }])) as
+      Record<Tier, { players: number; clubs: number; total: number; share: number; drawShare: number }>;
+    const stickers = this.stickers();
+    for (const s of stickers) {
+      const e = out[s.tier];
+      if (s.kind === 'player') e.players++; else e.clubs++;
+      e.total++;
+      e.drawShare += w[s.idx] ?? 0;
+    }
+    for (const t of TIERS) out[t].share = stickers.length ? out[t].total / stickers.length : 0;
+    return out;
+  });
 
   /** Komplette Saison — wird bei jeder Parameter-/Seed-Änderung neu berechnet, der Tag-Regler scrubbt nur. */
   packs = computed(() => simulateSeason(this.params(), this.weights(), this.timeline(), this.seed()));
@@ -288,7 +333,7 @@ export class StickerSimulationComponent {
   }
 
   readonly tierLabel = TIER_LABEL;
-  readonly tierRange = TIER_RANGE;
+  tierRange = computed(() => tierRanges(this.thresholds()));
   readonly tiers = TIERS;
   readonly positionLabel = POSITION_LABEL;
 }

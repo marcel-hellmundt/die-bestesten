@@ -5,7 +5,9 @@ import { ApiService } from '../../core/api.service';
 import { OpenedPack, StickerCollectionEntry } from '../../core/sticker-status.service';
 import { Timeline, stickerWeights } from '../sticker-sim';
 import { StickerCardData, StickerHolo } from '../sticker-card/sticker-card.component';
-import { AlbumClub, AlbumPreview, DEFAULT_SHARED_PARAMS, Sticker, Tier, clubStickerPrice, tierOf } from './album.model';
+import {
+  AlbumClub, AlbumPreview, DEFAULT_SHARED_PARAMS, DEFAULT_TIER_THRESHOLDS, Sticker, Tier, TierThresholds, clubStickerPrice, tierOf,
+} from './album.model';
 import { PackCard } from './pack.model';
 
 const DAY_MS = 86_400_000;
@@ -56,10 +58,14 @@ export class StickerAlbumService {
   seasonId = computed(() => this.state().data?.season_id ?? null);
   clubs    = computed(() => this.state().data?.clubs ?? []);
 
+  /** Marktwert-Grenzen der Seltenheitsstufen — Standard fest, in der Simulation per Regler verstellbar (nur diese Seite). */
+  tierThresholds = signal<TierThresholds>(DEFAULT_TIER_THRESHOLDS);
+
   /** Flache Sticker-Liste: je Club zuerst Wappen, dann Stadion, dann Spieler (API-Reihenfolge: Position, Marktwert). */
   stickers = computed<Sticker[]>(() => {
     const out: Sticker[] = [];
     const clubs = this.clubs();
+    const thresholds = this.tierThresholds();
     clubs.forEach((c, clubIdx) => {
       // Seltenheit der Vereins-Sticker nach Vorsaison-Platz (Clubs kommen bereits in dieser Reihenfolge);
       // beim eingefrorenen Album liefert die API den gespeicherten Wert
@@ -67,11 +73,11 @@ export class StickerAlbumService {
       const club = (kind: 'logo' | 'stadium', name: string): Sticker => ({
         id: `${c.id}-${kind}`, displayname: name, first_name: null, last_name: null,
         position: null, price, photo_uploaded: false,
-        idx: out.length, clubIdx, kind, tier: tierOf(price),
+        idx: out.length, clubIdx, kind, tier: tierOf(price, thresholds),
       });
       out.push(club('logo', c.name));
       out.push(club('stadium', c.stadium_name ?? c.name));
-      c.players.forEach(p => out.push({ ...p, idx: out.length, clubIdx, kind: 'player', tier: tierOf(p.price) }));
+      c.players.forEach(p => out.push({ ...p, idx: out.length, clubIdx, kind: 'player', tier: tierOf(p.price, thresholds) }));
     });
     return out;
   });

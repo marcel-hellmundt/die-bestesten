@@ -47,20 +47,31 @@ export function clubStickerPrice(rank: number, clubCount: number): number {
   return Math.round(CLUB_STICKER_PRICE_BEST - t * (CLUB_STICKER_PRICE_BEST - CLUB_STICKER_PRICE_WORST));
 }
 
-export function tierOf(price: number | null): Tier {
+/** Marktwert-Grenzen der Seltenheitsstufen: ein Sticker gehört zur höchsten Stufe, deren Grenze sein Marktwert übersteigt. */
+export interface TierThresholds { rare: number; epic: number; legendary: number; }
+export const DEFAULT_TIER_THRESHOLDS: TierThresholds = { rare: 1_000_000, epic: 2_500_000, legendary: 5_000_000 };
+
+export function tierOf(price: number | null, t: TierThresholds = DEFAULT_TIER_THRESHOLDS): Tier {
   const p = price ?? MIN_PRICE;
-  if (p > 5_000_000) return 'legendary';
-  if (p > 2_500_000) return 'epic';
-  if (p > 1_000_000) return 'rare';
+  if (p > t.legendary) return 'legendary';
+  if (p > t.epic) return 'epic';
+  if (p > t.rare) return 'rare';
   return 'common';
 }
 
 export const TIERS: Tier[] = ['common', 'rare', 'epic', 'legendary'];
 export const TIER_LABEL: Record<Tier, string> = { common: 'Häufig', rare: 'Selten', epic: 'Episch', legendary: 'Legendär' };
-// Marktwert-Spannen je Tier — müssen zu tierOf() passen
-export const TIER_RANGE: Record<Tier, string> = {
-  common: '≤ 1 Mio', rare: '1–2,5 Mio', epic: '2,5–5 Mio', legendary: '> 5 Mio',
-};
+
+/** Marktwert-Spannen je Tier als Text, z.B. "1–2,5 Mio". */
+export function tierRanges(t: TierThresholds): Record<Tier, string> {
+  const mio = (p: number) => (p / 1e6).toLocaleString('de-DE', { maximumFractionDigits: 1 });
+  return {
+    common: `≤ ${mio(t.rare)} Mio`,
+    rare: `${mio(t.rare)}–${mio(t.epic)} Mio`,
+    epic: `${mio(t.epic)}–${mio(t.legendary)} Mio`,
+    legendary: `> ${mio(t.legendary)} Mio`,
+  };
+}
 export const POSITION_LABEL: Record<string, string> = { GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU' };
 export const POSITION_ORDER = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 

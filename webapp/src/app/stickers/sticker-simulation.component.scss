@@ -15,6 +15,9 @@
   margin-top: $space-1;
 }
 
+// Farbe je Seltenheit: Dunkelgrün → Hellgelb → Rot → Lila (kein Blau neben Lila, schwer unterscheidbar)
+$tier-colors: (common: #15803d, rare: #fde047, epic: #dc2626, legendary: #9333ea);
+
 input[type='range'] {
   width: 100%;
   accent-color: $color-accent;
@@ -77,6 +80,113 @@ input[type='range'] {
     gap: $space-2;
     font-size: $font-sm;
     cursor: pointer;
+  }
+}
+
+// ── Seltenheitsstufen ────────────────────────────────────────────────────────
+.tiers {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4;
+
+  // kleine Farbmarke vor den Regler-Labels / in der Liste
+  .sticker {
+    width: 10px;
+    height: 14px;
+    border-width: 1px;
+    vertical-align: -2px;
+    cursor: default;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
+
+  &__controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: $space-6;
+
+    @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); gap: $space-3; }
+  }
+
+  &__bar {
+    display: flex;
+    gap: 2px;
+    height: 22px;
+    border-radius: $radius-sm;
+    overflow: hidden;
+  }
+
+  &__seg {
+    flex-basis: 0;
+    min-width: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    transition: flex-grow $transition-fast;
+
+    @each $tier, $color in $tier-colors {
+      &--#{$tier} { background: $color; }
+    }
+
+    &--rare { color: #422006; } // Hellgelb braucht dunkle Schrift
+  }
+
+  &__list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: $space-3;
+
+    @media (max-width: $mobile-breakpoint) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+}
+
+.tier-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    font-size: $font-sm;
+  }
+
+  &__range {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__value {
+    font-size: $font-xl;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+
+    small {
+      font-size: $font-xs;
+      font-weight: $font-weight-normal;
+      color: $color-text-muted;
+    }
+  }
+
+  &__meta {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -294,11 +404,9 @@ input[type='range'] {
   transition: background $transition-fast, border-color $transition-fast;
   flex-shrink: 0;
 
-  // Dunkelgrün → Hellgelb → Rot → Lila (kein Blau neben Lila, schwer unterscheidbar)
-  &--common    { --tier: #15803d; }
-  &--rare      { --tier: #fde047; }
-  &--epic      { --tier: #dc2626; }
-  &--legendary { --tier: #9333ea; }
+  @each $tier, $color in $tier-colors {
+    &--#{$tier} { --tier: #{$color}; }
+  }
 
   &--owned {
     background: var(--tier);
@@ -370,10 +478,9 @@ input[type='range'] {
 
   &--below { transform: translate(-50%, 8px); }
 
-  &--common    { --tier: #15803d; }
-  &--rare      { --tier: #fde047; }
-  &--epic      { --tier: #dc2626; }
-  &--legendary { --tier: #9333ea; }
+  @each $tier, $color in $tier-colors {
+    &--#{$tier} { --tier: #{$color}; }
+  }
 
   &__photo {
     flex-shrink: 0;
