@@ -258,9 +258,10 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
   align-items: center;
   gap: $space-5;
   padding: $space-4 $space-5;
-  border: 1px solid color-mix(in srgb, #0f766e 35%, transparent);
+  // Farbe wie die Starter-Folie (Feuerrot)
+  border: 1px solid color-mix(in srgb, #dc2626 35%, transparent);
   border-radius: $radius-lg;
-  background: linear-gradient(110deg, color-mix(in srgb, #2dd4bf 16%, #{$color-surface}), $color-surface 70%);
+  background: linear-gradient(110deg, color-mix(in srgb, #fb923c 18%, #{$color-surface}), $color-surface 70%);
 
   @media (max-width: $mobile-breakpoint) { flex-wrap: wrap; gap: $space-3; padding: $space-3; }
 
@@ -280,7 +281,7 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
     align-self: flex-start;
     padding: 1px 8px;
     border-radius: $radius-full;
-    background: #0f766e;
+    background: #dc2626;
     color: #fff;
     font-size: 11px;
     font-weight: $font-weight-bold;
@@ -350,8 +351,14 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
 
   @media (max-width: $narrow) { width: 78px; }
 
-  &--violet { --foil-light: #c084fc; --foil: #7c3aed; --foil-dark: #2e1065; }
-  &--onyx   { --foil-light: #6b7280; --foil: #1f2937; --foil-dark: #030712; }
+  // Lukaten
+  &--violet  { --foil-light: #c084fc; --foil: #7c3aed; --foil-dark: #2e1065; }
+  // Euro
+  &--fire     { --foil-light: #fb923c; --foil: #dc2626; --foil-dark: #7f1d1d; }                // Feuerrot
+  &--leaf     { --foil-light: #86efac; --foil: #16a34a; --foil-dark: #14532d; }                // Blattgrün
+  &--sun      { --foil-light: #fef9c3; --foil: #facc15; --foil-dark: #ca8a04; --ink: #854d0e; --text: #422006; } // Sonnengelb (dunkle Schrift)
+  &--bordeaux { --foil-light: #be123c; --foil: #7f1d2d; --foil-dark: #2a0510; }                // Bordeauxrot
+  &--lilac    { --foil-light: #e9d5ff; --foil: #a855f7; --foil-dark: #4c1d95; }                // Lila
   // --club: Farben kommen inline aus den Vereinsfarben (clubFoil())
 
   .offer:hover &,
@@ -390,7 +397,8 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
   }
 
   &__brand {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text, #fff);
+    opacity: 0.85;
     font-family: $font-display;
     font-size: 7cqw;
     font-weight: 800;
@@ -408,7 +416,7 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
 
   &__headline {
     max-width: 90%;
-    color: #fff;
+    color: var(--text, #fff);
     font-family: $font-display;
     font-size: 14cqw;
     font-weight: 800;
@@ -423,8 +431,8 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
   &__count {
     padding: 1.5cqw 6cqw;
     border-radius: $radius-full;
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--foil);
+    background: var(--pill, rgba(255, 255, 255, 0.92));
+    color: var(--ink, var(--foil));
     font-size: 8cqw;
     font-weight: $font-weight-bold;
     white-space: nowrap;

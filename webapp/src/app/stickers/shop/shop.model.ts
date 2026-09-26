@@ -1,7 +1,10 @@
 // "Die Klebrigsten" — Shop: Packs gegen Lukaten (verdient im Bestico, Hauptliga) oder Euro (PayPal).
 
-/** Folienfarbe des Packs im Shop — bewusst andere Farben als die verdienten Packs (Rot/Gold/Blau). */
-export type ShopFoil = 'teal' | 'violet' | 'onyx' | 'club';
+/**
+ * Folienfarbe des Packs im Shop — bewusst andere Farben als die verdienten Packs (Rot/Gold/Blau/Graphit).
+ * Lukaten: teal/violet · Euro: fire/leaf/sun/bordeaux/lilac · club = Vereinsfarben.
+ */
+export type ShopFoil = 'teal' | 'violet' | 'fire' | 'leaf' | 'sun' | 'bordeaux' | 'lilac' | 'club';
 export type ShopCurrency = 'lukaten' | 'eur';
 
 export interface ShopOffer {
@@ -28,13 +31,13 @@ export const LUKATEN_OFFERS: ShopOffer[] = [
 
 // Euro (PayPal): Packs wie das Tages-Pack (3 Sticker, 1 garantiert neu); nichts unter 1,99 € wegen der PayPal-Gebühr
 export const EUR_STARTER: ShopOffer =
-  { key: 'e-starter', currency: 'eur', name: 'Starter', packs: 10, packSize: 3, guaranteedNew: 1, price: 1.99, foil: 'teal', once: true, highlight: 'Einmalig' };
+  { key: 'e-starter', currency: 'eur', name: 'Starter', packs: 10, packSize: 3, guaranteedNew: 1, price: 1.99, foil: 'fire', once: true, highlight: 'Einmalig' };
 
 export const EUR_OFFERS: ShopOffer[] = [
-  { key: 'e-handful', currency: 'eur', name: 'Handvoll', packs: 5,  packSize: 3, guaranteedNew: 1, price: 2.99, foil: 'teal' },
-  { key: 'e-stack',   currency: 'eur', name: 'Stapel',   packs: 12, packSize: 3, guaranteedNew: 1, price: 4.99, foil: 'violet', highlight: 'Beliebt' },
-  { key: 'e-crate',   currency: 'eur', name: 'Kiste',    packs: 30, bonusPacks: 5, packSize: 3, guaranteedNew: 1, price: 9.99, foil: 'onyx', highlight: 'Bester Preis' },
-  { key: 'e-club',    currency: 'eur', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 1.99, foil: 'club', clubPick: true },
+  { key: 'e-handful', currency: 'eur', name: 'Handvoll', packs: 5,  packSize: 3, guaranteedNew: 1, price: 2.99, foil: 'leaf' },
+  { key: 'e-stack',   currency: 'eur', name: 'Stapel',   packs: 12, packSize: 3, guaranteedNew: 1, price: 4.99, foil: 'sun', highlight: 'Beliebt' },
+  { key: 'e-crate',   currency: 'eur', name: 'Kiste',    packs: 30, bonusPacks: 5, packSize: 3, guaranteedNew: 1, price: 9.99, foil: 'bordeaux', highlight: 'Bester Preis' },
+  { key: 'e-club',    currency: 'eur', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 1.99, foil: 'lilac', clubPick: true },
 ];
 
 /** Referenz für "X % günstiger": Preis pro Sticker der Handvoll. */
