@@ -91,14 +91,35 @@
     </div>
   </section>
 
-  <!-- ── Euro ── vorerst deaktiviert (farblos, nicht klickbar): Fokus erst mal auf Lukaten ── -->
-  <section class="shelf shelf--disabled" inert aria-disabled="true">
+  <!-- ── Euro (PayPal.me) ── ohne Migration farblos/inert ── -->
+  <section class="shelf" [class.shelf--disabled]="!loading() && !eurAvailable()" [attr.inert]="!loading() && !eurAvailable() ? '' : null">
     <div class="shelf__head">
       <div>
-        <h2 class="shelf__title">Mit Euro <small>bald verfügbar</small></h2>
-        <p class="shelf__sub">Sichere Zahlung über PayPal · jedes Pack wie das Tages-Pack, 3 Sticker, 1 garantiert neu</p>
+        <h2 class="shelf__title">Mit Euro @if (!loading() && !eurAvailable()) { <small>bald verfügbar</small> }</h2>
+        <p class="shelf__sub">Bezahlt wird per PayPal · jedes Pack wie das Tages-Pack, 3 Sticker, 1 garantiert neu</p>
       </div>
     </div>
+    <p class="shelf__hint">
+      Die Packs bekommst du sofort. Karten daraus kannst du tauschen, sobald deine Zahlung bestätigt ist.
+    </p>
+
+    <!-- Eigene, noch nicht bestätigte Käufe: hier bezahlen -->
+    @if (eurPending().length) {
+      <div class="pay-box">
+        <h3 class="pay-box__title">Offene Zahlungen</h3>
+        @for (p of eurPending(); track p.id) {
+          <div class="pay-row">
+            <span class="pay-row__text">
+              <b>{{ offerName(p.offer_key) }}</b> · {{ formatEur(p.amount_cents / 100) }}
+              <small>Code <button type="button" class="code" (click)="copy(p.code)" title="Code kopieren">{{ p.code }}</button>
+                @if (copied() === p.code) { kopiert } · {{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }}</small>
+            </span>
+            <a class="btn btn-primary btn-sm" [href]="p.paypal_url" target="_blank" rel="noopener">Mit PayPal bezahlen</a>
+          </div>
+        }
+        <p class="pay-box__hint">Bitte den Code als Nachricht in PayPal angeben. Ein Admin bestätigt die Zahlung dann.</p>
+      </div>
+    }
 
     <!-- Starter: einmal pro Saison, bester Einstieg -->
     <article class="starter">
@@ -113,7 +134,9 @@
           <span class="saving">−{{ savingPct(starter) }} %</span>
         </span>
       </div>
-      <button type="button" class="btn btn-primary starter__btn" (click)="open(starter)">{{ formatEur(starter.price) }}</button>
+      <button type="button" class="btn btn-primary starter__btn" [disabled]="!starterAvailable() || eurBlocked()" (click)="open(starter)">
+        {{ starterAvailable() ? formatEur(starter.price) : 'Schon geholt' }}
+      </button>
     </article>
 
     <div class="offers offers--eur">
@@ -139,7 +162,7 @@
             </ul>
             <div class="offer__buy">
               <span class="price"><b>{{ formatEur(o.price) }}</b></span>
-              <button type="button" class="btn btn-primary btn-sm" (click)="open(o)">Kaufen</button>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="eurBlocked()" (click)="open(o)">Kaufen</button>
             </div>
             <span class="offer__note">
               {{ formatEur(perSticker(o)) }} pro Sticker
@@ -149,7 +172,60 @@
         </article>
       }
     </div>
+    @if (eurBlocked()) {
+      <p class="shelf__hint">Du hast {{ eurPending().length }} offene Zahlungen – bitte erst bezahlen, dann geht's weiter.</p>
+    }
   </section>
+
+  <!-- ── Admin: Euro-Käufe der Saison bestätigen / stornieren ─────────────── -->
+  @if (isAdmin && purchases().length) {
+    <section class="shelf">
+      <div class="shelf__head">
+        <h2 class="shelf__title">Euro-Käufe <small>{{ openPurchases() }} offen</small></h2>
+      </div>
+      <p class="shelf__hint">Stornieren entfernt die Packs und alle daraus gezogenen Karten wieder (Tauschen war bis dahin gesperrt).</p>
+      @if (adminError()) { <p class="confirm__error">{{ adminError() }}</p> }
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Manager</th>
+              <th>Angebot</th>
+              <th class="num">Betrag</th>
+              <th>Code</th>
+              <th class="hide-mobile">Datum</th>
+              <th class="num hide-mobile">Geöffnet</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of purchases(); track p.id) {
+              <tr [class.row-muted]="p.status !== 'pending'">
+                <td>{{ p.manager_name }}</td>
+                <td>{{ p.offer_name }}</td>
+                <td class="num">{{ formatEur(p.amount_cents / 100) }}</td>
+                <td><b>{{ p.code }}</b></td>
+                <td class="hide-mobile">{{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }}</td>
+                <td class="num hide-mobile">{{ p.packs_opened }}/{{ p.packs_total }}</td>
+                <td class="admin-actions">
+                  @if (p.status === 'pending') {
+                    <button type="button" class="btn btn-primary btn-sm" [disabled]="adminBusyId() === p.id" (click)="handlePurchase(p, 'confirm')">Bezahlt</button>
+                    <button type="button" class="btn btn-ghost btn-sm" [disabled]="adminBusyId() === p.id" (click)="handlePurchase(p, 'cancel')">
+                      {{ cancelAskId() === p.id ? 'Wirklich stornieren?' : 'Stornieren' }}
+                    </button>
+                  } @else {
+                    <span class="status-pill status-pill--{{ p.status }}" [title]="p.handled_by_name ? 'von ' + p.handled_by_name : ''">
+                      {{ purchaseStatusLabel[p.status] }}
+                    </span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
 
   <!-- ── So funktioniert's ─────────────────────────────────────────────── -->
   <section class="how">
@@ -194,8 +270,28 @@
           </div>
         }
 
-        @if (bought()) {
-          <!-- Kauf erfolgreich -->
+        @if (bought() && eurResult(); as r) {
+          <!-- Euro-Kauf angelegt: jetzt per PayPal bezahlen -->
+          <p class="confirm__done">
+            <b>{{ r.packs === 1 ? 'Dein Pack ist da!' : 'Deine ' + r.packs + ' Packs sind da!' }}</b>
+            Jetzt nur noch bezahlen:
+          </p>
+          <div class="pay-code">
+            <span class="pay-code__label">Bitte als Nachricht angeben</span>
+            <button type="button" class="pay-code__value" (click)="copy(r.code)" title="Code kopieren">{{ r.code }}</button>
+            <span class="pay-code__hint">{{ copied() === r.code ? 'kopiert!' : 'antippen zum Kopieren' }}</span>
+          </div>
+          <div class="confirm__actions">
+            <a class="btn btn-primary" [href]="r.paypal_url" target="_blank" rel="noopener">
+              {{ formatEur(r.amount_cents / 100) }} mit PayPal bezahlen
+            </a>
+          </div>
+          <span class="confirm__hint">
+            Empfänger: {{ paypalMe() }} · Karten aus diesem Kauf sind tauschbar, sobald die Zahlung bestätigt ist.
+          </span>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="closeConfirm()">Schließen</button>
+        } @else if (bought()) {
+          <!-- Lukaten-Kauf erfolgreich -->
           <p class="confirm__done">
             <b>Gekauft!</b> Das Pack liegt ungeöffnet in deinem Sammelalbum.<br />
             <span>Guthaben jetzt: {{ formatLukaten(budget()) }} Lukaten</span>
@@ -223,11 +319,17 @@
             <dt>{{ o.packs > 1 ? o.packs + ' Packs · ' + stickerCount(o) + ' Sticker' : o.packSize + ' Sticker' }}</dt>
             <dd class="confirm__total">{{ formatEur(o.price) }}</dd>
           </dl>
+          @if (buyError()) { <span class="confirm__error">{{ buyError() }}</span> }
           <div class="confirm__actions">
-            <button type="button" class="btn btn-primary" disabled>Weiter zu PayPal</button>
-            <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Abbrechen</button>
+            <button type="button" class="btn btn-primary" [disabled]="!canBuy()" (click)="buy()">
+              {{ buying() ? 'Wird angelegt…' : 'Kaufen' }}
+            </button>
+            <button type="button" class="btn btn-ghost" [disabled]="buying()" (click)="closeConfirm()">Abbrechen</button>
           </div>
-          <span class="confirm__hint">Euro-Käufe sind bald verfügbar</span>
+          <span class="confirm__hint">
+            @if (o.clubPick && !pickedClubId()) { Bitte zuerst einen Verein wählen · }
+            Die Packs gibt's sofort, danach bezahlst du per PayPal.
+          </span>
         }
       </div>
     </div>

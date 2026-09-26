@@ -46,6 +46,14 @@
       </div>
     }
 
+    <!-- Euro-Kauf noch nicht bestätigt: Karten daraus sind (noch) nicht tauschbar -->
+    @if (lockedCount() > 0) {
+      <p class="pay-note">
+        {{ lockedCount() === 1 ? '1 Karte wartet' : lockedCount() + ' Karten warten' }} auf die Bestätigung deiner Zahlung –
+        bis dahin nicht tauschbar. <a routerLink="/klebrigsten/shop">Zum Shop</a>
+      </p>
+    }
+
     <!-- Ungeöffnete Packs -->
     @if (isOwn() && packs().length > 0) {
       <div class="packs">

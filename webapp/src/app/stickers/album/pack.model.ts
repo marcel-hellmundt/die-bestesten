@@ -2,7 +2,9 @@
 import { StickerPack, StickerPackSource } from '../../core/sticker-status.service';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { DEFAULT_SHARED_PARAMS, Sticker } from './album.model';
-import { LUKATEN_OFFERS } from '../shop/shop.model';
+import { EUR_OFFERS, EUR_STARTER, LUKATEN_OFFERS } from '../shop/shop.model';
+
+const SHOP_OFFERS_ALL = [...LUKATEN_OFFERS, EUR_STARTER, ...EUR_OFFERS];
 
 /** Was vor dem Öffnen auf dem Pack steht (Art, Anlass, Anzahl). */
 export interface PackInfo {
@@ -46,7 +48,7 @@ export function packFace(p: PackInfo): { kind: string; headline: string } {
     case 'daily':         return { kind: 'Täglich', headline: 'Tages-Pack' };
     case 'milestone':     return { kind: 'Meilenstein', headline: p.milestonePoints ? `${p.milestonePoints} Punkte` : 'Meilenstein' };
     case 'matchday_best': return { kind: 'Spieltagssieger', headline: p.matchdayNumber ? `Spieltag ${p.matchdayNumber}` : 'Spieltagssieger' };
-    case 'shop':          return { kind: 'Shop', headline: LUKATEN_OFFERS.find(o => o.key === p.shopOffer)?.name ?? 'Shop-Pack' };
+    case 'shop':          return { kind: 'Shop', headline: SHOP_OFFERS_ALL.find(o => o.key === p.shopOffer)?.name ?? 'Shop-Pack' };
     default:              return { kind: 'Bonus', headline: 'Bonus-Pack' };
   }
 }

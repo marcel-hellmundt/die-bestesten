@@ -227,14 +227,17 @@ trait StickerPackTrait
         ], $q->fetchAll(PDO::FETCH_ASSOC));
 
         if ($viewerId !== null) {
-            // alle Sammlungen der Saison auf einmal: manager_id → sticker_id → Anzahl
+            // alle Sammlungen der Saison auf einmal: manager_id → sticker_id → [Anzahl, davon tauschbar]
+            // (Karten aus unbezahlten Euro-Käufen sind nicht tauschbar)
+            $lk = $this->stickerLockedJoin('p');
             $cq = $this->con->prepare(
-                "SELECT p.manager_id, p.sticker_id, COUNT(*) AS cnt FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id
+                "SELECT p.manager_id, p.sticker_id, COUNT(*) AS cnt, SUM(NOT {$lk['locked']}) AS tradeable
+                 FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id {$lk['join']}
                  WHERE s.season_id = ? GROUP BY p.manager_id, p.sticker_id"
             );
             $cq->execute([$seasonId]);
             $all = [];
-            foreach ($cq->fetchAll(PDO::FETCH_ASSOC) as $r) $all[$r['manager_id']][$r['sticker_id']] = (int) $r['cnt'];
+            foreach ($cq->fetchAll(PDO::FETCH_ASSOC) as $r) $all[$r['manager_id']][$r['sticker_id']] = (int) $r['tradeable'];
             $mine = $all[$viewerId] ?? [];
             foreach ($collectors as &$c) {
                 $theirs = $all[$c['manager_id']] ?? [];
@@ -267,14 +270,18 @@ trait StickerPackTrait
         ];
     }
 
-    /** Sammlung: je gezogenem Sticker Anzahl, Holo-Anzahlen und Zeitpunkt des ersten Zugs. */
+    /**
+     * Sammlung: je gezogenem Sticker Anzahl, Holo-Anzahlen, Zeitpunkt des ersten Zugs und locked = davon aus
+     * noch unbezahlten Euro-Käufen (bis zur Bestätigung nicht tauschbar, siehe StickerShopEurTrait).
+     */
     private function getStickerCollection(string $managerId, string $seasonId): array
     {
+        $lk = $this->stickerLockedJoin('p');
         $q = $this->con->prepare(
             "SELECT s.sticker_key, COUNT(*) AS cnt,
                     SUM(p.holo = 'silver') AS silver, SUM(p.holo = 'gold') AS gold,
-                    MIN(p.created_at) AS first_at
-             FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id
+                    MIN(p.created_at) AS first_at, SUM({$lk['locked']}) AS locked
+             FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id {$lk['join']}
              WHERE p.manager_id = ? AND s.season_id = ?
              GROUP BY s.id, s.sticker_key"
         );
@@ -282,6 +289,7 @@ trait StickerPackTrait
         return array_map(fn($r) => [
             'key' => $r['sticker_key'], 'count' => (int) $r['cnt'],
             'silver' => (int) $r['silver'], 'gold' => (int) $r['gold'], 'first_at' => $r['first_at'],
+            'locked' => (int) $r['locked'],
         ], $q->fetchAll(PDO::FETCH_ASSOC));
     }
 

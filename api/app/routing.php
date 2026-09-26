@@ -1307,7 +1307,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/me',
-                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,announced,milestone_points,matchday_number,shop_offer,club_id}], collection:[{key,count,silver,gold,first_at}], ignored_days}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null; announced = bereits groß angekündigt, siehe PATCH /sticker/pack/announced) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready; ignored_days = an wie vielen verschiedenen Tagen angekündigte Packs ungeöffnet weggeklickt wurden, gezählt seit dem zuletzt geöffneten Pack (Desinteresse-Signal: ab 3 bietet die Einblendung "Nicht mehr anzeigen" an); trades_incoming = offene Tauschangebote an mich (Badge der Tauschbörse) — Auth',
+                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,announced,milestone_points,matchday_number,shop_offer,club_id}], collection:[{key,count,silver,gold,first_at,locked}], ignored_days}; locked = davon aus noch unbezahlten Euro-Käufen (bis zur Bestätigung nicht tauschbar); enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null; announced = bereits groß angekündigt, siehe PATCH /sticker/pack/announced) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready; ignored_days = an wie vielen verschiedenen Tagen angekündigte Packs ungeöffnet weggeklickt wurden, gezählt seit dem zuletzt geöffneten Pack (Desinteresse-Signal: ab 3 bietet die Einblendung "Nicht mehr anzeigen" an); trades_incoming = offene Tauschangebote an mich (Badge der Tauschbörse) — Auth',
                     ],
                     [
                         'method' => 'GET',
@@ -1347,7 +1347,25 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/shop',
-                        'description' => 'Shop (Lukaten gegen Packs) → {league:{id,name}|null, budget:float|null} — bezahlt wird immer aus der Hauptliga des Managers = seine oberste Liga mit Sticker-Album (Division mit niedrigstem level, bei Gleichstand zuerst beigetreten), unabhängig von der eingeloggten Liga; budget = Lukaten-Guthaben dort in der aktiven Saison (wie GET /h2h_prediction/budget); league=null ohne Liga mit Sticker-Album — Auth',
+                        'description' => 'Shop (Lukaten gegen Packs) → {league:{id,name}|null, budget:float|null} — bezahlt wird immer aus der Hauptliga des Managers = seine oberste Liga mit Sticker-Album (Division mit niedrigstem level, bei Gleichstand zuerst beigetreten), unabhängig von der eingeloggten Liga; budget = Lukaten-Guthaben dort in der aktiven Saison (wie GET /h2h_prediction/budget); league=null ohne Liga mit Sticker-Album; eur = {available (Migration migrate_sticker_shop_eur.sql eingespielt), paypal_me, starter_available (Starter noch nicht gekauft), pending:[{id,offer_key,amount_cents,code,created_at,paypal_url}] (eigene, noch nicht bestätigte Euro-Käufe zum Bezahlen)} — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/sticker/shop/buy_eur',
+                        'description' => 'Euro-Angebot kaufen (Preise serverseitig in StickerShopEurTrait::stickerShopEurOffers(): e-starter 1,99 € 10 Packs, einmal pro Saison; e-handful 2,99 € 5 Packs; e-stack 4,99 € 12 Packs; e-crate 9,99 € 30 Packs — je 3 Sticker, 1 garantiert neu; e-club 1,99 € 1 Vereins-Pack mit 5 Stickern, alle neu, nur aus club_id) — ohne Zahlungs-API: legt sticker_eur_purchase (pending, Kauf-Code DK-XXXX) und die Packs sofort an (sticker_pack source=shop, eur_purchase_id), bezahlt wird danach per PayPal.me (paypal_url mit Betrag, Code als Nachricht); bis ein Admin bestätigt, sind Karten aus diesen Packs nicht tauschbar; Mail + In-App-Benachrichtigung an alle Admins → {status, purchase_id, code, amount_cents, paypal_url, packs}; 400 ohne offer_key, 409 Tabellen fehlen / kein Album / Starter schon gekauft / bereits 3 offene Zahlungen, 422 unbekanntes Angebot oder Verein fehlt/ungültig — Auth',
+                        'body' => ['offer_key' => 'e-starter|e-handful|e-stack|e-crate|e-club', 'club_id' => 'UUID des Vereins (nur e-club)'],
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/sticker/shop/purchases',
+                        'description' => 'Alle Euro-Käufe der aktiven Saison (offene zuerst) → {available, purchases:[{id,manager_id,manager_name,offer_key,offer_name,amount_cents,code,status (pending|paid|cancelled),created_at,handled_at,handled_by_name,packs_total,packs_opened}]} — Admin',
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/sticker/shop/purchases/:id',
+                        'description' => 'Euro-Kauf bearbeiten: confirm = Zahlung eingegangen (paid, Karten werden tauschbar), cancel = storniert (Packs + daraus gezogene Karten werden gelöscht; da Tauschen bis dahin gesperrt war, trifft das niemand anderen); benachrichtigt den Käufer; 404 unbekannt, 409 nicht mehr offen — Admin',
+                        'body' => ['action' => 'confirm|cancel'],
+                        'path_params' => [':id' => 'UUID des Euro-Kaufs'],
                     ],
                     [
                         'method' => 'POST',

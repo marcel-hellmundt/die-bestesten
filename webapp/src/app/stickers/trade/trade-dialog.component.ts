@@ -28,8 +28,15 @@ export class TradeDialogComponent {
 
   /** seltenste (teuerste) zuerst */
   private sorted = computed(() => [...this.album.stickers()].sort((a, b) => (b.price ?? 0) - (a.price ?? 0)));
-  canGet = computed(() => { const m = this.mine(), t = this.theirs(); return this.sorted().filter(s => t.counts[s.idx] >= 2 && !m.counts[s.idx]); });
-  canGive = computed(() => { const m = this.mine(), t = this.theirs(); return this.sorted().filter(s => m.counts[s.idx] >= 2 && !t.counts[s.idx]); });
+  // Tauschbar = Doppelte ohne Karten aus unbezahlten Euro-Käufen (counts - locked)
+  private tradeable(c: Collection, idx: number): number { return c.counts[idx] - (c.locked[idx] ?? 0); }
+  canGet = computed(() => { const m = this.mine(), t = this.theirs(); return this.sorted().filter(s => this.tradeable(t, s.idx) >= 2 && !m.counts[s.idx]); });
+  canGive = computed(() => { const m = this.mine(), t = this.theirs(); return this.sorted().filter(s => this.tradeable(m, s.idx) >= 2 && !t.counts[s.idx]); });
+  /** eigene Doppelte, die nur wegen einer noch offenen Zahlung (Euro-Kauf) nicht tauschbar sind */
+  lockedGive = computed(() => {
+    const m = this.mine(), t = this.theirs();
+    return this.sorted().filter(s => m.counts[s.idx] >= 2 && this.tradeable(m, s.idx) < 2 && !t.counts[s.idx]).length;
+  });
 
   get = signal(new Set<string>());
   give = signal(new Set<string>());

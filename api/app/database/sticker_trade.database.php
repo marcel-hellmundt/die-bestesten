@@ -23,12 +23,16 @@ trait StickerTradeTrait
         }
     }
 
-    /** Anzahl je Sticker (sticker_id → count) eines Managers in der Saison. */
+    /**
+     * Tauschbare Anzahl je Sticker (sticker_id → count) eines Managers in der Saison — Karten aus noch unbezahlten
+     * Euro-Käufen zählen nicht mit (siehe StickerShopEurTrait), damit ein Storno niemand anderen trifft.
+     */
     private function stickerCounts(string $managerId, string $seasonId): array
     {
+        $lk = $this->stickerLockedJoin('p');
         $q = $this->con->prepare(
-            "SELECT p.sticker_id, COUNT(*) FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id
-             WHERE p.manager_id = ? AND s.season_id = ? GROUP BY p.sticker_id"
+            "SELECT p.sticker_id, COUNT(*) FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id {$lk['join']}
+             WHERE p.manager_id = ? AND s.season_id = ? AND NOT {$lk['locked']} GROUP BY p.sticker_id"
         );
         $q->execute([$managerId, $seasonId]);
         return array_map('intval', $q->fetchAll(PDO::FETCH_KEY_PAIR));
@@ -130,9 +134,12 @@ trait StickerTradeTrait
             $iq->execute([$tradeId]);
             $items = $iq->fetchAll(PDO::FETCH_ASSOC);
 
+            // nur tauschbare Karten (nicht aus unbezahlten Euro-Käufen)
+            $lk = $this->stickerLockedJoin('p');
             $pulls = $this->con->prepare(
-                "SELECT id FROM sticker_pull WHERE manager_id = ? AND sticker_id = ?
-                 ORDER BY holo IS NOT NULL, holo = 'gold', created_at DESC FOR UPDATE"
+                "SELECT p.id FROM sticker_pull p {$lk['join']}
+                 WHERE p.manager_id = ? AND p.sticker_id = ? AND NOT {$lk['locked']}
+                 ORDER BY p.holo IS NOT NULL, p.holo = 'gold', p.created_at DESC FOR UPDATE"
             );
             $move = $this->con->prepare("UPDATE sticker_pull SET manager_id = ?, trade_id = ?, created_at = NOW() WHERE id = ?");
             foreach ($items as $it) {

@@ -75,6 +75,9 @@ export class StickerAlbumComponent {
     ? this.album.collectionFrom(this.status.state()?.collection ?? [])
     : this.album.collectionFrom(this.other()?.data?.collection ?? []));
 
+  /** Karten aus noch unbezahlten Euro-Käufen (bis zur Bestätigung nicht tauschbar) — nur eigenes Album */
+  lockedCount = computed(() => this.isOwn() ? (this.status.state()?.collection ?? []).reduce((n, e) => n + (e.locked ?? 0), 0) : 0);
+
   /** Tausch-Dialog mit dem Besitzer des angezeigten fremden Albums */
   tradeOpen = signal(false);
 

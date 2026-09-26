@@ -20,6 +20,9 @@
       </p>
     } @else {
       <p class="hint">Getauscht werden nur Doppelte – das letzte Exemplar bleibt immer im Album. Je Seite höchstens {{ max }}.</p>
+      @if (lockedGive() > 0) {
+        <p class="hint">{{ lockedGive() }} weitere Doppelte stammen aus einem Euro-Kauf und sind tauschbar, sobald die Zahlung bestätigt ist.</p>
+      }
 
       <div class="sides">
         <section class="side">

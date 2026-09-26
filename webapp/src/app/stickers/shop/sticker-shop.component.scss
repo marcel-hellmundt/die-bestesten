@@ -443,6 +443,115 @@ $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
   }
 }
 
+// ── Offene Zahlungen (Euro) ──────────────────────────────────────────────────
+.pay-box {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-3 $space-4;
+  border: 1px solid color-mix(in srgb, #{$color-warning} 40%, transparent);
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, #{$color-warning} 8%, #{$color-surface});
+
+  &__title {
+    margin: 0;
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+.pay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-2;
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    font-size: $font-sm;
+
+    small { font-size: $font-xs; color: $color-text-muted; }
+  }
+}
+
+// Kauf-Code: antippen = kopieren
+.code {
+  padding: 0 4px;
+  border: 1px dashed $color-border;
+  border-radius: $radius-sm;
+  background: $color-surface;
+  color: $color-text;
+  font-family: monospace;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  cursor: pointer;
+}
+
+.pay-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+
+  &__label, &__hint {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__value {
+    padding: $space-1 $space-4;
+    border: 2px dashed $color-text;
+    border-radius: $radius-md;
+    background: $color-surface-alt;
+    color: $color-text;
+    font-family: monospace;
+    font-size: $font-2xl;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+}
+
+// ── Admin: Euro-Käufe ────────────────────────────────────────────────────────
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hide-mobile {
+  @media (max-width: $mobile-breakpoint) { display: none; }
+}
+
+.row-muted td { color: $color-text-muted; }
+
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.status-pill {
+  padding: 1px 8px;
+  border-radius: $radius-full;
+  background: $color-surface-alt;
+  font-size: 11px;
+  font-weight: $font-weight-semibold;
+
+  &--paid { background: color-mix(in srgb, #{$color-success} 15%, transparent); color: $color-success; }
+  &--cancelled { background: color-mix(in srgb, #{$color-danger} 12%, transparent); color: $color-danger; }
+}
+
 // ── So funktioniert's ────────────────────────────────────────────────────────
 .how {
   padding: $space-4;

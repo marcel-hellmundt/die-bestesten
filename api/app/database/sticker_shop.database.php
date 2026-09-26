@@ -40,12 +40,8 @@ trait StickerShopTrait
         $clubName = null;
         if ($offer['club']) {
             if (!$clubId) return ['error' => 422, 'message' => 'Bitte einen Verein wählen'];
-            $cq = $this->con->prepare(
-                "SELECT c.name FROM sticker s JOIN club c ON c.id = s.club_id WHERE s.season_id = ? AND s.club_id = ? LIMIT 1"
-            );
-            $cq->execute([$seasonId, $clubId]);
-            $clubName = $cq->fetchColumn();
-            if ($clubName === false) return ['error' => 422, 'message' => 'Verein ist nicht im Album'];
+            $clubName = $this->stickerShopClubName($seasonId, $clubId);
+            if ($clubName === null) return ['error' => 422, 'message' => 'Verein ist nicht im Album'];
         } else {
             $clubId = null;
         }
@@ -94,6 +90,17 @@ trait StickerShopTrait
         $this->sendStickerShopAdminEmail($managerId, $offer, $clubName, $league['name'], $budgetAfter);
         $this->notifyAdminsOfStickerShop($managerId, $offer, $clubName, $league['name'], $budgetAfter);
         return ['pack_id' => $packId, 'budget' => $budgetAfter];
+    }
+
+    /** Name des Vereins, falls er im Album der Saison vorkommt (Vereins-Pack), sonst null. */
+    private function stickerShopClubName(string $seasonId, string $clubId): ?string
+    {
+        $cq = $this->con->prepare(
+            "SELECT c.name FROM sticker s JOIN club c ON c.id = s.club_id WHERE s.season_id = ? AND s.club_id = ? LIMIT 1"
+        );
+        $cq->execute([$seasonId, $clubId]);
+        $name = $cq->fetchColumn();
+        return $name === false ? null : (string) $name;
     }
 
     private function formatLukaten(float $v): string
@@ -184,15 +191,16 @@ trait StickerShopTrait
         return $this->createConnection($_ENV['DB_HOST'], $league['db_name'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
     }
 
-    /** GET /sticker/shop — Hauptliga + Lukaten-Guthaben dort (aktive Saison). */
+    /** GET /sticker/shop — Hauptliga + Lukaten-Guthaben dort (aktive Saison) + eigene Euro-Käufe. */
     public function getStickerShop(string $managerId): array
     {
         $league   = $this->getStickerShopLeague($managerId);
         $seasonId = $this->getActiveSeasonId();
+        $eur      = $this->getStickerEurState($managerId, $seasonId);
         if (!$league || !$seasonId) {
-            return ['league' => $league ? ['id' => $league['id'], 'name' => $league['name']] : null, 'budget' => null];
+            return ['league' => $league ? ['id' => $league['id'], 'name' => $league['name']] : null, 'budget' => null, 'eur' => $eur];
         }
         $budget = $this->getManagerLukatenBudget($managerId, $seasonId, null, false, $this->stickerShopConnection($league));
-        return ['league' => ['id' => $league['id'], 'name' => $league['name']], 'budget' => $budget];
+        return ['league' => ['id' => $league['id'], 'name' => $league['name']], 'budget' => $budget, 'eur' => $eur];
     }
 }

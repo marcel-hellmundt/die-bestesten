@@ -426,6 +426,7 @@ CREATE TABLE IF NOT EXISTS sticker_pack (
     source_key VARCHAR(120) NOT NULL,  -- z.B. 'daily:2026-09-25', 'milestone:{team_id}:200', 'matchday_best:{team_id}:{matchday_id}', 'shop:{offer_key}:{uuid}'
     league_id  CHAR(36)     NULL,      -- Liga des Ereignisses (Meilenstein/Spieltagsbester) bzw. Hauptliga, aus der ein Shop-Kauf bezahlt wurde
     club_id    CHAR(36)     NULL,      -- Vereins-Pack (Shop): nur Sticker dieses Vereins (Migration: migrate_sticker_shop_pack.sql)
+    eur_purchase_id CHAR(36) NULL,     -- Euro-Kauf (sticker_eur_purchase), aus dem das Pack stammt (Migration: migrate_sticker_shop_eur.sql)
     size       TINYINT UNSIGNED NOT NULL,
     guaranteed_new TINYINT UNSIGNED NULL,  -- so viele Karten garantiert neu (NULL = Regel je source; Shop-Packs je Angebot)
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -452,6 +453,27 @@ CREATE TABLE IF NOT EXISTS sticker_pull (
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     FOREIGN KEY (sticker_id) REFERENCES sticker(id),
     KEY idx_sticker_pull_manager (manager_id, sticker_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: sticker_eur_purchase (Euro-Kauf im Klebrigsten-Shop per PayPal.me — Packs sofort, Admin bestätigt
+-- die Zahlung (paid) oder storniert (cancelled → Packs + Karten gelöscht); solange pending sind Karten daraus
+-- nicht tauschbar). Migration: database/migrate_sticker_shop_eur.sql
+CREATE TABLE IF NOT EXISTS sticker_eur_purchase (
+    id           CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id   CHAR(36)    NOT NULL,
+    season_id    CHAR(36)    NOT NULL,
+    offer_key    VARCHAR(30) NOT NULL,
+    amount_cents INT         NOT NULL,
+    code         VARCHAR(12) NOT NULL,                  -- Kauf-Code für den PayPal-Verwendungszweck, z.B. DK-4F2A
+    status       ENUM('pending', 'paid', 'cancelled') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'pending',
+    created_at   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    handled_at   DATETIME    NULL DEFAULT NULL,
+    handled_by   CHAR(36)    NULL DEFAULT NULL,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    FOREIGN KEY (season_id)  REFERENCES season(id),
+    UNIQUE KEY uk_sticker_eur_purchase_code (code),
+    KEY idx_sticker_eur_purchase_status (status),
+    KEY idx_sticker_eur_purchase_manager (manager_id, season_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: sticker_trade (Tauschangebot unter Managern: from bietet to eigene Doppelte gegen dessen Doppelte)

@@ -25,6 +25,7 @@ export interface StickerCollectionEntry {
   silver: number;
   gold: number;
   first_at: string;
+  locked?: number;   // davon aus noch unbezahlten Euro-Käufen (bis zur Bestätigung nicht tauschbar)
 }
 
 /** Response von GET /sticker/me. */
@@ -49,6 +50,15 @@ export interface StickerCollectors {
     trade_get?: number;   // seine Doppelten, die mir fehlen
     trade_give?: number;  // meine Doppelten, die ihm fehlen
   }[];
+}
+
+/** Response von POST /sticker/shop/buy_eur. */
+export interface EurPurchaseResult {
+  purchase_id: string;
+  code: string;          // Kauf-Code für den PayPal-Verwendungszweck, z.B. DK-4F2A
+  amount_cents: number;
+  paypal_url: string;    // PayPal.me-Link mit vorausgefülltem Betrag
+  packs: number;
 }
 
 export type StickerTradeStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'void';
@@ -149,6 +159,12 @@ export class StickerStatusService {
 
   openPack(packId: string): Observable<OpenedPack> {
     return this.api.post<OpenedPack>(`sticker/pack/${packId}/open`).pipe(tap(() => this.refresh()));
+  }
+
+  /** Euro-Angebot kaufen — Packs liegen sofort im Album, bezahlt wird danach per PayPal.me (Admin bestätigt). */
+  buyShopEur(offerKey: string, clubId: string | null): Observable<EurPurchaseResult> {
+    return this.api.post<EurPurchaseResult>('sticker/shop/buy_eur', { offer_key: offerKey, club_id: clubId })
+      .pipe(tap(() => this.refresh()));
   }
 
   /** Lukaten-Angebot im Shop kaufen — das Pack liegt danach ungeöffnet im Album. */

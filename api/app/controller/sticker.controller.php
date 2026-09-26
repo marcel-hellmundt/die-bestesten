@@ -9,6 +9,9 @@
  *   GET  /sticker/collection/:id     — Sammlung eines anderen Managers (Auth)
  *   GET  /sticker/shop               — Shop: Hauptliga + Lukaten-Guthaben dort (Auth)
  *   POST /sticker/shop/buy           — Lukaten-Angebot kaufen → Pack ungeöffnet ins Album, Mail an Admins (Auth)
+ *   POST /sticker/shop/buy_eur       — Euro-Angebot kaufen → Packs sofort, Zahlung per PayPal.me, Admin bestätigt (Auth)
+ *   GET  /sticker/shop/purchases     — alle Euro-Käufe der Saison (Admin)
+ *   PATCH /sticker/shop/purchases/:id — Euro-Kauf bestätigen/stornieren (Admin)
  *   GET  /sticker/trade              — eigene Tauschangebote (offen ein-/ausgehend + Verlauf) (Auth)
  *   POST /sticker/trade              — Tauschangebot machen (Auth)
  *   PATCH /sticker/trade/:id         — Tauschangebot annehmen/ablehnen (Auth, Empfänger)
@@ -42,6 +45,10 @@ class StickerController extends _BaseController
         if ($this->id === 'shop' && $this->sub === null) {
             return $this->db->getStickerShop($GLOBALS['auth_manager_id']);
         }
+        if ($this->id === 'shop' && $this->sub === 'purchases' && $this->sub_id === null) {
+            if (!$this->isAdmin()) return $this->forbidden();
+            return $this->db->getStickerEurPurchases();
+        }
         if ($this->id === 'collection' && $this->sub !== null) {
             $result = $this->db->getStickerCollectionOf($this->sub);
             if ($result === null) {
@@ -71,6 +78,15 @@ class StickerController extends _BaseController
             $clubId = is_string($b['club_id'] ?? null) ? $b['club_id'] : null;
             return $this->stickerResult($this->db->buyStickerShopOffer($GLOBALS['auth_manager_id'], $b['offer_key'], $clubId));
         }
+        if ($this->id === 'shop' && $this->sub === 'buy_eur') {
+            $b = $this->body();
+            if (!is_string($b['offer_key'] ?? null)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'offer_key erforderlich'];
+            }
+            $clubId = is_string($b['club_id'] ?? null) ? $b['club_id'] : null;
+            return $this->stickerResult($this->db->buyStickerShopEur($GLOBALS['auth_manager_id'], $b['offer_key'], $clubId));
+        }
         if ($this->id === 'trade' && $this->sub === null) {
             $b = $this->body();
             if (!is_string($b['to_manager_id'] ?? null) || !is_array($b['give'] ?? null) || !is_array($b['get'] ?? null)) {
@@ -92,6 +108,15 @@ class StickerController extends _BaseController
 
     protected function patch(): mixed
     {
+        if ($this->id === 'shop' && $this->sub === 'purchases' && $this->sub_id !== null) {
+            if (!$this->isAdmin()) return $this->forbidden();
+            $action = $this->body()['action'] ?? null;
+            if (!in_array($action, ['confirm', 'cancel'], true)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'action (confirm|cancel) erforderlich'];
+            }
+            return $this->stickerResult($this->db->handleStickerEurPurchase($GLOBALS['auth_manager_id'], $this->sub_id, $action));
+        }
         if ($this->id === 'trade' && $this->sub !== null) {
             $action = $this->body()['action'] ?? null;
             if (!in_array($action, ['accept', 'decline'], true)) {

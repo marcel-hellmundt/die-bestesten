@@ -49,6 +49,18 @@ $desktop: $mobile-breakpoint + 1;
   }
 }
 
+// Hinweis: Karten aus unbezahlten Euro-Käufen sind noch nicht tauschbar
+.pay-note {
+  margin: 0;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: color-mix(in srgb, #{$color-warning} 10%, #{$color-surface});
+  color: $color-text;
+  font-size: $font-xs;
+
+  a { color: $color-accent; }
+}
+
 // ── Ungeöffnete Packs ────────────────────────────────────────────────────────
 .packs {
   display: flex;
