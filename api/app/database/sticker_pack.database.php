@@ -102,20 +102,24 @@ trait StickerPackTrait
         $today = (new DateTime('now', new DateTimeZone('Europe/Berlin')))->format('Y-m-d');
         $this->grantStickerPack($managerId, $seasonId, 'daily', "daily:{$today}", null, $this->stickerConfig()['daily_pack_size']);
 
-        $packSql = fn(string $announced) =>
-            "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, $announced AS announced, l.name AS league_name
+        $packSql = fn(string $announced, string $club) =>
+            "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, $announced AS announced, $club AS club_id, l.name AS league_name
              FROM sticker_pack sp LEFT JOIN league l ON l.id = sp.league_id
              WHERE sp.manager_id = ? AND sp.season_id = ? AND sp.opened_at IS NULL
              ORDER BY sp.created_at ASC";
-        try {
-            $pq = $this->con->prepare($packSql('sp.announced_at IS NOT NULL'));
-            $pq->execute([$managerId, $seasonId]);
-        } catch (\Throwable $e) {
-            // Spalte announced_at fehlt noch (Migration nicht eingespielt) → nichts groß ankündigen
-            $pq = $this->con->prepare($packSql('1'));
-            $pq->execute([$managerId, $seasonId]);
+        // Spalten announced_at / club_id fehlen evtl. noch (Migrationen nicht eingespielt) → schrittweise ohne
+        $rows = null;
+        foreach ([['sp.announced_at IS NOT NULL', 'sp.club_id'], ['sp.announced_at IS NOT NULL', 'NULL'], ['1', 'NULL']] as [$announced, $club]) {
+            try {
+                $pq = $this->con->prepare($packSql($announced, $club));
+                $pq->execute([$managerId, $seasonId]);
+                $rows = $pq->fetchAll(PDO::FETCH_ASSOC);
+                break;
+            } catch (\Throwable $e) {
+                continue;
+            }
         }
-        $rows = $pq->fetchAll(PDO::FETCH_ASSOC);
+        $rows ??= [];
 
         // Anlass aus dem source_key: Meilenstein-Schwelle bzw. Spieltag (Nummer per matchday_id nachschlagen)
         $matchdayIds = [];
@@ -139,6 +143,8 @@ trait StickerPackTrait
                 'milestone_points' => $p['source'] === 'milestone' ? (int) ($parts[2] ?? 0) : null,
                 'matchday_number'  => $p['source'] === 'matchday_best' && isset($mdNumbers[$parts[2] ?? ''])
                     ? (int) $mdNumbers[$parts[2]] : null,
+                'shop_offer'       => $p['source'] === 'shop' ? ($parts[1] ?? null) : null,
+                'club_id'          => $p['club_id'],
             ];
         }, $rows);
 
@@ -408,16 +414,27 @@ trait StickerPackTrait
      */
     public function openStickerPack(string $managerId, string $packId): array
     {
-        $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at FROM sticker_pack WHERE id = ? AND manager_id = ?");
-        $pq->execute([$packId, $managerId]);
+        try {
+            $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, club_id, guaranteed_new FROM sticker_pack WHERE id = ? AND manager_id = ?");
+            $pq->execute([$packId, $managerId]);
+        } catch (\Throwable $e) {
+            // Spalten club_id/guaranteed_new fehlen noch (migrate_sticker_shop_pack.sql) → wie bisher
+            $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, NULL AS club_id, NULL AS guaranteed_new FROM sticker_pack WHERE id = ? AND manager_id = ?");
+            $pq->execute([$packId, $managerId]);
+        }
         $pack = $pq->fetch(PDO::FETCH_ASSOC);
         if (!$pack) return ['error' => 404, 'message' => 'Pack nicht gefunden'];
         if ($pack['opened_at'] !== null) return ['error' => 409, 'message' => 'Pack wurde bereits geöffnet'];
 
-        $sq = $this->con->prepare("SELECT id, sticker_key, price FROM sticker WHERE season_id = ?");
+        $sq = $this->con->prepare("SELECT id, sticker_key, price, club_id FROM sticker WHERE season_id = ?");
         $sq->execute([$pack['season_id']]);
         $stickers = $sq->fetchAll(PDO::FETCH_ASSOC);
         if (!$stickers) return ['error' => 409, 'message' => 'Album der Saison existiert noch nicht'];
+        // Vereins-Pack (Shop): nur Sticker dieses Vereins
+        if ($pack['club_id'] !== null) {
+            $stickers = array_values(array_filter($stickers, fn($s) => $s['club_id'] === $pack['club_id']));
+            if (!$stickers) return ['error' => 409, 'message' => 'Verein ist nicht im Album'];
+        }
 
         $oq = $this->con->prepare(
             "SELECT DISTINCT p.sticker_id FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id
@@ -449,13 +466,17 @@ trait StickerPackTrait
             return $drawAny();
         };
 
-        // Wie viele Karten dieses Packs sind garantiert neu? Meilenstein/Spieltagsbester: alle, sonst die erste
+        // Wie viele Karten dieses Packs sind garantiert neu? Shop-Packs: je Angebot (guaranteed_new),
+        // Meilenstein/Spieltagsbester: alle, sonst die erste
         $allNew = ($pack['source'] === 'milestone' && $cfg['milestone_all_new'])
             || ($pack['source'] === 'matchday_best' && $cfg['matchday_best_all_new']);
+        $guaranteed = $pack['guaranteed_new'] !== null
+            ? (int) $pack['guaranteed_new']
+            : ($allNew ? (int) $pack['size'] : ($cfg['guarantee_new'] ? 1 : 0));
 
         $cards = [];
         for ($k = 0; $k < (int) $pack['size']; $k++) {
-            $i = ($allNew || ($cfg['guarantee_new'] && $k === 0)) ? $drawMissing() : $drawAny();
+            $i = $k < $guaranteed ? $drawMissing() : $drawAny();
             $sticker = $stickers[$i];
             $isNew = !isset($owned[$sticker['id']]);
             $owned[$sticker['id']] = true;

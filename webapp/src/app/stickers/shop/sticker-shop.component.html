@@ -27,7 +27,6 @@
     <span class="page-title__sub">Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro</span>
   </h1>
 
-  <p class="draft-note">Entwurf – Preise und Pack-Inhalte sind vorläufig, kaufen geht noch nicht.</p>
 
   <!-- ── Lukaten ───────────────────────────────────────────────────────── -->
   <section class="shelf">
@@ -96,7 +95,7 @@
   <section class="shelf shelf--disabled" inert aria-disabled="true">
     <div class="shelf__head">
       <div>
-        <h2 class="shelf__title">Mit Euro</h2>
+        <h2 class="shelf__title">Mit Euro <small>bald verfügbar</small></h2>
         <p class="shelf__sub">Sichere Zahlung über PayPal · jedes Pack wie das Tages-Pack, 3 Sticker, 1 garantiert neu</p>
       </div>
     </div>
@@ -176,7 +175,7 @@
         </h2>
 
         <!-- Vereins-Pack: Verein wählen — fast komplette Vereine zuerst -->
-        @if (o.clubPick) {
+        @if (o.clubPick && !bought()) {
           <div class="club-pick">
             <span class="club-pick__label">Welcher Verein?</span>
             <div class="club-pick__grid">
@@ -195,26 +194,41 @@
           </div>
         }
 
-        @if (o.currency === 'lukaten') {
+        @if (bought()) {
+          <!-- Kauf erfolgreich -->
+          <p class="confirm__done">
+            <b>Gekauft!</b> Das Pack liegt ungeöffnet in deinem Sammelalbum.<br />
+            <span>Guthaben jetzt: {{ formatLukaten(budget()) }} Lukaten</span>
+          </p>
+          <div class="confirm__actions">
+            <a class="btn btn-primary" routerLink="/klebrigsten/sammelalbum">Zum Sammelalbum</a>
+            <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Weiter einkaufen</button>
+          </div>
+        } @else if (o.currency === 'lukaten') {
           <dl class="confirm__calc">
             <dt>Guthaben ({{ league()?.name }})</dt><dd>{{ formatLukaten(budget()) }}</dd>
             <dt>Preis</dt><dd>− {{ o.price }}</dd>
             <dt class="confirm__total">Danach</dt><dd class="confirm__total">{{ formatLukaten(budgetAfter()) }} Lukaten</dd>
           </dl>
+          @if (buyError()) { <span class="confirm__error">{{ buyError() }}</span> }
+          <div class="confirm__actions">
+            <button type="button" class="btn btn-primary" [disabled]="!canBuy()" (click)="buy()">
+              {{ buying() ? 'Wird gekauft…' : 'Eintauschen' }}
+            </button>
+            <button type="button" class="btn btn-ghost" [disabled]="buying()" (click)="closeConfirm()">Abbrechen</button>
+          </div>
+          @if (o.clubPick && !pickedClubId()) { <span class="confirm__hint">Bitte zuerst einen Verein wählen</span> }
         } @else {
           <dl class="confirm__calc">
             <dt>{{ o.packs > 1 ? o.packs + ' Packs · ' + stickerCount(o) + ' Sticker' : o.packSize + ' Sticker' }}</dt>
             <dd class="confirm__total">{{ formatEur(o.price) }}</dd>
           </dl>
+          <div class="confirm__actions">
+            <button type="button" class="btn btn-primary" disabled>Weiter zu PayPal</button>
+            <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Abbrechen</button>
+          </div>
+          <span class="confirm__hint">Euro-Käufe sind bald verfügbar</span>
         }
-
-        <div class="confirm__actions">
-          <button type="button" class="btn btn-primary" disabled title="Kauf ist noch nicht freigeschaltet">
-            {{ o.currency === 'lukaten' ? 'Eintauschen' : 'Weiter zu PayPal' }}
-          </button>
-          <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Abbrechen</button>
-        </div>
-        <span class="confirm__hint">Kauf ist noch nicht freigeschaltet</span>
       </div>
     </div>
   }

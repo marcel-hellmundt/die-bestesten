@@ -422,10 +422,12 @@ CREATE TABLE IF NOT EXISTS sticker_pack (
     id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id CHAR(36)     NOT NULL,
     season_id  CHAR(36)     NOT NULL,
-    source     ENUM('daily', 'milestone', 'matchday_best', 'admin') CHARACTER SET utf8mb4 NOT NULL,
-    source_key VARCHAR(120) NOT NULL,  -- z.B. 'daily:2026-09-25', 'milestone:{team_id}:200', 'matchday_best:{team_id}:{matchday_id}'
-    league_id  CHAR(36)     NULL,      -- Liga des Ereignisses (Meilenstein/Spieltagsbester)
+    source     ENUM('daily', 'milestone', 'matchday_best', 'admin', 'shop') CHARACTER SET utf8mb4 NOT NULL,
+    source_key VARCHAR(120) NOT NULL,  -- z.B. 'daily:2026-09-25', 'milestone:{team_id}:200', 'matchday_best:{team_id}:{matchday_id}', 'shop:{offer_key}:{uuid}'
+    league_id  CHAR(36)     NULL,      -- Liga des Ereignisses (Meilenstein/Spieltagsbester) bzw. Hauptliga, aus der ein Shop-Kauf bezahlt wurde
+    club_id    CHAR(36)     NULL,      -- Vereins-Pack (Shop): nur Sticker dieses Vereins (Migration: migrate_sticker_shop_pack.sql)
     size       TINYINT UNSIGNED NOT NULL,
+    guaranteed_new TINYINT UNSIGNED NULL,  -- so viele Karten garantiert neu (NULL = Regel je source; Shop-Packs je Angebot)
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     announced_at DATETIME   NULL,      -- NULL = noch nicht groß angekündigt (Migration: migrate_sticker_pack_announced.sql)
     opened_at  DATETIME     NULL,      -- NULL = ungeöffnet

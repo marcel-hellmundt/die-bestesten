@@ -72,6 +72,14 @@
     --ink: #1d4ed8;
   }
 
+  // Shop (Lukaten): Türkis wie im Shop
+  &--shop {
+    --foil-light: #2dd4bf;
+    --foil: #0f766e;
+    --foil-dark: #042f2e;
+    --ink: #0f766e;
+  }
+
   // Bonus: Graphit
   &--admin {
     --foil-light: #9ca3af;

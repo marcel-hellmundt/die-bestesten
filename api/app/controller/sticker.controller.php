@@ -8,6 +8,7 @@
  *   GET  /sticker/collectors         — alle Manager mit Album + Fortschritt (Sammler-Rangliste, Auth)
  *   GET  /sticker/collection/:id     — Sammlung eines anderen Managers (Auth)
  *   GET  /sticker/shop               — Shop: Hauptliga + Lukaten-Guthaben dort (Auth)
+ *   POST /sticker/shop/buy           — Lukaten-Angebot kaufen → Pack ungeöffnet ins Album, Mail an Admins (Auth)
  *   GET  /sticker/trade              — eigene Tauschangebote (offen ein-/ausgehend + Verlauf) (Auth)
  *   POST /sticker/trade              — Tauschangebot machen (Auth)
  *   PATCH /sticker/trade/:id         — Tauschangebot annehmen/ablehnen (Auth, Empfänger)
@@ -60,6 +61,15 @@ class StickerController extends _BaseController
             // bisherige Meilensteine + Spieltagssiege der Saison nachträglich belohnen (idempotent)
             $packs = $sync['season_id'] ? $this->db->backfillStickerPacks($sync['season_id']) : ['milestone' => 0, 'matchday_best' => 0];
             return ['status' => true] + $sync + ['packs' => $packs];
+        }
+        if ($this->id === 'shop' && $this->sub === 'buy') {
+            $b = $this->body();
+            if (!is_string($b['offer_key'] ?? null)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'offer_key erforderlich'];
+            }
+            $clubId = is_string($b['club_id'] ?? null) ? $b['club_id'] : null;
+            return $this->stickerResult($this->db->buyStickerShopOffer($GLOBALS['auth_manager_id'], $b['offer_key'], $clubId));
         }
         if ($this->id === 'trade' && $this->sub === null) {
             $b = $this->body();

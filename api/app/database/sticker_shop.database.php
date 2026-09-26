@@ -8,6 +8,132 @@
  */
 trait StickerShopTrait
 {
+    /**
+     * Lukaten-Angebote — maßgeblich sind die Preise hier (nicht die im Frontend, shop.model.ts muss passen).
+     * guaranteed_new = so viele Karten garantiert neu; club = Vereins-Pack (Verein wird beim Kauf gewählt).
+     */
+    protected function stickerShopOffers(): array
+    {
+        return [
+            'l-small' => ['name' => 'Kleines Pack', 'price' => 15, 'size' => 3, 'guaranteed_new' => 1, 'club' => false],
+            'l-big'   => ['name' => 'Großes Pack',  'price' => 25, 'size' => 6, 'guaranteed_new' => 2, 'club' => false],
+            'l-club'  => ['name' => 'Vereins-Pack', 'price' => 40, 'size' => 5, 'guaranteed_new' => 5, 'club' => true],
+        ];
+    }
+
+    /**
+     * POST /sticker/shop/buy — Lukaten-Angebot kaufen: bezahlt aus der Hauptliga (sticker_shop_purchase in deren
+     * Liga-DB → mindert das Lukaten-Budget dort), Pack landet ungeöffnet im Album (sticker_pack source 'shop').
+     * Named Lock je Manager+Liga gegen doppeltes Ausgeben bei parallelen Käufen. Mail an alle Admins.
+     * Rückgabe ['error' => HTTP-Code, 'message'] oder ['pack_id', 'budget'].
+     */
+    public function buyStickerShopOffer(string $managerId, string $offerKey, ?string $clubId): array
+    {
+        $offer = $this->stickerShopOffers()[$offerKey] ?? null;
+        if (!$offer) return ['error' => 422, 'message' => 'Unbekanntes Angebot'];
+
+        $league   = $this->getStickerShopLeague($managerId);
+        $seasonId = $this->getActiveSeasonId();
+        if (!$league) return ['error' => 409, 'message' => 'Du spielst in keiner Liga mit Sticker-Album'];
+        if ($seasonId === null || !$this->stickerAlbumReady($seasonId)) return ['error' => 409, 'message' => 'Album der Saison existiert noch nicht'];
+
+        $clubName = null;
+        if ($offer['club']) {
+            if (!$clubId) return ['error' => 422, 'message' => 'Bitte einen Verein wählen'];
+            $cq = $this->con->prepare(
+                "SELECT c.name FROM sticker s JOIN club c ON c.id = s.club_id WHERE s.season_id = ? AND s.club_id = ? LIMIT 1"
+            );
+            $cq->execute([$seasonId, $clubId]);
+            $clubName = $cq->fetchColumn();
+            if ($clubName === false) return ['error' => 422, 'message' => 'Verein ist nicht im Album'];
+        } else {
+            $clubId = null;
+        }
+
+        $db   = $this->stickerShopConnection($league);
+        $lock = "lukaten:{$league['id']}:{$managerId}";
+        $db->prepare("SELECT GET_LOCK(?, 5)")->execute([$lock]);
+        try {
+            try {
+                $budget = $this->getManagerLukatenBudget($managerId, $seasonId, null, false, $db);
+            } catch (\Throwable $e) {
+                return ['error' => 409, 'message' => 'Shop ist in deiner Liga noch nicht eingerichtet'];
+            }
+            if ($budget + 1e-9 < $offer['price']) {
+                return ['error' => 422, 'message' => 'Nicht genug Lukaten (' . $this->formatLukaten($budget) . ' von ' . $offer['price'] . ')'];
+            }
+
+            $purchaseId = $db->query("SELECT UUID()")->fetchColumn();
+            try {
+                $db->prepare(
+                    "INSERT INTO sticker_shop_purchase (id, manager_id, season_id, offer_key, price) VALUES (?, ?, ?, ?, ?)"
+                )->execute([$purchaseId, $managerId, $seasonId, $offerKey, $offer['price']]);
+            } catch (\Throwable $e) {
+                return ['error' => 409, 'message' => 'Shop ist in deiner Liga noch nicht eingerichtet'];
+            }
+
+            // Pack anlegen (globale DB) — schlägt das fehl, wird der Kauf zurückgenommen (zwei DBs, keine gemeinsame Transaktion)
+            try {
+                $packId = $this->con->query("SELECT UUID()")->fetchColumn();
+                $this->con->prepare(
+                    "INSERT INTO sticker_pack (id, manager_id, season_id, source, source_key, league_id, club_id, size, guaranteed_new)
+                     VALUES (?, ?, ?, 'shop', ?, ?, ?, ?, ?)"
+                )->execute([$packId, $managerId, $seasonId, "shop:{$offerKey}:{$purchaseId}", $league['id'], $clubId, $offer['size'], $offer['guaranteed_new']]);
+                $db->prepare("UPDATE sticker_shop_purchase SET pack_id = ? WHERE id = ?")->execute([$packId, $purchaseId]);
+            } catch (\Throwable $e) {
+                $db->prepare("DELETE FROM sticker_shop_purchase WHERE id = ?")->execute([$purchaseId]);
+                error_log('buyStickerShopOffer: ' . $e->getMessage());
+                return ['error' => 409, 'message' => 'Shop-Packs sind noch nicht eingerichtet'];
+            }
+            $budgetAfter = $budget - $offer['price'];
+        } finally {
+            $db->prepare("SELECT RELEASE_LOCK(?)")->execute([$lock]);
+        }
+
+        $this->sendStickerShopAdminEmail($managerId, $offer, $clubName, $league['name'], $budgetAfter);
+        return ['pack_id' => $packId, 'budget' => $budgetAfter];
+    }
+
+    private function formatLukaten(float $v): string
+    {
+        return rtrim(rtrim(number_format($v, 2, ',', '.'), '0'), ',');
+    }
+
+    /** Mail an alle Admins (mit E-Mail) bei jedem Shop-Kauf. */
+    private function sendStickerShopAdminEmail(string $managerId, array $offer, ?string $clubName, string $leagueName, float $budgetAfter): void
+    {
+        try {
+            $adminEmails = $this->con->query(
+                "SELECT m.email FROM manager m
+                 JOIN manager_role mr ON mr.manager_id = m.id
+                 WHERE mr.role = 'admin' AND m.email IS NOT NULL AND m.status = 'active'"
+            )->fetchAll(PDO::FETCH_COLUMN);
+            if (empty($adminEmails)) return;
+
+            $n = $this->con->prepare("SELECT manager_name FROM manager WHERE id = ?");
+            $n->execute([$managerId]);
+            $managerName = (string) $n->fetchColumn();
+            $what = $offer['name'] . ($clubName ? ' (' . $clubName . ')' : '');
+
+            $subject = "Shop-Kauf: $managerName – {$offer['name']} — die bestesten";
+            $body    = "<!DOCTYPE html><html lang=\"de\"><head><meta charset=\"UTF-8\"></head>"
+                . "<body style=\"font-family:sans-serif;color:#1e293b;background:#f8fafc;padding:24px;max-width:600px;margin:0 auto;\">"
+                . "<h2 style=\"margin:0 0 12px;\">Neuer Kauf im Klebrigsten-Shop</h2>"
+                . "<p><strong>" . htmlspecialchars($managerName) . "</strong> hat <strong>" . htmlspecialchars($what) . "</strong> "
+                . "für <strong>{$offer['price']} Lukaten</strong> gekauft ({$offer['size']} Sticker).</p>"
+                . "<p style=\"color:#64748b;\">Bezahlt aus der Liga " . htmlspecialchars($leagueName)
+                . " · Guthaben danach: " . $this->formatLukaten($budgetAfter) . " Lukaten</p>"
+                . "</body></html>";
+            $headers = "From: noreply@die-bestesten.de\r\nContent-Type: text/html; charset=UTF-8";
+
+            foreach ($adminEmails as $email) {
+                mail($email, $subject, $body, $headers);
+            }
+        } catch (\Throwable $e) {
+            error_log('sendStickerShopAdminEmail failed: ' . $e->getMessage());
+        }
+    }
+
     /** Hauptliga des Managers {id, name, db_name} oder null (in keiner aktiven Liga mit Sticker-Album). */
     public function getStickerShopLeague(string $managerId): ?array
     {

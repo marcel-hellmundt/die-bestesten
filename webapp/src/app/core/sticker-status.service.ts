@@ -3,7 +3,7 @@ import { Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from '../auth/auth.service';
 
-export type StickerPackSource = 'daily' | 'milestone' | 'matchday_best' | 'admin';
+export type StickerPackSource = 'daily' | 'milestone' | 'matchday_best' | 'admin' | 'shop';
 
 export interface StickerPack {
   id: string;
@@ -14,6 +14,8 @@ export interface StickerPack {
   announced: boolean;               // schon groß angekündigt (auf irgendeinem Gerät)
   milestone_points: number | null;  // Meilenstein-Pack: erreichte Punkte-Schwelle
   matchday_number: number | null;   // Spieltagsbester-Pack: Spieltag
+  shop_offer?: string | null;       // Shop-Pack: gekauftes Angebot (offer key, siehe shop.model.ts)
+  club_id?: string | null;          // Vereins-Pack: nur Sticker dieses Vereins
 }
 
 /** Je gezogenem Sticker: key = player_id bzw. '{club_id}-logo' / '{club_id}-stadium'. */
@@ -89,6 +91,7 @@ export const PACK_SOURCE_LABEL: Record<StickerPackSource, string> = {
   milestone: 'Meilenstein-Pack',
   matchday_best: 'Spieltagsbester-Pack',
   admin: 'Bonus-Pack',
+  shop: 'Shop-Pack',
 };
 
 /** Anlass eines Packs in Worten, z.B. "200 Punkte erreicht · Liga" oder "Spieltag 5 · Liga". */
@@ -98,6 +101,7 @@ export function packDetail(p: Pick<StickerPack, 'source' | 'milestone_points' | 
   if (p.source === 'milestone' && p.milestone_points) parts.push(`${p.milestone_points} Saisonpunkte erreicht`);
   if (p.source === 'matchday_best') parts.push(p.matchday_number ? `bestes Team an Spieltag ${p.matchday_number}` : 'bestes Team des Spieltags');
   if (p.source === 'admin') parts.push('vom Admin vergeben');
+  if (p.source === 'shop') parts.push('im Shop gekauft');
   if (p.league_name) parts.push(p.league_name);
   return parts.join(' · ');
 }
@@ -145,6 +149,12 @@ export class StickerStatusService {
 
   openPack(packId: string): Observable<OpenedPack> {
     return this.api.post<OpenedPack>(`sticker/pack/${packId}/open`).pipe(tap(() => this.refresh()));
+  }
+
+  /** Lukaten-Angebot im Shop kaufen — das Pack liegt danach ungeöffnet im Album. */
+  buyShopOffer(offerKey: string, clubId: string | null): Observable<{ pack_id: string; budget: number }> {
+    return this.api.post<{ pack_id: string; budget: number }>('sticker/shop/buy', { offer_key: offerKey, club_id: clubId })
+      .pipe(tap(() => this.refresh()));
   }
 
   // ── Tauschen (danach Sammlung + Badge neu laden) ──

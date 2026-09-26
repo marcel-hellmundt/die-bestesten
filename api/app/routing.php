@@ -1307,7 +1307,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/me',
-                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,announced,milestone_points,matchday_number}], collection:[{key,count,silver,gold,first_at}], ignored_days}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null; announced = bereits groß angekündigt, siehe PATCH /sticker/pack/announced) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready; ignored_days = an wie vielen verschiedenen Tagen angekündigte Packs ungeöffnet weggeklickt wurden, gezählt seit dem zuletzt geöffneten Pack (Desinteresse-Signal: ab 3 bietet die Einblendung "Nicht mehr anzeigen" an); trades_incoming = offene Tauschangebote an mich (Badge der Tauschbörse) — Auth',
+                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,announced,milestone_points,matchday_number,shop_offer,club_id}], collection:[{key,count,silver,gold,first_at}], ignored_days}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null; announced = bereits groß angekündigt, siehe PATCH /sticker/pack/announced) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready; ignored_days = an wie vielen verschiedenen Tagen angekündigte Packs ungeöffnet weggeklickt wurden, gezählt seit dem zuletzt geöffneten Pack (Desinteresse-Signal: ab 3 bietet die Einblendung "Nicht mehr anzeigen" an); trades_incoming = offene Tauschangebote an mich (Badge der Tauschbörse) — Auth',
                     ],
                     [
                         'method' => 'GET',
@@ -1351,6 +1351,12 @@ class Routing
                     ],
                     [
                         'method' => 'POST',
+                        'path' => '/sticker/shop/buy',
+                        'description' => 'Lukaten-Angebot kaufen (Preise serverseitig in StickerShopTrait::stickerShopOffers(): l-small 15 Lukaten/3 Sticker/1 garantiert neu, l-big 25/6/2, l-club 40/5/alle neu nur aus club_id) — bezahlt aus der Hauptliga (sticker_shop_purchase in deren Liga-DB, mindert dort das Lukaten-Budget; Named Lock gegen doppeltes Ausgeben), das Pack landet ungeöffnet im Album (sticker_pack source=shop, league_id = Hauptliga, club_id/guaranteed_new je Angebot) und wird wie jedes neue Pack groß angekündigt; E-Mail an alle Admins mit E-Mail → {status, pack_id, budget (danach)}; 400 ohne offer_key, 409 keine Liga mit Album / Album fehlt / Shop-Tabellen fehlen (Migrationen), 422 unbekanntes Angebot, kein/ungültiger Verein beim Vereins-Pack oder nicht genug Lukaten — Auth',
+                        'body' => ['offer_key' => 'l-small|l-big|l-club', 'club_id' => 'UUID des Vereins (nur l-club)'],
+                    ],
+                    [
+                        'method' => 'POST',
                         'path' => '/sticker/album/sync',
                         'description' => 'Friert das Album der aktiven Saison ein bzw. ergänzt es (Grundlage: /sticker/album_preview): fehlende Spieler (z.B. Foto erst später hochgeladen) und Vereins-Sticker werden hinzugefügt, bestehende nie geändert oder gelöscht — Seltenheit bleibt stabil, gesammelte Karten bleiben gültig; danach werden in allen Ligen mit sticker_enabled die bisher erreichten Punkte-Meilensteine und Spieltagssiege der Saison rückwirkend als Packs vergeben (gleiche source_keys wie die Live-Vergabe → idempotent, nichts doppelt; Tages-Packs nicht nachholbar) → {status, season_id, added, total, packs:{milestone, matchday_best}} (packs = neu vergebene Packs) — Admin',
                     ],
@@ -1363,7 +1369,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/sticker/pack/:id/open',
-                        'description' => 'Eigenes, ungeöffnetes Pack öffnen: Karten werden jetzt serverseitig gewürfelt und gespeichert → {status, pack:{id,source,size}, cards:[{key,holo:"silver"|"gold"|null,is_new}]}; 404 fremdes/unbekanntes Pack, 409 bereits geöffnet (auch bei gleichzeitigem Doppelklick) oder Album der Saison fehlt — Auth',
+                        'description' => 'Eigenes, ungeöffnetes Pack öffnen: Karten werden jetzt serverseitig gewürfelt und gespeichert (garantiert neu: Meilenstein/Spieltagsbester alle, Shop-Packs laut sticker_pack.guaranteed_new, sonst die 1.; Vereins-Pack mit club_id nur aus diesem Verein) → {status, pack:{id,source,size}, cards:[{key,holo:"silver"|"gold"|null,is_new}]}; 404 fremdes/unbekanntes Pack, 409 bereits geöffnet (auch bei gleichzeitigem Doppelklick) oder Album der Saison fehlt — Auth',
                         'path_params' => [':id' => 'UUID des Packs'],
                     ],
                     [

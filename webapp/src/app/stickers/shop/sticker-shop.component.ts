@@ -1,6 +1,6 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { StickerStatusService } from '../../core/sticker-status.service';
 import { ALBUM_SOURCE, StickerAlbumService } from '../album/sticker-album.service';
@@ -22,7 +22,7 @@ interface ClubChoice {
 
 /**
  * Shop (/klebrigsten/shop): Packs gegen Lukaten (Hauptliga) oder Euro (PayPal).
- * Entwurf — der Kauf selbst ist noch nicht angebunden.
+ * Lukaten-Kauf aktiv (POST /sticker/shop/buy); Euro vorerst deaktiviert.
  */
 @Component({
   selector: 'app-sticker-shop',
@@ -42,8 +42,11 @@ export class StickerShopComponent {
   readonly starter = EUR_STARTER;
   readonly stickerCount = stickerCount;
 
-  // undefined = lädt, null = Fehler
-  private shop = toSignal(this.api.get<ShopState>('sticker/shop').pipe(catchError(() => of(null))));
+  // undefined = lädt, null = Fehler — nach einem Kauf neu geladen
+  private reloadTick = signal(0);
+  private shop = toSignal(toObservable(this.reloadTick).pipe(
+    switchMap(() => this.api.get<ShopState>('sticker/shop').pipe(catchError(() => of(null)))),
+  ));
   loading = computed(() => this.shop() === undefined);
   league  = computed(() => this.shop()?.league ?? null);
   budget  = computed(() => this.shop()?.budget ?? null);
@@ -80,11 +83,43 @@ export class StickerShopComponent {
 
   open(o: ShopOffer): void {
     this.pickedClubId.set(null);
+    this.buyError.set(null);
+    this.bought.set(false);
     this.confirming.set(o);
   }
 
   @HostListener('document:keydown.escape')
-  closeConfirm(): void { this.confirming.set(null); }
+  closeConfirm(): void { if (!this.buying()) this.confirming.set(null); }
+
+  // ── Kaufen (nur Lukaten; Euro kommt später) ──
+  buying = signal(false);
+  buyError = signal<string | null>(null);
+  bought = signal(false);
+
+  canBuy = computed(() => {
+    const o = this.confirming();
+    if (!o || o.currency !== 'lukaten' || this.buying() || this.bought()) return false;
+    if (o.clubPick && !this.pickedClubId()) return false;
+    return this.missingLukaten(o) === 0;
+  });
+
+  buy(): void {
+    const o = this.confirming();
+    if (!o || !this.canBuy()) return;
+    this.buying.set(true);
+    this.buyError.set(null);
+    this.status.buyShopOffer(o.key, o.clubPick ? this.pickedClubId() : null).subscribe({
+      next: () => {
+        this.buying.set(false);
+        this.bought.set(true);
+        this.reloadTick.update(n => n + 1);
+      },
+      error: err => {
+        this.buying.set(false);
+        this.buyError.set(err?.error?.message ?? 'Kauf fehlgeschlagen');
+      },
+    });
+  }
 
   /** Guthaben nach dem Kauf (nur Lukaten). */
   budgetAfter = computed(() => {
