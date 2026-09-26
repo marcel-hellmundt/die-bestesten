@@ -5,12 +5,12 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import {
-  OtherCollection, PACK_SOURCE_LABEL, StickerPack, StickerPackSource, StickerStatusService, packDetail,
+  OtherCollection, PACK_SOURCE_LABEL, StickerPack, StickerStatusService, packDetail,
 } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
-import { PackCard, packInfo, packRules } from './pack.model';
+import { PackCard, packInfo } from './pack.model';
 import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 import { seasonTheme } from './season-theme';
@@ -116,29 +116,9 @@ export class StickerAlbumComponent {
     this.openCard.set(c.card);
   }
 
-  // ── Admin: Album einfrieren/ergänzen + Test-Packs ─────────────────────────
+  // ── Admin: Album einfrieren/ergänzen ──────────────────────────────────────
   syncBusy = signal(false);
   syncResult = signal<string | null>(null);
-
-  readonly testSources: { source: StickerPackSource; label: string }[] = [
-    { source: 'daily', label: 'Tages-Pack' },
-    { source: 'milestone', label: 'Meilenstein' },
-    { source: 'matchday_best', label: 'Spieltagssieger' },
-  ];
-
-  /**
-   * Test-Pack zum Ausprobieren von Pack-Optik und Öffnen-Animation: Größe + Garantie wie die echte Pack-Art,
-   * die Sticker werden erst beim Aufreißen und nur im Browser gewürfelt — nichts wird gespeichert.
-   */
-  openTestPack(source: StickerPackSource): void {
-    requestTiltPermission(); // synchron in der Klick-Geste (iOS)
-    this.opener.show({
-      id: null, source, size: packRules(source).size,
-      milestonePoints: source === 'milestone' ? 100 * (1 + Math.floor(Math.random() * 15)) : null,
-      matchdayNumber: source === 'matchday_best' ? 1 + Math.floor(Math.random() * 34) : null,
-      leagueName: source === 'daily' ? null : 'Test-Liga',
-    });
-  }
 
   syncAlbum(): void {
     if (this.syncBusy()) return;

@@ -1,18 +1,11 @@
 <div class="album">
-  <!-- Admin: Album einfrieren/ergänzen + Test-Packs je Art (Optik/Animation ausprobieren, nichts gespeichert) -->
+  <!-- Admin: Album einfrieren/ergänzen -->
   @if (isAdmin && isOwn()) {
     <div class="tools">
       @if (syncResult()) {
         <span class="tools__result">{{ syncResult() }}</span>
       } @else if (status.state() && !status.enabled()) {
         <span class="tools__result">In keiner deiner Ligen aktiv — Packs und Sammlung werden dir nicht angezeigt (Liga-Einstellungen).</span>
-      }
-      <span class="tools__label">Test:</span>
-      @for (t of testSources; track t.source) {
-        <button type="button" class="btn btn-ghost btn-sm" [disabled]="rows().length === 0" (click)="openTestPack(t.source)"
-                title="Pack ausprobieren — wird nicht gespeichert">
-          {{ t.label }}
-        </button>
       }
       <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
         {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}
