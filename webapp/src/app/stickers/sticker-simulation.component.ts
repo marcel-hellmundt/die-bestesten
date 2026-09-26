@@ -1,11 +1,20 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
-import { MIN_PRICE, SimParams, SimProfile, countsAtDay, holoAtDay, simulateSeason, stickerWeights } from './sticker-sim';
+import {
+  MIN_PRICE, ShopPlan, ShopTiming, SimParams, SimProfile, countsAtDay, holoAtDay, shopPlan, simulateSeason, stickerWeights,
+} from './sticker-sim';
 import { StickerCardData, StickerHolo, requestTiltPermission } from './sticker-card/sticker-card.component';
 import { ALBUM_SOURCE, StickerAlbumService } from './album/sticker-album.service';
 import {
   AlbumClub, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS, DEFAULT_TIER_THRESHOLDS, POSITION_LABEL, SharedParams, Sticker,
   TIERS, TIER_LABEL, Tier, TierThresholds, paramsFor, tierRanges,
 } from './album/album.model';
+
+/** Monte-Carlo-Kennzahlen eines Parametersatzes. */
+interface McResult {
+  albumP10: number; albumP50: number; albumP90: number;
+  anyClub: number; avgClubs: number; full: number; packs: number; firstClubDay: number | null;
+  stickers: number; duplicates: number; holoSilver: number; holoGold: number; anyGold: number;
+}
 
 @Component({
   selector: 'app-sticker-simulation',
@@ -100,8 +109,30 @@ export class StickerSimulationComponent {
     return out;
   });
 
+  /** Vereins-Index je Sticker (für Vereins-Packs aus dem Shop) — Vergleich per Inhalt wie bei weights. */
+  clubOf = computed(
+    () => this.stickers().map(s => s.clubIdx),
+    { equal: (a, b) => a.length === b.length && a.every((c, i) => c === b[i]) },
+  );
+
   /** Komplette Saison — wird bei jeder Parameter-/Seed-Änderung neu berechnet, der Tag-Regler scrubbt nur. */
-  packs = computed(() => simulateSeason(this.params(), this.weights(), this.timeline(), this.seed()));
+  packs = computed(() => simulateSeason(this.params(), this.weights(), this.timeline(), this.seed(), this.clubOf()));
+
+  // ── Shop ──────────────────────────────────────────────────────────────────
+  readonly shopTimings: { value: ShopTiming; label: string }[] = [
+    { value: 'start', label: 'Saisonstart' },
+    { value: 'spread', label: 'verteilt' },
+    { value: 'late', label: 'Rückrunde' },
+  ];
+  /** Was mit den eingestellten Lukaten/Euro gekauft wird. */
+  plan = computed(() => shopPlan(this.shared().shopLukaten, this.shared().shopEuro));
+  planLabel(p: ShopPlan): string {
+    if (p.offers.length === 0) return 'keine Käufe';
+    const counts = new Map<string, number>();
+    for (const o of p.offers) counts.set(o.name, (counts.get(o.name) ?? 0) + 1);
+    return [...counts].map(([name, c]) => (c > 1 ? `${c}× ${name}` : name)).join(' · ');
+  }
+  formatEur(v: number): string { return v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }); }
 
   rarestIdx = computed(() => { const w = this.weights(); return w.indexOf(Math.min(...w)); });
   commonestIdx = computed(() => { const w = this.weights(); return w.indexOf(Math.max(...w)); });
@@ -175,7 +206,7 @@ export class StickerSimulationComponent {
     const n = counts.length;
     let unique = 0, total = 0;
     for (const c of counts) { total += c; if (c) unique++; }
-    const bySource = { daily: 0, milestone: 0, best: 0 };
+    const bySource = { daily: 0, milestone: 0, best: 0, shop: 0 };
     for (const p of this.packs()) { if (p.day > d) break; bySource[p.source]++; }
     const complete = this.rows().filter(r => r.stickers.length > 0 && r.stickers.every(s => counts[s.idx] > 0)).length;
     const h = this.holo();
@@ -185,7 +216,7 @@ export class StickerSimulationComponent {
       unique, total, n,
       pct: n ? unique / n : 0,
       duplicates: total - unique,
-      packs: bySource.daily + bySource.milestone + bySource.best,
+      packs: bySource.daily + bySource.milestone + bySource.best + bySource.shop,
       bySource,
       complete,
       holoSilver, holoGold,
@@ -199,11 +230,7 @@ export class StickerSimulationComponent {
 
   // ── Monte-Carlo über viele Saisons (gleiche Parameter, verschiedene Seeds) ─
   readonly mcRuns = 200;
-  monteCarlo = signal<{
-    label: string; albumP10: number; albumP50: number; albumP90: number;
-    anyClub: number; avgClubs: number; full: number; packs: number; firstClubDay: number | null;
-    stickers: number; holoSilver: number; holoGold: number; anyGold: number;
-  }[] | null>(null);
+  monteCarlo = signal<({ label: string } & McResult)[] | null>(null);
   mcBusy = signal(false);
 
   /** Alle Profile mit denselben gemeinsamen Regeln — so werden aktive und inaktive Manager direkt vergleichbar. */
@@ -211,51 +238,80 @@ export class StickerSimulationComponent {
     this.mcBusy.set(true);
     // setTimeout, damit der "läuft…"-Zustand vor der synchronen Rechnung gerendert wird
     setTimeout(() => {
-      const weights = this.weights(), timeline = this.timeline();
-      const n = this.stickers().length;
-      const rows = this.rows();
-      const q = (arr: number[], p: number) => [...arr].sort((a, b) => a - b)[Math.min(arr.length - 1, Math.floor(p * arr.length))];
-      const results = this.profiles().map(profile => {
-        const params = paramsFor(this.shared(), profile);
-        const album: number[] = [], clubs: number[] = [], packsN: number[] = [], firstDays: number[] = [];
-        let full = 0, stickersSum = 0, silverSum = 0, goldSum = 0, anyGold = 0;
-        for (let r = 0; r < this.mcRuns; r++) {
-          const packs = simulateSeason(params, weights, timeline, 1000 + r * 7919);
-          const counts = countsAtDay(packs, n, timeline.days);
-          let unique = 0;
-          for (const c of counts) if (c) unique++;
-          let gold = 0;
-          for (const p of packs) {
-            stickersSum += p.stickers.length;
-            for (const v of p.holo) { if (v === 'silver') silverSum++; else if (v === 'gold') gold++; }
-          }
-          goldSum += gold;
-          if (gold > 0) anyGold++;
-          album.push(n ? unique / n : 0);
-          clubs.push(rows.filter(row => row.stickers.length > 0 && row.stickers.every(s => counts[s.idx] > 0)).length);
-          packsN.push(packs.length);
-          if (unique === n) full++;
-          const first = this.firstCompleteClubDay(packs, n, rows);
-          if (first !== null) firstDays.push(first);
-        }
-        return {
-          label: profile.label,
-          albumP10: q(album, 0.1), albumP50: q(album, 0.5), albumP90: q(album, 0.9),
-          anyClub: clubs.filter(c => c > 0).length / this.mcRuns,
-          avgClubs: clubs.reduce((a, b) => a + b, 0) / this.mcRuns,
-          full: full / this.mcRuns,
-          packs: packsN.reduce((a, b) => a + b, 0) / this.mcRuns,
-          // Median nur, wenn in mind. der Hälfte der Saisons überhaupt ein Verein komplett wurde
-          firstClubDay: firstDays.length >= this.mcRuns / 2 ? q(firstDays, 0.5) : null,
-          stickers: stickersSum / this.mcRuns,
-          holoSilver: silverSum / this.mcRuns,
-          holoGold: goldSum / this.mcRuns,
-          anyGold: anyGold / this.mcRuns,
-        };
-      });
-      this.monteCarlo.set(results);
+      this.monteCarlo.set(this.profiles().map(profile => ({
+        label: profile.label, ...this.mcStats(paramsFor(this.shared(), profile)),
+      })));
       this.mcBusy.set(false);
     });
+  }
+
+  // ── Monte-Carlo: Shop-Szenarien je Profil ─────────────────────────────────
+  /** Was Manager im Shop ausgeben (pro Saison) — Rest der Regeln wie eingestellt, Kaufzeitpunkt wie oben. */
+  readonly shopScenarios = [
+    { key: 'none', label: 'ohne Shop',            lukaten: 0,   euro: 0 },
+    { key: 'luk',  label: '100 Lukaten',          lukaten: 100, euro: 0 },
+    { key: 'e5',   label: '100 Lukaten + 5 €',    lukaten: 100, euro: 5 },
+    { key: 'e10',  label: '100 Lukaten + 10 €',   lukaten: 100, euro: 10 },
+  ];
+  shopMc = signal<{ profile: string; rows: ({ key: string; label: string; plan: ShopPlan } & McResult)[] }[] | null>(null);
+  shopMcBusy = signal(false);
+
+  runShopScenarios(): void {
+    this.shopMcBusy.set(true);
+    setTimeout(() => {
+      this.shopMc.set(this.profiles().map(profile => ({
+        profile: profile.label,
+        rows: this.shopScenarios.map(sc => {
+          const params = { ...paramsFor(this.shared(), profile), shopLukaten: sc.lukaten, shopEuro: sc.euro };
+          return { key: sc.key, label: sc.label, plan: shopPlan(sc.lukaten, sc.euro), ...this.mcStats(params) };
+        }),
+      })));
+      this.shopMcBusy.set(false);
+    });
+  }
+
+  /** Kennzahlen über mcRuns Saisons — gleiche Seeds für alle Parameter (direkt vergleichbar). */
+  private mcStats(params: SimParams): McResult {
+    const weights = this.weights(), timeline = this.timeline(), clubOf = this.clubOf();
+    const n = this.stickers().length;
+    const rows = this.rows();
+    const q = (arr: number[], p: number) => [...arr].sort((a, b) => a - b)[Math.min(arr.length - 1, Math.floor(p * arr.length))];
+    const album: number[] = [], clubs: number[] = [], packsN: number[] = [], firstDays: number[] = [];
+    let full = 0, stickersSum = 0, silverSum = 0, goldSum = 0, anyGold = 0;
+    for (let r = 0; r < this.mcRuns; r++) {
+      const packs = simulateSeason(params, weights, timeline, 1000 + r * 7919, clubOf);
+      const counts = countsAtDay(packs, n, timeline.days);
+      let unique = 0;
+      for (const c of counts) if (c) unique++;
+      let gold = 0;
+      for (const p of packs) {
+        stickersSum += p.stickers.length;
+        for (const v of p.holo) { if (v === 'silver') silverSum++; else if (v === 'gold') gold++; }
+      }
+      goldSum += gold;
+      if (gold > 0) anyGold++;
+      album.push(n ? unique / n : 0);
+      clubs.push(rows.filter(row => row.stickers.length > 0 && row.stickers.every(s => counts[s.idx] > 0)).length);
+      packsN.push(packs.length);
+      if (unique === n) full++;
+      const first = this.firstCompleteClubDay(packs, n, rows);
+      if (first !== null) firstDays.push(first);
+    }
+    const stickers = stickersSum / this.mcRuns;
+    return {
+      albumP10: q(album, 0.1), albumP50: q(album, 0.5), albumP90: q(album, 0.9),
+      anyClub: clubs.filter(c => c > 0).length / this.mcRuns,
+      avgClubs: clubs.reduce((a, b) => a + b, 0) / this.mcRuns,
+      full: full / this.mcRuns,
+      packs: packsN.reduce((a, b) => a + b, 0) / this.mcRuns,
+      // Median nur, wenn in mind. der Hälfte der Saisons überhaupt ein Verein komplett wurde
+      firstClubDay: firstDays.length >= this.mcRuns / 2 ? q(firstDays, 0.5) : null,
+      stickers,
+      duplicates: stickers - album.reduce((a, b) => a + b, 0) / this.mcRuns * n,
+      holoSilver: silverSum / this.mcRuns,
+      holoGold: goldSum / this.mcRuns,
+      anyGold: anyGold / this.mcRuns,
+    };
   }
 
   /** Tag, an dem der erste Verein komplett wurde (null = nie). */

@@ -346,6 +346,30 @@ input[type='range'] {
     font-weight: $font-weight-semibold;
   }
 
+  &__sub {
+    display: block;
+    font-size: $font-xs;
+    font-weight: $font-weight-normal;
+    color: $color-text-muted;
+  }
+
+  // Zwischenüberschrift je Profil in der Shop-Szenarien-Tabelle
+  &__group td {
+    padding-top: $space-3;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $color-text-muted;
+    background: $color-surface-alt;
+  }
+
+  &__plan {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    white-space: normal !important;
+  }
+
   &__table {
     margin-top: $space-3;
 
