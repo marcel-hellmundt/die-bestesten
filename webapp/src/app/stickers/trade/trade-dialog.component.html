@@ -1,0 +1,59 @@
+<div class="backdrop" (click)="close()">
+  <div class="panel" role="dialog" aria-modal="true" [attr.aria-label]="'Tausch mit ' + partnerName()" (click)="$event.stopPropagation()">
+    <div class="panel__head">
+      <h2 class="panel__title">Tauschen mit {{ partnerName() }}</h2>
+      <button type="button" class="panel__close" (click)="close()" aria-label="Schließen">✕</button>
+    </div>
+
+    @if (sent()) {
+      <div class="done">
+        <p><b>Angebot verschickt!</b> {{ partnerName() }} bekommt eine Benachrichtigung.</p>
+        <div class="done__actions">
+          <a class="btn btn-secondary" routerLink="/klebrigsten/tausch" (click)="closed.emit()">Zur Tauschbörse</a>
+          <button type="button" class="btn btn-primary" (click)="closed.emit()">OK</button>
+        </div>
+      </div>
+    } @else if (canGet().length === 0 || canGive().length === 0) {
+      <p class="empty">
+        @if (canGet().length === 0) { {{ partnerName() }} hat gerade keine Doppelten, die dir fehlen. }
+        @else { Du hast gerade keine Doppelten, die {{ partnerName() }} fehlen. }
+      </p>
+    } @else {
+      <p class="hint">Getauscht werden nur Doppelte – das letzte Exemplar bleibt immer im Album. Je Seite höchstens {{ max }}.</p>
+
+      <div class="sides">
+        <section class="side">
+          <h3 class="side__title">Du bekommst <small>{{ get().size }}/{{ max }}</small></h3>
+          <span class="side__sum">{{ summary(get()) }}</span>
+          <div class="side__list">
+            @for (s of canGet(); track s.id) {
+              <button type="button" class="pick" (click)="toggle('get', s)" [attr.aria-pressed]="get().has(s.id)">
+                <app-sticker-chip [sticker]="s" [selected]="get().has(s.id)" />
+              </button>
+            }
+          </div>
+        </section>
+
+        <section class="side">
+          <h3 class="side__title">Du gibst <small>{{ give().size }}/{{ max }}</small></h3>
+          <span class="side__sum">{{ summary(give()) }}</span>
+          <div class="side__list">
+            @for (s of canGive(); track s.id) {
+              <button type="button" class="pick" (click)="toggle('give', s)" [attr.aria-pressed]="give().has(s.id)">
+                <app-sticker-chip [sticker]="s" [selected]="give().has(s.id)" />
+              </button>
+            }
+          </div>
+        </section>
+      </div>
+
+      @if (error()) { <p class="error">{{ error() }}</p> }
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" (click)="close()">Abbrechen</button>
+        <button type="button" class="btn btn-primary" [disabled]="!canSend()" (click)="send()">
+          {{ busy() ? 'Wird verschickt…' : 'Angebot machen' }}
+        </button>
+      </div>
+    }
+  </div>
+</div>

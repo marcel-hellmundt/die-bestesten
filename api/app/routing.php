@@ -577,12 +577,12 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/notification/preferences',
-                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, overlay_achievement, overlay_pack} (je bool); sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack); fehlende Einträge = true (default ON) — Auth',
+                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, sticker_trade, overlay_achievement, overlay_pack} (je bool); sticker_trade = Benachrichtigung bei neuem/beantwortetem Sticker-Tauschangebot; sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack); fehlende Einträge = true (default ON) — Auth',
                     ],
                     [
                         'method' => 'PATCH',
                         'path' => '/notification/preferences',
-                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|overlay_achievement|overlay_pack, enabled: bool}; 422 bei unbekanntem event_type — Auth',
+                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|sticker_trade|overlay_achievement|overlay_pack, enabled: bool}; 422 bei unbekanntem event_type — Auth',
                     ],
                 ],
             ]),
@@ -1307,12 +1307,36 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/me',
-                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,announced,milestone_points,matchday_number}], collection:[{key,count,silver,gold,first_at}], ignored_days}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null; announced = bereits groß angekündigt, siehe PATCH /sticker/pack/announced) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready; ignored_days = an wie vielen verschiedenen Tagen angekündigte Packs ungeöffnet weggeklickt wurden, gezählt seit dem zuletzt geöffneten Pack (Desinteresse-Signal: ab 3 bietet die Einblendung "Nicht mehr anzeigen" an) — Auth',
+                        'description' => 'Eigener Album-Status → {enabled, album_ready, season_id, packs:[{id,source,size,created_at,league_name,announced,milestone_points,matchday_number}], collection:[{key,count,silver,gold,first_at}], ignored_days}; enabled = Manager spielt in mind. einer Liga mit sticker_enabled; vergibt beim Aufruf idempotent das tägliche Pack (source_key daily:YYYY-MM-DD nach deutscher Zeit, "App öffnen" — Frontend ruft das beim App-Start und bei Datumswechsel ab); packs = ungeöffnete Packs der aktiven Saison (milestone_points = erreichte Punkte-Schwelle bei Meilenstein-Packs, matchday_number = Spieltag bei Spieltagsbester-Packs, sonst null; announced = bereits groß angekündigt, siehe PATCH /sticker/pack/announced) (source daily|milestone|matchday_best|admin, league_name bei Meilenstein/Spieltagsbester); collection je gezogenem Sticker (key = player_id bzw. {club_id}-logo / {club_id}-stadium, count inkl. Doppelter, silver/gold = Holo-Anzahlen, first_at = erster Zug); packs/collection leer solange !enabled oder !album_ready; ignored_days = an wie vielen verschiedenen Tagen angekündigte Packs ungeöffnet weggeklickt wurden, gezählt seit dem zuletzt geöffneten Pack (Desinteresse-Signal: ab 3 bietet die Einblendung "Nicht mehr anzeigen" an); trades_incoming = offene Tauschangebote an mich (Badge der Tauschbörse) — Auth',
                     ],
                     [
                         'method' => 'GET',
                         'path' => '/sticker/collectors',
-                        'description' => 'Sammler-Rangliste der aktiven Saison: alle aktiven Manager mit Album (aktiv in mind. einer Liga mit sticker_enabled) → {season_id, total (Sticker im Album), collectors:[{manager_id,manager_name,have (verschiedene Sticker),pulled (alle gezogenen Karten inkl. Doppelter),silver,gold}]}, sortiert nach have absteigend, dann Name; collectors=[] solange das Album nicht eingefroren ist — Auth',
+                        'description' => 'Sammler-Rangliste der aktiven Saison: alle aktiven Manager mit Album (aktiv in mind. einer Liga mit sticker_enabled) → {season_id, total (Sticker im Album), collectors:[{manager_id,manager_name,have (verschiedene Sticker),pulled (alle gezogenen Karten inkl. Doppelter),silver,gold,trade_get,trade_give}]}, sortiert nach have absteigend, dann Name; trade_get = Doppelte dieses Sammlers, die dem eingeloggten Manager fehlen, trade_give = Doppelte des eingeloggten Managers, die diesem Sammler fehlen (beim eigenen Eintrag 0); collectors=[] solange das Album nicht eingefroren ist — Auth',
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/sticker/trade',
+                        'description' => 'Tauschbörse: eigene Tauschangebote der aktiven Saison → {available (Tabellen vorhanden), incoming:[…offen an mich], outgoing:[…offen von mir], history:[…letzte 20 abgeschlossene]} je {id,status (pending|accepted|declined|cancelled|void),direction (incoming|outgoing),partner{manager_id,manager_name},give:[sticker_key] (was ich abgebe),get:[sticker_key] (was ich bekomme),created_at,responded_at}; offene Angebote, bei denen ein Sticker inzwischen kein Doppelter mehr ist, werden dabei auf void (hinfällig) gesetzt — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/sticker/trade',
+                        'description' => 'Tauschangebot machen: eigene Doppelte (give) gegen Doppelte des anderen (get) — nur Doppelte (das letzte Exemplar bleibt immer im Album), je Seite 1–10 Sticker, max. 20 offene eigene Angebote, keine Reservierung → {status, id}; benachrichtigt den Empfänger (Einstellung sticker_trade); 400 fehlende Felder/leere Seite, 404 Empfänger ohne Album, 409 kein Doppelter / zu viele offene / Album fehlt / Tabellen fehlen, 422 unbekannter Sticker, zu viele Sticker oder Tausch mit sich selbst — Auth',
+                        'body' => ['to_manager_id' => 'UUID des Tauschpartners', 'give' => 'Array eigener sticker_keys (Doppelte)', 'get' => 'Array sticker_keys des Partners (seine Doppelten)'],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/sticker/trade/:id',
+                        'description' => 'Empfänger nimmt an (accept: alle Karten wechseln in einer Transaktion den Besitzer — je Sticker wird eine normale Karte vor einer Holo abgegeben, Gold zuletzt; sticker_pull.manager_id = neuer Besitzer, trade_id gesetzt) oder lehnt ab (decline); ist beim Annehmen ein Sticker kein Doppelter mehr → 409 und das Angebot wird void; benachrichtigt den Anbieter; 404 fremd/unbekannt, 409 nicht mehr offen — Auth',
+                        'body' => ['action' => 'accept|decline'],
+                        'path_params' => [':id' => 'UUID des Tauschangebots'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/sticker/trade/:id',
+                        'description' => 'Eigenes offenes Tauschangebot zurückziehen (status cancelled); 404 fremd/unbekannt, 409 nicht mehr offen — Auth',
+                        'path_params' => [':id' => 'UUID des Tauschangebots'],
                     ],
                     [
                         'method' => 'GET',

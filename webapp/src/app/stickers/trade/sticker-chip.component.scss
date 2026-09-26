@@ -1,0 +1,77 @@
+@use '../../../styles/variables' as *;
+
+:host { display: block; min-width: 0; }
+
+// Farbe je Seltenheit wie in der Simulation: Dunkelgrün → Hellgelb → Rot → Lila
+$tier-colors: (common: #15803d, rare: #eab308, epic: #dc2626, legendary: #9333ea);
+
+.chip {
+  --tier: #9ca3af;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: 4px $space-2 4px 4px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  min-width: 0;
+
+  @each $tier, $color in $tier-colors {
+    &--#{$tier} { --tier: #{$color}; }
+  }
+
+  // ausgewählt = komplett gefüllt
+  &--selected {
+    border-color: $color-text;
+    background: $color-text;
+    color: $color-surface;
+
+    .chip__meta { color: color-mix(in srgb, #{$color-surface} 70%, transparent); }
+  }
+
+  // Seltenheit = farbiger Rahmen ums Bild
+  &__img {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--tier);
+    border-radius: $radius-sm;
+    overflow: hidden;
+    background: $color-surface-alt;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+  }
+
+  &__placeholder { opacity: 0.3; }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: $color-text-muted;
+  }
+
+  &__logo { width: 12px; height: 12px; object-fit: contain; }
+
+  &__check {
+    margin-left: auto;
+    color: $color-success;
+    font-weight: $font-weight-bold;
+  }
+}

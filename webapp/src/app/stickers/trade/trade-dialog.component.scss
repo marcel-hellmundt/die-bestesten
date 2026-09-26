@@ -1,0 +1,123 @@
+@use '../../../styles/variables' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: $z-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-4;
+  background: rgba(0, 0, 0, 0.6);
+
+  @media (max-width: $mobile-breakpoint) { padding: 0; align-items: flex-end; }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  width: min(100%, 760px);
+  max-height: calc(100dvh - 2 * #{$space-4});
+  padding: $space-4 $space-5;
+  border-radius: $radius-xl;
+  background: $color-surface;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+
+  @media (max-width: $mobile-breakpoint) {
+    max-height: 92dvh;
+    padding: $space-4;
+    border-radius: $radius-xl $radius-xl 0 0;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-2;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-lg;
+    font-weight: $font-weight-bold;
+  }
+
+  &__close {
+    border: none;
+    background: none;
+    color: $color-text-muted;
+    font-size: $font-lg;
+    cursor: pointer;
+  }
+}
+
+.hint, .empty {
+  margin: 0;
+  font-size: $font-sm;
+  color: $color-text-muted;
+}
+
+.sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-4;
+  min-height: 0;
+  overflow-y: auto;
+
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+
+  &__title {
+    margin: 0;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+
+    small { font-weight: $font-weight-normal; color: $color-text-muted; }
+  }
+
+  &__sum {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.pick {
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.error {
+  margin: 0;
+  font-size: $font-sm;
+  color: $color-danger;
+}
+
+.actions, .done__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $space-2;
+}
+
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  p { margin: 0; }
+}

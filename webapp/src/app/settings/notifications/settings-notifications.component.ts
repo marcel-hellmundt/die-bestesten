@@ -17,6 +17,7 @@ const NOTIFICATION_ROWS: PrefRow[] = [
   { key: 'h2h_draw',           icon: 'shuffle',   name: 'H2H-Auslosung',          desc: 'Bei Auslosung der Gruppenphase, des Viertelfinales oder Halbfinales' },
   { key: 'direct_offer',       icon: 'handshake', name: 'Direktangebote',         desc: 'Wenn jemand ein Angebot für einen deiner Spieler abgibt oder auf dein Angebot antwortet' },
   { key: 'sticker_pack',       icon: 'sticker',   name: 'Sticker-Pack erhalten',  desc: 'Zähler für ungeöffnete Packs oben in der Topbar', sticker: true },
+  { key: 'sticker_trade',      icon: 'handshake', name: 'Sticker-Tausch',         desc: 'Wenn dir jemand einen Tausch anbietet oder auf dein Angebot antwortet', sticker: true },
 ];
 
 const OVERLAY_ROWS: PrefRow[] = [

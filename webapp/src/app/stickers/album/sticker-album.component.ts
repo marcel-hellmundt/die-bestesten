@@ -75,6 +75,9 @@ export class StickerAlbumComponent {
     ? this.album.collectionFrom(this.status.state()?.collection ?? [])
     : this.album.collectionFrom(this.other()?.data?.collection ?? []));
 
+  /** Tausch-Dialog mit dem Besitzer des angezeigten fremden Albums */
+  tradeOpen = signal(false);
+
   /** Zum eigenen Album wechseln — die aktuelle Seite (?seite) bleibt erhalten. */
   viewOwnAlbum(): void {
     this.router.navigate(['/klebrigsten/sammelalbum'], { queryParamsHandling: 'preserve' });
@@ -217,7 +220,7 @@ export class StickerAlbumComponent {
   /** Desktop: mit den Pfeiltasten blättern (nicht bei offenem Dialog / in Eingabefeldern). */
   @HostListener('document:keydown', ['$event'])
   onKey(e: KeyboardEvent): void {
-    if (this.openCard() || this.opener.info() || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (this.openCard() || this.opener.info() || this.tradeOpen() || e.altKey || e.ctrlKey || e.metaKey) return;
     const el = e.target as HTMLElement | null;
     if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
     if (e.key === 'ArrowLeft') { this.prev(); e.preventDefault(); }

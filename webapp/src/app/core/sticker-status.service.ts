@@ -34,13 +34,41 @@ export interface StickerState {
   collection: StickerCollectionEntry[];
   /** an wie vielen Tagen eingeblendete Packs ungeöffnet weggeklickt wurden (seit dem letzten geöffneten) */
   ignored_days?: number;
+  /** offene Tauschangebote an mich */
+  trades_incoming?: number;
 }
 
 /** Response von GET /sticker/collectors (Sammler-Rangliste). */
 export interface StickerCollectors {
   season_id: string | null;
   total: number;
-  collectors: { manager_id: string; manager_name: string; have: number; pulled: number; silver: number; gold: number }[];
+  collectors: {
+    manager_id: string; manager_name: string; have: number; pulled: number; silver: number; gold: number;
+    trade_get?: number;   // seine Doppelten, die mir fehlen
+    trade_give?: number;  // meine Doppelten, die ihm fehlen
+  }[];
+}
+
+export type StickerTradeStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'void';
+
+/** Tauschangebot aus eigener Sicht: give = was ich abgebe, get = was ich bekomme (sticker keys). */
+export interface StickerTrade {
+  id: string;
+  status: StickerTradeStatus;
+  direction: 'incoming' | 'outgoing';
+  partner: { manager_id: string; manager_name: string };
+  give: string[];
+  get: string[];
+  created_at: string;
+  responded_at: string | null;
+}
+
+/** Response von GET /sticker/trade. */
+export interface StickerTrades {
+  available: boolean;
+  incoming: StickerTrade[];
+  outgoing: StickerTrade[];
+  history: StickerTrade[];
 }
 
 /** Response von GET /sticker/collection/:manager_id (fremdes Album, nur ansehen). */
@@ -87,6 +115,7 @@ export class StickerStatusService {
   readonly enabled = computed(() => this.state()?.enabled ?? false);
   readonly packs = computed(() => this.state()?.packs ?? []);
   readonly unopenedCount = computed(() => this.packs().length);
+  readonly tradesIncoming = computed(() => this.state()?.trades_incoming ?? 0);
 
   private started = false;
   private lastDay = '';
@@ -116,6 +145,23 @@ export class StickerStatusService {
 
   openPack(packId: string): Observable<OpenedPack> {
     return this.api.post<OpenedPack>(`sticker/pack/${packId}/open`).pipe(tap(() => this.refresh()));
+  }
+
+  // ── Tauschen (danach Sammlung + Badge neu laden) ──
+  trades(): Observable<StickerTrades> {
+    return this.api.get<StickerTrades>('sticker/trade');
+  }
+
+  offerTrade(toManagerId: string, give: string[], get: string[]): Observable<{ id: string }> {
+    return this.api.post<{ id: string }>('sticker/trade', { to_manager_id: toManagerId, give, get });
+  }
+
+  respondTrade(id: string, action: 'accept' | 'decline'): Observable<unknown> {
+    return this.api.patch(`sticker/trade/${id}`, { action }).pipe(tap(() => this.refresh()));
+  }
+
+  cancelTrade(id: string): Observable<unknown> {
+    return this.api.delete(`sticker/trade/${id}`);
   }
 
   private today(): string {

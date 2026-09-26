@@ -44,6 +44,9 @@
           @else { Album von <b>{{ otherName() ?? '…' }}</b> }
         </span>
         <span class="viewing__actions">
+          @if (otherName() && status.enabled()) {
+            <button type="button" class="btn btn-primary btn-sm" (click)="tradeOpen.set(true)">Tauschen</button>
+          }
           <a class="btn btn-ghost btn-sm" routerLink="/klebrigsten/klebebande">Klebebande</a>
           <button type="button" class="btn btn-ghost btn-sm" (click)="viewOwnAlbum()">Zu meinem Album</button>
         </span>
@@ -163,5 +166,9 @@
 
   @if (openCard(); as card) {
     <app-sticker-card-dialog [data]="card" (closed)="openCard.set(null)" />
+  }
+
+  @if (tradeOpen() && viewId() && otherName()) {
+    <app-trade-dialog [partnerId]="viewId()!" [partnerName]="otherName()!" [theirs]="collection()" (closed)="tradeOpen.set(false)" />
   }
 </div>

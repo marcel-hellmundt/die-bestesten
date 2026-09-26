@@ -26,6 +26,10 @@
               @if (m.manager_id === myId) { <span class="collector__me">(du)</span> }
             </span>
             <span class="collector__holo">
+              <!-- Tausch möglich: er hat Doppelte, die mir fehlen, und braucht welche von mir -->
+              @if (m.trade_get && m.trade_give) {
+                <span class="trade-dot" [title]="m.trade_get + ' Doppelte für dich · braucht ' + m.trade_give + ' von dir'">⇄ {{ m.trade_get }}</span>
+              }
               @if (m.gold > 0) { <span class="holo-dot holo-dot--gold" title="Holo Gold">{{ m.gold }}</span> }
               @if (m.silver > 0) { <span class="holo-dot holo-dot--silver" title="Holo Silber">{{ m.silver }}</span> }
             </span>

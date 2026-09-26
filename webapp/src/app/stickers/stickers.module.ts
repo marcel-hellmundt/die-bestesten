@@ -11,9 +11,13 @@ import { StickerSimulationComponent } from './sticker-simulation.component';
 import { StickerSharedModule } from './sticker-shared.module';
 import { StickerCollectorsComponent } from './collectors/sticker-collectors.component';
 import { StickerShopComponent } from './shop/sticker-shop.component';
+import { StickerChipComponent } from './trade/sticker-chip.component';
+import { TradeDialogComponent } from './trade/trade-dialog.component';
+import { StickerTradesComponent } from './trade/sticker-trades.component';
 
 // "Die Klebrigsten" (Sticker-Album): /klebrigsten/sammelalbum (eigenes Album), /klebrigsten/klebebande
-// (alle Sammler, Klick → deren Album), /klebrigsten/shop (Lukaten → Packs) + /klebrigsten/simulation (Maintainer+)
+// (alle Sammler, Klick → deren Album), /klebrigsten/tausch (Tauschbörse), /klebrigsten/shop (Lukaten/Euro → Packs)
+// + /klebrigsten/simulation (Maintainer+)
 const routes: Routes = [
   {
     path: '', component: StickersComponent,
@@ -23,6 +27,7 @@ const routes: Routes = [
       { path: 'klebebande',  component: StickerCollectorsComponent },
       // Album eines anderen Managers (nur ansehen) — dieselbe Album-Komponente, Manager aus dem Pfad
       { path: 'klebebande/:managerId', component: StickerAlbumComponent },
+      { path: 'tausch',      component: StickerTradesComponent },
       { path: 'shop',        component: StickerShopComponent },
       { path: 'simulation',  component: StickerSimulationComponent, canActivate: [MaintainerGuard] },
     ],
@@ -33,6 +38,7 @@ const routes: Routes = [
   declarations: [
     StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent,
     StickerSimulationComponent, StickerCollectorsComponent, StickerShopComponent,
+    StickerChipComponent, TradeDialogComponent, StickerTradesComponent,
   ],
   imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule, StuckDirective],
 })

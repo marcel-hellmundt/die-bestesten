@@ -444,11 +444,41 @@ CREATE TABLE IF NOT EXISTS sticker_pull (
     sticker_id CHAR(36) NOT NULL,
     slot       TINYINT UNSIGNED NOT NULL,  -- Reihenfolge im Pack
     holo       ENUM('silver', 'gold') CHARACTER SET utf8mb4 NULL,  -- NULL = normale Karte
+    trade_id   CHAR(36) NULL DEFAULT NULL,  -- per Tausch erhalten (sticker_trade) — manager_id ist dann der neue Besitzer
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pack_id)    REFERENCES sticker_pack(id) ON DELETE CASCADE,
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     FOREIGN KEY (sticker_id) REFERENCES sticker(id),
     KEY idx_sticker_pull_manager (manager_id, sticker_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: sticker_trade (Tauschangebot unter Managern: from bietet to eigene Doppelte gegen dessen Doppelte)
+-- Migration: database/migrate_sticker_trade.sql
+CREATE TABLE IF NOT EXISTS sticker_trade (
+    id              CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    season_id       CHAR(36) NOT NULL,
+    from_manager_id CHAR(36) NOT NULL,   -- hat das Angebot gemacht
+    to_manager_id   CHAR(36) NOT NULL,   -- nimmt an / lehnt ab
+    status          ENUM('pending', 'accepted', 'declined', 'cancelled', 'void') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'pending',
+                                          -- void = hinfällig (ein Sticker ist kein Doppelter mehr)
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    responded_at    DATETIME NULL DEFAULT NULL,
+    FOREIGN KEY (season_id)       REFERENCES season(id),
+    FOREIGN KEY (from_manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    FOREIGN KEY (to_manager_id)   REFERENCES manager(id) ON DELETE CASCADE,
+    KEY idx_sticker_trade_to (to_manager_id, status),
+    KEY idx_sticker_trade_from (from_manager_id, status)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: sticker_trade_item (je Sticker eine Zeile; giver_id = wer ihn abgibt)
+CREATE TABLE IF NOT EXISTS sticker_trade_item (
+    id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    trade_id   CHAR(36) NOT NULL,
+    sticker_id CHAR(36) NOT NULL,
+    giver_id   CHAR(36) NOT NULL,
+    FOREIGN KEY (trade_id)   REFERENCES sticker_trade(id) ON DELETE CASCADE,
+    FOREIGN KEY (sticker_id) REFERENCES sticker(id),
+    UNIQUE KEY uk_sticker_trade_item (trade_id, sticker_id, giver_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Achievements (v2)

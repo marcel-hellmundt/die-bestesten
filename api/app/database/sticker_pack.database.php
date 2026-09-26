@@ -142,8 +142,9 @@ trait StickerPackTrait
             ];
         }, $rows);
 
-        $state['collection']   = $this->getStickerCollection($managerId, $seasonId);
-        $state['ignored_days'] = $this->stickerIgnoredDays($managerId);
+        $state['collection']      = $this->getStickerCollection($managerId, $seasonId);
+        $state['ignored_days']    = $this->stickerIgnoredDays($managerId);
+        $state['trades_incoming'] = $this->countIncomingStickerTrades($managerId, $seasonId);
         return $state;
     }
 
@@ -189,8 +190,10 @@ trait StickerPackTrait
     /**
      * Alle Manager mit Album (aktiv in mind. einer Liga mit sticker_enabled) und ihr Fortschritt in der
      * aktiven Saison — für die Sammler-Rangliste; sortiert nach Anzahl verschiedener Sticker.
+     * Mit $viewerId zusätzlich je Sammler die Tauschmöglichkeiten: trade_get = seine Doppelten, die dem
+     * Betrachter fehlen, trade_give = Doppelte des Betrachters, die ihm fehlen.
      */
-    public function getStickerCollectors(): array
+    public function getStickerCollectors(?string $viewerId = null): array
     {
         $seasonId = $this->getActiveSeasonId();
         if ($seasonId === null || !$this->stickerAlbumReady($seasonId)) return ['season_id' => $seasonId, 'total' => 0, 'collectors' => []];
@@ -211,15 +214,33 @@ trait StickerPackTrait
              ORDER BY have DESC, m.manager_name ASC"
         );
         $q->execute([$seasonId]);
-        return [
-            'season_id'  => $seasonId,
-            'total'      => (int) $t->fetchColumn(),
-            'collectors' => array_map(fn($r) => [
-                'manager_id' => $r['id'], 'manager_name' => $r['manager_name'],
-                'have' => (int) $r['have'], 'pulled' => (int) $r['pulled'],
-                'silver' => (int) $r['silver'], 'gold' => (int) $r['gold'],
-            ], $q->fetchAll(PDO::FETCH_ASSOC)),
-        ];
+        $collectors = array_map(fn($r) => [
+            'manager_id' => $r['id'], 'manager_name' => $r['manager_name'],
+            'have' => (int) $r['have'], 'pulled' => (int) $r['pulled'],
+            'silver' => (int) $r['silver'], 'gold' => (int) $r['gold'],
+        ], $q->fetchAll(PDO::FETCH_ASSOC));
+
+        if ($viewerId !== null) {
+            // alle Sammlungen der Saison auf einmal: manager_id → sticker_id → Anzahl
+            $cq = $this->con->prepare(
+                "SELECT p.manager_id, p.sticker_id, COUNT(*) AS cnt FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id
+                 WHERE s.season_id = ? GROUP BY p.manager_id, p.sticker_id"
+            );
+            $cq->execute([$seasonId]);
+            $all = [];
+            foreach ($cq->fetchAll(PDO::FETCH_ASSOC) as $r) $all[$r['manager_id']][$r['sticker_id']] = (int) $r['cnt'];
+            $mine = $all[$viewerId] ?? [];
+            foreach ($collectors as &$c) {
+                $theirs = $all[$c['manager_id']] ?? [];
+                $c['trade_get'] = $c['trade_give'] = 0;
+                if ($c['manager_id'] === $viewerId) continue;
+                foreach ($theirs as $sid => $n) if ($n >= 2 && !isset($mine[$sid])) $c['trade_get']++;
+                foreach ($mine as $sid => $n) if ($n >= 2 && !isset($theirs[$sid])) $c['trade_give']++;
+            }
+            unset($c);
+        }
+
+        return ['season_id' => $seasonId, 'total' => (int) $t->fetchColumn(), 'collectors' => $collectors];
     }
 
     /** Sammlung eines (anderen) Managers der aktiven Saison — null, wenn er kein Album hat. */

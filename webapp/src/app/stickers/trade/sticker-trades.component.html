@@ -1,0 +1,122 @@
+<!-- Ein Tauschangebot: Partner, was ich gebe / bekomme, Aktionen -->
+<ng-template #tradeTpl let-t>
+  <article class="trade" [class.trade--done]="t.status !== 'pending'">
+    <div class="trade__head">
+      <span class="avatar">
+        @if (photoUrl(t.partner.manager_id); as url) {
+          @if (!photoFailed().has(t.partner.manager_id)) {
+            <img [src]="url" alt="" (error)="onPhotoError(t.partner.manager_id)" />
+          } @else { {{ initials(t.partner.manager_name) }} }
+        } @else { {{ initials(t.partner.manager_name) }} }
+      </span>
+      <span class="trade__who">
+        <b>{{ t.partner.manager_name }}</b>
+        <small>{{ (t.responded_at ?? t.created_at).replace(' ', 'T') | date:'dd.MM., HH:mm' }}</small>
+      </span>
+      @if (t.status !== 'pending') {
+        <span class="badge badge--{{ t.status }}">{{ statusLabel[t.status] }}</span>
+      }
+    </div>
+
+    <div class="trade__sides">
+      <div class="trade__side">
+        <span class="trade__label">Du bekommst</span>
+        @for (s of stickersOf(t.get); track s.id) { <app-sticker-chip [sticker]="s" /> }
+      </div>
+      <span class="trade__arrow" aria-hidden="true">⇄</span>
+      <div class="trade__side">
+        <span class="trade__label">Du gibst</span>
+        @for (s of stickersOf(t.give); track s.id) { <app-sticker-chip [sticker]="s" /> }
+      </div>
+    </div>
+
+    @if (t.status === 'pending') {
+      <div class="trade__actions">
+        @if (t.direction === 'incoming') {
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === t.id" (click)="respond(t, 'decline')">Ablehnen</button>
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="busyId() === t.id" (click)="respond(t, 'accept')">Annehmen</button>
+        } @else {
+          <span class="trade__waiting">Wartet auf {{ t.partner.manager_name }}</span>
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="busyId() === t.id" (click)="cancel(t)">Zurückziehen</button>
+        }
+      </div>
+    }
+  </article>
+</ng-template>
+
+<div class="trades">
+  <h1 class="page-title">
+    Tauschbörse
+    <span class="page-title__sub">Doppelte gegen Sticker tauschen, die dir fehlen</span>
+  </h1>
+
+  @if (message()) { <p class="message">{{ message() }}</p> }
+
+  @if (loading()) {
+    <p class="state-msg">Wird geladen…</p>
+  } @else if (!trades()?.available) {
+    <p class="state-msg">Tauschen ist noch nicht eingerichtet.</p>
+  } @else {
+    @let tr = trades()!;
+
+    <section class="block">
+      <h2 class="block__title">An dich <small>{{ tr.incoming.length }}</small></h2>
+      @for (t of tr.incoming; track t.id) {
+        <ng-container *ngTemplateOutlet="tradeTpl; context: { $implicit: t }" />
+      } @empty {
+        <p class="block__empty">Gerade keine Angebote an dich.</p>
+      }
+    </section>
+
+    <!-- Tauschpartner: beide haben etwas füreinander -->
+    <section class="block">
+      <h2 class="block__title">Tauschpartner</h2>
+      @if (partners().length === 0) {
+        <p class="block__empty">Gerade passt niemand – sammle weiter Doppelte!</p>
+      } @else {
+        <ul class="partners">
+          @for (p of partners(); track p.manager_id) {
+            <li class="partner">
+              <span class="avatar">
+                @if (photoUrl(p.manager_id); as url) {
+                  @if (!photoFailed().has(p.manager_id)) {
+                    <img [src]="url" alt="" (error)="onPhotoError(p.manager_id)" />
+                  } @else { {{ initials(p.manager_name) }} }
+                } @else { {{ initials(p.manager_name) }} }
+              </span>
+              <span class="partner__text">
+                <b>{{ p.manager_name }}</b>
+                <small>hat {{ p.trade_get }} für dich · braucht {{ p.trade_give }} von dir</small>
+              </span>
+              <a class="btn btn-ghost btn-sm hide-mobile" [routerLink]="['/klebrigsten/klebebande', p.manager_id]">Album</a>
+              <button type="button" class="btn btn-secondary btn-sm" [disabled]="openingId() === p.manager_id"
+                      (click)="startTrade(p.manager_id, p.manager_name)">Tauschen</button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (tr.outgoing.length) {
+      <section class="block">
+        <h2 class="block__title">Von dir <small>{{ tr.outgoing.length }}</small></h2>
+        @for (t of tr.outgoing; track t.id) {
+          <ng-container *ngTemplateOutlet="tradeTpl; context: { $implicit: t }" />
+        }
+      </section>
+    }
+
+    @if (tr.history.length) {
+      <section class="block">
+        <h2 class="block__title">Verlauf</h2>
+        @for (t of tr.history; track t.id) {
+          <ng-container *ngTemplateOutlet="tradeTpl; context: { $implicit: t }" />
+        }
+      </section>
+    }
+  }
+
+  @if (dialog(); as d) {
+    <app-trade-dialog [partnerId]="d.id" [partnerName]="d.name" [theirs]="d.collection" (closed)="closeDialog()" />
+  }
+</div>
