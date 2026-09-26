@@ -24,7 +24,7 @@ trait StickerShopTrait
     /**
      * POST /sticker/shop/buy — Lukaten-Angebot kaufen: bezahlt aus der Hauptliga (sticker_shop_purchase in deren
      * Liga-DB → mindert das Lukaten-Budget dort), Pack landet ungeöffnet im Album (sticker_pack source 'shop').
-     * Named Lock je Manager+Liga gegen doppeltes Ausgeben bei parallelen Käufen. Mail an alle Admins.
+     * Named Lock je Manager+Liga gegen doppeltes Ausgeben bei parallelen Käufen. Mail + In-App-Benachrichtigung an alle Admins.
      * Rückgabe ['error' => HTTP-Code, 'message'] oder ['pack_id', 'budget'].
      */
     public function buyStickerShopOffer(string $managerId, string $offerKey, ?string $clubId): array
@@ -91,12 +91,32 @@ trait StickerShopTrait
         }
 
         $this->sendStickerShopAdminEmail($managerId, $offer, $clubName, $league['name'], $budgetAfter);
+        $this->notifyAdminsOfStickerShop($managerId, $offer, $clubName, $league['name'], $budgetAfter);
         return ['pack_id' => $packId, 'budget' => $budgetAfter];
     }
 
     private function formatLukaten(float $v): string
     {
         return rtrim(rtrim(number_format($v, 2, ',', '.'), '0'), ',');
+    }
+
+    /** In-App-Benachrichtigung an alle Admins bei jedem Shop-Kauf (analog zur Mail), Absender = Käufer. */
+    private function notifyAdminsOfStickerShop(string $managerId, array $offer, ?string $clubName, string $leagueName, float $budgetAfter): void
+    {
+        try {
+            $n = $this->con->prepare("SELECT manager_name FROM manager WHERE id = ?");
+            $n->execute([$managerId]);
+            $managerName = (string) $n->fetchColumn();
+            $what    = $offer['name'] . ($clubName ? " ($clubName)" : '');
+            $title   = "Shop-Kauf: $managerName – $what";
+            $message = "{$offer['price']} Lukaten · {$offer['size']} Sticker · bezahlt aus $leagueName · Guthaben danach: "
+                . $this->formatLukaten($budgetAfter) . ' Lukaten';
+            foreach ($this->getAdminManagerIds() as $adminId) {
+                $this->createNotification($adminId, $title, $message, $managerId);
+            }
+        } catch (\Throwable $e) {
+            error_log('notifyAdminsOfStickerShop failed: ' . $e->getMessage());
+        }
     }
 
     /** Mail an alle Admins (mit E-Mail) bei jedem Shop-Kauf. */
