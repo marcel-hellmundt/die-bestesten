@@ -1,0 +1,106 @@
+<div class="shop">
+  <div class="shop__head">
+    <h1 class="page-title">
+      Shop
+      <span class="page-title__sub">Tausche deine Lukaten gegen Sticker-Packs</span>
+    </h1>
+
+    <!-- Guthaben -->
+    <div class="wallet">
+      <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
+      <span class="wallet__text">
+        <span class="wallet__label">Dein Guthaben</span>
+        <span class="wallet__value">
+          @if (loadingBudget()) { … }
+          @else if (budget() === null) { – }
+          @else { {{ formatLukaten(budget()) }} <small>Lukaten</small> }
+        </span>
+      </span>
+      <a class="wallet__link" routerLink="/liga/h2h/bestico">Mehr verdienen im Bestico ›</a>
+    </div>
+  </div>
+
+  <p class="draft-note">Entwurf – Preise und Pack-Inhalte sind Platzhalter, kaufen geht noch nicht.</p>
+
+  <!-- Angebote -->
+  <div class="offers">
+    @for (o of offers; track o.key) {
+      @let miss = missing(o);
+      <article class="offer" [class.offer--highlight]="o.highlight">
+        @if (o.highlight) { <span class="offer__ribbon">{{ o.highlight }}</span> }
+
+        <div class="offer__stage">
+          <div class="mini-pack mini-pack--{{ o.foil }}" aria-hidden="true">
+            <span class="mini-pack__body">
+              <span class="mini-pack__brand">Die Klebrigsten</span>
+              <span class="mini-pack__headline">{{ o.name }}</span>
+              <span class="mini-pack__count">{{ o.size }} Sticker</span>
+            </span>
+            <span class="mini-pack__top"></span>
+          </div>
+        </div>
+
+        <div class="offer__info">
+          <h2 class="offer__name">{{ o.name }}</h2>
+          <ul class="offer__perks">
+            <li>{{ o.size }} Sticker</li>
+            <li>{{ guaranteeLabel(o) }}</li>
+            <li>Holo-Chance wie in jedem Pack</li>
+          </ul>
+
+          <div class="offer__buy">
+            <span class="price">
+              <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
+              <b>{{ o.price }}</b> Lukaten
+            </span>
+            <button type="button" class="btn btn-primary btn-sm" [disabled]="miss > 0 || loadingBudget()" (click)="confirming.set(o)">
+              Eintauschen
+            </button>
+          </div>
+          @if (!loadingBudget() && miss > 0) {
+            <span class="offer__missing">Dir fehlen noch {{ miss }} Lukaten</span>
+          }
+        </div>
+      </article>
+    }
+  </div>
+
+  <!-- So funktioniert's -->
+  <section class="how">
+    <h2 class="how__title">So funktioniert's</h2>
+    <ol class="how__steps">
+      <li><b>Lukaten gewinnen</b><span>Setze im Bestico auf H2H-Duelle – richtige Tipps füllen dein Guthaben.</span></li>
+      <li><b>Pack eintauschen</b><span>Wähle ein Pack, die Lukaten werden sofort abgezogen.</span></li>
+      <li><b>Aufreißen</b><span>Das Pack liegt danach ungeöffnet in deinem Sammelalbum.</span></li>
+    </ol>
+  </section>
+
+  <!-- Kauf bestätigen -->
+  @if (confirming(); as o) {
+    <div class="confirm" (click)="closeConfirm()">
+      <div class="confirm__panel" role="dialog" aria-modal="true" [attr.aria-label]="o.name + ' eintauschen'" (click)="$event.stopPropagation()">
+        <div class="mini-pack mini-pack--{{ o.foil }} mini-pack--float" aria-hidden="true">
+          <span class="mini-pack__body">
+            <span class="mini-pack__brand">Die Klebrigsten</span>
+            <span class="mini-pack__headline">{{ o.name }}</span>
+            <span class="mini-pack__count">{{ o.size }} Sticker</span>
+          </span>
+          <span class="mini-pack__top"></span>
+        </div>
+
+        <h2 class="confirm__title">{{ o.name }} eintauschen?</h2>
+        <dl class="confirm__calc">
+          <dt>Guthaben</dt><dd>{{ formatLukaten(budget()) }}</dd>
+          <dt>Preis</dt><dd>− {{ o.price }}</dd>
+          <dt class="confirm__total">Danach</dt><dd class="confirm__total">{{ formatLukaten(budgetAfter()) }} Lukaten</dd>
+        </dl>
+
+        <div class="confirm__actions">
+          <button type="button" class="btn btn-primary" disabled title="Kauf ist noch nicht freigeschaltet">Eintauschen</button>
+          <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Abbrechen</button>
+        </div>
+        <span class="confirm__hint">Kauf ist noch nicht freigeschaltet</span>
+      </div>
+    </div>
+  }
+</div>
