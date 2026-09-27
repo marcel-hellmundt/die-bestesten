@@ -5,6 +5,9 @@
 //   820ms+ Karten schieben sich (verdeckt) nacheinander heraus · 1450ms Pack fällt weg · 1750ms Karten drehen sich um
 // Folienfarbe je Pack-Art (CSS-Variablen auf .pack, siehe .pack--{source})
 
+// TEST: Schrift auf allen Packs weiß (ignoriert die dunkle Schrift der hellen Folien) — false = wieder je Folie
+$pack-text-always-white: true;
+
 .backdrop {
   position: fixed;
   inset: 0;
@@ -87,6 +90,9 @@
   &--big     { --foil-light: #f9ab9b; --foil: #f26d53; --foil-dark: #a3301b; --ink: #b83a22; }
   &--club    { --foil-light: #fee79a; --foil: #fcc732; --foil-dark: #b38a0e; --ink: #7a5a00; --text: #3d2c00; }
   &--special { --foil-light: #b99be6; --foil: #8854d0; --foil-dark: #4a2682; --ink: #6c3bb3; }
+
+  // TEST (siehe $pack-text-always-white oben): [class] erhöht die Spezifität über die .pack--{art}-Regeln
+  @if $pack-text-always-white { &[class] { --text: #fff; } }
 
   // Bonus: Graphit
   &--admin {

@@ -2,7 +2,8 @@
 
 $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
 
-$side-col: 1280px;   // ab hier rechte Spalte (Guthaben + Admin-Übersicht) neben dem Shop, darunter unter dem Shop
+$pack-text-always-white: true; // TEST: Schrift auf den Mini-Packs immer weiß — false = dunkle Schrift auf hellen Folien
+$side-col: 1280px;  // ab hier rechte Spalte (Guthaben + Admin-Übersicht) neben dem Shop, darunter unter dem Shop
 $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den Angeboten
 
 .shop {
@@ -47,8 +48,10 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
     @media (max-width: $mobile-breakpoint) { gap: $space-4; }
   }
 
-  // Titel im Stil der Pack-Aufdrucke ("Normal", "Big")
+  // Titel im Stil der Pack-Aufdrucke ("Normal", "Big"), über beide Spalten
   &__title {
+    grid-column: 1 / -1;
+    margin: 0;
     font-family: $font-display;
     font-size: 40px;
     font-weight: 800;
@@ -242,28 +245,6 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   display: flex;
   flex-direction: column;
   gap: $space-3;
-
-  &__head {
-    display: flex;
-    align-items: center; // Titel mittig zur Guthaben-Box
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: $space-3;
-  }
-
-  &__title {
-    margin: 0;
-    font-size: $font-lg;
-    font-weight: $font-weight-bold;
-
-    small { margin-left: 6px; font-size: $font-xs; font-weight: $font-weight-normal; color: $color-text-muted; }
-  }
-
-  &__sub {
-    margin: 2px 0 0;
-    font-size: $font-xs;
-    color: $color-text-muted;
-  }
 
   &__hint {
     margin: 0;
@@ -509,6 +490,21 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   }
 }
 
+// Kauf-Buttons: auf den Karten schwarz (App-Standard), aber ohne roten Hover (Rot wirkt wie eine Warnung)
+.offer, .single, .starter {
+  .btn-primary:hover:not(:disabled) { background-color: #374151; border-color: #374151; }
+}
+
+// Endgültiger Kauf im Bestätigungs-Dialog: Grün = "los"
+.btn-buy {
+  background-color: $color-success;
+  border-color: $color-success;
+  color: #fff;
+
+  &:hover:not(:disabled) { background-color: #15803d; border-color: #15803d; }
+  &:active { opacity: 0.9; }
+}
+
 .price {
   font-size: $font-sm;
   color: $color-text-muted;
@@ -629,7 +625,11 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
     club    #fee79a #fcc732 #b38a0e #7a5a00 #3d2c00,  // Gelb (dunkle Schrift)
     special #b99be6 #8854d0 #4a2682 #6c3bb3 #fff,     // Lila
   ) {
-    &--#{$kind} { --foil-light: #{$light}; --foil: #{$foil}; --foil-dark: #{$dark}; --ink: #{$ink}; --text: #{$text}; }
+    // TEST: $pack-text-always-white (oben) = Schrift auf allen Packs weiß
+    &--#{$kind} {
+      --foil-light: #{$light}; --foil: #{$foil}; --foil-dark: #{$dark}; --ink: #{$ink}; --text: #{$text};
+      @if $pack-text-always-white { --text: #fff; }
+    }
   }
 
   .offer:hover &,
@@ -900,7 +900,7 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
     width: min(100%, 380px);
     max-height: calc(100dvh - 2 * #{$space-4});
     overflow-y: auto;
-    padding: $space-6 $space-5 $space-5;
+    padding: $space-10 $space-5 $space-5; // oben mehr Luft: die Packs sind leicht gedreht und ragen sonst an den Rand
     border-radius: $radius-xl;
     background: $color-surface;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);

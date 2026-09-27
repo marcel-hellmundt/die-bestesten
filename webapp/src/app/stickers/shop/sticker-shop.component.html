@@ -46,12 +46,13 @@
 </ng-template>
 
 <div class="shop">
-<div class="shop__main">
-  <h1 class="page-title shop__title">
-    Shop
-    <span class="page-title__sub">Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro</span>
-  </h1>
+<!-- Titel über beiden Spalten — die rechte Spalte beginnt so auf Höhe der obersten Angebote -->
+<h1 class="page-title shop__title">
+  Shop
+  <span class="page-title__sub">Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro</span>
+</h1>
 
+<div class="shop__main">
   <!-- Desktop: "So funktioniert's" links (Schritte untereinander), Angebote rechts -->
   <div class="shop__body">
   <!-- ── So funktioniert's ─────────────────────────────────────────────── -->
@@ -95,12 +96,9 @@
                 <b>{{ o.price }}</b> Lukaten
               </span>
               <button type="button" class="btn btn-primary btn-sm" [disabled]="loading() || !league() || miss > 0" (click)="open(o)">
-                Eintauschen
+                Kaufen
               </button>
             </div>
-            @if (!loading() && league() && miss > 0) {
-              <span class="offer__note">Dir fehlen noch {{ miss }} Lukaten</span>
-            }
           </div>
         </article>
       }
@@ -109,16 +107,6 @@
 
   <!-- ── Euro (PayPal.me) ── ohne Migration farblos/inert ── -->
   <section class="shelf" [class.shelf--disabled]="!loading() && !eurAvailable()" [attr.inert]="!loading() && !eurAvailable() ? '' : null">
-    <div class="shelf__head">
-      <div>
-        <h2 class="shelf__title">Mit Euro @if (!loading() && !eurAvailable()) { <small>bald verfügbar</small> }</h2>
-        <p class="shelf__sub">Bezahlt wird per PayPal · dieselben Packs wie mit Lukaten, als günstige Kombis</p>
-      </div>
-    </div>
-    <p class="shelf__hint">
-      Die Packs bekommst du sofort. Karten daraus kannst du tauschen, sobald deine Zahlung bestätigt ist.
-    </p>
-
     <!-- Eigene, noch nicht bestätigte Käufe: hier bezahlen -->
     @if (eurPending().length) {
       <div class="pay-box">
@@ -181,7 +169,10 @@
               </span>
               <button type="button" class="btn btn-primary btn-sm" [disabled]="eurBlocked()" (click)="open(o)">Kaufen</button>
             </div>
-            @if (savingPct(o) > 0) { <span class="offer__note"><span class="saving">−{{ savingPct(o) }} %</span> gegenüber einzeln</span> }
+            <!-- immer da (ohne Rabatt unsichtbar), damit die Kaufen-Buttons aller Kombis auf gleicher Höhe stehen -->
+            <span class="offer__note" [style.visibility]="savingPct(o) > 0 ? null : 'hidden'" [attr.aria-hidden]="savingPct(o) > 0 ? null : 'true'">
+              <span class="saving">−{{ savingPct(o) }} %</span> gegenüber einzeln
+            </span>
           </div>
         </article>
       }
@@ -329,8 +320,8 @@
             <span>Guthaben jetzt: {{ formatLukaten(budget()) }} Lukaten</span>
           </p>
           <div class="confirm__actions">
-            <a class="btn btn-primary" routerLink="/klebrigsten/sammelalbum">Zum Sammelalbum</a>
             <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Weiter einkaufen</button>
+            <a class="btn btn-primary" routerLink="/klebrigsten/sammelalbum">Zum Sammelalbum</a>
           </div>
         } @else if (o.currency === 'lukaten') {
           <dl class="confirm__calc">
@@ -340,10 +331,11 @@
           </dl>
           @if (buyError()) { <span class="confirm__error">{{ buyError() }}</span> }
           <div class="confirm__actions">
-            <button type="button" class="btn btn-primary" [disabled]="!canBuy()" (click)="buy()">
-              {{ buying() ? 'Wird gekauft…' : 'Eintauschen' }}
-            </button>
+            <!-- links zurück, rechts weiter -->
             <button type="button" class="btn btn-ghost" [disabled]="buying()" (click)="closeConfirm()">Abbrechen</button>
+            <button type="button" class="btn btn-buy" [disabled]="!canBuy()" (click)="buy()">
+              {{ buying() ? 'Wird eingetauscht…' : 'Jetzt eintauschen' }}
+            </button>
           </div>
           @if (hasClub(o) && !pickedClubId()) { <span class="confirm__hint">Bitte zuerst einen Verein wählen</span> }
         } @else {
@@ -356,14 +348,16 @@
           </dl>
           @if (buyError()) { <span class="confirm__error">{{ buyError() }}</span> }
           <div class="confirm__actions">
-            <button type="button" class="btn btn-primary" [disabled]="!canBuy()" (click)="buy()">
-              {{ buying() ? 'Wird angelegt…' : 'Kaufen' }}
-            </button>
+            <!-- links zurück, rechts weiter; Buttonlösung (§312j BGB): der zahlungspflichtige Schritt sagt klar "kaufen" + Preis -->
             <button type="button" class="btn btn-ghost" [disabled]="buying()" (click)="closeConfirm()">Abbrechen</button>
+            <button type="button" class="btn btn-buy" [disabled]="!canBuy()" (click)="buy()">
+              {{ buying() ? 'Wird angelegt…' : 'Jetzt kaufen · ' + formatEur(o.price) }}
+            </button>
           </div>
           <span class="confirm__hint">
             @if (hasClub(o) && !pickedClubId()) { Bitte zuerst einen Verein wählen · }
-            Die Packs gibt's sofort, danach bezahlst du per PayPal.
+            Die Packs bekommst du sofort, danach bezahlst du per PayPal.
+            Karten daraus kannst du tauschen, sobald deine Zahlung bestätigt ist.
           </span>
         }
       </div>
