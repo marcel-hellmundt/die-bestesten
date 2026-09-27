@@ -29,3 +29,77 @@
 
   code { font-size: $font-xs; }
 }
+
+// Umschalter für die Bild-Darstellung — Desktop: bleibt beim Scrollen unter dem Sub-Menü stehen
+.art-controls {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+
+  @media (min-width: $mobile-breakpoint) {
+    position: sticky;
+    top: $subnav-stuck-bottom;
+    z-index: 3;
+  }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-2 $space-4;
+  }
+
+  &__label {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+
+  &__range {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+
+    input { width: 160px; }
+  }
+
+  &__check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: $font-sm;
+    cursor: pointer;
+  }
+
+  &__current {
+    margin: 0;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  padding: 2px 10px;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-surface;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  cursor: pointer;
+
+  &--active {
+    background: $color-text;
+    border-color: $color-text;
+    color: $color-surface;
+  }
+}

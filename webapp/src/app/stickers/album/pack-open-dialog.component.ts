@@ -35,6 +35,11 @@ export class PackOpenDialogComponent {
   inline = input(false);
   /** ab so vielen Einträgen wird die Auswahl klein + scrollbar */
   compactAfter = input(6);
+  /** Testseite: Darstellung der Pack-Bilder überschreiben (Blend-Mode für alle, Deckkraft, Glanz darüber, weicher Rand) */
+  artBlend = input<string | null>(null);
+  artOpacity = input(1);
+  artShine = input(false);
+  artFade = input(false);
   /** "Nicht mehr anzeigen" anbieten (nur in der Einblendung, wenn jemand Packs wiederholt ignoriert) */
   offerOptOut = input(false);
 

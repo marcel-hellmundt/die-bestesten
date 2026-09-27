@@ -11,9 +11,36 @@
   } @else if (rows().length === 0) {
     <p class="gallery__state">Das Album dieser Saison wurde noch nicht erstellt – ohne Album gibt es keine Karten zum Würfeln.</p>
   } @else {
+    <!-- Umschalter: wie die Bilder mit der Folie verschmelzen (für alle Packs, nur zum Ausprobieren) -->
+    <div class="art-controls">
+      <div class="art-controls__row">
+        <span class="art-controls__label">Blend-Mode</span>
+        <div class="chips">
+          @for (m of blendModes; track m.label) {
+            <button type="button" class="chip" [class.chip--active]="artBlend() === m.value" (click)="artBlend.set(m.value)">{{ m.label }}</button>
+          }
+        </div>
+      </div>
+      <div class="art-controls__row">
+        <label class="art-controls__range">
+          <span class="art-controls__label">Deckkraft {{ (artOpacity() * 100).toFixed(0) }} %</span>
+          <input type="range" min="0.3" max="1" step="0.05" [value]="artOpacity()" (input)="artOpacity.set(+$any($event.target).value)" />
+        </label>
+        <label class="art-controls__check">
+          <input type="checkbox" [checked]="artShine()" (change)="artShine.set($any($event.target).checked)" /> Glanz über dem Bild
+        </label>
+        <label class="art-controls__check">
+          <input type="checkbox" [checked]="artFade()" (change)="artFade.set($any($event.target).checked)" /> Weicher Rand
+        </label>
+      </div>
+      <p class="art-controls__current">Aktuell: {{ artSnippet() }}</p>
+    </div>
+
     <div class="gallery__stages">
-      <app-pack-stage title="Event-Packs" [packs]="eventPacks()" />
-      <app-pack-stage title="Shop-Packs" [packs]="shopPacks()" />
+      <app-pack-stage title="Event-Packs" [packs]="eventPacks()"
+                      [artBlend]="artBlend()" [artOpacity]="artOpacity()" [artShine]="artShine()" [artFade]="artFade()" />
+      <app-pack-stage title="Shop-Packs" [packs]="shopPacks()"
+                      [artBlend]="artBlend()" [artOpacity]="artOpacity()" [artShine]="artShine()" [artFade]="artFade()" />
     </div>
   }
 

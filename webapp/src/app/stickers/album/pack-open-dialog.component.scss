@@ -263,9 +263,27 @@
     width: 42%;
     transform: translateX(-50%);
   }
+
+  // weicher Rand: Motiv läuft zu den Rändern hin aus
+  &--fade {
+    mask-image: radial-gradient(closest-side, #000 60%, transparent 100%);
+  }
 }
 
-.pack__body > :not(.pack__art) { position: relative; z-index: 1; }
+.pack__body > :not(.pack__art):not(.pack__shine) { position: relative; z-index: 1; }
+
+// Glanz über dem Motiv (wie auf der Folie) — wirkt, als wäre das Bild auf die Folie gedruckt
+.pack__shine {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.45) 38%, transparent 52%);
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: overlay;
+  animation: sheen 3.2s linear infinite;
+}
 
 // Inline (Admin-Testseite): kein Overlay, dunkle Bühne in der Seite
 .backdrop--inline {
@@ -366,7 +384,8 @@
   // Glanz ebenfalls versetzt (Lasche + Körper desselben Packs bleiben synchron) — 1,37 s passt nicht glatt
   // in die 3,2-s-Periode, dadurch wirken auch viele Packs nebeneinander nicht gleichgetaktet
   .pack__body,
-  .pack__top { animation-delay: calc(var(--d, 0) * -1.37s); }
+  .pack__top,
+  .pack__shine { animation-delay: calc(var(--d, 0) * -1.37s); }
 }
 
 // Verdeckte Karte (Rückseite) — Format wie die Sticker-Karte (5:7)
