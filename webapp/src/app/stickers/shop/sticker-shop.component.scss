@@ -481,15 +481,16 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
 
   @media (max-width: $narrow) { width: 78px; }
 
-  // Lukaten
-  &--violet  { --foil-light: #c084fc; --foil: #7c3aed; --foil-dark: #2e1065; }
+  // Lukaten — Palette Basic / Medium / Premium (Kleines Pack / Großes Pack / Vereins-Pack)
+  &--sage    { --foil-light: #eef5ef; --foil: #d0e1d4; --foil-dark: #8fae98; --ink: #3f6b4f; --text: #1f3a2a; } // Soft Sage
+  &--classic { --foil-light: #8cc3c4; --foil: #4a8b8d; --foil-dark: #1f4546; --ink: #2f6b6d; }                 // Classic Teal
+  &--navy    { --foil-light: #45587f; --foil: #1d2a44; --foil-dark: #0b1120; --ink: #1d2a44; }                 // Deep Navy
   // Euro
   &--fire     { --foil-light: #fb923c; --foil: #dc2626; --foil-dark: #7f1d1d; }                // Feuerrot
   &--leaf     { --foil-light: #86efac; --foil: #16a34a; --foil-dark: #14532d; }                // Blattgrün
   &--sun      { --foil-light: #fef9c3; --foil: #facc15; --foil-dark: #ca8a04; --ink: #854d0e; --text: #422006; } // Sonnengelb (dunkle Schrift)
   &--bordeaux { --foil-light: #be123c; --foil: #7f1d2d; --foil-dark: #2a0510; }                // Bordeauxrot
   &--lilac    { --foil-light: #e9d5ff; --foil: #a855f7; --foil-dark: #4c1d95; }                // Lila
-  // --club: Farben kommen inline aus den Vereinsfarben (clubFoil())
 
   .offer:hover &,
   .starter:hover & { transform: rotate(0deg) translateY(-4px); }

@@ -80,6 +80,18 @@
     --ink: #0f766e;
   }
 
+  // Shop-Packs: Farbe je Angebot wie im Shop (shopOffer → pack--o-{key}), überschreibt das Shop-Türkis
+  // Lukaten: Basic Soft Sage · Medium Classic Teal · Premium Deep Navy
+  &--o-l-small  { --foil-light: #eef5ef; --foil: #d0e1d4; --foil-dark: #8fae98; --ink: #3f6b4f; --text: #1f3a2a; }
+  &--o-l-big    { --foil-light: #8cc3c4; --foil: #4a8b8d; --foil-dark: #1f4546; --ink: #2f6b6d; }
+  &--o-l-club   { --foil-light: #45587f; --foil: #1d2a44; --foil-dark: #0b1120; --ink: #1d2a44; }
+  // Euro: Starter Feuerrot · Handvoll Blattgrün · Stapel Sonnengelb · Kiste Bordeaux · Vereins-Pack Lila
+  &--o-e-starter { --foil-light: #fb923c; --foil: #dc2626; --foil-dark: #7f1d1d; --ink: #dc2626; }
+  &--o-e-handful { --foil-light: #86efac; --foil: #16a34a; --foil-dark: #14532d; --ink: #15803d; }
+  &--o-e-stack   { --foil-light: #fef9c3; --foil: #facc15; --foil-dark: #ca8a04; --ink: #854d0e; --text: #422006; }
+  &--o-e-crate   { --foil-light: #be123c; --foil: #7f1d2d; --foil-dark: #2a0510; --ink: #7f1d2d; }
+  &--o-e-club    { --foil-light: #e9d5ff; --foil: #a855f7; --foil-dark: #4c1d95; --ink: #7e22ce; }
+
   // Bonus: Graphit
   &--admin {
     --foil-light: #9ca3af;
@@ -163,7 +175,7 @@
 
   // Vorderseite: Marke klein, Art, große Überschrift (Anlass), Anzahl, Liga
   &__brand {
-    color: rgba(255, 255, 255, 0.85);
+    color: color-mix(in srgb, var(--text, #fff) 85%, transparent);
     font-family: $font-display;
     font-size: 5.5cqw;
     font-weight: 800;
@@ -174,7 +186,7 @@
 
   &__kind {
     margin-top: 2cqw;
-    color: rgba(255, 255, 255, 0.9);
+    color: color-mix(in srgb, var(--text, #fff) 90%, transparent);
     font-size: 5.5cqw;
     font-weight: $font-weight-semibold;
     text-transform: uppercase;
@@ -183,7 +195,7 @@
 
   &__headline {
     max-width: 90%;
-    color: #fff;
+    color: var(--text, #fff);
     font-family: $font-display;
     font-size: 13cqw;
     font-weight: 800;
@@ -207,7 +219,7 @@
 
   &__league {
     max-width: 85%;
-    color: rgba(255, 255, 255, 0.75);
+    color: color-mix(in srgb, var(--text, #fff) 75%, transparent);
     font-size: 4.8cqw;
     text-align: center;
     white-space: nowrap;

@@ -251,16 +251,6 @@ export class StickerShopComponent {
 
   clubLogo(club: AlbumClub): string { return this.album.clubLogoUrl(club); }
 
-  /** Folienfarben des Vereins-Packs aus den Vereinsfarben (neutral, solange kein Verein gewählt ist). */
-  clubFoil(club: AlbumClub | null): Record<string, string> {
-    const base = club?.primary_color ?? '#4b5563';
-    return {
-      '--foil-light': `color-mix(in srgb, ${base} 55%, white)`,
-      '--foil': base,
-      '--foil-dark': `color-mix(in srgb, ${base} 40%, black)`,
-    };
-  }
-
   formatLukaten(v: number | null | undefined): string {
     if (v == null) return '–';
     return Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');

@@ -2,9 +2,10 @@
 
 /**
  * Folienfarbe des Packs im Shop — bewusst andere Farben als die verdienten Packs (Rot/Gold/Blau/Graphit).
- * Lukaten: teal/violet · Euro: fire/leaf/sun/bordeaux/lilac · club = Vereinsfarben.
+ * Lukaten (Palette Basic/Medium/Premium): sage/classic/navy · Euro: fire/leaf/sun/bordeaux/lilac.
+ * Gleiche Farben wie beim Aufreißen (pack-open-dialog: pack--o-{offer key}).
  */
-export type ShopFoil = 'teal' | 'violet' | 'fire' | 'leaf' | 'sun' | 'bordeaux' | 'lilac' | 'club';
+export type ShopFoil = 'sage' | 'classic' | 'navy' | 'fire' | 'leaf' | 'sun' | 'bordeaux' | 'lilac';
 export type ShopCurrency = 'lukaten' | 'eur';
 
 export interface ShopOffer {
@@ -16,7 +17,7 @@ export interface ShopOffer {
   packSize: number;        // Sticker je Pack
   guaranteedNew: number;   // je Pack garantiert neu
   price: number;           // Lukaten bzw. Euro
-  foil: ShopFoil;          // 'club' = Vereinsfarben des gewählten Vereins
+  foil: ShopFoil;
   clubPick?: boolean;      // Vereins-Pack: nur Sticker eines gewählten Vereins
   once?: boolean;          // nur einmal pro Saison
   highlight?: string;      // Band, z.B. "Beliebt"
@@ -24,9 +25,9 @@ export interface ShopOffer {
 
 // Lukaten: jeder Manager startet pro Saison mit 100 → reicht für 3–6 Packs
 export const LUKATEN_OFFERS: ShopOffer[] = [
-  { key: 'l-small',  currency: 'lukaten', name: 'Kleines Pack', packs: 1, packSize: 3, guaranteedNew: 1, price: 15, foil: 'teal' },
-  { key: 'l-big',    currency: 'lukaten', name: 'Großes Pack',  packs: 1, packSize: 6, guaranteedNew: 2, price: 25, foil: 'violet', highlight: 'Beliebt' },
-  { key: 'l-club',   currency: 'lukaten', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 40, foil: 'club', clubPick: true },
+  { key: 'l-small',  currency: 'lukaten', name: 'Kleines Pack', packs: 1, packSize: 3, guaranteedNew: 1, price: 15, foil: 'sage' },
+  { key: 'l-big',    currency: 'lukaten', name: 'Großes Pack',  packs: 1, packSize: 6, guaranteedNew: 2, price: 25, foil: 'classic', highlight: 'Beliebt' },
+  { key: 'l-club',   currency: 'lukaten', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 40, foil: 'navy', clubPick: true },
 ];
 
 // Euro (PayPal): Packs wie das Tages-Pack (3 Sticker, 1 garantiert neu); nichts unter 1,99 € wegen der PayPal-Gebühr

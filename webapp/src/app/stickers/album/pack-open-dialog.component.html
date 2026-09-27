@@ -27,12 +27,12 @@
           <!-- Stapel: gleiche Packs übereinander, vorne das anklickbare, dahinter angedeutet + "×N" -->
           <div class="pick-stack" [style.--d]="$index">
             @for (b of stackBehind(g.count); track b) {
-              <span class="pack pack--mini pack--behind pack--{{ c.source }}" [style.--b]="b" aria-hidden="true">
+              <span class="pack pack--mini pack--behind pack--{{ c.source }} {{ offerClass(c) }}" [style.--b]="b" aria-hidden="true">
                 <span class="pack__body"></span>
                 <span class="pack__top"></span>
               </span>
             }
-            <button type="button" class="pack pack--mini pack--{{ c.source }}"
+            <button type="button" class="pack pack--mini pack--{{ c.source }} {{ offerClass(c) }}"
                     (click)="pick.emit(g.index)" [attr.aria-label]="f.kind + ' ' + f.headline + ' öffnen' + (g.count > 1 ? ' (' + g.count + ' Stück)' : '')">
               <span class="pack__body">
                 <span class="pack__brand">Die Klebrigsten</span>
@@ -57,7 +57,7 @@
       @let p = pack()!;
       @let f = faceOf(p);
       <!-- Geschlossenes Folien-Pack: Lasche oben (reißt ab), Körper vorne, Karten verdeckt dahinter -->
-      <button type="button" class="pack pack--{{ p.source }}" [class.pack--tearing]="phase() === 'tearing'"
+      <button type="button" class="pack pack--{{ p.source }} {{ offerClass(p) }}" [class.pack--tearing]="phase() === 'tearing'"
               (click)="onTear()" [style.--n]="p.size" aria-label="Pack aufreißen">
         <span class="pack__cards" aria-hidden="true">
           @for (i of backs(); track i) {

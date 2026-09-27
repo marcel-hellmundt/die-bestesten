@@ -43,6 +43,8 @@ export class PackOpenDialogComponent {
   back = output<void>();
 
   readonly faceOf = packFace;
+  /** Shop-Pack: Folienfarbe des gekauften Angebots (pack--o-{key}) */
+  offerClass(p: PackInfo): string { return p.shopOffer ? `pack--o-${p.shopOffer}` : ''; }
 
   /**
    * Auswahl gruppiert: gleiche Packs (gleiche Art + Anlass, z.B. 25 aus einer Kiste) als ein Stapel "×N" —
