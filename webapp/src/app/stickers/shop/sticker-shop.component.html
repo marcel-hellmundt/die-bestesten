@@ -34,14 +34,20 @@
     <span class="page-title__sub">Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro</span>
   </h1>
 
+  <!-- ── So funktioniert's ─────────────────────────────────────────────── -->
+  <section class="how">
+    <h2 class="how__title">So funktioniert's</h2>
+    <ol class="how__steps">
+      <li><b>Bezahlen</b><span>Mit Lukaten aus deiner Hauptliga oder mit Euro über PayPal.</span></li>
+      <li><b>Pack erhalten</b><span>Die Packs liegen sofort ungeöffnet in deinem Sammelalbum.</span></li>
+      <li><b>Aufreißen</b><span>Gleiche Chancen wie bei jedem Pack – inklusive Holo-Karten.</span></li>
+    </ol>
+  </section>
 
   <!-- ── Lukaten ───────────────────────────────────────────────────────── -->
   <section class="shelf">
     <div class="shelf__head">
-      <div>
-        <h2 class="shelf__title">Mit Lukaten</h2>
-        <p class="shelf__sub">Jeder startet pro Saison mit 100 Lukaten – tippen oder kleben?</p>
-      </div>
+      <h2 class="shelf__title">Mit Lukaten</h2>
 
       <div class="wallet">
         <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
@@ -197,16 +203,6 @@
     @if (eurBlocked()) {
       <p class="shelf__hint">Du hast {{ eurPending().length }} offene Zahlungen – bitte erst bezahlen, dann geht's weiter.</p>
     }
-  </section>
-
-  <!-- ── So funktioniert's ─────────────────────────────────────────────── -->
-  <section class="how">
-    <h2 class="how__title">So funktioniert's</h2>
-    <ol class="how__steps">
-      <li><b>Bezahlen</b><span>Mit Lukaten aus deiner Hauptliga oder mit Euro über PayPal.</span></li>
-      <li><b>Pack erhalten</b><span>Die Packs liegen sofort ungeöffnet in deinem Sammelalbum.</span></li>
-      <li><b>Aufreißen</b><span>Gleiche Chancen wie bei jedem Pack – inklusive Holo-Karten.</span></li>
-    </ol>
   </section>
 
 </div>

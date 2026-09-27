@@ -9,6 +9,7 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
   flex-direction: column;
   gap: $space-5;
   max-width: 1040px;
+  margin-inline: auto; // Desktop: mittig statt links (Admins: Shop + Euro-Käufe-Spalte gemeinsam mittig)
   padding: $space-4;
 
   @media (max-width: $mobile-breakpoint) { padding: $space-3 0; gap: $space-4; } // seitlicher Rand kommt von der Shell
