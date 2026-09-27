@@ -3,12 +3,13 @@
 $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
 
 $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter unter dem Shop
+$side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den Angeboten
 
 .shop {
   display: flex;
   flex-direction: column;
   gap: $space-5;
-  max-width: 1040px;
+  max-width: 1280px;
   margin-inline: auto; // Desktop: mittig statt links (Admins: Shop + Euro-Käufe-Spalte gemeinsam mittig)
   padding: $space-4;
 
@@ -16,7 +17,7 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
 
   // Admins: Shop links, Übersicht der Euro-Käufe rechts
   &--admin {
-    max-width: 1440px;
+    max-width: 1640px;
 
     @media (min-width: $admin-wide) {
       display: grid;
@@ -30,6 +31,54 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     flex-direction: column;
     gap: $space-5;
     min-width: 0;
+
+    @media (max-width: $mobile-breakpoint) { gap: $space-4; }
+  }
+
+  // Titel im Stil der Pack-Aufdrucke ("Normal", "Big")
+  &__title {
+    font-family: $font-display;
+    font-size: 40px;
+    font-weight: 800;
+    font-style: italic;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+
+    @media (max-width: $mobile-breakpoint) { font-size: $font-3xl; }
+
+    .page-title__sub {
+      margin-top: $space-2;
+      font-family: inherit;
+      font-style: normal;
+      text-transform: none;
+      letter-spacing: normal;
+      line-height: 1.4;
+    }
+  }
+
+  // Desktop: "So funktioniert's" als schmale Spalte links, Angebote rechts; darunter oben drüber
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+
+    @media (max-width: $mobile-breakpoint) { gap: $space-4; }
+
+    @media (min-width: $side-wide) {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      align-items: start;
+      gap: $space-5;
+    }
+  }
+
+  &__shelves {
+    display: flex;
+    flex-direction: column;
+    gap: $space-5;
+    min-width: 0;
+    container: shelves / inline-size; // Angebots-Raster richtet sich nach der Spaltenbreite
 
     @media (max-width: $mobile-breakpoint) { gap: $space-4; }
   }
@@ -173,7 +222,7 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
 
   &__head {
     display: flex;
-    align-items: flex-end;
+    align-items: center; // Titel mittig zur Guthaben-Box
     justify-content: space-between;
     flex-wrap: wrap;
     gap: $space-3;
@@ -269,11 +318,11 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: $space-4;
 
-  // Lukaten: 4 Pack-Arten nebeneinander, mittelbreit 2×2
+  // Lukaten: 4 Pack-Arten nebeneinander, wenn die Angebots-Spalte breit genug ist, sonst 2×2
   &--kinds {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    @media (max-width: 1100px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @container shelves (min-width: 780px) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   }
 
   @media (max-width: $narrow) {
@@ -751,6 +800,12 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
   border-radius: $radius-lg;
   background: $color-surface;
 
+  // Desktop-Spalte links: läuft beim Scrollen unter dem Sub-Menü mit
+  @media (min-width: $side-wide) {
+    position: sticky;
+    top: calc(#{$subnav-stuck-bottom} + #{$space-3});
+  }
+
   &__title {
     margin: 0 0 $space-3;
     font-size: $font-xs;
@@ -770,6 +825,8 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     counter-reset: step;
 
     @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); gap: $space-3; }
+    // Desktop-Spalte links: Schritte untereinander
+    @media (min-width: $side-wide) { grid-template-columns: minmax(0, 1fr); gap: $space-4; }
 
     li {
       display: grid;

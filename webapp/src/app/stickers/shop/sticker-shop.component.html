@@ -29,11 +29,13 @@
 
 <div class="shop" [class.shop--admin]="isAdmin">
 <div class="shop__main">
-  <h1 class="page-title">
+  <h1 class="page-title shop__title">
     Shop
     <span class="page-title__sub">Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro</span>
   </h1>
 
+  <!-- Desktop: "So funktioniert's" links (Schritte untereinander), Angebote rechts -->
+  <div class="shop__body">
   <!-- ── So funktioniert's ─────────────────────────────────────────────── -->
   <section class="how">
     <h2 class="how__title">So funktioniert's</h2>
@@ -44,6 +46,7 @@
     </ol>
   </section>
 
+  <div class="shop__shelves">
   <!-- ── Lukaten ───────────────────────────────────────────────────────── -->
   <section class="shelf">
     <div class="shelf__head">
@@ -204,6 +207,8 @@
       <p class="shelf__hint">Du hast {{ eurPending().length }} offene Zahlungen – bitte erst bezahlen, dann geht's weiter.</p>
     }
   </section>
+  </div><!-- /shop__shelves -->
+  </div><!-- /shop__body -->
 
 </div>
 
