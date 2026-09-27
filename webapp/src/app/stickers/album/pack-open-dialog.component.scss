@@ -233,6 +233,38 @@
   }
 }
 
+// ── Auswahl: mehrere Packs klein nebeneinander ──────────────────────────────
+.picker-title {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: $font-md;
+  font-weight: $font-weight-semibold;
+  text-align: center;
+}
+
+.picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 22px 18px;
+  max-width: 640px;
+  padding: $space-2 0;
+
+  // Mobile: 2 × 2 statt einer zu langen Reihe
+  @media (max-width: $mobile-breakpoint) { gap: 18px 14px; max-width: 320px; }
+}
+
+.pack--mini {
+  width: min(128px, 38vw);
+  // jedes Pack schwebt versetzt, sieht lebendiger aus als synchron
+  animation-delay: calc(var(--d, 0) * -0.7s);
+  transition: filter $transition-fast;
+
+  &:hover, &:focus-visible {
+    filter: brightness(1.12) drop-shadow(0 6px 16px rgba(255, 214, 140, 0.35));
+  }
+}
+
 // Verdeckte Karte (Rückseite) — Format wie die Sticker-Karte (5:7)
 .back {
   position: absolute;

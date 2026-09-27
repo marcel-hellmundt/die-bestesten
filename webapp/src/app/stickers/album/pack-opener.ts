@@ -30,8 +30,23 @@ export class PackOpener {
   });
 
   private unopened = computed(() => this.status.packs().filter(p => !this.openedIds.has(p.id) && p.id !== this.info()?.id));
-  /** weitere ungeöffnete Packs (Test-Packs: keine) */
-  readonly remaining = computed(() => (this.info()?.id ? this.unopened().length : 0));
+
+  /**
+   * Auswahl-Modus (mehrere neue Packs auf einmal, z.B. Einblendung oder Test): alle stehen klein nebeneinander,
+   * der Nutzer sucht sich aus, welches er zuerst öffnet. choices = noch nicht geöffnete Packs der Auswahl;
+   * info = null, solange die Auswahl angezeigt wird.
+   */
+  readonly choices = signal<PackInfo[]>([]);
+  readonly choosing = signal(false);
+
+  /** weitere ungeöffnete Packs — in der Auswahl nur die der Auswahl, sonst alle eigenen (Test-Packs: keine) */
+  readonly remaining = computed(() => {
+    if (this.choosing()) return this.choices().filter(c => c !== this.info()).length;
+    return this.info()?.id ? this.unopened().length : 0;
+  });
+
+  /** Dialog sichtbar? (einzelnes Pack oder Auswahl) */
+  readonly visible = computed(() => this.info() !== null || (this.choosing() && this.choices().length > 0));
 
   show(info: PackInfo): void {
     this.info.set(info);
@@ -39,7 +54,42 @@ export class PackOpener {
     this.error.set(null);
   }
 
+  /** Mehrere Packs zur Auswahl anbieten — bei nur einem direkt dieses zeigen. */
+  showChoice(infos: PackInfo[]): void {
+    if (infos.length <= 1) {
+      this.choosing.set(false);
+      this.choices.set([]);
+      if (infos[0]) this.show(infos[0]);
+      return;
+    }
+    this.choosing.set(true);
+    this.choices.set(infos);
+    this.info.set(null);
+    this.result.set(null);
+    this.error.set(null);
+  }
+
+  /** Vom (noch geschlossenen) Pack zurück zur Auswahl. */
+  backToChoice(): void {
+    if (!this.choosing() || this.result()) return;
+    this.info.set(null);
+    this.error.set(null);
+  }
+
+  /** Aus der Auswahl ein Pack zum Aufreißen öffnen. */
+  pick(index: number): void {
+    const p = this.choices()[index];
+    if (p) this.show(p);
+  }
+
   showNext(): void {
+    if (this.choosing()) {
+      const rest = this.choices().filter(c => c !== this.info());
+      if (rest.length > 1) { this.info.set(null); this.result.set(null); this.error.set(null); }  // zurück zur Auswahl
+      else if (rest.length === 1) this.show(rest[0]);
+      else this.close();
+      return;
+    }
     const next = this.unopened()[0];
     if (next) this.show(packInfo(next)); else this.close();
   }
@@ -47,6 +97,13 @@ export class PackOpener {
   close(): void {
     this.info.set(null);
     this.result.set(null);
+    this.choosing.set(false);
+    this.choices.set([]);
+  }
+
+  /** geöffnetes Pack aus der Auswahl nehmen */
+  private dropChoice(info: PackInfo): void {
+    if (this.choosing()) this.choices.update(list => list.filter(c => c !== info));
   }
 
   /** Beim Aufreißen: jetzt erst öffnen (die Animation läuft währenddessen). */
@@ -56,6 +113,7 @@ export class PackOpener {
     const before = this.album.collectionFrom(this.status.state()?.collection ?? []).counts;
     if (info.id === null) {
       this.result.set({ test: this.album.randomPackCards(info.size, before, packRules(info.source).allNew), before });
+      this.dropChoice(info);
       return;
     }
     const id = info.id;
@@ -64,6 +122,7 @@ export class PackOpener {
       next: opened => {
         this.busy.set(false);
         this.openedIds.add(id);
+        this.dropChoice(info);
         if (this.info()?.id === id) this.result.set({ opened, before });
       },
       error: err => {

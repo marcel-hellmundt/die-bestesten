@@ -18,7 +18,12 @@ const TEAR_MS = 1750;
 })
 export class PackOpenDialogComponent {
   heading = input('');
-  pack = input.required<PackInfo>();
+  /** null = Auswahl anzeigen (choices) statt eines einzelnen Packs */
+  pack = input<PackInfo | null>(null);
+  /** mehrere neue Packs klein nebeneinander — der Nutzer wählt, welches er zuerst aufreißt */
+  choices = input<PackInfo[]>([]);
+  /** in der Auswahl: "Nächstes Pack wählen" führt zurück zur Auswahl */
+  choosing = input(false);
   /** null, solange das Pack noch nicht geöffnet ist */
   cards = input<PackCard[] | null>(null);
   error = input<string | null>(null);
@@ -34,14 +39,15 @@ export class PackOpenDialogComponent {
   next = output<void>();
   open = output<PackCard>();
   closed = output<void>();
+  pick = output<number>();
+  back = output<void>();
 
-  face = computed(() => packFace(this.pack()));
+  readonly faceOf = packFace;
   /** "3 Sticker" bzw. "5 neue Sticker", wenn die Pack-Art nur garantiert neue Karten enthält */
-  countLabel = computed(() => {
-    const p = this.pack();
+  countLabelOf(p: PackInfo): string {
     return `${p.size} ${packRules(p.source).allNew ? 'neue ' : ''}Sticker`;
-  });
-  backs = computed(() => Array.from({ length: this.pack().size }, (_, i) => i));
+  }
+  backs = computed(() => Array.from({ length: this.pack()?.size ?? 0 }, (_, i) => i));
 
   private torn = signal(false);
   private timerDone = signal(false);

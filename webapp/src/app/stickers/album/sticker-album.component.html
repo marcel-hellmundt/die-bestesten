@@ -7,6 +7,12 @@
       } @else if (status.state() && !status.enabled()) {
         <span class="tools__result">In keiner deiner Ligen aktiv — Packs und Sammlung werden dir nicht angezeigt (Liga-Einstellungen).</span>
       }
+      <!-- Test: mehrere neue Packs wie in der Einblendung (Auswahl) — nur im Browser gewürfelt, nichts gespeichert -->
+      <span class="tools__label">Test:</span>
+      @for (n of [2, 3, 4]; track n) {
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="rows().length === 0" (click)="openTestPacks(n)"
+                title="Mehrere neue Packs simulieren — wird nicht gespeichert">{{ n }} Packs</button>
+      }
       <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
         {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}
       </button>
@@ -158,11 +164,13 @@
     </div>
   }
 
-  @if (opener.info(); as info) {
-    <app-pack-open-dialog [heading]="info.id === null ? 'Test-Pack (nicht gespeichert)' : ''"
-                          [pack]="info" [cards]="opener.cards()" [error]="opener.error()"
+  @if (opener.visible()) {
+    <app-pack-open-dialog [heading]="testing() ? 'Test (nicht gespeichert)' : ''"
+                          [pack]="opener.info()" [choices]="opener.choices()" [choosing]="opener.choosing()"
+                          [cards]="opener.cards()" [error]="opener.error()"
                           [remaining]="opener.remaining()" [busy]="opener.busy()" [covered]="openCard() !== null"
-                          (tear)="opener.tear()" (next)="opener.showNext()" (open)="openPulled($event)" (closed)="opener.close()" />
+                          (pick)="opener.pick($event)" (back)="opener.backToChoice()"
+                          (tear)="opener.tear()" (next)="opener.showNext()" (open)="openPulled($event)" (closed)="closeOpener()" />
   }
 
   @if (openCard(); as card) {

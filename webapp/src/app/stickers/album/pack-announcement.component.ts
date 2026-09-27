@@ -11,7 +11,8 @@ const OPT_OUT_AFTER_IGNORED_DAYS = 3;
 
 /**
  * "Die Klebrigsten" — neu erhaltene Packs (z.B. Tages-Pack beim App-Öffnen, Meilenstein nach dem Spieltag)
- * erscheinen auf jeder Seite sofort groß in der Mitte: aufreißen oder "Später öffnen" (dann bleibt das Pack
+ * erscheinen auf jeder Seite sofort groß in der Mitte — mehrere auf einmal klein nebeneinander zur Auswahl,
+ * welches zuerst aufgerissen wird: aufreißen oder "Später öffnen" (dann bleibt das Pack
  * ungeöffnet und kann unter /klebrigsten/sammelalbum geöffnet werden). Beim Einblenden werden alle neuen
  * Packs serverseitig als angekündigt markiert (announced) — jedes Pack erscheint nur einmal von selbst, auch
  * über mehrere Geräte hinweg. Liegt in der Shell; die Dialog-Logik (inkl. Album-Daten) entsteht erst bei Bedarf.
@@ -20,8 +21,8 @@ const OPT_OUT_AFTER_IGNORED_DAYS = 3;
   selector: 'app-pack-announcement',
   standalone: false,
   template: `
-    @if (active(); as info) {
-      <app-pack-announcement-dialog [first]="info" [offerOptOut]="offerOptOut()" (optOut)="optOut()" (done)="dismiss()" />
+    @if (active(); as packs) {
+      <app-pack-announcement-dialog [packs]="packs" [offerOptOut]="offerOptOut()" (optOut)="optOut()" (done)="dismiss()" />
     }
   `,
 })
@@ -31,7 +32,8 @@ export class PackAnnouncementComponent {
   /** in dieser Sitzung schon geschlossen — bis GET /sticker/me die Markierung zurückliefert */
   private dismissed = signal(new Set<string>());
 
-  readonly active = signal<PackInfo | null>(null);
+  /** gerade eingeblendete neue Packs (bei mehreren: Auswahl) */
+  readonly active = signal<PackInfo[] | null>(null);
   /**
    * "Nicht mehr anzeigen" nur für Manager, die Packs an mind. OPT_OUT_AFTER_IGNORED_DAYS verschiedenen Tagen
    * ungeöffnet weggeklickt haben (seit dem letzten geöffneten Pack) — wer Packs öffnet, sieht den Button nie.
@@ -58,7 +60,7 @@ export class PackAnnouncementComponent {
         const ids = pending.map(p => p.id);
         this.dismissed.set(new Set([...this.dismissed(), ...ids]));
         this.status.markAnnounced(ids);
-        this.active.set(packInfo(pending[0]));
+        this.active.set(pending.map(packInfo));
       });
     });
   }
@@ -81,10 +83,13 @@ export class PackAnnouncementComponent {
   standalone: false,
   providers: [{ provide: ALBUM_SOURCE, useValue: 'sticker/album' }, StickerAlbumService, PackOpener],
   template: `
-    @if (opener.info(); as info) {
-      <app-pack-open-dialog heading="Neues Pack!" [pack]="info" [cards]="opener.cards()" [error]="opener.error()"
+    @if (opener.visible()) {
+      <app-pack-open-dialog [heading]="packs().length > 1 ? 'Neue Packs!' : 'Neues Pack!'" [pack]="opener.info()"
+                            [choices]="opener.choices()" [choosing]="opener.choosing()"
+                            [cards]="opener.cards()" [error]="opener.error()"
                             [remaining]="opener.remaining()" [busy]="opener.busy()" [covered]="openCard() !== null"
                             [offerOptOut]="offerOptOut()" (optOut)="optOut.emit()"
+                            (pick)="opener.pick($event)" (back)="opener.backToChoice()"
                             (tear)="onTear()" (next)="opener.showNext()" (open)="openPulled($event)" (closed)="finish()" />
     }
     @if (openCard(); as card) {
@@ -94,14 +99,14 @@ export class PackAnnouncementComponent {
 })
 export class PackAnnouncementDialogComponent implements OnInit {
   opener = inject(PackOpener);
-  first = input.required<PackInfo>();
+  packs = input.required<PackInfo[]>();
   offerOptOut = input(false);
   optOut = output<void>();
   done = output<void>();
   openCard = signal<StickerCardData | null>(null);
 
   ngOnInit(): void {
-    this.opener.show(this.first());
+    this.opener.showChoice(this.packs());
   }
 
   onTear(): void {

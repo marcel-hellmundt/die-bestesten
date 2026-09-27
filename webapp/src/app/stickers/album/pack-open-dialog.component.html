@@ -15,10 +15,37 @@
       <div class="actions">
         <button class="btn btn-ghost" type="button" (click)="closed.emit()">Schließen</button>
       </div>
+    } @else if (!pack()) {
+      <!-- Auswahl: mehrere neue Packs klein nebeneinander — antippen öffnet es groß zum Aufreißen -->
+      <p class="picker-title">{{ choices().length }} Packs – welches reißt du zuerst auf?</p>
+      <div class="picker">
+        @for (c of choices(); track $index) {
+          @let f = faceOf(c);
+          <button type="button" class="pack pack--mini pack--{{ c.source }}" [style.--d]="$index"
+                  (click)="pick.emit($index)" [attr.aria-label]="f.kind + ' ' + f.headline + ' öffnen'">
+            <span class="pack__body">
+              <span class="pack__brand">Die Klebrigsten</span>
+              <span class="pack__kind">{{ f.kind }}</span>
+              <span class="pack__headline">{{ f.headline }}</span>
+              <span class="pack__count">{{ countLabelOf(c) }}</span>
+              @if (c.leagueName) { <span class="pack__league">{{ c.leagueName }}</span> }
+            </span>
+            <span class="pack__top"></span>
+          </button>
+        }
+      </div>
+      <div class="sealed-actions">
+        <button class="btn btn-ghost btn-sm" type="button" (click)="closed.emit()">Später öffnen</button>
+        @if (offerOptOut()) {
+          <button class="opt-out" type="button" (click)="onOptOut()">Nicht mehr anzeigen</button>
+        }
+      </div>
     } @else if (phase() !== 'revealed') {
+      @let p = pack()!;
+      @let f = faceOf(p);
       <!-- Geschlossenes Folien-Pack: Lasche oben (reißt ab), Körper vorne, Karten verdeckt dahinter -->
-      <button type="button" class="pack pack--{{ pack().source }}" [class.pack--tearing]="phase() === 'tearing'"
-              (click)="onTear()" [style.--n]="pack().size" aria-label="Pack aufreißen">
+      <button type="button" class="pack pack--{{ p.source }}" [class.pack--tearing]="phase() === 'tearing'"
+              (click)="onTear()" [style.--n]="p.size" aria-label="Pack aufreißen">
         <span class="pack__cards" aria-hidden="true">
           @for (i of backs(); track i) {
             <span class="back" [style.--i]="i">
@@ -28,16 +55,19 @@
         </span>
         <span class="pack__body">
           <span class="pack__brand">Die Klebrigsten</span>
-          <span class="pack__kind">{{ face().kind }}</span>
-          <span class="pack__headline">{{ face().headline }}</span>
-          <span class="pack__count">{{ countLabel() }}</span>
-          @if (pack().leagueName) { <span class="pack__league">{{ pack().leagueName }}</span> }
+          <span class="pack__kind">{{ f.kind }}</span>
+          <span class="pack__headline">{{ f.headline }}</span>
+          <span class="pack__count">{{ countLabelOf(p) }}</span>
+          @if (p.leagueName) { <span class="pack__league">{{ p.leagueName }}</span> }
         </span>
         <span class="pack__top"></span>
       </button>
 
       <div class="sealed-actions" [class.sealed-actions--hidden]="phase() === 'tearing'">
         <p class="hint">Tippen zum Aufreißen</p>
+        @if (choosing() && choices().length > 1) {
+          <button class="btn btn-ghost btn-sm" type="button" (click)="back.emit()">Anderes Pack wählen</button>
+        }
         <button class="btn btn-ghost btn-sm" type="button" (click)="closed.emit()">Später öffnen</button>
         @if (offerOptOut()) {
           <button class="opt-out" type="button" (click)="onOptOut()">Nicht mehr anzeigen</button>
@@ -56,7 +86,7 @@
       <div class="actions">
         @if (remaining() > 0) {
           <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="next.emit()">
-            Nächstes Pack ({{ remaining() }})
+            {{ choosing() && remaining() > 1 ? 'Nächstes Pack wählen' : 'Nächstes Pack' }} ({{ remaining() }})
           </button>
         }
         <button class="btn btn-ghost" type="button" (click)="closed.emit()">Fertig</button>
