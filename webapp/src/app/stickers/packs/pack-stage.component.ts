@@ -16,11 +16,6 @@ import { PackOpener } from '../album/pack-opener';
 export class PackStageComponent {
   title = input('');
   packs = input<PackInfo[]>([]);
-  /** Bild-Darstellung aus dem Umschalter der Testseite (an den Pack-Dialog durchgereicht) */
-  artBlend = input<string | null>(null);
-  artOpacity = input(1);
-  artShine = input(false);
-  artFade = input(false);
 
   opener = inject(PackOpener);
   openCard = signal<StickerCardData | null>(null);

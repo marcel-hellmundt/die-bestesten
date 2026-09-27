@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { PACK_ART, PackArt, PackDesign, PackInfo, packRules } from '../album/pack.model';
 import { ALBUM_SOURCE, StickerAlbumService } from '../album/sticker-album.service';
 import { LUKATEN_OFFERS, PACK_KINDS, PACK_KIND_ORDER } from '../shop/shop.model';
@@ -40,32 +40,6 @@ export class PackGalleryComponent {
       shopOffer: LUKATEN_OFFERS.find(o => o.contents[kind])?.key ?? null,
       clubId: PACK_KINDS[kind].club ? clubId : null,
     }));
-  });
-
-  // ── Umschalter: Darstellung der Pack-Bilder ausprobieren (gilt für alle Packs, nichts wird gespeichert) ──
-  readonly blendModes: { value: string | null; label: string }[] = [
-    { value: null, label: 'wie PACK_ART' },
-    { value: 'normal', label: 'normal' },
-    { value: 'luminosity', label: 'luminosity' },
-    { value: 'hard-light', label: 'hard-light' },
-    { value: 'overlay', label: 'overlay' },
-    { value: 'multiply', label: 'multiply' },
-    { value: 'color-burn', label: 'color-burn' },
-    { value: 'soft-light', label: 'soft-light' },
-    { value: 'screen', label: 'screen' },
-    { value: 'color-dodge', label: 'color-dodge' },
-  ];
-  artBlend = signal<string | null>(null);
-  artOpacity = signal(1);
-  artShine = signal(false);
-  artFade = signal(false);
-
-  /** Eintrag für PACK_ART mit der aktuellen Einstellung (zum Übernehmen) */
-  artSnippet = computed(() => {
-    const parts = [this.artBlend() && this.artBlend() !== 'normal' ? `blend: '${this.artBlend()}'` : null,
-      this.artOpacity() < 1 ? `opacity ${Math.round(this.artOpacity() * 100)} %` : null,
-      this.artShine() ? 'Glanz darüber' : null, this.artFade() ? 'weicher Rand' : null].filter(Boolean);
-    return parts.length ? parts.join(' · ') : 'Standard';
   });
 
   /** Designs mit eigenem Bild (PACK_ART) — zur Kontrolle unter den Bühnen */
