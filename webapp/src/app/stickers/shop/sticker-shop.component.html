@@ -27,7 +27,25 @@
   </div>
 </ng-template>
 
-<div class="shop" [class.shop--admin]="isAdmin">
+<!-- Guthaben (Lukaten der Hauptliga) -->
+<ng-template #walletTpl>
+  <div class="wallet">
+    <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
+    <span class="wallet__text">
+      <span class="wallet__label">
+        @if (league(); as l) { Guthaben in {{ l.name }} } @else { Guthaben }
+      </span>
+      <span class="wallet__value">
+        @if (loading()) { … }
+        @else if (budget() === null) { – }
+        @else { {{ formatLukaten(budget()) }} <small>Lukaten</small> }
+      </span>
+    </span>
+    <a class="wallet__link" routerLink="/liga/h2h/bestico">Mehr verdienen im Bestico ›</a>
+  </div>
+</ng-template>
+
+<div class="shop">
 <div class="shop__main">
   <h1 class="page-title shop__title">
     Shop
@@ -49,29 +67,13 @@
   <div class="shop__shelves">
   <!-- ── Lukaten ───────────────────────────────────────────────────────── -->
   <section class="shelf">
-    <div class="shelf__head">
-      <h2 class="shelf__title">Mit Lukaten</h2>
-
-      <div class="wallet">
-        <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
-        <span class="wallet__text">
-          <span class="wallet__label">
-            @if (league(); as l) { Guthaben in {{ l.name }} } @else { Guthaben }
-          </span>
-          <span class="wallet__value">
-            @if (loading()) { … }
-            @else if (budget() === null) { – }
-            @else { {{ formatLukaten(budget()) }} <small>Lukaten</small> }
-          </span>
-        </span>
-        <a class="wallet__link" routerLink="/liga/h2h/bestico">Mehr verdienen im Bestico ›</a>
-      </div>
+    <!-- Guthaben: breit in der rechten Spalte, schmaler hier über den Angeboten -->
+    <div class="wallet-slot wallet-slot--inline">
+      <ng-container *ngTemplateOutlet="walletTpl" />
     </div>
 
     @if (!loading() && !league()) {
       <p class="shelf__hint">Du spielst in keiner Liga mit Sticker-Album – Lukaten-Käufe sind nicht möglich.</p>
-    } @else if (league()) {
-      <p class="shelf__hint">Bezahlt wird immer aus deiner Hauptliga ({{ league()!.name }}), egal in welcher Liga du gerade bist.</p>
     }
 
     <div class="offers offers--kinds">
@@ -212,7 +214,13 @@
 
 </div>
 
-<!-- ── Admin: Übersicht aller Euro-Käufe (Desktop rechts, mobil darunter) ─ -->
+<!-- ── Rechte Spalte (ab 1280px): Guthaben + für Admins die Euro-Käufe; schmaler darunter ── -->
+<div class="shop__side">
+<div class="wallet-slot wallet-slot--side">
+  <ng-container *ngTemplateOutlet="walletTpl" />
+</div>
+
+<!-- ── Admin: Übersicht aller Euro-Käufe ─ -->
 @if (isAdmin) {
   <aside class="admin-panel">
     <div class="admin-panel__head">
@@ -259,6 +267,7 @@
     <p class="admin-panel__hint">Stornieren entfernt alle Packs des Kaufs samt der daraus gezogenen Sticker. Tauschen war bis zur Bestätigung gesperrt, andere Manager sind also nicht betroffen.</p>
   </aside>
 }
+</div><!-- /shop__side -->
 
   <!-- ── Kauf bestätigen ───────────────────────────────────────────────── -->
   @if (confirming(); as o) {

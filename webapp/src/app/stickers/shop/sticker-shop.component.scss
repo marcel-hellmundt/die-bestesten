@@ -2,27 +2,39 @@
 
 $narrow: 860px; // darunter: Angebote einspaltig, Pack links neben den Infos
 
-$admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter unter dem Shop
+$side-col: 1280px;   // ab hier rechte Spalte (Guthaben + Admin-Übersicht) neben dem Shop, darunter unter dem Shop
 $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den Angeboten
 
 .shop {
   display: flex;
   flex-direction: column;
   gap: $space-5;
-  max-width: 1280px;
-  margin-inline: auto; // Desktop: mittig statt links (Admins: Shop + Euro-Käufe-Spalte gemeinsam mittig)
+  max-width: 1640px;
+  margin-inline: auto; // Desktop: mittig statt links (Shop + rechte Spalte gemeinsam)
   padding: $space-4;
 
   @media (max-width: $mobile-breakpoint) { padding: $space-3 0; gap: $space-4; } // seitlicher Rand kommt von der Shell
 
-  // Admins: Shop links, Übersicht der Euro-Käufe rechts
-  &--admin {
-    max-width: 1640px;
+  // Shop links, rechte Spalte mit Guthaben (+ Euro-Käufe für Admins)
+  @media (min-width: $side-col) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+  }
 
-    @media (min-width: $admin-wide) {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
-      align-items: start;
+  &__side {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    min-width: 0;
+
+    // Desktop: mitlaufend unter dem gepinnten Sub-Menü; lange Admin-Liste scrollt in sich
+    @media (min-width: $side-col) {
+      position: sticky;
+      top: calc(#{$subnav-stuck-bottom} + #{$space-3});
+      max-height: calc(100vh - #{$subnav-stuck-bottom} - #{$space-6});
+
+      .admin-panel { min-height: 0; overflow-y: auto; }
     }
   }
 
@@ -76,11 +88,30 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   &__shelves {
     display: flex;
     flex-direction: column;
-    gap: $space-5;
+    gap: $space-10; // deutlicher Abstand zwischen Lukaten- und Euro-Angeboten
     min-width: 0;
     container: shelves / inline-size; // Angebots-Raster richtet sich nach der Spaltenbreite
 
-    @media (max-width: $mobile-breakpoint) { gap: $space-4; }
+    @media (max-width: $mobile-breakpoint) { gap: $space-8; }
+  }
+}
+
+// Guthaben: ab $side-col in der rechten Spalte, darunter rechtsbündig über den Lukaten-Angeboten
+.wallet-slot {
+  &--inline {
+    display: flex;
+    justify-content: flex-end;
+
+    @media (min-width: $side-col) { display: none; }
+  }
+
+  &--side {
+    @media (max-width: $side-col - 1px) { display: none; }
+
+    .wallet {
+      grid-template-columns: auto 1fr;
+      padding: $space-3 $space-4;
+    }
   }
 }
 
@@ -93,14 +124,6 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   border: 1px solid $color-border;
   border-radius: $radius-lg;
   background: $color-surface;
-
-  // Desktop: mitlaufend unter dem gepinnten Sub-Menü, eigene Scrollleiste bei vielen Käufen
-  @media (min-width: $admin-wide) {
-    position: sticky;
-    top: calc(#{$subnav-stuck-bottom} + #{$space-3});
-    max-height: calc(100vh - #{$subnav-stuck-bottom} - #{$space-6});
-    overflow-y: auto;
-  }
 
   &__head {
     display: flex;
