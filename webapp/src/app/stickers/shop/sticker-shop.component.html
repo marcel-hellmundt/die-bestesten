@@ -278,7 +278,7 @@
                         [disabled]="c.missing === 0" (click)="pickedClubId.set(c.club.id)"
                         [title]="c.club.name + (c.missing === 0 ? ' – komplett' : ' – ' + c.missing + ' fehlen')">
                   <img [src]="c.logo" alt="" />
-                  <span>{{ c.missing === 0 ? '✓' : c.missing }}</span>
+                  @if (c.missing === 0) { <span>✓</span> }
                 </button>
               }
             </div>
