@@ -15,7 +15,7 @@
       }
       @for (o of testOffers; track o.key) {
         <button type="button" class="btn btn-ghost btn-sm" [disabled]="rows().length === 0" (click)="openTestPacks(o)"
-                title="Kauf simulieren — wird nicht gespeichert">{{ o.name }} ({{ o.packs }})</button>
+                title="Kauf simulieren — wird nicht gespeichert">{{ o.name }} ({{ packsOf(o) }})</button>
       }
       <button type="button" class="btn btn-ghost btn-sm" [disabled]="syncBusy()" (click)="syncAlbum()">
         {{ syncBusy() ? 'Gleicht ab…' : 'Album abgleichen' }}

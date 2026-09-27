@@ -1,48 +1,98 @@
-// "Die Klebrigsten" — Shop: Packs gegen Lukaten (verdient im Bestico, Hauptliga) oder Euro (PayPal).
+// "Die Klebrigsten" — Shop: feste Pack-Arten, einzeln gegen Lukaten (Bestico, Hauptliga) oder als
+// Euro-Kombinationen (PayPal.me). Muss zu StickerShopTrait::stickerPackKinds()/…Offers() und
+// StickerShopEurTrait::stickerShopEurOffers() im Backend passen (dort sind die Preise maßgeblich).
 
-/**
- * Folienfarbe des Packs im Shop — bewusst andere Farben als die verdienten Packs (Rot/Gold/Blau/Graphit).
- * Lukaten: orange (#fa983a) / red (#eb2f06) / blue (#1e3799) · Euro: fire/leaf/sun/bordeaux/lilac.
- * Gleiche Farben wie beim Aufreißen (pack-open-dialog: pack--o-{offer key}).
- */
-export type ShopFoil = 'orange' | 'red' | 'blue' | 'fire' | 'leaf' | 'sun' | 'bordeaux' | 'lilac';
+export type PackKind = 'normal' | 'big' | 'club' | 'special';
 export type ShopCurrency = 'lukaten' | 'eur';
+
+export interface PackKindDef {
+  kind: PackKind;
+  name: string;           // "Big Pack"
+  short: string;          // Aufdruck auf dem Pack, z.B. "Big"
+  size: number;           // Sticker
+  guaranteedNew: number;  // davon garantiert neu
+  holoMin: number;        // davon mindestens Holo
+  club: boolean;          // nur Sticker eines gewählten Vereins
+}
+
+/** Die festen Pack-Arten — Farbe je Art: normal Orange, big Rot, club Blau, special Electric Gold. */
+export const PACK_KINDS: Record<PackKind, PackKindDef> = {
+  normal:  { kind: 'normal',  name: 'Normales Pack', short: 'Normal',  size: 3, guaranteedNew: 1, holoMin: 0, club: false },
+  big:     { kind: 'big',     name: 'Big Pack',      short: 'Big',     size: 7, guaranteedNew: 2, holoMin: 0, club: false },
+  club:    { kind: 'club',    name: 'Vereins-Pack',  short: 'Verein',  size: 5, guaranteedNew: 5, holoMin: 0, club: true },
+  special: { kind: 'special', name: 'Special Pack',  short: 'Special', size: 3, guaranteedNew: 1, holoMin: 1, club: false },
+};
+export const PACK_KIND_ORDER: PackKind[] = ['normal', 'big', 'club', 'special'];
 
 export interface ShopOffer {
   key: string;
   currency: ShopCurrency;
   name: string;
-  packs: number;           // Anzahl Packs
-  bonusPacks?: number;     // davon gratis (z.B. "25 + 5")
-  packSize: number;        // Sticker je Pack
-  guaranteedNew: number;   // je Pack garantiert neu
-  price: number;           // Lukaten bzw. Euro
-  foil: ShopFoil;
-  clubPick?: boolean;      // Vereins-Pack: nur Sticker eines gewählten Vereins
-  once?: boolean;          // nur einmal pro Saison
-  highlight?: string;      // Band, z.B. "Beliebt"
+  contents: Partial<Record<PackKind, number>>;  // Pack-Art → Anzahl
+  price: number;          // Lukaten bzw. Euro
+  once?: boolean;         // nur einmal pro Saison
+  highlight?: string;     // Band, z.B. "Beliebt"
 }
 
-// Lukaten: jeder Manager startet pro Saison mit 100 → reicht für 3–6 Packs
+// Lukaten: je eine Pack-Art (jeder Manager startet pro Saison mit 100) — Keys stabil, l-small = Normales Pack
 export const LUKATEN_OFFERS: ShopOffer[] = [
-  { key: 'l-small',  currency: 'lukaten', name: 'Kleines Pack', packs: 1, packSize: 3, guaranteedNew: 1, price: 15, foil: 'orange' },
-  { key: 'l-big',    currency: 'lukaten', name: 'Großes Pack',  packs: 1, packSize: 6, guaranteedNew: 2, price: 25, foil: 'red', highlight: 'Beliebt' },
-  { key: 'l-club',   currency: 'lukaten', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 40, foil: 'blue', clubPick: true },
+  { key: 'l-small',   currency: 'lukaten', name: PACK_KINDS.normal.name,  contents: { normal: 1 },  price: 15 },
+  { key: 'l-big',     currency: 'lukaten', name: PACK_KINDS.big.name,     contents: { big: 1 },     price: 30, highlight: 'Beliebt' },
+  { key: 'l-club',    currency: 'lukaten', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 40 },
+  { key: 'l-special', currency: 'lukaten', name: PACK_KINDS.special.name, contents: { special: 1 }, price: 45 },
 ];
 
-// Euro (PayPal): Packs wie das Tages-Pack (3 Sticker, 1 garantiert neu); nichts unter 1,99 € wegen der PayPal-Gebühr
+// Euro: Kombinationen — Staffel 2,99 → 4,99 → 6,99; Starter einmalig als Einstieg
 export const EUR_STARTER: ShopOffer =
-  { key: 'e-starter', currency: 'eur', name: 'Starter', packs: 10, packSize: 3, guaranteedNew: 1, price: 1.99, foil: 'fire', once: true, highlight: 'Einmalig' };
+  { key: 'e-starter', currency: 'eur', name: 'Starter', contents: { normal: 10 }, price: 1.99, once: true, highlight: 'Einmalig' };
 
-export const EUR_OFFERS: ShopOffer[] = [
-  { key: 'e-handful', currency: 'eur', name: 'Handvoll', packs: 5,  packSize: 3, guaranteedNew: 1, price: 2.99, foil: 'leaf' },
-  // Staffel pro Sticker: Handvoll 0,20 € · Stapel 0,17 € (−17 %) · Kiste 0,13 € (−33 %)
-  { key: 'e-stack',   currency: 'eur', name: 'Stapel',   packs: 10, packSize: 3, guaranteedNew: 1, price: 4.99, foil: 'sun', highlight: 'Beliebt' },
-  { key: 'e-crate',   currency: 'eur', name: 'Kiste',    packs: 25, bonusPacks: 5, packSize: 3, guaranteedNew: 1, price: 9.99, foil: 'bordeaux', highlight: 'Bester Preis' },
-  { key: 'e-club',    currency: 'eur', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 1.99, foil: 'lilac', clubPick: true },
+export const EUR_BUNDLES: ShopOffer[] = [
+  { key: 'e-handful', currency: 'eur', name: 'Handvoll', contents: { normal: 5 },         price: 2.99 },
+  { key: 'e-stack',   currency: 'eur', name: 'Stapel',   contents: { normal: 4, big: 3 }, price: 4.99, highlight: 'Beliebt' },
+  { key: 'e-crate',   currency: 'eur', name: 'Kiste',    contents: { normal: 3, big: 3, special: 1, club: 1 }, price: 6.99, highlight: 'Bester Wert' },
 ];
 
-/** Referenz für "X % günstiger": Preis pro Sticker der Handvoll. */
-export const EUR_BASE_PER_STICKER = 2.99 / 15;
+/** einzelne Packs gegen Euro (Impulskauf) */
+export const EUR_SINGLES: ShopOffer[] = [
+  { key: 'e-club',    currency: 'eur', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 1.99 },
+  { key: 'e-special', currency: 'eur', name: PACK_KINDS.special.name, contents: { special: 1 }, price: 1.99 },
+];
 
-export function stickerCount(o: ShopOffer): number { return o.packs * o.packSize; }
+export const EUR_OFFERS: ShopOffer[] = [...EUR_BUNDLES, ...EUR_SINGLES];
+export const ALL_SHOP_OFFERS: ShopOffer[] = [...LUKATEN_OFFERS, EUR_STARTER, ...EUR_OFFERS];
+
+/**
+ * "Wert" je Pack-Art in Euro für die Ersparnis-Anzeige: Normal wie in der Handvoll (2,99 € / 5),
+ * Big nach Stickern (7 statt 3), Vereins-/Special-Pack = Einzelpreis.
+ */
+const EUR_KIND_VALUE: Record<PackKind, number> = { normal: 0.6, big: 1.4, club: 1.99, special: 1.99 };
+
+/** [{kind, count}] in fester Reihenfolge */
+export function offerKinds(o: ShopOffer): { kind: PackKind; count: number }[] {
+  return PACK_KIND_ORDER.filter(k => (o.contents[k] ?? 0) > 0).map(k => ({ kind: k, count: o.contents[k]! }));
+}
+export function packsOf(o: ShopOffer): number { return offerKinds(o).reduce((n, x) => n + x.count, 0); }
+export function stickerCount(o: ShopOffer): number {
+  return offerKinds(o).reduce((n, x) => n + x.count * PACK_KINDS[x.kind].size, 0);
+}
+/** enthält ein Vereins-Pack → beim Kauf Verein wählen */
+export function hasClub(o: ShopOffer): boolean { return (o.contents.club ?? 0) > 0; }
+/** besteht nur aus Vereins-Packs (für den Kaufplan der Simulation) */
+export function isClubOnly(o: ShopOffer): boolean { return offerKinds(o).every(x => x.kind === 'club'); }
+/** Summe der Einzelwerte in Euro */
+export function offerValueEur(o: ShopOffer): number {
+  return offerKinds(o).reduce((v, x) => v + x.count * EUR_KIND_VALUE[x.kind], 0);
+}
+/** z.B. "4 Normal + 3 Big" */
+export function contentsLabel(o: ShopOffer): string {
+  return offerKinds(o).map(x => `${x.count} ${PACK_KINDS[x.kind].short}`).join(' + ');
+}
+/** alte Käufe ohne pack_kind: Pack-Art aus dem Angebot herleiten */
+export function kindFromOffer(key: string | null | undefined): PackKind | null {
+  if (!key) return null;
+  if (key === 'l-small') return 'normal';
+  if (key === 'l-big') return 'big';
+  if (key === 'l-club' || key === 'e-club') return 'club';
+  if (key === 'l-special' || key === 'e-special') return 'special';
+  return key.startsWith('e-') ? 'normal' : null;
+}

@@ -1,23 +1,29 @@
-<!-- Folien-Pack(s): bei mehreren Packs ein kleiner Stapel mit Anzahl -->
+<!-- Folien-Pack(s): Farbe je Pack-Art; bei mehreren Packs ein kleiner Stapel (gemischt: je Art eins) mit Anzahl -->
 <ng-template #packTpl let-o let-club="club">
-  <div class="pack-stack" [class.pack-stack--multi]="o.packs > 1">
-    @for (i of stackOf(o); track i) {
-      <div class="pack-stack__item" [style.--i]="i">
-        <div class="mini-pack mini-pack--{{ o.foil }}" aria-hidden="true">
+  @let n = packsOf(o);
+  <div class="pack-stack" [class.pack-stack--multi]="n > 1">
+    @for (it of stacks.get(o.key); track it.i) {
+      @let k = kinds[it.kind];
+      @let showClub = club && k.club;
+      <div class="pack-stack__item" [style.--i]="it.i">
+        <div class="mini-pack mini-pack--{{ it.kind }}" aria-hidden="true">
           <span class="mini-pack__body">
-            @if (club) {
+            @if (art(it.kind); as a) {
+              <img class="mini-pack__art" [src]="a.src" [style.mix-blend-mode]="a.blend ?? 'soft-light'" alt="" />
+            }
+            @if (showClub) {
               <img class="mini-pack__logo" [src]="clubLogo(club)" alt="" />
             } @else {
               <span class="mini-pack__brand">Die Klebrigsten</span>
             }
-            <span class="mini-pack__headline">{{ club ? club.short_name : o.name }}</span>
-            <span class="mini-pack__count">{{ o.packSize }} Sticker</span>
+            <span class="mini-pack__headline">{{ showClub ? club.short_name : k.short }}</span>
+            <span class="mini-pack__count">{{ k.size }} Sticker</span>
           </span>
           <span class="mini-pack__top"></span>
         </div>
       </div>
     }
-    @if (o.packs > 1) { <span class="pack-stack__badge">×{{ o.packs }}</span> }
+    @if (n > 1) { <span class="pack-stack__badge">×{{ n }}</span> }
   </div>
 </ng-template>
 
@@ -59,7 +65,7 @@
       <p class="shelf__hint">Bezahlt wird immer aus deiner Hauptliga ({{ league()!.name }}), egal in welcher Liga du gerade bist.</p>
     }
 
-    <div class="offers">
+    <div class="offers offers--kinds">
       @for (o of lukatenOffers; track o.key) {
         @let miss = missingLukaten(o);
         <article class="offer" [class.offer--highlight]="o.highlight">
@@ -70,9 +76,7 @@
           <div class="offer__info">
             <h3 class="offer__name">{{ o.name }}</h3>
             <ul class="offer__perks">
-              <li>{{ o.packSize }} Sticker</li>
-              <li>{{ guaranteeLabel(o) }}</li>
-              @if (o.clubPick) { <li>Verein frei wählbar</li> }
+              @for (perk of kindPerks(kindOf(o)); track perk) { <li>{{ perk }}</li> }
             </ul>
             <div class="offer__buy">
               <span class="price">
@@ -97,7 +101,7 @@
     <div class="shelf__head">
       <div>
         <h2 class="shelf__title">Mit Euro @if (!loading() && !eurAvailable()) { <small>bald verfügbar</small> }</h2>
-        <p class="shelf__sub">Bezahlt wird per PayPal · jedes Pack wie das Tages-Pack, 3 Sticker, 1 garantiert neu</p>
+        <p class="shelf__sub">Bezahlt wird per PayPal · dieselben Packs wie mit Lukaten, als günstige Kombis</p>
       </div>
     </div>
     <p class="shelf__hint">
@@ -129,9 +133,9 @@
       </div>
       <div class="starter__info">
         <span class="starter__tag">{{ starter.highlight }} pro Saison</span>
-        <h3 class="starter__name">{{ starter.name }}: {{ starter.packs }} Packs für {{ formatEur(starter.price) }}</h3>
+        <h3 class="starter__name">{{ starter.name }}: {{ packsOf(starter) }} normale Packs für {{ formatEur(starter.price) }}</h3>
         <span class="starter__meta">
-          {{ stickerCount(starter) }} Sticker · {{ formatEur(perSticker(starter)) }} pro Sticker
+          {{ stickerCount(starter) }} Sticker · statt <s>{{ formatEur(offerValueEur(starter)) }}</s>
           <span class="saving">−{{ savingPct(starter) }} %</span>
         </span>
       </div>
@@ -140,8 +144,9 @@
       </button>
     </article>
 
-    <div class="offers offers--eur">
-      @for (o of eurOffers; track o.key) {
+    <!-- Kombis: Inhalt je Pack-Art + Ersparnis gegenüber dem Einzelwert -->
+    <div class="offers">
+      @for (o of eurBundles; track o.key) {
         <article class="offer" [class.offer--highlight]="o.highlight">
           @if (o.highlight) { <span class="offer__ribbon">{{ o.highlight }}</span> }
           <div class="offer__stage">
@@ -149,27 +154,43 @@
           </div>
           <div class="offer__info">
             <h3 class="offer__name">{{ o.name }}</h3>
-            <ul class="offer__perks">
-              @if (o.packs > 1) {
-                <li>
-                  {{ o.bonusPacks ? (o.packs - o.bonusPacks) + ' + ' + o.bonusPacks + ' gratis' : o.packs }} Packs
-                  · {{ stickerCount(o) }} Sticker
-                </li>
-              } @else {
-                <li>{{ o.packSize }} Sticker</li>
+            <ul class="offer__contents">
+              @for (x of offerKinds(o); track x.kind) {
+                <li><span class="kind-dot kind-dot--{{ x.kind }}"></span>{{ x.count }}× {{ kinds[x.kind].name }}</li>
               }
-              <li>{{ guaranteeLabel(o) }}</li>
-              @if (o.clubPick) { <li>Verein frei wählbar</li> }
             </ul>
+            <span class="offer__note">
+              {{ packsOf(o) }} Packs · {{ stickerCount(o) }} Sticker
+              @if (hasClub(o)) { · Verein frei wählbar }
+            </span>
             <div class="offer__buy">
-              <span class="price"><b>{{ formatEur(o.price) }}</b></span>
+              <span class="price">
+                <b>{{ formatEur(o.price) }}</b>
+                @if (savingPct(o) > 0) { <s>{{ formatEur(offerValueEur(o)) }}</s> }
+              </span>
               <button type="button" class="btn btn-primary btn-sm" [disabled]="eurBlocked()" (click)="open(o)">Kaufen</button>
             </div>
-            <span class="offer__note">
-              {{ formatEur(perSticker(o)) }} pro Sticker
-              @if (savingPct(o) > 0) { <span class="saving">−{{ savingPct(o) }} %</span> }
-            </span>
+            @if (savingPct(o) > 0) { <span class="offer__note"><span class="saving">−{{ savingPct(o) }} %</span> gegenüber einzeln</span> }
           </div>
+        </article>
+      }
+    </div>
+
+    <!-- Einzelne Packs -->
+    <div class="singles">
+      @for (o of eurSingles; track o.key) {
+        @let k = kindOf(o);
+        <article class="single">
+          <div class="single__stage">
+            <ng-container *ngTemplateOutlet="packTpl; context: { $implicit: o, club: null }" />
+          </div>
+          <div class="single__info">
+            <h3 class="offer__name">{{ o.name }}</h3>
+            <span class="offer__note">{{ kindPerks(k).join(' · ') }}</span>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm single__btn" [disabled]="eurBlocked()" (click)="open(o)">
+            {{ formatEur(o.price) }}
+          </button>
         </article>
       }
     </div>
@@ -252,9 +273,9 @@
         </h2>
 
         <!-- Vereins-Pack: Verein wählen — fast komplette Vereine zuerst -->
-        @if (o.clubPick && !bought()) {
+        @if (hasClub(o) && !bought()) {
           <div class="club-pick">
-            <span class="club-pick__label">Welcher Verein?</span>
+            <span class="club-pick__label">{{ packsOf(o) > 1 ? 'Welcher Verein fürs Vereins-Pack?' : 'Welcher Verein?' }}</span>
             <div class="club-pick__grid">
               @for (c of clubChoices(); track c.club.id) {
                 <button type="button" class="club-pick__item" [class.club-pick__item--active]="c.club.id === pickedClubId()"
@@ -265,7 +286,7 @@
                 </button>
               }
             </div>
-            @if (pc && pc.missing < o.packSize) {
+            @if (pc && pc.missing < kinds.club.size) {
               <span class="club-pick__hint">Nur noch {{ pc.missing }} neue – der Rest sind Doppelte.</span>
             }
           </div>
@@ -314,10 +335,13 @@
             </button>
             <button type="button" class="btn btn-ghost" [disabled]="buying()" (click)="closeConfirm()">Abbrechen</button>
           </div>
-          @if (o.clubPick && !pickedClubId()) { <span class="confirm__hint">Bitte zuerst einen Verein wählen</span> }
+          @if (hasClub(o) && !pickedClubId()) { <span class="confirm__hint">Bitte zuerst einen Verein wählen</span> }
         } @else {
           <dl class="confirm__calc">
-            <dt>{{ o.packs > 1 ? o.packs + ' Packs · ' + stickerCount(o) + ' Sticker' : o.packSize + ' Sticker' }}</dt>
+            @for (x of offerKinds(o); track x.kind) {
+              <dt>{{ x.count }}× {{ kinds[x.kind].name }}</dt><dd>{{ x.count * kinds[x.kind].size }} Sticker</dd>
+            }
+            <dt class="confirm__total">{{ packsOf(o) }} {{ packsOf(o) === 1 ? 'Pack' : 'Packs' }} · {{ stickerCount(o) }} Sticker</dt>
             <dd class="confirm__total">{{ formatEur(o.price) }}</dd>
           </dl>
           @if (buyError()) { <span class="confirm__error">{{ buyError() }}</span> }
@@ -328,7 +352,7 @@
             <button type="button" class="btn btn-ghost" [disabled]="buying()" (click)="closeConfirm()">Abbrechen</button>
           </div>
           <span class="confirm__hint">
-            @if (o.clubPick && !pickedClubId()) { Bitte zuerst einen Verein wählen · }
+            @if (hasClub(o) && !pickedClubId()) { Bitte zuerst einen Verein wählen · }
             Die Packs gibt's sofort, danach bezahlst du per PayPal.
           </span>
         }

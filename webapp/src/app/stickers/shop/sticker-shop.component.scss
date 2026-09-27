@@ -268,11 +268,67 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: $space-4;
 
-  &--eur { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  // Lukaten: 4 Pack-Arten nebeneinander, mittelbreit 2×2
+  &--kinds {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    @media (max-width: 1100px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
 
   @media (max-width: $narrow) {
-    &, &--eur { grid-template-columns: minmax(0, 1fr); gap: $space-3; }
+    &, &--kinds { grid-template-columns: minmax(0, 1fr); gap: $space-3; }
   }
+}
+
+// Euro: einzelne Packs, kompakte Zeilen
+.singles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-3;
+
+  @media (max-width: $narrow) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.single {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+
+  &__stage {
+    flex-shrink: 0;
+    padding: $space-1;
+
+    .mini-pack { width: 56px; }
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__btn { flex-shrink: 0; }
+}
+
+// Farbpunkt je Pack-Art (Inhalt der Kombis)
+.kind-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: -1px;
+
+  &--normal  { background: #fa983a; }
+  &--big     { background: #eb2f06; }
+  &--club    { background: #1e3799; }
+  &--special { background: #ffc72c; box-shadow: inset 0 0 0 1px #b8860b; }
 }
 
 .offer {
@@ -355,6 +411,16 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     }
   }
 
+  &__contents {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: $font-sm;
+  }
+
   &__buy {
     display: flex;
     align-items: center;
@@ -380,6 +446,8 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     color: $color-text;
     font-variant-numeric: tabular-nums;
   }
+
+  s { margin-left: 4px; font-size: $font-xs; }
 }
 
 // ── Starter-Angebot (einmalig) ───────────────────────────────────────────────
@@ -388,10 +456,10 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
   align-items: center;
   gap: $space-5;
   padding: $space-4 $space-5;
-  // Farbe wie die Starter-Folie (Feuerrot)
-  border: 1px solid color-mix(in srgb, #dc2626 35%, transparent);
+  // Farbe wie die Folie der normalen Packs (Orange)
+  border: 1px solid color-mix(in srgb, #fa983a 45%, transparent);
   border-radius: $radius-lg;
-  background: linear-gradient(110deg, color-mix(in srgb, #fb923c 18%, #{$color-surface}), $color-surface 70%);
+  background: linear-gradient(110deg, color-mix(in srgb, #fa983a 18%, #{$color-surface}), $color-surface 70%);
 
   @media (max-width: $mobile-breakpoint) { flex-wrap: wrap; gap: $space-3; padding: $space-3; }
 
@@ -411,7 +479,7 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     align-self: flex-start;
     padding: 1px 8px;
     border-radius: $radius-full;
-    background: #dc2626;
+    background: #eb2f06;
     color: #fff;
     font-size: 11px;
     font-weight: $font-weight-bold;
@@ -481,18 +549,19 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
 
   @media (max-width: $narrow) { width: 78px; }
 
-  // Lukaten (Kleines Pack / Großes Pack / Vereins-Pack)
-  &--orange  { --foil-light: #fcc58f; --foil: #fa983a; --foil-dark: #b35f0f; --ink: #b35f0f; } // Orange #fa983a
-  &--red     { --foil-light: #f5795c; --foil: #eb2f06; --foil-dark: #8a1a02; --ink: #b82503; } // Rot #eb2f06
-  &--blue    { --foil-light: #5b72c9; --foil: #1e3799; --foil-dark: #0c1a4f; --ink: #1e3799; } // Blau #1e3799
-  // Euro
-  &--fire     { --foil-light: #fb923c; --foil: #dc2626; --foil-dark: #7f1d1d; }                // Feuerrot
-  &--leaf     { --foil-light: #86efac; --foil: #16a34a; --foil-dark: #14532d; }                // Blattgrün
-  &--sun      { --foil-light: #fef9c3; --foil: #facc15; --foil-dark: #ca8a04; --ink: #854d0e; --text: #422006; } // Sonnengelb (dunkle Schrift)
-  &--bordeaux { --foil-light: #be123c; --foil: #7f1d2d; --foil-dark: #2a0510; }                // Bordeauxrot
-  &--lilac    { --foil-light: #e9d5ff; --foil: #a855f7; --foil-dark: #4c1d95; }                // Lila
+  // Pack-Arten — gleiche Farben wie im Pack-Dialog (pack-open-dialog.component.scss)
+  @each $kind, $light, $foil, $dark, $ink in (
+    normal  #fcc58f #fa983a #b35f0f #b35f0f,  // Orange
+    big     #f5795c #eb2f06 #8a1a02 #b82503,  // Rot
+    club    #5b72c9 #1e3799 #0c1a4f #1e3799,  // Blau
+    special #fff1b8 #ffc72c #b8860b #8a6100,  // Electric Gold
+  ) {
+    &--#{$kind} { --foil-light: #{$light}; --foil: #{$foil}; --foil-dark: #{$dark}; --ink: #{$ink}; }
+  }
+  &--special { --text: #3d2b00; } // dunkle Schrift auf Gold
 
   .offer:hover &,
+  .single:hover &,
   .starter:hover & { transform: rotate(0deg) translateY(-4px); }
 
   &__body,
@@ -517,7 +586,20 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     align-items: center;
     justify-content: center;
     gap: 4cqw;
+    overflow: hidden;
     mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 10px 100%;
+
+    > :not(.mini-pack__art) { position: relative; z-index: 1; }
+  }
+
+  // eigenes Motiv (PACK_ART): freigestellt, unten seitlich angeschnitten
+  &__art {
+    position: absolute;
+    right: -22%;
+    bottom: -10%;
+    width: 85%;
+    pointer-events: none;
+    transform: rotate(-8deg);
   }
 
   &__top {

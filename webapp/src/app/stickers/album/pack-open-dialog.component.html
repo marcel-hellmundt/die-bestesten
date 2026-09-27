@@ -1,4 +1,4 @@
-<div class="backdrop" (click)="phase() !== 'tearing' && closed.emit()">
+<div class="backdrop" [class.backdrop--inline]="inline()" (click)="!inline() && phase() !== 'tearing' && closed.emit()">
   <div class="panel" (click)="$event.stopPropagation()">
     @if (heading()) { <h2 class="panel__title">{{ heading() }}</h2> }
 
@@ -20,25 +20,26 @@
       <p class="picker-title">
         {{ choices().length }} Packs – {{ groups().length > 1 ? 'welches reißt du zuerst auf?' : 'tippen zum Aufreißen' }}
       </p>
-      <div class="picker" [class.picker--many]="groups().length > 6">
+      <div class="picker" [class.picker--many]="groups().length > compactAfter()">
         @for (g of groups(); track g.key) {
           @let c = g.info;
           @let f = faceOf(c);
           <!-- Stapel: gleiche Packs übereinander, vorne das anklickbare, dahinter angedeutet + "×N" -->
           <div class="pick-stack" [style.--d]="$index">
             @for (b of stackBehind(g.count); track b) {
-              <span class="pack pack--mini pack--behind pack--{{ c.source }} {{ offerClass(c) }}" [style.--b]="b" aria-hidden="true">
+              <span class="pack pack--mini pack--behind pack--{{ design(c) }}" [style.--b]="b" aria-hidden="true">
                 <span class="pack__body"></span>
                 <span class="pack__top"></span>
               </span>
             }
-            <button type="button" class="pack pack--mini pack--{{ c.source }} {{ offerClass(c) }}"
+            <button type="button" class="pack pack--mini pack--{{ design(c) }}"
                     (click)="pick.emit(g.index)" [attr.aria-label]="f.kind + ' ' + f.headline + ' öffnen' + (g.count > 1 ? ' (' + g.count + ' Stück)' : '')">
               <span class="pack__body">
+                @if (artOf(c); as art) { <img class="pack__art" [src]="art.src" [style.mix-blend-mode]="art.blend ?? 'soft-light'" alt="" /> }
                 <span class="pack__brand">Die Klebrigsten</span>
                 <span class="pack__kind">{{ f.kind }}</span>
                 <span class="pack__headline">{{ f.headline }}</span>
-                <span class="pack__count">{{ countLabelOf(c) }}</span>
+                <span class="pack__count">{{ countLabel(c) }}</span>
                 @if (c.leagueName) { <span class="pack__league">{{ c.leagueName }}</span> }
               </span>
               <span class="pack__top"></span>
@@ -57,7 +58,7 @@
       @let p = pack()!;
       @let f = faceOf(p);
       <!-- Geschlossenes Folien-Pack: Lasche oben (reißt ab), Körper vorne, Karten verdeckt dahinter -->
-      <button type="button" class="pack pack--{{ p.source }} {{ offerClass(p) }}" [class.pack--tearing]="phase() === 'tearing'"
+      <button type="button" class="pack pack--{{ design(p) }}" [class.pack--tearing]="phase() === 'tearing'"
               (click)="onTear()" [style.--n]="p.size" aria-label="Pack aufreißen">
         <span class="pack__cards" aria-hidden="true">
           @for (i of backs(); track i) {
@@ -67,10 +68,11 @@
           }
         </span>
         <span class="pack__body">
+          @if (artOf(p); as art) { <img class="pack__art" [src]="art.src" [style.mix-blend-mode]="art.blend ?? 'soft-light'" alt="" /> }
           <span class="pack__brand">Die Klebrigsten</span>
           <span class="pack__kind">{{ f.kind }}</span>
           <span class="pack__headline">{{ f.headline }}</span>
-          <span class="pack__count">{{ countLabelOf(p) }}</span>
+          <span class="pack__count">{{ countLabel(p) }}</span>
           @if (p.leagueName) { <span class="pack__league">{{ p.leagueName }}</span> }
         </span>
         <span class="pack__top"></span>

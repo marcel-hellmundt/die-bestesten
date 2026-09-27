@@ -1,0 +1,33 @@
+<div class="gallery">
+  <p class="gallery__intro">
+    Alle Pack-Designs zum Ausprobieren – Karten werden nur im Browser gewürfelt, nichts wird gespeichert.
+    Eigene Bilder auf den Packs kommen aus <code>PACK_ART</code> in <code>album/pack.model.ts</code>.
+  </p>
+
+  @if (loading()) {
+    <p class="gallery__state">Album wird geladen…</p>
+  } @else if (error()) {
+    <p class="gallery__state">{{ error() }}</p>
+  } @else if (rows().length === 0) {
+    <p class="gallery__state">Das Album dieser Saison wurde noch nicht erstellt – ohne Album gibt es keine Karten zum Würfeln.</p>
+  } @else if (opener.visible()) {
+    <app-pack-open-dialog [inline]="true" [compactAfter]="99" heading="Test (nicht gespeichert)"
+                          [pack]="opener.info()" [choices]="opener.choices()" [choosing]="opener.choosing()"
+                          [cards]="opener.cards()" [error]="opener.error()"
+                          [remaining]="opener.remaining()" [busy]="opener.busy()" [covered]="openCard() !== null"
+                          (pick)="pick($event)" (back)="opener.backToChoice()"
+                          (tear)="opener.tear()" (next)="reset()" (open)="openPulled($event)" (closed)="reset()" />
+  }
+
+  @if (artList.length) {
+    <ul class="gallery__art">
+      @for (a of artList; track a[0]) {
+        <li><b>{{ a[0] }}</b> {{ a[1].src }} · {{ a[1].blend ?? 'soft-light' }}</li>
+      }
+    </ul>
+  }
+
+  @if (openCard(); as card) {
+    <app-sticker-card-dialog [data]="card" (closed)="openCard.set(null)" />
+  }
+</div>

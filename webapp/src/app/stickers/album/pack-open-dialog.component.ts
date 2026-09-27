@@ -1,5 +1,5 @@
-import { Component, DestroyRef, HostListener, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
-import { PackCard, PackInfo, packFace, packRules } from './pack.model';
+import { Component, DestroyRef, HostListener, afterNextRender, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { PACK_ART, PackCard, PackInfo, packCountLabel, packDesign, packFace } from './pack.model';
 
 /** Dauer der Aufreiß-Animation bis zum Aufdecken (muss zu den Delays im SCSS passen). */
 const TEAR_MS = 1750;
@@ -31,6 +31,10 @@ export class PackOpenDialogComponent {
   busy = input(false);
   /** true, solange darüber die große Karte offen ist — Esc schließt dann nur die. */
   covered = input(false);
+  /** ohne Abdunklung/Overlay direkt in der Seite (Admin-Testseite /klebrigsten/packs) */
+  inline = input(false);
+  /** ab so vielen Einträgen wird die Auswahl klein + scrollbar */
+  compactAfter = input(6);
   /** "Nicht mehr anzeigen" anbieten (nur in der Einblendung, wenn jemand Packs wiederholt ignoriert) */
   offerOptOut = input(false);
 
@@ -43,8 +47,10 @@ export class PackOpenDialogComponent {
   back = output<void>();
 
   readonly faceOf = packFace;
-  /** Shop-Pack: Folienfarbe des gekauften Angebots (pack--o-{key}) */
-  offerClass(p: PackInfo): string { return p.shopOffer ? `pack--o-${p.shopOffer}` : ''; }
+  /** Design (Farbe + Bild): Pack-Art bei Shop-Packs, sonst die Quelle → Klasse pack--{design} */
+  readonly design = packDesign;
+  readonly countLabel = packCountLabel;
+  artOf(p: PackInfo) { return PACK_ART[packDesign(p)] ?? null; }
 
   /**
    * Auswahl gruppiert: gleiche Packs (gleiche Art + Anlass, z.B. 25 aus einer Kiste) als ein Stapel "×N" —
@@ -53,7 +59,7 @@ export class PackOpenDialogComponent {
   groups = computed(() => {
     const out: { info: PackInfo; index: number; count: number; key: string }[] = [];
     this.choices().forEach((c, index) => {
-      const key = [c.source, c.shopOffer, c.milestonePoints, c.matchdayNumber, c.leagueName, c.size].join('|');
+      const key = [c.source, c.kind, c.clubId, c.milestonePoints, c.matchdayNumber, c.leagueName, c.size].join('|');
       const g = out.find(x => x.key === key);
       if (g) g.count++; else out.push({ info: c, index, count: 1, key });
     });
@@ -61,10 +67,6 @@ export class PackOpenDialogComponent {
   });
   /** angedeutete Packs hinter dem vordersten (max. 2) */
   stackBehind(count: number): number[] { return count >= 3 ? [2, 1] : count === 2 ? [1] : []; }
-  /** "3 Sticker" bzw. "5 neue Sticker", wenn die Pack-Art nur garantiert neue Karten enthält */
-  countLabelOf(p: PackInfo): string {
-    return `${p.size} ${packRules(p.source).allNew ? 'neue ' : ''}Sticker`;
-  }
   backs = computed(() => Array.from({ length: this.pack()?.size ?? 0 }, (_, i) => i));
 
   private torn = signal(false);
@@ -78,9 +80,10 @@ export class PackOpenDialogComponent {
   private prevOverflow = document.body.style.overflow;
 
   constructor() {
-    document.body.style.overflow = 'hidden';
+    // Seite hinter dem Overlay nicht scrollen (inline: nichts sperren)
+    afterNextRender(() => { if (!this.inline()) document.body.style.overflow = 'hidden'; });
     inject(DestroyRef).onDestroy(() => {
-      document.body.style.overflow = this.prevOverflow;
+      if (!this.inline()) document.body.style.overflow = this.prevOverflow;
       if (this.tearTimer) clearTimeout(this.tearTimer);
     });
 
@@ -113,6 +116,6 @@ export class PackOpenDialogComponent {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    if (!this.covered()) this.closed.emit();
+    if (!this.covered() && !this.inline()) this.closed.emit();
   }
 }

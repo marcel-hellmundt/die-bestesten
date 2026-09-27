@@ -11,7 +11,7 @@ import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
 import { PackCard, PackInfo, packInfo, packRules } from './pack.model';
-import { EUR_OFFERS, EUR_STARTER, ShopOffer } from '../shop/shop.model';
+import { EUR_OFFERS, EUR_STARTER, PACK_KINDS, ShopOffer, offerKinds, packsOf } from '../shop/shop.model';
 import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 import { seasonTheme } from './season-theme';
@@ -146,18 +146,23 @@ export class StickerAlbumComponent {
   }
 
   /** Test-Buttons = Euro-Angebote mit mehreren Packs, genau wie im Shop (Starter, Handvoll, Stapel, Kiste) */
-  readonly testOffers = [EUR_STARTER, ...EUR_OFFERS].filter(o => o.packs > 1);
+  readonly testOffers = [EUR_STARTER, ...EUR_OFFERS].filter(o => packsOf(o) > 1);
+  readonly packsOf = packsOf;
 
   /**
-   * Test: ein Euro-Kauf mit mehreren Packs wie in der Einblendung zur Auswahl — Karten werden erst beim Aufreißen
-   * und nur im Browser gewürfelt (id null), nichts wird gespeichert.
+   * Test: ein Euro-Kauf wie in der Einblendung zur Auswahl — je Pack-Art die Packs des Angebots (Vereins-Pack
+   * mit zufälligem Verein). Karten werden erst beim Aufreißen und nur im Browser gewürfelt, nichts wird gespeichert.
    */
   openTestPacks(offer: ShopOffer): void {
     requestTiltPermission(); // synchron in der Klick-Geste (iOS)
-    const packs: PackInfo[] = Array.from({ length: offer.packs }, () => ({
-      id: null, source: 'shop' as const, size: offer.packSize,
-      milestonePoints: null, matchdayNumber: null, leagueName: null, shopOffer: offer.key,
-    }));
+    const clubs = this.rows().map(r => r.club.id);
+    const clubId = clubs[Math.floor(Math.random() * clubs.length)] ?? null;
+    const packs: PackInfo[] = offerKinds(offer).flatMap(({ kind, count }) =>
+      Array.from({ length: count }, () => ({
+        id: null, source: 'shop' as const, size: PACK_KINDS[kind].size, kind, shopOffer: offer.key,
+        clubId: PACK_KINDS[kind].club ? clubId : null,
+        milestonePoints: null, matchdayNumber: null, leagueName: null,
+      })));
     this.testing.set(true);
     this.opener.showChoice(packs);
   }

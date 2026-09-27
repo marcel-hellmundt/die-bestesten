@@ -423,12 +423,14 @@ CREATE TABLE IF NOT EXISTS sticker_pack (
     manager_id CHAR(36)     NOT NULL,
     season_id  CHAR(36)     NOT NULL,
     source     ENUM('daily', 'milestone', 'matchday_best', 'admin', 'shop') CHARACTER SET utf8mb4 NOT NULL,
+    pack_kind  VARCHAR(20)  NULL,      -- Shop: normal | big | club | special (Design + Inhalt); NULL = aus source (Migration: migrate_sticker_pack_kind.sql)
     source_key VARCHAR(120) NOT NULL,  -- z.B. 'daily:2026-09-25', 'milestone:{team_id}:200', 'matchday_best:{team_id}:{matchday_id}', 'shop:{offer_key}:{uuid}'
     league_id  CHAR(36)     NULL,      -- Liga des Ereignisses (Meilenstein/Spieltagsbester) bzw. Hauptliga, aus der ein Shop-Kauf bezahlt wurde
     club_id    CHAR(36)     NULL,      -- Vereins-Pack (Shop): nur Sticker dieses Vereins (Migration: migrate_sticker_shop_pack.sql)
     eur_purchase_id CHAR(36) NULL,     -- Euro-Kauf (sticker_eur_purchase), aus dem das Pack stammt (Migration: migrate_sticker_shop_eur.sql)
     size       TINYINT UNSIGNED NOT NULL,
-    guaranteed_new TINYINT UNSIGNED NULL,  -- so viele Karten garantiert neu (NULL = Regel je source; Shop-Packs je Angebot)
+    guaranteed_new TINYINT UNSIGNED NULL,  -- so viele Karten garantiert neu (NULL = Regel je source; Shop-Packs je Pack-Art)
+    holo_min   TINYINT UNSIGNED NULL,      -- so viele Karten mindestens Holo (Special-Pack: 1; Migration: migrate_sticker_pack_kind.sql)
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     announced_at DATETIME   NULL,      -- NULL = noch nicht groß angekündigt (Migration: migrate_sticker_pack_announced.sql)
     opened_at  DATETIME     NULL,      -- NULL = ungeöffnet

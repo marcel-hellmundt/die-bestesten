@@ -9,16 +9,46 @@
 trait StickerShopTrait
 {
     /**
-     * Lukaten-Angebote — maßgeblich sind die Preise hier (nicht die im Frontend, shop.model.ts muss passen).
-     * guaranteed_new = so viele Karten garantiert neu; club = Vereins-Pack (Verein wird beim Kauf gewählt).
+     * Die festen Pack-Arten des Shops (Lukaten einzeln, Euro als Kombinationen) — müssen zu PACK_KINDS in
+     * shop.model.ts passen. guaranteed_new = so viele Karten garantiert neu, holo_min = mindestens so viele Holo,
+     * club = nur Sticker eines beim Kauf gewählten Vereins.
+     */
+    protected function stickerPackKinds(): array
+    {
+        return [
+            'normal'  => ['name' => 'Normales Pack', 'size' => 3, 'guaranteed_new' => 1, 'holo_min' => 0, 'club' => false],
+            'big'     => ['name' => 'Big Pack',      'size' => 7, 'guaranteed_new' => 2, 'holo_min' => 0, 'club' => false],
+            'club'    => ['name' => 'Vereins-Pack',  'size' => 5, 'guaranteed_new' => 5, 'holo_min' => 0, 'club' => true],
+            'special' => ['name' => 'Special Pack',  'size' => 3, 'guaranteed_new' => 1, 'holo_min' => 1, 'club' => false],
+        ];
+    }
+
+    /**
+     * Lukaten-Angebote: je eine Pack-Art — maßgeblich sind die Preise hier (shop.model.ts muss passen).
+     * Keys bleiben stabil (bestehende Käufe), l-small = Normales Pack.
      */
     protected function stickerShopOffers(): array
     {
-        return [
-            'l-small' => ['name' => 'Kleines Pack', 'price' => 15, 'size' => 3, 'guaranteed_new' => 1, 'club' => false],
-            'l-big'   => ['name' => 'Großes Pack',  'price' => 25, 'size' => 6, 'guaranteed_new' => 2, 'club' => false],
-            'l-club'  => ['name' => 'Vereins-Pack', 'price' => 40, 'size' => 5, 'guaranteed_new' => 5, 'club' => true],
-        ];
+        $kinds = $this->stickerPackKinds();
+        $offers = ['l-small' => ['normal', 15], 'l-big' => ['big', 30], 'l-club' => ['club', 40], 'l-special' => ['special', 45]];
+        return array_map(fn($o) => $kinds[$o[0]] + ['kind' => $o[0], 'price' => $o[1]], $offers);
+    }
+
+    /** Ein Shop-Pack der Pack-Art $kind anlegen (ungeöffnet) — Rückgabe: Pack-ID. */
+    private function insertStickerShopPack(string $managerId, string $seasonId, string $sourceKey, string $kind,
+                                           ?string $leagueId, ?string $clubId, ?string $eurPurchaseId = null): string
+    {
+        $k = $this->stickerPackKinds()[$kind];
+        $packId = $this->con->query("SELECT UUID()")->fetchColumn();
+        $cols = ['id', 'manager_id', 'season_id', 'source', 'pack_kind', 'source_key', 'league_id', 'club_id', 'size', 'guaranteed_new', 'holo_min'];
+        $vals = [$packId, $managerId, $seasonId, 'shop', $kind, $sourceKey, $leagueId, $k['club'] ? $clubId : null,
+                 $k['size'], $k['guaranteed_new'], $k['holo_min'] ?: null];
+        // eur_purchase_id nur bei Euro-Käufen — Lukaten-Käufe brauchen die Euro-Migration nicht
+        if ($eurPurchaseId !== null) { $cols[] = 'eur_purchase_id'; $vals[] = $eurPurchaseId; }
+        $this->con->prepare(
+            'INSERT INTO sticker_pack (' . implode(', ', $cols) . ') VALUES (' . implode(', ', array_fill(0, count($cols), '?')) . ')'
+        )->execute($vals);
+        return $packId;
     }
 
     /**
@@ -71,11 +101,7 @@ trait StickerShopTrait
 
             // Pack anlegen (globale DB) — schlägt das fehl, wird der Kauf zurückgenommen (zwei DBs, keine gemeinsame Transaktion)
             try {
-                $packId = $this->con->query("SELECT UUID()")->fetchColumn();
-                $this->con->prepare(
-                    "INSERT INTO sticker_pack (id, manager_id, season_id, source, source_key, league_id, club_id, size, guaranteed_new)
-                     VALUES (?, ?, ?, 'shop', ?, ?, ?, ?, ?)"
-                )->execute([$packId, $managerId, $seasonId, "shop:{$offerKey}:{$purchaseId}", $league['id'], $clubId, $offer['size'], $offer['guaranteed_new']]);
+                $packId = $this->insertStickerShopPack($managerId, $seasonId, "shop:{$offerKey}:{$purchaseId}", $offer['kind'], $league['id'], $clubId);
                 $db->prepare("UPDATE sticker_shop_purchase SET pack_id = ? WHERE id = ?")->execute([$packId, $purchaseId]);
             } catch (\Throwable $e) {
                 $db->prepare("DELETE FROM sticker_shop_purchase WHERE id = ?")->execute([$purchaseId]);

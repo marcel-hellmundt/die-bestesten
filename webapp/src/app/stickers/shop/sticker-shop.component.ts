@@ -6,7 +6,11 @@ import { EurPurchaseResult, StickerStatusService } from '../../core/sticker-stat
 import { AuthService } from '../../auth/auth.service';
 import { ALBUM_SOURCE, StickerAlbumService } from '../album/sticker-album.service';
 import { AlbumClub } from '../album/album.model';
-import { EUR_BASE_PER_STICKER, EUR_OFFERS, EUR_STARTER, LUKATEN_OFFERS, ShopOffer, stickerCount } from './shop.model';
+import { PACK_ART } from '../album/pack.model';
+import {
+  ALL_SHOP_OFFERS, EUR_BUNDLES, EUR_SINGLES, EUR_STARTER, LUKATEN_OFFERS, PACK_KINDS, PackKind, ShopOffer,
+  hasClub, offerKinds, offerValueEur, packsOf, stickerCount,
+} from './shop.model';
 
 /** Eigener, noch nicht bestätigter Euro-Kauf (bitte per PayPal bezahlen). */
 interface EurPending {
@@ -71,9 +75,28 @@ export class StickerShopComponent {
   private status = inject(StickerStatusService);
 
   readonly lukatenOffers = LUKATEN_OFFERS;
-  readonly eurOffers = EUR_OFFERS;
+  readonly eurBundles = EUR_BUNDLES;
+  readonly eurSingles = EUR_SINGLES;
   readonly starter = EUR_STARTER;
+  readonly kinds = PACK_KINDS;
   readonly stickerCount = stickerCount;
+  readonly packsOf = packsOf;
+  readonly offerKinds = offerKinds;
+  readonly hasClub = hasClub;
+  readonly offerValueEur = offerValueEur;
+
+  /** eigenes Bild auf dem Pack (siehe PACK_ART), wie im Pack-Dialog */
+  art(kind: PackKind) { return PACK_ART[kind] ?? null; }
+
+  /**
+   * Stapel je Angebot: bei gemischten Angeboten je Art ein Pack (vorne die "beste" Art), sonst bis zu 3 gleiche.
+   * i = 0 ist das vorderste; gerendert wird von hinten nach vorne.
+   */
+  readonly stacks = new Map(ALL_SHOP_OFFERS.map(o => {
+    const kinds = offerKinds(o).map(k => k.kind);
+    const list = kinds.length > 1 ? [...kinds].reverse() : Array<PackKind>(Math.min(packsOf(o), 3)).fill(kinds[0]);
+    return [o.key, list.map((kind, i) => ({ kind, i })).reverse()] as const;
+  }));
 
   // undefined = lädt, null = Fehler — nach einem Kauf neu geladen
   private reloadTick = signal(0);
@@ -93,7 +116,7 @@ export class StickerShopComponent {
   eurBlocked       = computed(() => this.eurPending().length >= EUR_MAX_PENDING);
 
   offerName(key: string): string {
-    return [...LUKATEN_OFFERS, EUR_STARTER, ...EUR_OFFERS].find(o => o.key === key)?.name ?? key;
+    return ALL_SHOP_OFFERS.find(o => o.key === key)?.name ?? key;
   }
 
   copied = signal<string | null>(null);
@@ -110,10 +133,9 @@ export class StickerShopComponent {
     return b == null ? o.price : Math.max(0, Math.ceil(o.price - b));
   }
 
-  // ── Euro: Preis pro Sticker + Ersparnis gegenüber der Handvoll ──
-  perSticker(o: ShopOffer): number { return o.price / stickerCount(o); }
+  /** Euro: Ersparnis gegenüber dem Wert der enthaltenen Packs (0 bei Einzel-Packs) */
   savingPct(o: ShopOffer): number {
-    return Math.round((1 - this.perSticker(o) / EUR_BASE_PER_STICKER) * 100);
+    return Math.max(0, Math.round((1 - o.price / offerValueEur(o)) * 100));
   }
 
   // ── Vereins-Pack: Vereine mit Fortschritt, fast komplette zuerst ──
@@ -164,7 +186,7 @@ export class StickerShopComponent {
   canBuy = computed(() => {
     const o = this.confirming();
     if (!o || this.buying() || this.bought()) return false;
-    if (o.clubPick && !this.pickedClubId()) return false;
+    if (hasClub(o) && !this.pickedClubId()) return false;
     if (o.currency === 'eur') {
       return this.eurAvailable() && !this.eurBlocked() && (!o.once || this.starterAvailable());
     }
@@ -176,7 +198,7 @@ export class StickerShopComponent {
     if (!o || !this.canBuy()) return;
     this.buying.set(true);
     this.buyError.set(null);
-    const clubId = o.clubPick ? this.pickedClubId() : null;
+    const clubId = hasClub(o) ? this.pickedClubId() : null;
     const done = () => {
       this.buying.set(false);
       this.bought.set(true);
@@ -244,11 +266,6 @@ export class StickerShopComponent {
     return o?.currency === 'lukaten' && b != null ? b - o.price : null;
   });
 
-  /** Bis zu 3 Packs im Stapel, vorderstes zuletzt gerendert. */
-  stackOf(o: ShopOffer): number[] {
-    return Array.from({ length: Math.min(o.packs, 3) }, (_, i) => Math.min(o.packs, 3) - 1 - i);
-  }
-
   clubLogo(club: AlbumClub): string { return this.album.clubLogoUrl(club); }
 
   formatLukaten(v: number | null | undefined): string {
@@ -260,8 +277,15 @@ export class StickerShopComponent {
     return v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
   }
 
-  guaranteeLabel(o: ShopOffer): string {
-    if (o.guaranteedNew >= o.packSize) return 'alle garantiert neu';
-    return o.packs > 1 ? `je Pack ${o.guaranteedNew} garantiert neu` : `${o.guaranteedNew} garantiert neu`;
+  /** Pack-Art eines Einzel-Angebots (Lukaten, Euro-Einzelpacks) */
+  kindOf(o: ShopOffer): PackKind { return offerKinds(o)[0].kind; }
+
+  /** Vorteile eines einzelnen Packs dieser Art */
+  kindPerks(kind: PackKind): string[] {
+    const k = PACK_KINDS[kind];
+    const perks = [`${k.size} Sticker`, k.guaranteedNew >= k.size ? 'alle garantiert neu' : `${k.guaranteedNew} garantiert neu`];
+    if (k.holoMin > 0) perks.push(`mind. ${k.holoMin} Holo-Karte`);
+    if (k.club) perks.push('Verein frei wählbar');
+    return perks;
   }
 }

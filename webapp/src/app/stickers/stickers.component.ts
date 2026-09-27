@@ -14,5 +14,6 @@ export class StickersComponent {
   private auth = inject(AuthService);
   private status = inject(StickerStatusService);
   isMaintainer = computed(() => this.auth.isMaintainer());
+  isAdmin = computed(() => this.auth.isAdmin());
   tradesIncoming = this.status.tradesIncoming;
 }

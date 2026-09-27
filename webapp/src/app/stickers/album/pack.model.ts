@@ -2,9 +2,7 @@
 import { StickerPack, StickerPackSource } from '../../core/sticker-status.service';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { DEFAULT_SHARED_PARAMS, Sticker } from './album.model';
-import { EUR_OFFERS, EUR_STARTER, LUKATEN_OFFERS } from '../shop/shop.model';
-
-const SHOP_OFFERS_ALL = [...LUKATEN_OFFERS, EUR_STARTER, ...EUR_OFFERS];
+import { PACK_KINDS, PackKind, kindFromOffer } from '../shop/shop.model';
 
 /** Was vor dem Öffnen auf dem Pack steht (Art, Anlass, Anzahl). */
 export interface PackInfo {
@@ -15,6 +13,8 @@ export interface PackInfo {
   matchdayNumber: number | null;
   leagueName: string | null;
   shopOffer?: string | null;     // Shop-Pack: gekauftes Angebot
+  kind?: PackKind | null;        // Shop-Pack: Pack-Art (normal/big/club/special) — bestimmt Design + Inhalt
+  clubId?: string | null;        // Vereins-Pack (nur Test-Packs brauchen das im Browser)
 }
 
 export interface PackCard {
@@ -29,6 +29,8 @@ export function packInfo(p: StickerPack): PackInfo {
     id: p.id, source: p.source, size: p.size,
     milestonePoints: p.milestone_points, matchdayNumber: p.matchday_number, leagueName: p.league_name,
     shopOffer: p.shop_offer ?? null,
+    kind: p.source === 'shop' ? ((p.pack_kind as PackKind | null) ?? kindFromOffer(p.shop_offer)) : null,
+    clubId: p.club_id ?? null,
   };
 }
 
@@ -42,13 +44,44 @@ export function packRules(source: StickerPackSource): { size: number; allNew: bo
   }
 }
 
+/** Ziehregeln eines Packs (Test-Packs im Browser, Beschriftung): garantiert neu, mind. Holo, nur ein Verein. */
+export function packDrawRules(p: PackInfo): { size: number; guaranteed: number; holoMin: number } {
+  if (p.kind) {
+    const k = PACK_KINDS[p.kind];
+    return { size: k.size, guaranteed: k.guaranteedNew, holoMin: k.holoMin };
+  }
+  const r = packRules(p.source);
+  return { size: p.size, guaranteed: r.allNew ? p.size : (DEFAULT_SHARED_PARAMS.guaranteeNew ? 1 : 0), holoMin: 0 };
+}
+
 /** Beschriftung der Pack-Vorderseite: kleine Art-Zeile + große Überschrift. */
 export function packFace(p: PackInfo): { kind: string; headline: string } {
   switch (p.source) {
     case 'daily':         return { kind: 'Täglich', headline: 'Tages-Pack' };
     case 'milestone':     return { kind: 'Meilenstein', headline: p.milestonePoints ? `${p.milestonePoints} Punkte` : 'Meilenstein' };
     case 'matchday_best': return { kind: 'Spieltagssieger', headline: p.matchdayNumber ? `Spieltag ${p.matchdayNumber}` : 'Spieltagssieger' };
-    case 'shop':          return { kind: 'Shop', headline: SHOP_OFFERS_ALL.find(o => o.key === p.shopOffer)?.name ?? 'Shop-Pack' };
+    case 'shop':          return { kind: 'Shop', headline: p.kind ? PACK_KINDS[p.kind].short : 'Shop-Pack' };
     default:              return { kind: 'Bonus', headline: 'Bonus-Pack' };
   }
 }
+
+/** Anzahl-Zeile: "3 Sticker", "5 neue Sticker" (alle garantiert neu) bzw. "3 Sticker · 1 Holo" */
+export function packCountLabel(p: PackInfo): string {
+  const r = packDrawRules(p);
+  const base = `${p.size} ${r.guaranteed >= p.size ? 'neue ' : ''}Sticker`;
+  return r.holoMin > 0 ? `${base} · ${r.holoMin} Holo` : base;
+}
+
+/** Design-Schlüssel eines Packs: Pack-Art bei Shop-Packs, sonst die Quelle (für Farbe + Bild, siehe PACK_ART) */
+export type PackDesign = PackKind | StickerPackSource;
+export function packDesign(p: PackInfo): PackDesign {
+  return p.source === 'shop' && p.kind ? p.kind : p.source;
+}
+
+/**
+ * Optionale Bilder auf den Packs (freigestellte PNGs unter public/img/packs/), seitlich nach unten versetzt
+ * und per Blend-Mode in die Folie gemischt. Ohne Eintrag: kein Bild. Abstimmen auf /klebrigsten/packs.
+ */
+export const PACK_ART: Partial<Record<PackDesign, { src: string; blend?: string }>> = {
+  // Beispiel: normal: { src: 'img/packs/normal.png', blend: 'soft-light' },
+};

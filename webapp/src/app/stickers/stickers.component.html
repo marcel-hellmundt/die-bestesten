@@ -9,6 +9,9 @@
   @if (isMaintainer()) {
     <a class="pill" routerLink="simulation" routerLinkActive="pill--active">Simulation</a>
   }
+  @if (isAdmin()) {
+    <a class="pill" routerLink="packs" routerLinkActive="pill--active">Packs</a>
+  }
 </nav>
 
 <router-outlet />

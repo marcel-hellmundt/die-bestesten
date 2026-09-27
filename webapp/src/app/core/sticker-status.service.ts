@@ -16,6 +16,7 @@ export interface StickerPack {
   matchday_number: number | null;   // Spieltagsbester-Pack: Spieltag
   shop_offer?: string | null;       // Shop-Pack: gekauftes Angebot (offer key, siehe shop.model.ts)
   club_id?: string | null;          // Vereins-Pack: nur Sticker dieses Vereins
+  pack_kind?: string | null;        // Shop-Pack: normal | big | club | special
 }
 
 /** Je gezogenem Sticker: key = player_id bzw. '{club_id}-logo' / '{club_id}-stadium'. */

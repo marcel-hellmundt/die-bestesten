@@ -102,16 +102,17 @@ trait StickerPackTrait
         $today = (new DateTime('now', new DateTimeZone('Europe/Berlin')))->format('Y-m-d');
         $this->grantStickerPack($managerId, $seasonId, 'daily', "daily:{$today}", null, $this->stickerConfig()['daily_pack_size']);
 
-        $packSql = fn(string $announced, string $club) =>
-            "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, $announced AS announced, $club AS club_id, l.name AS league_name
+        $packSql = fn(string $announced, string $club, string $kind = 'NULL') =>
+            "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, $announced AS announced, $club AS club_id, $kind AS pack_kind, l.name AS league_name
              FROM sticker_pack sp LEFT JOIN league l ON l.id = sp.league_id
              WHERE sp.manager_id = ? AND sp.season_id = ? AND sp.opened_at IS NULL
              ORDER BY sp.created_at ASC";
         // Spalten announced_at / club_id fehlen evtl. noch (Migrationen nicht eingespielt) → schrittweise ohne
         $rows = null;
-        foreach ([['sp.announced_at IS NOT NULL', 'sp.club_id'], ['sp.announced_at IS NOT NULL', 'NULL'], ['1', 'NULL']] as [$announced, $club]) {
+        foreach ([['sp.announced_at IS NOT NULL', 'sp.club_id', 'sp.pack_kind'], ['sp.announced_at IS NOT NULL', 'sp.club_id', 'NULL'],
+                  ['sp.announced_at IS NOT NULL', 'NULL', 'NULL'], ['1', 'NULL', 'NULL']] as [$announced, $club, $kind]) {
             try {
-                $pq = $this->con->prepare($packSql($announced, $club));
+                $pq = $this->con->prepare($packSql($announced, $club, $kind));
                 $pq->execute([$managerId, $seasonId]);
                 $rows = $pq->fetchAll(PDO::FETCH_ASSOC);
                 break;
@@ -145,6 +146,7 @@ trait StickerPackTrait
                     ? (int) $mdNumbers[$parts[2]] : null,
                 'shop_offer'       => $p['source'] === 'shop' ? ($parts[1] ?? null) : null,
                 'club_id'          => $p['club_id'],
+                'pack_kind'        => $p['pack_kind'],
             ];
         }, $rows);
 
@@ -423,11 +425,17 @@ trait StickerPackTrait
     public function openStickerPack(string $managerId, string $packId): array
     {
         try {
-            $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, club_id, guaranteed_new FROM sticker_pack WHERE id = ? AND manager_id = ?");
-            $pq->execute([$packId, $managerId]);
+            try {
+                $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, club_id, guaranteed_new, holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
+                $pq->execute([$packId, $managerId]);
+            } catch (\Throwable $e) {
+                // Spalte holo_min fehlt noch (migrate_sticker_pack_kind.sql)
+                $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, club_id, guaranteed_new, NULL AS holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
+                $pq->execute([$packId, $managerId]);
+            }
         } catch (\Throwable $e) {
             // Spalten club_id/guaranteed_new fehlen noch (migrate_sticker_shop_pack.sql) → wie bisher
-            $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, NULL AS club_id, NULL AS guaranteed_new FROM sticker_pack WHERE id = ? AND manager_id = ?");
+            $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, NULL AS club_id, NULL AS guaranteed_new, NULL AS holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
             $pq->execute([$packId, $managerId]);
         }
         $pack = $pq->fetch(PDO::FETCH_ASSOC);
@@ -492,6 +500,17 @@ trait StickerPackTrait
             $holo = $h < $cfg['holo_gold_chance'] ? 'gold'
                 : ($h < $cfg['holo_gold_chance'] + $cfg['holo_silver_chance'] ? 'silver' : null);
             $cards[] = ['sticker_id' => $sticker['id'], 'key' => $sticker['sticker_key'], 'holo' => $holo, 'is_new' => $isNew];
+        }
+
+        // Holo-Garantie (Special-Pack): fehlende Holos auf zufälligen normalen Karten nachwürfeln — Gold im selben
+        // Verhältnis wie sonst (Gold-Chance / Holo-Chance gesamt), sonst Silber
+        $holoMin = (int) ($pack['holo_min'] ?? 0);
+        $plain = array_keys(array_filter($cards, fn($c) => $c['holo'] === null));
+        shuffle($plain);
+        $missingHolo = $holoMin - (count($cards) - count($plain));
+        $goldShare = $cfg['holo_gold_chance'] / max(1e-9, $cfg['holo_gold_chance'] + $cfg['holo_silver_chance']);
+        for ($m = 0; $m < $missingHolo && $plain; $m++) {
+            $cards[array_pop($plain)]['holo'] = $rand() < $goldShare ? 'gold' : 'silver';
         }
 
         $this->con->beginTransaction();

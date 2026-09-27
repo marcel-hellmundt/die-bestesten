@@ -181,11 +181,13 @@ export class StickerAlbumService {
 
   /**
    * Test-Pack: Sticker nur im Browser gewürfelt, nach denselben Regeln wie serverseitig (Gewichtung,
-   * garantiert neue Karten — `allNew` alle, sonst die erste —, Holo-Chancen) — nichts wird gespeichert;
-   * "Neu"/"Doppelt" relativ zur echten Sammlung `before`.
+   * die ersten `guaranteed` Karten garantiert neu, mind. `holoMin` Holo, bei `clubId` nur Sticker dieses
+   * Vereins, sonst Holo-Chancen) — nichts wird gespeichert; "Neu"/"Doppelt" relativ zur echten Sammlung `before`.
    */
-  randomPackCards(size: number, before: Uint16Array, allNew = false): PackCard[] {
-    const stickers = this.stickers();
+  randomPackCards(size: number, before: Uint16Array, opts: { guaranteed: number; holoMin?: number; clubId?: string | null }): PackCard[] {
+    const all = this.stickers();
+    const clubIdx = opts.clubId ? this.clubs().findIndex(c => c.id === opts.clubId) : -1;
+    const stickers = clubIdx >= 0 ? all.filter(s => s.clubIdx === clubIdx) : all;
     if (stickers.length === 0) return [];
     const rules = DEFAULT_SHARED_PARAMS;
     const weights = stickerWeights(stickers.map(s => s.price), rules.rarityAlpha);
@@ -204,11 +206,17 @@ export class StickerAlbumService {
     };
     const draws: { sticker: Sticker; holo: StickerHolo | null }[] = [];
     for (let k = 0; k < size; k++) {
-      const i = draw(allNew || (rules.guaranteeNew && k === 0));
+      const i = draw(k < opts.guaranteed);
       owned[i] = 1;
       const h = Math.random();
       const holo = h < rules.holoGoldChance ? 'gold' : h < rules.holoGoldChance + rules.holoSilverChance ? 'silver' : null;
       draws.push({ sticker: stickers[i], holo });
+    }
+    // Holo-Garantie (Special-Pack) wie im Backend: fehlende Holos auf zufälligen normalen Karten, Gold anteilig
+    const goldShare = rules.holoGoldChance / Math.max(1e-9, rules.holoGoldChance + rules.holoSilverChance);
+    const plain = draws.map((d, i) => (d.holo ? -1 : i)).filter(i => i >= 0).sort(() => Math.random() - 0.5);
+    for (let m = draws.length - plain.length; m < (opts.holoMin ?? 0) && plain.length; m++) {
+      draws[plain.pop()!].holo = Math.random() < goldShare ? 'gold' : 'silver';
     }
     return this.toPackCards(draws, before);
   }

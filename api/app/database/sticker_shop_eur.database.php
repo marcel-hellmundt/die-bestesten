@@ -11,16 +11,37 @@ trait StickerShopEurTrait
 {
     private const EUR_MAX_PENDING = 3; // offene (unbezahlte) Käufe je Manager
 
-    /** Euro-Angebote — maßgeblich sind die Preise hier (shop.model.ts muss passen). */
+    /**
+     * Euro-Angebote = Kombinationen der festen Pack-Arten (StickerShopTrait::stickerPackKinds()) — maßgeblich sind
+     * die Preise hier (shop.model.ts muss passen). contents = Pack-Art → Anzahl; club = enthält ein Vereins-Pack
+     * (Verein wird beim Kauf gewählt); packs/stickers = abgeleitete Summen.
+     */
     protected function stickerShopEurOffers(): array
     {
-        return [
-            'e-starter' => ['name' => 'Starter',      'price_cents' => 199, 'packs' => 10, 'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => true],
-            'e-handful' => ['name' => 'Handvoll',     'price_cents' => 299, 'packs' => 5,  'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => false],
-            'e-stack'   => ['name' => 'Stapel',       'price_cents' => 499, 'packs' => 10, 'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => false],
-            'e-crate'   => ['name' => 'Kiste',        'price_cents' => 999, 'packs' => 25, 'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => false],  // 20 + 5 gratis
-            'e-club'    => ['name' => 'Vereins-Pack', 'price_cents' => 199, 'packs' => 1,  'size' => 5, 'guaranteed_new' => 5, 'club' => true,  'once' => false],
+        $offers = [
+            'e-starter' => ['name' => 'Starter',      'price_cents' => 199, 'contents' => ['normal' => 10], 'once' => true],
+            'e-handful' => ['name' => 'Handvoll',     'price_cents' => 299, 'contents' => ['normal' => 5]],
+            'e-stack'   => ['name' => 'Stapel',       'price_cents' => 499, 'contents' => ['normal' => 4, 'big' => 3]],
+            'e-crate'   => ['name' => 'Kiste',        'price_cents' => 699, 'contents' => ['normal' => 3, 'big' => 3, 'special' => 1, 'club' => 1]],
+            'e-club'    => ['name' => 'Vereins-Pack', 'price_cents' => 199, 'contents' => ['club' => 1]],
+            'e-special' => ['name' => 'Special Pack', 'price_cents' => 199, 'contents' => ['special' => 1]],
         ];
+        $kinds = $this->stickerPackKinds();
+        foreach ($offers as &$o) {
+            $o['once']    = $o['once'] ?? false;
+            $o['club']    = isset($o['contents']['club']);
+            $o['packs']   = array_sum($o['contents']);
+            $o['stickers'] = array_sum(array_map(fn($k, $n) => $kinds[$k]['size'] * $n, array_keys($o['contents']), $o['contents']));
+        }
+        return $offers;
+    }
+
+    /** z.B. "3 Normale, 3 Big, 1 Special, 1 Vereins-Pack" */
+    private function stickerEurContentsLabel(array $offer): string
+    {
+        $names = ['normal' => ['Normales Pack', 'Normale Packs'], 'big' => ['Big Pack', 'Big Packs'],
+                  'club' => ['Vereins-Pack', 'Vereins-Packs'], 'special' => ['Special Pack', 'Special Packs']];
+        return implode(', ', array_map(fn($k, $n) => $n . ' ' . $names[$k][$n === 1 ? 0 : 1], array_keys($offer['contents']), $offer['contents']));
     }
 
     /** PayPal.me-Name des Empfängers (privates Konto) — per .env überschreibbar. */
@@ -129,12 +150,13 @@ trait StickerShopEurTrait
                 "INSERT INTO sticker_eur_purchase (id, manager_id, season_id, offer_key, amount_cents, code) VALUES (?, ?, ?, ?, ?, ?)"
             )->execute([$purchaseId, $managerId, $seasonId, $offerKey, $offer['price_cents'], $code]);
 
-            $ins = $this->con->prepare(
-                "INSERT INTO sticker_pack (manager_id, season_id, source, source_key, club_id, eur_purchase_id, size, guaranteed_new)
-                 VALUES (?, ?, 'shop', ?, ?, ?, ?, ?)"
-            );
-            for ($i = 1; $i <= $offer['packs']; $i++) {
-                $ins->execute([$managerId, $seasonId, "shop:{$offerKey}:{$purchaseId}:{$i}", $clubId, $purchaseId, $offer['size'], $offer['guaranteed_new']]);
+            // Packs je Pack-Art der Kombination (Vereins-Packs mit dem gewählten Verein)
+            $i = 0;
+            foreach ($offer['contents'] as $kind => $count) {
+                for ($n = 0; $n < $count; $n++) {
+                    $i++;
+                    $this->insertStickerShopPack($managerId, $seasonId, "shop:{$offerKey}:{$purchaseId}:{$i}", $kind, null, $clubId, $purchaseId);
+                }
             }
             $this->con->commit();
         } catch (\Throwable $e) {
@@ -267,7 +289,7 @@ trait StickerShopEurTrait
                 . "<body style=\"font-family:sans-serif;color:#1e293b;background:#f8fafc;padding:24px;max-width:600px;margin:0 auto;\">"
                 . "<h2 style=\"margin:0 0 12px;\">Neuer Euro-Kauf im Klebrigsten-Shop</h2>"
                 . "<p><strong>" . htmlspecialchars($managerName) . "</strong> hat <strong>" . htmlspecialchars($what) . "</strong> "
-                . "für <strong>$amount</strong> gekauft ({$offer['packs']} Pack(s) à {$offer['size']} Sticker).</p>"
+                . "für <strong>$amount</strong> gekauft (" . htmlspecialchars($this->stickerEurContentsLabel($offer)) . ", {$offer['stickers']} Sticker).</p>"
                 . "<p>Kauf-Code: <strong>$code</strong> · Zahlung per PayPal an " . htmlspecialchars($this->paypalMeName()) . "</p>"
                 . "<p style=\"color:#64748b;\">Die Packs sind schon da; Karten daraus sind bis zur Bestätigung nicht tauschbar. "
                 . "Bitte im Shop unter „Euro-Käufe“ bestätigen oder stornieren.</p>"

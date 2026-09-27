@@ -1,5 +1,5 @@
 // "Die Klebrigsten" V0 — reine Simulationslogik (ohne Angular), deterministisch per Seed.
-import { EUR_OFFERS, EUR_STARTER, LUKATEN_OFFERS, ShopOffer, stickerCount } from './shop/shop.model';
+import { EUR_OFFERS, EUR_STARTER, LUKATEN_OFFERS, PACK_KINDS, ShopOffer, isClubOnly, offerKinds, packsOf, stickerCount } from './shop/shop.model';
 
 /** Wann über die Saison im Shop gekauft wird. */
 export type ShopTiming = 'start' | 'spread' | 'late';
@@ -117,13 +117,13 @@ function bestBundle(offers: ShopOffer[], budget: number, unit: number): ShopOffe
 }
 
 /**
- * Was ein Manager mit `lukaten` + `euro` pro Saison kauft: je Währung die meisten Sticker (ohne
- * Vereins-Packs), was übrig bleibt, geht in Vereins-Packs — gezielt für den Verein, dem am wenigsten fehlt.
+ * Was ein Manager mit `lukaten` + `euro` pro Saison kauft: je Währung die meisten Sticker (ohne reine
+ * Vereins-Pack-Angebote), was übrig bleibt, geht in Vereins-Packs — gezielt für den Verein, dem am wenigsten fehlt.
  */
 export function shopPlan(lukaten: number, euro: number): ShopPlan {
   const plan = (offers: ShopOffer[], budget: number, unit: number) => {
-    const bundle = bestBundle(offers.filter(o => !o.clubPick), budget, unit);
-    const club = offers.find(o => o.clubPick);
+    const bundle = bestBundle(offers.filter(o => !isClubOnly(o)), budget, unit);
+    const club = offers.find(o => isClubOnly(o));
     let left = budget - bundle.reduce((a, o) => a + o.price, 0);
     if (club) while (left + 1e-6 >= club.price) { bundle.push(club); left -= club.price; }
     return bundle;
@@ -133,7 +133,7 @@ export function shopPlan(lukaten: number, euro: number): ShopPlan {
   const offers = [...l, ...e];
   return {
     offers,
-    packs: offers.reduce((a, o) => a + o.packs, 0),
+    packs: offers.reduce((a, o) => a + packsOf(o), 0),
     stickers: offers.reduce((a, o) => a + stickerCount(o), 0),
     spentLukaten: l.reduce((a, o) => a + o.price, 0),
     spentEuro: Math.round(e.reduce((a, o) => a + o.price, 0) * 100) / 100,
@@ -212,25 +212,35 @@ export function simulateSeason(params: SimParams, weights: number[], timeline: T
     packs.push({ day: Math.max(day, 0), source, stickers, holo });
   };
 
-  /** Shop-Pack: `guaranteedNew` Karten garantiert neu; Vereins-Pack nur aus dem Verein mit den wenigsten fehlenden. */
+  /**
+   * Shop-Kauf: je Pack-Art des Angebots die Packs öffnen — garantiert neue Karten, mind. Holo (Special),
+   * Vereins-Pack nur aus dem Verein mit den wenigsten fehlenden.
+   */
   const openShop = (day: number, o: ShopOffer) => {
     if (n === 0) return;
-    let club = -1;
-    if (o.clubPick && clubOf) {
-      for (let c = 0; c < clubCount; c++) {
-        if (clubMissing[c] > 0 && (club < 0 || clubMissing[c] < clubMissing[club])) club = c;
+    for (const { kind, count } of offerKinds(o)) {
+      const def = PACK_KINDS[kind];
+      for (let p = 0; p < count; p++) {
+        let club = -1;
+        if (def.club && clubOf) {
+          for (let c = 0; c < clubCount; c++) {
+            if (clubMissing[c] > 0 && (club < 0 || clubMissing[c] < clubMissing[club])) club = c;
+          }
+        }
+        const inClub = (i: number) => club < 0 || clubOf![i] === club;
+        const stickers: number[] = [];
+        const holo: HoloVariant[] = [];
+        for (let k = 0; k < def.size; k++) {
+          const pick = k < def.guaranteedNew ? drawWhere(i => !owned[i] && inClub(i), shopRandom) : null;
+          stickers.push(take(pick ?? drawWhere(inClub, shopRandom) ?? drawAny(shopRandom)));
+          holo.push(rollHolo());
+        }
+        // Holo-Garantie: fehlende auf die ersten normalen Karten (Silber; Gold spielt für die Simulation keine Rolle)
+        for (let k = 0, have = holo.filter(Boolean).length; k < holo.length && have < def.holoMin; k++) {
+          if (!holo[k]) { holo[k] = 'silver'; have++; }
+        }
+        packs.push({ day, source: 'shop', stickers, holo });
       }
-    }
-    const inClub = (i: number) => club < 0 || clubOf![i] === club;
-    for (let p = 0; p < o.packs; p++) {
-      const stickers: number[] = [];
-      const holo: HoloVariant[] = [];
-      for (let k = 0; k < o.packSize; k++) {
-        const pick = k < o.guaranteedNew ? drawWhere(i => !owned[i] && inClub(i), shopRandom) : null;
-        stickers.push(take(pick ?? drawWhere(inClub, shopRandom) ?? drawAny(shopRandom)));
-        holo.push(rollHolo());
-      }
-      packs.push({ day, source: 'shop', stickers, holo });
     }
   };
   const plan = shopPlan(params.shopLukaten, params.shopEuro).offers;
