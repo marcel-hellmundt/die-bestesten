@@ -1381,7 +1381,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/sticker/pack/announced',
-                        'description' => 'Eigene Packs als "groß angekündigt" markieren (sticker_pack.announced_at = jetzt) — der Ankündigungs-Dialog neuer Packs ruft das beim Schließen auf (aufgerissen oder "Später öffnen"), damit dasselbe Pack auf anderen Geräten nicht erneut groß erscheint; fremde/bereits markierte IDs werden ignoriert → {status, updated}; 400 ohne ids-Array — Auth',
+                        'description' => 'Eigene Packs als "groß angekündigt" markieren (sticker_pack.announced_at = jetzt) — der Ankündigungs-Dialog ruft das beim Einblenden für alle dann neuen Packs auf (auch die, die im selben Dialog per "Nächstes Pack" geöffnet werden), damit dasselbe Pack auf anderen Geräten nicht erneut groß erscheint; fremde/bereits markierte IDs werden ignoriert → {status, updated}; 400 ohne ids-Array — Auth',
                         'body' => ['ids' => 'Array von Pack-UUIDs (max. 500)'],
                     ],
                     [

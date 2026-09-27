@@ -12,8 +12,8 @@ const OPT_OUT_AFTER_IGNORED_DAYS = 3;
 /**
  * "Die Klebrigsten" — neu erhaltene Packs (z.B. Tages-Pack beim App-Öffnen, Meilenstein nach dem Spieltag)
  * erscheinen auf jeder Seite sofort groß in der Mitte: aufreißen oder "Später öffnen" (dann bleibt das Pack
- * ungeöffnet und kann unter /klebrigsten/sammelalbum geöffnet werden). Beim Schließen werden die Packs
- * serverseitig als angekündigt markiert (announced) — jedes Pack erscheint nur einmal von selbst, auch
+ * ungeöffnet und kann unter /klebrigsten/sammelalbum geöffnet werden). Beim Einblenden werden alle neuen
+ * Packs serverseitig als angekündigt markiert (announced) — jedes Pack erscheint nur einmal von selbst, auch
  * über mehrere Geräte hinweg. Liegt in der Shell; die Dialog-Logik (inkl. Album-Daten) entsteht erst bei Bedarf.
  */
 @Component({
@@ -45,13 +45,20 @@ export class PackAnnouncementComponent {
     : this.status.packs().filter(p => !p.announced && !this.dismissed().has(p.id)));
 
   constructor() {
-    // Neues, noch nicht angekündigtes Pack → Dialog zeigen (einer zur Zeit)
+    // Neues, noch nicht angekündigtes Pack → Dialog zeigen (einer zur Zeit). active wird mitgelesen, damit
+    // ein Pack, das während eines offenen Dialogs dazukommt, nach dem Schließen noch eingeblendet wird.
     effect(() => {
-      const next = this.pending()[0];
+      const pending = this.pending();
+      const busy = this.active() !== null;
       untracked(() => {
-        if (!next || this.active()) return;
+        if (!pending.length || busy) return;
         this.offerOptOut.set((this.status.state()?.ignored_days ?? 0) >= OPT_OUT_AFTER_IGNORED_DAYS);
-        this.active.set(packInfo(next));
+        // Alle jetzt neuen Packs gelten ab dem Einblenden als angekündigt — auch die, die gleich per
+        // "Nächstes Pack" im selben Dialog geöffnet werden (beim Schließen wären sie schon aus packs() raus)
+        const ids = pending.map(p => p.id);
+        this.dismissed.set(new Set([...this.dismissed(), ...ids]));
+        this.status.markAnnounced(ids);
+        this.active.set(packInfo(pending[0]));
       });
     });
   }
@@ -62,13 +69,8 @@ export class PackAnnouncementComponent {
     this.notif.setPreference('sticker_pack', false);
   }
 
-  /** Dialog zu: alle bis jetzt bekannten Packs gelten als angekündigt (auch übersprungene) — in der DB. */
+  /** Dialog zu — markiert ist schon beim Einblenden; währenddessen neu dazugekommene Packs erscheinen danach. */
   dismiss(): void {
-    const ids = new Set(this.status.packs().filter(p => !p.announced).map(p => p.id));
-    const first = this.active()?.id;
-    if (first) ids.add(first);
-    this.dismissed.set(new Set([...this.dismissed(), ...ids]));
-    this.status.markAnnounced([...ids]);
     this.active.set(null);
   }
 }
