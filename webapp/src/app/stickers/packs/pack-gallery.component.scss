@@ -16,6 +16,12 @@
     color: $color-text-muted;
   }
 
+  &__stages {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+  }
+
   &__art {
     padding-left: $space-4;
     font-size: $font-xs;

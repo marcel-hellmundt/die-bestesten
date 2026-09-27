@@ -79,9 +79,16 @@ export function packDesign(p: PackInfo): PackDesign {
 }
 
 /**
- * Optionale Bilder auf den Packs (freigestellte PNGs unter public/img/packs/), seitlich nach unten versetzt
- * und per Blend-Mode in die Folie gemischt. Ohne Eintrag: kein Bild. Abstimmen auf /klebrigsten/packs.
+ * Optionale Bilder auf den Packs (freigestellte PNGs unter public/img/stickers/front/), nach unten links versetzt (Motive schauen nach rechts)
+ * und per Blend-Mode in die Folie gemischt (Default normal = voll sichtbar). Ohne Eintrag: kein Bild. Abstimmen auf /klebrigsten/packs.
+ * place 'center' = kleiner, mittig unten, nicht gedreht (z.B. Icons wie die Medaille).
  */
-export const PACK_ART: Partial<Record<PackDesign, { src: string; blend?: string }>> = {
-  // Beispiel: normal: { src: 'img/packs/normal.png', blend: 'soft-light' },
+export interface PackArt { src: string; blend?: string; place?: 'corner' | 'center'; }
+export const PACK_ART: Partial<Record<PackDesign, PackArt>> = {
+  normal:  { src: 'img/stickers/front/dinosaur.png' },
+  big:     { src: 'img/stickers/front/dragon.png' },
+  club:    { src: 'img/stickers/front/phoenix.png' },
+  special: { src: 'img/stickers/front/chimera.png' },
+  // Spieltagssieger: Medaille wie die Karte "Spieltagssiege" in der Saisontabelle (/liga/tabelle), hier in höherer Auflösung
+  matchday_best: { src: 'img/stickers/front/medal.png', place: 'center' },
 };

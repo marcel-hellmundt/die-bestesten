@@ -9,7 +9,7 @@
         <div class="mini-pack mini-pack--{{ it.kind }}" aria-hidden="true">
           <span class="mini-pack__body">
             @if (art(it.kind); as a) {
-              <img class="mini-pack__art" [src]="a.src" [style.mix-blend-mode]="a.blend ?? 'soft-light'" alt="" />
+              <img class="mini-pack__art" [class.mini-pack__art--center]="a.place === 'center'" [src]="a.src" [style.mix-blend-mode]="a.blend ?? 'normal'" alt="" />
             }
             @if (showClub) {
               <img class="mini-pack__logo" [src]="clubLogo(club)" alt="" />

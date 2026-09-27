@@ -93,9 +93,9 @@ export class StickerCardComponent {
 
   /** Facetten-Texturen (Voronoi, generiert per scripts/generate-sticker-facets.js), relativ zur base href. */
   readonly facetUrls = {
-    base: 'url(img/stickers/facets-base.svg)',
-    x: 'url(img/stickers/facets-x.svg)',
-    y: 'url(img/stickers/facets-y.svg)',
+    base: 'url(img/stickers/holo/facets-base.svg)',
+    x: 'url(img/stickers/holo/facets-x.svg)',
+    y: 'url(img/stickers/holo/facets-y.svg)',
   };
   photoFailed = signal(false);
   logoFailed = signal(false);

@@ -325,10 +325,10 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
   border-radius: 50%;
   vertical-align: -1px;
 
-  &--normal  { background: #fa983a; }
-  &--big     { background: #eb2f06; }
-  &--club    { background: #1e3799; }
-  &--special { background: #ffc72c; box-shadow: inset 0 0 0 1px #b8860b; }
+  &--normal  { background: #75cc54; }
+  &--big     { background: #f26d53; }
+  &--club    { background: #fcc732; box-shadow: inset 0 0 0 1px #b38a0e; }
+  &--special { background: #8854d0; }
 }
 
 .offer {
@@ -456,10 +456,10 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
   align-items: center;
   gap: $space-5;
   padding: $space-4 $space-5;
-  // Farbe wie die Folie der normalen Packs (Orange)
-  border: 1px solid color-mix(in srgb, #fa983a 45%, transparent);
+  // Farbe wie die Folie der normalen Packs (Grün)
+  border: 1px solid color-mix(in srgb, #75cc54 50%, transparent);
   border-radius: $radius-lg;
-  background: linear-gradient(110deg, color-mix(in srgb, #fa983a 18%, #{$color-surface}), $color-surface 70%);
+  background: linear-gradient(110deg, color-mix(in srgb, #75cc54 20%, #{$color-surface}), $color-surface 70%);
 
   @media (max-width: $mobile-breakpoint) { flex-wrap: wrap; gap: $space-3; padding: $space-3; }
 
@@ -479,7 +479,7 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     align-self: flex-start;
     padding: 1px 8px;
     border-radius: $radius-full;
-    background: #eb2f06;
+    background: #f26d53;
     color: #fff;
     font-size: 11px;
     font-weight: $font-weight-bold;
@@ -550,15 +550,14 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
   @media (max-width: $narrow) { width: 78px; }
 
   // Pack-Arten — gleiche Farben wie im Pack-Dialog (pack-open-dialog.component.scss)
-  @each $kind, $light, $foil, $dark, $ink in (
-    normal  #fcc58f #fa983a #b35f0f #b35f0f,  // Orange
-    big     #f5795c #eb2f06 #8a1a02 #b82503,  // Rot
-    club    #5b72c9 #1e3799 #0c1a4f #1e3799,  // Blau
-    special #fff1b8 #ffc72c #b8860b #8a6100,  // Electric Gold
+  @each $kind, $light, $foil, $dark, $ink, $text in (
+    normal  #b5e8a2 #75cc54 #3d7f26 #2f6b1b #173d0c,  // Grün (dunkle Schrift)
+    big     #f9ab9b #f26d53 #a3301b #b83a22 #fff,     // Koralle
+    club    #fee79a #fcc732 #b38a0e #7a5a00 #3d2c00,  // Gelb (dunkle Schrift)
+    special #b99be6 #8854d0 #4a2682 #6c3bb3 #fff,     // Lila
   ) {
-    &--#{$kind} { --foil-light: #{$light}; --foil: #{$foil}; --foil-dark: #{$dark}; --ink: #{$ink}; }
+    &--#{$kind} { --foil-light: #{$light}; --foil: #{$foil}; --foil-dark: #{$dark}; --ink: #{$ink}; --text: #{$text}; }
   }
-  &--special { --text: #3d2b00; } // dunkle Schrift auf Gold
 
   .offer:hover &,
   .single:hover &,
@@ -584,7 +583,8 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; // Text im oberen Teil, unten ist Platz fürs Motiv (PACK_ART)
+    padding-top: 16%;
     gap: 4cqw;
     overflow: hidden;
     mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 10px 100%;
@@ -592,14 +592,17 @@ $admin-wide: 1280px; // ab hier Admin-Übersicht rechts neben dem Shop, darunter
     > :not(.mini-pack__art) { position: relative; z-index: 1; }
   }
 
-  // eigenes Motiv (PACK_ART): freigestellt, unten seitlich angeschnitten
+  // eigenes Motiv (PACK_ART): freigestellt, unten links angeschnitten
   &__art {
     position: absolute;
-    right: -22%;
+    left: -22%; // unten links — die Motive schauen nach rechts ins Pack
     bottom: -10%;
     width: 85%;
     pointer-events: none;
-    transform: rotate(-8deg);
+    transform: rotate(8deg);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+
+    &--center { left: 50%; bottom: 7%; width: 42%; transform: translateX(-50%); }
   }
 
   &__top {

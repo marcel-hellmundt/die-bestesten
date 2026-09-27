@@ -15,7 +15,7 @@ export interface PackKindDef {
   club: boolean;          // nur Sticker eines gewählten Vereins
 }
 
-/** Die festen Pack-Arten — Farbe je Art: normal Orange, big Rot, club Blau, special Electric Gold. */
+/** Die festen Pack-Arten — Farbe je Art: normal Grün #75cc54, big Koralle #f26d53, club Gelb #fcc732, special Lila #8854d0. */
 export const PACK_KINDS: Record<PackKind, PackKindDef> = {
   normal:  { kind: 'normal',  name: 'Normales Pack', short: 'Normal',  size: 3, guaranteedNew: 1, holoMin: 0, club: false },
   big:     { kind: 'big',     name: 'Big Pack',      short: 'Big',     size: 7, guaranteedNew: 2, holoMin: 0, club: false },

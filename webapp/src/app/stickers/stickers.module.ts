@@ -15,6 +15,7 @@ import { StickerChipComponent } from './trade/sticker-chip.component';
 import { TradeDialogComponent } from './trade/trade-dialog.component';
 import { StickerTradesComponent } from './trade/sticker-trades.component';
 import { PackGalleryComponent } from './packs/pack-gallery.component';
+import { PackStageComponent } from './packs/pack-stage.component';
 import { AdminGuard } from '../auth/admin.guard';
 
 // "Die Klebrigsten" (Sticker-Album): /klebrigsten/sammelalbum (eigenes Album), /klebrigsten/klebebande
@@ -41,7 +42,7 @@ const routes: Routes = [
   declarations: [
     StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent,
     StickerSimulationComponent, StickerCollectorsComponent, StickerShopComponent,
-    StickerChipComponent, TradeDialogComponent, StickerTradesComponent, PackGalleryComponent,
+    StickerChipComponent, TradeDialogComponent, StickerTradesComponent, PackGalleryComponent, PackStageComponent,
   ],
   imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule, StuckDirective],
 })

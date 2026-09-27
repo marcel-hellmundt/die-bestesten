@@ -12,7 +12,7 @@ const W = 500, H = 700;
 const CELLS = 500;
 const LLOYD_ITERATIONS = 10;
 const SEED = 20260925;
-const OUT = path.join(__dirname, '..', 'public', 'img', 'stickers');
+const OUT = path.join(__dirname, '..', 'public', 'img', 'stickers', 'holo');
 
 // Mulberry32 — kleiner Seed-PRNG
 function rng(seed) {

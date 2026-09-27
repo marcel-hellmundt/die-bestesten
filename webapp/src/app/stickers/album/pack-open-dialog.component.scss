@@ -56,20 +56,21 @@
   container-type: inline-size;
   animation: float 2.6s ease-in-out infinite;
 
-  // Meilenstein: Gold
+  // Meilenstein: Blau #4b7bec
   &--milestone {
-    --foil-light: #f6d36b;
-    --foil: #c99416;
-    --foil-dark: #6b4705;
-    --ink: #8a5d06;
+    --foil-light: #9bb6f5;
+    --foil: #4b7bec;
+    --foil-dark: #1f3f96;
+    --ink: #2f5bc4;
   }
 
-  // Spieltagssieger: Blau
+  // Spieltagssieger: Gelb #fed330 (dunkle Schrift)
   &--matchday_best {
-    --foil-light: #5b9bf5;
-    --foil: #1d4ed8;
-    --foil-dark: #0c1f5e;
-    --ink: #1d4ed8;
+    --foil-light: #fff0b0;
+    --foil: #fed330;
+    --foil-dark: #b89300;
+    --ink: #7a6200;
+    --text: #3d3000;
   }
 
   // Shop (Lukaten): Türkis wie im Shop
@@ -80,11 +81,12 @@
     --ink: #0f766e;
   }
 
-  // Shop-Packs je Pack-Art (Klasse pack--{kind}, wie im Shop): Normal Orange · Big Rot · Verein Blau · Special Electric Gold
-  &--normal  { --foil-light: #fcc58f; --foil: #fa983a; --foil-dark: #b35f0f; --ink: #b35f0f; }
-  &--big     { --foil-light: #f5795c; --foil: #eb2f06; --foil-dark: #8a1a02; --ink: #b82503; }
-  &--club    { --foil-light: #5b72c9; --foil: #1e3799; --foil-dark: #0c1a4f; --ink: #1e3799; }
-  &--special { --foil-light: #fff1b8; --foil: #ffc72c; --foil-dark: #b8860b; --ink: #8a6100; --text: #3d2b00; }
+  // Shop-Packs je Pack-Art (Klasse pack--{kind}, wie im Shop): Normal Grün · Big Koralle · Verein Gelb · Special Lila
+  // (helle Folien mit dunkler Schrift)
+  &--normal  { --foil-light: #b5e8a2; --foil: #75cc54; --foil-dark: #3d7f26; --ink: #2f6b1b; --text: #173d0c; }
+  &--big     { --foil-light: #f9ab9b; --foil: #f26d53; --foil-dark: #a3301b; --ink: #b83a22; }
+  &--club    { --foil-light: #fee79a; --foil: #fcc732; --foil-dark: #b38a0e; --ink: #7a5a00; --text: #3d2c00; }
+  &--special { --foil-light: #b99be6; --foil: #8854d0; --foil-dark: #4a2682; --ink: #6c3bb3; }
 
   // Bonus: Graphit
   &--admin {
@@ -140,7 +142,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; // Text im oberen Teil, unten ist Platz fürs Motiv (PACK_ART)
+    padding-top: 16%;
     gap: 2.5cqw;
     box-shadow: inset 0 -12px 20px rgba(0, 0, 0, 0.2);
     overflow: hidden;
@@ -240,17 +243,26 @@
   }
 }
 
-// Bild auf dem Pack (PACK_ART): freigestellt, seitlich nach unten versetzt, angeschnitten, per Blend-Mode
-// (inline gesetzt, Standard soft-light) in die Folie gemischt; Text bleibt darüber lesbar
+// Bild auf dem Pack (PACK_ART): freigestellt, nach unten links versetzt, angeschnitten; Blend-Mode inline
+// (Standard normal = voll sichtbar, optional je Bild z.B. soft-light); Text bleibt darüber lesbar
 .pack__art {
   position: absolute;
-  right: -22%;
+  left: -22%; // unten links — die Motive schauen nach rechts ins Pack
   bottom: -10%;
   z-index: 0;
   width: 85%;
   height: auto;
   pointer-events: none;
-  transform: rotate(-8deg);
+  transform: rotate(8deg);
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
+
+  // z.B. Medaille: kleiner, mittig unten, nicht gedreht
+  &--center {
+    left: 50%;
+    bottom: 7%;
+    width: 42%;
+    transform: translateX(-50%);
+  }
 }
 
 .pack__body > :not(.pack__art) { position: relative; z-index: 1; }
