@@ -43,6 +43,22 @@ export class PackOpenDialogComponent {
   back = output<void>();
 
   readonly faceOf = packFace;
+
+  /**
+   * Auswahl gruppiert: gleiche Packs (gleiche Art + Anlass, z.B. 25 aus einer Kiste) als ein Stapel "×N" —
+   * index = erstes Pack der Gruppe in choices (das wird beim Antippen geöffnet).
+   */
+  groups = computed(() => {
+    const out: { info: PackInfo; index: number; count: number; key: string }[] = [];
+    this.choices().forEach((c, index) => {
+      const key = [c.source, c.shopOffer, c.milestonePoints, c.matchdayNumber, c.leagueName, c.size].join('|');
+      const g = out.find(x => x.key === key);
+      if (g) g.count++; else out.push({ info: c, index, count: 1, key });
+    });
+    return out;
+  });
+  /** angedeutete Packs hinter dem vordersten (max. 2) */
+  stackBehind(count: number): number[] { return count >= 3 ? [2, 1] : count === 2 ? [1] : []; }
   /** "3 Sticker" bzw. "5 neue Sticker", wenn die Pack-Art nur garantiert neue Karten enthält */
   countLabelOf(p: PackInfo): string {
     return `${p.size} ${packRules(p.source).allNew ? 'neue ' : ''}Sticker`;

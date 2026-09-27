@@ -17,21 +17,34 @@
       </div>
     } @else if (!pack()) {
       <!-- Auswahl: mehrere neue Packs klein nebeneinander — antippen öffnet es groß zum Aufreißen -->
-      <p class="picker-title">{{ choices().length }} Packs – welches reißt du zuerst auf?</p>
-      <div class="picker" [class.picker--many]="choices().length > 6">
-        @for (c of choices(); track $index) {
+      <p class="picker-title">
+        {{ choices().length }} Packs – {{ groups().length > 1 ? 'welches reißt du zuerst auf?' : 'tippen zum Aufreißen' }}
+      </p>
+      <div class="picker" [class.picker--many]="groups().length > 6">
+        @for (g of groups(); track g.key) {
+          @let c = g.info;
           @let f = faceOf(c);
-          <button type="button" class="pack pack--mini pack--{{ c.source }}" [style.--d]="$index"
-                  (click)="pick.emit($index)" [attr.aria-label]="f.kind + ' ' + f.headline + ' öffnen'">
-            <span class="pack__body">
-              <span class="pack__brand">Die Klebrigsten</span>
-              <span class="pack__kind">{{ f.kind }}</span>
-              <span class="pack__headline">{{ f.headline }}</span>
-              <span class="pack__count">{{ countLabelOf(c) }}</span>
-              @if (c.leagueName) { <span class="pack__league">{{ c.leagueName }}</span> }
-            </span>
-            <span class="pack__top"></span>
-          </button>
+          <!-- Stapel: gleiche Packs übereinander, vorne das anklickbare, dahinter angedeutet + "×N" -->
+          <div class="pick-stack" [style.--d]="$index">
+            @for (b of stackBehind(g.count); track b) {
+              <span class="pack pack--mini pack--behind pack--{{ c.source }}" [style.--b]="b" aria-hidden="true">
+                <span class="pack__body"></span>
+                <span class="pack__top"></span>
+              </span>
+            }
+            <button type="button" class="pack pack--mini pack--{{ c.source }}"
+                    (click)="pick.emit(g.index)" [attr.aria-label]="f.kind + ' ' + f.headline + ' öffnen' + (g.count > 1 ? ' (' + g.count + ' Stück)' : '')">
+              <span class="pack__body">
+                <span class="pack__brand">Die Klebrigsten</span>
+                <span class="pack__kind">{{ f.kind }}</span>
+                <span class="pack__headline">{{ f.headline }}</span>
+                <span class="pack__count">{{ countLabelOf(c) }}</span>
+                @if (c.leagueName) { <span class="pack__league">{{ c.leagueName }}</span> }
+              </span>
+              <span class="pack__top"></span>
+            </button>
+            @if (g.count > 1) { <span class="pick-stack__badge">×{{ g.count }}</span> }
+          </div>
         }
       </div>
       <div class="sealed-actions">

@@ -17,8 +17,8 @@ trait StickerShopEurTrait
         return [
             'e-starter' => ['name' => 'Starter',      'price_cents' => 199, 'packs' => 10, 'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => true],
             'e-handful' => ['name' => 'Handvoll',     'price_cents' => 299, 'packs' => 5,  'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => false],
-            'e-stack'   => ['name' => 'Stapel',       'price_cents' => 499, 'packs' => 12, 'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => false],
-            'e-crate'   => ['name' => 'Kiste',        'price_cents' => 999, 'packs' => 30, 'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => false],
+            'e-stack'   => ['name' => 'Stapel',       'price_cents' => 499, 'packs' => 10, 'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => false],
+            'e-crate'   => ['name' => 'Kiste',        'price_cents' => 999, 'packs' => 25, 'size' => 3, 'guaranteed_new' => 1, 'club' => false, 'once' => false],  // 20 + 5 gratis
             'e-club'    => ['name' => 'Vereins-Pack', 'price_cents' => 199, 'packs' => 1,  'size' => 5, 'guaranteed_new' => 5, 'club' => true,  'once' => false],
         ];
     }

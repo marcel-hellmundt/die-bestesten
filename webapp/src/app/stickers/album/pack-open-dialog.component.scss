@@ -268,10 +268,45 @@
   }
 }
 
+// Ein Eintrag der Auswahl: vorne das anklickbare Pack, bei gleichen Packs dahinter angedeutet + "×N".
+// Der ganze Stapel schwebt gemeinsam (versetzt je Stapel über --d), die Packs darin nicht einzeln.
+.pick-stack {
+  position: relative;
+  display: grid;
+  animation: float 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--d, 0) * -0.7s);
+
+  > .pack {
+    grid-area: 1 / 1;
+    animation: none;
+  }
+
+  &__badge {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    z-index: 4;
+    padding: 2px 8px;
+    border-radius: $radius-full;
+    background: #fff;
+    color: #111827;
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+  }
+}
+
+// angedeutete Packs hinter dem vordersten
+.pack--behind {
+  pointer-events: none;
+  filter: brightness(0.8);
+  transform: translate(calc(var(--b) * 7px), calc(var(--b) * -6px)) rotate(calc(var(--b) * 5deg));
+}
+
 .pack--mini {
   width: min(128px, 38vw);
-  // jedes Pack schwebt versetzt, sieht lebendiger aus als synchron
-  animation-delay: calc(var(--d, 0) * -0.7s);
   transition: filter $transition-fast;
 
   &:hover, &:focus-visible {

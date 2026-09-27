@@ -35,8 +35,9 @@ export const EUR_STARTER: ShopOffer =
 
 export const EUR_OFFERS: ShopOffer[] = [
   { key: 'e-handful', currency: 'eur', name: 'Handvoll', packs: 5,  packSize: 3, guaranteedNew: 1, price: 2.99, foil: 'leaf' },
-  { key: 'e-stack',   currency: 'eur', name: 'Stapel',   packs: 12, packSize: 3, guaranteedNew: 1, price: 4.99, foil: 'sun', highlight: 'Beliebt' },
-  { key: 'e-crate',   currency: 'eur', name: 'Kiste',    packs: 30, bonusPacks: 5, packSize: 3, guaranteedNew: 1, price: 9.99, foil: 'bordeaux', highlight: 'Bester Preis' },
+  // Staffel pro Sticker: Handvoll 0,20 € · Stapel 0,17 € (−17 %) · Kiste 0,13 € (−33 %)
+  { key: 'e-stack',   currency: 'eur', name: 'Stapel',   packs: 10, packSize: 3, guaranteedNew: 1, price: 4.99, foil: 'sun', highlight: 'Beliebt' },
+  { key: 'e-crate',   currency: 'eur', name: 'Kiste',    packs: 25, bonusPacks: 5, packSize: 3, guaranteedNew: 1, price: 9.99, foil: 'bordeaux', highlight: 'Bester Preis' },
   { key: 'e-club',    currency: 'eur', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 1.99, foil: 'lilac', clubPick: true },
 ];
 
