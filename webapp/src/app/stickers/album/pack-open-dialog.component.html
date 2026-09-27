@@ -18,7 +18,7 @@
     } @else if (!pack()) {
       <!-- Auswahl: mehrere neue Packs klein nebeneinander — antippen öffnet es groß zum Aufreißen -->
       <p class="picker-title">{{ choices().length }} Packs – welches reißt du zuerst auf?</p>
-      <div class="picker">
+      <div class="picker" [class.picker--many]="choices().length > 6">
         @for (c of choices(); track $index) {
           @let f = faceOf(c);
           <button type="button" class="pack pack--mini pack--{{ c.source }}" [style.--d]="$index"

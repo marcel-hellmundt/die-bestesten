@@ -5,12 +5,13 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import {
-  OtherCollection, PACK_SOURCE_LABEL, StickerPack, StickerPackSource, StickerStatusService, packDetail,
+  OtherCollection, PACK_SOURCE_LABEL, StickerPack, StickerStatusService, packDetail,
 } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
-import { PackCard, PackInfo, packInfo, packRules } from './pack.model';
+import { PackCard, PackInfo, packInfo } from './pack.model';
+import { EUR_OFFERS, EUR_STARTER, ShopOffer } from '../shop/shop.model';
 import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
 import { seasonTheme } from './season-theme';
@@ -126,22 +127,19 @@ export class StickerAlbumComponent {
   /** Test läuft (Überschrift "nicht gespeichert") */
   testing = signal(false);
 
+  /** Test-Buttons = Euro-Angebote mit mehreren Packs, genau wie im Shop (Starter, Handvoll, Stapel, Kiste) */
+  readonly testOffers = [EUR_STARTER, ...EUR_OFFERS].filter(o => o.packs > 1);
+
   /**
-   * Test: n neue Packs wie in der Einblendung zur Auswahl — gemischte Arten, Karten werden erst beim Aufreißen
+   * Test: ein Euro-Kauf mit mehreren Packs wie in der Einblendung zur Auswahl — Karten werden erst beim Aufreißen
    * und nur im Browser gewürfelt (id null), nichts wird gespeichert.
    */
-  openTestPacks(n: number): void {
+  openTestPacks(offer: ShopOffer): void {
     requestTiltPermission(); // synchron in der Klick-Geste (iOS)
-    const sources: StickerPackSource[] = ['daily', 'milestone', 'matchday_best'];
-    const packs: PackInfo[] = Array.from({ length: n }, (_, i) => {
-      const source = i === 0 ? 'daily' : sources[Math.floor(Math.random() * sources.length)];
-      return {
-        id: null, source, size: packRules(source).size,
-        milestonePoints: source === 'milestone' ? 100 * (1 + Math.floor(Math.random() * 15)) : null,
-        matchdayNumber: source === 'matchday_best' ? 1 + Math.floor(Math.random() * 34) : null,
-        leagueName: source === 'daily' ? null : 'Test-Liga',
-      };
-    });
+    const packs: PackInfo[] = Array.from({ length: offer.packs }, () => ({
+      id: null, source: 'shop' as const, size: offer.packSize,
+      milestonePoints: null, matchdayNumber: null, leagueName: null, shopOffer: offer.key,
+    }));
     this.testing.set(true);
     this.opener.showChoice(packs);
   }

@@ -252,6 +252,20 @@
 
   // Mobile: 2 × 2 statt einer zu langen Reihe
   @media (max-width: $mobile-breakpoint) { gap: 18px 14px; max-width: 320px; }
+
+  // Viele Packs (z.B. Stapel mit 12, Kiste mit 30): kleiner und scrollbar
+  &--many {
+    gap: 14px 10px;
+    max-width: 720px;
+    max-height: 62vh;
+    overflow-y: auto;
+    padding: $space-2;
+    overscroll-behavior: contain;
+
+    .pack--mini { width: min(84px, 21vw); }
+
+    @media (max-width: $mobile-breakpoint) { max-width: 100%; gap: 12px 8px; }
+  }
 }
 
 .pack--mini {
