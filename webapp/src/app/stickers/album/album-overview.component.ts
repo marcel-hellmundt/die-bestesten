@@ -1,9 +1,13 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
-import { AlbumClub, Sticker, TIERS, TIER_LABEL } from './album.model';
+import { AlbumClub, DEFAULT_SHARED_PARAMS, Sticker, TIERS, TIER_LABEL } from './album.model';
 import { Collection, StickerAlbumService } from './sticker-album.service';
+import { stickerWeights } from '../sticker-sim';
 
-/** Erste Seite des Sammelalbums: Gesamtfortschritt, Holo-/Doppelte-Zähler, Vereins-Kacheln, zuletzt eingeklebt. */
+/**
+ * Erste Seite des Sammelalbums: Gesamtfortschritt, Holo-/Doppelte-Zähler, zuletzt eingeklebt (24 h) + seltenste
+ * Karte, Vereins-Kacheln.
+ */
 @Component({
   selector: 'app-album-overview',
   standalone: false,
@@ -49,13 +53,42 @@ export class AlbumOverviewComponent {
     });
   });
 
-  /** Zuletzt eingeklebt: die jüngsten Erstzüge (stabile Kartendaten je Sammelstand). */
+  /**
+   * Zuletzt eingeklebt: alle in den letzten 24 Stunden neu eingeklebten Sticker (Erstzug), neueste zuerst —
+   * leer (Abschnitt entfällt), wenn in der Zeit nichts Neues dazukam.
+   */
   recent = computed<{ sticker: Sticker; card: StickerCardData }[]>(() => {
     const col = this.collection();
+    const since = Date.now() - 24 * 60 * 60 * 1000;
     return this.album.stickers()
-      .filter(s => col.firstAt[s.idx] >= 0)
+      .filter(s => col.firstAt[s.idx] >= since)
       .sort((a, b) => col.firstAt[b.idx] - col.firstAt[a.idx] || b.idx - a.idx)
-      .slice(0, 8)
       .map(s => ({ sticker: s, card: this.album.cardData(s, col.holo[s.idx]) }));
+  });
+
+  /**
+   * Seltenste Karte der Sammlung: kleinste Zieh-Wahrscheinlichkeit = Gewicht des Stickers (Marktwert^-α, wie beim
+   * Öffnen) × Chance der besten eigenen Variante (Holo Gold/Silber) — eine Holo-Karte schlägt so fast immer die
+   * Normalen; null ohne Sammlung.
+   */
+  rarest = computed<{ sticker: Sticker; card: StickerCardData; label: string } | null>(() => {
+    const col = this.collection();
+    const stickers = this.album.stickers();
+    const rules = DEFAULT_SHARED_PARAMS;
+    const weights = stickerWeights(stickers.map(s => s.price), rules.rarityAlpha);
+    let best: Sticker | null = null;
+    let bestScore = Infinity;
+    for (const s of stickers) {
+      if (!col.counts[s.idx]) continue;
+      const holo = col.holo[s.idx];
+      const variant = holo === 'gold' ? rules.holoGoldChance : holo === 'silver' ? rules.holoSilverChance : 1;
+      const score = weights[s.idx] * variant;
+      if (score < bestScore) { bestScore = score; best = s; }
+    }
+    if (!best) return null;
+    const holo = col.holo[best.idx];
+    const label = [TIER_LABEL[best.tier], holo === 'gold' ? 'Holo Gold' : holo === 'silver' ? 'Holo Silber' : null]
+      .filter(Boolean).join(' · ');
+    return { sticker: best, card: this.album.cardData(best, holo), label };
   });
 }

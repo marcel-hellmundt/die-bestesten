@@ -41,31 +41,47 @@
   }
 }
 
-.kpis {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: $space-3;
+// Desktop: Kennzahlen links (halbe Breite), rechts zuletzt eingeklebt + seltenste Karte
+.top {
+  display: flex;
+  flex-direction: column;
   margin-top: $space-4;
 
-  @media (max-width: $mobile-breakpoint) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: $space-2; }
+  @media (min-width: $mobile-breakpoint + 1) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: $space-6;
+    align-items: start;
+  }
 }
 
+// 3 je Reihe (3 + 2) — auch in der halben Breite genug Platz für "Vereine komplett"
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-2;
+}
+
+// kompakte Kacheln
 .kpi {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: $space-3;
+  gap: 1px;
+  min-width: 0;
+  padding: $space-2;
   border-radius: $radius-md;
   background: $color-surface-alt;
 
   &__value {
-    font-size: $font-xl;
+    font-size: $font-lg;
     font-weight: $font-weight-bold;
+    line-height: 1.2;
     font-variant-numeric: tabular-nums;
   }
 
   &__label {
-    font-size: $font-xs;
+    font-size: 11px;
+    line-height: 1.25;
     color: $color-text-muted;
   }
 
@@ -98,6 +114,51 @@
   }
 }
 
+// Zuletzt eingeklebt + seltenste Karte: Desktop nebeneinander (Seltenste rechts), mobil untereinander
+.highlights {
+  display: flex;
+  flex-direction: column;
+  margin-top: $space-6; // mobil: Abstand zu den Kennzahlen
+
+  .block { margin-top: 0; }
+  .block + .block { margin-top: $space-6; }
+
+  @media (min-width: $mobile-breakpoint + 1) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: $space-4;
+    align-items: start;
+    margin-top: 0; // steht rechts neben den Kennzahlen
+
+    .block + .block { margin-top: 0; }
+    &__rarest { grid-column: 2; } // auch ohne "Zuletzt eingeklebt" rechts
+  }
+
+  // Der große Karten-Schatten (0 10px 30px) wird von der scrollbaren Reihe oben/unten abgeschnitten und wirkt
+  // dann wie ein grauer Verlauf hinter der Reihe → hier nur ein knapper Schatten (auch bei der seltensten Karte)
+  ::ng-deep .sticker-card { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18); }
+}
+
+.rarest {
+  display: block;
+  width: 124px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: transform $transition-fast;
+
+  &:hover { transform: translateY(-3px); }
+
+  &__label {
+    display: block;
+    margin-top: $space-2;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+}
+
 // Zuletzt eingeklebt: horizontale Reihe kleiner Karten (mobile scrollbar).
 // Das Scroll-Overflow schneidet auch vertikal ab → oben Luft für den Hover-Lift, per negativem Margin ausgeglichen.
 .recent {
@@ -108,7 +169,10 @@
   padding: $space-2 0;
 
   &__item {
-    flex: 0 0 96px;
+    flex: 0 0 124px; // so groß wie die seltenste Karte daneben
+
+    // Mobile: 3 Karten (Standard: ein Tages-Pack) passen genau in die Breite, weitere per Wischen
+    @media (max-width: $mobile-breakpoint) { flex-basis: calc((100% - 2 * #{$space-3}) / 3); }
     padding: 0;
     border: none;
     background: none;
@@ -122,7 +186,7 @@
 // Vereins-Kacheln
 .clubs {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr)); // Desktop: 6 Vereine je Reihe (18 → 3 Reihen)
   gap: $space-2;
 
   @media (max-width: $mobile-breakpoint) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
