@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700" preserveAspectRatio="none">
+  <!--
+    Kartenrückseite (Pack-Dialog, .back): dunkles Spielkarten-Muster mit Goldrand —
+    glänzender Goldrahmen (Verlauf), feine goldene Innenlinie, darin ein Rauten-Gitter in zwei dunklen Tönen
+    (jede Raute durch ein feines Kreuz geviertelt). Format 5:7 wie die Sticker-Karte.
+    Farben: Grund/Linien #141414 (Schwarz), Rauten #262626 (Anthrazit), Gold als Verlauf (#gold).
+  -->
+  <defs>
+    <!-- Gold: diagonaler Verlauf mit zwei Glanzstellen, über die ganze Karte (userSpaceOnUse → Rand + Linie passen zusammen) -->
+    <linearGradient id="gold" x1="0" y1="0" x2="500" y2="700" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8a6424" />
+      <stop offset="0.18" stop-color="#f3d58a" />
+      <stop offset="0.34" stop-color="#b8862f" />
+      <stop offset="0.5" stop-color="#e9c46f" />
+      <stop offset="0.66" stop-color="#9c7329" />
+      <stop offset="0.82" stop-color="#fbe6a6" />
+      <stop offset="1" stop-color="#8a6424" />
+    </linearGradient>
+
+    <!-- Kachel 32×32 (knapp 14 Rauten quer, bei ~200 px Kartenbreite noch als Rauten lesbar), im Feld zentriert:
+         Rauten Anthrazit, Gitter aus schwarzen Diagonalen, feines Kreuz durch jede Raute -->
+    <pattern id="lattice" x="26" y="30" width="32" height="32" patternUnits="userSpaceOnUse">
+      <rect width="32" height="32" fill="#262626" />
+      <g stroke="#141414" stroke-linecap="square">
+        <path d="M0 0 L32 32 M32 0 L0 32" stroke-width="4.5" />
+        <path d="M0 0 H32 M0 16 H32 M0 32 H32 M0 0 V32 M16 0 V32 M32 0 V32" stroke-width="1.5" />
+      </g>
+    </pattern>
+  </defs>
+
+  <!-- Goldrand -->
+  <rect width="500" height="700" fill="url(#gold)" />
+  <!-- dunkle Fläche -->
+  <rect x="13" y="13" width="474" height="674" rx="24" ry="24" fill="#141414" />
+  <!-- feine goldene Innenlinie -->
+  <rect x="23" y="23" width="454" height="654" rx="15" ry="15" fill="none" stroke="url(#gold)" stroke-width="2.5" />
+  <!-- Muster -->
+  <rect x="30" y="30" width="440" height="640" rx="9" ry="9" fill="url(#lattice)" />
+</svg>

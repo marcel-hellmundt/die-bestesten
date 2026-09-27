@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700" preserveAspectRatio="none">
+  <!--
+    Relief der Kartenrückseite (Pack-Dialog, .back::after): Grau = X-Anteil der Flächennormalen wie bei den
+    Holo-Facetten (50 % = flach/neutral, dunkler = zeigt nach links, heller = nach rechts). Per mix-blend-mode
+    overlay über die Rückseite gelegt — beim Drehen um die Y-Achse fangen Rahmen und Logo das Licht.
+    Geometrie passend zu img/stickers/card-back.svg (Goldrand 0–13, Goldlinie bei 23, Muster ab 30) und .back__mark (38 %, mittig).
+  -->
+  <defs>
+    <!-- über die ganze Breite: linke Kanten dunkel, rechte hell (Fase zeigt jeweils nach außen) -->
+    <linearGradient id="bevel" x1="0" y1="0" x2="500" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1c1c1c" />
+      <stop offset="0.5" stop-color="#808080" />
+      <stop offset="1" stop-color="#e8e8e8" />
+    </linearGradient>
+    <!-- Kante des Musterfelds: umgekehrt (zeigt nach innen, das Feld wirkt eingelassen) -->
+    <linearGradient id="bevel-in" x1="0" y1="0" x2="500" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c8c8c8" />
+      <stop offset="0.5" stop-color="#808080" />
+      <stop offset="1" stop-color="#383838" />
+    </linearGradient>
+    <!-- Kuppel unter dem Logo: Normale läuft von links nach rechts durch -->
+    <linearGradient id="dome" x1="155" y1="0" x2="345" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#262626" />
+      <stop offset="0.5" stop-color="#808080" />
+      <stop offset="1" stop-color="#dcdcdc" />
+    </linearGradient>
+    <!-- erhabener Ring ums Logo: außen wie die Kuppel, nur stärker -->
+    <linearGradient id="rim" x1="140" y1="0" x2="360" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#101010" />
+      <stop offset="0.5" stop-color="#808080" />
+      <stop offset="1" stop-color="#f4f4f4" />
+    </linearGradient>
+    <radialGradient id="dome-soft" cx="250" cy="350" r="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0.55" stop-color="#808080" stop-opacity="0" />
+      <stop offset="1" stop-color="#808080" stop-opacity="0.35" />
+    </radialGradient>
+  </defs>
+
+  <!-- flach -->
+  <rect width="500" height="700" fill="#808080" />
+
+  <!-- Goldrand erhaben, goldene Innenlinie erhaben, Musterfeld leicht eingelassen -->
+  <rect x="6.5" y="6.5" width="487" height="687" rx="30" ry="30" fill="none" stroke="url(#bevel)" stroke-width="13" />
+  <rect x="23" y="23" width="454" height="654" rx="15" ry="15" fill="none" stroke="url(#bevel)" stroke-width="4" />
+  <rect x="30" y="30" width="440" height="640" rx="9" ry="9" fill="none" stroke="url(#bevel-in)" stroke-width="5" />
+
+  <!-- Logo: Kuppel + erhabener Ring -->
+  <circle cx="250" cy="350" r="95" fill="url(#dome)" />
+  <circle cx="250" cy="350" r="95" fill="url(#dome-soft)" />
+  <circle cx="250" cy="350" r="104" fill="none" stroke="url(#rim)" stroke-width="12" />
+</svg>

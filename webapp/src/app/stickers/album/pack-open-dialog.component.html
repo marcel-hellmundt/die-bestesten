@@ -63,7 +63,7 @@
         <span class="pack__cards" aria-hidden="true">
           @for (i of backs(); track i) {
             <span class="back" [style.--i]="i">
-              <span class="back__mark">DK</span>
+              <img class="back__mark" src="img/logos/die-bestesten.png" alt="" draggable="false" />
             </span>
           }
         </span>
@@ -92,16 +92,20 @@
       <!-- Karten fliegen verdeckt aus dem Pack an ihren Platz (deal() im TS), dann dreht sich eine nach der anderen um -->
       <div class="cards">
         @for (c of cards(); track $index) {
-          <button class="pull" type="button" [style.--flip-delay]="flipDelay($index) + 'ms'" (click)="open.emit(c)"
-                  [attr.aria-label]="c.sticker.displayname">
+          <!-- Test-Packs: bleibt verdeckt (pull--hidden), bis sie angeklickt wird -->
+          <button class="pull" type="button" [class.pull--hidden]="isHidden($index)" [style.--flip-delay]="flipDelay($index) + 'ms'"
+                  (click)="onPull(c, $index)" [attr.aria-label]="isHidden($index) ? 'Karte umdrehen' : c.sticker.displayname">
             <span class="flip">
               <span class="flip__front"><app-sticker-card [data]="c.card" /></span>
-              <span class="flip__back back" aria-hidden="true"><span class="back__mark">DK</span></span>
+              <span class="flip__back back" aria-hidden="true"><img class="back__mark" src="img/logos/die-bestesten.png" alt="" draggable="false" /></span>
             </span>
             <span class="tag" [class.tag--new]="c.isNew">{{ c.isNew ? 'Neu' : 'Doppelt ×' + c.count }}</span>
           </button>
         }
       </div>
+      @if (manualFlip() && flipped().size < (cards()?.length ?? 0)) {
+        <p class="hint actions--after-reveal" [style.animation-delay]="revealTotal() + 'ms'">Karte antippen zum Umdrehen</p>
+      }
       <div class="actions actions--after-reveal" [style.animation-delay]="revealTotal() + 'ms'">
         @if (remaining() > 0) {
           <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="next.emit()">

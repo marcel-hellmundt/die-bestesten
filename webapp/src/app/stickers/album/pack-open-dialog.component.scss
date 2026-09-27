@@ -3,7 +3,8 @@
 // Reihenfolge der Aufreiß-Animation (gesamt ≈ TEAR_MS im TS):
 //   0–420ms Pack wackelt · 380–980ms Lasche reißt ab · 750–1450ms Lichtschein aus der Öffnung
 //   820ms+ Karten schieben sich (verdeckt) nacheinander heraus · 1450ms Pack fällt weg
-//   1750ms Karten fliegen verdeckt an ihre Plätze nebeneinander (deal()) · danach dreht sich eine nach der anderen um
+//   ab 1750ms (bzw. sobald die letzte Karte draußen ist) fliegen die Karten verdeckt von genau dort an ihre Plätze
+//   nebeneinander (deal()) · danach dreht sich eine nach der anderen um
 // Folienfarbe je Pack-Art (CSS-Variablen auf .pack, siehe .pack--{source})
 
 // TEST: Schrift auf allen Packs weiß (ignoriert die dunkle Schrift der hellen Folien) — false = wieder je Folie
@@ -242,10 +243,10 @@ $pack-text-always-white: true;
     .pack__top  { animation: sheen 3.2s linear infinite, tear-off 600ms 380ms cubic-bezier(0.4, 0.1, 0.6, 1) forwards; }
     .pack__body { animation: sheen 3.2s linear infinite, drop 380ms 1450ms ease-in forwards; }
 
+    // bleiben sichtbar stehen, bis die ausgeteilten Karten sie nahtlos ablösen (deal() im TS startet an ihrer Lage);
+    // Zeiten = RISE_START_MS / RISE_STAGGER_MS / RISE_MS im TS
     .back {
-      animation:
-        rise 650ms calc(820ms + var(--i) * 110ms) cubic-bezier(0.2, 0.8, 0.3, 1.1) forwards,
-        vanish 150ms 1600ms ease forwards; // bei TEAR_MS übernehmen die ausgeteilten Karten (deal() im TS)
+      animation: rise 650ms calc(820ms + var(--i) * 110ms) cubic-bezier(0.2, 0.8, 0.3, 1.1) forwards;
     }
   }
 }
@@ -387,24 +388,36 @@ $pack-text-always-white: true;
   align-items: center;
   justify-content: center;
   border-radius: 7% / 5%;
-  background:
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 3px, transparent 3px 9px),
-    linear-gradient(150deg, #1f2937, #0b1120);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 4px 12px rgba(0, 0, 0, 0.3);
+  // dunkles Spielkarten-Muster mit glänzendem Goldrand (img/stickers/card-back.svg, --back-face vom Host)
+  background: #141414 var(--back-face) center / 100% 100% no-repeat;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
+  // Relief (--back-relief vom Host, img/stickers/holo/card-back-relief.svg): Fase am Rahmen + Kuppel unter dem Logo,
+  // in Ruhe nur angedeutet, beim Drehen fangen Rahmen und Logo das Licht (liegt über dem Logo)
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    background: var(--back-relief) center / 100% 100% no-repeat;
+    mix-blend-mode: overlay;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  // Logo der Webseite (img/logos/die-bestesten.png), kreisrund ausgeschnitten
   &__mark {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative;
+    z-index: 1;
+    display: block;
     width: 38%;
     aspect-ratio: 1;
     border-radius: 50%;
-    background: $color-accent;
-    color: #fff;
-    font-family: $font-display;
-    font-size: 11cqw;
-    font-weight: 800;
-    font-style: italic;
+    object-fit: cover;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    user-select: none;
   }
 }
 
@@ -481,21 +494,79 @@ $pack-text-always-white: true;
   transition: transform $transition-fast;
 
   &:hover { transform: translateY(-4px); }
+
+  // Test-Packs: verdeckt liegen lassen, bis angeklickt — dann startet die Dreh-Animation (Verzögerung 0)
+  &--hidden {
+    .flip { animation: none; transform: rotateY(180deg); }
+    .flip__front::before, .flip__front::after, .flip__back::before, .flip__back::after { animation: none; }
+    .tag { visibility: hidden; animation: none; }
+  }
 }
 
+// Umdrehen mit Tiefe: die Karte hebt sich zur Mitte leicht an (translateZ), die abgewandte Seite wird dunkler,
+// die Facetten der Rückseite blitzen auf, über die Vorderseite läuft ein Lichtreflex (alle 600 ms, --flip-delay)
 .flip {
   position: relative;
   display: block;
   transform-style: preserve-3d;
   // both: bis zum Umdrehen liegt die Rückseite oben
-  animation: flip 600ms var(--flip-delay, 0ms) cubic-bezier(0.3, 0.7, 0.35, 1.25) both;
+  animation: flip 600ms var(--flip-delay, 0ms) both;
 
   &__front,
   &__back { backface-visibility: hidden; }
 
-  &__front { display: block; }
+  &__front {
+    position: relative;
+    display: block;
 
-  &__back { transform: rotateY(180deg); } // .back liegt absolut über der Vorderseite
+    // Schatten der abgewandten Seite (kurz nach der Kante noch dunkel, dann hell)
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      border-radius: 7% / 5%;
+      background: linear-gradient(90deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.15));
+      opacity: 0;
+      pointer-events: none;
+      animation: shade-front 600ms var(--flip-delay, 0ms) both;
+    }
+
+    // Lichtreflex, der beim Aufdrehen über die Karte läuft
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      border-radius: 7% / 5%;
+      background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.6) 50%, transparent 62%) no-repeat;
+      background-size: 260% 100%;
+      mix-blend-mode: soft-light;
+      opacity: 0;
+      pointer-events: none;
+      animation: glint 600ms var(--flip-delay, 0ms) both;
+    }
+  }
+
+  &__back {
+    transform: rotateY(180deg); // .back liegt absolut über der Vorderseite
+
+    // Rahmen + Logo fangen beim Wegdrehen das Licht
+    &::after { animation: relief-flash 600ms var(--flip-delay, 0ms) both; }
+
+    // wird zur Kante hin dunkler
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      border-radius: inherit;
+      background: linear-gradient(270deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.15));
+      opacity: 0;
+      pointer-events: none;
+      animation: shade-back 600ms var(--flip-delay, 0ms) both;
+    }
+  }
 }
 
 .tag {
@@ -530,7 +601,8 @@ $pack-text-always-white: true;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .flip, .tag, .actions--after-reveal { animation: none; }
+  .flip, .flip__front::before, .flip__front::after, .flip__back::before, .flip__back::after,
+  .tag, .actions--after-reveal { animation: none; }
 }
 
 // ── Keyframes ────────────────────────────────────────────────────────────────
@@ -570,13 +642,37 @@ $pack-text-always-white: true;
   to { transform: translateY(calc(-40% - var(--i) * 7%)) rotate(calc((var(--i) - (var(--n) - 1) / 2) * 7deg)); }
 }
 
-@keyframes vanish { to { opacity: 0; } }
 
 @keyframes drop {
   to { transform: translateY(30%); opacity: 0; }
 }
 
+// Umdrehen: zur Kante hin anheben, danach mit leichtem Überschwingen ablegen
 @keyframes flip {
-  from { transform: rotateY(180deg); }
-  to   { transform: rotateY(0deg); }
+  0%   { transform: translateZ(0) rotateY(180deg) scale(1); animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.6); }
+  50%  { transform: translateZ(36px) rotateY(90deg) scale(1.06); animation-timing-function: cubic-bezier(0.2, 0.7, 0.35, 1.25); }
+  100% { transform: translateZ(0) rotateY(0deg) scale(1); }
+}
+
+@keyframes shade-back {
+  0%   { opacity: 0; }
+  50%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes shade-front {
+  0%, 50% { opacity: 1; }
+  100%    { opacity: 0; }
+}
+
+@keyframes relief-flash {
+  0%   { opacity: 0.3; }
+  40%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes glint {
+  0%, 50% { opacity: 1; background-position: 110% 0; }
+  95%     { opacity: 1; background-position: -10% 0; }
+  100%    { opacity: 0; background-position: -10% 0; }
 }

@@ -4,8 +4,12 @@ import {
 } from '@angular/core';
 import { PACK_ART, PackCard, PackInfo, packCountLabel, packDesign, packFace } from './pack.model';
 
-/** Dauer der Aufreiß-Animation bis zum Aufdecken (muss zu den Delays im SCSS passen). */
+/** Dauer der Aufreiß-Animation bis zum Aufdecken (mindestens; muss zu den Delays im SCSS passen). */
 const TEAR_MS = 1750;
+/** Herausziehen der verdeckten Karten (.pack--tearing .back → rise im SCSS): Start, Versatz je Karte, Dauer */
+const RISE_START_MS = 820;
+const RISE_STAGGER_MS = 110;
+const RISE_MS = 650;
 /** Austeilen: jede Karte fliegt verdeckt vom Pack an ihren Platz, versetzt um DEAL_STAGGER_MS */
 const DEAL_MS = 460;
 const DEAL_STAGGER_MS = 80;
@@ -25,6 +29,11 @@ const FLIP_MS = 600;
   standalone: false,
   templateUrl: './pack-open-dialog.component.html',
   styleUrl: './pack-open-dialog.component.scss',
+  // Kartenrückseite (Muster) + ihr Relief (Rahmen-Fase + Logo-Kuppel, Prinzip wie die Holo-Facetten) — relativ zur
+  // base href, wie in sticker-card, damit der Build die URLs nicht auflöst
+  host: {
+    style: '--back-face: url(img/stickers/card-back.svg); --back-relief: url(img/stickers/holo/card-back-relief.svg)',
+  },
 })
 export class PackOpenDialogComponent {
   heading = input('');
@@ -89,35 +98,66 @@ export class PackOpenDialogComponent {
   private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
   private packEl = viewChild<ElementRef<HTMLElement>>('packEl');
-  /** Mitte der Öffnung beim Aufreißen — von hier fliegen die Karten an ihren Platz */
+  /** Mitte der Öffnung beim Aufreißen — Fallback-Startpunkt fürs Austeilen */
   private dealOrigin: { x: number; y: number } | null = null;
+  /** Lage jeder herausgezogenen, verdeckten Karte beim Übergang — dort startet die ausgeteilte Karte (kein Bruch) */
+  private dealFrom: { x: number; y: number; w: number }[] = [];
 
-  /** Verzögerung, bis Karte i umgedreht wird (nach dem Austeilen aller Karten) */
+  /** Positionen der herausgezogenen Karten merken, bevor das Pack durch die ausgeteilten Karten ersetzt wird */
+  private captureBacks(): void {
+    const backs = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>('.pack__cards .back'));
+    this.dealFrom = backs.map(b => {
+      const r = b.getBoundingClientRect(); // Mitte stimmt auch bei gedrehter Karte
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: b.offsetWidth };
+    });
+  }
+
+  /**
+   * Test-Packs (id null, /klebrigsten/packs + Test-Buttons im Sammelalbum): Karten bleiben nach dem Austeilen
+   * verdeckt und werden erst per Klick einzeln umgedreht (zum Ausprobieren der Dreh-Animation).
+   */
+  manualFlip = computed(() => this.pack()?.id === null);
+  /** per Klick umgedrehte Karten (Index) — nur bei manualFlip */
+  flipped = signal<ReadonlySet<number>>(new Set());
+  isHidden(i: number): boolean { return this.manualFlip() && !this.flipped().has(i); }
+
+  onPull(c: PackCard, i: number): void {
+    if (this.isHidden(i)) { this.flipped.update(s => new Set(s).add(i)); return; }
+    this.open.emit(c);
+  }
+
+  /** Verzögerung, bis Karte i umgedreht wird (nach dem Austeilen aller Karten; per Klick sofort) */
   flipDelay(i: number): number {
-    if (this.reducedMotion) return 0;
+    if (this.reducedMotion || this.manualFlip()) return 0;
     const n = this.cards()?.length ?? 0;
     return (n - 1) * DEAL_STAGGER_MS + DEAL_MS + FLIP_PAUSE_MS + i * FLIP_STAGGER_MS;
   }
-  /** Alle Karten umgedreht → erst dann die Buttons einblenden */
+  /** Alle Karten umgedreht → erst dann die Buttons einblenden (per Klick: sobald ausgeteilt) */
   revealTotal = computed(() => {
     const n = this.cards()?.length ?? 0;
-    return this.reducedMotion || !n ? 0 : this.flipDelay(n - 1) + FLIP_MS;
+    if (this.reducedMotion || !n) return 0;
+    return this.manualFlip() ? (n - 1) * DEAL_STAGGER_MS + DEAL_MS : this.flipDelay(n - 1) + FLIP_MS;
   });
 
-  /** Karten verdeckt vom Pack an ihre Plätze fliegen lassen (FLIP: Endposition messen, vom Pack aus animieren). */
+  /**
+   * Karten verdeckt an ihre Plätze fliegen lassen (FLIP: Endposition messen, von der Lage der herausgezogenen
+   * Karte aus animieren — gleiche Mitte, Größe und Neigung, damit der Übergang nahtlos ist).
+   */
   private deal(): void {
-    const origin = this.dealOrigin;
-    if (this.reducedMotion || !origin) return;
+    if (this.reducedMotion) return;
     const pulls = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>('.pull'));
     const n = pulls.length;
     pulls.forEach((el, i) => {
+      const from = this.dealFrom[i] ?? (this.dealOrigin ? { ...this.dealOrigin, w: el.offsetWidth * 0.55 } : null);
+      if (!from) return;
       const r = el.getBoundingClientRect();
-      const dx = origin.x - (r.left + r.width / 2);
-      const dy = origin.y - (r.top + r.height / 2);
-      const tilt = (i - (n - 1) / 2) * 7; // wie der Fächer beim Herausziehen
+      const dx = from.x - (r.left + r.width / 2);
+      const dy = from.y - (r.top + r.height / 2);
+      const scale = from.w / el.offsetWidth;
+      const tilt = (i - (n - 1) / 2) * 7; // wie der Fächer beim Herausziehen (rise im SCSS)
       el.animate(
         [
-          { transform: `translate(${dx}px, ${dy}px) scale(0.55) rotate(${tilt}deg)` },
+          { transform: `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(${scale})` },
           { transform: 'none' },
         ],
         { duration: DEAL_MS, delay: i * DEAL_STAGGER_MS, easing: 'cubic-bezier(0.2, 0.8, 0.3, 1.05)', fill: 'backwards' },
@@ -141,6 +181,7 @@ export class PackOpenDialogComponent {
         if (this.tearTimer) clearTimeout(this.tearTimer);
         this.torn.set(false);
         this.timerDone.set(false);
+        this.flipped.set(new Set());
       });
     });
 
@@ -167,7 +208,13 @@ export class PackOpenDialogComponent {
     this.torn.set(true);
     this.tear.emit();
     if (this.reducedMotion) { this.timerDone.set(true); return; }
-    this.tearTimer = setTimeout(() => this.timerDone.set(true), TEAR_MS);
+    // Übergang erst, wenn auch die letzte Karte ganz herausgezogen ist (Big Pack: 7 Karten)
+    const n = this.pack()?.size ?? 0;
+    const tearMs = Math.max(TEAR_MS, RISE_START_MS + Math.max(0, n - 1) * RISE_STAGGER_MS + RISE_MS + 80);
+    this.tearTimer = setTimeout(() => {
+      this.captureBacks(); // die verdeckten Karten stehen jetzt still — ihre Lage ist der Startpunkt fürs Austeilen
+      this.timerDone.set(true);
+    }, tearMs);
   }
 
   @HostListener('document:keydown.escape')
