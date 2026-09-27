@@ -10,7 +10,7 @@ import {
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
-import { PackCard, PackInfo, packInfo } from './pack.model';
+import { PackCard, PackInfo, packInfo, packRules } from './pack.model';
 import { EUR_OFFERS, EUR_STARTER, ShopOffer } from '../shop/shop.model';
 import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
@@ -126,6 +126,24 @@ export class StickerAlbumComponent {
 
   /** Test läuft (Überschrift "nicht gespeichert") */
   testing = signal(false);
+
+  /**
+   * Test: n verschiedene neue Packs (Tages-Pack, Meilensteine, Spieltagssieger) — jedes mit eigenem Anlass,
+   * damit sie in der Auswahl nebeneinander stehen statt gestapelt. Nur im Browser gewürfelt, nichts gespeichert.
+   */
+  openTestMixed(n: number): void {
+    requestTiltPermission(); // synchron in der Klick-Geste (iOS)
+    const base = 100 * (1 + Math.floor(Math.random() * 10));
+    const matchday = 1 + Math.floor(Math.random() * 30);
+    const all: PackInfo[] = [
+      { id: null, source: 'daily', size: packRules('daily').size, milestonePoints: null, matchdayNumber: null, leagueName: null },
+      { id: null, source: 'milestone', size: packRules('milestone').size, milestonePoints: base, matchdayNumber: null, leagueName: 'Test-Liga' },
+      { id: null, source: 'matchday_best', size: packRules('matchday_best').size, milestonePoints: null, matchdayNumber: matchday, leagueName: 'Test-Liga' },
+      { id: null, source: 'milestone', size: packRules('milestone').size, milestonePoints: base + 100, matchdayNumber: null, leagueName: 'Test-Liga' },
+    ];
+    this.testing.set(true);
+    this.opener.showChoice(all.slice(0, n));
+  }
 
   /** Test-Buttons = Euro-Angebote mit mehreren Packs, genau wie im Shop (Starter, Handvoll, Stapel, Kiste) */
   readonly testOffers = [EUR_STARTER, ...EUR_OFFERS].filter(o => o.packs > 1);

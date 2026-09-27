@@ -9,6 +9,10 @@
       }
       <!-- Test: Euro-Käufe mit mehreren Packs wie im Shop (Auswahl) — nur im Browser gewürfelt, nichts gespeichert -->
       <span class="tools__label">Test:</span>
+      @for (n of [2, 3, 4]; track n) {
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="rows().length === 0" (click)="openTestMixed(n)"
+                title="Verschiedene neue Packs nebeneinander — wird nicht gespeichert">{{ n }} Packs</button>
+      }
       @for (o of testOffers; track o.key) {
         <button type="button" class="btn btn-ghost btn-sm" [disabled]="rows().length === 0" (click)="openTestPacks(o)"
                 title="Kauf simulieren — wird nicht gespeichert">{{ o.name }} ({{ o.packs }})</button>
