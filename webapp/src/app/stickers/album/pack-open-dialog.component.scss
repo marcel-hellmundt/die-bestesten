@@ -2,7 +2,8 @@
 
 // Reihenfolge der Aufreiß-Animation (gesamt ≈ TEAR_MS im TS):
 //   0–420ms Pack wackelt · 380–980ms Lasche reißt ab · 750–1450ms Lichtschein aus der Öffnung
-//   820ms+ Karten schieben sich (verdeckt) nacheinander heraus · 1450ms Pack fällt weg · 1750ms Karten drehen sich um
+//   820ms+ Karten schieben sich (verdeckt) nacheinander heraus · 1450ms Pack fällt weg
+//   1750ms Karten fliegen verdeckt an ihre Plätze nebeneinander (deal()) · danach dreht sich eine nach der anderen um
 // Folienfarbe je Pack-Art (CSS-Variablen auf .pack, siehe .pack--{source})
 
 // TEST: Schrift auf allen Packs weiß (ignoriert die dunkle Schrift der hellen Folien) — false = wieder je Folie
@@ -244,7 +245,7 @@ $pack-text-always-white: true;
     .back {
       animation:
         rise 650ms calc(820ms + var(--i) * 110ms) cubic-bezier(0.2, 0.8, 0.3, 1.1) forwards,
-        vanish 250ms 1500ms ease forwards;
+        vanish 150ms 1600ms ease forwards; // bei TEAR_MS übernehmen die ausgeteilten Karten (deal() im TS)
     }
   }
 }
@@ -466,6 +467,7 @@ $pack-text-always-white: true;
   width: 100%;
 }
 
+// Karte: fliegt verdeckt vom Pack an ihren Platz (Web Animations im TS, deal()), dreht sich dann um (--flip-delay)
 .pull {
   position: relative;
   width: min(200px, calc((100% - 32px) / 3));
@@ -474,12 +476,26 @@ $pack-text-always-white: true;
   background: none;
   cursor: pointer;
   text-align: left;
-  perspective: 800px;
-  // backwards: während der Verzögerung unsichtbar, danach wieder normale Styles (Hover funktioniert)
-  animation: reveal 520ms cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+  perspective: 900px;
+  container-type: inline-size; // für die Rückseite (cqw wie im Pack)
   transition: transform $transition-fast;
 
   &:hover { transform: translateY(-4px); }
+}
+
+.flip {
+  position: relative;
+  display: block;
+  transform-style: preserve-3d;
+  // both: bis zum Umdrehen liegt die Rückseite oben
+  animation: flip 600ms var(--flip-delay, 0ms) cubic-bezier(0.3, 0.7, 0.35, 1.25) both;
+
+  &__front,
+  &__back { backface-visibility: hidden; }
+
+  &__front { display: block; }
+
+  &__back { transform: rotateY(180deg); } // .back liegt absolut über der Vorderseite
 }
 
 .tag {
@@ -494,6 +510,8 @@ $pack-text-always-white: true;
   font-size: 12px;
   font-weight: $font-weight-bold;
   white-space: nowrap;
+  // erst wenn die Karte umgedreht ist
+  animation: fade-in 220ms calc(var(--flip-delay, 0ms) + 380ms) backwards;
 
   &--new { background: $color-success; }
 }
@@ -506,6 +524,13 @@ $pack-text-always-white: true;
   margin-top: $space-2;
 
   .btn-ghost { color: #fff; }
+
+  // nach dem Aufdecken: erst einblenden, wenn alle Karten umgedreht sind (Verzögerung inline)
+  &--after-reveal { animation: fade-in 260ms backwards; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip, .tag, .actions--after-reveal { animation: none; }
 }
 
 // ── Keyframes ────────────────────────────────────────────────────────────────
@@ -551,7 +576,7 @@ $pack-text-always-white: true;
   to { transform: translateY(30%); opacity: 0; }
 }
 
-@keyframes reveal {
-  from { opacity: 0; transform: rotateY(90deg) scale(0.8); }
-  to   { opacity: 1; transform: none; }
+@keyframes flip {
+  from { transform: rotateY(180deg); }
+  to   { transform: rotateY(0deg); }
 }
