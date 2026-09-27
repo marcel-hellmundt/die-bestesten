@@ -2,10 +2,10 @@
 
 /**
  * Folienfarbe des Packs im Shop — bewusst andere Farben als die verdienten Packs (Rot/Gold/Blau/Graphit).
- * Lukaten (Palette Basic/Medium/Premium): sage/classic/navy · Euro: fire/leaf/sun/bordeaux/lilac.
+ * Lukaten: orange (#fa983a) / red (#eb2f06) / blue (#1e3799) · Euro: fire/leaf/sun/bordeaux/lilac.
  * Gleiche Farben wie beim Aufreißen (pack-open-dialog: pack--o-{offer key}).
  */
-export type ShopFoil = 'sage' | 'classic' | 'navy' | 'fire' | 'leaf' | 'sun' | 'bordeaux' | 'lilac';
+export type ShopFoil = 'orange' | 'red' | 'blue' | 'fire' | 'leaf' | 'sun' | 'bordeaux' | 'lilac';
 export type ShopCurrency = 'lukaten' | 'eur';
 
 export interface ShopOffer {
@@ -25,9 +25,9 @@ export interface ShopOffer {
 
 // Lukaten: jeder Manager startet pro Saison mit 100 → reicht für 3–6 Packs
 export const LUKATEN_OFFERS: ShopOffer[] = [
-  { key: 'l-small',  currency: 'lukaten', name: 'Kleines Pack', packs: 1, packSize: 3, guaranteedNew: 1, price: 15, foil: 'sage' },
-  { key: 'l-big',    currency: 'lukaten', name: 'Großes Pack',  packs: 1, packSize: 6, guaranteedNew: 2, price: 25, foil: 'classic', highlight: 'Beliebt' },
-  { key: 'l-club',   currency: 'lukaten', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 40, foil: 'navy', clubPick: true },
+  { key: 'l-small',  currency: 'lukaten', name: 'Kleines Pack', packs: 1, packSize: 3, guaranteedNew: 1, price: 15, foil: 'orange' },
+  { key: 'l-big',    currency: 'lukaten', name: 'Großes Pack',  packs: 1, packSize: 6, guaranteedNew: 2, price: 25, foil: 'red', highlight: 'Beliebt' },
+  { key: 'l-club',   currency: 'lukaten', name: 'Vereins-Pack', packs: 1, packSize: 5, guaranteedNew: 5, price: 40, foil: 'blue', clubPick: true },
 ];
 
 // Euro (PayPal): Packs wie das Tages-Pack (3 Sticker, 1 garantiert neu); nichts unter 1,99 € wegen der PayPal-Gebühr

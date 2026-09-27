@@ -81,10 +81,10 @@
   }
 
   // Shop-Packs: Farbe je Angebot wie im Shop (shopOffer → pack--o-{key}), überschreibt das Shop-Türkis
-  // Lukaten: Basic Soft Sage · Medium Classic Teal · Premium Deep Navy
-  &--o-l-small  { --foil-light: #eef5ef; --foil: #d0e1d4; --foil-dark: #8fae98; --ink: #3f6b4f; --text: #1f3a2a; }
-  &--o-l-big    { --foil-light: #8cc3c4; --foil: #4a8b8d; --foil-dark: #1f4546; --ink: #2f6b6d; }
-  &--o-l-club   { --foil-light: #45587f; --foil: #1d2a44; --foil-dark: #0b1120; --ink: #1d2a44; }
+  // Lukaten: Kleines Pack Orange · Großes Pack Rot · Vereins-Pack Blau
+  &--o-l-small  { --foil-light: #fcc58f; --foil: #fa983a; --foil-dark: #b35f0f; --ink: #b35f0f; }
+  &--o-l-big    { --foil-light: #f5795c; --foil: #eb2f06; --foil-dark: #8a1a02; --ink: #b82503; }
+  &--o-l-club   { --foil-light: #5b72c9; --foil: #1e3799; --foil-dark: #0c1a4f; --ink: #1e3799; }
   // Euro: Starter Feuerrot · Handvoll Blattgrün · Stapel Sonnengelb · Kiste Bordeaux · Vereins-Pack Lila
   &--o-e-starter { --foil-light: #fb923c; --foil: #dc2626; --foil-dark: #7f1d1d; --ink: #dc2626; }
   &--o-e-handful { --foil-light: #86efac; --foil: #16a34a; --foil-dark: #14532d; --ink: #15803d; }
