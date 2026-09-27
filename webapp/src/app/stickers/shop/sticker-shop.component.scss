@@ -110,11 +110,6 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
 
   &--side {
     @media (max-width: $side-col - 1px) { display: none; }
-
-    .wallet {
-      grid-template-columns: auto 1fr;
-      padding: $space-3 $space-4;
-    }
   }
 }
 
@@ -265,39 +260,26 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
 }
 
 // ── Guthaben ─────────────────────────────────────────────────────────────────
+// Guthaben: schlicht — Lukat-Icon + Anzahl + "Lukaten"
 .wallet {
-  display: grid;
-  grid-template-columns: auto auto;
+  display: inline-flex;
   align-items: center;
-  column-gap: $space-3;
-  padding: $space-2 $space-4;
+  gap: $space-2;
+  padding: $space-2 $space-3;
   border: 1px solid $color-border;
   border-radius: $radius-lg;
   background: $color-surface;
 
-  @media (max-width: $mobile-breakpoint) { width: 100%; grid-template-columns: auto 1fr; }
-
   &__icon {
-    grid-row: span 2;
-    width: 34px;
-    height: 34px;
+    width: 26px;
+    height: 26px;
     object-fit: contain;
   }
 
-  &__text {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__label {
-    font-size: $font-xs;
-    color: $color-text-muted;
-  }
-
   &__value {
-    font-size: $font-xl;
+    font-size: $font-lg;
     font-weight: $font-weight-bold;
-    line-height: 1.1;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
 
     small {
@@ -305,14 +287,6 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
       font-weight: $font-weight-normal;
       color: $color-text-muted;
     }
-  }
-
-  &__link {
-    font-size: $font-xs;
-    color: $color-accent;
-    text-decoration: none;
-
-    &:hover { text-decoration: underline; }
   }
 }
 
@@ -379,7 +353,7 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   border-radius: 50%;
   vertical-align: -1px;
 
-  &--normal  { background: #75cc54; }
+  &--normal  { background: #6aba49; }
   &--big     { background: #f26d53; }
   &--club    { background: #fcc732; box-shadow: inset 0 0 0 1px #b38a0e; }
   &--special { background: #8854d0; }
@@ -428,7 +402,8 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
       radial-gradient(ellipse at 50% 90%, rgba(0, 0, 0, 0.08), transparent 60%),
       $color-surface-alt;
 
-    @media (max-width: $narrow) { padding: $space-4 $space-2; }
+    // Mobile (Pack links neben den Infos): ohne grauen "Regal"-Hintergrund
+    @media (max-width: $narrow) { padding: $space-4 $space-2; background: transparent; }
   }
 
   &__info {
@@ -526,9 +501,9 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   gap: $space-5;
   padding: $space-4 $space-5;
   // Farbe wie die Folie der normalen Packs (Grün)
-  border: 1px solid color-mix(in srgb, #75cc54 50%, transparent);
+  border: 1px solid color-mix(in srgb, #6aba49 50%, transparent);
   border-radius: $radius-lg;
-  background: linear-gradient(110deg, color-mix(in srgb, #75cc54 20%, #{$color-surface}), $color-surface 70%);
+  background: linear-gradient(110deg, color-mix(in srgb, #6aba49 20%, #{$color-surface}), $color-surface 70%);
 
   @media (max-width: $mobile-breakpoint) { flex-wrap: wrap; gap: $space-3; padding: $space-3; }
 
@@ -570,7 +545,8 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   &__btn {
     flex-shrink: 0;
 
-    @media (max-width: $mobile-breakpoint) { width: 100%; }
+    // Mobile: normale Breite, rechtsbündig (volle Breite in Schwarz wirkt erschlagend)
+    @media (max-width: $mobile-breakpoint) { margin-left: auto; }
   }
 }
 
@@ -620,7 +596,7 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
 
   // Pack-Arten — gleiche Farben wie im Pack-Dialog (pack-open-dialog.component.scss)
   @each $kind, $light, $foil, $dark, $ink, $text in (
-    normal  #b5e8a2 #75cc54 #3d7f26 #2f6b1b #173d0c,  // Grün (dunkle Schrift)
+    normal  #a8dc92 #6aba49 #36701f #2d6419 #143a08,  // Grün (dunkle Schrift)
     big     #f9ab9b #f26d53 #a3301b #b83a22 #fff,     // Koralle
     club    #fee79a #fcc732 #b38a0e #7a5a00 #3d2c00,  // Gelb (dunkle Schrift)
     special #b99be6 #8854d0 #4a2682 #6c3bb3 #fff,     // Lila
@@ -822,6 +798,9 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   border: 1px solid $color-border;
   border-radius: $radius-lg;
   background: $color-surface;
+
+  // Mobile: unter die Angebote
+  @media (max-width: $mobile-breakpoint) { order: 1; }
 
   // Desktop-Spalte links: läuft beim Scrollen unter dem Sub-Menü mit
   @media (min-width: $side-wide) {

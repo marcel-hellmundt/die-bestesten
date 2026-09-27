@@ -88,7 +88,7 @@ export const PACK_ART: Partial<Record<PackDesign, PackArt>> = {
   normal:  { src: 'img/stickers/front/dinosaur.png' },
   big:     { src: 'img/stickers/front/dragon.png' },
   club:    { src: 'img/stickers/front/phoenix.png' },
-  special: { src: 'img/stickers/front/chimera.png' },
+  special: { src: 'img/stickers/front/wizard.png' },
   // Spieltagssieger: Medaille wie die Karte "Spieltagssiege" in der Saisontabelle (/liga/tabelle), hier in höherer Auflösung
   matchday_best: { src: 'img/stickers/front/medal.png', place: 'center' },
 };
