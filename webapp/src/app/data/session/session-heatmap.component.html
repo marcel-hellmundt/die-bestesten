@@ -118,8 +118,15 @@
         (mouseenter)="onRowLabelHover($event, m)"
         (mouseleave)="onCellLeave()"
       >
-        <span class="heatmap__device-swatch" [style.background-color]="managerColor(m)"></span>
+        @let swatch = managerColor(m);
+        <span class="heatmap__device-swatch" [class.heatmap__device-swatch--empty]="swatch === 'transparent'"
+              [style.background-color]="swatch"></span>
         <span class="heatmap__row-label-text">{{ m.manager_name }}</span>
+        @if (onlineState(m); as state) {
+          <span class="heatmap__online heatmap__online--{{ state }}"
+                [attr.title]="state === 'active' ? 'Gerade online' : 'Vor 1–3 Minuten online'"
+                [attr.aria-label]="state === 'active' ? 'Gerade online' : 'Vor 1–3 Minuten online'"></span>
+        }
       </div>
       @for (col of columns(); track col.key) {
         <div

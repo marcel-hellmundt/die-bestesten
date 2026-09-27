@@ -237,7 +237,23 @@ trait SessionTrait
         foreach ($result as &$r) unset($r['_total']);
         unset($r);
 
-        return ['range' => $range, 'managers' => $result];
+        // Gerade online: letzter Heartbeat (ended_at wird bei jedem authentifizierten Request verlängert,
+        // das Frontend pollt alle 4 s) vor weniger als 3 Minuten — unabhängig vom gewählten Zeitraum
+        // idle_seconds = Sekunden seit dem letzten Heartbeat (Frontend: < 60 s voller Punkt, sonst Ring)
+        $oq = $this->con->prepare(
+            "SELECT ms.manager_id, GREATEST(0, TIMESTAMPDIFF(SECOND, MAX(ms.ended_at), NOW())) AS idle_seconds
+             FROM manager_session ms
+             JOIN manager m ON m.id = ms.manager_id
+             WHERE m.status != 'deleted' AND ms.ended_at >= (NOW() - INTERVAL 3 MINUTE)
+             GROUP BY ms.manager_id"
+        );
+        $oq->execute();
+        $online = array_map(
+            fn($r) => ['manager_id' => $r['manager_id'], 'idle_seconds' => (int) $r['idle_seconds']],
+            $oq->fetchAll(PDO::FETCH_ASSOC),
+        );
+
+        return ['range' => $range, 'managers' => $result, 'online_managers' => $online];
     }
 
     /** Merged $intervals (siehe mergeIntervals) und summiert sie pro Bucket (siehe splitSessionIntoBuckets). */

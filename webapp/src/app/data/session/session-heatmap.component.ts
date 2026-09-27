@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of, switchMap } from 'rxjs';
+import { EMPTY, Observable, catchError, exhaustMap, of, switchMap, timer } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
@@ -18,7 +18,11 @@ interface HeatmapManager {
 interface HeatmapResponse {
   range: RangeKey;
   managers: HeatmapManager[];
+  online_managers?: { manager_id: string; idle_seconds: number }[]; // gerade online (Heartbeat < 3 min), unabhängig vom Zeitraum
 }
+
+/** Hintergrund-Aktualisierung der Heatmap-Daten */
+const REFRESH_MS = 15_000;
 
 interface BucketColumn {
   key: string;
@@ -88,25 +92,35 @@ export class SessionHeatmapComponent {
   range = signal<RangeKey>('day');
   setRange(r: RangeKey): void { this.range.set(r); }
 
+  /**
+   * Lädt `path` sofort und danach alle REFRESH_MS im Hintergrund neu (ohne Ladezustand/Flackern). Schlägt der
+   * erste Abruf fehl, gibt es eine leere Antwort; spätere Fehler behalten einfach die letzten Daten.
+   */
+  private poll(path: string, range: RangeKey): Observable<HeatmapResponse> {
+    return timer(0, REFRESH_MS).pipe(
+      exhaustMap(i => this.api.get<HeatmapResponse>(path).pipe(
+        catchError(() => i === 0 ? of({ range, managers: [] } as HeatmapResponse) : EMPTY),
+      )),
+    );
+  }
+
   private data = toSignal(
-    toObservable(this.range).pipe(
-      switchMap(range =>
-        this.api.get<HeatmapResponse>(`session?range=${range}`).pipe(
-          catchError(() => of({ range, managers: [] } as HeatmapResponse)),
-        ),
-      ),
-    ),
+    toObservable(this.range).pipe(switchMap(range => this.poll(`session?range=${range}`, range))),
   );
+
+  /** Neben dem Namen: gerade online — < 1 min voller grüner Punkt, 1–3 min grüner Ring */
+  private online = computed(() => new Map((this.data()?.online_managers ?? []).map(o => [o.manager_id, o.idle_seconds])));
+  onlineState(m: HeatmapManager): 'active' | 'idle' | null {
+    const idle = this.online().get(m.manager_id);
+    if (idle === undefined) return null;
+    return idle < 60 ? 'active' : 'idle';
+  }
 
   // Sortierung der Manager-Zeilen soll unabhängig vom gewählten Intervall (Tag/Monat/Jahr/Insgesamt)
   // immer dieselbe Reihenfolge zeigen, statt bei jedem Range-Wechsel neu nach der Nutzung NUR dieses
   // Zeitraums zu sortieren. 'all' (seit der ersten Session) ist der breiteste verfügbare Zeitraum
   // und dient hier als globaler Referenzwert — einmalig geladen, unabhängig vom range-Signal.
-  private globalTotals = toSignal(
-    this.api.get<HeatmapResponse>('session?range=all').pipe(
-      catchError(() => of({ range: 'all', managers: [] } as HeatmapResponse)),
-    ),
-  );
+  private globalTotals = toSignal(this.poll('session?range=all', 'all'));
 
   private globalTotalSeconds = computed(() => {
     const map = new Map<string, number>();
@@ -383,11 +397,7 @@ export class SessionHeatmapComponent {
   // Insgesamt) — dafür ein eigener, fixer range=month-Fetch (analog zu globalTotals oben), statt
   // sich auf data() zu verlassen, das je nach Toggle stündliche/wöchentliche/monatliche statt
   // tägliche Buckets liefern kann.
-  private dailyData = toSignal(
-    this.api.get<HeatmapResponse>('session?range=month').pipe(
-      catchError(() => of({ range: 'month', managers: [] } as HeatmapResponse)),
-    ),
-  );
+  private dailyData = toSignal(this.poll('session?range=month', 'month'));
 
   // Pro Tag: Summe aller Sekunden (alle Manager) + Anzahl Manager mit >0 Sekunden an diesem Tag.
   private dailyTotals(source: HeatmapResponse | undefined): Map<string, { seconds: number; activeUsers: number }> {
@@ -504,11 +514,13 @@ export class SessionHeatmapComponent {
   // Geräte-Mix-Kachel links vom Namen — gleiche Farblogik wie mobileFraction()/hueForMobileFraction,
   // aber über die Summe ALLER aktuell angezeigten Buckets (nicht nur eine einzelne Zelle) und ohne
   // Deckkraft-Skalierung nach Nutzungsdauer, da hier nur das Verhältnis gezeigt werden soll.
+  // Ohne Onlinezeit im Zeitraum transparent (statt 50/50-Mischfarbe, die eine Nutzung vortäuschen würde).
   managerColor(m: HeatmapManager): string {
     const mobile = this.sumValues(m.mobile_seconds);
     const desktop = this.sumValues(m.desktop_seconds);
     const denom = mobile + desktop;
-    const fraction = denom > 0 ? Math.min(1, Math.max(0, mobile / denom)) : 0.5;
+    if (denom <= 0) return 'transparent';
+    const fraction = Math.min(1, Math.max(0, mobile / denom));
     const [r, g, b] = this.hueForMobileFraction(fraction);
     return `rgb(${r}, ${g}, ${b})`;
   }

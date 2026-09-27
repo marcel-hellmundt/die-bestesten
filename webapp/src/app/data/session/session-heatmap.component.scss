@@ -239,6 +239,24 @@
   max-width: 24px;
   max-height: 24px;
   border-radius: $radius-sm;
+
+  // ohne Onlinezeit im Zeitraum: leeres Kästchen mit Rahmen
+  &--empty {
+    box-sizing: border-box;
+    border: 1px solid $color-border;
+  }
+}
+
+// rechts neben dem Namen: < 1 min seit dem letzten Heartbeat = voller grüner Punkt, 1–3 min = grüner Ring
+.heatmap__online {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+
+  &--active { background: $color-success; }
+  &--idle   { border: 2px solid $color-success; }
 }
 
 .heatmap__row-label-text {
