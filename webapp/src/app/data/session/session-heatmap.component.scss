@@ -264,6 +264,28 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  @media (max-width: $mobile-breakpoint) { display: none; }
+}
+
+// mobil statt Name: rundes Profilbild (Initiale ohne Foto)
+.heatmap__avatar {
+  display: none;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: $color-surface-alt;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  align-items: center;
+  justify-content: center;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+
+  @media (max-width: $mobile-breakpoint) { display: flex; }
 }
 
 // ── Gesamtnutzungs-Chart-Zeile ───────────────────────────────────────────────
@@ -354,9 +376,12 @@
   }
 
   .heatmap {
-    --row-label-width: 80px;
+    --row-label-width: 80px; // Kästchen + Profilbild + Online-Punkt
     gap: 0;
   }
+
+  .heatmap__row-label { gap: 6px; padding-left: 0; padding-right: 0; }
+  .heatmap__device-swatch { width: 14px; height: 14px; }
 
   .heatmap__col-label {
     font-size: 9px;

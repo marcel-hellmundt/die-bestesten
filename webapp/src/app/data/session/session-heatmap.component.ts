@@ -108,6 +108,10 @@ export class SessionHeatmapComponent {
     toObservable(this.range).pipe(switchMap(range => this.poll(`session?range=${range}`, range))),
   );
 
+  /** Mobil statt Name: Profilbild — Manager ohne Foto bekommen die Initiale */
+  photoFailed = signal<ReadonlySet<string>>(new Set());
+  onPhotoError(id: string): void { this.photoFailed.update(s => new Set(s).add(id)); }
+
   /** Neben dem Namen: gerade online — < 1 min voller grüner Punkt, 1–3 min grüner Ring */
   private online = computed(() => new Map((this.data()?.online_managers ?? []).map(o => [o.manager_id, o.idle_seconds])));
   onlineState(m: HeatmapManager): 'active' | 'idle' | null {

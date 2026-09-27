@@ -121,7 +121,15 @@
         @let swatch = managerColor(m);
         <span class="heatmap__device-swatch" [class.heatmap__device-swatch--empty]="swatch === 'transparent'"
               [style.background-color]="swatch"></span>
+        <!-- Desktop: Name, mobil: Profilbild (ohne Foto: Initiale) -->
         <span class="heatmap__row-label-text">{{ m.manager_name }}</span>
+        <span class="heatmap__avatar" [attr.title]="m.manager_name">
+          @if (!photoFailed().has(m.manager_id)) {
+            <img [src]="cache.managerPhotoUrl(m.manager_id)" [alt]="m.manager_name" (error)="onPhotoError(m.manager_id)" />
+          } @else {
+            {{ m.manager_name.charAt(0).toUpperCase() }}
+          }
+        </span>
         @if (onlineState(m); as state) {
           <span class="heatmap__online heatmap__online--{{ state }}"
                 [attr.title]="state === 'active' ? 'Gerade online' : 'Vor 1–3 Minuten online'"
