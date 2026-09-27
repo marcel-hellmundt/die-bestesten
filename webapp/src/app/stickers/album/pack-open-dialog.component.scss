@@ -277,6 +277,11 @@
   &:hover, &:focus-visible {
     filter: brightness(1.12) drop-shadow(0 6px 16px rgba(255, 214, 140, 0.35));
   }
+
+  // Glanz ebenfalls versetzt (Lasche + Körper desselben Packs bleiben synchron) — 1,37 s passt nicht glatt
+  // in die 3,2-s-Periode, dadurch wirken auch viele Packs nebeneinander nicht gleichgetaktet
+  .pack__body,
+  .pack__top { animation-delay: calc(var(--d, 0) * -1.37s); }
 }
 
 // Verdeckte Karte (Rückseite) — Format wie die Sticker-Karte (5:7)
