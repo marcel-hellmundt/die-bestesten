@@ -12,8 +12,16 @@
     <ol class="collectors">
       @for (m of ranking(); track m.manager_id) {
         <li>
-          <a class="collector" [class.collector--me]="m.manager_id === myId" [routerLink]="m.link">
+          <a class="collector" [class.collector--me]="m.manager_id === myId" [class.collector--admin]="isAdmin" [routerLink]="m.link">
             <span class="collector__rank">{{ m.rank }}.</span>
+            <!-- Admin: ungeöffnete Packs (wie im Sammelalbum oben), Platz bleibt auch ohne Packs frei -->
+            @if (isAdmin) {
+              <span class="collector__packs">
+                @if (m.unopened) {
+                  <span class="packs-icon" [title]="m.unopened === 1 ? '1 ungeöffnetes Pack' : m.unopened + ' ungeöffnete Packs'">{{ m.unopened }}</span>
+                }
+              </span>
+            }
             <span class="collector__avatar">
               @if (m.photo && !photoFailed().has(m.manager_id)) {
                 <img [src]="m.photo" alt="" (error)="onPhotoError(m.manager_id)" />

@@ -47,6 +47,19 @@
 
   &--me { background: color-mix(in srgb, #{$color-accent} 6%, #{$color-surface}); }
 
+  // Admin: zusätzliche Spalte für die ungeöffneten Packs links neben dem Bild
+  &--admin {
+    grid-template-columns: 26px 26px 36px minmax(0, 1fr) auto auto;
+
+    .collector__bar { grid-column: 4 / span 3; }
+  }
+
+  &__packs {
+    grid-row: span 2;
+    display: flex;
+    justify-content: center;
+  }
+
   &__rank {
     grid-row: span 2;
     font-size: $font-sm;
@@ -101,6 +114,7 @@
 
   &__bar {
     grid-column: 3 / span 3;
+    grid-row: 2;
     height: 5px;
     border-radius: $radius-full;
     background: $color-surface-alt;
@@ -138,4 +152,22 @@
 
   &--silver { background: linear-gradient(135deg, #eef0f3, #bfc5ce); }
   &--gold   { background: linear-gradient(135deg, #fbf1cf, #e0bb4f); }
+}
+
+// Ungeöffnete Packs (nur Admins): kleines rotes Pack-Kärtchen mit der Anzahl — wie oben im Sammelalbum (.packs__icon)
+.packs-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 30px;
+  border-radius: 4px;
+  background: linear-gradient(160deg, #{$color-accent}, color-mix(in srgb, #{$color-accent} 60%, #000));
+  color: #fff;
+  font-family: $font-display;
+  font-size: $font-sm;
+  font-weight: 800;
+  font-style: italic;
+  transform: rotate(-6deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }

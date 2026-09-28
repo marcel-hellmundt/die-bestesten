@@ -37,7 +37,7 @@ class StickerController extends _BaseController
             return $this->db->getMyStickerState($GLOBALS['auth_manager_id']);
         }
         if ($this->id === 'collectors' && $this->sub === null) {
-            return $this->db->getStickerCollectors($GLOBALS['auth_manager_id']);
+            return $this->db->getStickerCollectors($GLOBALS['auth_manager_id'], $this->isAdmin());
         }
         if ($this->id === 'trade' && $this->sub === null) {
             return $this->db->getStickerTrades($GLOBALS['auth_manager_id']);

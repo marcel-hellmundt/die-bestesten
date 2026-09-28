@@ -23,6 +23,8 @@ export class StickerCollectorsComponent {
   private status = inject(StickerStatusService);
 
   readonly myId = this.auth.getManagerId();
+  /** Admins sehen links neben dem Bild, wie viele ungeöffnete Packs jeder Manager hat */
+  readonly isAdmin = this.auth.isAdmin();
 
   // neu geladen, sobald sich die eigene Sammlung ändert (Pack geöffnet); bis dahin bleibt die alte Liste stehen
   private data = toSignal(

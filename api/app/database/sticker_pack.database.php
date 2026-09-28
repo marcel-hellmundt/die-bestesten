@@ -200,8 +200,9 @@ trait StickerPackTrait
      * aktiven Saison — für die Sammler-Rangliste; sortiert nach Anzahl verschiedener Sticker.
      * Mit $viewerId zusätzlich je Sammler die Tauschmöglichkeiten: trade_get = seine Doppelten, die dem
      * Betrachter fehlen, trade_give = Doppelte des Betrachters, die ihm fehlen.
+     * Mit $withUnopened (nur Admins) zusätzlich unopened = Anzahl ungeöffneter Packs der aktiven Saison.
      */
-    public function getStickerCollectors(?string $viewerId = null): array
+    public function getStickerCollectors(?string $viewerId = null, bool $withUnopened = false): array
     {
         $seasonId = $this->getActiveSeasonId();
         if ($seasonId === null || !$this->stickerAlbumReady($seasonId)) return ['season_id' => $seasonId, 'total' => 0, 'collectors' => []];
@@ -248,6 +249,16 @@ trait StickerPackTrait
                 foreach ($theirs as $sid => $n) if ($n >= 2 && !isset($mine[$sid])) $c['trade_get']++;
                 foreach ($mine as $sid => $n) if ($n >= 2 && !isset($theirs[$sid])) $c['trade_give']++;
             }
+            unset($c);
+        }
+
+        if ($withUnopened) {
+            $uq = $this->con->prepare(
+                "SELECT manager_id, COUNT(*) FROM sticker_pack WHERE season_id = ? AND opened_at IS NULL GROUP BY manager_id"
+            );
+            $uq->execute([$seasonId]);
+            $unopened = $uq->fetchAll(PDO::FETCH_KEY_PAIR);
+            foreach ($collectors as &$c) $c['unopened'] = (int) ($unopened[$c['manager_id']] ?? 0);
             unset($c);
         }
 

@@ -50,6 +50,7 @@ export interface StickerCollectors {
     manager_id: string; manager_name: string; have: number; pulled: number; silver: number; gold: number;
     trade_get?: number;   // seine Doppelten, die mir fehlen
     trade_give?: number;  // meine Doppelten, die ihm fehlen
+    unopened?: number;    // ungeöffnete Packs — nur für Admins geliefert
   }[];
 }
 
