@@ -1,14 +1,15 @@
 @use '../../styles/variables' as *;
 
-// Flaggen auf der Karte: immer kreisrund mit 2px weißem Rand (Kopf, Länderliste, Filter-Zeile, Ranking)
-@mixin round-flag($size) {
+// Flaggen auf der Karte: immer kreisrund (Kopf, Länderliste, Filter-Zeile, Ranking);
+// weißer Rand nur bei der gewählten Flagge oben ($border: true)
+@mixin round-flag($size, $border: false) {
   flex-shrink: 0;
   box-sizing: border-box;
   width: $size;
   height: $size;
   object-fit: cover;
-  border: 2px solid #fff;
   border-radius: 50%;
+  @if $border { border: 1px solid #fff; }
 }
 
 :host {
@@ -147,7 +148,7 @@
 
     &:hover { opacity: 0.85; }
 
-    img { @include round-flag(26px); }
+    img { @include round-flag(26px, true); }
   }
 
   &__check {
