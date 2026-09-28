@@ -607,9 +607,7 @@
   // as visible on both axes) — without this padding, a .pill__badge's negative top offset would
   // get clipped by that implicit vertical clipping instead of poking above the pill as intended.
   padding-top: $space-2;
-  // Space before the routed sub-page content. On team-detail this collapses with
-  // .team-header's own margin-bottom:$space-6 (same value, standard block margin
-  // collapsing) instead of stacking — so the gap stays 24px everywhere either way.
+  // Space before the routed sub-page content.
   margin-bottom: $space-6;
   // Establishes a stacking context above content that follows in the DOM (e.g. .row-link
   // anchors with position:absolute; inset:0 in a table below) — without this, such an

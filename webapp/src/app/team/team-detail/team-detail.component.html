@@ -54,26 +54,28 @@
         </div>
       </div>
     </div>
-
-    <nav class="pill-nav pill-nav--sticky pill-nav--last" appStuck>
-      <a class="pill" routerLink="uebersicht" routerLinkActive="pill--active">Übersicht</a>
-      <a class="pill" routerLink="kader" routerLinkActive="pill--active">
-        @if (squadInvalid()) {
-          <img class="pill__warn-icon" src="img/icons/warning.png" alt="" />
-        }
-        Kader
-      </a>
-      <a class="pill" routerLink="aufstellung" routerLinkActive="pill--active">
-        @if (lineupInvalid()) {
-          <img class="pill__warn-icon" src="img/icons/warning.png" alt="" />
-        }
-        Aufstellung
-      </a>
-      @if (isOwnTeam()) {
-        <a class="pill" routerLink="finanzen" routerLinkActive="pill--active">Finanzen</a>
-      }
-    </nav>
   </div>
+
+  <!-- außerhalb von .team-header: sticky wirkt nur innerhalb des Elternelements — so bleibt das Menü
+       über die ganze Unterseite gepinnt -->
+  <nav class="pill-nav pill-nav--sticky pill-nav--last" appStuck>
+    <a class="pill" routerLink="uebersicht" routerLinkActive="pill--active">Übersicht</a>
+    <a class="pill" routerLink="kader" routerLinkActive="pill--active">
+      @if (squadInvalid()) {
+        <img class="pill__warn-icon" src="img/icons/warning.png" alt="" />
+      }
+      Kader
+    </a>
+    <a class="pill" routerLink="aufstellung" routerLinkActive="pill--active">
+      @if (lineupInvalid()) {
+        <img class="pill__warn-icon" src="img/icons/warning.png" alt="" />
+      }
+      Aufstellung
+    </a>
+    @if (isOwnTeam()) {
+      <a class="pill" routerLink="finanzen" routerLinkActive="pill--active">Finanzen</a>
+    }
+  </nav>
 
   <router-outlet />
 }
