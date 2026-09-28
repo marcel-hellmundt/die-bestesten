@@ -2,7 +2,7 @@
 
 /**
  * Länderpunkte auf der Karte (/karte): welche Länder ein Manager als besucht markiert hat.
- * Tabelle manager_country (Migration database/migrations/2026-09-28_manager_country.sql) — fehlt sie noch,
+ * Tabelle manager_country (Migration 2026-09-28_manager_country.sql) — fehlt sie noch,
  * liefert GET eine leere Liste statt eines Fehlers.
  */
 trait ManagerCountryTrait

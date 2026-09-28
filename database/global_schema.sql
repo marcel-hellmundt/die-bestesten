@@ -385,7 +385,7 @@ CREATE TABLE IF NOT EXISTS manager_stadium (
 
 -- Tabelle: manager_country (Länderpunkte auf der Karte — welche Länder ein Manager als besucht markiert hat;
 -- das Markieren eines Stadions schreibt das Land des Vereins automatisch mit gut)
--- Migration: database/migrations/2026-09-28_manager_country.sql
+-- Migration: 2026-09-28_manager_country.sql
 CREATE TABLE IF NOT EXISTS manager_country (
     id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id CHAR(36) NOT NULL,
