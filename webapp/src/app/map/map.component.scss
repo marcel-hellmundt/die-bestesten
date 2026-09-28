@@ -100,6 +100,8 @@
   display: flex;
   flex-direction: column;
   gap: $space-2;
+  // Desktop: feste Breite — gleich breit, egal ob Länderliste, "Länderpunkt eintragen" oder Ligen darunter
+  width: 220px;
 }
 
 // Kopf über den Liga-Buttons: links Flagge, rechts Ranking-Button (gleicher dunkler Stil wie die Buttons)
@@ -118,10 +120,10 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   }
 
-  // Flagge = Button: öffnet die Länderliste darunter
+  // Flagge = Button: öffnet die Länderliste darunter; Flagge mittig, ✓ links und Pfeil rechts am Rand
   &__flag {
+    position: relative;
     flex: 1;
-    gap: $space-2;
     padding: 0 $space-3;
     border: none;
     color: $color-surface;
@@ -138,13 +140,16 @@
   }
 
   &__check {
+    position: absolute;
+    left: $space-3;
     color: $color-success;
     font-size: $font-sm;
     font-weight: $font-weight-bold;
   }
 
   &__caret {
-    margin-left: auto;
+    position: absolute;
+    right: $space-3;
     font-size: $font-xs;
     opacity: 0.7;
     transition: transform $transition-fast;
@@ -275,6 +280,7 @@
     top: calc(40px + #{$space-2});
     left: 0;
     right: 0;
+    width: auto;
 
     &--open {
       display: flex;
