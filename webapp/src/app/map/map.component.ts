@@ -178,26 +178,132 @@ export class MapComponent {
     return map;
   });
 
-  // Nur deutsche Ligen — Filter-Buttons und Marker (Marker nur für Clubs einer aktiven Division)
+  // ── Länder (Länderpunkte) ────────────────────────────────────────────────────────────────────────
+  // Oben links: Flagge des gewählten Landes (Klick → alphabetische Länderliste) + Stadion-Ranking.
+  // Darunter: noch nicht besucht → "Länderpunkt eintragen", sonst die Ligen des Landes (falls vorhanden).
+  // Nicht besuchte Länder sind auf der Karte dunkler getönt (GeoJSON-Ebene, siehe onMapInit).
+  private readonly COUNTRY_STORAGE_KEY = 'map-country';
+
+  countries = toSignal(
+    this.api.get<{ id: string; name: string }[]>('country').pipe(
+      map((list) => [...list].sort((a, b) => a.name.localeCompare(b.name, 'de'))),
+      catchError(() => of([] as { id: string; name: string }[])),
+    ),
+    { initialValue: [] as { id: string; name: string }[] },
+  );
+
+  /** Besuchte Länder (ids klein geschrieben, wie img/flags) */
+  private visitedCountryIds = signal<Set<string>>(new Set());
+  selectedCountryId = signal<string>(this.loadStoredCountry());
+  selectedCountry = computed(() => this.countries().find((c) => c.id.toLowerCase() === this.selectedCountryId()) ?? null);
+  selectedVisited = computed(() => this.visitedCountryIds().has(this.selectedCountryId()));
+  countryListOpen = signal(false);
+  countryBusy = signal(false);
+
+  flagUrl(countryId: string): string {
+    return `img/flags/${countryId.toLowerCase()}.svg`;
+  }
+
+  isCountryVisited(countryId: string): boolean {
+    return this.visitedCountryIds().has(countryId.toLowerCase());
+  }
+
+  private loadStoredCountry(): string {
+    try {
+      return localStorage.getItem(this.COUNTRY_STORAGE_KEY)?.toLowerCase() || 'de';
+    } catch {
+      return 'de';
+    }
+  }
+
+  selectCountry(countryId: string): void {
+    const id = countryId.toLowerCase();
+    this.selectedCountryId.set(id);
+    this.countryListOpen.set(false);
+    try { localStorage.setItem(this.COUNTRY_STORAGE_KEY, id); } catch { /* egal */ }
+    this.panToCountry(id);
+  }
+
+  private loadVisitedCountries(): void {
+    this.api
+      .get<string[]>('manager_country')
+      .pipe(catchError(() => of([] as string[])))
+      .subscribe((ids) => this.visitedCountryIds.set(new Set(ids.map((i) => i.toLowerCase()))));
+  }
+
+  /** "Länderpunkt eintragen" für das gewählte Land (optimistisch, bei Fehler zurück) */
+  markSelectedCountryVisited(): void {
+    const country = this.selectedCountry();
+    if (!country || this.countryBusy()) return;
+    const id = country.id.toLowerCase();
+    this.countryBusy.set(true);
+    this.visitedCountryIds.update((s) => new Set(s).add(id));
+    this.api.post('manager_country', { country_id: country.id }).subscribe({
+      next: () => this.countryBusy.set(false),
+      error: () => {
+        this.countryBusy.set(false);
+        this.visitedCountryIds.update((s) => { const n = new Set(s); n.delete(id); return n; });
+      },
+    });
+  }
+
+  // ── Kartenebene: nicht besuchte Länder dunkler (GeoJSON aus scripts/build-country-geojson.js) ──
+  private gmap: google.maps.Map | null = null;
+
+  onMapInit(m: google.maps.Map): void {
+    this.gmap = m;
+    // zuletzt gewähltes Land ≠ Deutschland → Karte nach dem Laden der Grenzen dorthin ausrichten
+    m.data.loadGeoJson('img/geo/countries.json', undefined, () => {
+      if (this.selectedCountryId() !== 'de') this.panToCountry(this.selectedCountryId());
+    });
+    this.applyCountryStyle();
+  }
+
+  private applyCountryStyle(): void {
+    const visited = this.visitedCountryIds();
+    this.gmap?.data.setStyle((f) => {
+      const iso = String(f.getProperty('iso') ?? '');
+      return visited.has(iso)
+        ? { visible: false, clickable: false } // besucht: Karte wie bisher
+        : { fillColor: '#1f2937', fillOpacity: 0.14, strokeWeight: 0, clickable: false };
+    });
+  }
+
+  /** Karte auf das gewählte Land ausrichten (Grenzen aus der GeoJSON-Ebene) */
+  private panToCountry(iso: string): void {
+    const m = this.gmap;
+    if (!m) return;
+    const bounds = new google.maps.LatLngBounds();
+    let found = false;
+    m.data.forEach((f) => {
+      if (f.getProperty('iso') !== iso) return;
+      found = true;
+      f.getGeometry()?.forEachLatLng((ll) => bounds.extend(ll));
+    });
+    if (found) m.fitBounds(bounds, 40);
+  }
+
+  // Ligen des gewählten Landes — Filter-Buttons (Marker nur für Clubs einer aktiven Division)
   divisions = computed(() =>
     this.cache.divisions()
-      .filter((d) => d.country_id?.toLowerCase() === 'de')
+      .filter((d) => d.country_id?.toLowerCase() === this.selectedCountryId())
       .sort((a, b) => a.level - b.level)
   );
 
   // Mobile: the division buttons collapse behind this toggle instead of showing all at once.
   filtersMenuOpen = signal(false);
 
-  // Division filter buttons — every division starts active; toggling one hides its clubs'
-  // markers. Lazily initialized once the division list has actually loaded, either from a
-  // stored selection (persisted across sessions) or "all active" as the default.
-  private readonly DIVISION_FILTER_STORAGE_KEY = 'map-active-divisions';
-  private activeDivisionIds = signal<Set<string>>(new Set());
+  // Division filter: gespeichert werden die AUSGESCHALTETEN Ligen (über alle Länder) — Ligen eines
+  // neu gewählten Landes sind so von selbst sichtbar (1. + 2. Liga), ohne die eigene Auswahl zu verlieren.
+  // Lazily initialized once the division list has actually loaded.
+  private readonly DIVISION_FILTER_STORAGE_KEY = 'map-inactive-divisions';
+  private readonly LEGACY_ACTIVE_STORAGE_KEY = 'map-active-divisions'; // alte Speicherung (nur deutsche Ligen, aktive)
+  private inactiveDivisionIds = signal<Set<string>>(new Set());
   private divisionsInitialized = false;
 
-  private loadStoredActiveDivisions(): string[] | null {
+  private readStored(key: string): string[] | null {
     try {
-      const raw = localStorage.getItem(this.DIVISION_FILTER_STORAGE_KEY);
+      const raw = localStorage.getItem(key);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -205,11 +311,11 @@ export class MapComponent {
   }
 
   isDivisionActive(divisionId: string): boolean {
-    return this.activeDivisionIds().has(divisionId);
+    return !this.inactiveDivisionIds().has(divisionId);
   }
 
   toggleDivision(divisionId: string): void {
-    this.activeDivisionIds.update((set) => {
+    this.inactiveDivisionIds.update((set) => {
       const next = new Set(set);
       if (next.has(divisionId)) next.delete(divisionId);
       else next.add(divisionId);
@@ -230,7 +336,7 @@ export class MapComponent {
     const prevLvl = this.clubPrevLevel();
     const prevPos = this.clubPrevPosition();
     const divisionByClub = this.clubDivisionId();
-    const active = this.activeDivisionIds();
+    const inactive = this.inactiveDivisionIds();
     const visited = this.visitedStadiumIds();
 
     const entries = this.stadiums()
@@ -240,7 +346,7 @@ export class MapComponent {
       )
       .filter((s) => {
         const divisionId = divisionByClub.get(s.club.id);
-        return divisionId != null && active.has(divisionId);
+        return divisionId != null && !inactive.has(divisionId);
       })
       .map((s) => ({
         stadium: s,
@@ -451,8 +557,6 @@ export class MapComponent {
   // Markierungen (other_visitors schließt den eingeloggten Manager aus) — kein eigener Endpunkt nötig.
   rankingOpen = signal(false);
   readonly myId = this.auth.getManagerId();
-  /** Land der Karte (nur deutsche Ligen, siehe divisions) — Flagge über den Liga-Buttons */
-  readonly countryFlagUrl = 'img/flags/de.svg';
 
   ranking = computed(() => {
     const byId = new Map<string, { id: string; name: string; count: number }>();
@@ -478,9 +582,14 @@ export class MapComponent {
     });
   });
 
-  @HostListener('document:keydown.escape')
   closeRanking(): void {
     this.rankingOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.rankingOpen.set(false);
+    this.countryListOpen.set(false);
   }
 
   toggleVisited(stadiumId: string): void {
@@ -499,6 +608,8 @@ export class MapComponent {
       : this.api.post<{ status: boolean }>('manager_stadium', { stadium_id: stadiumId });
 
     request.subscribe({
+      // Markieren schreibt serverseitig das Land des Vereins mit gut → Länderpunkte neu laden
+      next: () => { if (!wasVisited) this.loadVisitedCountries(); },
       error: () => {
         this.visitedStadiumIds.update((set) => {
           const next = new Set(set);
@@ -532,25 +643,39 @@ export class MapComponent {
     });
 
     effect(() => {
-      const divs = this.divisions(); // nur deutsche Ligen — gespeicherte ausländische Auswahl fällt so heraus
-      if (divs.length && !this.divisionsInitialized) {
+      const all = this.cache.divisions(); // alle Länder
+      if (all.length && !this.divisionsInitialized) {
         this.divisionsInitialized = true;
-        const stored = this.loadStoredActiveDivisions();
+        const stored = this.readStored(this.DIVISION_FILTER_STORAGE_KEY);
+        const legacyActive = stored ? null : this.readStored(this.LEGACY_ACTIVE_STORAGE_KEY);
+        // Standard: 1. + 2. Liga je Land an, tiefere Ligen aus
+        const byDefault = all.filter((d) => d.level > 2).map((d) => d.id);
         if (stored) {
-          const validIds = new Set(divs.map((d) => d.id));
-          this.activeDivisionIds.set(new Set(stored.filter((id) => validIds.has(id))));
+          this.inactiveDivisionIds.set(new Set(stored));
+        } else if (legacyActive) {
+          // alte Auswahl übernehmen: deutsche Ligen, die dort nicht aktiv waren, bleiben aus
+          const active = new Set(legacyActive);
+          const inactiveDe = all.filter((d) => d.country_id?.toLowerCase() === 'de' && !active.has(d.id)).map((d) => d.id);
+          const inactiveOther = all.filter((d) => d.country_id?.toLowerCase() !== 'de' && d.level > 2).map((d) => d.id);
+          this.inactiveDivisionIds.set(new Set([...inactiveDe, ...inactiveOther]));
         } else {
-          // No stored selection yet — default to the top two divisions (1. + 2. Liga).
-          this.activeDivisionIds.set(new Set(divs.filter((d) => d.level <= 2).map((d) => d.id)));
+          this.inactiveDivisionIds.set(new Set(byDefault));
         }
       }
     });
 
     // Persist the division filter selection across sessions, once initialized.
     effect(() => {
-      const active = this.activeDivisionIds();
+      const inactive = this.inactiveDivisionIds();
       if (!this.divisionsInitialized) return;
-      localStorage.setItem(this.DIVISION_FILTER_STORAGE_KEY, JSON.stringify([...active]));
+      try { localStorage.setItem(this.DIVISION_FILTER_STORAGE_KEY, JSON.stringify([...inactive])); } catch { /* egal */ }
+    });
+
+    // Länderpunkte laden + Tönung der Karte aktualisieren, sobald sich besuchte Länder ändern
+    this.loadVisitedCountries();
+    effect(() => {
+      this.visitedCountryIds();
+      this.applyCountryStyle();
     });
   }
 }

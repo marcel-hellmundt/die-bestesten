@@ -102,8 +102,11 @@ POST     /club/:id/logo        — multipart/form-data, Feld "image" (PNG) → s
 GET      /stadium              — Alle Stadien inkl. lat/lng, capacity, other_visitors ([{id,manager_name}] anderer Manager, die das Stadion besucht haben, eingeloggter Manager ausgeschlossen) und aktuell verknüpftem Club ({id,name,logo_uploaded} oder null) — Auth
 POST     /stadium              — {club_id, official_name, name?, capacity?, lat?, lng?, from_date?} → {id}; legt Stadion an und verknüpft es sofort als aktuelles Stadion des Clubs (club_stadium, to_date NULL); from_date default heute — Admin
 GET      /manager_stadium      — Stadion-IDs, die der eingeloggte Manager als besucht markiert hat — Auth
-POST     /manager_stadium      — {stadium_id} — als besucht markieren (idempotent) — Auth
+POST     /manager_stadium      — {stadium_id} — als besucht markieren (idempotent); schreibt zusätzlich das Land des Vereins als Länderpunkt gut (manager_country) — Auth
 DELETE   /manager_stadium/:stadium_id — Markierung entfernen (idempotent) — Auth
+GET      /manager_country      — Länderpunkte: IDs (country.id, ISO Alpha-2) der Länder, die der eingeloggte Manager als besucht markiert hat; [] ohne Migration — Auth
+POST     /manager_country      — {country_id} — Land als besucht markieren ("Länderpunkt eintragen", idempotent); 400 ungültig, 404 Land unbekannt, 409 Migration fehlt — Auth
+DELETE   /manager_country/:country_id — Länderpunkt entfernen (idempotent) — Auth
 GET      /country[/:id]
 GET      /season[/:id|/active]
 POST     /season                — {start_date: YYYY-MM-DD} → {id}; UNIQUE auf start_date — Admin
@@ -277,6 +280,8 @@ GET      /session               — ?range=day|month|year|all (optional, default
 **manager_achievement**: id PK, manager_id FK, achievement_id FK → achievement (echtes FK, gleiche DB!), earned_at DATETIME, reason VARCHAR(255)?, seen_at DATETIME?, level ENUM('bronze','silver','gold') DEFAULT 'gold' — UNIQUE(manager_id, achievement_id) — idempotent per INSERT IGNORE; seen_at=NULL = noch nicht gesehen
 
 **manager_stadium**: id PK, manager_id FK, stadium_id FK → stadium (echtes FK, gleiche DB!), created_at — UNIQUE(manager_id, stadium_id) — vom Manager als besucht markierte Stadien; idempotent per INSERT IGNORE
+
+**manager_country** (Migration `database/migrations/2026-09-28_manager_country.sql`, schreibt allen mit ≥ 1 besuchtem Stadion Deutschland gut): id PK, manager_id FK, country_id FK → country, created_at — UNIQUE(manager_id, country_id) — Länderpunkte auf der Karte; Markieren eines Stadions schreibt das Land des Vereins automatisch mit gut. Karte (/karte): oben links Flagge des gewählten Landes (Klick → alphabetische Länderliste) + Stadion-Ranking-Button; darunter "Länderpunkt eintragen" bzw. die Ligen des Landes; nicht besuchte Länder dunkler getönt über eine GeoJSON-Ebene (webapp/public/img/geo/countries.json, erzeugt per `node webapp/scripts/build-country-geojson.js <ne_50m_admin_0_countries.geojson>` aus Natural Earth)
 
 **manager_session**: id PK, manager_id FK, started_at DATETIME, ended_at DATETIME, device_type VARCHAR(10)? (mobile/tablet/desktop), os VARCHAR(20)? (iOS/Android/Windows/macOS/Linux), browser VARCHAR(20)? (Chrome/Safari/Firefox/Edge/Opera) — näherungsweise Sitzungsdauer per Heartbeat; Guard::authorize() verlängert bei jedem authentifizierten Request die jüngste Session mit ended_at ≥ jetzt−2min UND gleichem device_type/os/browser (aus User-Agent geparst), sonst wird eine neue Zeile angelegt — ein Geräte-/Browser-Wechsel beendet die vorherige Session immer, unabhängig vom Zeitabstand; Grundlage für den Admin-Nutzungs-Heatmap-Report (GET /session); beim Anlegen einer neuen Session räumt touchSession() automatisch alte 0s-Zeilen (started_at = ended_at) desselben Managers auf, die außerhalb des 2-Minuten-Fensters liegen und daher nie mehr verlängert werden können — hält die Tabelle ohne separaten Cron-Job schlank
 

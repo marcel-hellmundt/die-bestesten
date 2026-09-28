@@ -9,6 +9,7 @@ require_once 'club.database.php';
 require_once 'club_in_season.database.php';
 require_once 'stadium.database.php';
 require_once 'manager_stadium.database.php';
+require_once 'manager_country.database.php';
 require_once 'division.database.php';
 require_once 'player.database.php';
 require_once 'player_in_club.database.php';
@@ -64,6 +65,7 @@ class Database
     use ClubInSeasonTrait;
     use StadiumTrait;
     use ManagerStadiumTrait;
+    use ManagerCountryTrait;
     use DivisionTrait;
     use PlayerTrait;
     use PlayerInClubTrait;

@@ -338,7 +338,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/manager_stadium',
-                        'description' => 'Stadion als besucht markieren (idempotent) — Auth',
+                        'description' => 'Stadion als besucht markieren (idempotent); schreibt zusätzlich das Land des Vereins als Länderpunkt gut (siehe /manager_country) — Auth',
                         'body' => ['stadium_id' => 'UUID des Stadions (erforderlich)'],
                     ],
                     [
@@ -346,6 +346,30 @@ class Routing
                         'path' => '/manager_stadium/:stadium_id',
                         'description' => 'Markierung als besucht wieder entfernen (idempotent) — Auth',
                         'path_params' => [':stadium_id' => 'UUID des Stadions'],
+                    ],
+                ],
+            ]),
+
+            new Route('manager_country', 'ManagerCountry', [
+                'title' => 'ManagerCountry',
+                'description' => 'Länderpunkte auf der Karte (/karte): von einem Manager als besucht markierte Länder (Tabelle manager_country)',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/manager_country',
+                        'description' => 'Länder-IDs (ISO Alpha-2 wie country.id), die der eingeloggte Manager als besucht markiert hat; [] solange die Migration fehlt — Auth',
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/manager_country',
+                        'description' => 'Land als besucht markieren ("Länderpunkt eintragen", idempotent); 400 ungültige country_id, 404 Land nicht gefunden, 409 Migration fehlt — Auth',
+                        'body' => ['country_id' => 'ISO Alpha-2 (country.id, erforderlich)'],
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/manager_country/:country_id',
+                        'description' => 'Länderpunkt wieder entfernen (idempotent) — Auth',
+                        'path_params' => [':country_id' => 'ISO Alpha-2'],
                     ],
                 ],
             ]),

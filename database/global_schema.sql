@@ -383,6 +383,19 @@ CREATE TABLE IF NOT EXISTS manager_stadium (
     UNIQUE KEY uk_manager_stadium (manager_id, stadium_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: manager_country (Länderpunkte auf der Karte — welche Länder ein Manager als besucht markiert hat;
+-- das Markieren eines Stadions schreibt das Land des Vereins automatisch mit gut)
+-- Migration: database/migrations/2026-09-28_manager_country.sql
+CREATE TABLE IF NOT EXISTS manager_country (
+    id         CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id CHAR(36) NOT NULL,
+    country_id CHAR(2)  NOT NULL,  -- Referenz auf country.id (gleiche DB)
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    FOREIGN KEY (country_id) REFERENCES country(id),
+    UNIQUE KEY uk_manager_country (manager_id, country_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Tabelle: maintainer_contribution (welche Manager an einem player_rating mitgewirkt haben)
 -- player_rating_id ist Cross-DB-Referenz auf player_rating.id (kein FK). Akkumuliert statt
 -- Upsert: UNIQUE über (rating, Kategorie, Manager) statt nur (rating, Kategorie) — trägt z.B.

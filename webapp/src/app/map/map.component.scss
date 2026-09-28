@@ -118,9 +118,17 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   }
 
+  // Flagge = Button: öffnet die Länderliste darunter
   &__flag {
     flex: 1;
+    gap: $space-2;
     padding: 0 $space-3;
+    border: none;
+    color: $color-surface;
+    cursor: pointer;
+    transition: opacity $transition-fast;
+
+    &:hover { opacity: 0.85; }
 
     img {
       height: 20px;
@@ -128,6 +136,21 @@
       box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
     }
   }
+
+  &__check {
+    color: $color-success;
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+  }
+
+  &__caret {
+    margin-left: auto;
+    font-size: $font-xs;
+    opacity: 0.7;
+    transition: transform $transition-fast;
+  }
+
+  &__flag--open &__caret { transform: rotate(180deg); }
 
   &__award {
     flex: 0 0 40px;
@@ -137,6 +160,59 @@
     transition: opacity $transition-fast;
 
     &:hover { opacity: 0.8; }
+  }
+}
+
+// Länderliste (alphabetisch) unter der Flagge — dunkel wie die Buttons, scrollt bei vielen Ländern
+.map-countries {
+  display: flex;
+  flex-direction: column;
+  max-height: min(50vh, 420px);
+  margin: 0;
+  padding: $space-1;
+  list-style: none;
+  overflow-y: auto;
+  border-radius: $radius-sm;
+  background: $color-text;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    width: 100%;
+    padding: 6px $space-2;
+    border: none;
+    border-radius: $radius-sm;
+    background: transparent;
+    color: $color-surface;
+    font-size: $font-sm;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { background: rgba(255, 255, 255, 0.1); }
+    &--active { background: rgba(255, 255, 255, 0.16); font-weight: $font-weight-semibold; }
+
+    img {
+      flex-shrink: 0;
+      width: 22px;
+      height: 16px;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__check {
+    color: $color-success;
+    font-weight: $font-weight-bold;
   }
 }
 
@@ -164,6 +240,14 @@
 
   &--inactive:hover {
     opacity: 0.6;
+  }
+
+  // "Länderpunkt eintragen" (Land noch nicht besucht)
+  &--cta {
+    background: $color-success;
+    text-align: center;
+
+    &:disabled { opacity: 0.5; cursor: default; }
   }
 }
 

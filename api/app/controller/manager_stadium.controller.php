@@ -19,6 +19,8 @@ class ManagerStadiumController extends _BaseController
 
         $id = $this->generateGUID();
         $this->db->markStadiumVisited($id, $GLOBALS['auth_manager_id'], $stadiumId);
+        // Land des Vereins zählt damit automatisch als besucht (Länderpunkt, siehe /manager_country)
+        $this->db->creditCountryOfStadium($GLOBALS['auth_manager_id'], $stadiumId);
 
         http_response_code(201);
         return ['status' => true];

@@ -6,7 +6,7 @@
   <p class="state-msg">Karte wird geladen…</p>
 } @else {
   <div class="map-shell">
-    <google-map height="100%" width="100%" [center]="center" [zoom]="zoom" [options]="mapOptions">
+    <google-map height="100%" width="100%" [center]="center" [zoom]="zoom" [options]="mapOptions" (mapInitialized)="onMapInit($event)">
       @for (m of markers(); track m.stadium.id) {
         <map-marker
           [position]="m.position"
@@ -19,25 +19,51 @@
     </google-map>
 
     <div class="map-top-row">
-      @if (divisions().length > 1) {
-        <div class="map-filters-wrap">
-          <button
-            class="map-filters-toggle"
-            [class.map-filters-toggle--active]="filtersMenuOpen()"
-            (click)="filtersMenuOpen.set(!filtersMenuOpen())"
-            aria-label="Ligen filtern"
-          >
-            <app-icon name="filter"></app-icon>
-          </button>
+      <div class="map-filters-wrap">
+        <button
+          class="map-filters-toggle"
+          [class.map-filters-toggle--active]="filtersMenuOpen()"
+          (click)="filtersMenuOpen.set(!filtersMenuOpen())"
+          aria-label="Land und Ligen wählen"
+        >
+          <app-icon name="filter"></app-icon>
+        </button>
 
-          <div class="map-filters" [class.map-filters--open]="filtersMenuOpen()">
-            <!-- Kopf: links die Flagge des Landes, rechts das Stadion-Ranking -->
-            <div class="map-country">
-              <span class="map-country__flag"><img [src]="countryFlagUrl" alt="Deutschland" /></span>
-              <button class="map-country__award" (click)="rankingOpen.set(true)" aria-label="Stadion-Ranking" title="Stadion-Ranking">
-                <app-icon name="award"></app-icon>
-              </button>
-            </div>
+        <div class="map-filters" [class.map-filters--open]="filtersMenuOpen()">
+          <!-- Kopf: links die Flagge des gewählten Landes (Klick → Länderliste), rechts das Stadion-Ranking -->
+          <div class="map-country">
+            <button class="map-country__flag" [class.map-country__flag--open]="countryListOpen()"
+                    (click)="countryListOpen.set(!countryListOpen())" [attr.aria-expanded]="countryListOpen()"
+                    [title]="(selectedCountry()?.name ?? '') + ' — Land wählen'">
+              <img [src]="flagUrl(selectedCountryId())" [alt]="selectedCountry()?.name ?? ''" />
+              @if (selectedVisited()) { <span class="map-country__check" title="Länderpunkt eingetragen">✓</span> }
+              <span class="map-country__caret">▾</span>
+            </button>
+            <button class="map-country__award" (click)="rankingOpen.set(true)" aria-label="Stadion-Ranking" title="Stadion-Ranking">
+              <app-icon name="award"></app-icon>
+            </button>
+          </div>
+
+          @if (countryListOpen()) {
+            <!-- alle Länder alphabetisch — besuchte mit Häkchen -->
+            <ul class="map-countries">
+              @for (c of countries(); track c.id) {
+                <li>
+                  <button class="map-countries__item" [class.map-countries__item--active]="c.id.toLowerCase() === selectedCountryId()"
+                          (click)="selectCountry(c.id)">
+                    <img [src]="flagUrl(c.id)" alt="" loading="lazy" />
+                    <span class="map-countries__name">{{ c.name }}</span>
+                    @if (isCountryVisited(c.id)) { <span class="map-countries__check">✓</span> }
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else if (!selectedVisited()) {
+            <button class="map-filter-btn map-filter-btn--cta" [disabled]="countryBusy() || !selectedCountry()"
+                    (click)="markSelectedCountryVisited()">
+              Länderpunkt eintragen
+            </button>
+          } @else {
             @for (d of divisions(); track d.id) {
               <button
                 class="map-filter-btn"
@@ -47,9 +73,9 @@
                 {{ d.name }}
               </button>
             }
-          </div>
+          }
         </div>
-      }
+      </div>
 
       <div class="map-progress">
         <div class="map-progress__fill" [style.width.%]="visitedPercent()"></div>
