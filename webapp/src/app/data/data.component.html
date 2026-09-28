@@ -4,23 +4,22 @@
     <p class="page-subtitle">Spieler, Clubs, Spielklassen und Saisons verwalten</p>
   }
 
-  <nav class="sub-nav">
-    <a class="sub-nav-item" routerLink="ratings" routerLinkActive="sub-nav-item--active"
-      >Punkte eintragen</a
-    >
+  <!-- Standard-Sub-Menü (bleibt auf Desktop beim Scrollen unter der Topbar gepinnt) -->
+  <nav class="pill-nav pill-nav--sticky pill-nav--last" appStuck>
+    <a class="pill" routerLink="ratings" routerLinkActive="pill--active">Punkte eintragen</a>
     @if (isMaintainer()) {
-      <div class="seperator"></div>
-      <a class="sub-nav-item" routerLink="player" routerLinkActive="sub-nav-item--active">Spieler</a>
-      <a class="sub-nav-item" routerLink="club" routerLinkActive="sub-nav-item--active">Clubs</a>
-      <a class="sub-nav-item" routerLink="season" routerLinkActive="sub-nav-item--active">Saisons</a>
-      <a class="sub-nav-item" routerLink="division" routerLinkActive="sub-nav-item--active">Spielklassen</a>
-      <a class="sub-nav-item" routerLink="country" routerLinkActive="sub-nav-item--active">Länder</a>
-      <div class="sub-nav-spacer"></div>
-      <a class="sub-nav-item" routerLink="league" routerLinkActive="sub-nav-item--active">Ligen</a>
+      <span class="nav-separator" aria-hidden="true"></span>
+      <a class="pill" routerLink="player" routerLinkActive="pill--active">Spieler</a>
+      <a class="pill" routerLink="club" routerLinkActive="pill--active">Clubs</a>
+      <a class="pill" routerLink="season" routerLinkActive="pill--active">Saisons</a>
+      <a class="pill" routerLink="division" routerLinkActive="pill--active">Spielklassen</a>
+      <a class="pill" routerLink="country" routerLinkActive="pill--active">Länder</a>
+      <span class="nav-spacer" aria-hidden="true"></span>
+      <a class="pill" routerLink="league" routerLinkActive="pill--active">Ligen</a>
       @if (isAdmin()) {
-        <a class="sub-nav-item" routerLink="manager" routerLinkActive="sub-nav-item--active">Manager</a>
-        <a class="sub-nav-item" routerLink="achievements" routerLinkActive="sub-nav-item--active">Achievements</a>
-        <a class="sub-nav-item" routerLink="session-heatmap" routerLinkActive="sub-nav-item--active">Nutzung</a>
+        <a class="pill" routerLink="manager" routerLinkActive="pill--active">Manager</a>
+        <a class="pill" routerLink="achievements" routerLinkActive="pill--active">Achievements</a>
+        <a class="pill" routerLink="session-heatmap" routerLinkActive="pill--active">Nutzung</a>
       }
     }
   </nav>

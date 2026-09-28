@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { IconModule } from '../shared/icon/icon.module';
+import { StuckDirective } from '../core/stuck.directive';
 import { MaintainerGuard } from '../auth/maintainer.guard';
 import { ContributorGuard } from '../auth/contributor.guard';
 import { AdminGuard } from '../auth/admin.guard';
@@ -79,6 +80,7 @@ const routes: Routes = [
     CommonModule,
     RouterModule.forChild(routes),
     IconModule,
+    StuckDirective,
   ]
 })
 export class DataModule {}
