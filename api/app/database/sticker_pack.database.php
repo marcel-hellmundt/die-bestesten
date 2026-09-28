@@ -253,12 +253,32 @@ trait StickerPackTrait
         }
 
         if ($withUnopened) {
-            $uq = $this->con->prepare(
-                "SELECT manager_id, COUNT(*) FROM sticker_pack WHERE season_id = ? AND opened_at IS NULL GROUP BY manager_id"
-            );
-            $uq->execute([$seasonId]);
-            $unopened = $uq->fetchAll(PDO::FETCH_KEY_PAIR);
-            foreach ($collectors as &$c) $c['unopened'] = (int) ($unopened[$c['manager_id']] ?? 0);
+            // je Manager nach Art: Shop-Packs nach pack_kind (normal/big/club/special), sonst nach source
+            try {
+                $uq = $this->con->prepare(
+                    "SELECT manager_id, COALESCE(pack_kind, source) AS type, COUNT(*) AS cnt
+                     FROM sticker_pack WHERE season_id = ? AND opened_at IS NULL
+                     GROUP BY manager_id, COALESCE(pack_kind, source)"
+                );
+                $uq->execute([$seasonId]);
+            } catch (PDOException $e) {
+                // Spalte pack_kind fehlt noch (migrate_sticker_pack_kind.sql) → nur nach source
+                $uq = $this->con->prepare(
+                    "SELECT manager_id, source AS type, COUNT(*) AS cnt
+                     FROM sticker_pack WHERE season_id = ? AND opened_at IS NULL GROUP BY manager_id, source"
+                );
+                $uq->execute([$seasonId]);
+            }
+            $types = [];
+            foreach ($uq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $types[$r['manager_id']][] = ['type' => $r['type'], 'count' => (int) $r['cnt']];
+            }
+            foreach ($collectors as &$c) {
+                $list = $types[$c['manager_id']] ?? [];
+                usort($list, fn($a, $b) => $b['count'] <=> $a['count'] ?: strcmp($a['type'], $b['type']));
+                $c['unopened'] = array_sum(array_column($list, 'count'));
+                $c['unopened_types'] = $list;
+            }
             unset($c);
         }
 

@@ -51,6 +51,7 @@ export interface StickerCollectors {
     trade_get?: number;   // seine Doppelten, die mir fehlen
     trade_give?: number;  // meine Doppelten, die ihm fehlen
     unopened?: number;    // ungeöffnete Packs — nur für Admins geliefert
+    unopened_types?: { type: string; count: number }[]; // dieselben nach Art (Shop: pack_kind, sonst source) — nur Admins
   }[];
 }
 

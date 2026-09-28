@@ -18,7 +18,14 @@
             @if (isAdmin) {
               <span class="collector__packs">
                 @if (m.unopened) {
-                  <span class="packs-icon" [title]="m.unopened === 1 ? '1 ungeöffnetes Pack' : m.unopened + ' ungeöffnete Packs'">{{ m.unopened }}</span>
+                  <span class="packs-icon">{{ m.unopened }}</span>
+                  <!-- Hover: kompakte Liste nach Pack-Art -->
+                  <span class="packs-tip" role="tooltip">
+                    <span class="packs-tip__title">{{ m.unopened === 1 ? '1 ungeöffnetes Pack' : m.unopened + ' ungeöffnete Packs' }}</span>
+                    @for (t of m.unopened_types ?? []; track t.type) {
+                      <span class="packs-tip__row"><b>{{ t.count }}×</b> {{ packTypeLabel(t.type) }}</span>
+                    }
+                  </span>
                 }
               </span>
             }

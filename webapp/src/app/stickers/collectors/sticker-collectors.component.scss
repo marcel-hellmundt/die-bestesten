@@ -55,9 +55,12 @@
   }
 
   &__packs {
+    position: relative;
     grid-row: span 2;
     display: flex;
     justify-content: center;
+
+    &:hover .packs-tip { display: flex; }
   }
 
   &__rank {
@@ -170,4 +173,38 @@
   font-style: italic;
   transform: rotate(-6deg);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+// Tooltip zu den ungeöffneten Packs (Hover auf das Kärtchen): kompakte Liste nach Art, rechts daneben
+.packs-tip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  z-index: 20;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  color: $color-text;
+  font-size: $font-xs;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  pointer-events: none;
+
+  &__title {
+    margin-bottom: 2px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+
+  &__row b {
+    display: inline-block;
+    min-width: 22px;
+    font-variant-numeric: tabular-nums;
+  }
 }

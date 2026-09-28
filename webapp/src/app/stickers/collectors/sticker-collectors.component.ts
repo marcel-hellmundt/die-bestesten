@@ -4,7 +4,8 @@ import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
-import { StickerCollectors, StickerStatusService } from '../../core/sticker-status.service';
+import { PACK_SOURCE_LABEL, StickerCollectors, StickerPackSource, StickerStatusService } from '../../core/sticker-status.service';
+import { PACK_KINDS, PackKind } from '../shop/shop.model';
 
 /**
  * "Klebebande" (/klebrigsten/klebebande): Rangliste aller Sammler der Saison — Klick öffnet das
@@ -51,6 +52,11 @@ export class StickerCollectorsComponent {
       };
     });
   });
+
+  /** Anzeigename einer Pack-Art für den Tooltip: Shop-Packs nach Art (Big Pack …), sonst nach Quelle (Tages-Pack …) */
+  packTypeLabel(type: string): string {
+    return PACK_KINDS[type as PackKind]?.name ?? PACK_SOURCE_LABEL[type as StickerPackSource] ?? type;
+  }
 
   /** Manager, deren Foto nicht geladen werden konnte → Initialen */
   photoFailed = signal(new Set<string>());
