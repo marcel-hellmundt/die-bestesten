@@ -79,6 +79,11 @@ export const ICONS: Record<string, string> = {
     <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
   </svg>`,
 
+  // Pokal — gleiche Zeichnung wie "powerranking" im Nav-Icon-Set (core/icon); z.B. Stadion-Ranking auf der Karte
+  pokal: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 21h8"/><path d="M12 21v-6"/><path d="M7 3h10l-1 8a4 4 0 0 1-8 0z"/><path d="M17 5h3a2 2 0 0 1-2 4"/><path d="M7 5H4a2 2 0 0 0 2 4"/>
+  </svg>`,
+
   sticker: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M7.93 10.9C8.29 9.86 5.18 8.45 2.7 7.36A2.2 2.2 0 0 1 5.52 3.99C7.02 6.26 9.22 7.88 10.26 7.51C11.29 7.13 11.97 7.62 11.97 4.98A1.3 1.3 0 0 1 14.53 5.44C13.63 7.92 13.55 8.04 14.46 8.65C15.37 9.27 17.22 7.81 19.12 5.96A1.6 1.6 0 0 1 20.82 8.68C18.32 9.58 17.18 10.74 17.28 11.84C17.38 12.93 15.89 12.82 18.5 13.31A1.5 1.5 0 0 1 17.37 16.09C15.16 14.63 15.61 14.35 14.83 15.13C14.05 15.91 15.54 17.77 17.13 19.93A1.9 1.9 0 0 1 13.61 21.36C13.25 18.7 12.49 17.3 11.4 17.16C10.31 17.03 9.67 17.16 8.57 19.57A1.5 1.5 0 0 1 6.14 17.81C8.1 16.01 8.45 15.43 7.94 14.46C7.42 13.49 5.64 13.63 3.06 14.31A1.7 1.7 0 0 1 2.95 10.92C5.57 11.42 7.58 11.94 7.93 10.9Z"/>
   </svg>`,
