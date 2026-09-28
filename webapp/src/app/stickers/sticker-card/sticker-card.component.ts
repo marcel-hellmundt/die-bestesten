@@ -26,6 +26,13 @@ export interface StickerCardData {
 
 const MAX_TILT = 18; // Grad
 
+/** Seltenheit nach Marktwert (Label oben rechts bei normalen Karten) */
+export const STICKER_TIER_LABEL: Record<StickerTier, string> = {
+  common: 'Häufig', rare: 'Selten', epic: 'Episch', legendary: 'Legendär',
+};
+/** Holo-Variante (Label oben rechts bei Holo-Karten) */
+export const HOLO_LABEL: Record<StickerHolo, string> = { silver: 'Holo Silber', gold: 'Holo Gold' };
+
 /**
  * iOS (13+) liefert deviceorientation erst nach expliziter Erlaubnis — die Anfrage MUSS
  * synchron aus einer Nutzer-Geste (Klick/Tap) heraus gestartet werden, deshalb vom Aufrufer
@@ -69,9 +76,15 @@ export class StickerCardComponent {
     return this.firstLine() ? displayname.replace(/^[A-ZÄÖÜ]\.\s+/, '') : displayname;
   });
 
-  readonly tierLabel: Record<StickerTier, string> = {
-    common: 'Häufig', rare: 'Selten', epic: 'Episch', legendary: 'Legendär',
-  };
+  /**
+   * Label oben rechts: bei Holo-Karten die Variante statt der Marktwert-Seltenheit — eine Holo-Karte ist
+   * immer seltener als jede normale (Holo Silber 1 %, Gold 0,1 % je Karte), "Häufig" wäre dort irreführend.
+   * Die Spieler-Seltenheit zeigt dann die große Karte darunter (sticker-card-dialog).
+   */
+  badge = computed(() => {
+    const { holo, tier } = this.data();
+    return holo ? { text: HOLO_LABEL[holo], variant: holo } : { text: STICKER_TIER_LABEL[tier], variant: null };
+  });
   /** Schriftgröße der großen Zeile in cqw — lange Namen ("Chukwuemeka") schrumpfen statt abgeschnitten zu werden. */
   mainSize = computed(() => {
     const len = this.mainLine().length;

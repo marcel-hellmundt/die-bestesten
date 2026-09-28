@@ -336,6 +336,29 @@
     white-space: nowrap;
   }
 
+  // Holo: Band metallisch (Gold/Silber) mit wanderndem Glanz statt Weiß
+  &__tier--gold &__tier-bg,
+  &__tier--silver &__tier-bg {
+    background-size: 250% 100%, 100% 100%;
+    background-repeat: no-repeat;
+    animation: tier-sheen 2.8s linear infinite;
+  }
+
+  &__tier--gold &__tier-bg {
+    background-image:
+      linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.75) 50%, transparent 65%),
+      linear-gradient(135deg, #f7e08f, #c99a2e 45%, #f3d27a 70%, #a8781c);
+  }
+
+  &__tier--silver &__tier-bg {
+    background-image:
+      linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.85) 50%, transparent 65%),
+      linear-gradient(135deg, #f4f6f9, #aeb5c0 45%, #e3e7ec 70%, #8d95a2);
+  }
+
+  &__tier--gold &__tier-text { color: #4a3406; }
+  &__tier--silver &__tier-text { color: #1f2937; }
+
   // Glanzlicht folgt der Neigung (nur interaktiv); bei Holo wie im Original per overlay
   &__glare {
     position: absolute;
@@ -373,6 +396,12 @@
   to   { --posx: 60%; --posy: 58%; --hyp: 0.6; --fx: 0.15; --fy: 0.5; }
 }
 
+// Glanz über das Holo-Label (erste Ebene läuft durch, zweite = Metall bleibt stehen)
+@keyframes tier-sheen {
+  from { background-position: 150% 0, 0 0; }
+  to   { background-position: -150% 0, 0 0; }
+}
+
 // Damit die Custom Properties in der Animation interpoliert werden (statt zu springen)
 @property --posx { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
 @property --posy { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
@@ -382,4 +411,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .card-3d:not(.card-3d--interactive) .sticker-card--holo { animation: none; }
+  .sticker-card__tier-bg { animation: none !important; }
 }

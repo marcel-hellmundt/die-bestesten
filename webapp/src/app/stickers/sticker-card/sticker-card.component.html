@@ -77,10 +77,12 @@
         </div>
       </div>
 
-      <!-- Seltenheit oben rechts: kleines Band im Stil des Namens-Banners (gespiegelt) -->
-      <div class="sticker-card__tier">
+      <!-- Seltenheit oben rechts: kleines Band im Stil des Namens-Banners (gespiegelt); bei Holo die Variante
+           (Gold/Silber, metallisch mit Glanz) statt der Marktwert-Seltenheit -->
+      @let b = badge();
+      <div class="sticker-card__tier" [class.sticker-card__tier--gold]="b.variant === 'gold'" [class.sticker-card__tier--silver]="b.variant === 'silver'">
         <div class="sticker-card__tier-bg"></div>
-        <span class="sticker-card__tier-text">{{ tierLabel[d.tier] }}</span>
+        <span class="sticker-card__tier-text">{{ b.text }}</span>
       </div>
 
       @if (interactive()) {
