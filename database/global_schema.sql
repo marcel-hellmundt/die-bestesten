@@ -459,7 +459,7 @@ CREATE TABLE IF NOT EXISTS sticker_pull (
 
 -- Tabelle: sticker_eur_purchase (Euro-Kauf im Klebrigsten-Shop per PayPal.me — Packs sofort, Admin bestätigt
 -- die Zahlung (paid) oder storniert (cancelled → Packs + Karten gelöscht); solange pending sind Karten daraus
--- nicht tauschbar). Migration: database/migrate_sticker_shop_eur.sql
+-- nicht tauschbar). Migration: migrate_sticker_shop_eur.sql
 CREATE TABLE IF NOT EXISTS sticker_eur_purchase (
     id           CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id   CHAR(36)    NOT NULL,
@@ -479,7 +479,7 @@ CREATE TABLE IF NOT EXISTS sticker_eur_purchase (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: sticker_trade (Tauschangebot unter Managern: from bietet to eigene Doppelte gegen dessen Doppelte)
--- Migration: database/migrate_sticker_trade.sql
+-- Migration: migrate_sticker_trade.sql
 CREATE TABLE IF NOT EXISTS sticker_trade (
     id              CHAR(36) NOT NULL PRIMARY KEY DEFAULT (UUID()),
     season_id       CHAR(36) NOT NULL,

@@ -242,7 +242,7 @@ CREATE TABLE IF NOT EXISTS h2h_prediction (
 -- Tabelle: sticker_shop_purchase (Lukaten gegen Sticker-Pack eingetauscht, "Die Klebrigsten"-Shop) —
 -- Lukaten sind je Liga, bezahlt wird also aus dem Budget dieser Liga-DB. Die Summe wird vom Lukaten-
 -- Budget des Managers abgezogen und in der Schatzkammer als eigene "Shop"-Zeile ausgewiesen
--- (siehe H2HPredictionTrait). Migration: database/migrate_sticker_shop.sql
+-- (siehe H2HPredictionTrait). Migration: migrate_sticker_shop.sql
 CREATE TABLE IF NOT EXISTS sticker_shop_purchase (
     id         CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id CHAR(36)    NOT NULL,             -- Referenz auf global_schema.manager.id (kein FK, cross-DB)

@@ -18,7 +18,7 @@ trait PlayerOfferTrait
 
     /**
      * Die Bestandsfunktionen (Gebote, Budget, Transferfenster) rufen die Reservierungs-Helfer unten
-     * auf. Fehlt die Migration (database/migrate_player_offer.sql) auf einer Liga-DB noch, sollen sie
+     * auf. Fehlt die Migration (migrate_player_offer.sql) auf einer Liga-DB noch, sollen sie
      * dort weiter funktionieren statt mit "Table doesn't exist" abzustürzen — die Direktangebote selbst
      * bleiben bis zur Migration natürlich nicht nutzbar.
      */
