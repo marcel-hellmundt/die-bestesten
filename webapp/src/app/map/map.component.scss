@@ -1,15 +1,15 @@
 @use '../../styles/variables' as *;
 
 // Flaggen auf der Karte: immer kreisrund (Kopf, Länderliste, Filter-Zeile, Ranking);
-// weißer Rand nur bei der gewählten Flagge oben ($border: true)
-@mixin round-flag($size, $border: false) {
+// heller Schein statt Rand nur bei der gewählten Flagge oben ($glow: true) — hebt sie vom dunklen Button ab
+@mixin round-flag($size, $glow: false) {
   flex-shrink: 0;
   box-sizing: border-box;
   width: $size;
   height: $size;
   object-fit: cover;
   border-radius: 50%;
-  @if $border { border: 1px solid #fff; }
+  @if $glow { box-shadow: 0 0 6px rgba(255, 255, 255, 0.45); }
 }
 
 :host {
