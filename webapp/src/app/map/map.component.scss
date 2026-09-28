@@ -1,5 +1,16 @@
 @use '../../styles/variables' as *;
 
+// Flaggen auf der Karte: immer kreisrund mit 2px weißem Rand (Kopf, Länderliste, Filter-Zeile, Ranking)
+@mixin round-flag($size) {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: $size;
+  height: $size;
+  object-fit: cover;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
 :host {
   display: block;
   height: 100%;
@@ -136,10 +147,7 @@
 
     &:hover { opacity: 0.85; }
 
-    img {
-      height: 20px;
-      border-radius: 2px;
-    }
+    img { @include round-flag(26px); }
   }
 
   &__check {
@@ -201,13 +209,7 @@
     &:hover { background: rgba(255, 255, 255, 0.1); }
     &--active { background: rgba(255, 255, 255, 0.16); font-weight: $font-weight-semibold; }
 
-    img {
-      flex-shrink: 0;
-      width: 22px;
-      height: 16px;
-      object-fit: cover;
-      border-radius: 2px;
-    }
+    img { @include round-flag(20px); }
   }
 
   &__name {
@@ -558,7 +560,7 @@
     font-size: $font-xs;
     color: rgba(255, 255, 255, 0.7);
 
-    img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; }
+    img { @include round-flag(18px); }
   }
 
   &__empty {
@@ -633,13 +635,7 @@
     min-width: 0;
     overflow: hidden;
 
-    img {
-      flex-shrink: 0;
-      width: 18px;
-      height: 13px;
-      object-fit: cover;
-      border-radius: 2px;
-    }
+    img { @include round-flag(18px); }
   }
 
   &__count {
