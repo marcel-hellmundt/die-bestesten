@@ -22,13 +22,20 @@ const ring = r => {
 };
 const polygon = rings => { const r = rings.map(ring).filter(Boolean); return r.length ? r : null; };
 
+// Gebiete ohne eigenen ISO-Code in Natural Earth → dem Land zuordnen, zu dem sie international gezählt werden
+// (sonst fehlen sie in der Ebene und wirken auf der Karte wie "besucht")
+const NO_ISO_FALLBACK = { SOL: 'SO' /* Somaliland */, CYN: 'CY' /* Nordzypern */, KAS: 'IN' /* Siachen-Gletscher */ };
+
 const data = JSON.parse(fs.readFileSync(src, 'utf8'));
 const features = [];
 for (const f of data.features) {
   const p = f.properties;
   // ISO_A2 ist bei manchen Ländern (z.B. Frankreich, Norwegen) "-99" → ISO_A2_EH ist dort gesetzt
-  const iso = [p.ISO_A2_EH, p.ISO_A2, p.WB_A2].find(c => c && c !== '-99' && /^[A-Z]{2}$/.test(c));
-  if (!iso || !f.geometry) continue;
+  const iso = [p.ISO_A2_EH, p.ISO_A2, p.WB_A2].find(c => c && c !== '-99' && /^[A-Z]{2}$/.test(c))
+    ?? NO_ISO_FALLBACK[p.ADM0_A3]
+    ?? 'XX'; // unbekannt → bleibt trotzdem drin und immer getönt (nie "besucht"), statt eine Lücke zu lassen
+  if (iso === 'XX') console.warn(`ohne ISO-Code, immer getönt: ${p.ADMIN} (${p.ADM0_A3})`);
+  if (!f.geometry) continue;
   let geometry;
   if (f.geometry.type === 'Polygon') {
     const coords = polygon(f.geometry.coordinates);
