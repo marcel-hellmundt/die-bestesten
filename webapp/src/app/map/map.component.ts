@@ -269,18 +269,48 @@ export class MapComponent {
     });
   }
 
-  /** Karte auf das gewählte Land ausrichten (Grenzen aus der GeoJSON-Ebene) */
+  /**
+   * Karte auf das gewählte Land ausrichten (Grenzen aus der GeoJSON-Ebene). Nur das Kernland: die größte
+   * zusammenhängende Fläche plus Teile in ihrer Nähe (vorgelagerte Inseln) — weit entfernte Überseegebiete
+   * (z.B. Karibische Niederlande, Französisch-Guayana) zählen nicht, sonst zeigt die Karte vor allem Ozean.
+   */
   private panToCountry(iso: string): void {
     const m = this.gmap;
     if (!m) return;
-    const bounds = new google.maps.LatLngBounds();
-    let found = false;
+
+    // alle Teilflächen des Landes mit ihrer eigenen Ausdehnung
+    const parts: google.maps.LatLngBounds[] = [];
     m.data.forEach((f) => {
       if (f.getProperty('iso') !== iso) return;
-      found = true;
-      f.getGeometry()?.forEachLatLng((ll) => bounds.extend(ll));
+      const g = f.getGeometry();
+      const polys = g instanceof google.maps.Data.MultiPolygon ? g.getArray() : g ? [g] : [];
+      for (const p of polys) {
+        const b = new google.maps.LatLngBounds();
+        p.forEachLatLng((ll) => b.extend(ll));
+        parts.push(b);
+      }
     });
-    if (found) m.fitBounds(bounds, 40);
+    if (!parts.length) return;
+
+    const size = (b: google.maps.LatLngBounds) => {
+      const s = b.toSpan();
+      return s.lat() * s.lng();
+    };
+    const main = parts.reduce((a, b) => (size(b) > size(a) ? b : a));
+
+    // "in der Nähe" = Mitte der Teilfläche liegt im Kernland-Rechteck, rundum um dessen eigene Größe erweitert
+    const span = main.toSpan();
+    const pad = Math.max(span.lat(), span.lng(), 1);
+    const ne = main.getNorthEast(), sw = main.getSouthWest();
+    const near = new google.maps.LatLngBounds(
+      { lat: sw.lat() - pad, lng: sw.lng() - pad },
+      { lat: ne.lat() + pad, lng: ne.lng() + pad },
+    );
+    const bounds = new google.maps.LatLngBounds();
+    for (const b of parts) {
+      if (b === main || near.contains(b.getCenter())) bounds.union(b);
+    }
+    m.fitBounds(bounds, 40);
   }
 
   // Ligen des gewählten Landes — Filter-Buttons (Marker nur für Clubs einer aktiven Division)
