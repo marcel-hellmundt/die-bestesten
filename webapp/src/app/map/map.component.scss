@@ -118,6 +118,10 @@
     border-radius: $radius-sm;
     background: $color-text;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+
+    // kein eckiger Browser-Fokusrahmen nach dem Klick; per Tastatur ein runder Ring passend zur Form
+    &:focus { outline: none; }
+    &:focus-visible { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 0 0 2px rgba(255, 255, 255, 0.6); }
   }
 
   // Flagge = Button: öffnet die Länderliste darunter; Flagge mittig, ✓ links und Pfeil rechts am Rand
