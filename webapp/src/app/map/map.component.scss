@@ -102,6 +102,44 @@
   gap: $space-2;
 }
 
+// Kopf über den Liga-Buttons: links Flagge, rechts Ranking-Button (gleicher dunkler Stil wie die Buttons)
+.map-country {
+  display: flex;
+  gap: $space-2;
+
+  &__flag,
+  &__award {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    border-radius: $radius-sm;
+    background: $color-text;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  &__flag {
+    flex: 1;
+    padding: 0 $space-3;
+
+    img {
+      height: 20px;
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  &__award {
+    flex: 0 0 40px;
+    border: none;
+    color: $color-surface;
+    cursor: pointer;
+    transition: opacity $transition-fast;
+
+    &:hover { opacity: 0.8; }
+  }
+}
+
 .map-filter-btn {
   background: $color-text;
   color: $color-surface;
@@ -337,6 +375,128 @@
         opacity: 0.9;
       }
     }
+  }
+}
+
+// ── Stadion-Ranking (mittig über der Karte, dunkel wie die Stadion-Card) ──
+.ranking-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: $z-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-4;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.ranking {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 380px);
+  max-height: min(80vh, 640px);
+  padding: $space-5;
+  border-radius: $radius-md;
+  background: $color-text;
+  color: $color-surface;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+
+  &__close {
+    position: absolute;
+    top: $space-2;
+    right: $space-2;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: $radius-sm;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: $font-xl;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover { color: $color-surface; background: rgba(255, 255, 255, 0.1); }
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    margin: 0 $space-6 0 0;
+    font-size: $font-xl;
+    font-weight: $font-weight-bold;
+    color: $color-bg;
+  }
+
+  &__sub {
+    margin: 2px 0 $space-4;
+    font-size: $font-sm;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  &__empty {
+    margin: 0;
+    font-size: $font-sm;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-y: auto;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 28px 32px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-1 $space-2;
+    border-radius: $radius-sm;
+
+    &--me { background: rgba(255, 255, 255, 0.08); }
+  }
+
+  &__rank {
+    font-size: $font-sm;
+    color: rgba(255, 255, 255, 0.6);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+
+    img { width: 100%; height: 100%; object-fit: cover; }
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    small { font-weight: normal; color: rgba(255, 255, 255, 0.6); }
+  }
+
+  &__count {
+    font-size: $font-md;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
   }
 }
 

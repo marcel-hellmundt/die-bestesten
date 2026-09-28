@@ -31,6 +31,13 @@
           </button>
 
           <div class="map-filters" [class.map-filters--open]="filtersMenuOpen()">
+            <!-- Kopf: links die Flagge des Landes, rechts das Stadion-Ranking -->
+            <div class="map-country">
+              <span class="map-country__flag"><img [src]="countryFlagUrl" alt="Deutschland" /></span>
+              <button class="map-country__award" (click)="rankingOpen.set(true)" aria-label="Stadion-Ranking" title="Stadion-Ranking">
+                <app-icon name="award"></app-icon>
+              </button>
+            </div>
             @for (d of divisions(); track d.id) {
               <button
                 class="map-filter-btn"
@@ -96,6 +103,41 @@
       </div>
     </div>
   </div>
+
+  <!-- Stadion-Ranking: alle Manager mit min. 1 besuchten Stadion, absteigend -->
+  @if (rankingOpen()) {
+    <div class="ranking-backdrop" (click)="closeRanking()">
+      <div class="ranking" role="dialog" aria-modal="true" aria-labelledby="ranking-title" (click)="$event.stopPropagation()">
+        <button class="ranking__close" (click)="closeRanking()" aria-label="Schließen">×</button>
+        <h2 id="ranking-title" class="ranking__title">
+          <app-icon name="award"></app-icon>
+          Stadion-Ranking
+        </h2>
+        <p class="ranking__sub">Besuchte Stadien je Manager</p>
+
+        @if (ranking().length === 0) {
+          <p class="ranking__empty">Noch hat niemand ein Stadion als besucht markiert.</p>
+        } @else {
+          <ol class="ranking__list">
+            @for (r of ranking(); track r.id) {
+              <li class="ranking__row" [class.ranking__row--me]="r.id === myId">
+                <span class="ranking__rank">{{ r.rank }}.</span>
+                <span class="ranking__avatar">
+                  @if (!managerPhotoFailed(r.id)) {
+                    <img [src]="managerPhotoUrl(r.id)" (error)="onManagerPhotoError(r.id)" alt="" />
+                  } @else {
+                    {{ r.name.charAt(0).toUpperCase() }}
+                  }
+                </span>
+                <span class="ranking__name">{{ r.name }}@if (r.id === myId) { <small>(du)</small> }</span>
+                <span class="ranking__count">{{ r.count }}</span>
+              </li>
+            }
+          </ol>
+        }
+      </div>
+    </div>
+  }
 }
 
 <ng-template #visitedHintSheet>

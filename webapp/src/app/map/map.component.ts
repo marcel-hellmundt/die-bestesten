@@ -1,10 +1,11 @@
-import { Component, computed, effect, inject, signal, TemplateRef, ViewChild } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, signal, TemplateRef, ViewChild } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../core/api.service';
 import { DataCacheService } from '../core/data-cache.service';
 import { GoogleMapsLoaderService } from '../core/google-maps-loader.service';
 import { BottomSheetService } from '../core/bottom-sheet.service';
+import { AuthService } from '../auth/auth.service';
 import { StadiumClub, StadiumMapEntry } from '../core/models/stadium.model';
 import { environment } from '../../environments/environment';
 
@@ -98,6 +99,7 @@ export class MapComponent {
   private cache = inject(DataCacheService);
   private mapsLoader = inject(GoogleMapsLoaderService);
   private bottomSheet = inject(BottomSheetService);
+  private auth = inject(AuthService);
 
   mapsReady = this.mapsLoader.ready;
 
@@ -442,6 +444,43 @@ export class MapComponent {
 
   managerPhotoUrl(managerId: string): string {
     return `${environment.imageApiUrl}/manager/${managerId}.jpg`;
+  }
+
+  // ── Stadion-Ranking: alle Manager nach Anzahl besuchter Stadien (min. 1) ──────────────────────────
+  // Aus /stadium berechnet: other_visitors je Stadion = alle anderen Besucher, dazu die eigenen
+  // Markierungen (other_visitors schließt den eingeloggten Manager aus) — kein eigener Endpunkt nötig.
+  rankingOpen = signal(false);
+  readonly myId = this.auth.getManagerId();
+  /** Land der Karte (nur deutsche Ligen, siehe divisions) — Flagge über den Liga-Buttons */
+  readonly countryFlagUrl = 'img/flags/de.svg';
+
+  ranking = computed(() => {
+    const byId = new Map<string, { id: string; name: string; count: number }>();
+    for (const s of this.stadiums()) {
+      for (const v of s.other_visitors) {
+        const e = byId.get(v.id) ?? { id: v.id, name: v.manager_name, count: 0 };
+        e.count++;
+        byId.set(v.id, e);
+      }
+    }
+    const own = this.visitedStadiumIds().size;
+    if (this.myId && own > 0) {
+      byId.set(this.myId, { id: this.myId, name: this.auth.getManagerName() ?? 'Du', count: own });
+    }
+    const list = [...byId.values()].filter((e) => e.count > 0)
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'de'));
+    // Standard-Wettkampf-Rang: gleiche Anzahl = gleicher Platz
+    let lastCount = -1, lastRank = 0;
+    return list.map((e, i) => {
+      const rank = e.count === lastCount ? lastRank : i + 1;
+      lastCount = e.count; lastRank = rank;
+      return { ...e, rank };
+    });
+  });
+
+  @HostListener('document:keydown.escape')
+  closeRanking(): void {
+    this.rankingOpen.set(false);
   }
 
   toggleVisited(stadiumId: string): void {
