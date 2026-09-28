@@ -104,7 +104,7 @@ POST     /stadium              — {club_id, official_name, name?, capacity?, la
 GET      /manager_stadium      — Stadion-IDs, die der eingeloggte Manager als besucht markiert hat — Auth
 POST     /manager_stadium      — {stadium_id} — als besucht markieren (idempotent); schreibt zusätzlich das Land des Vereins als Länderpunkt gut (manager_country) — Auth
 DELETE   /manager_stadium/:stadium_id — Markierung entfernen (idempotent) — Auth
-GET      /manager_country      — Länderpunkte: IDs (country.id, ISO Alpha-2) der Länder, die der eingeloggte Manager als besucht markiert hat; [] ohne Migration — Auth
+GET      /manager_country      — Länderpunkte: IDs (country.id, ISO Alpha-2) der Länder, die der eingeloggte Manager als besucht markiert hat; [] ohne Migration; ?all=1 → alle Manager [{manager_id,manager_name,countries:[id]}] (≥ 1 Land) fürs Ranking auf der Karte (Modi Total/Länder/Filter) — Auth
 POST     /manager_country      — {country_id} — Land als besucht markieren ("Länderpunkt eintragen", idempotent); 400 ungültig, 404 Land unbekannt, 409 Migration fehlt — Auth
 DELETE   /manager_country/:country_id — Länderpunkt entfernen (idempotent) — Auth
 GET      /country[/:id]

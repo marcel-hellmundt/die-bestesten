@@ -492,10 +492,47 @@
   color: $color-surface;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 
+  // Kopf: Modus-Umschalter (Total / Länder / Filter) + Schließen
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    margin-bottom: $space-4;
+  }
+
+  &__modes {
+    display: flex;
+    flex: 1;
+    gap: 2px;
+    padding: 2px;
+    border-radius: $radius-full;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  &__mode {
+    flex: 1;
+    padding: 5px $space-2;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    transition: background-color $transition-fast, color $transition-fast;
+
+    &:hover { color: $color-surface; }
+
+    &--active {
+      background: $color-surface;
+      color: $color-text;
+
+      &:hover { color: $color-text; }
+    }
+  }
+
   &__close {
-    position: absolute;
-    top: $space-2;
-    right: $space-2;
+    flex-shrink: 0;
     width: 28px;
     height: 28px;
     border: none;
@@ -509,20 +546,16 @@
     &:hover { color: $color-surface; background: rgba(255, 255, 255, 0.1); }
   }
 
-  &__title {
+  // Modus "Filter": welches Land + welche Ligen gerade zählen
+  &__filter {
     display: flex;
     align-items: center;
     gap: $space-2;
-    margin: 0 $space-6 0 0;
-    font-size: $font-xl;
-    font-weight: $font-weight-bold;
-    color: $color-bg;
-  }
+    margin: -#{$space-2} 0 $space-3;
+    font-size: $font-xs;
+    color: rgba(255, 255, 255, 0.7);
 
-  &__sub {
-    margin: 2px 0 $space-4;
-    font-size: $font-sm;
-    color: rgba(255, 255, 255, 0.6);
+    img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; }
   }
 
   &__empty {
@@ -574,13 +607,36 @@
   }
 
   &__name {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    min-width: 0;
     font-size: $font-sm;
     font-weight: $font-weight-semibold;
+  }
+
+  &__name-text {
+    flex-shrink: 0;
+    max-width: 60%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
 
-    small { font-weight: normal; color: rgba(255, 255, 255, 0.6); }
+  // Modus "Länder": Flaggen der besuchten Länder hinter dem Namen (werden bei vielen abgeschnitten)
+  &__flags {
+    display: flex;
+    gap: 3px;
+    min-width: 0;
+    overflow: hidden;
+
+    img {
+      flex-shrink: 0;
+      width: 18px;
+      height: 13px;
+      object-fit: cover;
+      border-radius: 2px;
+    }
   }
 
   &__count {

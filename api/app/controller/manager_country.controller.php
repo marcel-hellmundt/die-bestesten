@@ -9,6 +9,10 @@ class ManagerCountryController extends _BaseController
 
     protected function get(): mixed
     {
+        // ?all=1 → Länderpunkte aller Manager (Ranking auf der Karte)
+        if (!empty($_GET['all'])) {
+            return $this->db->getAllManagerCountries();
+        }
         return $this->db->getVisitedCountryIds($GLOBALS['auth_manager_id']);
     }
 

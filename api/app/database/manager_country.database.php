@@ -18,6 +18,31 @@ trait ManagerCountryTrait
         }
     }
 
+    /**
+     * Länderpunkte aller (nicht gelöschten) Manager fürs Ranking auf der Karte →
+     * [{manager_id, manager_name, countries:[country_id]}], nur Manager mit ≥ 1 Land; [] ohne Migration.
+     */
+    public function getAllManagerCountries(): array
+    {
+        try {
+            $q = $this->con->prepare(
+                "SELECT mc.manager_id, m.manager_name, mc.country_id
+                 FROM manager_country mc JOIN manager m ON m.id = mc.manager_id
+                 WHERE m.status != 'deleted'
+                 ORDER BY m.manager_name, mc.created_at"
+            );
+            $q->execute();
+        } catch (PDOException $e) {
+            return [];
+        }
+        $out = [];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $out[$r['manager_id']] ??= ['manager_id' => $r['manager_id'], 'manager_name' => $r['manager_name'], 'countries' => []];
+            $out[$r['manager_id']]['countries'][] = $r['country_id'];
+        }
+        return array_values($out);
+    }
+
     /** false, wenn es das Land nicht gibt */
     public function markCountryVisited(string $managerId, string $countryId): bool
     {

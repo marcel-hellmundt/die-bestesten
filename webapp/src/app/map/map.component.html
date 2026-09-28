@@ -39,7 +39,7 @@
               @if (selectedVisited()) { <span class="map-country__check" title="Länderpunkt eingetragen">✓</span> }
               <span class="map-country__caret">▾</span>
             </button>
-            <button class="map-country__award" (click)="rankingOpen.set(true)" aria-label="Stadion-Ranking" title="Stadion-Ranking">
+            <button class="map-country__award" (click)="openRanking()" aria-label="Stadion-Ranking" title="Stadion-Ranking">
               <app-icon name="pokal"></app-icon>
             </button>
           </div>
@@ -130,19 +130,36 @@
     </div>
   </div>
 
-  <!-- Stadion-Ranking: alle Manager mit min. 1 besuchten Stadion, absteigend -->
+  <!-- Ranking: Total (alle Stadien) / Länder (Länderpunkte) / Filter (gewähltes Land + eingeschaltete Ligen) -->
   @if (rankingOpen()) {
     <div class="ranking-backdrop" (click)="closeRanking()">
-      <div class="ranking" role="dialog" aria-modal="true" aria-labelledby="ranking-title" (click)="$event.stopPropagation()">
-        <button class="ranking__close" (click)="closeRanking()" aria-label="Schließen">×</button>
-        <h2 id="ranking-title" class="ranking__title">
-          <app-icon name="pokal"></app-icon>
-          Stadion-Ranking
-        </h2>
-        <p class="ranking__sub">Besuchte Stadien je Manager</p>
+      <div class="ranking" role="dialog" aria-modal="true" aria-label="Ranking" (click)="$event.stopPropagation()">
+        <div class="ranking__head">
+          <div class="ranking__modes" role="tablist">
+            @for (m of rankingModes; track m.key) {
+              <button class="ranking__mode" role="tab" [class.ranking__mode--active]="rankingMode() === m.key"
+                      [attr.aria-selected]="rankingMode() === m.key" (click)="rankingMode.set(m.key)">{{ m.label }}</button>
+            }
+          </div>
+          <button class="ranking__close" (click)="closeRanking()" aria-label="Schließen">×</button>
+        </div>
+
+        @if (rankingMode() === 'filter') {
+          <!-- welcher Filter gerade gilt: Land + eingeschaltete Ligen -->
+          <p class="ranking__filter">
+            <img [src]="flagUrl(selectedCountryId())" alt="" />
+            @if (activeLeagueNames()) {
+              {{ activeLeagueNames() }}
+            } @else {
+              keine Liga ausgewählt
+            }
+          </p>
+        }
 
         @if (ranking().length === 0) {
-          <p class="ranking__empty">Noch hat niemand ein Stadion als besucht markiert.</p>
+          <p class="ranking__empty">
+            {{ rankingMode() === 'countries' ? 'Noch hat niemand einen Länderpunkt eingetragen.' : 'Noch hat hier niemand ein Stadion als besucht markiert.' }}
+          </p>
         } @else {
           <ol class="ranking__list">
             @for (r of ranking(); track r.id) {
@@ -155,7 +172,15 @@
                     {{ r.name.charAt(0).toUpperCase() }}
                   }
                 </span>
-                <span class="ranking__name">{{ r.name }}</span>
+                <span class="ranking__name">
+                  <span class="ranking__name-text">{{ r.name }}</span>
+                  <!-- Länder: Flaggen der besuchten Länder hinter dem Namen -->
+                  @if (r.flags.length) {
+                    <span class="ranking__flags">
+                      @for (f of r.flags; track f) { <img [src]="flagUrl(f)" alt="" loading="lazy" /> }
+                    </span>
+                  }
+                </span>
                 <span class="ranking__count">{{ r.count }}</span>
               </li>
             }

@@ -357,7 +357,8 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/manager_country',
-                        'description' => 'Länder-IDs (ISO Alpha-2 wie country.id), die der eingeloggte Manager als besucht markiert hat; [] solange die Migration fehlt — Auth',
+                        'description' => 'Länder-IDs (ISO Alpha-2 wie country.id), die der eingeloggte Manager als besucht markiert hat; [] solange die Migration fehlt; ?all=1 → Länderpunkte aller Manager [{manager_id, manager_name, countries:[country_id]}] (nur Manager mit ≥ 1 Land, für das Ranking auf der Karte) — Auth',
+                        'query_params' => ['all' => '1 = alle Manager statt nur der eigenen'],
                     ],
                     [
                         'method' => 'POST',

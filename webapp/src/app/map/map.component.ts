@@ -588,19 +588,73 @@ export class MapComponent {
   rankingOpen = signal(false);
   readonly myId = this.auth.getManagerId();
 
+  /**
+   * Modus des Rankings: total = alle Stadien, countries = Länderpunkte (mit Flaggen hinter dem Namen),
+   * filter = nur Stadien des gewählten Landes in den dort eingeschalteten Ligen (wie die Karte gerade filtert).
+   */
+  rankingMode = signal<'total' | 'countries' | 'filter'>('total');
+  readonly rankingModes = [
+    { key: 'total', label: 'Total' },
+    { key: 'countries', label: 'Länder' },
+    { key: 'filter', label: 'Filter' },
+  ] as const;
+
+  /** Länderpunkte aller Manager (GET /manager_country?all=1) — beim Öffnen des Rankings (neu) geladen */
+  private allManagerCountries = signal<{ manager_id: string; manager_name: string; countries: string[] }[]>([]);
+
+  openRanking(): void {
+    this.rankingOpen.set(true);
+    this.api
+      .get<{ manager_id: string; manager_name: string; countries: string[] }[]>('manager_country?all=1')
+      .pipe(catchError(() => of([])))
+      .subscribe((list) => this.allManagerCountries.set(list));
+  }
+
+  /** Ligen des gewählten Landes, die gerade eingeschaltet sind (Modus "Filter") */
+  activeLeagues = computed(() => this.divisions().filter((d) => this.isDivisionActive(d.id)));
+  activeLeagueNames = computed(() => this.activeLeagues().map((d) => d.name).join(', '));
+
+  /** Stadion zählt im Modus "Filter": Verein spielt in einer eingeschalteten Liga des gewählten Landes */
+  private filteredStadiumIds = computed(() => {
+    const leagues = new Set(this.activeLeagues().map((d) => d.id));
+    const divisionByClub = this.clubDivisionId();
+    return new Set(
+      this.stadiums()
+        .filter((s) => s.club && leagues.has(divisionByClub.get(s.club.id) ?? ''))
+        .map((s) => s.id),
+    );
+  });
+
   ranking = computed(() => {
-    const byId = new Map<string, { id: string; name: string; count: number }>();
-    for (const s of this.stadiums()) {
-      for (const v of s.other_visitors) {
-        const e = byId.get(v.id) ?? { id: v.id, name: v.manager_name, count: 0 };
-        e.count++;
-        byId.set(v.id, e);
+    const mode = this.rankingMode();
+    const byId = new Map<string, { id: string; name: string; count: number; flags: string[] }>();
+    const myName = this.auth.getManagerName() ?? 'Du';
+
+    if (mode === 'countries') {
+      for (const e of this.allManagerCountries()) {
+        const flags = e.countries.map((c) => c.toLowerCase());
+        byId.set(e.manager_id, { id: e.manager_id, name: e.manager_name, count: flags.length, flags });
       }
+      // eigene Länderpunkte immer aktuell (auch direkt nach "Länderpunkt eintragen")
+      const own = [...this.visitedCountryIds()];
+      if (this.myId) {
+        if (own.length) byId.set(this.myId, { id: this.myId, name: myName, count: own.length, flags: own });
+        else byId.delete(this.myId);
+      }
+    } else {
+      const only = mode === 'filter' ? this.filteredStadiumIds() : null;
+      for (const s of this.stadiums()) {
+        if (only && !only.has(s.id)) continue;
+        for (const v of s.other_visitors) {
+          const e = byId.get(v.id) ?? { id: v.id, name: v.manager_name, count: 0, flags: [] };
+          e.count++;
+          byId.set(v.id, e);
+        }
+      }
+      const own = [...this.visitedStadiumIds()].filter((id) => !only || only.has(id)).length;
+      if (this.myId && own > 0) byId.set(this.myId, { id: this.myId, name: myName, count: own, flags: [] });
     }
-    const own = this.visitedStadiumIds().size;
-    if (this.myId && own > 0) {
-      byId.set(this.myId, { id: this.myId, name: this.auth.getManagerName() ?? 'Du', count: own });
-    }
+
     const list = [...byId.values()].filter((e) => e.count > 0)
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'de'));
     // Standard-Wettkampf-Rang: gleiche Anzahl = gleicher Platz
