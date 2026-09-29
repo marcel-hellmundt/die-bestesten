@@ -8,7 +8,7 @@ import {
   OtherCollection, PACK_SOURCE_LABEL, StickerPack, StickerStatusService, packDetail,
 } from '../../core/sticker-status.service';
 import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
-import { AlbumClub, Sticker } from './album.model';
+import { AlbumClub, Sticker, isLight } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
 import { PackCard, PackInfo, packInfo, packRules } from './pack.model';
 import { EUR_OFFERS, EUR_STARTER, PACK_KINDS, ShopOffer, offerKinds, packsOf } from '../shop/shop.model';
@@ -220,6 +220,8 @@ export class StickerAlbumComponent {
       logo: this.album.clubLogoUrl(r.club),
       have: r.stickers.filter(s => col.counts[s.idx] > 0).length,
       total: r.stickers.length,
+      // Schrift auf der Vereinsfarbe (ausgewählt): weiß, bei (fast) weißer Vereinsfarbe schwarz
+      ink: r.club.primary_color && isLight(r.club.primary_color) ? '#000' : '#fff',
     }));
   });
 

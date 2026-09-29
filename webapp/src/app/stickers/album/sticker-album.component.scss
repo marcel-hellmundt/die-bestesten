@@ -224,15 +224,16 @@ $desktop: $mobile-breakpoint + 1;
 
     &--complete .toc__count { color: $color-success; font-weight: $font-weight-semibold; }
 
-    // Ausgewählt: Vereinsfarbe als Fläche, Schrift immer weiß (Übersicht ohne Verein: dunkel)
+    // Ausgewählt: Vereinsfarbe als Fläche, Schrift weiß — bei (fast) weißer Vereinsfarbe schwarz (--club-ink);
+    // Übersicht ohne Verein: dunkel mit weißer Schrift
     &--active,
     &--active:hover {
       background: var(--club, #{$color-text});
-      color: #fff;
+      color: var(--club-ink, #fff);
       font-weight: $font-weight-semibold;
 
       .toc__icon,
-      .toc__count { color: #fff; }
+      .toc__count { color: var(--club-ink, #fff); }
     }
   }
 
@@ -364,11 +365,11 @@ $desktop: $mobile-breakpoint + 1;
 
     &--active {
       background: var(--club, #{$color-text});
-      color: #fff;
+      color: var(--club-ink, #fff);
       font-weight: $font-weight-semibold;
 
       .toc__icon,
-      .toc__count { color: #fff; }
+      .toc__count { color: var(--club-ink, #fff); }
     }
   }
 }
