@@ -308,6 +308,30 @@
   height: 100px;
 }
 
+// Auswahl links vom Chart (Spalte der Namen): Sessiondauer / Aktive Manager
+.chart-mode {
+  grid-column: 1;
+  align-self: start;
+  padding-right: $space-2;
+
+  &__select {
+    height: 32px;
+    padding-left: $space-2;
+    padding-right: $space-6;
+    background-position: right $space-2 center;
+    font-size: $font-xs;
+  }
+}
+
+.heatmap-tooltip__names {
+  display: block;
+  max-width: 220px;
+  margin-top: 2px;
+  font-size: $font-xs;
+  color: $color-text-muted;
+  white-space: normal;
+}
+
 .usage-chart-svg {
   display: block;
   position: absolute;
@@ -404,6 +428,12 @@
 
   .usage-chart {
     height: 70px;
+  }
+
+  // Namens-Spalte ist mobil zu schmal → Auswahl über die ganze Breite oberhalb des Charts
+  .chart-mode {
+    grid-column: 1 / -1;
+    padding: 0 0 $space-2;
   }
 }
 

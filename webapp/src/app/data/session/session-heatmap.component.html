@@ -72,6 +72,14 @@
 
   <div class="heatmap" [style.--col-count]="columns().length">
     @if (usageChart(); as chart) {
+      <!-- links vom Chart (über den Namen): was der Balkenchart zeigt -->
+      <div class="chart-mode">
+        <select class="chart-mode__select" (change)="setChartMode($any($event.target).value)" aria-label="Balkenchart">
+          @for (m of CHART_MODES; track m.key) {
+            <option [value]="m.key" [selected]="m.key === chartMode()">{{ m.label }}</option>
+          }
+        </select>
+      </div>
       <div class="usage-chart">
         <div class="usage-chart-hover-row">
           @for (col of columns(); track col.key; let i = $index) {
@@ -89,7 +97,7 @@
           aria-hidden="true"
         >
           @for (bar of chart.bars; track $index) {
-            <path [attr.d]="bar.path" [attr.fill]="chartColor" />
+            <path [attr.d]="bar.path" [attr.fill]="bar.fill" />
           }
           @if (usageDashedLine(); as dl) {
             <path
@@ -150,7 +158,15 @@
   @if (hoveredTooltip(); as tip) {
     <div class="heatmap-tooltip" [style.left.px]="tip.x" [style.top.px]="tip.y">
       <span class="heatmap-tooltip__title">{{ tip.timeLabel }}</span>
-      @if (!tip.hasUsage) {
+      @if (tip.activeLabel !== undefined) {
+        <div class="heatmap-tooltip__row">
+          <span>Aktive Manager</span>
+          <span class="heatmap-tooltip__value">{{ tip.activeLabel }}</span>
+        </div>
+        @if (tip.activeNames?.length) {
+          <span class="heatmap-tooltip__names">{{ tip.activeNames!.join(', ') }}</span>
+        }
+      } @else if (!tip.hasUsage) {
         <span class="heatmap-tooltip__empty">Keine Nutzung</span>
       } @else {
         <div class="heatmap-tooltip__row">

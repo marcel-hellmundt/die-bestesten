@@ -74,7 +74,13 @@ interface TooltipState {
   // Nur bei Spalten-Hover im Monats-Range gesetzt (siehe onChartColumnHover) — Wert der
   // gestrichelten Trendlinie (Ø Zeit/Nutzer, rollender 7-Tage-Durchschnitt) für diese Spalte.
   trendLabel?: string;
+  // Nur bei Spalten-Hover im Modus "Aktive Manager" gesetzt — Anzahl + Namen statt Dauer
+  activeLabel?: string;
+  activeNames?: string[];
 }
+
+/** Was der Balkenchart über der Heatmap zeigt */
+type ChartMode = 'duration' | 'active';
 
 @Component({
   selector: 'app-session-heatmap',
@@ -91,6 +97,27 @@ export class SessionHeatmapComponent {
 
   range = signal<RangeKey>('day');
   setRange(r: RangeKey): void { this.range.set(r); }
+
+  // Balkenchart: Sessiondauer (Summe aller Manager je Intervall) oder Anzahl aktiver Manager je Intervall
+  // (jeder mit > 0 s zählt einmal, egal wie lange) — Auswahl links vom Chart, pro Gerät gemerkt
+  readonly CHART_MODES: { key: ChartMode; label: string }[] = [
+    { key: 'duration', label: 'Sessiondauer' },
+    { key: 'active', label: 'Aktive Manager' },
+  ];
+  chartMode = signal<ChartMode>(this.loadChartMode());
+
+  private loadChartMode(): ChartMode {
+    try {
+      return localStorage.getItem('session-chart-mode') === 'active' ? 'active' : 'duration';
+    } catch {
+      return 'duration';
+    }
+  }
+
+  setChartMode(mode: ChartMode): void {
+    this.chartMode.set(mode);
+    try { localStorage.setItem('session-chart-mode', mode); } catch {}
+  }
 
   /**
    * Lädt `path` sofort und danach alle REFRESH_MS im Hintergrund neu (ohne Ladezustand/Flackern). Schlägt der
@@ -298,6 +325,7 @@ export class SessionHeatmapComponent {
   // Spalte i im Chart deckungsgleich mit Heatmap-Spalte i skaliert — unabhängig von Fensterbreite
   // und Spaltenzahl (24/30/52).
   readonly chartColor = '#bf1d00'; // == $color-accent; kein Team-Kontext hier wie in team-overview
+  readonly allActiveColor = '#16a34a'; // == $color-success — "Aktive Manager": alle waren aktiv
   private readonly USAGE_CHART_PAD = 12; // ViewBox-Einheiten Rand oben/unten (ViewBox-Höhe fix 100)
 
   // Summe der Sekunden aller Manager, je Bucket-Key — transponiert zu totalSeconds() (das pro
@@ -349,13 +377,32 @@ export class SessionHeatmapComponent {
   private readonly USAGE_BAR_RADIUS_Y = 4;
   private readonly USAGE_BAR_RADIUS_X_FRACTION = 0.3;
 
+  // Aktive Manager je Bucket-Key (Namen, alphabetisch) — jeder mit > 0 s zählt einmal, egal wie lange
+  private activeByBucket = computed(() => {
+    const map = new Map<string, string[]>();
+    for (const m of this.data()?.managers ?? []) {
+      for (const [key, secs] of Object.entries(m.buckets)) {
+        if (secs <= 0) continue;
+        const names = map.get(key) ?? [];
+        names.push(m.manager_name);
+        map.set(key, names);
+      }
+    }
+    for (const names of map.values()) names.sort((a, b) => a.localeCompare(b, 'de'));
+    return map;
+  });
+
   usageChart = computed(() => {
     const cols = this.columns();
     if (cols.length === 0) return null;
 
+    const active   = this.chartMode() === 'active';
     const totals   = this.totalsByBucket();
-    const values   = cols.map(c => totals.get(c.key) ?? 0);
-    const maxValue = Math.max(...values, 1);
+    const actives  = this.activeByBucket();
+    const values   = cols.map(c => active ? (actives.get(c.key)?.length ?? 0) : (totals.get(c.key) ?? 0));
+    // Aktive Manager: volle Höhe = alle Manager der Heatmap; waren alle aktiv, wird der Balken grün
+    const allCount = this.managers().length;
+    const maxValue = active ? Math.max(allCount, ...values, 1) : Math.max(...values, 1);
 
     const top    = this.USAGE_CHART_PAD;
     const bottom = 100 - this.USAGE_CHART_PAD;
@@ -369,7 +416,8 @@ export class SessionHeatmapComponent {
     // Ecken abrunden, auch die unteren auf der gemeinsamen Grundlinie.
     const bars = values.map((v, i) => {
       const barHeight = (v / maxValue) * h;
-      if (barHeight <= 0) return { path: '' };
+      if (barHeight <= 0) return { path: '', fill: this.chartColor };
+      const fill = active && allCount > 0 && v >= allCount ? this.allActiveColor : this.chartColor;
 
       const x  = i + gap;
       const y  = bottom - barHeight;
@@ -385,7 +433,7 @@ export class SessionHeatmapComponent {
         `L${(x + width - rx).toFixed(3)},${y.toFixed(3)} ` +
         `Q${(x + width).toFixed(3)},${y.toFixed(3)} ${(x + width).toFixed(3)},${(y + ry).toFixed(3)} ` +
         `L${(x + width).toFixed(3)},${bottom} Z`;
-      return { path };
+      return { path, fill };
     });
 
     return { bars, columnCount: cols.length };
@@ -457,7 +505,8 @@ export class SessionHeatmapComponent {
   // normiert) wird zusätzlich zurückgegeben, damit onChartColumnHover denselben Wert im Tooltip
   // anzeigen kann, ohne die Rolling-Berechnung ein zweites Mal auszuführen.
   usageDashedLine = computed(() => {
-    if (this.range() !== 'month') return null;
+    // Ø Zeit/Nutzer gehört zur Sessiondauer — bei "Aktive Manager" keine Trendlinie
+    if (this.range() !== 'month' || this.chartMode() !== 'duration') return null;
     const cols = this.columns();
     if (cols.length === 0) return null;
 
@@ -636,6 +685,15 @@ export class SessionHeatmapComponent {
   // Spalten-Schleife im Template — dient nur zum Nachschlagen des Trendlinie-Werts (usageDashedLine
   // liefert seine Rolling-Werte parallel zu columns() sortiert).
   onChartColumnHover(event: MouseEvent, col: BucketColumn, index: number): void {
+    if (this.chartMode() === 'active') {
+      const names = this.activeByBucket().get(col.key) ?? [];
+      this.hoveredTooltip.set({
+        ...this.buildTooltip(this.formatBucketLabel(col), 0, 0, 0, this.tooltipPosition(event)),
+        activeLabel: String(names.length),
+        activeNames: names,
+      });
+      return;
+    }
     const total  = this.totalsByBucket().get(col.key) ?? 0;
     const device = this.deviceTotalsByBucket().get(col.key);
     const tooltip = this.buildTooltip(this.formatBucketLabel(col), total, device?.mobile ?? 0, device?.desktop ?? 0, this.tooltipPosition(event));
