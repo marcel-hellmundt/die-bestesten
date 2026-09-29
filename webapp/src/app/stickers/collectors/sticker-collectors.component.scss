@@ -8,6 +8,9 @@
   padding: $space-4;
 
   @media (max-width: $mobile-breakpoint) { padding: $space-3 0; } // seitlicher Rand kommt von der Shell
+
+  // Admins: breiter für die Pack-Chips rechts
+  &--admin { max-width: 1080px; }
 }
 
 .page-title__sub {
@@ -47,11 +50,28 @@
 
   &--me { background: color-mix(in srgb, #{$color-accent} 6%, #{$color-surface}); }
 
-  // Admin: zusätzliche Spalte für die ungeöffneten Packs links neben dem Bild
+  // Admin: zusätzliche Spalte für die ungeöffneten Packs links neben dem Bild und rechts die Pack-Chips
   &--admin {
-    grid-template-columns: 26px 26px 36px minmax(0, 1fr) auto auto;
+    grid-template-columns: 26px 26px 36px minmax(0, 1fr) auto auto minmax(0, 400px);
 
     .collector__bar { grid-column: 4 / span 3; }
+
+    // Mobil: Chips unter dem Balken statt als eigene Spalte
+    @media (max-width: $mobile-breakpoint) {
+      grid-template-columns: 26px 26px 36px minmax(0, 1fr) auto auto;
+
+      .collector__pack-stats { grid-column: 4 / -1; grid-row: 3; justify-content: flex-start; }
+    }
+  }
+
+  // Admin: erhaltene Packs je Art ("geöffnet/erhalten")
+  &__pack-stats {
+    grid-row: span 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+    padding-left: $space-3;
   }
 
   &__packs {
@@ -150,6 +170,24 @@
 
   &--silver { background: linear-gradient(135deg, #eef0f3, #bfc5ce); }
   &--gold   { background: linear-gradient(135deg, #fbf1cf, #e0bb4f); }
+}
+
+// Pack-Chip (nur Admins): Farbe wie das Pack-Design; alle geöffnet → blasser, noch ungeöffnete → kräftig
+.pack-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: $radius-full;
+  background: var(--chip);
+  color: var(--chip-ink);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+
+  b { font-variant-numeric: tabular-nums; }
+
+  &--done { opacity: 0.45; }
 }
 
 // Ungeöffnete Packs (nur Admins): kleines rotes Pack-Kärtchen mit der Anzahl — wie oben im Sammelalbum (.packs__icon)

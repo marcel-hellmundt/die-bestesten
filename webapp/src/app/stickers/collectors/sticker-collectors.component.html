@@ -1,4 +1,4 @@
-<div class="gang">
+<div class="gang" [class.gang--admin]="isAdmin">
   <h1 class="page-title">
     Klebebande
     <span class="page-title__sub">Alle Sammelalben der Saison — tippe auf einen Namen, um reinzuschauen</span>
@@ -48,6 +48,19 @@
               @if (m.silver > 0) { <span class="holo-dot holo-dot--silver" title="Holo Silber">{{ m.silver }}</span> }
             </span>
             <span class="collector__count">{{ m.have }}/{{ total() }}</span>
+            <!-- Admin: erhaltene Packs je Art, "geöffnet/erhalten" -->
+            @if (isAdmin) {
+              <span class="collector__pack-stats">
+                @for (p of packChips(m.packs); track p.type) {
+                  <span class="pack-chip" [class.pack-chip--done]="p.opened === p.total"
+                        [style.--chip]="p.color" [style.--chip-ink]="p.ink"
+                        [title]="p.label + ': ' + p.opened + ' von ' + p.total + ' geöffnet'">
+                    <span class="pack-chip__label">{{ p.short }}</span>
+                    <b>{{ p.opened }}/{{ p.total }}</b>
+                  </span>
+                }
+              </span>
+            }
             <span class="collector__bar"><span [style.width.%]="m.pct * 100"></span></span>
           </a>
         </li>

@@ -200,7 +200,8 @@ trait StickerPackTrait
      * aktiven Saison — für die Sammler-Rangliste; sortiert nach Anzahl verschiedener Sticker.
      * Mit $viewerId zusätzlich je Sammler die Tauschmöglichkeiten: trade_get = seine Doppelten, die dem
      * Betrachter fehlen, trade_give = Doppelte des Betrachters, die ihm fehlen.
-     * Mit $withUnopened (nur Admins) zusätzlich unopened = Anzahl ungeöffneter Packs der aktiven Saison.
+     * Mit $withUnopened (nur Admins) zusätzlich unopened = Anzahl ungeöffneter Packs der aktiven Saison (+ unopened_types)
+     * und packs = [{type, total, opened}] je Pack-Art: erhalten und davon geöffnet.
      */
     public function getStickerCollectors(?string $viewerId = null, bool $withUnopened = false): array
     {
@@ -253,31 +254,37 @@ trait StickerPackTrait
         }
 
         if ($withUnopened) {
-            // je Manager nach Art: Shop-Packs nach pack_kind (normal/big/club/special), sonst nach source
+            // je Manager nach Art (Shop-Packs nach pack_kind normal/big/club/special, sonst nach source):
+            // erhalten + davon geöffnet; ungeöffnet = Differenz
             try {
                 $uq = $this->con->prepare(
-                    "SELECT manager_id, COALESCE(pack_kind, source) AS type, COUNT(*) AS cnt
-                     FROM sticker_pack WHERE season_id = ? AND opened_at IS NULL
+                    "SELECT manager_id, COALESCE(pack_kind, source) AS type, COUNT(*) AS total, SUM(opened_at IS NOT NULL) AS opened
+                     FROM sticker_pack WHERE season_id = ?
                      GROUP BY manager_id, COALESCE(pack_kind, source)"
                 );
                 $uq->execute([$seasonId]);
             } catch (PDOException $e) {
                 // Spalte pack_kind fehlt noch (migrate_sticker_pack_kind.sql) → nur nach source
                 $uq = $this->con->prepare(
-                    "SELECT manager_id, source AS type, COUNT(*) AS cnt
-                     FROM sticker_pack WHERE season_id = ? AND opened_at IS NULL GROUP BY manager_id, source"
+                    "SELECT manager_id, source AS type, COUNT(*) AS total, SUM(opened_at IS NOT NULL) AS opened
+                     FROM sticker_pack WHERE season_id = ? GROUP BY manager_id, source"
                 );
                 $uq->execute([$seasonId]);
             }
             $types = [];
             foreach ($uq->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                $types[$r['manager_id']][] = ['type' => $r['type'], 'count' => (int) $r['cnt']];
+                $types[$r['manager_id']][] = ['type' => $r['type'], 'total' => (int) $r['total'], 'opened' => (int) $r['opened']];
             }
             foreach ($collectors as &$c) {
-                $list = $types[$c['manager_id']] ?? [];
-                usort($list, fn($a, $b) => $b['count'] <=> $a['count'] ?: strcmp($a['type'], $b['type']));
-                $c['unopened'] = array_sum(array_column($list, 'count'));
-                $c['unopened_types'] = $list;
+                $packs = $types[$c['manager_id']] ?? [];
+                $unopened = [];
+                foreach ($packs as $p) {
+                    if ($p['total'] > $p['opened']) $unopened[] = ['type' => $p['type'], 'count' => $p['total'] - $p['opened']];
+                }
+                usort($unopened, fn($a, $b) => $b['count'] <=> $a['count'] ?: strcmp($a['type'], $b['type']));
+                $c['unopened'] = array_sum(array_column($unopened, 'count'));
+                $c['unopened_types'] = $unopened;
+                $c['packs'] = $packs;
             }
             unset($c);
         }

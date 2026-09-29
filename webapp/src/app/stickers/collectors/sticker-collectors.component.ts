@@ -58,6 +58,33 @@ export class StickerCollectorsComponent {
     return PACK_KINDS[type as PackKind]?.name ?? PACK_SOURCE_LABEL[type as StickerPackSource] ?? type;
   }
 
+  /** Admin-Chips rechts: feste Reihenfolge (Event-Packs, dann Shop-Packs), Farbe wie das jeweilige Pack-Design */
+  private readonly PACK_TYPE_ORDER = ['daily', 'milestone', 'matchday_best', 'normal', 'big', 'club', 'special', 'shop', 'admin'];
+  private readonly PACK_TYPE_COLOR: Record<string, string> = {
+    daily: '#bf1d00', milestone: '#4b7bec', matchday_best: '#fed330', shop: '#0f766e', admin: '#4b5563',
+    normal: '#6aba49', big: '#f26d53', club: '#fcc732', special: '#8854d0',
+  };
+  /** Kurzname im Chip (voller Name im Tooltip) */
+  private readonly PACK_TYPE_SHORT: Record<string, string> = {
+    daily: 'Tages', milestone: 'Meilenstein', matchday_best: 'Sieger', shop: 'Shop', admin: 'Admin',
+    normal: 'Normal', big: 'Big', club: 'Verein', special: 'Special',
+  };
+  /** helle Pack-Farben (Gelb/Grün) brauchen dunkle Schrift */
+  private readonly DARK_TEXT = new Set(['matchday_best', 'normal', 'club']);
+
+  packChips(packs: { type: string; total: number; opened: number }[] | undefined) {
+    const rank = (t: string) => { const i = this.PACK_TYPE_ORDER.indexOf(t); return i < 0 ? 99 : i; };
+    return [...(packs ?? [])]
+      .sort((a, b) => rank(a.type) - rank(b.type))
+      .map(p => ({
+        ...p,
+        label: this.packTypeLabel(p.type),
+        short: this.PACK_TYPE_SHORT[p.type] ?? p.type,
+        color: this.PACK_TYPE_COLOR[p.type] ?? '#6b7280',
+        ink: this.DARK_TEXT.has(p.type) ? '#1f2937' : '#fff',
+      }));
+  }
+
   /** Manager, deren Foto nicht geladen werden konnte → Initialen */
   photoFailed = signal(new Set<string>());
   onPhotoError(id: string): void {
