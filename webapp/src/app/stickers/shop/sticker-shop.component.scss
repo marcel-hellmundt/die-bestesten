@@ -187,6 +187,12 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
 
   &--done { background: $color-surface-alt; }
 
+  // Lukaten-Käufe: ohne Rahmen, nur Hintergrundfläche
+  &--lukaten {
+    border-color: transparent;
+    background: $color-surface-alt;
+  }
+
   &__head {
     display: flex;
     align-items: center;
