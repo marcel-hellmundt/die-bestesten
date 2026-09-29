@@ -39,30 +39,28 @@
     @let row = currentRow();
     @let ov = overviewProgress();
 
-    <!-- Umschalter oben links: durch die Alben aller Sammler blättern -->
-    @if (switcherName(); as name) {
-      <div class="switcher">
-        <button type="button" class="switcher__btn" (click)="stepAlbum(-1)" aria-label="Vorheriges Album">‹</button>
-        <span class="switcher__name">{{ name }}</span>
-        <button type="button" class="switcher__btn" (click)="stepAlbum(1)" aria-label="Nächstes Album">›</button>
+    <!-- Oben: links Umschalter durch die Alben aller Sammler (+ zurück zum eigenen), rechts bei fremdem Album "Tauschen" -->
+    @if (switcherName() || !isOwn()) {
+      <div class="album-bar">
+        <div class="album-bar__left">
+          @if (switcherName(); as name) {
+            <div class="switcher">
+              <button type="button" class="switcher__btn" (click)="stepAlbum(-1)" aria-label="Vorheriges Album">‹</button>
+              <span class="switcher__name">{{ name }}</span>
+              <button type="button" class="switcher__btn" (click)="stepAlbum(1)" aria-label="Nächstes Album">›</button>
+            </div>
+          }
+          @if (!isOwn()) {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="viewOwnAlbum()">Zurück zu meinem Album</button>
+          }
+        </div>
+        @if (!isOwn() && otherName() && status.enabled()) {
+          <button type="button" class="btn btn-primary btn-sm" (click)="tradeOpen.set(true)">Tauschen</button>
+        }
       </div>
     }
-
-    <!-- Fremdes Album: nur ansehen -->
-    @if (!isOwn()) {
-      <div class="viewing">
-        <span class="viewing__text">
-          @if (otherError()) { {{ otherError() }} }
-          @else { Album von <b>{{ otherName() ?? '…' }}</b> }
-        </span>
-        <span class="viewing__actions">
-          @if (otherName() && status.enabled()) {
-            <button type="button" class="btn btn-primary btn-sm" (click)="tradeOpen.set(true)">Tauschen</button>
-          }
-          <a class="btn btn-ghost btn-sm" routerLink="/klebrigsten/klebebande">Klebebande</a>
-          <button type="button" class="btn btn-ghost btn-sm" (click)="viewOwnAlbum()">Zu meinem Album</button>
-        </span>
-      </div>
+    @if (otherError()) {
+      <p class="state-msg">{{ otherError() }}</p>
     }
 
     <!-- Euro-Kauf noch nicht bestätigt: Karten daraus sind (noch) nicht tauschbar -->

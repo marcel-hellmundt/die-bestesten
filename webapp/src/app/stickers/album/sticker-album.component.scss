@@ -27,12 +27,26 @@ $desktop: $mobile-breakpoint + 1;
   }
 }
 
-// ── Fremdes Album (nur ansehen) ──────────────────────────────────────────────
-// "< Managername >" oben links über dem Album
+// ── Oben: Album-Umschalter + (fremdes Album) zurück / Tauschen ───────────────
+.album-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+
+  &__left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-2;
+  }
+}
+
+// "‹ Managername ›"
 .switcher {
   display: inline-flex;
   align-items: center;
-  align-self: flex-start;
   gap: $space-1;
   padding: 2px;
   border: 1px solid $color-border;
@@ -68,27 +82,6 @@ $desktop: $mobile-breakpoint + 1;
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-}
-
-.viewing {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $space-3;
-  padding: $space-2 $space-3 $space-2 $space-4;
-  border-radius: $radius-lg;
-  background: $color-text;
-  color: #fff;
-  font-size: $font-sm;
-
-  .btn-ghost { color: #fff; }
-
-  &__actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: $space-1;
   }
 }
 
