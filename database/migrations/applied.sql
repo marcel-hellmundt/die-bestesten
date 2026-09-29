@@ -424,3 +424,17 @@ INSERT IGNORE INTO manager_country (id, manager_id, country_id)
 SELECT UUID(), ms.manager_id, c.id
 FROM (SELECT DISTINCT manager_id FROM manager_stadium) ms
 JOIN country c ON LOWER(c.id) = 'de';
+
+-- ── 2026-09-29_sticker_pack_special.sql  (2026-09-29) ──────────────────────────────────────────────
+
+-- Migration: Sonder-Packs "Geburtstag" + "Weihnachten" für "Die Klebrigsten"
+-- Ziel: GLOBALE DB, dev + prod. Idempotent (MODIFY setzt die ENUM-Liste nur neu, bestehende Werte bleiben erhalten).
+--
+-- sticker_pack.source bekommt zwei neue Werte:
+--   birthday  — am Geburtstag (manager.date_of_birth), sonst beim nächsten Login derselben Saison; source_key birthday:{Jahr}
+--   christmas — wer vom 24. bis 26.12. online ist; source_key christmas:{Jahr}
+-- Vergabe in StickerPackTrait::getMyStickerState() (GET /sticker/me), Regeln in stickerConfig().
+
+ALTER TABLE sticker_pack
+    MODIFY source ENUM('daily', 'milestone', 'matchday_best', 'admin', 'shop', 'birthday', 'christmas')
+        CHARACTER SET utf8mb4 NOT NULL;
