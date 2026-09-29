@@ -36,7 +36,8 @@ class PlayerRatingController extends _BaseController
                 http_response_code(400);
                 return ['status' => false, 'message' => 'matchday_id ist erforderlich'];
             }
-            return $this->db->getContributionSummaryForMatchday($matchdayId);
+            $seasonScope = ($_GET['scope'] ?? '') === 'season';
+            return $this->db->getContributionSummaryForMatchday($matchdayId, $seasonScope);
         }
 
         if (!$matchdayId || !$clubId) {

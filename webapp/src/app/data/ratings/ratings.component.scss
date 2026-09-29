@@ -28,8 +28,43 @@
   }
 }
 
+// Spieltag / Saison — Umfang der Contribution-Card
+.summary-scope {
+  display: flex;
+  height: 32px;
+  margin-bottom: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  padding: 2px;
+  gap: 2px;
+  box-sizing: border-box;
+  background: $color-surface;
+
+  &__btn {
+    flex: 1;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: $color-text-muted;
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &:hover:not(.active) {
+      color: $color-text;
+    }
+
+    &.active {
+      background: $color-accent;
+      color: #fff;
+    }
+  }
+}
+
 .contribution-summary {
   padding: $space-4;
+  overflow: hidden;
 
   &__title {
     font-size: $font-xs;
@@ -40,22 +75,63 @@
     margin-bottom: $space-3;
   }
 
-  &__group {
+  // Gesamt: größere Zeilen, kräftige Zahl — das Hauptergebnis der Card
+  &__total {
+    .contribution-summary__group-label {
+      color: $color-text;
+    }
+
+    .contribution-summary__avatar {
+      width: 28px;
+      height: 28px;
+    }
+
+    .contribution-summary__name {
+      font-weight: $font-weight-medium;
+    }
+
+    .contribution-summary__count {
+      font-size: $font-md;
+      font-weight: $font-weight-bold;
+      color: $color-text;
+    }
+  }
+
+  // Die drei Teilbereiche: eigene, grau hinterlegte Fläche bis zum Card-Rand, kompaktere Zeilen
+  &__parts {
+    margin: $space-4 (-$space-4) (-$space-4);
+    padding: $space-3 $space-4 $space-4;
+    background: $color-surface-alt;
+    border-top: 1px solid $color-border;
+
+    .contribution-summary__avatar {
+      width: 20px;
+      height: 20px;
+      background: $color-surface;
+    }
+
+    .contribution-summary__name,
+    .contribution-summary__count {
+      font-size: $font-xs;
+    }
+
+    .contribution-summary__row {
+      padding: 2px 0;
+    }
+  }
+
+  &__group + &__group {
     padding-top: $space-3;
     margin-top: $space-3;
     border-top: 1px solid $color-border;
-
-    &:first-of-type {
-      padding-top: 0;
-      margin-top: 0;
-      border-top: none;
-    }
   }
 
   &__group-label {
     font-size: $font-xs;
     font-weight: $font-weight-semibold;
     color: $color-text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     margin-bottom: $space-1;
   }
 

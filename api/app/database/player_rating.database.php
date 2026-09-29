@@ -142,17 +142,25 @@ trait PlayerRatingTrait
     /**
      * Aggregierte Contribution-Übersicht für einen ganzen Spieltag (alle Clubs), sortiert nach
      * Gesamtzahl der bearbeiteten Ratings absteigend — Grundlage für die Sidebar-Zusammenfassung
-     * auf /daten/ratings.
+     * auf /daten/ratings. $seasonScope = true zählt stattdessen alle Spieltage derselben Saison
+     * und Division wie $matchdayId (Toggle "Spieltag / Saison" in der Sidebar).
      */
-    public function getContributionSummaryForMatchday(string $matchdayId): array
+    public function getContributionSummaryForMatchday(string $matchdayId, bool $seasonScope = false): array
     {
+        $scopeJoin = $seasonScope
+            ? "JOIN matchday md  ON md.id = pr.matchday_id
+               JOIN matchday ref ON ref.id = :matchday_id
+                                AND md.season_id = ref.season_id AND md.division_id = ref.division_id"
+            : "";
+        $scopeWhere = $seasonScope ? "" : "WHERE pr.matchday_id = :matchday_id";
         $q = $this->con->prepare(
             "SELECT mc.manager_id, m.manager_name, mc.contribution_type,
                     COUNT(DISTINCT mc.player_rating_id) AS cnt
              FROM maintainer_contribution mc
              JOIN manager m       ON m.id = mc.manager_id
              JOIN player_rating pr ON pr.id = mc.player_rating_id
-             WHERE pr.matchday_id = :matchday_id
+             $scopeJoin
+             $scopeWhere
              GROUP BY mc.manager_id, m.manager_name, mc.contribution_type"
         );
         $q->execute([':matchday_id' => $matchdayId]);

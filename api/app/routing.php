@@ -510,9 +510,10 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_rating/contribution_summary',
-                        'description' => 'Aggregierte Contribution-Übersicht eines ganzen Spieltags (alle Clubs) — gibt [{manager_id, manager_name, total, by_type:{create,participation,stats,note}}] zurück, absteigend nach total sortiert — Auth',
+                        'description' => 'Aggregierte Contribution-Übersicht eines ganzen Spieltags (alle Clubs) oder mit scope=season der ganzen Saison (alle Spieltage derselben Saison + Division) — gibt [{manager_id, manager_name, total, by_type:{participation,stats,note}}] zurück, absteigend nach total sortiert — Auth',
                         'query_params' => [
                             'matchday_id' => 'UUID des Spieltags (erforderlich)',
+                            'scope' => 'optional: season → alle Spieltage der Saison + Division des Spieltags statt nur dieses einen',
                         ],
                     ],
                     [

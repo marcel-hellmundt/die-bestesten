@@ -210,13 +210,39 @@ export class RatingsDataComponent {
     this.contributionBumps.update((arr) => arr.filter((b) => b.id !== id));
   }
 
+  // Toggle über der Card: nur der gewählte Spieltag oder die ganze Saison (alle Spieltage derselben
+  // Saison + Division, siehe ?scope=season) — pro Gerät gemerkt.
+  summaryScope = signal<'matchday' | 'season'>(this.loadSummaryScope());
+
+  private loadSummaryScope(): 'matchday' | 'season' {
+    try {
+      return localStorage.getItem('ratings-summary-scope') === 'season' ? 'season' : 'matchday';
+    } catch {
+      return 'matchday';
+    }
+  }
+
+  setSummaryScope(scope: 'matchday' | 'season'): void {
+    if (this.summaryScope() === scope) return;
+    this.summaryScope.set(scope);
+    try {
+      localStorage.setItem('ratings-summary-scope', scope);
+    } catch {}
+    this.contributionSummary.set([]);
+    this.refreshContributionSummary(true);
+  }
+
   private refreshContributionSummary(silent = false): void {
     const md = this.selectedMatchday();
     if (!md) return;
+    const scope = this.summaryScope();
+    const scopeParam = scope === 'season' ? '&scope=season' : '';
     this.api
-      .get<any[]>(`player_rating/contribution_summary?matchday_id=${md.id}`)
+      .get<any[]>(`player_rating/contribution_summary?matchday_id=${md.id}${scopeParam}`)
       .pipe(catchError(() => of([] as any[])))
       .subscribe((list) => {
+        // Spieltag oder Umfang inzwischen gewechselt → veraltete Antwort verwerfen
+        if (this.selectedMatchday()?.id !== md.id || this.summaryScope() !== scope) return;
         if (!silent) {
           const modes: ('total' | 'participation' | 'stats' | 'note')[] = [
             'total', 'participation', 'stats', 'note',
@@ -244,6 +270,8 @@ export class RatingsDataComponent {
     { key: 'stats', label: 'Stats' },
     { key: 'note', label: 'Noten' },
   ];
+  // Die drei Teilbereiche — in der Card abgesetzt unter dem Gesamt-Block
+  readonly summaryPartModes = this.summaryModes.filter((m) => m.key !== 'total');
 
   // 'total' returns the backend's already-total-sorted list as-is; every other category
   // re-sorts by that category's count and drops managers who didn't contribute to it at all —
