@@ -196,6 +196,11 @@ export class MapComponent {
   private visitedCountryIds = signal<Set<string>>(new Set());
   selectedCountryId = signal<string>(this.loadStoredCountry());
   selectedCountry = computed(() => this.countries().find((c) => c.id.toLowerCase() === this.selectedCountryId()) ?? null);
+  /** Ländername je ID (klein geschrieben) — Tooltip der Flaggen im Ranking */
+  private countryNames = computed(() => new Map(this.countries().map((c) => [c.id.toLowerCase(), c.name])));
+  countryName(id: string): string {
+    return this.countryNames().get(id.toLowerCase()) ?? id.toUpperCase();
+  }
   selectedVisited = computed(() => this.visitedCountryIds().has(this.selectedCountryId()));
   countryListOpen = signal(false);
   countryBusy = signal(false);

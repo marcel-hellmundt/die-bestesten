@@ -177,7 +177,7 @@
                   <!-- Länder: Flaggen der besuchten Länder hinter dem Namen -->
                   @if (r.flags.length) {
                     <span class="ranking__flags">
-                      @for (f of r.flags; track f) { <img [src]="flagUrl(f)" alt="" loading="lazy" /> }
+                      @for (f of r.flags; track f) { <img [src]="flagUrl(f)" [alt]="countryName(f)" [title]="countryName(f)" loading="lazy" /> }
                     </span>
                   }
                 </span>
