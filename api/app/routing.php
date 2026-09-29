@@ -1387,6 +1387,11 @@ class Routing
                         'description' => 'Alle Euro-Käufe der aktiven Saison (offene zuerst) → {available, purchases:[{id,manager_id,manager_name,offer_key,offer_name,amount_cents,code,status (pending|paid|cancelled),created_at,handled_at,handled_by_name,packs_total,packs_opened}]} — Admin',
                     ],
                     [
+                        'method' => 'GET',
+                        'path' => '/sticker/shop/lukaten',
+                        'description' => 'Alle Lukaten-Käufe der aktiven Saison (neueste zuerst; final, keine Bestätigung/kein Storno) → {purchases:[{pack_id,manager_id,manager_name,offer_key,pack_kind,offer_name,club_id,club_name,price,league_name,created_at,opened}], total} — Pack aus sticker_pack (source_key shop:l-…), price = bezahlte Lukaten aus sticker_shop_purchase der Hauptliga (Fallback: aktueller Angebotspreis), total = Summe — Admin',
+                    ],
+                    [
                         'method' => 'PATCH',
                         'path' => '/sticker/shop/purchases/:id',
                         'description' => 'Euro-Kauf bearbeiten: confirm = Zahlung eingegangen (paid, Karten werden tauschbar), cancel = storniert (Packs + daraus gezogene Karten werden gelöscht; da Tauschen bis dahin gesperrt war, trifft das niemand anderen); benachrichtigt den Käufer; 404 unbekannt, 409 nicht mehr offen — Admin',

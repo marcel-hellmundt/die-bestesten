@@ -252,6 +252,34 @@
     }
     <p class="admin-panel__hint">Stornieren entfernt alle Packs des Kaufs samt der daraus gezogenen Sticker. Tauschen war bis zur Bestätigung gesperrt, andere Manager sind also nicht betroffen.</p>
   </aside>
+
+  <!-- ── Admin: Lukaten-Käufe (final — nichts zu bestätigen oder zu stornieren) ─ -->
+  <aside class="admin-panel">
+    <div class="admin-panel__head">
+      <h2 class="admin-panel__title">Lukaten-Käufe</h2>
+    </div>
+    <div class="admin-panel__sums">
+      <span><b>{{ lukatenPurchases().length }}</b> {{ lukatenPurchases().length === 1 ? 'Pack' : 'Packs' }}</span>
+      <span><b>{{ lukatenTotal() }}</b> Lukaten</span>
+    </div>
+
+    @for (p of lukatenPurchases(); track p.pack_id) {
+      <article class="purchase">
+        <div class="purchase__head">
+          <b>{{ p.manager_name }}</b>
+          <span class="purchase__price">{{ p.price }} Lukaten</span>
+        </div>
+        <div class="purchase__line">
+          {{ p.offer_name }}@if (p.club_name) { · {{ p.club_name }} }
+        </div>
+        <div class="purchase__meta">
+          {{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }}@if (p.league_name) { · {{ p.league_name }} } · {{ p.opened ? 'geöffnet' : 'ungeöffnet' }}
+        </div>
+      </article>
+    } @empty {
+      <p class="admin-panel__empty">Noch keine Lukaten-Käufe in dieser Saison.</p>
+    }
+  </aside>
 }
 </div><!-- /shop__side -->
 

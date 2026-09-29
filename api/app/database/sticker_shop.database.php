@@ -217,6 +217,71 @@ trait StickerShopTrait
         return $this->createConnection($_ENV['DB_HOST'], $league['db_name'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
     }
 
+    /**
+     * GET /sticker/shop/lukaten — alle Lukaten-Käufe der aktiven Saison (Admin), neueste zuerst. Die Packs liegen global
+     * (sticker_pack, source_key shop:l-…:{purchase_id}), der bezahlte Preis in der Liga-DB der jeweiligen Hauptliga
+     * (sticker_shop_purchase) — fehlt die Tabelle/Zeile dort, gilt der aktuelle Angebotspreis.
+     */
+    public function getStickerLukatenPurchases(): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        if ($seasonId === null) return ['purchases' => [], 'total' => 0];
+        try {
+            $q = $this->con->prepare(
+                "SELECT sp.id AS pack_id, sp.manager_id, m.manager_name, sp.source_key, sp.pack_kind, sp.club_id,
+                        c.name AS club_name, sp.league_id, l.name AS league_name, l.db_name, sp.created_at, sp.opened_at
+                 FROM sticker_pack sp
+                 JOIN manager m ON m.id = sp.manager_id
+                 LEFT JOIN club c ON c.id = sp.club_id
+                 LEFT JOIN league l ON l.id = sp.league_id
+                 WHERE sp.season_id = ? AND sp.source = 'shop' AND sp.source_key LIKE 'shop:l-%'
+                 ORDER BY sp.created_at DESC"
+            );
+            $q->execute([$seasonId]);
+            $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return ['purchases' => [], 'total' => 0]; // Shop-Migration fehlt
+        }
+
+        // bezahlte Preise je Liga-DB nachschlagen (eine Abfrage je Liga)
+        $prices = [];
+        $byLeague = [];
+        foreach ($rows as $r) {
+            if (!$r['league_id'] || !$r['db_name']) continue;
+            $byLeague[$r['league_id']] ??= ['id' => $r['league_id'], 'db_name' => $r['db_name'], 'packs' => []];
+            $byLeague[$r['league_id']]['packs'][] = $r['pack_id'];
+        }
+        foreach ($byLeague as $league) {
+            try {
+                $db = $this->stickerShopConnection(['id' => $league['id'], 'db_name' => $league['db_name']]);
+                $in = implode(',', array_fill(0, count($league['packs']), '?'));
+                $pq = $db->prepare("SELECT pack_id, price FROM sticker_shop_purchase WHERE pack_id IN ($in)");
+                $pq->execute($league['packs']);
+                foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) $prices[$p['pack_id']] = (int) $p['price'];
+            } catch (\Throwable $e) {
+                // Tabelle fehlt in dieser Liga → Angebotspreis
+            }
+        }
+
+        $offers = $this->stickerShopOffers();
+        $kinds  = $this->stickerPackKinds();
+        $total  = 0;
+        $purchases = array_map(function ($r) use ($offers, $kinds, $prices, &$total) {
+            $offerKey = explode(':', $r['source_key'])[1] ?? '';
+            $price = $prices[$r['pack_id']] ?? ($offers[$offerKey]['price'] ?? 0);
+            $total += $price;
+            return [
+                'pack_id' => $r['pack_id'], 'manager_id' => $r['manager_id'], 'manager_name' => $r['manager_name'],
+                'offer_key' => $offerKey, 'pack_kind' => $r['pack_kind'],
+                'offer_name' => $kinds[$r['pack_kind']]['name'] ?? ($offers[$offerKey]['name'] ?? $offerKey),
+                'club_id' => $r['club_id'], 'club_name' => $r['club_name'],
+                'price' => $price, 'league_name' => $r['league_name'],
+                'created_at' => $r['created_at'], 'opened' => $r['opened_at'] !== null,
+            ];
+        }, $rows);
+        return ['purchases' => $purchases, 'total' => $total];
+    }
+
     /** GET /sticker/shop — Hauptliga + Lukaten-Guthaben dort (aktive Saison) + eigene Euro-Käufe. */
     public function getStickerShop(string $managerId): array
     {

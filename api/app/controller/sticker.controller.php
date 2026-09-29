@@ -11,6 +11,7 @@
  *   POST /sticker/shop/buy           — Lukaten-Angebot kaufen → Pack ungeöffnet ins Album, Mail an Admins (Auth)
  *   POST /sticker/shop/buy_eur       — Euro-Angebot kaufen → Packs sofort, Zahlung per PayPal.me, Admin bestätigt (Auth)
  *   GET  /sticker/shop/purchases     — alle Euro-Käufe der Saison (Admin)
+ *   GET  /sticker/shop/lukaten       — alle Lukaten-Käufe der Saison (Admin, final — nur Übersicht)
  *   PATCH /sticker/shop/purchases/:id — Euro-Kauf bestätigen/stornieren (Admin)
  *   GET  /sticker/trade              — eigene Tauschangebote (offen ein-/ausgehend + Verlauf) (Auth)
  *   POST /sticker/trade              — Tauschangebot machen (Auth)
@@ -48,6 +49,10 @@ class StickerController extends _BaseController
         if ($this->id === 'shop' && $this->sub === 'purchases' && $this->sub_id === null) {
             if (!$this->isAdmin()) return $this->forbidden();
             return $this->db->getStickerEurPurchases();
+        }
+        if ($this->id === 'shop' && $this->sub === 'lukaten' && $this->sub_id === null) {
+            if (!$this->isAdmin()) return $this->forbidden();
+            return $this->db->getStickerLukatenPurchases();
         }
         if ($this->id === 'collection' && $this->sub !== null) {
             $result = $this->db->getStickerCollectionOf($this->sub);

@@ -46,6 +46,22 @@ interface EurPurchaseRow {
   packs_opened: number;
 }
 
+/** Admin-Liste GET /sticker/shop/lukaten — Lukaten-Käufe sind final (keine Bestätigung/kein Storno). */
+interface LukatenPurchaseRow {
+  pack_id: string;
+  manager_id: string;
+  manager_name: string;
+  offer_key: string;
+  pack_kind: string | null;
+  offer_name: string;
+  club_id: string | null;
+  club_name: string | null;
+  price: number;
+  league_name: string | null;
+  created_at: string;
+  opened: boolean;
+}
+
 const EUR_MAX_PENDING = 3; // wie im Backend (StickerShopEurTrait)
 
 interface ClubChoice {
@@ -58,7 +74,8 @@ interface ClubChoice {
 /**
  * Shop (/klebrigsten/shop): Packs gegen Lukaten (Hauptliga, POST /sticker/shop/buy) oder Euro
  * (POST /sticker/shop/buy_eur: Packs sofort, Zahlung per PayPal.me mit Kauf-Code, Admin bestätigt/storniert —
- * bis dahin sind Karten daraus nicht tauschbar). Admins sehen unten alle Euro-Käufe der Saison.
+ * bis dahin sind Karten daraus nicht tauschbar). Admins sehen unten alle Euro-Käufe der Saison und darunter
+ * alle Lukaten-Käufe (final, nur Übersicht).
  */
 @Component({
   selector: 'app-sticker-shop',
@@ -259,6 +276,14 @@ export class StickerShopComponent {
   }
 
   readonly purchaseStatusLabel: Record<string, string> = { pending: 'offen', paid: 'bezahlt', cancelled: 'storniert' };
+
+  // ── Admin: Lukaten-Käufe (nur Übersicht — final) ──
+  private lukatenData = toSignal(toObservable(this.adminTick).pipe(
+    switchMap(() => !this.isAdmin ? of(null)
+      : this.api.get<{ purchases: LukatenPurchaseRow[]; total: number }>('sticker/shop/lukaten').pipe(catchError(() => of(null)))),
+  ));
+  lukatenPurchases = computed(() => this.lukatenData()?.purchases ?? []);
+  lukatenTotal = computed(() => this.lukatenData()?.total ?? 0);
 
   /** Guthaben nach dem Kauf (nur Lukaten). */
   budgetAfter = computed(() => {

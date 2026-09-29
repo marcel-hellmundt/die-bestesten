@@ -113,7 +113,7 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   }
 }
 
-// ── Admin: Euro-Käufe ────────────────────────────────────────────────────────
+// ── Admin: Euro-Käufe + Lukaten-Käufe ────────────────────────────────────────
 .admin-panel {
   display: flex;
   flex-direction: column;
@@ -195,6 +195,14 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   &__line { font-size: $font-sm; }
 
   &__code { font-family: monospace; letter-spacing: 0.04em; }
+
+  // Lukaten-Käufe: Preis rechts im Kopf (statt Status-Pill — die Käufe sind final)
+  &__price {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
 
   &__meta {
     font-size: $font-xs;
