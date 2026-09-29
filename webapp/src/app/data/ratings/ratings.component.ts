@@ -186,11 +186,44 @@ export class RatingsDataComponent {
       );
 
     this.refreshContributionSummary(true);
+    this.loadLeagueManagers(md.season_id);
   }
 
   contributionSummary = signal<
     { manager_id: string; manager_name: string; total: number; by_type: Record<string, number> }[]
   >([]);
+
+  // Manager mit Team in der Saison des Spieltags (aktuelle Liga) — wer davon noch nichts
+  // eingetragen hat, steht ausgegraut mit 0 unter "Gesamt".
+  private leagueManagers = signal<{ manager_id: string; manager_name: string }[]>([]);
+  private leagueManagersSeasonId: string | null = null;
+
+  private loadLeagueManagers(seasonId: string): void {
+    if (this.leagueManagersSeasonId === seasonId) return;
+    this.leagueManagersSeasonId = seasonId;
+    this.leagueManagers.set([]);
+    this.api
+      .get<any[]>(`team?season_id=${seasonId}`)
+      .pipe(catchError(() => of([] as any[])))
+      .subscribe((teams) => {
+        if (this.leagueManagersSeasonId !== seasonId) return;
+        this.leagueManagers.set(
+          teams.map((t) => ({ manager_id: t.manager_id, manager_name: t.manager_name })),
+        );
+      });
+  }
+
+  totalRows = computed(() => {
+    const list = this.contributionSummary().map((c) => ({ ...c, inactive: false }));
+    const seen = new Set(list.map((c) => c.manager_id));
+    const idle = this.leagueManagers()
+      .filter((m) => !seen.has(m.manager_id))
+      .sort((a, b) => a.manager_name.localeCompare(b.manager_name, 'de'))
+      .map((m) => ({ ...m, total: 0, by_type: {} as Record<string, number>, inactive: true }));
+    return [...list, ...idle];
+  });
+
+  detailsOpen = signal(false);
 
   // ── Live-Update der "Mitwirkende Manager"-Card (Sidebar, Desktop) ────────────────
   // Nach jeder eintragenden Aktion (Aufstellung/Statistik/Note) wird die Contribution-Summary
