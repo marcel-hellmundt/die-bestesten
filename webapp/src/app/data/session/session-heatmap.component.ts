@@ -325,7 +325,8 @@ export class SessionHeatmapComponent {
   // Spalte i im Chart deckungsgleich mit Heatmap-Spalte i skaliert — unabhängig von Fensterbreite
   // und Spaltenzahl (24/30/52).
   readonly chartColor = '#bf1d00'; // == $color-accent; kein Team-Kontext hier wie in team-overview
-  readonly allActiveColor = '#16a34a'; // == $color-success — "Aktive Manager": alle waren aktiv
+  // "Aktive Manager": waren alle aktiv → volles Rot (chartColor), sonst helleres Rot (chartColor 50 % mit Weiß)
+  readonly partlyActiveColor = '#df8e80';
   private readonly USAGE_CHART_PAD = 12; // ViewBox-Einheiten Rand oben/unten (ViewBox-Höhe fix 100)
 
   // Summe der Sekunden aller Manager, je Bucket-Key — transponiert zu totalSeconds() (das pro
@@ -400,7 +401,7 @@ export class SessionHeatmapComponent {
     const totals   = this.totalsByBucket();
     const actives  = this.activeByBucket();
     const values   = cols.map(c => active ? (actives.get(c.key)?.length ?? 0) : (totals.get(c.key) ?? 0));
-    // Aktive Manager: volle Höhe = alle Manager der Heatmap; waren alle aktiv, wird der Balken grün
+    // Aktive Manager: volle Höhe = alle Manager der Heatmap; nur wenn alle aktiv waren, ist der Balken voll rot
     const allCount = this.managers().length;
     const maxValue = active ? Math.max(allCount, ...values, 1) : Math.max(...values, 1);
 
@@ -417,7 +418,7 @@ export class SessionHeatmapComponent {
     const bars = values.map((v, i) => {
       const barHeight = (v / maxValue) * h;
       if (barHeight <= 0) return { path: '', fill: this.chartColor };
-      const fill = active && allCount > 0 && v >= allCount ? this.allActiveColor : this.chartColor;
+      const fill = active && v < allCount ? this.partlyActiveColor : this.chartColor;
 
       const x  = i + gap;
       const y  = bottom - barHeight;
