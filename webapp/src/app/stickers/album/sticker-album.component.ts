@@ -87,6 +87,37 @@ export class StickerAlbumComponent {
     this.router.navigate(['/klebrigsten/sammelalbum'], { queryParamsHandling: 'preserve' });
   }
 
+  // ── Umschalter "< Managername >": durch die Alben aller Sammler blättern (Reihenfolge wie in der Klebebande) ─
+  private collectors = toSignal(
+    this.api.get<{ collectors: { manager_id: string; manager_name: string }[] }>('sticker/collectors').pipe(
+      map(res => res.collectors ?? []),
+      catchError(() => of([] as { manager_id: string; manager_name: string }[])),
+    ),
+    { initialValue: [] as { manager_id: string; manager_name: string }[] },
+  );
+  private collectorIndex = computed(() => {
+    const id = this.viewId() ?? this.myId;
+    return this.collectors().findIndex(c => c.manager_id === id);
+  });
+  /** Name des angezeigten Albums für den Umschalter (null → Umschalter ausblenden) */
+  switcherName = computed(() => {
+    if (this.collectors().length < 2) return null;
+    const i = this.collectorIndex();
+    return i >= 0 ? this.collectors()[i].manager_name : (this.otherName() ?? null);
+  });
+
+  /** Vorheriges/nächstes Album (am Ende wieder von vorn); die aktuelle Seite (?seite) bleibt erhalten */
+  stepAlbum(dir: -1 | 1): void {
+    const list = this.collectors();
+    if (list.length < 2) return;
+    const i = this.collectorIndex();
+    const target = list[((i < 0 ? 0 : i + dir) + list.length) % list.length];
+    const path = target.manager_id === this.myId
+      ? ['/klebrigsten/sammelalbum']
+      : ['/klebrigsten/klebebande', target.manager_id];
+    this.router.navigate(path, { queryParamsHandling: 'preserve' });
+  }
+
   // ── Packs ─────────────────────────────────────────────────────────────────
   packs = this.status.packs;
   packSummary = computed(() => {
