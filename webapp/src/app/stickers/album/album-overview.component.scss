@@ -198,6 +198,26 @@
   }
 }
 
+// Verlauf transparent → weiß über dem rechten Rand der Reihe, solange rechts noch Karten versteckt sind
+.recent-wrap {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 56px;
+    background: linear-gradient(to right, transparent, #{$color-surface});
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity $transition-fast;
+  }
+
+  &--more::after { opacity: 1; }
+}
+
 // Zuletzt eingeklebt: horizontale Reihe kleiner Karten (mobile scrollbar).
 // Das Scroll-Overflow schneidet auch vertikal ab → oben Luft für den Hover-Lift, per negativem Margin ausgeglichen.
 .recent {

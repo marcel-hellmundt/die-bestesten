@@ -1,4 +1,6 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import {
+  Component, DestroyRef, ElementRef, afterRenderEffect, computed, inject, input, output, signal, viewChild,
+} from '@angular/core';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { AlbumClub, DEFAULT_SHARED_PARAMS, Sticker, TIERS, TIER_LABEL, isLight } from './album.model';
 import { Collection, StickerAlbumService } from './sticker-album.service';
@@ -70,6 +72,23 @@ export class AlbumOverviewComponent {
       .sort((a, b) => col.firstAt[b.idx] - col.firstAt[a.idx] || b.idx - a.idx)
       .map(s => ({ sticker: s, card: this.album.cardData(s, col.holo[s.idx]) }));
   });
+
+  /** Reihe "Zuletzt eingeklebt": rechts noch Karten außerhalb des sichtbaren Bereichs → Verlauf einblenden */
+  private recentRow = viewChild<ElementRef<HTMLElement>>('recentRow');
+  recentMore = signal(false);
+
+  updateRecentMore(): void {
+    const el = this.recentRow()?.nativeElement;
+    this.recentMore.set(!!el && el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }
+
+  constructor() {
+    // nach jedem Neuzeichnen der Reihe (andere Karten, Größenänderung) neu prüfen
+    afterRenderEffect(() => { this.recent(); this.recentRow(); this.updateRecentMore(); });
+    const onResize = () => this.updateRecentMore();
+    window.addEventListener('resize', onResize);
+    inject(DestroyRef).onDestroy(() => window.removeEventListener('resize', onResize));
+  }
 
   /**
    * Seltenste Karte der Sammlung: kleinste Zieh-Wahrscheinlichkeit = Gewicht des Stickers (Marktwert^-α, wie beim
