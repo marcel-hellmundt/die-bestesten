@@ -4,6 +4,7 @@
   <header class="overview__head">
     <h2 class="overview__title">{{ ownerName() ? 'Album von ' + ownerName() : 'Mein Sammelalbum' }}</h2>
     <span class="overview__sub">{{ t.have }} von {{ t.total }} Stickern eingeklebt</span>
+    <span class="overview__pct">{{ t.pct * 100 | number:'1.0-0' }} %</span>
     <div class="overview__bar"><span [style.width.%]="t.pct * 100"></span></div>
   </header>
 
@@ -11,7 +12,6 @@
   <div class="top">
   <div class="summary">
     <section class="kpis">
-      <div class="kpi"><span class="kpi__value">{{ t.pct * 100 | number:'1.0-0' }} %</span><span class="kpi__label">Album</span></div>
       <div class="kpi"><span class="kpi__value">{{ t.clubsComplete }}</span><span class="kpi__label">Vereine komplett</span></div>
       <div class="kpi"><span class="kpi__value">{{ t.duplicates }}</span><span class="kpi__label">Doppelte</span></div>
       <div class="kpi kpi--silver"><span class="kpi__value">{{ col.holoSilver }}</span><span class="kpi__label">Holo Silber</span></div>
@@ -58,6 +58,7 @@
     <div class="clubs">
       @for (c of clubTiles(); track c.club.id) {
         <button class="club" type="button" (click)="goTo.emit(c.index)" [class.club--complete]="c.have === c.total"
+                [class.club--empty]="c.have === 0"
                 [style.--club]="c.club.primary_color ?? '#8b929e'">
           <img class="club__logo" [src]="c.logo" alt="" draggable="false" />
           <span class="club__name">{{ c.club.short_name || c.club.name }}</span>

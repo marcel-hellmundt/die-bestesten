@@ -24,9 +24,19 @@
     color: $color-text-muted;
   }
 
+  // Prozent mittig über dem Fortschrittsbalken
+  &__pct {
+    display: block;
+    margin-top: $space-3;
+    text-align: center;
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+  }
+
   &__bar {
     height: 8px;
-    margin-top: $space-3;
+    margin-top: $space-1;
     border-radius: $radius-full;
     background: $color-surface-alt;
     overflow: hidden;
@@ -55,10 +65,10 @@
   }
 }
 
-// 3 je Reihe (3 + 2) — auch in der halben Breite genug Platz für "Vereine komplett"
+// 4 Kacheln in 2 Reihen
 .kpis {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: $space-2;
 }
 
@@ -210,6 +220,9 @@
   &:hover { background: $color-surface-alt; }
 
   &--complete { background: color-mix(in srgb, #{$color-success} 8%, #{$color-surface}); }
+
+  // noch kein Sticker dieses Vereins: Logo farblos + halbtransparent
+  &--empty .club__logo { filter: grayscale(1); opacity: 0.5; }
 
   &__logo {
     grid-row: span 2;
