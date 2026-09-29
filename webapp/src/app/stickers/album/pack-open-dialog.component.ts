@@ -13,16 +13,13 @@ const RISE_MS = 650;
 /** Austeilen: jede Karte fliegt verdeckt vom Pack an ihren Platz, versetzt um DEAL_STAGGER_MS */
 const DEAL_MS = 460;
 const DEAL_STAGGER_MS = 80;
-/** Umdrehen: nach dem Austeilen eine Karte nach der anderen (Dauer muss zu .flip im SCSS passen) */
-const FLIP_PAUSE_MS = 180;
-const FLIP_STAGGER_MS = 420;
-const FLIP_MS = 600;
 
 /**
  * Pack-Dialog: zuerst das geschlossene Folien-Pack (Art + Anlass aufgedruckt, Farbe je Art) mit
  * "Tippen zum Aufreißen" und "Später öffnen". Tippen startet die Aufreiß-Animation und meldet `tear` —
- * erst dann öffnet der Aufrufer das Pack (Server bzw. Test) und reicht `cards` nach; aufgedeckt wird,
- * sobald Animation UND Karten da sind. Klick auf eine Karte → große Karte (open).
+ * erst dann öffnet der Aufrufer das Pack (Server bzw. Test) und reicht `cards` nach; ausgeteilt wird,
+ * sobald Animation UND Karten da sind. Die Karten liegen verdeckt — Klick dreht eine um, zweiter Klick
+ * → große Karte (open).
  */
 @Component({
   selector: 'app-pack-open-dialog',
@@ -112,31 +109,20 @@ export class PackOpenDialogComponent {
     });
   }
 
-  /**
-   * Test-Packs (id null, /klebrigsten/packs + Test-Buttons im Sammelalbum): Karten bleiben nach dem Austeilen
-   * verdeckt und werden erst per Klick einzeln umgedreht (zum Ausprobieren der Dreh-Animation).
-   */
-  manualFlip = computed(() => this.pack()?.id === null);
-  /** per Klick umgedrehte Karten (Index) — nur bei manualFlip */
+  /** Karten bleiben nach dem Austeilen verdeckt und werden erst per Klick einzeln umgedreht */
   flipped = signal<ReadonlySet<number>>(new Set());
-  isHidden(i: number): boolean { return this.manualFlip() && !this.flipped().has(i); }
+  isHidden(i: number): boolean { return !this.flipped().has(i); }
 
   onPull(c: PackCard, i: number): void {
     if (this.isHidden(i)) { this.flipped.update(s => new Set(s).add(i)); return; }
     this.open.emit(c);
   }
 
-  /** Verzögerung, bis Karte i umgedreht wird (nach dem Austeilen aller Karten; per Klick sofort) */
-  flipDelay(i: number): number {
-    if (this.reducedMotion || this.manualFlip()) return 0;
-    const n = this.cards()?.length ?? 0;
-    return (n - 1) * DEAL_STAGGER_MS + DEAL_MS + FLIP_PAUSE_MS + i * FLIP_STAGGER_MS;
-  }
-  /** Alle Karten umgedreht → erst dann die Buttons einblenden (per Klick: sobald ausgeteilt) */
+  /** Alle Karten ausgeteilt → erst dann Hinweis + Buttons einblenden */
   revealTotal = computed(() => {
     const n = this.cards()?.length ?? 0;
     if (this.reducedMotion || !n) return 0;
-    return this.manualFlip() ? (n - 1) * DEAL_STAGGER_MS + DEAL_MS : this.flipDelay(n - 1) + FLIP_MS;
+    return (n - 1) * DEAL_STAGGER_MS + DEAL_MS;
   });
 
   /**

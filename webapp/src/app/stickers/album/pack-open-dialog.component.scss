@@ -480,7 +480,7 @@ $pack-text-always-white: true;
   width: 100%;
 }
 
-// Karte: fliegt verdeckt vom Pack an ihren Platz (Web Animations im TS, deal()), dreht sich dann um (--flip-delay)
+// Karte: fliegt verdeckt vom Pack an ihren Platz (Web Animations im TS, deal()), dreht sich per Klick um
 .pull {
   position: relative;
   width: min(200px, calc((100% - 32px) / 3));
@@ -495,7 +495,7 @@ $pack-text-always-white: true;
 
   &:hover { transform: translateY(-4px); }
 
-  // Test-Packs: verdeckt liegen lassen, bis angeklickt — dann startet die Dreh-Animation (Verzögerung 0)
+  // verdeckt liegen lassen, bis angeklickt — dann startet die Dreh-Animation
   &--hidden {
     .flip { animation: none; transform: rotateY(180deg); }
     .flip__front { animation: none; visibility: hidden; }
@@ -506,7 +506,7 @@ $pack-text-always-white: true;
 }
 
 // Umdrehen mit Tiefe: die Karte hebt sich zur Mitte leicht an (translateZ), die abgewandte Seite wird dunkler,
-// die Facetten der Rückseite blitzen auf, über die Vorderseite läuft ein Lichtreflex (alle 600 ms, --flip-delay)
+// die Facetten der Rückseite blitzen auf, über die Vorderseite läuft ein Lichtreflex (alle 600 ms)
 .flip {
   position: relative;
   display: block;
@@ -607,7 +607,7 @@ $pack-text-always-white: true;
 
   .btn-ghost { color: #fff; }
 
-  // nach dem Aufdecken: erst einblenden, wenn alle Karten umgedreht sind (Verzögerung inline)
+  // erst einblenden, wenn alle Karten ausgeteilt sind (Verzögerung inline)
   &--after-reveal { animation: fade-in 260ms backwards; }
 }
 
@@ -615,7 +615,7 @@ $pack-text-always-white: true;
   .flip, .flip__front, .flip__front::before, .flip__front::after, .flip__back::before, .flip__back::after,
   .tag, .actions--after-reveal { animation: none; }
   .flip__back { animation: none; visibility: hidden; }
-  // Test-Packs: auch ohne Animation verdeckt, bis angeklickt
+  // auch ohne Animation verdeckt, bis angeklickt
   .pull--hidden .flip__back { visibility: visible; }
 }
 

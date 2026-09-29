@@ -89,11 +89,10 @@
         }
       </div>
     } @else {
-      <!-- Karten fliegen verdeckt aus dem Pack an ihren Platz (deal() im TS), dann dreht sich eine nach der anderen um -->
+      <!-- Karten fliegen verdeckt aus dem Pack an ihren Platz (deal() im TS) und bleiben verdeckt (pull--hidden), bis sie angeklickt werden -->
       <div class="cards">
         @for (c of cards(); track $index) {
-          <!-- Test-Packs: bleibt verdeckt (pull--hidden), bis sie angeklickt wird -->
-          <button class="pull" type="button" [class.pull--hidden]="isHidden($index)" [style.--flip-delay]="flipDelay($index) + 'ms'"
+          <button class="pull" type="button" [class.pull--hidden]="isHidden($index)"
                   (click)="onPull(c, $index)" [attr.aria-label]="isHidden($index) ? 'Karte umdrehen' : c.sticker.displayname">
             <span class="flip">
               <span class="flip__front"><app-sticker-card [data]="c.card" /></span>
@@ -103,7 +102,7 @@
           </button>
         }
       </div>
-      @if (manualFlip() && flipped().size < (cards()?.length ?? 0)) {
+      @if (flipped().size < (cards()?.length ?? 0)) {
         <p class="hint actions--after-reveal" [style.animation-delay]="revealTotal() + 'ms'">Karte antippen zum Umdrehen</p>
       }
       <div class="actions actions--after-reveal" [style.animation-delay]="revealTotal() + 'ms'">
