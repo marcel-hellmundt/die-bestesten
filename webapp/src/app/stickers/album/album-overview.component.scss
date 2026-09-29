@@ -51,7 +51,7 @@
   }
 }
 
-// Desktop: Kennzahlen links (halbe Breite), rechts zuletzt eingeklebt + seltenste Karte
+// Desktop: Kennzahlen links (schmale Spalte), rechts mit dem restlichen Platz zuletzt eingeklebt + seltenste Karte
 .top {
   display: flex;
   flex-direction: column;
@@ -59,7 +59,7 @@
 
   @media (min-width: $mobile-breakpoint + 1) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: 260px minmax(0, 1fr);
     column-gap: $space-6;
     align-items: start;
   }
@@ -219,10 +219,26 @@
 
   &:hover { background: $color-surface-alt; }
 
-  &--complete { background: color-mix(in srgb, #{$color-success} 8%, #{$color-surface}); }
+  // komplett: Kachel in Vereinsfarbe, Schrift weiß bzw. schwarz (--club-ink), Balken in Schriftfarbe
+  &--complete {
+    border-color: color-mix(in srgb, var(--club) 85%, #000); // bei weißer Vereinsfarbe bleibt ein Rand sichtbar
+    background: var(--club);
+    color: var(--club-ink);
 
-  // noch kein Sticker dieses Vereins: Logo farblos + halbtransparent
-  &--empty .club__logo { filter: grayscale(1); opacity: 0.5; }
+    &:hover { background: var(--club); filter: brightness(1.08); }
+
+    .club__count { color: inherit; opacity: 0.85; }
+    .club__bar { background: color-mix(in srgb, var(--club-ink) 25%, transparent); }
+    .club__bar span { background: var(--club-ink); }
+  }
+
+  // noch kein Sticker dieses Vereins: ganze Kachel etwas blasser, Logo farblos + halbtransparent, Name grau
+  &--empty {
+    opacity: 0.7;
+
+    .club__logo { filter: grayscale(1); opacity: 0.5; }
+    .club__name { color: $color-text-muted; }
+  }
 
   &__logo {
     grid-row: span 2;

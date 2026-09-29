@@ -83,6 +83,15 @@ export function initials(s: Pick<Sticker, 'first_name' | 'last_name' | 'displayn
   return parts.slice(0, 3).map(p => p.charAt(0).toUpperCase() + '.').join('');
 }
 
+/** Relative Helligkeit eines Hex-Werts (#rrggbb) > 0.8 → gilt als "fast weiß". */
+export function isLight(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return false;
+  const n = parseInt(m[1], 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.8;
+}
+
 // ── Standard-Regeln (Simulation + Demo-Sammlung im Album) ─────────────────────
 /** Regeln, die für alle Manager gleich sind — der Rest von SimParams kommt aus dem Profil. */
 export type SharedParams = Omit<SimParams, 'loginChance' | 'avgPoints' | 'bestChance'>;

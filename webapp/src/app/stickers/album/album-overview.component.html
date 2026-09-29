@@ -59,7 +59,7 @@
       @for (c of clubTiles(); track c.club.id) {
         <button class="club" type="button" (click)="goTo.emit(c.index)" [class.club--complete]="c.have === c.total"
                 [class.club--empty]="c.have === 0"
-                [style.--club]="c.club.primary_color ?? '#8b929e'">
+                [style.--club]="c.color" [style.--club-ink]="c.ink">
           <img class="club__logo" [src]="c.logo" alt="" draggable="false" />
           <span class="club__name">{{ c.club.short_name || c.club.name }}</span>
           <span class="club__count">{{ c.have }}/{{ c.total }}</span>

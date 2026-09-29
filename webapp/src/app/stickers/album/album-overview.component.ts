@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
-import { AlbumClub, DEFAULT_SHARED_PARAMS, Sticker, TIERS, TIER_LABEL } from './album.model';
+import { AlbumClub, DEFAULT_SHARED_PARAMS, Sticker, TIERS, TIER_LABEL, isLight } from './album.model';
 import { Collection, StickerAlbumService } from './sticker-album.service';
 import { stickerWeights } from '../sticker-sim';
 
@@ -49,7 +49,12 @@ export class AlbumOverviewComponent {
     const col = this.collection();
     return this.rows().map((r, i) => {
       const have = r.stickers.filter(s => col.counts[s.idx] > 0).length;
-      return { index: i, club: r.club, have, total: r.stickers.length, logo: this.album.clubLogoUrl(r.club) };
+      const color = r.club.primary_color ?? '#8b929e';
+      return {
+        index: i, club: r.club, have, total: r.stickers.length, logo: this.album.clubLogoUrl(r.club),
+        // Kachel eines kompletten Vereins in Vereinsfarbe: Schrift weiß, bei (fast) weißer Vereinsfarbe schwarz
+        color, ink: isLight(color) ? '#000' : '#fff',
+      };
     });
   });
 

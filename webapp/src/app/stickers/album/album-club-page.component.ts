@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, output } from '@angular/core';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
-import { AlbumClub, POSITION_ORDER, Sticker, initials } from './album.model';
+import { AlbumClub, POSITION_ORDER, Sticker, initials, isLight } from './album.model';
 import { Collection, StickerAlbumService, hashSeed } from './sticker-album.service';
 import { SeasonTheme, cornerPosition, themeSash } from './season-theme';
 
@@ -10,15 +10,6 @@ export interface AlbumSlot {
   card: StickerCardData | null;   // null = noch nicht gesammelt (leerer Slot)
   initials: string;
   tilt: number;                   // Grad — leichte, stabile Schräglage wie eingeklebt (nur Desktop)
-}
-
-/** Relative Helligkeit eines Hex-Werts (#rrggbb) > 0.8 → gilt als "fast weiß". */
-function isLight(hex: string): boolean {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-  if (!m) return false;
-  const n = parseInt(m[1], 16);
-  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.8;
 }
 
 const SECTION_LABEL: Record<string, string> = {
