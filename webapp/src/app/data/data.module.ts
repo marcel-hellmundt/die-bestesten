@@ -51,7 +51,8 @@ const routes: Routes = [
       { path: 'achievements',  component: AchievementsDataComponent, canActivate: A },
       { path: 'manager',       component: ManagerDataComponent,      canActivate: A },
       { path: 'player-import', component: PlayerImportDataComponent, canActivate: M },
-      { path: 'session-heatmap', component: SessionHeatmapComponent, canActivate: A },
+      { path: 'nutzung',       component: SessionHeatmapComponent,   canActivate: A },
+      { path: 'session-heatmap', redirectTo: 'nutzung' }, // alter Pfad (Lesezeichen)
     ]
   }
 ];
