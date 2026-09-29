@@ -78,6 +78,10 @@ $pack-text-always-white: true;
     --text: #3d3000;
   }
 
+  // Sonder-Packs: Geburtstag Pink #e84393 · Weihnachten Tannengrün #1e8449 (Farben vorläufig)
+  &--birthday  { --foil-light: #fbc2dc; --foil: #e84393; --foil-dark: #9c1b5b; --ink: #b8246e; }
+  &--christmas { --foil-light: #6fcf8f; --foil: #1e8449; --foil-dark: #0b3d20; --ink: #1b6b3c; }
+
   // Shop (Lukaten): Türkis wie im Shop
   &--shop {
     --foil-light: #2dd4bf;

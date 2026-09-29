@@ -59,14 +59,16 @@ export class StickerCollectorsComponent {
   }
 
   /** Admin-Chips rechts: feste Reihenfolge (Event-Packs, dann Shop-Packs), Farbe wie das jeweilige Pack-Design */
-  private readonly PACK_TYPE_ORDER = ['daily', 'milestone', 'matchday_best', 'normal', 'big', 'club', 'special', 'shop', 'admin'];
+  private readonly PACK_TYPE_ORDER = ['daily', 'milestone', 'matchday_best', 'birthday', 'christmas', 'normal', 'big', 'club', 'special', 'shop', 'admin'];
   private readonly PACK_TYPE_COLOR: Record<string, string> = {
     daily: '#bf1d00', milestone: '#4b7bec', matchday_best: '#fed330', shop: '#0f766e', admin: '#4b5563',
+    birthday: '#e84393', christmas: '#1e8449',
     normal: '#6aba49', big: '#f26d53', club: '#fcc732', special: '#8854d0',
   };
   /** Kurzname im Chip (voller Name im Tooltip) */
   private readonly PACK_TYPE_SHORT: Record<string, string> = {
     daily: 'Tages', milestone: 'Meilenstein', matchday_best: 'Sieger', shop: 'Shop', admin: 'Admin',
+    birthday: 'Geburtstag', christmas: 'Weihnachten',
     normal: 'Normal', big: 'Big', club: 'Verein', special: 'Special',
   };
   /** helle Pack-Farben (Gelb/Grün) brauchen dunkle Schrift */

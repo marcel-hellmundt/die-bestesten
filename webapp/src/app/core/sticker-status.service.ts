@@ -3,7 +3,7 @@ import { Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from '../auth/auth.service';
 
-export type StickerPackSource = 'daily' | 'milestone' | 'matchday_best' | 'admin' | 'shop';
+export type StickerPackSource = 'daily' | 'milestone' | 'matchday_best' | 'admin' | 'shop' | 'birthday' | 'christmas';
 
 export interface StickerPack {
   id: string;
@@ -106,6 +106,8 @@ export const PACK_SOURCE_LABEL: Record<StickerPackSource, string> = {
   matchday_best: 'Spieltagsbester-Pack',
   admin: 'Bonus-Pack',
   shop: 'Shop-Pack',
+  birthday: 'Geburtstags-Pack',
+  christmas: 'Weihnachts-Pack',
 };
 
 /** Anlass eines Packs in Worten, z.B. "200 Punkte erreicht · Liga" oder "Spieltag 5 · Liga". */
@@ -116,6 +118,8 @@ export function packDetail(p: Pick<StickerPack, 'source' | 'milestone_points' | 
   if (p.source === 'matchday_best') parts.push(p.matchday_number ? `bestes Team an Spieltag ${p.matchday_number}` : 'bestes Team des Spieltags');
   if (p.source === 'admin') parts.push('vom Admin vergeben');
   if (p.source === 'shop') parts.push('im Shop gekauft');
+  if (p.source === 'birthday') parts.push('alles Gute zum Geburtstag');
+  if (p.source === 'christmas') parts.push('frohe Weihnachten');
   if (p.league_name) parts.push(p.league_name);
   return parts.join(' · ');
 }

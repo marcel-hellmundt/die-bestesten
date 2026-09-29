@@ -34,12 +34,23 @@ export function packInfo(p: StickerPack): PackInfo {
   };
 }
 
+/**
+ * Sonder-Packs (Geburtstag, Weihnachten): Größe + garantiert neue Karten — müssen zu stickerConfig() im Backend
+ * passen (birthday_/christmas_pack_size, *_guaranteed_new; vorläufige Werte).
+ */
+export const SPECIAL_PACKS: Record<'birthday' | 'christmas', { size: number; guaranteedNew: number }> = {
+  birthday:  { size: 5, guaranteedNew: 2 },
+  christmas: { size: 5, guaranteedNew: 2 },
+};
+
 /** Größe + Garantie je Pack-Art nach den echten Regeln (für Test-Packs und die Pack-Beschriftung). */
 export function packRules(source: StickerPackSource): { size: number; allNew: boolean } {
   const r = DEFAULT_SHARED_PARAMS;
   switch (source) {
     case 'milestone':     return { size: r.milestonePackSize, allNew: r.milestoneAllNew };
     case 'matchday_best': return { size: r.bestPackSize, allNew: r.bestAllNew };
+    case 'birthday':
+    case 'christmas':     return { size: SPECIAL_PACKS[source].size, allNew: false };
     default:              return { size: r.dailyPackSize, allNew: false };
   }
 }
@@ -49,6 +60,9 @@ export function packDrawRules(p: PackInfo): { size: number; guaranteed: number; 
   if (p.kind) {
     const k = PACK_KINDS[p.kind];
     return { size: k.size, guaranteed: k.guaranteedNew, holoMin: k.holoMin };
+  }
+  if (p.source === 'birthday' || p.source === 'christmas') {
+    return { size: p.size, guaranteed: Math.min(SPECIAL_PACKS[p.source].guaranteedNew, p.size), holoMin: 0 };
   }
   const r = packRules(p.source);
   return { size: p.size, guaranteed: r.allNew ? p.size : (DEFAULT_SHARED_PARAMS.guaranteeNew ? 1 : 0), holoMin: 0 };
@@ -61,6 +75,8 @@ export function packFace(p: PackInfo): { kind: string; headline: string } {
     case 'milestone':     return { kind: 'Meilenstein', headline: p.milestonePoints ? `${p.milestonePoints} Punkte` : 'Meilenstein' };
     case 'matchday_best': return { kind: 'Spieltagssieger', headline: p.matchdayNumber ? `Spieltag ${p.matchdayNumber}` : 'Spieltagssieger' };
     case 'shop':          return { kind: 'Shop', headline: p.kind ? PACK_KINDS[p.kind].short : 'Shop-Pack' };
+    case 'birthday':      return { kind: 'Sonder-Pack', headline: 'Geburtstag' };
+    case 'christmas':     return { kind: 'Sonder-Pack', headline: 'Weihnachten' };
     default:              return { kind: 'Bonus', headline: 'Bonus-Pack' };
   }
 }
@@ -91,4 +107,7 @@ export const PACK_ART: Partial<Record<PackDesign, PackArt>> = {
   special: { src: 'img/stickers/front/wizard.png' },
   // Spieltagssieger: Medaille wie die Karte "Spieltagssiege" in der Saisontabelle (/liga/tabelle), hier in höherer Auflösung
   matchday_best: { src: 'img/stickers/front/medal.png', place: 'center' },
+  // Sonder-Packs: wie die Medaille mittig
+  birthday:  { src: 'img/stickers/front/birthday.png', place: 'center' },
+  christmas: { src: 'img/stickers/front/christmas.png', place: 'center' },
 };

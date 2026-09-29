@@ -1,7 +1,7 @@
 <?php
 
 /**
- * "Die Klebrigsten" — Packs: Vergabe (tägliches Pack, Punkte-Meilensteine, Spieltagsbester),
+ * "Die Klebrigsten" — Packs: Vergabe (tägliches Pack, Punkte-Meilensteine, Spieltagsbester, Geburtstag, Weihnachten),
  * Öffnen (serverseitiges Würfeln) und Sammlung. Das Album ist global je Manager + Saison;
  * aktiv ist es für Manager, die in mindestens einer Liga mit league.sticker_enabled spielen.
  */
@@ -19,6 +19,12 @@ trait StickerPackTrait
             'milestone_interval'      => 100,     // alle X Saisonpunkte eines Teams ein Pack
             'milestone_pack_size'     => 3,       // Sticker im Meilenstein-Pack (0 = aus)
             'matchday_best_pack_size' => 5,       // Sticker im Spieltagsbester-Pack (0 = aus)
+            // Sonder-Packs (Größe/Zusammensetzung vorläufig): Geburtstag (manager.date_of_birth) und Weihnachten (24.–26.12.)
+            'birthday_pack_size'      => 5,       // 0 = aus
+            'birthday_guaranteed_new' => 2,
+            'birthday_since'          => '2026-09-29', // erst Geburtstage ab Einführung — sonst gäbe es beim Start rückwirkend Packs für alle
+            'christmas_pack_size'     => 5,       // 0 = aus
+            'christmas_guaranteed_new' => 2,
             'guarantee_new'           => true,    // 1. Sticker jedes Packs garantiert neu (solange welche fehlen)
             'milestone_all_new'       => true,    // Meilenstein-Pack: alle Sticker garantiert neu
             'matchday_best_all_new'   => true,    // Spieltagsbester-Pack: alle Sticker garantiert neu
@@ -74,16 +80,59 @@ trait StickerPackTrait
         }
     }
 
-    /** Idempotente Vergabe — true, wenn das Pack neu angelegt wurde. */
-    private function grantStickerPack(string $managerId, string $seasonId, string $source, string $sourceKey, ?string $leagueId, int $size): bool
+    /**
+     * Idempotente Vergabe — true, wenn das Pack neu angelegt wurde. $guaranteedNew = so viele Karten garantiert neu
+     * (null = Regel je source beim Öffnen).
+     */
+    private function grantStickerPack(string $managerId, string $seasonId, string $source, string $sourceKey, ?string $leagueId, int $size,
+                                      ?int $guaranteedNew = null): bool
     {
         if ($size <= 0) return false;
+        $cols = ['manager_id', 'season_id', 'source', 'source_key', 'league_id', 'size'];
+        $vals = [$managerId, $seasonId, $source, $sourceKey, $leagueId, $size];
+        if ($guaranteedNew !== null) { $cols[] = 'guaranteed_new'; $vals[] = min($guaranteedNew, $size); }
         $q = $this->con->prepare(
-            "INSERT IGNORE INTO sticker_pack (manager_id, season_id, source, source_key, league_id, size)
-             VALUES (?, ?, ?, ?, ?, ?)"
+            'INSERT IGNORE INTO sticker_pack (' . implode(', ', $cols) . ') VALUES (' . implode(', ', array_fill(0, count($cols), '?')) . ')'
         );
-        $q->execute([$managerId, $seasonId, $source, $sourceKey, $leagueId, $size]);
+        $q->execute($vals);
         return $q->rowCount() > 0;
+    }
+
+    /**
+     * Sonder-Packs beim Abruf von GET /sticker/me (deutsche Zeit, $today = Y-m-d):
+     * - Geburtstag: jüngster Geburtstag (manager.date_of_birth, 29.2. in Nicht-Schaltjahren am 28.2.) liegt heute oder
+     *   früher und ab birthday_since → Pack birthday:{Jahr}. Wer an dem Tag nicht online war, bekommt es beim nächsten
+     *   Login — auch in der nächsten Saison bzw. nach dem Einfrieren des Albums (dann ins aktive Album).
+     * - Weihnachten: nur wer vom 24. bis 26.12. online ist → Pack christmas:{Jahr}.
+     * Idempotent über source_key; fehlt die Migration (ENUM-Werte), passiert nichts.
+     */
+    private function grantSpecialStickerPacks(string $managerId, string $seasonId, string $today): void
+    {
+        $cfg = $this->stickerConfig();
+        [$year, $monthDay] = [(int) substr($today, 0, 4), substr($today, 5)];
+        try {
+            $bq = $this->con->prepare("SELECT date_of_birth FROM manager WHERE id = ?");
+            $bq->execute([$managerId]);
+            $dob = $bq->fetchColumn();
+            if ($dob) {
+                $birthday = function (int $y) use ($dob): string {
+                    $md = substr((string) $dob, 5, 5);
+                    if ($md === '02-29' && !checkdate(2, 29, $y)) $md = '02-28';
+                    return "$y-$md";
+                };
+                $last = $birthday($year) <= $today ? $year : $year - 1;
+                if ($birthday($last) >= $cfg['birthday_since']) {
+                    $this->grantStickerPack($managerId, $seasonId, 'birthday', "birthday:$last", null,
+                        $cfg['birthday_pack_size'], $cfg['birthday_guaranteed_new']);
+                }
+            }
+            if ($monthDay >= '12-24' && $monthDay <= '12-26') {
+                $this->grantStickerPack($managerId, $seasonId, 'christmas', "christmas:$year", null,
+                    $cfg['christmas_pack_size'], $cfg['christmas_guaranteed_new']);
+            }
+        } catch (\Throwable $e) {
+            // Migration 2026-09-29_sticker_pack_special.sql fehlt noch (source-ENUM) → keine Sonder-Packs
+        }
     }
 
     /**
@@ -101,6 +150,7 @@ trait StickerPackTrait
         // Tageswechsel nach deutscher Zeit (PHP-Default-Zeitzone des Servers ist nicht festgelegt)
         $today = (new DateTime('now', new DateTimeZone('Europe/Berlin')))->format('Y-m-d');
         $this->grantStickerPack($managerId, $seasonId, 'daily', "daily:{$today}", null, $this->stickerConfig()['daily_pack_size']);
+        $this->grantSpecialStickerPacks($managerId, $seasonId, $today);
 
         $packSql = fn(string $announced, string $club, string $kind = 'NULL') =>
             "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, $announced AS announced, $club AS club_id, $kind AS pack_kind, l.name AS league_name
