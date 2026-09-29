@@ -144,6 +144,17 @@ export class StickerShopComponent {
     }).catch(() => {});
   }
 
+  /**
+   * Euro-Angebote nach oben, Lukaten nach unten, sobald mit Lukaten nichts mehr kaufbar ist: Guthaben reicht nicht
+   * fürs günstigste Pack (oder keine Liga mit Sticker-Album → Lukaten-Käufe gar nicht möglich).
+   */
+  eurFirst = computed(() => {
+    if (this.loading()) return false;
+    if (!this.league()) return true;
+    const b = this.budget();
+    return b != null && b < Math.min(...LUKATEN_OFFERS.map(o => o.price));
+  });
+
   /** Wie viele Lukaten noch fehlen (0 = leistbar). */
   missingLukaten(o: ShopOffer): number {
     const b = this.budget();

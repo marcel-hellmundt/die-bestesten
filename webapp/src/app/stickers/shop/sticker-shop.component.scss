@@ -96,6 +96,9 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
     container: shelves / inline-size; // Angebots-Raster richtet sich nach der Spaltenbreite
 
     @media (max-width: $mobile-breakpoint) { gap: $space-8; }
+
+    // kein Lukaten-Pack mehr leistbar → Euro-Angebote oben
+    &--eur-first .shelf--lukaten { order: 1; }
   }
 }
 

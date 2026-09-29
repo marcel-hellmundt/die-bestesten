@@ -60,9 +60,10 @@
     </ol>
   </section>
 
-  <div class="shop__shelves">
+  <!-- Reihenfolge: Lukaten oben — reicht das Guthaben fürs günstigste Pack nicht mehr, Euro oben (eurFirst) -->
+  <div class="shop__shelves" [class.shop__shelves--eur-first]="eurFirst()">
   <!-- ── Lukaten ───────────────────────────────────────────────────────── -->
-  <section class="shelf">
+  <section class="shelf shelf--lukaten">
     <!-- Guthaben: breit in der rechten Spalte, schmaler hier über den Angeboten -->
     <div class="wallet-slot wallet-slot--inline">
       <ng-container *ngTemplateOutlet="walletTpl" />
