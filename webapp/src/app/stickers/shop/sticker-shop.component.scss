@@ -653,7 +653,8 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
     padding-top: 16%;
     gap: 4cqw;
     overflow: hidden;
-    mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 10px 100%;
+    // nur waagerecht kacheln — sonst zeichnet die nächste Kachel-Reihe bei gerader Lage (Hover) eine 1px-Linie unter die Zacken
+    mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / 10px 100% repeat-x;
 
     > :not(.mini-pack__art) { position: relative; z-index: 1; }
   }
@@ -675,7 +676,8 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
     top: 0;
     height: 13.5%;
     filter: brightness(0.92);
-    mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% / 10px 100%;
+    // nur waagerecht kacheln — sonst zeichnet die Kachel darüber bei gerader Lage (Hover) eine 1px-Linie über die Zacken
+    mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / 10px 100% repeat-x;
   }
 
   &__brand {
