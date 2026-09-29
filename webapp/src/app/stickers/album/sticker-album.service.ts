@@ -184,7 +184,8 @@ export class StickerAlbumService {
    * die ersten `guaranteed` Karten garantiert neu, mind. `holoMin` Holo, bei `clubId` nur Sticker dieses
    * Vereins, sonst Holo-Chancen) — nichts wird gespeichert; "Neu"/"Doppelt" relativ zur echten Sammlung `before`.
    */
-  randomPackCards(size: number, before: Uint16Array, opts: { guaranteed: number; holoMin?: number; clubId?: string | null }): PackCard[] {
+  randomPackCards(size: number, before: Uint16Array,
+                  opts: { guaranteed: number; holoMin?: number; epicMin?: number; clubId?: string | null }): PackCard[] {
     const all = this.stickers();
     const clubIdx = opts.clubId ? this.clubs().findIndex(c => c.id === opts.clubId) : -1;
     const stickers = clubIdx >= 0 ? all.filter(s => s.clubIdx === clubIdx) : all;
@@ -193,20 +194,27 @@ export class StickerAlbumService {
     const weights = stickerWeights(stickers.map(s => s.price), rules.rarityAlpha);
     const owned = new Uint8Array(stickers.length);
     stickers.forEach((s, i) => { if ((before[s.idx] ?? 0) > 0) owned[i] = 1; });
-    const draw = (onlyMissing: boolean): number => {
-      const total = weights.reduce((a, w, i) => a + (onlyMissing && owned[i] ? 0 : w), 0);
-      if (total <= 0) return draw(false); // nichts mehr fehlt → normal ziehen
+    // "episch oder besser" (Sonder-Packs: mind. epicMin davon, wie min_epic im Backend)
+    const isEpic = (i: number) => stickers[i].tier === 'epic' || stickers[i].tier === 'legendary';
+    const epicMin = stickers.some((_, i) => isEpic(i)) ? (opts.epicMin ?? 0) : 0;
+    const draw = (onlyMissing: boolean, onlyEpic = false): number => {
+      const ok = (i: number) => !(onlyMissing && owned[i]) && (!onlyEpic || isEpic(i));
+      const total = weights.reduce((a, w, i) => a + (ok(i) ? w : 0), 0);
+      if (total <= 0) return draw(false, onlyEpic); // nichts mehr fehlt → normal ziehen
       let r = Math.random() * total;
       for (let i = 0; i < weights.length; i++) {
-        if (onlyMissing && owned[i]) continue;
+        if (!ok(i)) continue;
         r -= weights[i];
         if (r <= 0) return i;
       }
       return weights.length - 1;
     };
     const draws: { sticker: Sticker; holo: StickerHolo | null }[] = [];
+    let epics = 0;
     for (let k = 0; k < size; k++) {
-      const i = draw(k < opts.guaranteed);
+      // Epic-Garantie: fehlen noch so viele epische, wie Plätze übrig sind → nur noch aus den epischen ziehen
+      const i = draw(k < opts.guaranteed, epicMin - epics >= size - k);
+      if (isEpic(i)) epics++;
       owned[i] = 1;
       const h = Math.random();
       const holo = h < rules.holoGoldChance ? 'gold' : h < rules.holoGoldChance + rules.holoSilverChance ? 'silver' : null;

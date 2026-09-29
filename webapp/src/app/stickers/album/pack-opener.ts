@@ -113,7 +113,7 @@ export class PackOpener {
     const before = this.album.collectionFrom(this.status.state()?.collection ?? []).counts;
     if (info.id === null) {
       const r = packDrawRules(info);
-      this.result.set({ test: this.album.randomPackCards(info.size, before, { guaranteed: r.guaranteed, holoMin: r.holoMin, clubId: info.clubId }), before });
+      this.result.set({ test: this.album.randomPackCards(info.size, before, { guaranteed: r.guaranteed, holoMin: r.holoMin, epicMin: r.epicMin, clubId: info.clubId }), before });
       this.dropChoice(info);
       return;
     }

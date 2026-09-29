@@ -25,6 +25,9 @@ trait StickerPackTrait
             'birthday_since'          => '2026-09-29', // erst Geburtstage ab Einführung — sonst gäbe es beim Start rückwirkend Packs für alle
             'christmas_pack_size'     => 5,       // 0 = aus
             'christmas_guaranteed_new' => 2,
+            // mind. so viele Karten "episch oder besser" (Gewichtungs-Marktwert > epic_min_price) je Pack-Quelle
+            'min_epic'                => ['birthday' => 1, 'christmas' => 1],
+            'epic_min_price'          => 3_500_000, // = DEFAULT_TIER_THRESHOLDS.epic im Frontend (album.model.ts)
             'guarantee_new'           => true,    // 1. Sticker jedes Packs garantiert neu (solange welche fehlen)
             'milestone_all_new'       => true,    // Meilenstein-Pack: alle Sticker garantiert neu
             'matchday_best_all_new'   => true,    // Spieltagsbester-Pack: alle Sticker garantiert neu
@@ -507,7 +510,7 @@ trait StickerPackTrait
     /**
      * Öffnet ein eigenes, ungeöffnetes Pack: würfelt die Karten serverseitig (Gewicht = Marktwert^-α;
      * garantiert neu, solange Sticker fehlen: bei Meilenstein-/Spieltagsbester-Packs alle Karten, sonst die
-     * erste; Holo je Karte) und speichert sie.
+     * erste; Sonder-Packs mind. min_epic Karten "episch oder besser"; Holo je Karte) und speichert sie.
      * Rückgabe ['error' => HTTP-Code, 'message'] oder ['pack' => …, 'cards' => [{key, holo, is_new}]].
      */
     public function openStickerPack(string $managerId, string $packId): array
@@ -552,22 +555,34 @@ trait StickerPackTrait
         $total = array_sum($weights);
         $rand = fn(): float => random_int(0, PHP_INT_MAX - 1) / PHP_INT_MAX;
 
-        $drawAny = function () use ($weights, $total, $rand): int {
-            $r = $rand() * $total;
-            foreach ($weights as $i => $w) { $r -= $w; if ($r < 0) return $i; }
-            return count($weights) - 1;
-        };
-        $drawMissing = function () use ($weights, $stickers, &$owned, $rand, $drawAny): int {
-            $missingTotal = 0.0;
-            foreach ($weights as $i => $w) if (!isset($owned[$stickers[$i]['id']])) $missingTotal += $w;
-            if ($missingTotal <= 0) return $drawAny();
-            $r = $rand() * $missingTotal;
+        // Epische (oder bessere) Sticker — für Packs mit Garantie "mind. N episch" (Sonder-Packs)
+        $isEpic = fn(int $i): bool => (int) $stickers[$i]['price'] > $cfg['epic_min_price'];
+        $minEpic = (int) ($cfg['min_epic'][$pack['source']] ?? 0);
+        $hasEpic = $minEpic > 0 && array_filter(array_keys($stickers), $isEpic);
+
+        $drawAny = function (bool $onlyEpic = false) use ($weights, $total, $rand, $isEpic): int {
+            $sum = $onlyEpic ? 0.0 : $total;
+            if ($onlyEpic) foreach ($weights as $i => $w) if ($isEpic($i)) $sum += $w;
+            $r = $rand() * $sum;
             foreach ($weights as $i => $w) {
-                if (isset($owned[$stickers[$i]['id']])) continue;
+                if ($onlyEpic && !$isEpic($i)) continue;
                 $r -= $w;
                 if ($r < 0) return $i;
             }
-            return $drawAny();
+            return count($weights) - 1;
+        };
+        $drawMissing = function (bool $onlyEpic = false) use ($weights, $stickers, &$owned, $rand, $drawAny, $isEpic): int {
+            $ok = fn(int $i): bool => !isset($owned[$stickers[$i]['id']]) && (!$onlyEpic || $isEpic($i));
+            $missingTotal = 0.0;
+            foreach ($weights as $i => $w) if ($ok($i)) $missingTotal += $w;
+            if ($missingTotal <= 0) return $drawAny($onlyEpic);
+            $r = $rand() * $missingTotal;
+            foreach ($weights as $i => $w) {
+                if (!$ok($i)) continue;
+                $r -= $w;
+                if ($r < 0) return $i;
+            }
+            return $drawAny($onlyEpic);
         };
 
         // Wie viele Karten dieses Packs sind garantiert neu? Shop-Packs: je Angebot (guaranteed_new),
@@ -579,8 +594,13 @@ trait StickerPackTrait
             : ($allNew ? (int) $pack['size'] : ($cfg['guarantee_new'] ? 1 : 0));
 
         $cards = [];
-        for ($k = 0; $k < (int) $pack['size']; $k++) {
-            $i = $k < $guaranteed ? $drawMissing() : $drawAny();
+        $epics = 0;
+        $size = (int) $pack['size'];
+        for ($k = 0; $k < $size; $k++) {
+            // Epic-Garantie: fehlen noch so viele epische Karten, wie Plätze übrig sind → nur noch aus den epischen ziehen
+            $forceEpic = $hasEpic && $minEpic - $epics >= $size - $k;
+            $i = $k < $guaranteed ? $drawMissing($forceEpic) : $drawAny($forceEpic);
+            if ($isEpic($i)) $epics++;
             $sticker = $stickers[$i];
             $isNew = !isset($owned[$sticker['id']]);
             $owned[$sticker['id']] = true;

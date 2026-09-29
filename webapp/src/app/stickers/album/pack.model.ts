@@ -38,9 +38,9 @@ export function packInfo(p: StickerPack): PackInfo {
  * Sonder-Packs (Geburtstag, Weihnachten): Größe + garantiert neue Karten — müssen zu stickerConfig() im Backend
  * passen (birthday_/christmas_pack_size, *_guaranteed_new; vorläufige Werte).
  */
-export const SPECIAL_PACKS: Record<'birthday' | 'christmas', { size: number; guaranteedNew: number }> = {
-  birthday:  { size: 5, guaranteedNew: 2 },
-  christmas: { size: 5, guaranteedNew: 2 },
+export const SPECIAL_PACKS: Record<'birthday' | 'christmas', { size: number; guaranteedNew: number; epicMin: number }> = {
+  birthday:  { size: 5, guaranteedNew: 2, epicMin: 1 },   // epicMin = mind. so viele Karten "episch oder besser" (min_epic)
+  christmas: { size: 5, guaranteedNew: 2, epicMin: 1 },
 };
 
 /** Größe + Garantie je Pack-Art nach den echten Regeln (für Test-Packs und die Pack-Beschriftung). */
@@ -55,17 +55,18 @@ export function packRules(source: StickerPackSource): { size: number; allNew: bo
   }
 }
 
-/** Ziehregeln eines Packs (Test-Packs im Browser, Beschriftung): garantiert neu, mind. Holo, nur ein Verein. */
-export function packDrawRules(p: PackInfo): { size: number; guaranteed: number; holoMin: number } {
+/** Ziehregeln eines Packs (Test-Packs im Browser, Beschriftung): garantiert neu, mind. Holo, mind. episch, nur ein Verein. */
+export function packDrawRules(p: PackInfo): { size: number; guaranteed: number; holoMin: number; epicMin: number } {
   if (p.kind) {
     const k = PACK_KINDS[p.kind];
-    return { size: k.size, guaranteed: k.guaranteedNew, holoMin: k.holoMin };
+    return { size: k.size, guaranteed: k.guaranteedNew, holoMin: k.holoMin, epicMin: 0 };
   }
   if (p.source === 'birthday' || p.source === 'christmas') {
-    return { size: p.size, guaranteed: Math.min(SPECIAL_PACKS[p.source].guaranteedNew, p.size), holoMin: 0 };
+    const s = SPECIAL_PACKS[p.source];
+    return { size: p.size, guaranteed: Math.min(s.guaranteedNew, p.size), holoMin: 0, epicMin: Math.min(s.epicMin, p.size) };
   }
   const r = packRules(p.source);
-  return { size: p.size, guaranteed: r.allNew ? p.size : (DEFAULT_SHARED_PARAMS.guaranteeNew ? 1 : 0), holoMin: 0 };
+  return { size: p.size, guaranteed: r.allNew ? p.size : (DEFAULT_SHARED_PARAMS.guaranteeNew ? 1 : 0), holoMin: 0, epicMin: 0 };
 }
 
 /** Beschriftung der Pack-Vorderseite: kleine Art-Zeile + große Überschrift. */
@@ -81,11 +82,12 @@ export function packFace(p: PackInfo): { kind: string; headline: string } {
   }
 }
 
-/** Anzahl-Zeile: "3 Sticker", "5 neue Sticker" (alle garantiert neu) bzw. "3 Sticker · 1 Holo" */
+/** Anzahl-Zeile: "3 Sticker", "5 neue Sticker" (alle garantiert neu), "3 Sticker · 1 Holo" bzw. "5 Sticker · 1 episch" */
 export function packCountLabel(p: PackInfo): string {
   const r = packDrawRules(p);
   const base = `${p.size} ${r.guaranteed >= p.size ? 'neue ' : ''}Sticker`;
-  return r.holoMin > 0 ? `${base} · ${r.holoMin} Holo` : base;
+  if (r.holoMin > 0) return `${base} · ${r.holoMin} Holo`;
+  return r.epicMin > 0 ? `${base} · ${r.epicMin} episch` : base;
 }
 
 /** Design-Schlüssel eines Packs: Pack-Art bei Shop-Packs, sonst die Quelle (für Farbe + Bild, siehe PACK_ART) */

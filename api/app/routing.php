@@ -1418,7 +1418,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/sticker/pack/:id/open',
-                        'description' => 'Eigenes, ungeöffnetes Pack öffnen: Karten werden jetzt serverseitig gewürfelt und gespeichert (garantiert neu: Meilenstein/Spieltagsbester alle, Shop-Packs laut sticker_pack.guaranteed_new, sonst die 1.; Vereins-Pack mit club_id nur aus diesem Verein; sticker_pack.holo_min (Special Pack) = so viele Karten werden mindestens Holo, Gold-Anteil wie bei den normalen Holo-Chancen) → {status, pack:{id,source,size}, cards:[{key,holo:"silver"|"gold"|null,is_new}]}; 404 fremdes/unbekanntes Pack, 409 bereits geöffnet (auch bei gleichzeitigem Doppelklick) oder Album der Saison fehlt — Auth',
+                        'description' => 'Eigenes, ungeöffnetes Pack öffnen: Karten werden jetzt serverseitig gewürfelt und gespeichert (garantiert neu: Meilenstein/Spieltagsbester alle, Shop-Packs laut sticker_pack.guaranteed_new, sonst die 1.; Vereins-Pack mit club_id nur aus diesem Verein; sticker_pack.holo_min (Special Pack) = so viele Karten werden mindestens Holo, Gold-Anteil wie bei den normalen Holo-Chancen; Sonder-Packs birthday/christmas: sticker_pack.guaranteed_new garantiert neu und mind. 1 Karte "episch oder besser" (Gewichtungs-Marktwert > 3,5 Mio, stickerConfig() min_epic) — fehlt sie bis zu den letzten Plätzen, werden diese nur aus epischen gezogen) → {status, pack:{id,source,size}, cards:[{key,holo:"silver"|"gold"|null,is_new}]}; 404 fremdes/unbekanntes Pack, 409 bereits geöffnet (auch bei gleichzeitigem Doppelklick) oder Album der Saison fehlt — Auth',
                         'path_params' => [':id' => 'UUID des Packs'],
                     ],
                     [

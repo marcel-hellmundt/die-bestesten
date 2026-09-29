@@ -38,7 +38,7 @@
                 @if (artOf(c); as art) { <img class="pack__art" [class.pack__art--center]="art.place === 'center'" [src]="art.src" [style.mix-blend-mode]="art.blend ?? 'normal'" alt="" /> }
                 <span class="pack__brand">Die Klebrigsten</span>
                 <span class="pack__kind">{{ f.kind }}</span>
-                <span class="pack__headline">{{ f.headline }}</span>
+                <span class="pack__headline" [class.pack__headline--long]="f.headline.length > 10">{{ f.headline }}</span>
                 <span class="pack__count">{{ countLabel(c) }}</span>
                 @if (c.leagueName) { <span class="pack__league">{{ c.leagueName }}</span> }
               </span>
@@ -71,7 +71,7 @@
           @if (artOf(p); as art) { <img class="pack__art" [class.pack__art--center]="art.place === 'center'" [src]="art.src" [style.mix-blend-mode]="art.blend ?? 'normal'" alt="" /> }
           <span class="pack__brand">Die Klebrigsten</span>
           <span class="pack__kind">{{ f.kind }}</span>
-          <span class="pack__headline">{{ f.headline }}</span>
+          <span class="pack__headline" [class.pack__headline--long]="f.headline.length > 10">{{ f.headline }}</span>
           <span class="pack__count">{{ countLabel(p) }}</span>
           @if (p.leagueName) { <span class="pack__league">{{ p.leagueName }}</span> }
         </span>
