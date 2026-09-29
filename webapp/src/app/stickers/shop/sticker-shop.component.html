@@ -260,15 +260,23 @@
       <h2 class="admin-panel__title">Lukaten-Käufe</h2>
     </div>
     <div class="admin-panel__sums">
-      <span><b>{{ lukatenPurchases().length }}</b> {{ lukatenPurchases().length === 1 ? 'Pack' : 'Packs' }}</span>
+      <span><b>{{ lukatenBooked().length }}</b> {{ lukatenBooked().length === 1 ? 'Pack' : 'Packs' }}</span>
       <span><b>{{ lukatenTotal() }}</b> Lukaten</span>
+      @if (lukatenBooked().length < lukatenPurchases().length) {
+        <span>{{ lukatenPurchases().length - lukatenBooked().length }} nicht verbucht</span>
+      }
     </div>
 
-    @for (p of lukatenPurchases(); track p.pack_id) {
+    @for (p of lukatenPurchases(); track $index) {
       <article class="purchase purchase--lukaten">
         <div class="purchase__head">
           <b>{{ p.manager_name }}</b>
-          <span class="purchase__price">{{ p.price }} Lukaten</span>
+          @if (p.booked) {
+            <span class="purchase__price">{{ p.price }} Lukaten</span>
+          } @else {
+            <!-- Pack ohne Buchung in sticker_shop_purchase: zählt nicht zur Summe/zum Budget -->
+            <span class="status-pill status-pill--cancelled" title="Keine Lukaten-Buchung zu diesem Pack — nicht im Budget abgezogen">nicht verbucht</span>
+          }
         </div>
         <div class="purchase__line">
           {{ p.offer_name }}@if (p.club_name) { · {{ p.club_name }} }

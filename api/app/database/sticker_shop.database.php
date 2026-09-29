@@ -218,67 +218,91 @@ trait StickerShopTrait
     }
 
     /**
-     * GET /sticker/shop/lukaten — alle Lukaten-Käufe der aktiven Saison (Admin), neueste zuerst. Die Packs liegen global
-     * (sticker_pack, source_key shop:l-…:{purchase_id}), der bezahlte Preis in der Liga-DB der jeweiligen Hauptliga
-     * (sticker_shop_purchase) — fehlt die Tabelle/Zeile dort, gilt der aktuelle Angebotspreis.
+     * GET /sticker/shop/lukaten — alle Lukaten-Käufe der aktiven Saison (Admin), neueste zuerst. Maßgeblich sind die
+     * Buchungen sticker_shop_purchase in den Liga-DBs (dieselben Zeilen, die das Lukaten-Budget mindern und in der
+     * Schatzkammer als "Shop" zählen) — die Details (Pack-Art, Verein, geöffnet) kommen aus dem zugehörigen
+     * sticker_pack. Shop-Packs (source_key shop:l-…) ohne Buchung erscheinen mit booked=false und price=null und
+     * zählen nicht zur Summe (Hinweis auf eine Unstimmigkeit). total = Summe der Buchungen.
      */
     public function getStickerLukatenPurchases(): array
     {
         $seasonId = $this->getActiveSeasonId();
         if ($seasonId === null) return ['purchases' => [], 'total' => 0];
+
+        // Shop-Packs der Saison (global) — Details je Pack
         try {
             $q = $this->con->prepare(
-                "SELECT sp.id AS pack_id, sp.manager_id, m.manager_name, sp.source_key, sp.pack_kind, sp.club_id,
-                        c.name AS club_name, sp.league_id, l.name AS league_name, l.db_name, sp.created_at, sp.opened_at
+                "SELECT sp.id AS pack_id, sp.manager_id, sp.source_key, sp.pack_kind, sp.club_id, c.name AS club_name,
+                        l.name AS league_name, sp.created_at, sp.opened_at
                  FROM sticker_pack sp
-                 JOIN manager m ON m.id = sp.manager_id
                  LEFT JOIN club c ON c.id = sp.club_id
                  LEFT JOIN league l ON l.id = sp.league_id
-                 WHERE sp.season_id = ? AND sp.source = 'shop' AND sp.source_key LIKE 'shop:l-%'
-                 ORDER BY sp.created_at DESC"
+                 WHERE sp.season_id = ? AND sp.source = 'shop' AND sp.source_key LIKE 'shop:l-%'"
             );
             $q->execute([$seasonId]);
-            $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+            $packs = [];
+            foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $p) $packs[$p['pack_id']] = $p;
         } catch (\Throwable $e) {
-            return ['purchases' => [], 'total' => 0]; // Shop-Migration fehlt
+            $packs = []; // Shop-Migration fehlt
         }
 
-        // bezahlte Preise je Liga-DB nachschlagen (eine Abfrage je Liga)
-        $prices = [];
-        $byLeague = [];
-        foreach ($rows as $r) {
-            if (!$r['league_id'] || !$r['db_name']) continue;
-            $byLeague[$r['league_id']] ??= ['id' => $r['league_id'], 'db_name' => $r['db_name'], 'packs' => []];
-            $byLeague[$r['league_id']]['packs'][] = $r['pack_id'];
-        }
-        foreach ($byLeague as $league) {
+        // Buchungen aus allen Liga-DBs (fehlt die Tabelle in einer Liga: überspringen)
+        $bookings = [];
+        foreach ($this->con->query("SELECT id, name, db_name FROM league")->fetchAll(PDO::FETCH_ASSOC) as $league) {
+            if (!$league['db_name']) continue;
             try {
-                $db = $this->stickerShopConnection(['id' => $league['id'], 'db_name' => $league['db_name']]);
-                $in = implode(',', array_fill(0, count($league['packs']), '?'));
-                $pq = $db->prepare("SELECT pack_id, price FROM sticker_shop_purchase WHERE pack_id IN ($in)");
-                $pq->execute($league['packs']);
-                foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) $prices[$p['pack_id']] = (int) $p['price'];
+                $db = $this->stickerShopConnection($league);
+                $bq = $db->prepare(
+                    "SELECT manager_id, offer_key, price, pack_id, created_at FROM sticker_shop_purchase WHERE season_id = ?"
+                );
+                $bq->execute([$seasonId]);
+                foreach ($bq->fetchAll(PDO::FETCH_ASSOC) as $b) $bookings[] = $b + ['league_name' => $league['name']];
             } catch (\Throwable $e) {
-                // Tabelle fehlt in dieser Liga → Angebotspreis
+                // keine Shop-Tabelle in dieser Liga
             }
         }
 
         $offers = $this->stickerShopOffers();
         $kinds  = $this->stickerPackKinds();
-        $total  = 0;
-        $purchases = array_map(function ($r) use ($offers, $kinds, $prices, &$total) {
-            $offerKey = explode(':', $r['source_key'])[1] ?? '';
-            $price = $prices[$r['pack_id']] ?? ($offers[$offerKey]['price'] ?? 0);
-            $total += $price;
+        $entry = function (?array $pack, ?array $booking) use ($offers, $kinds): array {
+            $offerKey = $booking['offer_key'] ?? (explode(':', $pack['source_key'] ?? '')[1] ?? '');
+            $kind = $pack['pack_kind'] ?? ($offers[$offerKey]['kind'] ?? null);
             return [
-                'pack_id' => $r['pack_id'], 'manager_id' => $r['manager_id'], 'manager_name' => $r['manager_name'],
-                'offer_key' => $offerKey, 'pack_kind' => $r['pack_kind'],
-                'offer_name' => $kinds[$r['pack_kind']]['name'] ?? ($offers[$offerKey]['name'] ?? $offerKey),
-                'club_id' => $r['club_id'], 'club_name' => $r['club_name'],
-                'price' => $price, 'league_name' => $r['league_name'],
-                'created_at' => $r['created_at'], 'opened' => $r['opened_at'] !== null,
+                'pack_id' => $pack['pack_id'] ?? ($booking['pack_id'] ?? null),
+                'manager_id' => $booking['manager_id'] ?? $pack['manager_id'],
+                'offer_key' => $offerKey, 'pack_kind' => $kind,
+                'offer_name' => $kinds[$kind]['name'] ?? ($offers[$offerKey]['name'] ?? $offerKey),
+                'club_id' => $pack['club_id'] ?? null, 'club_name' => $pack['club_name'] ?? null,
+                'price' => $booking ? (int) $booking['price'] : null,
+                'booked' => $booking !== null,
+                'league_name' => $booking['league_name'] ?? ($pack['league_name'] ?? null),
+                'created_at' => $booking['created_at'] ?? $pack['created_at'],
+                'opened' => $pack !== null && $pack['opened_at'] !== null,
             ];
-        }, $rows);
+        };
+
+        $purchases = [];
+        $total = 0;
+        foreach ($bookings as $b) {
+            $pack = $b['pack_id'] !== null ? ($packs[$b['pack_id']] ?? null) : null;
+            if ($pack) unset($packs[$b['pack_id']]);
+            $purchases[] = $entry($pack, $b);
+            $total += (int) $b['price'];
+        }
+        foreach ($packs as $pack) $purchases[] = $entry($pack, null); // Pack ohne Buchung
+
+        // Managernamen nachladen, neueste zuerst
+        $ids = array_values(array_unique(array_column($purchases, 'manager_id')));
+        $names = [];
+        if ($ids) {
+            $nq = $this->con->prepare('SELECT id, manager_name FROM manager WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')');
+            $nq->execute($ids);
+            $names = $nq->fetchAll(PDO::FETCH_KEY_PAIR);
+        }
+        foreach ($purchases as &$p) $p['manager_name'] = $names[$p['manager_id']] ?? '?';
+        unset($p);
+        usort($purchases, fn($a, $b) => strcmp((string) $b['created_at'], (string) $a['created_at']));
+
         return ['purchases' => $purchases, 'total' => $total];
     }
 

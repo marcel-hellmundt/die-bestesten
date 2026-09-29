@@ -48,7 +48,7 @@ interface EurPurchaseRow {
 
 /** Admin-Liste GET /sticker/shop/lukaten — Lukaten-Käufe sind final (keine Bestätigung/kein Storno). */
 interface LukatenPurchaseRow {
-  pack_id: string;
+  pack_id: string | null;
   manager_id: string;
   manager_name: string;
   offer_key: string;
@@ -56,7 +56,8 @@ interface LukatenPurchaseRow {
   offer_name: string;
   club_id: string | null;
   club_name: string | null;
-  price: number;
+  price: number | null;     // bezahlte Lukaten (Buchung) — null bei Pack ohne Buchung
+  booked: boolean;          // false = Shop-Pack ohne Buchung in sticker_shop_purchase (Unstimmigkeit)
   league_name: string | null;
   created_at: string;
   opened: boolean;
@@ -295,6 +296,7 @@ export class StickerShopComponent {
   ));
   lukatenPurchases = computed(() => this.lukatenData()?.purchases ?? []);
   lukatenTotal = computed(() => this.lukatenData()?.total ?? 0);
+  lukatenBooked = computed(() => this.lukatenPurchases().filter(p => p.booked));
 
   /** Guthaben nach dem Kauf (nur Lukaten). */
   budgetAfter = computed(() => {

@@ -1389,7 +1389,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/shop/lukaten',
-                        'description' => 'Alle Lukaten-Käufe der aktiven Saison (neueste zuerst; final, keine Bestätigung/kein Storno) → {purchases:[{pack_id,manager_id,manager_name,offer_key,pack_kind,offer_name,club_id,club_name,price,league_name,created_at,opened}], total} — Pack aus sticker_pack (source_key shop:l-…), price = bezahlte Lukaten aus sticker_shop_purchase der Hauptliga (Fallback: aktueller Angebotspreis), total = Summe — Admin',
+                        'description' => 'Alle Lukaten-Käufe der aktiven Saison (neueste zuerst; final, keine Bestätigung/kein Storno) → {purchases:[{pack_id,manager_id,manager_name,offer_key,pack_kind,offer_name,club_id,club_name,price,booked,league_name,created_at,opened}], total} — maßgeblich sind die Buchungen sticker_shop_purchase aller Liga-DBs (dieselben Zeilen wie Lukaten-Budget und Schatzkammer-"Shop"), Details (Pack-Art, Verein, geöffnet) aus sticker_pack; Shop-Packs (source_key shop:l-…) ohne Buchung erscheinen mit booked=false, price=null und zählen nicht zu total — Admin',
                     ],
                     [
                         'method' => 'PATCH',
