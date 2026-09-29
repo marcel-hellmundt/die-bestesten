@@ -51,9 +51,16 @@
       @if (rarest(); as r) {
         <section class="block highlights__rarest">
           <h3 class="block__title">Seltenste Karte</h3>
-          <button class="rarest" type="button" (click)="open.emit(r.sticker)" [attr.aria-label]="r.sticker.displayname">
-            <app-sticker-card [data]="r.card" />
-          </button>
+          <div class="rarest-wrap">
+            <button class="rarest" type="button" (click)="open.emit(r.sticker)" [attr.aria-label]="r.sticker.displayname">
+              <app-sticker-card [data]="r.card" />
+            </button>
+            <!-- Hover (Desktop): nur die Chance, genau diese Karte zu ziehen -->
+            <div class="rarest-tip" role="tooltip">
+              <span class="rarest-tip__odds">{{ r.odds }}</span>
+              <span class="rarest-tip__hint">{{ r.percent }} je gezogenem Sticker</span>
+            </div>
+          </div>
           <span class="rarest__label">{{ r.label }}</span>
         </section>
       }

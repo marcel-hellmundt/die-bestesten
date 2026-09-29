@@ -6,6 +6,20 @@ import { AlbumClub, DEFAULT_SHARED_PARAMS, Sticker, TIERS, TIER_LABEL, isLight }
 import { Collection, StickerAlbumService } from './sticker-album.service';
 import { stickerWeights } from '../sticker-sim';
 
+interface RarestCard {
+  sticker: Sticker;
+  card: StickerCardData;
+  label: string;          // Seltenheit (+ Holo-Variante)
+  odds: string;           // Chance, sie zu ziehen: "1 : 123.456"
+  percent: string;        // dieselbe Chance in Prozent: "0,00081 %"
+}
+
+/** Prozent mit 2 signifikanten Stellen, auch bei sehr kleinen Werten (0,00081 %) */
+function formatPercent(p: number): string {
+  if (!(p > 0)) return '0 %';
+  return p.toLocaleString('de-DE', { maximumSignificantDigits: 2 }) + ' %';
+}
+
 /**
  * Erste Seite des Sammelalbums: Gesamtfortschritt, Holo-/Doppelte-Zähler, zuletzt eingeklebt (24 h) + seltenste
  * Karte, Vereins-Kacheln.
@@ -95,7 +109,7 @@ export class AlbumOverviewComponent {
    * Öffnen) × Chance der besten eigenen Variante (Holo Gold/Silber) — eine Holo-Karte schlägt so fast immer die
    * Normalen; null ohne Sammlung.
    */
-  rarest = computed<{ sticker: Sticker; card: StickerCardData; label: string } | null>(() => {
+  rarest = computed<RarestCard | null>(() => {
     const col = this.collection();
     const stickers = this.album.stickers();
     const rules = DEFAULT_SHARED_PARAMS;
@@ -113,6 +127,17 @@ export class AlbumOverviewComponent {
     const holo = col.holo[best.idx];
     const label = [TIER_LABEL[best.tier], holo === 'gold' ? 'Holo Gold' : holo === 'silver' ? 'Holo Silber' : null]
       .filter(Boolean).join(' · ');
-    return { sticker: best, card: this.album.cardData(best, holo), label };
+    // Chance, dass ein gezogener Sticker genau diese Karte in dieser Variante ist (normal: ohne Holo-Anteil)
+    const variant = holo === 'gold' ? rules.holoGoldChance
+      : holo === 'silver' ? rules.holoSilverChance
+      : 1 - rules.holoSilverChance - rules.holoGoldChance;
+    const chance = weights[best.idx] * variant;
+    return {
+      sticker: best,
+      card: this.album.cardData(best, holo),
+      label,
+      odds: chance > 0 ? '1 : ' + Math.round(1 / chance).toLocaleString('de-DE') : '—',
+      percent: formatPercent(chance * 100),
+    };
   });
 }
