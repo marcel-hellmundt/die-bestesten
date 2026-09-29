@@ -104,8 +104,9 @@ trait StickerPackTrait
     /**
      * Sonder-Packs beim Abruf von GET /sticker/me (deutsche Zeit, $today = Y-m-d):
      * - Geburtstag: jüngster Geburtstag (manager.date_of_birth, 29.2. in Nicht-Schaltjahren am 28.2.) liegt heute oder
-     *   früher und ab birthday_since → Pack birthday:{Jahr}. Wer an dem Tag nicht online war, bekommt es beim nächsten
-     *   Login — auch in der nächsten Saison bzw. nach dem Einfrieren des Albums (dann ins aktive Album).
+     *   früher, innerhalb der aktiven Saison (ab season.start_date) und ab birthday_since → Pack birthday:{Jahr}. Wer an
+     *   dem Tag nicht online war, bekommt es beim nächsten Login, solange dieselbe Saison läuft (Geburtstage vor dem
+     *   Einfrieren des Albums am 1.9. werden dann nachgeholt); nach dem Saisonwechsel verfällt es.
      * - Weihnachten: nur wer vom 24. bis 26.12. online ist → Pack christmas:{Jahr}.
      * Idempotent über source_key; fehlt die Migration (ENUM-Werte), passiert nichts.
      */
@@ -124,7 +125,12 @@ trait StickerPackTrait
                     return "$y-$md";
                 };
                 $last = $birthday($year) <= $today ? $year : $year - 1;
-                if ($birthday($last) >= $cfg['birthday_since']) {
+                // nur Geburtstage der aktiven Saison (ab deren Start, z.B. 1.7.) — ein Juni-Geburtstag verfällt mit dem
+                // Saisonwechsel; Juli/August-Geburtstage warten, bis das Album (1.9.) eingefroren ist
+                $sq = $this->con->prepare("SELECT start_date FROM season WHERE id = ?");
+                $sq->execute([$seasonId]);
+                $from = max($cfg['birthday_since'], (string) $sq->fetchColumn());
+                if ($birthday($last) >= $from) {
                     $this->grantStickerPack($managerId, $seasonId, 'birthday', "birthday:$last", null,
                         $cfg['birthday_pack_size'], $cfg['birthday_guaranteed_new']);
                 }
