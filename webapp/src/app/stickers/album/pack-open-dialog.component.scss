@@ -478,6 +478,9 @@ $pack-text-always-white: true;
   justify-content: center;
   gap: 16px;
   width: 100%;
+
+  // Big Pack (7 Karten): 4 + 3 statt 3 + 3 + 1
+  &--four .pull { width: min(200px, calc((100% - 48px) / 4)); }
 }
 
 // Karte: fliegt verdeckt vom Pack an ihren Platz (Web Animations im TS, deal()), dreht sich per Klick um

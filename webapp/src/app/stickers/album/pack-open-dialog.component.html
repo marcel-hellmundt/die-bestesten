@@ -90,7 +90,7 @@
       </div>
     } @else {
       <!-- Karten fliegen verdeckt aus dem Pack an ihren Platz (deal() im TS) und bleiben verdeckt (pull--hidden), bis sie angeklickt werden -->
-      <div class="cards">
+      <div class="cards" [class.cards--four]="(cards()?.length ?? 0) > 6">
         @for (c of cards(); track $index) {
           <button class="pull" type="button" [class.pull--hidden]="isHidden($index)"
                   (click)="onPull(c, $index)" [attr.aria-label]="isHidden($index) ? 'Karte umdrehen' : c.sticker.displayname">
