@@ -102,9 +102,9 @@
           </button>
         }
       </div>
-      @if (flipped().size < (cards()?.length ?? 0)) {
-        <p class="hint actions--after-reveal" [style.animation-delay]="revealTotal() + 'ms'">Karte antippen zum Umdrehen</p>
-      }
+      <!-- bleibt im Layout (nur unsichtbar), sonst rutscht der zentrierte Dialog beim letzten Umdrehen nach unten -->
+      <p class="hint actions--after-reveal" [class.hint--done]="flipped().size >= (cards()?.length ?? 0)"
+         [style.animation-delay]="revealTotal() + 'ms'">Karte antippen zum Umdrehen</p>
       <div class="actions actions--after-reveal" [style.animation-delay]="revealTotal() + 'ms'">
         @if (remaining() > 0) {
           <button class="btn btn-primary" type="button" [disabled]="busy()" (click)="next.emit()">
