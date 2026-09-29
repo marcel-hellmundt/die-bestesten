@@ -41,7 +41,7 @@ export class AlbumOverviewComponent {
       duplicates: pulled - have,
       pct: stickers.length ? have / stickers.length : 0,
       clubsComplete,
-      tiers: TIERS.map(t => ({ label: TIER_LABEL[t], ...tiers[t] })),
+      tiers: TIERS.map(t => ({ key: t, label: TIER_LABEL[t], ...tiers[t] })),
     };
   });
 

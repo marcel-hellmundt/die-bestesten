@@ -101,14 +101,43 @@
 
 .tiers {
   display: flex;
-  flex-wrap: wrap;
-  gap: $space-2 $space-4;
+  flex-direction: column;
+  gap: $space-2;
   margin-top: $space-3;
+}
+
+// Label + Zahl in einer Zeile, darunter ein dünner Balken in der Seltenheitsfarbe
+.tier {
+  --tier: #9ca3af;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 3px;
   font-size: $font-xs;
-  color: $color-text-muted;
   font-variant-numeric: tabular-nums;
 
-  b { color: $color-text; }
+  &--common    { --tier: #15803d; }
+  &--rare      { --tier: #eab308; }
+  &--epic      { --tier: #dc2626; }
+  &--legendary { --tier: #9333ea; }
+
+  &__label { font-weight: $font-weight-semibold; }
+  &__count { color: $color-text-muted; }
+
+  &__bar {
+    grid-column: 1 / -1;
+    height: 5px;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--tier);
+      transition: width $transition-normal;
+    }
+  }
 }
 
 .block {

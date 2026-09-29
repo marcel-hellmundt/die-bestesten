@@ -18,9 +18,14 @@
       <div class="kpi kpi--gold"><span class="kpi__value">{{ col.holoGold }}</span><span class="kpi__label">Holo Gold</span></div>
     </section>
 
+    <!-- Fortschritt je Seltenheit: kleine Balken untereinander, Farbe wie auf den Karten -->
     <section class="tiers">
-      @for (tier of t.tiers; track tier.label) {
-        <span class="tiers__item"><b>{{ tier.label }}</b> {{ tier.have }}/{{ tier.total }}</span>
+      @for (tier of t.tiers; track tier.key) {
+        <div class="tier" [class]="'tier--' + tier.key">
+          <span class="tier__label">{{ tier.label }}</span>
+          <span class="tier__count">{{ tier.have }}/{{ tier.total }}</span>
+          <span class="tier__bar"><span [style.width.%]="tier.total ? (tier.have / tier.total) * 100 : 0"></span></span>
+        </div>
       }
     </section>
   </div>
