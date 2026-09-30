@@ -21,6 +21,8 @@
   --color-contrast-bg: #111827;
   --color-contrast-text: #ffffff;
   --color-pitch: #05c46b;
+  --color-own-bg: #ffffc1;
+  --color-own-border: #e6e600;
   --grade-unset: #dfe6e9;
 }
 
@@ -43,5 +45,7 @@
   --color-contrast-bg: #e7e9ee;
   --color-contrast-text: #111827;
   --color-pitch: #218c74;  // gedeckter als das Light-Grün, sonst zu grell auf dunklem Grund
+  --color-own-bg: #1b2a45;       // dunkles Blau statt Hellgelb
+  --color-own-border: #3867d6;
   --grade-unset: #3a3f47;
 }

@@ -28,6 +28,9 @@ $color-contrast-bg: var(--color-contrast-bg);
 $color-contrast-text: var(--color-contrast-text);
 // Rasenfarbe des Spielfelds (Aufstellung, H2H, Beste Elf)
 $color-pitch: var(--color-pitch);
+// Hervorhebung "Spieler im eigenen Team" (z.B. Elf des Tages)
+$color-own-bg: var(--color-own-bg);
+$color-own-border: var(--color-own-border);
 
 // Spacing scale
 $space-1: 4px;
