@@ -1,22 +1,67 @@
 <section class="settings-section">
   <div class="section-header-row"><h2 class="section-header">Erscheinung</h2></div>
-  <p class="section-desc">Gilt nur für dieses Gerät.</p>
+  <p class="section-desc">Wie die App auf diesem Gerät aussieht — jedes Gerät merkt sich seine eigene Wahl.</p>
 
-  <div class="theme-switch" role="radiogroup" aria-label="Erscheinungsbild">
+  <div class="theme-cards" role="radiogroup" aria-label="Erscheinungsbild">
     @for (opt of options; track opt.value) {
+      @let active = themeSvc.preference() === opt.value;
       <button type="button"
-              class="theme-switch__option"
+              class="theme-card"
               role="radio"
-              [class.theme-switch__option--active]="themeSvc.preference() === opt.value"
-              [attr.aria-checked]="themeSvc.preference() === opt.value"
+              [class.theme-card--active]="active"
+              [attr.aria-checked]="active"
               (click)="themeSvc.setPreference(opt.value)">
-        <app-icon [name]="opt.icon" />
-        {{ opt.label }}
+        <span class="theme-card__preview">
+          @if (opt.value === 'system') {
+            <span class="mock-layer mock-layer--light"><ng-container *ngTemplateOutlet="mock" /></span>
+            <span class="mock-layer mock-layer--dark mock-layer--half"><ng-container *ngTemplateOutlet="mock" /></span>
+          } @else {
+            <span class="mock-layer" [class.mock-layer--light]="opt.value === 'light'" [class.mock-layer--dark]="opt.value === 'dark'"><ng-container *ngTemplateOutlet="mock" /></span>
+          }
+        </span>
+
+        <span class="theme-card__footer">
+          <app-icon class="theme-card__icon" [name]="opt.icon" />
+          <span class="theme-card__label">{{ opt.label }}</span>
+          <span class="theme-card__check" aria-hidden="true"></span>
+        </span>
       </button>
     }
   </div>
 
-  @if (themeSvc.preference() === 'system') {
-    <p class="theme-hint">Dein Gerät nutzt gerade: {{ themeSvc.systemTheme() === 'dark' ? 'Dunkel' : 'Hell' }}</p>
-  }
+  <p class="theme-hint" [class.theme-hint--visible]="themeSvc.preference() === 'system'">
+    <app-icon name="monitor" />
+    Dein Gerät nutzt gerade: <strong>{{ themeSvc.systemTheme() === 'dark' ? 'Dunkel' : 'Hell' }}</strong>
+  </p>
 </section>
+
+<!-- Mini-Ansicht der App: Topbar, Seitenleiste, zwei Cards — Farben aus der Palette der umgebenden .mock-layer -->
+<ng-template #mock>
+  <span class="mock">
+    <span class="mock__topbar">
+      <span class="mock__logo"></span>
+      <span class="mock__line mock__line--short"></span>
+      <span class="mock__avatar"></span>
+    </span>
+    <span class="mock__body">
+      <span class="mock__sidebar">
+        <span class="mock__line mock__line--accent"></span>
+        <span class="mock__line"></span>
+        <span class="mock__line"></span>
+        <span class="mock__line mock__line--short"></span>
+      </span>
+      <span class="mock__main">
+        <span class="mock__card">
+          <span class="mock__line mock__line--strong"></span>
+          <span class="mock__line"></span>
+          <span class="mock__pill"></span>
+        </span>
+        <span class="mock__card">
+          <span class="mock__line mock__line--strong mock__line--short"></span>
+          <span class="mock__line"></span>
+          <span class="mock__line mock__line--short"></span>
+        </span>
+      </span>
+    </span>
+  </span>
+</ng-template>

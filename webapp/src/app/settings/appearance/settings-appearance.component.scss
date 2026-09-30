@@ -1,55 +1,256 @@
 @use '../../../styles/variables' as *;
+@use '../../../styles/palettes';
 @use '../settings-shared';
 
-// Hell / Dunkel / System als Segment-Umschalter — gewählt = volle Füllung
-.theme-switch {
-  display: inline-flex;
-  gap: $space-1;
-  padding: $space-1;
-  border: 1px solid $color-border;
-  border-radius: $radius-full;
-  background: $color-surface-alt;
+// Hell / Dunkel / System als Auswahlkarten mit Mini-Ansicht der App
 
-  &__option {
-    display: inline-flex;
+.theme-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-3;
+}
+
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+  color: $color-text-muted;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color $transition-fast,
+    box-shadow $transition-fast,
+    transform $transition-fast,
+    color $transition-fast;
+
+  &:hover {
+    border-color: $color-text-muted;
+    color: $color-text;
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+
+  // Gewählt: Akzentrahmen (rundum, per Schatten ohne Layout-Sprung) + gefülltes Häkchen
+  &--active,
+  &--active:hover {
+    border-color: $color-accent;
+    box-shadow: 0 0 0 1px $color-accent, 0 6px 18px color-mix(in srgb, $color-accent 18%, transparent);
+    color: $color-text;
+  }
+
+  &__preview {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    border-radius: $radius-md;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, $color-text 10%, transparent);
+  }
+
+  &__footer {
+    display: flex;
     align-items: center;
     gap: $space-2;
-    height: $control-height - 2 * $space-1;
-    padding: 0 $space-4;
-    border: none;
-    border-radius: $radius-full;
-    background: transparent;
-    color: $color-text-muted;
-    font: inherit;
+    padding: 0 $space-1 $space-1;
+  }
+
+  &__icon { display: flex; }
+
+  &__label {
+    flex: 1;
     font-size: $font-sm;
-    font-weight: $font-weight-medium;
-    cursor: pointer;
-    transition: color $transition-fast, background-color $transition-fast;
+    font-weight: $font-weight-semibold;
+  }
 
-    &:hover { color: $color-text; }
+  // Radio-Kreis rechts; gewählt = Akzentfüllung mit Haken
+  &__check {
+    position: relative;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid $color-border;
+    transition: background-color $transition-fast, border-color $transition-fast;
 
-    &--active,
-    &--active:hover {
-      background: $color-contrast-bg;
-      color: $color-contrast-text;
+    &::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 4px;
+      height: 8px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) scale(0);
+      transition: transform $transition-fast;
     }
+  }
+
+  &--active &__check {
+    background: $color-accent;
+    border-color: $color-accent;
+
+    &::after { transform: rotate(45deg) scale(1); }
   }
 }
 
+// Eine Ebene je Palette — die Mini-Ansicht darin nutzt die normalen Tokens, bekommt aber die festen
+// Werte des jeweiligen Themes (unabhängig vom gerade aktiven)
+.mock-layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+
+  &--light { @include palettes.palette-light; }
+  &--dark  { @include palettes.palette-dark; }
+
+  // System: dunkle Hälfte diagonal über der hellen
+  &--half { clip-path: polygon(62% 0, 100% 0, 100% 100%, 38% 100%); }
+}
+
+.mock {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: $color-bg;
+
+  &__topbar {
+    display: flex;
+    align-items: center;
+    gap: 6%;
+    height: 14%;
+    padding: 0 6%;
+    background: $color-surface;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__logo {
+    width: 9%;
+    aspect-ratio: 1;
+    border-radius: 30%;
+    background: $color-accent;
+  }
+
+  &__avatar {
+    width: 8%;
+    aspect-ratio: 1;
+    margin-left: auto;
+    border-radius: 50%;
+    background: $color-border;
+  }
+
+  &__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  &__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 9%;
+    width: 26%;
+    padding: 7% 5%;
+    background: $color-surface;
+    border-right: 1px solid $color-border;
+  }
+
+  &__main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 7%;
+    padding: 6%;
+  }
+
+  &__card {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14%;
+    padding: 0 8%;
+    border: 1px solid $color-border;
+    border-radius: 4px;
+    background: $color-surface;
+  }
+
+  &__line {
+    display: block;
+    height: 4px;
+    width: 100%;
+    border-radius: 2px;
+    background: $color-surface-alt;
+
+    &--short  { width: 55%; }
+    &--strong { background: $color-text-muted; opacity: 0.55; }
+    &--accent { background: $color-accent; }
+  }
+
+  // "dunkle Pille" (Primär-Button) — zeigt die Kontrastfarbe des Themes
+  &__pill {
+    display: block;
+    width: 38%;
+    height: 7px;
+    border-radius: $radius-full;
+    background: $color-contrast-bg;
+  }
+}
+
+// Hinweis bei "System": Platz bleibt reserviert, damit die Karte beim Umschalten nicht springt
 .theme-hint {
-  margin-top: $space-3;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-top: $space-4;
   font-size: $font-xs;
   color: $color-text-muted;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity $transition-fast;
+
+  strong { color: $color-text; font-weight: $font-weight-semibold; }
+
+  &--visible {
+    visibility: visible;
+    opacity: 1;
+  }
 }
 
 @media (max-width: $mobile-breakpoint) {
-  .theme-switch {
-    display: flex;
+  .theme-cards { gap: $space-2; }
 
-    &__option {
-      flex: 1;
-      justify-content: center;
-      padding: 0 $space-2;
+  .theme-card {
+    gap: $space-2;
+    padding: $space-1;
+
+    &:hover { transform: none; }
+
+    &__preview { border-radius: $radius-sm; }
+
+    &__footer {
+      flex-direction: column;
+      gap: $space-1;
+      padding: 0 0 $space-1;
+    }
+
+    &__icon { display: none; }
+
+    &__label {
+      font-size: $font-xs;
+      text-align: center;
     }
   }
+
+  // Mini-Ansicht auf dem Handy ohne Seitenleiste — sonst zu gedrängt
+  .mock__sidebar { display: none; }
 }
