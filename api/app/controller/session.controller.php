@@ -8,9 +8,12 @@ class SessionController extends _BaseController
 
     protected function get(): mixed
     {
-        $range = $this->params['range'] ?? 'day';
+        $range = $this->params['range'] ?? ($this->id === 'devices' ? 'month' : 'day');
         if (!in_array($range, self::ALLOWED_RANGES, true)) {
             $range = 'day';
+        }
+        if ($this->id === 'devices') {
+            return $this->db->getSessionDevices($range);
         }
         return $this->db->getSessionHeatmap($range);
     }

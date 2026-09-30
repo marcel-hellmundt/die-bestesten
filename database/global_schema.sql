@@ -314,6 +314,14 @@ CREATE TABLE IF NOT EXISTS manager_session (
     device_type VARCHAR(10) NULL DEFAULT NULL, -- 'mobile' | 'tablet' | 'desktop', aus User-Agent geparst; NULL = nicht erkennbar
     os          VARCHAR(20) NULL DEFAULT NULL, -- z.B. 'iOS', 'Android', 'Windows', 'macOS', 'Linux'
     browser     VARCHAR(20) NULL DEFAULT NULL, -- z.B. 'Chrome', 'Safari', 'Firefox', 'Edge', 'Opera'
+    -- Geräte-/Theme-Infos aus Header X-Client-Info (letzter Stand der Session), siehe GET /session/devices
+    theme_pref   VARCHAR(6)  NULL DEFAULT NULL, -- Wahl: 'light' | 'dark' | 'system'
+    theme        VARCHAR(5)  NULL DEFAULT NULL, -- angezeigt: 'light' | 'dark'
+    system_theme VARCHAR(5)  NULL DEFAULT NULL, -- Systemeinstellung des Geräts (prefers-color-scheme)
+    standalone   TINYINT(1)  NULL DEFAULT NULL, -- 1 = als App installiert (Home-Bildschirm)
+    os_version   VARCHAR(12) NULL DEFAULT NULL, -- z.B. '17.5' (iOS), '14' (Android), '11' (Windows)
+    device_model VARCHAR(40) NULL DEFAULT NULL, -- nur Android per Client Hints, z.B. 'Pixel 8'
+    screen       VARCHAR(20) NULL DEFAULT NULL, -- 'kurz×lang@Pixeldichte', z.B. '375x812@3'
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     INDEX idx_manager_session_lookup (manager_id, ended_at)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

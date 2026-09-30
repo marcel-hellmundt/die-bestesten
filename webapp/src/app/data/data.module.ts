@@ -24,6 +24,7 @@ import { AchievementsDataComponent } from './achievements/achievements-data.comp
 import { ManagerDataComponent } from './manager/manager-data.component';
 import { PlayerImportDataComponent } from './player-import/player-import.component';
 import { SessionHeatmapComponent } from './session/session-heatmap.component';
+import { SessionDevicesComponent } from './session/session-devices.component';
 
 const M = [MaintainerGuard];
 const C = [ContributorGuard];
@@ -76,6 +77,7 @@ const routes: Routes = [
     ManagerDataComponent,
     PlayerImportDataComponent,
     SessionHeatmapComponent,
+    SessionDevicesComponent,
   ],
   imports: [
     CommonModule,

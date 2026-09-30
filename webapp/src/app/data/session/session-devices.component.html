@@ -1,0 +1,98 @@
+<section class="devices">
+  <h2 class="section-header">Geräte &amp; Erscheinung</h2>
+  <p class="devices__intro">
+    Welche Geräte die Manager im gewählten Zeitraum nutzen und welches Theme darauf läuft.
+    Ein Gerät ist eine Kombination aus Typ, System, Browser und Bildschirm — zwei gleiche iPhones zählen als eins.
+  </p>
+
+  @if (loading()) {
+    <p class="state-msg">Laden…</p>
+  } @else if (!managers().length) {
+    <p class="state-msg">Keine Geräte im Zeitraum.</p>
+  } @else {
+    <div class="devices__summary">
+      <div class="card summary-card summary-card--wide">
+        <span class="summary-card__label">Theme-Wahl</span>
+        @if (hasTracking()) {
+          <div class="pref-bar" role="img" aria-label="Verteilung der Theme-Wahl">
+            @for (s of prefShares(); track s.pref) {
+              @if (s.count) {
+                <span class="pref-bar__segment pref-bar__segment--{{ s.pref }}" [style.flex-grow]="s.count"></span>
+              }
+            }
+          </div>
+          <div class="pref-legend">
+            @for (s of prefShares(); track s.pref) {
+              <span class="pref-legend__item">
+                <span class="pref-legend__dot pref-bar__segment--{{ s.pref }}"></span>
+                {{ s.label }} <strong>{{ s.count }}</strong> <span class="pref-legend__pct">({{ s.pct }}%)</span>
+              </span>
+            }
+          </div>
+        } @else {
+          <span class="summary-card__empty">Noch keine Daten — kommen mit den nächsten Besuchen.</span>
+        }
+      </div>
+
+      @if (hasTracking()) {
+        <div class="card summary-card">
+          <span class="summary-card__label">Dunkel angezeigt</span>
+          <span class="summary-card__value">{{ darkShown() }} <small>von {{ trackedCount() }}</small></span>
+        </div>
+        <div class="card summary-card" title="Gerät ist im System auf Dunkel eingestellt, die App läuft aber hell">
+          <span class="summary-card__label">System dunkel, App hell</span>
+          <span class="summary-card__value">{{ darkSystemLightApp() }}</span>
+        </div>
+      }
+      @if (installed().total) {
+        <div class="card summary-card" title="Vom Home-Bildschirm als App gestartet">
+          <span class="summary-card__label">Als App installiert</span>
+          <span class="summary-card__value">{{ installed().count }} <small>von {{ installed().total }}</small></span>
+        </div>
+      }
+    </div>
+
+    <div class="device-list">
+      @for (m of managers(); track m.manager_id) {
+        <div class="card manager-devices">
+          <div class="manager-devices__head">
+            <span class="manager-devices__avatar">
+              @if (!photoFailed.has(m.manager_id)) {
+                <img [src]="cache.managerPhotoUrl(m.manager_id)" [alt]="m.manager_name" (error)="photoFailed.add(m.manager_id)" />
+              } @else {
+                {{ m.manager_name.charAt(0).toUpperCase() }}
+              }
+            </span>
+            <span class="manager-devices__name">{{ m.manager_name }}</span>
+            <span class="manager-devices__count">{{ m.devices.length }} {{ m.devices.length === 1 ? 'Gerät' : 'Geräte' }}</span>
+          </div>
+
+          <ul class="device-rows">
+            @for (d of m.devices; track $index) {
+              <li class="device-row">
+                <app-icon class="device-row__icon" [name]="deviceIcon(d)" />
+                <div class="device-row__main">
+                  <span class="device-row__name">{{ deviceName(d) }}</span>
+                  <span class="device-row__meta">{{ deviceMeta(d) }} · {{ duration(d.seconds) }} · zuletzt {{ lastSeen(d) }}</span>
+                </div>
+                <div class="device-row__badges">
+                  @if (d.standalone) {
+                    <span class="badge badge--app" title="Als App vom Home-Bildschirm gestartet">App</span>
+                  }
+                  @if (themeLabel(d); as label) {
+                    <span class="badge badge--{{ d.theme }}"
+                          [class.badge--hint]="isDarkSystemLightApp(d)"
+                          [attr.title]="isDarkSystemLightApp(d) ? 'System steht auf Dunkel, App läuft hell' : null">
+                      <app-icon [name]="d.theme === 'dark' ? 'moon' : 'sun'" />
+                      {{ label }}
+                    </span>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  }
+</section>

@@ -3,35 +3,36 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../auth/auth.service';
+import { ClientInfoService } from './client-info.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private base = environment.apiUrl;
 
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  constructor(private http: HttpClient, private auth: AuthService, private clientInfo: ClientInfoService) {}
+
+  /** Nur eingeloggt: Token + X-Client-Info (Geräte-/Theme-Infos für GET /session/devices, siehe ClientInfoService) */
+  private headers(): HttpHeaders | undefined {
+    const token = this.auth.getToken();
+    return token
+      ? new HttpHeaders({ Authorization: `Bearer ${token}`, 'X-Client-Info': this.clientInfo.header() })
+      : undefined;
+  }
 
   get<T>(path: string): Observable<T> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.get<T>(`${this.base}/${path}`, { headers });
+    return this.http.get<T>(`${this.base}/${path}`, { headers: this.headers() });
   }
 
   post<T>(path: string, body: unknown = {}): Observable<T> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.post<T>(`${this.base}/${path}`, body, { headers });
+    return this.http.post<T>(`${this.base}/${path}`, body, { headers: this.headers() });
   }
 
   patch<T>(path: string, body: unknown = {}): Observable<T> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.patch<T>(`${this.base}/${path}`, body, { headers });
+    return this.http.patch<T>(`${this.base}/${path}`, body, { headers: this.headers() });
   }
 
   postForm<T>(path: string, formData: FormData): Observable<T> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.post<T>(`${this.base}/${path}`, formData, { headers });
+    return this.http.post<T>(`${this.base}/${path}`, formData, { headers: this.headers() });
   }
 
   uploadClubLogo(clubId: string, photo: File): Observable<any> {
@@ -75,8 +76,6 @@ export class ApiService {
   }
 
   delete<T>(path: string, body: unknown = {}): Observable<T> {
-    const token = this.auth.getToken();
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.delete<T>(`${this.base}/${path}`, { headers, body });
+    return this.http.delete<T>(`${this.base}/${path}`, { headers: this.headers(), body });
   }
 }

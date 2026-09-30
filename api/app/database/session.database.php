@@ -57,9 +57,10 @@ trait SessionTrait
                 && $open['browser'] === $browser;
 
             if ($sameDevice) {
+                $sessionId = $open['id'];
                 $this->con->prepare(
                     "UPDATE manager_session SET ended_at = NOW() WHERE id = :id"
-                )->execute([':id' => $open['id']]);
+                )->execute([':id' => $sessionId]);
             } else {
                 // Eine neue Session wird eröffnet — der ideale Zeitpunkt, um alte 0s-Zeilen
                 // (started_at = ended_at) desselben Managers zu entsorgen, die außerhalb des
@@ -73,19 +74,139 @@ trait SessionTrait
                        AND ended_at < (NOW() - INTERVAL 2 MINUTE)"
                 )->execute([':id' => $managerId]);
 
+                $sessionId = $this->con->query('SELECT UUID()')->fetchColumn();
                 $this->con->prepare(
-                    "INSERT INTO manager_session (manager_id, device_type, os, browser)
-                     VALUES (:id, :device_type, :os, :browser)"
+                    "INSERT INTO manager_session (id, manager_id, device_type, os, browser)
+                     VALUES (:sid, :id, :device_type, :os, :browser)"
                 )->execute([
+                    ':sid'         => $sessionId,
                     ':id'          => $managerId,
                     ':device_type' => $deviceType,
                     ':os'          => $os,
                     ':browser'     => $browser,
                 ]);
             }
+
+            // Eigener try: fehlen die Spalten noch (Migration 2026-09-30_manager_session_client_info
+            // nicht ausgeführt), läuft der Heartbeat oben trotzdem unverändert weiter.
+            try {
+                $this->storeSessionClientInfo($sessionId);
+            } catch (Throwable) {
+            }
         } finally {
             $this->con->prepare('SELECT RELEASE_LOCK(?)')->execute([$lockName]);
         }
+    }
+
+    /**
+     * Header X-Client-Info (vom Frontend an jeden API-Request gehängt, siehe core/client-info.service.ts),
+     * URL-kodiert: theme (Wahl light|dark|system), shown (angezeigtes Theme), scheme (Systemeinstellung
+     * des Geräts), pwa (1 = als App installiert), osv (OS-Version), model (Gerätemodell, nur Android per
+     * Client Hints), screen (kurze×lange Seite@Pixeldichte). Jeder Wert wird streng geprüft — ungültig
+     * oder fehlend = NULL. Überschreibt die Werte der Session bei jedem Heartbeat (letzter Stand zählt);
+     * fehlt der Header ganz (älterer Client), bleibt die Zeile unverändert.
+     */
+    private function storeSessionClientInfo(string $sessionId): void
+    {
+        $raw = $_SERVER['HTTP_X_CLIENT_INFO'] ?? '';
+        if ($raw === '' || strlen($raw) > 300) {
+            return;
+        }
+        parse_str($raw, $info);
+
+        $pick = fn(string $key, string $pattern) =>
+            isset($info[$key]) && is_string($info[$key]) && preg_match($pattern, $info[$key]) ? $info[$key] : null;
+
+        $this->con->prepare(
+            "UPDATE manager_session
+             SET theme_pref = :theme_pref, theme = :theme, system_theme = :system_theme, standalone = :standalone,
+                 os_version = :os_version, device_model = :device_model, screen = :screen
+             WHERE id = :id"
+        )->execute([
+            ':id'           => $sessionId,
+            ':theme_pref'   => $pick('theme', '/^(light|dark|system)$/'),
+            ':theme'        => $pick('shown', '/^(light|dark)$/'),
+            ':system_theme' => $pick('scheme', '/^(light|dark)$/'),
+            ':standalone'   => ($pwa = $pick('pwa', '/^[01]$/')) === null ? null : (int) $pwa,
+            ':os_version'   => $pick('osv', '/^\d{1,3}(\.\d{1,3}){0,2}$/'),
+            ':device_model' => $pick('model', '/^[\w .()+\-]{1,40}$/u'),
+            ':screen'       => $pick('screen', '/^\d{2,5}x\d{2,5}@\d(\.\d{1,2})?$/'),
+        ]);
+    }
+
+    /**
+     * Geräte je Manager im Zeitraum (gleiche Fenster wie getSessionHeatmap) — für "Geräte & Erscheinung"
+     * auf /daten/nutzung. Ein Gerät = gleiche Kombination aus device_type, os, browser, device_model und
+     * screen (keine echte Geräte-ID: zwei gleiche iPhones eines Managers sind eine Zeile). Die übrigen
+     * Felder (Theme, installiert, OS-Version) kommen aus der jüngsten Session des Geräts, die sie gesetzt
+     * hat. seconds = Summe der Session-Dauern dieses Geräts (nicht gemergt — pro Gerät gibt es keine
+     * Überlappung). Ohne Migration liefert es dieselben Geräte, nur mit leeren Zusatzfeldern.
+     */
+    public function getSessionDevices(string $range = 'month'): array
+    {
+        $sinceExpr = match ($range) {
+            'day'   => "(NOW() - INTERVAL 24 HOUR)",
+            'year'  => "(CURDATE() - INTERVAL 51 WEEK)",
+            'all'   => null,
+            default => "(CURDATE() - INTERVAL 29 DAY)",
+        };
+        $whereSql = "m.status != 'deleted'" . ($sinceExpr !== null ? " AND ms.ended_at >= $sinceExpr" : '');
+
+        try {
+            $q = $this->con->prepare(
+                "SELECT ms.manager_id, m.manager_name, ms.device_type, ms.os, ms.browser, ms.started_at, ms.ended_at,
+                        ms.theme_pref, ms.theme, ms.system_theme, ms.standalone, ms.os_version, ms.device_model, ms.screen
+                 FROM manager_session ms JOIN manager m ON m.id = ms.manager_id
+                 WHERE $whereSql ORDER BY ms.ended_at ASC"
+            );
+            $q->execute();
+        } catch (PDOException) {
+            // Migration noch nicht ausgeführt — nur die Basisspalten
+            $q = $this->con->prepare(
+                "SELECT ms.manager_id, m.manager_name, ms.device_type, ms.os, ms.browser, ms.started_at, ms.ended_at
+                 FROM manager_session ms JOIN manager m ON m.id = ms.manager_id
+                 WHERE $whereSql ORDER BY ms.ended_at ASC"
+            );
+            $q->execute();
+        }
+
+        $clientFields = ['theme_pref', 'theme', 'system_theme', 'standalone', 'os_version', 'device_model', 'screen'];
+        $managers = [];
+        // Aufsteigend nach ended_at → spätere Sessions überschreiben die Zusatzfelder (jüngster Stand)
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $mid = $r['manager_id'];
+            $managers[$mid] ??= ['manager_id' => $mid, 'manager_name' => $r['manager_name'], 'devices' => []];
+
+            $key = implode('|', [$r['device_type'], $r['os'], $r['browser'], $r['device_model'] ?? '', $r['screen'] ?? '']);
+            $device = &$managers[$mid]['devices'][$key];
+            $device ??= [
+                'device_type' => $r['device_type'], 'os' => $r['os'], 'browser' => $r['browser'],
+                'sessions' => 0, 'seconds' => 0, 'last_seen' => null,
+            ] + array_fill_keys($clientFields, null);
+
+            $device['sessions']++;
+            $device['seconds']  += max(0, strtotime($r['ended_at']) - strtotime($r['started_at']));
+            $device['last_seen'] = $r['ended_at'];
+            foreach ($clientFields as $f) {
+                if (($r[$f] ?? null) !== null) {
+                    $device[$f] = $f === 'standalone' ? (bool) $r[$f] : $r[$f];
+                }
+            }
+            unset($device);
+        }
+
+        $result = [];
+        foreach ($managers as $m) {
+            $devices = array_values($m['devices']);
+            usort($devices, fn($a, $b) => $b['seconds'] <=> $a['seconds']);
+            $m['devices'] = $devices;
+            $result[] = $m;
+        }
+        usort($result, fn($a, $b) =>
+            array_sum(array_column($b['devices'], 'seconds')) <=> array_sum(array_column($a['devices'], 'seconds'))
+            ?: strcmp($a['manager_name'], $b['manager_name']));
+
+        return ['range' => $range, 'managers' => $result];
     }
 
     /**
