@@ -97,6 +97,15 @@
 
   &--silver { background: linear-gradient(135deg, #eef0f3, #cfd4dc); }
   &--gold   { background: linear-gradient(135deg, #fbf1cf, #e6c766); }
+
+  // Dark: gedeckteres Silber/Gold, damit die helle Schrift lesbar bleibt
+  :host-context([data-theme="dark"]) & {
+    &--silver { background: linear-gradient(135deg, #6b7380, #3f4550); }
+    &--gold   { background: linear-gradient(135deg, #9a7a24, #5e4812); }
+
+    &--silver .kpi__label,
+    &--gold .kpi__label { color: rgba(255, 255, 255, 0.75); }
+  }
 }
 
 .tiers {
