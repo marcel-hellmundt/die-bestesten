@@ -23,6 +23,10 @@
   --color-pitch: #05c46b;
   --color-own-bg: #ffffc1;
   --color-own-border: #e6e600;
+  --position-goalkeeper: #05c46b;
+  --position-defender: #ffd32a;
+  --position-midfielder: #0097e6;
+  --position-forward: #ff3f34;
   --grade-unset: #dfe6e9;
 }
 
@@ -47,5 +51,9 @@
   --color-pitch: #218c74;  // gedeckter als das Light-Grün, sonst zu grell auf dunklem Grund
   --color-own-bg: #1b2a45;       // dunkles Blau statt Hellgelb
   --color-own-border: #3867d6;
+  --position-goalkeeper: #218c74;
+  --position-defender: #ccae62;
+  --position-midfielder: #227093;
+  --position-forward: #b33939;
   --grade-unset: #3a3f47;
 }

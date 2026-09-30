@@ -97,13 +97,7 @@ $z-toast: 500;
   --flat-concrete: #95a5a6;
 }
 
-// Position colors (player positions)
-:root {
-  --position-forward: #ff3f34;
-  --position-midfielder: #0097e6;
-  --position-defender: #ffd32a;
-  --position-goalkeeper: #05c46b;
-}
+// Position colors (player positions): --position-* sind themeabhängig, siehe _palettes.scss
 
 // Division level colors (1 = top flight, 2 = second, 3 = third)
 :root {
