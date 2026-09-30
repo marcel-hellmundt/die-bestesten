@@ -140,7 +140,9 @@ trait SessionTrait
      * screen (keine echte Geräte-ID: zwei gleiche iPhones eines Managers sind eine Zeile). Die übrigen
      * Felder (Theme, installiert, OS-Version) kommen aus der jüngsten Session des Geräts, die sie gesetzt
      * hat. seconds = Summe der Session-Dauern dieses Geräts (nicht gemergt — pro Gerät gibt es keine
-     * Überlappung). Ohne Migration liefert es dieselben Geräte, nur mit leeren Zusatzfeldern.
+     * Überlappung).
+     * Nur Sessions mit Geräte-Infos (theme_pref gesetzt = Header X-Client-Info vom aktuellen Client):
+     * ältere Sessions haben z.B. kein screen und würden dasselbe Handy sonst als zweites Gerät zeigen.
      */
     public function getSessionDevices(string $range = 'month'): array
     {
@@ -150,25 +152,16 @@ trait SessionTrait
             'all'   => null,
             default => "(CURDATE() - INTERVAL 29 DAY)",
         };
-        $whereSql = "m.status != 'deleted'" . ($sinceExpr !== null ? " AND ms.ended_at >= $sinceExpr" : '');
+        $whereSql = "m.status != 'deleted' AND ms.theme_pref IS NOT NULL"
+            . ($sinceExpr !== null ? " AND ms.ended_at >= $sinceExpr" : '');
 
-        try {
-            $q = $this->con->prepare(
-                "SELECT ms.manager_id, m.manager_name, ms.device_type, ms.os, ms.browser, ms.started_at, ms.ended_at,
-                        ms.theme_pref, ms.theme, ms.system_theme, ms.standalone, ms.os_version, ms.device_model, ms.screen
-                 FROM manager_session ms JOIN manager m ON m.id = ms.manager_id
-                 WHERE $whereSql ORDER BY ms.ended_at ASC"
-            );
-            $q->execute();
-        } catch (PDOException) {
-            // Migration noch nicht ausgeführt — nur die Basisspalten
-            $q = $this->con->prepare(
-                "SELECT ms.manager_id, m.manager_name, ms.device_type, ms.os, ms.browser, ms.started_at, ms.ended_at
-                 FROM manager_session ms JOIN manager m ON m.id = ms.manager_id
-                 WHERE $whereSql ORDER BY ms.ended_at ASC"
-            );
-            $q->execute();
-        }
+        $q = $this->con->prepare(
+            "SELECT ms.manager_id, m.manager_name, ms.device_type, ms.os, ms.browser, ms.started_at, ms.ended_at,
+                    ms.theme_pref, ms.theme, ms.system_theme, ms.standalone, ms.os_version, ms.device_model, ms.screen
+             FROM manager_session ms JOIN manager m ON m.id = ms.manager_id
+             WHERE $whereSql ORDER BY ms.ended_at ASC"
+        );
+        $q->execute();
 
         $clientFields = ['theme_pref', 'theme', 'system_theme', 'standalone', 'os_version', 'device_model', 'screen'];
         $managers = [];
