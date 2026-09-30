@@ -1,5 +1,4 @@
 @use '../../../styles/variables' as *;
-@use 'sass:color';
 
 .transfers-layout {
   display: grid;
@@ -91,7 +90,7 @@
 
     &:hover {
       background: $color-surface-alt;
-      border-color: color.adjust($color-border, $lightness: -8%);
+      border-color: color-mix(in srgb, $color-border 88%, $color-text);
     }
   }
 

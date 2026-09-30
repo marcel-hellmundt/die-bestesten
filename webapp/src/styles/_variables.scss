@@ -5,20 +5,27 @@ $font-soft: 'Nunito', sans-serif;
 $font-special: 'Bridge', sans-serif;
 
 // Colors — base palette
-$color-bg: #f9fafb;
-$color-surface: #ffffff;
-$color-surface-alt: #f3f4f6;
-$color-border: #e5e7eb;
-$color-text: #111827;
-$color-text-muted: #6b7280;
-$color-text-menu: #3e4043;
-$color-accent: #bf1d00;
-$color-accent-hover: #d92200;
-$color-danger: #ef4444;
-$color-danger-hover: #dc2626;
-$color-success: #16a34a;
-$color-progress: #4b7bec;
-$color-warning: #d97706;
+// Laufzeit-Theme: die SCSS-Variablen verweisen auf CSS Custom Properties, deren Werte je Theme in
+// _palettes.scss stehen (angewendet in _themes.scss; data-theme an <html> setzt der ThemeService).
+// Deshalb keine SCSS-Farbfunktionen (color.adjust, darken, rgba($x, …)) auf diese Variablen —
+// stattdessen color-mix(). Für Flächen/Text keine harten Hex-Farben, sonst bleiben sie im Dark-Mode hell.
+$color-bg: var(--color-bg);
+$color-surface: var(--color-surface);
+$color-surface-alt: var(--color-surface-alt);
+$color-border: var(--color-border);
+$color-text: var(--color-text);
+$color-text-muted: var(--color-text-muted);
+$color-text-menu: var(--color-text-menu);
+$color-accent: var(--color-accent);
+$color-accent-hover: var(--color-accent-hover);
+$color-danger: var(--color-danger);
+$color-danger-hover: var(--color-danger-hover);
+$color-success: var(--color-success);
+$color-progress: var(--color-progress);
+$color-warning: var(--color-warning);
+// Kräftige Kontrastfläche ("dunkle Pille": Primär-Button, Tooltips, Badges) — im Dark-Mode hell
+$color-contrast-bg: var(--color-contrast-bg);
+$color-contrast-text: var(--color-contrast-text);
 
 // Spacing scale
 $space-1: 4px;
@@ -100,9 +107,8 @@ $z-toast: 500;
   --division-level-3: #00b894;
 }
 
-// Grade colors (player rating notes 1.0–6.0)
+// Grade colors (player rating notes 1.0–6.0) — --grade-unset ist themeabhängig, siehe _palettes.scss
 :root {
-  --grade-unset: #dfe6e9;
   --grade-10: #1565c0;
   --grade-15: #2e7d32;
   --grade-20: #43a047;

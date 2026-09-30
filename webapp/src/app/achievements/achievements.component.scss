@@ -1,7 +1,6 @@
 @use '../../styles/variables' as *;
 
-$card-color: #fff;
-$card-border: #eee;
+$card-color: $color-surface;
 
 .achievements-header {
   display: flex;
@@ -180,7 +179,7 @@ $card-border: #eee;
       position: relative;
       overflow: hidden;
       height: 50%;
-      background: white;
+      background: $color-surface;
       .achievement-logo-background {
         filter: blur(32px) opacity(0.5);
         transform: scale(4);
@@ -206,8 +205,8 @@ $card-border: #eee;
 
     .achievement-condition {
       font-size: 10px;
-      background-color: #fff;
-      border: 1px solid #ccc;
+      background-color: $color-surface;
+      border: 1px solid $color-border;
       border-radius: 3px;
       text-align: center;
       padding: 2px;

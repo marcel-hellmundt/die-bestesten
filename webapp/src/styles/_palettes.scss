@@ -1,0 +1,45 @@
+// Farbwerte je Theme als Mixins (erzeugen selbst kein CSS) — einzige Quelle der Theme-Farben.
+// Global in _themes.scss auf :root angewendet; lokal nutzbar, um einen Bereich fest auf ein Theme
+// zu setzen (z.B. Karte bis zur dunklen Kartenvariante, Theme-Vorschau in /einstellungen/erscheinung).
+
+@mixin palette-light {
+  color-scheme: light;
+  --color-bg: #f9fafb;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-text-menu: #3e4043;
+  --color-accent: #bf1d00;
+  --color-accent-hover: #d92200;
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-success: #16a34a;
+  --color-progress: #4b7bec;
+  --color-warning: #d97706;
+  --color-contrast-bg: #111827;
+  --color-contrast-text: #ffffff;
+  --grade-unset: #dfe6e9;
+}
+
+@mixin palette-dark {
+  color-scheme: dark;
+  --color-bg: #0f1115;
+  --color-surface: #181b21;
+  --color-surface-alt: #22262e;
+  --color-border: #2e333c;
+  --color-text: #e7e9ee;
+  --color-text-muted: #9aa1ad;
+  --color-text-menu: #c9cdd4;
+  --color-accent: #e0391a;
+  --color-accent-hover: #f04a2b;
+  --color-danger: #f87171;
+  --color-danger-hover: #ef4444;
+  --color-success: #22c55e;
+  --color-progress: #6b93f0;
+  --color-warning: #f59e0b;
+  --color-contrast-bg: #e7e9ee;
+  --color-contrast-text: #111827;
+  --grade-unset: #3a3f47;
+}

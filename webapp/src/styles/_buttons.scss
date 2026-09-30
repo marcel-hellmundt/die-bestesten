@@ -28,9 +28,9 @@
 }
 
 .btn-primary {
-  background-color: $color-text;
-  color: #ffffff;
-  border-color: $color-text;
+  background-color: $color-contrast-bg;
+  color: $color-contrast-text;
+  border-color: $color-contrast-bg;
 
   &:hover {
     background-color: $color-accent;

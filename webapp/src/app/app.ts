@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { NavigationEnd, NavigationError, Router } from '@angular/router';
+import { ThemeService } from './core/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +21,7 @@ export class App {
   private static readonly RELOAD_GUARD_KEY = 'chunk-reload-attempted';
 
   constructor() {
+    inject(ThemeService); // Light/Dark auf allen Seiten (auch ohne Login)
     const router = inject(Router);
     router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {

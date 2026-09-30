@@ -1,0 +1,22 @@
+<section class="settings-section">
+  <div class="section-header-row"><h2 class="section-header">Erscheinung</h2></div>
+  <p class="section-desc">Gilt nur für dieses Gerät.</p>
+
+  <div class="pref-list">
+    <label class="pref-item">
+      <span class="pref-icon"><app-icon name="moon" /></span>
+      <div class="pref-text">
+        <span class="pref-name">Dunkles Design</span>
+        <span class="pref-desc">Dunkle Flächen, heller Text — angenehmer am Abend</span>
+      </div>
+      <span class="toggle">
+        <input type="checkbox"
+               class="toggle__input"
+               [checked]="themeSvc.theme() === 'dark'"
+               (click)="$event.stopPropagation()"
+               (change)="themeSvc.setTheme($any($event.target).checked ? 'dark' : 'light')" />
+        <span class="toggle__track"></span>
+      </span>
+    </label>
+  </div>
+</section>

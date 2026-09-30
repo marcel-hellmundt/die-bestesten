@@ -1,4 +1,5 @@
 @use '../../styles/variables' as *;
+@use '../../styles/palettes';
 
 // Flaggen auf der Karte: immer kreisrund (Kopf, Länderliste, Filter-Zeile, Ranking);
 // heller Schein statt Rand nur bei der gewählten Flagge oben ($glow: true) — hebt sie vom dunklen Button ab
@@ -15,6 +16,9 @@
 :host {
   display: block;
   height: 100%;
+  // Karte bleibt vorerst hell (Google-Maps-Stil in map.component.ts ist fest hell) — die dunklen
+  // Overlay-Panels ($color-text-Hintergrund) würden im Dark-Mode sonst hell auf heller Karte
+  @include palettes.palette-light;
 }
 
 .map-shell {

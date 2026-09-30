@@ -1,0 +1,13 @@
+@use 'palettes';
+
+// Theme-Farben auf :root — nur global in index.scss eingebunden, damit die Blöcke nicht in jedes
+// Komponenten-Stylesheet kopiert werden. data-theme an <html> setzt der ThemeService
+// (core/theme.service.ts), beim Laden vorab das Inline-Script in index.html.
+
+:root {
+  @include palettes.palette-light;
+}
+
+:root[data-theme="dark"] {
+  @include palettes.palette-dark;
+}
