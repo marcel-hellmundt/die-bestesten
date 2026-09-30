@@ -37,7 +37,7 @@ webapp/src/app/
 ├── core/
 │   ├── api.service.ts           — HTTP-Wrapper: get/post/patch<T>(path, body?)
 │   ├── data-cache.service.ts    — Reaktiver Cache für Lookups
-│   ├── theme.service.ts         — Erscheinungsbild Light/Dark pro Gerät (localStorage-Key `theme`, kein Server-Setting); setzt `data-theme` an `<html>` + meta theme-color; Inline-Script in index.html setzt es schon vor dem App-Start (kein Aufblitzen); in App instanziert (gilt auch auf /login, /noten)
+│   ├── theme.service.ts         — Erscheinungsbild Hell/Dunkel/System pro Gerät (localStorage-Key `theme` = light|dark|system, kein Server-Setting; system folgt prefers-color-scheme live); setzt `data-theme` an `<html>` + meta theme-color; Inline-Script in index.html setzt es schon vor dem App-Start (kein Aufblitzen); in App instanziert (gilt auch auf /login, /noten)
 │   └── models/                  — club, country, division, matchday, player, season, transferwindow (je from()-Factory)
 ├── data/              — /app/data: club, country, division, player, season (Liste + Detail je)
 ├── noten/             — /noten: öffentliche Noten-Übersicht, Top-Level-Route außerhalb ShellModule/AuthGuard (kein Login nötig, wie auth/) — kein Sidebar/Topbar

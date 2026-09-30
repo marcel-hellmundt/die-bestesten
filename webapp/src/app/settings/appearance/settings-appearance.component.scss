@@ -1,1 +1,55 @@
+@use '../../../styles/variables' as *;
 @use '../settings-shared';
+
+// Hell / Dunkel / System als Segment-Umschalter — gewählt = volle Füllung
+.theme-switch {
+  display: inline-flex;
+  gap: $space-1;
+  padding: $space-1;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-surface-alt;
+
+  &__option {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    height: $control-height - 2 * $space-1;
+    padding: 0 $space-4;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: $color-text-muted;
+    font: inherit;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    cursor: pointer;
+    transition: color $transition-fast, background-color $transition-fast;
+
+    &:hover { color: $color-text; }
+
+    &--active,
+    &--active:hover {
+      background: $color-contrast-bg;
+      color: $color-contrast-text;
+    }
+  }
+}
+
+.theme-hint {
+  margin-top: $space-3;
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .theme-switch {
+    display: flex;
+
+    &__option {
+      flex: 1;
+      justify-content: center;
+      padding: 0 $space-2;
+    }
+  }
+}

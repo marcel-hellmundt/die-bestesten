@@ -1,7 +1,19 @@
 import { Component, inject } from '@angular/core';
-import { ThemeService } from '../../core/theme.service';
+import { ThemePreference, ThemeService } from '../../core/theme.service';
 
-/** /einstellungen/erscheinung — Light/Dark (pro Gerät, siehe ThemeService). */
+interface ThemeOption {
+  value: ThemePreference;
+  icon: string;   // app-icon (shared/icon)
+  label: string;
+}
+
+const OPTIONS: ThemeOption[] = [
+  { value: 'light',  icon: 'sun',     label: 'Hell' },
+  { value: 'dark',   icon: 'moon',    label: 'Dunkel' },
+  { value: 'system', icon: 'monitor', label: 'System' },
+];
+
+/** /einstellungen/erscheinung — Hell/Dunkel/System (pro Gerät, siehe ThemeService). */
 @Component({
   selector: 'app-settings-appearance',
   standalone: false,
@@ -10,4 +22,5 @@ import { ThemeService } from '../../core/theme.service';
 })
 export class SettingsAppearanceComponent {
   themeSvc = inject(ThemeService);
+  options = OPTIONS;
 }

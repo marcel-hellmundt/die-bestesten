@@ -14,7 +14,8 @@
     <!-- Theme vor dem App-Start setzen (kein kurzes Aufblitzen von Light) — Logik wie core/theme.service.ts -->
     <script>
       try {
-        if (localStorage.getItem('theme') === 'dark') {
+        var pref = localStorage.getItem('theme');
+        if (pref === 'dark' || (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.dataset.theme = 'dark';
           document.querySelector('meta[name="theme-color"]').setAttribute('content', '#181b21');
         }
