@@ -978,7 +978,7 @@
 
 .field {
   container-type: inline-size;
-  background-color: #05c46b;
+  background-color: $color-pitch;
   border-radius: $radius-lg;
   aspect-ratio: 4 / 5;
   display: flex;
@@ -1261,7 +1261,7 @@
 
 .h2h-field {
   container-type: inline-size;
-  background-color: #05c46b;
+  background-color: $color-pitch;
   border-radius: $radius-lg;
   aspect-ratio: 16 / 9;
   width: 100%;
