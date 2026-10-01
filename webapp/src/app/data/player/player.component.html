@@ -1,4 +1,4 @@
-﻿@if (!loading() && !error() && items().length > 0) {
+@if (!loading() && !error() && items().length > 0) {
   <div class="stat-grid">
     <div class="stat-card">
       <span class="stat-label" style="color: var(--flat-carrot)">Spieler</span>
@@ -54,7 +54,6 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th class="col-id">ID</th>
           <th>Land</th>
           <th>Vorname</th>
           <th>Nachname</th>
@@ -71,7 +70,6 @@
       <tbody>
         @for (item of sortedItems(); track item.id) {
           <tr class="row-link" (click)="navigate(item.id)">
-            <td class="col-id">{{ item.id }}</td>
             <td><img [src]="item.flagUrl" class="flag" alt="" /></td>
             <td>{{ item.first_name }}</td>
             <td>{{ item.last_name }}</td>
