@@ -790,3 +790,64 @@
     outline: 4px solid color-mix(in srgb, var(--pos-color) 40%, transparent);
   }
 }
+
+// ── Segmented Control ────────────────────────────────────────────────────────
+// Mehrere Optionen nebeneinander, genau eine aktiv — schaltet eine Ansicht auf derselben Seite um (keine
+// Navigation: dafür .pill-nav; An/Aus einer einzelnen Einstellung: .toggle). Ein gemeinsamer Rahmen, die
+// aktive Option ist in Akzentfarbe gefüllt. Markup:
+//   <div class="segmented" role="group">
+//     <button class="segmented__option" [class.segmented__option--active]="…">…</button>
+//   </div>
+// Steht über der zugehörigen Card: in <div class="segmented-row"> (Abstand nach unten, optional Zusatzinfo rechts).
+// Höhe 36px wie .select/.nav-arrow daneben.
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  max-width: 100%;
+  height: 36px;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  box-sizing: border-box;
+  // viele Optionen auf schmalen Screens: waagerecht scrollen statt umbrechen
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+
+  &__option {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 100%;
+    padding: 0 $space-4;
+    border: none;
+    border-radius: $radius-full;
+    background: transparent;
+    color: $color-text-muted;
+    font-family: inherit;
+    font-size: $font-xs;
+    font-weight: $font-weight-medium;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color $transition-fast, background-color $transition-fast;
+
+    &:hover:not(.segmented__option--active) { color: $color-text; }
+
+    &--active {
+      background: $color-accent;
+      color: #fff;
+    }
+  }
+}
+
+.segmented-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-2 $space-3;
+  margin-bottom: $space-3;
+}

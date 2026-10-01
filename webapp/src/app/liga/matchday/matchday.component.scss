@@ -251,41 +251,6 @@
   padding: $space-4;
 }
 
-.best-xi-tabs {
-  display: flex;
-  gap: $space-2;
-  margin-bottom: $space-4;
-}
-
-.best-xi-tab {
-  padding: $space-2 $space-6;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
-  background: transparent;
-  color: $color-text-muted;
-  font-size: $font-sm;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  transition: all $transition-fast;
-  white-space: nowrap;
-
-  &.active {
-    background: $color-accent;
-    border-color: $color-accent;
-    color: #fff;
-  }
-
-  &:hover:not(.active) {
-    border-color: $color-text-muted;
-    color: $color-text;
-  }
-
-  @media (max-width: $mobile-breakpoint) {
-    padding: $space-2 0;
-    flex-grow: 1;
-  }
-}
-
 .best-xi-meta {
   display: flex;
   align-items: center;
@@ -669,43 +634,9 @@
   }
 }
 
-// height:36px matcht .select/.nav-arrow daneben (Spieltag-/Saison-Auswahl) — Buttons darin
-// füllen die volle Höhe statt sich über vertikales Padding auf ihre eigene Höhe zu bringen.
+// Statistik/Einsatz: globales Segmented Control (.segmented, _layout.scss) — hier nur rechtsbündig in der Zeile
 .stats-mode-toggle {
-  display: inline-flex;
-  align-items: center;
-  height: 36px;
   margin-left: auto;
-  border: 1px solid $color-border;
-  border-radius: $radius-full;
-  padding: 2px;
-  gap: 2px;
-  box-sizing: border-box;
-
-  &__btn {
-    display: inline-flex;
-    align-items: center;
-    height: 100%;
-    padding: 0 $space-4;
-    border: none;
-    border-radius: $radius-full;
-    background: transparent;
-    color: $color-text-muted;
-    font-size: $font-xs;
-    font-weight: $font-weight-medium;
-    cursor: pointer;
-    transition: all $transition-fast;
-    white-space: nowrap;
-
-    &.active {
-      background: $color-accent;
-      color: #fff;
-    }
-
-    &:hover:not(.active) {
-      color: $color-text;
-    }
-  }
 }
 
 .lineup-compact {

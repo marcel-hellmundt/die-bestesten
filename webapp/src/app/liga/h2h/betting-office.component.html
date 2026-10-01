@@ -54,37 +54,38 @@
   </div>
 
   <div class="main-col">
+    <!-- Segmented Control über der Card; Wrapper, damit .main-col beides als einen Block behandelt -->
+    <div class="bets-block">
+    @if (!betsLoading() && totalCount() > 0) {
+      <div class="segmented-row">
+        <div class="segmented" role="group" aria-label="Wetten filtern">
+          <button
+            class="segmented__option"
+            [class.segmented__option--active]="betsFilter() === 'all'"
+            (click)="betsFilter.set('all')"
+          >
+            Alle
+          </button>
+          <button
+            class="segmented__option"
+            [class.segmented__option--active]="betsFilter() === 'open'"
+            (click)="betsFilter.set('open')"
+          >
+            Offen
+          </button>
+          <button
+            class="segmented__option"
+            [class.segmented__option--active]="betsFilter() === 'won'"
+            (click)="betsFilter.set('won')"
+          >
+            Gewonnen
+          </button>
+        </div>
+        <span class="bets-summary">{{ wonCount() }} Gewonnen von {{ totalCount() }} Wetten</span>
+      </div>
+    }
     <div class="card">
       <div class="card-title">Meine Wetten</div>
-
-      @if (!betsLoading() && totalCount() > 0) {
-        <div class="bets-header">
-          <div class="bets-toggle">
-            <button
-              class="bets-toggle__btn"
-              [class.active]="betsFilter() === 'all'"
-              (click)="betsFilter.set('all')"
-            >
-              Alle
-            </button>
-            <button
-              class="bets-toggle__btn"
-              [class.active]="betsFilter() === 'open'"
-              (click)="betsFilter.set('open')"
-            >
-              Offen
-            </button>
-            <button
-              class="bets-toggle__btn"
-              [class.active]="betsFilter() === 'won'"
-              (click)="betsFilter.set('won')"
-            >
-              Gewonnen
-            </button>
-          </div>
-          <span class="bets-summary">{{ wonCount() }} Gewonnen von {{ totalCount() }} Wetten</span>
-        </div>
-      }
 
       @if (betsLoading()) {
         <p class="state-msg">Laden…</p>
@@ -162,6 +163,7 @@
           }
         </div>
       }
+    </div>
     </div>
 
     <div class="table-section-title">Offene Tipps</div>

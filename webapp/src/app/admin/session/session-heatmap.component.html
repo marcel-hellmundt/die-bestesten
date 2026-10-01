@@ -4,14 +4,16 @@
   gehaltene Tabs, nicht zwingend aktive Nutzung.
 </p>
 
-<div class="range-toggle">
-  @for (r of RANGES; track r) {
-    <button
-      class="range-toggle__btn"
-      [class.range-toggle__btn--active]="range() === r"
-      (click)="setRange(r)"
-    >{{ rangeLabels[r] }}</button>
-  }
+<div class="segmented-row">
+  <div class="segmented" role="group" aria-label="Zeitraum">
+    @for (r of RANGES; track r) {
+      <button
+        class="segmented__option"
+        [class.segmented__option--active]="range() === r"
+        (click)="setRange(r)"
+      >{{ rangeLabels[r] }}</button>
+    }
+  </div>
 </div>
 
 @if (loading()) {

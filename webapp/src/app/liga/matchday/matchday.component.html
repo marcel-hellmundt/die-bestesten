@@ -46,17 +46,17 @@
       }
       <span class="mobile-break" aria-hidden="true"></span>
       @if (ratings().length > 0) {
-        <div class="stats-mode-toggle">
+        <div class="segmented stats-mode-toggle" role="group" aria-label="Ansicht">
           <button
-            class="stats-mode-toggle__btn"
-            [class.active]="statsMode() === 'stats'"
+            class="segmented__option"
+            [class.segmented__option--active]="statsMode() === 'stats'"
             (click)="statsMode.set('stats')"
           >
             Statistik
           </button>
           <button
-            class="stats-mode-toggle__btn"
-            [class.active]="statsMode() === 'lineup'"
+            class="segmented__option"
+            [class.segmented__option--active]="statsMode() === 'lineup'"
             (click)="statsMode.set('lineup')"
           >
             Einsatz
@@ -288,24 +288,27 @@
         }
       </div>
 
-      <div class="card best-xi-card">
-        <div class="best-xi-tabs">
-          <button
-            class="best-xi-tab"
-            [class.active]="bestXiMode() === 'all'"
-            (click)="bestXiMode.set('all')"
-          >
-            Elf des Tages
-          </button>
-          <button
-            class="best-xi-tab"
-            [class.active]="bestXiMode() === 'free'"
-            (click)="bestXiMode.set('free')"
-          >
-            Transfermarkt-Team
-          </button>
+      <!-- Segmented Control über der Card; Wrapper, damit .main-col beides als einen Block behandelt -->
+      <div class="best-xi-block">
+        <div class="segmented-row">
+          <div class="segmented" role="group" aria-label="Beste Elf">
+            <button
+              class="segmented__option"
+              [class.segmented__option--active]="bestXiMode() === 'all'"
+              (click)="bestXiMode.set('all')"
+            >
+              Elf des Tages
+            </button>
+            <button
+              class="segmented__option"
+              [class.segmented__option--active]="bestXiMode() === 'free'"
+              (click)="bestXiMode.set('free')"
+            >
+              Transfermarkt-Team
+            </button>
+          </div>
         </div>
-
+      <div class="card best-xi-card">
         @if (!bestXi()) {
           <p class="state-msg">Laden…</p>
         } @else if (!bestXi().formation) {
@@ -366,6 +369,7 @@
             }
           </div>
         }
+      </div>
       </div>
     </div>
 
