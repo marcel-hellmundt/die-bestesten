@@ -8,7 +8,7 @@ interface UserAgentData {
 }
 
 /**
- * Geräte-/Theme-Infos für die Admin-Auswertung "Geräte & Erscheinung" (/daten/nutzung) — ApiService hängt
+ * Geräte-/Theme-Infos für die Admin-Auswertung "Geräte & Erscheinung" (/verwaltung/nutzung) — ApiService hängt
  * header() als X-Client-Info an jeden authentifizierten Request, das Backend speichert es an der
  * manager_session (SessionTrait::storeSessionClientInfo). Bewusst grob: kein Fingerabdruck, kein
  * eindeutiges Gerät. Werte:

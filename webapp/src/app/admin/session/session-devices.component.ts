@@ -55,7 +55,7 @@ const THEME_LABEL = { light: 'Hell', dark: 'Dunkel' } as const;
 const PREF_ORDER: ThemePref[] = ['light', 'dark', 'system'];
 
 /**
- * "Geräte & Erscheinung" unter der Nutzungs-Heatmap (/daten/nutzung): welche Geräte jeder Manager
+ * "Geräte & Erscheinung" unter der Nutzungs-Heatmap (/verwaltung/nutzung): welche Geräte jeder Manager
  * nutzt und welches Theme darauf läuft — Grundlage: GET /session/devices (Header X-Client-Info,
  * siehe core/client-info.service.ts). Gleicher Zeitraum wie die Heatmap darüber.
  */

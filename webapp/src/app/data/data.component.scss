@@ -1,7 +1,7 @@
 @use '../../styles/variables' as *;
 
-// Sub-Menü = globales .pill-nav (_layout.scss); hier nur die Trenner:
-// senkrechte Linie nach "Punkte eintragen", Abstandshalter vor "Ligen" (schiebt den Admin-Teil nach rechts)
+// Sub-Menü = globales .pill-nav (_layout.scss); hier nur der Trenner:
+// senkrechte Linie nach "Punkte eintragen"
 .nav-separator {
   flex-shrink: 0;
   align-self: center;
@@ -9,9 +9,4 @@
   height: 26px;
   margin: 0 $space-3;
   background-color: $color-border;
-}
-
-.nav-spacer {
-  flex: 1;
-  min-width: $space-6;
 }

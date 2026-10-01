@@ -136,7 +136,7 @@ trait SessionTrait
 
     /**
      * Geräte je Manager im Zeitraum (gleiche Fenster wie getSessionHeatmap) — für "Geräte & Erscheinung"
-     * auf /daten/nutzung. Ein Gerät = gleiche Kombination aus device_type, os, browser, device_model und
+     * auf /verwaltung/nutzung. Ein Gerät = gleiche Kombination aus device_type, os, browser, device_model und
      * screen (keine echte Geräte-ID: zwei gleiche iPhones eines Managers sind eine Zeile). Die übrigen
      * Felder (Theme, installiert, OS-Version) kommen aus der jüngsten Session des Geräts, die sie gesetzt
      * hat. seconds = Summe der Session-Dauern dieses Geräts (nicht gemergt — pro Gerät gibt es keine

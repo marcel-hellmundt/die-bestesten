@@ -106,9 +106,14 @@ export class NavComponent {
 
   topGroups = computed<NavGroup[]>(() => [this.ligaGroup(), ...this.teamGroups(), this.marktGroup()]);
 
-  bottomGroups = computed<NavGroup[]>(() =>
-    this.auth.isContributor() ? [{ label: '', items: [{ label: 'Datenbank', icon: 'data', route: '/daten' }] }] : [],
-  );
+  // Datenbank ab Contributor, Verwaltung (Ligen, Manager, Achievements, Nutzung) nur Admin
+  bottomGroups = computed<NavGroup[]>(() => {
+    const items: NavItem[] = [
+      ...(this.auth.isContributor() ? [{ label: 'Datenbank', icon: 'data', route: '/daten' }] : []),
+      ...(this.auth.isAdmin() ? [{ label: 'Verwaltung', icon: 'admin', route: '/verwaltung' }] : []),
+    ];
+    return items.length ? [{ label: '', items }] : [];
+  });
 
   mobileNavItems = computed<NavItem[]>(() =>
     this.topGroups().map((g) => ({

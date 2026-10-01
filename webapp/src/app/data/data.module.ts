@@ -5,7 +5,6 @@ import { IconModule } from '../shared/icon/icon.module';
 import { StuckDirective } from '../core/stuck.directive';
 import { MaintainerGuard } from '../auth/maintainer.guard';
 import { ContributorGuard } from '../auth/contributor.guard';
-import { AdminGuard } from '../auth/admin.guard';
 
 import { DataComponent } from './data.component';
 import { CountryDataComponent } from './country/country.component';
@@ -18,17 +17,10 @@ import { SeasonDataComponent } from './season/season.component';
 import { PlayerDataComponent } from './player/player.component';
 import { PlayerDetailComponent } from './player/player-detail.component';
 import { RatingsDataComponent } from './ratings/ratings.component';
-import { LeagueDataComponent } from './league/league.component';
-import { LeagueDetailComponent } from './league/league-detail.component';
-import { AchievementsDataComponent } from './achievements/achievements-data.component';
-import { ManagerDataComponent } from './manager/manager-data.component';
 import { PlayerImportDataComponent } from './player-import/player-import.component';
-import { SessionHeatmapComponent } from './session/session-heatmap.component';
-import { SessionDevicesComponent } from './session/session-devices.component';
 
 const M = [MaintainerGuard];
 const C = [ContributorGuard];
-const A = [AdminGuard];
 
 const routes: Routes = [
   {
@@ -40,8 +32,6 @@ const routes: Routes = [
       { path: 'country/:id',  component: CountryDetailComponent,  canActivate: M },
       { path: 'division',     component: DivisionDataComponent,   canActivate: M },
       { path: 'division/:id', component: DivisionDetailComponent, canActivate: M },
-      { path: 'league',       component: LeagueDataComponent,     canActivate: M },
-      { path: 'league/:id',   component: LeagueDetailComponent,   canActivate: M },
       // club routes: wie player ohne Guard — für alle Manager lesbar (Suche, Karte, Transfers verlinken
       // darauf); Bearbeiten ist in den Komponenten an die Rolle gebunden
       { path: 'club',         component: ClubDataComponent },
@@ -51,11 +41,14 @@ const routes: Routes = [
       // player routes: no MaintainerGuard — managers may get read access here later
       { path: 'player',        component: PlayerDataComponent },
       { path: 'player/:id',    component: PlayerDetailComponent },
-      { path: 'achievements',  component: AchievementsDataComponent, canActivate: A },
-      { path: 'manager',       component: ManagerDataComponent,      canActivate: A },
       { path: 'player-import', component: PlayerImportDataComponent, canActivate: M },
-      { path: 'nutzung',       component: SessionHeatmapComponent,   canActivate: A },
-      { path: 'session-heatmap', redirectTo: 'nutzung' }, // alter Pfad (Lesezeichen)
+      // Ligen, Manager, Achievements, Nutzung liegen jetzt unter /verwaltung (AdminModule) — alte Pfade (Lesezeichen)
+      { path: 'league',          redirectTo: '/verwaltung/ligen' },
+      { path: 'league/:id',      redirectTo: '/verwaltung/ligen/:id' },
+      { path: 'manager',         redirectTo: '/verwaltung/manager' },
+      { path: 'achievements',    redirectTo: '/verwaltung/achievements' },
+      { path: 'nutzung',         redirectTo: '/verwaltung/nutzung' },
+      { path: 'session-heatmap', redirectTo: '/verwaltung/nutzung' },
     ]
   }
 ];
@@ -73,13 +66,7 @@ const routes: Routes = [
     PlayerDataComponent,
     PlayerDetailComponent,
     RatingsDataComponent,
-    LeagueDataComponent,
-    LeagueDetailComponent,
-    AchievementsDataComponent,
-    ManagerDataComponent,
     PlayerImportDataComponent,
-    SessionHeatmapComponent,
-    SessionDevicesComponent,
   ],
   imports: [
     CommonModule,

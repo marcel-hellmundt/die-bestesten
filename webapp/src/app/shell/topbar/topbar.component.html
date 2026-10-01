@@ -336,6 +336,12 @@
               <app-icon name="data"></app-icon>
               Datenbank
             </a>
+            @if (isAdmin()) {
+              <a class="dropdown-item" routerLink="/verwaltung" (click)="closeDropdown()">
+                <app-icon name="admin"></app-icon>
+                Verwaltung
+              </a>
+            }
             <hr class="dropdown-divider" />
           }
           <a class="dropdown-item" routerLink="/einstellungen" (click)="closeDropdown()">

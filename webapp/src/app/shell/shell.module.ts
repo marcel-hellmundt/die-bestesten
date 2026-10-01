@@ -5,6 +5,7 @@ import { ShellComponent } from './shell.component';
 import { NavComponent } from './nav/nav.component';
 import { TopbarComponent } from './topbar/topbar.component';
 import { AuthGuard } from '../auth/auth.guard';
+import { AdminGuard } from '../auth/admin.guard';
 import { IconComponent } from '../core/icon/icon.component';
 import { AchievementNotificationComponent } from './achievement-notification/achievement-notification.component';
 import { BottomSheetComponent } from './bottom-sheet/bottom-sheet.component';
@@ -23,6 +24,7 @@ const routes: Routes = [
       { path: 'markt',         loadChildren: () => import('../markt/markt.module').then(m => m.MarktModule) },
       { path: 'manager',       loadChildren: () => import('../manager/manager.module').then(m => m.ManagerModule) },
       { path: 'daten',         loadChildren: () => import('../data/data.module').then(m => m.DataModule) },
+      { path: 'verwaltung',    loadChildren: () => import('../admin/admin.module').then(m => m.AdminModule), canActivate: [AdminGuard] },
       { path: 'karte',         loadChildren: () => import('../map/map.module').then(m => m.MapModule) },
       { path: 'klebrigsten',   loadChildren: () => import('../stickers/stickers.module').then(m => m.StickersModule) },
       { path: 'einstellungen',  loadChildren: () => import('../settings/settings.module').then(m => m.SettingsModule) },

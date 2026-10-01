@@ -568,7 +568,7 @@ trait LeagueTrait
     /**
      * League-division players of a season without an active team in THIS league — draft pool
      * for admin-assigned pre-season squads. Unlike getAvailablePlayers(), this is scoped to an
-     * explicit $leagueId (not the JWT's auth_league_id), since /daten/league/:id lets an admin
+     * explicit $leagueId (not the JWT's auth_league_id), since /verwaltung/ligen/:id lets an admin
      * manage any league regardless of which one their own token is bound to.
      */
     public function getDraftPool(string $leagueId, string $seasonId): ?array

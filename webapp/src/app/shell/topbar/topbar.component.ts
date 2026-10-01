@@ -93,6 +93,7 @@ export class TopbarComponent implements OnDestroy {
   });
   isMaintainer  = computed(() => this.auth.isMaintainer());
   isContributor = computed(() => this.auth.isContributor());
+  isAdmin       = computed(() => this.auth.isAdmin());
   showStickers  = computed(() => this.isMaintainer() || this.stickerStatus.enabled());
   // Zähler ungeöffneter Sticker-Packs — abschaltbar unter Einstellungen → Benachrichtigungen (sticker_pack)
   stickerBadgeCount = computed(() =>
