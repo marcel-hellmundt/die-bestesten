@@ -32,16 +32,28 @@ export class SegmentedDirective implements AfterViewInit, OnDestroy {
     this.resize.observe(this.host);
   }
 
+  private x = -1;
+  private w = -1;
+
+  /**
+   * Schreibt nur bei echter Änderung: classList.add/remove setzt das class-Attribut auch dann neu, wenn sich
+   * nichts ändert — das würde den MutationObserver erneut auslösen (Endlosschleife, Seite friert ein).
+   */
   private update(): void {
     const active = this.host.querySelector<HTMLElement>(':scope > .segmented__option--active');
+    const sliding = this.host.classList.contains('segmented--sliding');
     if (!active) {
-      this.host.classList.remove('segmented--sliding');
+      if (sliding) this.host.classList.remove('segmented--sliding');
       return;
     }
-    this.host.style.setProperty('--seg-x', `${active.offsetLeft}px`);
-    this.host.style.setProperty('--seg-w', `${active.offsetWidth}px`);
-    // classList.add auf eine vorhandene Klasse ändert das Attribut nicht → kein erneuter Observer-Aufruf
-    this.host.classList.add('segmented--sliding');
+    const x = active.offsetLeft, w = active.offsetWidth;
+    if (x !== this.x || w !== this.w) {
+      this.x = x;
+      this.w = w;
+      this.host.style.setProperty('--seg-x', `${x}px`);
+      this.host.style.setProperty('--seg-w', `${w}px`);
+    }
+    if (!sliding) this.host.classList.add('segmented--sliding');
   }
 
   ngOnDestroy(): void {
