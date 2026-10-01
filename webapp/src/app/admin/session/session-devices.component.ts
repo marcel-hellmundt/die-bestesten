@@ -109,6 +109,35 @@ export class SessionDevicesComponent {
     return { count: known.filter(d => d.standalone).length, total: known.length };
   });
 
+  /**
+   * Card "Geräte-Aufteilung": Computer vs. Mobil (Tablet zählt zu Mobil, unbekannter Typ zu Computer — wie in der
+   * Heatmap) als Leiste, je Gruppe darunter Betriebssysteme und Browser. Gezählt werden Geräte, nicht Nutzungszeit.
+   */
+  deviceSplit = computed(() => {
+    const all = this.allDevices();
+    const total = all.length;
+    const pct = (n: number, of: number) => (of ? Math.round(n / of * 100) : 0);
+    const tally = (devices: SessionDevice[], key: (d: SessionDevice) => string | null) => {
+      const counts = new Map<string, number>();
+      for (const d of devices) {
+        const label = key(d) ?? 'Unbekannt';
+        counts.set(label, (counts.get(label) ?? 0) + 1);
+      }
+      return [...counts.entries()]
+        .map(([label, count]) => ({ label, count, pct: pct(count, devices.length) }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    };
+    const group = (key: 'desktop' | 'mobile', label: string, icon: string) => {
+      const devices = all.filter(d => (d.device_type === 'mobile' || d.device_type === 'tablet') === (key === 'mobile'));
+      return {
+        key, label, icon, count: devices.length, pct: pct(devices.length, total),
+        os: tally(devices, d => d.os),
+        browsers: tally(devices, d => d.browser),
+      };
+    };
+    return { total, groups: [group('desktop', 'Computer', 'monitor'), group('mobile', 'Mobil', 'phone')] };
+  });
+
   deviceName(d: SessionDevice): string {
     if (d.device_model) return d.device_model;
     if (d.os === 'iOS' && d.device_type === 'mobile' && d.screen) {

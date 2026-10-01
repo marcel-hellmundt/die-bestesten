@@ -95,5 +95,61 @@
         </div>
       }
     </div>
+
+    <!-- Geräte-Aufteilung: Computer vs. Mobil, je Gruppe Betriebssysteme + Browser -->
+    @let split = deviceSplit();
+    <div class="card split-card">
+      <div class="split-card__head">
+        <span class="summary-card__label">Geräte-Aufteilung</span>
+        <span class="split-card__total">{{ split.total }} {{ split.total === 1 ? 'Gerät' : 'Geräte' }}</span>
+      </div>
+
+      <div class="split-bar" role="img" aria-label="Aufteilung Computer und Mobil">
+        @for (g of split.groups; track g.key) {
+          @if (g.count) {
+            <span class="split-bar__segment split-bar__segment--{{ g.key }}" [style.flex-grow]="g.count">
+              {{ g.pct }}%
+            </span>
+          }
+        }
+      </div>
+
+      <div class="split-groups">
+        @for (g of split.groups; track g.key) {
+          <div class="split-group split-group--{{ g.key }}">
+            <div class="split-group__title">
+              <app-icon [name]="g.icon" />
+              {{ g.label }}
+              <span class="split-group__count">{{ g.count }} · {{ g.pct }}%</span>
+            </div>
+
+            @if (g.count) {
+              <div class="split-group__cols">
+                <div class="split-list">
+                  <span class="split-list__title">Betriebssystem</span>
+                  <ng-container *ngTemplateOutlet="bars; context: { $implicit: g.os }" />
+                </div>
+                <div class="split-list">
+                  <span class="split-list__title">Browser</span>
+                  <ng-container *ngTemplateOutlet="bars; context: { $implicit: g.browsers }" />
+                </div>
+              </div>
+            } @else {
+              <span class="summary-card__empty">Keine Geräte im Zeitraum.</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
   }
 </section>
+
+<ng-template #bars let-rows>
+  @for (r of rows; track r.label) {
+    <div class="split-row">
+      <span class="split-row__label">{{ r.label }}</span>
+      <span class="split-row__track"><span class="split-row__fill" [style.width.%]="r.pct"></span></span>
+      <span class="split-row__value">{{ r.count }} <small>{{ r.pct }}%</small></span>
+    </div>
+  }
+</ng-template>
