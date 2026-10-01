@@ -867,13 +867,13 @@
     }
   }
 
-  // erst nach der ersten Positionierung animieren (kein Hereinfahren beim Laden)
-  &--sliding#{&}--ready::before {
+  // nur nach einem Klick gleiten (Direktive setzt --animate kurz) — sonst sitzt der Schieber sofort richtig
+  &--sliding#{&}--animate::before {
     transition: transform $transition-normal, width $transition-normal;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    &--sliding#{&}--ready::before { transition: none; }
+    &--sliding#{&}--animate::before { transition: none; }
   }
 }
 

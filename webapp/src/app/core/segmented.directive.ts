@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, OnDestroy, inject } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, HostListener, OnDestroy, inject } from '@angular/core';
 
 /**
  * Gleitender Hintergrund für das Segmented Control (.segmented, _layout.scss): statt dass die alte Option
@@ -8,6 +8,8 @@ import { AfterViewInit, Directive, ElementRef, OnDestroy, inject } from '@angula
  * Misst die Option mit .segmented__option--active und schreibt Position/Breite als --seg-x/--seg-w an den Host;
  * den Schieber zeichnet .segmented--sliding::before. Ohne diese Direktive (oder ohne aktive Option) bleibt es bei
  * der statischen Füllung der aktiven Option. Reines DOM, kein Signal/CD.
+ * Geglitten wird nur nach einem Klick (.segmented--animate, kurz gesetzt) — beim Laden, bei Größenänderungen oder
+ * nachladender Schrift sitzt der Schieber sofort richtig, statt sichtbar herumzuwandern.
  */
 @Directive({
   selector: '.segmented',
@@ -18,10 +20,18 @@ export class SegmentedDirective implements AfterViewInit, OnDestroy {
   private mutations?: MutationObserver;
   private resize?: ResizeObserver;
 
+  private animateTimer?: ReturnType<typeof setTimeout>;
+
+  /** Klick auf eine Option: für die Dauer des Übergangs animieren (läuft vor dem Klassenwechsel der Option) */
+  @HostListener('click')
+  onClick(): void {
+    if (!this.host.classList.contains('segmented--animate')) this.host.classList.add('segmented--animate');
+    clearTimeout(this.animateTimer);
+    this.animateTimer = setTimeout(() => this.host.classList.remove('segmented--animate'), 400);
+  }
+
   ngAfterViewInit(): void {
     this.update();
-    // Erst nach der ersten Positionierung animieren — sonst fährt der Schieber beim Laden von links herein
-    requestAnimationFrame(() => this.host.classList.add('segmented--ready'));
 
     // Aktive Option wechselt (Klasse), Optionen kommen/gehen (@for), Beschriftung ändert sich
     this.mutations = new MutationObserver(() => this.update());
@@ -57,6 +67,7 @@ export class SegmentedDirective implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    clearTimeout(this.animateTimer);
     this.mutations?.disconnect();
     this.resize?.disconnect();
   }
