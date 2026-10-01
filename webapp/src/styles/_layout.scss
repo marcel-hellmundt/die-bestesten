@@ -856,7 +856,7 @@
       width: var(--seg-w, 0);
       transform: translateX(var(--seg-x, 0));
       border-radius: $radius-full;
-      background: $color-accent;
+      background: var(--seg-color, #{$color-accent}); // --seg-color: Variante mit eigener Farbe (.team-toggle)
     }
 
     .segmented__option {
@@ -869,7 +869,7 @@
 
   // nur nach einem Klick gleiten (Direktive setzt --animate kurz) — sonst sitzt der Schieber sofort richtig
   &--sliding#{&}--animate::before {
-    transition: transform $transition-normal, width $transition-normal;
+    transition: transform $transition-normal, width $transition-normal, background-color $transition-normal;
   }
 
   @media (prefers-reduced-motion: reduce) {

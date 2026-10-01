@@ -10,9 +10,12 @@ import { AfterViewInit, Directive, ElementRef, HostListener, OnDestroy, inject }
  * der statischen Füllung der aktiven Option. Reines DOM, kein Signal/CD.
  * Geglitten wird nur nach einem Klick (.segmented--animate, kurz gesetzt) — beim Laden, bei Größenänderungen oder
  * nachladender Schrift sitzt der Schieber sofort richtig, statt sichtbar herumzuwandern.
+ *
+ * Bedient auch die Variante .team-toggle (H2H-Match, mobil: Heim/Auswärts): dort ist die aktive Farbe die
+ * Teamfarbe (--team-color am Button) — sie wird als --seg-color an den Host gereicht, der Schieber blendet um.
  */
 @Directive({
-  selector: '.segmented',
+  selector: '.segmented, .team-toggle',
   standalone: true,
 })
 export class SegmentedDirective implements AfterViewInit, OnDestroy {
@@ -44,13 +47,14 @@ export class SegmentedDirective implements AfterViewInit, OnDestroy {
 
   private x = -1;
   private w = -1;
+  private color = '';
 
   /**
    * Schreibt nur bei echter Änderung: classList.add/remove setzt das class-Attribut auch dann neu, wenn sich
    * nichts ändert — das würde den MutationObserver erneut auslösen (Endlosschleife, Seite friert ein).
    */
   private update(): void {
-    const active = this.host.querySelector<HTMLElement>(':scope > .segmented__option--active');
+    const active = this.host.querySelector<HTMLElement>(':scope > .segmented__option--active, :scope > .team-toggle__btn--active');
     const sliding = this.host.classList.contains('segmented--sliding');
     if (!active) {
       if (sliding) this.host.classList.remove('segmented--sliding');
@@ -62,6 +66,15 @@ export class SegmentedDirective implements AfterViewInit, OnDestroy {
       this.w = w;
       this.host.style.setProperty('--seg-x', `${x}px`);
       this.host.style.setProperty('--seg-w', `${w}px`);
+    }
+    // .team-toggle: Farbe des aktiven Teams für den Schieber
+    const color = this.host.classList.contains('team-toggle')
+      ? getComputedStyle(active).getPropertyValue('--team-color').trim()
+      : '';
+    if (color !== this.color) {
+      this.color = color;
+      if (color) this.host.style.setProperty('--seg-color', color);
+      else this.host.style.removeProperty('--seg-color');
     }
     if (!sliding) this.host.classList.add('segmented--sliding');
   }

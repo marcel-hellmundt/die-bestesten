@@ -960,6 +960,15 @@
       font-weight: $font-weight-semibold;
     }
   }
+
+  // Gleitender Hintergrund wie beim Segmented Control (SegmentedDirective setzt .segmented--sliding +
+  // --seg-color = Teamfarbe; den Schieber zeichnet .segmented--sliding::before aus _layout.scss)
+  &.segmented--sliding &__btn {
+    position: relative; // über dem Schieber
+    z-index: 1;
+
+    &--active { background: transparent; }
+  }
 }
 
 // ── Mobile: pitch view of the selected team ──────────────────────────────────
