@@ -4,7 +4,10 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else if (player(); as p) {
   <div class="detail-header">
-    <a class="back-link" routerLink="../">← Alle Spieler</a>
+    <!-- Liste gibt es erst ab Maintainer -->
+    @if (isMaintainer()) {
+      <a class="back-link" routerLink="../">← Alle Spieler</a>
+    }
 
     <div class="player-hero">
       @if (latestPhotoUrl(); as photoUrl) {

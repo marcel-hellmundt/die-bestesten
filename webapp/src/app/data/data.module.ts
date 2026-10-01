@@ -32,14 +32,13 @@ const routes: Routes = [
       { path: 'country/:id',  component: CountryDetailComponent,  canActivate: M },
       { path: 'division',     component: DivisionDataComponent,   canActivate: M },
       { path: 'division/:id', component: DivisionDetailComponent, canActivate: M },
-      // club routes: wie player ohne Guard — für alle Manager lesbar (Suche, Karte, Transfers verlinken
-      // darauf); Bearbeiten ist in den Komponenten an die Rolle gebunden
-      { path: 'club',         component: ClubDataComponent },
+      // club + player: Liste ab Maintainer, Detailseite ohne Guard für alle Manager lesbar (Suche, Karte,
+      // Kader, Transfers verlinken darauf) — Bearbeiten ist dort in den Komponenten an die Rolle gebunden
+      { path: 'club',         component: ClubDataComponent,       canActivate: M },
       { path: 'club/:id',     component: ClubDetailComponent },
       { path: 'season',       component: SeasonDataComponent,     canActivate: M },
       { path: 'ratings',      component: RatingsDataComponent,    canActivate: C },
-      // player routes: no MaintainerGuard — managers may get read access here later
-      { path: 'player',        component: PlayerDataComponent },
+      { path: 'player',        component: PlayerDataComponent,    canActivate: M },
       { path: 'player/:id',    component: PlayerDetailComponent },
       { path: 'player-import', component: PlayerImportDataComponent, canActivate: M },
       // Ligen, Manager, Achievements, Nutzung liegen jetzt unter /verwaltung (AdminModule) — alte Pfade (Lesezeichen)

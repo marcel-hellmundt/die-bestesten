@@ -4,7 +4,10 @@
   <p class="state-msg state-msg--error">{{ error() }}</p>
 } @else if (club(); as c) {
   <div class="detail-header">
-    <a class="back-link" routerLink="../">← Alle Clubs</a>
+    <!-- Liste gibt es erst ab Maintainer -->
+    @if (isMaintainer()) {
+      <a class="back-link" routerLink="../">← Alle Clubs</a>
+    }
 
     <div class="club-hero">
       <div class="logo-upload-wrapper" [class.logo-upload-wrapper--readonly]="!isMaintainer()"
