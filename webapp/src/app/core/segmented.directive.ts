@@ -1,0 +1,51 @@
+import { AfterViewInit, Directive, ElementRef, OnDestroy, inject } from '@angular/core';
+
+/**
+ * Gleitender Hintergrund für das Segmented Control (.segmented, _layout.scss): statt dass die alte Option
+ * aus- und die neue angeht, bewegt sich die Akzentfläche zur neu gewählten Option. Hängt am Klassen-Selektor,
+ * greift also bei jedem .segmented automatisch — das Modul muss die Direktive nur importieren (standalone).
+ *
+ * Misst die Option mit .segmented__option--active und schreibt Position/Breite als --seg-x/--seg-w an den Host;
+ * den Schieber zeichnet .segmented--sliding::before. Ohne diese Direktive (oder ohne aktive Option) bleibt es bei
+ * der statischen Füllung der aktiven Option. Reines DOM, kein Signal/CD.
+ */
+@Directive({
+  selector: '.segmented',
+  standalone: true,
+})
+export class SegmentedDirective implements AfterViewInit, OnDestroy {
+  private host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private mutations?: MutationObserver;
+  private resize?: ResizeObserver;
+
+  ngAfterViewInit(): void {
+    this.update();
+    // Erst nach der ersten Positionierung animieren — sonst fährt der Schieber beim Laden von links herein
+    requestAnimationFrame(() => this.host.classList.add('segmented--ready'));
+
+    // Aktive Option wechselt (Klasse), Optionen kommen/gehen (@for), Beschriftung ändert sich
+    this.mutations = new MutationObserver(() => this.update());
+    this.mutations.observe(this.host, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+
+    // Breite ändert sich (Fenstergröße, Schrift geladen)
+    this.resize = new ResizeObserver(() => this.update());
+    this.resize.observe(this.host);
+  }
+
+  private update(): void {
+    const active = this.host.querySelector<HTMLElement>(':scope > .segmented__option--active');
+    if (!active) {
+      this.host.classList.remove('segmented--sliding');
+      return;
+    }
+    this.host.style.setProperty('--seg-x', `${active.offsetLeft}px`);
+    this.host.style.setProperty('--seg-w', `${active.offsetWidth}px`);
+    // classList.add auf eine vorhandene Klasse ändert das Attribut nicht → kein erneuter Observer-Aufruf
+    this.host.classList.add('segmented--sliding');
+  }
+
+  ngOnDestroy(): void {
+    this.mutations?.disconnect();
+    this.resize?.disconnect();
+  }
+}

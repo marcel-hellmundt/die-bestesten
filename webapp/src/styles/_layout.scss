@@ -841,6 +841,40 @@
       color: #fff;
     }
   }
+
+  // Gleitender Hintergrund (SegmentedDirective, core/segmented.directive.ts): die Direktive misst die aktive
+  // Option und setzt --seg-x/--seg-w; der Schieber liegt unter den Optionen und fährt zur neuen Auswahl.
+  &--sliding {
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      left: 0;
+      width: var(--seg-w, 0);
+      transform: translateX(var(--seg-x, 0));
+      border-radius: $radius-full;
+      background: $color-accent;
+    }
+
+    .segmented__option {
+      position: relative; // über dem Schieber
+      z-index: 1;
+
+      &--active { background: transparent; }
+    }
+  }
+
+  // erst nach der ersten Positionierung animieren (kein Hereinfahren beim Laden)
+  &--sliding#{&}--ready::before {
+    transition: transform $transition-normal, width $transition-normal;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &--sliding#{&}--ready::before { transition: none; }
+  }
 }
 
 .segmented-row {

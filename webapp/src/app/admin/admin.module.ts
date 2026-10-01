@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { IconModule } from '../shared/icon/icon.module';
 import { StuckDirective } from '../core/stuck.directive';
+import { SegmentedDirective } from '../core/segmented.directive';
 
 import { AdminComponent } from './admin.component';
 import { LeagueDataComponent } from './league/league.component';
@@ -43,6 +44,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     IconModule,
     StuckDirective,
+    SegmentedDirective,
   ],
 })
 export class AdminModule {}
