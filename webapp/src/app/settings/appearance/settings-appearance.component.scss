@@ -6,12 +6,17 @@
 
 .theme-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  // minmax(0, …): Spalten bleiben exakt gleich breit, auch wenn ein Inhalt breiter wäre
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: $space-3;
 }
 
 .theme-card {
   display: flex;
+  // volle Spaltenbreite — links neben der ersten und rechts neben der letzten Karte bleibt nur das Card-Padding
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   flex-direction: column;
   gap: $space-3;
   padding: $space-2;
