@@ -4,7 +4,7 @@ import { EMPTY, Observable, catchError, exhaustMap, of, switchMap, timer } from 
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
-type RangeKey = 'day' | 'month' | 'year' | 'all';
+type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all';
 
 interface HeatmapManager {
   manager_id: string;
@@ -45,13 +45,13 @@ const GRADIENT_MIN_OPACITY = 0.1;
 const GRADIENT_MAX_OPACITY = 1;
 
 const RANGE_LABELS: Record<RangeKey, string> = {
-  day: 'Tag', month: 'Monat', year: 'Jahr', all: 'Insgesamt',
+  today: 'Heute', day: 'Tag', month: 'Monat', year: 'Jahr', all: 'Insgesamt',
 };
 
 // Beschreibung des gesamten abgedeckten Zeitraums für den Manager-Zeilen-Tooltip (aggregiert über
 // alle aktuell angezeigten Buckets) — Fenstergrößen wie in SessionTrait::getSessionHeatmap.
 const RANGE_PERIOD_LABELS: Record<RangeKey, string> = {
-  day: 'Letzte 24 Stunden', month: 'Letzte 30 Tage', year: 'Letzte 52 Wochen', all: 'Seit der ersten Session',
+  today: 'Heute seit 0 Uhr', day: 'Letzte 24 Stunden', month: 'Letzte 30 Tage', year: 'Letzte 52 Wochen', all: 'Seit der ersten Session',
 };
 
 // Grobe Obergrenze für die Tooltip-Breite, nur zum Clampen der Position genutzt (siehe
@@ -92,7 +92,7 @@ export class SessionHeatmapComponent {
   private api = inject(ApiService);
   cache        = inject(DataCacheService);
 
-  readonly RANGES: RangeKey[] = ['day', 'month', 'year', 'all'];
+  readonly RANGES: RangeKey[] = ['today', 'day', 'month', 'year', 'all'];
   readonly rangeLabels = RANGE_LABELS;
 
   range = signal<RangeKey>('day');
@@ -191,7 +191,13 @@ export class SessionHeatmapComponent {
     const now = new Date();
     const cols: BucketColumn[] = [];
 
-    if (range === 'day') {
+    if (range === 'today') {
+      // alle Stunden von 0 Uhr bis zur laufenden Stunde
+      for (let h = 0; h <= now.getHours(); h++) {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h);
+        cols.push({ key: this.hourKey(d), label: `${String(h).padStart(2, '0')}h` });
+      }
+    } else if (range === 'day') {
       const currentHour = new Date(now);
       currentHour.setMinutes(0, 0, 0);
       for (let i = 23; i >= 0; i--) {
@@ -616,7 +622,7 @@ export class SessionHeatmapComponent {
   // da new Date("YYYY-MM-DD") sonst als UTC-Mitternacht statt Lokalzeit interpretiert wird
   // (JS-Falle) und je nach Zeitzone auf den Vortag verschieben könnte.
   private formatBucketLabel(col: BucketColumn): string {
-    if (this.range() === 'day') {
+    if (this.range() === 'day' || this.range() === 'today') {
       const d = new Date(col.key);
       const day = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
       return `${day}, ${String(d.getHours()).padStart(2, '0')}:00 Uhr`;

@@ -4,7 +4,7 @@ import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
-type RangeKey = 'day' | 'month' | 'year' | 'all';
+type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all';
 type ThemePref = 'light' | 'dark' | 'system';
 
 interface SessionDevice {

@@ -147,6 +147,7 @@ trait SessionTrait
     public function getSessionDevices(string $range = 'month'): array
     {
         $sinceExpr = match ($range) {
+            'today' => "CURDATE()",
             'day'   => "(NOW() - INTERVAL 24 HOUR)",
             'year'  => "(CURDATE() - INTERVAL 51 WEEK)",
             'all'   => null,
@@ -244,6 +245,8 @@ trait SessionTrait
 
     /**
      * Usage seconds per manager, bucketed for the given range (heatmap raw data):
+     *  - 'today' → heute seit 0 Uhr, ein Bucket pro Stunde (Schlüssel wie 'day'); Sessions, die vor
+     *              Mitternacht begonnen haben, zählen erst ab 0 Uhr
      *  - 'day'   → letzte 24h, ein Bucket pro Stunde (Schlüssel "YYYY-MM-DDTHH:00:00")
      *  - 'month' → letzte 30 Tage, ein Bucket pro Tag (Schlüssel "YYYY-MM-DD")
      *  - 'year'  → letzte 52 Wochen, ein Bucket pro Woche (Schlüssel = Montag der Woche, "YYYY-MM-DD")
@@ -275,6 +278,9 @@ trait SessionTrait
     public function getSessionHeatmap(string $range = 'day'): array
     {
         switch ($range) {
+            case 'today':
+                $sinceExpr = "CURDATE()";
+                break;
             case 'month':
                 $sinceExpr = "(CURDATE() - INTERVAL 29 DAY)";
                 break;
@@ -322,6 +328,10 @@ trait SessionTrait
             }
 
             $interval = [new DateTime($r['started_at']), new DateTime($r['ended_at'])];
+            // Heute: nur der Teil ab Mitternacht (sonst landete der Rest in Stunden-Buckets von gestern)
+            if ($range === 'today' && $interval[0] < ($midnight ??= new DateTime('today'))) {
+                $interval[0] = clone $midnight;
+            }
             $managers[$r['manager_id']]['intervals'][] = $interval;
             if (in_array($r['device_type'], ['mobile', 'tablet'], true)) {
                 $managers[$r['manager_id']]['mobileIntervals'][] = $interval;
@@ -434,6 +444,7 @@ trait SessionTrait
     private function sessionBucketBoundary(DateTime $t, string $range): array
     {
         switch ($range) {
+            case 'today':
             case 'day':
                 $key = $t->format('Y-m-d\TH:00:00');
                 $end = (clone $t)->setTime((int) $t->format('H'), 0, 0)->modify('+1 hour');
