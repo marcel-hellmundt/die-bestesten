@@ -43,9 +43,11 @@
   @if (isAdmin()) {
     <button class="btn" (click)="openClubForm()">+ Neuer Club</button>
   }
-  <button class="btn" [disabled]="sanityState() === 'loading'" (click)="runSanityCheck()">
-    {{ sanityState() === 'loading' ? 'Prüft…' : 'Sanity Check' }}
-  </button>
+  @if (isMaintainer()) {
+    <button class="btn" [disabled]="sanityState() === 'loading'" (click)="runSanityCheck()">
+      {{ sanityState() === 'loading' ? 'Prüft…' : 'Sanity Check' }}
+    </button>
+  }
 </div>
 
 @if (sanityState() === 'done') {
@@ -98,7 +100,7 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th class="col-id">ID</th>
+            @if (isMaintainer()) { <th class="col-id">ID</th> }
             <th colspan="2">Name</th>
             <th>Kürzel</th>
             <th>Liga</th>
@@ -107,7 +109,7 @@
         <tbody>
           @for (entry of otherClubs(); track entry.club.id) {
             <tr class="row-link" (click)="navigate(entry.club.id)">
-              <td class="col-id">{{ entry.club.id }}</td>
+              @if (isMaintainer()) { <td class="col-id">{{ entry.club.id }}</td> }
               <td class="col-flag"><img [src]="entry.club.flagUrl" class="flag" /></td>
               <td>
                 <span class="flex items-center gap-2">

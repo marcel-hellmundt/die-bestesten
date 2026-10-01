@@ -26,6 +26,8 @@ export class ClubDataComponent {
   cache         = inject(DataCacheService);
 
   isAdmin = computed(() => this.auth.isAdmin());
+  /** Sanity Check + ID-Spalte — Werkzeuge der Datenpflege, für normale Manager ausgeblendet */
+  isMaintainer = computed(() => this.auth.isMaintainer());
 
   private reload$ = new BehaviorSubject<void>(undefined);
 

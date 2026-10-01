@@ -42,8 +42,10 @@ const routes: Routes = [
       { path: 'division/:id', component: DivisionDetailComponent, canActivate: M },
       { path: 'league',       component: LeagueDataComponent,     canActivate: M },
       { path: 'league/:id',   component: LeagueDetailComponent,   canActivate: M },
-      { path: 'club',         component: ClubDataComponent,       canActivate: M },
-      { path: 'club/:id',     component: ClubDetailComponent,     canActivate: M },
+      // club routes: wie player ohne Guard — für alle Manager lesbar (Suche, Karte, Transfers verlinken
+      // darauf); Bearbeiten ist in den Komponenten an die Rolle gebunden
+      { path: 'club',         component: ClubDataComponent },
+      { path: 'club/:id',     component: ClubDetailComponent },
       { path: 'season',       component: SeasonDataComponent,     canActivate: M },
       { path: 'ratings',      component: RatingsDataComponent,    canActivate: C },
       // player routes: no MaintainerGuard — managers may get read access here later

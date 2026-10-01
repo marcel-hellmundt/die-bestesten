@@ -26,6 +26,8 @@ export class ClubDetailComponent {
   cache = inject(DataCacheService);
 
   isAdmin = computed(() => this.auth.isAdmin());
+  /** Logo hochladen, Vereinsfarben, ID kopieren — für normale Manager ist die Seite nur lesbar */
+  isMaintainer = computed(() => this.auth.isMaintainer());
 
   private id$ = this.route.paramMap.pipe(map((p) => p.get('id')!));
   private reloadSeasons$ = new BehaviorSubject<void>(undefined);
@@ -131,6 +133,7 @@ export class ClubDetailComponent {
   @ViewChild('logoInput') logoInput!: ElementRef<HTMLInputElement>;
 
   onLogoClick(): void {
+    if (!this.isMaintainer()) return;
     this.logoInput.nativeElement.click();
   }
 

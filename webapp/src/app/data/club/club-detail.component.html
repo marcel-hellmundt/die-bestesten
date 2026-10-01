@@ -7,7 +7,8 @@
     <a class="back-link" routerLink="../">← Alle Clubs</a>
 
     <div class="club-hero">
-      <div class="logo-upload-wrapper" (click)="onLogoClick()" title="Logo hochladen">
+      <div class="logo-upload-wrapper" [class.logo-upload-wrapper--readonly]="!isMaintainer()"
+           (click)="onLogoClick()" [attr.title]="isMaintainer() ? 'Logo hochladen' : null">
         <img
           [src]="
             logoBust()
@@ -18,18 +19,20 @@
           class="club-logo"
           alt=""
         />
-        <div
-          class="logo-upload-overlay"
-          [class.logo-upload-overlay--visible]="logoUploadState() !== 'idle'"
-        >
-          @if (logoUploadState() === 'loading') {
-            <span class="logo-upload-spinner"></span>
-          } @else if (logoUploadState() === 'error') {
-            <app-icon name="upload-error" />
-          } @else {
-            <app-icon name="upload" />
-          }
-        </div>
+        @if (isMaintainer()) {
+          <div
+            class="logo-upload-overlay"
+            [class.logo-upload-overlay--visible]="logoUploadState() !== 'idle'"
+          >
+            @if (logoUploadState() === 'loading') {
+              <span class="logo-upload-spinner"></span>
+            } @else if (logoUploadState() === 'error') {
+              <app-icon name="upload-error" />
+            } @else {
+              <app-icon name="upload" />
+            }
+          </div>
+        }
       </div>
       <input
         #logoInput
@@ -47,27 +50,43 @@
           }
         </div>
 
-        <button class="id-copy-btn" (click)="copyId(c.id)" title="ID kopieren">
-          {{ idCopied() ? 'Kopiert!' : c.id }}
-        </button>
+        @if (isMaintainer()) {
+          <button class="id-copy-btn" (click)="copyId(c.id)" title="ID kopieren">
+            {{ idCopied() ? 'Kopiert!' : c.id }}
+          </button>
+        }
 
-        <!-- Vereinsfarben: Primärfarbe = Rand der Sticker-Karte ("Die Klebrigsten") -->
-        <div class="club-colors" [class.club-colors--saving]="colorSaving()">
-          @for (slot of colorSlots; track slot.key) {
-            @let value = c[slot.key];
-            <div class="club-color">
-              <label class="club-color__swatch" [class.club-color__swatch--empty]="!value"
-                     [style.background]="value ?? null" [title]="slot.label + (value ? ': ' + value : ' – nicht gesetzt')">
-                <input type="color" [value]="value ?? '#ffffff'" (change)="setColor(slot.key, $any($event.target).value)" />
-              </label>
-              <span class="club-color__label">{{ slot.label }}</span>
-              @if (value) {
-                <button class="club-color__clear" (click)="setColor(slot.key, null)" title="Farbe entfernen">×</button>
+        <!-- Vereinsfarben: Primärfarbe = Rand der Sticker-Karte ("Die Klebrigsten") — bearbeiten ab Maintainer,
+             sonst nur gesetzte Farben als Anzeige -->
+        @if (isMaintainer()) {
+          <div class="club-colors" [class.club-colors--saving]="colorSaving()">
+            @for (slot of colorSlots; track slot.key) {
+              @let value = c[slot.key];
+              <div class="club-color">
+                <label class="club-color__swatch" [class.club-color__swatch--empty]="!value"
+                       [style.background]="value ?? null" [title]="slot.label + (value ? ': ' + value : ' – nicht gesetzt')">
+                  <input type="color" [value]="value ?? '#ffffff'" (change)="setColor(slot.key, $any($event.target).value)" />
+                </label>
+                <span class="club-color__label">{{ slot.label }}</span>
+                @if (value) {
+                  <button class="club-color__clear" (click)="setColor(slot.key, null)" title="Farbe entfernen">×</button>
+                }
+              </div>
+            }
+            @if (colorError(); as err) { <span class="club-colors__error">{{ err }}</span> }
+          </div>
+        } @else if (c.primary_color || c.secondary_color) {
+          <div class="club-colors">
+            @for (slot of colorSlots; track slot.key) {
+              @if (c[slot.key]; as value) {
+                <div class="club-color">
+                  <span class="club-color__swatch club-color__swatch--readonly" [style.background]="value" [title]="slot.label"></span>
+                  <span class="club-color__label">{{ slot.label }}</span>
+                </div>
               }
-            </div>
-          }
-          @if (colorError(); as err) { <span class="club-colors__error">{{ err }}</span> }
-        </div>
+            }
+          </div>
+        }
       </div>
 
       @if (c.stadium) {
@@ -171,7 +190,8 @@
                         </td>
                       } @else {
                         <td>
-                          <a class="division-cell" [routerLink]="['/daten/division', s.division_id]">
+                          <!-- Spielklassen-Detail gibt es erst ab Maintainer — sonst ohne Link -->
+                          <a class="division-cell" [routerLink]="isMaintainer() ? ['/daten/division', s.division_id] : null">
                             <span
                               class="division-badge"
                               [style.background-color]="divisionColor(s.division_id)"
