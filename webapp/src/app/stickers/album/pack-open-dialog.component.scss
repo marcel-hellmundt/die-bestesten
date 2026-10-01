@@ -515,8 +515,35 @@ $pack-text-always-white: true;
     .flip__front { animation: none; visibility: hidden; }
     .flip__back { animation: none; visibility: visible; }
     .flip__front::before, .flip__front::after, .flip__back::before, .flip__back::after { animation: none; }
-    .tag { visibility: hidden; animation: none; }
+    .tag, .holo-ring { visibility: hidden; animation: none; }
   }
+}
+
+// Holo-Karte: Leuchtrahmen hinter der Karte — bewusst ohne Blend-Modi (der Folien-Schimmer der Karte selbst
+// fällt in der 3D-Dreh-Animation auf mobilen Browsern oft weg, die Karte wirkt dann nur grau)
+.holo-ring {
+  --holo-glow: 203, 213, 225; // Silber
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: 7% / 5%;
+  pointer-events: none;
+  background: linear-gradient(135deg, #f4f6f9, #aeb5c0 45%, #e3e7ec 70%, #8d95a2);
+  box-shadow: 0 0 14px 3px rgba(var(--holo-glow), 0.75);
+  // erst wenn die Karte umgedreht ist, dann pulsierend
+  animation:
+    fade-in 220ms calc(var(--flip-delay, 0ms) + 380ms) backwards,
+    holo-pulse 1.6s calc(var(--flip-delay, 0ms) + 600ms) ease-in-out infinite alternate;
+}
+
+.pull--holo-gold .holo-ring {
+  --holo-glow: 250, 204, 21;
+  background: linear-gradient(135deg, #f7e08f, #c99a2e 45%, #f3d27a 70%, #a8781c);
+}
+
+@keyframes holo-pulse {
+  from { box-shadow: 0 0 10px 2px rgba(var(--holo-glow), 0.55); }
+  to   { box-shadow: 0 0 22px 7px rgba(var(--holo-glow), 0.95); }
 }
 
 // Umdrehen mit Tiefe: die Karte hebt sich zur Mitte leicht an (translateZ), die abgewandte Seite wird dunkler,
@@ -610,6 +637,20 @@ $pack-text-always-white: true;
   animation: fade-in 220ms calc(var(--flip-delay, 0ms) + 380ms) backwards;
 
   &--new { background: $color-success; }
+
+  // "Holo Silber"/"Holo Gold" oben an der Karte — metallisch wie das Label auf der Karte, nur groß genug zum Lesen
+  &--holo {
+    top: -10px;
+    bottom: auto;
+    background: linear-gradient(135deg, #f4f6f9, #aeb5c0 45%, #e3e7ec 70%, #8d95a2);
+    color: #1f2937;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.pull--holo-gold .tag--holo {
+  background: linear-gradient(135deg, #f7e08f, #c99a2e 45%, #f3d27a 70%, #a8781c);
+  color: #4a3406;
 }
 
 .actions {
@@ -627,7 +668,7 @@ $pack-text-always-white: true;
 
 @media (prefers-reduced-motion: reduce) {
   .flip, .flip__front, .flip__front::before, .flip__front::after, .flip__back::before, .flip__back::after,
-  .tag, .actions--after-reveal { animation: none; }
+  .tag, .holo-ring, .actions--after-reveal { animation: none; }
   .flip__back { animation: none; visibility: hidden; }
   // auch ohne Animation verdeckt, bis angeklickt
   .pull--hidden .flip__back { visibility: visible; }

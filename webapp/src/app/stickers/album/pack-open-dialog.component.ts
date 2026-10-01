@@ -3,6 +3,7 @@ import {
   untracked, viewChild,
 } from '@angular/core';
 import { PACK_ART, PackCard, PackInfo, packCountLabel, packDesign, packFace } from './pack.model';
+import { HOLO_LABEL } from '../sticker-card/sticker-card.component';
 
 /** Dauer der Aufreiß-Animation bis zum Aufdecken (mindestens; muss zu den Delays im SCSS passen). */
 const TEAR_MS = 1750;
@@ -110,6 +111,10 @@ export class PackOpenDialogComponent {
   }
 
   /** Karten bleiben nach dem Austeilen verdeckt und werden erst per Klick einzeln umgedreht */
+  /** Holo-Karten beim Aufdecken eigens kennzeichnen (Label + Leuchtrahmen) — der Folien-Schimmer der Karte selbst
+   *  hängt an Blend-Modi, die mobile Browser in der 3D-Dreh-Animation oft nicht darstellen */
+  readonly holoLabel = HOLO_LABEL;
+
   flipped = signal<ReadonlySet<number>>(new Set());
   isHidden(i: number): boolean { return !this.flipped().has(i); }
 

@@ -93,11 +93,16 @@
       <div class="cards" [class.cards--four]="(cards()?.length ?? 0) > 6">
         @for (c of cards(); track $index) {
           <button class="pull" type="button" [class.pull--hidden]="isHidden($index)"
+                  [class.pull--holo]="!!c.card.holo" [class.pull--holo-gold]="c.card.holo === 'gold'"
                   (click)="onPull(c, $index)" [attr.aria-label]="isHidden($index) ? 'Karte umdrehen' : c.sticker.displayname">
             <span class="flip">
               <span class="flip__front"><app-sticker-card [data]="c.card" /></span>
               <span class="flip__back back" aria-hidden="true"><img class="back__mark" src="img/logos/die-bestesten.png" alt="" draggable="false" /></span>
             </span>
+            @if (c.card.holo; as holo) {
+              <span class="holo-ring" aria-hidden="true"></span>
+              <span class="tag tag--holo">{{ holoLabel[holo] }}</span>
+            }
             <span class="tag" [class.tag--new]="c.isNew">{{ c.isNew ? 'Neu' : 'Doppelt ×' + c.count }}</span>
           </button>
         }
