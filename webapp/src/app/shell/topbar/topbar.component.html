@@ -332,19 +332,19 @@
           </a>
           <hr class="dropdown-divider dropdown-divider--mobile-only" />
           @if (isContributor()) {
-            <a class="dropdown-item" routerLink="/daten" (click)="closeDropdown()">
+            <a class="dropdown-item" [class.dropdown-item--active]="currentUrl().startsWith('/daten')" routerLink="/daten" (click)="closeDropdown()">
               <app-icon name="data"></app-icon>
               Datenbank
             </a>
             @if (isAdmin()) {
-              <a class="dropdown-item" routerLink="/verwaltung" (click)="closeDropdown()">
+              <a class="dropdown-item" [class.dropdown-item--active]="currentUrl().startsWith('/verwaltung')" routerLink="/verwaltung" (click)="closeDropdown()">
                 <app-icon name="admin"></app-icon>
                 Verwaltung
               </a>
             }
             <hr class="dropdown-divider" />
           }
-          <a class="dropdown-item" routerLink="/einstellungen" (click)="closeDropdown()">
+          <a class="dropdown-item" [class.dropdown-item--active]="currentUrl().startsWith('/einstellungen')" routerLink="/einstellungen" (click)="closeDropdown()">
             <app-icon name="settings"></app-icon>
             Einstellungen
           </a>
