@@ -199,7 +199,10 @@
 
   &__icon { font-size: 14px; }
 
+  // Zeilenbox auf die Ziffernhöhe beschneiden (ohne Ober-/Unterlänge) — sonst sitzen die Zahlen neben dem
+  // Emoji nicht mittig in der Pille
   &__count {
+    text-box: trim-both cap alphabetic;
     font-weight: $font-weight-bold;
     font-variant-numeric: tabular-nums;
 
