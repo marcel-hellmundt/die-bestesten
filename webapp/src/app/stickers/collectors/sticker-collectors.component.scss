@@ -177,7 +177,7 @@
 .pack-cell {
   position: relative;
   display: flex;
-  min-height: 22px;
+  height: 26px;
   font-size: 11px;
   line-height: 1;
   white-space: nowrap;
@@ -217,6 +217,9 @@
 
   // Mobil: schmale Spalten → Symbol über der Zahl
   @media (max-width: $mobile-breakpoint) {
+    height: auto; // Symbol über der Zahl braucht mehr als 26px
+    min-height: 26px;
+
     .pack-cell__chip {
       flex-direction: column;
       gap: 2px;

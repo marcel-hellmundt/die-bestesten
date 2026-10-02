@@ -1,12 +1,15 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of, switchMap } from 'rxjs';
+import { catchError, of, scan, switchMap, timer } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { PACK_SOURCE_LABEL, StickerCollectors, StickerPackSource, StickerStatusService } from '../../core/sticker-status.service';
 import { PACK_KINDS, PackKind } from '../shop/shop.model';
 import { packRules } from '../album/pack.model';
+
+/** Admins: Liste (Pack-Übersicht) im Hintergrund neu laden — wie die Heatmap auf /verwaltung/nutzung */
+const ADMIN_REFRESH_MS = 15_000;
 
 /**
  * "Klebebande" (/klebrigsten/klebebande): Rangliste aller Sammler der Saison — Klick öffnet das
@@ -28,10 +31,13 @@ export class StickerCollectorsComponent {
   /** Admins sehen links neben dem Bild, wie viele ungeöffnete Packs jeder Manager hat */
   readonly isAdmin = this.auth.isAdmin();
 
-  // neu geladen, sobald sich die eigene Sammlung ändert (Pack geöffnet); bis dahin bleibt die alte Liste stehen
+  // neu geladen, sobald sich die eigene Sammlung ändert (Pack geöffnet), für Admins zusätzlich alle
+  // ADMIN_REFRESH_MS; bis dahin — und wenn ein Abruf scheitert — bleibt die alte Liste stehen
   private data = toSignal(
     toObservable(this.status.state).pipe(
+      switchMap(() => this.isAdmin ? timer(0, ADMIN_REFRESH_MS) : of(0)),
       switchMap(() => this.api.get<StickerCollectors>('sticker/collectors').pipe(catchError(() => of(null)))),
+      scan((prev, cur) => cur ?? prev, null as StickerCollectors | null),
     ),
   );
   loading = computed(() => this.data() === undefined);
