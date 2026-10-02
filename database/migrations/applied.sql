@@ -457,3 +457,16 @@ ALTER TABLE manager_session
     ADD COLUMN os_version   VARCHAR(12) NULL DEFAULT NULL AFTER standalone,   -- z.B. '17.5' (iOS), '14' (Android), '11' (Windows)
     ADD COLUMN device_model VARCHAR(40) NULL DEFAULT NULL AFTER os_version,   -- nur Android per Client Hints, z.B. 'Pixel 8'
     ADD COLUMN screen       VARCHAR(20) NULL DEFAULT NULL AFTER device_model; -- 'kurz×lang@Pixeldichte', z.B. '375x812@3'
+
+-- ── 2026-10-02_sticker_pack_streak.sql  (2026-10-02) ────────────────────────────────────────────────
+
+-- Migration: Streak-Pack ("Die Klebrigsten") — neue Pack-Quelle
+-- Ziel: GLOBALE DB, dev + prod. Idempotent (MODIFY) — kann mehrfach ausgeführt werden.
+--
+--   streak — 7 Tage in Folge online (streak_days), zusätzlich zum Tages-Pack; 3 Sticker (streak_pack_size)
+-- Regeln in StickerPackTrait::stickerConfig(), Vergabe in grantStreakStickerPack() (GET /sticker/me); source_key streak:{Datum}.
+-- Ohne diese Migration wird kein Streak-Pack vergeben.
+
+ALTER TABLE sticker_pack
+    MODIFY source ENUM('daily', 'milestone', 'matchday_best', 'admin', 'shop', 'birthday', 'christmas', 'streak')
+        CHARACTER SET utf8mb4 NOT NULL;
