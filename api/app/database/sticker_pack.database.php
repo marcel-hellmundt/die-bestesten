@@ -148,11 +148,12 @@ trait StickerPackTrait
     }
 
     /**
-     * Streak-Pack beim Abruf von GET /sticker/me (nach dem Tages-Pack, $today = Y-m-d deutscher Zeit): wer an jedem der
-     * letzten streak_days Tage (heute eingeschlossen) online war, bekommt Pack streak:{heute}. "Online" = Tages-Pack
-     * dieses Tages vorhanden (daily:{Datum} wird bei jedem App-Start vergeben). Danach zählt die Serie neu: liegt in
-     * diesen Tagen schon ein Streak-Pack, gibt es keins — das nächste also frühestens streak_days Tage später.
-     * Wer beim Einführen schon eine längere Serie hat, bekommt beim nächsten Abruf genau ein Pack.
+     * Streak-Pack beim Abruf von GET /sticker/me (nach dem Tages-Pack, $today = Y-m-d deutscher Zeit): je volle
+     * streak_days Tage einer ununterbrochenen Online-Serie ein Pack — am 7., 14., 21. … Tag der Serie, source_key
+     * streak:{Datum dieses Tags}. "Online" = Tages-Pack dieses Tages vorhanden (daily:{Datum} wird bei jedem App-Start
+     * vergeben); die Serie endet mit dem ersten Tag ohne Tages-Pack. Gezählt wird ab Beginn der Serie, nicht ab der
+     * Vergabe: fehlende Packs der laufenden Serie werden nachgeholt (z.B. Serie schon vor Einführung der Regel
+     * begonnen) — wann jemand das erste Pack abholt, verschiebt die folgenden nicht.
      */
     private function grantStreakStickerPack(string $managerId, string $seasonId, string $today): void
     {
@@ -160,26 +161,35 @@ trait StickerPackTrait
         $days = (int) $cfg['streak_days'];
         if ($days <= 0 || $cfg['streak_pack_size'] <= 0 || $cfg['daily_pack_size'] <= 0) return;
         try {
-            $daily = $streak = [];
-            for ($i = 0; $i < $days; $i++) {
-                $d = (new DateTime($today))->modify("-$i day")->format('Y-m-d');
-                $daily[]  = "daily:$d";
-                $streak[] = "streak:$d";
-            }
-            $in = implode(',', array_fill(0, $days, '?'));
             $q = $this->con->prepare(
-                "SELECT COALESCE(SUM(source_key IN ($in)), 0) AS online_days, COALESCE(SUM(source_key IN ($in)), 0) AS streak_packs
-                 FROM sticker_pack WHERE manager_id = ?"
+                "SELECT source_key FROM sticker_pack
+                 WHERE manager_id = ? AND (source_key LIKE 'daily:%' OR source_key LIKE 'streak:%')"
             );
-            $q->execute([...$daily, ...$streak, $managerId]);
-            $r = $q->fetch(PDO::FETCH_ASSOC);
-            if ((int) $r['online_days'] < $days || (int) $r['streak_packs'] > 0) return;
+            $q->execute([$managerId]);
+            $keys = array_fill_keys($q->fetchAll(PDO::FETCH_COLUMN), true);
+
+            // Länge der laufenden Serie: von heute rückwärts, solange es je Tag ein Tages-Pack gibt
+            $day = new DateTime($today);
+            $run = [];
+            while (isset($keys['daily:' . $day->format('Y-m-d')])) {
+                array_unshift($run, $day->format('Y-m-d'));
+                $day->modify('-1 day');
+            }
+
+            // jeder streak_days-te Tag der Serie (Index 6, 13, …) bringt ein Pack — noch fehlende vergeben
+            $due = [];
+            for ($i = $days - 1; $i < count($run); $i += $days) {
+                if (!isset($keys["streak:{$run[$i]}"])) $due[] = $run[$i];
+            }
+            if (!$due) return;
 
             // ohne Migration 2026-10-02_sticker_pack_streak.sql würde INSERT IGNORE ein Pack mit leerer source anlegen
             $col = $this->con->query("SHOW COLUMNS FROM sticker_pack LIKE 'source'")->fetch(PDO::FETCH_ASSOC);
             if (!$col || strpos((string) $col['Type'], "'streak'") === false) return;
 
-            $this->grantStickerPack($managerId, $seasonId, 'streak', "streak:$today", null, $cfg['streak_pack_size']);
+            foreach ($due as $date) {
+                $this->grantStickerPack($managerId, $seasonId, 'streak', "streak:$date", null, $cfg['streak_pack_size']);
+            }
         } catch (\Throwable $e) {
             // kein Streak-Pack
         }
