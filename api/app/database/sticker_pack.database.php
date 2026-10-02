@@ -182,6 +182,13 @@ trait StickerPackTrait
             $last = intdiv(count($run), $days) * $days - 1;
             if ($last < 0 || isset($keys["streak:{$run[$last]}"])) return;
 
+            // kein Interesse, kein Pack: seit Beginn dieser streak_days Tage muss mindestens ein Pack (egal welches)
+            // geöffnet worden sein. Öffnet er später doch eins, kommt das Streak-Pack beim nächsten Abruf nach —
+            // solange die Serie läuft und der nächste 7er-Tag nicht erreicht ist.
+            $oq = $this->con->prepare("SELECT 1 FROM sticker_pack WHERE manager_id = ? AND opened_at >= ? LIMIT 1");
+            $oq->execute([$managerId, $run[$last - $days + 1] . ' 00:00:00']);
+            if (!$oq->fetchColumn()) return;
+
             // ohne Migration 2026-10-02_sticker_pack_streak.sql würde INSERT IGNORE ein Pack mit leerer source anlegen
             $col = $this->con->query("SHOW COLUMNS FROM sticker_pack LIKE 'source'")->fetch(PDO::FETCH_ASSOC);
             if (!$col || strpos((string) $col['Type'], "'streak'") === false) return;
