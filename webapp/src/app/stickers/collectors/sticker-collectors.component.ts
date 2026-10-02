@@ -99,7 +99,7 @@ export class StickerCollectorsComponent {
   });
 
   /** je Spalte (packTypes) die Zelle eines Managers — null = keine Packs dieser Art */
-  packCells(packs: { type: string; total: number; opened: number }[] | undefined) {
+  packCells(packs: { type: string; total: number; opened: number; cards?: number }[] | undefined) {
     return this.packTypes().map((type, i, all) => {
       const p = packs?.find(x => x.type === type);
       if (!p) return null;

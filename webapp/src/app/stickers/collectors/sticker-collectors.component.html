@@ -61,6 +61,9 @@
                       <span class="pack-tip" [class.pack-tip--right]="p.tipRight" role="tooltip">
                         <span class="pack-tip__title">{{ p.icon }} {{ p.label }}</span>
                         <span>{{ p.total }} {{ p.total === 1 ? 'Pack' : 'Packs' }}@if (p.size) { mit je {{ p.size }} Karten}</span>
+                        @if (p.cards !== undefined) {
+                          <span>{{ p.cards }} {{ p.cards === 1 ? 'Karte' : 'Karten' }} daraus gezogen</span>
+                        }
                         @if (p.unopened > 0) {
                           <span class="pack-tip__open">{{ p.unopened }} ungeöffnet · {{ p.opened }} geöffnet</span>
                         } @else {

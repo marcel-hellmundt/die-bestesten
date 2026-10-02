@@ -52,7 +52,7 @@ export interface StickerCollectors {
     trade_give?: number;  // meine Doppelten, die ihm fehlen
     unopened?: number;    // ungeöffnete Packs — nur für Admins geliefert
     unopened_types?: { type: string; count: number }[]; // dieselben nach Art (Shop: pack_kind, sonst source) — nur Admins
-    packs?: { type: string; total: number; opened: number }[]; // alle erhaltenen Packs je Art + davon geöffnet — nur Admins
+    packs?: { type: string; total: number; opened: number; cards?: number }[]; // alle erhaltenen Packs je Art + davon geöffnet + daraus gezogene Karten — nur Admins
   }[];
 }
 
