@@ -117,4 +117,5 @@ export const PACK_ART: Partial<Record<PackDesign, PackArt>> = {
   // Sonder-Packs: wie die Medaille mittig
   birthday:  { src: 'img/stickers/front/birthday.png', place: 'center' },
   christmas: { src: 'img/stickers/front/christmas.png', place: 'center' },
+  streak:    { src: 'img/stickers/front/fire.png', place: 'center' },
 };

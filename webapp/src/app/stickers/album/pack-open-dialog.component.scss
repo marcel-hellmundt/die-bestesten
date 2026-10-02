@@ -281,6 +281,19 @@ $pack-text-always-white: true;
     width: 42%;
     transform: translateX(-50%);
   }
+
+  // mittiges Motiv ohne Liga-Zeile darunter: im Textfluss nach der Anzahl-Pille, senkrecht mittig im freien Platz —
+  // Abstand zur Pille = Abstand zum unteren Pack-Rand (top gleicht den Flex-Gap über dem Bild aus)
+  &--balanced {
+    position: relative;
+    order: 1;
+    left: auto;
+    bottom: auto;
+    top: -1.25cqw;
+    flex-shrink: 0;
+    margin: auto 0;
+    transform: none;
+  }
 }
 
 .pack__body > :not(.pack__art) { position: relative; z-index: 1; }

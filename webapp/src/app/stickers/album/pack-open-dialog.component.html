@@ -35,7 +35,7 @@
             <button type="button" class="pack pack--mini pack--{{ design(c) }}"
                     (click)="pick.emit(g.index)" [attr.aria-label]="f.kind + ' ' + f.headline + ' öffnen' + (g.count > 1 ? ' (' + g.count + ' Stück)' : '')">
               <span class="pack__body">
-                @if (artOf(c); as art) { <img class="pack__art" [class.pack__art--center]="art.place === 'center'" [src]="art.src" [style.mix-blend-mode]="art.blend ?? 'normal'" alt="" /> }
+                @if (artOf(c); as art) { <img class="pack__art" [class.pack__art--center]="art.place === 'center'" [class.pack__art--balanced]="art.place === 'center' && !c.leagueName" [src]="art.src" [style.mix-blend-mode]="art.blend ?? 'normal'" alt="" /> }
                 <span class="pack__brand">Die Klebrigsten</span>
                 <span class="pack__kind">{{ f.kind }}</span>
                 <span class="pack__headline" [class.pack__headline--long]="f.headline.length > 10">{{ f.headline }}</span>
@@ -68,7 +68,7 @@
           }
         </span>
         <span class="pack__body">
-          @if (artOf(p); as art) { <img class="pack__art" [class.pack__art--center]="art.place === 'center'" [src]="art.src" [style.mix-blend-mode]="art.blend ?? 'normal'" alt="" /> }
+          @if (artOf(p); as art) { <img class="pack__art" [class.pack__art--center]="art.place === 'center'" [class.pack__art--balanced]="art.place === 'center' && !p.leagueName" [src]="art.src" [style.mix-blend-mode]="art.blend ?? 'normal'" alt="" /> }
           <span class="pack__brand">Die Klebrigsten</span>
           <span class="pack__kind">{{ f.kind }}</span>
           <span class="pack__headline" [class.pack__headline--long]="f.headline.length > 10">{{ f.headline }}</span>
