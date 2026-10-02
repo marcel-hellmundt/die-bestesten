@@ -54,8 +54,10 @@
                 @for (p of packCells(m.packs); track $index) {
                   @if (p) {
                     <span class="pack-cell" [class.pack-cell--unopened]="p.unopened > 0">
-                      <span class="pack-cell__icon" aria-hidden="true">{{ p.icon }}</span>
-                      <span class="pack-cell__count">{{ p.total }}@if (p.size) {<i>×{{ p.size }}</i>}</span>
+                      <span class="pack-cell__chip" [style.--chip]="p.color" [style.--chip-ink]="p.ink">
+                        <span class="pack-cell__icon" aria-hidden="true">{{ p.icon }}</span>
+                        <span class="pack-cell__count">{{ p.total }}@if (p.size) {<i>×{{ p.size }}</i>}</span>
+                      </span>
                       <span class="pack-tip" [class.pack-tip--right]="p.tipRight" role="tooltip">
                         <span class="pack-tip__title">{{ p.icon }} {{ p.label }}</span>
                         <span>{{ p.total }} {{ p.total === 1 ? 'Pack' : 'Packs' }}@if (p.size) { mit je {{ p.size }} Karten}</span>

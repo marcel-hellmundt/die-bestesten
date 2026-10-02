@@ -66,6 +66,15 @@ export class StickerCollectorsComponent {
     normal: '🦖', big: '🐉', club: '🛡️', special: '🧙', shop: '🛒', admin: '🎁',
   };
 
+  /** Hintergrund der Zelle: Farbe wie das jeweilige Pack-Design */
+  private readonly PACK_TYPE_COLOR: Record<string, string> = {
+    daily: '#bf1d00', milestone: '#4b7bec', matchday_best: '#fed330', shop: '#0f766e', admin: '#4b5563',
+    birthday: '#e84393', christmas: '#1e8449', streak: '#fa8231',
+    normal: '#6aba49', big: '#f26d53', club: '#fcc732', special: '#8854d0',
+  };
+  /** helle Pack-Farben (Gelb/Grün) brauchen dunkle Schrift */
+  private readonly DARK_TEXT = new Set(['matchday_best', 'normal', 'club']);
+
   /** Karten je Pack einer Art — null, wenn die Art keine feste Größe hat (alte Shop-Packs ohne Art, Admin-Packs) */
   private packSize(type: string): number | null {
     if (type in PACK_KINDS) return PACK_KINDS[type as PackKind].size;
@@ -93,6 +102,8 @@ export class StickerCollectorsComponent {
         label: this.packTypeLabel(type),
         icon: this.PACK_TYPE_ICON[type] ?? '📦',
         size: this.packSize(type),
+        color: this.PACK_TYPE_COLOR[type] ?? '#6b7280',
+        ink: this.DARK_TEXT.has(type) ? '#1f2937' : '#fff',
         unopened: p.total - p.opened,
         tipRight: i >= all.length / 2,   // rechte Hälfte: Tooltip rechtsbündig, sonst ragt er aus der Liste
       };

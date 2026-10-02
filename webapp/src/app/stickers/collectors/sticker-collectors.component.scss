@@ -69,8 +69,8 @@
   &__pack-stats {
     grid-row: span 2;
     display: grid;
-    grid-template-columns: repeat(var(--cols, 1), 52px);
-    gap: 2px;
+    grid-template-columns: repeat(var(--cols, 1), 54px);
+    gap: 4px;
     padding-left: $space-3;
   }
 
@@ -172,22 +172,30 @@
   &--gold   { background: linear-gradient(135deg, #fbf1cf, #e0bb4f); }
 }
 
-// Zelle im Pack-Raster (nur Admins): Symbol der Art + Anzahl × Karten je Pack; noch ungeöffnete dabei → blasser,
-// Details im Tooltip (Hover)
+// Zelle im Pack-Raster (nur Admins): Symbol der Art + Anzahl × Karten je Pack auf der Farbe des Pack-Designs;
+// noch ungeöffnete dabei → blasser, Details im Tooltip (Hover)
 .pack-cell {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-height: 24px;
-  border-radius: $radius-sm;
+  min-height: 22px;
   font-size: 11px;
   line-height: 1;
   white-space: nowrap;
 
-  &:not(.pack-cell--empty):hover { background: color-mix(in srgb, #{$color-text} 8%, transparent); }
   &:hover .pack-tip { display: flex; }
+
+  // farbige Fläche (eigenes Element, damit der Tooltip nicht mit verblasst)
+  &__chip {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 2px 0;
+    border-radius: $radius-full;
+    background: var(--chip);
+    color: var(--chip-ink);
+  }
 
   &__icon { font-size: 14px; }
 
@@ -198,18 +206,19 @@
     i {
       font-style: normal;
       font-weight: normal;
-      color: $color-text-muted;
+      opacity: 0.8;
     }
   }
 
-  &--unopened > .pack-cell__icon,
-  &--unopened > .pack-cell__count { opacity: 0.4; }
+  &--unopened > .pack-cell__chip { opacity: 0.45; }
 
   // Mobil: schmale Spalten → Symbol über der Zahl
   @media (max-width: $mobile-breakpoint) {
-    flex-direction: column;
-    gap: 2px;
-    padding: 2px 0;
+    .pack-cell__chip {
+      flex-direction: column;
+      gap: 2px;
+      border-radius: $radius-md;
+    }
   }
 }
 
