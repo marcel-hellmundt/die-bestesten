@@ -7,7 +7,7 @@ import { AuthService } from '../../auth/auth.service';
 import {
   OtherCollection, PACK_SOURCE_LABEL, StickerPack, StickerStatusService, packDetail,
 } from '../../core/sticker-status.service';
-import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
+import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { AlbumClub, Sticker, isLight } from './album.model';
 import { AlbumSlot } from './album-club-page.component';
 import { PackCard, PackInfo, packInfo, packRules } from './pack.model';
@@ -136,18 +136,15 @@ export class StickerAlbumComponent {
   openNextPack(): void {
     const pack = this.packs()[0];
     if (!pack) return;
-    requestTiltPermission(); // synchron in der Klick-Geste (iOS), falls danach eine Karte groß geöffnet wird
     this.opener.show(packInfo(pack));
   }
 
   /** Ein bestimmtes Pack aus der Detail-Liste zeigen. */
   openSpecificPack(pack: StickerPack): void {
-    requestTiltPermission();
     this.opener.show(packInfo(pack));
   }
 
   openPulled(c: PackCard): void {
-    requestTiltPermission();
     this.openCard.set(c.card);
   }
 
@@ -163,7 +160,6 @@ export class StickerAlbumComponent {
    * damit sie in der Auswahl nebeneinander stehen statt gestapelt. Nur im Browser gewürfelt, nichts gespeichert.
    */
   openTestMixed(n: number): void {
-    requestTiltPermission(); // synchron in der Klick-Geste (iOS)
     const base = 100 * (1 + Math.floor(Math.random() * 10));
     const matchday = 1 + Math.floor(Math.random() * 30);
     const all: PackInfo[] = [
@@ -185,7 +181,6 @@ export class StickerAlbumComponent {
    * mit zufälligem Verein). Karten werden erst beim Aufreißen und nur im Browser gewürfelt, nichts wird gespeichert.
    */
   openTestPacks(offer: ShopOffer): void {
-    requestTiltPermission(); // synchron in der Klick-Geste (iOS)
     const clubs = this.rows().map(r => r.club.id);
     const clubId = clubs[Math.floor(Math.random() * clubs.length)] ?? null;
     const packs: PackInfo[] = offerKinds(offer).flatMap(({ kind, count }) =>
@@ -295,14 +290,12 @@ export class StickerAlbumComponent {
   // ── Große Karte ───────────────────────────────────────────────────────────
   openSlot(slot: AlbumSlot): void {
     if (!slot.card) return;
-    requestTiltPermission(); // muss synchron in der Klick-Geste passieren (iOS)
     this.openCard.set(slot.card);
   }
 
   openSticker(s: Sticker): void {
     const col = this.collection();
     if (!col.counts[s.idx]) return;
-    requestTiltPermission();
     this.openCard.set(this.album.cardData(s, col.holo[s.idx]));
   }
 }

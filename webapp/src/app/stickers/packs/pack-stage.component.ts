@@ -1,5 +1,5 @@
 import { Component, effect, inject, input, signal, untracked } from '@angular/core';
-import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
+import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { PackCard, PackInfo } from '../album/pack.model';
 import { PackOpener } from '../album/pack-opener';
 
@@ -33,12 +33,10 @@ export class PackStageComponent {
   }
 
   pick(index: number): void {
-    requestTiltPermission(); // synchron in der Klick-Geste (iOS)
     this.opener.pick(index);
   }
 
   openPulled(c: PackCard): void {
-    requestTiltPermission();
     this.openCard.set(c.card);
   }
 }

@@ -3,7 +3,7 @@ import {
   MIN_PRICE, ShopPlan, ShopTiming, SimParams, SimProfile, countsAtDay, holoAtDay, shopPlan, simulateSeason, stickerWeights,
 } from './sticker-sim';
 import { simulateLeague } from './sticker-trade-sim';
-import { StickerCardData, StickerHolo, requestTiltPermission } from './sticker-card/sticker-card.component';
+import { StickerCardData, StickerHolo } from './sticker-card/sticker-card.component';
 import { ALBUM_SOURCE, StickerAlbumService } from './album/sticker-album.service';
 import {
   AlbumClub, DEFAULT_PROFILES, DEFAULT_SHARED_PARAMS, DEFAULT_TIER_THRESHOLDS, POSITION_LABEL, SharedParams, Sticker,
@@ -427,7 +427,6 @@ export class StickerSimulationComponent {
   });
 
   openCard(idx: number): void {
-    requestTiltPermission(); // muss synchron in der Klick-Geste passieren (iOS)
     this.tip.set(null);
     this.pause();
     this.openCardIdx.set(idx);

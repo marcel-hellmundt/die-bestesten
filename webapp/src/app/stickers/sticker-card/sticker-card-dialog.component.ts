@@ -4,7 +4,7 @@ import { HOLO_LABEL, STICKER_TIER_LABEL, StickerCardData } from './sticker-card.
 /**
  * Sticker-Karte frei schwebend in der Bildschirmmitte über abgedunkeltem Hintergrund —
  * interaktiv (Neigung per Maus bzw. Geräteneigung). Schließt per Klick daneben oder Esc.
- * Vor dem Öffnen im Click-Handler requestTiltPermission() aufrufen (iOS-Sensorfreigabe).
+ * Auf iOS bleibt sie gerade (keine Sensor-Abfrage, siehe sticker-card.component.ts).
  */
 @Component({
   selector: 'app-sticker-card-dialog',

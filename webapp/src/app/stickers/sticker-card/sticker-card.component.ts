@@ -34,21 +34,19 @@ export const STICKER_TIER_LABEL: Record<StickerTier, string> = {
 export const HOLO_LABEL: Record<StickerHolo, string> = { silver: 'Holo Silber', gold: 'Holo Gold' };
 
 /**
- * iOS (13+) liefert deviceorientation erst nach expliziter Erlaubnis — die Anfrage MUSS
- * synchron aus einer Nutzer-Geste (Klick/Tap) heraus gestartet werden, deshalb vom Aufrufer
- * direkt im Click-Handler aufrufen, bevor die Karte geöffnet wird. Andere Plattformen: no-op.
+ * iOS (13+) liefert deviceorientation erst nach einer System-Abfrage ("Zugriff auf Bewegung und
+ * Ausrichtung erlauben?") — die wollen wir nicht zeigen, deshalb bleibt die Karte dort gerade.
+ * Erkennbar daran, dass es DeviceOrientationEvent.requestPermission nur auf iOS/iPadOS gibt.
  */
-export function requestTiltPermission(): void {
-  const D = (window as any).DeviceOrientationEvent;
-  if (D && typeof D.requestPermission === 'function') {
-    D.requestPermission().catch(() => { /* abgelehnt → Karte bleibt einfach gerade */ });
-  }
+function tiltNeedsPermission(): boolean {
+  return typeof (window as any).DeviceOrientationEvent?.requestPermission === 'function';
 }
 
 /**
  * Die eigentliche Sticker-Karte (hochkant). Statisch (Sammelalbum, `interactive` = false) oder
  * interaktiv: dann neigt sie sich auf Desktop mit der Maus, auf Touch-Geräten mit der
  * Geräteneigung (deviceorientation, erster Messwert = Nullstellung) — inkl. Glanzlicht.
+ * Ausnahme iOS: keine Neigung (siehe tiltNeedsPermission).
  * Die Größe bestimmt der Container (Breite), die Höhe folgt aus dem Seitenverhältnis 5:7.
  */
 @Component({
@@ -142,7 +140,8 @@ export class StickerCardComponent {
       cleanup = null;
       if (!this.interactive()) { this.reset(); return; }
       const coarse = window.matchMedia?.('(pointer: coarse)').matches;
-      cleanup = coarse && 'DeviceOrientationEvent' in window ? this.listenOrientation() : this.listenPointer();
+      if (coarse && tiltNeedsPermission()) { this.reset(); return; }
+      cleanup =coarse && 'DeviceOrientationEvent' in window ? this.listenOrientation() : this.listenPointer();
     });
     destroyRef.onDestroy(() => cleanup?.());
   }

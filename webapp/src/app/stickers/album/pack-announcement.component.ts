@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, OnInit, output, signal, untracked } from '@angular/core';
 import { StickerStatusService } from '../../core/sticker-status.service';
 import { NotificationService } from '../../core/notification.service';
-import { StickerCardData, requestTiltPermission } from '../sticker-card/sticker-card.component';
+import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { PackCard, PackInfo, packInfo } from './pack.model';
 import { PackOpener } from './pack-opener';
 import { ALBUM_SOURCE, StickerAlbumService } from './sticker-album.service';
@@ -110,7 +110,6 @@ export class PackAnnouncementDialogComponent implements OnInit {
   }
 
   onTear(): void {
-    requestTiltPermission(); // synchron in der Tipp-Geste (iOS), falls danach eine Karte groß geöffnet wird
     this.opener.tear();
   }
 
