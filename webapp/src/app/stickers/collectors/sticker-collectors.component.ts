@@ -6,6 +6,7 @@ import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { PACK_SOURCE_LABEL, StickerCollectors, StickerPackSource, StickerStatusService } from '../../core/sticker-status.service';
 import { PACK_KINDS, PackKind } from '../shop/shop.model';
+import { packRules } from '../album/pack.model';
 
 /**
  * "Klebebande" (/klebrigsten/klebebande): Rangliste aller Sammler der Saison — Klick öffnet das
@@ -58,33 +59,44 @@ export class StickerCollectorsComponent {
     return PACK_KINDS[type as PackKind]?.name ?? PACK_SOURCE_LABEL[type as StickerPackSource] ?? type;
   }
 
-  /** Admin-Chips rechts: feste Reihenfolge (Event-Packs, dann Shop-Packs), Farbe wie das jeweilige Pack-Design */
-  private readonly PACK_TYPE_ORDER = ['daily', 'milestone', 'matchday_best', 'birthday', 'christmas', 'streak', 'normal', 'big', 'club', 'special', 'shop', 'admin'];
-  private readonly PACK_TYPE_COLOR: Record<string, string> = {
-    daily: '#bf1d00', milestone: '#4b7bec', matchday_best: '#fed330', shop: '#0f766e', admin: '#4b5563',
-    birthday: '#e84393', christmas: '#1e8449', streak: '#fa8231',
-    normal: '#6aba49', big: '#f26d53', club: '#fcc732', special: '#8854d0',
+  /** Admin-Übersicht rechts: feste Reihenfolge (Event-Packs, dann Shop-Packs) und ein Symbol je Pack-Art */
+  private readonly PACK_TYPE_ORDER = ['daily', 'milestone', 'matchday_best', 'streak', 'birthday', 'christmas', 'normal', 'big', 'club', 'special', 'shop', 'admin'];
+  private readonly PACK_TYPE_ICON: Record<string, string> = {
+    daily: '📅', milestone: '📈', matchday_best: '🏅', streak: '🔥', birthday: '🎂', christmas: '🎄',
+    normal: '🦖', big: '🐉', club: '🛡️', special: '🧙', shop: '🛒', admin: '🎁',
   };
-  /** Kurzname im Chip (voller Name im Tooltip) */
-  private readonly PACK_TYPE_SHORT: Record<string, string> = {
-    daily: 'Tages', milestone: 'Meilenstein', matchday_best: 'Sieger', shop: 'Shop', admin: 'Admin',
-    birthday: 'Geburtstag', christmas: 'Weihnachten', streak: 'Streak',
-    normal: 'Normal', big: 'Big', club: 'Verein', special: 'Special',
-  };
-  /** helle Pack-Farben (Gelb/Grün) brauchen dunkle Schrift */
-  private readonly DARK_TEXT = new Set(['matchday_best', 'normal', 'club']);
 
-  packChips(packs: { type: string; total: number; opened: number }[] | undefined) {
+  /** Karten je Pack einer Art — null, wenn die Art keine feste Größe hat (alte Shop-Packs ohne Art, Admin-Packs) */
+  private packSize(type: string): number | null {
+    if (type in PACK_KINDS) return PACK_KINDS[type as PackKind].size;
+    return type === 'shop' || type === 'admin' ? null : packRules(type as StickerPackSource).size;
+  }
+
+  /**
+   * Spalten der Admin-Übersicht: alle Pack-Arten, die irgendein Manager bekommen hat — für jeden Manager dieselben,
+   * damit gleiche Arten untereinander stehen (wer keine hat: Zelle bleibt leer, nichts rückt nach).
+   */
+  packTypes = computed(() => {
+    const seen = new Set<string>();
+    for (const m of this.data()?.collectors ?? []) for (const p of m.packs ?? []) seen.add(p.type);
     const rank = (t: string) => { const i = this.PACK_TYPE_ORDER.indexOf(t); return i < 0 ? 99 : i; };
-    return [...(packs ?? [])]
-      .sort((a, b) => rank(a.type) - rank(b.type))
-      .map(p => ({
+    return [...seen].sort((a, b) => rank(a) - rank(b));
+  });
+
+  /** je Spalte (packTypes) die Zelle eines Managers — null = keine Packs dieser Art */
+  packCells(packs: { type: string; total: number; opened: number }[] | undefined) {
+    return this.packTypes().map((type, i, all) => {
+      const p = packs?.find(x => x.type === type);
+      if (!p) return null;
+      return {
         ...p,
-        label: this.packTypeLabel(p.type),
-        short: this.PACK_TYPE_SHORT[p.type] ?? p.type,
-        color: this.PACK_TYPE_COLOR[p.type] ?? '#6b7280',
-        ink: this.DARK_TEXT.has(p.type) ? '#1f2937' : '#fff',
-      }));
+        label: this.packTypeLabel(type),
+        icon: this.PACK_TYPE_ICON[type] ?? '📦',
+        size: this.packSize(type),
+        unopened: p.total - p.opened,
+        tipRight: i >= all.length / 2,   // rechte Hälfte: Tooltip rechtsbündig, sonst ragt er aus der Liste
+      };
+    });
   }
 
   /** Manager, deren Foto nicht geladen werden konnte → Initialen */

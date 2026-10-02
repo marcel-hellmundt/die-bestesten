@@ -9,8 +9,8 @@
 
   @media (max-width: $mobile-breakpoint) { padding: $space-3 0; } // seitlicher Rand kommt von der Shell
 
-  // Admins: breiter für die Pack-Chips rechts
-  &--admin { max-width: 1080px; }
+  // Admins: breiter für das Pack-Raster rechts
+  &--admin { max-width: 1180px; }
 }
 
 .page-title__sub {
@@ -50,27 +50,27 @@
 
   &--me { background: color-mix(in srgb, #{$color-accent} 6%, #{$color-surface}); }
 
-  // Admin: zusätzliche Spalte für die ungeöffneten Packs links neben dem Bild und rechts die Pack-Chips
+  // Admin: zusätzliche Spalte für die ungeöffneten Packs links neben dem Bild und rechts das Pack-Raster
   &--admin {
-    grid-template-columns: 26px 26px 36px minmax(0, 1fr) auto auto minmax(0, 400px);
+    grid-template-columns: 26px 26px 36px minmax(0, 1fr) auto auto auto;
 
     .collector__bar { grid-column: 4 / span 3; }
 
-    // Mobil: Chips unter dem Balken statt als eigene Spalte
+    // Mobil: Raster unter dem Balken über die ganze Breite statt als eigene Spalte
     @media (max-width: $mobile-breakpoint) {
       grid-template-columns: 26px 26px 36px minmax(0, 1fr) auto auto;
 
-      .collector__pack-stats { grid-column: 4 / -1; grid-row: 3; justify-content: flex-start; }
+      .collector__pack-stats { grid-column: 1 / -1; grid-row: 3; padding-left: 0; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); }
     }
   }
 
-  // Admin: erhaltene Packs je Art ("geöffnet/erhalten")
+  // Admin: erhaltene Packs je Art — Raster mit einer festen Spalte je Art (--cols = Anzahl Arten),
+  // gleiche Arten stehen bei allen Managern untereinander
   &__pack-stats {
     grid-row: span 2;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 4px;
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 1), 52px);
+    gap: 2px;
     padding-left: $space-3;
   }
 
@@ -172,22 +172,74 @@
   &--gold   { background: linear-gradient(135deg, #fbf1cf, #e0bb4f); }
 }
 
-// Pack-Chip (nur Admins): Farbe wie das Pack-Design; alle geöffnet → blasser, noch ungeöffnete → kräftig
-.pack-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 1px 7px;
-  border-radius: $radius-full;
-  background: var(--chip);
-  color: var(--chip-ink);
+// Zelle im Pack-Raster (nur Admins): Symbol der Art + Anzahl × Karten je Pack; noch ungeöffnete dabei → blasser,
+// Details im Tooltip (Hover)
+.pack-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 24px;
+  border-radius: $radius-sm;
   font-size: 11px;
-  line-height: 16px;
+  line-height: 1;
   white-space: nowrap;
 
-  b { font-variant-numeric: tabular-nums; }
+  &:not(.pack-cell--empty):hover { background: color-mix(in srgb, #{$color-text} 8%, transparent); }
+  &:hover .pack-tip { display: flex; }
 
-  &--done { opacity: 0.45; }
+  &__icon { font-size: 14px; }
+
+  &__count {
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+
+    i {
+      font-style: normal;
+      font-weight: normal;
+      color: $color-text-muted;
+    }
+  }
+
+  &--unopened > .pack-cell__icon,
+  &--unopened > .pack-cell__count { opacity: 0.4; }
+
+  // Mobil: schmale Spalten → Symbol über der Zahl
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+    gap: 2px;
+    padding: 2px 0;
+  }
+}
+
+// Tooltip einer Zelle: Art, Anzahl, ungeöffnet/geöffnet — über der Zelle
+.pack-tip {
+  display: none;
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 20;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  color: $color-text;
+  font-size: $font-xs;
+  font-weight: normal;
+  line-height: 1.35;
+  text-align: left;
+  white-space: nowrap;
+  pointer-events: none;
+
+  &--right { left: auto; right: 0; }
+
+  &__title { font-weight: $font-weight-semibold; }
+  &__open { color: $color-accent; font-weight: $font-weight-semibold; }
+  &__muted { color: $color-text-muted; }
 }
 
 // Ungeöffnete Packs (nur Admins): kleines rotes Pack-Kärtchen mit der Anzahl — wie oben im Sammelalbum (.packs__icon)

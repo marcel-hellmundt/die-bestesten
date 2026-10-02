@@ -48,16 +48,27 @@
               @if (m.silver > 0) { <span class="holo-dot holo-dot--silver" title="Holo Silber">{{ m.silver }}</span> }
             </span>
             <span class="collector__count">{{ m.have }}/{{ total() }}</span>
-            <!-- Admin: erhaltene Packs je Art, "geöffnet/erhalten" -->
+            <!-- Admin: erhaltene Packs je Art als Raster (gleiche Art = gleiche Spalte): Symbol + Anzahl × Karten je Pack -->
             @if (isAdmin) {
-              <span class="collector__pack-stats">
-                @for (p of packChips(m.packs); track p.type) {
-                  <span class="pack-chip" [class.pack-chip--done]="p.opened === p.total"
-                        [style.--chip]="p.color" [style.--chip-ink]="p.ink"
-                        [title]="p.label + ': ' + p.opened + ' von ' + p.total + ' geöffnet'">
-                    <span class="pack-chip__label">{{ p.short }}</span>
-                    <b>{{ p.opened }}/{{ p.total }}</b>
-                  </span>
+              <span class="collector__pack-stats" [style.--cols]="packTypes().length">
+                @for (p of packCells(m.packs); track $index) {
+                  @if (p) {
+                    <span class="pack-cell" [class.pack-cell--unopened]="p.unopened > 0">
+                      <span class="pack-cell__icon" aria-hidden="true">{{ p.icon }}</span>
+                      <span class="pack-cell__count">{{ p.total }}@if (p.size) {<i>×{{ p.size }}</i>}</span>
+                      <span class="pack-tip" [class.pack-tip--right]="p.tipRight" role="tooltip">
+                        <span class="pack-tip__title">{{ p.icon }} {{ p.label }}</span>
+                        <span>{{ p.total }} {{ p.total === 1 ? 'Pack' : 'Packs' }}@if (p.size) { mit je {{ p.size }} Karten}</span>
+                        @if (p.unopened > 0) {
+                          <span class="pack-tip__open">{{ p.unopened }} ungeöffnet · {{ p.opened }} geöffnet</span>
+                        } @else {
+                          <span class="pack-tip__muted">alle geöffnet</span>
+                        }
+                      </span>
+                    </span>
+                  } @else {
+                    <span class="pack-cell pack-cell--empty"></span>
+                  }
                 }
               </span>
             }
