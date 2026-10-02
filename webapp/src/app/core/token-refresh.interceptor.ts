@@ -25,6 +25,11 @@ export class TokenRefreshInterceptor implements HttpInterceptor {
           this.authService.logout();
           this.router.navigate(['/login']);
         }
+        // Umgebung nur für Admins (API: ADMIN_ONLY im .env, z.B. development-Domain) — abmelden + Hinweis im Login
+        if (error instanceof HttpErrorResponse && error.status === 403 && error.error?.admin_only && this.authService.getToken()) {
+          this.authService.logout();
+          this.router.navigate(['/login'], { queryParams: { admin_only: 1 } });
+        }
         return throwError(() => error);
       })
     );

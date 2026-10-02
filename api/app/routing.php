@@ -33,7 +33,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/auth',
-                        'description' => 'Login mit manager_name und password',
+                        'description' => 'Login mit manager_name und password — auf einer Umgebung mit ADMIN_ONLY=true (.env, z.B. development) 403 {admin_only:true} für Manager ohne Admin-Rolle; dort liefert auch jeder authentifizierte Request 403 mit admin_only',
                     ],
                     [
                         'method' => 'POST',

@@ -58,6 +58,11 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Account wurde deaktiviert'];
         }
 
+        if (Guard::adminOnlyBlocks($manager['roles'])) {
+            http_response_code(403);
+            return ['status' => false, 'message' => Guard::ADMIN_ONLY_MESSAGE, 'admin_only' => true];
+        }
+
         $leagues  = $this->db->getManagerLeagues($manager['id']);
         $leagueId = $this->autoLeagueId($leagues);
         $token    = $this->buildJwt($manager, $leagueId);

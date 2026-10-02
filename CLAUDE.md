@@ -72,6 +72,8 @@ styles/
 
 Rollenvergabe: `POST /manager/:id/roles` mit `{role}` (Upsert — ersetzt eine evtl. vorhandene Rolle), Entzug (zurück auf Basisrolle `manager`): `DELETE /manager/:id/roles/:role` — jeweils Admin. Die 403-Prüfung selbst liest bei jedem Request live aus der DB, wirkt also sofort; das im JWT eingebettete `roles` kann kurzzeitig veralten — der Guard vergleicht es deshalb bei jedem authentifizierten Request gegen die aktuelle DB-Rolle und schickt bei Abweichung sofort (nicht erst im 3-Tage-Rolling-Window) ein frisches Token per `X-New-Token`-Header, das der Frontend-Interceptor automatisch übernimmt — kein Logout/Login nötig, damit eine Rollenänderung im UI ankommt.
 
+**Umgebung nur für Admins** (development-Domain): `ADMIN_ONLY=true` im `.env` der jeweiligen API (nicht committet, bleibt beim Deploy erhalten; auf production nicht gesetzt). Dann liefern `POST /auth` und jeder authentifizierte Request für Manager ohne Admin-Rolle (auch Maintainer/Contributor) 403 mit `admin_only: true` (`Guard::adminOnlyBlocks()`); Gast-Endpunkte (öffentliche Seiten wie /noten) bleiben erreichbar. Frontend: `token-refresh.interceptor.ts` meldet bei diesem 403 ab und leitet auf /login?admin_only=1, die Login-Seite zeigt den Hinweis "Diese Testumgebung ist nur für Admins freigeschaltet".
+
 ## Datenbankschema
 
 Vollständig in `database/global_schema.sql`. Alle IDs `CHAR(36)` UUID außer country (`CHAR(2)` ISO-Alpha-2).
@@ -180,7 +182,7 @@ GET      /player_rating/contribution_summary — ?matchday_id (+ optional ?scope
 POST     /player_rating/init   — {matchday_id,club_id} → leere Ratings erstellen für aktuelle Clubspieler mit gültigem player_in_season (Position + Marktwert gesetzt) in der Saison des Spieltags; 409 wenn completed oder vor kickoff_date (gilt für alle Rollen inkl. Admin — Ratings dürfen nie für zukünftige Spieltage angelegt werden) — Contributor+
 POST     /player_rating/validate-csv — multipart: matchday_id + csv-Datei (;-getrennt, Spalte 4 = Angezeigter Name, Spalte 8 = Punkte) → {ok, checked?} oder {ok: false, mismatches: [{kicker_id, displayname, csv_points, db_points, error}]}; error: 'points mismatch' | 'player not found in db' (+ first_name/last_name/club_name/position/price) | 'no ratings in season' — db_points summiert nur Spieltage derselben Season UND Division wie der übergebene matchday_id (ein Divisionswechsel eines Spielers innerhalb der Saison, z.B. Winterwechsel 2. Liga → 1. Liga, zählt beim externen CSV-Anbieter nur die Punkte der aktuellen Division) — Contributor+
 PATCH    /player_rating/:id    — Contributor+; 403 wenn Spieltag completed; Body: grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card (points wird immer serverseitig berechnet)
-POST     /auth                 — JWT-Login; Response enthält token + leagues[] + league_id (null wenn keine Liga)
+POST     /auth                 — JWT-Login; Response enthält token + leagues[] + league_id (null wenn keine Liga) — bei ADMIN_ONLY-Umgebung 403 {admin_only:true} für Nicht-Admins (siehe API-Autorisierung)
 POST     /auth/switch-league  — {league_id} → {token, league_id}; neues JWT mit geänderter league_id; 403 wenn kein Zugang — Auth
 POST     /auth/password-reset-request — {email} — sendet Reset-Link; immer 200 (kein E-Mail-Leak)
 POST     /auth/password-reset — {token,new_password} — setzt Passwort zurück (Token aus Reset- oder Einladungslink); gibt {token,leagues,league_id} zurück (automatischer Login mit neuem JWT); 400 wenn Token ungültig/abgelaufen

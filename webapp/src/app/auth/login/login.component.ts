@@ -1,8 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, League } from '../auth.service';
 import { ApiService } from '../../core/api.service';
+
+/** API mit ADMIN_ONLY (z.B. development-Domain): Nicht-Admins kommen nicht rein */
+const ADMIN_ONLY_MESSAGE = 'Diese Testumgebung ist nur für Admins freigeschaltet.';
 
 type Mode = 'login' | 'request' | 'sent' | 'choose-league' | 'join-league';
 
@@ -30,8 +33,11 @@ export class LoginComponent {
     private fb:     FormBuilder,
     private auth:   AuthService,
     private router: Router,
-    private api:    ApiService
+    private api:    ApiService,
+    route:          ActivatedRoute
   ) {
+    // vom Interceptor hierher geschickt (eingeloggter Nicht-Admin auf einer Admin-only-Umgebung)
+    if (route.snapshot.queryParamMap.has('admin_only')) this.error = ADMIN_ONLY_MESSAGE;
     this.form = this.fb.group({
       name:     ['', Validators.required],
       password: ['', Validators.required]
@@ -62,8 +68,8 @@ export class LoginComponent {
           this.mode.set('join-league');
         }
       },
-      error: () => {
-        this.error   = 'Name oder Passwort inkorrekt';
+      error: err => {
+        this.error   = err?.error?.admin_only ? ADMIN_ONLY_MESSAGE : 'Name oder Passwort inkorrekt';
         this.loading = false;
         this.form.get('password')?.setValue('');
       }

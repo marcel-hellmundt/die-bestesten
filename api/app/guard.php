@@ -14,6 +14,18 @@ class Guard
         $this->db = Database::getInstance();
     }
 
+    /**
+     * Umgebung nur für Admins (z.B. die development-Domain): ADMIN_ONLY=true im .env des jeweiligen Servers
+     * (nicht committet). Dann kommen Manager ohne Admin-Rolle nicht mehr rein — Login und jeder authentifizierte
+     * Request liefern 403 mit admin_only=true; Gast-Endpunkte (öffentliche Seiten) bleiben erreichbar.
+     */
+    public const ADMIN_ONLY_MESSAGE = 'Diese Testumgebung ist nur für Admins freigeschaltet';
+
+    public static function adminOnlyBlocks(array $roles): bool
+    {
+        return ($_ENV['ADMIN_ONLY'] ?? '') === 'true' && !in_array('admin', $roles, true);
+    }
+
     public function authorize(?string $controllerClass): array
     {
         $method       = $_SERVER['REQUEST_METHOD'];
@@ -63,6 +75,10 @@ class Guard
 
             if ($manager['status'] !== 'active') {
                 return ['status' => false, 'code' => 403, 'message' => 'Account ist nicht aktiv'];
+            }
+
+            if (self::adminOnlyBlocks($manager['roles'])) {
+                return ['status' => false, 'code' => 403, 'message' => self::ADMIN_ONLY_MESSAGE, 'admin_only' => true];
             }
 
             $GLOBALS['auth_manager_id'] = $manager['id'];
