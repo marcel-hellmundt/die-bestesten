@@ -152,8 +152,9 @@ trait StickerPackTrait
      * streak_days Tage einer ununterbrochenen Online-Serie ein Pack — am 7., 14., 21. … Tag der Serie, source_key
      * streak:{Datum dieses Tags}. "Online" = Tages-Pack dieses Tages vorhanden (daily:{Datum} wird bei jedem App-Start
      * vergeben); die Serie endet mit dem ersten Tag ohne Tages-Pack. Gezählt wird ab Beginn der Serie, nicht ab der
-     * Vergabe: fehlende Packs der laufenden Serie werden nachgeholt (z.B. Serie schon vor Einführung der Regel
-     * begonnen) — wann jemand das erste Pack abholt, verschiebt die folgenden nicht.
+     * Vergabe: fehlt das Pack des jüngsten erreichten 7er-Tags, wird es beim Abruf nachgereicht (Serie schon vor
+     * Einführung der Regel begonnen) — höchstens eins, ältere 7er-Tage nicht; wann jemand es abholt, verschiebt
+     * die folgenden nicht.
      */
     private function grantStreakStickerPack(string $managerId, string $seasonId, string $today): void
     {
@@ -176,20 +177,16 @@ trait StickerPackTrait
                 $day->modify('-1 day');
             }
 
-            // jeder streak_days-te Tag der Serie (Index 6, 13, …) bringt ein Pack — noch fehlende vergeben
-            $due = [];
-            for ($i = $days - 1; $i < count($run); $i += $days) {
-                if (!isset($keys["streak:{$run[$i]}"])) $due[] = $run[$i];
-            }
-            if (!$due) return;
+            // jeder streak_days-te Tag der Serie (Index 6, 13, …) bringt ein Pack; geprüft wird nur der jüngste
+            // erreichte — ältere, verpasste (Serie lief schon vor Einführung der Regel) werden nicht nachgeholt
+            $last = intdiv(count($run), $days) * $days - 1;
+            if ($last < 0 || isset($keys["streak:{$run[$last]}"])) return;
 
             // ohne Migration 2026-10-02_sticker_pack_streak.sql würde INSERT IGNORE ein Pack mit leerer source anlegen
             $col = $this->con->query("SHOW COLUMNS FROM sticker_pack LIKE 'source'")->fetch(PDO::FETCH_ASSOC);
             if (!$col || strpos((string) $col['Type'], "'streak'") === false) return;
 
-            foreach ($due as $date) {
-                $this->grantStickerPack($managerId, $seasonId, 'streak', "streak:$date", null, $cfg['streak_pack_size']);
-            }
+            $this->grantStickerPack($managerId, $seasonId, 'streak', "streak:{$run[$last]}", null, $cfg['streak_pack_size']);
         } catch (\Throwable $e) {
             // kein Streak-Pack
         }
