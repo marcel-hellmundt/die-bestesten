@@ -3,7 +3,7 @@ import { Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from '../auth/auth.service';
 
-export type StickerPackSource = 'daily' | 'milestone' | 'matchday_best' | 'admin' | 'shop' | 'birthday' | 'christmas';
+export type StickerPackSource = 'daily' | 'milestone' | 'matchday_best' | 'admin' | 'shop' | 'birthday' | 'christmas' | 'streak';
 
 export interface StickerPack {
   id: string;
@@ -100,6 +100,9 @@ export interface OpenedPack {
   cards: { key: string; holo: 'silver' | 'gold' | null; is_new: boolean }[];
 }
 
+/** Streak-Pack: so viele Tage in Folge online — muss zu stickerConfig() im Backend passen (streak_days). */
+export const STREAK_DAYS = 7;
+
 export const PACK_SOURCE_LABEL: Record<StickerPackSource, string> = {
   daily: 'Tages-Pack',
   milestone: 'Meilenstein-Pack',
@@ -108,6 +111,7 @@ export const PACK_SOURCE_LABEL: Record<StickerPackSource, string> = {
   shop: 'Shop-Pack',
   birthday: 'Geburtstags-Pack',
   christmas: 'Weihnachts-Pack',
+  streak: 'Streak-Pack',
 };
 
 /** Anlass eines Packs in Worten, z.B. "200 Punkte erreicht · Liga" oder "Spieltag 5 · Liga". */
@@ -120,6 +124,7 @@ export function packDetail(p: Pick<StickerPack, 'source' | 'milestone_points' | 
   if (p.source === 'shop') parts.push('im Shop gekauft');
   if (p.source === 'birthday') parts.push('alles Gute zum Geburtstag');
   if (p.source === 'christmas') parts.push('frohe Weihnachten');
+  if (p.source === 'streak') parts.push(`${STREAK_DAYS} Tage in Folge online`);
   if (p.league_name) parts.push(p.league_name);
   return parts.join(' · ');
 }

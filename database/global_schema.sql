@@ -443,7 +443,7 @@ CREATE TABLE IF NOT EXISTS sticker_pack (
     id         CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id CHAR(36)     NOT NULL,
     season_id  CHAR(36)     NOT NULL,
-    source     ENUM('daily', 'milestone', 'matchday_best', 'admin', 'shop', 'birthday', 'christmas') CHARACTER SET utf8mb4 NOT NULL, -- birthday/christmas: Migration 2026-09-29_sticker_pack_special.sql
+    source     ENUM('daily', 'milestone', 'matchday_best', 'admin', 'shop', 'birthday', 'christmas', 'streak') CHARACTER SET utf8mb4 NOT NULL, -- birthday/christmas: Migration 2026-09-29_sticker_pack_special.sql, streak: 2026-10-02_sticker_pack_streak.sql
     pack_kind  VARCHAR(20)  NULL,      -- Shop: normal | big | club | special (Design + Inhalt); NULL = aus source (Migration: migrate_sticker_pack_kind.sql)
     source_key VARCHAR(120) NOT NULL,  -- z.B. 'daily:2026-09-25', 'milestone:{team_id}:200', 'matchday_best:{team_id}:{matchday_id}', 'shop:{offer_key}:{uuid}', 'birthday:2026', 'christmas:2026'
     league_id  CHAR(36)     NULL,      -- Liga des Ereignisses (Meilenstein/Spieltagsbester) bzw. Hauptliga, aus der ein Shop-Kauf bezahlt wurde

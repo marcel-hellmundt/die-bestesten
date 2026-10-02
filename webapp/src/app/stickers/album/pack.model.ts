@@ -1,5 +1,5 @@
 // "Die Klebrigsten" — Packs: Metadaten fürs geschlossene Pack + aufgedeckte Karten.
-import { StickerPack, StickerPackSource } from '../../core/sticker-status.service';
+import { STREAK_DAYS, StickerPack, StickerPackSource } from '../../core/sticker-status.service';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { DEFAULT_SHARED_PARAMS, Sticker } from './album.model';
 import { PACK_KINDS, PackKind, kindFromOffer } from '../shop/shop.model';
@@ -43,6 +43,9 @@ export const SPECIAL_PACKS: Record<'birthday' | 'christmas', { size: number; gua
   christmas: { size: 5, guaranteedNew: 2, epicMin: 1 },
 };
 
+/** Streak-Pack (7 Tage in Folge online): Größe — muss zu stickerConfig() im Backend passen (streak_pack_size). */
+export const STREAK_PACK_SIZE = 3;
+
 /** Größe + Garantie je Pack-Art nach den echten Regeln (für Test-Packs und die Pack-Beschriftung). */
 export function packRules(source: StickerPackSource): { size: number; allNew: boolean } {
   const r = DEFAULT_SHARED_PARAMS;
@@ -51,6 +54,7 @@ export function packRules(source: StickerPackSource): { size: number; allNew: bo
     case 'matchday_best': return { size: r.bestPackSize, allNew: r.bestAllNew };
     case 'birthday':
     case 'christmas':     return { size: SPECIAL_PACKS[source].size, allNew: false };
+    case 'streak':        return { size: STREAK_PACK_SIZE, allNew: false };
     default:              return { size: r.dailyPackSize, allNew: false };
   }
 }
@@ -78,6 +82,7 @@ export function packFace(p: PackInfo): { kind: string; headline: string } {
     case 'shop':          return { kind: 'Shop', headline: p.kind ? PACK_KINDS[p.kind].short : 'Shop-Pack' };
     case 'birthday':      return { kind: 'Sonder-Pack', headline: 'Geburtstag' };
     case 'christmas':     return { kind: 'Sonder-Pack', headline: 'Weihnachten' };
+    case 'streak':        return { kind: 'Streak', headline: `${STREAK_DAYS} Tage` };
     default:              return { kind: 'Bonus', headline: 'Bonus-Pack' };
   }
 }

@@ -82,6 +82,9 @@ $pack-text-always-white: true;
   &--birthday  { --foil-light: #fbc2dc; --foil: #e84393; --foil-dark: #9c1b5b; --ink: #b8246e; }
   &--christmas { --foil-light: #6fcf8f; --foil: #1e8449; --foil-dark: #0b3d20; --ink: #1b6b3c; }
 
+  // Streak (7 Tage in Folge online): Orange #fa8231
+  &--streak { --foil-light: #fdc194; --foil: #fa8231; --foil-dark: #a54a0c; --ink: #b8540f; }
+
   // Shop (Lukaten): Türkis wie im Shop
   &--shop {
     --foil-light: #2dd4bf;

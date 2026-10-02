@@ -25,6 +25,9 @@ trait StickerPackTrait
             'birthday_since'          => '2026-09-29', // erst Geburtstage ab Einführung — sonst gäbe es beim Start rückwirkend Packs für alle
             'christmas_pack_size'     => 5,       // 0 = aus
             'christmas_guaranteed_new' => 2,
+            // Streak-Pack: so viele Tage in Folge online → Pack zusätzlich zum Tages-Pack (Vergabe folgt, bisher nur Design)
+            'streak_days'             => 7,
+            'streak_pack_size'        => 3,       // 0 = aus
             // mind. so viele Karten "episch oder besser" (Gewichtungs-Marktwert > epic_min_price) je Pack-Quelle
             'min_epic'                => ['birthday' => 1, 'christmas' => 1],
             'epic_min_price'          => 3_500_000, // = DEFAULT_TIER_THRESHOLDS.epic im Frontend (album.model.ts)

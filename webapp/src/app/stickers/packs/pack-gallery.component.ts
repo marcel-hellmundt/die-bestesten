@@ -5,7 +5,7 @@ import { LUKATEN_OFFERS, PACK_KINDS, PACK_KIND_ORDER } from '../shop/shop.model'
 
 /**
  * Admin-Testseite /klebrigsten/packs: alle Pack-Designs, gruppiert in Event-Packs (Tages-Pack, Meilenstein,
- * Spieltagssieger, Geburtstag, Weihnachten) und Shop-Packs (normal/big/club/special) — je eine Bühne zum Aufreißen wie echt, aber nur
+ * Spieltagssieger, Geburtstag, Weihnachten, Streak) und Shop-Packs (normal/big/club/special) — je eine Bühne zum Aufreißen wie echt, aber nur
  * im Browser gewürfelt, nichts wird gespeichert. Eigene Bilder auf den Packs: PACK_ART in album/pack.model.ts.
  */
 @Component({
@@ -31,6 +31,7 @@ export class PackGalleryComponent {
     { ...this.base, source: 'matchday_best', size: packRules('matchday_best').size, matchdayNumber: 12, leagueName: 'Test-Liga' },
     { ...this.base, source: 'birthday', size: packRules('birthday').size },
     { ...this.base, source: 'christmas', size: packRules('christmas').size },
+    { ...this.base, source: 'streak', size: packRules('streak').size },
   ]);
 
   /** Shop-Packs je Pack-Art; Vereins-Pack mit zufälligem Verein aus dem Album */
