@@ -25,7 +25,7 @@ trait StickerPackTrait
             'birthday_since'          => '2026-09-29', // erst Geburtstage ab Einführung — sonst gäbe es beim Start rückwirkend Packs für alle
             'christmas_pack_size'     => 5,       // 0 = aus
             'christmas_guaranteed_new' => 2,
-            // Streak-Pack: so viele Tage in Folge online → Pack zusätzlich zum Tages-Pack (Vergabe folgt, bisher nur Design)
+            // Streak-Pack: so viele Tage in Folge online → Pack zusätzlich zum Tages-Pack, danach zählt die Serie neu
             'streak_days'             => 7,
             'streak_pack_size'        => 3,       // 0 = aus
             // mind. so viele Karten "episch oder besser" (Gewichtungs-Marktwert > epic_min_price) je Pack-Quelle
@@ -148,6 +148,44 @@ trait StickerPackTrait
     }
 
     /**
+     * Streak-Pack beim Abruf von GET /sticker/me (nach dem Tages-Pack, $today = Y-m-d deutscher Zeit): wer an jedem der
+     * letzten streak_days Tage (heute eingeschlossen) online war, bekommt Pack streak:{heute}. "Online" = Tages-Pack
+     * dieses Tages vorhanden (daily:{Datum} wird bei jedem App-Start vergeben). Danach zählt die Serie neu: liegt in
+     * diesen Tagen schon ein Streak-Pack, gibt es keins — das nächste also frühestens streak_days Tage später.
+     * Wer beim Einführen schon eine längere Serie hat, bekommt beim nächsten Abruf genau ein Pack.
+     */
+    private function grantStreakStickerPack(string $managerId, string $seasonId, string $today): void
+    {
+        $cfg  = $this->stickerConfig();
+        $days = (int) $cfg['streak_days'];
+        if ($days <= 0 || $cfg['streak_pack_size'] <= 0 || $cfg['daily_pack_size'] <= 0) return;
+        try {
+            $daily = $streak = [];
+            for ($i = 0; $i < $days; $i++) {
+                $d = (new DateTime($today))->modify("-$i day")->format('Y-m-d');
+                $daily[]  = "daily:$d";
+                $streak[] = "streak:$d";
+            }
+            $in = implode(',', array_fill(0, $days, '?'));
+            $q = $this->con->prepare(
+                "SELECT COALESCE(SUM(source_key IN ($in)), 0) AS online_days, COALESCE(SUM(source_key IN ($in)), 0) AS streak_packs
+                 FROM sticker_pack WHERE manager_id = ?"
+            );
+            $q->execute([...$daily, ...$streak, $managerId]);
+            $r = $q->fetch(PDO::FETCH_ASSOC);
+            if ((int) $r['online_days'] < $days || (int) $r['streak_packs'] > 0) return;
+
+            // ohne Migration 2026-10-02_sticker_pack_streak.sql würde INSERT IGNORE ein Pack mit leerer source anlegen
+            $col = $this->con->query("SHOW COLUMNS FROM sticker_pack LIKE 'source'")->fetch(PDO::FETCH_ASSOC);
+            if (!$col || strpos((string) $col['Type'], "'streak'") === false) return;
+
+            $this->grantStickerPack($managerId, $seasonId, 'streak', "streak:$today", null, $cfg['streak_pack_size']);
+        } catch (\Throwable $e) {
+            // kein Streak-Pack
+        }
+    }
+
+    /**
      * Status fürs Frontend (beim App-Start + Datumswechsel abgefragt): vergibt dabei das tägliche Pack
      * ("App öffnen"), liefert ungeöffnete Packs und die Sammlung der aktiven Saison.
      */
@@ -163,6 +201,7 @@ trait StickerPackTrait
         $today = (new DateTime('now', new DateTimeZone('Europe/Berlin')))->format('Y-m-d');
         $this->grantStickerPack($managerId, $seasonId, 'daily', "daily:{$today}", null, $this->stickerConfig()['daily_pack_size']);
         $this->grantSpecialStickerPacks($managerId, $seasonId, $today);
+        $this->grantStreakStickerPack($managerId, $seasonId, $today);
 
         $packSql = fn(string $announced, string $club, string $kind = 'NULL') =>
             "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, $announced AS announced, $club AS club_id, $kind AS pack_kind, l.name AS league_name

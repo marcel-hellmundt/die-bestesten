@@ -2,8 +2,8 @@
 -- Ziel: GLOBALE DB, dev + prod. Idempotent (MODIFY) — kann mehrfach ausgeführt werden.
 --
 --   streak — 7 Tage in Folge online (streak_days), zusätzlich zum Tages-Pack; 3 Sticker (streak_pack_size)
--- Regeln in StickerPackTrait::stickerConfig(). Die Vergabe folgt in einem zweiten Schritt — bis dahin gibt es
--- das Pack nur als Design (Testseite /klebrigsten/packs).
+-- Regeln in StickerPackTrait::stickerConfig(), Vergabe in grantStreakStickerPack() (GET /sticker/me); source_key streak:{Datum}.
+-- Ohne diese Migration wird kein Streak-Pack vergeben.
 
 ALTER TABLE sticker_pack
     MODIFY source ENUM('daily', 'milestone', 'matchday_best', 'admin', 'shop', 'birthday', 'christmas', 'streak')
