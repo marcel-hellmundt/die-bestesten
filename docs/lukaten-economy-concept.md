@@ -1,7 +1,7 @@
 # Konzept: Lukaten ab der nächsten Saison
 
 Stand: 2026-10-07 · Branch `future/next-season-lukaten-and-coin-mode` · Status: Regeln weitgehend entschieden,
-noch kein Code
+Stufen 1 und 2 gebaut (Abschnitt 11)
 
 Dieses Dokument beschreibt, wie die Lukaten ab der nächsten Saison funktionieren, was dafür technisch nötig
 ist, wie die Admin-Vorschau und der Rückblick auf alte Saisons funktionieren und welche Risiken es gibt. Was als
@@ -80,21 +80,29 @@ Ein normales Pack entspricht dem Tages-Pack, das es täglich gratis gibt; 150 Ei
 Lohnend sind vor allem Vereins- und Special-Pack. Soll das normale Pack attraktiver sein, ist sein Preis die
 Stellschraube. Offen.
 
-## 4. Euro: ein Weg statt zwei
+## 4. Euro: zwei Wege, ein Kurs
 
-Gibt es Euro für Packs und Euro für Lukaten nebeneinander, müssen beide Preislisten immer exakt
-zusammenpassen, sonst entsteht ein Schlupfloch. Vorschlag: nur ein Weg. Für Euro gibt es ausschließlich
-Lukaten, Packs kosten ausschließlich Lukaten. Die heutigen Euro-Angebote (`stickerShopEurOffers()`) lassen
-sich eins zu eins übersetzen:
+Entschieden: Die Euro-Packs bleiben. Wer einfach Packs will, soll nicht den Umweg über Lukaten gehen müssen.
+Lukaten gegen Euro kommen dazu.
 
-| Preis | Lukaten | je Lukate | reicht für | entspricht heute |
-|---|---:|---:|---|---|
-| 1,99 € | 9 | 22 Cent | 1 Special oder 3 normale | Special-Pack einzeln |
-| 2,99 € | 15 | 20 Cent | 5 normale | Handvoll |
-| 4,99 € | 30 | 17 Cent | 4 normale und 3 Big | Stapel |
-| 6,99 € | 45 | 16 Cent | 3 normale, 3 Big, 1 Special, 1 Verein (44) | Kiste |
+Damit kein Schlupfloch entsteht, gilt eine Regel: Ein Lukaten-Bündel kostet genau so viel wie das Euro-Paket,
+dessen Packs man damit kaufen kann. Beide Listen hängen also aneinander; ändert sich ein Pack-Preis in
+Lukaten, muss das passende Bündel mitziehen. Aus den heutigen Euro-Angeboten (`stickerShopEurOffers()`) und
+den Pack-Preisen 3 / 6 / 8 / 9 ergibt sich:
 
-Offen: das Starter-Angebot. Heute 10 normale Packs für 1,99 €, einmal je Saison. Übersetzt wären das 30
+| Preis | Euro-Paket (bleibt) | Lukaten-Bündel (neu) | je Lukate |
+|---|---|---:|---:|
+| 1,99 € | Special-Pack einzeln | 9 | 22 Cent |
+| 2,99 € | Handvoll: 5 normale | 15 | 20 Cent |
+| 4,99 € | Stapel: 4 normale und 3 Big | 30 | 17 Cent |
+| 6,99 € | Kiste: 3 normale, 3 Big, 1 Special, 1 Verein | 44 | 16 Cent |
+
+Eine Unstimmigkeit steckt schon in den heutigen Preisen: Vereins- und Special-Pack kosten einzeln beide
+1,99 €, in Lukaten aber 8 und 9. Für 1,99 € bekäme man 9 Lukaten und damit ein Vereins-Pack plus eine Lukate
+Rest — das einzelne Vereins-Pack für Euro wäre dann der schlechtere Kauf. Auflösen lässt sich das, indem beide
+Packs in Lukaten gleich viel kosten oder das Vereins-Pack in Euro günstiger wird. Offen.
+
+Offen außerdem: das Starter-Angebot. Heute 10 normale Packs für 1,99 €, einmal je Saison. Übersetzt wären das 30
 Lukaten, mehr als ein Startbonus und so viel wie 1500 Einträge.
 
 Ablauf wie heute über PayPal.me (`StickerShopEurTrait`, `sticker_eur_purchase`). Heute gibt es die Packs
@@ -224,18 +232,19 @@ Rückweg: Modus der neuen Saison auf `classic`. Sauber möglich, solange noch ni
 
 | Stufe | Inhalt | Wirkungslos nach `main`? |
 |---|---|---|
-| 1 | Modus je Saison, Kontobuch, Kontostand mit Startbonus, Schalter in der Verwaltung | ja |
-| 2 | Neuer Shop: Preise im neuen Maßstab, zahlt aus dem Konto | ja |
+| 1 | Modus je Saison, Kontobuch, Kontostand mit Startbonus, Schalter in der Verwaltung — **gebaut** (Commit `df3cbc2`) | ja |
+| 2 | Neuer Shop: Preise im neuen Maßstab, zahlt aus dem Konto — **gebaut** (Commit `df3cbc2`) | ja |
 | 3 | Neue Bestico-Seite: Einsätze und Gewinne über das Konto, Schatzkammer neu, Rückblick mit Alt-Lukaten | ja |
 | 4 | Einträge bringen Lukaten: erster Eintrag, Zähler, Anzeige | ja |
-| 5 | Lukaten gegen Euro, ersetzt im neuen Modus die Euro-Packs | ja |
+| 5 | Lukaten gegen Euro, zusätzlich zu den Euro-Packs | ja |
 | 6 | Simulation um Einträge und Euro-Lukaten erweitern | ja, unabhängig |
 | 7 | CasinPro | später |
 
 ## 12. Offene Entscheidungen
 
-1. Pack-Preise: 3, 6, 8 und 9 als Ausgangspunkt, oder das normale Pack günstiger?
-2. Euro nur noch für Lukaten (ein Weg) oder Euro-Packs zusätzlich behalten?
+1. Pack-Preise: 3, 6, 8 und 9 als Ausgangspunkt, oder das normale Pack günstiger? (Entscheidung nach dem
+   Ausprobieren im Shop.)
+2. Vereins- und Special-Pack: in Lukaten gleich teuer machen oder die Euro-Preise anpassen (Abschnitt 4)?
 3. Starter-Angebot behalten, verkleinern oder streichen?
 4. Gekaufte Lukaten sofort gutschreiben (Minus bei Storno) oder erst nach der Zahlungsbestätigung?
 5. Tippgewinne mit Nachkommastellen wie heute?
