@@ -10,8 +10,6 @@ type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all';
  * bzw. Wochentag aufsummiert (zeigt Gewohnheiten: wer morgens, wer abends, wer an welchem Wochentag online ist)
  */
 type ViewKey = 'timeline' | 'hour' | 'weekday';
-/** Zeiträume, über die ein Profil sinnvoll ist (Heute/Tag sind dafür zu kurz) */
-const PROFILE_RANGES: RangeKey[] = ['month', 'year', 'all'];
 const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
 interface HeatmapManager {
@@ -116,10 +114,12 @@ export class SessionHeatmapComponent {
   view = signal<ViewKey>(this.loadView());
   isProfile = computed(() => this.view() !== 'timeline');
 
-  range = signal<RangeKey>(this.view() === 'timeline' ? 'day' : 'month');
-  setRange(r: RangeKey): void { this.range.set(r); }
-  /** Im Profil nur die längeren Zeiträume */
-  ranges = computed<RangeKey[]>(() => this.isProfile() ? PROFILE_RANGES : ['today', 'day', 'month', 'year', 'all']);
+  readonly RANGES: RangeKey[] = ['today', 'day', 'month', 'year', 'all'];
+  /** Zeitraum des Verlaufs (Umschalter rechts) — die Profile rechnen immer über alles, siehe range */
+  private timelineRange = signal<RangeKey>('day');
+  setRange(r: RangeKey): void { this.timelineRange.set(r); }
+  /** Wirksamer Zeitraum: im Profil immer "Insgesamt" (Gewohnheiten zeigen sich erst über lange Zeit) */
+  range = computed<RangeKey>(() => this.isProfile() ? 'all' : this.timelineRange());
 
   private loadView(): ViewKey {
     try {
@@ -131,7 +131,6 @@ export class SessionHeatmapComponent {
   }
 
   setView(v: ViewKey): void {
-    if (v !== 'timeline' && !PROFILE_RANGES.includes(this.range())) this.range.set('month');
     this.view.set(v);
     try { localStorage.setItem('session-view', v); } catch {}
   }

@@ -149,6 +149,7 @@
   gap: 4px;
   align-items: center;
   width: 100%;
+  margin-inline: auto; // schmaler als die Seite (wenige Spalten) → mittig statt linksbündig
   // Deckelt die Gesamtbreite auf "so viel wie N Spalten à 30px + Gaps brauchen" — dadurch
   // werden die (quadratischen) Zellen bei wenigen Spalten (Heute/Tag = bis 24, Wochentag = 7) nicht
   // größer als bei "Monat", die Zeilen bleiben niedrig und alle Manager passen auf einen Blick

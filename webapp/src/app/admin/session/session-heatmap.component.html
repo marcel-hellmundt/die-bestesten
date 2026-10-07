@@ -14,15 +14,18 @@
       >{{ v.label }}</button>
     }
   </div>
-  <div class="segmented" role="group" aria-label="Zeitraum">
-    @for (r of ranges(); track r) {
-      <button
-        class="segmented__option"
-        [class.segmented__option--active]="range() === r"
-        (click)="setRange(r)"
-      >{{ rangeLabels[r] }}</button>
-    }
-  </div>
+  <!-- Zeitraum nur im Verlauf — Tageszeit/Wochentag rechnen immer über alle Sessions -->
+  @if (!isProfile()) {
+    <div class="segmented" role="group" aria-label="Zeitraum">
+      @for (r of RANGES; track r) {
+        <button
+          class="segmented__option"
+          [class.segmented__option--active]="range() === r"
+          (click)="setRange(r)"
+        >{{ rangeLabels[r] }}</button>
+      }
+    </div>
+  }
 </div>
 
 @if (loading()) {
