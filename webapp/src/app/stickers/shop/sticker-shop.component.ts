@@ -28,6 +28,7 @@ interface EurPending {
  */
 interface ShopState {
   mode?: 'classic' | 'account';
+  preview?: boolean;                  // Admin-Vorschau des Konto-Modus: Vorschau-Konto, Käufe legen kein Pack an
   league: { id: string; name: string } | null;
   budget: number | null;
   lukaten_available?: boolean;        // Lukaten-Käufe möglich (ältere API: aus league hergeleitet)
@@ -134,6 +135,8 @@ export class StickerShopComponent {
   /** Neuer Lukaten-Modus der Saison: Konto je Manager statt Guthaben der Hauptliga */
   accountMode = computed(() => this.shop()?.mode === 'account');
   seasonBonus = computed(() => this.shop()?.season_bonus ?? null);
+  /** Admin-Vorschau: Käufe buchen nur Lukaten vom Vorschau-Konto ab, es entsteht kein Pack */
+  preview = computed(() => this.shop()?.preview ?? false);
   lukatenAvailable = computed(() => this.shop()?.lukaten_available ?? !!this.league());
   /** Lukaten-Angebote mit den Preisen des Servers (je Modus andere) — shop.model.ts ist nur der Rückfall */
   lukatenOffers = computed<ShopOffer[]>(() => {

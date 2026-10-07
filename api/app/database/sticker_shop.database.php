@@ -131,6 +131,9 @@ trait StickerShopTrait
      * Lukaten-Kauf im Konto-Modus (season.lukaten_mode = account): bezahlt vom Lukaten-Konto des Managers
      * (LukatenAccountTrait) statt aus der Hauptliga. Pack und Buchung liegen beide in der globalen DB und entstehen
      * in einer Transaktion; Lock je Manager gegen doppeltes Ausgeben.
+     * In der Admin-Vorschau (LukatenAccountTrait::isLukatenPreview()) werden nur die Lukaten vom Vorschau-Konto
+     * abgebucht: kein Pack, keine Meldung an die Admins — Development und Production teilen sich die Datenbank,
+     * ein Pack läge sonst im echten Album der laufenden Saison.
      */
     private function buyStickerShopOfferFromAccount(string $managerId, string $offerKey, ?string $clubId, string $seasonId): array
     {
@@ -158,6 +161,14 @@ trait StickerShopTrait
             }
             if ($budget + 1e-9 < $offer['price']) {
                 return ['error' => 422, 'message' => 'Nicht genug Lukaten (' . $this->formatLukaten($budget) . ' von ' . $offer['price'] . ')'];
+            }
+
+            if ($this->isLukatenPreview()) {
+                $purchaseId = $this->con->query("SELECT UUID()")->fetchColumn();
+                if (!$this->bookLukaten($managerId, -$offer['price'], 'pack', "preview-pack:{$offerKey}:{$purchaseId}", $seasonId)) {
+                    return ['error' => 409, 'message' => 'Das Lukaten-Konto ist noch nicht eingerichtet'];
+                }
+                return ['pack_id' => null, 'budget' => $budget - $offer['price'], 'preview' => true];
             }
 
             $this->con->beginTransaction();
@@ -384,30 +395,33 @@ trait StickerShopTrait
     {
         try {
             $q = $this->con->prepare(
-                "SELECT lt.pack_id, lt.manager_id, m.manager_name, -lt.amount AS price, lt.created_at,
+                "SELECT lt.pack_id, lt.manager_id, m.manager_name, -lt.amount AS price, lt.created_at, lt.source_key AS booking_key,
                         sp.source_key, sp.pack_kind, sp.club_id, c.name AS club_name, sp.opened_at
                  FROM lukaten_transaction lt
                  JOIN manager m ON m.id = lt.manager_id
                  LEFT JOIN sticker_pack sp ON sp.id = lt.pack_id
                  LEFT JOIN club c ON c.id = sp.club_id
-                 WHERE lt.source = 'pack' AND lt.season_id = ?
+                 WHERE lt.source = 'pack' AND lt.season_id = ? AND lt.preview = ?
                  ORDER BY lt.created_at DESC"
             );
-            $q->execute([$seasonId]);
+            $q->execute([$seasonId, $this->isLukatenPreview() ? 1 : 0]);
             $rows = $q->fetchAll(PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
             return ['purchases' => [], 'total' => 0]; // Migration fehlt
         }
 
-        $kinds = $this->stickerPackKinds();
+        $kinds  = $this->stickerPackKinds();
+        $offers = $this->stickerShopOffers('account');
         $total = 0.0;
-        $purchases = array_map(function ($r) use ($kinds, &$total) {
+        $purchases = array_map(function ($r) use ($kinds, $offers, &$total) {
             $total += (float) $r['price'];
-            $offerKey = explode(':', (string) $r['source_key'])[1] ?? '';
+            // Angebot aus dem Pack bzw. — Vorschau-Käufe haben kein Pack — aus dem Buchungsschlüssel
+            $offerKey = explode(':', (string) ($r['source_key'] ?? $r['booking_key']))[1] ?? '';
+            $kind = $r['pack_kind'] ?? ($offers[$offerKey]['kind'] ?? null);
             return [
                 'pack_id' => $r['pack_id'], 'manager_id' => $r['manager_id'], 'manager_name' => $r['manager_name'],
-                'offer_key' => $offerKey, 'pack_kind' => $r['pack_kind'],
-                'offer_name' => $kinds[$r['pack_kind']]['name'] ?? $offerKey,
+                'offer_key' => $offerKey, 'pack_kind' => $kind,
+                'offer_name' => $kinds[$kind]['name'] ?? $offerKey,
                 'club_id' => $r['club_id'], 'club_name' => $r['club_name'],
                 'price' => (float) $r['price'], 'booked' => true, 'league_name' => null,
                 'created_at' => $r['created_at'], 'opened' => $r['opened_at'] !== null,
@@ -421,7 +435,8 @@ trait StickerShopTrait
      * GET /sticker/shop — Lukaten-Guthaben, Preise und eigene Euro-Käufe. mode = Lukaten-Modus der aktiven Saison:
      * classic = Guthaben der Hauptliga (aktive Saison), account = Lukaten-Konto des Managers (bucht dabei den
      * Startbonus der Saison, falls er fehlt). prices = Preis je Lukaten-Angebot in diesem Modus;
-     * lukaten_available = ob Lukaten-Käufe möglich sind.
+     * lukaten_available = ob Lukaten-Käufe möglich sind; preview = Admin-Vorschau des Konto-Modus (Vorschau-Konto,
+     * Käufe ohne Pack).
      */
     public function getStickerShop(string $managerId): array
     {
@@ -439,8 +454,8 @@ trait StickerShopTrait
                     // Kontobuch fehlt (Migration) → keine Lukaten-Käufe
                 }
             }
-            return ['mode' => 'account', 'league' => null, 'budget' => $budget, 'lukaten_available' => $budget !== null,
-                    'prices' => $prices, 'season_bonus' => $this->lukatenAccountConfig()['season_bonus'], 'eur' => $eur];
+            return ['mode' => 'account', 'preview' => $this->isLukatenPreview(), 'league' => null, 'budget' => $budget,
+                    'lukaten_available' => $budget !== null, 'prices' => $prices, 'season_bonus' => $this->lukatenAccountConfig()['season_bonus'], 'eur' => $eur];
         }
 
         $league = $this->getStickerShopLeague($managerId);

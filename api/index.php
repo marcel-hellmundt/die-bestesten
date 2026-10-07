@@ -25,7 +25,7 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (in_array($origin, $allowedOrigins)) {
     header('Access-Control-Allow-Origin: ' . $origin);
 }
-header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Client-Info');
+header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Client-Info, X-Lukaten-Preview');
 header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Expose-Headers: X-New-Token');

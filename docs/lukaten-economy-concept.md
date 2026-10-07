@@ -192,27 +192,35 @@ Folgen:
 Anforderung: Als Admin den neuen Modus zum Testen und fürs Gefühl einschalten können, mit neuem Shop und
 neuer Bestico-Seite.
 
-Vorschlag:
+Randbedingung: Development und Production sprechen dieselbe Datenbank an. Getrennt sind nur Code und `.env`.
+Ein Schalter in der DB (Modus der laufenden Saison) würde deshalb auch die echte Seite umstellen, sobald der
+Code auf `main` ist, und ein Pack-Kauf auf Development läge im echten Album.
 
-- Ein Schalter in der Verwaltung setzt den Modus der aktiven Saison (`classic` ↔ `account`).
-- Gedacht für die Development-Umgebung, die sich über `ADMIN_ONLY` auf Admins beschränken lässt. Dort sind
-  alle Buchungen echt, berühren aber die echte Saison nicht.
-- Der Schalter ist nur verfügbar, wo es die `.env` erlaubt (auf Production nicht gesetzt). Dort beginnt der neue
-  Modus, indem die neue Saison mit `account` angelegt wird.
+Umsetzung (Stufe 1, gebaut):
 
-Warum keine Vorschau auf der echten Seite: Tipps der laufenden Saison liegen in derselben Tabelle
-(`h2h_prediction`, ein Tipp je Manager und Match). Ein Tipp im neuen Modus würde den echten überschreiben, und
-ein Pack-Kauf legte echte Packs ins laufende Album.
+- Die Saison wird nicht umgestellt. Stattdessen läuft ein einzelner Request im Konto-Modus, wenn drei Dinge
+  zusammenkommen: die Umgebung erlaubt es (`LUKATEN_MODE_SWITCH=true` in der `.env` der API, nur Development),
+  der Request kommt von einem Admin, und der Header `X-Lukaten-Preview: 1` ist gesetzt.
+- Den Header schaltet der Admin unter `/verwaltung/lukaten` ein, je Gerät (`LukatenPreviewService`,
+  `localStorage`). Alle anderen und alle anderen Geräte sehen weiter den bisherigen Stand.
+- Buchungen der Vorschau sind im Kontobuch markiert (`preview = 1`) und vom echten Konto getrennt. Die Seite
+  zeigt den Vorschau-Kontostand und kann ihn zurücksetzen (`DELETE /lukaten/preview`).
+- Ein Pack-Kauf in der Vorschau bucht nur die Lukaten ab. Es entsteht kein Pack und keine Meldung an die
+  Admins; das laufende Album bleibt unberührt.
 
-Beim Zurückschalten auf Development zählen im neuen Modus gesetzte Einsätze im alten Rechenweg mit. Für
-Testdaten ist das hinnehmbar.
+Für die späteren Stufen gilt dieselbe Regel: Die Vorschau darf nichts schreiben, was die echte Saison verändert.
+Beim Tippen heißt das, dass Vorschau-Einsätze nicht in `h2h_prediction` landen dürfen (ein Tipp je Manager und
+Match — ein Vorschau-Tipp würde den echten überschreiben).
 
 ## 9. Umstellung
 
-1. Globale DB: `season.lukaten_mode` und das Kontobuch anlegen. Ohne Wirkung.
+1. Migration `2026-10-07_lukaten_account.sql` auf der gemeinsamen Datenbank: `season.lukaten_mode` und das
+   Kontobuch. Rein additiv, für den Code auf `main` ohne Wirkung.
 2. Code deployen. Die laufende Saison bleibt `classic`.
-3. Auf Development einschalten, testen, Preise einstellen.
-4. Neue Saison mit `account` anlegen. Der Startbonus wird beim ersten Abruf gebucht.
+3. Auf Development die Vorschau einschalten, testen, Preise einstellen.
+4. Neue Saison mit `account` anlegen (das Setzen des Modus beim Anlegen gehört zur Umstellung und ist noch
+   nicht gebaut). Der Startbonus wird beim ersten Abruf gebucht.
+5. Vor dem Start die Vorschau-Buchungen löschen (`preview = 1`).
 
 Rückweg: Modus der neuen Saison auf `classic`. Sauber möglich, solange noch nichts gebucht wurde.
 
@@ -232,8 +240,8 @@ Rückweg: Modus der neuen Saison auf `classic`. Sauber möglich, solange noch ni
 
 | Stufe | Inhalt | Wirkungslos nach `main`? |
 |---|---|---|
-| 1 | Modus je Saison, Kontobuch, Kontostand mit Startbonus, Schalter in der Verwaltung — **gebaut** (Commit `df3cbc2`) | ja |
-| 2 | Neuer Shop: Preise im neuen Maßstab, zahlt aus dem Konto — **gebaut** (Commit `df3cbc2`) | ja |
+| 1 | Modus je Saison, Kontobuch, Kontostand mit Startbonus, Admin-Vorschau mit Schalter in der Verwaltung — **gebaut** | ja |
+| 2 | Neuer Shop: Preise im neuen Maßstab, zahlt aus dem Konto (in der Vorschau ohne Pack) — **gebaut** | ja |
 | 3 | Neue Bestico-Seite: Einsätze und Gewinne über das Konto, Schatzkammer neu, Rückblick mit Alt-Lukaten | ja |
 | 4 | Einträge bringen Lukaten: erster Eintrag, Zähler, Anzeige | ja |
 | 5 | Lukaten gegen Euro, zusätzlich zu den Euro-Packs | ja |

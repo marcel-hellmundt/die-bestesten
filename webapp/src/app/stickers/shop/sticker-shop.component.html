@@ -75,7 +75,12 @@
     <!-- Admins: Hinweis, dass die Saison im neuen Lukaten-Modus läuft (Schalter unter /verwaltung/lukaten) -->
     @if (accountMode() && isAdmin) {
       <p class="shelf__hint">
-        Neuer Lukaten-Modus: Konto je Manager@if (seasonBonus(); as bonus) {, Startbonus {{ bonus }} je Saison}.
+        @if (preview()) {
+          Vorschau des neuen Lukaten-Modus, nur für dich auf diesem Gerät. Käufe buchen Lukaten vom Vorschau-Konto ab,
+          legen aber kein Pack an.
+        } @else {
+          Neuer Lukaten-Modus: Konto je Manager@if (seasonBonus(); as bonus) {, Startbonus {{ bonus }} je Saison}.
+        }
         Tippen rechnet noch mit dem alten Guthaben.
       </p>
     }
@@ -355,12 +360,16 @@
         } @else if (bought()) {
           <!-- Lukaten-Kauf erfolgreich -->
           <p class="confirm__done">
-            <b>Gekauft!</b> Das Pack liegt ungeöffnet in deinem Sammelalbum.<br />
+            @if (preview()) {
+              <b>Vorschau-Kauf.</b> Die Lukaten sind abgebucht, ein Pack wurde nicht angelegt.<br />
+            } @else {
+              <b>Gekauft!</b> Das Pack liegt ungeöffnet in deinem Sammelalbum.<br />
+            }
             <span>Guthaben jetzt: {{ formatLukaten(budget()) }} Lukaten</span>
           </p>
           <div class="confirm__actions">
             <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Weiter einkaufen</button>
-            <a class="btn btn-primary" routerLink="/klebrigsten/sammelalbum">Zum Sammelalbum</a>
+            @if (!preview()) { <a class="btn btn-primary" routerLink="/klebrigsten/sammelalbum">Zum Sammelalbum</a> }
           </div>
         } @else if (o.currency === 'lukaten') {
           <dl class="confirm__calc">

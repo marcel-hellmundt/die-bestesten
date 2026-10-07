@@ -1,21 +1,22 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
-import { Season } from '../../core/models/season.model';
+import { LukatenPreviewService } from '../../core/lukaten-preview.service';
 
-type LukatenMode = 'classic' | 'account';
-
-/** Response von GET /season/active — Saison + Lukaten-Modus und ob er auf dieser Umgebung umschaltbar ist. */
-interface ActiveSeason {
-  id: string;
-  start_date: string;
-  lukaten_mode?: LukatenMode;
-  lukaten_mode_switchable?: boolean;
+/** Response von GET /lukaten. */
+interface LukatenState {
+  mode: 'classic' | 'account';
+  preview_available: boolean;   // diese Umgebung erlaubt die Vorschau (.env der API)
+  preview: boolean;             // für diesen Request aktiv
+  ready: boolean;               // Kontobuch vorhanden (Migration)
+  balance: number | null;       // Kontostand im Konto-Modus, sonst null
+  season_bonus: number;
 }
 
 /**
- * /verwaltung/lukaten: Schalter für den neuen Lukaten-Modus der aktiven Saison (Konto je Manager statt 100 Lukaten
- * je Liga und Saison, siehe docs/lukaten-economy-concept.md). Zum Ausprobieren auf der Development-Umgebung —
- * umschaltbar nur, wo die API es erlaubt (LUKATEN_MODE_SWITCH im .env).
+ * /verwaltung/lukaten: Vorschau des neuen Lukaten-Modus (Konto je Manager statt 100 Lukaten je Liga und Saison,
+ * siehe docs/lukaten-economy-concept.md). Der Schalter gilt nur für diesen Admin auf diesem Gerät
+ * (LukatenPreviewService) und nur, wo die API es erlaubt — die Saison selbst wird nicht umgestellt, weil sich
+ * beide Umgebungen die Datenbank teilen.
  */
 @Component({
   selector: 'app-lukaten-mode',
@@ -25,46 +26,56 @@ interface ActiveSeason {
 })
 export class LukatenModeComponent {
   private api = inject(ApiService);
+  private preview = inject(LukatenPreviewService);
 
   /** undefined = lädt, null = Fehler */
-  season = signal<ActiveSeason | null | undefined>(undefined);
-  saving = signal(false);
+  state = signal<LukatenState | null | undefined>(undefined);
+  busy = signal(false);
   error = signal<string | null>(null);
 
-  seasonName = computed(() => {
-    const s = this.season();
-    return s ? Season.from(s).longDisplayName : '';
-  });
-  accountMode = computed(() => this.season()?.lukaten_mode === 'account');
-  switchable = computed(() => this.season()?.lukaten_mode_switchable ?? false);
+  readonly previewOn = this.preview.enabled;
+  available = computed(() => this.state()?.preview_available ?? false);
+  ready = computed(() => this.state()?.ready ?? false);
+  balance = computed(() => this.state()?.balance ?? null);
+  seasonBonus = computed(() => this.state()?.season_bonus ?? 20);
 
   constructor() {
     this.load();
   }
 
   private load(): void {
-    this.api.get<ActiveSeason>('season/active').subscribe({
-      next: s => this.season.set(s),
-      error: () => this.season.set(null),
+    this.api.get<LukatenState>('lukaten').subscribe({
+      next: s => {
+        // Schalter stand noch an, die Umgebung erlaubt die Vorschau aber nicht (mehr) → aus
+        if (!s.preview_available && this.preview.enabled()) this.preview.set(false);
+        this.state.set(s);
+      },
+      error: () => this.state.set(null),
     });
   }
 
-  setMode(input: HTMLInputElement): void {
-    const s = this.season();
-    if (!s || this.saving()) return;
-    const mode: LukatenMode = input.checked ? 'account' : 'classic';
-    this.saving.set(true);
+  setPreview(on: boolean): void {
     this.error.set(null);
-    this.api.patch(`season/${s.id}`, { lukaten_mode: mode }).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.season.set({ ...s, lukaten_mode: mode });
-      },
+    this.preview.set(on);
+    this.load();
+  }
+
+  /** Vorschau-Konto leeren — beim nächsten Abruf gibt es wieder den Startbonus */
+  reset(): void {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.error.set(null);
+    this.api.delete('lukaten/preview').subscribe({
+      next: () => { this.busy.set(false); this.load(); },
       error: err => {
-        this.saving.set(false);
-        this.error.set(err?.error?.message ?? 'Umschalten fehlgeschlagen');
-        input.checked = this.accountMode(); // Schalter zurück auf den echten Stand
+        this.busy.set(false);
+        this.error.set(err?.error?.message ?? 'Zurücksetzen fehlgeschlagen');
       },
     });
+  }
+
+  formatLukaten(v: number | null): string {
+    if (v == null) return '–';
+    return Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',');
   }
 }

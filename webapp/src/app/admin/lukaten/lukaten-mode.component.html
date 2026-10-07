@@ -1,28 +1,38 @@
-@if (season() === undefined) {
+@if (state() === undefined) {
   <p class="state-msg">Laden…</p>
-} @else if (!season()) {
-  <p class="state-msg state-msg--error">Die aktive Saison konnte nicht geladen werden.</p>
+} @else if (!state()) {
+  <p class="state-msg state-msg--error">Der Lukaten-Stand konnte nicht geladen werden.</p>
 } @else {
   <div class="lukaten-mode">
     <div class="card">
       <label class="mode-row">
         <span class="mode-row__text">
-          <span class="mode-row__name">Neuer Lukaten-Modus für die Saison {{ seasonName() }}</span>
-          <span class="mode-row__desc">Ein Konto je Manager statt 100 Lukaten je Liga und Saison.</span>
+          <span class="mode-row__name">Vorschau: neuer Lukaten-Modus</span>
+          <span class="mode-row__desc">Gilt nur für dich auf diesem Gerät. Alle anderen sehen weiter den bisherigen Shop.</span>
         </span>
-        <span class="toggle" [class.toggle--disabled]="!switchable() || saving()">
+        <span class="toggle" [class.toggle--disabled]="!available()">
           <input type="checkbox" class="toggle__input"
-                 [checked]="accountMode()" [disabled]="!switchable() || saving()"
-                 (change)="setMode($any($event.target))" />
+                 [checked]="previewOn()" [disabled]="!available()"
+                 (change)="setPreview($any($event.target).checked)" />
           <span class="toggle__track"></span>
         </span>
       </label>
-      @if (!switchable()) {
+
+      @if (!available()) {
         <p class="mode-hint">
-          Auf dieser Umgebung nicht umschaltbar. Dafür muss <code>LUKATEN_MODE_SWITCH=true</code> in der .env der API
+          Auf dieser Umgebung nicht verfügbar. Dafür muss <code>LUKATEN_MODE_SWITCH=true</code> in der .env der API
           stehen. Gedacht ist das für die Development-Umgebung; auf der echten Seite beginnt der neue Modus mit der
           neuen Saison.
         </p>
+      } @else if (!ready()) {
+        <p class="mode-hint mode-hint--error">
+          Das Kontobuch fehlt noch. Bitte die Migration <code>2026-10-07_lukaten_account.sql</code> ausführen.
+        </p>
+      } @else if (previewOn()) {
+        <div class="mode-balance">
+          <span>Vorschau-Konto: <b>{{ formatLukaten(balance()) }} Lukaten</b></span>
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="reset()">Zurücksetzen</button>
+        </div>
       }
       @if (error()) {
         <p class="mode-hint mode-hint--error">{{ error() }}</p>
@@ -30,11 +40,11 @@
     </div>
 
     <div class="card">
-      <h2 class="mode-title">Was der neue Modus ändert</h2>
+      <h2 class="mode-title">Was die Vorschau zeigt</h2>
       <ul class="mode-list">
-        <li>Lukaten gehören dem Manager und bleiben über Saisons erhalten.</li>
-        <li>Jede Saison gibt es 20 Lukaten Startbonus, gebucht beim ersten Besuch im Shop.</li>
-        <li>Packs kosten im Shop 3, 6, 8 und 9 Lukaten und werden vom Konto bezahlt.</li>
+        <li>Ein Lukaten-Konto je Manager mit {{ seasonBonus() }} Lukaten Startbonus je Saison.</li>
+        <li>Im Shop kosten die Packs 3, 6, 8 und 9 Lukaten.</li>
+        <li>Ein Kauf bucht die Lukaten vom Vorschau-Konto ab, legt aber kein Pack an. Dein echtes Album und dein echtes Guthaben bleiben unberührt.</li>
       </ul>
       <h2 class="mode-title">Noch nicht umgestellt</h2>
       <ul class="mode-list">

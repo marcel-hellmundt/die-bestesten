@@ -201,6 +201,23 @@ class Routing
                 ],
             ]),
 
+            new Route('lukaten', 'Lukaten', [
+                'title' => 'Lukaten',
+                'description' => 'Lukaten-Konto (neuer Modus ab der nächsten Saison, Konzept docs/lukaten-economy-concept.md): ein Konto je Manager, unabhängig von Liga und Saison, Kontobuch lukaten_transaction. Gilt für Saisons mit season.lukaten_mode = account — und in der Admin-Vorschau: ein Request läuft im Konto-Modus, wenn LUKATEN_MODE_SWITCH=true im .env der API steht (nur development), ein Admin ihn schickt und der Header X-Lukaten-Preview: 1 gesetzt ist. Vorschau-Buchungen sind markiert (preview = 1) und vom echten Konto getrennt; Pack-Käufe in der Vorschau legen kein Pack an (development und production teilen sich die Datenbank).',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/lukaten',
+                        'description' => 'Eigener Stand → {mode: classic|account (Lukaten-Modus der aktiven Saison für diesen Request), preview_available (Vorschau auf dieser Umgebung erlaubt), preview (für diesen Request aktiv), ready (Kontobuch vorhanden), balance (Kontostand im Konto-Modus, sonst null — bucht dabei den Startbonus der Saison, falls er fehlt), season_bonus} — Auth',
+                    ],
+                    [
+                        'method' => 'DELETE',
+                        'path' => '/lukaten/preview',
+                        'description' => 'Eigenes Vorschau-Konto leeren (alle als preview markierten Buchungen) → {status, deleted}; 403 wo die Vorschau nicht erlaubt ist, 409 ohne Migration — Admin',
+                    ],
+                ],
+            ]),
+
             new Route('season', 'Season', [
                 'title' => 'Season',
                 'description' => 'Saisons — die aktive Saison hat das höchste start_date',
@@ -213,7 +230,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/season/active',
-                        'description' => 'Die aktuell aktive Saison — zusätzlich lukaten_mode (classic|account; classic ohne Migration) und lukaten_mode_switchable (bool, siehe PATCH /season/:id)',
+                        'description' => 'Die aktuell aktive Saison',
                     ],
                     [
                         'method' => 'GET',
@@ -226,13 +243,6 @@ class Routing
                         'path' => '/season',
                         'description' => 'Neue Saison anlegen — {start_date} → {id}; 500 bei doppeltem start_date (UNIQUE) — Admin',
                         'body' => ['start_date' => 'YYYY-MM-DD (erforderlich)'],
-                    ],
-                    [
-                        'method' => 'PATCH',
-                        'path' => '/season/:id',
-                        'description' => 'Lukaten-Modus der Saison umschalten (zum Ausprobieren des Konto-Modus, siehe docs/lukaten-economy-concept.md) — 403 außer LUKATEN_MODE_SWITCH=true im .env der API (für development gedacht), 409 ohne Migration 2026-10-07_lukaten_account.sql, 404 Saison unbekannt — Admin',
-                        'path_params' => [':id' => 'UUID der Saison'],
-                        'body' => ['lukaten_mode' => 'classic|account'],
                     ],
                 ],
             ]),
@@ -1386,7 +1396,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/shop',
-                        'description' => 'Antwort enthält zusätzlich mode (season.lukaten_mode der aktiven Saison), lukaten_available und prices {offer_key: Lukaten}; im Konto-Modus (account): league null, budget = Lukaten-Konto des Managers (bucht dabei den Startbonus der Saison, falls er fehlt), season_bonus, Preise 3/6/8/9 — klassisch: Shop (Lukaten gegen Packs) → {league:{id,name}|null, budget:float|null} — bezahlt wird immer aus der Hauptliga des Managers = seine oberste Liga mit Sticker-Album (Division mit niedrigstem level, bei Gleichstand zuerst beigetreten), unabhängig von der eingeloggten Liga; budget = Lukaten-Guthaben dort in der aktiven Saison (wie GET /h2h_prediction/budget); league=null ohne Liga mit Sticker-Album; eur = {available (Migration migrate_sticker_shop_eur.sql eingespielt), paypal_me, starter_available (Starter noch nicht gekauft), pending:[{id,offer_key,amount_cents,code,created_at,paypal_url}] (eigene, noch nicht bestätigte Euro-Käufe zum Bezahlen)} — Auth',
+                        'description' => 'Antwort enthält zusätzlich mode (Lukaten-Modus der aktiven Saison für diesen Request, siehe /lukaten), lukaten_available und prices {offer_key: Lukaten}; im Konto-Modus (account): preview (Admin-Vorschau), league null, budget = Lukaten-Konto des Managers (bucht dabei den Startbonus der Saison, falls er fehlt), season_bonus, Preise 3/6/8/9 — klassisch: Shop (Lukaten gegen Packs) → {league:{id,name}|null, budget:float|null} — bezahlt wird immer aus der Hauptliga des Managers = seine oberste Liga mit Sticker-Album (Division mit niedrigstem level, bei Gleichstand zuerst beigetreten), unabhängig von der eingeloggten Liga; budget = Lukaten-Guthaben dort in der aktiven Saison (wie GET /h2h_prediction/budget); league=null ohne Liga mit Sticker-Album; eur = {available (Migration migrate_sticker_shop_eur.sql eingespielt), paypal_me, starter_available (Starter noch nicht gekauft), pending:[{id,offer_key,amount_cents,code,created_at,paypal_url}] (eigene, noch nicht bestätigte Euro-Käufe zum Bezahlen)} — Auth',
                     ],
                     [
                         'method' => 'POST',
@@ -1402,7 +1412,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/shop/lukaten',
-                        'description' => 'Im Konto-Modus aus lukaten_transaction (league_name null) — Alle Lukaten-Käufe der aktiven Saison (neueste zuerst; final, keine Bestätigung/kein Storno) → {purchases:[{pack_id,manager_id,manager_name,offer_key,pack_kind,offer_name,club_id,club_name,price,booked,league_name,created_at,opened}], total} — maßgeblich sind die Buchungen sticker_shop_purchase aller Liga-DBs (dieselben Zeilen wie Lukaten-Budget und Schatzkammer-"Shop"), Details (Pack-Art, Verein, geöffnet) aus sticker_pack; Shop-Packs (source_key shop:l-…) ohne Buchung erscheinen mit booked=false, price=null und zählen nicht zu total — Admin',
+                        'description' => 'Im Konto-Modus aus lukaten_transaction (league_name null; in der Admin-Vorschau die Vorschau-Käufe, pack_id null) — Alle Lukaten-Käufe der aktiven Saison (neueste zuerst; final, keine Bestätigung/kein Storno) → {purchases:[{pack_id,manager_id,manager_name,offer_key,pack_kind,offer_name,club_id,club_name,price,booked,league_name,created_at,opened}], total} — maßgeblich sind die Buchungen sticker_shop_purchase aller Liga-DBs (dieselben Zeilen wie Lukaten-Budget und Schatzkammer-"Shop"), Details (Pack-Art, Verein, geöffnet) aus sticker_pack; Shop-Packs (source_key shop:l-…) ohne Buchung erscheinen mit booked=false, price=null und zählen nicht zu total — Admin',
                     ],
                     [
                         'method' => 'PATCH',
@@ -1414,7 +1424,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/sticker/shop/buy',
-                        'description' => 'Im Konto-Modus (season.lukaten_mode = account) bezahlt vom Lukaten-Konto des Managers: Preise 3/6/8/9, Pack und Buchung (lukaten_transaction, source pack) in einer Transaktion, Lock je Manager — klassisch: Lukaten-Angebot kaufen (Preise serverseitig in StickerShopTrait::stickerShopOffers(): je eine feste Pack-Art aus StickerShopTrait::stickerPackKinds(): l-small = normal 15 Lukaten/3 Sticker/1 garantiert neu, l-big = big 30/7/2, l-club = club 40/5/alle neu nur aus club_id, l-special = special 45/3/1 neu + mind. 1 Holo) — bezahlt aus der Hauptliga (sticker_shop_purchase in deren Liga-DB, mindert dort das Lukaten-Budget; Named Lock gegen doppeltes Ausgeben), das Pack landet ungeöffnet im Album (sticker_pack source=shop, pack_kind, league_id = Hauptliga, club_id/guaranteed_new/holo_min je Pack-Art) und wird wie jedes neue Pack groß angekündigt; E-Mail an alle Admins mit E-Mail + In-App-Benachrichtigung an alle Admins (Absender = Käufer) → {status, pack_id, budget (danach)}; 400 ohne offer_key, 409 keine Liga mit Album / Album fehlt / Shop-Tabellen fehlen (Migrationen), 422 unbekanntes Angebot, kein/ungültiger Verein beim Vereins-Pack oder nicht genug Lukaten — Auth',
+                        'description' => 'Im Konto-Modus (season.lukaten_mode = account) bezahlt vom Lukaten-Konto des Managers: Preise 3/6/8/9, Pack und Buchung (lukaten_transaction, source pack) in einer Transaktion, Lock je Manager; in der Admin-Vorschau nur Abbuchung vom Vorschau-Konto, kein Pack, keine Admin-Meldung → {pack_id: null, budget, preview: true} — klassisch: Lukaten-Angebot kaufen (Preise serverseitig in StickerShopTrait::stickerShopOffers(): je eine feste Pack-Art aus StickerShopTrait::stickerPackKinds(): l-small = normal 15 Lukaten/3 Sticker/1 garantiert neu, l-big = big 30/7/2, l-club = club 40/5/alle neu nur aus club_id, l-special = special 45/3/1 neu + mind. 1 Holo) — bezahlt aus der Hauptliga (sticker_shop_purchase in deren Liga-DB, mindert dort das Lukaten-Budget; Named Lock gegen doppeltes Ausgeben), das Pack landet ungeöffnet im Album (sticker_pack source=shop, pack_kind, league_id = Hauptliga, club_id/guaranteed_new/holo_min je Pack-Art) und wird wie jedes neue Pack groß angekündigt; E-Mail an alle Admins mit E-Mail + In-App-Benachrichtigung an alle Admins (Absender = Käufer) → {status, pack_id, budget (danach)}; 400 ohne offer_key, 409 keine Liga mit Album / Album fehlt / Shop-Tabellen fehlen (Migrationen), 422 unbekanntes Angebot, kein/ungültiger Verein beim Vereins-Pack oder nicht genug Lukaten — Auth',
                         'body' => ['offer_key' => 'l-small|l-big|l-club|l-special', 'club_id' => 'UUID des Vereins (nur l-club)'],
                     ],
                     [

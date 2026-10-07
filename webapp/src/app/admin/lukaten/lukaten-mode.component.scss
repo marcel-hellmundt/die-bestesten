@@ -42,6 +42,18 @@
   &--error { color: $color-danger; }
 }
 
+.mode-balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-2 $space-4;
+  margin-top: $space-3;
+  padding-top: $space-3;
+  border-top: 1px solid $color-border;
+  font-size: $font-sm;
+}
+
 .mode-title {
   margin: 0 0 $space-2;
   font-size: $font-md;
