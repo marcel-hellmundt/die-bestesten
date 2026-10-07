@@ -85,8 +85,8 @@
       <div class="control-group">
         <h2 class="control-group__title">Shop <small>(pro Saison)</small></h2>
         <label class="control">
-          <span class="control__label">Lukaten <b>{{ r.shopLukaten }}</b> <small>(Start 100)</small></span>
-          <input type="range" min="0" max="300" step="5" [value]="r.shopLukaten" (input)="setShared('shopLukaten', num($event))" />
+          <span class="control__label">Lukaten <b>{{ r.shopLukaten }}</b> <small>(Startbonus 100, dazu 1 je Eintrag)</small></span>
+          <input type="range" min="0" max="5000" step="20" [value]="r.shopLukaten" (input)="setShared('shopLukaten', num($event))" />
         </label>
         <label class="control">
           <span class="control__label">Euro <b>{{ formatEur(r.shopEuro) }}</b></span>

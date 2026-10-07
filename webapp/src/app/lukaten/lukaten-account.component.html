@@ -9,30 +9,21 @@
   } @else if (!account()) {
     <p class="state-msg state-msg--error">Das Lukaten-Konto konnte nicht geladen werden.</p>
   } @else if (!active()) {
-    <p class="state-msg">
-      Das Lukaten-Konto startet mit der neuen Saison. Bis dahin findest du dein Guthaben im Bestico und im
-      Shop der Klebrigsten.
-    </p>
+    <p class="state-msg">Das Lukaten-Konto ist noch nicht eingerichtet.</p>
   } @else {
     @let a = active()!;
-
-    @if (a.preview) {
-      <p class="preview-note">
-        Vorschau, nur für dich sichtbar. Das Vorschau-Konto ist vom echten getrennt und lässt sich unter
-        <a routerLink="/verwaltung/lukaten">Verwaltung → Lukaten</a> zurücksetzen.
-      </p>
-    }
+    @let rules = a.rules!;
 
     <!-- ── Kontostand ── -->
     <section class="card balance">
       <div class="balance__main">
         <img class="balance__icon" src="img/icons/lukat.png" alt="" />
-        <span class="balance__value">{{ formatLukaten(a.balance) }}</span>
+        <span class="balance__value" [class.is-minus]="(a.balance ?? 0) < 0">{{ format(a.balance) }}</span>
         <span class="balance__unit">Lukaten</span>
       </div>
       @if (totals().length) {
         <ul class="balance__totals">
-          @for (t of totals(); track t.source) {
+          @for (t of totals(); track t.key) {
             <li>
               <span>{{ t.label }}</span>
               <b [class.is-minus]="t.amount < 0">{{ formatSigned(t.amount) }}</b>
@@ -40,66 +31,99 @@
           }
         </ul>
       }
+      @if ((a.balance ?? 0) < 0) {
+        <p class="balance__note">
+          Dein Konto ist im Minus, weil ein Kauf storniert wurde. Packs und Einsätze gehen wieder, sobald es ausgeglichen ist.
+        </p>
+      }
     </section>
 
     <!-- ── Bekommen ── -->
     <section class="block">
       <h2 class="block__title">So bekommst du Lukaten</h2>
       <div class="ways">
-        <article class="card way">
-          <header class="way__head">
-            <h3>Startbonus</h3>
-            <span class="way__amount">+{{ a.rules!.season_bonus }}</span>
-          </header>
-          <p>Zu Beginn jeder Saison, automatisch. Was am Saisonende übrig ist, bleibt auf deinem Konto.</p>
-        </article>
-
         <article class="card way way--wide">
           <header class="way__head">
             <h3>Einträge</h3>
-            <span class="way__amount">+1 je {{ a.rules!.entries_per_lukate }}</span>
+            <span class="way__amount">+1 je Eintrag</span>
           </header>
           <p>
-            Für jeden {{ a.rules!.entries_per_lukate }}. Eintrag gibt es eine Lukate. Ein Eintrag ist eine Note, ein
-            Einsatz (Startelf oder eingewechselt) oder eine Statistik eines Spielers, also Tor, Vorlage, Weiße Weste,
-            Spieler des Spiels oder Karte.
+            Für jeden Eintrag bei den Spieltagsdaten gibt es eine Lukate. Je Spieler und Spieltag sind das bis zu drei:
+            der Einsatz (Startelf oder eingewechselt), die Note und die Statistik (Tore, Vorlagen, Weiße Weste,
+            Spieler des Spiels und Karten zählen zusammen als ein Eintrag).
           </p>
           <p>
             Es zählt, wer einen Wert zuerst einträgt. Wer einen vorhandenen Wert ändert oder noch einmal speichert,
             bekommt dafür nichts.
           </p>
-          @if (a.entries; as e) {
-            <div class="progress" role="img"
-                 [attr.aria-label]="'Noch ' + e.to_next + ' Einträge bis zur nächsten Lukate'">
-              <span class="progress__fill" [style.width.%]="entryProgress()"></span>
-            </div>
+          <p>Gutgeschrieben wird, sobald der Spieltag abgeschlossen ist, als eine Buchung für den ganzen Spieltag.</p>
+          @if (a.pending_entries; as e) {
             <p class="way__status">
-              <b>Noch {{ formatCount(e.to_next) }} {{ e.to_next === 1 ? 'Eintrag' : 'Einträge' }}</b> bis zur nächsten Lukate.
-            </p>
-            <p class="way__meta">
-              Seit Beginn der Saison {{ seasonSince(e.since) }}: {{ formatCount(e.count) }}
-              {{ e.count === 1 ? 'Eintrag' : 'Einträge' }}
-              ({{ entryBreakdown(e.by_type) }}), daraus {{ formatCount(e.credited) }} {{ e.credited === 1 ? 'Lukate' : 'Lukaten' }}.
+              @if (e.count > 0) {
+                <b>{{ format(e.count) }} {{ e.count === 1 ? 'Eintrag' : 'Einträge' }}</b> am laufenden Spieltag
+                ({{ entryBreakdown(e.by_type) }}), gebucht beim Abschluss.
+              } @else {
+                Am laufenden Spieltag hast du noch nichts eingetragen.
+              }
             </p>
           }
           @if (canContribute) {
             <a class="btn btn-primary btn-sm way__link" routerLink="/daten/ratings">Noten eintragen</a>
+          } @else {
+            <p class="way__meta">Eintragen dürfen Manager, die ein Admin dafür freigeschaltet hat.</p>
           }
         </article>
 
         <article class="card way">
           <header class="way__head">
-            <h3>Kaufen</h3>
-            <span class="way__tag">noch nicht verfügbar</span>
+            <h3>Startbonus</h3>
+            <span class="way__amount">+{{ format(rules.season_bonus) }}</span>
           </header>
-          <p>Lukaten gegen Euro, bezahlt per PayPal. Geplant sind diese Bündel:</p>
+          <p>Zu Beginn jeder Saison, automatisch. Was am Saisonende übrig ist, bleibt auf deinem Konto.</p>
+        </article>
+
+        <article class="card way" [class.way--disabled]="!eurAvailable()" [attr.inert]="eurAvailable() ? null : ''">
+          <header class="way__head">
+            <h3>Kaufen</h3>
+          </header>
+          <p>Lukaten gegen Euro, bezahlt per PayPal. Du bekommst sie sofort.</p>
           <ul class="bundles">
-            @for (b of a.rules!.eur_bundles; track b.amount_cents) {
-              <li><span>{{ formatEur(b.amount_cents) }}</span><b>{{ b.lukaten }} Lukaten</b></li>
+            @for (b of rules.eur_bundles; track b.key) {
+              <li>
+                <span class="bundles__amount">
+                  <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
+                  <b>{{ format(b.lukaten) }}</b>
+                  @if (bonusPct(b) > 0) { <span class="bundles__bonus">+{{ bonusPct(b) }} %</span> }
+                </span>
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="eurBlocked()" (click)="open(b)">
+                  {{ formatEur(b.amount_cents) }}
+                </button>
+              </li>
             }
           </ul>
+          @if (eurBlocked()) {
+            <p class="way__meta">Du hast {{ eurPending().length }} offene Zahlungen. Bitte erst bezahlen, dann geht es weiter.</p>
+          }
         </article>
       </div>
+
+      <!-- Eigene, noch nicht bestätigte Lukaten-Käufe: hier bezahlen -->
+      @if (eurPending().length) {
+        <div class="card pay-box">
+          <h3 class="pay-box__title">Offene Zahlungen</h3>
+          @for (p of eurPending(); track p.id) {
+            <div class="pay-row">
+              <span class="pay-row__text">
+                <b>{{ format(bundleFor(p.offer_key)?.lukaten) }} Lukaten</b> · {{ formatEur(p.amount_cents) }}
+                <small>Code <button type="button" class="code" (click)="copy(p.code)" title="Code kopieren">{{ p.code }}</button>
+                  @if (copied() === p.code) { kopiert } · {{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }}</small>
+              </span>
+              <a class="btn btn-primary btn-sm" [href]="p.paypal_url" target="_blank" rel="noopener">Mit PayPal bezahlen</a>
+            </div>
+          }
+          <p class="pay-box__hint">Bitte den Code als Nachricht in PayPal angeben. Ein Admin bestätigt die Zahlung dann.</p>
+        </div>
+      }
     </section>
 
     <!-- ── Ausgeben ── -->
@@ -109,8 +133,8 @@
         <a class="card spend__item" routerLink="/klebrigsten/shop">
           <h3>Sticker-Packs</h3>
           <ul class="prices">
-            @for (p of a.rules!.packs; track p.kind) {
-              <li><span>{{ p.name }} · {{ p.size }} Sticker</span><b>{{ p.price }}</b></li>
+            @for (p of rules.packs; track p.kind) {
+              <li><span>{{ p.name }} · {{ p.size }} Sticker</span><b>{{ format(p.price) }}</b></li>
             }
           </ul>
           <span class="spend__go">Zum Shop</span>
@@ -118,7 +142,9 @@
         <a class="card spend__item" routerLink="/liga/h2h/bestico">
           <h3>Tippen im Bestico</h3>
           <p>Setze Lukaten auf den Ausgang eines H2H-Duells. Liegst du richtig, bekommst du Einsatz mal Quote zurück.</p>
-          @if (a.preview) { <p class="spend__note">Noch nicht umgestellt: Das Bestico rechnet weiter mit dem alten Guthaben.</p> }
+          @if (rules.max_payout != null) {
+            <p class="spend__note">Möglicher Gewinn je Tipp: höchstens {{ format(rules.max_payout) }} Lukaten.</p>
+          }
           <span class="spend__go">Zum Bestico</span>
         </a>
       </div>
@@ -128,12 +154,24 @@
     <section class="block">
       <h2 class="block__title">Kontoauszug</h2>
       <div class="card statement">
-        @if (a.entries && a.entries.credited > 0) {
-          <div class="statement__row">
-            <span class="statement__date">laufend</span>
-            <span class="statement__text">Einträge · {{ formatCount(a.entries.count) }} gezählt</span>
-            <b class="statement__amount">{{ formatSigned(a.entries.credited) }}</b>
+        @if (a.pending_entries && a.pending_entries.count > 0) {
+          <div class="statement__row statement__row--pending">
+            <span class="statement__date">offen</span>
+            <span class="statement__text">Einträge am laufenden Spieltag, gebucht beim Abschluss</span>
+            <b class="statement__amount">{{ formatSigned(a.pending_entries.count) }}</b>
           </div>
+        }
+        <!-- Tipps stehen nicht einzeln im Kontobuch, sie zählen direkt aus dem Bestico -->
+        @if (a.totals && (a.totals.stakes !== 0 || a.totals.payouts !== 0)) {
+          <a class="statement__row statement__row--link" routerLink="/liga/h2h/bestico">
+            <span class="statement__date">laufend</span>
+            <span class="statement__text">
+              Tipps: {{ format(-a.totals.stakes) }} gesetzt, {{ format(a.totals.payouts) }} gewonnen · einzeln im Bestico
+            </span>
+            <b class="statement__amount" [class.is-minus]="a.totals.payouts + a.totals.stakes < 0">
+              {{ formatSigned(a.totals.payouts + a.totals.stakes) }}
+            </b>
+          </a>
         }
         @for (t of a.transactions ?? []; track $index) {
           <div class="statement__row">
@@ -148,3 +186,51 @@
     </section>
   }
 </div>
+
+<!-- ── Lukaten kaufen: bestätigen, danach bezahlen ── -->
+@if (confirming(); as b) {
+  <div class="confirm" (click)="closeConfirm()">
+    <div class="confirm__panel" role="dialog" aria-modal="true" [attr.aria-label]="format(b.lukaten) + ' Lukaten kaufen'" (click)="$event.stopPropagation()">
+      <div class="confirm__amount">
+        <img src="img/icons/lukat.png" alt="" />
+        <b>{{ format(b.lukaten) }}</b> Lukaten
+      </div>
+
+      @if (eurResult(); as r) {
+        <p class="confirm__done">
+          <b>{{ format(r.lukaten) }} Lukaten sind auf deinem Konto.</b>
+          Jetzt nur noch bezahlen:
+        </p>
+        <div class="pay-code">
+          <span class="pay-code__label">Bitte als Nachricht angeben</span>
+          <button type="button" class="pay-code__value" (click)="copy(r.code)" title="Code kopieren">{{ r.code }}</button>
+          <span class="pay-code__hint">{{ copied() === r.code ? 'kopiert!' : 'antippen zum Kopieren' }}</span>
+        </div>
+        <div class="confirm__actions">
+          <a class="btn btn-primary" [href]="r.paypal_url" target="_blank" rel="noopener">
+            {{ formatEur(r.amount_cents) }} mit PayPal bezahlen
+          </a>
+        </div>
+        <span class="confirm__hint">Empfänger: {{ paypalMe() }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="closeConfirm()">Schließen</button>
+      } @else {
+        <dl class="confirm__calc">
+          <dt>Kontostand</dt><dd>{{ format(active()?.balance) }}</dd>
+          <dt>Kauf</dt><dd>+ {{ format(b.lukaten) }}</dd>
+          <dt class="confirm__total">Preis</dt><dd class="confirm__total">{{ formatEur(b.amount_cents) }}</dd>
+        </dl>
+        @if (buyError()) { <span class="confirm__error">{{ buyError() }}</span> }
+        <div class="confirm__actions">
+          <!-- links zurück, rechts weiter; Buttonlösung (§312j BGB): der zahlungspflichtige Schritt sagt klar "kaufen" + Preis -->
+          <button type="button" class="btn btn-ghost" [disabled]="buying()" (click)="closeConfirm()">Abbrechen</button>
+          <button type="button" class="btn btn-primary" [disabled]="buying()" (click)="buy()">
+            {{ buying() ? 'Wird angelegt…' : 'Jetzt kaufen · ' + formatEur(b.amount_cents) }}
+          </button>
+        </div>
+        <span class="confirm__hint">
+          Die Lukaten bekommst du sofort, danach bezahlst du per PayPal. Bleibt die Zahlung aus, werden sie wieder abgezogen.
+        </span>
+      }
+    </div>
+  </div>
+}

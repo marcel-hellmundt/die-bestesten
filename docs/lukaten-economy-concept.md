@@ -1,28 +1,27 @@
-# Konzept: Lukaten ab der nächsten Saison
+# Konzept: Lukaten als einziges Zahlungsmittel
 
-Stand: 2026-10-07 · Branch `future/next-season-lukaten-and-coin-mode` · Status: Regeln weitgehend entschieden,
-Stufen 1, 2 und 4 sowie die Lukaten-Seite gebaut (Abschnitt 11)
+Stand: 2026-10-07 · Branch `future/next-season-lukaten-and-coin-mode` · Status: gebaut, wartet auf den Blick
+auf development und die Entscheidung über die Startwerte (Abschnitt 9)
 
-Dieses Dokument beschreibt, wie die Lukaten ab der nächsten Saison funktionieren, was dafür technisch nötig
-ist, wie die Admin-Vorschau und der Rückblick auf alte Saisons funktionieren und welche Risiken es gibt. Was als
-„Vorschlag" oder „offen" markiert ist, ist noch nicht entschieden.
-
-Als Bild: https://claude.ai/artifact/9T5fiXDRkyArt8WfQEW95c (privat, nur für den Inhaber sichtbar).
+Lukaten sind ab dem Start das eine Zahlungsmittel der App. Jeder Manager hat ein Konto, unabhängig von Liga und
+Saison. Der Start erfolgt im laufenden Betrieb, mitten in der Saison 2026/27, ohne Schalter und ohne Vorschau.
 
 ## 1. Entschieden
 
-- **Eine Währung.** Es bleibt bei Lukaten.
-- **Manager-gebunden und saisonübergreifend.** Ein Konto je Manager, unabhängig von Liga und Saison. Was am
-  Saisonende übrig ist, bleibt.
-- **Offenes System.** Neue Lukaten entstehen durch den Startbonus, durch Einträge und durch Kauf gegen Euro.
-- **Startbonus:** 20 Lukaten je Saison.
-- **Einträge:** 1 Lukate für jeden 50. Eintrag, fortlaufend gezählt. Es zählt nur, wer einen Wert zuerst
-  einträgt. Alle relevanten Manager haben die Contributor-Rolle.
-- **Zwei Verwendungen:** Sticker-Packs und Einsätze auf H2H-Tipps. Später CasinPro. Keine Holo-Veredelung,
-  kein Wunschsticker.
-- **Tipp-Wertung über richtige Tipps** (`GET /h2h_prediction/standings`), nicht mehr über den Kontostand.
-- **Start mit der neuen Saison.** Die laufende Saison bleibt, wie sie ist. Ihre Lukaten werden nicht
-  übernommen.
+- **Eine Währung, ein Konto.** Es bleibt bei Lukaten. Ein Konto je Manager; was am Saisonende übrig ist, bleibt.
+- **Referenzpunkt: 1 Eintrag = 1 Lukate ≈ 1 Cent.** Die Arbeit eines Spieltags (rund 570 Einträge) ist rund
+  5 € wert. Daraus leiten sich alle Preise ab; Euro- und Lukaten-Preise passen so von selbst zusammen.
+- **Einträge werden beim Spieltagsabschluss gutgeschrieben**, erst ab dem Start, nichts rückwirkend. Es zählt
+  nur, wer einen Wert zuerst einträgt.
+- **Vorhandene Guthaben bleiben unverändert.** Niemand hat beim Start mehr oder weniger Lukaten als vorher.
+- **Start direkt mit dem Deploy.** Kein Modus je Saison, keine Vorschau, kein Trockenlauf.
+- **Startbonus je Saison** bleibt (100).
+- **Zwei Shops.** Im Shop der Klebrigsten gibt es Packs gegen Lukaten; die Euro-Packs bleiben dort. Lukaten
+  gegen Euro gibt es auf der Lukaten-Seite.
+- **Tippen:** kein fester Höchsteinsatz. Vorbereitet ist eine Obergrenze für den möglichen Gewinn
+  (Einsatz × Quote); ihr Wert wird festgelegt, wenn klar ist, wie viele Lukaten im Umlauf sind.
+- **Bestico zeigt den Tipp-Saldo**, nicht mehr den Kontostand. Wie viele Lukaten jemand insgesamt hat, sieht nur
+  er selbst.
 - **Recht:** Tippen mit gekauften Lukaten ist als geschlossene, private Runde bewusst akzeptiert.
 - **Kein Einfluss aufs Punktespiel.** Nichts, was man mit Lukaten oder Euro bekommt, wirkt auf Punkte, Kader,
   Aufstellung oder Team-Budget.
@@ -31,266 +30,208 @@ Als Bild: https://claude.ai/artifact/9T5fiXDRkyArt8WfQEW95c (privat, nur für de
 
 ```mermaid
 flowchart LR
-    S["Startbonus<br/>20 je Saison"] --> M
-    A["Einträge<br/>1 Lukate für jeden 50."] --> M
+    S["Startbonus<br/>100 je Saison"] --> M
+    A["Einträge<br/>1 Lukate je Eintrag,<br/>gebucht beim Spieltagsabschluss"] --> M
     E["Euro<br/>Lukaten kaufen"] --> M
-    M["Manager-Konto<br/>eins je Manager, bleibt über Saisons"]
-    B["Bank<br/>hält alles Ausgegebene"]
-    M -- "Tipp-Einsatz" --> B
-    M -- "Sticker-Packs" --> B
+    M["Lukaten-Konto<br/>eins je Manager, bleibt über Saisons"]
+    M -- "Sticker-Packs" --> X["verbraucht"]
+    M -- "Tipp-Einsatz" --> B["Bank<br/>Gegenseite aller Tipps"]
     B -- "Tippgewinn: Einsatz × Quote" --> M
 ```
 
-Die Bank ist eine einzige Zeile (heute zwei: Bank für Tipps, Shop für Packs). Sie wächst mit jedem Einsatz
-und jedem Pack-Kauf und schrumpft mit jedem Tippgewinn. **Im Umlauf = neu entstanden − Bank.**
+Das System ist offen: Lukaten entstehen durch Startbonus, Einträge und Kauf. Sie verschwinden durch Pack-Käufe
+und durch verlorene Tipps. Die Bank ist keine Kasse mit Bestand, sie zahlt jeden Gewinn aus.
 
-## 3. Zahlen
+## 3. Der Kontostand
 
-**Der echte Spieltag** (Beiträge eines üblichen Spieltags aus `maintainer_contribution`):
+**Kontostand = Kontobuch + Tipps − alte Shop-Käufe** (`LukatenAccountTrait::getLukatenBalance()`)
 
-| Manager | Einträge am Spieltag | Lukaten am Spieltag | Lukaten in der Saison |
-|---|---:|---:|---:|
-| Marcel | 251 | 5,0 | 170 |
-| Nils | 132 | 2,6 | 89 |
-| Lukas | 108 | 2,2 | 73 |
-| Matze | 79 | 1,6 | 53 |
-| Eike | 2 | 0,04 | 1 |
-| 7 weitere | 0 | 0 | 0 |
-| **Alle** | **572** | **11,4** | **386** |
+| Teil | Woher | Warum so |
+|---|---|---|
+| Kontobuch | `lukaten_transaction` (globale DB): Startguthaben, Einträge, Euro-Käufe, Pack-Käufe | Je Bewegung eine Zeile mit eindeutigem Schlüssel, jede Buchung ist dadurch idempotent. |
+| Tipps | live aus `h2h_prediction` aller Ligen, in denen der Manager aktives Mitglied ist: −Einsätze + Einsatz × Quote der gewonnenen | Tipp-Tabelle (Liga-DB) und Kontobuch (globale DB) lassen sich nicht in einer Transaktion halten. Würden Tipps zusätzlich gebucht, könnten beide auseinanderlaufen. |
+| alte Shop-Käufe | `sticker_shop_purchase` der Liga-DBs | Käufe vor der Umstellung. Neue Käufe stehen im Kontobuch; ab der nächsten Saison ist dieser Teil von selbst 0. |
 
-Saison = 34 Spieltage wie dieser, fortlaufend gezählt. Zum Vergleich: Der Startbonus aller 12 Manager zusammen
-sind 240 Lukaten. Die Quelle deckelt sich selbst: Ein Spieltag hat rund 570 Einträge, und es zählt nur der
-erste Eintrag je Wert.
+Gezählt wird ab der Saison der Umstellung (2026/27). In ihr bekommt jeder beim ersten Abruf einmalig 100 Lukaten
+je Liga, in der er aktives Mitglied ist (`opening:{season_id}:{league_id}`). Genau damit wurde vorher je Liga
+gerechnet, also hat im Moment der Umstellung jeder so viele Lukaten wie vorher, zusammengezählt über seine
+Ligen. Ab der nächsten Saison gibt es stattdessen den Startbonus je Manager (`season:{season_id}`).
 
-**Was eine Lukate wert ist** (Vorschlag)
+Buchungen im Kontobuch:
 
-Pack-Preise im heutigen Verhältnis 15 : 30 : 40 : 45 (`stickerShopOffers()`), geteilt durch fünf. Euro-Kurs
-aus dem heutigen Angebot „Handvoll" (5 normale Packs für 2,99 €): rund 20 Cent je Lukate.
-
-| | Lukaten | Einträge | Euro, etwa |
-|---|---:|---:|---:|
-| Normales Pack (3 Sticker, 1 neu) | 3 | 150 | 0,60 € |
-| Big Pack (7 Sticker, 2 neu) | 6 | 300 | 1,20 € |
-| Vereins-Pack (5 Sticker eines Vereins, alle neu) | 8 | 400 | 1,60 € |
-| Special Pack (3 Sticker, mindestens 1 Holo) | 9 | 450 | 1,80 € |
-| Startbonus einer Saison | 20 | 1000 | 4,00 € |
-| Marcel, ein Spieltag | 5 | 251 | 1,00 € |
-
-Ein normales Pack entspricht dem Tages-Pack, das es täglich gratis gibt; 150 Einträge dafür sind viel.
-Lohnend sind vor allem Vereins- und Special-Pack. Soll das normale Pack attraktiver sein, ist sein Preis die
-Stellschraube. Offen.
-
-## 4. Euro: zwei Wege, ein Kurs
-
-Entschieden: Die Euro-Packs bleiben. Wer einfach Packs will, soll nicht den Umweg über Lukaten gehen müssen.
-Lukaten gegen Euro kommen dazu.
-
-Damit kein Schlupfloch entsteht, gilt eine Regel: Ein Lukaten-Bündel kostet genau so viel wie das Euro-Paket,
-dessen Packs man damit kaufen kann. Beide Listen hängen also aneinander; ändert sich ein Pack-Preis in
-Lukaten, muss das passende Bündel mitziehen. Aus den heutigen Euro-Angeboten (`stickerShopEurOffers()`) und
-den Pack-Preisen 3 / 6 / 8 / 9 ergibt sich:
-
-| Preis | Euro-Paket (bleibt) | Lukaten-Bündel (neu) | je Lukate |
-|---|---|---:|---:|
-| 1,99 € | Special-Pack einzeln | 9 | 22 Cent |
-| 2,99 € | Handvoll: 5 normale | 15 | 20 Cent |
-| 4,99 € | Stapel: 4 normale und 3 Big | 30 | 17 Cent |
-| 6,99 € | Kiste: 3 normale, 3 Big, 1 Special, 1 Verein | 44 | 16 Cent |
-
-Eine Unstimmigkeit steckt schon in den heutigen Preisen: Vereins- und Special-Pack kosten einzeln beide
-1,99 €, in Lukaten aber 8 und 9. Für 1,99 € bekäme man 9 Lukaten und damit ein Vereins-Pack plus eine Lukate
-Rest — das einzelne Vereins-Pack für Euro wäre dann der schlechtere Kauf. Auflösen lässt sich das, indem beide
-Packs in Lukaten gleich viel kosten oder das Vereins-Pack in Euro günstiger wird. Offen.
-
-Offen außerdem: das Starter-Angebot. Heute 10 normale Packs für 1,99 €, einmal je Saison. Übersetzt wären das 30
-Lukaten, mehr als ein Startbonus und so viel wie 1500 Einträge.
-
-Ablauf wie heute über PayPal.me (`StickerShopEurTrait`, `sticker_eur_purchase`). Heute gibt es die Packs
-sofort, und ihre Karten sind bis zur Zahlungsbestätigung gesperrt. Für Lukaten Vorschlag: sofort gutschreiben;
-storniert der Admin, wird gegengebucht und das Konto kann ins Minus gehen. Ein Minus sperrt Käufe und
-Einsätze, bis es ausgeglichen ist. Offen.
-
-## 5. Einträge: was zählt
-
-**Wie Einträge heute entstehen** (`api/app/database/player_rating.database.php`, `updatePlayerRating`):
-
-- Jede Änderung, die Einsatz (`participation`), Note (`grade`) oder Statistik setzt, schreibt dem Manager einen
-  Eintrag der jeweiligen Art gut (`insertContribution()`, `INSERT IGNORE`) — auch wenn der Wert schon so
-  dastand. Mehrere Manager können für dieselbe Note einen Eintrag haben.
-- Statistik-Einträge einer Bewertung werden gelöscht, sobald die Statistik wieder komplett leer ist.
-
-**Regel für die Lukaten**
-
-- Je Bewertung und Art zählt nur der früheste Eintrag (`created_at`). Die Übersicht der Mitwirkenden bleibt,
-  wie sie ist.
-- Der Zähler läuft je Manager fortlaufend, auch über Saisons. Überschreitet er ein Vielfaches von 50, wird eine
-  Lukate gebucht, mit dem Schlüssel der Schwelle (`entries:{n}`). So wird keine Schwelle doppelt bezahlt, auch
-  wenn Einträge wegfallen und wiederkommen.
-- Gebucht wird beim Abruf des Kontos (`syncLukatenAccount()`), nicht beim Eintragen. Der Weg, auf dem Noten
-  gespeichert werden, bleibt dadurch unangetastet. Gebaut.
-- Gezählt wird ab dem Start der ersten Saison im Konto-Modus; in der Vorschau ab dem Start der laufenden Saison,
-  damit das Vorschau-Konto zeigt, was sie bisher gebracht hätte.
-- Anzeige für die Motivation: „noch x Einträge bis zur nächsten Lukate".
-- Offen: Zählt jede Art von Eintrag gleich?
-
-## 6. Diese Saison und alte Saisons
-
-- Die Lukaten der laufenden Saison werden nicht übernommen. Sie galten schon immer nur für eine Saison, es
-  wird nichts weggenommen. Es gibt zu viele davon, und sie wurden gesetzt, ohne dass jemand von einem späteren
-  Wert wusste.
-- Umbenannt wird während der Saison nichts. Erst im Rückblick heißen sie **Alt-Lukaten** (Vorschlag), damit
-  die Zahlen im alten Maßstab (Start 100) nicht mit den neuen verwechselt werden.
-- Alte Saisons rechnen unverändert über den heutigen Weg (`getManagerLukatenBudget()`,
-  `getBankLukatenBalance()`, `getLukatenStandings()` in `h2h_prediction.database.php`), einschließlich
-  getrennter Bank- und Shop-Zeile.
-- Was fehlt: Die Schatzkammer nimmt heute immer die aktive Saison. Für den Rückblick braucht sie eine
-  Saison-Auswahl.
-
-Regel für die Umsetzung: Bestehende Tabellen und Zeilen werden nie umgeschrieben. Es kommt nur Neues dazu.
-
-## 7. Technisches Zielbild
-
-**Modus je Saison.** Neue Spalte in der globalen DB, z.B. `season.lukaten_mode` (`classic` als Default,
-`account` für das neue System). Die API liefert den Modus mit der Saison; Shop, Wettbüro und Tipp-Karte
-richten sich danach.
-
-**Ein Kontobuch für alles** (globale DB, weil das Konto am Manager hängt): eine Zeile je Buchung mit
-Manager, Betrag, Quelle, eindeutigem Schlüssel je Manager und Verweisen (Saison, Liga, Match, Pack,
-Euro-Kauf). Kontostand = Summe. Dasselbe Muster wie `sticker_pack.source_key` und `transaction`.
-
-| Buchung | Betrag | Schlüssel (Beispiel) | Wann |
+| Buchung | Betrag | Schlüssel | Wann |
 |---|---|---|---|
-| Startbonus | +20 | `season:{season_id}` | beim ersten Kontoabruf der Saison, wie das Tages-Pack |
-| Einträge | +1 | `entries:{n}` | wenn der Zähler die Schwelle n × 50 überschreitet |
-| Euro-Kauf | +Bündel | `eur:{purchase_id}` | beim Kauf; Storno als Gegenbuchung |
-| Pack-Kauf | −Preis | `pack:{pack_id}` | beim Kauf |
-| Tipp-Einsatz | −Einsatz | `stake:{match_id}` | beim Tippen; bis zum Anpfiff änderbar, mit dem Tipp gelöscht |
-| Tippgewinn | +Einsatz × Quote | `payout:{match_id}` | bei der Auswertung des Spieltags |
+| Startguthaben | +100 je Liga | `opening:{season_id}:{league_id}` | beim ersten Kontoabruf, nur in der Saison der Umstellung |
+| Startbonus | +100 | `season:{season_id}` | beim ersten Kontoabruf jeder späteren Saison |
+| Einträge | +1 je Eintrag | `entries:{matchday_id}` | beim Spieltagsabschluss, eine Buchung je Manager und Spieltag |
+| Lukaten-Kauf | +Bündel | `eur:{purchase_id}` | sofort beim Kauf |
+| Storno | −Bündel | `eur_cancel:{purchase_id}` | wenn ein Admin den Kauf storniert |
+| Pack-Kauf | −Preis | `pack:{pack_id}` | beim Kauf, in einer Transaktion mit dem Pack |
 
-Folgen:
+Ausgaben (Pack-Kauf, Tipp-Einsatz) laufen unter einem Lock je Manager, damit dasselbe Guthaben nicht parallel
+zweimal ausgegeben wird.
 
-- Ausgaben laufen unter einem Lock je Manager, wie im heutigen Shop-Kauf (`buyStickerShopOffer()`).
-- Einsätze werden im Kontobuch gebucht statt wie heute aus `h2h_prediction` berechnet. Das ist nötig, weil
-  ein Manager in mehreren Ligen tippen kann und alle Einsätze dasselbe Konto belasten. `h2h_prediction` behält
-  Einsatz, Quote und Ergebnis für die Anzeige.
-- Die Hauptliga-Logik des Shops (`getStickerShopLeague()`) und `sticker_shop_purchase` in den Liga-DBs werden
-  im neuen Modus nicht mehr gebraucht. Auf den Liga-DBs ist keine Migration nötig.
-- Schatzkammer im neuen Modus: aktuelle Kontostände der Manager der Liga und eine Bank-Zeile. Sie ist nicht
-  mehr an eine Saison gebunden. Offen: Bank je Liga oder eine für alle.
-- Tippgewinne haben Nachkommastellen (Einsatz × Quote). Vorschlag: wie heute beibehalten; bei kleinen Zahlen
-  lohnt ein Einsatz von 1 sonst kaum.
+## 4. Zahlen
 
-**Betroffene Stellen**
+**Ein üblicher Spieltag** (Einträge aus `maintainer_contribution`):
 
-| Bereich | Dateien (Auswahl) |
+| Manager | Einträge = Lukaten am Spieltag | in Euro, etwa | Lukaten in der Saison |
+|---|---:|---:|---:|
+| Marcel | 251 | 2,50 € | 8.534 |
+| Nils | 132 | 1,30 € | 4.488 |
+| Lukas | 108 | 1,10 € | 3.672 |
+| Matze | 79 | 0,80 € | 2.686 |
+| Eike | 2 | 0,02 € | 68 |
+| 7 weitere | 0 | 0 € | 0 |
+| **Alle** | **572** | **5,70 €** | **19.448** |
+
+Saison = 34 Spieltage wie dieser. Die Quelle deckelt sich selbst: Ein Spieltag hat rund 570 Einträge, und je
+Bewertung und Art zählt nur der erste.
+
+**Preise** (Startwerte, `LukatenAccountTrait::lukatenAccountConfig()`)
+
+| Pack | Lukaten | Herleitung |
+|---|---:|---|
+| Normales Pack (3 Sticker, 1 neu) | 60 | Handvoll: 5 Packs für 2,99 € |
+| Big Pack (7 Sticker, 2 neu) | 120 | doppelt, wie bisher |
+| Vereins-Pack (5 Sticker eines Vereins, alle neu) | 200 | einzeln 1,99 € |
+| Special Pack (3 Sticker, mindestens 1 Holo) | 200 | einzeln 1,99 € |
+
+| Lukaten-Bündel | Preis | je 100 Lukaten |
+|---:|---:|---:|
+| 200 | 1,99 € | 1,00 € |
+| 300 | 2,99 € | 1,00 € |
+| 550 | 4,99 € | 0,91 € |
+| 800 | 6,99 € | 0,87 € |
+
+Die Euro-Pakete im Shop (Handvoll, Stapel, Kiste) sind damit nie schlechter als der Weg über Lukaten: Die Kiste
+für 6,99 € enthält Packs im Wert von 940 Lukaten, das Bündel für denselben Preis bringt 800.
+
+Was das für die Manager heißt:
+
+- Marcel verdient an einem Spieltag rund vier normale Packs.
+- Ein vorhandenes Guthaben von 100 Lukaten reicht für ein normales Pack. Vorher waren es sechs (Preis 15).
+
+## 5. Regeln im Einzelnen
+
+**Einträge**
+
+- Ein Eintrag ist eine Zeile in `maintainer_contribution`: je Spieler und Spieltag der Einsatz, die Note und
+  die Statistik (Tore, Vorlagen, Weiße Weste, Spieler des Spiels und Karten zusammen).
+- Dort wird jedem ein Eintrag gutgeschrieben, der einen Wert speichert, auch einen schon vorhandenen. Für Lukaten
+  zählt deshalb je Bewertung und Art nur der früheste Eintrag. Erneutes Speichern fremder Werte bringt nichts.
+- Gebucht wird beim Abschluss des Spieltags (`creditLukatenEntriesForMatchday()`, aufgerufen in
+  `MatchdayController::patch()`), mit einer Systemnachricht an jeden, der etwas bekommt.
+- Nur Spieltage mit Anpfiff ab dem Start (`entries_since`). Erneutes Abschließen bucht nichts doppelt. Wird ein
+  Spieltag wieder geöffnet und ergänzt, kommt für ihn nichts mehr dazu.
+
+**Tippen (Bestico)**
+
+- Einsatz höchstens der Kontostand. Der eigene bisherige Einsatz auf dasselbe Match zählt dabei nicht mit.
+- **Die Quote legt der Server fest.** Gespeichert wird, was er im Moment der Abgabe für den Pick berechnet.
+  Vorher schickte die Webapp die Quote mit, und sie wurde unverändert gespeichert; seit Einsatz × Quote echte
+  Lukaten sind, wäre das ein Schlupfloch.
+- **Gewinn-Obergrenze** (`max_payout`): Ist sie gesetzt, gilt Einsatz × Quote ≤ Obergrenze. Der Höchsteinsatz
+  hängt dann von der Quote ab, und die Webapp zeigt den Hinweis an. Vorerst aus.
+- **Tipp-Saldo** statt Schatzkammer: je Manager Einsätze, Gewinne und Saldo der Saison in dieser Liga, dazu die
+  Bank als Gegenseite. Gezählt wird ab Anpfiff. Die Rangliste der richtigen Tipps bleibt.
+
+**Shop der Klebrigsten**
+
+- Lukaten-Käufe zahlen immer vom Konto. Die Hauptliga-Regel entfällt, `sticker_shop_purchase` wird nicht mehr
+  beschrieben.
+- Die Preise liefert der Server (`GET /sticker/shop → prices`).
+
+**Lukaten gegen Euro**
+
+- Ablauf wie bei den Euro-Packs über PayPal.me (`sticker_eur_purchase`, Kauf-Code): Die Lukaten gibt es sofort,
+  der Admin bestätigt oder storniert unter „Euro-Käufe" im Shop.
+- Storno bucht die Lukaten wieder ab. Sind sie schon ausgegeben, steht das Konto im Minus; Packs und Einsätze
+  gehen erst wieder, wenn es ausgeglichen ist.
+- Höchstens drei offene Zahlungen, zusammen mit den Euro-Packs.
+
+## 6. Wo man es sieht
+
+| Stelle | Inhalt |
 |---|---|
-| Budget, Bank, Schatzkammer, Tippen | `api/app/database/h2h_prediction.database.php` |
+| Topbar (Desktop), Benutzermenü (mobil) | Guthaben, führt zu `/lukaten` |
+| `/lukaten` | Kontostand mit Summen, Regeln im Klartext, Lukaten kaufen, Preise, Kontoauszug |
+| `/klebrigsten/shop` | Packs gegen Lukaten oder Euro |
+| `/liga/h2h/bestico` und H2H-Match | Guthaben, Einsatz, Tipp-Saldo |
+| `/verwaltung/lukaten` (Admin) | alle Konten: Summe im Umlauf und je Manager Startguthaben, Einträge, Gekauft, Packs, Tipps |
+
+## 7. Technik
+
+| Bereich | Dateien |
+|---|---|
+| Konto, Regeln, Einträge, Lukaten-Kauf | `api/app/database/lukaten_account.database.php`, `api/app/controller/lukaten.controller.php` |
 | Shop Lukaten / Euro | `api/app/database/sticker_shop.database.php`, `sticker_shop_eur.database.php` |
-| Gutschrift für Einträge | `api/app/database/player_rating.database.php` |
-| Shop-Oberfläche, Angebote | `webapp/src/app/stickers/shop/` |
-| Wettbüro, Tipp-Karte | `webapp/src/app/liga/h2h/betting-office.component.*`, `h2h-match.component.*` |
-| Simulation | `webapp/src/app/stickers/sticker-sim.ts` |
+| Tippen, Tipp-Saldo | `api/app/database/h2h_prediction.database.php` |
+| Gutschrift beim Abschluss | `api/app/controller/matchday.controller.php` |
+| Webapp | `core/lukaten.service.ts`, `lukaten/`, `admin/lukaten/`, `stickers/shop/`, `liga/h2h/`, `shell/topbar/` |
 
-**Die zentrale Stelle: die Seite `/lukaten`** (gebaut)
+Endpunkte: `GET /lukaten`, `GET /lukaten/account`, `GET /lukaten/overview` (Admin), `POST /lukaten/buy_eur`;
+geändert: `GET /sticker/shop`, `POST /sticker/shop/buy`, `GET /sticker/shop/lukaten`,
+`PATCH /sticker/shop/purchases/:id`, `GET /h2h_prediction/budget`, `GET /h2h_prediction/budget_standings`,
+`POST /h2h_prediction`, `PATCH /matchday/:id`. Einzelheiten in `CLAUDE.md` und `api/app/routing.php`.
 
-Lukaten sind mehr als ein Teil der Klebrigsten: Man bekommt sie fürs Eintragen, gibt sie beim Tippen und für
-Packs aus und kann sie kaufen. Damit das nicht wieder im Sticker-Shop vermischt wird, gibt es eine eigene Seite
-für das Konto:
+## 8. Umstellung
 
-- Kontostand und Summen je Quelle.
-- „So bekommst du Lukaten": Startbonus; Einträge mit der Regel im Klartext (was ein Eintrag ist, dass nur der
-  erste zählt), Fortschritt zur nächsten Lukate und bisherigem Stand; Kaufen mit den geplanten Bündeln.
-- „Dafür kannst du sie ausgeben": Pack-Preise mit Link zum Shop, Tippen mit Link zum Bestico.
-- Kontoauszug mit den einzelnen Buchungen.
+Development und production sprechen dieselbe Datenbank an. Getrennt sind nur Code und `.env`.
 
-Der Kauf von Lukaten gegen Euro gehört auf diese Seite, nicht in den Shop der Klebrigsten. Dort bleiben die
-Euro-Packs. Erreichbar ist die Seite bisher über das Guthaben im Shop und über die Verwaltung. Offen: wo sie im
-Menü hängt, etwa als Guthaben in der Topbar oder im Benutzermenü.
+1. Migration `2026-10-07_lukaten_live.sql` auf der gemeinsamen Datenbank ausführen: löscht die Buchungen der
+   früheren Admin-Vorschau, entfernt `lukaten_transaction.preview` und `season.lukaten_mode`. Der Code auf
+   `main` nutzt beides nicht.
+2. Branch pushen. Development läuft dann mit dem neuen System, auf echten Daten.
+3. Auf development prüfen: Guthaben in der Topbar entspricht dem bisherigen (Vergleich mit production), der
+   Shop zeigt die neuen Preise, `/verwaltung/lukaten` zeigt alle Konten.
+4. Startwerte entscheiden (Abschnitt 9), dann Merge nach `main`. Das ist der Start für alle.
+5. Nach dem ersten Spieltagsabschluss prüfen: je Manager eine Buchung `entries:{matchday_id}`, die Summe
+   entspricht der Zahl der Einträge.
 
-## 8. Admin-Vorschau
+Zwischen Schritt 2 und 4 rechnet production noch alt. Ein Pack-Kauf oder Tipp auf production zählt auf
+development mit, umgekehrt aber nicht: Ein Pack-Kauf auf development steht nur im Kontobuch, das production
+noch nicht liest. Bis zum Merge also auf development nur ansehen oder bewusst mit eigenen Lukaten testen.
 
-Anforderung: Als Admin den neuen Modus zum Testen und fürs Gefühl einschalten können, mit neuem Shop und
-neuer Bestico-Seite.
+Nach dem Merge gibt es keinen einfachen Rückweg: Käufe stehen dann im Kontobuch, das der alte Code nicht kennt.
 
-Randbedingung: Development und Production sprechen dieselbe Datenbank an. Getrennt sind nur Code und `.env`.
-Ein Schalter in der DB (Modus der laufenden Saison) würde deshalb auch die echte Seite umstellen, sobald der
-Code auf `main` ist, und ein Pack-Kauf auf Development läge im echten Album.
+## 9. Offen vor dem Merge
 
-Umsetzung (Stufe 1, gebaut):
+Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 
-- Die Saison wird nicht umgestellt. Stattdessen läuft ein einzelner Request im Konto-Modus, wenn drei Dinge
-  zusammenkommen: die Umgebung erlaubt es (`LUKATEN_MODE_SWITCH=true` in der `.env` der API, nur Development),
-  der Request kommt von einem Admin, und der Header `X-Lukaten-Preview: 1` ist gesetzt.
-- Den Header schaltet der Admin unter `/verwaltung/lukaten` ein, je Gerät (`LukatenPreviewService`,
-  `localStorage`). Alle anderen und alle anderen Geräte sehen weiter den bisherigen Stand.
-- Buchungen der Vorschau sind im Kontobuch markiert (`preview = 1`) und vom echten Konto getrennt. Die Seite
-  zeigt den Vorschau-Kontostand und kann ihn zurücksetzen (`DELETE /lukaten/preview`).
-- Ein Pack-Kauf in der Vorschau bucht nur die Lukaten ab. Es entsteht kein Pack und keine Meldung an die
-  Admins; das laufende Album bleibt unberührt.
-
-Für die späteren Stufen gilt dieselbe Regel: Die Vorschau darf nichts schreiben, was die echte Saison verändert.
-Beim Tippen heißt das, dass Vorschau-Einsätze nicht in `h2h_prediction` landen dürfen (ein Tipp je Manager und
-Match — ein Vorschau-Tipp würde den echten überschreiben).
-
-## 9. Umstellung
-
-1. Migration `2026-10-07_lukaten_account.sql` auf der gemeinsamen Datenbank: `season.lukaten_mode` und das
-   Kontobuch. Rein additiv, für den Code auf `main` ohne Wirkung.
-2. Code deployen. Die laufende Saison bleibt `classic`.
-3. Auf Development die Vorschau einschalten, testen, Preise einstellen.
-4. Neue Saison mit `account` anlegen (das Setzen des Modus beim Anlegen gehört zur Umstellung und ist noch
-   nicht gebaut). Der Startbonus wird beim ersten Abruf gebucht.
-5. Vor dem Start die Vorschau-Buchungen löschen (`preview = 1`).
-
-Rückweg: Modus der neuen Saison auf `classic`. Sauber möglich, solange noch nichts gebucht wurde.
+1. Pack-Preise 60 / 120 / 200 / 200.
+2. Lukaten-Bündel 200 / 300 / 550 / 800 für 1,99 € / 2,99 € / 4,99 € / 6,99 €.
+3. Startbonus je Saison: 100.
+4. Gewinn-Obergrenze beim Tippen: aus. Wert festlegen, sobald `/verwaltung/lukaten` zeigt, wie viele Lukaten im
+   Umlauf sind.
+5. `entries_since`: 2026-10-07. Auf das Datum des Merges setzen, falls er später kommt.
 
 ## 10. Risiken
 
 | Risiko | Einschätzung | Umgang |
 |---|---|---|
+| **Kaufkraft der alten Guthaben** | Unverändert übernommen, bei vierfachen Pack-Preisen: 100 Lukaten reichen für ein normales Pack statt für sechs. | Bewusst so entschieden. Beim Start erklären. |
+| **Einträge bringen viele Packs** | Rund 19.400 Lukaten je Saison für alle zusammen, das sind über 300 normale Packs. Fleißige füllen das Album deutlich schneller. | Gewollt: Mitarbeit soll sich lohnen. Stellschraube sind die Pack-Preise. |
+| **Tippen ohne Obergrenze** | Wer viele Lukaten hat, kann viel setzen; die Bank zahlt jeden Gewinn. | Gewinn-Obergrenze ist vorbereitet (Abschnitt 5). Die Quote kommt vom Server. |
+| **Datenqualität im Hauptspiel** | „Wer zuerst einträgt, bekommt die Lukate" belohnt Tempo. Falsche Noten wirken auf die Punkte, bis sie korrigiert sind. | Gutschrift erst beim Spieltagsabschluss; die Übersicht der Mitwirkenden zeigt, wer was eingetragen hat. |
 | **Tippen mit gekauften Lukaten** | Rechtlich eine Grauzone. | Bewusst akzeptiert: geschlossene, private Runde, keine Auszahlung. Sollte der Kreis je öffentlich werden, neu bewerten. |
 | **Privates PayPal** für digitale Güter | Besteht schon bei den Euro-Packs: PayPal-Bedingungen, Steuer, Widerruf. | Im Blick behalten, wenn der Umsatz wächst. |
-| **Datenqualität im Hauptspiel** | „Wer zuerst einträgt, bekommt die Lukate" belohnt Tempo. Falsche Noten wirken auf die Punkte, bis sie korrigiert sind. | Übersicht der Mitwirkenden zeigt, wer was eingetragen hat; bei Auffälligkeiten Gutschrift erst beim Spieltagsabschluss. |
-| **Inflation** | Einträge sind gedeckelt (rund 390 Lukaten je Saison für alle). Unbegrenzt sind nur Euro-Käufe, und Konten wachsen über Saisons. | Nach der ersten Saison prüfen; CasinPro als zusätzlicher Abfluss. |
-| **Reiche werden reicher** | Wer viel einträgt oder kauft, startet jede Saison mit Vorsprung. | Betrifft nur Sticker und Tipp-Einsätze, nicht die Tipp-Wertung. |
-| **Ein Konto für mehrere Ligen** | Einsätze aus verschiedenen Ligen belasten dasselbe Konto. | Kontobuch für Einsätze, Abschnitt 7. |
-| **Veraltender Branch** | Das Repo ändert sich täglich. | Stufe 1 früh und wirkungslos nach `main`. |
-
-## 11. Ausbaustufen
-
-| Stufe | Inhalt | Wirkungslos nach `main`? |
-|---|---|---|
-| 1 | Modus je Saison, Kontobuch, Kontostand mit Startbonus, Admin-Vorschau mit Schalter in der Verwaltung — **gebaut** | ja |
-| 2 | Neuer Shop: Preise im neuen Maßstab, zahlt aus dem Konto (in der Vorschau ohne Pack) — **gebaut** | ja |
-| 3 | Neue Bestico-Seite: Einsätze und Gewinne über das Konto, Schatzkammer neu, Rückblick mit Alt-Lukaten | ja |
-| 4 | Einträge bringen Lukaten: erster Eintrag, Zähler, Anzeige — **gebaut** | ja |
-| – | Lukaten-Seite `/lukaten`: Kontostand, Regeln im Klartext, Kontoauszug — **gebaut**; Platz im Menü offen | ja |
-| 5 | Lukaten gegen Euro auf der Lukaten-Seite, zusätzlich zu den Euro-Packs im Shop | ja |
-| 6 | Simulation um Einträge und Euro-Lukaten erweitern | ja, unabhängig |
-| 7 | CasinPro | später |
-
-## 12. Offene Entscheidungen
-
-1. Pack-Preise: 3, 6, 8 und 9 als Ausgangspunkt, oder das normale Pack günstiger? (Entscheidung nach dem
-   Ausprobieren im Shop.)
-2. Vereins- und Special-Pack: in Lukaten gleich teuer machen oder die Euro-Preise anpassen (Abschnitt 4)?
-3. Starter-Angebot behalten, verkleinern oder streichen?
-4. Gekaufte Lukaten sofort gutschreiben (Minus bei Storno) oder erst nach der Zahlungsbestätigung?
-5. Tippgewinne mit Nachkommastellen wie heute?
-6. Bank je Liga oder eine für alle?
-7. Zählt jede Art von Eintrag gleich (Einsatz, Note, Statistik)?
-8. Name im Rückblick: Alt-Lukaten?
-9. Wo hängt die Lukaten-Seite im Menü: Guthaben in der Topbar, Benutzermenü, beides?
+| **Storno nach dem Ausgeben** | Gekaufte Lukaten gibt es sofort. Bleibt die Zahlung aus, sind sie vielleicht schon weg. | Konto geht ins Minus und ist gesperrt, bis es ausgeglichen ist. |
+| **Zwei Umgebungen, eine Datenbank** | Bis zum Merge rechnen development und production verschieden. | Abschnitt 8. |
 
 ## Verworfen
 
+- **Maßstab 20 mit Modus je Saison und Admin-Vorschau** (Startbonus 20, 1 Lukate je 50 Einträge, Pack-Preise
+  3 / 6 / 8 / 9, Start erst mit der neuen Saison, alte Guthaben verfallen als „Alt-Lukaten"): gebaut bis
+  Commit `1a04240`, dann ersetzt. Kleine Zahlen wirken knauserig (2,99 € für 15 Lukaten), die Arbeit an einem
+  Spieltag war nur 5 Lukaten wert, und Modus plus Vorschau machten den Code doppelt.
 - **Zwei Währungen** (limitierter Besticoin fürs Tippen, unbegrenzte Spaßwährung für Sticker): für die Manager
   zu schwer zu verstehen, großer Umbau.
 - **Geschlossenes System** (Prämien nur aus dem Bestand der Bank, feste Gesamtmenge).
-- **Lukaten je Liga und Saison** wie heute, mit Verfall am Saisonende.
-- **Startbonus 10 oder 100:** Bei 10 werden die Pack-Preise zu halben Lukaten; 100 wäre als Bonus fürs
-  Nichtstun zu viel im Verhältnis zur Arbeit für Einträge.
+- **Lukaten je Liga und Saison** wie bisher, mit Verfall am Saisonende.
+- **Einsätze und Gewinne im Kontobuch buchen:** zwei Datenbanken ohne gemeinsame Transaktion, siehe
+  Abschnitt 3.
 - **Holo-Veredelung und Wunschsticker:** Es soll nur Packs geben.
 
-Die ausführlichen Fassungen der frühen Varianten stehen in der Git-Historie dieser Datei (bis Commit
-`3913457`, damals `docs/currency-split-concept.md`).
+Die ausführlichen Fassungen der früheren Varianten stehen in der Git-Historie dieser Datei (bis Commit
+`3913457` unter `docs/currency-split-concept.md`).

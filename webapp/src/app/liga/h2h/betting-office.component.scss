@@ -86,7 +86,7 @@
   }
 }
 
-// ── Mein Budget (linke Spalte) ────────────────────────────────────────────────
+// ── Mein Guthaben (linke Spalte) — führt zum Lukaten-Konto ─────────────────────
 
 .budget-value {
   display: flex;
@@ -96,7 +96,16 @@
   font-size: $font-2xl;
   font-weight: $font-weight-bold;
   color: $color-text;
+  text-decoration: none;
   margin-bottom: $space-4;
+
+  &:hover { color: $color-accent; }
+}
+
+.card-hint {
+  margin: (-$space-2) 0 $space-3;
+  font-size: $font-xs;
+  color: $color-text-muted;
 }
 
 .history-label {
@@ -281,30 +290,28 @@
   gap: $space-2;
 }
 
-// Schatzkammer-Zeile "Shop" (Die Klebrigsten): kleines Folienpack in Shop-Türkis mit gezackter Naht
-.shop-avatar {
-  width: 16px;
-  height: 22px;
-  margin: 0 3px;
-  flex-shrink: 0;
-  background:
-    linear-gradient(115deg, transparent 25%, rgba(255, 255, 255, 0.35) 45%, transparent 60%),
-    linear-gradient(160deg, #2dd4bf, #0f766e 45%, #042f2e);
-  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / 4px 100% repeat-x; // nur waagerecht (sonst 1px-Linie an den Zacken)
-  transform: rotate(-6deg);
-}
+// Tipp-Saldo: Name, darunter klein Einsätze und Gewinne
+.saldo-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 
-.shop-link {
-  color: inherit;
-  text-decoration: none;
-
-  &:hover { text-decoration: underline; }
+  small {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .budget-cell {
   display: inline-flex;
   align-items: center;
   gap: $space-1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  &--plus  { color: $color-success; }
+  &--minus { color: $color-danger; }
 }
 
 .team-dot {

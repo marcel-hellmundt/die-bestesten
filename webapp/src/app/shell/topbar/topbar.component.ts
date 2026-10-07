@@ -8,6 +8,7 @@ import { DataCacheService } from '../../core/data-cache.service';
 import { ApiService } from '../../core/api.service';
 import { NotificationService } from '../../core/notification.service';
 import { StickerStatusService } from '../../core/sticker-status.service';
+import { LukatenService } from '../../core/lukaten.service';
 import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
 
 interface SearchResults {
@@ -30,6 +31,11 @@ export class TopbarComponent implements OnDestroy {
   private api    = inject(ApiService);
   notifService   = inject(NotificationService);
   stickerStatus  = inject(StickerStatusService);
+  private lukaten = inject(LukatenService);
+
+  // Lukaten-Guthaben (Konto je Manager) — null, solange es nicht geladen ist oder kein Konto existiert
+  lukatenBalance = computed(() => this.lukaten.balance() ?? null);
+  lukatenLabel   = computed(() => LukatenService.format(this.lukatenBalance()));
 
   isDropdownOpen       = signal(false);
   isLeagueDropdownOpen = signal(false);
@@ -166,6 +172,7 @@ export class TopbarComponent implements OnDestroy {
 
     // "Die Klebrigsten": Album-Status laden — vergibt dabei das tägliche Pack ("App öffnen")
     this.stickerStatus.start();
+    this.lukaten.start();
 
     this.api.get<{ leagues: League[] }>('manager/leagues').subscribe({
       next: data => this.leagues.set(data.leagues ?? []),

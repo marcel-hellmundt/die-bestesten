@@ -1,6 +1,7 @@
-// "Die Klebrigsten" — Shop: feste Pack-Arten, einzeln gegen Lukaten (Bestico, Hauptliga) oder als
-// Euro-Kombinationen (PayPal.me). Muss zu StickerShopTrait::stickerPackKinds()/…Offers() und
-// StickerShopEurTrait::stickerShopEurOffers() im Backend passen (dort sind die Preise maßgeblich).
+// "Die Klebrigsten" — Shop: feste Pack-Arten, einzeln gegen Lukaten (Lukaten-Konto, siehe /lukaten) oder als
+// Euro-Kombinationen (PayPal.me). Muss zu StickerShopTrait::stickerPackKinds()/…Offers(),
+// LukatenAccountTrait::lukatenAccountConfig() (pack_prices) und StickerShopEurTrait::stickerShopEurOffers() im
+// Backend passen (dort sind die Preise maßgeblich).
 
 export type PackKind = 'normal' | 'big' | 'club' | 'special';
 export type ShopCurrency = 'lukaten' | 'eur';
@@ -34,12 +35,15 @@ export interface ShopOffer {
   highlight?: string;     // Band, z.B. "Beliebt"
 }
 
-// Lukaten: je eine Pack-Art (jeder Manager startet pro Saison mit 100) — Keys stabil, l-small = Normales Pack
+// Lukaten: je eine Pack-Art — 1 Lukate ≈ 1 Cent (1 Eintrag = 1 Lukate), Preise also wie die Euro-Preise in Cent:
+// Normales Pack wie in der Handvoll (2,99 € / 5), Vereins-/Special-Pack wie einzeln (1,99 €).
+// Keys stabil, l-small = Normales Pack. Der Shop zeigt die Preise des Servers (GET /sticker/shop → prices);
+// die Werte hier sind der Rückfall und die Grundlage der Simulation.
 export const LUKATEN_OFFERS: ShopOffer[] = [
-  { key: 'l-small',   currency: 'lukaten', name: PACK_KINDS.normal.name,  contents: { normal: 1 },  price: 15 },
-  { key: 'l-big',     currency: 'lukaten', name: PACK_KINDS.big.name,     contents: { big: 1 },     price: 30, highlight: 'Beliebt' },
-  { key: 'l-club',    currency: 'lukaten', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 40 },
-  { key: 'l-special', currency: 'lukaten', name: PACK_KINDS.special.name, contents: { special: 1 }, price: 45 },
+  { key: 'l-small',   currency: 'lukaten', name: PACK_KINDS.normal.name,  contents: { normal: 1 },  price: 60 },
+  { key: 'l-big',     currency: 'lukaten', name: PACK_KINDS.big.name,     contents: { big: 1 },     price: 120, highlight: 'Beliebt' },
+  { key: 'l-club',    currency: 'lukaten', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 200 },
+  { key: 'l-special', currency: 'lukaten', name: PACK_KINDS.special.name, contents: { special: 1 }, price: 200 },
 ];
 
 // Euro: Kombinationen — Staffel 2,99 → 4,99 → 6,99; Starter einmalig als Einstieg

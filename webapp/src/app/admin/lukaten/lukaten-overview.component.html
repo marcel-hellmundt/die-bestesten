@@ -1,0 +1,84 @@
+@if (overview() === undefined) {
+  <p class="state-msg">Laden…</p>
+} @else if (!overview()) {
+  <p class="state-msg state-msg--error">Die Lukaten-Konten konnten nicht geladen werden.</p>
+} @else if (!overview()!.ready) {
+  <p class="state-msg state-msg--error">Das Kontobuch fehlt noch (Tabelle lukaten_transaction).</p>
+} @else {
+  @if (totals(); as t) {
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-label stat-label--sunflower">Im Umlauf</span>
+        <div class="stat-value">{{ format(t.in_circulation) }}</div>
+        <div class="stat-desc">alle Kontostände zusammen</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label stat-label--asphalt">Startguthaben</span>
+        <div class="stat-value">{{ format(t.start) }}</div>
+        <div class="stat-desc">je Liga bzw. Saison</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label stat-label--emerald">Einträge</span>
+        <div class="stat-value">{{ format(t.entries) }}</div>
+        <div class="stat-desc">1 Lukate je Eintrag</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label stat-label--river">Gekauft</span>
+        <div class="stat-value">{{ format(t.eur) }}</div>
+        <div class="stat-desc">gegen Euro</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label stat-label--amethyst">Packs</span>
+        <div class="stat-value">{{ format(-t.packs) }}</div>
+        <div class="stat-desc">für Sticker-Packs ausgegeben</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label stat-label--carrot">Tipps</span>
+        <div class="stat-value">{{ signed(t.bets) }}</div>
+        <div class="stat-desc">Gewinne minus Einsätze</div>
+      </div>
+    </div>
+  }
+
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Manager</th>
+          <th class="col-value hidden-mobile">Start</th>
+          <th class="col-value">Einträge</th>
+          <th class="col-value hidden-mobile">Gekauft</th>
+          <th class="col-value hidden-mobile">Packs</th>
+          <th class="col-value">Tipps</th>
+          <th class="col-value">Kontostand</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of accounts(); track a.manager_id) {
+          <tr>
+            <td>
+              <span class="manager-cell">
+                <img class="manager-cell__photo" [src]="managerPhotoUrl(a.manager_id)"
+                     (error)="$any($event.target).style.visibility = 'hidden'" alt="" />
+                {{ a.manager_name }}
+              </span>
+            </td>
+            <td class="col-value hidden-mobile">{{ format(a.start) }}</td>
+            <td class="col-value">{{ signed(a.entries) }}</td>
+            <td class="col-value hidden-mobile">{{ signed(a.eur) }}</td>
+            <td class="col-value hidden-mobile">{{ signed(a.packs) }}</td>
+            <td class="col-value" [class.is-minus]="a.bets < 0">{{ signed(a.bets) }}</td>
+            <td class="col-value" [class.is-minus]="a.balance < 0"><strong>{{ format(a.balance) }}</strong></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="state-msg">Noch keine Konten.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="overview-hint">
+    Kontostand = Kontobuch (Startguthaben, Einträge, Käufe, Packs) plus Tipps. Tipps zählen ab dem Abgeben,
+    also auch offene Einsätze. Regeln und Preise stehen unter <a routerLink="/lukaten">Lukaten</a>.
+  </p>
+}

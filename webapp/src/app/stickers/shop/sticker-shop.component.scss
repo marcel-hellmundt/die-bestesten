@@ -262,6 +262,8 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
     margin: 0;
     font-size: $font-xs;
     color: $color-text-muted;
+
+    a { color: $color-accent; }
   }
 
   // Euro-Bereich vorerst: farblos, gedimmt, nicht klickbar (zusätzlich inert im Template), ohne Glanz-Animation
@@ -289,7 +291,7 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   color: $color-text;
   text-decoration: none;
 
-  // Konto-Modus: führt zum Lukaten-Konto (/lukaten)
+  // führt zum Lukaten-Konto (/lukaten)
   &--link {
     cursor: pointer;
     transition: border-color $transition-fast;

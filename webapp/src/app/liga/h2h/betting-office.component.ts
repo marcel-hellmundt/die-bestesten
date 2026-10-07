@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, Subject, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { LukatenService } from '../../core/lukaten.service';
 import { environment } from '../../../environments/environment';
 
 interface Bet {
@@ -48,12 +49,15 @@ interface StandingRow {
   won_matches: WonMatch[];
 }
 
-interface BudgetStandingRow {
-  manager_id: string | null; // null = synthetische Zeile ("Bank"/"Shop"), siehe GET /h2h_prediction/budget_standings
-  kind?: 'manager' | 'bank' | 'shop'; // fehlt bei älterer API → per manager_id unterscheiden
+/** Tipp-Saldo je Manager (GET /h2h_prediction/budget_standings): nur Einsätze und Gewinne aus Tipps der Saison. */
+interface SaldoRow {
+  manager_id: string | null; // null = die Bank (Gegenseite aller Wetten)
+  kind: 'manager' | 'bank';
   manager_name: string;
   alias: string | null;
-  budget: number;
+  stakes: number;   // Summe der Einsätze (Bank: eingenommen)
+  payouts: number;  // Einsatz × Quote der gewonnenen Tipps (Bank: ausgezahlt)
+  saldo: number;    // payouts − stakes (Bank: stakes − payouts)
 }
 
 interface MatchTeam {
@@ -85,10 +89,11 @@ interface AvailableMatch {
 export class BettingOfficeComponent {
   private api   = inject(ApiService);
   private cache = inject(DataCacheService);
+  private lukaten = inject(LukatenService);
 
   // Nach einem erfolgreich abgegebenen Tipp (siehe submitAvailablePrediction()) müssen sowohl die
   // eigene Tipp-Liste (neuer Eintrag) als auch die Liste der noch offenen Matches (dieses Match
-  // verschwindet daraus) und das eigene Lukaten-Budget neu geladen werden.
+  // verschwindet daraus) und das eigene Lukaten-Guthaben neu geladen werden.
   private refresh$ = new Subject<void>();
 
   private betsState = toSignal(
@@ -114,34 +119,31 @@ export class BettingOfficeComponent {
     { initialValue: { data: [] as StandingRow[], loading: true } },
   );
 
-  // Anders als die Sieg-Bestenliste (ändert sich nur bei Spieltagsabschluss) ändert sich das
-  // Lukaten-Ranking direkt beim Setzen eines Einsatzes — deshalb an refresh$ gekoppelt.
-  private budgetStandingsState = toSignal(
-    this.refresh$.pipe(
-      startWith(null),
-      switchMap(() =>
-        this.api.get<BudgetStandingRow[]>('h2h_prediction/budget_standings').pipe(
-          map(data => ({ data, loading: false })),
-          startWith({ data: [] as BudgetStandingRow[], loading: true }),
-          catchError(() => of({ data: [] as BudgetStandingRow[], loading: false })),
-        )
-      ),
+  // Tipp-Saldo: zählt nur Einsätze auf angepfiffene Matches, ändert sich also mit Anpfiff und
+  // Spieltagsabschluss — einmal beim Öffnen der Seite laden genügt.
+  private saldoState = toSignal(
+    this.api.get<SaldoRow[]>('h2h_prediction/budget_standings').pipe(
+      map(data => ({ data, loading: false })),
+      startWith({ data: [] as SaldoRow[], loading: true }),
+      catchError(() => of({ data: [] as SaldoRow[], loading: false })),
     ),
-    { initialValue: { data: [] as BudgetStandingRow[], loading: true } },
+    { initialValue: { data: [] as SaldoRow[], loading: true } },
   );
 
+  // Guthaben = Stand des Lukaten-Kontos (ein Konto je Manager, siehe /lukaten); max_payout =
+  // Obergrenze für Einsatz × Quote eines Tipps (null = keine)
   private budgetState = toSignal(
     this.refresh$.pipe(
       startWith(null),
       switchMap(() =>
-        this.api.get<{ budget: number }>('h2h_prediction/budget').pipe(
-          map(data => ({ data: data.budget, loading: false })),
-          startWith({ data: null as number | null, loading: true }),
-          catchError(() => of({ data: null as number | null, loading: false })),
+        this.api.get<{ budget: number; max_payout?: number | null }>('h2h_prediction/budget').pipe(
+          map(data => ({ data: data.budget as number | null, maxPayout: data.max_payout ?? null, loading: false })),
+          startWith({ data: null as number | null, maxPayout: null as number | null, loading: true }),
+          catchError(() => of({ data: null as number | null, maxPayout: null as number | null, loading: false })),
         )
       ),
     ),
-    { initialValue: { data: null as number | null, loading: true } },
+    { initialValue: { data: null as number | null, maxPayout: null as number | null, loading: true } },
   );
 
   private availableState = toSignal(
@@ -162,8 +164,9 @@ export class BettingOfficeComponent {
   betsLoading           = computed(() => this.betsState().loading);
   standings             = computed(() => this.standingsState().data);
   standingsLoading      = computed(() => this.standingsState().loading);
-  budgetStandings        = computed(() => this.budgetStandingsState().data);
-  budgetStandingsLoading = computed(() => this.budgetStandingsState().loading);
+  saldoRows             = computed(() => this.saldoState().data);
+  saldoLoading          = computed(() => this.saldoState().loading);
+  maxPayout             = computed(() => this.budgetState().maxPayout);
   availableMatches      = computed(() => this.availableState().data);
   availableLoading      = computed(() => this.availableState().loading);
 
@@ -229,6 +232,11 @@ export class BettingOfficeComponent {
 
   range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
 
+  /** mit Vorzeichen, für den Tipp-Saldo */
+  formatSigned(v: number): string {
+    return (v > 0 ? '+' : v < 0 ? '−' : '') + this.formatLukatenNumber(Math.abs(v));
+  }
+
   // ── Tipp direkt aus der Liste der offenen Matches abgeben (gleiche UI/Endpoint wie
   // h2h-match.component.ts's submitPrediction()) ────────────────────────────────────
   submittingMatchId = signal<string | null>(null);
@@ -236,7 +244,8 @@ export class BettingOfficeComponent {
 
   // Einsatz je offenem Match (mehrere Karten gleichzeitig sichtbar, jede mit eigenem Feld) —
   // available-Matches enthalten laut Backend nie einen bereits bestehenden eigenen Tipp, das
-  // verfügbare Maximum ist also immer schlicht das aktuelle Budget (kein Exclude nötig).
+  // verfügbare Maximum ist also immer schlicht das aktuelle Guthaben (kein Exclude nötig); gilt
+  // eine Gewinn-Obergrenze, hängt es zusätzlich von der Quote des gewählten Tipps ab.
   private stakeByMatch = signal<Record<string, number | null>>({});
 
   stakeForMatch(matchId: string): number | null {
@@ -252,24 +261,28 @@ export class BettingOfficeComponent {
     if (this.submittingMatchId()) return;
 
     const stake = this.stakeForMatch(m.match_id);
-    const maxStake = this.budget() ?? 0;
+    const cap = this.maxPayout(), odds = m.odds[pick];
+    let maxStake = Math.max(0, Math.floor(this.budget() ?? 0));
+    if (cap != null && odds) maxStake = Math.min(maxStake, Math.floor(cap / odds + 1e-9));
     if (stake !== null && (!Number.isInteger(stake) || stake < 1 || stake > maxStake)) {
-      this.predictionError.set(`Einsatz muss eine ganze Zahl zwischen 1 und ${maxStake} sein.`);
+      this.predictionError.set(maxStake < 1
+        ? 'Dein Guthaben reicht nicht für einen Einsatz.'
+        : `Einsatz muss eine ganze Zahl zwischen 1 und ${maxStake} sein.`);
       return;
     }
 
     this.submittingMatchId.set(m.match_id);
     this.predictionError.set(null);
 
+    // Die Quote legt der Server fest (H2HPredictionTrait::submitH2HPrediction), nicht die Anfrage
     this.api.post<{ status: boolean; message?: string; budget?: number }>('h2h_prediction', {
       match_id: m.match_id,
       pick,
-      odds: m.odds[pick] ?? null,
       stake,
     }).subscribe({
       next: (res) => {
         this.submittingMatchId.set(null);
-        if (res.budget !== undefined) this.budgetOverride.set(res.budget);
+        if (res.budget !== undefined) { this.budgetOverride.set(res.budget); this.lukaten.set(res.budget); }
         this.refresh$.next();
       },
       error: (err: any) => {

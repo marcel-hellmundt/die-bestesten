@@ -19,7 +19,10 @@ class H2HPredictionController extends _BaseController
         }
 
         if ($this->id === 'budget') {
-            return ['budget' => $this->db->getManagerLukatenBudgetForActiveSeason($GLOBALS['auth_manager_id'])];
+            return [
+                'budget'     => $this->db->getLukatenBalance($GLOBALS['auth_manager_id']),
+                'max_payout' => $this->db->getLukatenMaxPayout(),
+            ];
         }
 
         if ($this->id === 'budget_standings') {
@@ -41,16 +44,14 @@ class H2HPredictionController extends _BaseController
             return ['status' => false, 'message' => 'match_id und pick (home|draw|away) erforderlich'];
         }
 
-        // Vom Frontend zum Zeitpunkt der Tippabgabe für genau diesen Pick angezeigte Pseudo-Quote
-        // — optional, wird unverändert als Snapshot gespeichert (siehe
-        // H2HPredictionTrait::submitH2HPrediction).
-        $odds = isset($body['odds']) ? (float) $body['odds'] : null;
+        // Die Quote kommt nicht aus der Anfrage: submitH2HPrediction() speichert die serverseitig
+        // berechnete (ein mitgeschicktes odds wird ignoriert) und gibt sie in der Response zurück.
 
-        // Einsatz in Lukaten (fiktive Wettwährung) — optional, weiterhin unbelasteter Tipp
-        // möglich; Validierung (min 1, max Budget) übernimmt submitH2HPrediction().
+        // Einsatz in Lukaten — optional, weiterhin unbelasteter Tipp möglich; Validierung (min 1,
+        // max Kontostand, ggf. Gewinn-Obergrenze) übernimmt submitH2HPrediction().
         $stake = isset($body['stake']) && $body['stake'] !== null ? (int) $body['stake'] : null;
 
-        return $this->db->submitH2HPrediction($matchId, $GLOBALS['auth_manager_id'], $pick, $odds, $stake);
+        return $this->db->submitH2HPrediction($matchId, $GLOBALS['auth_manager_id'], $pick, $stake);
     }
 
     protected function patch(): mixed { return $this->methodNotAllowed(); }

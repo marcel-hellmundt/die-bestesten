@@ -89,6 +89,12 @@ class MatchdayController extends _BaseController
             $teamRatings = $this->db->finalizeMatchday($this->id, $pointsBonus);
             $this->db->evaluateH2HPredictionResults($this->id);
             $this->db->grantStickerMatchdayPacks($this->id);
+            // Lukaten für die Einträge dieses Spieltags (1 je Eintrag) — darf den Abschluss nicht aufhalten
+            try {
+                $this->db->creditLukatenEntriesForMatchday($this->id);
+            } catch (\Throwable $e) {
+                error_log('creditLukatenEntriesForMatchday: ' . $e->getMessage());
+            }
             $achResult   = $this->db->evaluateAchievements(true);
             $achievements = $achResult['count'];
             $this->db->createMatchdayCompletedNotifications($this->id, (int) $matchday['number']);

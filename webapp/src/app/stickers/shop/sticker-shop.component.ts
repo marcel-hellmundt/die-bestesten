@@ -3,6 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { EurPurchaseResult, StickerStatusService } from '../../core/sticker-status.service';
+import { LukatenService } from '../../core/lukaten.service';
 import { AuthService } from '../../auth/auth.service';
 import { ALBUM_SOURCE, StickerAlbumService } from '../album/sticker-album.service';
 import { AlbumClub } from '../album/album.model';
@@ -22,18 +23,11 @@ interface EurPending {
   paypal_url: string;
 }
 
-/**
- * Response von GET /sticker/shop — Lukaten-Guthaben, Preise und Euro-Käufe. mode = Lukaten-Modus der aktiven Saison:
- * classic = Guthaben der Hauptliga (oberste Liga mit Sticker-Album), account = Lukaten-Konto des Managers.
- */
+/** Response von GET /sticker/shop — Lukaten-Guthaben (Stand des Lukaten-Kontos), Preise und Euro-Käufe. */
 interface ShopState {
-  mode?: 'classic' | 'account';
-  preview?: boolean;                  // Admin-Vorschau des Konto-Modus: Vorschau-Konto, Käufe legen kein Pack an
-  league: { id: string; name: string } | null;
-  budget: number | null;
-  lukaten_available?: boolean;        // Lukaten-Käufe möglich (ältere API: aus league hergeleitet)
-  prices?: Record<string, number>;    // Preis je Lukaten-Angebot in diesem Modus (offer key → Lukaten)
-  season_bonus?: number;              // nur Konto-Modus: Startbonus je Saison
+  budget: number | null;              // null ohne Sticker-Album oder ohne Kontobuch
+  lukaten_available?: boolean;        // Lukaten-Käufe möglich
+  prices?: Record<string, number>;    // Preis je Lukaten-Angebot (offer key → Lukaten)
   eur?: { available: boolean; paypal_me: string; starter_available: boolean; pending: EurPending[] };
 }
 
@@ -52,6 +46,7 @@ interface EurPurchaseRow {
   handled_by_name: string | null;
   packs_total: number;
   packs_opened: number;
+  lukaten?: number | null;  // Lukaten-Kauf (auf /lukaten) statt Packs: so viele Lukaten
 }
 
 /** Admin-Liste GET /sticker/shop/lukaten — Lukaten-Käufe sind final (keine Bestätigung/kein Storno). */
@@ -65,8 +60,8 @@ interface LukatenPurchaseRow {
   club_id: string | null;
   club_name: string | null;
   price: number | null;     // bezahlte Lukaten (Buchung) — null bei Pack ohne Buchung
-  booked: boolean;          // false = Shop-Pack ohne Buchung in sticker_shop_purchase (Unstimmigkeit)
-  league_name: string | null;
+  booked: boolean;          // false = Shop-Pack ohne Buchung im Kontobuch (Unstimmigkeit)
+  league_name: string | null; // nur alte Käufe: Liga, aus der damals bezahlt wurde
   created_at: string;
   opened: boolean;
 }
@@ -81,11 +76,11 @@ interface ClubChoice {
 }
 
 /**
- * Shop (/klebrigsten/shop): Packs gegen Lukaten (klassisch aus der Hauptliga, im Konto-Modus vom Lukaten-Konto;
- * Preise liefert GET /sticker/shop; Kauf per POST /sticker/shop/buy) oder Euro
+ * Shop (/klebrigsten/shop): Packs gegen Lukaten (bezahlt vom Lukaten-Konto, siehe /lukaten; Preise liefert
+ * GET /sticker/shop; Kauf per POST /sticker/shop/buy) oder Euro
  * (POST /sticker/shop/buy_eur: Packs sofort, Zahlung per PayPal.me mit Kauf-Code, Admin bestätigt/storniert —
- * bis dahin sind Karten daraus nicht tauschbar). Admins sehen unten alle Euro-Käufe der Saison und darunter
- * alle Lukaten-Käufe (final, nur Übersicht).
+ * bis dahin sind Karten daraus nicht tauschbar). Admins sehen unten alle Euro-Käufe der Saison (auch die
+ * Lukaten-Käufe von /lukaten) und darunter alle Pack-Käufe gegen Lukaten (final, nur Übersicht).
  */
 @Component({
   selector: 'app-sticker-shop',
@@ -100,6 +95,7 @@ export class StickerShopComponent {
   private auth = inject(AuthService);
   private album = inject(StickerAlbumService);
   private status = inject(StickerStatusService);
+  private lukaten = inject(LukatenService);
 
   readonly eurBundles = EUR_BUNDLES;
   readonly eurSingles = EUR_SINGLES;
@@ -130,15 +126,9 @@ export class StickerShopComponent {
     switchMap(() => this.api.get<ShopState>('sticker/shop').pipe(catchError(() => of(null)))),
   ));
   loading = computed(() => this.shop() === undefined);
-  league  = computed(() => this.shop()?.league ?? null);
   budget  = computed(() => this.shop()?.budget ?? null);
-  /** Neuer Lukaten-Modus der Saison: Konto je Manager statt Guthaben der Hauptliga */
-  accountMode = computed(() => this.shop()?.mode === 'account');
-  seasonBonus = computed(() => this.shop()?.season_bonus ?? null);
-  /** Admin-Vorschau: Käufe buchen nur Lukaten vom Vorschau-Konto ab, es entsteht kein Pack */
-  preview = computed(() => this.shop()?.preview ?? false);
-  lukatenAvailable = computed(() => this.shop()?.lukaten_available ?? !!this.league());
-  /** Lukaten-Angebote mit den Preisen des Servers (je Modus andere) — shop.model.ts ist nur der Rückfall */
+  lukatenAvailable = computed(() => this.shop()?.lukaten_available ?? false);
+  /** Lukaten-Angebote mit den Preisen des Servers — shop.model.ts ist nur der Rückfall */
   lukatenOffers = computed<ShopOffer[]>(() => {
     const prices = this.shop()?.prices;
     return LUKATEN_OFFERS.map(o => prices?.[o.key] != null ? { ...o, price: prices[o.key] } : o);
@@ -263,7 +253,7 @@ export class StickerShopComponent {
       this.status.announcePaused.set(true);
       this.status.buyShopEur(o.key, clubId).subscribe({ next: r => { this.eurResult.set(r); done(); }, error: fail });
     } else {
-      this.status.buyShopOffer(o.key, clubId).subscribe({ next: done, error: fail });
+      this.status.buyShopOffer(o.key, clubId).subscribe({ next: r => { this.lukaten.set(r.budget); done(); }, error: fail });
     }
   }
 
@@ -292,7 +282,7 @@ export class StickerShopComponent {
   adminError = signal<string | null>(null);
 
   handlePurchase(p: EurPurchaseRow, action: 'confirm' | 'cancel'): void {
-    // Stornieren löscht Packs + Karten → zweiter Klick zur Bestätigung
+    // Stornieren löscht Packs + Karten (bzw. zieht die Lukaten wieder ab) → zweiter Klick zur Bestätigung
     if (action === 'cancel' && this.cancelAskId() !== p.id) { this.cancelAskId.set(p.id); return; }
     this.adminBusyId.set(p.id);
     this.adminError.set(null);

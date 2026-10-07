@@ -18,18 +18,14 @@
   color: $color-text-muted;
 }
 
-.preview-note {
-  margin: 0;
-  padding: $space-2 $space-3;
-  border: 1px dashed $color-border;
-  border-radius: $radius-md;
-  font-size: $font-sm;
-  color: $color-text-muted;
+.is-minus { color: $color-danger; }
 
-  a { color: $color-accent; }
+.lukat-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
-
-.is-minus { color: $color-accent; }
 
 // ── Kontostand ──
 .balance {
@@ -87,6 +83,14 @@
       font-variant-numeric: tabular-nums;
     }
   }
+
+  // Konto im Minus (stornierter Kauf)
+  &__note {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-danger;
+  }
 }
 
 .block {
@@ -118,7 +122,10 @@
   padding: $space-4;
 
   // Einträge: die ausführlichste Regel, über die ganze Breite
-  &--wide { grid-column: 1 / -1; order: -1; }
+  &--wide { grid-column: 1 / -1; }
+
+  // Kaufen ohne eingerichtete Euro-Käufe: farblos, nicht bedienbar
+  &--disabled { opacity: 0.5; filter: grayscale(1); }
 
   &__head {
     display: flex;
@@ -141,12 +148,6 @@
     white-space: nowrap;
   }
 
-  &__tag {
-    font-size: $font-xs;
-    color: $color-text-muted;
-    white-space: nowrap;
-  }
-
   p {
     margin: 0;
     max-width: 70ch;
@@ -164,22 +165,6 @@
   }
 }
 
-.progress {
-  height: 10px;
-  margin-top: $space-2;
-  border-radius: $radius-full;
-  background: $color-surface-alt;
-  overflow: hidden;
-
-  &__fill {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: $color-success;
-  }
-}
-
-.bundles,
 .prices {
   display: flex;
   flex-direction: column;
@@ -197,6 +182,115 @@
 
   span { color: $color-text-muted; }
   b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+}
+
+// Lukaten-Bündel: Menge links, Kaufen-Button mit Preis rechts
+.bundles {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin: $space-1 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+  }
+
+  &__amount {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: $font-md;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__bonus {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-success;
+  }
+
+  .btn { min-width: 76px; }
+}
+
+// ── Offene Zahlungen (wie im Shop der Klebrigsten) ──
+.pay-box {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-3 $space-4;
+  border-color: color-mix(in srgb, #{$color-warning} 40%, transparent);
+  background: color-mix(in srgb, #{$color-warning} 8%, #{$color-surface});
+
+  &__title {
+    margin: 0;
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+.pay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-2;
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    font-size: $font-sm;
+
+    small { font-size: $font-xs; color: $color-text-muted; }
+  }
+}
+
+// Kauf-Code: antippen = kopieren
+.code {
+  padding: 0 4px;
+  border: 1px dashed $color-border;
+  border-radius: $radius-sm;
+  background: $color-surface;
+  color: $color-text;
+  font-family: monospace;
+  font-size: $font-xs;
+  font-weight: $font-weight-bold;
+  cursor: pointer;
+}
+
+.pay-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+
+  &__label, &__hint {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__value {
+    padding: $space-1 $space-4;
+    border: 2px dashed $color-text;
+    border-radius: $radius-md;
+    background: $color-surface-alt;
+    color: $color-text;
+    font-family: monospace;
+    font-size: $font-2xl;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
 }
 
 // ── Ausgeben ──
@@ -258,6 +352,17 @@
 
     & + & { border-top: 1px solid $color-border; }
 
+    // noch nicht gebucht (Einträge des laufenden Spieltags)
+    &--pending { color: $color-text-muted; }
+
+    // Tipps: führt ins Bestico
+    &--link {
+      color: $color-text;
+      text-decoration: none;
+
+      &:hover .statement__text { text-decoration: underline; }
+    }
+
     // Mobil: Datum über dem Text
     @media (max-width: $mobile-breakpoint) {
       grid-template-columns: minmax(0, 1fr) auto;
@@ -287,4 +392,110 @@
     font-size: $font-sm;
     color: $color-text-muted;
   }
+}
+
+// ── Lukaten kaufen: bestätigen, danach bezahlen ──
+.confirm {
+  position: fixed;
+  inset: 0;
+  z-index: $z-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-4;
+  background: rgba(0, 0, 0, 0.6);
+  animation: lukaten-fade-in 180ms ease;
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-3;
+    width: min(100%, 380px);
+    max-height: calc(100dvh - 2 * #{$space-4});
+    overflow-y: auto;
+    padding: $space-6 $space-5 $space-5;
+    border-radius: $radius-xl;
+    background: $color-surface;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  }
+
+  &__amount {
+    display: flex;
+    align-items: baseline;
+    gap: $space-2;
+    font-size: $font-md;
+    color: $color-text-muted;
+
+    img {
+      align-self: center;
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+
+    b {
+      font-family: $font-display;
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1;
+      color: $color-text;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__calc {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px $space-4;
+    width: 100%;
+    margin: 0;
+    font-size: $font-sm;
+
+    dt { color: $color-text-muted; }
+    dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  }
+
+  &__total {
+    padding-top: 4px;
+    border-top: 1px solid $color-border;
+    font-weight: $font-weight-bold;
+    color: $color-text !important;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: $space-2;
+    margin-top: $space-2;
+  }
+
+  &__hint {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    text-align: center;
+  }
+
+  &__error {
+    font-size: $font-sm;
+    color: $color-danger;
+    text-align: center;
+  }
+
+  &__done {
+    margin: 0;
+    font-size: $font-sm;
+    line-height: 1.5;
+    text-align: center;
+  }
+}
+
+@keyframes lukaten-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm { animation: none; }
 }

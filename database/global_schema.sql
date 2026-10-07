@@ -30,8 +30,7 @@ CREATE TABLE IF NOT EXISTS club (
 -- Tabelle: season
 CREATE TABLE IF NOT EXISTS season (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
-    start_date DATE NOT NULL UNIQUE,            -- Startdatum der Saison; aktive Saison = höchstes start_date
-    lukaten_mode ENUM('classic', 'account') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'classic'  -- classic = 100 Lukaten je Liga und Saison (live aus h2h_prediction), account = Lukaten-Konto je Manager (lukaten_transaction) — gesetzt erst für die neue Saison, zum Ausprobieren dient die Admin-Vorschau je Request (LukatenAccountTrait); Migration: 2026-10-07_lukaten_account.sql
+    start_date DATE NOT NULL UNIQUE             -- Startdatum der Saison; aktive Saison = höchstes start_date
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: matchday
@@ -529,23 +528,22 @@ CREATE TABLE IF NOT EXISTS sticker_trade_item (
     UNIQUE KEY uk_sticker_trade_item (trade_id, sticker_id, giver_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Tabelle: lukaten_transaction (Lukaten-Konto je Manager, unabhängig von Liga und Saison — das Kontobuch des neuen
--- Lukaten-Modus season.lukaten_mode = account: eine Zeile je Bewegung, Kontostand = Summe; source_key macht die
--- Buchung idempotent). preview = 1: Buchung aus der Admin-Vorschau, vom echten Konto getrennt.
--- Konzept: docs/lukaten-economy-concept.md. Migration: 2026-10-07_lukaten_account.sql
+-- Tabelle: lukaten_transaction — das Kontobuch der Lukaten (ein Konto je Manager, unabhängig von Liga und Saison):
+-- eine Zeile je Bewegung, source_key macht die Buchung idempotent. Kontostand = Summe dieser Zeilen + Tipps (live aus
+-- h2h_prediction der Liga-DBs) − alte Shop-Käufe (sticker_shop_purchase der Liga-DBs), siehe LukatenAccountTrait.
+-- Konzept: docs/lukaten-economy-concept.md. Migrationen: 2026-10-07_lukaten_account.sql, 2026-10-07_lukaten_live.sql
 CREATE TABLE IF NOT EXISTS lukaten_transaction (
     id         CHAR(36)      NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id CHAR(36)      NOT NULL,
-    preview    TINYINT(1)    NOT NULL DEFAULT 0,  -- 1 = Buchung aus der Admin-Vorschau, zählt nicht zum echten Konto
     amount     DECIMAL(10,2) NOT NULL,      -- + Gutschrift, − Ausgabe
-    source     VARCHAR(20)   NOT NULL,      -- season_bonus | entries | pack (später: eur, stake, payout)
-    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'season:{season_id}', 'entries:{n}' (n-te Lukate aus Einträgen), 'pack:{pack_id}', Vorschau 'preview-pack:{offer_key}:{uuid}'
+    source     VARCHAR(20)   NOT NULL,      -- opening | season_bonus | entries | eur | eur_cancel | pack
+    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'opening:{season_id}:{league_id}' (Startguthaben in der Saison der Umstellung), 'season:{season_id}' (Startbonus), 'entries:{matchday_id}' (Einträge eines Spieltags), 'eur:{purchase_id}' / 'eur_cancel:{purchase_id}' (Lukaten-Kauf / Storno, sticker_eur_purchase), 'pack:{pack_id}'
     season_id  CHAR(36)      NULL,          -- Saison der Bewegung (nur zur Auswertung — das Konto ist saisonübergreifend)
-    pack_id    CHAR(36)      NULL,          -- gekauftes Pack (source = pack; in der Vorschau NULL — es entsteht kein Pack)
+    pack_id    CHAR(36)      NULL,          -- gekauftes Pack (source = pack)
     created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     FOREIGN KEY (season_id)  REFERENCES season(id),
-    UNIQUE KEY uk_lukaten_transaction (manager_id, preview, source_key),
+    UNIQUE KEY uk_lukaten_transaction (manager_id, source_key),
     KEY idx_lukaten_transaction_source (source, season_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

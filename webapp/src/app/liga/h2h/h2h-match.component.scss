@@ -359,7 +359,7 @@
   }
 }
 
-// Einsatz (Lukaten, fiktive Wettwährung) + Budget-Anzeige — oberhalb der Pick-Buttons.
+// Einsatz in Lukaten + Guthaben (Link zum Lukaten-Konto) — oberhalb der Pick-Buttons.
 .h2h-stake-row {
   display: flex;
   align-items: center;
@@ -374,11 +374,19 @@
   gap: $space-1;
   font-size: $font-sm;
   color: $color-text-muted;
+  text-decoration: none;
 
   strong {
     color: $color-text;
     font-weight: $font-weight-semibold;
   }
+}
+
+// Hinweis auf die Gewinn-Obergrenze (nur wenn eine gilt)
+.h2h-stake-hint {
+  margin: (-$space-1) 0 $space-3;
+  font-size: $font-xs;
+  color: $color-text-muted;
 }
 
 .h2h-stake-row__input-wrap {

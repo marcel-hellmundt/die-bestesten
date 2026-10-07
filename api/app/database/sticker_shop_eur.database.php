@@ -205,10 +205,12 @@ trait StickerShopEurTrait
              ORDER BY ep.status = 'pending' DESC, ep.created_at DESC"
         );
         $q->execute([$seasonId]);
-        $offers = $this->stickerShopEurOffers();
+        // Pack-Angebote und Lukaten-Bündel (LukatenAccountTrait) laufen über dieselbe Tabelle; lukaten = Lukaten des Bündels
+        $offers = $this->stickerShopEurOffers() + $this->lukatenEurBundles();
         return ['available' => true, 'purchases' => array_map(fn($r) => [
             'id' => $r['id'], 'manager_id' => $r['manager_id'], 'manager_name' => $r['manager_name'],
             'offer_key' => $r['offer_key'], 'offer_name' => $offers[$r['offer_key']]['name'] ?? $r['offer_key'],
+            'lukaten' => $offers[$r['offer_key']]['lukaten'] ?? null,
             'amount_cents' => (int) $r['amount_cents'], 'code' => $r['code'], 'status' => $r['status'],
             'created_at' => $r['created_at'], 'handled_at' => $r['handled_at'], 'handled_by_name' => $r['handled_by_name'],
             'packs_total' => (int) $r['packs_total'], 'packs_opened' => (int) $r['packs_opened'],
@@ -228,7 +230,9 @@ trait StickerShopEurTrait
         if (!$p) return ['error' => 404, 'message' => 'Kauf nicht gefunden'];
         if ($p['status'] !== 'pending') return ['error' => 409, 'message' => 'Kauf ist nicht mehr offen'];
 
-        $name = $this->stickerShopEurOffers()[$p['offer_key']]['name'] ?? $p['offer_key'];
+        // Lukaten-Bündel (LukatenAccountTrait::buyLukatenEur()) statt Packs: beim Storno die Lukaten wieder abziehen
+        $bundle = $this->lukatenEurBundles()[$p['offer_key']] ?? null;
+        $name   = $bundle['name'] ?? ($this->stickerShopEurOffers()[$p['offer_key']]['name'] ?? $p['offer_key']);
         $amount = $this->formatEur((int) $p['amount_cents']);
 
         $this->con->beginTransaction();
@@ -241,8 +245,11 @@ trait StickerShopEurTrait
                 $this->con->rollBack();
                 return ['error' => 409, 'message' => 'Kauf ist nicht mehr offen'];
             }
-            // Storno: Packs löschen — gezogene Karten hängen per ON DELETE CASCADE daran (tauschen war gesperrt)
-            if ($action === 'cancel') {
+            if ($action === 'cancel' && $bundle) {
+                // Gegenbuchung — sind die Lukaten schon ausgegeben, steht das Konto im Minus, bis es ausgeglichen ist
+                $this->bookLukaten($p['manager_id'], -(float) $bundle['lukaten'], 'eur_cancel', "eur_cancel:$purchaseId");
+            } elseif ($action === 'cancel') {
+                // Storno: Packs löschen — gezogene Karten hängen per ON DELETE CASCADE daran (tauschen war gesperrt)
                 $this->con->prepare("DELETE FROM sticker_pack WHERE eur_purchase_id = ?")->execute([$purchaseId]);
             }
             $this->con->commit();
@@ -254,10 +261,12 @@ trait StickerShopEurTrait
         try {
             if ($action === 'confirm') {
                 $this->createNotification($p['manager_id'], "Zahlung bestätigt – $name",
-                    "Danke! $amount ({$p['code']}) sind angekommen. Die Karten aus dem Kauf kannst du jetzt auch tauschen.", $adminId);
+                    "Danke! $amount ({$p['code']}) sind angekommen."
+                    . ($bundle ? '' : ' Die Karten aus dem Kauf kannst du jetzt auch tauschen.'), $adminId);
             } else {
                 $this->createNotification($p['manager_id'], "Kauf storniert – $name",
-                    "Für {$p['code']} ist keine Zahlung eingegangen, der Kauf wurde storniert und die Packs daraus entfernt.", $adminId);
+                    "Für {$p['code']} ist keine Zahlung eingegangen, der Kauf wurde storniert und "
+                    . ($bundle ? "die {$bundle['lukaten']} Lukaten wurden wieder abgezogen." : 'die Packs daraus entfernt.'), $adminId);
             }
         } catch (\Throwable $e) {
             error_log('handleStickerEurPurchase notify: ' . $e->getMessage());

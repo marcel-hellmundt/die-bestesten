@@ -27,9 +27,9 @@
   </div>
 </ng-template>
 
-<!-- Guthaben: klassisch die Lukaten der Hauptliga, im Konto-Modus das Lukaten-Konto (dann Link zu /lukaten) -->
+<!-- Guthaben: Stand des Lukaten-Kontos, führt zu /lukaten -->
 <ng-template #walletTpl>
-  <a class="wallet" [class.wallet--link]="accountMode()" [routerLink]="accountMode() ? '/lukaten' : null" [attr.title]="accountMode() ? 'Dein Lukaten-Konto' : (league() ? 'Guthaben in ' + league()!.name : null)">
+  <a class="wallet wallet--link" routerLink="/lukaten" title="Dein Lukaten-Konto">
     <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
     <span class="wallet__value">
       @if (loading()) { … }
@@ -44,7 +44,7 @@
 <!-- Titel über beiden Spalten — die rechte Spalte beginnt so auf Höhe der obersten Angebote -->
 <h1 class="page-title shop__title">
   Shop
-  <span class="page-title__sub">{{ accountMode() ? 'Mehr Packs – mit Lukaten oder mit Euro' : 'Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro' }}</span>
+  <span class="page-title__sub">Mehr Packs – mit Lukaten oder mit Euro</span>
 </h1>
 
 <div class="shop__main">
@@ -54,7 +54,7 @@
   <section class="how">
     <h2 class="how__title">So funktioniert's</h2>
     <ol class="how__steps">
-      <li><b>Bezahlen</b><span>{{ accountMode() ? 'Mit Lukaten von deinem Konto oder mit Euro über PayPal.' : 'Mit Lukaten aus deiner Hauptliga oder mit Euro über PayPal.' }}</span></li>
+      <li><b>Bezahlen</b><span>Mit Lukaten von deinem Konto oder mit Euro über PayPal.</span></li>
       <li><b>Pack erhalten</b><span>Die Packs liegen sofort ungeöffnet in deinem Sammelalbum.</span></li>
       <li><b>Aufreißen</b><span>Gleiche Chancen wie bei jedem Pack – inklusive Holo-Karten.</span></li>
     </ol>
@@ -72,19 +72,6 @@
     @if (!loading() && !lukatenAvailable()) {
       <p class="shelf__hint">Du spielst in keiner Liga mit Sticker-Album – Lukaten-Käufe sind nicht möglich.</p>
     }
-    <!-- Admins: Hinweis, dass die Saison im neuen Lukaten-Modus läuft (Schalter unter /verwaltung/lukaten) -->
-    @if (accountMode() && isAdmin) {
-      <p class="shelf__hint">
-        @if (preview()) {
-          Vorschau des neuen Lukaten-Modus, nur für dich auf diesem Gerät. Käufe buchen Lukaten vom Vorschau-Konto ab,
-          legen aber kein Pack an.
-        } @else {
-          Neuer Lukaten-Modus: Konto je Manager@if (seasonBonus(); as bonus) {, Startbonus {{ bonus }} je Saison}.
-        }
-        Tippen rechnet noch mit dem alten Guthaben.
-      </p>
-    }
-
     <div class="offers offers--kinds">
       @for (o of lukatenOffers(); track o.key) {
         @let miss = missingLukaten(o);
@@ -111,6 +98,10 @@
         </article>
       }
     </div>
+    <p class="shelf__hint">
+      Lukaten gibt es fürs Eintragen der Spieltagsdaten, als Startbonus und gegen Euro.
+      <a routerLink="/lukaten">Zum Lukaten-Konto</a>
+    </p>
   </section>
 
   <!-- ── Euro (PayPal.me) ── ohne Migration farblos/inert ── -->
@@ -245,7 +236,8 @@
           {{ p.offer_name }} · <b>{{ formatEur(p.amount_cents / 100) }}</b> · Code <b class="purchase__code">{{ p.code }}</b>
         </div>
         <div class="purchase__meta">
-          {{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }} · {{ p.packs_opened }}/{{ p.packs_total }} Packs geöffnet
+          {{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }} ·
+          @if (p.lukaten != null) { Lukaten gutgeschrieben } @else { {{ p.packs_opened }}/{{ p.packs_total }} Packs geöffnet }
           @if (p.status !== 'pending' && p.handled_by_name) {
             · {{ p.status === 'paid' ? 'bestätigt' : 'storniert' }} von {{ p.handled_by_name }}
           }
@@ -255,7 +247,7 @@
             <button type="button" class="btn btn-primary btn-sm" [disabled]="adminBusyId() === p.id" (click)="handlePurchase(p, 'confirm')">Geld erhalten</button>
             <button type="button" class="btn btn-sm" [class.btn-danger]="cancelAskId() === p.id" [class.btn-ghost]="cancelAskId() !== p.id"
                     [disabled]="adminBusyId() === p.id" (click)="handlePurchase(p, 'cancel')">
-              {{ cancelAskId() === p.id ? 'Packs + Sticker wirklich entfernen?' : 'Stornieren' }}
+              {{ cancelAskId() !== p.id ? 'Stornieren' : p.lukaten != null ? 'Lukaten wirklich wieder abziehen?' : 'Packs + Sticker wirklich entfernen?' }}
             </button>
           </div>
         }
@@ -263,7 +255,10 @@
     } @empty {
       <p class="admin-panel__empty">{{ purchaseFilter() === 'pending' ? 'Keine offenen Euro-Käufe.' : 'Noch keine Euro-Käufe in dieser Saison.' }}</p>
     }
-    <p class="admin-panel__hint">Stornieren entfernt alle Packs des Kaufs samt der daraus gezogenen Sticker. Tauschen war bis zur Bestätigung gesperrt, andere Manager sind also nicht betroffen.</p>
+    <p class="admin-panel__hint">
+      Stornieren entfernt alle Packs des Kaufs samt der daraus gezogenen Sticker. Tauschen war bis zur Bestätigung gesperrt, andere Manager sind also nicht betroffen.
+      Bei einem Lukaten-Kauf werden die Lukaten wieder abgezogen; sind sie schon ausgegeben, steht das Konto im Minus.
+    </p>
   </aside>
 
   <!-- ── Admin: Lukaten-Käufe (final — nichts zu bestätigen oder zu stornieren) ─ -->
@@ -286,8 +281,8 @@
           @if (p.booked) {
             <span class="purchase__price">{{ p.price }} Lukaten</span>
           } @else {
-            <!-- Pack ohne Buchung in sticker_shop_purchase: zählt nicht zur Summe/zum Budget -->
-            <span class="status-pill status-pill--cancelled" title="Keine Lukaten-Buchung zu diesem Pack — nicht im Budget abgezogen">nicht verbucht</span>
+            <!-- Pack ohne Buchung im Kontobuch: zählt nicht zur Summe, nicht vom Konto abgezogen -->
+            <span class="status-pill status-pill--cancelled" title="Keine Lukaten-Buchung zu diesem Pack — nicht vom Konto abgezogen">nicht verbucht</span>
           }
         </div>
         <div class="purchase__line">
@@ -360,20 +355,16 @@
         } @else if (bought()) {
           <!-- Lukaten-Kauf erfolgreich -->
           <p class="confirm__done">
-            @if (preview()) {
-              <b>Vorschau-Kauf.</b> Die Lukaten sind abgebucht, ein Pack wurde nicht angelegt.<br />
-            } @else {
-              <b>Gekauft!</b> Das Pack liegt ungeöffnet in deinem Sammelalbum.<br />
-            }
+            <b>Gekauft!</b> Das Pack liegt ungeöffnet in deinem Sammelalbum.<br />
             <span>Guthaben jetzt: {{ formatLukaten(budget()) }} Lukaten</span>
           </p>
           <div class="confirm__actions">
             <button type="button" class="btn btn-ghost" (click)="closeConfirm()">Weiter einkaufen</button>
-            @if (!preview()) { <a class="btn btn-primary" routerLink="/klebrigsten/sammelalbum">Zum Sammelalbum</a> }
+            <a class="btn btn-primary" routerLink="/klebrigsten/sammelalbum">Zum Sammelalbum</a>
           </div>
         } @else if (o.currency === 'lukaten') {
           <dl class="confirm__calc">
-            <dt>Guthaben@if (league(); as l) { ({{ l.name }}) }</dt><dd>{{ formatLukaten(budget()) }}</dd>
+            <dt>Guthaben</dt><dd>{{ formatLukaten(budget()) }}</dd>
             <dt>Preis</dt><dd>− {{ o.price }}</dd>
             <dt class="confirm__total">Danach</dt><dd class="confirm__total">{{ formatLukaten(budgetAfter()) }} Lukaten</dd>
           </dl>

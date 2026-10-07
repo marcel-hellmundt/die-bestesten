@@ -5,6 +5,7 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { LukatenService } from '../../core/lukaten.service';
 import { TeamNavService } from '../../core/team-nav.service';
 
 @Component({
@@ -17,6 +18,7 @@ export class H2HMatchComponent implements OnDestroy {
   private api  = inject(ApiService);
   private auth = inject(AuthService);
   private teamNav = inject(TeamNavService);
+  private lukaten = inject(LukatenService);
   cache        = inject(DataCacheService);
 
   private id$ = inject(ActivatedRoute).paramMap.pipe(map(p => p.get('id')!));
@@ -220,8 +222,9 @@ export class H2HMatchComponent implements OnDestroy {
   submittingPick  = signal(false);
   predictionError = signal<string | null>(null);
 
-  // Lukaten (fiktive Wettwährung) — gleiches Override-Muster wie optimisticPick: undefined = kein
-  // lokaler Override, null = explizit entfernt (nach removePrediction()).
+  // Einsatz in Lukaten — gleiches Override-Muster wie optimisticPick: undefined = kein lokaler
+  // Override, null = explizit entfernt (nach removePrediction()). budget = Stand des Lukaten-Kontos
+  // (ein Konto je Manager, siehe /lukaten).
   private optimisticStake = signal<number | null | undefined>(undefined);
   myStake = computed(() => {
     const o = this.optimisticStake();
@@ -229,10 +232,18 @@ export class H2HMatchComponent implements OnDestroy {
   });
   private optimisticBudget = signal<number | undefined>(undefined);
   budget = computed(() => this.optimisticBudget() ?? this.predictions()?.budget ?? null);
-  // Verfügbares Maximum fürs Einsatzfeld dieses Matches: aktuelles Budget zzgl. des eigenen
+  // Verfügbares Maximum fürs Einsatzfeld dieses Matches: aktuelles Guthaben zzgl. des eigenen
   // bereits auf DIESES Match gesetzten Einsatzes (der beim Ändern nicht "doppelt" kostet, siehe
-  // getManagerLukatenBudget()'s $excludeMatchId im Backend).
-  maxStake = computed(() => (this.budget() ?? 0) + (this.myStake() ?? 0));
+  // getLukatenBalance()'s $excludeMatchId im Backend).
+  maxStake = computed(() => Math.max(0, Math.floor((this.budget() ?? 0) + (this.myStake() ?? 0))));
+  // Obergrenze für die mögliche Auszahlung eines Tipps (Einsatz × Quote), null = keine — der
+  // Höchsteinsatz hängt dann von der Quote des gewählten Tipps ab.
+  maxPayout = computed<number | null>(() => this.predictions()?.max_payout ?? null);
+
+  maxStakeFor(pick: 'home' | 'draw' | 'away'): number {
+    const cap = this.maxPayout(), odds = this.odds()?.[pick];
+    return cap != null && odds ? Math.min(this.maxStake(), Math.floor(cap / odds + 1e-9)) : this.maxStake();
+  }
 
   // Frei editierbares Einsatz-Eingabefeld — einmalig beim ersten Laden mit dem aktuellen eigenen
   // Einsatz vorbefüllt (siehe constructor-effect), danach vollständig nutzergesteuert.
@@ -265,8 +276,11 @@ export class H2HMatchComponent implements OnDestroy {
     if (!matchId || this.submittingPick() || this.isRevealed() || !this.canTipThisMatchday() || this.isOwnMatch()) return;
 
     const stake = this.stakeInput();
-    if (stake !== null && (!Number.isInteger(stake) || stake < 1 || stake > this.maxStake())) {
-      this.predictionError.set(`Einsatz muss eine ganze Zahl zwischen 1 und ${this.maxStake()} sein.`);
+    const max   = this.maxStakeFor(pick);
+    if (stake !== null && (!Number.isInteger(stake) || stake < 1 || stake > max)) {
+      this.predictionError.set(max < 1
+        ? 'Dein Guthaben reicht nicht für einen Einsatz.'
+        : `Einsatz muss eine ganze Zahl zwischen 1 und ${max} sein.`);
       return;
     }
 
@@ -278,15 +292,14 @@ export class H2HMatchComponent implements OnDestroy {
     this.submittingPick.set(true);
     this.predictionError.set(null);
 
-    // Nur die Quote des gewählten Picks wird 1:1 als Snapshot mitgeschickt (siehe
-    // H2HPredictionTrait::submitH2HPrediction) — sie kann sich bis Anpfiff durch
-    // Aufstellungsänderungen noch von der Quote unterscheiden, die am Ende gilt.
-    const body = { match_id: matchId, pick, odds: this.odds()?.[pick] ?? null, stake };
+    // Die Quote legt der Server fest (siehe H2HPredictionTrait::submitH2HPrediction): gespeichert
+    // wird, was er in diesem Moment für den Pick berechnet — nicht ein Wert von hier.
+    const body = { match_id: matchId, pick, stake };
 
     this.api.post<{ status: boolean; message?: string; budget?: number }>('h2h_prediction', body).subscribe({
       next: (res) => {
         this.submittingPick.set(false);
-        if (res.budget !== undefined) this.optimisticBudget.set(res.budget);
+        if (res.budget !== undefined) { this.optimisticBudget.set(res.budget); this.lukaten.set(res.budget); }
         this.refreshAfterOwnPrediction();
       },
       error: (err) => {
@@ -314,7 +327,7 @@ export class H2HMatchComponent implements OnDestroy {
     this.api.delete<{ status: boolean; message?: string; budget?: number }>(`h2h_prediction/${matchId}`).subscribe({
       next: (res) => {
         this.submittingPick.set(false);
-        if (res.budget !== undefined && res.budget !== null) this.optimisticBudget.set(res.budget);
+        if (res.budget !== undefined && res.budget !== null) { this.optimisticBudget.set(res.budget); this.lukaten.set(res.budget); }
         this.refreshAfterOwnPrediction();
       },
       error: (err) => {

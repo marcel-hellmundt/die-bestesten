@@ -1,0 +1,31 @@
+@use '../../../styles/variables' as *;
+
+.manager-cell {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+
+  &__photo {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+}
+
+.col-value {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.is-minus { color: $color-danger; }
+
+.overview-hint {
+  max-width: 70ch;
+  margin: $space-4 0 0;
+  font-size: $font-sm;
+  color: $color-text-muted;
+
+  a { color: $color-accent; }
+}

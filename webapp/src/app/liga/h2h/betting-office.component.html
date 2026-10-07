@@ -5,11 +5,14 @@
 <div class="betting-office-layout">
   <div class="left-col">
     <div class="card">
-      <div class="card-title">Mein Budget</div>
-      <span class="budget-value">
+      <div class="card-title">Mein Guthaben</div>
+      <a class="budget-value" routerLink="/lukaten" title="Zum Lukaten-Konto">
         <img class="lukat-icon lukat-icon--lg" src="img/icons/lukat.png" alt="" />
         {{ formatLukaten(budget()) }}
-      </span>
+      </a>
+      @if (maxPayout(); as cap) {
+        <p class="card-hint">Möglicher Gewinn je Tipp: höchstens {{ formatLukaten(cap) }}. Der Höchsteinsatz hängt von der Quote ab.</p>
+      }
 
       <div class="history-label">Historie</div>
       @if (stakedHistory().length === 0) {
@@ -180,7 +183,7 @@
             </div>
             <div class="h2h-stake-row">
               <span class="h2h-stake-row__budget">
-                Budget: <strong>{{ formatLukatenNumber(budget()) }}</strong>
+                Guthaben: <strong>{{ formatLukatenNumber(budget()) }}</strong>
                 <img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />
               </span>
               <label class="h2h-stake-row__input-wrap">
@@ -323,23 +326,25 @@
       </div>
     </div>
 
+    <!-- Tipp-Saldo: nur Einsätze und Gewinne aus Tipps — wie viele Lukaten jemand insgesamt hat, zeigt nur sein Konto -->
     <div class="card">
-      <div class="card-title">Schatzkammer</div>
+      <div class="card-title">Tipp-Saldo</div>
+      <p class="card-hint">Gewinne minus Einsätze in dieser Saison, ab Anpfiff gezählt.</p>
       <div class="table-container">
-      @if (budgetStandingsLoading()) {
+      @if (saldoLoading()) {
         <p class="state-msg">Laden…</p>
-      } @else if (budgetStandings().length === 0) {
-        <p class="state-msg">Noch keine gestakten Tipps.</p>
+      } @else if (saldoRows().length === 0) {
+        <p class="state-msg">Noch keine Tipps mit Einsatz.</p>
       } @else {
         <table class="data-table">
           <thead>
             <tr>
               <th>Manager</th>
-              <th class="col-value">Budget</th>
+              <th class="col-value">Saldo</th>
             </tr>
           </thead>
           <tbody>
-            @for (row of budgetStandings(); track row.manager_id ?? row.manager_name) {
+            @for (row of saldoRows(); track row.manager_id ?? row.manager_name) {
               <tr>
                 <td>
                   <span class="manager-cell">
@@ -350,22 +355,21 @@
                         (error)="$any($event.target).style.display = 'none'"
                         alt=""
                       />
-                    } @else if (row.kind === 'shop') {
-                      <!-- Shop: Mini-Folienpack statt Bild -->
-                      <a class="shop-avatar" routerLink="/klebrigsten/shop" title="Zum Shop" aria-label="Zum Shop"></a>
                     } @else {
                       <img class="player-avatar-sm player-avatar-sm--square" src="img/bestico/bank.png" alt="" />
                     }
-                    @if (row.kind === 'shop') {
-                      <a class="shop-link" routerLink="/klebrigsten/shop">{{ row.manager_name }}</a>
-                    } @else {
+                    <span class="saldo-name">
                       {{ row.manager_name }}
-                    }
+                      <small>
+                        {{ formatLukatenNumber(row.stakes) }} {{ row.kind === 'bank' ? 'eingenommen' : 'gesetzt' }} ·
+                        {{ formatLukatenNumber(row.payouts) }} {{ row.kind === 'bank' ? 'ausgezahlt' : 'gewonnen' }}
+                      </small>
+                    </span>
                   </span>
                 </td>
                 <td class="col-value">
-                  <span class="budget-cell">
-                    <strong>{{ formatLukatenNumber(row.budget) }}</strong>
+                  <span class="budget-cell" [class.budget-cell--plus]="row.saldo > 0" [class.budget-cell--minus]="row.saldo < 0">
+                    <strong>{{ formatSigned(row.saldo) }}</strong>
                     <img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />
                   </span>
                 </td>

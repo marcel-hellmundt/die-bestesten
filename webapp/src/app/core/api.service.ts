@@ -4,27 +4,19 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { ClientInfoService } from './client-info.service';
-import { LukatenPreviewService } from './lukaten-preview.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private base = environment.apiUrl;
 
-  constructor(
-    private http: HttpClient, private auth: AuthService, private clientInfo: ClientInfoService,
-    private lukatenPreview: LukatenPreviewService,
-  ) {}
+  constructor(private http: HttpClient, private auth: AuthService, private clientInfo: ClientInfoService) {}
 
-  /**
-   * Nur eingeloggt: Token + X-Client-Info (Geräte-/Theme-Infos für GET /session/devices, siehe ClientInfoService);
-   * mit eingeschalteter Lukaten-Vorschau zusätzlich X-Lukaten-Preview (siehe LukatenPreviewService)
-   */
+  /** Nur eingeloggt: Token + X-Client-Info (Geräte-/Theme-Infos für GET /session/devices, siehe ClientInfoService) */
   private headers(): HttpHeaders | undefined {
     const token = this.auth.getToken();
-    if (!token) return undefined;
-    const headers: Record<string, string> = { Authorization: `Bearer ${token}`, 'X-Client-Info': this.clientInfo.header() };
-    if (this.lukatenPreview.enabled()) headers['X-Lukaten-Preview'] = '1';
-    return new HttpHeaders(headers);
+    return token
+      ? new HttpHeaders({ Authorization: `Bearer ${token}`, 'X-Client-Info': this.clientInfo.header() })
+      : undefined;
   }
 
   get<T>(path: string): Observable<T> {
