@@ -18,7 +18,21 @@ interface LukatenAccountRow {
 interface LukatenOverview {
   ready: boolean;    // Kontobuch vorhanden (Migration)
   accounts: LukatenAccountRow[];
-  totals: { in_circulation: number; start: number; entries: number; eur: number; packs: number; bets: number } | null;
+  totals: {
+    in_circulation: number; start: number; entries: number; eur: number; packs: number; bets: number;
+    stakes?: number;   // alle Einsätze dieser Konten, auch offene
+    payouts?: number;  // alle ausgezahlten Tippgewinne
+  } | null;
+}
+
+/** Gegenseite der Konten: wohin ausgegebene Lukaten gehen */
+interface CounterpartRow {
+  kind: 'bank' | 'shop';
+  name: string;
+  note: string;
+  received: number;        // eingenommen
+  paid: number | null;     // ausgezahlt (der Shop zahlt nichts aus)
+  balance: number;
 }
 
 /**
@@ -39,6 +53,20 @@ export class LukatenOverviewComponent {
   overview = signal<LukatenOverview | null | undefined>(undefined);
   accounts = computed(() => this.overview()?.accounts ?? []);
   totals = computed(() => this.overview()?.totals ?? null);
+
+  /**
+   * Bank = Gegenseite aller Tipps (Einsätze rein, Gewinne raus), Shop = für Sticker-Packs ausgegebene Lukaten.
+   * Zusammen mit "Im Umlauf" ergibt das alles, was je entstanden ist (Startbonus + Einträge + Gekauft).
+   */
+  counterparts = computed<CounterpartRow[]>(() => {
+    const t = this.totals();
+    if (!t) return [];
+    const stakes = t.stakes ?? 0, payouts = t.payouts ?? 0;
+    return [
+      { kind: 'bank', name: 'Bank', note: 'Gegenseite aller Tipps', received: stakes, paid: payouts, balance: stakes - payouts },
+      { kind: 'shop', name: 'Shop', note: 'Sticker-Packs', received: -t.packs, paid: null, balance: -t.packs },
+    ];
+  });
 
   constructor() {
     this.api.get<LukatenOverview>('lukaten/overview').subscribe({

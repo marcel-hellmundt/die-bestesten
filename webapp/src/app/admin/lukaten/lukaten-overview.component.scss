@@ -11,7 +11,45 @@
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
+
+    &--square { border-radius: 0; }
   }
+}
+
+// ── Bank und Shop: Gegenseite der Konten ──
+.counterparts {
+  margin-top: $space-4;
+
+  &__name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover { text-decoration: underline; }
+    }
+
+    small {
+      font-size: $font-xs;
+      color: $color-text-muted;
+    }
+  }
+}
+
+// Shop: kleines Folienpack mit gezackter Naht statt Bild (eigenständiges Motiv, feste Farben)
+.shop-avatar {
+  width: 16px;
+  height: 22px;
+  margin: 0 3px;
+  flex-shrink: 0;
+  background:
+    linear-gradient(115deg, transparent 25%, rgba(255, 255, 255, 0.35) 45%, transparent 60%),
+    linear-gradient(160deg, #2dd4bf, #0f766e 45%, #042f2e);
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / 4px 100% repeat-x;
+  transform: rotate(-6deg);
 }
 
 .col-value {

@@ -387,7 +387,9 @@ trait LukatenAccountTrait
 
     /**
      * GET /lukaten/overview (Admin) — alle Konten: je aktivem Manager mit Liga der Kontostand und woher er kommt,
-     * dazu die Summen (in_circulation = alle Kontostände zusammen). Bringt dabei jedes Konto auf den Stand.
+     * dazu die Summen (in_circulation = alle Kontostände zusammen). stakes/payouts = alle Einsätze und alle
+     * ausgezahlten Tippgewinne dieser Konten, auch offene Einsätze — daraus die Bank als Gegenseite der Tipps;
+     * der Shop ist die Gegenseite der Pack-Käufe (−packs). Bringt dabei jedes Konto auf den Stand.
      */
     public function getLukatenOverview(): array
     {
@@ -401,7 +403,8 @@ trait LukatenAccountTrait
         $sq = $this->con->prepare("SELECT source, SUM(amount) FROM lukaten_transaction WHERE manager_id = ? GROUP BY source");
 
         $accounts = [];
-        $totals = ['in_circulation' => 0.0, 'start' => 0.0, 'entries' => 0.0, 'eur' => 0.0, 'packs' => 0.0, 'bets' => 0.0];
+        $totals = ['in_circulation' => 0.0, 'start' => 0.0, 'entries' => 0.0, 'eur' => 0.0, 'packs' => 0.0, 'bets' => 0.0,
+                   'stakes' => 0.0, 'payouts' => 0.0];
         foreach ($mq->fetchAll(PDO::FETCH_ASSOC) as $m) {
             $this->syncLukatenAccount($m['id']);
             $parts = $this->lukatenParts($m['id']);
@@ -420,6 +423,8 @@ trait LukatenAccountTrait
             $accounts[] = $row;
             $totals['in_circulation'] += $row['balance'];
             foreach (['start', 'entries', 'eur', 'packs', 'bets'] as $k) $totals[$k] += $row[$k];
+            $totals['stakes']  += $parts['stakes'];
+            $totals['payouts'] += $parts['payouts'];
         }
         usort($accounts, fn($a, $b) => $b['balance'] <=> $a['balance'] ?: strcmp($a['manager_name'], $b['manager_name']));
         return ['ready' => true, 'accounts' => $accounts, 'totals' => array_map(fn($v) => round($v, 2), $totals)];

@@ -77,8 +77,50 @@
     </table>
   </div>
 
+  <!-- Gegenseite: wohin ausgegebene Lukaten gehen -->
+  <div class="table-container counterparts">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Gegenseite</th>
+          <th class="col-value">Eingenommen</th>
+          <th class="col-value hidden-mobile">Ausgezahlt</th>
+          <th class="col-value">Saldo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of counterparts(); track c.kind) {
+          <tr>
+            <td>
+              <span class="manager-cell">
+                @if (c.kind === 'bank') {
+                  <img class="manager-cell__photo manager-cell__photo--square" src="img/bestico/bank.png" alt="" />
+                } @else {
+                  <span class="shop-avatar" aria-hidden="true"></span>
+                }
+                <span class="counterparts__name">
+                  @if (c.kind === 'shop') {
+                    <a routerLink="/klebrigsten/shop">{{ c.name }}</a>
+                  } @else {
+                    {{ c.name }}
+                  }
+                  <small>{{ c.note }}</small>
+                </span>
+              </span>
+            </td>
+            <td class="col-value">{{ format(c.received) }}</td>
+            <td class="col-value hidden-mobile">{{ c.paid === null ? '–' : format(c.paid) }}</td>
+            <td class="col-value" [class.is-minus]="c.balance < 0"><strong>{{ format(c.balance) }}</strong></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
   <p class="overview-hint">
     Kontostand = Kontobuch (Startbonus, Einträge, Käufe, Packs) plus Tipps aus allen Ligen des Managers. Tipps
-    zählen ab dem Abgeben, also auch offene Einsätze. Regeln und Preise stehen unter <a routerLink="/lukaten">Lukaten</a>.
+    zählen ab dem Abgeben, also auch offene Einsätze, bei den Konten wie bei der Bank. Im Umlauf, Bank und Shop
+    zusammen ergeben alles, was je entstanden ist (Startbonus, Einträge, Gekauft).
+    Regeln und Preise stehen unter <a routerLink="/lukaten">Lukaten</a>.
   </p>
 }

@@ -218,7 +218,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/lukaten/overview',
-                        'description' => 'Alle Konten (aktive Manager mit Liga) → {ready, accounts:[{manager_id,manager_name,balance,start,entries,eur,packs,bets}] (nach Kontostand absteigend; bets = Tippgewinne − Einsätze), totals:{in_circulation,start,entries,eur,packs,bets}} — bringt dabei jedes Konto auf den Stand; Grundlage, um Preise und die Gewinn-Obergrenze festzulegen — Admin',
+                        'description' => 'Alle Konten (aktive Manager mit Liga) → {ready, accounts:[{manager_id,manager_name,balance,start,entries,eur,packs,bets}] (nach Kontostand absteigend; bets = Tippgewinne − Einsätze), totals:{in_circulation,start,entries,eur,packs,bets,stakes,payouts}} — stakes/payouts = alle Einsätze (auch offene) und alle ausgezahlten Tippgewinne dieser Konten: die Bank als Gegenseite der Tipps hat stakes eingenommen und payouts ausgezahlt, der Shop −packs eingenommen; in_circulation + Bank + Shop = alles je Entstandene (start + entries + eur). Bringt dabei jedes Konto auf den Stand; Grundlage, um Preise und die Gewinn-Obergrenze festzulegen — Admin',
                     ],
                     [
                         'method' => 'POST',

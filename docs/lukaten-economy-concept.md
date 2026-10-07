@@ -173,7 +173,7 @@ Was das für die Manager heißt:
 | `/lukaten` | Kontostand mit Summen, Regeln im Klartext, Lukaten kaufen, Preise, Kontoauszug |
 | `/klebrigsten/shop` | Packs gegen Lukaten oder Euro |
 | `/liga/h2h/bestico` und H2H-Match | Guthaben, Einsatz, Tipp-Saldo |
-| `/verwaltung/lukaten` (Admin) | alle Konten: Summe im Umlauf und je Manager Startbonus, Einträge, Gekauft, Packs, Tipps |
+| `/verwaltung/lukaten` (Admin) | alle Konten: Summe im Umlauf und je Manager Startbonus, Einträge, Gekauft, Packs, Tipps; darunter Bank und Shop als Gegenseite |
 
 ## 7. Technik
 
