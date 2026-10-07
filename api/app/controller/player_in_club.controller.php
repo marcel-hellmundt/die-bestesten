@@ -15,6 +15,12 @@ class PlayerInClubController extends _BaseController
                 return ['message' => "$f fehlt"];
             }
         }
+        // Zweite offene Zugehörigkeit beim selben Verein = Doppelerfassung — verdoppelt in allen Listen, die über
+        // die aktuelle Zugehörigkeit (to_date NULL) joinen, die Zeilen bzw. Punktesummen des Spielers
+        if (empty($body['to_date']) && $this->db->hasOpenPlayerInClub($body['player_id'], $body['club_id'])) {
+            http_response_code(409);
+            return ['status' => false, 'message' => 'Spieler ist diesem Verein bereits aktuell zugeordnet'];
+        }
         http_response_code(201);
         return $this->db->createPlayerInClub($body);
     }

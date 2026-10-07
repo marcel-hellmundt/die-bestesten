@@ -108,7 +108,13 @@ trait PlayerInSeasonTrait
                     pic.club_id,
                     c.name AS club_name, c.short_name AS club_short_name,
                     c.logo_uploaded AS club_logo_uploaded,
-                    COALESCE(SUM(pr.points), 0) AS season_points,
+                    -- als Unterabfrage statt SUM über einen JOIN: hat ein Spieler versehentlich zwei offene
+                    -- player_in_club-Zeilen (to_date NULL) beim selben Verein, vervielfachte der JOIN sonst
+                    -- jede Bewertung und damit die Punkte
+                    (SELECT COALESCE(SUM(pr.points), 0) FROM player_rating pr
+                     WHERE pr.player_id = p.id
+                       AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ? AND division_id = pis.division_id)
+                    ) AS season_points,
                     cis_prev.position AS prev_club_position
              FROM player_in_season pis
              JOIN player p          ON p.id = pis.player_id
@@ -117,8 +123,6 @@ trait PlayerInSeasonTrait
              JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
                  AND cis.division_id = pis.division_id
              JOIN division d        ON d.id = cis.division_id
-             LEFT JOIN player_rating pr ON pr.player_id = p.id
-                 AND pr.matchday_id IN (SELECT id FROM matchday WHERE season_id = ? AND division_id = pis.division_id)
              LEFT JOIN club_in_season cis_prev
                  ON cis_prev.club_id = pic.club_id
                  AND cis_prev.season_id = ?
@@ -128,7 +132,7 @@ trait PlayerInSeasonTrait
                AND pis.position IS NOT NULL
                AND pis.price IS NOT NULL AND pis.price > 0
                $exclusionClause
-             GROUP BY p.id, p.displayname, pis.position, pis.price, pis.photo_uploaded, pis.last_updated,
+             GROUP BY p.id, p.displayname, pis.position, pis.price, pis.photo_uploaded, pis.last_updated, pis.division_id,
                       pic.club_id, c.name, c.short_name, c.logo_uploaded, cis_prev.position
              ORDER BY season_points DESC, pis.price DESC"
         );

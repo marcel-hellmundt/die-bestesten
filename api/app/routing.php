@@ -1095,7 +1095,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/player_in_club',
-                        'description' => 'Fügt einem Spieler einen neuen Vereinseintrag hinzu — gibt {id} zurück — Maintainer+',
+                        'description' => 'Fügt einem Spieler einen neuen Vereinseintrag hinzu — gibt {id} zurück; 409 wenn der Spieler bei diesem Verein schon eine offene Zugehörigkeit (to_date NULL) hat und die neue ebenfalls offen wäre (Doppelerfassung) — Maintainer+',
                         'body' => [
                             'player_id' => 'UUID des Spielers',
                             'club_id'   => 'UUID des Vereins',

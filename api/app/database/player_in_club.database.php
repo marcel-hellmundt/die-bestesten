@@ -2,6 +2,14 @@
 
 trait PlayerInClubTrait
 {
+    /** Hat der Spieler bei diesem Verein schon eine offene Zugehörigkeit (to_date NULL)? */
+    public function hasOpenPlayerInClub(string $playerId, string $clubId): bool
+    {
+        $q = $this->con->prepare("SELECT 1 FROM player_in_club WHERE player_id = ? AND club_id = ? AND to_date IS NULL LIMIT 1");
+        $q->execute([$playerId, $clubId]);
+        return (bool) $q->fetchColumn();
+    }
+
     public function createPlayerInClub(array $body): array
     {
         $id = $this->con->query("SELECT UUID() AS id")->fetchColumn();
