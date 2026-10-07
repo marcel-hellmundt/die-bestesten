@@ -1,0 +1,290 @@
+@use '../../styles/variables' as *;
+
+.lukaten {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  max-width: 960px;
+  padding: $space-4;
+
+  @media (max-width: $mobile-breakpoint) { padding: $space-3 0; } // seitlicher Rand kommt von der Shell
+}
+
+.page-title__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: $font-sm;
+  font-weight: normal;
+  color: $color-text-muted;
+}
+
+.preview-note {
+  margin: 0;
+  padding: $space-2 $space-3;
+  border: 1px dashed $color-border;
+  border-radius: $radius-md;
+  font-size: $font-sm;
+  color: $color-text-muted;
+
+  a { color: $color-accent; }
+}
+
+.is-minus { color: $color-accent; }
+
+// ── Kontostand ──
+.balance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-4 $space-8;
+
+  &__main {
+    display: flex;
+    align-items: baseline;
+    gap: $space-2;
+  }
+
+  &__icon {
+    align-self: center;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+  }
+
+  &__value {
+    font-family: $font-display;
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__unit {
+    font-size: $font-md;
+    color: $color-text-muted;
+  }
+
+  &__totals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-2 $space-6;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: $font-sm;
+
+    li {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    span { color: $color-text-muted; }
+
+    b {
+      font-size: $font-md;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &__title {
+    margin: 0;
+    font-size: $font-lg;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// ── Bekommen ──
+.ways {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-3;
+
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.way {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+  padding: $space-4;
+
+  // Einträge: die ausführlichste Regel, über die ganze Breite
+  &--wide { grid-column: 1 / -1; order: -1; }
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: $space-3;
+
+    h3 {
+      margin: 0;
+      font-size: $font-md;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &__amount {
+    font-family: $font-display;
+    font-size: $font-xl;
+    font-weight: 800;
+    color: $color-success;
+    white-space: nowrap;
+  }
+
+  &__tag {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    white-space: nowrap;
+  }
+
+  p {
+    margin: 0;
+    max-width: 70ch;
+    font-size: $font-sm;
+    color: $color-text;
+  }
+
+  &__status { margin-top: 2px; }
+
+  p.way__meta { color: $color-text-muted; }
+
+  &__link {
+    align-self: flex-start;
+    margin-top: $space-1;
+  }
+}
+
+.progress {
+  height: 10px;
+  margin-top: $space-2;
+  border-radius: $radius-full;
+  background: $color-surface-alt;
+  overflow: hidden;
+
+  &__fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: $color-success;
+  }
+}
+
+.bundles,
+.prices {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: $font-sm;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: $space-3;
+  }
+
+  span { color: $color-text-muted; }
+  b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+}
+
+// ── Ausgeben ──
+.spend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-3;
+
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    min-width: 0;
+    padding: $space-4;
+    color: $color-text;
+    text-decoration: none;
+    transition: border-color $transition-fast;
+
+    &:hover { border-color: color-mix(in srgb, #{$color-text-muted} 60%, transparent); }
+
+    h3 {
+      margin: 0;
+      font-size: $font-md;
+      font-weight: $font-weight-semibold;
+    }
+
+    p {
+      margin: 0;
+      font-size: $font-sm;
+    }
+  }
+
+  &__note { color: $color-text-muted; }
+
+  &__go {
+    margin-top: auto;
+    padding-top: $space-1;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-accent;
+  }
+}
+
+// ── Kontoauszug ──
+.statement {
+  display: flex;
+  flex-direction: column;
+  padding: $space-2 $space-4;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: $space-3;
+    padding: $space-2 0;
+    font-size: $font-sm;
+
+    & + & { border-top: 1px solid $color-border; }
+
+    // Mobil: Datum über dem Text
+    @media (max-width: $mobile-breakpoint) {
+      grid-template-columns: minmax(0, 1fr) auto;
+
+      .statement__date { grid-column: 1 / -1; }
+    }
+  }
+
+  &__date {
+    font-size: $font-xs;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__amount { font-variant-numeric: tabular-nums; }
+
+  &__empty {
+    margin: 0;
+    padding: $space-2 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+}

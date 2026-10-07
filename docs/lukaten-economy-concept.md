@@ -1,7 +1,7 @@
 # Konzept: Lukaten ab der nächsten Saison
 
 Stand: 2026-10-07 · Branch `future/next-season-lukaten-and-coin-mode` · Status: Regeln weitgehend entschieden,
-Stufen 1 und 2 gebaut (Abschnitt 11)
+Stufen 1, 2 und 4 sowie die Lukaten-Seite gebaut (Abschnitt 11)
 
 Dieses Dokument beschreibt, wie die Lukaten ab der nächsten Saison funktionieren, was dafür technisch nötig
 ist, wie die Admin-Vorschau und der Rückblick auf alte Saisons funktionieren und welche Risiken es gibt. Was als
@@ -126,6 +126,10 @@ Einsätze, bis es ausgeglichen ist. Offen.
 - Der Zähler läuft je Manager fortlaufend, auch über Saisons. Überschreitet er ein Vielfaches von 50, wird eine
   Lukate gebucht, mit dem Schlüssel der Schwelle (`entries:{n}`). So wird keine Schwelle doppelt bezahlt, auch
   wenn Einträge wegfallen und wiederkommen.
+- Gebucht wird beim Abruf des Kontos (`syncLukatenAccount()`), nicht beim Eintragen. Der Weg, auf dem Noten
+  gespeichert werden, bleibt dadurch unangetastet. Gebaut.
+- Gezählt wird ab dem Start der ersten Saison im Konto-Modus; in der Vorschau ab dem Start der laufenden Saison,
+  damit das Vorschau-Konto zeigt, was sie bisher gebracht hätte.
 - Anzeige für die Motivation: „noch x Einträge bis zur nächsten Lukate".
 - Offen: Zählt jede Art von Eintrag gleich?
 
@@ -187,6 +191,22 @@ Folgen:
 | Wettbüro, Tipp-Karte | `webapp/src/app/liga/h2h/betting-office.component.*`, `h2h-match.component.*` |
 | Simulation | `webapp/src/app/stickers/sticker-sim.ts` |
 
+**Die zentrale Stelle: die Seite `/lukaten`** (gebaut)
+
+Lukaten sind mehr als ein Teil der Klebrigsten: Man bekommt sie fürs Eintragen, gibt sie beim Tippen und für
+Packs aus und kann sie kaufen. Damit das nicht wieder im Sticker-Shop vermischt wird, gibt es eine eigene Seite
+für das Konto:
+
+- Kontostand und Summen je Quelle.
+- „So bekommst du Lukaten": Startbonus; Einträge mit der Regel im Klartext (was ein Eintrag ist, dass nur der
+  erste zählt), Fortschritt zur nächsten Lukate und bisherigem Stand; Kaufen mit den geplanten Bündeln.
+- „Dafür kannst du sie ausgeben": Pack-Preise mit Link zum Shop, Tippen mit Link zum Bestico.
+- Kontoauszug mit den einzelnen Buchungen.
+
+Der Kauf von Lukaten gegen Euro gehört auf diese Seite, nicht in den Shop der Klebrigsten. Dort bleiben die
+Euro-Packs. Erreichbar ist die Seite bisher über das Guthaben im Shop und über die Verwaltung. Offen: wo sie im
+Menü hängt, etwa als Guthaben in der Topbar oder im Benutzermenü.
+
 ## 8. Admin-Vorschau
 
 Anforderung: Als Admin den neuen Modus zum Testen und fürs Gefühl einschalten können, mit neuem Shop und
@@ -243,8 +263,9 @@ Rückweg: Modus der neuen Saison auf `classic`. Sauber möglich, solange noch ni
 | 1 | Modus je Saison, Kontobuch, Kontostand mit Startbonus, Admin-Vorschau mit Schalter in der Verwaltung — **gebaut** | ja |
 | 2 | Neuer Shop: Preise im neuen Maßstab, zahlt aus dem Konto (in der Vorschau ohne Pack) — **gebaut** | ja |
 | 3 | Neue Bestico-Seite: Einsätze und Gewinne über das Konto, Schatzkammer neu, Rückblick mit Alt-Lukaten | ja |
-| 4 | Einträge bringen Lukaten: erster Eintrag, Zähler, Anzeige | ja |
-| 5 | Lukaten gegen Euro, zusätzlich zu den Euro-Packs | ja |
+| 4 | Einträge bringen Lukaten: erster Eintrag, Zähler, Anzeige — **gebaut** | ja |
+| – | Lukaten-Seite `/lukaten`: Kontostand, Regeln im Klartext, Kontoauszug — **gebaut**; Platz im Menü offen | ja |
+| 5 | Lukaten gegen Euro auf der Lukaten-Seite, zusätzlich zu den Euro-Packs im Shop | ja |
 | 6 | Simulation um Einträge und Euro-Lukaten erweitern | ja, unabhängig |
 | 7 | CasinPro | später |
 
@@ -259,6 +280,7 @@ Rückweg: Modus der neuen Saison auf `classic`. Sauber möglich, solange noch ni
 6. Bank je Liga oder eine für alle?
 7. Zählt jede Art von Eintrag gleich (Einsatz, Note, Statistik)?
 8. Name im Rückblick: Alt-Lukaten?
+9. Wo hängt die Lukaten-Seite im Menü: Guthaben in der Topbar, Benutzermenü, beides?
 
 ## Verworfen
 

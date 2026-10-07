@@ -1,0 +1,150 @@
+<div class="lukaten">
+  <h1 class="page-title">
+    Lukaten
+    <span class="page-title__sub">Dein Konto: bekommen, ausgeben, nachlesen</span>
+  </h1>
+
+  @if (account() === undefined) {
+    <p class="state-msg">Laden…</p>
+  } @else if (!account()) {
+    <p class="state-msg state-msg--error">Das Lukaten-Konto konnte nicht geladen werden.</p>
+  } @else if (!active()) {
+    <p class="state-msg">
+      Das Lukaten-Konto startet mit der neuen Saison. Bis dahin findest du dein Guthaben im Bestico und im
+      Shop der Klebrigsten.
+    </p>
+  } @else {
+    @let a = active()!;
+
+    @if (a.preview) {
+      <p class="preview-note">
+        Vorschau, nur für dich sichtbar. Das Vorschau-Konto ist vom echten getrennt und lässt sich unter
+        <a routerLink="/verwaltung/lukaten">Verwaltung → Lukaten</a> zurücksetzen.
+      </p>
+    }
+
+    <!-- ── Kontostand ── -->
+    <section class="card balance">
+      <div class="balance__main">
+        <img class="balance__icon" src="img/icons/lukat.png" alt="" />
+        <span class="balance__value">{{ formatLukaten(a.balance) }}</span>
+        <span class="balance__unit">Lukaten</span>
+      </div>
+      @if (totals().length) {
+        <ul class="balance__totals">
+          @for (t of totals(); track t.source) {
+            <li>
+              <span>{{ t.label }}</span>
+              <b [class.is-minus]="t.amount < 0">{{ formatSigned(t.amount) }}</b>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- ── Bekommen ── -->
+    <section class="block">
+      <h2 class="block__title">So bekommst du Lukaten</h2>
+      <div class="ways">
+        <article class="card way">
+          <header class="way__head">
+            <h3>Startbonus</h3>
+            <span class="way__amount">+{{ a.rules!.season_bonus }}</span>
+          </header>
+          <p>Zu Beginn jeder Saison, automatisch. Was am Saisonende übrig ist, bleibt auf deinem Konto.</p>
+        </article>
+
+        <article class="card way way--wide">
+          <header class="way__head">
+            <h3>Einträge</h3>
+            <span class="way__amount">+1 je {{ a.rules!.entries_per_lukate }}</span>
+          </header>
+          <p>
+            Für jeden {{ a.rules!.entries_per_lukate }}. Eintrag gibt es eine Lukate. Ein Eintrag ist eine Note, ein
+            Einsatz (Startelf oder eingewechselt) oder eine Statistik eines Spielers, also Tor, Vorlage, Weiße Weste,
+            Spieler des Spiels oder Karte.
+          </p>
+          <p>
+            Es zählt, wer einen Wert zuerst einträgt. Wer einen vorhandenen Wert ändert oder noch einmal speichert,
+            bekommt dafür nichts.
+          </p>
+          @if (a.entries; as e) {
+            <div class="progress" role="img"
+                 [attr.aria-label]="'Noch ' + e.to_next + ' Einträge bis zur nächsten Lukate'">
+              <span class="progress__fill" [style.width.%]="entryProgress()"></span>
+            </div>
+            <p class="way__status">
+              <b>Noch {{ formatCount(e.to_next) }} {{ e.to_next === 1 ? 'Eintrag' : 'Einträge' }}</b> bis zur nächsten Lukate.
+            </p>
+            <p class="way__meta">
+              Seit Beginn der Saison {{ seasonSince(e.since) }}: {{ formatCount(e.count) }}
+              {{ e.count === 1 ? 'Eintrag' : 'Einträge' }}
+              ({{ entryBreakdown(e.by_type) }}), daraus {{ formatCount(e.credited) }} {{ e.credited === 1 ? 'Lukate' : 'Lukaten' }}.
+            </p>
+          }
+          @if (canContribute) {
+            <a class="btn btn-primary btn-sm way__link" routerLink="/daten/ratings">Noten eintragen</a>
+          }
+        </article>
+
+        <article class="card way">
+          <header class="way__head">
+            <h3>Kaufen</h3>
+            <span class="way__tag">noch nicht verfügbar</span>
+          </header>
+          <p>Lukaten gegen Euro, bezahlt per PayPal. Geplant sind diese Bündel:</p>
+          <ul class="bundles">
+            @for (b of a.rules!.eur_bundles; track b.amount_cents) {
+              <li><span>{{ formatEur(b.amount_cents) }}</span><b>{{ b.lukaten }} Lukaten</b></li>
+            }
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ── Ausgeben ── -->
+    <section class="block">
+      <h2 class="block__title">Dafür kannst du sie ausgeben</h2>
+      <div class="spend">
+        <a class="card spend__item" routerLink="/klebrigsten/shop">
+          <h3>Sticker-Packs</h3>
+          <ul class="prices">
+            @for (p of a.rules!.packs; track p.kind) {
+              <li><span>{{ p.name }} · {{ p.size }} Sticker</span><b>{{ p.price }}</b></li>
+            }
+          </ul>
+          <span class="spend__go">Zum Shop</span>
+        </a>
+        <a class="card spend__item" routerLink="/liga/h2h/bestico">
+          <h3>Tippen im Bestico</h3>
+          <p>Setze Lukaten auf den Ausgang eines H2H-Duells. Liegst du richtig, bekommst du Einsatz mal Quote zurück.</p>
+          @if (a.preview) { <p class="spend__note">Noch nicht umgestellt: Das Bestico rechnet weiter mit dem alten Guthaben.</p> }
+          <span class="spend__go">Zum Bestico</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ── Kontoauszug ── -->
+    <section class="block">
+      <h2 class="block__title">Kontoauszug</h2>
+      <div class="card statement">
+        @if (a.entries && a.entries.credited > 0) {
+          <div class="statement__row">
+            <span class="statement__date">laufend</span>
+            <span class="statement__text">Einträge · {{ formatCount(a.entries.count) }} gezählt</span>
+            <b class="statement__amount">{{ formatSigned(a.entries.credited) }}</b>
+          </div>
+        }
+        @for (t of a.transactions ?? []; track $index) {
+          <div class="statement__row">
+            <span class="statement__date">{{ t.created_at.replace(' ', 'T') | date:'dd.MM.yy, HH:mm' }}</span>
+            <span class="statement__text">{{ describe(t) }}</span>
+            <b class="statement__amount" [class.is-minus]="t.amount < 0">{{ formatSigned(t.amount) }}</b>
+          </div>
+        } @empty {
+          <p class="statement__empty">Noch keine Buchungen.</p>
+        }
+      </div>
+    </section>
+  }
+</div>

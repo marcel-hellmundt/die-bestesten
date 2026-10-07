@@ -3,6 +3,7 @@
 /**
  * Lukaten-Konto (neuer Modus, siehe LukatenAccountTrait):
  *   GET    /lukaten          — eigener Stand: Modus der aktiven Saison, Vorschau, Kontostand (Auth)
+ *   GET    /lukaten/account  — das Konto im Einzelnen: Summen, Einträge, Buchungen, Regeln (Auth)
  *   DELETE /lukaten/preview  — eigenes Vorschau-Konto leeren (Admin, nur wo die Vorschau erlaubt ist)
  */
 class LukatenController extends _BaseController
@@ -11,8 +12,13 @@ class LukatenController extends _BaseController
 
     protected function get(): mixed
     {
-        if ($this->id !== null) return $this->methodNotAllowed();
-        return $this->db->getLukatenState($GLOBALS['auth_manager_id']);
+        if ($this->id === null) {
+            return $this->db->getLukatenState($GLOBALS['auth_manager_id']);
+        }
+        if ($this->id === 'account' && $this->sub === null) {
+            return $this->db->getLukatenAccount($GLOBALS['auth_manager_id']);
+        }
+        return $this->methodNotAllowed();
     }
 
     protected function delete(): mixed

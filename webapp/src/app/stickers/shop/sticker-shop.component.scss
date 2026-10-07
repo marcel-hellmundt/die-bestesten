@@ -286,6 +286,16 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   border: 1px solid $color-border;
   border-radius: $radius-lg;
   background: $color-surface;
+  color: $color-text;
+  text-decoration: none;
+
+  // Konto-Modus: führt zum Lukaten-Konto (/lukaten)
+  &--link {
+    cursor: pointer;
+    transition: border-color $transition-fast;
+
+    &:hover { border-color: color-mix(in srgb, #{$color-text-muted} 60%, transparent); }
+  }
 
   &__icon {
     width: 26px;

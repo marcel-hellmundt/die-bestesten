@@ -27,9 +27,9 @@
   </div>
 </ng-template>
 
-<!-- Guthaben (Lukaten der Hauptliga) -->
+<!-- Guthaben: klassisch die Lukaten der Hauptliga, im Konto-Modus das Lukaten-Konto (dann Link zu /lukaten) -->
 <ng-template #walletTpl>
-  <div class="wallet" [attr.title]="accountMode() ? 'Dein Lukaten-Konto' : (league() ? 'Guthaben in ' + league()!.name : null)">
+  <a class="wallet" [class.wallet--link]="accountMode()" [routerLink]="accountMode() ? '/lukaten' : null" [attr.title]="accountMode() ? 'Dein Lukaten-Konto' : (league() ? 'Guthaben in ' + league()!.name : null)">
     <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
     <span class="wallet__value">
       @if (loading()) { … }
@@ -37,7 +37,7 @@
       @else { {{ formatLukaten(budget()) }} }
       <small>Lukaten</small>
     </span>
-  </div>
+  </a>
 </ng-template>
 
 <div class="shop">

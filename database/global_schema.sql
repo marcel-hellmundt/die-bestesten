@@ -538,8 +538,8 @@ CREATE TABLE IF NOT EXISTS lukaten_transaction (
     manager_id CHAR(36)      NOT NULL,
     preview    TINYINT(1)    NOT NULL DEFAULT 0,  -- 1 = Buchung aus der Admin-Vorschau, zählt nicht zum echten Konto
     amount     DECIMAL(10,2) NOT NULL,      -- + Gutschrift, − Ausgabe
-    source     VARCHAR(20)   NOT NULL,      -- season_bonus | pack (später: entries, eur, stake, payout)
-    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'season:{season_id}', 'pack:{pack_id}', Vorschau 'preview-pack:{offer_key}:{uuid}'
+    source     VARCHAR(20)   NOT NULL,      -- season_bonus | entries | pack (später: eur, stake, payout)
+    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'season:{season_id}', 'entries:{n}' (n-te Lukate aus Einträgen), 'pack:{pack_id}', Vorschau 'preview-pack:{offer_key}:{uuid}'
     season_id  CHAR(36)      NULL,          -- Saison der Bewegung (nur zur Auswertung — das Konto ist saisonübergreifend)
     pack_id    CHAR(36)      NULL,          -- gekauftes Pack (source = pack; in der Vorschau NULL — es entsteht kein Pack)
     created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -43,15 +43,19 @@
       <h2 class="mode-title">Was die Vorschau zeigt</h2>
       <ul class="mode-list">
         <li>Ein Lukaten-Konto je Manager mit {{ seasonBonus() }} Lukaten Startbonus je Saison.</li>
+        <li>Für jeden 50. Eintrag der laufenden Saison eine Lukate. Es zählt, wer einen Wert zuerst eingetragen hat.</li>
         <li>Im Shop kosten die Packs 3, 6, 8 und 9 Lukaten.</li>
         <li>Ein Kauf bucht die Lukaten vom Vorschau-Konto ab, legt aber kein Pack an. Dein echtes Album und dein echtes Guthaben bleiben unberührt.</li>
       </ul>
       <h2 class="mode-title">Noch nicht umgestellt</h2>
       <ul class="mode-list">
         <li>Tippen im Bestico rechnet weiter mit dem alten Guthaben.</li>
-        <li>Einträge und Euro bringen noch keine Lukaten.</li>
+        <li>Lukaten gegen Euro gibt es noch nicht.</li>
       </ul>
-      <a class="btn btn-primary btn-sm mode-link" routerLink="/klebrigsten/shop">Zum Shop</a>
+      <div class="mode-links">
+        <a class="btn btn-primary btn-sm" routerLink="/lukaten">Zum Lukaten-Konto</a>
+        <a class="btn btn-ghost btn-sm" routerLink="/klebrigsten/shop">Zum Shop</a>
+      </div>
     </div>
   </div>
 }

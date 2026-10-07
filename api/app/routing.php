@@ -211,6 +211,11 @@ class Routing
                         'description' => 'Eigener Stand → {mode: classic|account (Lukaten-Modus der aktiven Saison für diesen Request), preview_available (Vorschau auf dieser Umgebung erlaubt), preview (für diesen Request aktiv), ready (Kontobuch vorhanden), balance (Kontostand im Konto-Modus, sonst null — bucht dabei den Startbonus der Saison, falls er fehlt), season_bonus} — Auth',
                     ],
                     [
+                        'method' => 'GET',
+                        'path' => '/lukaten/account',
+                        'description' => 'Das Konto im Einzelnen (Seite /lukaten) → {mode, preview, ready, balance, totals:{source:{amount,bookings}}, entries:{since,per,count,by_type:{participation,note,stats},credited,to_next}, transactions:[{source,amount,created_at,season_start,pack_name,club_name}] (neueste 50, ohne die Einzelbuchungen für Einträge), rules:{season_bonus,entries_per_lukate,packs:[{kind,name,size,price}],eur_bundles:[{amount_cents,lukaten}] (geplant, noch nicht kaufbar)}} — außerhalb des Konto-Modus nur mode/preview/ready mit balance null. Bringt das Konto dabei auf den Stand: Startbonus der Saison und je volle 50 Einträge 1 Lukate (Schlüssel entries:{n}). Einträge = maintainer_contribution, je Bewertung und Art zählt nur der früheste Eintrag; gezählt ab dem Start der ersten Saison im Konto-Modus, in der Vorschau ab dem Start der aktiven Saison — Auth',
+                    ],
+                    [
                         'method' => 'DELETE',
                         'path' => '/lukaten/preview',
                         'description' => 'Eigenes Vorschau-Konto leeren (alle als preview markierten Buchungen) → {status, deleted}; 403 wo die Vorschau nicht erlaubt ist, 409 ohne Migration — Admin',
