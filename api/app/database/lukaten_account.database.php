@@ -5,16 +5,16 @@
  * Referenzpunkt: 1 Eintrag = 1 Lukate ≈ 1 Cent. Ein Konto je Manager, unabhängig von Liga und Saison.
  *
  * Kontostand = Kontobuch + Tipps − alte Shop-Käufe
- *   Kontobuch        lukaten_transaction (globale DB): Startguthaben, Einträge, Euro-Käufe, Pack-Käufe — je Bewegung
+ *   Kontobuch        lukaten_transaction (globale DB): Startbonus, Einträge, Euro-Käufe, Pack-Käufe — je Bewegung
  *                    eine Zeile, der Schlüssel (source_key) ist je Manager eindeutig und macht jede Buchung idempotent.
  *   Tipps            live aus h2h_prediction aller Ligen des Managers: −Einsätze + Einsatz × Quote der gewonnenen.
  *                    Bewusst nicht ins Kontobuch gespiegelt — Tipp-Tabelle (Liga-DB) und Kontobuch (globale DB)
  *                    lassen sich nicht in einer Transaktion halten, so kann nichts auseinanderlaufen.
  *   alte Shop-Käufe  sticker_shop_purchase der Liga-DBs (Käufe vor der Umstellung); neue Käufe stehen im Kontobuch.
- * Gezählt wird ab der Saison der Umstellung (since_season). In ihr bekommt jeder beim ersten Abruf 100 Lukaten je
- * Liga, in der er aktives Mitglied ist — genau das Startguthaben, mit dem vorher je Liga gerechnet wurde. Damit hat
- * im Moment der Umstellung jeder so viele Lukaten wie vorher. Ab der nächsten Saison gibt es stattdessen einen
- * Startbonus je Manager.
+ * Gezählt wird ab der Saison der Umstellung (since_season). Je Saison gibt es einen Startbonus je Manager — einen,
+ * egal in wie vielen Ligen er spielt. Wer nur in einer Liga spielt, hat damit im Moment der Umstellung genau so
+ * viele Lukaten wie vorher (dort wurde mit 100 je Liga und Saison gerechnet). Wer in mehreren Ligen spielt, hat
+ * jetzt ein Konto mit einem Startbonus, von dem die Tipps und Käufe aller seiner Ligen abgehen.
  */
 trait LukatenAccountTrait
 {
@@ -23,8 +23,7 @@ trait LukatenAccountTrait
     {
         return [
             'since_season'  => '2026-07-01', // Start der Saison der Umstellung: ab ihr zählen Tipps und alte Shop-Käufe zum Konto
-            'league_start'  => 100,          // Startguthaben je Liga in der Saison der Umstellung (wie bisher gerechnet)
-            'season_bonus'  => 100,          // Startbonus je Manager in jeder späteren Saison
+            'season_bonus'  => 100,          // Startbonus je Manager und Saison (einer, unabhängig von der Zahl der Ligen)
             'entries_since' => '2026-10-07', // Lukaten für Einträge: nur Spieltage mit Anpfiff ab diesem Tag
             'max_payout'    => null,         // Obergrenze für den möglichen Gewinn eines Tipps (Einsatz × Quote); null = keine
             // Pack-Preise im Klebrigsten-Shop (Schlüssel wie StickerShopTrait::stickerShopOffers())
@@ -105,8 +104,9 @@ trait LukatenAccountTrait
     }
 
     /**
-     * Bringt das Kontobuch auf den Stand (beim Abruf, wie das Tages-Pack): Startguthaben je Liga in der Saison der
-     * Umstellung; in späteren Saisons der Startbonus der laufenden Saison.
+     * Bringt das Kontobuch auf den Stand (beim Abruf, wie das Tages-Pack): der Startbonus der laufenden Saison,
+     * einer je Manager (season:{season_id}). Der Startbonus der Saison der Umstellung wird immer nachgetragen —
+     * ihre Tipps und Shop-Käufe zählen zum Konto, auch wenn der erste Abruf erst später kommt.
      */
     private function syncLukatenAccount(string $managerId): void
     {
@@ -116,18 +116,17 @@ trait LukatenAccountTrait
         if (!$seasons) return;
         $leagues = $this->lukatenLeagues($managerId);
         if (!$leagues) return; // ohne Liga kein Guthaben
-        $cfg       = $this->lukatenAccountConfig();
+        $bonus     = (float) $this->lukatenAccountConfig()['season_bonus'];
         $cutoverId = array_key_first($seasons);
-        // Startguthaben nur für Ligen, denen er schon in der Saison der Umstellung angehörte — ein späterer
-        // Beitritt bringt keine weiteren 100
+        // Saison der Umstellung — nicht für Manager, die erst in einer späteren Saison dazugekommen sind
         $nextStart = array_values($seasons)[1] ?? null;
-        foreach ($leagues as $league) {
-            if ($nextStart !== null && $league['joined_at'] !== null && substr((string) $league['joined_at'], 0, 10) >= $nextStart) continue;
-            $this->bookLukaten($managerId, (float) $cfg['league_start'], 'opening', "opening:$cutoverId:{$league['id']}", $cutoverId);
+        $joined    = min(array_map(fn($l) => $l['joined_at'] === null ? '' : substr((string) $l['joined_at'], 0, 10), $leagues));
+        if ($nextStart === null || $joined < $nextStart) {
+            $this->bookLukaten($managerId, $bonus, 'season_bonus', "season:$cutoverId", $cutoverId);
         }
         $activeId = $this->getActiveSeasonId();
         if ($activeId !== null && $activeId !== $cutoverId && isset($seasons[$activeId])) {
-            $this->bookLukaten($managerId, (float) $cfg['season_bonus'], 'season_bonus', "season:$activeId", $activeId);
+            $this->bookLukaten($managerId, $bonus, 'season_bonus', "season:$activeId", $activeId);
         }
     }
 
@@ -204,7 +203,11 @@ trait LukatenAccountTrait
         return ['ready' => $ready, 'balance' => $ready ? $this->getLukatenBalance($managerId) : null];
     }
 
-    /** SQL-Bedingung "frühester Eintrag je Bewertung und Art" für maintainer_contribution mc. */
+    /**
+     * SQL-Bedingung "frühester Eintrag je Bewertung und Art" für maintainer_contribution mc. Seit ein Eintrag dem
+     * gehört, der den gültigen Wert eingetragen hat (PlayerRatingTrait::assignContribution()), gibt es je Bewertung
+     * und Art nur noch eine Zeile; die Bedingung fängt Zeilen aus der Zeit davor ab (mehrere Manager je Wert).
+     */
     private function lukatenFirstEntrySql(): string
     {
         return "NOT EXISTS (
@@ -216,10 +219,11 @@ trait LukatenAccountTrait
     /**
      * Beim Spieltagsabschluss (PATCH /matchday/:id completed=true): je Eintrag zu einer Bewertung dieses Spieltags
      * 1 Lukate — eine Buchung je Manager und Spieltag (entries:{matchday_id}), erneutes Abschließen bucht nichts
-     * doppelt. Ein Eintrag ist eine Zeile in maintainer_contribution (Einsatz, Note oder Statistik eines Spielers);
-     * dort wird jedem ein Eintrag gutgeschrieben, der einen Wert speichert, auch einen schon vorhandenen. Für
-     * Lukaten zählt deshalb je Bewertung und Art nur der früheste — sonst ließen sich fremde Einträge durch
-     * erneutes Speichern abgreifen. Nur Spieltage mit Anpfiff ab entries_since. Rückgabe: [manager_id => Lukaten].
+     * doppelt. Ein Eintrag ist eine Zeile in maintainer_contribution (Einsatz, Note oder Statistik eines Spielers)
+     * und gehört dem, der den Wert eingetragen hat, der beim Abschluss gilt: Wer einen Wert korrigiert, übernimmt
+     * den Eintrag, der Vorgänger bekommt nichts (PlayerRatingTrait::assignContribution()). Gezählt wird erst beim
+     * Abschluss, bis dahin kann ein Eintrag also noch wechseln. Nur Spieltage mit Anpfiff ab entries_since.
+     * Rückgabe: [manager_id => Lukaten].
      */
     public function creditLukatenEntriesForMatchday(string $matchdayId): array
     {
@@ -259,8 +263,9 @@ trait LukatenAccountTrait
 
     /**
      * Einträge des Managers auf noch nicht abgeschlossenen Spieltagen — sie werden beim Abschluss gebucht.
-     * Je Art (participation = Einsatz, note = Note, stats = Statistik), nur wo er der früheste ist. Ein Spieltag,
-     * für den er schon eine Buchung hat (abgeschlossen und wieder geöffnet), zählt nicht mehr — da kommt nichts dazu.
+     * Je Art (participation = Einsatz, note = Note, stats = Statistik). Bis zum Abschluss können sie noch an
+     * jemanden übergehen, der den Wert korrigiert. Ein Spieltag, für den er schon eine Buchung hat (abgeschlossen
+     * und wieder geöffnet), zählt nicht mehr — da kommt nichts dazu.
      */
     private function lukatenPendingEntries(string $managerId): array
     {
@@ -327,7 +332,7 @@ trait LukatenAccountTrait
         $lq->execute([$managerId]);
         $rows = $lq->fetchAll(PDO::FETCH_ASSOC);
 
-        // Spieltag (Einträge) und Liga (Startguthaben) stehen als ID im Buchungsschlüssel
+        // der Spieltag steht bei Einträgen als ID im Buchungsschlüssel (entries:{matchday_id})
         $keyPart = fn(array $r, int $i) => explode(':', (string) $r['source_key'])[$i] ?? '';
         $matchdayIds = array_values(array_unique(array_map(fn($r) => $keyPart($r, 1), array_filter($rows, fn($r) => $r['source'] === 'entries'))));
         $mdNumbers = [];
@@ -336,7 +341,6 @@ trait LukatenAccountTrait
             $mq->execute($matchdayIds);
             $mdNumbers = $mq->fetchAll(PDO::FETCH_KEY_PAIR);
         }
-        $leagueNames = array_column($this->lukatenLeagues($managerId), 'name', 'id');
         $kinds   = $this->stickerPackKinds();
         $bundles = $this->lukatenEurBundles();
 
@@ -346,7 +350,6 @@ trait LukatenAccountTrait
             'created_at'      => $r['created_at'],
             'season_start'    => $r['season_start'],
             'matchday_number' => $r['source'] === 'entries' && isset($mdNumbers[$keyPart($r, 1)]) ? (int) $mdNumbers[$keyPart($r, 1)] : null,
-            'league_name'     => $r['source'] === 'opening' ? ($leagueNames[$keyPart($r, 2)] ?? null) : null,
             'pack_name'       => $r['source'] === 'pack' ? ($kinds[$r['pack_kind']]['name'] ?? null) : null,
             'club_name'       => $r['club_name'],
         ], $rows);
@@ -357,7 +360,7 @@ trait LukatenAccountTrait
             'ready'   => true,
             'balance' => $parts['balance'],
             'totals'  => [
-                'start'   => ($bySource['opening'] ?? 0.0) + ($bySource['season_bonus'] ?? 0.0),
+                'start'   => $bySource['season_bonus'] ?? 0.0,
                 'entries' => $bySource['entries'] ?? 0.0,
                 'eur'     => ($bySource['eur'] ?? 0.0) + ($bySource['eur_cancel'] ?? 0.0),
                 'packs'   => ($bySource['pack'] ?? 0.0) - $parts['legacy_shop'],
@@ -408,7 +411,7 @@ trait LukatenAccountTrait
                 'manager_id'   => $m['id'],
                 'manager_name' => $m['manager_name'],
                 'balance'      => $parts['balance'],
-                'start'        => ($src['opening'] ?? 0.0) + ($src['season_bonus'] ?? 0.0),
+                'start'        => $src['season_bonus'] ?? 0.0,
                 'entries'      => $src['entries'] ?? 0.0,
                 'eur'          => ($src['eur'] ?? 0.0) + ($src['eur_cancel'] ?? 0.0),
                 'packs'        => ($src['pack'] ?? 0.0) - $parts['legacy_shop'],

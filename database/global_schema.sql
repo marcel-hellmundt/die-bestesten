@@ -404,11 +404,13 @@ CREATE TABLE IF NOT EXISTS manager_country (
     UNIQUE KEY uk_manager_country (manager_id, country_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Tabelle: maintainer_contribution (welche Manager an einem player_rating mitgewirkt haben)
--- player_rating_id ist Cross-DB-Referenz auf player_rating.id (kein FK). Akkumuliert statt
--- Upsert: UNIQUE über (rating, Kategorie, Manager) statt nur (rating, Kategorie) — trägt z.B.
--- Manager A ein Tor ein und korrigiert später Manager B dasselbe Feld, bleiben BEIDE unter
--- 'stats' gelistet statt dass B den Eintrag von A überschreibt.
+-- Tabelle: maintainer_contribution (wem die Einträge eines player_rating gehören)
+-- player_rating_id ist Referenz auf player_rating.id (kein FK). Je Bewertung und Kategorie gehört der
+-- Eintrag dem Manager, der den gültigen Wert eingetragen hat: Korrigiert Manager B eine Note von
+-- Manager A, geht der Eintrag an B über, A verliert ihn (PlayerRatingTrait::assignContribution());
+-- Speichern ohne Änderung zählt nicht, ein zurückgesetzter Wert gehört niemandem. Zeilen aus der Zeit
+-- davor (akkumuliert: jeder, der eine Kategorie bearbeitet hat) bleiben, wie sie sind — deshalb weiter
+-- UNIQUE über (rating, Kategorie, Manager).
 CREATE TABLE IF NOT EXISTS maintainer_contribution (
     id                CHAR(36)                                            NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id        CHAR(36)                                            NOT NULL,
@@ -417,6 +419,21 @@ CREATE TABLE IF NOT EXISTS maintainer_contribution (
     created_at        DATETIME                                            NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
     UNIQUE KEY uk_contribution (player_rating_id, contribution_type, manager_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: maintainer_contribution_log (Verlauf: wer hat welchen Wert einer Bewertung wann gesetzt)
+-- Grundlage für die Zuordnung in maintainer_contribution: Der Eintrag gehört dem, der den gültigen Wert als
+-- Erster so eingetragen hat — ändern und wieder zurückstellen bringt also nichts.
+-- Migration: 2026-10-07_maintainer_contribution_log.sql
+CREATE TABLE IF NOT EXISTS maintainer_contribution_log (
+    id                CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    player_rating_id  CHAR(36)    NOT NULL,  -- player_rating.id (kein FK, wie maintainer_contribution)
+    contribution_type ENUM('participation', 'stats', 'note') CHARACTER SET utf8mb4 NOT NULL,
+    manager_id        CHAR(36)    NOT NULL,  -- wer den Wert gesetzt hat
+    value             VARCHAR(40) NOT NULL,  -- der gesetzte Wert: Einsatz ('starting'), Note ('3.5'), Statistik ('2|0|0|1|0|0' = Tore|Vorlagen|Weiße Weste|SdS|Rot|Gelb-Rot)
+    created_at        DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    KEY idx_contribution_log (player_rating_id, contribution_type, value, created_at)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ── "Die Klebrigsten" (Sticker-Album; Migration: migrate_stickers.sql) ─────────────
@@ -536,8 +553,8 @@ CREATE TABLE IF NOT EXISTS lukaten_transaction (
     id         CHAR(36)      NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id CHAR(36)      NOT NULL,
     amount     DECIMAL(10,2) NOT NULL,      -- + Gutschrift, − Ausgabe
-    source     VARCHAR(20)   NOT NULL,      -- opening | season_bonus | entries | eur | eur_cancel | pack
-    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'opening:{season_id}:{league_id}' (Startguthaben in der Saison der Umstellung), 'season:{season_id}' (Startbonus), 'entries:{matchday_id}' (Einträge eines Spieltags), 'eur:{purchase_id}' / 'eur_cancel:{purchase_id}' (Lukaten-Kauf / Storno, sticker_eur_purchase), 'pack:{pack_id}'
+    source     VARCHAR(20)   NOT NULL,      -- season_bonus | entries | eur | eur_cancel | pack
+    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'season:{season_id}' (Startbonus, einer je Manager und Saison), 'entries:{matchday_id}' (Einträge eines Spieltags), 'eur:{purchase_id}' / 'eur_cancel:{purchase_id}' (Lukaten-Kauf / Storno, sticker_eur_purchase), 'pack:{pack_id}'
     season_id  CHAR(36)      NULL,          -- Saison der Bewegung (nur zur Auswertung — das Konto ist saisonübergreifend)
     pack_id    CHAR(36)      NULL,          -- gekauftes Pack (source = pack)
     created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,

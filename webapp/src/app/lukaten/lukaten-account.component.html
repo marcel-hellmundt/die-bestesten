@@ -53,8 +53,13 @@
             Spieler des Spiels und Karten zählen zusammen als ein Eintrag).
           </p>
           <p>
-            Es zählt, wer einen Wert zuerst einträgt. Wer einen vorhandenen Wert ändert oder noch einmal speichert,
-            bekommt dafür nichts.
+            Ein Eintrag gehört dem, dessen Wert beim Abschluss des Spieltags gilt. Korrigierst du einen falschen Wert,
+            geht der Eintrag an dich, und wer ihn vorher eingetragen hat, bekommt dafür nichts. Das gilt auch für die
+            Statistik: Wer sie ergänzt, etwa um den Spieler des Spiels, übernimmt den Eintrag.
+          </p>
+          <p>
+            Speichern ohne Änderung bringt nichts. Wer einen Wert ändert und wieder zurückstellt, bekommt den Eintrag
+            auch nicht: Er bleibt bei dem, der den Wert zuerst so eingetragen hat.
           </p>
           <p>Gutgeschrieben wird, sobald der Spieltag abgeschlossen ist, als eine Buchung für den ganzen Spieltag.</p>
           @if (a.pending_entries; as e) {
@@ -79,7 +84,10 @@
             <h3>Startbonus</h3>
             <span class="way__amount">+{{ format(rules.season_bonus) }}</span>
           </header>
-          <p>Zu Beginn jeder Saison, automatisch. Was am Saisonende übrig ist, bleibt auf deinem Konto.</p>
+          <p>
+            Zu Beginn jeder Saison, automatisch und einmal je Manager, egal in wie vielen Ligen du spielst.
+            Was am Saisonende übrig ist, bleibt auf deinem Konto.
+          </p>
         </article>
 
         <article class="card way" [class.way--disabled]="!eurAvailable()" [attr.inert]="eurAvailable() ? null : ''">

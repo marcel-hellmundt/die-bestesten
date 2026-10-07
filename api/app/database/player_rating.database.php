@@ -97,9 +97,10 @@ trait PlayerRatingTrait
         return $ratings;
     }
 
-    // Wer hat an einer Reihe von player_rating-Zeilen mitgewirkt — gruppiert je Zeile nach
-    // Manager (types = alle Kategorien, an denen dieser Manager beteiligt war). Siehe
-    // maintainer_contribution in global_schema.sql für das Akkumulations-Modell.
+    // Wem die Einträge einer Reihe von player_rating-Zeilen gehören — gruppiert je Zeile nach
+    // Manager (types = seine Kategorien). Je Zeile und Kategorie ist das der Manager, der den
+    // gültigen Wert eingetragen hat (siehe assignContribution()); Zeilen aus der Zeit davor
+    // können noch mehrere Manager je Kategorie haben.
     private function getContributorsForRatings(array $ratingIds): array
     {
         $ratingIds = array_values(array_unique(array_filter($ratingIds)));
@@ -137,6 +138,78 @@ trait PlayerRatingTrait
             "INSERT IGNORE INTO maintainer_contribution (id, manager_id, player_rating_id, contribution_type)
              VALUES (UUID(), :manager_id, :rating_id, :type)"
         )->execute([':manager_id' => $managerId, ':rating_id' => $ratingId, ':type' => $type]);
+    }
+
+    /**
+     * Wert je Eintrags-Art in vergleichbarer Form ('' = leer): Einsatz, Note und die Statistik — alle
+     * Statistikfelder zusammen sind ein Eintrag.
+     */
+    private function contributionValues(?array $row): array
+    {
+        if (!$row) return ['participation' => '', 'note' => '', 'stats' => ''];
+        $stats = array_map(fn($f) => (int) $row[$f], ['goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card']);
+        return [
+            'participation' => str_replace("\0", '', (string) ($row['participation'] ?? '')),
+            'note'          => $row['grade'] === null ? '' : rtrim(rtrim(number_format((float) $row['grade'], 2, '.', ''), '0'), '.'),
+            'stats'         => array_sum($stats) > 0 ? implode('|', $stats) : '',
+        ];
+    }
+
+    /**
+     * Wem ein Eintrag gehört (maintainer_contribution) — neu bestimmt, sobald sich der Wert einer Art ändert:
+     * dem Manager, der den jetzt gültigen Wert eingetragen hat. Korrigiert jemand einen Wert, geht der Eintrag
+     * an ihn über, und der Vorgänger verliert ihn — auch die Lukate dafür (LukatenAccountTrait). Speichern ohne
+     * Änderung zählt nicht. Ist der Wert danach leer (zurückgesetzt), gehört der Eintrag niemandem.
+     *
+     * Hat denselben Wert schon früher jemand eingetragen (Verlauf in maintainer_contribution_log), bleibt es
+     * dessen Eintrag: einen richtigen Wert ändern und wieder zurückstellen bringt nichts. Fehlt der Verlauf
+     * (Migration), gilt schlicht: wer zuletzt ändert.
+     * $old/$new = Wert vor und nach der Änderung in der Form von contributionValues().
+     */
+    private function assignContribution(string $ratingId, string $managerId, string $type, string $old, string $new): void
+    {
+        if ($old === $new) return;
+
+        $owner = $managerId;
+        if ($new !== '') {
+            try {
+                $key = [$ratingId, $type];
+                $has = $this->con->prepare("SELECT 1 FROM maintainer_contribution_log WHERE player_rating_id = ? AND contribution_type = ? LIMIT 1");
+                $has->execute($key);
+                if (!$has->fetchColumn() && $old !== '') {
+                    // Der bisherige Wert stammt aus der Zeit vor dem Verlauf → dem bisherigen Eintrag zuschreiben
+                    $prev = $this->con->prepare(
+                        "SELECT manager_id, created_at FROM maintainer_contribution
+                         WHERE player_rating_id = ? AND contribution_type = ? ORDER BY created_at ASC, id ASC LIMIT 1"
+                    );
+                    $prev->execute($key);
+                    if ($p = $prev->fetch(PDO::FETCH_ASSOC)) {
+                        $this->con->prepare(
+                            "INSERT INTO maintainer_contribution_log (id, player_rating_id, contribution_type, manager_id, value, created_at)
+                             VALUES (UUID(), ?, ?, ?, ?, ?)"
+                        )->execute([$ratingId, $type, $p['manager_id'], $old, $p['created_at']]);
+                    }
+                }
+                $this->con->prepare(
+                    "INSERT INTO maintainer_contribution_log (id, player_rating_id, contribution_type, manager_id, value)
+                     VALUES (UUID(), ?, ?, ?, ?)"
+                )->execute([$ratingId, $type, $managerId, $new]);
+
+                $first = $this->con->prepare(
+                    "SELECT manager_id FROM maintainer_contribution_log
+                     WHERE player_rating_id = ? AND contribution_type = ? AND value = ? ORDER BY created_at ASC LIMIT 1"
+                );
+                $first->execute([$ratingId, $type, $new]);
+                $owner = $first->fetchColumn() ?: $managerId;
+            } catch (\Throwable $e) {
+                $owner = $managerId; // Verlauf fehlt (Migration) → wer zuletzt ändert
+            }
+        }
+
+        $this->con->prepare(
+            "DELETE FROM maintainer_contribution WHERE player_rating_id = ? AND contribution_type = ?"
+        )->execute([$ratingId, $type]);
+        if ($new !== '') $this->insertContribution($ratingId, $owner, $type);
     }
 
     /**
@@ -528,11 +601,16 @@ trait PlayerRatingTrait
      */
     public function updatePlayerRating(string $id, array $data, string $managerId): bool
     {
+        // Stand vor der Änderung — für die Zuordnung der Einträge (assignContribution()) und die SdS-Meldung
+        $rowQ = $this->con->prepare(
+            'SELECT grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card, player_id
+             FROM player_rating WHERE id = ? LIMIT 1'
+        );
+        $rowQ->execute([$id]);
+        $oldRow = $rowQ->fetch(PDO::FETCH_ASSOC) ?: null;
+
         $oldSds = null;
         if (array_key_exists('sds', $data) && $data['sds']) {
-            $oldRow = $this->con->prepare("SELECT sds, player_id FROM player_rating WHERE id = ? LIMIT 1");
-            $oldRow->execute([$id]);
-            $oldRow = $oldRow->fetch(PDO::FETCH_ASSOC);
             $oldSds = $oldRow ? (bool) $oldRow['sds'] : null;
             $sdsPlayerId = $oldRow['player_id'] ?? null;
         }
@@ -561,46 +639,19 @@ trait PlayerRatingTrait
         $this->con->prepare('UPDATE player_rating SET points = :p WHERE id = :id')
             ->execute([':p' => $newPoints, ':id' => $id]);
 
-        // Track maintainer contributions (global DB) — accumulate every distinct manager who
-        // touched a category, never overwritten (see maintainer_contribution in
-        // global_schema.sql), so e.g. two different managers correcting a player's goals both
-        // stay credited under 'stats' instead of the later edit erasing the earlier one.
-        if (array_key_exists('participation', $data) && $data['participation'] !== null) {
-            $this->insertContribution($id, $managerId, 'participation');
-        }
-
-        if (array_key_exists('grade', $data) && $data['grade'] !== null) {
-            $this->insertContribution($id, $managerId, 'note');
-        }
-
-        // Judged on the resulting row, not just the touched fields — if a stat field was patched
-        // and the row now has no stats left at all (every one back to 0/false), someone almost
-        // certainly just corrected a mistake (e.g. removed a wrongly entered goal) rather than
-        // reported anything, so the 'stats' credit no longer applies to anyone and is dropped
-        // entirely; resetRating() clearing everything in one call hits this same path.
-        $statsFields = ['goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'];
-        if (array_intersect($statsFields, array_keys($data))) {
-            $statsRow = $this->con->prepare(
-                'SELECT goals, assists, clean_sheet, sds, red_card, yellow_red_card
-                 FROM player_rating WHERE id = :id LIMIT 1'
-            );
-            $statsRow->execute([':id' => $id]);
-            $statsRow = $statsRow->fetch(PDO::FETCH_ASSOC);
-
-            $hasAnyStat = $statsRow && array_reduce(
-                $statsFields,
-                fn($carry, $field) => $carry || (int) $statsRow[$field] > 0,
-                false
-            );
-
-            if ($hasAnyStat) {
-                $this->insertContribution($id, $managerId, 'stats');
-            } else {
-                $this->con->prepare(
-                    "DELETE FROM maintainer_contribution
-                     WHERE player_rating_id = :id AND contribution_type = 'stats'"
-                )->execute([':id' => $id]);
-            }
+        // Einträge (maintainer_contribution) je berührter Art neu zuordnen: Ein Eintrag gehört dem, der den
+        // jetzt gültigen Wert eingetragen hat — wer korrigiert, übernimmt ihn; Speichern ohne Änderung zählt
+        // nicht; ein leerer Wert (zurückgesetzt, Statistik komplett auf 0) gehört niemandem.
+        $rowQ->execute([$id]);
+        $old = $this->contributionValues($oldRow);
+        $new = $this->contributionValues($rowQ->fetch(PDO::FETCH_ASSOC) ?: null);
+        $touched = [
+            'participation' => array_key_exists('participation', $data),
+            'note'          => array_key_exists('grade', $data),
+            'stats'         => (bool) array_intersect(['goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'], array_keys($data)),
+        ];
+        foreach ($touched as $type => $isTouched) {
+            if ($isTouched) $this->assignContribution($id, $managerId, $type, $old[$type], $new[$type]);
         }
 
         if (isset($oldSds) && $oldSds === false && !empty($sdsPlayerId)) {

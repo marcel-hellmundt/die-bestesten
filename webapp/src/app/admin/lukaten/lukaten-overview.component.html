@@ -13,14 +13,14 @@
         <div class="stat-desc">alle Kontostände zusammen</div>
       </div>
       <div class="stat-card">
-        <span class="stat-label stat-label--asphalt">Startguthaben</span>
+        <span class="stat-label stat-label--asphalt">Startbonus</span>
         <div class="stat-value">{{ format(t.start) }}</div>
-        <div class="stat-desc">je Liga bzw. Saison</div>
+        <div class="stat-desc">je Manager und Saison</div>
       </div>
       <div class="stat-card">
         <span class="stat-label stat-label--emerald">Einträge</span>
         <div class="stat-value">{{ format(t.entries) }}</div>
-        <div class="stat-desc">1 Lukate je Eintrag</div>
+        <div class="stat-desc">1 Lukate je Eintrag, beim Abschluss</div>
       </div>
       <div class="stat-card">
         <span class="stat-label stat-label--river">Gekauft</span>
@@ -78,7 +78,7 @@
   </div>
 
   <p class="overview-hint">
-    Kontostand = Kontobuch (Startguthaben, Einträge, Käufe, Packs) plus Tipps. Tipps zählen ab dem Abgeben,
-    also auch offene Einsätze. Regeln und Preise stehen unter <a routerLink="/lukaten">Lukaten</a>.
+    Kontostand = Kontobuch (Startbonus, Einträge, Käufe, Packs) plus Tipps aus allen Ligen des Managers. Tipps
+    zählen ab dem Abgeben, also auch offene Einsätze. Regeln und Preise stehen unter <a routerLink="/lukaten">Lukaten</a>.
   </p>
 }

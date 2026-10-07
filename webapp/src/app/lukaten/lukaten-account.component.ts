@@ -5,15 +5,14 @@ import { LukatenService } from '../core/lukaten.service';
 import { Season } from '../core/models/season.model';
 
 type EntryType = 'participation' | 'note' | 'stats';
-type LukatenSource = 'opening' | 'season_bonus' | 'entries' | 'eur' | 'eur_cancel' | 'pack' | 'admin';
+type LukatenSource = 'season_bonus' | 'entries' | 'eur' | 'eur_cancel' | 'pack' | 'admin';
 
 interface LukatenTransaction {
   source: LukatenSource;
   amount: number;
   created_at: string;
-  season_start: string | null;     // Startguthaben/Startbonus: Saison
+  season_start: string | null;     // Startbonus: Saison
   matchday_number: number | null;  // Einträge: Spieltag
-  league_name: string | null;      // Startguthaben: Liga
   pack_name: string | null;        // Pack-Kauf: Pack-Art
   club_name: string | null;        // Vereins-Pack: Verein
 }
@@ -94,7 +93,7 @@ export class LukatenAccountComponent {
     const t = this.active()?.totals;
     if (!t) return [];
     return [
-      { key: 'start', label: 'Startguthaben', amount: t.start },
+      { key: 'start', label: 'Startbonus', amount: t.start },
       { key: 'entries', label: 'Einträge', amount: t.entries },
       { key: 'eur', label: 'Gekauft', amount: t.eur },
       { key: 'payouts', label: 'Tippgewinne', amount: t.payouts },
@@ -190,7 +189,6 @@ export class LukatenAccountComponent {
   describe(t: LukatenTransaction): string {
     const season = t.season_start ? Season.from({ id: '', start_date: t.season_start }).longDisplayName : null;
     switch (t.source) {
-      case 'opening':      return 'Startguthaben' + (t.league_name ? ` · ${t.league_name}` : '');
       case 'season_bonus': return season ? `Startbonus Saison ${season}` : 'Startbonus';
       case 'entries':      return t.matchday_number != null ? `Einträge · Spieltag ${t.matchday_number}` : 'Einträge';
       case 'eur':          return 'Lukaten gekauft';

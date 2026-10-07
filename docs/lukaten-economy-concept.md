@@ -13,11 +13,13 @@ Als Bild: https://claude.ai/artifact/9T5fiXDRkyArt8WfQEW95c (privat, nur für de
 - **Eine Währung, ein Konto.** Es bleibt bei Lukaten. Ein Konto je Manager; was am Saisonende übrig ist, bleibt.
 - **Referenzpunkt: 1 Eintrag = 1 Lukate ≈ 1 Cent.** Die Arbeit eines Spieltags (rund 570 Einträge) ist rund
   5 € wert. Daraus leiten sich alle Preise ab; Euro- und Lukaten-Preise passen so von selbst zusammen.
-- **Einträge werden beim Spieltagsabschluss gutgeschrieben**, erst ab dem Start, nichts rückwirkend. Es zählt
-  nur, wer einen Wert zuerst einträgt.
-- **Vorhandene Guthaben bleiben unverändert.** Niemand hat beim Start mehr oder weniger Lukaten als vorher.
+- **Einträge werden beim Spieltagsabschluss gutgeschrieben**, erst ab dem Start, nichts rückwirkend.
+- **Ein Eintrag gehört dem, dessen Wert beim Abschluss gilt.** Wer einen falschen Wert korrigiert, bekommt den
+  Eintrag und die Lukate; wer ihn vorher eingetragen hat, bekommt nichts.
+- **Vorhandene Guthaben werden nicht umgerechnet.** Wer in einer Liga spielt, hat beim Start so viele Lukaten
+  wie vorher.
+- **Ein Startbonus je Manager und Saison** (100), egal in wie vielen Ligen jemand spielt.
 - **Start direkt mit dem Deploy.** Kein Modus je Saison, keine Vorschau, kein Trockenlauf.
-- **Startbonus je Saison** bleibt (100).
 - **Zwei Shops.** Im Shop der Klebrigsten gibt es Packs gegen Lukaten; die Euro-Packs bleiben dort. Lukaten
   gegen Euro gibt es auf der Lukaten-Seite.
 - **Tippen:** kein fester Höchsteinsatz. Vorbereitet ist eine Obergrenze für den möglichen Gewinn
@@ -32,7 +34,7 @@ Als Bild: https://claude.ai/artifact/9T5fiXDRkyArt8WfQEW95c (privat, nur für de
 
 ```mermaid
 flowchart LR
-    S["Startbonus<br/>100 je Saison"] --> M
+    S["Startbonus<br/>100 je Manager und Saison"] --> M
     A["Einträge<br/>1 Lukate je Eintrag,<br/>gebucht beim Spieltagsabschluss"] --> M
     E["Euro<br/>Lukaten kaufen"] --> M
     M["Lukaten-Konto<br/>eins je Manager, bleibt über Saisons"]
@@ -50,21 +52,24 @@ und durch verlorene Tipps. Die Bank ist keine Kasse mit Bestand, sie zahlt jeden
 
 | Teil | Woher | Warum so |
 |---|---|---|
-| Kontobuch | `lukaten_transaction` (globale DB): Startguthaben, Einträge, Euro-Käufe, Pack-Käufe | Je Bewegung eine Zeile mit eindeutigem Schlüssel, jede Buchung ist dadurch idempotent. |
+| Kontobuch | `lukaten_transaction` (globale DB): Startbonus, Einträge, Euro-Käufe, Pack-Käufe | Je Bewegung eine Zeile mit eindeutigem Schlüssel, jede Buchung ist dadurch idempotent. |
 | Tipps | live aus `h2h_prediction` aller Ligen, in denen der Manager aktives Mitglied ist: −Einsätze + Einsatz × Quote der gewonnenen | Tipp-Tabelle (Liga-DB) und Kontobuch (globale DB) lassen sich nicht in einer Transaktion halten. Würden Tipps zusätzlich gebucht, könnten beide auseinanderlaufen. |
 | alte Shop-Käufe | `sticker_shop_purchase` der Liga-DBs | Käufe vor der Umstellung. Neue Käufe stehen im Kontobuch; ab der nächsten Saison ist dieser Teil von selbst 0. |
 
-Gezählt wird ab der Saison der Umstellung (2026/27). In ihr bekommt jeder beim ersten Abruf einmalig 100 Lukaten
-je Liga, in der er aktives Mitglied ist (`opening:{season_id}:{league_id}`). Genau damit wurde vorher je Liga
-gerechnet, also hat im Moment der Umstellung jeder so viele Lukaten wie vorher, zusammengezählt über seine
-Ligen. Ab der nächsten Saison gibt es stattdessen den Startbonus je Manager (`season:{season_id}`).
+Gezählt wird ab der Saison der Umstellung (2026/27). Je Saison gibt es einen Startbonus von 100 je Manager
+(`season:{season_id}`), gebucht beim ersten Kontoabruf der Saison.
+
+Bisher wurde mit 100 je Liga und Saison gerechnet. Wer in einer Liga spielt, hat im Moment der Umstellung deshalb
+genau so viele Lukaten wie vorher. Wer in mehreren Ligen spielt, hatte bisher in jeder 100 und hat jetzt einen
+Startbonus, von dem die Tipps und Käufe aller seiner Ligen abgehen. Hat er in allen Ligen zusammen mehr als 100
+ausgegeben, startet sein Konto im Minus und ist gesperrt, bis Tippgewinne oder Einträge es ausgleichen.
+`/verwaltung/lukaten` zeigt nach dem Start, ob das jemanden betrifft.
 
 Buchungen im Kontobuch:
 
 | Buchung | Betrag | Schlüssel | Wann |
 |---|---|---|---|
-| Startguthaben | +100 je Liga | `opening:{season_id}:{league_id}` | beim ersten Kontoabruf, nur in der Saison der Umstellung |
-| Startbonus | +100 | `season:{season_id}` | beim ersten Kontoabruf jeder späteren Saison |
+| Startbonus | +100 | `season:{season_id}` | beim ersten Kontoabruf der Saison, einmal je Manager |
 | Einträge | +1 je Eintrag | `entries:{matchday_id}` | beim Spieltagsabschluss, eine Buchung je Manager und Spieltag |
 | Lukaten-Kauf | +Bündel | `eur:{purchase_id}` | sofort beim Kauf |
 | Storno | −Bündel | `eur_cancel:{purchase_id}` | wenn ein Admin den Kauf storniert |
@@ -120,8 +125,16 @@ Was das für die Manager heißt:
 
 - Ein Eintrag ist eine Zeile in `maintainer_contribution`: je Spieler und Spieltag der Einsatz, die Note und
   die Statistik (Tore, Vorlagen, Weiße Weste, Spieler des Spiels und Karten zusammen).
-- Dort wird jedem ein Eintrag gutgeschrieben, der einen Wert speichert, auch einen schon vorhandenen. Für Lukaten
-  zählt deshalb je Bewertung und Art nur der früheste Eintrag. Erneutes Speichern fremder Werte bringt nichts.
+- **Ein Eintrag gehört dem, der den Wert eingetragen hat, der beim Abschluss gilt**
+  (`PlayerRatingTrait::assignContribution()`). Trägt Lukas die Note 3,0 ein und Thommy korrigiert auf 4,0, gehört
+  der Eintrag Thommy, und Lukas bekommt nichts.
+- Speichern ohne Änderung zählt nicht. Wird ein Wert gelöscht, gehört der Eintrag niemandem.
+- Wer einen Wert ändert und wieder zurückstellt, bekommt den Eintrag nicht: Er bleibt bei dem, der den Wert zuerst
+  so eingetragen hat. Dafür hält `maintainer_contribution_log` fest, wer welchen Wert wann gesetzt hat.
+- Die Statistik eines Spielers ist ein Eintrag. Wer sie ergänzt, etwa um den Spieler des Spiels, übernimmt ihn
+  (offen, Abschnitt 9).
+- Die Übersicht der Mitwirkenden unter `/daten/ratings` zeigt dieselben Einträge. Bisher blieb dort jeder
+  stehen, der einen Wert je gespeichert hatte.
 - Gebucht wird beim Abschluss des Spieltags (`creditLukatenEntriesForMatchday()`, aufgerufen in
   `MatchdayController::patch()`), mit einer Systemnachricht an jeden, der etwas bekommt.
 - Nur Spieltage mit Anpfiff ab dem Start (`entries_since`). Erneutes Abschließen bucht nichts doppelt. Wird ein
@@ -160,7 +173,7 @@ Was das für die Manager heißt:
 | `/lukaten` | Kontostand mit Summen, Regeln im Klartext, Lukaten kaufen, Preise, Kontoauszug |
 | `/klebrigsten/shop` | Packs gegen Lukaten oder Euro |
 | `/liga/h2h/bestico` und H2H-Match | Guthaben, Einsatz, Tipp-Saldo |
-| `/verwaltung/lukaten` (Admin) | alle Konten: Summe im Umlauf und je Manager Startguthaben, Einträge, Gekauft, Packs, Tipps |
+| `/verwaltung/lukaten` (Admin) | alle Konten: Summe im Umlauf und je Manager Startbonus, Einträge, Gekauft, Packs, Tipps |
 
 ## 7. Technik
 
@@ -170,23 +183,27 @@ Was das für die Manager heißt:
 | Shop Lukaten / Euro | `api/app/database/sticker_shop.database.php`, `sticker_shop_eur.database.php` |
 | Tippen, Tipp-Saldo | `api/app/database/h2h_prediction.database.php` |
 | Gutschrift beim Abschluss | `api/app/controller/matchday.controller.php` |
+| Wem ein Eintrag gehört | `api/app/database/player_rating.database.php` |
 | Webapp | `core/lukaten.service.ts`, `lukaten/`, `admin/lukaten/`, `stickers/shop/`, `liga/h2h/`, `shell/topbar/` |
 
 Endpunkte: `GET /lukaten`, `GET /lukaten/account`, `GET /lukaten/overview` (Admin), `POST /lukaten/buy_eur`;
 geändert: `GET /sticker/shop`, `POST /sticker/shop/buy`, `GET /sticker/shop/lukaten`,
 `PATCH /sticker/shop/purchases/:id`, `GET /h2h_prediction/budget`, `GET /h2h_prediction/budget_standings`,
-`POST /h2h_prediction`, `PATCH /matchday/:id`. Einzelheiten in `CLAUDE.md` und `api/app/routing.php`.
+`POST /h2h_prediction`, `PATCH /matchday/:id`, `PATCH /player_rating/:id`. Einzelheiten in `CLAUDE.md` und
+`api/app/routing.php`.
 
 ## 8. Umstellung
 
 Development und production sprechen dieselbe Datenbank an. Getrennt sind nur Code und `.env`.
 
-1. Migration `2026-10-07_lukaten_live.sql` auf der gemeinsamen Datenbank ausführen: löscht die Buchungen der
-   früheren Admin-Vorschau, entfernt `lukaten_transaction.preview` und `season.lukaten_mode`. Der Code auf
-   `main` nutzt beides nicht.
+1. Zwei Migrationen auf der gemeinsamen Datenbank ausführen. `2026-10-07_lukaten_live.sql` löscht die Buchungen
+   der früheren Admin-Vorschau und entfernt `lukaten_transaction.preview` und `season.lukaten_mode`.
+   `2026-10-07_maintainer_contribution_log.sql` legt den Verlauf der Einträge an. Der Code auf `main` nutzt
+   nichts davon.
 2. Branch pushen. Development läuft dann mit dem neuen System, auf echten Daten.
-3. Auf development prüfen: Guthaben in der Topbar entspricht dem bisherigen (Vergleich mit production), der
-   Shop zeigt die neuen Preise, `/verwaltung/lukaten` zeigt alle Konten.
+3. Auf development prüfen: Guthaben in der Topbar entspricht dem bisherigen (Vergleich mit production; bei
+   mehreren Ligen ein Startbonus statt mehrerer), der Shop zeigt die neuen Preise, `/verwaltung/lukaten` zeigt
+   alle Konten und ob eines im Minus startet.
 4. Startwerte entscheiden (Abschnitt 9), dann Merge nach `main`. Das ist der Start für alle.
 5. Nach dem ersten Spieltagsabschluss prüfen: je Manager eine Buchung `entries:{matchday_id}`, die Summe
    entspricht der Zahl der Einträge.
@@ -207,6 +224,9 @@ Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 4. Gewinn-Obergrenze beim Tippen: aus. Wert festlegen, sobald `/verwaltung/lukaten` zeigt, wie viele Lukaten im
    Umlauf sind.
 5. `entries_since`: 2026-10-07. Auf das Datum des Merges setzen, falls er später kommt.
+6. Statistik: ein Eintrag je Spieler, den übernimmt, wer ihn ergänzt. Die Alternative wäre ein Eintrag je Feld
+   (Tor, Vorlage, Spieler des Spiels, Karte); dann behält jeder, was er eingetragen hat, es gibt aber mehr
+   Einträge und damit mehr Lukaten je Spieltag.
 
 ## 10. Risiken
 
@@ -215,7 +235,9 @@ Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 | **Kaufkraft der alten Guthaben** | Unverändert übernommen, bei vierfachen Pack-Preisen: 100 Lukaten reichen für ein normales Pack statt für sechs. | Bewusst so entschieden. Beim Start erklären. |
 | **Einträge bringen viele Packs** | Rund 19.400 Lukaten je Saison für alle zusammen, das sind über 300 normale Packs. Fleißige füllen das Album deutlich schneller. | Gewollt: Mitarbeit soll sich lohnen. Stellschraube sind die Pack-Preise. |
 | **Tippen ohne Obergrenze** | Wer viele Lukaten hat, kann viel setzen; die Bank zahlt jeden Gewinn. | Gewinn-Obergrenze ist vorbereitet (Abschnitt 5). Die Quote kommt vom Server. |
-| **Datenqualität im Hauptspiel** | „Wer zuerst einträgt, bekommt die Lukate" belohnt Tempo. Falsche Noten wirken auf die Punkte, bis sie korrigiert sind. | Gutschrift erst beim Spieltagsabschluss; die Übersicht der Mitwirkenden zeigt, wer was eingetragen hat. |
+| **Datenqualität im Hauptspiel** | Lukaten fürs Eintragen könnten Tempo vor Sorgfalt belohnen. Falsche Noten wirken auf die Punkte, bis sie korrigiert sind. | Der Eintrag gehört dem, dessen Wert am Ende gilt: Ein falscher Wert bringt nichts, eine Korrektur lohnt sich. |
+| **Statistik: wer ergänzt, übernimmt** | Die Statistik eines Spielers ist ein Eintrag. Trägt einer die Tore ein und ein anderer später den Spieler des Spiels, bekommt der zweite den Eintrag. Das kann dazu verleiten, mit dem Eintragen zu warten. | Offen (Abschnitt 9): beobachten oder die Statistik je Feld zählen. |
+| **Mehrere Ligen, ein Startbonus** | Wer in mehreren Ligen zusammen mehr als 100 ausgegeben hat, startet im Minus. | `/verwaltung/lukaten` zeigt es; das Konto gleicht sich durch Tippgewinne und Einträge aus. |
 | **Tippen mit gekauften Lukaten** | Rechtlich eine Grauzone. | Bewusst akzeptiert: geschlossene, private Runde, keine Auszahlung. Sollte der Kreis je öffentlich werden, neu bewerten. |
 | **Privates PayPal** für digitale Güter | Besteht schon bei den Euro-Packs: PayPal-Bedingungen, Steuer, Widerruf. | Im Blick behalten, wenn der Umsatz wächst. |
 | **Storno nach dem Ausgeben** | Gekaufte Lukaten gibt es sofort. Bleibt die Zahlung aus, sind sie vielleicht schon weg. | Konto geht ins Minus und ist gesperrt, bis es ausgeglichen ist. |
@@ -231,6 +253,9 @@ Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
   zu schwer zu verstehen, großer Umbau.
 - **Geschlossenes System** (Prämien nur aus dem Bestand der Bank, feste Gesamtmenge).
 - **Lukaten je Liga und Saison** wie bisher, mit Verfall am Saisonende.
+- **Je Liga ein Startguthaben auf dem einen Konto:** Wer in zwei Ligen spielt, hätte 200 statt 100 gehabt.
+- **Wer einen Wert zuerst einträgt, bekommt die Lukate:** belohnt auch falsche Einträge, und wer korrigiert,
+  geht leer aus.
 - **Einsätze und Gewinne im Kontobuch buchen:** zwei Datenbanken ohne gemeinsame Transaktion, siehe
   Abschnitt 3.
 - **Holo-Veredelung und Wunschsticker:** Es soll nur Packs geben.

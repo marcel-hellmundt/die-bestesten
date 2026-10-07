@@ -8,7 +8,7 @@ interface LukatenAccountRow {
   manager_id: string;
   manager_name: string;
   balance: number;
-  start: number;     // Startguthaben und Startbonus
+  start: number;     // Startbonus (einer je Manager und Saison)
   entries: number;   // Lukaten für Einträge
   eur: number;       // gegen Euro gekauft (Stornos abgezogen)
   packs: number;     // für Sticker-Packs ausgegeben (negativ)
@@ -23,7 +23,7 @@ interface LukatenOverview {
 
 /**
  * /verwaltung/lukaten: alle Lukaten-Konten — wie viele Lukaten im Umlauf sind und woher sie kommen
- * (Startguthaben, Einträge, Euro) bzw. wohin sie gehen (Packs, Tipps). Grundlage, um Preise und die
+ * (Startbonus, Einträge, Euro) bzw. wohin sie gehen (Packs, Tipps). Grundlage, um Preise und die
  * Gewinn-Obergrenze beim Tippen festzulegen (siehe docs/lukaten-economy-concept.md).
  */
 @Component({
