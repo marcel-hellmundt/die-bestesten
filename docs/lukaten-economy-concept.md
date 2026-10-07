@@ -6,6 +6,8 @@ auf development und die Entscheidung über die Startwerte (Abschnitt 9)
 Lukaten sind ab dem Start das eine Zahlungsmittel der App. Jeder Manager hat ein Konto, unabhängig von Liga und
 Saison. Der Start erfolgt im laufenden Betrieb, mitten in der Saison 2026/27, ohne Schalter und ohne Vorschau.
 
+Als Bild: https://claude.ai/artifact/9T5fiXDRkyArt8WfQEW95c (privat, nur für den Inhaber sichtbar).
+
 ## 1. Entschieden
 
 - **Eine Währung, ein Konto.** Es bleibt bei Lukaten. Ein Konto je Manager; was am Saisonende übrig ist, bleibt.
