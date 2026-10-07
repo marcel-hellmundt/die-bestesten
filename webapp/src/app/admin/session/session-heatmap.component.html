@@ -5,8 +5,17 @@
 </p>
 
 <div class="segmented-row">
+  <div class="segmented" role="group" aria-label="Ansicht">
+    @for (v of VIEWS; track v.key) {
+      <button
+        class="segmented__option"
+        [class.segmented__option--active]="view() === v.key"
+        (click)="setView(v.key)"
+      >{{ v.label }}</button>
+    }
+  </div>
   <div class="segmented" role="group" aria-label="Zeitraum">
-    @for (r of RANGES; track r) {
+    @for (r of ranges(); track r) {
       <button
         class="segmented__option"
         [class.segmented__option--active]="range() === r"
@@ -149,7 +158,7 @@
       @for (col of columns(); track col.key) {
         <div
           class="heatmap__cell"
-          [style.background-color]="cellColor(seconds(m, col.key), mobileFraction(m, col.key))"
+          [style.background-color]="cellColorFor(m, col.key)"
           (mouseenter)="onCellHover($event, m, col)"
           (mouseleave)="onCellLeave()"
         ></div>
@@ -183,6 +192,19 @@
           <span>Desktop</span>
           <span class="heatmap-tooltip__value">{{ tip.desktopLabel }} ({{ tip.desktopPct }}%)</span>
         </div>
+      }
+      @if (tip.perDayLabel) {
+        <hr class="heatmap-tooltip__divider" />
+        <div class="heatmap-tooltip__row">
+          <span>Ø pro Tag</span>
+          <span class="heatmap-tooltip__value">{{ tip.perDayLabel }}</span>
+        </div>
+        @if (tip.shareLabel) {
+          <div class="heatmap-tooltip__row">
+            <span>Anteil an seiner Zeit</span>
+            <span class="heatmap-tooltip__value">{{ tip.shareLabel }}</span>
+          </div>
+        }
       }
       @if (tip.trendLabel) {
         <hr class="heatmap-tooltip__divider" />

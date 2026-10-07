@@ -5,6 +5,14 @@ import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
 type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all';
+/**
+ * Ansicht: Verlauf (jede Spalte ein konkreter Zeitabschnitt) oder Profil — derselbe Zeitraum nach Tageszeit
+ * bzw. Wochentag aufsummiert (zeigt Gewohnheiten: wer morgens, wer abends, wer an welchem Wochentag online ist)
+ */
+type ViewKey = 'timeline' | 'hour' | 'weekday';
+/** Zeiträume, über die ein Profil sinnvoll ist (Heute/Tag sind dafür zu kurz) */
+const PROFILE_RANGES: RangeKey[] = ['month', 'year', 'all'];
+const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
 interface HeatmapManager {
   manager_id: string;
@@ -19,6 +27,8 @@ interface HeatmapResponse {
   range: RangeKey;
   managers: HeatmapManager[];
   online_managers?: { manager_id: string; idle_seconds: number }[]; // gerade online (Heartbeat < 3 min), unabhängig vom Zeitraum
+  profile?: 'hour' | 'weekday' | null; // Profil-Ansicht: Buckets = Tageszeit "00".."23" bzw. Wochentag "1".."7"
+  since?: string | null;               // nur im Profil: Fensterbeginn (YYYY-MM-DD) — für "Ø pro Tag"
 }
 
 /** Hintergrund-Aktualisierung der Heatmap-Daten */
@@ -77,6 +87,10 @@ interface TooltipState {
   // Nur bei Spalten-Hover im Modus "Aktive Manager" gesetzt — Anzahl + Namen statt Dauer
   activeLabel?: string;
   activeNames?: string[];
+  // Nur im Profil (Tageszeit/Wochentag): Durchschnitt je Tag des Zeitraums und — bei einer Manager-Zelle —
+  // Anteil dieses Buckets an der Gesamtzeit des Managers
+  perDayLabel?: string;
+  shareLabel?: string;
 }
 
 /** Was der Balkenchart über der Heatmap zeigt */
@@ -92,11 +106,35 @@ export class SessionHeatmapComponent {
   private api = inject(ApiService);
   cache        = inject(DataCacheService);
 
-  readonly RANGES: RangeKey[] = ['today', 'day', 'month', 'year', 'all'];
   readonly rangeLabels = RANGE_LABELS;
 
-  range = signal<RangeKey>('day');
+  readonly VIEWS: { key: ViewKey; label: string }[] = [
+    { key: 'timeline', label: 'Verlauf' },
+    { key: 'hour', label: 'Tageszeit' },
+    { key: 'weekday', label: 'Wochentag' },
+  ];
+  view = signal<ViewKey>(this.loadView());
+  isProfile = computed(() => this.view() !== 'timeline');
+
+  range = signal<RangeKey>(this.view() === 'timeline' ? 'day' : 'month');
   setRange(r: RangeKey): void { this.range.set(r); }
+  /** Im Profil nur die längeren Zeiträume */
+  ranges = computed<RangeKey[]>(() => this.isProfile() ? PROFILE_RANGES : ['today', 'day', 'month', 'year', 'all']);
+
+  private loadView(): ViewKey {
+    try {
+      const v = localStorage.getItem('session-view');
+      return v === 'hour' || v === 'weekday' ? v : 'timeline';
+    } catch {
+      return 'timeline';
+    }
+  }
+
+  setView(v: ViewKey): void {
+    if (v !== 'timeline' && !PROFILE_RANGES.includes(this.range())) this.range.set('month');
+    this.view.set(v);
+    try { localStorage.setItem('session-view', v); } catch {}
+  }
 
   // Balkenchart: Sessiondauer (Summe aller Manager je Intervall) oder Anzahl aktiver Manager je Intervall
   // (jeder mit > 0 s zählt einmal, egal wie lange) — Auswahl links vom Chart, pro Gerät gemerkt
@@ -131,8 +169,10 @@ export class SessionHeatmapComponent {
     );
   }
 
+  private query = computed(() => ({ range: this.range(), view: this.view() }));
   private data = toSignal(
-    toObservable(this.range).pipe(switchMap(range => this.poll(`session?range=${range}`, range))),
+    toObservable(this.query).pipe(switchMap(({ range, view }) =>
+      this.poll(`session?range=${range}` + (view === 'timeline' ? '' : `&profile=${view}`), range))),
   );
 
   /** Mobil statt Name: Profilbild — Manager ohne Foto bekommen die Initiale */
@@ -190,6 +230,18 @@ export class SessionHeatmapComponent {
     const range = this.range();
     const now = new Date();
     const cols: BucketColumn[] = [];
+
+    // Profil: feste Spalten, unabhängig vom Zeitraum (Schlüssel wie SessionTrait::sessionBucketBoundary)
+    if (this.view() === 'hour') {
+      for (let h = 0; h < 24; h++) {
+        const hh = String(h).padStart(2, '0');
+        cols.push({ key: hh, label: `${hh}h` });
+      }
+      return cols;
+    }
+    if (this.view() === 'weekday') {
+      return WEEKDAYS.map((name, i) => ({ key: String(i + 1), label: name.slice(0, 2) }));
+    }
 
     if (range === 'today') {
       // alle Stunden von 0 Uhr bis zur laufenden Stunde
@@ -513,7 +565,7 @@ export class SessionHeatmapComponent {
   // anzeigen kann, ohne die Rolling-Berechnung ein zweites Mal auszuführen.
   usageDashedLine = computed(() => {
     // Ø Zeit/Nutzer gehört zur Sessiondauer — bei "Aktive Manager" keine Trendlinie
-    if (this.range() !== 'month' || this.chartMode() !== 'duration') return null;
+    if (this.isProfile() || this.range() !== 'month' || this.chartMode() !== 'duration') return null;
     const cols = this.columns();
     if (cols.length === 0) return null;
 
@@ -606,6 +658,50 @@ export class SessionHeatmapComponent {
     return this.lerpRgb(DESKTOP_RGB, MOBILE_RGB, fraction);
   }
 
+  // Profil: stärkster Bucket je Manager (seine aktivste Stunde bzw. sein aktivster Wochentag) — Bezugswert
+  // für die Färbung der Zeile
+  private rowMax = computed(() => {
+    const map = new Map<string, number>();
+    for (const m of this.data()?.managers ?? []) map.set(m.manager_id, Math.max(0, ...Object.values(m.buckets)));
+    return map;
+  });
+
+  /**
+   * Zellenfarbe: im Verlauf nach absoluter Dauer (cellColor), im Profil relativ zur stärksten Zelle derselben
+   * Zeile — so ist bei jedem Manager zu sehen, wann er online ist, auch bei Wenignutzern.
+   */
+  cellColorFor(m: HeatmapManager, bucketKey: string): string {
+    const secs = this.seconds(m, bucketKey);
+    if (!this.isProfile()) return this.cellColor(secs, this.mobileFraction(m, bucketKey));
+    const max = this.rowMax().get(m.manager_id) ?? 0;
+    if (secs <= 0 || max <= 0) return 'transparent';
+    const opacity = GRADIENT_MIN_OPACITY + (secs / max) * (GRADIENT_MAX_OPACITY - GRADIENT_MIN_OPACITY);
+    const [r, g, b] = this.hueForMobileFraction(this.mobileFraction(m, bucketKey));
+    return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(2)})`;
+  }
+
+  // Profil: wie viele Tage des Zeitraums in einen Bucket fallen — bei Tageszeit alle Tage, bei Wochentag
+  // nur die Tage dieses Wochentags (Fensterbeginn `since` bis heute, beide eingeschlossen)
+  private profileDays = computed(() => {
+    const since = this.data()?.since;
+    const total = { all: 0, byWeekday: [0, 0, 0, 0, 0, 0, 0] };
+    if (!since) return total;
+    const end = new Date();
+    end.setHours(0, 0, 0, 0);
+    for (const d = new Date(`${since}T00:00:00`); d <= end; d.setDate(d.getDate() + 1)) {
+      total.all++;
+      total.byWeekday[(d.getDay() + 6) % 7]++;
+    }
+    return total;
+  });
+
+  /** "Ø pro Tag" für einen Profil-Bucket (null im Verlauf oder ohne Tage) */
+  private perDayLabel(col: BucketColumn, seconds: number): string | undefined {
+    if (!this.isProfile()) return undefined;
+    const days = this.view() === 'hour' ? this.profileDays().all : this.profileDays().byWeekday[Number(col.key) - 1];
+    return days > 0 ? this.formatMinutes(seconds / days) : undefined;
+  }
+
   cellColor(seconds: number, mobileFraction: number): string {
     if (seconds <= 0) return 'transparent';
     const clamped = Math.min(Math.max(seconds, GRADIENT_MIN_SECONDS), GRADIENT_MAX_SECONDS);
@@ -622,6 +718,13 @@ export class SessionHeatmapComponent {
   // da new Date("YYYY-MM-DD") sonst als UTC-Mitternacht statt Lokalzeit interpretiert wird
   // (JS-Falle) und je nach Zeitzone auf den Vortag verschieben könnte.
   private formatBucketLabel(col: BucketColumn): string {
+    if (this.view() === 'hour') {
+      const next = String((Number(col.key) + 1) % 24).padStart(2, '0');
+      return `${col.key}:00–${next}:00 Uhr · ${RANGE_PERIOD_LABELS[this.range()]}`;
+    }
+    if (this.view() === 'weekday') {
+      return `${WEEKDAYS[Number(col.key) - 1]} · ${RANGE_PERIOD_LABELS[this.range()]}`;
+    }
     if (this.range() === 'day' || this.range() === 'today') {
       const d = new Date(col.key);
       const day = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
@@ -671,9 +774,13 @@ export class SessionHeatmapComponent {
     const total   = this.seconds(m, col.key);
     const mobile  = m.mobile_seconds[col.key] ?? 0;
     const desktop = m.desktop_seconds[col.key] ?? 0;
-    this.hoveredTooltip.set(
-      this.buildTooltip(this.formatBucketLabel(col), total, mobile, desktop, this.tooltipPosition(event)),
-    );
+    const tooltip = this.buildTooltip(this.formatBucketLabel(col), total, mobile, desktop, this.tooltipPosition(event));
+    if (this.isProfile() && total > 0) {
+      tooltip.perDayLabel = this.perDayLabel(col, total);
+      const all = this.totalSeconds(m);
+      tooltip.shareLabel = all > 0 ? `${Math.round(total / all * 100)} %` : undefined;
+    }
+    this.hoveredTooltip.set(tooltip);
   }
 
   // Gleicher Tooltip wie onCellHover, aber aggregiert über alle aktuell angezeigten Buckets dieses
@@ -704,6 +811,7 @@ export class SessionHeatmapComponent {
     const total  = this.totalsByBucket().get(col.key) ?? 0;
     const device = this.deviceTotalsByBucket().get(col.key);
     const tooltip = this.buildTooltip(this.formatBucketLabel(col), total, device?.mobile ?? 0, device?.desktop ?? 0, this.tooltipPosition(event));
+    if (total > 0) tooltip.perDayLabel = this.perDayLabel(col, total);
     const trendValue = this.usageDashedLine()?.values[index];
     if (trendValue !== undefined) {
       tooltip.trendLabel = this.formatMinutes(trendValue);

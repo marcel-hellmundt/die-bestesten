@@ -274,8 +274,15 @@ trait SessionTrait
      * mobile_seconds=30min, desktop_seconds=15min; Anteil = 30/(30+15) = 66,7% statt fälschlich
      * 30/30 = 100%). mobile_seconds + desktop_seconds ist dadurch immer ≥ buckets, nie kleiner —
      * die Opacity/Dauer-Anzeige (die weiterhin `buckets` nutzt) bleibt davon unberührt.
+     *
+     * $profile ('hour' | 'weekday', sonst null): derselbe Zeitraum, aber statt als Verlauf nach Tageszeit
+     * (Schlüssel "00".."23") bzw. Wochentag (Schlüssel "1".."7", 1 = Montag) aufsummiert — zeigt Gewohnheiten
+     * (wer morgens, wer abends, wer an welchem Wochentag online ist). Der Controller lässt das nur für
+     * month/year/all zu. Hineinragende Sessions zählen dabei erst ab Fensterbeginn. Die Antwort enthält
+     * zusätzlich `profile` und `since` (Y-m-d: Fensterbeginn, bei 'all' Tag der frühesten Session) — daraus
+     * rechnet das Frontend "Ø pro Tag".
      */
-    public function getSessionHeatmap(string $range = 'day'): array
+    public function getSessionHeatmap(string $range = 'day', ?string $profile = null): array
     {
         switch ($range) {
             case 'today':
@@ -314,6 +321,17 @@ trait SessionTrait
         );
         $q->execute();
 
+        // Bucket-Art: im Profil nach Tageszeit/Wochentag statt nach den Zeitabschnitten des Zeitraums
+        $bucketMode = $profile ?? $range;
+        // Fensterbeginn (PHP-seitig, deckungsgleich mit $sinceExpr) — nur fürs Profil: kappt hineinragende Sessions
+        $windowStart = match (true) {
+            $profile === null => null,
+            $range === 'month' => new DateTime('today -29 days'),
+            $range === 'year'  => new DateTime('today -51 weeks'),
+            default            => null, // all
+        };
+        $earliest = null;
+
         $managers = [];
         foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
             if (!isset($managers[$r['manager_id']])) {
@@ -332,6 +350,12 @@ trait SessionTrait
             if ($range === 'today' && $interval[0] < ($midnight ??= new DateTime('today'))) {
                 $interval[0] = clone $midnight;
             }
+            if ($windowStart !== null && $interval[0] < $windowStart) {
+                $interval[0] = clone $windowStart;
+            }
+            if ($earliest === null || $interval[0] < $earliest) {
+                $earliest = $interval[0];
+            }
             $managers[$r['manager_id']]['intervals'][] = $interval;
             if (in_array($r['device_type'], ['mobile', 'tablet'], true)) {
                 $managers[$r['manager_id']]['mobileIntervals'][] = $interval;
@@ -342,15 +366,15 @@ trait SessionTrait
 
         $result = [];
         foreach ($managers as $manager) {
-            $buckets = $this->bucketizeIntervals($manager['intervals'], $range);
+            $buckets = $this->bucketizeIntervals($manager['intervals'], $bucketMode);
 
             $result[] = [
                 'manager_id'      => $manager['manager_id'],
                 'manager_name'    => $manager['manager_name'],
                 'alias'           => $manager['alias'],
                 'buckets'         => $buckets,
-                'mobile_seconds'  => $this->bucketizeIntervals($manager['mobileIntervals'], $range),
-                'desktop_seconds' => $this->bucketizeIntervals($manager['desktopIntervals'], $range),
+                'mobile_seconds'  => $this->bucketizeIntervals($manager['mobileIntervals'], $bucketMode),
+                'desktop_seconds' => $this->bucketizeIntervals($manager['desktopIntervals'], $bucketMode),
                 '_total'          => array_sum($buckets),
             ];
         }
@@ -377,7 +401,11 @@ trait SessionTrait
             $oq->fetchAll(PDO::FETCH_ASSOC),
         );
 
-        return ['range' => $range, 'managers' => $result, 'online_managers' => $online];
+        return [
+            'range' => $range, 'managers' => $result, 'online_managers' => $online,
+            'profile' => $profile,
+            'since' => $profile === null ? null : ($windowStart ?? $earliest)?->format('Y-m-d'),
+        ];
     }
 
     /** Merged $intervals (siehe mergeIntervals) und summiert sie pro Bucket (siehe splitSessionIntoBuckets). */
@@ -444,6 +472,10 @@ trait SessionTrait
     private function sessionBucketBoundary(DateTime $t, string $range): array
     {
         switch ($range) {
+            case 'hour': // Profil nach Tageszeit: "00".."23", über alle Tage des Zeitraums aufsummiert
+                return [$t->format('H'), (clone $t)->setTime((int) $t->format('H'), 0, 0)->modify('+1 hour')];
+            case 'weekday': // Profil nach Wochentag: "1" (Montag) .. "7" (Sonntag)
+                return [$t->format('N'), (clone $t)->setTime(0, 0, 0)->modify('+1 day')];
             case 'today':
             case 'day':
                 $key = $t->format('Y-m-d\TH:00:00');
