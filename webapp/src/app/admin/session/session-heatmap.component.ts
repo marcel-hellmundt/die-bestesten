@@ -303,6 +303,18 @@ export class SessionHeatmapComponent {
     return cols;
   });
 
+  /**
+   * Profil: Spalte der laufenden Stunde bzw. des heutigen Wochentags — im Chart umrandet, Beschriftung
+   * hervorgehoben ("wo stehen wir gerade"). Liest data() mit, damit sie mit jedem Hintergrund-Abruf nachzieht.
+   */
+  currentKey = computed<string | null>(() => {
+    this.data();
+    const now = new Date();
+    if (this.view() === 'hour') return String(now.getHours()).padStart(2, '0');
+    if (this.view() === 'weekday') return String((now.getDay() + 6) % 7 + 1);
+    return null;
+  });
+
   private sumValues(record: Record<string, number>): number {
     return Object.values(record).reduce((sum, s) => sum + s, 0);
   }

@@ -99,6 +99,7 @@
           @for (col of columns(); track col.key; let i = $index) {
             <div
               class="usage-chart-hover-target"
+              [class.usage-chart-hover-target--current]="col.key === currentKey()"
               (mouseenter)="onChartColumnHover($event, col, i)"
               (mouseleave)="onCellLeave()"
             ></div>
@@ -132,7 +133,7 @@
 
     <div class="heatmap__corner"></div>
     @for (col of columns(); track col.key) {
-      <div class="heatmap__col-label">{{ col.label }}</div>
+      <div class="heatmap__col-label" [class.heatmap__col-label--current]="col.key === currentKey()">{{ col.label }}</div>
     }
     @for (m of managers(); track m.manager_id) {
       <div

@@ -336,6 +336,15 @@
     background-color: $color-border;
     border-color: color-mix(in srgb, $color-text-muted 40%, transparent);
   }
+
+  // Profil: laufende Stunde bzw. heutiger Wochentag — dauerhaft umrandet
+  &--current,
+  &--current:hover { border-color: $color-accent; }
+}
+
+.heatmap__col-label--current {
+  color: $color-accent;
+  font-weight: $font-weight-bold;
 }
 
 .heatmap__cell {
