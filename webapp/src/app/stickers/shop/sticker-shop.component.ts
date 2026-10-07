@@ -22,10 +22,17 @@ interface EurPending {
   paypal_url: string;
 }
 
-/** Response von GET /sticker/shop — Lukaten aus der Hauptliga (oberste Liga mit Sticker-Album) + Euro-Käufe. */
+/**
+ * Response von GET /sticker/shop — Lukaten-Guthaben, Preise und Euro-Käufe. mode = Lukaten-Modus der aktiven Saison:
+ * classic = Guthaben der Hauptliga (oberste Liga mit Sticker-Album), account = Lukaten-Konto des Managers.
+ */
 interface ShopState {
+  mode?: 'classic' | 'account';
   league: { id: string; name: string } | null;
   budget: number | null;
+  lukaten_available?: boolean;        // Lukaten-Käufe möglich (ältere API: aus league hergeleitet)
+  prices?: Record<string, number>;    // Preis je Lukaten-Angebot in diesem Modus (offer key → Lukaten)
+  season_bonus?: number;              // nur Konto-Modus: Startbonus je Saison
   eur?: { available: boolean; paypal_me: string; starter_available: boolean; pending: EurPending[] };
 }
 
@@ -73,7 +80,8 @@ interface ClubChoice {
 }
 
 /**
- * Shop (/klebrigsten/shop): Packs gegen Lukaten (Hauptliga, POST /sticker/shop/buy) oder Euro
+ * Shop (/klebrigsten/shop): Packs gegen Lukaten (klassisch aus der Hauptliga, im Konto-Modus vom Lukaten-Konto;
+ * Preise liefert GET /sticker/shop; Kauf per POST /sticker/shop/buy) oder Euro
  * (POST /sticker/shop/buy_eur: Packs sofort, Zahlung per PayPal.me mit Kauf-Code, Admin bestätigt/storniert —
  * bis dahin sind Karten daraus nicht tauschbar). Admins sehen unten alle Euro-Käufe der Saison und darunter
  * alle Lukaten-Käufe (final, nur Übersicht).
@@ -92,7 +100,6 @@ export class StickerShopComponent {
   private album = inject(StickerAlbumService);
   private status = inject(StickerStatusService);
 
-  readonly lukatenOffers = LUKATEN_OFFERS;
   readonly eurBundles = EUR_BUNDLES;
   readonly eurSingles = EUR_SINGLES;
   readonly starter = EUR_STARTER;
@@ -124,6 +131,15 @@ export class StickerShopComponent {
   loading = computed(() => this.shop() === undefined);
   league  = computed(() => this.shop()?.league ?? null);
   budget  = computed(() => this.shop()?.budget ?? null);
+  /** Neuer Lukaten-Modus der Saison: Konto je Manager statt Guthaben der Hauptliga */
+  accountMode = computed(() => this.shop()?.mode === 'account');
+  seasonBonus = computed(() => this.shop()?.season_bonus ?? null);
+  lukatenAvailable = computed(() => this.shop()?.lukaten_available ?? !!this.league());
+  /** Lukaten-Angebote mit den Preisen des Servers (je Modus andere) — shop.model.ts ist nur der Rückfall */
+  lukatenOffers = computed<ShopOffer[]>(() => {
+    const prices = this.shop()?.prices;
+    return LUKATEN_OFFERS.map(o => prices?.[o.key] != null ? { ...o, price: prices[o.key] } : o);
+  });
 
   // ── Euro ──
   eurAvailable     = computed(() => this.shop()?.eur?.available ?? false);
@@ -151,9 +167,9 @@ export class StickerShopComponent {
    */
   eurFirst = computed(() => {
     if (this.loading()) return false;
-    if (!this.league()) return true;
+    if (!this.lukatenAvailable()) return true;
     const b = this.budget();
-    return b != null && b < Math.min(...LUKATEN_OFFERS.map(o => o.price));
+    return b != null && b < Math.min(...this.lukatenOffers().map(o => o.price));
   });
 
   /** Wie viele Lukaten noch fehlen (0 = leistbar). */

@@ -29,7 +29,7 @@
 
 <!-- Guthaben (Lukaten der Hauptliga) -->
 <ng-template #walletTpl>
-  <div class="wallet" [attr.title]="league() ? 'Guthaben in ' + league()!.name : null">
+  <div class="wallet" [attr.title]="accountMode() ? 'Dein Lukaten-Konto' : (league() ? 'Guthaben in ' + league()!.name : null)">
     <img class="wallet__icon" src="img/icons/lukat.png" alt="" />
     <span class="wallet__value">
       @if (loading()) { … }
@@ -44,7 +44,7 @@
 <!-- Titel über beiden Spalten — die rechte Spalte beginnt so auf Höhe der obersten Angebote -->
 <h1 class="page-title shop__title">
   Shop
-  <span class="page-title__sub">Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro</span>
+  <span class="page-title__sub">{{ accountMode() ? 'Mehr Packs – mit Lukaten oder mit Euro' : 'Mehr Packs – mit Lukaten aus dem Bestico oder mit Euro' }}</span>
 </h1>
 
 <div class="shop__main">
@@ -54,7 +54,7 @@
   <section class="how">
     <h2 class="how__title">So funktioniert's</h2>
     <ol class="how__steps">
-      <li><b>Bezahlen</b><span>Mit Lukaten aus deiner Hauptliga oder mit Euro über PayPal.</span></li>
+      <li><b>Bezahlen</b><span>{{ accountMode() ? 'Mit Lukaten von deinem Konto oder mit Euro über PayPal.' : 'Mit Lukaten aus deiner Hauptliga oder mit Euro über PayPal.' }}</span></li>
       <li><b>Pack erhalten</b><span>Die Packs liegen sofort ungeöffnet in deinem Sammelalbum.</span></li>
       <li><b>Aufreißen</b><span>Gleiche Chancen wie bei jedem Pack – inklusive Holo-Karten.</span></li>
     </ol>
@@ -69,12 +69,19 @@
       <ng-container *ngTemplateOutlet="walletTpl" />
     </div>
 
-    @if (!loading() && !league()) {
+    @if (!loading() && !lukatenAvailable()) {
       <p class="shelf__hint">Du spielst in keiner Liga mit Sticker-Album – Lukaten-Käufe sind nicht möglich.</p>
+    }
+    <!-- Admins: Hinweis, dass die Saison im neuen Lukaten-Modus läuft (Schalter unter /verwaltung/lukaten) -->
+    @if (accountMode() && isAdmin) {
+      <p class="shelf__hint">
+        Neuer Lukaten-Modus: Konto je Manager@if (seasonBonus(); as bonus) {, Startbonus {{ bonus }} je Saison}.
+        Tippen rechnet noch mit dem alten Guthaben.
+      </p>
     }
 
     <div class="offers offers--kinds">
-      @for (o of lukatenOffers; track o.key) {
+      @for (o of lukatenOffers(); track o.key) {
         @let miss = missingLukaten(o);
         <article class="offer" [class.offer--highlight]="o.highlight">
           @if (o.highlight) { <span class="offer__ribbon">{{ o.highlight }}</span> }
@@ -91,7 +98,7 @@
                 <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
                 <b>{{ o.price }}</b> Lukaten
               </span>
-              <button type="button" class="btn btn-primary btn-sm" [disabled]="loading() || !league() || miss > 0" (click)="open(o)">
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="loading() || !lukatenAvailable() || miss > 0" (click)="open(o)">
                 Kaufen
               </button>
             </div>
@@ -357,7 +364,7 @@
           </div>
         } @else if (o.currency === 'lukaten') {
           <dl class="confirm__calc">
-            <dt>Guthaben ({{ league()?.name }})</dt><dd>{{ formatLukaten(budget()) }}</dd>
+            <dt>Guthaben@if (league(); as l) { ({{ l.name }}) }</dt><dd>{{ formatLukaten(budget()) }}</dd>
             <dt>Preis</dt><dd>− {{ o.price }}</dd>
             <dt class="confirm__total">Danach</dt><dd class="confirm__total">{{ formatLukaten(budgetAfter()) }} Lukaten</dd>
           </dl>

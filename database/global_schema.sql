@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS club (
 -- Tabelle: season
 CREATE TABLE IF NOT EXISTS season (
     id CHAR(36) PRIMARY KEY DEFAULT (UUID()),  -- GUID als eindeutige ID
-    start_date DATE NOT NULL UNIQUE             -- Startdatum der Saison; aktive Saison = höchstes start_date
+    start_date DATE NOT NULL UNIQUE,            -- Startdatum der Saison; aktive Saison = höchstes start_date
+    lukaten_mode ENUM('classic', 'account') CHARACTER SET utf8mb4 NOT NULL DEFAULT 'classic'  -- classic = 100 Lukaten je Liga und Saison (live aus h2h_prediction), account = Lukaten-Konto je Manager (lukaten_transaction); Migration: 2026-10-07_lukaten_account.sql
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: matchday
@@ -526,6 +527,24 @@ CREATE TABLE IF NOT EXISTS sticker_trade_item (
     FOREIGN KEY (trade_id)   REFERENCES sticker_trade(id) ON DELETE CASCADE,
     FOREIGN KEY (sticker_id) REFERENCES sticker(id),
     UNIQUE KEY uk_sticker_trade_item (trade_id, sticker_id, giver_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: lukaten_transaction (Lukaten-Konto je Manager, unabhängig von Liga und Saison — das Kontobuch des neuen
+-- Lukaten-Modus season.lukaten_mode = account: eine Zeile je Bewegung, Kontostand = Summe; source_key macht die
+-- Buchung idempotent). Konzept: docs/lukaten-economy-concept.md. Migration: 2026-10-07_lukaten_account.sql
+CREATE TABLE IF NOT EXISTS lukaten_transaction (
+    id         CHAR(36)      NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id CHAR(36)      NOT NULL,
+    amount     DECIMAL(10,2) NOT NULL,      -- + Gutschrift, − Ausgabe
+    source     VARCHAR(20)   NOT NULL,      -- season_bonus | pack (später: entries, eur, stake, payout)
+    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'season:{season_id}', 'pack:{pack_id}'
+    season_id  CHAR(36)      NULL,          -- Saison der Bewegung (nur zur Auswertung — das Konto ist saisonübergreifend)
+    pack_id    CHAR(36)      NULL,          -- gekauftes Pack (source = pack)
+    created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    FOREIGN KEY (season_id)  REFERENCES season(id),
+    UNIQUE KEY uk_lukaten_transaction (manager_id, source_key),
+    KEY idx_lukaten_transaction_source (source, season_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Achievements (v2)

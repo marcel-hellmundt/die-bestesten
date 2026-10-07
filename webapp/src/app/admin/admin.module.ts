@@ -12,6 +12,7 @@ import { ManagerDataComponent } from './manager/manager-data.component';
 import { AchievementsDataComponent } from './achievements/achievements-data.component';
 import { SessionHeatmapComponent } from './session/session-heatmap.component';
 import { SessionDevicesComponent } from './session/session-devices.component';
+import { LukatenModeComponent } from './lukaten/lukaten-mode.component';
 
 // /verwaltung — nur Admin (AdminGuard an der Route in shell.module.ts, gilt für alle Unterseiten)
 const routes: Routes = [
@@ -24,6 +25,7 @@ const routes: Routes = [
       { path: 'ligen/:id',    component: LeagueDetailComponent },
       { path: 'manager',      component: ManagerDataComponent },
       { path: 'achievements', component: AchievementsDataComponent },
+      { path: 'lukaten',      component: LukatenModeComponent },
       { path: 'nutzung',      component: SessionHeatmapComponent },
     ],
   },
@@ -38,6 +40,7 @@ const routes: Routes = [
     AchievementsDataComponent,
     SessionHeatmapComponent,
     SessionDevicesComponent,
+    LukatenModeComponent,
   ],
   imports: [
     CommonModule,

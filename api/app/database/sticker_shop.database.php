@@ -24,13 +24,18 @@ trait StickerShopTrait
     }
 
     /**
-     * Lukaten-Angebote: je eine Pack-Art — maßgeblich sind die Preise hier (shop.model.ts muss passen).
+     * Lukaten-Angebote: je eine Pack-Art — maßgeblich sind die Preise hier. Der Shop liefert sie mit aus
+     * (GET /sticker/shop → prices); shop.model.ts enthält die klassischen als Rückfall.
      * Keys bleiben stabil (bestehende Käufe), l-small = Normales Pack.
+     * $mode = Lukaten-Modus der Saison (LukatenAccountTrait): classic = 100 Lukaten Startguthaben je Liga und
+     * Saison, account = Konto je Manager mit Startbonus 20 — dasselbe Preisverhältnis, durch fünf geteilt.
      */
-    protected function stickerShopOffers(): array
+    protected function stickerShopOffers(string $mode = 'classic'): array
     {
         $kinds = $this->stickerPackKinds();
-        $offers = ['l-small' => ['normal', 15], 'l-big' => ['big', 30], 'l-club' => ['club', 40], 'l-special' => ['special', 45]];
+        $offers = $mode === 'account'
+            ? ['l-small' => ['normal', 3], 'l-big' => ['big', 6], 'l-club' => ['club', 8], 'l-special' => ['special', 9]]
+            : ['l-small' => ['normal', 15], 'l-big' => ['big', 30], 'l-club' => ['club', 40], 'l-special' => ['special', 45]];
         return array_map(fn($o) => $kinds[$o[0]] + ['kind' => $o[0], 'price' => $o[1]], $offers);
     }
 
@@ -59,11 +64,15 @@ trait StickerShopTrait
      */
     public function buyStickerShopOffer(string $managerId, string $offerKey, ?string $clubId): array
     {
+        $seasonId = $this->getActiveSeasonId();
+        if ($seasonId !== null && $this->getSeasonLukatenMode($seasonId) === 'account') {
+            return $this->buyStickerShopOfferFromAccount($managerId, $offerKey, $clubId, $seasonId);
+        }
+
         $offer = $this->stickerShopOffers()[$offerKey] ?? null;
         if (!$offer) return ['error' => 422, 'message' => 'Unbekanntes Angebot'];
 
         $league   = $this->getStickerShopLeague($managerId);
-        $seasonId = $this->getActiveSeasonId();
         if (!$league) return ['error' => 409, 'message' => 'Du spielst in keiner Liga mit Sticker-Album'];
         if ($seasonId === null || !$this->stickerAlbumReady($seasonId)) return ['error' => 409, 'message' => 'Album der Saison existiert noch nicht'];
 
@@ -118,6 +127,63 @@ trait StickerShopTrait
         return ['pack_id' => $packId, 'budget' => $budgetAfter];
     }
 
+    /**
+     * Lukaten-Kauf im Konto-Modus (season.lukaten_mode = account): bezahlt vom Lukaten-Konto des Managers
+     * (LukatenAccountTrait) statt aus der Hauptliga. Pack und Buchung liegen beide in der globalen DB und entstehen
+     * in einer Transaktion; Lock je Manager gegen doppeltes Ausgeben.
+     */
+    private function buyStickerShopOfferFromAccount(string $managerId, string $offerKey, ?string $clubId, string $seasonId): array
+    {
+        $offer = $this->stickerShopOffers('account')[$offerKey] ?? null;
+        if (!$offer) return ['error' => 422, 'message' => 'Unbekanntes Angebot'];
+        if (!$this->isStickerEnabledForManager($managerId)) return ['error' => 409, 'message' => 'Du spielst in keiner Liga mit Sticker-Album'];
+        if (!$this->stickerAlbumReady($seasonId)) return ['error' => 409, 'message' => 'Album der Saison existiert noch nicht'];
+
+        $clubName = null;
+        if ($offer['club']) {
+            if (!$clubId) return ['error' => 422, 'message' => 'Bitte einen Verein wählen'];
+            $clubName = $this->stickerShopClubName($seasonId, $clubId);
+            if ($clubName === null) return ['error' => 422, 'message' => 'Verein ist nicht im Album'];
+        } else {
+            $clubId = null;
+        }
+
+        $lock = 'lukaten:' . md5($managerId);
+        $this->con->prepare("SELECT GET_LOCK(?, 5)")->execute([$lock]);
+        try {
+            try {
+                $budget = $this->getLukatenAccountBalance($managerId, $seasonId);
+            } catch (\Throwable $e) {
+                return ['error' => 409, 'message' => 'Das Lukaten-Konto ist noch nicht eingerichtet'];
+            }
+            if ($budget + 1e-9 < $offer['price']) {
+                return ['error' => 422, 'message' => 'Nicht genug Lukaten (' . $this->formatLukaten($budget) . ' von ' . $offer['price'] . ')'];
+            }
+
+            $this->con->beginTransaction();
+            try {
+                $purchaseId = $this->con->query("SELECT UUID()")->fetchColumn();
+                $packId = $this->insertStickerShopPack($managerId, $seasonId, "shop:{$offerKey}:{$purchaseId}", $offer['kind'], null, $clubId);
+                // INSERT IGNORE meldet eine abgewiesene Buchung nicht als Fehler — ohne Buchung kein Pack
+                if (!$this->bookLukaten($managerId, -$offer['price'], 'pack', "pack:$packId", $seasonId, $packId)) {
+                    throw new \RuntimeException('Lukaten-Buchung wurde nicht angelegt');
+                }
+                $this->con->commit();
+            } catch (\Throwable $e) {
+                $this->con->rollBack();
+                error_log('buyStickerShopOfferFromAccount: ' . $e->getMessage());
+                return ['error' => 409, 'message' => 'Shop-Packs sind noch nicht eingerichtet'];
+            }
+            $budgetAfter = $budget - $offer['price'];
+        } finally {
+            $this->con->prepare("SELECT RELEASE_LOCK(?)")->execute([$lock]);
+        }
+
+        $this->sendStickerShopAdminEmail($managerId, $offer, $clubName, null, $budgetAfter);
+        $this->notifyAdminsOfStickerShop($managerId, $offer, $clubName, null, $budgetAfter);
+        return ['pack_id' => $packId, 'budget' => $budgetAfter];
+    }
+
     /** Name des Vereins, falls er im Album der Saison vorkommt (Vereins-Pack), sonst null. */
     private function stickerShopClubName(string $seasonId, string $clubId): ?string
     {
@@ -134,8 +200,14 @@ trait StickerShopTrait
         return rtrim(rtrim(number_format($v, 2, ',', '.'), '0'), ',');
     }
 
+    /** Woraus bezahlt wurde: Hauptliga (klassisch) oder, ohne Liga, das Lukaten-Konto (Konto-Modus). */
+    private function stickerShopPaidFrom(?string $leagueName): string
+    {
+        return $leagueName !== null ? "bezahlt aus $leagueName" : 'bezahlt vom Lukaten-Konto';
+    }
+
     /** In-App-Benachrichtigung an alle Admins bei jedem Shop-Kauf (analog zur Mail), Absender = Käufer. */
-    private function notifyAdminsOfStickerShop(string $managerId, array $offer, ?string $clubName, string $leagueName, float $budgetAfter): void
+    private function notifyAdminsOfStickerShop(string $managerId, array $offer, ?string $clubName, ?string $leagueName, float $budgetAfter): void
     {
         try {
             $n = $this->con->prepare("SELECT manager_name FROM manager WHERE id = ?");
@@ -143,7 +215,7 @@ trait StickerShopTrait
             $managerName = (string) $n->fetchColumn();
             $what    = $offer['name'] . ($clubName ? " ($clubName)" : '');
             $title   = "Shop-Kauf: $managerName – $what";
-            $message = "{$offer['price']} Lukaten · {$offer['size']} Sticker · bezahlt aus $leagueName · Guthaben danach: "
+            $message = "{$offer['price']} Lukaten · {$offer['size']} Sticker · {$this->stickerShopPaidFrom($leagueName)} · Guthaben danach: "
                 . $this->formatLukaten($budgetAfter) . ' Lukaten';
             foreach ($this->getAdminManagerIds() as $adminId) {
                 $this->createNotification($adminId, $title, $message, $managerId);
@@ -154,7 +226,7 @@ trait StickerShopTrait
     }
 
     /** Mail an alle Admins (mit E-Mail) bei jedem Shop-Kauf. */
-    private function sendStickerShopAdminEmail(string $managerId, array $offer, ?string $clubName, string $leagueName, float $budgetAfter): void
+    private function sendStickerShopAdminEmail(string $managerId, array $offer, ?string $clubName, ?string $leagueName, float $budgetAfter): void
     {
         try {
             $adminEmails = $this->con->query(
@@ -175,7 +247,7 @@ trait StickerShopTrait
                 . "<h2 style=\"margin:0 0 12px;\">Neuer Kauf im Klebrigsten-Shop</h2>"
                 . "<p><strong>" . htmlspecialchars($managerName) . "</strong> hat <strong>" . htmlspecialchars($what) . "</strong> "
                 . "für <strong>{$offer['price']} Lukaten</strong> gekauft ({$offer['size']} Sticker).</p>"
-                . "<p style=\"color:#64748b;\">Bezahlt aus der Liga " . htmlspecialchars($leagueName)
+                . "<p style=\"color:#64748b;\">" . htmlspecialchars(ucfirst($this->stickerShopPaidFrom($leagueName)))
                 . " · Guthaben danach: " . $this->formatLukaten($budgetAfter) . " Lukaten</p>"
                 . "</body></html>";
             $headers = "From: noreply@die-bestesten.de\r\nContent-Type: text/html; charset=UTF-8";
@@ -228,6 +300,7 @@ trait StickerShopTrait
     {
         $seasonId = $this->getActiveSeasonId();
         if ($seasonId === null) return ['purchases' => [], 'total' => 0];
+        if ($this->getSeasonLukatenMode($seasonId) === 'account') return $this->getStickerAccountPurchases($seasonId);
 
         // Shop-Packs der Saison (global) — Details je Pack
         try {
@@ -306,16 +379,76 @@ trait StickerShopTrait
         return ['purchases' => $purchases, 'total' => $total];
     }
 
-    /** GET /sticker/shop — Hauptliga + Lukaten-Guthaben dort (aktive Saison) + eigene Euro-Käufe. */
+    /** Lukaten-Käufe im Konto-Modus: die Pack-Buchungen der Saison aus dem Kontobuch, Form wie getStickerLukatenPurchases(). */
+    private function getStickerAccountPurchases(string $seasonId): array
+    {
+        try {
+            $q = $this->con->prepare(
+                "SELECT lt.pack_id, lt.manager_id, m.manager_name, -lt.amount AS price, lt.created_at,
+                        sp.source_key, sp.pack_kind, sp.club_id, c.name AS club_name, sp.opened_at
+                 FROM lukaten_transaction lt
+                 JOIN manager m ON m.id = lt.manager_id
+                 LEFT JOIN sticker_pack sp ON sp.id = lt.pack_id
+                 LEFT JOIN club c ON c.id = sp.club_id
+                 WHERE lt.source = 'pack' AND lt.season_id = ?
+                 ORDER BY lt.created_at DESC"
+            );
+            $q->execute([$seasonId]);
+            $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return ['purchases' => [], 'total' => 0]; // Migration fehlt
+        }
+
+        $kinds = $this->stickerPackKinds();
+        $total = 0.0;
+        $purchases = array_map(function ($r) use ($kinds, &$total) {
+            $total += (float) $r['price'];
+            $offerKey = explode(':', (string) $r['source_key'])[1] ?? '';
+            return [
+                'pack_id' => $r['pack_id'], 'manager_id' => $r['manager_id'], 'manager_name' => $r['manager_name'],
+                'offer_key' => $offerKey, 'pack_kind' => $r['pack_kind'],
+                'offer_name' => $kinds[$r['pack_kind']]['name'] ?? $offerKey,
+                'club_id' => $r['club_id'], 'club_name' => $r['club_name'],
+                'price' => (float) $r['price'], 'booked' => true, 'league_name' => null,
+                'created_at' => $r['created_at'], 'opened' => $r['opened_at'] !== null,
+            ];
+        }, $rows);
+
+        return ['purchases' => $purchases, 'total' => $total];
+    }
+
+    /**
+     * GET /sticker/shop — Lukaten-Guthaben, Preise und eigene Euro-Käufe. mode = Lukaten-Modus der aktiven Saison:
+     * classic = Guthaben der Hauptliga (aktive Saison), account = Lukaten-Konto des Managers (bucht dabei den
+     * Startbonus der Saison, falls er fehlt). prices = Preis je Lukaten-Angebot in diesem Modus;
+     * lukaten_available = ob Lukaten-Käufe möglich sind.
+     */
     public function getStickerShop(string $managerId): array
     {
-        $league   = $this->getStickerShopLeague($managerId);
         $seasonId = $this->getActiveSeasonId();
+        $mode     = $this->getSeasonLukatenMode($seasonId);
         $eur      = $this->getStickerEurState($managerId, $seasonId);
+        $prices   = array_map(fn($o) => $o['price'], $this->stickerShopOffers($mode));
+
+        if ($mode === 'account') {
+            $budget = null;
+            if ($this->isStickerEnabledForManager($managerId)) {
+                try {
+                    $budget = $this->getLukatenAccountBalance($managerId, $seasonId);
+                } catch (\Throwable $e) {
+                    // Kontobuch fehlt (Migration) → keine Lukaten-Käufe
+                }
+            }
+            return ['mode' => 'account', 'league' => null, 'budget' => $budget, 'lukaten_available' => $budget !== null,
+                    'prices' => $prices, 'season_bonus' => $this->lukatenAccountConfig()['season_bonus'], 'eur' => $eur];
+        }
+
+        $league = $this->getStickerShopLeague($managerId);
+        $base   = ['mode' => 'classic', 'prices' => $prices, 'eur' => $eur];
         if (!$league || !$seasonId) {
-            return ['league' => $league ? ['id' => $league['id'], 'name' => $league['name']] : null, 'budget' => null, 'eur' => $eur];
+            return $base + ['league' => $league ? ['id' => $league['id'], 'name' => $league['name']] : null, 'budget' => null, 'lukaten_available' => false];
         }
         $budget = $this->getManagerLukatenBudget($managerId, $seasonId, null, false, $this->stickerShopConnection($league));
-        return ['league' => ['id' => $league['id'], 'name' => $league['name']], 'budget' => $budget, 'eur' => $eur];
+        return $base + ['league' => ['id' => $league['id'], 'name' => $league['name']], 'budget' => $budget, 'lukaten_available' => true];
     }
 }
