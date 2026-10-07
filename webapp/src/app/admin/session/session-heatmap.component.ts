@@ -469,6 +469,7 @@ export class SessionHeatmapComponent {
     const active   = this.chartMode() === 'active';
     const totals   = this.totalsByBucket();
     const actives  = this.activeByBucket();
+    const devices  = this.deviceTotalsByBucket();
     const values   = cols.map(c => active ? (actives.get(c.key)?.length ?? 0) : (totals.get(c.key) ?? 0));
     // Aktive Manager: volle Höhe = alle Manager der Heatmap; nur wenn alle aktiv waren, ist der Balken voll rot
     const allCount = this.managers().length;
@@ -487,7 +488,11 @@ export class SessionHeatmapComponent {
     const bars = values.map((v, i) => {
       const barHeight = (v / maxValue) * h;
       if (barHeight <= 0) return { path: '', fill: this.chartColor };
-      const fill = active && v < allCount ? this.partlyActiveColor : this.chartColor;
+      // Sessiondauer: Farbe nach Gerätemix aller Manager in diesem Intervall, wie die Zellen darunter
+      // (Desktop Tomato … Mobil Blau); Aktive Manager: Rot-Töne (alle aktiv / nur ein Teil)
+      const fill = active
+        ? (v < allCount ? this.partlyActiveColor : this.chartColor)
+        : this.deviceMixColor(devices.get(cols[i].key));
 
       const x  = i + gap;
       const y  = bottom - barHeight;
@@ -663,6 +668,14 @@ export class SessionHeatmapComponent {
       Math.round(a[1] + (b[1] - a[1]) * t),
       Math.round(a[2] + (b[2] - a[2]) * t),
     ];
+  }
+
+  /** Volle Farbe für einen Mobil/Desktop-Mix (ohne Gerätedaten: Akzentrot wie bisher) */
+  private deviceMixColor(d: { mobile: number; desktop: number } | undefined): string {
+    const sum = (d?.mobile ?? 0) + (d?.desktop ?? 0);
+    if (sum <= 0) return this.chartColor;
+    const [r, g, b] = this.hueForMobileFraction(d!.mobile / sum);
+    return `rgb(${r}, ${g}, ${b})`;
   }
 
   private hueForMobileFraction(fraction: number): Rgb {
