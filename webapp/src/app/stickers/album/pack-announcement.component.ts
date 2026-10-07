@@ -42,8 +42,11 @@ export class PackAnnouncementComponent {
   readonly offerOptOut = signal(false);
   // Abschaltbar unter Einstellungen → Benachrichtigungen → Einblendungen (overlay_pack); dann bleiben
   // neue Packs einfach in der Pack-Leiste im Sammelalbum (+ Badge), ohne groß zu erscheinen
-  // Pausiert, solange z.B. der Bezahl-Dialog eines Euro-Kaufs offen ist — die Packs erscheinen danach
-  private pending = computed(() => !this.notif.overlayAllowed('overlay_pack') || this.status.announcePaused() ? []
+  // Pausiert, solange z.B. der Bezahl-Dialog eines Euro-Kaufs offen ist — die Packs erscheinen danach.
+  // Ebenso im versteckten Tab (Hintergrund/minimiert): eingeblendet und als angekündigt markiert wird erst,
+  // wenn der Tab wieder angesehen wird — sonst wäre das Pack "gezeigt", ohne dass es jemand gesehen hat
+  private pending = computed(() => !this.notif.overlayAllowed('overlay_pack') || this.status.announcePaused()
+    || !this.status.tabVisible() ? []
     : this.status.packs().filter(p => !p.announced && !this.dismissed().has(p.id)));
 
   constructor() {

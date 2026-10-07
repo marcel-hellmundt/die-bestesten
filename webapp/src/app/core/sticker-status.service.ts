@@ -146,15 +146,29 @@ export class StickerStatusService {
   /** Große Pack-Einblendung zurückhalten (z.B. solange der Bezahl-Dialog eines Euro-Kaufs offen ist). */
   readonly announcePaused = signal(false);
 
+  /**
+   * Tab wird gerade angesehen (nicht im Hintergrund/minimiert). Ein versteckter Tab holt kein Tages-Pack ab und
+   * blendet keine Packs ein — sonst gälte ein Pack als angekündigt, das niemand gesehen hat.
+   */
+  readonly tabVisible = signal(!document.hidden);
+
   private started = false;
   private lastDay = '';
 
-  /** Einmalig beim App-Start; prüft danach minütlich auf Tageswechsel (tägliches Pack). */
+  constructor() {
+    document.addEventListener('visibilitychange', () => {
+      this.tabVisible.set(!document.hidden);
+      // Tageswechsel im Hintergrund verpasst → jetzt nachholen
+      if (!document.hidden && this.started && this.today() !== this.lastDay) this.refresh();
+    });
+  }
+
+  /** Einmalig beim App-Start; prüft danach minütlich auf Tageswechsel (tägliches Pack) — nur im sichtbaren Tab. */
   start(): void {
     if (this.started) return;
     this.started = true;
     this.refresh();
-    setInterval(() => { if (this.today() !== this.lastDay) this.refresh(); }, 60_000);
+    setInterval(() => { if (!document.hidden && this.today() !== this.lastDay) this.refresh(); }, 60_000);
   }
 
   refresh(): void {
