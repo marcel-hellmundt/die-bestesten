@@ -6,6 +6,10 @@ Dieses Dokument beschreibt, wie die heutigen Lukaten ab der nächsten Saison in 
 aufgeteilt werden, was dafür technisch nötig ist, wie alte Saisons weiter funktionieren und welche Risiken
 es gibt. Alles, was als „Vorschlag" oder „offen" markiert ist, ist noch nicht entschieden.
 
+**Zwei Varianten.** Die Abschnitte 1–9 beschreiben Variante A (zwei Währungen). Abschnitt 10 beschreibt
+Variante B (eine Währung, Lukaten bleiben). Sie kam am 2026-10-07 dazu, weil zwei Währungen für die Manager
+schwer zu verstehen sein könnten. Welche Variante es wird, ist offen.
+
 ## 1. Ausgangslage und Ziel
 
 Lukaten waren als limitierte Tipp-Währung für das Bestico gedacht: jeder Manager startet mit 100, getippt
@@ -280,7 +284,95 @@ festlegen.
 8. Welche Euro-Anreize zuerst?
 9. Darf gekaufte Währung ins CasinPro?
 
-## Bereits entschieden
+## 10. Variante B: eine Währung, Lukaten bleiben
+
+**Idee**
+
+Es bleibt bei Lukaten. Wer am besten tippt, zeigt die Zahl der richtigen Tipps (gibt es schon:
+`GET /h2h_prediction/standings`). Die Schatzkammer zeigt dann nur noch, wer die meisten Lukaten hat. Dafür
+gibt es nichts Neues zu erklären.
+
+**Kreislauf**
+
+Eine einzige Instanz, die Bank: Alles, was Manager ausgeben, geht an die Bank. Alles, was sie bekommen,
+zahlt die Bank. Bank und Shop, heute zwei Zeilen in der Schatzkammer, werden eine.
+
+```mermaid
+flowchart LR
+    M["Manager-Konten<br/>Start: 100 je Manager und Saison"]
+    B["Bank<br/>hält alles Ausgegebene, zahlt alles aus"]
+    B -- "Tippgewinn: Einsatz × Quote (heute)" --> M
+    B -- "Prämien: Noten, Aufstellung, Achievement, Streak (neu)" --> M
+    B -- "Doppelte Sticker zurückgeben (neu)" --> M
+    M -- "Tipp-Einsatz (heute)" --> B
+    M -- "Sticker-Packs 15–45 (heute)" --> B
+    M -- "Wunschsticker, Holo, Kosmetik, Streak retten (neu)" --> B
+```
+
+| Bank zahlt an Manager | Manager zahlen an die Bank |
+|---|---|
+| Tippgewinn (heute) | Tipp-Einsatz (heute) |
+| Noten eintragen (neu) | Sticker-Packs (heute) |
+| Aufstellung rechtzeitig gesetzt (neu) | Wunschsticker (neu) |
+| Achievement und Streak (neu) | Holo-Veredelung (neu) |
+| Doppelte Sticker zurückgeben (neu) | Kosmetik (neu) |
+| CasinPro-Gewinn (später) | Streak retten (neu) |
+| Euro-Tausch (offen) | CasinPro-Einsatz (später) |
+
+Untereinander verschenken (neu) verschiebt Lukaten zwischen Managern und berührt die Bank nicht.
+
+Weil jede Buchung über die Bank läuft, gilt immer: **Konten + Bank = 100 × Manager** (bei 12 Managern
+1200). Ein Plus der Bank sind ausgegebene Lukaten; ein Minus heißt, dass entsprechend mehr im Umlauf sind als
+zu Saisonbeginn.
+
+Als Bild: https://claude.ai/artifact/9T5fiXDRkyArt8WfQEW95c (privat, nur für den Inhaber sichtbar).
+
+**Die eine Entscheidung: Darf die Bank für Prämien ins Minus?**
+
+Tippgewinne zahlt die Bank immer aus, wie heute. Offen ist nur, ob sie Prämien zahlt, wenn sie leer ist.
+
+| | Geschlossen: nur aus dem Bestand | Offen: auch im Minus |
+|---|---|---|
+| Menge | bleibt bei 100 × Manager, nur die Verteilung ändert sich | wächst mit der Aktivität |
+| Preise | müssen nie angepasst werden | brauchen Pflege, Quellen brauchen Obergrenzen |
+| Nachteil | ist die Bank leer, pausieren die Prämien | Packs und Einsätze verlieren mit der Zeit an Wert |
+| Passt zu | der ursprünglichen Regel „genau 1200, nicht mehr und nicht weniger" | „immer mehr, je nach Aktivität" |
+
+Für die geschlossene Form: Prämien nicht sofort bei jeder Aktivität zahlen (sonst leeren die Ersten den
+Topf), sondern je Spieltag einen festen Anteil des Bankbestands auf alle verteilen, die aktiv waren.
+
+**Euro**
+
+Vorschlag: Euro bleibt außerhalb des Kreislaufs, Packs kauft man weiter direkt. Könnte man Lukaten kaufen,
+ließen sie sich auch auf Tipps setzen — Wetten mit echtem Geld auf Spielausgänge. Das rückt nicht erst das
+CasinPro, sondern das Tippspiel selbst in die Nähe von Glücksspiel. Außerdem starten Lukaten jede Saison
+neu; gekaufte Lukaten würden dann verfallen.
+
+**Technische Folgen**
+
+- Kein Umbenennen, keine zweite Währung in der Oberfläche, kein Saison-Schalter für Beschriftungen.
+- Neue Buchungen (Prämien, weitere Käufe) brauchen ein Kontobuch. Lukaten gibt es je Liga, also eine neue
+  Tabelle auf jeder Liga-DB (Migration je Liga, dev und prod). Budget = 100 − Einsätze + Gewinne −
+  Shop-Käufe + Summe des Kontobuchs.
+- Alte Saisons: Das Kontobuch hat für sie keine Zeilen, sie rechnen unverändert. Offen ist nur, ob ihre
+  Schatzkammer Bank und Shop weiter getrennt zeigt.
+- Die Saison-Auswahl für die Schatzkammer (Abschnitt 5) bleibt nötig.
+- Die Hauptliga-Logik des Shops bleibt. Noten werden global eingetragen, nicht je Liga: Welche Liga-Bank
+  zahlt die Prämie? Vorschlag: die Hauptliga.
+- Geschlossene Form: Die Vergabe muss den Bankbestand kennen und unter Lock laufen; am einfachsten beim
+  Spieltagsabschluss (`PATCH /matchday/:id`), wo schon Packs und Achievements vergeben werden.
+
+**Vergleich der Varianten**
+
+| | A: zwei Währungen | B: eine Währung |
+|---|---|---|
+| Für Manager | zwei Kontostände, zwei Namen | wie heute |
+| Tipp-Wertung über Kontostand | sauber | nicht mehr, Wertung über richtige Tipps |
+| Umbau | groß: Schalter, Kontobuch, Beschriftungen, Shop | klein: Kontobuch je Liga, Bank und Shop zusammenlegen |
+| Euro-Tausch in Währung | möglich, ohne das Tippen zu berühren | nicht ratsam |
+| Risiko Inflation | bei der Spaßwährung | nur in der offenen Form |
+
+## Bereits entschieden (zu Variante A)
 
 - Die Spaßwährung bleibt über den Saisonwechsel erhalten; Besticoin startet je Saison neu.
 - Pleite bei Besticoin heißt kein Nachschub.
