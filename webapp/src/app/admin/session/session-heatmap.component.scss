@@ -143,19 +143,21 @@
 
 .heatmap {
   --row-label-width: 160px;
+  --col-max: 30px; // größte Spaltenbreite = größte Zellenhöhe (Zellen sind quadratisch)
   display: grid;
   grid-template-columns: var(--row-label-width) repeat(var(--col-count), minmax(0, 1fr));
   gap: 4px;
   align-items: center;
   width: 100%;
-  // Deckelt die Gesamtbreite auf "so viel wie N Spalten à 64px + Gaps brauchen" — dadurch
-  // strecken sich die 1fr-Spalten bei wenigen Boxen (z.B. "Monat" = 30) nicht über die
-  // Box-Größe hinaus (das erzeugte vorher großen Leerraum). Ist der verfügbare Platz kleiner
+  // Deckelt die Gesamtbreite auf "so viel wie N Spalten à 30px + Gaps brauchen" — dadurch
+  // werden die (quadratischen) Zellen bei wenigen Spalten (Heute/Tag = bis 24, Wochentag = 7) nicht
+  // größer als bei "Monat", die Zeilen bleiben niedrig und alle Manager passen auf einen Blick
+  // auf den Screen. Ist der verfügbare Platz kleiner
   // als dieser Deckel (z.B. "Jahr" = 52 Spalten), greift width:100% und 1fr schrumpft normal,
   // damit weiterhin alles auf den Screen passt. (fr-Einheiten sind in calc()/min() nicht
   // erlaubt, daher der Umweg über max-width statt einer Deckelung pro Spalte.)
   max-width: calc(
-    var(--row-label-width) + (var(--col-count) * 64px) + ((var(--col-count) - 1) * 4px)
+    var(--row-label-width) + (var(--col-count) * var(--col-max)) + ((var(--col-count) - 1) * 4px)
   );
 }
 
@@ -369,6 +371,7 @@
 
   .heatmap {
     --row-label-width: 80px; // Kästchen + Profilbild + Online-Punkt
+    --col-max: 64px; // mobil feste Zellenhöhe (32px) — Spalten dürfen die Breite ausnutzen
     gap: 0;
   }
 
