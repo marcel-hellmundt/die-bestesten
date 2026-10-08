@@ -285,7 +285,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/matchday/:id',
-                        'description' => 'Entweder completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, Lukaten für die Einträge dieses Spieltags gutschreiben (1 je Eintrag in maintainer_contribution — es zählt, was beim Abschluss gilt: Einsatz und Note gehören dem, der den gültigen Wert eingetragen hat, einen Statistik-Eintrag hat jeder, von dem eine gültige Angabe stammt, siehe PATCH /player_rating/:id; eine Buchung entries:{matchday_id} je Manager mit Systemnachricht, nur Spieltage mit Anpfiff ab entries_since, siehe /lukaten), maintainer_contribution vom Typ "create" für Spieler ohne gesetzte participation (also nicht eingesetzte Kaderspieler) wieder löschen — /player_rating/init vergibt "create" zunächst für den kompletten gültigen Kader, da die echte Aufstellung zu diesem Zeitpunkt noch unbekannt ist, siehe maintainer_contribution in CLAUDE.md —, h2h_prediction.result der H2H-Matches dieses Spieltags auswerten (won/lost je nach tatsächlichem Ergebnis), Achievements auswerten, Notifications senden, Zusammenfassungs-E-Mail an alle Admins mit hinterlegter E-Mail-Adresse senden — Admin. Oder Stammdaten bearbeiten — Body: beliebige Kombination aus number, start_date, kickoff_date; 404 wenn nicht gefunden, 409 wenn Spieltag bereits completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date liegt — Admin',
+                        'description' => 'Entweder completed-Status setzen — Body: { completed: bool }; bei completed=true: team_rating + Transaktionen für alle Teams erstellen, Lukaten für die Einträge dieses Spieltags gutschreiben (1 je Eintrag in maintainer_contribution — es zählt, was beim Abschluss gilt: Einsatz und Note gehören dem, der den gültigen Wert eingetragen hat, einen Statistik-Eintrag hat jeder, von dem eine gültige Angabe stammt, siehe PATCH /player_rating/:id; eine Buchung entries:{matchday_id} je Manager mit Systemnachricht, nur Spieltage mit Anpfiff ab entries_since, siehe /lukaten), maintainer_contribution vom Typ "create" für Spieler ohne gesetzte participation (also nicht eingesetzte Kaderspieler) wieder löschen — /player_rating/init vergibt "create" zunächst für den kompletten gültigen Kader, da die echte Aufstellung zu diesem Zeitpunkt noch unbekannt ist, siehe maintainer_contribution in CLAUDE.md —, h2h_prediction.result der H2H-Matches dieses Spieltags auswerten (won/lost je nach tatsächlichem Ergebnis), Achievements auswerten, Notifications senden, je Manager die Spieltags-Zusammenfassung festhalten (matchday_summary, Einblendung in der Webapp — siehe /matchday_summary), Zusammenfassungs-E-Mail an alle Admins mit hinterlegter E-Mail-Adresse senden — Admin. Oder Stammdaten bearbeiten — Body: beliebige Kombination aus number, start_date, kickoff_date; 404 wenn nicht gefunden, 409 wenn Spieltag bereits completed oder Nummer bereits vergeben, 422 wenn kickoff_date vor start_date liegt — Admin',
                         'path_params' => [':id' => 'UUID des Spieltags'],
                     ],
                     [
@@ -617,7 +617,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/notification',
-                        'description' => 'Alle Benachrichtigungen des eingeloggten Managers, neueste zuerst — Auth',
+                        'description' => 'Alle Benachrichtigungen des eingeloggten Managers, neueste zuerst — [{id,sender_id,sender_name,receiver_id,title,message,created_at,read_at,matchday_summary_id}]; matchday_summary_id = Spieltags-Zusammenfassung, die zu dieser Benachrichtigung gehört (Button "Zusammenfassung ansehen", siehe GET /matchday_summary/:id), sonst null — Auth',
                     ],
                     [
                         'method' => 'PATCH',
@@ -637,12 +637,42 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/notification/preferences',
-                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, sticker_trade, overlay_achievement, overlay_pack} (je bool); sticker_trade = Benachrichtigung bei neuem/beantwortetem Sticker-Tauschangebot; sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack); fehlende Einträge = true (default ON) — Auth',
+                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, sticker_trade, overlay_achievement, overlay_pack, overlay_matchday} (je bool); sticker_trade = Benachrichtigung bei neuem/beantwortetem Sticker-Tauschangebot; sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack, Spieltags-Zusammenfassung); fehlende Einträge = true (default ON) — Auth',
                     ],
                     [
                         'method' => 'PATCH',
                         'path' => '/notification/preferences',
-                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|sticker_trade|overlay_achievement|overlay_pack, enabled: bool}; 422 bei unbekanntem event_type — Auth',
+                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|sticker_trade|overlay_achievement|overlay_pack|overlay_matchday, enabled: bool}; 422 bei unbekanntem event_type — Auth',
+                    ],
+                ],
+            ]),
+
+            new Route('matchday_summary', 'MatchdaySummary', [
+                'title' => 'Matchday Summary',
+                'description' => 'Spieltags-Zusammenfassung: beim Abschluss eines Spieltags (PATCH /matchday/:id completed=true) hält die API je Manager und Liga fest, was er an dem Spieltag geholt hat (Tabelle matchday_summary, Inhalt als JSON). Die Webapp blendet die noch nicht gesehenen der letzten 5 Tage (MatchdaySummaryTrait::matchdaySummaryConfig() → show_days) einmal groß ein und markiert sie dabei als gesehen; über die Benachrichtigung "Spieltag N abgeschlossen" lässt sich die Zusammenfassung später wieder öffnen. Eine Zusammenfassung: {id, created_at, seen_at, version, matchday:{id,number,season_id}, league:{id,name}, team:{id,team_name,color,season_id}|null, result:{valid, points, max_points, rank (Platz am Spieltag unter den gewerteten Teams, null bei ungültiger Aufstellung), teams, table_rank, table_rank_before (Tabellenplatz nach dem vorherigen Spieltag, null am ersten), table_points, table_teams, stats:{goals,assists,clean_sheets,sds,red_cards,yellow_red_cards}, highlights:[{player_id,displayname,position,photo_season_id,goals,assists,sds,points}] (aufgestellte Spieler mit Tor, Vorlage oder SdS), income (Spieltagseinnahmen fürs Budget), fine (Strafe in Euro, 0 = keine), h2h:{match_id,phase,home,opponent:{team_id,team_name,color,season_id},goals_for,goals_against,outcome (win|draw|loss)}|null}|null, extras:{lukaten_entries:{amount,by_type:{participation,note,stats}}|null (Buchung entries:{matchday_id}), bets:{tips,correct,stakes,payouts}|null (Tipps auf die H2H-Matches des Spieltags in dieser Liga), packs:[{source (matchday_best|milestone),milestone_points,size}], achievements:[{name,icon,level,reason}] (beim Abschluss neu vergeben)}}. team/result sind null für Manager ohne Team in der Liga, die aber Lukaten für Einträge bekommen oder getippt haben. Ohne Migration (2026-10-08_matchday_summary.sql) schreibt der Abschluss nichts.',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/matchday_summary',
+                        'description' => 'Was eingeblendet wird → {ready (Tabelle vorhanden), show_days, summaries:[…]} — die noch nicht gesehenen Zusammenfassungen des Managers aus den letzten show_days Tagen, alle seine Ligen, älteste zuerst — Auth',
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/matchday_summary/:id',
+                        'description' => 'Eine eigene Zusammenfassung, egal wie alt (zum Wieder-Öffnen aus der Benachrichtigung, siehe GET /notification → matchday_summary_id); 404 wenn unbekannt oder fremd — Auth',
+                        'path_params' => [':id' => 'UUID der Zusammenfassung'],
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/matchday_summary/preview',
+                        'description' => 'Vorschau für die Verwaltung (/verwaltung/zusammenfassung): die Zusammenfassung eines Managers für einen abgeschlossenen Spieltag der aktuellen Liga, live berechnet — schreibt nichts und zeigt niemandem etwas an; id/created_at/seen_at sind null. Achievements kommen aus einer bereits festgehaltenen Zusammenfassung dieses Spieltags (nachträglich nicht herleitbar), sonst leer. 400 ohne Parameter, 404 wenn es für den Manager an dem Spieltag nichts zu zeigen gibt — Admin',
+                        'query_params' => ['manager_id' => 'UUID des Managers (erforderlich)', 'matchday_id' => 'UUID des Spieltags (erforderlich)'],
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/matchday_summary/seen',
+                        'description' => 'Eigene Zusammenfassungen als gesehen markieren (beim Einblenden, geräteübergreifend) → {status, updated}; 400 ohne ids — Auth',
+                        'body' => ['ids' => 'Array der UUIDs'],
                     ],
                 ],
             ]),

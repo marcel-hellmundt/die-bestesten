@@ -11,6 +11,7 @@ import { AchievementNotificationComponent } from './achievement-notification/ach
 import { BottomSheetComponent } from './bottom-sheet/bottom-sheet.component';
 import { CreateTeamComponent } from './create-team/create-team.component';
 import { StickerSharedModule } from '../stickers/sticker-shared.module';
+import { MatchdaySummaryComponent } from './matchday-summary/matchday-summary.component';
 
 const routes: Routes = [
   {
@@ -36,7 +37,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent, CreateTeamComponent],
+  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent, CreateTeamComponent, MatchdaySummaryComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),

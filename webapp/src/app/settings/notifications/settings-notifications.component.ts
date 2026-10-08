@@ -21,6 +21,7 @@ const NOTIFICATION_ROWS: PrefRow[] = [
 ];
 
 const OVERLAY_ROWS: PrefRow[] = [
+  { key: 'overlay_matchday',    icon: 'spieltag', name: 'Spieltag abgeschlossen', desc: 'Zusammenfassung deines Spieltags: Punkte, Platz und was du sonst bekommen hast — sonst über die Benachrichtigung' },
   { key: 'overlay_achievement', icon: 'award',   name: 'Neues Achievement',   desc: 'Sobald du ein Achievement freigeschaltet hast — sonst nur unter Achievements' },
   { key: 'overlay_pack',        icon: 'sticker', name: 'Neues Sticker-Pack',  desc: 'Neue Packs direkt zum Aufreißen anzeigen — sonst nur im Sammelalbum', sticker: true },
 ];

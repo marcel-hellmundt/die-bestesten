@@ -13,6 +13,7 @@ import { AchievementsDataComponent } from './achievements/achievements-data.comp
 import { SessionHeatmapComponent } from './session/session-heatmap.component';
 import { SessionDevicesComponent } from './session/session-devices.component';
 import { LukatenOverviewComponent } from './lukaten/lukaten-overview.component';
+import { MatchdaySummaryPreviewComponent } from './matchday-summary/matchday-summary-preview.component';
 
 // /verwaltung — nur Admin (AdminGuard an der Route in shell.module.ts, gilt für alle Unterseiten)
 const routes: Routes = [
@@ -26,6 +27,7 @@ const routes: Routes = [
       { path: 'manager',      component: ManagerDataComponent },
       { path: 'achievements', component: AchievementsDataComponent },
       { path: 'lukaten',      component: LukatenOverviewComponent },
+      { path: 'zusammenfassung', component: MatchdaySummaryPreviewComponent },
       { path: 'nutzung',      component: SessionHeatmapComponent },
     ],
   },
@@ -41,6 +43,7 @@ const routes: Routes = [
     SessionHeatmapComponent,
     SessionDevicesComponent,
     LukatenOverviewComponent,
+    MatchdaySummaryPreviewComponent,
   ],
   imports: [
     CommonModule,

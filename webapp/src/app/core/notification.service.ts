@@ -11,6 +11,8 @@ export interface AppNotification {
   message: string | null;
   created_at: string;
   read_at: string | null;
+  /** Spieltags-Zusammenfassung, die zu dieser Benachrichtigung gehört ("Zusammenfassung ansehen") */
+  matchday_summary_id?: string | null;
 }
 
 export type NotificationPreferences = Record<string, boolean>;
@@ -107,8 +109,8 @@ export class NotificationService {
     return this._preferences()[eventType] ?? true;
   }
 
-  /** Einblendung (overlay_achievement / overlay_pack) erlaubt — erst nachdem die Einstellungen geladen sind. */
-  overlayAllowed(eventType: 'overlay_achievement' | 'overlay_pack'): boolean {
+  /** Einblendung (overlay_achievement / overlay_pack / overlay_matchday) erlaubt — erst nachdem die Einstellungen geladen sind. */
+  overlayAllowed(eventType: 'overlay_achievement' | 'overlay_pack' | 'overlay_matchday'): boolean {
     return this._preferencesLoaded() && this.isEnabled(eventType);
   }
 

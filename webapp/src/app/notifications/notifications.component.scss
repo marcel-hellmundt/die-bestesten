@@ -153,6 +153,19 @@
     color: $color-text-muted;
   }
 
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-3;
+    margin-top: $space-5;
+  }
+
+  &__error {
+    font-size: $font-sm;
+    color: $color-danger;
+  }
+
   &__body {
     font-size: $font-sm;
     line-height: 1.7;

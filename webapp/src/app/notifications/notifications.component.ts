@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AppNotification, NotificationService } from '../core/notification.service';
+import { MatchdaySummaryService } from '../core/matchday-summary.service';
 
 @Component({
   selector: 'app-notifications',
@@ -11,7 +12,11 @@ import { AppNotification, NotificationService } from '../core/notification.servi
 export class NotificationsComponent implements OnInit {
   service   = inject(NotificationService);
   private sanitizer = inject(DomSanitizer);
+  private summary   = inject(MatchdaySummaryService);
   selected  = signal<AppNotification | null>(null);
+  /** Spieltags-Zusammenfassung wird gerade geholt bzw. ließ sich nicht öffnen */
+  summaryLoading = signal(false);
+  summaryError   = signal(false);
 
   ngOnInit(): void {
     this.service.reload();
@@ -33,7 +38,22 @@ export class NotificationsComponent implements OnInit {
 
   select(n: AppNotification): void {
     this.selected.set(n);
+    this.summaryError.set(false);
     if (!n.read_at) this.service.markAsRead(n.id);
+  }
+
+  /** Die Zusammenfassung zum Spieltag noch einmal groß einblenden (wie direkt nach dem Abschluss). */
+  openSummary(n: AppNotification): void {
+    if (!n.matchday_summary_id || this.summaryLoading()) return;
+    this.summaryLoading.set(true);
+    this.summaryError.set(false);
+    this.summary.open(n.matchday_summary_id).subscribe({
+      next: () => this.summaryLoading.set(false),
+      error: () => {
+        this.summaryLoading.set(false);
+        this.summaryError.set(true);
+      },
+    });
   }
 
   formatDate(dateStr: string, long = false): string {

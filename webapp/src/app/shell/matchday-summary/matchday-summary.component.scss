@@ -1,0 +1,489 @@
+@use '../../../styles/variables' as *;
+
+.mds-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-4;
+  background: rgba(0, 0, 0, 0.6);
+  animation: mds-fade 0.2s ease;
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: $space-3;
+  }
+}
+
+.mds {
+  --mds-team: #{$color-accent}; // Teamfarbe, per [style] überschrieben
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  overflow: hidden;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  animation: mds-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  // ── Kopf: Spieltag, Team, Liga ──
+  &__head {
+    position: relative;
+    flex-shrink: 0;
+    padding: $space-5 $space-5 $space-4;
+    background: $color-contrast-bg;
+    color: $color-contrast-text;
+    border-bottom: 4px solid var(--mds-team);
+  }
+
+  &__preview {
+    position: absolute;
+    top: $space-3;
+    right: $space-3;
+    padding: 2px $space-2;
+    border-radius: $radius-full;
+    background: $color-surface;
+    color: $color-text;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__kicker {
+    margin: 0 0 $space-2;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  &__team {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+  }
+
+  &__team-text {
+    min-width: 0;
+  }
+
+  &__logo {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: $font-display;
+    font-size: $font-xl;
+    line-height: 1.2;
+    color: inherit;
+    overflow-wrap: anywhere;
+  }
+
+  &__league {
+    margin: 2px 0 0;
+    font-size: $font-sm;
+    opacity: 0.7;
+  }
+
+  // ── Inhalt (scrollt, wenn es viel ist) ──
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    padding: $space-5;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    > * {
+      animation: mds-in 0.4s ease both;
+    }
+    @for $i from 1 through 6 {
+      > :nth-child(#{$i}) {
+        animation-delay: #{0.12 + $i * 0.07}s;
+      }
+    }
+
+    @media (max-width: $mobile-breakpoint) {
+      padding: $space-4;
+    }
+  }
+
+  // Punkte und Platz groß nebeneinander
+  &__hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $space-3;
+  }
+
+  &__big {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: $space-4 $space-2;
+    border-radius: $radius-lg;
+    background: $color-surface-alt;
+    text-align: center;
+
+    &--first {
+      background: color-mix(in srgb, var(--flat-sunflower) 24%, $color-surface);
+    }
+  }
+
+  &__big-value {
+    font-family: $font-display;
+    font-size: 46px;
+    font-weight: $font-weight-bold;
+    line-height: 1;
+    color: $color-text;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__big-label {
+    margin-top: $space-2;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $color-text-muted;
+  }
+
+  &__invalid {
+    margin: 0;
+    padding: $space-4;
+    border-radius: $radius-lg;
+    background: color-mix(in srgb, $color-danger 12%, $color-surface);
+    color: $color-text;
+    font-size: $font-sm;
+    text-align: center;
+  }
+
+  &__table {
+    margin: 0;
+    font-size: $font-sm;
+    text-align: center;
+    color: $color-text-muted;
+
+    strong {
+      color: $color-text;
+    }
+  }
+
+  &__move {
+    margin-left: $space-1;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+
+    &--up {
+      color: $color-success;
+    }
+    &--down {
+      color: $color-danger;
+    }
+  }
+
+  &__table-points {
+    white-space: nowrap;
+  }
+
+  // Tore, Vorlagen, SdS, Weiße Westen
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: $space-2;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: $font-xs;
+    line-height: 1.2;
+    text-align: center;
+    color: $color-text-muted;
+
+    img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
+
+    strong {
+      font-size: $font-lg;
+      color: $color-text;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &--zero {
+      opacity: 0.45;
+    }
+  }
+
+  // Wer getroffen, vorbereitet oder SdS geworden ist
+  &__players {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__player {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-1 $space-3 $space-1 $space-1;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    font-size: $font-sm;
+  }
+
+  &__player-photo {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    border-radius: $radius-full;
+    background: $color-border;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+    }
+  }
+
+  &__player-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+  }
+
+  &__player-icons {
+    display: flex;
+    flex-shrink: 0;
+    gap: 2px;
+
+    img {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+    }
+  }
+
+  &__player-points {
+    flex-shrink: 0;
+    min-width: 26px;
+    text-align: right;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Einnahmen, H2H, Karten, Strafe
+  &__facts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid $color-border;
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $space-3;
+      padding: $space-2 0;
+      border-bottom: 1px solid $color-border;
+      font-size: $font-sm;
+      color: $color-text-muted;
+    }
+
+    strong {
+      flex-shrink: 0;
+      color: $color-text;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__h2h {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    min-width: 0;
+
+    img {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
+  }
+
+  // ── Was nicht zum Spiel gehört: Lukaten, Tipps, Packs, Achievements ──
+  &__extras {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+  }
+
+  &__extras-title {
+    margin: 0;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $color-text-muted;
+  }
+
+  &__extra {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    width: 100%;
+    padding: $space-2 $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+    background: $color-surface;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+
+    &--link {
+      cursor: pointer;
+      transition: background $transition-fast;
+
+      &:hover {
+        background: $color-surface-alt;
+      }
+    }
+  }
+
+  &__extra-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: $radius-sm;
+    }
+  }
+
+  // kleines Pack in der Farbe des Pack-Designs (Meilenstein blau, Spieltagssieger gelb)
+  &__pack {
+    width: 25px;
+    height: 34px;
+    border-radius: 4px;
+    background: #4b7bec;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4), inset 0 5px 0 rgba(0, 0, 0, 0.12);
+
+    &--matchday_best {
+      background: #fed330;
+    }
+  }
+
+  &__extra-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-size: $font-sm;
+      color: $color-text;
+    }
+
+    small {
+      font-size: $font-xs;
+      color: $color-text-muted;
+    }
+  }
+
+  &__extra-value {
+    flex-shrink: 0;
+    font-weight: $font-weight-bold;
+    color: $color-text;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // einfarbig schwarzes Symbol (Vorlage): im Dark-Mode hell, sonst verschwindet es
+  &__mono {
+    :host-context([data-theme="dark"]) & {
+      filter: invert(1);
+    }
+  }
+
+  .is-plus {
+    color: $color-success;
+  }
+
+  .is-minus {
+    color: $color-danger;
+  }
+
+  // ── Fuß ──
+  &__foot {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
+    padding: $space-3 $space-5 $space-4;
+    border-top: 1px solid $color-border;
+
+    @media (max-width: $mobile-breakpoint) {
+      padding: $space-3 $space-4;
+    }
+  }
+
+  &__pager {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+@keyframes mds-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes mds-up {
+  from { opacity: 0; transform: translateY(24px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes mds-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mds-overlay,
+  .mds,
+  .mds__body > * {
+    animation: none;
+  }
+}

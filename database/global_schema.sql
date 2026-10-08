@@ -566,6 +566,23 @@ CREATE TABLE IF NOT EXISTS lukaten_transaction (
     KEY idx_lukaten_transaction_source (source, season_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: matchday_summary (Spieltags-Zusammenfassung je Manager und Liga, beim Spieltagsabschluss festgehalten;
+-- die Webapp blendet die noch nicht gesehenen der letzten Tage einmal groß ein — Migration: 2026-10-08_matchday_summary.sql)
+CREATE TABLE IF NOT EXISTS matchday_summary (
+    id              CHAR(36)   NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id      CHAR(36)   NOT NULL,
+    league_id       CHAR(36)   NOT NULL,  -- Liga, in der der Spieltag abgeschlossen wurde
+    matchday_id     CHAR(36)   NOT NULL,  -- matchday.id (kein FK)
+    notification_id CHAR(36)   NULL,      -- Benachrichtigung "Spieltag N abgeschlossen" (kein FK) — von dort wieder zu öffnen
+    payload         MEDIUMTEXT NOT NULL,  -- Inhalt als JSON, so wie er beim Abschluss galt
+    created_at      DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    seen_at         DATETIME   NULL DEFAULT NULL,  -- NULL = noch nicht eingeblendet
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    FOREIGN KEY (league_id)  REFERENCES league(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_matchday_summary (manager_id, league_id, matchday_id),
+    KEY idx_matchday_summary_matchday (matchday_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Achievements (v2)
 -- Spaltenreihenfolge: id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold
 INSERT IGNORE INTO achievement (id, condition_key, name, description, icon, threshold_bronze, threshold_silver, threshold_gold) VALUES

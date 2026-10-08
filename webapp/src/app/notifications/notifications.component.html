@@ -43,6 +43,16 @@
       @if (n.message) {
         <div class="notif-detail__body" [innerHTML]="renderMessage(n.message)"></div>
       }
+      @if (n.matchday_summary_id) {
+        <div class="notif-detail__actions">
+          <button type="button" class="btn btn-primary" [disabled]="summaryLoading()" (click)="openSummary(n)">
+            Zusammenfassung ansehen
+          </button>
+          @if (summaryError()) {
+            <span class="notif-detail__error">Die Zusammenfassung konnte nicht geladen werden.</span>
+          }
+        </div>
+      }
     } @else {
       <p class="state-msg">Benachrichtigung auswählen.</p>
     }

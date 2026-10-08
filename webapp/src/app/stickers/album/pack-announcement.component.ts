@@ -1,6 +1,7 @@
-import { Component, computed, effect, inject, input, OnInit, output, signal, untracked } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, OnInit, output, signal, untracked } from '@angular/core';
 import { StickerStatusService } from '../../core/sticker-status.service';
 import { NotificationService } from '../../core/notification.service';
+import { MatchdaySummaryService } from '../../core/matchday-summary.service';
 import { StickerCardData } from '../sticker-card/sticker-card.component';
 import { PackCard, PackInfo, packInfo } from './pack.model';
 import { PackOpener } from './pack-opener';
@@ -29,6 +30,7 @@ const OPT_OUT_AFTER_IGNORED_DAYS = 3;
 export class PackAnnouncementComponent {
   private status = inject(StickerStatusService);
   private notif = inject(NotificationService);
+  private summary = inject(MatchdaySummaryService);
   /** in dieser Sitzung schon geschlossen — bis GET /sticker/me die Markierung zurückliefert */
   private dismissed = signal(new Set<string>());
 
@@ -45,11 +47,15 @@ export class PackAnnouncementComponent {
   // Pausiert, solange z.B. der Bezahl-Dialog eines Euro-Kaufs offen ist — die Packs erscheinen danach.
   // Ebenso im versteckten Tab (Hintergrund/minimiert): eingeblendet und als angekündigt markiert wird erst,
   // wenn der Tab wieder angesehen wird — sonst wäre das Pack "gezeigt", ohne dass es jemand gesehen hat
+  // Nach einem Spieltagsabschluss kommt erst die Zusammenfassung (sie nennt die neuen Packs), dann die Packs
   private pending = computed(() => !this.notif.overlayAllowed('overlay_pack') || this.status.announcePaused()
-    || !this.status.tabVisible() ? []
+    || !this.status.tabVisible() || this.summary.blocking() ? []
     : this.status.packs().filter(p => !p.announced && !this.dismissed().has(p.id)));
 
   constructor() {
+    // Shell weg (Abmelden) bei offenem Dialog: die Markierung "offen" nicht stehen lassen
+    inject(DestroyRef).onDestroy(() => this.status.announcing.set(false));
+
     // Neues, noch nicht angekündigtes Pack → Dialog zeigen (einer zur Zeit). active wird mitgelesen, damit
     // ein Pack, das während eines offenen Dialogs dazukommt, nach dem Schließen noch eingeblendet wird.
     effect(() => {
@@ -64,6 +70,7 @@ export class PackAnnouncementComponent {
         this.dismissed.set(new Set([...this.dismissed(), ...ids]));
         this.status.markAnnounced(ids);
         this.active.set(pending.map(packInfo));
+        this.status.announcing.set(true);
       });
     });
   }
@@ -77,6 +84,7 @@ export class PackAnnouncementComponent {
   /** Dialog zu — markiert ist schon beim Einblenden; währenddessen neu dazugekommene Packs erscheinen danach. */
   dismiss(): void {
     this.active.set(null);
+    this.status.announcing.set(false);
   }
 }
 

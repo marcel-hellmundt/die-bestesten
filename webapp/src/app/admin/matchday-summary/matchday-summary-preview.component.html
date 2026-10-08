@@ -1,0 +1,71 @@
+@if (matchdays() === undefined) {
+  <p class="state-msg">Laden…</p>
+} @else if (!matchdays()) {
+  <p class="state-msg state-msg--error">Spieltage und Manager konnten nicht geladen werden.</p>
+} @else {
+  <div class="card preview">
+    <p class="preview__intro">
+      Nach dem Abschluss eines Spieltags sieht jeder Manager einmal groß, was er geholt hat: Punkte, Platz, Torschützen,
+      Einnahmen und darunter Lukaten, Tipps, Packs und Achievements. Hier siehst du diese Einblendung vorab für einen
+      Manager und einen abgeschlossenen Spieltag dieser Liga, mit den echten Daten. Die Vorschau speichert nichts und
+      wird niemandem angezeigt.
+    </p>
+
+    @if (!matchdays()!.length) {
+      <p class="state-msg">In dieser Saison ist noch kein Spieltag abgeschlossen.</p>
+    } @else {
+      <div class="preview__fields">
+        <label class="preview__field">
+          <span>Spieltag</span>
+          <select (change)="matchdayId.set($any($event.target).value)">
+            @for (m of matchdays()!; track m.id) {
+              <option [value]="m.id" [selected]="m.id === matchdayId()">Spieltag {{ m.number }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="preview__field">
+          <span>Manager</span>
+          <select (change)="managerId.set($any($event.target).value)">
+            @for (t of managers(); track t.manager_id) {
+              <option [value]="t.manager_id" [selected]="t.manager_id === managerId()">
+                {{ t.manager_name }} · {{ t.team_name }}
+              </option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <label class="preview__toggle">
+        <span class="toggle">
+          <input type="checkbox" class="toggle__input" [checked]="examples()"
+                 (change)="examples.set($any($event.target).checked)" />
+          <span class="toggle__track"></span>
+        </span>
+        <span class="preview__toggle-text">
+          Alle Bereiche zeigen
+          <small>Was der Manager an dem Spieltag nicht hatte (H2H, Strafe, Lukaten, Tipps, Packs, Achievement), wird mit einem Beispiel gefüllt.</small>
+        </span>
+      </label>
+
+      <button type="button" class="btn btn-primary" [disabled]="loading() || !matchdayId() || !managerId()" (click)="open()">
+        {{ loading() ? 'Lädt…' : 'Vorschau öffnen' }}
+      </button>
+
+      @if (error(); as e) {
+        <p class="state-msg state-msg--error">{{ e }}</p>
+      }
+    }
+  </div>
+
+  <p class="preview__hint">
+    @if (tableReady() === false) {
+      Die Tabelle matchday_summary fehlt noch (Migration 2026-10-08_matchday_summary.sql). Bis dahin hält der
+      Spieltagsabschluss nichts fest und niemand bekommt die Einblendung zu sehen; die Vorschau geht trotzdem.
+    } @else {
+      Echt eingeblendet wird die Zusammenfassung beim ersten Öffnen der App nach dem Abschluss, bis fünf Tage danach und
+      nur einmal. Danach lässt sie sich über die Benachrichtigung zum Spieltag wieder öffnen. Abschalten kann sie jeder
+      unter Einstellungen → Benachrichtigungen → Einblendungen.
+    }
+  </p>
+}

@@ -13,7 +13,15 @@ trait NotificationTrait
              ORDER BY n.created_at DESC"
         );
         $q->execute([':receiver_id' => $managerId]);
-        return $q->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+
+        // Gehört zur Benachrichtigung eine Spieltags-Zusammenfassung, lässt sie sich von dort wieder öffnen
+        $summaryIds = $this->matchdaySummaryIdsByNotification($managerId);
+        foreach ($rows as &$row) {
+            $row['matchday_summary_id'] = $summaryIds[$row['id']] ?? null;
+        }
+        unset($row);
+        return $rows;
     }
 
     public function getUnreadCount(string $managerId): int
@@ -68,6 +76,7 @@ trait NotificationTrait
         $defined = [
             'matchday_completed' => true, 'achievement_earned' => true, 'h2h_draw' => true, 'direct_offer' => true,
             'sticker_pack' => true, 'sticker_trade' => true, 'overlay_achievement' => true, 'overlay_pack' => true,
+            'overlay_matchday' => true,
         ];
         $q = $this->con->prepare(
             "SELECT event_type, enabled FROM notification_preference WHERE manager_id = ?"
@@ -99,9 +108,11 @@ trait NotificationTrait
      * einer knappen Stats-Zeile. Läuft im Kontext der Liga, in der der Spieltag abgeschlossen wurde
      * (con_league) — ein Manager in mehreren Ligen bekommt so je Liga eine eigene Nachricht. Managern ohne
      * Team in dieser Liga wird nichts geschickt (sie haben an dem Spieltag nichts geholt).
+     * Rückgabe: [manager_id => notification_id] — daran hängt die Spieltags-Zusammenfassung (matchday_summary).
      */
-    public function createMatchdayCompletedNotifications(string $matchdayId, int $matchdayNumber): void
+    public function createMatchdayCompletedNotifications(string $matchdayId, int $matchdayNumber): array
     {
+        $created = [];
         $rq = $this->con_league->prepare(
             "SELECT t.manager_id, tr.points, tr.goals, tr.assists, tr.red_cards, tr.yellow_red_cards,
                     tr.clean_sheet, tr.sds, tr.invalid
@@ -111,7 +122,7 @@ trait NotificationTrait
         );
         $rq->execute([$matchdayId]);
         $rows = $rq->fetchAll(PDO::FETCH_ASSOC);
-        if (empty($rows)) return;
+        if (empty($rows)) return $created;
 
         // Nur Manager, die aktiv sind und diese Benachrichtigung nicht abgeschaltet haben
         $q = $this->con->prepare(
@@ -136,7 +147,7 @@ trait NotificationTrait
 
         $insert = $this->con->prepare(
             "INSERT INTO notification (id, receiver_id, title, message, created_at)
-             VALUES (UUID(), ?, ?, ?, NOW())"
+             VALUES (?, ?, ?, ?, NOW())"
         );
         foreach ($rows as $r) {
             if (!isset($enabled[$r['manager_id']])) continue;
@@ -157,8 +168,11 @@ trait NotificationTrait
                 $body = "$lead\n\nDu hast $points " . ($points === 1 ? 'Punkt' : 'Punkte') . ' geholt und damit Platz '
                     . $rankOf($points) . " von $validCount belegt.\n\n$stats";
             }
-            $insert->execute([$r['manager_id'], $title, $body]);
+            $id = $this->con->query("SELECT UUID()")->fetchColumn();
+            $insert->execute([$id, $r['manager_id'], $title, $body]);
+            $created[$r['manager_id']] = $id;
         }
+        return $created;
     }
 
     /** Name der aktuellen Liga (aus dem JWT, sonst die per DB_NAME_LEAGUE konfigurierte Deployment-Liga). */

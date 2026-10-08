@@ -73,7 +73,7 @@ trait AchievementTrait
         $newItems = [];
 
         $achievements = $this->con->query(
-            "SELECT id, condition_key, name FROM achievement"
+            "SELECT id, condition_key, name, icon FROM achievement"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         if (empty($achievements)) return ['count' => 0, 'new' => []];
@@ -102,8 +102,10 @@ trait AchievementTrait
                 if ($stmt->rowCount() > 0) {
                     $newCount++;
                     $newItems[] = [
+                        'manager_id'       => $managerId,
                         'manager_name'     => $managerNames[$managerId] ?? $managerId,
                         'achievement_name' => $achievement['name'],
+                        'icon'             => $achievement['icon'],
                         'level'            => $level,
                         'reason'           => $meta['reason'] ?? null,
                     ];

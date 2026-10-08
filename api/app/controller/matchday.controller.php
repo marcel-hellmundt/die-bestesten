@@ -97,7 +97,13 @@ class MatchdayController extends _BaseController
             }
             $achResult   = $this->db->evaluateAchievements(true);
             $achievements = $achResult['count'];
-            $this->db->createMatchdayCompletedNotifications($this->id, (int) $matchday['number']);
+            $notificationIds = $this->db->createMatchdayCompletedNotifications($this->id, (int) $matchday['number']);
+            // Zusammenfassung je Manager festhalten (Einblendung in der Webapp) — darf den Abschluss nicht aufhalten
+            try {
+                $this->db->createMatchdaySummaries($this->id, $achResult['new'], $notificationIds);
+            } catch (\Throwable $e) {
+                error_log('createMatchdaySummaries: ' . $e->getMessage());
+            }
             $this->db->sendMatchdayCompletedAdminEmail($this->id, $teamRatings, $achResult['new'], (int) $matchday['number'], $pointsBonus);
             if ((int) $matchday['number'] === 34) {
                 $leagueId = $GLOBALS['auth_league_id'] ?? null;

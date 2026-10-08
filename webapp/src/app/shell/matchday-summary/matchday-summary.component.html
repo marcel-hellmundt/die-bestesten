@@ -1,0 +1,209 @@
+@if (current(); as s) {
+  <div class="mds-overlay" (click)="close()">
+    <div class="mds" role="dialog" aria-modal="true"
+         [attr.aria-label]="'Zusammenfassung Spieltag ' + s.matchday.number"
+         [style.--mds-team]="s.team?.color || null"
+         (click)="$event.stopPropagation()">
+
+      <header class="mds__head">
+        @if (svc.preview()) {
+          <span class="mds__preview">Vorschau</span>
+        }
+        <p class="mds__kicker">Spieltag {{ s.matchday.number }} abgeschlossen</p>
+        @if (s.team; as t) {
+          <div class="mds__team">
+            <img class="mds__logo" [src]="teamLogoUrl(t)" alt="" (error)="hide($event)" />
+            <div class="mds__team-text">
+              <h2 class="mds__title">{{ t.team_name }}</h2>
+              @if (s.league.name) {
+                <p class="mds__league">{{ s.league.name }}</p>
+              }
+            </div>
+          </div>
+        } @else {
+          <h2 class="mds__title">Dein Spieltag</h2>
+        }
+      </header>
+
+      <!-- der Schlüssel lässt die Einblend-Animation je Zusammenfassung neu laufen -->
+      @for (page of [s]; track position()) {
+        <div class="mds__body">
+          @if (page.result; as r) {
+            @if (r.valid) {
+              <div class="mds__hero">
+                <div class="mds__big">
+                  <span class="mds__big-value">{{ r.points }}</span>
+                  <span class="mds__big-label">{{ r.points === 1 ? 'Punkt' : 'Punkte' }}</span>
+                </div>
+                <div class="mds__big" [class.mds__big--first]="r.rank === 1">
+                  <span class="mds__big-value">{{ r.rank }}.</span>
+                  <span class="mds__big-label">{{ r.rank === 1 ? 'Spieltagssieg' : 'Platz von ' + r.teams }}</span>
+                </div>
+              </div>
+            } @else {
+              <p class="mds__invalid">
+                Dein Team wurde an diesem Spieltag nicht gewertet (ungültige Aufstellung).
+              </p>
+            }
+
+            <p class="mds__table">
+              Tabelle: <strong>Platz {{ r.table_rank }}</strong> von {{ r.table_teams }}
+              @if (move(r); as m) {
+                @if (m.dir === 'up') {
+                  <span class="mds__move mds__move--up">▲ {{ m.by }}</span>
+                } @else if (m.dir === 'down') {
+                  <span class="mds__move mds__move--down">▼ {{ m.by }}</span>
+                } @else {
+                  <span class="mds__move">unverändert</span>
+                }
+              }
+              <span class="mds__table-points">· {{ r.table_points }} Punkte</span>
+            </p>
+
+            @if (r.valid) {
+              <ul class="mds__stats">
+                <li class="mds__stat" [class.mds__stat--zero]="!r.stats.goals">
+                  <img src="img/icons/goal.png" alt="" /><strong>{{ r.stats.goals }}</strong>{{ r.stats.goals === 1 ? 'Tor' : 'Tore' }}
+                </li>
+                <li class="mds__stat" [class.mds__stat--zero]="!r.stats.assists">
+                  <img class="mds__mono" src="img/icons/assist.png" alt="" /><strong>{{ r.stats.assists }}</strong>{{ r.stats.assists === 1 ? 'Vorlage' : 'Vorlagen' }}
+                </li>
+                <li class="mds__stat" [class.mds__stat--zero]="!r.stats.sds">
+                  <img src="img/icons/sds.png" alt="" /><strong>{{ r.stats.sds }}</strong>SdS
+                </li>
+                <li class="mds__stat" [class.mds__stat--zero]="!r.stats.clean_sheets">
+                  <img src="img/icons/clean_sheet.png" alt="" /><strong>{{ r.stats.clean_sheets }}</strong>{{ r.stats.clean_sheets === 1 ? 'Weiße Weste' : 'Weiße Westen' }}
+                </li>
+              </ul>
+            }
+
+            @if (r.highlights.length) {
+              <ul class="mds__players">
+                @for (p of r.highlights; track p.player_id) {
+                  <li class="mds__player">
+                    <span class="mds__player-photo">
+                      @if (p.photo_season_id) {
+                        <img [src]="playerPhotoUrl(p)" alt="" (error)="hide($event)" />
+                      }
+                    </span>
+                    <span class="mds__player-name">{{ p.displayname }}</span>
+                    <span class="mds__player-icons">
+                      @if (p.sds) {
+                        <img src="img/icons/sds.png" alt="Spieler des Spiels" title="Spieler des Spiels" />
+                      }
+                      @for (i of times(p.goals); track i) {
+                        <img src="img/icons/goal.png" alt="Tor" title="Tor" />
+                      }
+                      @for (i of times(p.assists); track i) {
+                        <img class="mds__mono" src="img/icons/assist.png" alt="Vorlage" title="Vorlage" />
+                      }
+                    </span>
+                    <span class="mds__player-points">{{ p.points }}</span>
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (hasFacts(r)) {
+              <ul class="mds__facts">
+                @if (r.income > 0) {
+                  <li>
+                    <span>Einnahmen für neue Spieler</span>
+                    <strong class="is-plus">+{{ money(r.income) }}</strong>
+                  </li>
+                }
+                @if (r.h2h; as m) {
+                  <li>
+                    <span class="mds__h2h">
+                      H2H gegen
+                      <img [src]="teamLogoUrl(m.opponent)" alt="" (error)="hide($event)" />
+                      {{ m.opponent.team_name }}
+                    </span>
+                    <strong [class.is-plus]="m.outcome === 'win'" [class.is-minus]="m.outcome === 'loss'">
+                      {{ m.goals_for }}:{{ m.goals_against }} · {{ outcomeLabel(m) }}
+                    </strong>
+                  </li>
+                }
+                @if (cardsText(r); as cards) {
+                  <li>
+                    <span>Karten</span>
+                    <strong>{{ cards }}</strong>
+                  </li>
+                }
+                @if (r.fine > 0) {
+                  <li>
+                    <span>Strafe</span>
+                    <strong class="is-minus">{{ euro(r.fine) }}</strong>
+                  </li>
+                }
+              </ul>
+            }
+          }
+
+          @if (hasExtras(page.extras)) {
+            <section class="mds__extras">
+              <h3 class="mds__extras-title">{{ page.result ? 'Außerdem' : 'Das hast du bekommen' }}</h3>
+
+              @if (page.extras.lukaten_entries; as e) {
+                <button type="button" class="mds__extra mds__extra--link" (click)="openAccount()">
+                  <span class="mds__extra-icon"><img src="img/icons/lukat.png" alt="" /></span>
+                  <span class="mds__extra-text">
+                    <strong>Lukaten für deine Einträge</strong>
+                    <small>{{ entriesText(e) }}</small>
+                  </span>
+                  <span class="mds__extra-value is-plus">+{{ lukaten(e.amount) }}</span>
+                </button>
+              }
+
+              @if (page.extras.bets; as b) {
+                <div class="mds__extra">
+                  <span class="mds__extra-icon"><img src="img/bestico/bank.png" alt="" /></span>
+                  <span class="mds__extra-text">
+                    <strong>Tipps</strong>
+                    <small>{{ betsText(b) }}</small>
+                  </span>
+                  @if (b.stakes > 0) {
+                    <span class="mds__extra-value" [class.is-plus]="betsNet(b) > 0" [class.is-minus]="betsNet(b) < 0">
+                      {{ signedLukaten(betsNet(b)) }}
+                    </span>
+                  }
+                </div>
+              }
+
+              @for (p of page.extras.packs; track $index) {
+                <div class="mds__extra">
+                  <span class="mds__extra-icon"><span class="mds__pack mds__pack--{{ p.source }}"></span></span>
+                  <span class="mds__extra-text">
+                    <strong>{{ packTitle(p) }}</strong>
+                    <small>{{ packText(p) }}</small>
+                  </span>
+                </div>
+              }
+
+              @for (a of page.extras.achievements; track $index) {
+                <div class="mds__extra">
+                  <span class="mds__extra-icon">
+                    <img [src]="'img/achievements/' + (a.icon ?? 'cup') + '.png'" alt="" />
+                  </span>
+                  <span class="mds__extra-text">
+                    <strong>{{ achievementTitle(a) }}</strong>
+                    <small>{{ a.reason || 'Neues Achievement' }}</small>
+                  </span>
+                </div>
+              }
+            </section>
+          }
+        </div>
+      }
+
+      <footer class="mds__foot">
+        @if (count() > 1) {
+          <span class="mds__pager">{{ position() + 1 }} von {{ count() }}</span>
+        }
+        <button type="button" class="btn btn-primary" [class.btn-full]="count() <= 1" (click)="next()">
+          {{ isLast() ? 'Alles klar' : 'Weiter' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}
