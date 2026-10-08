@@ -16,8 +16,9 @@ interface ManagerOption {
 }
 
 /**
- * Füllt jeden Bereich, den der Manager an dem Spieltag nicht hatte, mit einem Beispiel — so lässt sich die ganze
- * Einblendung ansehen, auch wenn z.B. niemand getippt oder ein Achievement bekommen hat.
+ * Füllt die Bereiche, die der Manager an dem Spieltag nicht hatte, mit einem Beispiel — so lässt sich die ganze
+ * Einblendung ansehen, auch wenn z.B. niemand getippt oder ein Achievement bekommen hat. Nur das H2H-Ergebnis wird
+ * nie erfunden: es erscheint, wenn das Team an dem Spieltag wirklich ein Match hatte.
  */
 function withExamples(s: MatchdaySummary): MatchdaySummary {
   const r = s.result;
@@ -31,11 +32,7 @@ function withExamples(s: MatchdaySummary): MatchdaySummary {
       ],
       income: r.income > 0 ? r.income : 1_640_000,
       fine: r.fine > 0 ? r.fine : 2,
-      h2h: r.h2h ?? {
-        match_id: 'example', phase: 'group', home: true,
-        opponent: { team_id: 'example', team_name: 'Beispielgegner', color: null, season_id: s.matchday.season_id },
-        goals_for: 2, goals_against: 1, outcome: 'win',
-      },
+      // H2H bleibt echt: nur wenn das Team an dem Spieltag wirklich ein Match hatte (dann mit dem Logo des Gegners)
     },
     extras: {
       lukaten_entries: s.extras.lukaten_entries ?? { amount: 42, by_type: { participation: 22, note: 14, stats: 6 } },

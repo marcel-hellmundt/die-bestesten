@@ -9,9 +9,10 @@ import {
 
 /**
  * Spieltags-Zusammenfassung als große Einblendung (wie neue Packs oder Achievements): oben das Spiel — Punkte, Platz
- * am Spieltag, Tabellenplatz mit Veränderung, Torschützen, Einnahmen, H2H, Strafe —, darunter was sonst dazukam
- * (Lukaten für Einträge, Tipps, Packs, Achievements). Zeigt, was der MatchdaySummaryService gerade vorgibt; mehrere
- * (mehrere Ligen oder Spieltage) nacheinander mit "Weiter".
+ * am Spieltag, Tabellenplatz mit Veränderung, Torschützen, Einnahmen, H2H, Strafe. Das Seltene steht ganz oben auf
+ * grauem Grund nebeneinander (neue Achievements, Extra-Packs für Spieltagssieg oder Meilenstein), unten unter
+ * "Außerdem" kompakt Lukaten für Einträge und Tipps (je Symbol + Betrag). Zeigt, was der MatchdaySummaryService
+ * gerade vorgibt; mehrere (mehrere Ligen oder Spieltage) nacheinander mit "Weiter".
  */
 @Component({
   selector: 'app-matchday-summary',
@@ -137,8 +138,14 @@ export class MatchdaySummaryComponent {
     return r.income > 0 || r.h2h !== null || r.fine > 0 || this.cardsText(r) !== '';
   }
 
+  /** Das Seltene, oben auf grauem Grund: neue Achievements und Extra-Packs (Spieltagssieg, Meilenstein) */
+  hasRewards(e: SummaryExtras): boolean {
+    return e.packs.length > 0 || e.achievements.length > 0;
+  }
+
+  /** "Außerdem": Lukaten für Einträge und Tipps, je nur Symbol + Betrag */
   hasExtras(e: SummaryExtras): boolean {
-    return !!e.lukaten_entries || !!e.bets || e.packs.length > 0 || e.achievements.length > 0;
+    return !!e.lukaten_entries || !!e.bets;
   }
 
   /** z.B. "für 12 Einträge: 6 Einsätze, 4 Noten, 2× Statistik" */
@@ -167,9 +174,8 @@ export class MatchdaySummaryComponent {
     return p.source === 'matchday_best' ? 'Spieltagssieger-Pack' : 'Meilenstein-Pack';
   }
 
-  packText(p: SummaryPack): string {
-    const why = p.source === 'matchday_best' ? 'bestes Team des Spieltags' : `${p.milestone_points} Saisonpunkte erreicht`;
-    return `${why} · ${p.size} Sticker`;
+  packReason(p: SummaryPack): string {
+    return p.source === 'matchday_best' ? 'bestes Team des Spieltags' : `${p.milestone_points} Saisonpunkte erreicht`;
   }
 
   achievementTitle(a: SummaryAchievement): string {

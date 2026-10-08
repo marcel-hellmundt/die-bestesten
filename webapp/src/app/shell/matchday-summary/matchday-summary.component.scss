@@ -93,6 +93,55 @@
     color: color-mix(in srgb, var(--mds-team-ink) 68%, transparent);
   }
 
+  // ── Das Seltene zuerst: neue Achievements und Extra-Packs nebeneinander auf grauem Grund ──
+  &__rewards {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: $space-3 $space-4;
+    padding: $space-4 $space-5;
+    background: $color-surface-alt;
+
+    @media (max-width: $mobile-breakpoint) {
+      padding: $space-3 $space-4;
+    }
+  }
+
+  &__reward {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 96px;
+    max-width: 170px;
+    text-align: center;
+
+    strong {
+      font-size: $font-sm;
+      line-height: 1.25;
+      color: $color-text;
+    }
+
+    small {
+      font-size: $font-xs;
+      line-height: 1.3;
+      color: $color-text-muted;
+    }
+  }
+
+  &__reward-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: $space-1;
+    border-radius: $radius-md;
+    object-fit: contain;
+  }
+
   // ── Inhalt (scrollt, wenn es viel ist) ──
   &__body {
     display: flex;
@@ -331,17 +380,18 @@
 
     img {
       flex-shrink: 0;
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       object-fit: contain;
     }
   }
 
-  // ── Was nicht zum Spiel gehört: Lukaten, Tipps, Packs, Achievements ──
+  // ── Was nicht zum Spiel gehört, kompakt: Lukaten für Einträge und Tipps als Symbol + Betrag ──
   &__extras {
     display: flex;
-    flex-direction: column;
-    gap: $space-2;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-3;
   }
 
   &__extras-title {
@@ -353,18 +403,33 @@
     color: $color-text-muted;
   }
 
-  &__extra {
+  &__chips {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: $space-2;
+  }
+
+  &__chip {
+    display: inline-flex;
     align-items: center;
-    gap: $space-3;
-    width: 100%;
-    padding: $space-2 $space-3;
+    gap: 6px;
+    padding: $space-1 $space-3 $space-1 $space-2;
     border: 1px solid $color-border;
-    border-radius: $radius-lg;
+    border-radius: $radius-full;
     background: $color-surface;
-    color: inherit;
+    color: $color-text;
     font: inherit;
-    text-align: left;
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+
+    img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
 
     &--link {
       cursor: pointer;
@@ -376,58 +441,18 @@
     }
   }
 
-  &__extra-icon {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-
-    img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      border-radius: $radius-sm;
-    }
-  }
-
   // kleines Pack in der Farbe des Pack-Designs (Meilenstein blau, Spieltagssieger gelb)
   &__pack {
-    width: 25px;
-    height: 34px;
-    border-radius: 4px;
+    display: block;
+    width: 32px;
+    height: 44px;
+    border-radius: 5px;
     background: #4b7bec;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4), inset 0 5px 0 rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4), inset 0 6px 0 rgba(0, 0, 0, 0.12);
 
     &--matchday_best {
       background: #fed330;
     }
-  }
-
-  &__extra-text {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-width: 0;
-
-    strong {
-      font-size: $font-sm;
-      color: $color-text;
-    }
-
-    small {
-      font-size: $font-xs;
-      color: $color-text-muted;
-    }
-  }
-
-  &__extra-value {
-    flex-shrink: 0;
-    font-weight: $font-weight-bold;
-    color: $color-text;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
   }
 
   // einfarbig schwarzes Symbol (Vorlage): im Dark-Mode hell, sonst verschwindet es
