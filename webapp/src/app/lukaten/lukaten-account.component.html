@@ -18,8 +18,10 @@
     <section class="card balance">
       <div class="balance__main">
         <img class="balance__icon" src="img/icons/lukat.png" alt="" />
-        <span class="balance__value" [class.is-minus]="(a.balance ?? 0) < 0">{{ balanceParts().whole }}@if (balanceParts().fraction) {<small class="balance__fraction">{{ balanceParts().fraction }}</small>}</span>
-        <span class="balance__unit">Lukaten</span>
+        <div class="balance__figure">
+          <span class="balance__label">Kontostand</span>
+          <span class="balance__value" [class.is-minus]="(a.balance ?? 0) < 0">{{ balanceParts().whole }}@if (balanceParts().fraction) {<small class="balance__fraction">{{ balanceParts().fraction }}</small>}</span>
+        </div>
       </div>
       @if (totals().length) {
         <ul class="balance__totals">
@@ -38,130 +40,173 @@
       }
     </section>
 
-    <!-- ── Bekommen ── -->
-    <section class="block">
-      <h2 class="block__title">So bekommst du Lukaten</h2>
-      <div class="ways">
-        <article class="card way way--wide">
-          <header class="way__head">
-            <h3>Einträge</h3>
-            <span class="way__amount">+1 je Eintrag</span>
+    <div class="columns">
+      <!-- ── Links: bekommen ── -->
+      <section class="block">
+        <h2 class="block__title">So bekommst du Lukaten</h2>
+
+        <article class="card earn">
+          <header class="earn__head">
+            <div>
+              <h3 class="earn__title">Einträge</h3>
+              <p class="earn__sub">1 Eintrag bei den Spieltagsdaten = 1 Lukate</p>
+            </div>
+            <span class="earn__amount">+1</span>
           </header>
-          <p>
-            Für jeden Eintrag bei den Spieltagsdaten gibt es eine Lukate. Je Spieler und Spieltag kannst du bis zu
-            drei bekommen: für den Einsatz (Startelf oder eingewechselt), für die Note und für die Statistik
-            (Tore, Vorlagen, Weiße Weste, Spieler des Spiels, Karten).
-          </p>
-          <p>
-            Es zählt, was beim Abschluss des Spieltags gilt. Bei Einsatz und Note gehört der Eintrag dem, der den
-            gültigen Wert eingetragen hat: Korrigierst du einen falschen Wert, geht der Eintrag an dich, und wer ihn
-            vorher eingetragen hat, bekommt dafür nichts.
-          </p>
-          <p>
-            Bei der Statistik bekommt jeder einen Eintrag, von dem eine gültige Angabe stammt. Trägt einer das erste
-            Tor eines Spielers ein und ein anderer das zweite, haben beide einen Eintrag. Wer alles allein einträgt,
-            hat einen.
-          </p>
-          <p>
-            Speichern ohne Änderung bringt nichts. Wer einen Wert ändert und wieder zurückstellt, bekommt den Eintrag
-            auch nicht: Er bleibt bei dem, der ihn zuerst so eingetragen hat.
-          </p>
-          <p>Gutgeschrieben wird, sobald der Spieltag abgeschlossen ist, als eine Buchung für den ganzen Spieltag.</p>
+
+          <!-- je Spieler und Spieltag bis zu drei Einträge -->
+          <ul class="entry-types">
+            <li>
+              <img src="img/icons/part-starting.svg" alt="" />
+              <span>Einsatz</span>
+              <b>+1</b>
+            </li>
+            <li>
+              <span class="entry-types__grade" aria-hidden="true">2,5</span>
+              <span>Note</span>
+              <b>+1</b>
+            </li>
+            <li>
+              <img src="img/icons/goal.png" alt="" />
+              <span>Statistik</span>
+              <b>+1</b>
+            </li>
+          </ul>
+
           @if (a.pending_entries; as e) {
-            <p class="way__status">
-              @if (e.count > 0) {
-                <b>{{ format(e.count) }} {{ e.count === 1 ? 'Eintrag' : 'Einträge' }}</b> am laufenden Spieltag
-                ({{ entryBreakdown(e.by_type) }}), gebucht beim Abschluss.
-              } @else {
-                Am laufenden Spieltag hast du noch nichts eingetragen.
-              }
-            </p>
+            @if (e.count > 0 || canContribute) {
+              <div class="pending">
+                <div class="pending__text">
+                  <span class="pending__label">Laufender Spieltag</span>
+                  <span class="pending__detail">
+                    {{ e.count > 0 ? entryBreakdown(e.by_type) + ' · gebucht beim Abschluss' : 'Noch nichts eingetragen' }}
+                  </span>
+                </div>
+                <b class="pending__amount" [class.pending__amount--zero]="e.count === 0">+{{ format(e.count) }}</b>
+              </div>
+            }
           }
+
           @if (canContribute) {
-            <a class="btn btn-primary btn-sm way__link" routerLink="/daten/ratings">Noten eintragen</a>
+            <a class="btn btn-primary btn-sm earn__link" routerLink="/daten/ratings">Noten eintragen</a>
           } @else {
-            <p class="way__meta">Eintragen dürfen Manager, die ein Admin dafür freigeschaltet hat.</p>
+            <p class="earn__meta">Eintragen dürfen Manager, die ein Admin dafür freigeschaltet hat.</p>
           }
+
+          <details class="rules">
+            <summary>So wird gezählt</summary>
+            <ul>
+              <li>Je Spieler und Spieltag gibt es bis zu drei Einträge: Einsatz, Note und Statistik.</li>
+              <li>Gutgeschrieben wird beim Abschluss des Spieltags, als eine Buchung.</li>
+              <li>Einsatz und Note gehören dem, dessen Wert am Ende gilt. Wer einen falschen Wert korrigiert, übernimmt den Eintrag.</li>
+              <li>Bei der Statistik zählt jeder, von dem eine gültige Angabe stammt, zum Beispiel einer das erste Tor und ein anderer das zweite.</li>
+              <li>Speichern ohne Änderung zählt nicht.</li>
+            </ul>
+          </details>
         </article>
 
-        <article class="card way">
-          <header class="way__head">
-            <h3>Startbonus</h3>
-            <span class="way__amount">+{{ format(rules.season_bonus) }}</span>
-          </header>
-          <p>
-            Zu Beginn jeder Saison, automatisch und einmal je Manager, egal in wie vielen Ligen du spielst.
-            Was am Saisonende übrig ist, bleibt auf deinem Konto.
-          </p>
+        <article class="card earn earn--row">
+          <div>
+            <h3 class="earn__title">Startbonus</h3>
+            <p class="earn__sub">Zu Beginn jeder Saison, automatisch. Was übrig ist, bleibt auf dem Konto.</p>
+          </div>
+          <span class="earn__amount">+{{ format(rules.season_bonus) }}</span>
         </article>
 
-        <article class="card way" [class.way--disabled]="!eurAvailable()" [attr.inert]="eurAvailable() ? null : ''">
-          <header class="way__head">
-            <h3>Kaufen</h3>
+        <article class="card earn" [class.earn--disabled]="!eurAvailable()" [attr.inert]="eurAvailable() ? null : ''">
+          <header class="earn__head">
+            <div>
+              <h3 class="earn__title">Kaufen</h3>
+              <p class="earn__sub">Gegen Euro per PayPal, sofort auf dem Konto</p>
+            </div>
           </header>
-          <p>Lukaten gegen Euro, bezahlt per PayPal. Du bekommst sie sofort.</p>
           <ul class="bundles">
             @for (b of rules.eur_bundles; track b.key) {
               <li>
-                <span class="bundles__amount">
-                  <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
-                  <b>{{ format(b.lukaten) }}</b>
-                  @if (bonusPct(b) > 0) { <span class="bundles__bonus">+{{ bonusPct(b) }} %</span> }
-                </span>
-                <button type="button" class="btn btn-primary btn-sm" [disabled]="eurBlocked()" (click)="open(b)">
-                  {{ formatEur(b.amount_cents) }}
+                <button type="button" class="bundle" [disabled]="eurBlocked()" (click)="open(b)"
+                        [attr.aria-label]="format(b.lukaten) + ' Lukaten für ' + formatEur(b.amount_cents) + ' kaufen'">
+                  @if (bonusPct(b) > 0) { <span class="bundle__bonus">+{{ bonusPct(b) }} %</span> }
+                  <img class="bundle__icon" src="img/icons/lukat.png" alt="" />
+                  <b class="bundle__amount">{{ format(b.lukaten) }}</b>
+                  <span class="bundle__price">{{ formatEur(b.amount_cents) }}</span>
                 </button>
               </li>
             }
           </ul>
           @if (eurBlocked()) {
-            <p class="way__meta">Du hast {{ eurPending().length }} offene Zahlungen. Bitte erst bezahlen, dann geht es weiter.</p>
+            <p class="earn__meta">Du hast {{ eurPending().length }} offene Zahlungen. Bitte erst bezahlen, dann geht es weiter.</p>
           }
         </article>
-      </div>
 
-      <!-- Eigene, noch nicht bestätigte Lukaten-Käufe: hier bezahlen -->
-      @if (eurPending().length) {
-        <div class="card pay-box">
-          <h3 class="pay-box__title">Offene Zahlungen</h3>
-          @for (p of eurPending(); track p.id) {
-            <div class="pay-row">
-              <span class="pay-row__text">
-                <b>{{ format(bundleFor(p.offer_key)?.lukaten) }} Lukaten</b> · {{ formatEur(p.amount_cents) }}
-                <small>Code <button type="button" class="code" (click)="copy(p.code)" title="Code kopieren">{{ p.code }}</button>
-                  @if (copied() === p.code) { kopiert } · {{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }}</small>
-              </span>
-              <a class="btn btn-primary btn-sm" [href]="p.paypal_url" target="_blank" rel="noopener">Mit PayPal bezahlen</a>
+        <!-- Eigene, noch nicht bestätigte Lukaten-Käufe: hier bezahlen -->
+        @if (eurPending().length) {
+          <div class="card pay-box">
+            <h3 class="pay-box__title">Offene Zahlungen</h3>
+            @for (p of eurPending(); track p.id) {
+              <div class="pay-row">
+                <span class="pay-row__text">
+                  <b>{{ format(bundleFor(p.offer_key)?.lukaten) }} Lukaten</b> · {{ formatEur(p.amount_cents) }}
+                  <small>Code <button type="button" class="code" (click)="copy(p.code)" title="Code kopieren">{{ p.code }}</button>
+                    @if (copied() === p.code) { kopiert } · {{ p.created_at.replace(' ', 'T') | date:'dd.MM., HH:mm' }}</small>
+                </span>
+                <a class="btn btn-primary btn-sm" [href]="p.paypal_url" target="_blank" rel="noopener">Mit PayPal bezahlen</a>
+              </div>
+            }
+            <p class="pay-box__hint">Bitte den Code als Nachricht in PayPal angeben. Ein Admin bestätigt die Zahlung dann.</p>
+          </div>
+        }
+      </section>
+
+      <!-- ── Rechts: ausgeben ── -->
+      <section class="block">
+        <h2 class="block__title">Dafür kannst du sie ausgeben</h2>
+
+        <a class="card offer" routerLink="/klebrigsten/shop">
+          <header class="offer__head">
+            <div>
+              <h3 class="offer__title">Sticker-Packs</h3>
+              <p class="offer__sub">Für dein Sammelalbum bei den Klebrigsten</p>
             </div>
-          }
-          <p class="pay-box__hint">Bitte den Code als Nachricht in PayPal angeben. Ein Admin bestätigt die Zahlung dann.</p>
-        </div>
-      }
-    </section>
-
-    <!-- ── Ausgeben ── -->
-    <section class="block">
-      <h2 class="block__title">Dafür kannst du sie ausgeben</h2>
-      <div class="spend">
-        <a class="card spend__item" routerLink="/klebrigsten/shop">
-          <h3>Sticker-Packs</h3>
-          <ul class="prices">
-            @for (p of rules.packs; track p.kind) {
-              <li><span>{{ p.name }} · {{ p.size }} Sticker</span><b>{{ format(p.price) }}</b></li>
+            <span class="offer__go">Zum Shop</span>
+          </header>
+          <ul class="pack-offers">
+            @for (p of packOffers(); track p.kind) {
+              <li class="pack-offer">
+                <app-pack-cover class="pack-offer__cover" [pack]="p.info" />
+                <span class="pack-offer__name">{{ p.name }}</span>
+                <span class="pack-offer__size">{{ p.size }} Sticker</span>
+                <span class="pack-offer__price"><img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />{{ format(p.price) }}</span>
+              </li>
             }
           </ul>
-          <span class="spend__go">Zum Shop</span>
         </a>
-        <a class="card spend__item" routerLink="/liga/h2h/bestico">
-          <h3>Tippen im Bestico</h3>
-          <p>Setze Lukaten auf den Ausgang eines H2H-Duells. Liegst du richtig, bekommst du Einsatz mal Quote zurück.</p>
+
+        <a class="card offer" routerLink="/liga/h2h/bestico">
+          <header class="offer__head">
+            <div>
+              <h3 class="offer__title"><span class="bestico">Bestico</span></h3>
+              <p class="offer__sub">Tippe auf den Ausgang der H2H-Duelle</p>
+            </div>
+            <span class="offer__go">Zum Bestico</span>
+          </header>
+          <p class="offer__text">Richtig getippt bekommst du Einsatz mal Quote zurück.</p>
           @if (rules.max_payout != null) {
-            <p class="spend__note">Möglicher Gewinn je Tipp: höchstens {{ format(rules.max_payout) }} Lukaten.</p>
+            <p class="offer__note">Möglicher Gewinn je Tipp: höchstens {{ format(rules.max_payout) }} Lukaten.</p>
           }
-          <span class="spend__go">Zum Bestico</span>
+          <!-- Tipps stehen nicht einzeln im Kontobuch, sie zählen direkt aus dem Bestico -->
+          @if (a.totals && (a.totals.stakes !== 0 || a.totals.payouts !== 0)) {
+            <ul class="offer__stats">
+              <li><span>Gesetzt</span><b>{{ format(-a.totals.stakes) }}</b></li>
+              <li><span>Gewonnen</span><b>{{ format(a.totals.payouts) }}</b></li>
+              <li>
+                <span>Saldo</span>
+                <b [class.is-minus]="a.totals.payouts + a.totals.stakes < 0">{{ formatSigned(a.totals.payouts + a.totals.stakes) }}</b>
+              </li>
+            </ul>
+          }
         </a>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <!-- ── Kontoauszug ── -->
     <section class="block">

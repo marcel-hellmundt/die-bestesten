@@ -3,6 +3,8 @@ import { ApiService } from '../core/api.service';
 import { AuthService } from '../auth/auth.service';
 import { LukatenService } from '../core/lukaten.service';
 import { Season } from '../core/models/season.model';
+import { PackInfo } from '../stickers/album/pack.model';
+import { PackKind } from '../stickers/shop/shop.model';
 
 type EntryType = 'participation' | 'note' | 'stats';
 type LukatenSource = 'season_bonus' | 'entries' | 'eur' | 'eur_cancel' | 'pack' | 'admin';
@@ -64,8 +66,11 @@ interface LukatenAccount {
 const EUR_MAX_PENDING = 3; // wie im Backend (StickerShopEurTrait), gilt für Packs und Lukaten zusammen
 
 /**
- * /lukaten — die zentrale Stelle für Lukaten (siehe docs/lukaten-economy-concept.md): Kontostand, woher Lukaten
- * kommen (Einträge, Startbonus, Kauf gegen Euro), wofür man sie ausgibt (Sticker-Packs, Tipps) und der Kontoauszug.
+ * /lukaten — die zentrale Stelle für Lukaten (siehe docs/lukaten-economy-concept.md): oben der Kontostand, darunter
+ * auf Desktop zwei Spalten über die ganze Breite — links übereinander, woher Lukaten kommen (Einträge, Startbonus,
+ * Kauf gegen Euro), rechts die Angebote, sie auszugeben (Sticker-Packs mit Pack-Cover und Preis, Bestico) —, zuletzt
+ * der Kontoauszug. Die Regeln zu den Einträgen stehen bewusst knapp da ("1 Eintrag = 1 Lukate"), die Einzelheiten
+ * hinter "So wird gezählt".
  */
 @Component({
   selector: 'app-lukaten-account',
@@ -119,6 +124,15 @@ export class LukatenAccountComponent {
       .filter(t => byType[t] > 0)
       .map(t => `${this.entryTypeLabel[t]} ${this.format(byType[t])}`).join(' · ');
   }
+
+  /** Pack-Arten aus dem Shop mit Preis — samt den Angaben fürs kleine Pack-Cover (app-pack-cover) */
+  packOffers = computed(() => (this.active()?.rules?.packs ?? []).map(p => ({
+    ...p,
+    info: {
+      id: null, source: 'shop', size: p.size, milestonePoints: null, matchdayNumber: null, leagueName: null,
+      kind: p.kind as PackKind,
+    } as PackInfo,
+  })));
 
   constructor() {
     this.load();

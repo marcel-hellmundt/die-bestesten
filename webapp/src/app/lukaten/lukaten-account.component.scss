@@ -1,10 +1,10 @@
 @use '../../styles/variables' as *;
 
+// Volle Breite des Inhaltsbereichs — auf Desktop zwei Spalten (links bekommen, rechts ausgeben)
 .lukaten {
   display: flex;
   flex-direction: column;
   gap: $space-6;
-  max-width: 960px;
   padding: $space-4;
 
   @media (max-width: $mobile-breakpoint) { padding: $space-3 0; } // seitlicher Rand kommt von der Shell
@@ -34,23 +34,37 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: $space-4 $space-8;
+  padding: $space-5 $space-6;
+
+  @media (max-width: $mobile-breakpoint) { padding: $space-4; }
 
   &__main {
     display: flex;
-    align-items: baseline;
-    gap: $space-2;
+    align-items: center;
+    gap: $space-4;
   }
 
   &__icon {
-    align-self: center;
-    width: 40px;
-    height: 40px;
+    width: 56px;
+    height: 56px;
     object-fit: contain;
+  }
+
+  &__figure {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+  }
+
+  &__label {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
   }
 
   &__value {
     font-family: $font-display;
-    font-size: 44px;
+    font-size: 48px;
     font-weight: 800;
     line-height: 1;
     font-variant-numeric: tabular-nums;
@@ -61,15 +75,10 @@
     font-size: 0.5em;
   }
 
-  &__unit {
-    font-size: $font-md;
-    color: $color-text-muted;
-  }
-
   &__totals {
     display: flex;
     flex-wrap: wrap;
-    gap: $space-2 $space-6;
+    gap: $space-3 $space-6;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -98,10 +107,21 @@
   }
 }
 
+// ── Zwei Spalten: links bekommen, rechts ausgeben (schmaler: untereinander) ──
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: $space-6;
+
+  @media (max-width: 1100px) { grid-template-columns: minmax(0, 1fr); }
+}
+
 .block {
   display: flex;
   flex-direction: column;
   gap: $space-3;
+  min-width: 0;
 
   &__title {
     margin: 0;
@@ -110,116 +130,246 @@
   }
 }
 
-// ── Bekommen ──
-.ways {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $space-3;
-
-  @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); }
-}
-
-.way {
+// ── Bekommen: eine Karte je Weg ──
+.earn {
   display: flex;
   flex-direction: column;
-  gap: $space-2;
+  gap: $space-4;
   min-width: 0;
-  padding: $space-4;
+  padding: $space-5;
 
-  // Einträge: die ausführlichste Regel, über die ganze Breite
-  &--wide { grid-column: 1 / -1; }
+  @media (max-width: $mobile-breakpoint) { padding: $space-4; }
+
+  // Startbonus: Text links, Betrag rechts
+  &--row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 
   // Kaufen ohne eingerichtete Euro-Käufe: farblos, nicht bedienbar
   &--disabled { opacity: 0.5; filter: grayscale(1); }
 
   &__head {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: $space-3;
+    gap: $space-4;
+  }
 
-    h3 {
-      margin: 0;
-      font-size: $font-md;
-      font-weight: $font-weight-semibold;
-    }
+  &__title {
+    margin: 0;
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__sub {
+    margin: 2px 0 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+
+  &__amount {
+    flex-shrink: 0;
+    font-family: $font-display;
+    font-size: $font-3xl;
+    font-weight: 800;
+    line-height: 1;
+    color: $color-success;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__meta {
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+
+  &__link { align-self: flex-start; }
+}
+
+// Einsatz, Note, Statistik: je Spieler und Spieltag ein Eintrag = +1
+.entry-types {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-1;
+    padding: $space-3 $space-2;
+    border-radius: $radius-lg;
+    background: $color-surface-alt;
+    font-size: $font-sm;
+    text-align: center;
+  }
+
+  img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+
+  b {
+    color: $color-success;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Note als kleines Notenfeld (feste Notenfarbe, wie in den Noten-Ansichten)
+  &__grade {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: $radius-md;
+    background: var(--grade-25);
+    color: #fff;
+    font-size: 11px;
+    font-weight: $font-weight-bold;
+  }
+}
+
+// Einträge am laufenden Spieltag: was beim Abschluss gebucht wird
+.pending {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, #{$color-success} 10%, #{$color-surface});
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__detail {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__amount {
+    flex-shrink: 0;
+    font-family: $font-display;
+    font-size: $font-2xl;
+    font-weight: 800;
+    color: $color-success;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+
+    &--zero { color: $color-text-muted; }
+  }
+}
+
+// Einzelheiten zum Zählen: eingeklappt, wer es genau wissen will, klappt auf
+.rules {
+  font-size: $font-sm;
+
+  summary {
+    width: fit-content;
+    color: $color-text-muted;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    margin: $space-2 0 0;
+    padding-left: $space-5;
+    max-width: 70ch;
+  }
+}
+
+// Lukaten-Bündel als Kacheln: Menge, Preis — die ganze Kachel ist der Kaufen-Button
+.bundles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bundle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-1;
+  width: 100%;
+  padding: $space-5 $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+  color: $color-text;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color $transition-fast, border-color $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: color-mix(in srgb, #{$color-text-muted} 60%, transparent);
+    background: $color-surface-alt;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &__icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
   }
 
   &__amount {
     font-family: $font-display;
     font-size: $font-xl;
     font-weight: 800;
-    color: $color-success;
-    white-space: nowrap;
-  }
-
-  p {
-    margin: 0;
-    max-width: 70ch;
-    font-size: $font-sm;
-    color: $color-text;
-  }
-
-  &__status { margin-top: 2px; }
-
-  p.way__meta { color: $color-text-muted; }
-
-  &__link {
-    align-self: flex-start;
-    margin-top: $space-1;
-  }
-}
-
-.prices {
-  display: flex;
-  flex-direction: column;
-  gap: $space-1;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: $font-sm;
-
-  li {
-    display: flex;
-    justify-content: space-between;
-    gap: $space-3;
-  }
-
-  span { color: $color-text-muted; }
-  b { font-variant-numeric: tabular-nums; white-space: nowrap; }
-}
-
-// Lukaten-Bündel: Menge links, Kaufen-Button mit Preis rechts
-.bundles {
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-  margin: $space-1 0 0;
-  padding: 0;
-  list-style: none;
-
-  li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $space-3;
-  }
-
-  &__amount {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: $font-md;
     font-variant-numeric: tabular-nums;
   }
 
-  &__bonus {
-    font-size: $font-xs;
+  &__price {
+    margin-top: $space-1;
+    padding: 3px $space-3;
+    border-radius: $radius-full;
+    background: $color-contrast-bg;
+    color: $color-contrast-text;
+    font-size: $font-sm;
     font-weight: $font-weight-semibold;
-    color: $color-success;
+    white-space: nowrap;
   }
 
-  .btn { min-width: 76px; }
+  // mehr Lukaten je Euro als beim kleinsten Bündel
+  &__bonus {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 1px 6px;
+    border-radius: $radius-full;
+    background: color-mix(in srgb, #{$color-success} 14%, #{$color-surface});
+    color: $color-success;
+    font-size: 10px;
+    font-weight: $font-weight-bold;
+    white-space: nowrap;
+  }
 }
 
 // ── Offene Zahlungen (wie im Shop der Klebrigsten) ──
@@ -298,47 +448,153 @@
   }
 }
 
-// ── Ausgeben ──
-.spend {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $space-3;
+// ── Ausgeben: je Angebot eine Karte, die dorthin führt ──
+.offer {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  min-width: 0;
+  padding: $space-5;
+  color: $color-text;
+  text-decoration: none;
+  transition: border-color $transition-fast;
 
-  @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: $mobile-breakpoint) { padding: $space-4; }
 
-  &__item {
-    display: flex;
-    flex-direction: column;
-    gap: $space-2;
-    min-width: 0;
-    padding: $space-4;
-    color: $color-text;
-    text-decoration: none;
-    transition: border-color $transition-fast;
+  &:hover {
+    border-color: color-mix(in srgb, #{$color-text-muted} 60%, transparent);
 
-    &:hover { border-color: color-mix(in srgb, #{$color-text-muted} 60%, transparent); }
-
-    h3 {
-      margin: 0;
-      font-size: $font-md;
-      font-weight: $font-weight-semibold;
-    }
-
-    p {
-      margin: 0;
-      font-size: $font-sm;
-    }
+    .offer__go { text-decoration: underline; }
   }
 
-  &__note { color: $color-text-muted; }
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-4;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__sub {
+    margin: 2px 0 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
 
   &__go {
-    margin-top: auto;
-    padding-top: $space-1;
+    flex-shrink: 0;
     font-size: $font-sm;
     font-weight: $font-weight-semibold;
     color: $color-accent;
+    white-space: nowrap;
   }
+
+  &__text {
+    margin: 0;
+    font-size: $font-sm;
+  }
+
+  &__note {
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+  }
+
+  // eigene Tipps: gesetzt, gewonnen, Saldo
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: $space-2;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: $space-3;
+      border-radius: $radius-lg;
+      background: $color-surface-alt;
+    }
+
+    span {
+      font-size: $font-xs;
+      color: $color-text-muted;
+    }
+
+    b {
+      font-size: $font-md;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+// Pack-Arten aus dem Shop: Cover, Name, Inhalt, Preis in Lukaten
+.pack-offers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @media (max-width: $mobile-breakpoint) { gap: $space-2; }
+}
+
+.pack-offer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  text-align: center;
+
+  &__cover {
+    --pack-width: 68px;
+    margin: 3px 0 $space-2; // Platz fürs Schweben nach oben
+
+    @media (max-width: $mobile-breakpoint) { --pack-width: 54px; }
+  }
+
+  &__name {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    line-height: 1.2;
+  }
+
+  &__size {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__price {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: $space-1;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Bestico-Schriftzug wie der Button auf /liga/h2h: kursiv, weiß auf Rot (eigenständiges Motiv, feste Farben)
+.bestico {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: $radius-md;
+  background: #e2001a;
+  color: #fff;
+  font-size: $font-sm;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 // ── Kontoauszug ──
