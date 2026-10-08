@@ -169,15 +169,25 @@
     color: $color-text-muted;
   }
 
+  // Betrag in Textfarbe, das Lukat-Symbol rechts daneben
   &__amount {
+    display: inline-flex;
     flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
     font-family: $font-display;
     font-size: $font-3xl;
     font-weight: 800;
     line-height: 1;
-    color: $color-success;
+    color: $color-text;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+
+    img {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+    }
   }
 
   &__meta {
@@ -210,15 +220,24 @@
     text-align: center;
   }
 
-  img {
+  > li > img {
     width: 28px;
     height: 28px;
     object-fit: contain;
   }
 
   b {
-    color: $color-success;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: $color-text;
     font-variant-numeric: tabular-nums;
+
+    img {
+      width: 14px;
+      height: 14px;
+      object-fit: contain;
+    }
   }
 
   // Note als kleines Notenfeld (feste Notenfarbe, wie in den Noten-Ansichten)
@@ -264,13 +283,22 @@
   }
 
   &__amount {
+    display: inline-flex;
     flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
     font-family: $font-display;
     font-size: $font-2xl;
     font-weight: 800;
-    color: $color-success;
+    color: $color-text;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+
+    img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
 
     &--zero { color: $color-text-muted; }
   }

@@ -51,7 +51,7 @@
               <h3 class="earn__title">Einträge</h3>
               <p class="earn__sub">1 Eintrag bei den Spieltagsdaten = 1 Lukate</p>
             </div>
-            <span class="earn__amount">+1</span>
+            <span class="earn__amount">+1<img src="img/icons/lukat.png" alt="Lukaten" /></span>
           </header>
 
           <!-- je Spieler und Spieltag bis zu drei Einträge -->
@@ -59,17 +59,17 @@
             <li>
               <img src="img/icons/part-starting.svg" alt="" />
               <span>Einsatz</span>
-              <b>+1</b>
+              <b>+1<img src="img/icons/lukat.png" alt="Lukaten" /></b>
             </li>
             <li>
               <span class="entry-types__grade" aria-hidden="true">2,5</span>
               <span>Note</span>
-              <b>+1</b>
+              <b>+1<img src="img/icons/lukat.png" alt="Lukaten" /></b>
             </li>
             <li>
               <img src="img/icons/goal.png" alt="" />
               <span>Statistik</span>
-              <b>+1</b>
+              <b>+1<img src="img/icons/lukat.png" alt="Lukaten" /></b>
             </li>
           </ul>
 
@@ -82,7 +82,7 @@
                     {{ e.count > 0 ? entryBreakdown(e.by_type) + ' · gebucht beim Abschluss' : 'Noch nichts eingetragen' }}
                   </span>
                 </div>
-                <b class="pending__amount" [class.pending__amount--zero]="e.count === 0">+{{ format(e.count) }}</b>
+                <b class="pending__amount" [class.pending__amount--zero]="e.count === 0">+{{ format(e.count) }}<img src="img/icons/lukat.png" alt="Lukaten" /></b>
               </div>
             }
           }
@@ -110,7 +110,7 @@
             <h3 class="earn__title">Startbonus</h3>
             <p class="earn__sub">Zu Beginn jeder Saison, automatisch. Was übrig ist, bleibt auf dem Konto.</p>
           </div>
-          <span class="earn__amount">+{{ format(rules.season_bonus) }}</span>
+          <span class="earn__amount">+{{ format(rules.season_bonus) }}<img src="img/icons/lukat.png" alt="Lukaten" /></span>
         </article>
 
         <article class="card earn" [class.earn--disabled]="!eurAvailable()" [attr.inert]="eurAvailable() ? null : ''">
