@@ -10,14 +10,6 @@
   @media (max-width: $mobile-breakpoint) { padding: $space-3 0; } // seitlicher Rand kommt von der Shell
 }
 
-.page-title__sub {
-  display: block;
-  margin-top: 2px;
-  font-size: $font-sm;
-  font-weight: normal;
-  color: $color-text-muted;
-}
-
 .is-minus { color: $color-danger; }
 
 .lukat-icon {
@@ -623,10 +615,13 @@
   }
 }
 
-// Bestico-Schriftzug wie der Button auf /liga/h2h: kursiv, weiß auf Rot (eigenständiges Motiv, feste Farben)
+// Bestico-Schriftzug genau wie der Button auf /liga/h2h (.betting-link): 36px hoch, kursiv, weiß auf Rot
+// (eigenständiges Motiv, feste Farben)
 .bestico {
-  display: inline-block;
-  padding: 2px 10px;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 $space-4;
   border-radius: $radius-md;
   background: #e2001a;
   color: #fff;
