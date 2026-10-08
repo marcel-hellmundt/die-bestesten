@@ -171,10 +171,9 @@ Was das für die Manager heißt:
 
 **Lukaten gegen Euro**
 
-- Ablauf wie bei den Euro-Packs über PayPal.me (`sticker_eur_purchase`, Kauf-Code): Die Lukaten gibt es sofort,
-  der Admin bestätigt oder storniert unter „Euro-Käufe" im Shop.
-- Storno bucht die Lukaten wieder ab. Sind sie schon ausgegeben, steht das Konto im Minus; Packs und Einsätze
-  gehen erst wieder, wenn es ausgeglichen ist.
+- Ablauf wie bei den Euro-Packs über PayPal.me (`sticker_eur_purchase`, Kauf-Code): Der Kauf ist zunächst nur
+  vorgemerkt. Die Lukaten gibt es, sobald der Admin die Zahlung unter „Euro-Käufe" im Shop bestätigt hat.
+- Storniert der Admin, wird nichts gutgeschrieben. Ein Minus kann dadurch nicht mehr entstehen.
 - Höchstens drei offene Zahlungen, zusammen mit den Euro-Packs.
 
 ## 6. Wo man es sieht

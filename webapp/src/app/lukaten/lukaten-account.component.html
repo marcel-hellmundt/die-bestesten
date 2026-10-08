@@ -30,6 +30,11 @@
           }
         </ul>
       }
+      @if (pendingLukaten() > 0) {
+        <p class="balance__pending">
+          <b>+{{ format(pendingLukaten()) }}</b> vorgemerkt, sobald deine Zahlung bestätigt ist
+        </p>
+      }
       @if ((a.balance ?? 0) < 0) {
         <p class="balance__note">
           Dein Konto ist im Minus, weil ein Kauf storniert wurde. Packs und Einsätze gehen wieder, sobald es ausgeglichen ist.
@@ -114,7 +119,7 @@
           <header class="earn__head">
             <div>
               <h3 class="earn__title">Kaufen</h3>
-              <p class="earn__sub">Gegen Euro per PayPal, sofort auf dem Konto</p>
+              <p class="earn__sub">Gegen Euro per PayPal, auf dem Konto sobald die Zahlung bestätigt ist</p>
             </div>
           </header>
           <ul class="bundles">
@@ -157,7 +162,10 @@
                 <a class="btn btn-primary btn-sm" [href]="p.paypal_url" target="_blank" rel="noopener">Mit PayPal bezahlen</a>
               </div>
             }
-            <p class="pay-box__hint">Bitte den Code als Nachricht in PayPal angeben. Ein Admin bestätigt die Zahlung dann.</p>
+            <p class="pay-box__hint">
+              Bitte den Code als Nachricht in PayPal angeben. Sobald ein Admin die Zahlung bestätigt, sind die Lukaten auf
+              deinem Konto.
+            </p>
           </div>
         }
       </section>
@@ -262,8 +270,8 @@
 
       @if (eurResult(); as r) {
         <p class="confirm__done">
-          <b>{{ format(r.lukaten) }} Lukaten sind auf deinem Konto.</b>
-          Jetzt nur noch bezahlen:
+          <b>{{ format(r.lukaten) }} Lukaten sind vorgemerkt.</b>
+          Du bekommst sie, sobald deine Zahlung bestätigt ist:
         </p>
         <div class="pay-code">
           <span class="pay-code__label">Bitte als Nachricht angeben</span>
@@ -292,7 +300,7 @@
           </button>
         </div>
         <span class="confirm__hint">
-          Die Lukaten bekommst du sofort, danach bezahlst du per PayPal. Bleibt die Zahlung aus, werden sie wieder abgezogen.
+          Du bezahlst per PayPal. Die Lukaten sind auf deinem Konto, sobald ein Admin die Zahlung bestätigt hat.
         </span>
       }
     </div>

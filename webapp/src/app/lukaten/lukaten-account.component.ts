@@ -165,6 +165,8 @@ export class LukatenAccountComponent {
   eurAvailable = computed(() => this.active()?.eur?.available ?? false);
   eurPending   = computed(() => this.active()?.eur?.pending ?? []);
   paypalMe     = computed(() => this.active()?.eur?.paypal_me ?? '');
+  /** Gekaufte Lukaten, die noch auf die Bestätigung der Zahlung warten (noch nicht auf dem Konto) */
+  pendingLukaten = computed(() => this.eurPending().reduce((sum, p) => sum + (this.bundleFor(p.offer_key)?.lukaten ?? 0), 0));
   /** Zu viele unbezahlte Käufe → erst bezahlen */
   eurBlocked   = computed(() => this.eurPending().length >= EUR_MAX_PENDING);
 

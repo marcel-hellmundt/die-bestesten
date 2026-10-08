@@ -224,13 +224,14 @@ trait StickerShopEurTrait
     public function handleStickerEurPurchase(string $adminId, string $purchaseId, string $action): array
     {
         if (!$this->stickerEurReady()) return ['error' => 409, 'message' => 'Euro-Käufe sind noch nicht eingerichtet'];
-        $q = $this->con->prepare("SELECT id, manager_id, offer_key, amount_cents, code, status FROM sticker_eur_purchase WHERE id = ?");
+        $q = $this->con->prepare("SELECT id, manager_id, season_id, offer_key, amount_cents, code, status FROM sticker_eur_purchase WHERE id = ?");
         $q->execute([$purchaseId]);
         $p = $q->fetch(PDO::FETCH_ASSOC);
         if (!$p) return ['error' => 404, 'message' => 'Kauf nicht gefunden'];
         if ($p['status'] !== 'pending') return ['error' => 409, 'message' => 'Kauf ist nicht mehr offen'];
 
-        // Lukaten-Bündel (LukatenAccountTrait::buyLukatenEur()) statt Packs: beim Storno die Lukaten wieder abziehen
+        // Lukaten-Bündel (LukatenAccountTrait::buyLukatenEur()) statt Packs: die Lukaten werden erst mit der Bestätigung
+        // gutgeschrieben; ein Storno davor bucht nichts
         $bundle = $this->lukatenEurBundles()[$p['offer_key']] ?? null;
         $name   = $bundle['name'] ?? ($this->stickerShopEurOffers()[$p['offer_key']]['name'] ?? $p['offer_key']);
         $amount = $this->formatEur((int) $p['amount_cents']);
@@ -245,9 +246,18 @@ trait StickerShopEurTrait
                 $this->con->rollBack();
                 return ['error' => 409, 'message' => 'Kauf ist nicht mehr offen'];
             }
-            if ($action === 'cancel' && $bundle) {
-                // Gegenbuchung — sind die Lukaten schon ausgegeben, steht das Konto im Minus, bis es ausgeglichen ist
-                $this->bookLukaten($p['manager_id'], -(float) $bundle['lukaten'], 'eur_cancel', "eur_cancel:$purchaseId");
+            if ($action === 'confirm' && $bundle) {
+                // Zahlung da → jetzt gutschreiben (idempotent: Käufe aus der Zeit, als sofort gutgeschrieben wurde,
+                // haben die Buchung eur:{id} schon)
+                $this->bookLukaten($p['manager_id'], (float) $bundle['lukaten'], 'eur', "eur:$purchaseId", $p['season_id']);
+            } elseif ($action === 'cancel' && $bundle) {
+                // Nur Käufe aus der Zeit, als sofort gutgeschrieben wurde, haben schon eine Buchung — die wird
+                // zurückgenommen (sind die Lukaten ausgegeben, steht das Konto im Minus, bis es ausgeglichen ist)
+                $cq = $this->con->prepare("SELECT 1 FROM lukaten_transaction WHERE manager_id = ? AND source_key = ?");
+                $cq->execute([$p['manager_id'], "eur:$purchaseId"]);
+                if ($cq->fetchColumn()) {
+                    $this->bookLukaten($p['manager_id'], -(float) $bundle['lukaten'], 'eur_cancel', "eur_cancel:$purchaseId", $p['season_id']);
+                }
             } elseif ($action === 'cancel') {
                 // Storno: Packs löschen — gezogene Karten hängen per ON DELETE CASCADE daran (tauschen war gesperrt)
                 $this->con->prepare("DELETE FROM sticker_pack WHERE eur_purchase_id = ?")->execute([$purchaseId]);
@@ -262,11 +272,11 @@ trait StickerShopEurTrait
             if ($action === 'confirm') {
                 $this->createNotification($p['manager_id'], "Zahlung bestätigt – $name",
                     "Danke! $amount ({$p['code']}) sind angekommen."
-                    . ($bundle ? '' : ' Die Karten aus dem Kauf kannst du jetzt auch tauschen.'), $adminId);
+                    . ($bundle ? " Die {$bundle['lukaten']} Lukaten sind jetzt auf deinem Konto." : ' Die Karten aus dem Kauf kannst du jetzt auch tauschen.'), $adminId);
             } else {
                 $this->createNotification($p['manager_id'], "Kauf storniert – $name",
                     "Für {$p['code']} ist keine Zahlung eingegangen, der Kauf wurde storniert und "
-                    . ($bundle ? "die {$bundle['lukaten']} Lukaten wurden wieder abgezogen." : 'die Packs daraus entfernt.'), $adminId);
+                    . ($bundle ? "die {$bundle['lukaten']} Lukaten werden nicht gutgeschrieben." : 'die Packs daraus entfernt.'), $adminId);
             }
         } catch (\Throwable $e) {
             error_log('handleStickerEurPurchase notify: ' . $e->getMessage());

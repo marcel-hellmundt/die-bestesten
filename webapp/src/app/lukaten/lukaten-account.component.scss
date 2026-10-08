@@ -90,6 +90,16 @@
     }
   }
 
+  // gekaufte Lukaten, die auf die Bestätigung der Zahlung warten
+  &__pending {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: $font-sm;
+    color: $color-text-muted;
+
+    b { color: $color-text; }
+  }
+
   // Konto im Minus (stornierter Kauf)
   &__note {
     flex-basis: 100%;

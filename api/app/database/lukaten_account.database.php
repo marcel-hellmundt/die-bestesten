@@ -437,10 +437,9 @@ trait LukatenAccountTrait
 
     /**
      * POST /lukaten/buy_eur — Lukaten gegen Euro über denselben PayPal.me-Ablauf wie die Euro-Packs
-     * (StickerShopEurTrait, Tabelle sticker_eur_purchase): Kauf anlegen (pending, Kauf-Code), Lukaten sofort
-     * gutschreiben (eur:{purchase_id}), der Käufer zahlt per PayPal.me, ein Admin bestätigt oder storniert —
-     * beim Storno werden die Lukaten wieder abgezogen (handleStickerEurPurchase()); ein Minus sperrt Käufe und
-     * Einsätze, bis es ausgeglichen ist.
+     * (StickerShopEurTrait, Tabelle sticker_eur_purchase): Kauf anlegen (pending, Kauf-Code) — damit ist er nur
+     * vorgemerkt. Der Käufer zahlt per PayPal.me; erst wenn ein Admin die Zahlung bestätigt, werden die Lukaten
+     * gutgeschrieben (eur:{purchase_id}, handleStickerEurPurchase()). Ein Storno davor bucht nichts.
      * Rückgabe ['error' => HTTP-Code, 'message'] oder ['purchase_id','code','amount_cents','paypal_url','lukaten','balance'].
      */
     public function buyLukatenEur(string $managerId, string $offerKey): array
@@ -464,9 +463,8 @@ trait LukatenAccountTrait
             $this->con->prepare(
                 "INSERT INTO sticker_eur_purchase (id, manager_id, season_id, offer_key, amount_cents, code) VALUES (?, ?, ?, ?, ?, ?)"
             )->execute([$purchaseId, $managerId, $seasonId, $offerKey, $bundle['price_cents'], $code]);
-            if (!$this->bookLukaten($managerId, (float) $bundle['lukaten'], 'eur', "eur:$purchaseId", $seasonId)) {
-                throw new \RuntimeException('Lukaten-Buchung wurde nicht angelegt');
-            }
+            // Gutgeschrieben wird erst, wenn ein Admin die Zahlung bestätigt (handleStickerEurPurchase()) — bis dahin
+            // ist der Kauf nur vorgemerkt und die Lukaten sind nicht nutzbar
             $this->con->commit();
         } catch (\Throwable $e) {
             if ($this->con->inTransaction()) $this->con->rollBack();
