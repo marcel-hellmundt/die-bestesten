@@ -29,7 +29,9 @@ trait LukatenAccountTrait
             // Pack-Preise im Klebrigsten-Shop (Schlüssel wie StickerShopTrait::stickerShopOffers()). Maßstab: ein ganzer
             // Spieltag Einträge (rund 500 Lukaten) = 5 normale Packs, 15 Sticker — gut die Hälfte dessen, was ein aktiver
             // Manager in einer Woche ohnehin zieht (rund 25). Mit 60 je Pack hätten Einträge das Tempo verdoppelt.
-            'pack_prices'   => ['l-small' => 100, 'l-big' => 200, 'l-club' => 350, 'l-special' => 350],
+            // Leiter 100/200/300/300: direkt gegen Euro gibt es je Angebot +50 % (einzelnes Pack) bis +88 % (Kiste) mehr als
+            // über gekaufte Lukaten, steigend mit dem Betrag (Vergleich: /verwaltung/ui-tests → Preise).
+            'pack_prices'   => ['l-small' => 100, 'l-big' => 200, 'l-club' => 300, 'l-special' => 300],
             // Lukaten gegen Euro [Cent, Lukaten]: 1 Lukate ≈ 1 Cent, bei größeren Beträgen etwas mehr
             'eur_bundles'   => ['lk-200' => [199, 200], 'lk-300' => [299, 300], 'lk-550' => [499, 550], 'lk-800' => [699, 800]],
         ];
