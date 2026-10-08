@@ -88,6 +88,15 @@ export class LukatenAccountComponent {
     return a && a.ready ? a : null;
   });
 
+  /**
+   * Kontostand geteilt (z.B. "40" + ",7"): krumme Beträge entstehen durch Tippgewinne (Einsatz × Quote) und spielen
+   * bei größeren Guthaben keine Rolle — die Nachkommastellen stehen klein hinter dem ganzen Betrag.
+   */
+  balanceParts = computed(() => {
+    const [whole, fraction] = LukatenService.format(this.active()?.balance).split(',');
+    return { whole, fraction: fraction ? ',' + fraction : '' };
+  });
+
   /** Summen fürs Konto: nur Teile mit Bewegung, in fester Reihenfolge */
   totals = computed(() => {
     const t = this.active()?.totals;

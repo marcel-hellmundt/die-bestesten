@@ -18,7 +18,7 @@
     <section class="card balance">
       <div class="balance__main">
         <img class="balance__icon" src="img/icons/lukat.png" alt="" />
-        <span class="balance__value" [class.is-minus]="(a.balance ?? 0) < 0">{{ format(a.balance) }}</span>
+        <span class="balance__value" [class.is-minus]="(a.balance ?? 0) < 0">{{ balanceParts().whole }}@if (balanceParts().fraction) {<small class="balance__fraction">{{ balanceParts().fraction }}</small>}</span>
         <span class="balance__unit">Lukaten</span>
       </div>
       @if (totals().length) {

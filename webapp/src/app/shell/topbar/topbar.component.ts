@@ -36,12 +36,6 @@ export class TopbarComponent implements OnDestroy {
   // Lukaten-Guthaben (Konto je Manager) — null, solange es nicht geladen ist oder kein Konto existiert
   lukatenBalance = computed(() => this.lukaten.balance() ?? null);
   lukatenLabel   = computed(() => LukatenService.format(this.lukatenBalance()));
-  // Ganze Lukaten und Nachkommastellen getrennt (z.B. "40" + ",7"): krumme Beträge entstehen durch Tippgewinne
-  // (Einsatz × Quote) und spielen bei größeren Guthaben keine Rolle — sie stehen klein dahinter
-  lukatenParts   = computed(() => {
-    const [whole, fraction] = this.lukatenLabel().split(',');
-    return { whole, fraction: fraction ? ',' + fraction : '' };
-  });
 
   isDropdownOpen       = signal(false);
   isLeagueDropdownOpen = signal(false);
