@@ -2,7 +2,8 @@
   <div class="mds-overlay" (click)="close()">
     <div class="mds" role="dialog" aria-modal="true"
          [attr.aria-label]="'Zusammenfassung Spieltag ' + s.matchday.number"
-         [style.--mds-team]="s.team?.color || null"
+         [style.--mds-team]="teamColor(s)"
+         [style.--mds-team-ink]="teamInk(s)"
          (click)="$event.stopPropagation()">
 
       <header class="mds__head">

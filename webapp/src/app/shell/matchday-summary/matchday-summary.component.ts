@@ -59,6 +59,25 @@ export class MatchdaySummaryComponent {
     this.router.navigate(['/lukaten']);
   }
 
+  /** Teamfarbe als Kopf-Hintergrund — nur ein gültiger Hex-Wert, sonst greift die Standardfläche aus dem SCSS */
+  teamColor(s: MatchdaySummary): string | null {
+    const color = s.team?.color ?? '';
+    return /^#[0-9a-f]{6}$/i.test(color) ? color : null;
+  }
+
+  /**
+   * Schriftfarbe auf der Teamfarbe: weiß, nur auf wirklich hellen Farben (Gelb, Weiß) dunkel — auf kräftigen
+   * mittelhellen Tönen (Grün, Orange, Hellblau) liest sich Weiß besser. Die gedämpften Zeilen (Spieltag, Liga)
+   * nehmen dieselbe Farbe mit 68 % Deckkraft.
+   */
+  teamInk(s: MatchdaySummary): string | null {
+    const color = this.teamColor(s);
+    if (!color) return null;
+    const n = parseInt(color.slice(1), 16);
+    const luminance = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+    return luminance > 0.7 ? '#111827' : '#ffffff';
+  }
+
   teamLogoUrl(t: SummaryTeam | SummaryH2H['opponent']): string {
     const id = 'id' in t ? t.id : t.team_id;
     return `${environment.imageApiUrl}/team/${t.season_id}/${id}.png`;
