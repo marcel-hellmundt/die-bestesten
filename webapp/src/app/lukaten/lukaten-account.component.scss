@@ -363,10 +363,20 @@
     cursor: not-allowed;
   }
 
-  &__icon {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
+  // Münzstapel: je größer das Bündel, desto mehr Münzen (Lage je Münze aus dem TS, COIN dort = diese Maße)
+  &__coins {
+    position: relative;
+    flex-shrink: 0;
+    width: 56px;
+    height: 48px;
+
+    img {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+    }
   }
 
   &__amount {

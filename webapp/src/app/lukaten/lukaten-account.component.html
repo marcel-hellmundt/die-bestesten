@@ -121,12 +121,17 @@
             </div>
           </header>
           <ul class="bundles">
-            @for (b of rules.eur_bundles; track b.key) {
+            @for (b of rules.eur_bundles; track b.key; let i = $index) {
               <li>
                 <button type="button" class="bundle" [disabled]="eurBlocked()" (click)="open(b)"
                         [attr.aria-label]="format(b.lukaten) + ' Lukaten für ' + formatEur(b.amount_cents) + ' kaufen'">
                   @if (bonusPct(b) > 0) { <span class="bundle__bonus">+{{ bonusPct(b) }} %</span> }
-                  <img class="bundle__icon" src="img/icons/lukat.png" alt="" />
+                  <!-- je größer das Bündel, desto höher der Münzstapel -->
+                  <span class="bundle__coins" aria-hidden="true">
+                    @for (c of coinStack(i); track $index) {
+                      <img src="img/icons/lukat.png" alt="" [style.left.px]="c.x" [style.top.px]="c.y" />
+                    }
+                  </span>
                   <b class="bundle__amount">{{ format(b.lukaten) }}</b>
                   <span class="bundle__price">{{ formatEur(b.amount_cents) }}</span>
                 </button>

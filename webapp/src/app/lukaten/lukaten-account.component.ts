@@ -66,6 +66,19 @@ interface LukatenAccount {
 const EUR_MAX_PENDING = 3; // wie im Backend (StickerShopEurTrait), gilt für Packs und Lukaten zusammen
 
 /**
+ * Münzstapel der Kauf-Kacheln: je größer das Bündel, desto mehr Münzen — Reihen von unten nach oben
+ * (eine · zwei nebeneinander · 2 + 1 · 3 + 2 + 1). Maße in px, müssen zu .bundle__coins im SCSS passen.
+ */
+const COIN = { size: 26, stepX: 15, stepY: 11, width: 56, height: 48 };
+const COIN_STACKS: { x: number; y: number }[][] = [[1], [2], [2, 1], [3, 2, 1]].map(rows =>
+  rows.flatMap((count, row) => {
+    const rowWidth = (count - 1) * COIN.stepX + COIN.size;
+    const left = (COIN.width - rowWidth) / 2;
+    const y = COIN.height - COIN.size - row * COIN.stepY;
+    return Array.from({ length: count }, (_, j) => ({ x: left + j * COIN.stepX, y }));
+  }));
+
+/**
  * /lukaten — die zentrale Stelle für Lukaten (siehe docs/lukaten-economy-concept.md): oben der Kontostand, darunter
  * auf Desktop zwei Spalten über die ganze Breite — links übereinander, woher Lukaten kommen (Einträge, Startbonus,
  * Kauf gegen Euro), rechts die Angebote, sie auszugeben (Sticker-Packs mit Pack-Cover und Preis, Bestico) —, zuletzt
@@ -190,6 +203,11 @@ export class LukatenAccountComponent {
 
   bundleFor(key: string): EurBundle | null {
     return this.active()?.rules?.eur_bundles.find(b => b.key === key) ?? null;
+  }
+
+  /** Münzen der Kauf-Kachel für das n-te Bündel (aufsteigend nach Größe) — das größte bekommt den höchsten Stapel */
+  coinStack(index: number): { x: number; y: number }[] {
+    return COIN_STACKS[Math.min(index, COIN_STACKS.length - 1)];
   }
 
   /** Lukaten je Euro gegenüber dem kleinsten Bündel, in Prozent mehr (0 = kein Vorteil) */
