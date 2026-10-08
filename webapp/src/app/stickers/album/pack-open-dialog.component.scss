@@ -1,4 +1,5 @@
 @use '../../../styles/variables' as *;
+@use './pack-cover' as cover;
 
 // Reihenfolge der Aufreiß-Animation (gesamt ≈ TEAR_MS im TS):
 //   0–420ms Pack wackelt · 380–980ms Lasche reißt ab · 750–1450ms Lichtschein aus der Öffnung
@@ -7,8 +8,7 @@
 //   nebeneinander (deal()) · danach dreht sich eine nach der anderen um
 // Folienfarbe je Pack-Art (CSS-Variablen auf .pack, siehe .pack--{source})
 
-// TEST: Schrift auf allen Packs weiß (ignoriert die dunkle Schrift der hellen Folien) — false = wieder je Folie
-$pack-text-always-white: true;
+// Folienfarbe je Pack-Art, Folie, Beschriftung und Motiv: _pack-cover.scss (auch für die kleine Pack-Ansicht)
 
 .backdrop {
   position: fixed;
@@ -45,11 +45,7 @@ $pack-text-always-white: true;
 
 // ── Geschlossenes Pack ───────────────────────────────────────────────────────
 .pack {
-  // Tages-Pack: Rot (Standard)
-  --foil-light: #e0492c;
-  --foil: #{$color-accent};
-  --foil-dark: #7d1300;
-  --ink: #{$color-accent};   // Schrift auf der weißen Anzahl-Pille
+  @include cover.foil-default;
 
   position: relative;
   width: min(230px, 58vw);
@@ -61,55 +57,7 @@ $pack-text-always-white: true;
   container-type: inline-size;
   animation: float 2.6s ease-in-out infinite;
 
-  // Meilenstein: Blau #4b7bec
-  &--milestone {
-    --foil-light: #9bb6f5;
-    --foil: #4b7bec;
-    --foil-dark: #1f3f96;
-    --ink: #2f5bc4;
-  }
-
-  // Spieltagssieger: Gelb #fed330 (dunkle Schrift)
-  &--matchday_best {
-    --foil-light: #fff0b0;
-    --foil: #fed330;
-    --foil-dark: #b89300;
-    --ink: #7a6200;
-    --text: #3d3000;
-  }
-
-  // Sonder-Packs: Geburtstag Pink #e84393 · Weihnachten Tannengrün #1e8449 (Farben vorläufig)
-  &--birthday  { --foil-light: #fbc2dc; --foil: #e84393; --foil-dark: #9c1b5b; --ink: #b8246e; }
-  &--christmas { --foil-light: #6fcf8f; --foil: #1e8449; --foil-dark: #0b3d20; --ink: #1b6b3c; }
-
-  // Streak (7 Tage in Folge online): Orange #fa8231
-  &--streak { --foil-light: #fdc194; --foil: #fa8231; --foil-dark: #a54a0c; --ink: #b8540f; }
-
-  // Shop (Lukaten): Türkis wie im Shop
-  &--shop {
-    --foil-light: #2dd4bf;
-    --foil: #0f766e;
-    --foil-dark: #042f2e;
-    --ink: #0f766e;
-  }
-
-  // Shop-Packs je Pack-Art (Klasse pack--{kind}, wie im Shop): Normal Grün · Big Koralle · Verein Gelb · Special Lila
-  // (helle Folien mit dunkler Schrift)
-  &--normal  { --foil-light: #a8dc92; --foil: #6aba49; --foil-dark: #36701f; --ink: #2d6419; --text: #143a08; }
-  &--big     { --foil-light: #f9ab9b; --foil: #f26d53; --foil-dark: #a3301b; --ink: #b83a22; }
-  &--club    { --foil-light: #fee79a; --foil: #fcc732; --foil-dark: #b38a0e; --ink: #7a5a00; --text: #3d2c00; }
-  &--special { --foil-light: #b99be6; --foil: #8854d0; --foil-dark: #4a2682; --ink: #6c3bb3; }
-
-  // TEST (siehe $pack-text-always-white oben): [class] erhöht die Spezifität über die .pack--{art}-Regeln
-  @if $pack-text-always-white { &[class] { --text: #fff; } }
-
-  // Bonus: Graphit
-  &--admin {
-    --foil-light: #9ca3af;
-    --foil: #4b5563;
-    --foil-dark: #111827;
-    --ink: #374151;
-  }
+  @include cover.foil-designs;
 
   // Lichtschein aus der aufgerissenen Öffnung
   &::before {
@@ -133,115 +81,7 @@ $pack-text-always-white: true;
     z-index: 1;
   }
 
-  // Folie: Grundverlauf + feine Längsrillen + wandernder Glanz
-  &__body,
-  &__top {
-    position: absolute;
-    left: 0;
-    right: 0;
-    background:
-      linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.3) 38%, transparent 52%),
-      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 6px),
-      linear-gradient(160deg, var(--foil-light), var(--foil) 42%, var(--foil-dark));
-    background-size: 260% 100%, auto, auto;
-    // Glanz-Layer nicht kacheln — sonst steht am Ende der Animation der Streifen der Nachbarkachel mitten
-    // im Pack und springt beim Neustart weg; so läuft er links unsichtbar ein und rechts unsichtbar aus
-    background-repeat: no-repeat, repeat, no-repeat;
-    animation: sheen 3.2s linear infinite;
-  }
-
-  &__body {
-    top: 13%;
-    bottom: 0;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start; // Text im oberen Teil, unten ist Platz fürs Motiv (PACK_ART)
-    padding-top: 16%;
-    gap: 2.5cqw;
-    box-shadow: inset 0 -12px 20px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-    // gezackte Siegelnaht unten
-    mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / 14px 100% repeat-x; // nur waagerecht (sonst 1px-Linie an den Zacken)
-  }
-
-  &__top {
-    top: 0;
-    height: 13.5%;
-    z-index: 3;
-    transform-origin: 0% 100%;
-    filter: brightness(0.92);
-    // gezackte Siegelnaht oben
-    mask: conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / 14px 100% repeat-x; // nur waagerecht (sonst 1px-Linie an den Zacken)
-
-    // Perforation, an der die Lasche abreißt
-    &::after {
-      content: '';
-      position: absolute;
-      left: 4%;
-      right: 4%;
-      bottom: 2px;
-      border-bottom: 2px dashed rgba(255, 255, 255, 0.55);
-    }
-  }
-
-  // Vorderseite: Marke klein, Art, große Überschrift (Anlass), Anzahl, Liga
-  &__brand {
-    color: color-mix(in srgb, var(--text, #fff) 85%, transparent);
-    font-family: $font-display;
-    font-size: 5.5cqw;
-    font-weight: 800;
-    font-style: italic;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  &__kind {
-    margin-top: 2cqw;
-    color: color-mix(in srgb, var(--text, #fff) 90%, transparent);
-    font-size: 5.5cqw;
-    font-weight: $font-weight-semibold;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-  }
-
-  &__headline {
-    max-width: 90%;
-    color: var(--text, #fff);
-    font-family: $font-display;
-    font-size: 13cqw;
-    font-weight: 800;
-    font-style: italic;
-    line-height: 0.95;
-    text-align: center;
-    text-transform: uppercase;
-    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
-    transform: rotate(-6deg);
-
-    // lange Einzelwörter (z.B. "Weihnachten") passen sonst nicht in eine Zeile
-    &--long { font-size: 10.5cqw; }
-  }
-
-  &__count {
-    margin-top: 3cqw;
-    padding: 1.5cqw 5cqw;
-    border-radius: $radius-full;
-    background: rgba(255, 255, 255, 0.92);
-    color: var(--ink);
-    font-size: 6cqw;
-    font-weight: $font-weight-bold;
-  }
-
-  &__league {
-    max-width: 85%;
-    color: color-mix(in srgb, var(--text, #fff) 75%, transparent);
-    font-size: 4.8cqw;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  @include cover.face;
 
   // ── Aufreißen ──
   &--tearing {
@@ -261,42 +101,7 @@ $pack-text-always-white: true;
   }
 }
 
-// Bild auf dem Pack (PACK_ART): freigestellt, nach unten links versetzt, angeschnitten; Blend-Mode inline
-// (Standard normal = voll sichtbar, optional je Bild z.B. soft-light); Text bleibt darüber lesbar
-.pack__art {
-  position: absolute;
-  left: -22%; // unten links — die Motive schauen nach rechts ins Pack
-  bottom: -10%;
-  z-index: 0;
-  width: 85%;
-  height: auto;
-  pointer-events: none;
-  transform: rotate(8deg);
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
-
-  // z.B. Medaille: kleiner, mittig unten, nicht gedreht
-  &--center {
-    left: 50%;
-    bottom: 7%;
-    width: 42%;
-    transform: translateX(-50%);
-  }
-
-  // mittiges Motiv ohne Liga-Zeile darunter: im Textfluss nach der Anzahl-Pille, senkrecht mittig im freien Platz —
-  // Abstand zur Pille = Abstand zum unteren Pack-Rand (top gleicht den Flex-Gap über dem Bild aus)
-  &--balanced {
-    position: relative;
-    order: 1;
-    left: auto;
-    bottom: auto;
-    top: -1.25cqw;
-    flex-shrink: 0;
-    margin: auto 0;
-    transform: none;
-  }
-}
-
-.pack__body > :not(.pack__art) { position: relative; z-index: 1; }
+@include cover.art;
 
 // Inline (Admin-Testseite): kein Overlay, dunkle Bühne in der Seite
 .backdrop--inline {
@@ -698,10 +503,7 @@ $pack-text-always-white: true;
   50%      { transform: translateY(-8px) rotate(1.5deg); }
 }
 
-@keyframes sheen {
-  from { background-position: 130% 0, 0 0, 0 0; }
-  to   { background-position: -130% 0, 0 0, 0 0; }
-}
+@include cover.sheen-keyframes;
 
 @keyframes shake {
   0%, 100% { transform: none; }

@@ -113,6 +113,7 @@
     flex: 1 1 0;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end; // Achievement-Symbol und höheres Pack stehen auf einer Grundlinie
     gap: 2px;
     min-width: 96px;
     max-width: 170px;
@@ -132,14 +133,17 @@
   }
 
   &__reward-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    margin-bottom: $space-1;
+    width: 64px;
+    height: 64px;
+    margin-bottom: $space-2;
     border-radius: $radius-md;
     object-fit: contain;
+  }
+
+  // das echte Pack-Cover (wie es danach zum Aufreißen erscheint), klein, mit Glanz und Schweben
+  &__reward-pack {
+    --pack-width: 64px;
+    margin: 3px 0 $space-2; // Platz fürs Schweben nach oben
   }
 
   // ── Inhalt (scrollt, wenn es viel ist) ──
@@ -439,34 +443,31 @@
         background: $color-surface-alt;
       }
     }
+
+    // Tipps: der Bestico-Schriftzug füllt das Feld links bis an den Rand, danach etwas Luft bis zum Betrag
+    &--bestico {
+      gap: $space-3;
+      padding: 0 $space-3 0 0;
+    }
   }
 
-  // Bestico-Schriftzug wie der Button auf /liga/h2h: kursiv, weiß auf Rot (eigenständiges Motiv, feste Farben)
+  // Bestico-Schriftzug wie der Button auf /liga/h2h: kursiv, weiß auf Rot (eigenständiges Motiv, feste Farben).
+  // Liegt oben, links und unten bündig auf dem Rahmen des Felds und übernimmt dessen runde linke Seite.
   &__bestico {
-    padding: 0 6px;
-    border-radius: $radius-sm;
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    min-height: 32px; // Höhe des Lukaten-Felds daneben (Symbol 22px + Polster + Rahmen)
+    margin: -1px 0 -1px -1px;
+    padding: 0 10px 0 $space-3;
+    border-radius: $radius-full 0 0 $radius-full;
     background: #e2001a;
     color: #fff;
-    font-size: 11px;
+    font-size: 13px;
     font-style: italic;
     font-weight: 800;
-    line-height: 22px;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-  }
-
-  // kleines Pack in der Farbe des Pack-Designs (Meilenstein blau, Spieltagssieger gelb)
-  &__pack {
-    display: block;
-    width: 32px;
-    height: 44px;
-    border-radius: 5px;
-    background: #4b7bec;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4), inset 0 6px 0 rgba(0, 0, 0, 0.12);
-
-    &--matchday_best {
-      background: #fed330;
-    }
   }
 
   // einfarbig schwarzes Symbol (Vorlage): im Dark-Mode hell, sonst verschwindet es

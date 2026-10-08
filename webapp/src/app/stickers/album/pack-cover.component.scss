@@ -1,0 +1,47 @@
+@use './pack-cover' as cover;
+
+:host {
+  display: inline-block;
+  width: var(--pack-width, 72px);
+}
+
+.pack {
+  @include cover.foil-default;
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 7.8;
+  container-type: inline-size;
+  animation: cover-float 2.6s ease-in-out infinite;
+
+  @include cover.foil-designs;
+  @include cover.face;
+
+  // klein: feinere Zacken an den Siegelnähten und eine dünnere Perforation als beim großen Pack
+  &__body,
+  &__top {
+    mask-size: 8px 100%;
+  }
+
+  &__top::after {
+    bottom: 1px;
+    border-bottom-width: 1px;
+  }
+}
+
+@include cover.art;
+@include cover.sheen-keyframes;
+
+// schwebt wie das große Pack, nur mit kleinerem Hub
+@keyframes cover-float {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50%      { transform: translateY(-3px) rotate(1.5deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pack,
+  .pack__body,
+  .pack__top {
+    animation: none;
+  }
+}

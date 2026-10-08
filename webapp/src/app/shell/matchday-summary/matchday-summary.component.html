@@ -36,11 +36,11 @@
               <small>{{ a.reason || 'Neues Achievement' }}</small>
             </div>
           }
-          @for (p of s.extras.packs; track $index) {
+          @for (p of rewardPacks(); track $index) {
             <div class="mds__reward">
-              <span class="mds__reward-icon"><span class="mds__pack mds__pack--{{ p.source }}"></span></span>
-              <strong>{{ packTitle(p) }}</strong>
-              <small>{{ packReason(p) }}</small>
+              <app-pack-cover class="mds__reward-pack" [pack]="p.info" />
+              <strong>{{ packTitle(p.pack) }}</strong>
+              <small>{{ packReason(p.pack) }}</small>
             </div>
           }
         </div>
@@ -172,7 +172,7 @@
                   </button>
                 }
                 @if (page.extras.bets; as b) {
-                  <span class="mds__chip" [title]="'Tipps: ' + betsText(b)">
+                  <span class="mds__chip mds__chip--bestico" [title]="'Tipps: ' + betsText(b)">
                     <span class="mds__bestico">Bestico</span>
                     @if (b.stakes > 0) {
                       <span [class.is-plus]="betsNet(b) > 0" [class.is-minus]="betsNet(b) < 0">{{ signedLukaten(betsNet(b)) }}</span>

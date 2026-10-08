@@ -2,6 +2,7 @@ import { Component, DestroyRef, HostListener, computed, effect, inject, signal, 
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { LukatenService } from '../../core/lukaten.service';
+import { PackInfo } from '../../stickers/album/pack.model';
 import {
   MatchdaySummary, MatchdaySummaryService, SummaryAchievement, SummaryExtras, SummaryH2H, SummaryHighlight,
   SummaryPack, SummaryResult, SummaryTeam,
@@ -29,6 +30,24 @@ export class MatchdaySummaryComponent {
   position = computed(() => Math.min(this.index(), Math.max(0, this.count() - 1)));
   current = computed<MatchdaySummary | null>(() => this.svc.shown()[this.position()] ?? null);
   isLast = computed(() => this.position() >= this.count() - 1);
+
+  /**
+   * Extra-Packs der gezeigten Zusammenfassung mit den Angaben fürs Pack-Cover (app-pack-cover) — so, wie das Pack
+   * danach auch zum Aufreißen erscheint: Art, Anlass (Spieltag bzw. erreichte Punkte), Anzahl, Liga.
+   */
+  rewardPacks = computed<{ pack: SummaryPack; info: PackInfo }[]>(() => {
+    const s = this.current();
+    if (!s) return [];
+    return s.extras.packs.map(pack => ({
+      pack,
+      info: {
+        id: null, source: pack.source, size: pack.size,
+        milestonePoints: pack.milestone_points,
+        matchdayNumber: pack.source === 'matchday_best' ? s.matchday.number : null,
+        leagueName: s.league.name,
+      },
+    }));
+  });
 
   constructor() {
     // neue Einblendung → wieder bei der ersten anfangen
