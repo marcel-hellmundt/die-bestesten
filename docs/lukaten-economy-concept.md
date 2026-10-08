@@ -100,10 +100,16 @@ Bewertung und Art zählt nur der erste.
 
 | Pack | Lukaten | Herleitung |
 |---|---:|---|
-| Normales Pack (3 Sticker, 1 neu) | 60 | Handvoll: 5 Packs für 2,99 € |
-| Big Pack (7 Sticker, 2 neu) | 120 | doppelt, wie bisher |
-| Vereins-Pack (5 Sticker eines Vereins, alle neu) | 200 | einzeln 1,99 € |
-| Special Pack (3 Sticker, mindestens 1 Holo) | 200 | einzeln 1,99 € |
+| Normales Pack (3 Sticker, 1 neu) | 100 | ein ganzer Spieltag Einträge (rund 500 Lukaten) = 5 Packs |
+| Big Pack (7 Sticker, 2 neu) | 200 | doppelt, wie bisher |
+| Vereins-Pack (5 Sticker eines Vereins, alle neu) | 350 | 3,5-fach |
+| Special Pack (3 Sticker, mindestens 1 Holo) | 350 | 3,5-fach |
+
+Maßstab ist das, was ein Manager ohnehin bekommt: Ein aktiver zieht ohne Lukaten rund 25 Sticker in der Woche
+(7 Tages-Packs, Streak-Pack, gelegentlich Meilenstein oder Spieltagssieg), rund 1.000 je Saison, und darauf ist das
+Album abgestimmt. Wer einen ganzen Spieltag allein einträgt, bekommt dafür 5 normale Packs, also 15 Sticker dazu.
+Die ersten Startwerte (60 / 120 / 200 / 200, abgeleitet aus 1 Lukate ≈ 1 Cent und den Euro-Preisen) hätten 8 Packs
+ergeben und das Tempo verdoppelt.
 
 | Lukaten-Bündel | Preis | je 100 Lukaten |
 |---:|---:|---:|
@@ -112,12 +118,14 @@ Bewertung und Art zählt nur der erste.
 | 550 | 4,99 € | 0,91 € |
 | 800 | 6,99 € | 0,87 € |
 
-Die Euro-Pakete im Shop (Handvoll, Stapel, Kiste) sind damit nie schlechter als der Weg über Lukaten: Die Kiste
-für 6,99 € enthält Packs im Wert von 940 Lukaten, das Bündel für denselben Preis bringt 800.
+Die Euro-Pakete im Shop (Handvoll, Stapel, Kiste) sind deutlich günstiger als der Weg über gekaufte Lukaten: Die
+Kiste für 6,99 € enthält Packs im Wert von 1.600 Lukaten, das Bündel für denselben Preis bringt 800; ein normales
+Pack kostet in der Handvoll 0,60 €, über gekaufte Lukaten rund 1 €. Gekaufte Lukaten sind damit fürs Tippen gedacht,
+Packs kauft man mit verdienten Lukaten oder direkt gegen Euro. Die Seite /lukaten sagt das beim Kaufen dazu.
 
 Was das für die Manager heißt:
 
-- Marcel verdient an einem Spieltag rund vier normale Packs.
+- Marcel verdient an einem Spieltag gut zwei normale Packs.
 - Ein vorhandenes Guthaben von 100 Lukaten reicht für ein normales Pack. Vorher waren es sechs (Preis 15).
 
 ## 5. Regeln im Einzelnen
@@ -221,7 +229,7 @@ Nach dem Merge gibt es keinen einfachen Rückweg: Käufe stehen dann im Kontobuc
 
 Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 
-1. Pack-Preise 60 / 120 / 200 / 200.
+1. Pack-Preise 100 / 200 / 350 / 350.
 2. Lukaten-Bündel 200 / 300 / 550 / 800 für 1,99 € / 2,99 € / 4,99 € / 6,99 €.
 3. Startbonus je Saison: 100.
 4. Gewinn-Obergrenze beim Tippen: aus. Wert festlegen, sobald `/verwaltung/lukaten` zeigt, wie viele Lukaten im
@@ -232,8 +240,8 @@ Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 
 | Risiko | Einschätzung | Umgang |
 |---|---|---|
-| **Kaufkraft der alten Guthaben** | Unverändert übernommen, bei vierfachen Pack-Preisen: 100 Lukaten reichen für ein normales Pack statt für sechs. | Bewusst so entschieden. Beim Start erklären. |
-| **Einträge bringen viele Packs** | Rund 19.400 Lukaten je Saison für alle zusammen, das sind über 300 normale Packs. Fleißige füllen das Album deutlich schneller. | Gewollt: Mitarbeit soll sich lohnen. Stellschraube sind die Pack-Preise. |
+| **Kaufkraft der alten Guthaben** | Unverändert übernommen, bei knapp siebenfachen Pack-Preisen (15 → 100): 100 Lukaten reichen für ein normales Pack statt für sechs. | Bewusst so entschieden. Beim Start erklären. |
+| **Einträge bringen viele Packs** | Rund 19.400 Lukaten je Saison für alle zusammen, das sind knapp 200 normale Packs. Fleißige füllen das Album schneller. | Gewollt: Mitarbeit soll sich lohnen. Stellschraube sind die Pack-Preise — deshalb von 60 auf 100 angehoben (Abschnitt 4). |
 | **Tippen ohne Obergrenze** | Wer viele Lukaten hat, kann viel setzen; die Bank zahlt jeden Gewinn. | Gewinn-Obergrenze ist vorbereitet (Abschnitt 5). Die Quote kommt vom Server. |
 | **Datenqualität im Hauptspiel** | Lukaten fürs Eintragen könnten Tempo vor Sorgfalt belohnen. Falsche Noten wirken auf die Punkte, bis sie korrigiert sind. | Der Eintrag gehört dem, dessen Wert am Ende gilt: Ein falscher Wert bringt nichts, eine Korrektur lohnt sich. |
 | **Statistik lässt sich aufteilen** | Tragen zwei Manager je ein Tor desselben Spielers ein, gibt es zwei Einträge statt einem. Mehr als es Angaben gibt, kann es nicht werden, und ohne eine neue, richtige Angabe bekommt niemand einen Eintrag. | Hinnehmen; so wurde auch bisher gezählt. |

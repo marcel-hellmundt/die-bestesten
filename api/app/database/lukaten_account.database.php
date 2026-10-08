@@ -26,8 +26,10 @@ trait LukatenAccountTrait
             'season_bonus'  => 100,          // Startbonus je Manager und Saison (einer, unabhängig von der Zahl der Ligen)
             'entries_since' => '2026-10-07', // Lukaten für Einträge: nur Spieltage mit Anpfiff ab diesem Tag
             'max_payout'    => null,         // Obergrenze für den möglichen Gewinn eines Tipps (Einsatz × Quote); null = keine
-            // Pack-Preise im Klebrigsten-Shop (Schlüssel wie StickerShopTrait::stickerShopOffers())
-            'pack_prices'   => ['l-small' => 60, 'l-big' => 120, 'l-club' => 200, 'l-special' => 200],
+            // Pack-Preise im Klebrigsten-Shop (Schlüssel wie StickerShopTrait::stickerShopOffers()). Maßstab: ein ganzer
+            // Spieltag Einträge (rund 500 Lukaten) = 5 normale Packs, 15 Sticker — gut die Hälfte dessen, was ein aktiver
+            // Manager in einer Woche ohnehin zieht (rund 25). Mit 60 je Pack hätten Einträge das Tempo verdoppelt.
+            'pack_prices'   => ['l-small' => 100, 'l-big' => 200, 'l-club' => 350, 'l-special' => 350],
             // Lukaten gegen Euro [Cent, Lukaten]: 1 Lukate ≈ 1 Cent, bei größeren Beträgen etwas mehr
             'eur_bundles'   => ['lk-200' => [199, 200], 'lk-300' => [299, 300], 'lk-550' => [499, 550], 'lk-800' => [699, 800]],
         ];

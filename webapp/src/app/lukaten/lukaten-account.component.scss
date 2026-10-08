@@ -194,6 +194,8 @@
     margin: 0;
     font-size: $font-sm;
     color: $color-text-muted;
+
+    a { color: $color-accent; }
   }
 
   &__link { align-self: flex-start; }

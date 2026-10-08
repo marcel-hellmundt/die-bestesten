@@ -40,10 +40,10 @@ export interface ShopOffer {
 // Keys stabil, l-small = Normales Pack. Der Shop zeigt die Preise des Servers (GET /sticker/shop → prices);
 // die Werte hier sind der Rückfall und die Grundlage der Simulation.
 export const LUKATEN_OFFERS: ShopOffer[] = [
-  { key: 'l-small',   currency: 'lukaten', name: PACK_KINDS.normal.name,  contents: { normal: 1 },  price: 60 },
-  { key: 'l-big',     currency: 'lukaten', name: PACK_KINDS.big.name,     contents: { big: 1 },     price: 120, highlight: 'Beliebt' },
-  { key: 'l-club',    currency: 'lukaten', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 200 },
-  { key: 'l-special', currency: 'lukaten', name: PACK_KINDS.special.name, contents: { special: 1 }, price: 200 },
+  { key: 'l-small',   currency: 'lukaten', name: PACK_KINDS.normal.name,  contents: { normal: 1 },  price: 100 },
+  { key: 'l-big',     currency: 'lukaten', name: PACK_KINDS.big.name,     contents: { big: 1 },     price: 200, highlight: 'Beliebt' },
+  { key: 'l-club',    currency: 'lukaten', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 350 },
+  { key: 'l-special', currency: 'lukaten', name: PACK_KINDS.special.name, contents: { special: 1 }, price: 350 },
 ];
 
 // Euro: Kombinationen — Staffel 2,99 → 4,99 → 6,99; Starter einmalig als Einstieg
