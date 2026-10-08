@@ -277,6 +277,11 @@
       object-fit: contain;
     }
 
+    // Nachkommastellen (krumme Tippgewinne) klein hinter dem ganzen Betrag
+    small {
+      font-size: 0.72em;
+    }
+
     &:hover { background-color: $color-surface-alt; }
     &.active { color: $color-accent; }
 
@@ -496,6 +501,10 @@
         margin-left: auto;
         font-weight: $font-weight-semibold;
         font-variant-numeric: tabular-nums;
+
+        small {
+          font-size: 0.72em;
+        }
       }
     }
 

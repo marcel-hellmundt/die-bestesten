@@ -222,7 +222,7 @@
         data-tooltip="Lukaten"
       >
         <img src="img/icons/lukat.png" alt="" />
-        {{ lukatenLabel() }}
+        <span>{{ lukatenParts().whole }}@if (lukatenParts().fraction) {<small>{{ lukatenParts().fraction }}</small>}</span>
       </a>
     }
 
@@ -316,7 +316,7 @@
                routerLink="/lukaten" (click)="closeDropdown()">
               <img class="dropdown-item-lukat" src="img/icons/lukat.png" alt="" />
               Lukaten
-              <span class="dropdown-item-value">{{ lukatenLabel() }}</span>
+              <span class="dropdown-item-value">{{ lukatenParts().whole }}@if (lukatenParts().fraction) {<small>{{ lukatenParts().fraction }}</small>}</span>
             </a>
           }
           <!-- Mobile-only: Karte/Achievements/Benachrichtigungen sitzen dort auf Desktop als
