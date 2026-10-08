@@ -254,7 +254,7 @@
     position: relative;
   }
 
-  // Lukaten-Guthaben: Icon + Zahl, führt zum Konto. Auf Mobile im Nutzer-Dropdown (wie die Icon-Buttons).
+  // Lukaten-Guthaben: Icon + Zahl, führt zum Konto — auf Desktop und Mobile in der Topbar.
   &-wallet {
     display: flex;
     align-items: center;
@@ -280,8 +280,11 @@
     &:hover { background-color: $color-surface-alt; }
     &.active { color: $color-accent; }
 
+    // Mobile: enger, die Topbar hat dort wenig Platz
     @media (max-width: #{$mobile-breakpoint}) {
-      display: none;
+      gap: 4px;
+      margin-right: 0;
+      padding: 0 $space-2 0 $space-1;
     }
   }
 
@@ -485,18 +488,6 @@
         line-height: 1;
       }
 
-      // Lukaten: Icon in der Größe der übrigen Menü-Icons, Guthaben rechts
-      .dropdown-item-lukat {
-        width: 18px;
-        height: 18px;
-        object-fit: contain;
-      }
-
-      .dropdown-item-value {
-        margin-left: auto;
-        font-weight: $font-weight-semibold;
-        font-variant-numeric: tabular-nums;
-      }
     }
 
     // Badge auf dem Avatar (Mobile: zeigt ungelesene Benachrichtigungen — auf Desktop steht das

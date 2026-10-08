@@ -211,7 +211,7 @@
   }
 
   <div class="topbar-right">
-    <!-- Lukaten-Guthaben → Konto (/lukaten); auf Mobile im Benutzermenü -->
+    <!-- Lukaten-Guthaben → Konto (/lukaten); auch auf Mobile in der Topbar -->
     @if (lukatenBalance() !== null) {
       <a
         class="topbar-wallet"
@@ -310,15 +310,6 @@
             </div>
           </a>
           <hr class="dropdown-divider" />
-          @if (lukatenBalance() !== null) {
-            <a class="dropdown-item dropdown-item--mobile-only"
-               [class.dropdown-item--active]="currentUrl().startsWith('/lukaten')"
-               routerLink="/lukaten" (click)="closeDropdown()">
-              <img class="dropdown-item-lukat" src="img/icons/lukat.png" alt="" />
-              Lukaten
-              <span class="dropdown-item-value">{{ lukatenLabel() }}</span>
-            </a>
-          }
           <!-- Mobile-only: Karte/Achievements/Benachrichtigungen sitzen dort auf Desktop als
                eigene Icon-Buttons in der Topbar; auf Mobile ist dieser Platz jetzt für die immer
                sichtbare Liga-Auswahl (.topbar-league) reserviert, siehe dort. -->
