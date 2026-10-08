@@ -518,6 +518,9 @@
     color: $color-text-muted;
   }
 
+  // unter dem Bestico-Schriftzug etwas mehr Luft als unter einer Textüberschrift
+  &__sub--below-logo { margin-top: $space-3; }
+
   &__go {
     flex-shrink: 0;
     font-size: $font-sm;

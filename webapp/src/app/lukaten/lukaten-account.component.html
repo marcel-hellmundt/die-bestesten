@@ -190,11 +190,12 @@
           <header class="offer__head">
             <div>
               <h3 class="offer__title"><span class="bestico">Bestico</span></h3>
-              <p class="offer__sub">Tippe auf den Ausgang der H2H-Duelle</p>
+              <p class="offer__sub offer__sub--below-logo">
+                Tippe auf den Ausgang der H2H-Duelle. Richtig getippt bekommst du Einsatz mal Quote zurück.
+              </p>
             </div>
             <span class="offer__go">Zum Bestico</span>
           </header>
-          <p class="offer__text">Richtig getippt bekommst du Einsatz mal Quote zurück.</p>
           @if (rules.max_payout != null) {
             <p class="offer__note">Möglicher Gewinn je Tipp: höchstens {{ format(rules.max_payout) }} Lukaten.</p>
           }
