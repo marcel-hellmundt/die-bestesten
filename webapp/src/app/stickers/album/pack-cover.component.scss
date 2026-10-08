@@ -13,6 +13,9 @@
   aspect-ratio: 5 / 7.8;
   container-type: inline-size;
   animation: cover-float 2.6s ease-in-out infinite;
+  // mehrere Packs nebeneinander: --pack-delay (negativ, z.B. -0.7s) am Element versetzt Schweben und Glanz,
+  // damit sie sich nicht im gleichen Takt bewegen
+  animation-delay: var(--pack-delay, 0s);
 
   @include cover.foil-designs;
   @include cover.face;
@@ -21,6 +24,8 @@
   &__body,
   &__top {
     mask-size: 8px 100%;
+    // 1,9-fach: passt nicht glatt in die Periode des Schwebens, wirkt dadurch nicht gleichgetaktet
+    animation-delay: calc(var(--pack-delay, 0s) * 1.9);
   }
 
   &__top::after {

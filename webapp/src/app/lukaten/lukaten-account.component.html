@@ -177,7 +177,7 @@
           <ul class="pack-offers">
             @for (p of packOffers(); track p.kind) {
               <li class="pack-offer">
-                <app-pack-cover class="pack-offer__cover" [pack]="p.info" />
+                <app-pack-cover class="pack-offer__cover" [pack]="p.info" [style.--pack-delay]="packDelays[$index % packDelays.length]" />
                 <span class="pack-offer__name">{{ p.name }}</span>
                 <span class="pack-offer__size">{{ p.size }} Sticker</span>
                 <span class="pack-offer__price"><img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />{{ format(p.price) }}</span>

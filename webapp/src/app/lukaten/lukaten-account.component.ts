@@ -138,6 +138,9 @@ export class LukatenAccountComponent {
       .map(t => `${this.entryTypeLabel[t]} ${this.format(byType[t])}`).join(' · ');
   }
 
+  /** Versatz der Pack-Bewegung je Pack — ungleichmäßig, damit die vier nicht im Takt schweben und glänzen */
+  readonly packDelays = ['0s', '-1.7s', '-0.6s', '-2.3s'];
+
   /** Pack-Arten aus dem Shop mit Preis — samt den Angaben fürs kleine Pack-Cover (app-pack-cover) */
   packOffers = computed(() => (this.active()?.rules?.packs ?? []).map(p => ({
     ...p,

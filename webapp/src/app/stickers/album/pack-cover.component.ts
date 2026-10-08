@@ -4,7 +4,8 @@ import { PACK_ART, PackInfo, packCountLabel, packDesign, packFace } from './pack
 /**
  * "Die Klebrigsten" — ein geschlossenes Pack klein und nur zum Ansehen: dieselbe Vorderseite wie im Pack-Dialog
  * (Folienfarbe je Design, Motiv, Beschriftung, wandernder Glanz, leichtes Schweben), aber ohne Aufreißen.
- * Breite über --pack-width am Element (Standard 72px), alles darauf skaliert mit. Aussehen: _pack-cover.scss.
+ * Breite über --pack-width am Element (Standard 72px), alles darauf skaliert mit; --pack-delay (negativ) versetzt
+ * die Bewegung, wenn mehrere nebeneinander stehen. Aussehen: _pack-cover.scss.
  */
 @Component({
   selector: 'app-pack-cover',

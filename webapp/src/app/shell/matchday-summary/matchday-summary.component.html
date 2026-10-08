@@ -38,7 +38,7 @@
           }
           @for (p of rewardPacks(); track $index) {
             <div class="mds__reward">
-              <app-pack-cover class="mds__reward-pack" [pack]="p.info" />
+              <app-pack-cover class="mds__reward-pack" [pack]="p.info" [style.--pack-delay]="($index * -1.1) + 's'" />
               <strong>{{ packTitle(p.pack) }}</strong>
               <small>{{ packReason(p.pack) }}</small>
             </div>
