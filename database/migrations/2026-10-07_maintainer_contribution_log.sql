@@ -4,11 +4,12 @@
 --
 -- Rein additiv: eine neue Tabelle, die der Code auf main nicht kennt — für Production ändert sich nichts.
 --
--- Ein Eintrag (maintainer_contribution) gehört dem Manager, der den gültigen Wert eingetragen hat: Wer einen Wert
--- korrigiert, übernimmt den Eintrag (PlayerRatingTrait::assignContribution()). Dieser Verlauf hält fest, wer
--- welchen Wert wann gesetzt hat — damit bleibt ein Eintrag bei dem, der den Wert zuerst so eingetragen hat, wenn
--- jemand ihn ändert und wieder zurückstellt.
--- Ohne diese Migration gilt schlicht: Der Eintrag gehört dem, der den Wert zuletzt geändert hat.
+-- Ein Eintrag (maintainer_contribution) gehört dem, dessen Wert gilt (PlayerRatingTrait::assignContribution()):
+-- Wer Einsatz oder Note korrigiert, übernimmt den Eintrag; einen Statistik-Eintrag hat jeder, von dem eine gültige
+-- Angabe stammt (einer das erste Tor, ein anderer das zweite → beide). Dieser Verlauf hält fest, wer welchen Wert
+-- wann gesetzt hat — daraus ergibt sich, von wem welche Angabe stammt, und ein Eintrag bleibt bei dem, der den
+-- Wert zuerst so eingetragen hat, wenn jemand ihn ändert und wieder zurückstellt.
+-- Ohne diese Migration gilt: bei Einsatz und Note, wer zuletzt ändert; bei der Statistik kommt dazu, wer sie ändert.
 
 CREATE TABLE IF NOT EXISTS maintainer_contribution_log (
     id                CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),

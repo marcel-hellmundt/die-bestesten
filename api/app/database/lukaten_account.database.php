@@ -204,26 +204,27 @@ trait LukatenAccountTrait
     }
 
     /**
-     * SQL-Bedingung "frühester Eintrag je Bewertung und Art" für maintainer_contribution mc. Seit ein Eintrag dem
-     * gehört, der den gültigen Wert eingetragen hat (PlayerRatingTrait::assignContribution()), gibt es je Bewertung
-     * und Art nur noch eine Zeile; die Bedingung fängt Zeilen aus der Zeit davor ab (mehrere Manager je Wert).
+     * SQL-Bedingung für maintainer_contribution mc: welche Zeilen als Eintrag zählen. Das sind alle — Einsatz und
+     * Note gehören je Bewertung einem Manager, die Statistik jedem, von dem eine gültige Angabe stammt
+     * (PlayerRatingTrait::assignContribution()). Bei Einsatz und Note fängt die Bedingung zusätzlich Zeilen aus
+     * der Zeit davor ab (mehrere Manager für denselben Wert): dort zählt nur die früheste.
      */
     private function lukatenFirstEntrySql(): string
     {
-        return "NOT EXISTS (
+        return "(mc.contribution_type = 'stats' OR NOT EXISTS (
                     SELECT 1 FROM maintainer_contribution o
                     WHERE o.player_rating_id = mc.player_rating_id AND o.contribution_type = mc.contribution_type
-                      AND (o.created_at < mc.created_at OR (o.created_at = mc.created_at AND o.id < mc.id)))";
+                      AND (o.created_at < mc.created_at OR (o.created_at = mc.created_at AND o.id < mc.id))))";
     }
 
     /**
      * Beim Spieltagsabschluss (PATCH /matchday/:id completed=true): je Eintrag zu einer Bewertung dieses Spieltags
      * 1 Lukate — eine Buchung je Manager und Spieltag (entries:{matchday_id}), erneutes Abschließen bucht nichts
      * doppelt. Ein Eintrag ist eine Zeile in maintainer_contribution (Einsatz, Note oder Statistik eines Spielers)
-     * und gehört dem, der den Wert eingetragen hat, der beim Abschluss gilt: Wer einen Wert korrigiert, übernimmt
-     * den Eintrag, der Vorgänger bekommt nichts (PlayerRatingTrait::assignContribution()). Gezählt wird erst beim
-     * Abschluss, bis dahin kann ein Eintrag also noch wechseln. Nur Spieltage mit Anpfiff ab entries_since.
-     * Rückgabe: [manager_id => Lukaten].
+     * und gehört dem, dessen Wert beim Abschluss gilt: Wer Einsatz oder Note korrigiert, übernimmt den Eintrag,
+     * der Vorgänger bekommt nichts; bei der Statistik hat jeder einen Eintrag, von dem eine gültige Angabe stammt
+     * (PlayerRatingTrait::assignContribution()). Gezählt wird erst beim Abschluss, bis dahin kann ein Eintrag also
+     * noch wechseln. Nur Spieltage mit Anpfiff ab entries_since. Rückgabe: [manager_id => Lukaten].
      */
     public function creditLukatenEntriesForMatchday(string $matchdayId): array
     {

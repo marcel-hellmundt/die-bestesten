@@ -405,12 +405,13 @@ CREATE TABLE IF NOT EXISTS manager_country (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: maintainer_contribution (wem die Einträge eines player_rating gehören)
--- player_rating_id ist Referenz auf player_rating.id (kein FK). Je Bewertung und Kategorie gehört der
--- Eintrag dem Manager, der den gültigen Wert eingetragen hat: Korrigiert Manager B eine Note von
--- Manager A, geht der Eintrag an B über, A verliert ihn (PlayerRatingTrait::assignContribution());
--- Speichern ohne Änderung zählt nicht, ein zurückgesetzter Wert gehört niemandem. Zeilen aus der Zeit
--- davor (akkumuliert: jeder, der eine Kategorie bearbeitet hat) bleiben, wie sie sind — deshalb weiter
--- UNIQUE über (rating, Kategorie, Manager).
+-- player_rating_id ist Referenz auf player_rating.id (kein FK). Ein Eintrag gehört dem, dessen Wert gilt
+-- (PlayerRatingTrait::assignContribution()): Einsatz und Note haben je Bewertung einen Besitzer —
+-- korrigiert Manager B eine Note von Manager A, geht der Eintrag an B über, A verliert ihn. Einen
+-- Statistik-Eintrag hat jeder Manager, von dem mindestens eine gültige Angabe stammt (A das erste Tor,
+-- B das zweite → beide eine Zeile) — deshalb UNIQUE über (rating, Kategorie, Manager). Speichern ohne
+-- Änderung zählt nicht, ein zurückgesetzter Wert gehört niemandem. Zeilen aus der Zeit davor
+-- (akkumuliert: jeder, der eine Kategorie gespeichert hat) bleiben, bis der Wert sich ändert.
 CREATE TABLE IF NOT EXISTS maintainer_contribution (
     id                CHAR(36)                                            NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id        CHAR(36)                                            NOT NULL,
@@ -422,8 +423,9 @@ CREATE TABLE IF NOT EXISTS maintainer_contribution (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: maintainer_contribution_log (Verlauf: wer hat welchen Wert einer Bewertung wann gesetzt)
--- Grundlage für die Zuordnung in maintainer_contribution: Der Eintrag gehört dem, der den gültigen Wert als
--- Erster so eingetragen hat — ändern und wieder zurückstellen bringt also nichts.
+-- Grundlage für die Zuordnung in maintainer_contribution: Einsatz und Note gehören dem, der den gültigen Wert
+-- als Erster so eingetragen hat; bei der Statistik gehört jede Angabe (das n-te Tor, der SdS, …) dem, der sie
+-- als Erster eingetragen hat — ändern und wieder zurückstellen bringt also nichts.
 -- Migration: 2026-10-07_maintainer_contribution_log.sql
 CREATE TABLE IF NOT EXISTS maintainer_contribution_log (
     id                CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),

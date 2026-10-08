@@ -98,9 +98,9 @@ trait PlayerRatingTrait
     }
 
     // Wem die Einträge einer Reihe von player_rating-Zeilen gehören — gruppiert je Zeile nach
-    // Manager (types = seine Kategorien). Je Zeile und Kategorie ist das der Manager, der den
-    // gültigen Wert eingetragen hat (siehe assignContribution()); Zeilen aus der Zeit davor
-    // können noch mehrere Manager je Kategorie haben.
+    // Manager (types = seine Kategorien). Einsatz und Note gehören je Zeile einem Manager (der den
+    // gültigen Wert eingetragen hat), die Statistik jedem, von dem eine gültige Angabe stammt —
+    // siehe assignContribution(). Zeilen aus der Zeit davor können mehr Manager je Kategorie haben.
     private function getContributorsForRatings(array $ratingIds): array
     {
         $ratingIds = array_values(array_unique(array_filter($ratingIds)));
@@ -141,8 +141,8 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Wert je Eintrags-Art in vergleichbarer Form ('' = leer): Einsatz, Note und die Statistik — alle
-     * Statistikfelder zusammen sind ein Eintrag.
+     * Wert je Eintrags-Art in vergleichbarer Form ('' = leer): Einsatz, Note und die Statistik als
+     * 'Tore|Vorlagen|Weiße Weste|SdS|Rot|Gelb-Rot'.
      */
     private function contributionValues(?array $row): array
     {
@@ -156,60 +156,108 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Wem ein Eintrag gehört (maintainer_contribution) — neu bestimmt, sobald sich der Wert einer Art ändert:
-     * dem Manager, der den jetzt gültigen Wert eingetragen hat. Korrigiert jemand einen Wert, geht der Eintrag
-     * an ihn über, und der Vorgänger verliert ihn — auch die Lukate dafür (LukatenAccountTrait). Speichern ohne
-     * Änderung zählt nicht. Ist der Wert danach leer (zurückgesetzt), gehört der Eintrag niemandem.
+     * Wem die Einträge einer Art gehören (maintainer_contribution) — neu bestimmt, sobald sich der Wert ändert.
+     * Grundsatz: Ein Eintrag gehört dem, dessen Wert jetzt gilt. Speichern ohne Änderung zählt nicht; ist der
+     * Wert danach leer (zurückgesetzt), gehört der Eintrag niemandem. Für jeden Eintrag gibt es beim
+     * Spieltagsabschluss eine Lukate (LukatenAccountTrait).
      *
-     * Hat denselben Wert schon früher jemand eingetragen (Verlauf in maintainer_contribution_log), bleibt es
-     * dessen Eintrag: einen richtigen Wert ändern und wieder zurückstellen bringt nichts. Fehlt der Verlauf
-     * (Migration), gilt schlicht: wer zuletzt ändert.
+     * Einsatz und Note haben genau einen Wert und damit einen Besitzer: Korrigiert jemand den Wert, geht der
+     * Eintrag an ihn über, und der Vorgänger verliert ihn. Hat denselben Wert schon früher jemand eingetragen,
+     * bleibt es dessen Eintrag — ändern und wieder zurückstellen bringt nichts.
+     *
+     * Die Statistik besteht aus mehreren Angaben (jedes Tor, jede Vorlage, Weiße Weste, SdS, jede Karte). Einen
+     * Statistik-Eintrag hat jeder, von dem mindestens eine Angabe stammt, die jetzt gilt: Trägt A das erste Tor
+     * ein und B das zweite, haben beide einen Eintrag; nimmt jemand das zweite Tor wieder heraus, verliert B
+     * seinen. Eine Angabe gehört dem, der sie als Erster eingetragen hat (das n-te Tor dem, der die Zahl zuerst
+     * auf n gebracht hat) — herausnehmen und wieder eintragen bringt also ebenfalls nichts.
+     *
+     * Grundlage ist der Verlauf maintainer_contribution_log (wer hat welchen Wert wann gesetzt). Fehlt er
+     * (Migration), gilt bei Einsatz und Note: wer zuletzt ändert; bei der Statistik kommt dazu, wer sie ändert.
      * $old/$new = Wert vor und nach der Änderung in der Form von contributionValues().
      */
     private function assignContribution(string $ratingId, string $managerId, string $type, string $old, string $new): void
     {
         if ($old === $new) return;
 
-        $owner = $managerId;
+        $owners = [];
         if ($new !== '') {
             try {
-                $key = [$ratingId, $type];
-                $has = $this->con->prepare("SELECT 1 FROM maintainer_contribution_log WHERE player_rating_id = ? AND contribution_type = ? LIMIT 1");
-                $has->execute($key);
-                if (!$has->fetchColumn() && $old !== '') {
-                    // Der bisherige Wert stammt aus der Zeit vor dem Verlauf → dem bisherigen Eintrag zuschreiben
-                    $prev = $this->con->prepare(
-                        "SELECT manager_id, created_at FROM maintainer_contribution
-                         WHERE player_rating_id = ? AND contribution_type = ? ORDER BY created_at ASC, id ASC LIMIT 1"
-                    );
-                    $prev->execute($key);
-                    if ($p = $prev->fetch(PDO::FETCH_ASSOC)) {
-                        $this->con->prepare(
-                            "INSERT INTO maintainer_contribution_log (id, player_rating_id, contribution_type, manager_id, value, created_at)
-                             VALUES (UUID(), ?, ?, ?, ?, ?)"
-                        )->execute([$ratingId, $type, $p['manager_id'], $old, $p['created_at']]);
-                    }
-                }
-                $this->con->prepare(
-                    "INSERT INTO maintainer_contribution_log (id, player_rating_id, contribution_type, manager_id, value)
-                     VALUES (UUID(), ?, ?, ?, ?)"
-                )->execute([$ratingId, $type, $managerId, $new]);
-
-                $first = $this->con->prepare(
-                    "SELECT manager_id FROM maintainer_contribution_log
-                     WHERE player_rating_id = ? AND contribution_type = ? AND value = ? ORDER BY created_at ASC LIMIT 1"
-                );
-                $first->execute([$ratingId, $type, $new]);
-                $owner = $first->fetchColumn() ?: $managerId;
+                $owners = $this->contributionOwners($ratingId, $managerId, $type, $old, $new);
             } catch (\Throwable $e) {
-                $owner = $managerId; // Verlauf fehlt (Migration) → wer zuletzt ändert
+                // Verlauf fehlt (Migration)
+                $owners = [$managerId];
+                if ($type === 'stats') {
+                    $q = $this->con->prepare(
+                        "SELECT manager_id FROM maintainer_contribution WHERE player_rating_id = ? AND contribution_type = 'stats'"
+                    );
+                    $q->execute([$ratingId]);
+                    $owners = array_values(array_unique(array_merge($q->fetchAll(PDO::FETCH_COLUMN), $owners)));
+                }
             }
         }
 
         $this->con->prepare(
             "DELETE FROM maintainer_contribution WHERE player_rating_id = ? AND contribution_type = ?"
         )->execute([$ratingId, $type]);
-        if ($new !== '') $this->insertContribution($ratingId, $owner, $type);
+        foreach ($owners as $owner) $this->insertContribution($ratingId, $owner, $type);
+    }
+
+    /**
+     * Schreibt die Änderung in den Verlauf (maintainer_contribution_log) und liefert die Manager, denen die
+     * Einträge dieser Art jetzt gehören — Regeln siehe assignContribution(). Wirft, wenn der Verlauf fehlt.
+     */
+    private function contributionOwners(string $ratingId, string $managerId, string $type, string $old, string $new): array
+    {
+        $key = [$ratingId, $type];
+        $has = $this->con->prepare("SELECT 1 FROM maintainer_contribution_log WHERE player_rating_id = ? AND contribution_type = ? LIMIT 1");
+        $has->execute($key);
+        if (!$has->fetchColumn() && $old !== '') {
+            // Der bisherige Wert stammt aus der Zeit vor dem Verlauf → dem bisherigen (frühesten) Eintrag zuschreiben
+            $prev = $this->con->prepare(
+                "SELECT manager_id, created_at FROM maintainer_contribution
+                 WHERE player_rating_id = ? AND contribution_type = ? ORDER BY created_at ASC, id ASC LIMIT 1"
+            );
+            $prev->execute($key);
+            if ($p = $prev->fetch(PDO::FETCH_ASSOC)) {
+                $this->con->prepare(
+                    "INSERT INTO maintainer_contribution_log (id, player_rating_id, contribution_type, manager_id, value, created_at)
+                     VALUES (UUID(), ?, ?, ?, ?, ?)"
+                )->execute([$ratingId, $type, $p['manager_id'], $old, $p['created_at']]);
+            }
+        }
+        $this->con->prepare(
+            "INSERT INTO maintainer_contribution_log (id, player_rating_id, contribution_type, manager_id, value)
+             VALUES (UUID(), ?, ?, ?, ?)"
+        )->execute([$ratingId, $type, $managerId, $new]);
+
+        $logQ = $this->con->prepare(
+            "SELECT manager_id, value FROM maintainer_contribution_log
+             WHERE player_rating_id = ? AND contribution_type = ? ORDER BY created_at ASC"
+        );
+        $logQ->execute($key);
+        $log = $logQ->fetchAll(PDO::FETCH_ASSOC);
+
+        // Einsatz, Note: wer den jetzt gültigen Wert als Erster so eingetragen hat
+        if ($type !== 'stats') {
+            foreach ($log as $row) {
+                if ($row['value'] === $new) return [$row['manager_id']];
+            }
+            return [$managerId];
+        }
+
+        // Statistik: jede Angabe ("Feld:n" = das n-te Tor, die Weiße Weste, …) gehört dem, der sie zuerst eingetragen hat
+        $units = fn(string $value) => array_map(fn($n) => min((int) $n, 50), explode('|', $value));
+        $first = [];
+        foreach ($log as $row) {
+            foreach ($units($row['value']) as $field => $count) {
+                for ($n = 1; $n <= $count; $n++) $first["$field:$n"] ??= $row['manager_id'];
+            }
+        }
+        $owners = [];
+        foreach ($units($new) as $field => $count) {
+            for ($n = 1; $n <= $count; $n++) $owners[$first["$field:$n"] ?? $managerId] = true;
+        }
+        return array_map('strval', array_keys($owners));
     }
 
     /**
@@ -639,9 +687,10 @@ trait PlayerRatingTrait
         $this->con->prepare('UPDATE player_rating SET points = :p WHERE id = :id')
             ->execute([':p' => $newPoints, ':id' => $id]);
 
-        // Einträge (maintainer_contribution) je berührter Art neu zuordnen: Ein Eintrag gehört dem, der den
-        // jetzt gültigen Wert eingetragen hat — wer korrigiert, übernimmt ihn; Speichern ohne Änderung zählt
-        // nicht; ein leerer Wert (zurückgesetzt, Statistik komplett auf 0) gehört niemandem.
+        // Einträge (maintainer_contribution) je berührter Art neu zuordnen: Ein Eintrag gehört dem, dessen Wert
+        // jetzt gilt — wer Einsatz oder Note korrigiert, übernimmt den Eintrag; bei der Statistik hat jeder
+        // einen, von dem eine gültige Angabe stammt; Speichern ohne Änderung zählt nicht; ein leerer Wert
+        // (zurückgesetzt, Statistik komplett auf 0) gehört niemandem.
         $rowQ->execute([$id]);
         $old = $this->contributionValues($oldRow);
         $new = $this->contributionValues($rowQ->fetch(PDO::FETCH_ASSOC) ?: null);

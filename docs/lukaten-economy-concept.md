@@ -14,8 +14,9 @@ Als Bild: https://claude.ai/artifact/9T5fiXDRkyArt8WfQEW95c (privat, nur für de
 - **Referenzpunkt: 1 Eintrag = 1 Lukate ≈ 1 Cent.** Die Arbeit eines Spieltags (rund 570 Einträge) ist rund
   5 € wert. Daraus leiten sich alle Preise ab; Euro- und Lukaten-Preise passen so von selbst zusammen.
 - **Einträge werden beim Spieltagsabschluss gutgeschrieben**, erst ab dem Start, nichts rückwirkend.
-- **Ein Eintrag gehört dem, dessen Wert beim Abschluss gilt.** Wer einen falschen Wert korrigiert, bekommt den
-  Eintrag und die Lukate; wer ihn vorher eingetragen hat, bekommt nichts.
+- **Es zählt, was beim Abschluss gilt.** Wer eine falsche Note oder einen falschen Einsatz korrigiert, bekommt
+  den Eintrag und die Lukate; wer ihn vorher eingetragen hat, bekommt nichts. Bei der Statistik bekommt jeder
+  einen Eintrag, von dem eine gültige Angabe stammt.
 - **Vorhandene Guthaben werden nicht umgerechnet.** Wer in einer Liga spielt, hat beim Start so viele Lukaten
   wie vorher.
 - **Ein Startbonus je Manager und Saison** (100), egal in wie vielen Ligen jemand spielt.
@@ -125,14 +126,16 @@ Was das für die Manager heißt:
 
 - Ein Eintrag ist eine Zeile in `maintainer_contribution`: je Spieler und Spieltag der Einsatz, die Note und
   die Statistik (Tore, Vorlagen, Weiße Weste, Spieler des Spiels und Karten zusammen).
-- **Ein Eintrag gehört dem, der den Wert eingetragen hat, der beim Abschluss gilt**
-  (`PlayerRatingTrait::assignContribution()`). Trägt Lukas die Note 3,0 ein und Thommy korrigiert auf 4,0, gehört
-  der Eintrag Thommy, und Lukas bekommt nichts.
+- **Es zählt, was beim Abschluss gilt** (`PlayerRatingTrait::assignContribution()`).
+- Einsatz und Note haben einen Wert und damit einen Besitzer. Trägt Lukas die Note 3,0 ein und Thommy korrigiert
+  auf 4,0, gehört der Eintrag Thommy, und Lukas bekommt nichts.
+- Die Statistik besteht aus mehreren Angaben: jedes Tor, jede Vorlage, Weiße Weste, Spieler des Spiels, jede
+  Karte. Einen Statistik-Eintrag hat jeder, von dem mindestens eine gültige Angabe stammt. Trägt Lukas das erste
+  Tor ein und Matze das zweite, haben beide einen Eintrag. Wer alles allein einträgt, hat einen. Nimmt jemand
+  das zweite Tor wieder heraus, verliert Matze seinen.
 - Speichern ohne Änderung zählt nicht. Wird ein Wert gelöscht, gehört der Eintrag niemandem.
-- Wer einen Wert ändert und wieder zurückstellt, bekommt den Eintrag nicht: Er bleibt bei dem, der den Wert zuerst
-  so eingetragen hat. Dafür hält `maintainer_contribution_log` fest, wer welchen Wert wann gesetzt hat.
-- Die Statistik eines Spielers ist ein Eintrag. Wer sie ergänzt, etwa um den Spieler des Spiels, übernimmt ihn
-  (offen, Abschnitt 9).
+- Wer einen Wert ändert und wieder zurückstellt, bekommt den Eintrag nicht: Er bleibt bei dem, der ihn zuerst so
+  eingetragen hat. Dafür hält `maintainer_contribution_log` fest, wer welchen Wert wann gesetzt hat.
 - Die Übersicht der Mitwirkenden unter `/daten/ratings` zeigt dieselben Einträge. Bisher blieb dort jeder
   stehen, der einen Wert je gespeichert hatte.
 - Gebucht wird beim Abschluss des Spieltags (`creditLukatenEntriesForMatchday()`, aufgerufen in
@@ -224,9 +227,6 @@ Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 4. Gewinn-Obergrenze beim Tippen: aus. Wert festlegen, sobald `/verwaltung/lukaten` zeigt, wie viele Lukaten im
    Umlauf sind.
 5. `entries_since`: 2026-10-07. Auf das Datum des Merges setzen, falls er später kommt.
-6. Statistik: ein Eintrag je Spieler, den übernimmt, wer ihn ergänzt. Die Alternative wäre ein Eintrag je Feld
-   (Tor, Vorlage, Spieler des Spiels, Karte); dann behält jeder, was er eingetragen hat, es gibt aber mehr
-   Einträge und damit mehr Lukaten je Spieltag.
 
 ## 10. Risiken
 
@@ -236,7 +236,7 @@ Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 | **Einträge bringen viele Packs** | Rund 19.400 Lukaten je Saison für alle zusammen, das sind über 300 normale Packs. Fleißige füllen das Album deutlich schneller. | Gewollt: Mitarbeit soll sich lohnen. Stellschraube sind die Pack-Preise. |
 | **Tippen ohne Obergrenze** | Wer viele Lukaten hat, kann viel setzen; die Bank zahlt jeden Gewinn. | Gewinn-Obergrenze ist vorbereitet (Abschnitt 5). Die Quote kommt vom Server. |
 | **Datenqualität im Hauptspiel** | Lukaten fürs Eintragen könnten Tempo vor Sorgfalt belohnen. Falsche Noten wirken auf die Punkte, bis sie korrigiert sind. | Der Eintrag gehört dem, dessen Wert am Ende gilt: Ein falscher Wert bringt nichts, eine Korrektur lohnt sich. |
-| **Statistik: wer ergänzt, übernimmt** | Die Statistik eines Spielers ist ein Eintrag. Trägt einer die Tore ein und ein anderer später den Spieler des Spiels, bekommt der zweite den Eintrag. Das kann dazu verleiten, mit dem Eintragen zu warten. | Offen (Abschnitt 9): beobachten oder die Statistik je Feld zählen. |
+| **Statistik lässt sich aufteilen** | Tragen zwei Manager je ein Tor desselben Spielers ein, gibt es zwei Einträge statt einem. Mehr als es Angaben gibt, kann es nicht werden, und ohne eine neue, richtige Angabe bekommt niemand einen Eintrag. | Hinnehmen; so wurde auch bisher gezählt. |
 | **Mehrere Ligen, ein Startbonus** | Wer in mehreren Ligen zusammen mehr als 100 ausgegeben hat, startet im Minus. | `/verwaltung/lukaten` zeigt es; das Konto gleicht sich durch Tippgewinne und Einträge aus. |
 | **Tippen mit gekauften Lukaten** | Rechtlich eine Grauzone. | Bewusst akzeptiert: geschlossene, private Runde, keine Auszahlung. Sollte der Kreis je öffentlich werden, neu bewerten. |
 | **Privates PayPal** für digitale Güter | Besteht schon bei den Euro-Packs: PayPal-Bedingungen, Steuer, Widerruf. | Im Blick behalten, wenn der Umsatz wächst. |
@@ -256,6 +256,8 @@ Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 - **Je Liga ein Startguthaben auf dem einen Konto:** Wer in zwei Ligen spielt, hätte 200 statt 100 gehabt.
 - **Wer einen Wert zuerst einträgt, bekommt die Lukate:** belohnt auch falsche Einträge, und wer korrigiert,
   geht leer aus.
+- **Statistik als ein Eintrag mit einem Besitzer:** Wer ein zweites Tor ergänzt, hätte dem ersten den Eintrag
+  weggenommen.
 - **Einsätze und Gewinne im Kontobuch buchen:** zwei Datenbanken ohne gemeinsame Transaktion, siehe
   Abschnitt 3.
 - **Holo-Veredelung und Wunschsticker:** Es soll nur Packs geben.
