@@ -66,7 +66,7 @@ interface LukatenPurchaseRow {
   opened: boolean;
 }
 
-const EUR_MAX_PENDING = 3; // wie im Backend (StickerShopEurTrait)
+const EUR_MAX_PENDING = 1; // wie im Backend (StickerShopEurTrait): immer nur ein offener Euro-Kauf
 
 interface ClubChoice {
   club: AlbumClub;

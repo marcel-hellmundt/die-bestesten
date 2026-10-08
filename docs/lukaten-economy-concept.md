@@ -174,7 +174,7 @@ Was das für die Manager heißt:
 - Ablauf wie bei den Euro-Packs über PayPal.me (`sticker_eur_purchase`, Kauf-Code): Der Kauf ist zunächst nur
   vorgemerkt. Die Lukaten gibt es, sobald der Admin die Zahlung unter „Euro-Käufe" im Shop bestätigt hat.
 - Storniert der Admin, wird nichts gutgeschrieben. Ein Minus kann dadurch nicht mehr entstehen.
-- Höchstens drei offene Zahlungen, zusammen mit den Euro-Packs.
+- Immer nur ein offener Euro-Kauf, zusammen mit den Euro-Packs: der nächste geht erst, wenn der offene bestätigt ist.
 
 ## 6. Wo man es sieht
 

@@ -9,7 +9,10 @@
  */
 trait StickerShopEurTrait
 {
-    private const EUR_MAX_PENDING = 3; // offene (unbezahlte) Käufe je Manager
+    // Offene (unbezahlte) Euro-Käufe je Manager, Packs und Lukaten zusammen: immer nur einer — der nächste geht erst,
+    // wenn der Admin den offenen bestätigt oder storniert hat. Euro-Käufe sind selten und heikel; die Oberfläche
+    // erklärt die Sperre nicht eigens (die offene Zahlung steht ohnehin da), sie hält nur die Kaufen-Buttons zurück.
+    private const EUR_MAX_PENDING = 1;
 
     /**
      * Euro-Angebote = Kombinationen der festen Pack-Arten (StickerShopTrait::stickerPackKinds()) — maßgeblich sind

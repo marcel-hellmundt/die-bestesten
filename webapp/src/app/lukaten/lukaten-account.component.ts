@@ -63,7 +63,7 @@ interface LukatenAccount {
   eur?: { available: boolean; paypal_me: string; pending: EurPending[] };
 }
 
-const EUR_MAX_PENDING = 3; // wie im Backend (StickerShopEurTrait), gilt für Packs und Lukaten zusammen
+const EUR_MAX_PENDING = 1; // wie im Backend (StickerShopEurTrait): immer nur ein offener Euro-Kauf, Packs und Lukaten zusammen
 
 /**
  * Münzstapel der Kauf-Kacheln: je größer das Bündel, desto mehr Münzen — Reihen von unten nach oben
@@ -167,7 +167,7 @@ export class LukatenAccountComponent {
   paypalMe     = computed(() => this.active()?.eur?.paypal_me ?? '');
   /** Gekaufte Lukaten, die noch auf die Bestätigung der Zahlung warten (noch nicht auf dem Konto) */
   pendingLukaten = computed(() => this.eurPending().reduce((sum, p) => sum + (this.bundleFor(p.offer_key)?.lukaten ?? 0), 0));
-  /** Zu viele unbezahlte Käufe → erst bezahlen */
+  /** Ein Kauf ist noch offen → die Kaufen-Kacheln ruhen, bis er bestätigt ist (ohne eigenen Hinweis) */
   eurBlocked   = computed(() => this.eurPending().length >= EUR_MAX_PENDING);
 
   confirming = signal<EurBundle | null>(null);
