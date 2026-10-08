@@ -95,6 +95,17 @@
                 <li class="mds__stat" [class.mds__stat--zero]="!r.stats.clean_sheets">
                   <img src="img/icons/clean_sheet.png" alt="" /><strong>{{ r.stats.clean_sheets }}</strong>{{ r.stats.clean_sheets === 1 ? 'Weiße Weste' : 'Weiße Westen' }}
                 </li>
+                <!-- Karten stehen nur da, wenn es welche gab (nicht ausgegraut wie die übrigen bei 0) -->
+                @if (r.stats.yellow_red_cards > 0) {
+                  <li class="mds__stat">
+                    <span class="mds__card mds__card--yr" aria-hidden="true"></span><strong>{{ r.stats.yellow_red_cards }}</strong>Gelb-Rot
+                  </li>
+                }
+                @if (r.stats.red_cards > 0) {
+                  <li class="mds__stat">
+                    <span class="mds__card" aria-hidden="true"></span><strong>{{ r.stats.red_cards }}</strong>Rot
+                  </li>
+                }
               </ul>
             }
 
@@ -143,12 +154,6 @@
                     <strong [class.is-plus]="m.outcome === 'win'" [class.is-minus]="m.outcome === 'loss'">
                       {{ m.goals_for }}:{{ m.goals_against }} · {{ outcomeLabel(m) }}
                     </strong>
-                  </li>
-                }
-                @if (cardsText(r); as cards) {
-                  <li>
-                    <span>Karten</span>
-                    <strong>{{ cards }}</strong>
                   </li>
                 }
                 @if (r.fine > 0) {

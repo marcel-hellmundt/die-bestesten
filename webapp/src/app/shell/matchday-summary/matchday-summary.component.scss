@@ -246,10 +246,11 @@
     white-space: nowrap;
   }
 
-  // Tore, Vorlagen, SdS, Weiße Westen
+  // Tore, Vorlagen, SdS, Weiße Westen — und Karten, falls es welche gab (dann eine bzw. zwei Spalten mehr)
   &__stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
     gap: $space-2;
     margin: 0;
     padding: 0;
@@ -280,6 +281,42 @@
 
     &--zero {
       opacity: 0.45;
+    }
+  }
+
+  // Kartensymbol in der Stats-Reihe (wie auf /liga/spieltag): Rot, bzw. Gelb vor Rot für Gelb-Rot
+  &__card {
+    position: relative;
+    display: block;
+    width: 15px;
+    height: 22px;
+    border-radius: 2px;
+    background: $color-danger;
+
+    &--yr {
+      width: 19px;
+      background: none;
+
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 19px;
+        border-radius: 2px;
+      }
+
+      &::before {
+        top: 0;
+        right: 0;
+        background: $color-danger;
+      }
+
+      &::after {
+        bottom: 0;
+        left: 0;
+        background: #f59e0b;
+      }
     }
   }
 

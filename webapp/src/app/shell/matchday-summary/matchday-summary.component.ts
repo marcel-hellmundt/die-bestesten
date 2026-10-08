@@ -10,7 +10,7 @@ import {
 
 /**
  * Spieltags-Zusammenfassung als große Einblendung (wie neue Packs oder Achievements): oben das Spiel — Punkte, Platz
- * am Spieltag, Tabellenplatz mit Veränderung, Torschützen, Einnahmen, H2H, Strafe. Das Seltene steht ganz oben auf
+ * am Spieltag, Tabellenplatz mit Veränderung, Tore/Vorlagen/SdS/Weiße Westen (und Karten, falls es welche gab), Torschützen, Einnahmen, H2H, Strafe. Das Seltene steht ganz oben auf
  * grauem Grund nebeneinander (neue Achievements, Extra-Packs für Spieltagssieg oder Meilenstein), unten unter
  * "Außerdem" kompakt Lukaten für Einträge und Tipps (je Symbol + Betrag). Zeigt, was der MatchdaySummaryService
  * gerade vorgibt; mehrere (mehrere Ligen oder Spieltage) nacheinander mit "Weiter".
@@ -146,15 +146,8 @@ export class MatchdaySummaryComponent {
     return m.outcome === 'win' ? 'Sieg' : m.outcome === 'loss' ? 'Niederlage' : 'Unentschieden';
   }
 
-  cardsText(r: SummaryResult): string {
-    const parts: string[] = [];
-    if (r.stats.red_cards > 0) parts.push(`${r.stats.red_cards}× Rot`);
-    if (r.stats.yellow_red_cards > 0) parts.push(`${r.stats.yellow_red_cards}× Gelb-Rot`);
-    return parts.join(', ');
-  }
-
   hasFacts(r: SummaryResult): boolean {
-    return r.income > 0 || r.h2h !== null || r.fine > 0 || this.cardsText(r) !== '';
+    return r.income > 0 || r.h2h !== null || r.fine > 0;
   }
 
   /** Das Seltene, oben auf grauem Grund: neue Achievements und Extra-Packs (Spieltagssieg, Meilenstein) */
