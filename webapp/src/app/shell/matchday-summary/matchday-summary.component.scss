@@ -368,6 +368,12 @@
       color: $color-text-muted;
     }
 
+    // steht die Liste ganz unten (kein "Außerdem" darunter), braucht die letzte Zeile keine Linie mehr
+    &:last-child li:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
     strong {
       flex-shrink: 0;
       color: $color-text;
