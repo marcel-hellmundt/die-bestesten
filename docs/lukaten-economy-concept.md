@@ -122,7 +122,7 @@ Die Euro-Pakete im Shop (Handvoll, Stapel, Kiste) sind deutlich günstiger als d
 Kiste für 6,99 € enthält Packs im Wert von 1.500 Lukaten, das Bündel für denselben Preis bringt 800 (+88 %; Stapel +82 %,
 Handvoll +67 %, einzelnes Vereins- oder Special-Pack +50 % — der Vorteil steigt mit dem Betrag); ein normales
 Pack kostet in der Handvoll 0,60 €, über gekaufte Lukaten rund 1 €. Gekaufte Lukaten sind damit fürs Tippen gedacht,
-Packs kauft man mit verdienten Lukaten oder direkt gegen Euro. Die Seite /lukaten sagt das beim Kaufen dazu.
+Packs kauft man mit verdienten Lukaten oder direkt gegen Euro.
 
 Was das für die Manager heißt:
 
