@@ -507,3 +507,88 @@ CREATE TABLE IF NOT EXISTS lukaten_transaction (
     UNIQUE KEY uk_lukaten_transaction (manager_id, preview, source_key),
     KEY idx_lukaten_transaction_source (source, season_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ── 2026-10-07_lukaten_live.sql  (2026-10-07) ────────────────────────────────────────────────────────
+
+-- Migration: Lukaten als einziges Zahlungsmittel — Start im laufenden Betrieb
+-- Ziel: GLOBALE DB (eine gemeinsame für dev + prod). Nicht idempotent (DROP COLUMN) — nur einmal ausführen.
+-- Konzept: docs/lukaten-economy-concept.md
+--
+-- Räumt die Reste des verworfenen Modells auf (Lukaten-Modus je Saison, Admin-Vorschau): das Kontobuch
+-- lukaten_transaction gilt ab jetzt für alle, einen Modus und eine Vorschau gibt es nicht mehr.
+--   - Buchungen der Admin-Vorschau (preview = 1) löschen, Spalte preview entfernen,
+--     Eindeutigkeit jetzt (manager_id, source_key)
+--   - season.lukaten_mode entfernen
+-- Der Code auf main nutzt weder die Tabelle noch die Spalte (season wird dort per "SELECT *" bzw. mit benannten
+-- Spalten gelesen) — für Production ändert sich durch diese Migration nichts.
+--
+-- Reihenfolge: zuerst diese Migration, dann den neuen Code ausliefern. Der neue Code läuft auch ohne sie, zählt
+-- die Vorschau-Buchungen dann aber wie echte.
+--
+-- Vorher prüfen — erwartet werden nur Zeilen mit preview = 1 (aus der Vorschau):
+--   SELECT preview, source, COUNT(*), SUM(amount) FROM lukaten_transaction GROUP BY preview, source;
+
+DELETE FROM lukaten_transaction WHERE preview = 1;
+
+ALTER TABLE lukaten_transaction
+    DROP INDEX uk_lukaten_transaction,
+    DROP COLUMN preview,
+    ADD UNIQUE KEY uk_lukaten_transaction (manager_id, source_key);
+
+ALTER TABLE season
+    DROP COLUMN lukaten_mode;
+
+-- ── 2026-10-07_maintainer_contribution_log.sql  (2026-10-08) ─────────────────────────────────────────
+
+-- Migration: Verlauf der Einträge bei den Spieltagsdaten (wem ein Eintrag gehört)
+-- Ziel: GLOBALE DB (eine gemeinsame für dev + prod). Idempotent (CREATE TABLE IF NOT EXISTS).
+-- Konzept: docs/lukaten-economy-concept.md, Abschnitt "Einträge"
+--
+-- Rein additiv: eine neue Tabelle, die der Code auf main nicht kennt — für Production ändert sich nichts.
+--
+-- Ein Eintrag (maintainer_contribution) gehört dem, dessen Wert gilt (PlayerRatingTrait::assignContribution()):
+-- Wer Einsatz oder Note korrigiert, übernimmt den Eintrag; einen Statistik-Eintrag hat jeder, von dem eine gültige
+-- Angabe stammt (einer das erste Tor, ein anderer das zweite → beide). Dieser Verlauf hält fest, wer welchen Wert
+-- wann gesetzt hat — daraus ergibt sich, von wem welche Angabe stammt, und ein Eintrag bleibt bei dem, der den
+-- Wert zuerst so eingetragen hat, wenn jemand ihn ändert und wieder zurückstellt.
+-- Ohne diese Migration gilt: bei Einsatz und Note, wer zuletzt ändert; bei der Statistik kommt dazu, wer sie ändert.
+
+CREATE TABLE IF NOT EXISTS maintainer_contribution_log (
+    id                CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    player_rating_id  CHAR(36)    NOT NULL,  -- player_rating.id (kein FK, wie maintainer_contribution)
+    contribution_type ENUM('participation', 'stats', 'note') CHARACTER SET utf8mb4 NOT NULL,
+    manager_id        CHAR(36)    NOT NULL,  -- wer den Wert gesetzt hat
+    value             VARCHAR(40) NOT NULL,  -- der gesetzte Wert: Einsatz ('starting'), Note ('3.5'), Statistik ('2|0|0|1|0|0' = Tore|Vorlagen|Weiße Weste|SdS|Rot|Gelb-Rot)
+    created_at        DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    KEY idx_contribution_log (player_rating_id, contribution_type, value, created_at)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ── 2026-10-08_matchday_summary.sql  (2026-10-08) ────────────────────────────────────────────────────
+
+-- Migration: Spieltags-Zusammenfassung (Einblendung nach dem Spieltagsabschluss)
+-- Ziel: GLOBALE DB (eine gemeinsame für dev + prod). Idempotent (CREATE TABLE IF NOT EXISTS).
+--
+-- Rein additiv: eine neue Tabelle, die der Code auf main nicht kennt — für Production ändert sich nichts.
+--
+-- Beim Abschluss eines Spieltags (PATCH /matchday/:id completed=true) hält die API je Manager und Liga fest, was er
+-- an dem Spieltag geholt hat (MatchdaySummaryTrait::createMatchdaySummaries()): Punkte, Platz, Torschützen,
+-- Einnahmen, Strafe, H2H-Ergebnis und darunter Lukaten für Einträge, Tipps, Packs, Achievements. Die Webapp blendet
+-- die noch nicht gesehenen der letzten 5 Tage einmal groß ein (GET /matchday_summary) und markiert sie als gesehen.
+-- Ohne diese Migration schreibt der Abschluss nichts und es wird nichts eingeblendet; die Vorschau in der Verwaltung
+-- (/verwaltung/ui-tests) rechnet live und funktioniert auch ohne die Tabelle.
+
+CREATE TABLE IF NOT EXISTS matchday_summary (
+    id              CHAR(36)   NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id      CHAR(36)   NOT NULL,
+    league_id       CHAR(36)   NOT NULL,  -- Liga, in der der Spieltag abgeschlossen wurde
+    matchday_id     CHAR(36)   NOT NULL,  -- matchday.id (kein FK)
+    notification_id CHAR(36)   NULL,      -- Benachrichtigung "Spieltag N abgeschlossen" (kein FK) — von dort wieder zu öffnen
+    payload         MEDIUMTEXT NOT NULL,  -- Inhalt als JSON, so wie er beim Abschluss galt
+    created_at      DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    seen_at         DATETIME   NULL DEFAULT NULL,  -- NULL = noch nicht eingeblendet
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    FOREIGN KEY (league_id)  REFERENCES league(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_matchday_summary (manager_id, league_id, matchday_id),
+    KEY idx_matchday_summary_matchday (matchday_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
