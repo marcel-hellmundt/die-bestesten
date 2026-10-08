@@ -114,7 +114,7 @@ ergeben und das Tempo verdoppelt.
 | Lukaten-Bündel | Preis | je 100 Lukaten |
 |---:|---:|---:|
 | 200 | 1,99 € | 1,00 € |
-| 300 | 2,99 € | 1,00 € |
+| 320 | 2,99 € | 0,93 € |
 | 550 | 4,99 € | 0,91 € |
 | 800 | 6,99 € | 0,87 € |
 
@@ -230,7 +230,7 @@ Nach dem Merge gibt es keinen einfachen Rückweg: Käufe stehen dann im Kontobuc
 Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 
 1. Pack-Preise 100 / 200 / 300 / 300.
-2. Lukaten-Bündel 200 / 300 / 550 / 800 für 1,99 € / 2,99 € / 4,99 € / 6,99 €.
+2. Lukaten-Bündel 200 / 320 / 550 / 800 für 1,99 € / 2,99 € / 4,99 € / 6,99 €.
 3. Startbonus je Saison: 100.
 4. Gewinn-Obergrenze beim Tippen: aus. Wert festlegen, sobald `/verwaltung/lukaten` zeigt, wie viele Lukaten im
    Umlauf sind.
