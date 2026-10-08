@@ -441,6 +441,20 @@
     }
   }
 
+  // Bestico-Schriftzug wie der Button auf /liga/h2h: kursiv, weiß auf Rot (eigenständiges Motiv, feste Farben)
+  &__bestico {
+    padding: 0 6px;
+    border-radius: $radius-sm;
+    background: #e2001a;
+    color: #fff;
+    font-size: 11px;
+    font-style: italic;
+    font-weight: 800;
+    line-height: 22px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
   // kleines Pack in der Farbe des Pack-Designs (Meilenstein blau, Spieltagssieger gelb)
   &__pack {
     display: block;

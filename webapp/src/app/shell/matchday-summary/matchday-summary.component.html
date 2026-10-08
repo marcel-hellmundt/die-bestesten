@@ -173,7 +173,7 @@
                 }
                 @if (page.extras.bets; as b) {
                   <span class="mds__chip" [title]="'Tipps: ' + betsText(b)">
-                    <img src="img/bestico/bank.png" alt="Tipps" />
+                    <span class="mds__bestico">Bestico</span>
                     @if (b.stakes > 0) {
                       <span [class.is-plus]="betsNet(b) > 0" [class.is-minus]="betsNet(b) < 0">{{ signedLukaten(betsNet(b)) }}</span>
                     } @else {
