@@ -1,0 +1,222 @@
+@if (loading()) {
+  <p class="state-msg">Laden…</p>
+} @else if (unavailable()) {
+  <p class="state-msg state-msg--error">Die Preise konnten nicht geladen werden (Lukaten-Konto nicht eingerichtet?).</p>
+} @else {
+  <div class="prices">
+    <p class="prices__intro">
+      Drei Wege, ein Dreieck: Lukaten gegen Euro, Packs gegen Lukaten, Packs direkt gegen Euro. Alles ist hier auf
+      Lukaten umgerechnet, damit sich die Wege vergleichen lassen. Der direkte Kauf gegen Euro soll sich mehr lohnen
+      als der Umweg über gekaufte Lukaten; wie viel mehr, steht je Angebot als Bonus da.
+    </p>
+
+    <!-- ── Was wäre, wenn ── -->
+    <div class="card whatif">
+      <label class="whatif__field">
+        <span class="whatif__label">Pack-Preise in Lukaten <b>× {{ n(packFactor(), 2) }}</b></span>
+        <input type="range" min="0.5" max="3" step="0.05" [value]="packFactor()" (input)="packFactor.set(num($event))" />
+        <span class="whatif__values">
+          @for (k of kinds(); track k.kind) {
+            <span>{{ k.name }} <b>{{ n(k.price) }}</b></span>
+          }
+        </span>
+      </label>
+      <label class="whatif__field">
+        <span class="whatif__label">Lukaten je Bündel <b>× {{ n(bundleFactor(), 2) }}</b></span>
+        <input type="range" min="0.5" max="3" step="0.05" [value]="bundleFactor()" (input)="bundleFactor.set(num($event))" />
+        <span class="whatif__values">
+          @for (b of bundles(); track b.key) {
+            <span>{{ eur(b.eur) }} <b>{{ n(b.lukaten) }}</b></span>
+          }
+        </span>
+      </label>
+      <div class="whatif__foot">
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="!changed()" (click)="reset()">Zurücksetzen</button>
+        <span>
+          {{ changed() ? 'Probewerte, nichts ist geändert.' : 'Aktuelle Preise.' }}
+          Echt geändert wird in der API-Config (lukatenAccountConfig), Euro-Angebote in stickerShopEurOffers.
+        </span>
+      </div>
+    </div>
+
+    <div class="prices__top">
+      <!-- ── Das Dreieck ── -->
+      <figure class="card tri">
+        <svg viewBox="0 0 380 292" role="img"
+             [attr.aria-label]="'Preis-Dreieck: 1 Euro bringt ' + n(rateRange().min) + ' bis ' + n(rateRange().max) + ' Lukaten, direkt Packs im Wert von ' + n(directRange().min) + ' bis ' + n(directRange().max) + ' Lukaten'">
+          <defs>
+            <marker id="tri-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path class="tri__head" d="M0 0 L10 5 L0 10 z" />
+            </marker>
+            <marker id="tri-arrow-direct" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path class="tri__head tri__head--direct" d="M0 0 L10 5 L0 10 z" />
+            </marker>
+          </defs>
+
+          <!-- Kanten -->
+          <line class="tri__edge" x1="78" y1="200" x2="170" y2="72" marker-end="url(#tri-arrow)" />
+          <line class="tri__edge" x1="210" y1="72" x2="302" y2="200" marker-end="url(#tri-arrow)" />
+          <line class="tri__edge tri__edge--direct" x1="94" y1="226" x2="284" y2="226" marker-end="url(#tri-arrow-direct)" />
+
+          <!-- Ecken -->
+          <circle class="tri__node" cx="58" cy="226" r="30" />
+          <text class="tri__symbol" x="58" y="237" text-anchor="middle">€</text>
+          <circle class="tri__node" cx="190" cy="44" r="30" />
+          <image href="img/icons/lukat.png" x="171" y="25" width="38" height="38" />
+          <circle class="tri__node" cx="322" cy="226" r="30" />
+          <rect class="tri__pack" x="310" y="208" width="24" height="36" rx="3" />
+
+          <!-- Euro → Lukaten -->
+          <text class="tri__label" x="112" y="118" text-anchor="end">1 € =</text>
+          <text class="tri__label tri__label--strong" x="112" y="134" text-anchor="end">{{ n(rateRange().min) }}–{{ n(rateRange().max) }} Lukaten</text>
+          <!-- Lukaten → Sticker -->
+          <text class="tri__label" x="268" y="118">1 Pack =</text>
+          <text class="tri__label tri__label--strong" x="268" y="134">{{ n(packRange().min) }}–{{ n(packRange().max) }} Lukaten</text>
+          <!-- Euro → Sticker, direkt -->
+          <text class="tri__label tri__label--direct" x="190" y="218" text-anchor="middle">direkt</text>
+          <text class="tri__label" x="190" y="262" text-anchor="middle">1 € = Packs im Wert von</text>
+          <text class="tri__label tri__label--strong tri__label--direct" x="190" y="280" text-anchor="middle">{{ n(directRange().min) }}–{{ n(directRange().max) }} Lukaten</text>
+          <!-- Bonus in der Mitte -->
+          <text class="tri__bonus-caption" x="190" y="150" text-anchor="middle">Bonus direkt</text>
+          <text class="tri__bonus" x="190" y="176" text-anchor="middle">{{ pct(bonusRange().min) }} bis {{ pct(bonusRange().max) }}</text>
+        </svg>
+        <figcaption>
+          Für einen Euro gibt es als Bündel {{ n(rateRange().min) }} bis {{ n(rateRange().max) }} Lukaten, direkt im Shop
+          aber Packs, die {{ n(directRange().min) }} bis {{ n(directRange().max) }} Lukaten kosten würden.
+        </figcaption>
+      </figure>
+
+      <!-- ── Auffälligkeiten ── -->
+      <div class="card findings">
+        <h3 class="findings__title">Auffälligkeiten</h3>
+        <ul class="findings__list">
+          @for (f of findings(); track $index) {
+            <li class="findings__item findings__item--{{ f.level }}">{{ f.text }}</li>
+          }
+        </ul>
+        @if (matchday(); as m) {
+          <p class="findings__ref">
+            Zum Maßstab: Ein ganzer Spieltag Einträge (rund {{ n(entriesPerMatchday) }} Lukaten) reicht für
+            <b>{{ m.packs }} normale Packs</b>, also {{ m.stickers }} Sticker. Ohne Lukaten zieht ein aktiver Manager
+            rund 25 Sticker in der Woche.
+          </p>
+        }
+      </div>
+    </div>
+
+    <!-- ── Euro direkt gegen den Umweg ── -->
+    <h2 class="prices__heading">Euro-Angebote: direkt gegen dasselbe Geld als Lukaten-Bündel</h2>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Angebot</th>
+            <th class="num hidden-mobile">Preis</th>
+            <th>Was es fürs Geld gibt (in Lukaten)</th>
+            <th class="num">Bonus</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of offers(); track o.key) {
+            <tr>
+              <td>
+                <span class="offer-name">
+                  <b>{{ o.name }}</b>
+                  @if (o.once) { <span class="tag">einmalig</span> }
+                  <small>{{ o.contents }} · {{ o.stickers }} Sticker</small>
+                </span>
+              </td>
+              <td class="num hidden-mobile">{{ eur(o.eur) }}</td>
+              <td class="bars">
+                <div class="bar-row">
+                  <span class="bar-row__label">direkt</span>
+                  <span class="bar-row__track"><span class="bar-row__fill bar-row__fill--direct" [style.width]="bar(o.valuePerEuro)"></span></span>
+                  <span class="bar-row__value"><b>{{ n(o.value) }}</b></span>
+                </div>
+                <div class="bar-row">
+                  <span class="bar-row__label">Bündel</span>
+                  <span class="bar-row__track"><span class="bar-row__fill" [style.width]="bar(o.lukatenPerEuro)"></span></span>
+                  <span class="bar-row__value">{{ o.exact ? '' : '≈ ' }}{{ n(o.sameMoney) }}</span>
+                </div>
+              </td>
+              <td class="num">
+                <span class="bonus" [class.bonus--bad]="o.bonus <= 0" [class.bonus--low]="o.bonus > 0 && o.bonus < 0.2">{{ pct(o.bonus) }}</span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="prices__tables">
+      <!-- ── Pack-Arten ── -->
+      <div>
+        <h2 class="prices__heading">Pack-Arten: was ein Pack je Weg kostet</h2>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Pack</th>
+                <th class="num">Lukaten</th>
+                <th class="num hidden-mobile">je Sticker</th>
+                <th class="num">über Lukaten</th>
+                <th class="num">direkt</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (k of kindRoutes(); track k.kind) {
+                <tr>
+                  <td>
+                    <span class="offer-name">
+                      <b>{{ k.name }}</b>
+                      <small>{{ k.size }} Sticker, {{ k.guaranteedNew }} neu{{ k.holoMin ? ', ' + k.holoMin + ' Holo' : '' }}</small>
+                    </span>
+                  </td>
+                  <td class="num"><b>{{ n(k.price) }}</b></td>
+                  <td class="num hidden-mobile">{{ n(k.perSticker, 1) }}</td>
+                  <td class="num">{{ eur(k.viaMin) }}–{{ eur(k.viaMax) }}</td>
+                  <td class="num">
+                    @if (k.directEur !== null) {
+                      <b class="direct" [class.direct--bad]="(k.bonus ?? 0) <= 0">{{ eur(k.directEur) }}</b>
+                    } @else {
+                      <span class="muted">nur in Kombis</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Lukaten-Bündel ── -->
+      <div>
+        <h2 class="prices__heading">Lukaten-Bündel</h2>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Preis</th>
+                <th class="num">Lukaten</th>
+                <th class="num">je Euro</th>
+                <th class="num hidden-mobile">Cent je Lukate</th>
+                <th class="num">Staffel</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of bundles(); track b.key) {
+                <tr>
+                  <td><b>{{ eur(b.eur) }}</b></td>
+                  <td class="num">{{ n(b.lukaten) }}</td>
+                  <td class="num">{{ n(b.perEuro, 1) }}</td>
+                  <td class="num hidden-mobile">{{ n(b.centPer, 2) }}</td>
+                  <td class="num">{{ b.bonus > 0.004 ? pct(b.bonus) : '–' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+}

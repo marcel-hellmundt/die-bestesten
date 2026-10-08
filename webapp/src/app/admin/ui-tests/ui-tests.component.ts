@@ -3,12 +3,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 
-type UiTest = 'spieltag' | 'packs';
+type UiTest = 'spieltag' | 'packs' | 'preise';
 
 /** Die Test-Oberflächen — eine neue kommt hier als weitere Option dazu (+ ihr Baustein im Template). */
 const TESTS: { key: UiTest; label: string }[] = [
   { key: 'spieltag', label: 'Spieltags-Abschluss' },
   { key: 'packs', label: 'Sticker-Packs' },
+  { key: 'preise', label: 'Preise' },
 ];
 
 /**
@@ -17,6 +18,7 @@ const TESTS: { key: UiTest; label: string }[] = [
  * (Neuladen und Links bleiben beim gewählten Test).
  *   Spieltags-Abschluss — Vorschau der Spieltags-Zusammenfassung (admin/matchday-summary)
  *   Sticker-Packs       — alle Pack-Designs zum Aufreißen (stickers/packs, PackGalleryModule)
+ *   Preise              — Preis-Dreieck Euro / Lukaten / Sticker mit Was-wäre-wenn (admin/price-triangle)
  */
 @Component({
   selector: 'app-ui-tests',

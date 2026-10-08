@@ -15,6 +15,7 @@ import { SessionDevicesComponent } from './session/session-devices.component';
 import { LukatenOverviewComponent } from './lukaten/lukaten-overview.component';
 import { MatchdaySummaryPreviewComponent } from './matchday-summary/matchday-summary-preview.component';
 import { UiTestsComponent } from './ui-tests/ui-tests.component';
+import { PriceTriangleComponent } from './price-triangle/price-triangle.component';
 import { PackGalleryModule } from '../stickers/packs/pack-gallery.module';
 
 // /verwaltung — nur Admin (AdminGuard an der Route in shell.module.ts, gilt für alle Unterseiten)
@@ -49,6 +50,7 @@ const routes: Routes = [
     LukatenOverviewComponent,
     MatchdaySummaryPreviewComponent,
     UiTestsComponent,
+    PriceTriangleComponent,
   ],
   imports: [
     CommonModule,

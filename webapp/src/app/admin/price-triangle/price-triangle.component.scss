@@ -1,0 +1,313 @@
+@use '../../../styles/variables' as *;
+
+.prices {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+
+  &__intro {
+    max-width: 760px;
+    margin: 0;
+    font-size: $font-sm;
+    line-height: 1.6;
+    color: $color-text-muted;
+  }
+
+  &__heading {
+    margin: $space-2 0 $space-2;
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+  }
+
+  // Dreieck links, Auffälligkeiten rechts
+  &__top {
+    display: grid;
+    grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+    gap: $space-4;
+    align-items: start;
+
+    @media (max-width: 1000px) { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  &__tables {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-4;
+    align-items: start;
+
+    @media (max-width: 1100px) { grid-template-columns: minmax(0, 1fr); }
+  }
+}
+
+input[type='range'] {
+  width: 100%;
+  accent-color: $color-accent;
+  cursor: pointer;
+}
+
+// ── Was wäre, wenn ──
+.whatif {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-4 $space-6;
+  padding: $space-4 $space-5;
+
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: minmax(0, 1fr); padding: $space-4; }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: $font-sm;
+    color: $color-text-muted;
+
+    b { color: $color-text; font-variant-numeric: tabular-nums; }
+  }
+
+  &__values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px $space-3;
+    font-size: $font-xs;
+    color: $color-text-muted;
+
+    b { color: $color-text; font-variant-numeric: tabular-nums; }
+  }
+
+  &__foot {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-2 $space-3;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+// ── Dreieck ──
+.tri {
+  margin: 0;
+  padding: $space-4;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    margin-top: $space-3;
+    font-size: $font-xs;
+    line-height: 1.5;
+    color: $color-text-muted;
+  }
+
+  &__edge {
+    stroke: $color-text-muted;
+    stroke-width: 1.5;
+
+    // der direkte Weg: kräftig hervorgehoben
+    &--direct {
+      stroke: $color-success;
+      stroke-width: 5;
+    }
+  }
+
+  &__head {
+    fill: $color-text-muted;
+
+    &--direct { fill: $color-success; }
+  }
+
+  &__node {
+    fill: $color-surface-alt;
+    stroke: $color-border;
+    stroke-width: 1.5;
+  }
+
+  &__symbol {
+    fill: $color-text;
+    font-family: $font-display;
+    font-size: 32px;
+    font-weight: 800;
+  }
+
+  // Sticker-Pack als kleines Kärtchen (eigenständiges Motiv, feste Farbe)
+  &__pack {
+    fill: #6aba49;
+    stroke: rgba(255, 255, 255, 0.6);
+    stroke-width: 2;
+  }
+
+  &__label {
+    fill: $color-text-muted;
+    font-size: 12px;
+
+    &--strong {
+      fill: $color-text;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    &--direct { fill: $color-success; font-weight: 700; }
+  }
+
+  &__bonus-caption {
+    fill: $color-text-muted;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &__bonus {
+    fill: $color-success;
+    font-family: $font-display;
+    font-size: 19px;
+    font-weight: 800;
+  }
+}
+
+// ── Auffälligkeiten ──
+.findings {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4 $space-5;
+
+  &__title {
+    margin: 0;
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    padding: $space-2 $space-3;
+    border-radius: $radius-md;
+    font-size: $font-sm;
+    line-height: 1.5;
+
+    &--ok    { background: color-mix(in srgb, #{$color-success} 12%, #{$color-surface}); }
+    &--warn  { background: color-mix(in srgb, #{$color-warning} 16%, #{$color-surface}); }
+    &--error { background: color-mix(in srgb, #{$color-danger} 14%, #{$color-surface}); }
+  }
+
+  &__ref {
+    margin: 0;
+    font-size: $font-sm;
+    line-height: 1.6;
+    color: $color-text-muted;
+
+    b { color: $color-text; }
+  }
+}
+
+// ── Tabellen ──
+.num {
+  text-align: right !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted { color: $color-text-muted; }
+
+.offer-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 $space-2;
+
+  small {
+    flex-basis: 100%;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+}
+
+.tag {
+  padding: 0 6px;
+  border-radius: $radius-full;
+  background: $color-surface-alt;
+  font-size: 10px;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+}
+
+// zwei Balken je Angebot: was es direkt gibt, was als Lukaten-Bündel
+.bars {
+  min-width: 220px;
+  width: 50%;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 46px minmax(40px, 1fr) 52px;
+  align-items: center;
+  gap: $space-2;
+  font-size: $font-xs;
+
+  & + & { margin-top: 3px; }
+
+  &__label { color: $color-text-muted; }
+
+  &__track {
+    height: 10px;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    overflow: hidden;
+  }
+
+  &__fill {
+    display: block;
+    height: 100%;
+    border-radius: $radius-full;
+    background: $color-text-muted;
+    transition: width $transition-normal;
+
+    &--direct { background: $color-success; }
+  }
+
+  &__value {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// Bonus des direkten Kaufs: grün hervorgehoben, knapp = gelb, keiner = rot
+.bonus {
+  display: inline-block;
+  padding: 2px $space-2;
+  border-radius: $radius-full;
+  background: color-mix(in srgb, #{$color-success} 16%, #{$color-surface});
+  color: $color-success;
+  font-weight: $font-weight-bold;
+
+  &--low {
+    background: color-mix(in srgb, #{$color-warning} 20%, #{$color-surface});
+    color: $color-text;
+  }
+
+  &--bad {
+    background: color-mix(in srgb, #{$color-danger} 16%, #{$color-surface});
+    color: $color-danger;
+  }
+}
+
+.direct {
+  color: $color-success;
+
+  &--bad { color: $color-danger; }
+}

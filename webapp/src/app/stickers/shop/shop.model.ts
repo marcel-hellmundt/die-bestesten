@@ -35,8 +35,8 @@ export interface ShopOffer {
   highlight?: string;     // Band, z.B. "Beliebt"
 }
 
-// Lukaten: je eine Pack-Art — 1 Lukate ≈ 1 Cent (1 Eintrag = 1 Lukate), Preise also wie die Euro-Preise in Cent:
-// Normales Pack wie in der Handvoll (2,99 € / 5), Vereins-/Special-Pack wie einzeln (1,99 €).
+// Lukaten: je eine Pack-Art. Maßstab ist die Arbeit eines Spieltags (rund 500 Einträge = 500 Lukaten = 5 normale
+// Packs); direkt gegen Euro sind Packs bewusst günstiger als über gekaufte Lukaten (Vergleich: /verwaltung/ui-tests, Preise).
 // Keys stabil, l-small = Normales Pack. Der Shop zeigt die Preise des Servers (GET /sticker/shop → prices);
 // die Werte hier sind der Rückfall und die Grundlage der Simulation.
 export const LUKATEN_OFFERS: ShopOffer[] = [
