@@ -102,6 +102,9 @@
     gap: $space-3 $space-4;
     padding: $space-3 $space-5;
     background: $color-surface-alt;
+    // ganz leichte Kante: die grauen Kacheln (Punkte, Platz) schieben sich beim Scrollen darunter und wären
+    // sonst nicht vom Band zu unterscheiden
+    border-bottom: 1px solid $color-border;
 
     @media (max-width: $mobile-breakpoint) {
       padding: $space-3 $space-4;
