@@ -14,13 +14,10 @@ import { StickerShopComponent } from './shop/sticker-shop.component';
 import { StickerChipComponent } from './trade/sticker-chip.component';
 import { TradeDialogComponent } from './trade/trade-dialog.component';
 import { StickerTradesComponent } from './trade/sticker-trades.component';
-import { PackGalleryComponent } from './packs/pack-gallery.component';
-import { PackStageComponent } from './packs/pack-stage.component';
-import { AdminGuard } from '../auth/admin.guard';
 
 // "Die Klebrigsten" (Sticker-Album): /klebrigsten/sammelalbum (eigenes Album), /klebrigsten/klebebande
 // (alle Sammler, Klick → deren Album), /klebrigsten/tausch (Tauschbörse), /klebrigsten/shop (Lukaten/Euro → Packs)
-// + /klebrigsten/simulation (Maintainer+) + /klebrigsten/packs (Admin: alle Pack-Designs testen)
+// + /klebrigsten/simulation (Maintainer+); die Pack-Testseite der Admins liegt unter /verwaltung/ui-tests
 const routes: Routes = [
   {
     path: '', component: StickersComponent,
@@ -33,7 +30,7 @@ const routes: Routes = [
       { path: 'tausch',      component: StickerTradesComponent },
       { path: 'shop',        component: StickerShopComponent },
       { path: 'simulation',  component: StickerSimulationComponent, canActivate: [MaintainerGuard] },
-      { path: 'packs',       component: PackGalleryComponent, canActivate: [AdminGuard] },
+      { path: 'packs',       redirectTo: '/verwaltung/ui-tests?test=packs' },
     ],
   },
 ];
@@ -42,7 +39,7 @@ const routes: Routes = [
   declarations: [
     StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent,
     StickerSimulationComponent, StickerCollectorsComponent, StickerShopComponent,
-    StickerChipComponent, TradeDialogComponent, StickerTradesComponent, PackGalleryComponent, PackStageComponent,
+    StickerChipComponent, TradeDialogComponent, StickerTradesComponent,
   ],
   imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule, StuckDirective],
 })

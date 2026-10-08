@@ -103,7 +103,7 @@ export function packDesign(p: PackInfo): PackDesign {
 
 /**
  * Optionale Bilder auf den Packs (freigestellte PNGs unter public/img/stickers/front/), nach unten links versetzt (Motive schauen nach rechts)
- * und per Blend-Mode in die Folie gemischt (Default normal = voll sichtbar). Ohne Eintrag: kein Bild. Abstimmen auf /klebrigsten/packs.
+ * und per Blend-Mode in die Folie gemischt (Default normal = voll sichtbar). Ohne Eintrag: kein Bild. Abstimmen auf /verwaltung/ui-tests (Sticker-Packs).
  * place 'center' = kleiner, mittig unten, nicht gedreht (z.B. Icons wie die Medaille).
  */
 export interface PackArt { src: string; blend?: string; place?: 'corner' | 'center'; }

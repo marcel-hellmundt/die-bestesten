@@ -1,0 +1,26 @@
+<p class="ui-tests__intro">
+  Test-Oberflächen, die nur Admins sehen: zum Ansehen und Ausprobieren, bevor etwas für alle erscheint.
+  Nichts davon wird gespeichert oder jemandem angezeigt.
+</p>
+
+<div class="segmented-row">
+  <div class="segmented" role="group" aria-label="Test-Oberfläche">
+    @for (t of TESTS; track t.key) {
+      <button
+        type="button"
+        class="segmented__option"
+        [class.segmented__option--active]="view() === t.key"
+        (click)="setView(t.key)"
+      >{{ t.label }}</button>
+    }
+  </div>
+</div>
+
+@switch (view()) {
+  @case ('packs') {
+    <app-pack-gallery />
+  }
+  @default {
+    <app-matchday-summary-preview />
+  }
+}

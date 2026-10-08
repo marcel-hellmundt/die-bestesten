@@ -665,7 +665,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/matchday_summary/preview',
-                        'description' => 'Vorschau für die Verwaltung (/verwaltung/zusammenfassung): die Zusammenfassung eines Managers für einen abgeschlossenen Spieltag der aktuellen Liga, live berechnet — schreibt nichts und zeigt niemandem etwas an; id/created_at/seen_at sind null. Achievements kommen aus einer bereits festgehaltenen Zusammenfassung dieses Spieltags (nachträglich nicht herleitbar), sonst leer. 400 ohne Parameter, 404 wenn es für den Manager an dem Spieltag nichts zu zeigen gibt — Admin',
+                        'description' => 'Vorschau für die Verwaltung (/verwaltung/ui-tests, Test "Spieltags-Abschluss"): die Zusammenfassung eines Managers für einen abgeschlossenen Spieltag der aktuellen Liga, live berechnet — schreibt nichts und zeigt niemandem etwas an; id/created_at/seen_at sind null. Achievements kommen aus einer bereits festgehaltenen Zusammenfassung dieses Spieltags (nachträglich nicht herleitbar), sonst leer. 400 ohne Parameter, 404 wenn es für den Manager an dem Spieltag nichts zu zeigen gibt — Admin',
                         'query_params' => ['manager_id' => 'UUID des Managers (erforderlich)', 'matchday_id' => 'UUID des Spieltags (erforderlich)'],
                     ],
                     [

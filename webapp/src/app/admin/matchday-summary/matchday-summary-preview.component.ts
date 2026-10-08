@@ -52,7 +52,7 @@ function withExamples(s: MatchdaySummary): MatchdaySummary {
 }
 
 /**
- * /verwaltung/zusammenfassung: Vorschau der Spieltags-Zusammenfassung, bevor sie jemand zu sehen bekommt — Manager
+ * Test "Spieltags-Abschluss" unter /verwaltung/ui-tests: Vorschau der Spieltags-Zusammenfassung, bevor sie jemand zu sehen bekommt — Manager
  * und abgeschlossenen Spieltag der aktuellen Liga wählen, die Einblendung öffnet sich mit den echten Daten
  * (GET /matchday_summary/preview). Es wird nichts gespeichert und niemandem etwas angezeigt.
  */

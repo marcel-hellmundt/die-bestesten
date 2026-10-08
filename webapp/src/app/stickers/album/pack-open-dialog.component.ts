@@ -48,7 +48,7 @@ export class PackOpenDialogComponent {
   busy = input(false);
   /** true, solange darüber die große Karte offen ist — Esc schließt dann nur die. */
   covered = input(false);
-  /** ohne Abdunklung/Overlay direkt in der Seite (Admin-Testseite /klebrigsten/packs) */
+  /** ohne Abdunklung/Overlay direkt in der Seite (Admin-Testseite unter /verwaltung/ui-tests) */
   inline = input(false);
   /** ab so vielen Einträgen wird die Auswahl klein + scrollbar */
   compactAfter = input(6);

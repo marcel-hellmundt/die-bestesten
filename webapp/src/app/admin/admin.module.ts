@@ -14,6 +14,8 @@ import { SessionHeatmapComponent } from './session/session-heatmap.component';
 import { SessionDevicesComponent } from './session/session-devices.component';
 import { LukatenOverviewComponent } from './lukaten/lukaten-overview.component';
 import { MatchdaySummaryPreviewComponent } from './matchday-summary/matchday-summary-preview.component';
+import { UiTestsComponent } from './ui-tests/ui-tests.component';
+import { PackGalleryModule } from '../stickers/packs/pack-gallery.module';
 
 // /verwaltung — nur Admin (AdminGuard an der Route in shell.module.ts, gilt für alle Unterseiten)
 const routes: Routes = [
@@ -27,8 +29,10 @@ const routes: Routes = [
       { path: 'manager',      component: ManagerDataComponent },
       { path: 'achievements', component: AchievementsDataComponent },
       { path: 'lukaten',      component: LukatenOverviewComponent },
-      { path: 'zusammenfassung', component: MatchdaySummaryPreviewComponent },
       { path: 'nutzung',      component: SessionHeatmapComponent },
+      // Test-Oberflächen für Admins an einer Stelle (Spieltags-Abschluss, Sticker-Packs)
+      { path: 'ui-tests',     component: UiTestsComponent },
+      { path: 'zusammenfassung', redirectTo: 'ui-tests' },
     ],
   },
 ];
@@ -44,6 +48,7 @@ const routes: Routes = [
     SessionDevicesComponent,
     LukatenOverviewComponent,
     MatchdaySummaryPreviewComponent,
+    UiTestsComponent,
   ],
   imports: [
     CommonModule,
@@ -51,6 +56,7 @@ const routes: Routes = [
     IconModule,
     StuckDirective,
     SegmentedDirective,
+    PackGalleryModule, // Pack-Testseite unter UI-Tests
   ],
 })
 export class AdminModule {}

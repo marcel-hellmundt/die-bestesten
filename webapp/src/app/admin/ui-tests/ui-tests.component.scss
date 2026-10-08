@@ -1,0 +1,9 @@
+@use '../../../styles/variables' as *;
+
+.ui-tests__intro {
+  max-width: 640px;
+  margin: 0 0 $space-4;
+  font-size: $font-sm;
+  line-height: 1.6;
+  color: $color-text-muted;
+}

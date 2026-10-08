@@ -4,7 +4,7 @@ import { ALBUM_SOURCE, StickerAlbumService } from '../album/sticker-album.servic
 import { LUKATEN_OFFERS, PACK_KINDS, PACK_KIND_ORDER } from '../shop/shop.model';
 
 /**
- * Admin-Testseite /klebrigsten/packs: alle Pack-Designs, gruppiert in Event-Packs (Tages-Pack, Meilenstein,
+ * Admin-Testseite (Test "Sticker-Packs" unter /verwaltung/ui-tests): alle Pack-Designs, gruppiert in Event-Packs (Tages-Pack, Meilenstein,
  * Spieltagssieger, Geburtstag, Weihnachten, Streak) und Shop-Packs (normal/big/club/special) — je eine Bühne zum Aufreißen wie echt, aber nur
  * im Browser gewürfelt, nichts wird gespeichert. Eigene Bilder auf den Packs: PACK_ART in album/pack.model.ts.
  */

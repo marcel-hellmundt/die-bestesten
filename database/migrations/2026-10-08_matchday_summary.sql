@@ -8,7 +8,7 @@
 -- Einnahmen, Strafe, H2H-Ergebnis und darunter Lukaten für Einträge, Tipps, Packs, Achievements. Die Webapp blendet
 -- die noch nicht gesehenen der letzten 5 Tage einmal groß ein (GET /matchday_summary) und markiert sie als gesehen.
 -- Ohne diese Migration schreibt der Abschluss nichts und es wird nichts eingeblendet; die Vorschau in der Verwaltung
--- (/verwaltung/zusammenfassung) rechnet live und funktioniert auch ohne die Tabelle.
+-- (/verwaltung/ui-tests) rechnet live und funktioniert auch ohne die Tabelle.
 
 CREATE TABLE IF NOT EXISTS matchday_summary (
     id              CHAR(36)   NOT NULL PRIMARY KEY DEFAULT (UUID()),
