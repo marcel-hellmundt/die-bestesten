@@ -278,7 +278,8 @@
     }
 
     &:hover { background-color: $color-surface-alt; }
-    &.active { color: $color-accent; }
+    // geöffnete Seite: hinterlegt statt Akzentfarbe — die ist im Dark-Mode auf der Topbar nicht lesbar
+    &.active { background-color: $color-surface-alt; }
 
     // Mobile: enger, die Topbar hat dort wenig Platz
     @media (max-width: #{$mobile-breakpoint}) {
