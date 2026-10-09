@@ -49,7 +49,7 @@ export class SettingsAppearanceComponent {
     r.item !== 'klebrigsten' || this.stickers.enabled() || this.auth.isMaintainer()));
   /** weicht irgendetwas vom Standard ab? → "Auf Standard zurücksetzen" anbieten */
   topbarChanged = computed(() => TOPBAR_ITEMS.some(item =>
-    (['desktop', 'mobile'] as TopbarWhere[]).some(w => this.notif.topbarShows(item, w) !== topbarDefault(item, w))));
+    (['desktop', 'mobile'] as TopbarWhere[]).some(w => this.notif.isEnabled(topbarKey(item, w)) !== topbarDefault(item, w))));
 
   constructor() {
     this.notif.loadPreferences();
@@ -60,6 +60,14 @@ export class SettingsAppearanceComponent {
   }
 
   setTopbar(item: TopbarItem, where: TopbarWhere, enabled: boolean): void {
+    // Handy: nur ein Eintrag hat Platz — ein neu gewählter löst den bisherigen ab
+    if (where === 'mobile' && enabled) {
+      for (const other of TOPBAR_ITEMS) {
+        if (other !== item && this.notif.isEnabled(topbarKey(other, 'mobile'))) {
+          this.notif.setPreference(topbarKey(other, 'mobile'), false);
+        }
+      }
+    }
     this.notif.setPreference(topbarKey(item, where), enabled);
   }
 
@@ -67,7 +75,7 @@ export class SettingsAppearanceComponent {
     for (const item of TOPBAR_ITEMS) {
       for (const where of ['desktop', 'mobile'] as TopbarWhere[]) {
         const standard = topbarDefault(item, where);
-        if (this.notif.topbarShows(item, where) !== standard) this.notif.setPreference(topbarKey(item, where), standard);
+        if (this.notif.isEnabled(topbarKey(item, where)) !== standard) this.notif.setPreference(topbarKey(item, where), standard);
       }
     }
   }

@@ -123,9 +123,18 @@ export class NotificationService {
     return this._preferences()[eventType] ?? !DEFAULT_OFF.has(eventType);
   }
 
-  /** Steht der Eintrag auf dieser Breite in der Topbar? Sonst liegt er im Benutzermenü. */
+  /**
+   * Steht der Eintrag auf dieser Breite in der Topbar? Sonst liegt er im Benutzermenü. Auf dem Handy ist nur für
+   * einen Eintrag Platz: dort gilt der erste gewählte (die Einstellungen lassen ohnehin nur einen zu).
+   */
   topbarShows(item: TopbarItem, where: TopbarWhere): boolean {
+    if (where === 'mobile') return this.topbarMobileItem() === item;
     return this.isEnabled(topbarKey(item, where));
+  }
+
+  /** Der eine Eintrag der Topbar auf dem Handy, null = keiner */
+  topbarMobileItem(): TopbarItem | null {
+    return TOPBAR_ITEMS.find(i => this.isEnabled(topbarKey(i, 'mobile'))) ?? null;
   }
 
   /** Einblendung (overlay_achievement / overlay_pack / overlay_matchday) erlaubt — erst nachdem die Einstellungen geladen sind. */
