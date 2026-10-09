@@ -197,6 +197,8 @@ export class LukatenOverviewComponent {
       // Tooltip links vom Zeiger, sobald er in der rechten Hälfte ist — sonst liefe er aus dem Chart
       flip: i > (h.days.length - 1) / 2,
       values: series.map(s => ({ key: s.key, label: s.label, color: s.color, value: s.values[i] })),
+      // für den Tooltip von oben nach unten, wie die Flächen im Chart liegen (Shop, Bank, dann die Konten)
+      topDown: series.map(s => ({ key: s.key, label: s.label, color: s.color, value: s.values[i] })).reverse(),
       total: series.reduce((sum, s) => sum + s.values[i], 0),
     };
   });

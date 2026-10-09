@@ -81,7 +81,7 @@
           <div class="history__tip" [class.history__tip--flip]="d.flip" [style.left.px]="d.x" role="tooltip">
             <div class="history__tip-head"><span>{{ d.label }}</span><b>{{ format(d.total) }}</b></div>
             <ul>
-              @for (v of d.values; track v.key) {
+              @for (v of d.topDown; track v.key) {
                 <li>
                   <span class="history__dot" [style.background]="v.color"></span>
                   <span class="history__tip-name">{{ v.label }}</span>
