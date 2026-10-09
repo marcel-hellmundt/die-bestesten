@@ -47,7 +47,6 @@ interface ChartSeries {
 const CHART = { height: 300, left: 48, right: 10, top: 12, bottom: 24 };
 const BANK_COLOR = '#7f8c8d';
 const SHOP_COLOR = '#0f766e';
-const TOTAL_COLOR = '#f1c40f';
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
 /**
@@ -118,8 +117,6 @@ export class LukatenOverviewComponent {
   // ── Verlauf: Lukaten je Tag seit dem Stichtag ──
   /** undefined = lädt, null = nicht verfügbar */
   history = signal<LukatenHistory | null | undefined>(undefined);
-  /** Gesamt = eine Fläche "Im Umlauf"; Konten = jeder Manager einzeln gestapelt */
-  chartMode = signal<'total' | 'accounts'>('total');
   /** Bank und Shop mit in den Stapel nehmen (was aus dem Umlauf abgeflossen ist) */
   showBank = signal(true);
   showShop = signal(true);
@@ -142,23 +139,16 @@ export class LukatenOverviewComponent {
     this.resize.observe(el.nativeElement);
     this.destroyRef.onDestroy(() => this.resize?.disconnect());
   }
-  readonly chartModes = [{ key: 'total' as const, label: 'Gesamt' }, { key: 'accounts' as const, label: 'Nach Konto' }];
 
   /** Flächen von unten nach oben: Konten (bzw. ihre Summe), dann Bank, dann Shop */
   chartSeries = computed<ChartSeries[]>(() => {
     const h = this.history();
     if (!h) return [];
     const series: ChartSeries[] = [];
-    if (this.chartMode() === 'accounts') {
-      h.managers.forEach((m, i) => series.push({
-        key: m.manager_id, label: m.manager_name, color: managerShade(i), values: m.balance,
-      }));
-    } else {
-      series.push({
-        key: 'total', label: 'Im Umlauf', color: TOTAL_COLOR,
-        values: h.days.map((_, i) => h.managers.reduce((sum, m) => sum + m.balance[i], 0)),
-      });
-    }
+    // jeder Manager eine eigene Fläche in einem Gelbton — zusammen sind sie "Im Umlauf"
+    h.managers.forEach((m, i) => series.push({
+      key: m.manager_id, label: m.manager_name, color: managerShade(i), values: m.balance,
+    }));
     if (this.showBank()) series.push({ key: 'bank', label: 'Bank', color: BANK_COLOR, values: h.bank });
     if (this.showShop()) series.push({ key: 'shop', label: 'Shop', color: SHOP_COLOR, values: h.shop });
     return series;

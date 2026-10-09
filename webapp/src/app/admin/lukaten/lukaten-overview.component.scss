@@ -65,6 +65,8 @@
   gap: $space-4;
   font-size: $font-sm;
 
+  &__label { color: $color-text-muted; font-size: $font-sm; }
+
   label {
     display: inline-flex;
     align-items: center;

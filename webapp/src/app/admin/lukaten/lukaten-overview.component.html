@@ -43,12 +43,7 @@
   <!-- ── Verlauf: Lukaten je Tag seit dem Stichtag ── -->
   @if (history(); as h) {
     <div class="segmented-row">
-      <div class="segmented" role="group" aria-label="Ansicht des Verlaufs">
-        @for (m of chartModes; track m.key) {
-          <button type="button" class="segmented__option" [class.segmented__option--active]="chartMode() === m.key"
-                  (click)="chartMode.set(m.key)">{{ m.label }}</button>
-        }
-      </div>
+      <span class="chart-toggles__label">Im Stapel zeigen</span>
       <div class="chart-toggles">
         <label><input type="checkbox" [checked]="showBank()" (change)="showBank.set($any($event.target).checked)" /> Bank</label>
         <label><input type="checkbox" [checked]="showShop()" (change)="showShop.set($any($event.target).checked)" /> Shop</label>
