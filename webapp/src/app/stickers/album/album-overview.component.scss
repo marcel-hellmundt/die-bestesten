@@ -380,18 +380,19 @@
 
 // ── Kennzahlen als Schalter (Doppelte, Holo): Klick klappt die Liste dieser Sticker auf ──
 .kpi--button {
-  border: 2px solid transparent;
+  border: none; // kein Rahmen: über dem Farbverlauf der Holo-Kacheln zeichnet er sich an den runden Ecken ab
   font: inherit;
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color $transition-fast;
+  transition: box-shadow $transition-fast;
 
-  &:hover:not(:disabled) { border-color: color-mix(in srgb, #{$color-text-muted} 50%, transparent); }
+  // Hervorhebung als innerer Ring — folgt der Rundung und verändert die Kachelgröße nicht
+  &:hover:not(:disabled) { box-shadow: inset 0 0 0 2px color-mix(in srgb, #{$color-text-muted} 50%, transparent); }
   &:disabled { cursor: default; }
 
-  // aufgeklappt: kräftiger Rand
-  &.kpi--open { border-color: $color-text; }
+  // aufgeklappt: kräftiger Ring
+  &.kpi--open { box-shadow: inset 0 0 0 2px $color-text; }
 }
 
 .listing__head {
