@@ -207,8 +207,23 @@ trait TeamLineupTrait
         $seasonPtsQ->execute(array_merge([$seasonId], $playerIds, $seasonPtsDivisionParams));
         $seasonPointsMap = array_column($seasonPtsQ->fetchAll(PDO::FETCH_ASSOC), 'season_points', 'player_id');
 
+        // Neu im Team: Spieler, die am vorherigen Spieltag noch nicht zum Kader gehörten
+        // (team_lineup führt je Spieltag den ganzen Kader). Ohne Kader am vorherigen Spieltag
+        // (Spieltag 1, Team ohne Einträge) gilt niemand als neu.
+        $previousSquad = null;
+        $previousMatchday = current(array_filter(
+            $matchdays, fn($m) => (int) $m['number'] === (int) $matchday['number'] - 1
+        )) ?: null;
+        if ($previousMatchday) {
+            $prevQ = $this->con_league->prepare(
+                "SELECT player_id FROM team_lineup WHERE team_id = :team_id AND matchday_id = :matchday_id"
+            );
+            $prevQ->execute([':team_id' => $teamId, ':matchday_id' => $previousMatchday['id']]);
+            $previousSquad = array_flip($prevQ->fetchAll(PDO::FETCH_COLUMN));
+        }
+
         // Merge lineup meta + ratings into player data
-        $posOrder = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
+        $posOrder =['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
         $nominated = [];
         $bench     = [];
 
@@ -221,6 +236,7 @@ trait TeamLineupTrait
             $player['grade']          = $rating['grade'] ?? null;
             $player['points']         = isset($rating['points']) ? (int)$rating['points'] : null;
             $player['has_rating']     = isset($ratingMap[$e['player_id']]);
+            $player['is_new']         = $previousSquad !== null && !isset($previousSquad[$e['player_id']]);
             $player['goals']          = (int)($rating['goals'] ?? 0);
             $player['assists']        = (int)($rating['assists'] ?? 0);
             $player['clean_sheet']    = (int)($rating['clean_sheet'] ?? 0);

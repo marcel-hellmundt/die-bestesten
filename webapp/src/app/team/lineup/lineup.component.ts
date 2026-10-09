@@ -25,6 +25,7 @@ interface LineupPlayer {
   yellow_red_card: number;
   participation: string | null;
   has_rating: boolean;
+  is_new?: boolean;        // am vorherigen Spieltag noch nicht im Kader
   photo_uploaded: boolean;
 }
 

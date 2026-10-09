@@ -227,6 +227,32 @@ $mobile-nav-height: 64px;
       }
     }
 
+    // "Neu" links neben dem Status: aufgestellter Spieler, der am vorherigen Spieltag noch nicht
+    // im Kader war — hochkant (von unten nach oben gelesen), weiß auf Blau.
+    &__new {
+      flex-shrink: 0;
+      align-self: stretch;
+      width: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      background: var(--flat-river);
+      color: #fff;
+      font-size: 8px;
+      font-weight: $font-weight-bold;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+
+      @media (max-width: $mobile-breakpoint) {
+        width: 8px;
+        font-size: 5.5px;
+        letter-spacing: 0;
+      }
+    }
+
     &__points {
       flex-shrink: 0;
       width: 32px;

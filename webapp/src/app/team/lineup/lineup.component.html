@@ -110,6 +110,9 @@
                 <div class="field-player__badge"
                      (mouseenter)="onBadgeEnter($event, p)"
                      (mouseleave)="onBadgeLeave()">
+                  @if (p.is_new) {
+                    <span class="field-player__new" title="Neu im Team">Neu</span>
+                  }
                   @if (p.grade) {
                     <span class="field-player__grade grade-{{ gradeInt(p.grade) }}">{{ p.grade | number:'1.1-1' }}</span>
                   } @else if (!p.has_rating) {
