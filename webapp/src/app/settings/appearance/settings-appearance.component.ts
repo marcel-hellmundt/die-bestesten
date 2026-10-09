@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { ThemePreference, ThemeService } from '../../core/theme.service';
 import { AuthService } from '../../auth/auth.service';
-import { NotificationService, TOPBAR_ITEMS, TopbarItem, TopbarWhere, topbarDefault, topbarKey } from '../../core/notification.service';
+import { AppearanceService, TOPBAR_ITEMS, TopbarItem, TopbarWhere, topbarDefault } from '../../core/appearance.service';
 import { StickerStatusService } from '../../core/sticker-status.service';
 
 interface ThemeOption {
@@ -27,8 +27,8 @@ const TOPBAR_ROWS: { item: TopbarItem; icon: string | null; name: string }[] = [
 
 /**
  * /einstellungen/erscheinung — Hell/Dunkel/System (pro Gerät, siehe ThemeService) und darunter, welche Einträge
- * rechts in der Topbar stehen (je Nutzer, getrennt für Desktop und Handy; gespeichert über die Preferences
- * topbar_*, siehe NotificationService — Abgewähltes liegt im Benutzermenü).
+ * rechts in der Topbar stehen (je Nutzer, getrennt für Desktop und Handy; gespeichert am Konto, siehe
+ * AppearanceService — Abgewähltes liegt im Benutzermenü).
  */
 @Component({
   selector: 'app-settings-appearance',
@@ -40,7 +40,7 @@ export class SettingsAppearanceComponent {
   themeSvc = inject(ThemeService);
   options = OPTIONS;
 
-  private notif = inject(NotificationService);
+  private appearance = inject(AppearanceService);
   private auth = inject(AuthService);
   private stickers = inject(StickerStatusService);
 
@@ -49,33 +49,31 @@ export class SettingsAppearanceComponent {
     r.item !== 'klebrigsten' || this.stickers.enabled() || this.auth.isMaintainer()));
   /** weicht irgendetwas vom Standard ab? → "Auf Standard zurücksetzen" anbieten */
   topbarChanged = computed(() => TOPBAR_ITEMS.some(item =>
-    (['desktop', 'mobile'] as TopbarWhere[]).some(w => this.notif.isEnabled(topbarKey(item, w)) !== topbarDefault(item, w))));
+    (['desktop', 'mobile'] as TopbarWhere[]).some(w => this.appearance.topbarPref(item, w) !== topbarDefault(item, w))));
 
   constructor() {
-    this.notif.loadPreferences();
+    this.appearance.load();
   }
 
   shows(item: TopbarItem, where: TopbarWhere): boolean {
-    return this.notif.topbarShows(item, where);
+    return this.appearance.topbarShows(item, where);
   }
 
   setTopbar(item: TopbarItem, where: TopbarWhere, enabled: boolean): void {
     // Handy: nur ein Eintrag hat Platz — ein neu gewählter löst den bisherigen ab
     if (where === 'mobile' && enabled) {
       for (const other of TOPBAR_ITEMS) {
-        if (other !== item && this.notif.isEnabled(topbarKey(other, 'mobile'))) {
-          this.notif.setPreference(topbarKey(other, 'mobile'), false);
-        }
+        if (other !== item && this.appearance.topbarPref(other, 'mobile')) this.appearance.setTopbar(other, 'mobile', false);
       }
     }
-    this.notif.setPreference(topbarKey(item, where), enabled);
+    this.appearance.setTopbar(item, where, enabled);
   }
 
   resetTopbar(): void {
     for (const item of TOPBAR_ITEMS) {
       for (const where of ['desktop', 'mobile'] as TopbarWhere[]) {
         const standard = topbarDefault(item, where);
-        if (this.notif.isEnabled(topbarKey(item, where)) !== standard) this.notif.setPreference(topbarKey(item, where), standard);
+        if (this.appearance.topbarPref(item, where) !== standard) this.appearance.setTopbar(item, where, standard);
       }
     }
   }

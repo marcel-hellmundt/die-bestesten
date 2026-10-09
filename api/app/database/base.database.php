@@ -44,6 +44,7 @@ require_once 'sticker_shop_eur.database.php';
 require_once 'sticker_trade.database.php';
 require_once 'lukaten_account.database.php';
 require_once 'matchday_summary.database.php';
+require_once 'appearance.database.php';
 
 class Database
 {
@@ -92,6 +93,7 @@ class Database
     use StickerTradeTrait;
     use LukatenAccountTrait;
     use MatchdaySummaryTrait;
+    use AppearanceTrait;
 
     private $con;
     private $con_league;

@@ -17,20 +17,6 @@ export interface AppNotification {
 
 export type NotificationPreferences = Record<string, boolean>;
 
-/** Einträge rechts in der Topbar — je Nutzer einstellbar, getrennt für Desktop und Handy */
-export type TopbarItem = 'lukaten' | 'karte' | 'klebrigsten' | 'achievements' | 'benachrichtigungen';
-export type TopbarWhere = 'desktop' | 'mobile';
-export const TOPBAR_ITEMS: TopbarItem[] = ['lukaten', 'karte', 'klebrigsten', 'achievements', 'benachrichtigungen'];
-export function topbarKey(item: TopbarItem, where: TopbarWhere): string {
-  return `topbar_${where}_${item}`;
-}
-/** Standard wie im Backend: am Desktop alle Einträge, auf dem Handy nur Lukaten (der Rest im Benutzermenü) */
-export function topbarDefault(item: TopbarItem, where: TopbarWhere): boolean {
-  return where === 'desktop' || item === 'lukaten';
-}
-/** Einstellungen, die ohne gespeicherten Wert aus sind (alle anderen sind an) */
-const DEFAULT_OFF = new Set(TOPBAR_ITEMS.filter(i => !topbarDefault(i, 'mobile')).map(i => topbarKey(i, 'mobile')));
-
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
   private api = inject(ApiService);
@@ -118,23 +104,9 @@ export class NotificationService {
       });
   }
 
-  /** Einstellung aktiv? Fehlender Eintrag = Standard (wie im Backend: an, außer DEFAULT_OFF). */
+  /** Einstellung aktiv? Fehlender Eintrag = an (wie im Backend). */
   isEnabled(eventType: string): boolean {
-    return this._preferences()[eventType] ?? !DEFAULT_OFF.has(eventType);
-  }
-
-  /**
-   * Steht der Eintrag auf dieser Breite in der Topbar? Sonst liegt er im Benutzermenü. Auf dem Handy ist nur für
-   * einen Eintrag Platz: dort gilt der erste gewählte (die Einstellungen lassen ohnehin nur einen zu).
-   */
-  topbarShows(item: TopbarItem, where: TopbarWhere): boolean {
-    if (where === 'mobile') return this.topbarMobileItem() === item;
-    return this.isEnabled(topbarKey(item, where));
-  }
-
-  /** Der eine Eintrag der Topbar auf dem Handy, null = keiner */
-  topbarMobileItem(): TopbarItem | null {
-    return TOPBAR_ITEMS.find(i => this.isEnabled(topbarKey(i, 'mobile'))) ?? null;
+    return this._preferences()[eventType] ?? true;
   }
 
   /** Einblendung (overlay_achievement / overlay_pack / overlay_matchday) erlaubt — erst nachdem die Einstellungen geladen sind. */

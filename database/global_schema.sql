@@ -366,6 +366,17 @@ CREATE TABLE IF NOT EXISTS notification_preference (
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: appearance_preference (Erscheinungs-Einstellungen je Nutzer, unabhängig vom Gerät — getrennt von den
+-- Benachrichtigungen; bisher die Einträge der Topbar: 'topbar_{desktop|mobile}_{lukaten|karte|…}'. Fehlende Zeile =
+-- Standard aus AppearanceTrait. Migration: 2026-10-09_appearance_preference.sql)
+CREATE TABLE IF NOT EXISTS appearance_preference (
+    manager_id CHAR(36)    NOT NULL,
+    pref_key   VARCHAR(50) NOT NULL,
+    enabled    BOOL        NOT NULL DEFAULT 1,
+    PRIMARY KEY (manager_id, pref_key),
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Tabelle: manager_achievement
 CREATE TABLE IF NOT EXISTS manager_achievement (
     id             CHAR(36)     NOT NULL PRIMARY KEY DEFAULT (UUID()),

@@ -6,7 +6,8 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'r
 import { AuthService, League } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { ApiService } from '../../core/api.service';
-import { NotificationService, TOPBAR_ITEMS, TopbarItem, TopbarWhere } from '../../core/notification.service';
+import { NotificationService } from '../../core/notification.service';
+import { AppearanceService, TOPBAR_ITEMS, TopbarItem, TopbarWhere } from '../../core/appearance.service';
 import { StickerStatusService } from '../../core/sticker-status.service';
 import { LukatenService } from '../../core/lukaten.service';
 import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
@@ -32,6 +33,7 @@ export class TopbarComponent implements OnDestroy {
   notifService   = inject(NotificationService);
   stickerStatus  = inject(StickerStatusService);
   private lukaten = inject(LukatenService);
+  private appearance = inject(AppearanceService);
 
   // Lukaten-Guthaben (Konto je Manager) — null, solange es nicht geladen ist oder kein Konto existiert
   lukatenBalance = computed(() => this.lukaten.balance() ?? null);
@@ -107,7 +109,7 @@ export class TopbarComponent implements OnDestroy {
   );
   /** Steht der Eintrag auf dieser Breite in der Topbar? (Einstellungen → Erscheinung; sonst im Benutzermenü) */
   tb(item: TopbarItem, where: TopbarWhere): boolean {
-    return this.notifService.topbarShows(item, where);
+    return this.appearance.topbarShows(item, where);
   }
 
   /** Liegt auf dieser Breite mindestens ein Eintrag im Benutzermenü? (für die Trennlinie darunter) */
@@ -192,6 +194,7 @@ export class TopbarComponent implements OnDestroy {
     // "Die Klebrigsten": Album-Status laden — vergibt dabei das tägliche Pack ("App öffnen")
     this.stickerStatus.start();
     this.lukaten.start();
+    this.appearance.load(); // welche Einträge in der Topbar stehen (Einstellungen → Erscheinung)
 
     this.api.get<{ leagues: League[] }>('manager/leagues').subscribe({
       next: data => this.leagues.set(data.leagues ?? []),

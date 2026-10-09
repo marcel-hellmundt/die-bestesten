@@ -642,12 +642,30 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/notification/preferences',
-                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, sticker_trade, overlay_achievement, overlay_pack, overlay_matchday} (je bool); sticker_trade = Benachrichtigung bei neuem/beantwortetem Sticker-Tauschangebot; sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack, Spieltags-Zusammenfassung); fehlende Einträge = true (default ON). Dazu topbar_{desktop|mobile}_{lukaten|karte|klebrigsten|achievements|benachrichtigungen} (je bool): welche Einträge rechts in der Topbar stehen, getrennt für Desktop und Handy (Einstellungen → Erscheinung) — Standard topbar_desktop_* = true, topbar_mobile_lukaten = true, übrige topbar_mobile_* = false; abgewählte Einträge liegen im Benutzermenü — Auth',
+                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, sticker_trade, overlay_achievement, overlay_pack, overlay_matchday} (je bool); sticker_trade = Benachrichtigung bei neuem/beantwortetem Sticker-Tauschangebot; sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack, Spieltags-Zusammenfassung); fehlende Einträge = true (default ON). — Auth',
                     ],
                     [
                         'method' => 'PATCH',
                         'path' => '/notification/preferences',
-                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|sticker_trade|overlay_achievement|overlay_pack|overlay_matchday|topbar_{desktop|mobile}_{lukaten|karte|klebrigsten|achievements|benachrichtigungen}, enabled: bool}; 422 bei unbekanntem event_type — Auth',
+                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|sticker_trade|overlay_achievement|overlay_pack|overlay_matchday, enabled: bool}; 422 bei unbekanntem event_type — Auth',
+                    ],
+                ],
+            ]),
+
+            new Route('appearance', 'Appearance', [
+                'title' => 'Appearance',
+                'description' => 'Erscheinungs-Einstellungen je Nutzer (Tabelle appearance_preference, AppearanceTrait): wie die App für diesen Manager aussieht, unabhängig vom Gerät — bewusst getrennt von den Benachrichtigungs-Einstellungen. Bisher: welche Einträge rechts in der Topbar stehen, getrennt für Desktop und Handy — Schlüssel topbar_{desktop|mobile}_{lukaten|karte|klebrigsten|achievements|benachrichtigungen}; Standard: topbar_desktop_* an, auf dem Handy nur topbar_mobile_lukaten (dort ist nur Platz für einen Eintrag: die Einstellungen lassen nur einen zu, die Webapp nimmt bei mehreren den ersten). Was nicht in der Topbar steht, liegt im Benutzermenü. Hell/Dunkel bleibt pro Gerät (localStorage).',
+                'endpoints' => [
+                    [
+                        'method' => 'GET',
+                        'path' => '/appearance',
+                        'description' => 'Alle Einstellungen des eingeloggten Managers als {key: bool}; fehlt eine Zeile, der Standard; ohne Tabelle (Migration 2026-10-09_appearance_preference.sql) überall der Standard — Auth',
+                    ],
+                    [
+                        'method' => 'PATCH',
+                        'path' => '/appearance',
+                        'description' => 'Eine Einstellung setzen → {status}; 422 bei unbekanntem key oder fehlendem enabled, 409 ohne Tabelle — Auth',
+                        'body' => ['key' => 'z.B. topbar_desktop_karte', 'enabled' => 'bool'],
                     ],
                 ],
             ]),
