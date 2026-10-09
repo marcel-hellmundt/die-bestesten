@@ -32,13 +32,34 @@ jobs:
       - name: Install lftp
         run: sudo apt-get install -y lftp
 
+      # Waehrend des Uploads liegt deploying.flag im Webroot: die .htaccess liefert dann fuer jede
+      # Anfrage die Hinweis-Seite deploying.html (503) statt eines halb hochgeladenen Standes.
+      # Zuerst Seite + .htaccess (damit die Regel sicher da ist), dann die Markierung, dann der Upload.
       - name: Upload to FTP
         run: |
+          touch deploying.flag
           lftp -c "
             set ftp:ssl-force true;
             set ftp:ssl-protect-data true;
             set ssl:verify-certificate false;
             open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+            put -O ${{ vars.FTP_DIR_WEBAPP }} ./webapp/dist/webapp/browser/deploying.html;
+            put -O ${{ vars.FTP_DIR_WEBAPP }} ./webapp/dist/webapp/browser/.htaccess;
+            put -O ${{ vars.FTP_DIR_WEBAPP }} ./deploying.flag;
             mirror --reverse --only-missing --verbose ./webapp/dist/webapp/browser/img/ ${{ vars.FTP_DIR_WEBAPP }}/img/;
-            mirror --reverse --delete --verbose --exclude '^img/' ./webapp/dist/webapp/browser/ ${{ vars.FTP_DIR_WEBAPP }};
+            mirror --reverse --delete --verbose --exclude '^img/' --exclude-glob deploying.flag ./webapp/dist/webapp/browser/ ${{ vars.FTP_DIR_WEBAPP }};
+            rm -f ${{ vars.FTP_DIR_WEBAPP }}/deploying.flag;
+          "
+
+      # Auch nach einem fehlgeschlagenen oder abgebrochenen Upload darf die Markierung nicht liegen bleiben
+      - name: Remove deploy flag
+        if: always()
+        run: |
+          command -v lftp >/dev/null || exit 0
+          lftp -c "
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ssl:verify-certificate false;
+            open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_HOST }};
+            rm -f ${{ vars.FTP_DIR_WEBAPP }}/deploying.flag;
           "

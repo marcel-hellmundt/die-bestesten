@@ -17,7 +17,7 @@ Angular-Webapp + PHP-REST-API, Fantasy-Football. Frontend: Angular (`standalone:
 
 ```
 die-bestesten/
-├── .github/workflows/  — deploy-api.yml, deploy-webapp.yml, deploy-asset-server.yml (Push auf jeden Branch → Deploy; main → production-Environment/-Domain, alle anderen Branches → development-Environment/-Domain, siehe FTP_DIR_*/Build-Konfiguration je GitHub Environment)
+├── .github/workflows/  — deploy-api.yml, deploy-webapp.yml, deploy-asset-server.yml (Push auf jeden Branch → Deploy; main → production-Environment/-Domain, alle anderen Branches → development-Environment/-Domain, siehe FTP_DIR_*/Build-Konfiguration je GitHub Environment; während eines Webapp-Uploads liegt `deploying.flag` im Webroot — die `.htaccess` der Webapp liefert so lange für jede Anfrage 503 mit der statischen Hinweis-Seite `webapp/public/deploying.html` ("Neue Version wird eingespielt", lädt von selbst neu), der Workflow löscht die Markierung danach, auch bei Fehler/Abbruch)
 ├── api/app/
 │   ├── controller/     — Ein Controller pro Ressource (erbt _BaseController)
 │   ├── database/       — Ein Trait pro Ressource; composited in base.database.php

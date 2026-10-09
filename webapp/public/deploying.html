@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>DieBestesten</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#ffffff" />
+    <!--
+      Hinweis-Seite während eines Webapp-Deploys: solange deploying.flag im Webroot liegt, liefert die .htaccess
+      diese Seite mit Status 503 für jede Anfrage aus (siehe .github/workflows/deploy-webapp.yml). Alles steht in
+      dieser einen Datei — Bundles, Schriften und Bilder sind in der Zeit nicht abrufbar.
+    -->
+    <script>
+      // Erscheinungsbild wie in der App (localStorage-Key "theme", siehe index.html)
+      (function () {
+        try {
+          var pref = localStorage.getItem('theme');
+          var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#181b21');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      :root {
+        --bg: #f9fafb;
+        --surface: #ffffff;
+        --border: #e5e7eb;
+        --text: #111827;
+        --muted: #6b7280;
+        --accent: #bf1d00;
+      }
+      :root[data-theme='dark'] {
+        --bg: #0f1115;
+        --surface: #181b21;
+        --border: #2e333c;
+        --text: #e7e9ee;
+        --muted: #9aa1ad;
+        --accent: #e0391a;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .notice {
+        width: 100%;
+        max-width: 380px;
+        padding: 32px 24px;
+        border-radius: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        text-align: center;
+      }
+      .notice__app {
+        margin: 0 0 20px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .notice__spinner {
+        width: 36px;
+        height: 36px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        border: 3px solid var(--border);
+        border-top-color: var(--accent);
+        animation: spin 0.9s linear infinite;
+      }
+      .notice__title {
+        margin: 0 0 8px;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.25;
+      }
+      .notice__text {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .notice__spinner { animation-duration: 3s; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="notice">
+      <p class="notice__app">Die Bestesten</p>
+      <div class="notice__spinner" aria-hidden="true"></div>
+      <h1 class="notice__title">Neue Version wird eingespielt</h1>
+      <p class="notice__text">Das dauert meist nur ein paar Sekunden. Die Seite lädt gleich von selbst neu.</p>
+    </main>
+    <script>
+      // Alle 3 s nachfragen; sobald der Server nicht mehr 503 antwortet, ist der Deploy durch → neu laden.
+      // Die Adresse ist weiterhin die ursprünglich aufgerufene, der Nutzer landet also dort, wo er hinwollte.
+      (function () {
+        function check() {
+          fetch(location.href, { method: 'HEAD', cache: 'no-store' })
+            .then(function (res) {
+              if (res.status !== 503) location.reload();
+              else setTimeout(check, 3000);
+            })
+            .catch(function () { setTimeout(check, 3000); });
+        }
+        setTimeout(check, 3000);
+      })();
+    </script>
+  </body>
+</html>
