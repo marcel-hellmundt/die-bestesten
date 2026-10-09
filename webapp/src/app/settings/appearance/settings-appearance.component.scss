@@ -356,3 +356,18 @@
     cursor: pointer;
   }
 }
+
+// Kopf der Karte "Topbar": Überschrift links, "Auf Standard zurücksetzen" oben rechts auf gleicher Höhe —
+// der Rand der Karte gibt nach oben und rechts denselben Abstand
+.topbar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  min-height: 32px; // Höhe des Buttons: die Zeile springt nicht, wenn er erscheint
+  margin: (-$space-1) 0 $space-4;
+
+  .section-header { margin-bottom: 0; }
+
+  .btn { flex-shrink: 0; }
+}
