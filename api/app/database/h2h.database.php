@@ -206,12 +206,14 @@ trait H2HTrait
                 $liveAgg = [];
                 foreach ($liveLineupRows as $entry) {
                     $pr = $liveRatingByPlayerMd[$entry['player_id']][$entry['matchday_id']] ?? null;
-                    if (!$pr) continue;
                     $tId  = $entry['team_id'];
                     $mdId = $entry['matchday_id'];
+                    // Ein aufgestelltes Team steht ab Anpfiff bei 0 Toren — auch solange noch
+                    // keiner seiner Spieler eine Bewertung hat.
                     if (!isset($liveAgg[$tId][$mdId])) {
                         $liveAgg[$tId][$mdId] = ['goals' => 0, 'assists' => 0, 'sds_defender' => 0];
                     }
+                    if (!$pr) continue;
                     $liveAgg[$tId][$mdId]['goals']   += (int) $pr['goals'];
                     $liveAgg[$tId][$mdId]['assists'] += (int) $pr['assists'];
                     if ($pr['sds'] && in_array($pr['position'], ['GOALKEEPER', 'DEFENDER'])) {
@@ -683,11 +685,12 @@ trait H2HTrait
                     $liveAgg = [];
                     foreach ($liveLineupRows as $entry) {
                         $pr = $liveRatingByPlayer[$entry['player_id']] ?? null;
-                        if (!$pr) continue;
                         $tId = $entry['team_id'];
+                        // Ein aufgestelltes Team steht ab Anpfiff bei 0 — auch ohne Bewertung.
                         if (!isset($liveAgg[$tId])) {
                             $liveAgg[$tId] = ['points' => 0, 'goals' => 0, 'assists' => 0, 'sds_defender' => 0];
                         }
+                        if (!$pr) continue;
                         $liveAgg[$tId]['points']  += (int) $pr['points'];
                         $liveAgg[$tId]['goals']   += (int) $pr['goals'];
                         $liveAgg[$tId]['assists'] += (int) $pr['assists'];

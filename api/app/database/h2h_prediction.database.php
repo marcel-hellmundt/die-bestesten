@@ -548,12 +548,13 @@ trait H2HPredictionTrait
                 $liveAgg = [];
                 foreach ($liveLineupRows as $entry) {
                     $pr = $liveRatingByPlayerMd[$entry['player_id']][$entry['matchday_id']] ?? null;
-                    if (!$pr) continue;
                     $tId  = $entry['team_id'];
                     $mdId = $entry['matchday_id'];
+                    // Ein aufgestelltes Team steht ab Anpfiff bei 0 Toren — auch ohne Bewertung.
                     if (!isset($liveAgg[$mdId][$tId])) {
                         $liveAgg[$mdId][$tId] = ['goals' => 0, 'assists' => 0, 'sds_defender' => 0];
                     }
+                    if (!$pr) continue;
                     $liveAgg[$mdId][$tId]['goals']   += (int) $pr['goals'];
                     $liveAgg[$mdId][$tId]['assists'] += (int) $pr['assists'];
                     if ($pr['sds'] && in_array($pr['position'], ['GOALKEEPER', 'DEFENDER'])) {
