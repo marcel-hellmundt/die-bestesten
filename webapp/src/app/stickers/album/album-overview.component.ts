@@ -14,6 +14,16 @@ interface RarestCard {
   percent: string;        // dieselbe Chance in Prozent: "0,00081 %"
 }
 
+/** Liste hinter einer Kennzahl: welche Sticker doppelt bzw. Holo sind */
+type OverviewList = 'duplicates' | 'silver' | 'gold';
+
+interface ListEntry {
+  sticker: Sticker;
+  card: StickerCardData;
+  count: number;          // Doppelte: so viele übrig (ohne das eingeklebte); Holo: so viele in dieser Variante
+  club: string;
+}
+
 /** Prozent mit 2 signifikanten Stellen, auch bei sehr kleinen Werten (0,00081 %) */
 function formatPercent(p: number): string {
   if (!(p > 0)) return '0 %';
@@ -22,7 +32,8 @@ function formatPercent(p: number): string {
 
 /**
  * Erste Seite des Sammelalbums: Gesamtfortschritt, Holo-/Doppelte-Zähler, zuletzt eingeklebt (24 h) + seltenste
- * Karte, Vereins-Kacheln.
+ * Karte, Vereins-Kacheln. Die Zähler Doppelte, Holo Silber und Holo Gold sind Schalter: ein Klick klappt darunter
+ * die Liste genau dieser Sticker auf (in Album-Reihenfolge, mit Anzahl), ein zweiter klappt sie wieder zu.
  */
 @Component({
   selector: 'app-album-overview',
@@ -59,6 +70,32 @@ export class AlbumOverviewComponent {
       clubsComplete,
       tiers: TIERS.map(t => ({ key: t, label: TIER_LABEL[t], ...tiers[t] })),
     };
+  });
+
+  /** aufgeklappte Liste hinter einer Kennzahl (Doppelte / Holo Silber / Holo Gold), null = keine */
+  list = signal<OverviewList | null>(null);
+  readonly listTitle: Record<OverviewList, string> = { duplicates: 'Doppelte', silver: 'Holo Silber', gold: 'Holo Gold' };
+
+  toggleList(list: OverviewList): void {
+    this.list.update(current => (current === list ? null : list));
+  }
+
+  /** Sticker der aufgeklappten Liste, in Album-Reihenfolge (Verein für Verein) */
+  listEntries = computed<ListEntry[]>(() => {
+    const list = this.list();
+    if (!list) return [];
+    const col = this.collection();
+    const entries: ListEntry[] = [];
+    for (const row of this.rows()) {
+      for (const s of row.stickers) {
+        const count = list === 'duplicates' ? col.counts[s.idx] - 1 : list === 'silver' ? col.silver[s.idx] : col.gold[s.idx];
+        if (count <= 0) continue;
+        // Doppelte in ihrer besten Variante (wie im Album eingeklebt), Holo-Listen in genau der Variante
+        const holo = list === 'duplicates' ? col.holo[s.idx] : list;
+        entries.push({ sticker: s, card: this.album.cardData(s, holo), count, club: row.club.short_name || row.club.name });
+      }
+    }
+    return entries;
   });
 
   clubTiles = computed(() => {

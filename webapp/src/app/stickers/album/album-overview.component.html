@@ -13,9 +13,19 @@
   <div class="summary">
     <section class="kpis">
       <div class="kpi"><span class="kpi__value">{{ t.clubsComplete }}</span><span class="kpi__label">Vereine komplett</span></div>
-      <div class="kpi"><span class="kpi__value">{{ t.duplicates }}</span><span class="kpi__label">Doppelte</span></div>
-      <div class="kpi kpi--silver"><span class="kpi__value">{{ col.holoSilver }}</span><span class="kpi__label">Holo Silber</span></div>
-      <div class="kpi kpi--gold"><span class="kpi__value">{{ col.holoGold }}</span><span class="kpi__label">Holo Gold</span></div>
+      <!-- Doppelte und Holo: Klick zeigt darunter, welche Sticker das sind -->
+      <button type="button" class="kpi kpi--button" [class.kpi--open]="list() === 'duplicates'" [disabled]="!t.duplicates"
+              [attr.aria-expanded]="list() === 'duplicates'" (click)="toggleList('duplicates')">
+        <span class="kpi__value">{{ t.duplicates }}</span><span class="kpi__label">Doppelte</span>
+      </button>
+      <button type="button" class="kpi kpi--button kpi--silver" [class.kpi--open]="list() === 'silver'" [disabled]="!col.holoSilver"
+              [attr.aria-expanded]="list() === 'silver'" (click)="toggleList('silver')">
+        <span class="kpi__value">{{ col.holoSilver }}</span><span class="kpi__label">Holo Silber</span>
+      </button>
+      <button type="button" class="kpi kpi--button kpi--gold" [class.kpi--open]="list() === 'gold'" [disabled]="!col.holoGold"
+              [attr.aria-expanded]="list() === 'gold'" (click)="toggleList('gold')">
+        <span class="kpi__value">{{ col.holoGold }}</span><span class="kpi__label">Holo Gold</span>
+      </button>
     </section>
 
     <!-- Fortschritt je Seltenheit: kleine Balken untereinander, Farbe wie auf den Karten -->
@@ -67,6 +77,30 @@
     </div>
   }
   </div>
+
+  <!-- Liste hinter der angeklickten Kennzahl: genau diese Sticker, in Album-Reihenfolge -->
+  @if (list(); as l) {
+    <section class="block">
+      <div class="listing__head">
+        <h3 class="block__title">{{ listTitle[l] }} <span class="listing__count">{{ listEntries().length }} Sticker</span></h3>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="list.set(null)">Schließen</button>
+      </div>
+      <div class="listing">
+        @for (e of listEntries(); track e.sticker.id) {
+          <button class="listing__item" type="button" (click)="open.emit(e.sticker)"
+                  [attr.aria-label]="e.sticker.displayname + ', ' + e.club + (e.count > 1 || l === 'duplicates' ? ', ' + e.count + (l === 'duplicates' ? ' übrig' : ' Stück') : '')">
+            <app-sticker-card [data]="e.card" />
+            @if (l === 'duplicates' || e.count > 1) {
+              <span class="listing__badge">×{{ e.count }}</span>
+            }
+          </button>
+        }
+      </div>
+      @if (l === 'duplicates') {
+        <p class="listing__note">Die Zahl ist, wie viele du über das eingeklebte Exemplar hinaus hast.</p>
+      }
+    </section>
+  }
 
   <section class="block">
     <h3 class="block__title">Vereine</h3>

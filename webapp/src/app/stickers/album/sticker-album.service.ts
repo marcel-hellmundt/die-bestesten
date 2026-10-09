@@ -20,6 +20,8 @@ export interface Collection {
   holo: (StickerHolo | null)[];
   firstAt: Float64Array;  // Zeitpunkt des ersten Zugs (ms), -1 = noch nicht gezogen
   locked: Uint16Array;    // davon aus unbezahlten Euro-Käufen — tauschbar ist counts - locked
+  silver: Uint16Array;    // je Sticker: so viele Exemplare als Holo Silber
+  gold: Uint16Array;      // je Sticker: so viele Exemplare als Holo Gold
   holoSilver: number;
   holoGold: number;
 }
@@ -247,6 +249,8 @@ export class StickerAlbumService {
     const counts = new Uint16Array(n);
     const locked = new Uint16Array(n);
     const firstAt = new Float64Array(n).fill(-1);
+    const silver = new Uint16Array(n);
+    const gold = new Uint16Array(n);
     const holo: (StickerHolo | null)[] = new Array(n).fill(null);
     let holoSilver = 0, holoGold = 0;
     for (const e of entries) {
@@ -256,10 +260,12 @@ export class StickerAlbumService {
       locked[i] = e.locked ?? 0;
       firstAt[i] = new Date(e.first_at.replace(' ', 'T')).getTime();
       holo[i] = e.gold > 0 ? 'gold' : e.silver > 0 ? 'silver' : null;
+      silver[i] = e.silver;
+      gold[i] = e.gold;
       holoSilver += e.silver;
       holoGold += e.gold;
     }
-    return { counts, holo, firstAt, locked, holoSilver, holoGold };
+    return { counts, holo, firstAt, locked, silver, gold, holoSilver, holoGold };
   }
 }
 
