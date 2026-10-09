@@ -298,3 +298,61 @@
     &__pill { height: 5px; }
   }
 }
+
+// ── Karte "Topbar": je Eintrag zwei Schalter (Desktop, Handy) ──
+.topbar-prefs {
+  display: flex;
+  flex-direction: column;
+
+  &__head,
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 72px 72px;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__head {
+    padding-bottom: $space-1;
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+    text-align: center;
+  }
+
+  &__row {
+    padding: $space-3 0;
+    border-top: 1px solid $color-border;
+  }
+
+  &__name {
+    display: flex;
+    align-items: center;
+    gap: $space-3;
+    min-width: 0;
+    font-size: $font-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text;
+  }
+
+  &__icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    color: $color-text-muted;
+
+    img {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+    }
+  }
+
+  &__cell {
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+  }
+}

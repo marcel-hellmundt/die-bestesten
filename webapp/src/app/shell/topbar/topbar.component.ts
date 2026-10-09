@@ -6,7 +6,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'r
 import { AuthService, League } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { ApiService } from '../../core/api.service';
-import { NotificationService } from '../../core/notification.service';
+import { NotificationService, TOPBAR_ITEMS, TopbarItem, TopbarWhere } from '../../core/notification.service';
 import { StickerStatusService } from '../../core/sticker-status.service';
 import { LukatenService } from '../../core/lukaten.service';
 import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
@@ -105,9 +105,28 @@ export class TopbarComponent implements OnDestroy {
   stickerBadgeCount = computed(() =>
     this.showStickers() && this.notifService.isEnabled('sticker_pack') ? this.stickerStatus.unopenedCount() : 0
   );
-  // Avatar-Badge: ungelesene Benachrichtigungen + ungeöffnete Sticker-Packs — auf Mobile sitzen beide
-  // Menüpunkte nur im Dropdown hinter dem Avatar
-  avatarBadgeCount = computed(() => this.notifService.unreadCount() + this.stickerBadgeCount());
+  /** Steht der Eintrag auf dieser Breite in der Topbar? (Einstellungen → Erscheinung; sonst im Benutzermenü) */
+  tb(item: TopbarItem, where: TopbarWhere): boolean {
+    return this.notifService.topbarShows(item, where);
+  }
+
+  /** Liegt auf dieser Breite mindestens ein Eintrag im Benutzermenü? (für die Trennlinie darunter) */
+  menuHas(where: TopbarWhere): boolean {
+    return TOPBAR_ITEMS.some(item => {
+      if (item === 'lukaten' && this.lukatenBalance() === null) return false;
+      if (item === 'klebrigsten' && !this.showStickers()) return false;
+      return !this.tb(item, where);
+    });
+  }
+
+  /**
+   * Zähler am Avatar: ungelesene Benachrichtigungen + ungeöffnete Sticker-Packs — aber nur, soweit der jeweilige
+   * Eintrag auf dieser Breite im Benutzermenü liegt; steht er in der Topbar, trägt er seinen Zähler selbst.
+   */
+  avatarBadge(where: TopbarWhere): number {
+    return (this.tb('benachrichtigungen', where) ? 0 : this.notifService.unreadCount())
+      + (this.tb('klebrigsten', where) ? 0 : this.stickerBadgeCount());
+  }
   avatarUrl     = computed(() => this.cache.managerPhotoUrl(this.auth.getManagerId()));
   initials     = computed(() => {
     const name = this.managerName();

@@ -35,6 +35,53 @@
   </p>
 </section>
 
+<!-- Topbar: welche Einträge oben rechts stehen — am Konto gespeichert, getrennt für Desktop und Handy -->
+<section class="settings-section">
+  <div class="section-header-row">
+    <h2 class="section-header">Topbar</h2>
+    @if (topbarChanged()) {
+      <button type="button" class="btn btn-ghost btn-sm" (click)="resetTopbar()">Auf Standard zurücksetzen</button>
+    }
+  </div>
+  <p class="section-desc">
+    Was oben rechts in der Leiste steht. Abgewähltes findest du im Menü hinter deinem Profilbild. Gilt für dein Konto
+    auf allen Geräten; auf dem Handy ist in der Leiste wenig Platz.
+  </p>
+
+  <div class="topbar-prefs" role="table" aria-label="Einträge der Topbar">
+    <div class="topbar-prefs__head" role="row">
+      <span role="columnheader"></span>
+      <span role="columnheader">Desktop</span>
+      <span role="columnheader">Handy</span>
+    </div>
+    @for (row of topbarRows(); track row.item) {
+      <div class="topbar-prefs__row" role="row">
+        <span class="topbar-prefs__name" role="cell">
+          <span class="topbar-prefs__icon">
+            @if (row.icon) {
+              <app-icon [name]="row.icon" />
+            } @else {
+              <img src="img/icons/lukat.png" alt="" />
+            }
+          </span>
+          {{ row.name }}
+        </span>
+        @for (where of ['desktop', 'mobile']; track where) {
+          <label class="topbar-prefs__cell" role="cell">
+            <span class="toggle">
+              <input type="checkbox" class="toggle__input"
+                     [attr.aria-label]="row.name + (where === 'desktop' ? ' am Desktop' : ' auf dem Handy') + ' in der Topbar'"
+                     [checked]="shows(row.item, $any(where))"
+                     (change)="setTopbar(row.item, $any(where), $any($event.target).checked)" />
+              <span class="toggle__track"></span>
+            </span>
+          </label>
+        }
+      </div>
+    }
+  </div>
+</section>
+
 <!-- Mini-Ansicht der App: Topbar, Seitenleiste, zwei Cards — Farben aus der Palette der umgebenden .mock-layer -->
 <ng-template #mock>
   <span class="mock">

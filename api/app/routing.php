@@ -642,12 +642,12 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/notification/preferences',
-                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, sticker_trade, overlay_achievement, overlay_pack, overlay_matchday} (je bool); sticker_trade = Benachrichtigung bei neuem/beantwortetem Sticker-Tauschangebot; sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack, Spieltags-Zusammenfassung); fehlende Einträge = true (default ON) — Auth',
+                        'description' => 'Benachrichtigungs-Einstellungen des eingeloggten Managers — {matchday_completed, achievement_earned, h2h_draw, direct_offer, sticker_pack, sticker_trade, overlay_achievement, overlay_pack, overlay_matchday} (je bool); sticker_trade = Benachrichtigung bei neuem/beantwortetem Sticker-Tauschangebot; sticker_pack = Zähler ungeöffneter Sticker-Packs in der Topbar (Badge am Sticker-Symbol, im Benutzermenü und in der Avatar-Summe); overlay_* = Einblendungen im Frontend (groß über der Seite: neues Achievement, neues Sticker-Pack, Spieltags-Zusammenfassung); fehlende Einträge = true (default ON). Dazu topbar_{desktop|mobile}_{lukaten|karte|klebrigsten|achievements|benachrichtigungen} (je bool): welche Einträge rechts in der Topbar stehen, getrennt für Desktop und Handy (Einstellungen → Erscheinung) — Standard topbar_desktop_* = true, topbar_mobile_lukaten = true, übrige topbar_mobile_* = false; abgewählte Einträge liegen im Benutzermenü — Auth',
                     ],
                     [
                         'method' => 'PATCH',
                         'path' => '/notification/preferences',
-                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|sticker_trade|overlay_achievement|overlay_pack|overlay_matchday, enabled: bool}; 422 bei unbekanntem event_type — Auth',
+                        'description' => 'Einzelne Präferenz setzen — Body: {event_type: matchday_completed|achievement_earned|h2h_draw|direct_offer|sticker_pack|sticker_trade|overlay_achievement|overlay_pack|overlay_matchday|topbar_{desktop|mobile}_{lukaten|karte|klebrigsten|achievements|benachrichtigungen}, enabled: bool}; 422 bei unbekanntem event_type — Auth',
                     ],
                 ],
             ]),

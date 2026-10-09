@@ -215,6 +215,7 @@
     @if (lukatenBalance() !== null) {
       <a
         class="topbar-wallet"
+        [class.tb-hide-desktop]="!tb('lukaten', 'desktop')" [class.tb-hide-mobile]="!tb('lukaten', 'mobile')"
         [class.active]="currentUrl().startsWith('/lukaten')"
         routerLink="/lukaten"
         (click)="closeDropdown()"
@@ -228,6 +229,7 @@
 
     <a
       class="topbar-icon-btn topbar-bell"
+      [class.tb-hide-desktop]="!tb('karte', 'desktop')" [class.tb-hide-mobile]="!tb('karte', 'mobile')"
       [class.active]="currentUrl().startsWith('/karte')"
       routerLink="/karte"
       (click)="closeDropdown()"
@@ -242,6 +244,7 @@
     @if (showStickers()) {
       <a
         class="topbar-icon-btn topbar-bell"
+        [class.tb-hide-desktop]="!tb('klebrigsten', 'desktop')" [class.tb-hide-mobile]="!tb('klebrigsten', 'mobile')"
         [class.active]="currentUrl().startsWith('/klebrigsten')"
         routerLink="/klebrigsten"
         (click)="closeDropdown()"
@@ -257,6 +260,7 @@
 
     <a
       class="topbar-icon-btn topbar-bell"
+      [class.tb-hide-desktop]="!tb('achievements', 'desktop')" [class.tb-hide-mobile]="!tb('achievements', 'mobile')"
       [class.active]="currentUrl().startsWith('/achievements')"
       routerLink="/achievements"
       (click)="closeDropdown()"
@@ -268,6 +272,7 @@
 
     <a
       class="topbar-icon-btn topbar-bell"
+      [class.tb-hide-desktop]="!tb('benachrichtigungen', 'desktop')" [class.tb-hide-mobile]="!tb('benachrichtigungen', 'mobile')"
       [class.active]="currentUrl().startsWith('/benachrichtigungen')"
       routerLink="/benachrichtigungen"
       (click)="closeDropdown()"
@@ -287,8 +292,12 @@
         } @else {
           {{ initials() }}
         }
-        @if (avatarBadgeCount() > 0) {
-          <span class="avatar-notif-badge">{{ avatarBadgeCount() }}</span>
+        <!-- zählt nur, was auf dieser Breite nicht selbst in der Topbar steht (sonst stünde die Zahl doppelt) -->
+        @if (avatarBadge('desktop') > 0) {
+          <span class="avatar-notif-badge tb-hide-mobile">{{ avatarBadge('desktop') }}</span>
+        }
+        @if (avatarBadge('mobile') > 0) {
+          <span class="avatar-notif-badge tb-hide-desktop">{{ avatarBadge('mobile') }}</span>
         }
         @if (invitedLeagues().length > 0) {
           <span class="avatar-league-badge">{{ invitedLeagues().length }}</span>
@@ -310,17 +319,25 @@
             </div>
           </a>
           <hr class="dropdown-divider" />
-          <!-- Mobile-only: Karte/Achievements/Benachrichtigungen sitzen dort auf Desktop als
-               eigene Icon-Buttons in der Topbar; auf Mobile ist dieser Platz jetzt für die immer
-               sichtbare Liga-Auswahl (.topbar-league) reserviert, siehe dort. -->
-          <a class="dropdown-item dropdown-item--mobile-only"
+          <!-- Was auf dieser Breite nicht in der Topbar steht, liegt hier (je Nutzer einstellbar unter
+               Einstellungen → Erscheinung; Standard: am Desktop alles in der Topbar, auf dem Handy nur Lukaten) -->
+          @if (lukatenBalance() !== null) {
+            <a class="dropdown-item" [class.tb-hide-desktop]="tb('lukaten', 'desktop')" [class.tb-hide-mobile]="tb('lukaten', 'mobile')"
+               [class.dropdown-item--active]="currentUrl().startsWith('/lukaten')"
+               routerLink="/lukaten" (click)="closeDropdown()">
+              <img class="dropdown-item-lukat" src="img/icons/lukat.png" alt="" />
+              Lukaten
+              <span class="dropdown-item-value">{{ lukatenLabel() }}</span>
+            </a>
+          }
+          <a class="dropdown-item" [class.tb-hide-desktop]="tb('karte', 'desktop')" [class.tb-hide-mobile]="tb('karte', 'mobile')"
              [class.dropdown-item--active]="currentUrl().startsWith('/karte')"
              routerLink="/karte" (click)="closeDropdown()">
             <app-icon name="map"></app-icon>
             Karte
           </a>
           @if (showStickers()) {
-            <a class="dropdown-item dropdown-item--mobile-only"
+            <a class="dropdown-item" [class.tb-hide-desktop]="tb('klebrigsten', 'desktop')" [class.tb-hide-mobile]="tb('klebrigsten', 'mobile')"
                [class.dropdown-item--active]="currentUrl().startsWith('/klebrigsten')"
                routerLink="/klebrigsten" (click)="closeDropdown()">
               <app-icon name="sticker"></app-icon>
@@ -330,13 +347,13 @@
               }
             </a>
           }
-          <a class="dropdown-item dropdown-item--mobile-only"
+          <a class="dropdown-item" [class.tb-hide-desktop]="tb('achievements', 'desktop')" [class.tb-hide-mobile]="tb('achievements', 'mobile')"
              [class.dropdown-item--active]="currentUrl().startsWith('/achievements')"
              routerLink="/achievements" (click)="closeDropdown()">
             <app-icon name="award"></app-icon>
             Achievements
           </a>
-          <a class="dropdown-item dropdown-item--mobile-only"
+          <a class="dropdown-item" [class.tb-hide-desktop]="tb('benachrichtigungen', 'desktop')" [class.tb-hide-mobile]="tb('benachrichtigungen', 'mobile')"
              [class.dropdown-item--active]="currentUrl().startsWith('/benachrichtigungen')"
              routerLink="/benachrichtigungen" (click)="closeDropdown()">
             <app-icon name="bell"></app-icon>
@@ -345,7 +362,7 @@
               <span class="dropdown-item-badge">{{ notifService.unreadCount() }}</span>
             }
           </a>
-          <hr class="dropdown-divider dropdown-divider--mobile-only" />
+          <hr class="dropdown-divider" [class.tb-hide-desktop]="!menuHas('desktop')" [class.tb-hide-mobile]="!menuHas('mobile')" />
           @if (isContributor()) {
             <a class="dropdown-item" [class.dropdown-item--active]="currentUrl().startsWith('/daten')" routerLink="/daten" (click)="closeDropdown()">
               <app-icon name="data"></app-icon>

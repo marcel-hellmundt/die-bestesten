@@ -107,6 +107,15 @@ export const ICONS: Record<string, string> = {
     <path d="M7.93 10.9C8.29 9.86 5.18 8.45 2.7 7.36A2.2 2.2 0 0 1 5.52 3.99C7.02 6.26 9.22 7.88 10.26 7.51C11.29 7.13 11.97 7.62 11.97 4.98A1.3 1.3 0 0 1 14.53 5.44C13.63 7.92 13.55 8.04 14.46 8.65C15.37 9.27 17.22 7.81 19.12 5.96A1.6 1.6 0 0 1 20.82 8.68C18.32 9.58 17.18 10.74 17.28 11.84C17.38 12.93 15.89 12.82 18.5 13.31A1.5 1.5 0 0 1 17.37 16.09C15.16 14.63 15.61 14.35 14.83 15.13C14.05 15.91 15.54 17.77 17.13 19.93A1.9 1.9 0 0 1 13.61 21.36C13.25 18.7 12.49 17.3 11.4 17.16C10.31 17.03 9.67 17.16 8.57 19.57A1.5 1.5 0 0 1 6.14 17.81C8.1 16.01 8.45 15.43 7.94 14.46C7.42 13.49 5.64 13.63 3.06 14.31A1.7 1.7 0 0 1 2.95 10.92C5.57 11.42 7.58 11.94 7.93 10.9Z"/>
   </svg>`,
 
+  map: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+  </svg>`,
+
+  bell: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+  </svg>`,
+
   // Auslosung (H2H)
   shuffle: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/>

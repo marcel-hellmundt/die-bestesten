@@ -242,11 +242,11 @@
       pointer-events: none;
     }
 
-    // Mobile: Karte/Achievements/Benachrichtigungen leben dort im Nutzer-Dropdown (siehe
-    // .dropdown-item--mobile-only), damit im Topbar-Streifen Platz für die immer sichtbare
-    // Liga-Auswahl (.topbar-league) ist.
+    // Welche Einträge auf Desktop bzw. Handy in der Topbar stehen, legt der Nutzer fest (.tb-hide-*, siehe unten);
+    // auf dem Handy rücken sie enger zusammen, dort ist neben Liga-Auswahl und Suche wenig Platz.
     @media (max-width: #{$mobile-breakpoint}) {
-      display: none;
+      width: 32px;
+      height: 32px;
     }
   }
 
@@ -461,16 +461,19 @@
           }
         }
 
-        // Karte/Achievements/Benachrichtigungen: auf Desktop eigene Icon-Buttons in der Topbar
-        // (siehe .topbar-icon-btn), auf Mobile stattdessen hier — der Platz in der Topbar ist
-        // dort für die immer sichtbare Liga-Auswahl reserviert.
-        &--mobile-only {
-          display: none;
+      }
 
-          @media (max-width: #{$mobile-breakpoint}) {
-            display: flex;
-          }
-        }
+      // Lukaten im Menü: Icon in der Größe der übrigen Menü-Icons, Guthaben rechts
+      .dropdown-item-lukat {
+        width: 18px;
+        height: 18px;
+        object-fit: contain;
+      }
+
+      .dropdown-item-value {
+        margin-left: auto;
+        font-weight: $font-weight-semibold;
+        font-variant-numeric: tabular-nums;
       }
 
       .dropdown-item-badge {
@@ -495,26 +498,22 @@
     // schon auf dem Glocken-Icon, das dort aber ausgeblendet ist, siehe .topbar-icon-btn). Oben
     // rechts, damit es sofort sichtbar ist statt erst im aufgeklappten Dropdown.
     .avatar-notif-badge {
-      display: none;
-
-      @media (max-width: #{$mobile-breakpoint}) {
-        display: flex;
-        position: absolute;
-        top: -6px;
-        right: -6px;
-        align-items: center;
-        justify-content: center;
-        min-width: 16px;
-        height: 16px;
-        padding: 0 3px;
-        border-radius: 99px;
-        background: $color-danger;
-        color: #fff;
-        font-size: 10px;
-        font-weight: $font-weight-semibold;
-        line-height: 1;
-        pointer-events: none;
-      }
+      display: flex;
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      align-items: center;
+      justify-content: center;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 3px;
+      border-radius: 99px;
+      background: $color-danger;
+      color: #fff;
+      font-size: 10px;
+      font-weight: $font-weight-semibold;
+      line-height: 1;
+      pointer-events: none;
     }
 
     // Badge auf dem Avatar (Mobile: zeigt ausstehende Liga-Einladungen) — unten rechts, damit es
@@ -934,4 +933,14 @@
   text-align: center;
   padding: 0 3px;
   pointer-events: none;
+}
+
+// Einträge der Topbar je Nutzer (Einstellungen → Erscheinung, getrennt für Desktop und Handy): ein Eintrag steht
+// entweder in der Topbar oder im Benutzermenü — die jeweils andere Stelle wird auf dieser Breite ausgeblendet.
+@media (min-width: #{$mobile-breakpoint + 1px}) {
+  .tb-hide-desktop { display: none !important; }
+}
+
+@media (max-width: #{$mobile-breakpoint}) {
+  .tb-hide-mobile { display: none !important; }
 }

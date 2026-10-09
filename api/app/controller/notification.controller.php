@@ -45,9 +45,13 @@ class NotificationController extends _BaseController
             $eventType = $body['event_type'] ?? null;
             $enabled   = $body['enabled']    ?? null;
             $allowed   = ['matchday_completed', 'achievement_earned', 'h2h_draw', 'direct_offer', 'sticker_pack', 'sticker_trade', 'overlay_achievement', 'overlay_pack', 'overlay_matchday'];
+            foreach (['lukaten', 'karte', 'klebrigsten', 'achievements', 'benachrichtigungen'] as $item) {
+                $allowed[] = "topbar_desktop_$item";
+                $allowed[] = "topbar_mobile_$item";
+            }
             if (!$eventType || !in_array($eventType, $allowed) || $enabled === null) {
                 http_response_code(422);
-                return ['message' => 'event_type (' . implode('|', $allowed) . ') und enabled (bool) erforderlich'];
+                return ['message' => 'event_type (unbekannt oder fehlt) und enabled (bool) erforderlich'];
             }
             $this->db->setNotificationPreference($managerId, $eventType, (bool) $enabled);
             return ['ok' => true];

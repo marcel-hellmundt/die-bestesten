@@ -78,6 +78,13 @@ trait NotificationTrait
             'sticker_pack' => true, 'sticker_trade' => true, 'overlay_achievement' => true, 'overlay_pack' => true,
             'overlay_matchday' => true,
         ];
+        // Einträge rechts in der Topbar, je Nutzer und getrennt für Desktop und Handy (Einstellungen → Erscheinung);
+        // Standard wie bisher fest verdrahtet: am Desktop alle fünf, auf dem Handy nur Lukaten. Was nicht in der
+        // Topbar steht, liegt im Benutzermenü.
+        foreach (['lukaten', 'karte', 'klebrigsten', 'achievements', 'benachrichtigungen'] as $item) {
+            $defined["topbar_desktop_$item"] = true;
+            $defined["topbar_mobile_$item"]  = $item === 'lukaten';
+        }
         $q = $this->con->prepare(
             "SELECT event_type, enabled FROM notification_preference WHERE manager_id = ?"
         );
