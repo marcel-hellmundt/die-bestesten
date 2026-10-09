@@ -50,14 +50,13 @@ const SHOP_COLOR = '#0f766e';
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
 /**
- * Farbe eines Manager-Kontos im Verlauf: lauter Gelbtöne, damit die Konten zusammen als "Im Umlauf" erkennbar
- * bleiben (Bank grau, Shop türkis heben sich ab) — Helligkeit und Ton wechseln von Fläche zu Fläche, damit sich
- * Nachbarn unterscheiden.
+ * Farbe eines Manager-Kontos im Verlauf: ein gleichmäßiger Verlauf von kräftigem Gelb (unten, größtes Konto) zu
+ * hellem Gelb (oben) — so bleiben die Konten zusammen als "Im Umlauf" erkennbar (Bank grau, Shop türkis heben sich
+ * ab), und jede Fläche ist ein Stück heller als die darunter.
  */
-function managerShade(index: number): string {
-  const lightness = [52, 70, 42, 62, 78, 47][index % 6];
-  const hue = [48, 40, 54][index % 3];
-  return `hsl(${hue} 90% ${lightness}%)`;
+function managerShade(index: number, count: number): string {
+  const t = count > 1 ? index / (count - 1) : 0;
+  return `hsl(${Math.round(42 + t * 10)} 92% ${Math.round(46 + t * 36)}%)`;
 }
 
 /** Gegenseite der Konten: wohin ausgegebene Lukaten gehen */
@@ -147,7 +146,7 @@ export class LukatenOverviewComponent {
     const series: ChartSeries[] = [];
     // jeder Manager eine eigene Fläche in einem Gelbton — zusammen sind sie "Im Umlauf"
     h.managers.forEach((m, i) => series.push({
-      key: m.manager_id, label: m.manager_name, color: managerShade(i), values: m.balance,
+      key: m.manager_id, label: m.manager_name, color: managerShade(i, h.managers.length), values: m.balance,
     }));
     if (this.showBank()) series.push({ key: 'bank', label: 'Bank', color: BANK_COLOR, values: h.bank });
     if (this.showShop()) series.push({ key: 'shop', label: 'Shop', color: SHOP_COLOR, values: h.shop });
