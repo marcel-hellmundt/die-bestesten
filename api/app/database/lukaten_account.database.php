@@ -440,7 +440,8 @@ trait LukatenAccountTrait
      * GET /lukaten/history (Admin) — Verlauf: wie viele Lukaten an jedem Tag seit dem Stichtag (since_season) auf den
      * Konten lagen, je Manager, dazu Bank (Gegenseite der Tipps: Einsätze − ausgezahlte Gewinne) und Shop (für Packs
      * ausgegeben). Aus denselben Quellen wie der Kontostand, nach Tag aufsummiert:
-     *   Kontobuch          Tag der Buchung (Pack-Käufe gehen zugleich an den Shop)
+     *   Kontobuch          Tag der Buchung (Pack-Käufe gehen zugleich an den Shop); der Startbonus zählt ab dem
+     *                      ersten Tag seiner Saison — gebucht wird er technisch erst beim ersten Kontoabruf
      *   Tipp-Einsätze      Tag, an dem der Tipp abgegeben wurde (gehen an die Bank)
      *   Tippgewinne        Tag des Anpfiffs des Spieltags — einen Zeitpunkt der Auswertung gibt es nicht, der
      *                      Abschluss liegt meist ein paar Tage danach (kommen von der Bank)
@@ -482,9 +483,12 @@ trait LukatenAccountTrait
             return true;
         };
 
-        $lq = $this->con->query("SELECT manager_id, amount, source, created_at FROM lukaten_transaction");
+        $seasonStart = $this->lukatenSeasons(); // [season_id => start_date]
+        $lq = $this->con->query("SELECT manager_id, amount, source, season_id, created_at FROM lukaten_transaction");
         foreach ($lq->fetchAll(PDO::FETCH_ASSOC) as $r) {
-            $i = $at($r['created_at']);
+            // Startbonus: verteilt zum Saisonbeginn, auch wenn die Buchung später angelegt wurde
+            $bonusDay = $r['source'] === 'season_bonus' ? ($seasonStart[$r['season_id']] ?? null) : null;
+            $i = $at($bonusDay ?? $r['created_at']);
             if ($add($r['manager_id'], $i, (float) $r['amount']) && $r['source'] === 'pack') $shop[$i] -= (float) $r['amount'];
         }
 

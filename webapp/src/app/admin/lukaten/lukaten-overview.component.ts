@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { LukatenService } from '../../core/lukaten.service';
 import { environment } from '../../../environments/environment';
@@ -43,8 +43,8 @@ interface ChartSeries {
   values: number[];
 }
 
-/** Zeichenfläche des Verlauf-Charts (viewBox) */
-const CHART = { width: 900, height: 300, left: 48, right: 10, top: 12, bottom: 24 };
+/** Zeichenfläche des Verlauf-Charts in px — die Breite kommt vom Platz auf der Seite (1:1 gezeichnet, nicht skaliert) */
+const CHART = { height: 300, left: 48, right: 10, top: 12, bottom: 24 };
 const BANK_COLOR = '#7f8c8d';
 const SHOP_COLOR = '#0f766e';
 const TOTAL_COLOR = '#f1c40f';
@@ -115,7 +115,22 @@ export class LukatenOverviewComponent {
   /** Tag unter dem Mauszeiger (Index in days), null = letzter Tag */
   hoverIndex = signal<number | null>(null);
 
-  readonly chart = CHART;
+  /** Breite des Charts = Breite seines Platzes auf der Seite; so wird 1:1 gezeichnet und nichts unscharf skaliert */
+  private chartWidth = signal(900);
+  chart = computed(() => ({ ...CHART, width: this.chartWidth() }));
+  private resize?: ResizeObserver;
+  private destroyRef = inject(DestroyRef);
+
+  @ViewChild('chartBox') set chartBox(el: ElementRef<HTMLElement> | undefined) {
+    this.resize?.disconnect();
+    if (!el) return;
+    this.resize = new ResizeObserver(entries => {
+      const width = Math.round(entries[0].contentRect.width);
+      if (width > 0 && width !== this.chartWidth()) this.chartWidth.set(width);
+    });
+    this.resize.observe(el.nativeElement);
+    this.destroyRef.onDestroy(() => this.resize?.disconnect());
+  }
   readonly chartModes = [{ key: 'total' as const, label: 'Gesamt' }, { key: 'accounts' as const, label: 'Nach Konto' }];
 
   /** Flächen von unten nach oben: Konten (bzw. ihre Summe), dann Bank, dann Shop */
@@ -151,7 +166,8 @@ export class LukatenOverviewComponent {
       return { series: s, lower, upper: [...base] };
     });
     const max = this.niceMax(Math.max(1, ...base));
-    const x = (i: number) => CHART.left + (i / (n - 1)) * (CHART.width - CHART.left - CHART.right);
+    const width = this.chartWidth();
+    const x = (i: number) => CHART.left + (i / (n - 1)) * (width - CHART.left - CHART.right);
     const y = (v: number) => CHART.top + (1 - v / max) * (CHART.height - CHART.top - CHART.bottom);
     const areas = layers.map(l => ({
       key: l.series.key,
@@ -178,6 +194,8 @@ export class LukatenOverviewComponent {
       index: i,
       label: `${day}.${month}.${year}`,
       x: this.chartAreas().x?.(i) ?? 0,
+      // Tooltip links vom Zeiger, sobald er in der rechten Hälfte ist — sonst liefe er aus dem Chart
+      flip: i > (h.days.length - 1) / 2,
       values: series.map(s => ({ key: s.key, label: s.label, color: s.color, value: s.values[i] })),
       total: series.reduce((sum, s) => sum + s.values[i], 0),
     };
@@ -188,8 +206,7 @@ export class LukatenOverviewComponent {
     if (!h) return;
     const rect = svg.getBoundingClientRect();
     const clientX = 'touches' in event ? event.touches[0]?.clientX ?? 0 : event.clientX;
-    const vx = ((clientX - rect.left) / rect.width) * CHART.width;
-    const ratio = (vx - CHART.left) / (CHART.width - CHART.left - CHART.right);
+    const ratio = (clientX - rect.left - CHART.left) / (rect.width - CHART.left - CHART.right);
     this.hoverIndex.set(Math.min(h.days.length - 1, Math.max(0, Math.round(ratio * (h.days.length - 1)))));
   }
 

@@ -61,25 +61,44 @@
           <span class="history__day">{{ d.label }} · <b>{{ format(d.total) }}</b></span>
         }
       </div>
-      <svg #chartSvg class="history__chart" [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height" role="img"
-           aria-label="Lukaten je Tag seit dem Stichtag, gestapelt nach Konten, Bank und Shop"
-           (mousemove)="onChartMove($event, chartSvg)" (touchmove)="onChartMove($event, chartSvg)"
-           (mouseleave)="hoverIndex.set(null)">
-        @for (t of chartAreas().ticks; track $index) {
-          <line class="history__grid" [attr.x1]="chart.left" [attr.x2]="chart.width - chart.right" [attr.y1]="t.y" [attr.y2]="t.y" />
-          <text class="history__axis" [attr.x]="chart.left - 6" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
-        }
-        @for (m of chartAreas().months; track $index) {
-          <text class="history__axis" [attr.x]="m.x" [attr.y]="chart.height - 6" text-anchor="middle">{{ m.label }}</text>
-        }
-        @for (a of chartAreas().areas; track a.key) {
-          <path class="history__area" [attr.d]="a.path" [attr.fill]="a.color" />
-        }
+      <div #chartBox class="history__box">
+        <svg #chartSvg class="history__chart" [attr.width]="chart().width" [attr.height]="chart().height" role="img"
+             aria-label="Lukaten je Tag seit dem Stichtag, gestapelt nach Konten, Bank und Shop"
+             (mousemove)="onChartMove($event, chartSvg)" (touchmove)="onChartMove($event, chartSvg)"
+             (mouseleave)="hoverIndex.set(null)">
+          @for (t of chartAreas().ticks; track $index) {
+            <line class="history__grid" [attr.x1]="chart().left" [attr.x2]="chart().width - chart().right" [attr.y1]="t.y" [attr.y2]="t.y" />
+            <text class="history__axis" [attr.x]="chart().left - 6" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+          }
+          @for (m of chartAreas().months; track $index) {
+            <text class="history__axis" [attr.x]="m.x" [attr.y]="chart().height - 6" text-anchor="middle">{{ m.label }}</text>
+          }
+          @for (a of chartAreas().areas; track a.key) {
+            <path class="history__area" [attr.d]="a.path" [attr.fill]="a.color" />
+          }
+          @if (hoverIndex() !== null && chartDay(); as d) {
+            <line class="history__cursor" [attr.x1]="d.x" [attr.x2]="d.x" [attr.y1]="chart().top" [attr.y2]="chart().height - chart().bottom" />
+          }
+        </svg>
+
+        <!-- Tooltip zum Tag unter dem Mauszeiger -->
         @if (hoverIndex() !== null && chartDay(); as d) {
-          <line class="history__cursor" [attr.x1]="d.x" [attr.x2]="d.x" [attr.y1]="chart.top" [attr.y2]="chart.height - chart.bottom" />
+          <div class="history__tip" [class.history__tip--flip]="d.flip" [style.left.px]="d.x" role="tooltip">
+            <div class="history__tip-head"><span>{{ d.label }}</span><b>{{ format(d.total) }}</b></div>
+            <ul>
+              @for (v of d.values; track v.key) {
+                <li>
+                  <span class="history__dot" [style.background]="v.color"></span>
+                  <span class="history__tip-name">{{ v.label }}</span>
+                  <b [class.is-minus]="v.value < 0">{{ format(v.value) }}</b>
+                </li>
+              }
+            </ul>
+          </div>
         }
-      </svg>
-      @if (chartDay(); as d) {
+      </div>
+      <!-- Legende: heutiger Stand -->
+      @if (hoverIndex() === null && chartDay(); as d) {
         <ul class="history__legend">
           @for (v of d.values; track v.key) {
             <li>
@@ -90,7 +109,7 @@
         </ul>
       }
       <p class="history__note">
-        Stände am Tagesende seit dem {{ h.since.slice(8, 10) }}.{{ h.since.slice(5, 7) }}.{{ h.since.slice(0, 4) }}.
+        Stände am Tagesende seit dem {{ h.since.slice(8, 10) }}.{{ h.since.slice(5, 7) }}.{{ h.since.slice(0, 4) }}. Der Startbonus zählt ab dem ersten Tag der Saison.
         Tippgewinne sind auf den Tag des Anpfiffs gelegt, weil der Abschluss keinen Zeitstempel hat. Konten oder die
         Bank im Minus zählen in der Fläche als 0, die Zahl in der Legende ist der echte Stand.
       </p>
