@@ -50,6 +50,17 @@ const SHOP_COLOR = '#0f766e';
 const TOTAL_COLOR = '#f1c40f';
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
+/**
+ * Farbe eines Manager-Kontos im Verlauf: lauter Gelbtöne, damit die Konten zusammen als "Im Umlauf" erkennbar
+ * bleiben (Bank grau, Shop türkis heben sich ab) — Helligkeit und Ton wechseln von Fläche zu Fläche, damit sich
+ * Nachbarn unterscheiden.
+ */
+function managerShade(index: number): string {
+  const lightness = [52, 70, 42, 62, 78, 47][index % 6];
+  const hue = [48, 40, 54][index % 3];
+  return `hsl(${hue} 90% ${lightness}%)`;
+}
+
 /** Gegenseite der Konten: wohin ausgegebene Lukaten gehen */
 interface CounterpartRow {
   kind: 'bank' | 'shop';
@@ -140,7 +151,7 @@ export class LukatenOverviewComponent {
     const series: ChartSeries[] = [];
     if (this.chartMode() === 'accounts') {
       h.managers.forEach((m, i) => series.push({
-        key: m.manager_id, label: m.manager_name, color: `hsl(${(i * 47 + 12) % 360} 62% 55%)`, values: m.balance,
+        key: m.manager_id, label: m.manager_name, color: managerShade(i), values: m.balance,
       }));
     } else {
       series.push({
