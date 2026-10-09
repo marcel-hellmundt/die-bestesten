@@ -25,6 +25,31 @@ interface LukatenOverview {
   } | null;
 }
 
+/** Response von GET /lukaten/history: Stände am Tagesende seit dem Stichtag */
+interface LukatenHistory {
+  ready: boolean;
+  since: string;
+  days: string[];
+  managers: { manager_id: string; manager_name: string; balance: number[] }[];
+  bank: number[];
+  shop: number[];
+}
+
+/** Eine Fläche im Verlauf-Chart */
+interface ChartSeries {
+  key: string;
+  label: string;
+  color: string;
+  values: number[];
+}
+
+/** Zeichenfläche des Verlauf-Charts (viewBox) */
+const CHART = { width: 900, height: 300, left: 48, right: 10, top: 12, bottom: 24 };
+const BANK_COLOR = '#7f8c8d';
+const SHOP_COLOR = '#0f766e';
+const TOTAL_COLOR = '#f1c40f';
+const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
 /** Gegenseite der Konten: wohin ausgegebene Lukaten gehen */
 interface CounterpartRow {
   kind: 'bank' | 'shop';
@@ -73,6 +98,106 @@ export class LukatenOverviewComponent {
       next: o => this.overview.set(o),
       error: () => this.overview.set(null),
     });
+    this.api.get<LukatenHistory>('lukaten/history').subscribe({
+      next: h => this.history.set(h.ready && h.days.length > 1 ? h : null),
+      error: () => this.history.set(null),
+    });
+  }
+
+  // ── Verlauf: Lukaten je Tag seit dem Stichtag ──
+  /** undefined = lädt, null = nicht verfügbar */
+  history = signal<LukatenHistory | null | undefined>(undefined);
+  /** Gesamt = eine Fläche "Im Umlauf"; Konten = jeder Manager einzeln gestapelt */
+  chartMode = signal<'total' | 'accounts'>('total');
+  /** Bank und Shop mit in den Stapel nehmen (was aus dem Umlauf abgeflossen ist) */
+  showBank = signal(true);
+  showShop = signal(true);
+  /** Tag unter dem Mauszeiger (Index in days), null = letzter Tag */
+  hoverIndex = signal<number | null>(null);
+
+  readonly chart = CHART;
+  readonly chartModes = [{ key: 'total' as const, label: 'Gesamt' }, { key: 'accounts' as const, label: 'Nach Konto' }];
+
+  /** Flächen von unten nach oben: Konten (bzw. ihre Summe), dann Bank, dann Shop */
+  chartSeries = computed<ChartSeries[]>(() => {
+    const h = this.history();
+    if (!h) return [];
+    const series: ChartSeries[] = [];
+    if (this.chartMode() === 'accounts') {
+      h.managers.forEach((m, i) => series.push({
+        key: m.manager_id, label: m.manager_name, color: `hsl(${(i * 47 + 12) % 360} 62% 55%)`, values: m.balance,
+      }));
+    } else {
+      series.push({
+        key: 'total', label: 'Im Umlauf', color: TOTAL_COLOR,
+        values: h.days.map((_, i) => h.managers.reduce((sum, m) => sum + m.balance[i], 0)),
+      });
+    }
+    if (this.showBank()) series.push({ key: 'bank', label: 'Bank', color: BANK_COLOR, values: h.bank });
+    if (this.showShop()) series.push({ key: 'shop', label: 'Shop', color: SHOP_COLOR, values: h.shop });
+    return series;
+  });
+
+  /** Gestapelte Flächen als SVG-Pfade; negative Stände (Konto im Minus, Bank im Minus) zählen im Stapel als 0 */
+  chartAreas = computed(() => {
+    const h = this.history();
+    const series = this.chartSeries();
+    if (!h || !series.length) return { areas: [], ticks: [], months: [], max: 0 };
+    const n = h.days.length;
+    const base = new Array<number>(n).fill(0);
+    const layers = series.map(s => {
+      const lower = [...base];
+      s.values.forEach((v, i) => { base[i] += Math.max(0, v); });
+      return { series: s, lower, upper: [...base] };
+    });
+    const max = this.niceMax(Math.max(1, ...base));
+    const x = (i: number) => CHART.left + (i / (n - 1)) * (CHART.width - CHART.left - CHART.right);
+    const y = (v: number) => CHART.top + (1 - v / max) * (CHART.height - CHART.top - CHART.bottom);
+    const areas = layers.map(l => ({
+      key: l.series.key,
+      color: l.series.color,
+      path: 'M' + l.upper.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('L')
+        + 'L' + l.lower.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).reverse().join('L') + 'Z',
+    }));
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => ({ y: y(max * f), label: LukatenService.format(Math.round(max * f)) }));
+    const months = h.days
+      .map((day, i) => ({ day, i }))
+      .filter(d => d.day.endsWith('-01'))
+      .map(d => ({ x: x(d.i), label: MONTHS[+d.day.slice(5, 7) - 1] }));
+    return { areas, ticks, months, max, x };
+  });
+
+  /** Tag, dessen Werte die Legende zeigt: unter dem Mauszeiger, sonst der letzte */
+  chartDay = computed(() => {
+    const h = this.history();
+    if (!h) return null;
+    const i = Math.min(h.days.length - 1, Math.max(0, this.hoverIndex() ?? h.days.length - 1));
+    const [year, month, day] = h.days[i].split('-');
+    const series = this.chartSeries();
+    return {
+      index: i,
+      label: `${day}.${month}.${year}`,
+      x: this.chartAreas().x?.(i) ?? 0,
+      values: series.map(s => ({ key: s.key, label: s.label, color: s.color, value: s.values[i] })),
+      total: series.reduce((sum, s) => sum + s.values[i], 0),
+    };
+  });
+
+  onChartMove(event: MouseEvent | TouchEvent, svg: Element): void {
+    const h = this.history();
+    if (!h) return;
+    const rect = svg.getBoundingClientRect();
+    const clientX = 'touches' in event ? event.touches[0]?.clientX ?? 0 : event.clientX;
+    const vx = ((clientX - rect.left) / rect.width) * CHART.width;
+    const ratio = (vx - CHART.left) / (CHART.width - CHART.left - CHART.right);
+    this.hoverIndex.set(Math.min(h.days.length - 1, Math.max(0, Math.round(ratio * (h.days.length - 1)))));
+  }
+
+  /** nächste "runde" Obergrenze für die Achse */
+  private niceMax(v: number): number {
+    const pow = Math.pow(10, Math.floor(Math.log10(v)));
+    const step = [1, 2, 2.5, 4, 5, 10].find(f => f * pow >= v) ?? 10;
+    return step * pow;
   }
 
   managerPhotoUrl(managerId: string): string {

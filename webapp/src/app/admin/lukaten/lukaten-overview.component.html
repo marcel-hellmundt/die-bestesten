@@ -40,6 +40,63 @@
     </div>
   }
 
+  <!-- ── Verlauf: Lukaten je Tag seit dem Stichtag ── -->
+  @if (history(); as h) {
+    <div class="segmented-row">
+      <div class="segmented" role="group" aria-label="Ansicht des Verlaufs">
+        @for (m of chartModes; track m.key) {
+          <button type="button" class="segmented__option" [class.segmented__option--active]="chartMode() === m.key"
+                  (click)="chartMode.set(m.key)">{{ m.label }}</button>
+        }
+      </div>
+      <div class="chart-toggles">
+        <label><input type="checkbox" [checked]="showBank()" (change)="showBank.set($any($event.target).checked)" /> Bank</label>
+        <label><input type="checkbox" [checked]="showShop()" (change)="showShop.set($any($event.target).checked)" /> Shop</label>
+      </div>
+    </div>
+    <div class="card history">
+      <div class="history__head">
+        <h2 class="history__title">Lukaten im Verlauf</h2>
+        @if (chartDay(); as d) {
+          <span class="history__day">{{ d.label }} · <b>{{ format(d.total) }}</b></span>
+        }
+      </div>
+      <svg #chartSvg class="history__chart" [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height" role="img"
+           aria-label="Lukaten je Tag seit dem Stichtag, gestapelt nach Konten, Bank und Shop"
+           (mousemove)="onChartMove($event, chartSvg)" (touchmove)="onChartMove($event, chartSvg)"
+           (mouseleave)="hoverIndex.set(null)">
+        @for (t of chartAreas().ticks; track $index) {
+          <line class="history__grid" [attr.x1]="chart.left" [attr.x2]="chart.width - chart.right" [attr.y1]="t.y" [attr.y2]="t.y" />
+          <text class="history__axis" [attr.x]="chart.left - 6" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+        }
+        @for (m of chartAreas().months; track $index) {
+          <text class="history__axis" [attr.x]="m.x" [attr.y]="chart.height - 6" text-anchor="middle">{{ m.label }}</text>
+        }
+        @for (a of chartAreas().areas; track a.key) {
+          <path class="history__area" [attr.d]="a.path" [attr.fill]="a.color" />
+        }
+        @if (hoverIndex() !== null && chartDay(); as d) {
+          <line class="history__cursor" [attr.x1]="d.x" [attr.x2]="d.x" [attr.y1]="chart.top" [attr.y2]="chart.height - chart.bottom" />
+        }
+      </svg>
+      @if (chartDay(); as d) {
+        <ul class="history__legend">
+          @for (v of d.values; track v.key) {
+            <li>
+              <span class="history__dot" [style.background]="v.color"></span>
+              {{ v.label }} <b [class.is-minus]="v.value < 0">{{ format(v.value) }}</b>
+            </li>
+          }
+        </ul>
+      }
+      <p class="history__note">
+        Stände am Tagesende seit dem {{ h.since.slice(8, 10) }}.{{ h.since.slice(5, 7) }}.{{ h.since.slice(0, 4) }}.
+        Tippgewinne sind auf den Tag des Anpfiffs gelegt, weil der Abschluss keinen Zeitstempel hat. Konten oder die
+        Bank im Minus zählen in der Fläche als 0, die Zahl in der Legende ist der echte Stand.
+      </p>
+    </div>
+  }
+
   <div class="table-container">
     <table class="data-table">
       <thead>

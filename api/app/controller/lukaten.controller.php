@@ -5,6 +5,7 @@
  *   GET  /lukaten          — eigener Kontostand (Auth)
  *   GET  /lukaten/account  — das Konto im Einzelnen: Summen, offene Einträge, Buchungen, Regeln (Auth)
  *   GET  /lukaten/overview — alle Konten mit Summen je Herkunft (Admin)
+ *   GET  /lukaten/history  — Verlauf: Lukaten je Tag seit dem Stichtag, je Manager, Bank und Shop (Admin)
  *   POST /lukaten/buy_eur  — Lukaten gegen Euro kaufen, Zahlung per PayPal.me (Auth)
  */
 class LukatenController extends _BaseController
@@ -25,6 +26,13 @@ class LukatenController extends _BaseController
                 return ['status' => false, 'message' => 'Keine Berechtigung'];
             }
             return $this->db->getLukatenOverview();
+        }
+        if ($this->id === 'history' && $this->sub === null) {
+            if (!$this->isAdmin()) {
+                http_response_code(403);
+                return ['status' => false, 'message' => 'Keine Berechtigung'];
+            }
+            return $this->db->getLukatenHistory();
         }
         return $this->methodNotAllowed();
     }

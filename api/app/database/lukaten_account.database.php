@@ -437,6 +437,128 @@ trait LukatenAccountTrait
     }
 
     /**
+     * GET /lukaten/history (Admin) — Verlauf: wie viele Lukaten an jedem Tag seit dem Stichtag (since_season) auf den
+     * Konten lagen, je Manager, dazu Bank (Gegenseite der Tipps: Einsätze − ausgezahlte Gewinne) und Shop (für Packs
+     * ausgegeben). Aus denselben Quellen wie der Kontostand, nach Tag aufsummiert:
+     *   Kontobuch          Tag der Buchung (Pack-Käufe gehen zugleich an den Shop)
+     *   Tipp-Einsätze      Tag, an dem der Tipp abgegeben wurde (gehen an die Bank)
+     *   Tippgewinne        Tag des Anpfiffs des Spieltags — einen Zeitpunkt der Auswertung gibt es nicht, der
+     *                      Abschluss liegt meist ein paar Tage danach (kommen von der Bank)
+     *   alte Shop-Käufe    Tag des Kaufs (gehen an den Shop)
+     * Die Werte je Tag sind Stände am Tagesende; der letzte Tag entspricht GET /lukaten/overview.
+     */
+    public function getLukatenHistory(): array
+    {
+        $since = $this->lukatenAccountConfig()['since_season'];
+        if (!$this->lukatenLedgerReady()) return ['ready' => false, 'since' => $since, 'days' => [], 'managers' => [], 'bank' => [], 'shop' => []];
+
+        $mq = $this->con->query(
+            "SELECT DISTINCT m.id, m.manager_name FROM manager m
+             JOIN manager_league ml ON ml.manager_id = m.id AND ml.status = 'active'
+             WHERE m.status = 'active' ORDER BY m.manager_name"
+        );
+        $names = $mq->fetchAll(PDO::FETCH_KEY_PAIR);
+        foreach (array_keys($names) as $managerId) $this->syncLukatenAccount($managerId);
+
+        $today = date('Y-m-d');
+        $days = [];
+        for ($t = strtotime($since); $t <= strtotime($today); $t = strtotime('+1 day', $t)) $days[] = date('Y-m-d', $t);
+        $index = array_flip($days);
+        $last = count($days) - 1;
+        // Bewegung auf den Tag legen; was vor dem Stichtag oder (Anpfiff eines laufenden Spieltags) nach heute liegt, an den Rand
+        $at = function (?string $date) use ($index, $since, $today, $last): int {
+            $d = substr((string) $date, 0, 10);
+            if ($d === '' || $d < $since) return 0;
+            if ($d > $today) return $last;
+            return $index[$d] ?? $last;
+        };
+
+        $delta = [];                                   // manager_id => [Tag-Index => Veränderung]
+        $bank = array_fill(0, count($days), 0.0);
+        $shop = array_fill(0, count($days), 0.0);
+        $add = function (string $managerId, int $i, float $amount) use (&$delta, $names): bool {
+            if (!isset($names[$managerId])) return false;
+            $delta[$managerId][$i] = ($delta[$managerId][$i] ?? 0.0) + $amount;
+            return true;
+        };
+
+        $lq = $this->con->query("SELECT manager_id, amount, source, created_at FROM lukaten_transaction");
+        foreach ($lq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $i = $at($r['created_at']);
+            if ($add($r['manager_id'], $i, (float) $r['amount']) && $r['source'] === 'pack') $shop[$i] -= (float) $r['amount'];
+        }
+
+        $seasonIds = array_keys($this->lukatenSeasons());
+        if ($seasonIds) {
+            $in = implode(',', array_fill(0, count($seasonIds), '?'));
+            $kq = $this->con->prepare("SELECT id, kickoff_date FROM matchday WHERE season_id IN ($in)");
+            $kq->execute($seasonIds);
+            $kickoff = $kq->fetchAll(PDO::FETCH_KEY_PAIR);
+            $memberQ = $this->con->prepare("SELECT manager_id FROM manager_league WHERE league_id = ? AND status = 'active'");
+
+            $leagues = $this->con->query("SELECT id, name, db_name FROM league WHERE db_name IS NOT NULL AND db_name != ''")->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($leagues as $league) {
+                // wie beim Kontostand zählen nur die Ligen, in denen der Manager aktives Mitglied ist
+                $memberQ->execute([$league['id']]);
+                $members = array_flip($memberQ->fetchAll(PDO::FETCH_COLUMN));
+                $db = $this->lukatenLeagueConnection($league);
+                try {
+                    $bq = $db->prepare(
+                        "SELECT hp.manager_id, hp.stake, hp.odds, hp.result, hp.created_at, hm.matchday_id
+                         FROM h2h_prediction hp JOIN h2h_match hm ON hm.id = hp.match_id
+                         WHERE hp.stake IS NOT NULL AND hm.season_id IN ($in)"
+                    );
+                    $bq->execute($seasonIds);
+                    foreach ($bq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                        if (!isset($members[$r['manager_id']])) continue;
+                        $stake = (float) $r['stake'];
+                        $i = $at($r['created_at']);
+                        if (!$add($r['manager_id'], $i, -$stake)) continue;
+                        $bank[$i] += $stake;
+                        if (str_replace("\0", '', (string) $r['result']) === 'won') {
+                            $payout = $stake * (float) $r['odds'];
+                            $j = max($i, $at($kickoff[$r['matchday_id']] ?? $r['created_at']));
+                            $add($r['manager_id'], $j, $payout);
+                            $bank[$j] -= $payout;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    if (!$this->lukatenFeatureMissing($e)) throw $e; // Liga ohne H2H-Tipps
+                }
+                try {
+                    $sq = $db->prepare("SELECT manager_id, price, created_at FROM sticker_shop_purchase WHERE season_id IN ($in)");
+                    $sq->execute($seasonIds);
+                    foreach ($sq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                        if (!isset($members[$r['manager_id']])) continue;
+                        $i = $at($r['created_at']);
+                        if ($add($r['manager_id'], $i, -(float) $r['price'])) $shop[$i] += (float) $r['price'];
+                    }
+                } catch (\Throwable $e) {
+                    if (!$this->lukatenFeatureMissing($e)) throw $e; // Liga ohne Shop-Tabelle
+                }
+            }
+        }
+
+        // aus den Veränderungen je Tag die Stände am Tagesende
+        $running = function (array $perDay) use ($days): array {
+            $sum = 0.0;
+            $out = [];
+            foreach (array_keys($days) as $i) {
+                $sum += $perDay[$i] ?? 0.0;
+                $out[] = round($sum, 2);
+            }
+            return $out;
+        };
+        $managers = [];
+        foreach ($names as $managerId => $name) {
+            $managers[] = ['manager_id' => $managerId, 'manager_name' => $name, 'balance' => $running($delta[$managerId] ?? [])];
+        }
+        usort($managers, fn($a, $b) => end($b['balance']) <=> end($a['balance']) ?: strcmp($a['manager_name'], $b['manager_name']));
+
+        return ['ready' => true, 'since' => $since, 'days' => $days, 'managers' => $managers, 'bank' => $running($bank), 'shop' => $running($shop)];
+    }
+
+    /**
      * POST /lukaten/buy_eur — Lukaten gegen Euro über denselben PayPal.me-Ablauf wie die Euro-Packs
      * (StickerShopEurTrait, Tabelle sticker_eur_purchase): Kauf anlegen (pending, Kauf-Code) — damit ist er nur
      * vorgemerkt. Der Käufer zahlt per PayPal.me; erst wenn ein Admin die Zahlung bestätigt, werden die Lukaten

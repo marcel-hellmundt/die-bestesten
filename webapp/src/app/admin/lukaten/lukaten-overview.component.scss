@@ -59,6 +59,120 @@
 
 .is-minus { color: $color-danger; }
 
+// ── Verlauf-Chart ──
+.chart-toggles {
+  display: flex;
+  gap: $space-4;
+  font-size: $font-sm;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    cursor: pointer;
+  }
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  margin-bottom: $space-6;
+  padding: $space-4 $space-5;
+
+  @media (max-width: $mobile-breakpoint) { padding: $space-4; }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: $space-1 $space-3;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__day {
+    font-size: $font-sm;
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+
+    b { color: $color-text; }
+  }
+
+  &__chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: pan-y;
+  }
+
+  &__grid {
+    stroke: $color-border;
+    stroke-width: 1;
+  }
+
+  &__axis {
+    fill: $color-text-muted;
+    font-size: 11px;
+  }
+
+  &__area {
+    stroke: $color-surface;
+    stroke-width: 0.6;
+    opacity: 0.9;
+  }
+
+  &__cursor {
+    stroke: $color-text;
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    pointer-events: none;
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-1 $space-4;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: $font-xs;
+    color: $color-text-muted;
+
+    li {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    b {
+      color: $color-text;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  &__note {
+    max-width: 90ch;
+    margin: 0;
+    font-size: $font-xs;
+    line-height: 1.5;
+    color: $color-text-muted;
+  }
+}
+
 .overview-hint {
   max-width: 70ch;
   margin: $space-4 0 0;
