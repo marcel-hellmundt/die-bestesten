@@ -150,6 +150,9 @@ trait SessionTrait
             'today'  => "CURDATE()",
             'day'    => "(NOW() - INTERVAL 24 HOUR)",
             'year'   => "(CURDATE() - INTERVAL 51 WEEK)",
+            // gleiche Fenster wie getSessionHeatmap(): 12 Wochen ab Montag, 12 Monate ab dem 1.
+            'weeks'  => "(CURDATE() - INTERVAL WEEKDAY(CURDATE()) DAY - INTERVAL 11 WEEK)",
+            'months' => "(DATE_FORMAT(CURDATE(), '%Y-%m-01') - INTERVAL 11 MONTH)",
             'all', 'custom' => null,
             default  => "(CURDATE() - INTERVAL 29 DAY)",
         };
@@ -295,10 +298,22 @@ trait SessionTrait
     public function getSessionHeatmap(string $range = 'day', ?string $profile = null, ?array $window = null): array
     {
         $params = [];
+        // weeks/months: Fenster beginnt an einer Bucket-Grenze (Montag bzw. 1. des Monats) — hineinragende
+        // Sessions werden darauf gekappt, damit kein Bucket vor der ersten Spalte entsteht
+        $clipStart = match ($range) {
+            'weeks'  => (new DateTime('monday this week'))->modify('-11 weeks'),
+            'months' => (new DateTime('first day of this month 00:00'))->modify('-11 months'),
+            default  => null,
+        };
         switch ($range) {
             case 'custom':
                 $sinceExpr = ":from";
                 $params    = [':from' => $window[0]->format('Y-m-d H:i:s'), ':to' => $window[1]->format('Y-m-d H:i:s')];
+                break;
+            case 'weeks':
+            case 'months':
+                $sinceExpr = ":from";
+                $params    = [':from' => $clipStart->format('Y-m-d H:i:s')];
                 break;
             case 'today':
                 $sinceExpr = "CURDATE()";
@@ -341,7 +356,13 @@ trait SessionTrait
 
         // Bucket-Art: im Profil nach Tageszeit/Wochentag statt nach den Zeitabschnitten des Zeitraums
         // (eigener Zeitraum: tageweise wie 'month')
-        $bucketMode = $profile ?? ($range === 'custom' ? 'month' : $range);
+        // (weeks: je Woche ab Montag wie 'year', months: je Monat wie 'all')
+        $bucketMode = $profile ?? match ($range) {
+            'custom' => 'month',
+            'weeks'  => 'year',
+            'months' => 'all',
+            default  => $range,
+        };
         // Fensterbeginn (PHP-seitig, deckungsgleich mit $sinceExpr) — nur fürs Profil: kappt hineinragende Sessions
         $windowStart = match (true) {
             $profile === null => null,
@@ -371,6 +392,9 @@ trait SessionTrait
             }
             if ($windowStart !== null && $interval[0] < $windowStart) {
                 $interval[0] = clone $windowStart;
+            }
+            if ($clipStart !== null && $interval[0] < $clipStart) {
+                $interval[0] = clone $clipStart;
             }
             // Eigener Zeitraum: auf beide Grenzen kappen
             if ($range === 'custom') {

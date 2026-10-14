@@ -4,7 +4,10 @@ import { EMPTY, Observable, catchError, exhaustMap, of, switchMap, timer } from 
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
-type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all' | 'custom';
+// Werte = range der API: today = heute stündlich, month = 30 Tage täglich, weeks = 12 Wochen ab Montag,
+// months = 12 Monate, custom = eigener Zeitraum täglich; day/year/all bietet die Oberfläche nicht mehr an
+// (all nur noch intern: Sortierung der Zeilen + Grundlage der Aggregiert-Ansicht)
+type RangeKey = 'today' | 'day' | 'month' | 'weeks' | 'months' | 'year' | 'all' | 'custom';
 /** Längster eigener Zeitraum in Tagen — wie SessionController::CUSTOM_MAX_DAYS */
 const CUSTOM_MAX_DAYS = 366;
 /**
@@ -55,15 +58,16 @@ const GRADIENT_MIN_OPACITY = 0.1;
 const GRADIENT_MAX_OPACITY = 1;
 
 const RANGE_LABELS: Record<RangeKey, string> = {
-  today: 'Heute', day: 'Tag', month: 'Monat', year: 'Jahr', all: 'Insgesamt', custom: 'Zeitraum',
+  today: 'Heute', day: '24 h', month: 'Tag', weeks: 'Woche', months: 'Monat', year: 'Jahr', all: 'Insgesamt',
+  custom: 'Zeitraum',
 };
 
 // Beschreibung des gesamten abgedeckten Zeitraums für den Manager-Zeilen-Tooltip (aggregiert über
 // alle aktuell angezeigten Buckets) — Fenstergrößen wie in SessionTrait::getSessionHeatmap.
 // (custom: Von–Bis, siehe periodLabel())
 const RANGE_PERIOD_LABELS: Record<RangeKey, string> = {
-  today: 'Heute seit 0 Uhr', day: 'Letzte 24 Stunden', month: 'Letzte 30 Tage', year: 'Letzte 52 Wochen', all: 'Seit der ersten Session',
-  custom: 'Eigener Zeitraum',
+  today: 'Heute seit 0 Uhr', day: 'Letzte 24 Stunden', month: 'Letzte 30 Tage', weeks: 'Letzte 12 Wochen',
+  months: 'Letzte 12 Monate', year: 'Letzte 52 Wochen', all: 'Seit der ersten Session', custom: 'Eigener Zeitraum',
 };
 
 // Grobe Obergrenze für die Tooltip-Breite, nur zum Clampen der Position genutzt (siehe
@@ -110,18 +114,40 @@ export class SessionHeatmapComponent {
 
   readonly rangeLabels = RANGE_LABELS;
 
-  readonly VIEWS: { key: ViewKey; label: string }[] = [
-    { key: 'timeline', label: 'Verlauf' },
-    { key: 'hour', label: 'Tageszeit' },
+  // Erster Umschalter: Fortlaufend (jede Spalte ein Zeitabschnitt) | Aggregiert (alles nach Uhrzeit bzw.
+  // Wochentag aufsummiert); rechts daneben der zweite mit den Optionen des gewählten Modus
+  readonly MODES: { key: 'timeline' | 'profile'; label: string }[] = [
+    { key: 'timeline', label: 'Fortlaufend' },
+    { key: 'profile', label: 'Aggregiert' },
+  ];
+  readonly PROFILES: { key: ViewKey; label: string }[] = [
+    { key: 'hour', label: 'Uhrzeit' },
     { key: 'weekday', label: 'Wochentag' },
   ];
   view = signal<ViewKey>(this.loadView());
   isProfile = computed(() => this.view() !== 'timeline');
+  /** zuletzt gewählte Aggregiert-Option — ein Wechsel des Modus kehrt dorthin zurück */
+  private lastProfile: ViewKey = this.view() === 'weekday' ? 'weekday' : 'hour';
+  setMode(mode: 'timeline' | 'profile'): void {
+    this.setView(mode === 'timeline' ? 'timeline' : this.lastProfile);
+  }
 
-  readonly RANGES: RangeKey[] = ['today', 'day', 'month', 'year', 'all', 'custom'];
-  /** Zeitraum des Verlaufs (Umschalter rechts) — die Profile rechnen immer über alles, siehe range */
-  private timelineRange = signal<RangeKey>('day');
-  setRange(r: RangeKey): void { this.timelineRange.set(r); }
+  readonly RANGES: RangeKey[] = ['today', 'month', 'weeks', 'months', 'custom'];
+  /** Zeitraum im Modus Fortlaufend (zweiter Umschalter) — Aggregiert rechnet immer über alles, siehe range */
+  private timelineRange = signal<RangeKey>(this.loadRange());
+  setRange(r: RangeKey): void {
+    this.timelineRange.set(r);
+    try { localStorage.setItem('session-range', r); } catch {}
+  }
+
+  private loadRange(): RangeKey {
+    try {
+      const r = localStorage.getItem('session-range') as RangeKey | null;
+      return r && this.RANGES.includes(r) ? r : 'today';
+    } catch {
+      return 'today';
+    }
+  }
   /** Wirksamer Zeitraum: im Profil immer "Insgesamt" (Gewohnheiten zeigen sich erst über lange Zeit) */
   range = computed<RangeKey>(() => this.isProfile() ? 'all' : this.timelineRange());
 
@@ -166,6 +192,7 @@ export class SessionHeatmapComponent {
 
   setView(v: ViewKey): void {
     this.view.set(v);
+    if (v !== 'timeline') this.lastProfile = v;
     try { localStorage.setItem('session-view', v); } catch {}
   }
 
@@ -311,6 +338,22 @@ export class SessionHeatmapComponent {
         const d = new Date(now);
         d.setDate(now.getDate() - i);
         const label = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+        cols.push({ key: this.localDateKey(d), label });
+      }
+    } else if (range === 'weeks') {
+      // 12 Wochen, je ab Montag (Schlüssel = Montag, wie SessionTrait 'weeks')
+      const thisMonday = this.mondayOf(now);
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(thisMonday);
+        d.setDate(thisMonday.getDate() - i * 7);
+        cols.push({ key: this.localDateKey(d), label: d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) });
+      }
+    } else if (range === 'months') {
+      // 12 Monate (Schlüssel = 1. des Monats); Jahreszahl am ersten Monat und bei jedem Jahreswechsel
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const showYear = i === 11 || d.getMonth() === 0;
+        const label = d.toLocaleDateString('de-DE', showYear ? { month: 'short', year: '2-digit' } : { month: 'short' });
         cols.push({ key: this.localDateKey(d), label });
       }
     } else if (range === 'year') {
@@ -817,11 +860,16 @@ export class SessionHeatmapComponent {
       return `${day}, ${String(d.getHours()).padStart(2, '0')}:00 Uhr`;
     }
     const d = new Date(`${col.key}T00:00:00`);
-    if (this.range() === 'all') {
+    if (this.range() === 'all' || this.range() === 'months') {
       return d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
     }
-    const dateLabel = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
-    return this.range() === 'year' ? `Woche ab ${dateLabel}` : dateLabel;
+    if (this.range() === 'year' || this.range() === 'weeks') {
+      const sunday = new Date(d);
+      sunday.setDate(d.getDate() + 6);
+      const fmt = (x: Date) => x.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+      return `Woche ${fmt(d)} – ${fmt(sunday)}.${sunday.getFullYear()}`;
+    }
+    return d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   private formatDurationOrZero(seconds: number, withSecondsBelow?: number): string {

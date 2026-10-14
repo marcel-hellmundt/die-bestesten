@@ -510,3 +510,8 @@
     }
   }
 }
+
+// Modus + seine Optionen direkt nebeneinander (statt an beide Ränder wie sonst in .segmented-row)
+.usage-switches {
+  justify-content: flex-start;
+}

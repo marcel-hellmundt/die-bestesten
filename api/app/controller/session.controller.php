@@ -4,7 +4,7 @@ class SessionController extends _BaseController
 {
     public static array $methodRoles = ['GET' => 'admin'];
 
-    private const ALLOWED_RANGES = ['today', 'day', 'month', 'year', 'all', 'custom'];
+    private const ALLOWED_RANGES = ['today', 'day', 'month', 'weeks', 'months', 'year', 'all', 'custom'];
     private const ALLOWED_PROFILES = ['hour', 'weekday'];
     /** Längster wählbarer eigener Zeitraum (Tage, beide Grenzen eingeschlossen) */
     private const CUSTOM_MAX_DAYS = 366;

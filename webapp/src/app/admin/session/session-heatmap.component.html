@@ -4,25 +4,36 @@
   gehaltene Tabs, nicht zwingend aktive Nutzung.
 </p>
 
-<div class="segmented-row">
-  <div class="segmented" role="group" aria-label="Ansicht">
-    @for (v of VIEWS; track v.key) {
+<div class="segmented-row usage-switches">
+  <div class="segmented" role="group" aria-label="Modus">
+    @for (m of MODES; track m.key) {
       <button
         class="segmented__option"
-        [class.segmented__option--active]="view() === v.key"
-        (click)="setView(v.key)"
-      >{{ v.label }}</button>
+        [class.segmented__option--active]="(m.key === 'profile') === isProfile()"
+        (click)="setMode(m.key)"
+      >{{ m.label }}</button>
     }
   </div>
-  <!-- Zeitraum nur im Verlauf — Tageszeit/Wochentag rechnen immer über alle Sessions -->
+  <!-- rechts daneben die Optionen des Modus: Fortlaufend = Zeitabschnitt, Aggregiert = Uhrzeit/Wochentag
+       (Aggregiert rechnet immer über alle Sessions) -->
   @if (!isProfile()) {
-    <div class="segmented" role="group" aria-label="Zeitraum">
+    <div class="segmented" role="group" aria-label="Zeitabschnitt">
       @for (r of RANGES; track r) {
         <button
           class="segmented__option"
           [class.segmented__option--active]="range() === r"
           (click)="setRange(r)"
         >{{ rangeLabels[r] }}</button>
+      }
+    </div>
+  } @else {
+    <div class="segmented" role="group" aria-label="Aggregiert nach">
+      @for (p of PROFILES; track p.key) {
+        <button
+          class="segmented__option"
+          [class.segmented__option--active]="view() === p.key"
+          (click)="setView(p.key)"
+        >{{ p.label }}</button>
       }
     </div>
   }
