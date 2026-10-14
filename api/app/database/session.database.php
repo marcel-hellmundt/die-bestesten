@@ -144,17 +144,23 @@ trait SessionTrait
      * Nur Sessions mit Geräte-Infos (theme_pref gesetzt = Header X-Client-Info vom aktuellen Client):
      * ältere Sessions haben z.B. kein screen und würden dasselbe Handy sonst als zweites Gerät zeigen.
      */
-    public function getSessionDevices(string $range = 'month'): array
+    public function getSessionDevices(string $range = 'month', ?array $window = null): array
     {
         $sinceExpr = match ($range) {
-            'today' => "CURDATE()",
-            'day'   => "(NOW() - INTERVAL 24 HOUR)",
-            'year'  => "(CURDATE() - INTERVAL 51 WEEK)",
-            'all'   => null,
-            default => "(CURDATE() - INTERVAL 29 DAY)",
+            'today'  => "CURDATE()",
+            'day'    => "(NOW() - INTERVAL 24 HOUR)",
+            'year'   => "(CURDATE() - INTERVAL 51 WEEK)",
+            'all', 'custom' => null,
+            default  => "(CURDATE() - INTERVAL 29 DAY)",
         };
         $whereSql = "m.status != 'deleted' AND ms.theme_pref IS NOT NULL"
             . ($sinceExpr !== null ? " AND ms.ended_at >= $sinceExpr" : '');
+        // Eigener Zeitraum [from, to+1 Tag): Sessions, die ihn berühren
+        $params = [];
+        if ($range === 'custom' && $window !== null) {
+            $whereSql .= " AND ms.ended_at >= :from AND ms.started_at < :to";
+            $params = [':from' => $window[0]->format('Y-m-d H:i:s'), ':to' => $window[1]->format('Y-m-d H:i:s')];
+        }
 
         $q = $this->con->prepare(
             "SELECT ms.manager_id, m.manager_name, ms.device_type, ms.os, ms.browser, ms.started_at, ms.ended_at,
@@ -162,7 +168,7 @@ trait SessionTrait
              FROM manager_session ms JOIN manager m ON m.id = ms.manager_id
              WHERE $whereSql ORDER BY ms.ended_at ASC"
         );
-        $q->execute();
+        $q->execute($params);
 
         $clientFields = ['theme_pref', 'theme', 'system_theme', 'standalone', 'os_version', 'device_model', 'screen'];
         $managers = [];
@@ -281,10 +287,19 @@ trait SessionTrait
      * month/year/all zu. Hineinragende Sessions zählen dabei erst ab Fensterbeginn. Die Antwort enthält
      * zusätzlich `profile` und `since` (Y-m-d: Fensterbeginn, bei 'all' Tag der frühesten Session) — daraus
      * rechnet das Frontend "Ø pro Tag".
+     *
+     * 'custom' (nur mit $window = [from 0 Uhr, Tag nach to 0 Uhr], vom Controller geprüft): eigener Zeitraum,
+     * ein Bucket pro Tag wie 'month'; Sessions werden auf beide Fenstergrenzen gekappt. Die Antwort enthält
+     * dann zusätzlich `from`/`to` (Y-m-d, beide eingeschlossen).
      */
-    public function getSessionHeatmap(string $range = 'day', ?string $profile = null): array
+    public function getSessionHeatmap(string $range = 'day', ?string $profile = null, ?array $window = null): array
     {
+        $params = [];
         switch ($range) {
+            case 'custom':
+                $sinceExpr = ":from";
+                $params    = [':from' => $window[0]->format('Y-m-d H:i:s'), ':to' => $window[1]->format('Y-m-d H:i:s')];
+                break;
             case 'today':
                 $sinceExpr = "CURDATE()";
                 break;
@@ -311,6 +326,9 @@ trait SessionTrait
         if ($sinceExpr !== null) {
             $whereSql .= " AND ms.ended_at >= $sinceExpr";
         }
+        if ($range === 'custom') {
+            $whereSql .= " AND ms.started_at < :to";
+        }
 
         $q = $this->con->prepare(
             "SELECT ms.manager_id, m.manager_name, m.alias, ms.device_type, ms.started_at, ms.ended_at
@@ -319,10 +337,11 @@ trait SessionTrait
              WHERE $whereSql
              ORDER BY m.manager_name ASC"
         );
-        $q->execute();
+        $q->execute($params);
 
         // Bucket-Art: im Profil nach Tageszeit/Wochentag statt nach den Zeitabschnitten des Zeitraums
-        $bucketMode = $profile ?? $range;
+        // (eigener Zeitraum: tageweise wie 'month')
+        $bucketMode = $profile ?? ($range === 'custom' ? 'month' : $range);
         // Fensterbeginn (PHP-seitig, deckungsgleich mit $sinceExpr) — nur fürs Profil: kappt hineinragende Sessions
         $windowStart = match (true) {
             $profile === null => null,
@@ -352,6 +371,12 @@ trait SessionTrait
             }
             if ($windowStart !== null && $interval[0] < $windowStart) {
                 $interval[0] = clone $windowStart;
+            }
+            // Eigener Zeitraum: auf beide Grenzen kappen
+            if ($range === 'custom') {
+                if ($interval[0] < $window[0]) $interval[0] = clone $window[0];
+                if ($interval[1] > $window[1]) $interval[1] = clone $window[1];
+                if ($interval[1] <= $interval[0]) continue;
             }
             if ($earliest === null || $interval[0] < $earliest) {
                 $earliest = $interval[0];
@@ -405,6 +430,8 @@ trait SessionTrait
             'range' => $range, 'managers' => $result, 'online_managers' => $online,
             'profile' => $profile,
             'since' => $profile === null ? null : ($windowStart ?? $earliest)?->format('Y-m-d'),
+            'from'  => $range === 'custom' ? $window[0]->format('Y-m-d') : null,
+            'to'    => $range === 'custom' ? (clone $window[1])->modify('-1 day')->format('Y-m-d') : null,
         ];
     }
 

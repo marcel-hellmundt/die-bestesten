@@ -28,6 +28,25 @@
   }
 </div>
 
+<!-- Eigener Zeitraum: Von–Bis, die Daten kommen tageweise -->
+@if (range() === 'custom') {
+  <div class="custom-range">
+    <label class="custom-range__field">
+      <span>Von</span>
+      <input type="date" [value]="customFrom()" [max]="customTo()" (change)="customFrom.set($any($event.target).value)" />
+    </label>
+    <label class="custom-range__field">
+      <span>Bis</span>
+      <input type="date" [value]="customTo()" [min]="customFrom()" [max]="today" (change)="customTo.set($any($event.target).value)" />
+    </label>
+    @if (customError(); as err) {
+      <span class="custom-range__error">{{ err }}</span>
+    } @else {
+      <span class="custom-range__hint">{{ columns().length }} Tage</span>
+    }
+  </div>
+}
+
 @if (loading()) {
   <p class="state-msg">Laden…</p>
 } @else if (!managers().length) {
@@ -220,5 +239,7 @@
     </div>
   }
 
-  <app-session-devices [range]="range()" />
+  @if (rangeQuery(); as q) {
+    <app-session-devices [query]="q" />
+  }
 }

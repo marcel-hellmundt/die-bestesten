@@ -4,7 +4,7 @@ import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
-type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all';
+type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all' | 'custom';
 type ThemePref = 'light' | 'dark' | 'system';
 
 interface SessionDevice {
@@ -69,11 +69,12 @@ export class SessionDevicesComponent {
   private api = inject(ApiService);
   cache = inject(DataCacheService);
 
-  range = input.required<RangeKey>();
+  /** Zeitraum als Query-String der Heatmap, z.B. "range=month" oder "range=custom&from=…&to=…" */
+  query = input.required<string>();
 
-  private data = toSignal(toObservable(this.range).pipe(
-    switchMap(r => this.api.get<DevicesResponse>(`session/devices?range=${r}`).pipe(
-      catchError(() => of({ range: r, managers: [] } as DevicesResponse)),
+  private data = toSignal(toObservable(this.query).pipe(
+    switchMap(q => this.api.get<DevicesResponse>(`session/devices?${q}`).pipe(
+      catchError(() => of({ range: 'month', managers: [] } as DevicesResponse)),
     )),
   ));
 

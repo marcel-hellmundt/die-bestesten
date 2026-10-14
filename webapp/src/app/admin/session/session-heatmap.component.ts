@@ -4,7 +4,9 @@ import { EMPTY, Observable, catchError, exhaustMap, of, switchMap, timer } from 
 import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 
-type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all';
+type RangeKey = 'today' | 'day' | 'month' | 'year' | 'all' | 'custom';
+/** Längster eigener Zeitraum in Tagen — wie SessionController::CUSTOM_MAX_DAYS */
+const CUSTOM_MAX_DAYS = 366;
 /**
  * Ansicht: Verlauf (jede Spalte ein konkreter Zeitabschnitt) oder Profil — derselbe Zeitraum nach Tageszeit
  * bzw. Wochentag aufsummiert (zeigt Gewohnheiten: wer morgens, wer abends, wer an welchem Wochentag online ist)
@@ -53,13 +55,15 @@ const GRADIENT_MIN_OPACITY = 0.1;
 const GRADIENT_MAX_OPACITY = 1;
 
 const RANGE_LABELS: Record<RangeKey, string> = {
-  today: 'Heute', day: 'Tag', month: 'Monat', year: 'Jahr', all: 'Insgesamt',
+  today: 'Heute', day: 'Tag', month: 'Monat', year: 'Jahr', all: 'Insgesamt', custom: 'Zeitraum',
 };
 
 // Beschreibung des gesamten abgedeckten Zeitraums für den Manager-Zeilen-Tooltip (aggregiert über
 // alle aktuell angezeigten Buckets) — Fenstergrößen wie in SessionTrait::getSessionHeatmap.
+// (custom: Von–Bis, siehe periodLabel())
 const RANGE_PERIOD_LABELS: Record<RangeKey, string> = {
   today: 'Heute seit 0 Uhr', day: 'Letzte 24 Stunden', month: 'Letzte 30 Tage', year: 'Letzte 52 Wochen', all: 'Seit der ersten Session',
+  custom: 'Eigener Zeitraum',
 };
 
 // Grobe Obergrenze für die Tooltip-Breite, nur zum Clampen der Position genutzt (siehe
@@ -114,12 +118,42 @@ export class SessionHeatmapComponent {
   view = signal<ViewKey>(this.loadView());
   isProfile = computed(() => this.view() !== 'timeline');
 
-  readonly RANGES: RangeKey[] = ['today', 'day', 'month', 'year', 'all'];
+  readonly RANGES: RangeKey[] = ['today', 'day', 'month', 'year', 'all', 'custom'];
   /** Zeitraum des Verlaufs (Umschalter rechts) — die Profile rechnen immer über alles, siehe range */
   private timelineRange = signal<RangeKey>('day');
   setRange(r: RangeKey): void { this.timelineRange.set(r); }
   /** Wirksamer Zeitraum: im Profil immer "Insgesamt" (Gewohnheiten zeigen sich erst über lange Zeit) */
   range = computed<RangeKey>(() => this.isProfile() ? 'all' : this.timelineRange());
+
+  // Eigener Zeitraum (Von–Bis, beide eingeschlossen, YYYY-MM-DD) — tageweise; Start: 1. des Monats bis heute
+  readonly today = this.localDateKey(new Date());
+  customFrom = signal(this.localDateKey(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+  customTo   = signal(this.today);
+  /** Fehler der Eingabe (null = gültig) — bei einem Fehler wird nichts geladen */
+  customError = computed<string | null>(() => {
+    const from = this.customFrom(), to = this.customTo();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return 'Bitte Von und Bis wählen.';
+    if (from > to) return '„Von" liegt nach „Bis".';
+    if (this.customDays(from, to).length > CUSTOM_MAX_DAYS) return `Höchstens ${CUSTOM_MAX_DAYS} Tage.`;
+    return null;
+  });
+
+  /** Alle Tage von from bis to (eingeschlossen) als Date, 0 Uhr Ortszeit */
+  private customDays(from: string, to: string): Date[] {
+    const days: Date[] = [];
+    const end = new Date(`${to}T00:00:00`);
+    for (const d = new Date(`${from}T00:00:00`); d <= end && days.length <= CUSTOM_MAX_DAYS; d.setDate(d.getDate() + 1)) {
+      days.push(new Date(d));
+    }
+    return days;
+  }
+
+  /** Beschreibung des ganzen Zeitraums (Tooltip der Manager-Zeile) */
+  private periodLabel(): string {
+    if (this.range() !== 'custom') return RANGE_PERIOD_LABELS[this.range()];
+    const fmt = (key: string) => new Date(`${key}T00:00:00`).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return `${fmt(this.customFrom())} – ${fmt(this.customTo())}`;
+  }
 
   private loadView(): ViewKey {
     try {
@@ -168,10 +202,18 @@ export class SessionHeatmapComponent {
     );
   }
 
-  private query = computed(() => ({ range: this.range(), view: this.view() }));
+  /** Query-String des Zeitraums (auch für die Geräte-Card) — null bei ungültigem eigenem Zeitraum */
+  rangeQuery = computed<string | null>(() => {
+    const range = this.range();
+    if (range !== 'custom') return `range=${range}`;
+    return this.customError() ? null : `range=custom&from=${this.customFrom()}&to=${this.customTo()}`;
+  });
+
+  private query = computed(() => ({ rangeQuery: this.rangeQuery(), range: this.range(), view: this.view() }));
   private data = toSignal(
-    toObservable(this.query).pipe(switchMap(({ range, view }) =>
-      this.poll(`session?range=${range}` + (view === 'timeline' ? '' : `&profile=${view}`), range))),
+    toObservable(this.query).pipe(switchMap(({ rangeQuery, range, view }) => rangeQuery === null
+      ? of({ range, managers: [] } as HeatmapResponse)
+      : this.poll(`session?${rangeQuery}` + (view === 'timeline' ? '' : `&profile=${view}`), range))),
   );
 
   /** Mobil statt Name: Profilbild — Manager ohne Foto bekommen die Initiale */
@@ -255,6 +297,15 @@ export class SessionHeatmapComponent {
         const d = new Date(currentHour.getTime() - i * 60 * 60 * 1000);
         cols.push({ key: this.hourKey(d), label: `${String(d.getHours()).padStart(2, '0')}h` });
       }
+    } else if (range === 'custom') {
+      if (this.customError()) return cols;
+      const days = this.customDays(this.customFrom(), this.customTo());
+      // Bei langen Zeiträumen wird es eng — dann nur jeden n-ten Tag beschriften (immer den ersten)
+      const step = Math.max(1, Math.ceil(days.length / 40));
+      days.forEach((d, i) => cols.push({
+        key: this.localDateKey(d),
+        label: i % step === 0 ? d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) : '',
+      }));
     } else if (range === 'month') {
       for (let i = 29; i >= 0; i--) {
         const d = new Date(now);
@@ -581,7 +632,8 @@ export class SessionHeatmapComponent {
   // anzeigen kann, ohne die Rolling-Berechnung ein zweites Mal auszuführen.
   usageDashedLine = computed(() => {
     // Ø Zeit/Nutzer gehört zur Sessiondauer — bei "Aktive Manager" keine Trendlinie
-    if (this.isProfile() || this.range() !== 'month' || this.chartMode() !== 'duration') return null;
+    // (eigener Zeitraum ist ebenfalls tageweise)
+    if (this.isProfile() || !['month', 'custom'].includes(this.range()) || this.chartMode() !== 'duration') return null;
     const cols = this.columns();
     if (cols.length === 0) return null;
 
@@ -816,7 +868,7 @@ export class SessionHeatmapComponent {
     const mobile  = this.sumValues(m.mobile_seconds);
     const desktop = this.sumValues(m.desktop_seconds);
     this.hoveredTooltip.set(
-      this.buildTooltip(RANGE_PERIOD_LABELS[this.range()], total, mobile, desktop, this.tooltipPosition(event)),
+      this.buildTooltip(this.periodLabel(), total, mobile, desktop, this.tooltipPosition(event)),
     );
   }
 

@@ -471,3 +471,42 @@
     margin: $space-2 0;
   }
 }
+
+// ── Eigener Zeitraum (Von–Bis) ──
+
+.custom-range {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: $space-3;
+  margin-bottom: $space-4;
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: $space-1;
+    font-size: $font-sm;
+    color: $color-text-muted;
+
+    input {
+      width: 170px;
+    }
+  }
+
+  &__hint,
+  &__error {
+    align-self: center;
+    font-size: $font-sm;
+  }
+
+  &__hint { color: $color-text-muted; }
+  &__error { color: $color-danger; }
+
+  @media (max-width: $mobile-breakpoint) {
+    &__field {
+      flex: 1 1 140px;
+
+      input { width: 100%; }
+    }
+  }
+}
