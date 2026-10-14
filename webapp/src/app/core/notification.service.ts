@@ -42,7 +42,8 @@ export class NotificationService {
 
   // Läuft nur, während der Tab sichtbar ist — ein im Hintergrund offen gelassener Tab soll den
   // Heartbeat (siehe api/app/guard.php touchSession()) nicht künstlich am Leben halten und damit
-  // eine "Session" vortäuschen, die niemand aktiv nutzt.
+  // eine "Session" vortäuschen, die niemand aktiv nutzt. Bei sichtbarem, aber unberührtem Tab beendet der
+  // Heartbeat die Session nach 10 min Leerlauf (idle im Header X-Client-Info, siehe UserActivityService).
   private onVisibilityChange = (): void => {
     if (document.hidden) {
       this.stopPolling();

@@ -56,6 +56,25 @@ trait SessionTrait
                 && $open['os'] === $os
                 && $open['browser'] === $browser;
 
+            // Leerlauf: ein offener Tab pollt weiter, auch wenn niemand davorsitzt — ab `limit` Sekunden ohne
+            // Interaktion (idle im Header X-Client-Info) zählt das nicht mehr: die Session dieses Geräts endet
+            // rückwirkend `grace` Sekunden nach der letzten Interaktion, es wird weder verlängert noch neu
+            // angelegt. Danach liegt ended_at mehr als 2 min zurück, die nächste echte Interaktion eröffnet
+            // eine neue Session. Ohne idle (älterer Client) wie bisher.
+            $idle = $this->sessionIdleSeconds();
+            $cfg  = $this->sessionIdleConfig();
+            if ($idle !== null && $idle >= $cfg['limit']) {
+                if ($sameDevice) {
+                    $this->con->prepare(
+                        "UPDATE manager_session
+                         SET ended_at = GREATEST(started_at, LEAST(ended_at,
+                             NOW() - INTERVAL :idle SECOND + INTERVAL :grace SECOND))
+                         WHERE id = :id"
+                    )->execute([':id' => $open['id'], ':idle' => $idle, ':grace' => $cfg['grace']]);
+                }
+                return;
+            }
+
             if ($sameDevice) {
                 $sessionId = $open['id'];
                 $this->con->prepare(
@@ -96,6 +115,25 @@ trait SessionTrait
         } finally {
             $this->con->prepare('SELECT RELEASE_LOCK(?)')->execute([$lockName]);
         }
+    }
+
+    /** Leerlauf-Regel des Heartbeats (siehe touchSession()): limit = ab so vielen Sekunden ohne Interaktion
+     *  gilt der Manager nicht mehr als aktiv, grace = so viel zählt nach der letzten Interaktion noch mit */
+    private function sessionIdleConfig(): array
+    {
+        return ['limit' => 600, 'grace' => 60];
+    }
+
+    /** Sekunden seit der letzten Interaktion laut Header X-Client-Info (idle), null wenn nicht mitgeschickt */
+    private function sessionIdleSeconds(): ?int
+    {
+        $raw = $_SERVER['HTTP_X_CLIENT_INFO'] ?? '';
+        if ($raw === '' || strlen($raw) > 300) {
+            return null;
+        }
+        parse_str($raw, $info);
+        $idle = $info['idle'] ?? null;
+        return is_string($idle) && preg_match('/^\d{1,7}$/', $idle) ? (int) $idle : null;
     }
 
     /**

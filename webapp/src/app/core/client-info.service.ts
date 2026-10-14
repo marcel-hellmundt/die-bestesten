@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ThemeService } from './theme.service';
+import { UserActivityService } from './user-activity.service';
 
 /** Chromium-only (Chrome/Edge/Samsung/Opera) — in Safari/Firefox nicht vorhanden */
 interface UserAgentData {
@@ -18,10 +19,13 @@ interface UserAgentData {
  *           Android-Version), sonst aus dem User-Agent (iOS, Android)
  *  model  — Gerätemodell, nur Android per Client Hints (iPhones melden kein Modell)
  *  screen — kurze×lange Bildschirmseite@Pixeldichte (iPhone-Größenklasse, im Admin-Frontend gedeutet)
+ *  idle   — Sekunden seit der letzten Interaktion (UserActivityService) — der Heartbeat beendet ab 10 min
+ *           Leerlauf die Session, siehe SessionTrait::touchSession()
  */
 @Injectable({ providedIn: 'root' })
 export class ClientInfoService {
   private theme = inject(ThemeService);
+  private activity = inject(UserActivityService);
   private hints = signal<{ osv?: string; model?: string }>({});
   private readonly base = collectBase();
 
@@ -44,6 +48,7 @@ export class ClientInfoService {
     const osv = hints.osv ?? this.base.osv;
     if (osv) params.set('osv', osv);
     if (hints.model) params.set('model', hints.model);
+    params.set('idle', String(this.activity.idleSeconds()));
     return params.toString();
   }
 }

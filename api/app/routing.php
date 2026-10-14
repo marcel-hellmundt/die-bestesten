@@ -166,7 +166,7 @@ class Routing
 
             new Route('session', 'Session', [
                 'title' => 'Session',
-                'description' => 'Näherungsweise Sitzungsdauer-Erfassung per Heartbeat (jeder authentifizierte Request verlängert/eröffnet eine manager_session) — Admin-Report',
+                'description' => 'Näherungsweise Sitzungsdauer-Erfassung per Heartbeat (jeder authentifizierte Request verlängert/eröffnet eine manager_session; ab 10 min ohne Interaktion — idle im Header X-Client-Info — endet die Session rückwirkend 1 min nach der letzten Interaktion und wird nicht mehr verlängert) — Admin-Report',
                 'endpoints' => [
                     [
                         'method' => 'GET',
