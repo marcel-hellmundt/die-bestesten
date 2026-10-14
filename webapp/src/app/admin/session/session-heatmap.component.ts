@@ -705,10 +705,18 @@ export class SessionHeatmapComponent {
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  formatDuration(seconds: number): string {
+  /**
+   * Dauer als "1h 20min" — unter `withSecondsBelow` Sekunden zusätzlich mit Sekunden ("3min 12s"), unter einer
+   * Minute nur Sekunden ("42s"); Standard: unter 10 Minuten
+   */
+  formatDuration(seconds: number, withSecondsBelow = 10 * 60): string {
     if (seconds <= 0) return 'Keine Nutzung';
-    // Unter einer Minute in Sekunden — sonst stünde bei kurzen Besuchen "0min" da
-    if (seconds < 60) return `${Math.max(1, Math.round(seconds))}s`;
+    if (seconds < withSecondsBelow || seconds < 60) {
+      const total = Math.max(1, Math.round(seconds));
+      const min = Math.floor(total / 60), s = total % 60;
+      if (min === 0) return `${s}s`;
+      return s > 0 ? `${min}min ${s}s` : `${min}min`;
+    }
     const totalMinutes = Math.round(seconds / 60);
     const h = Math.floor(totalMinutes / 60);
     const min = totalMinutes % 60;
@@ -816,8 +824,8 @@ export class SessionHeatmapComponent {
     return this.range() === 'year' ? `Woche ab ${dateLabel}` : dateLabel;
   }
 
-  private formatDurationOrZero(seconds: number): string {
-    return seconds > 0 ? this.formatDuration(seconds) : '0min';
+  private formatDurationOrZero(seconds: number, withSecondsBelow?: number): string {
+    return seconds > 0 ? this.formatDuration(seconds, withSecondsBelow) : '0min';
   }
 
   hoveredTooltip = signal<TooltipState | null>(null);
@@ -834,16 +842,17 @@ export class SessionHeatmapComponent {
 
   private buildTooltip(
     timeLabel: string, total: number, mobile: number, desktop: number, pos: { x: number; y: number },
+    withSecondsBelow?: number,
   ): TooltipState {
     const deviceSum = mobile + desktop;
     return {
       ...pos,
       timeLabel,
       hasUsage:     total > 0,
-      totalLabel:   this.formatDuration(total),
-      mobileLabel:  this.formatDurationOrZero(mobile),
+      totalLabel:   this.formatDuration(total, withSecondsBelow),
+      mobileLabel:  this.formatDurationOrZero(mobile, withSecondsBelow),
       mobilePct:    deviceSum > 0 ? Math.round(mobile / deviceSum * 100) : 0,
-      desktopLabel: this.formatDurationOrZero(desktop),
+      desktopLabel: this.formatDurationOrZero(desktop, withSecondsBelow),
       desktopPct:   deviceSum > 0 ? Math.round(desktop / deviceSum * 100) : 0,
     };
   }
@@ -862,13 +871,13 @@ export class SessionHeatmapComponent {
   }
 
   // Gleicher Tooltip wie onCellHover, aber aggregiert über alle aktuell angezeigten Buckets dieses
-  // Managers (== die komplette Zeile) statt nur einer einzelnen Zelle.
+  // Managers (== die komplette Zeile) statt nur einer einzelnen Zelle. Unter einer Stunde mit Sekunden.
   onRowLabelHover(event: MouseEvent, m: HeatmapManager): void {
     const total   = this.totalSeconds(m);
     const mobile  = this.sumValues(m.mobile_seconds);
     const desktop = this.sumValues(m.desktop_seconds);
     this.hoveredTooltip.set(
-      this.buildTooltip(this.periodLabel(), total, mobile, desktop, this.tooltipPosition(event)),
+      this.buildTooltip(this.periodLabel(), total, mobile, desktop, this.tooltipPosition(event), 60 * 60),
     );
   }
 
