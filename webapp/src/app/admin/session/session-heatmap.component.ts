@@ -655,6 +655,8 @@ export class SessionHeatmapComponent {
 
   formatDuration(seconds: number): string {
     if (seconds <= 0) return 'Keine Nutzung';
+    // Unter einer Minute in Sekunden — sonst stünde bei kurzen Besuchen "0min" da
+    if (seconds < 60) return `${Math.max(1, Math.round(seconds))}s`;
     const totalMinutes = Math.round(seconds / 60);
     const h = Math.floor(totalMinutes / 60);
     const min = totalMinutes % 60;
