@@ -272,6 +272,11 @@
           <button type="button" class="pay-code__value" (click)="copy(r.code)" title="Code kopieren">{{ r.code }}</button>
           <span class="pay-code__hint">{{ copied() === r.code ? 'kopiert!' : 'antippen zum Kopieren' }}</span>
         </div>
+        <!-- privates PayPal: "Freunde & Familie" — sonst zieht PayPal Gebühren ab -->
+        <p class="pay-friends">
+          In PayPal bitte <b>„Freunde und Familie“</b> auswählen – dann fallen keine Gebühren an.
+          Wir sind ja Freunde 😉
+        </p>
         <div class="confirm__actions">
           <a class="btn btn-primary" [href]="r.paypal_url" target="_blank" rel="noopener">
             {{ formatEur(r.amount_cents) }} mit PayPal bezahlen

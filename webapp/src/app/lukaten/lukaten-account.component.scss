@@ -808,3 +808,14 @@
 @media (prefers-reduced-motion: reduce) {
   .confirm { animation: none; }
 }
+
+// Hinweis im Bezahl-Schritt: in PayPal "Freunde und Familie" wählen (keine Gebühren)
+.pay-friends {
+  margin: 0;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: $color-surface-alt;
+  font-size: $font-sm;
+  text-align: center;
+  color: $color-text;
+}

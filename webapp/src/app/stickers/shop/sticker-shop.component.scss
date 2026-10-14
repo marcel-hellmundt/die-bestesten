@@ -1044,3 +1044,14 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
 }
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+// Hinweis im Bezahl-Schritt: in PayPal "Freunde und Familie" wählen (keine Gebühren)
+.pay-friends {
+  margin: 0;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: $color-surface-alt;
+  font-size: $font-sm;
+  text-align: center;
+  color: $color-text;
+}
