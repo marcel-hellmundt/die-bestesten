@@ -749,6 +749,19 @@ export class SessionHeatmapComponent {
   }
 
   /**
+   * Tooltips: immer eine Einheit genauer — ab 1 h mit Minuten ("2h 5min", auch "2h 0min"), ab 1 min mit
+   * Sekunden ("3min 12s"), darunter nur Sekunden (genauer wird nicht gemessen)
+   */
+  private formatDurationPrecise(seconds: number): string {
+    if (seconds <= 0) return 'Keine Nutzung';
+    const total = Math.max(1, Math.round(seconds));
+    const h = Math.floor(total / 3600), min = Math.floor((total % 3600) / 60), s = total % 60;
+    if (h > 0) return `${h}h ${min}min`;
+    if (min > 0) return `${min}min ${s}s`;
+    return `${s}s`;
+  }
+
+  /**
    * Dauer als "1h 20min" — unter `withSecondsBelow` Sekunden zusätzlich mit Sekunden ("3min 12s"), unter einer
    * Minute nur Sekunden ("42s"); Standard: unter 10 Minuten
    */
@@ -828,7 +841,7 @@ export class SessionHeatmapComponent {
   private perDayLabel(col: BucketColumn, seconds: number): string | undefined {
     if (!this.isProfile()) return undefined;
     const days = this.view() === 'hour' ? this.profileDays().all : this.profileDays().byWeekday[Number(col.key) - 1];
-    return days > 0 ? this.formatMinutes(seconds / days) : undefined;
+    return days > 0 ? this.formatDurationPrecise(seconds / days) : undefined;
   }
 
   cellColor(seconds: number, mobileFraction: number): string {
@@ -872,8 +885,8 @@ export class SessionHeatmapComponent {
     return d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
-  private formatDurationOrZero(seconds: number, withSecondsBelow?: number): string {
-    return seconds > 0 ? this.formatDuration(seconds, withSecondsBelow) : '0min';
+  private formatDurationOrZero(seconds: number): string {
+    return seconds > 0 ? this.formatDurationPrecise(seconds) : '0s';
   }
 
   hoveredTooltip = signal<TooltipState | null>(null);
@@ -890,17 +903,16 @@ export class SessionHeatmapComponent {
 
   private buildTooltip(
     timeLabel: string, total: number, mobile: number, desktop: number, pos: { x: number; y: number },
-    withSecondsBelow?: number,
   ): TooltipState {
     const deviceSum = mobile + desktop;
     return {
       ...pos,
       timeLabel,
       hasUsage:     total > 0,
-      totalLabel:   this.formatDuration(total, withSecondsBelow),
-      mobileLabel:  this.formatDurationOrZero(mobile, withSecondsBelow),
+      totalLabel:   this.formatDurationPrecise(total),
+      mobileLabel:  this.formatDurationOrZero(mobile),
       mobilePct:    deviceSum > 0 ? Math.round(mobile / deviceSum * 100) : 0,
-      desktopLabel: this.formatDurationOrZero(desktop, withSecondsBelow),
+      desktopLabel: this.formatDurationOrZero(desktop),
       desktopPct:   deviceSum > 0 ? Math.round(desktop / deviceSum * 100) : 0,
     };
   }
@@ -919,13 +931,13 @@ export class SessionHeatmapComponent {
   }
 
   // Gleicher Tooltip wie onCellHover, aber aggregiert über alle aktuell angezeigten Buckets dieses
-  // Managers (== die komplette Zeile) statt nur einer einzelnen Zelle. Unter einer Stunde mit Sekunden.
+  // Managers (== die komplette Zeile) statt nur einer einzelnen Zelle.
   onRowLabelHover(event: MouseEvent, m: HeatmapManager): void {
     const total   = this.totalSeconds(m);
     const mobile  = this.sumValues(m.mobile_seconds);
     const desktop = this.sumValues(m.desktop_seconds);
     this.hoveredTooltip.set(
-      this.buildTooltip(this.periodLabel(), total, mobile, desktop, this.tooltipPosition(event), 60 * 60),
+      this.buildTooltip(this.periodLabel(), total, mobile, desktop, this.tooltipPosition(event)),
     );
   }
 
@@ -949,7 +961,7 @@ export class SessionHeatmapComponent {
     if (total > 0) tooltip.perDayLabel = this.perDayLabel(col, total);
     const trendValue = this.usageDashedLine()?.values[index];
     if (trendValue !== undefined) {
-      tooltip.trendLabel = this.formatMinutes(trendValue);
+      tooltip.trendLabel = this.formatDurationPrecise(trendValue);
     }
     this.hoveredTooltip.set(tooltip);
   }
