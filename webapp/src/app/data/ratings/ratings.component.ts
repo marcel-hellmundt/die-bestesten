@@ -1,4 +1,4 @@
-import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, HostListener, inject, signal } from '@angular/core';
 import { catchError, combineLatest, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api.service';
@@ -7,6 +7,9 @@ import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
 import { PlayerRating, RatingContributor } from '../../core/models/player-rating.model';
 import { POSITION_LABEL } from '../../core/constants';
+
+/** Eintragen ist ab 1 h vor dem Anpfiff freigeschaltet (wie PlayerRatingTrait::ratingsUnlockMinutes()) */
+const RATINGS_UNLOCK_MS = 60 * 60 * 1000;
 
 interface Club {
   id: string;
@@ -101,14 +104,19 @@ export class RatingsDataComponent {
     { initialValue: [] as any[] },
   );
 
-  // Sorted ASC (lowest number = oldest = first uncompleted); future matchdays (kickoff not yet
-  // reached) are excluded entirely — player_rating objects can never be created for them (see
-  // POST /player_rating/init), so there's nothing to do here for them yet.
-  matchdays = computed(() =>
-    [...(this.pageData()?.matchdays ?? [])]
-      .filter((m) => m.kickoff_date && new Date(m.kickoff_date) <= new Date())
-      .sort((a, b) => a.number - b.number),
-  );
+  // Sorted ASC (lowest number = oldest = first uncompleted); matchdays are listed from 1 h before
+  // kickoff on (RATINGS_UNLOCK_MS, same rule as PlayerRatingTrait::ratingsUnlocked() behind
+  // POST /player_rating/init) — earlier there's nothing to enter yet. `now` ticks every minute, so a
+  // page left open shows the matchday by itself once it unlocks.
+  private now = signal(Date.now());
+  private nowTimer = setInterval(() => this.now.set(Date.now()), 60_000);
+  private stopNowTimer = inject(DestroyRef).onDestroy(() => clearInterval(this.nowTimer));
+  matchdays = computed(() => {
+    const now = this.now();
+    return [...(this.pageData()?.matchdays ?? [])]
+      .filter((m) => m.kickoff_date && new Date(m.kickoff_date.replace(' ', 'T')).getTime() - RATINGS_UNLOCK_MS <= now)
+      .sort((a, b) => a.number - b.number);
+  });
 
   bundesligaClubs = computed((): Club[] => {
     const pd = this.pageData();

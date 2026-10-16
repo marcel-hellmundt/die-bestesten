@@ -167,9 +167,10 @@ class PlayerRatingController extends _BaseController
             return ['status' => false, 'message' => 'Spieltag ist bereits abgeschlossen'];
         }
 
-        if (!$matchday['kickoff_date'] || new \DateTime() < new \DateTime($matchday['kickoff_date'])) {
+        // freigeschaltet 1 h vor dem Anpfiff (PlayerRatingTrait::ratingsUnlocked) — dann stehen die Aufstellungen fest
+        if (!$this->db->ratingsUnlocked($matchday['kickoff_date'] ?? null)) {
             http_response_code(409);
-            return ['status' => false, 'message' => 'Spieltag hat noch nicht begonnen'];
+            return ['status' => false, 'message' => 'Eintragen ist erst ab 1 Stunde vor dem Anpfiff möglich'];
         }
 
         return $this->db->initPlayerRatingsForClub($matchdayId, $clubId, $matchday['season_id']);

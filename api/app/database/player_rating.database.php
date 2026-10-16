@@ -318,6 +318,32 @@ trait PlayerRatingTrait
      * whole squad (~20-25 players), not meaningful data-entry work; only participation/stats/note
      * (real per-player work) count, see updateRating().
      */
+    /** So viele Minuten vor dem Anpfiff wird das Eintragen eines Spieltags freigeschaltet (Aufstellungen sind dann bekannt) */
+    private function ratingsUnlockMinutes(): int
+    {
+        return 60;
+    }
+
+    /** Darf für einen Spieltag mit diesem Anpfiff schon eingetragen werden? (POST /player_rating/init) */
+    public function ratingsUnlocked(?string $kickoffDate): bool
+    {
+        if (!$kickoffDate) return false;
+        $unlock = (new \DateTime($kickoffDate))->modify('-' . $this->ratingsUnlockMinutes() . ' minutes');
+        return new \DateTime() >= $unlock;
+    }
+
+    /**
+     * has_rating in Aufstellung und H2H (steuert "ausstehend" gegen "nicht eingesetzt"): vor dem Anpfiff zählt eine
+     * schon angelegte, aber noch leere Zeile (ohne Einsatz) noch nicht — sonst stünden Spieler in der Stunde vor dem
+     * Anpfiff als "nicht eingesetzt" da, obwohl ihr Spiel noch gar nicht begonnen hat.
+     */
+    public function ratingCountsAsRated(?array $rating, ?string $kickoffDate): bool
+    {
+        if (!$rating) return false;
+        if (!empty($rating['participation'])) return true;
+        return $kickoffDate !== null && new \DateTime() >= new \DateTime($kickoffDate);
+    }
+
     public function initPlayerRatingsForClub(string $matchdayId, string $clubId, string $seasonId): array
     {
         // Rating-Zeitpunkt-bezogen (Fragment B): Division einmal aus $clubId + $seasonId auflösen
