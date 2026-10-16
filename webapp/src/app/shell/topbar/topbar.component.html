@@ -319,7 +319,7 @@
       </button>
 
       @if (isDropdownOpen()) {
-        <div class="user-dropdown">
+        <div class="user-dropdown" [class.user-dropdown--birthday]="birthdayLabel()">
           <a
             class="dropdown-header"
             [routerLink]="['/manager', managerId()]"
@@ -337,9 +337,12 @@
           @if (birthdayLabel()) {
             <div class="dropdown-birthday tb-hide-desktop">
               <span class="birthday-emoji">{{ birthdayEmoji() }}</span>
-              <span>
-                {{ birthdayLabel() }}
-                @if (birthdayNames().length > 2) { <small>{{ birthdayNames().join(', ') }}</small> }
+              <!-- jede Zeile so klein, dass sie in eine Zeile passt (fitText) -->
+              <span class="dropdown-birthday__text">
+                <span class="dropdown-birthday__line"><span fitText [fitTextMax]="14" [fitTextMin]="9">{{ birthdayLabel() }}</span></span>
+                @if (birthdayNames().length > 2) {
+                  <span class="dropdown-birthday__line"><small fitText [fitTextMax]="12" [fitTextMin]="8">{{ birthdayNames().join(', ') }}</small></span>
+                }
               </span>
             </div>
             <hr class="dropdown-divider tb-hide-desktop" />

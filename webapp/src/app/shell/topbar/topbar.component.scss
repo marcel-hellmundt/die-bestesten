@@ -379,6 +379,13 @@
       top: calc(100% + $space-2);
       right: 0;
       min-width: 240px;
+
+      // Handy mit Geburtstags-Hinweis: breiter (bis zur Bildschirmbreite), damit der Text in einer Zeile lesbar bleibt
+      &--birthday {
+        @media (max-width: #{$mobile-breakpoint}) {
+          min-width: min(340px, calc(100vw - 2 * #{$space-2}));
+        }
+      }
       background-color: $color-surface;
       border: 1px solid $color-border;
       border-radius: $radius-lg;
@@ -598,13 +605,28 @@
   font-size: $font-sm;
   color: $color-text;
 
+  // trägt nicht zur Breite des Menüs bei (sonst würde der einzeilige Text es aufziehen): Breite 0, mindestens
+  // so breit wie das Menü abzüglich Rand — die Schrift passt sich dann per fitText an
+  width: 0;
+  min-width: calc(100% - 2 * #{$space-2});
+  box-sizing: border-box;
+
   .birthday-emoji { font-size: 1.3em; line-height: 1; flex-shrink: 0; }
 
-  small {
-    display: block;
-    color: $color-text-muted;
-    font-size: $font-xs;
+  &__text {
+    flex: 1;
+    min-width: 0;
   }
+
+  &__line {
+    display: block;
+    overflow: hidden;
+
+    // fitText misst scrollWidth — bei Inline-Elementen ist das 0, daher als Block
+    > * { display: block; }
+  }
+
+  small { color: $color-text-muted; }
 }
 
 .birthday-label {

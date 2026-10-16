@@ -12,6 +12,7 @@ import { BottomSheetComponent } from './bottom-sheet/bottom-sheet.component';
 import { CreateTeamComponent } from './create-team/create-team.component';
 import { StickerSharedModule } from '../stickers/sticker-shared.module';
 import { MatchdaySummaryComponent } from './matchday-summary/matchday-summary.component';
+import { FitTextDirective } from '../core/fit-text.directive';
 
 const routes: Routes = [
   {
@@ -42,6 +43,7 @@ const routes: Routes = [
     CommonModule,
     RouterModule.forChild(routes),
     StickerSharedModule, // "Die Klebrigsten": globale Ankündigung neuer Packs
+    FitTextDirective,    // Geburtstags-Hinweis im Benutzermenü passt sich einer Zeile an
   ]
 })
 export class ShellModule {}

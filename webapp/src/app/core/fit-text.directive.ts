@@ -1,6 +1,10 @@
 import { AfterViewInit, Directive, ElementRef, Input, OnChanges } from '@angular/core';
 
-@Directive({ selector: '[fitText]', standalone: false })
+/**
+ * Verkleinert die Schrift, bis der Text in eine Zeile passt (fitTextMax → fitTextMin px); Platz = Breite des
+ * Elternelements minus Padding und Geschwister. Standalone — im jeweiligen Modul importieren.
+ */
+@Directive({ selector: '[fitText]', standalone: true })
 export class FitTextDirective implements AfterViewInit, OnChanges {
   @Input() fitTextMin = 10;
   @Input() fitTextMax = 14;
