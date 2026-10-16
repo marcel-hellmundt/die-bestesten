@@ -8,6 +8,9 @@ import { DataCacheService } from '../../core/data-cache.service';
 import { Matchday } from '../../core/models/matchday.model';
 import { TeamNavService } from '../../core/team-nav.service';
 
+/** Spieltag ab 1 h vor dem Anpfiff zeigen (wie ratingsUnlockMinutes() in der API) */
+const MATCHDAY_OPEN_BEFORE_KICKOFF_MS = 60 * 60 * 1000;
+
 @Component({
   selector: 'app-matchday',
   standalone: false,
@@ -58,15 +61,25 @@ export class MatchdayComponent {
     )
   );
 
-  matchdays = computed(() => this.seasonData()?.matchdays ?? []);
+  /**
+   * Ab 1 h vor dem Anpfiff ist ein Spieltag hier zu sehen (Standard + Auswahl) — dann wird eingetragen; gleiche
+   * Regel wie GET /team_rating (ratingsUnlockMinutes()). Spieltage davor tauchen in der Auswahl noch nicht auf.
+   */
+  private isOpen(m: Matchday): boolean {
+    return !!m.kickoff_date
+      && new Date(m.kickoff_date.replace(' ', 'T')).getTime() - MATCHDAY_OPEN_BEFORE_KICKOFF_MS <= Date.now();
+  }
+
+  private allMatchdays = computed(() => this.seasonData()?.matchdays ?? []);
+  /** Auswahl: nur Spieltage, die schon offen sind (vergangene Saisons: alle) */
+  matchdays = computed(() => this.allMatchdays().filter(m => this.isOpen(m)));
 
   private computeDefaultNumber(matchdays: Matchday[]): number | null {
     if (!matchdays.length) return null;
-    const now = new Date();
     const sorted = [...matchdays].sort((a, b) => a.number - b.number);
     const uncompleted = sorted.find(m => !m.completed);
     if (!uncompleted) return sorted[sorted.length - 1].number;
-    if (new Date(uncompleted.kickoff_date) <= now) return uncompleted.number;
+    if (this.isOpen(uncompleted)) return uncompleted.number;
     return uncompleted.number > 1 ? uncompleted.number - 1 : 1;
   }
 
@@ -74,10 +87,9 @@ export class MatchdayComponent {
   // current/default matchday otherwise. Used both for fetching and for dropdown selection,
   // so the "current" matchday stays highlighted even when it has no team_rating data yet.
   private effectiveNumber = computed(() => {
-    const matchdays = this.matchdays();
     const number = this.selectedNumber();
-    const validNumber = number !== null && matchdays.some(m => m.number === number) ? number : null;
-    return validNumber ?? this.computeDefaultNumber(matchdays);
+    const validNumber = number !== null && this.matchdays().some(m => m.number === number) ? number : null;
+    return validNumber ?? this.computeDefaultNumber(this.allMatchdays());
   });
 
   private ratingsState = toSignal(

@@ -478,13 +478,15 @@ trait TeamRatingTrait
     public function getTeamRatingsByActiveSeason(string $seasonId, ?int $matchdayNumber = null): array|false
     {
         $divisionId = $this->getLeagueDivisionId();
+        // ein Spieltag ist hier wählbar ab 1 h vor dem Anpfiff — ab dann wird eingetragen (siehe ratingsUnlockMinutes())
+        $unlock = $this->ratingsUnlockMinutes();
 
         if ($matchdayNumber !== null) {
             if ($divisionId !== null) {
                 $mq = $this->con->prepare(
                     "SELECT id, number, kickoff_date, completed FROM matchday
                      WHERE season_id = :season_id AND number = :number AND division_id = :division_id
-                       AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()
+                       AND kickoff_date IS NOT NULL AND kickoff_date <= NOW() + INTERVAL {$unlock} MINUTE
                      LIMIT 1"
                 );
                 $mq->execute([':season_id' => $seasonId, ':number' => $matchdayNumber, ':division_id' => $divisionId]);
@@ -494,7 +496,7 @@ trait TeamRatingTrait
                      JOIN division d ON d.id = m.division_id
                      WHERE m.season_id = :season_id AND m.number = :number
                        AND d.level = 1 AND LOWER(d.country_id) = 'de'
-                       AND m.kickoff_date IS NOT NULL AND m.kickoff_date <= NOW()
+                       AND m.kickoff_date IS NOT NULL AND m.kickoff_date <= NOW() + INTERVAL {$unlock} MINUTE
                      LIMIT 1"
                 );
                 $mq->execute([':season_id' => $seasonId, ':number' => $matchdayNumber]);
@@ -599,7 +601,7 @@ trait TeamRatingTrait
             $maxQ = $this->con->prepare(
                 "SELECT MAX(number) AS max_number FROM matchday
                  WHERE season_id = :season_id AND division_id = :division_id
-                   AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()"
+                   AND kickoff_date IS NOT NULL AND kickoff_date <= NOW() + INTERVAL {$unlock} MINUTE"
             );
             $maxQ->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
         } else {
@@ -607,13 +609,13 @@ trait TeamRatingTrait
                 "SELECT MAX(m.number) AS max_number FROM matchday m
                  JOIN division d ON d.id = m.division_id
                  WHERE m.season_id = :season_id AND d.level = 1 AND LOWER(d.country_id) = 'de'
-                   AND m.kickoff_date IS NOT NULL AND m.kickoff_date <= NOW()"
+                   AND m.kickoff_date IS NOT NULL AND m.kickoff_date <= NOW() + INTERVAL {$unlock} MINUTE"
             );
             $maxQ->execute([':season_id' => $seasonId]);
         }
         $maxNumber = (int) $maxQ->fetchColumn();
 
-        $statusCounts = $this->getLineupStatusCounts($matchday['id']);
+        $statusCounts = $this->getLineupStatusCounts($matchday['id'], $matchday['kickoff_date'] ?? null);
         foreach ($ratings as &$r) {
             $r['status_counts'] = $statusCounts[$r['team_id']]
                 ?? ['starting' => 0, 'substitute' => 0, 'not_used' => 0, 'waiting' => 0];
@@ -633,7 +635,7 @@ trait TeamRatingTrait
     // Zustandslogik wie im Lineup (waiting => noch keine player_rating-Zeile vorhanden, unabhängig
     // davon ob deren Werte bereits gesetzt sind — sonst würde eine leer initialisierte Zeile
     // fälschlich als "wartet" statt "nicht eingesetzt" gezählt).
-    private function getLineupStatusCounts(string $matchdayId): array
+    private function getLineupStatusCounts(string $matchdayId, ?string $kickoffDate = null): array
     {
         $lq = $this->con_league->prepare(
             "SELECT team_id, player_id FROM team_lineup
@@ -662,7 +664,8 @@ trait TeamRatingTrait
         foreach ($lineupRows as $row) {
             $tid = $row['team_id'];
             $pr = $ratingByPlayer[$row['player_id']] ?? null;
-            if ($pr === null) {
+            // vor dem Anpfiff zählt eine schon angelegte, leere Zeile noch als wartend (wie im Lineup, ratingCountsAsRated())
+            if (!$this->ratingCountsAsRated($pr, $kickoffDate)) {
                 $counts[$tid]['waiting']++;
             } elseif ($pr['participation'] === 'starting') {
                 $counts[$tid]['starting']++;
