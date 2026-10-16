@@ -69,13 +69,13 @@ trait NotenTrait
             return ['season_id' => null, 'matchdays' => [], 'matchday' => null, 'clubs' => []];
         }
 
-        // Nur bereits angepfiffene Spieltage — vor Anpfiff existieren ohnehin nie player_rating-
-        // Zeilen (siehe POST /player_rating/init), gleicher Filter wie das Frontend bisher lokal
-        // anwendete (ratings.component.ts).
+        // Spieltage ab 1 h vor dem Anpfiff — ab dann wird eingetragen (POST /player_rating/init,
+        // ratingsUnlockMinutes()), gleiche Regel wie /daten/ratings und /liga/spieltag.
+        $unlock = $this->ratingsUnlockMinutes();
         $mdq = $this->con->prepare(
             "SELECT id, number, start_date, kickoff_date FROM matchday
              WHERE season_id = :season_id AND division_id = :division_id
-               AND kickoff_date IS NOT NULL AND kickoff_date <= NOW()
+               AND kickoff_date IS NOT NULL AND kickoff_date <= NOW() + INTERVAL {$unlock} MINUTE
              ORDER BY number ASC"
         );
         $mdq->execute([':season_id' => $seasonId, ':division_id' => $divisionId]);
@@ -87,8 +87,8 @@ trait NotenTrait
                 if ($m['id'] === $matchdayId) { $matchday = $m; break; }
             }
         } else {
-            // Letzter angepfiffener Spieltag = größte number (Liste bereits auf kickoff_date <=
-            // NOW() eingegrenzt, also einfach das letzte Element).
+            // Jüngster offener Spieltag = größte number (Liste bereits auf "ab 1 h vor dem Anpfiff"
+            // eingegrenzt, also einfach das letzte Element).
             $matchday = end($matchdays) ?: null;
         }
 
