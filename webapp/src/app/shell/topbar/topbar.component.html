@@ -333,6 +333,17 @@
             </div>
           </a>
           <hr class="dropdown-divider" />
+          <!-- Geburtstage: am Desktop steht der Hinweis in der Topbar, auf dem Handy ist dort kein Platz — dann hier -->
+          @if (birthdayLabel()) {
+            <div class="dropdown-birthday tb-hide-desktop">
+              <span class="birthday-emoji">{{ birthdayEmoji() }}</span>
+              <span>
+                {{ birthdayLabel() }}
+                @if (birthdayNames().length > 2) { <small>{{ birthdayNames().join(', ') }}</small> }
+              </span>
+            </div>
+            <hr class="dropdown-divider tb-hide-desktop" />
+          }
           <!-- Was auf dieser Breite nicht in der Topbar steht, liegt hier (je Nutzer einstellbar unter
                Einstellungen → Erscheinung; Standard: am Desktop alles in der Topbar, auf dem Handy nur Lukaten) -->
           @if (lukatenBalance() !== null) {

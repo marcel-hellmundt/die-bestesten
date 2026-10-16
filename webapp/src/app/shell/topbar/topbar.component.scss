@@ -586,6 +586,27 @@
   }
 }
 
+// Geburtstage im Benutzermenü (nur Handy, siehe Template) — gleiche Tönung wie .birthday-label
+.dropdown-birthday {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin: $space-1 $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: color-mix(in srgb, $color-warning 24%, transparent);
+  font-size: $font-sm;
+  color: $color-text;
+
+  .birthday-emoji { font-size: 1.3em; line-height: 1; flex-shrink: 0; }
+
+  small {
+    display: block;
+    color: $color-text-muted;
+    font-size: $font-xs;
+  }
+}
+
 .birthday-label {
   display: inline-flex;
   align-items: center;
