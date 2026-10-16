@@ -2,10 +2,15 @@ import { Injectable, inject, signal } from '@angular/core';
 import { catchError, of } from 'rxjs';
 import { ApiService } from './api.service';
 
-/** Einträge rechts in der Topbar — je Nutzer einstellbar, getrennt für Desktop und Handy */
-export type TopbarItem = 'lukaten' | 'karte' | 'klebrigsten' | 'achievements' | 'benachrichtigungen';
+/**
+ * Einträge rechts in der Topbar — je Nutzer einstellbar, getrennt für Desktop und Handy. streak (Online-Serie) ist
+ * nur eine Anzeige ohne Ziel-Seite: abgewählt landet sie nicht im Benutzermenü, sondern ist einfach weg.
+ */
+export type TopbarItem = 'lukaten' | 'streak' | 'karte' | 'klebrigsten' | 'achievements' | 'benachrichtigungen';
 export type TopbarWhere = 'desktop' | 'mobile';
-export const TOPBAR_ITEMS: TopbarItem[] = ['lukaten', 'karte', 'klebrigsten', 'achievements', 'benachrichtigungen'];
+export const TOPBAR_ITEMS: TopbarItem[] = ['lukaten', 'streak', 'karte', 'klebrigsten', 'achievements', 'benachrichtigungen'];
+/** Einträge ohne Platz im Benutzermenü (keine Ziel-Seite) */
+export const TOPBAR_ONLY: TopbarItem[] = ['streak'];
 
 export function topbarKey(item: TopbarItem, where: TopbarWhere): string {
   return `topbar_${where}_${item}`;

@@ -40,6 +40,8 @@ export interface StickerState {
   ignored_days?: number;
   /** offene Tauschangebote an mich */
   trades_incoming?: number;
+  /** laufende Online-Serie (Tage in Folge mit Tages-Pack, heute eingeschlossen); every = Streak-Pack alle so viele Tage */
+  streak?: { days: number; every: number };
 }
 
 /** Response von GET /sticker/collectors (Sammler-Rangliste). */
@@ -143,6 +145,8 @@ export class StickerStatusService {
   readonly packs = computed(() => this.state()?.packs ?? []);
   readonly unopenedCount = computed(() => this.packs().length);
   readonly tradesIncoming = computed(() => this.state()?.trades_incoming ?? 0);
+  /** Online-Serie für die Topbar — null ohne Album (dort gibt es keine Tages-Packs, also keine Serie) */
+  readonly streak = computed(() => this.state()?.streak ?? null);
   /** Große Pack-Einblendung zurückhalten (z.B. solange der Bezahl-Dialog eines Euro-Kaufs offen ist). */
   readonly announcePaused = signal(false);
   /** Die große Pack-Einblendung ist gerade offen — andere Einblendungen (Spieltags-Zusammenfassung) warten so lange. */

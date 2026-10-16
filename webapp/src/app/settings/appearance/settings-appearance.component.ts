@@ -17,8 +17,9 @@ const OPTIONS: ThemeOption[] = [
 ];
 
 /** Einträge rechts in der Topbar: Name und Symbol (app-icon) für die Einstellungs-Karte */
-const TOPBAR_ROWS: { item: TopbarItem; icon: string | null; name: string }[] = [
+const TOPBAR_ROWS: { item: TopbarItem; icon: string | null; name: string; note?: string }[] = [
   { item: 'lukaten',            icon: null,      name: 'Lukaten' },
+  { item: 'streak',             icon: 'flame',   name: 'Serie', note: 'Tage in Folge online — abgewählt nicht im Menü' },
   { item: 'karte',              icon: 'map',     name: 'Karte' },
   { item: 'klebrigsten',        icon: 'sticker', name: 'Die Klebrigsten' },
   { item: 'achievements',       icon: 'award',   name: 'Achievements' },
@@ -44,9 +45,12 @@ export class SettingsAppearanceComponent {
   private auth = inject(AuthService);
   private stickers = inject(StickerStatusService);
 
-  /** Klebrigsten nur für Manager mit Album (wie in der Topbar) */
-  topbarRows = computed(() => TOPBAR_ROWS.filter(r =>
-    r.item !== 'klebrigsten' || this.stickers.enabled() || this.auth.isMaintainer()));
+  /** Klebrigsten nur für Manager mit Album (wie in der Topbar), die Serie nur, wenn es eine gibt (Album mit Tages-Packs) */
+  topbarRows = computed(() => TOPBAR_ROWS.filter(r => {
+    if (r.item === 'klebrigsten') return this.stickers.enabled() || this.auth.isMaintainer();
+    if (r.item === 'streak') return this.stickers.streak() !== null;
+    return true;
+  }));
   /** weicht irgendetwas vom Standard ab? → "Auf Standard zurücksetzen" anbieten */
   topbarChanged = computed(() => TOPBAR_ITEMS.some(item =>
     (['desktop', 'mobile'] as TopbarWhere[]).some(w => this.appearance.topbarPref(item, w) !== topbarDefault(item, w))));

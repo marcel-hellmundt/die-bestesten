@@ -227,6 +227,20 @@
       </a>
     }
 
+    <!-- Online-Serie: Tage in Folge online (Tages-Pack) — nur Anzeige, abgewählt nicht im Benutzermenü -->
+    @if (streak(); as st) {
+      <span
+        class="topbar-streak"
+        [class.tb-hide-desktop]="!tb('streak', 'desktop')" [class.tb-hide-mobile]="!tb('streak', 'mobile')"
+        tabindex="0"
+        [attr.aria-label]="st.tooltip"
+        [attr.data-tooltip]="st.tooltip"
+      >
+        <app-icon name="flame"></app-icon>
+        {{ st.days }}
+      </span>
+    }
+
     <a
       class="topbar-icon-btn topbar-bell"
       [class.tb-hide-desktop]="!tb('karte', 'desktop')" [class.tb-hide-mobile]="!tb('karte', 'mobile')"

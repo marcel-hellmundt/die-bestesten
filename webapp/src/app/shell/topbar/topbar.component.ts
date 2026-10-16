@@ -7,7 +7,7 @@ import { AuthService, League } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { ApiService } from '../../core/api.service';
 import { NotificationService } from '../../core/notification.service';
-import { AppearanceService, TOPBAR_ITEMS, TopbarItem, TopbarWhere } from '../../core/appearance.service';
+import { AppearanceService, TOPBAR_ITEMS, TOPBAR_ONLY, TopbarItem, TopbarWhere } from '../../core/appearance.service';
 import { StickerStatusService } from '../../core/sticker-status.service';
 import { LukatenService } from '../../core/lukaten.service';
 import { ROLE_LABEL, ROLE_ORDER } from '../../core/constants';
@@ -107,6 +107,21 @@ export class TopbarComponent implements OnDestroy {
   stickerBadgeCount = computed(() =>
     this.showStickers() && this.notifService.isEnabled('sticker_pack') ? this.stickerStatus.unopenedCount() : 0
   );
+  /**
+   * Online-Serie (Tage in Folge mit Tages-Pack) rechts neben den Lukaten: Flamme + Anzahl, Tooltip mit dem Weg
+   * zum nächsten Streak-Pack. Nur mit Album (sonst gibt es keine Tages-Packs) und ab einem Tag.
+   */
+  streak = computed(() => {
+    const s = this.stickerStatus.streak();
+    if (!s || s.days < 1) return null;
+    const left = s.every > 0 ? s.every - (s.days % s.every) : 0;
+    const days = s.days === 1 ? '1 Tag' : `${s.days} Tage`;
+    const next = !s.every ? '' : left === s.every && s.days >= s.every
+      ? ' · heute gab es ein Streak-Pack'
+      : ` · noch ${left === 1 ? '1 Tag' : left + ' Tage'} bis zum Streak-Pack`;
+    return { days: s.days, tooltip: `${days} in Folge online${next}` };
+  });
+
   /** Steht der Eintrag auf dieser Breite in der Topbar? (Einstellungen → Erscheinung; sonst im Benutzermenü) */
   tb(item: TopbarItem, where: TopbarWhere): boolean {
     return this.appearance.topbarShows(item, where);
@@ -115,6 +130,7 @@ export class TopbarComponent implements OnDestroy {
   /** Liegt auf dieser Breite mindestens ein Eintrag im Benutzermenü? (für die Trennlinie darunter) */
   menuHas(where: TopbarWhere): boolean {
     return TOPBAR_ITEMS.some(item => {
+      if (TOPBAR_ONLY.includes(item)) return false; // ohne Ziel-Seite, nie im Benutzermenü
       if (item === 'lukaten' && this.lukatenBalance() === null) return false;
       if (item === 'klebrigsten' && !this.showStickers()) return false;
       return !this.tb(item, where);

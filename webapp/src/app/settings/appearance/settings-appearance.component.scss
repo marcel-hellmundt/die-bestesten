@@ -371,3 +371,16 @@
 
   .btn { flex-shrink: 0; }
 }
+
+// Name eines Topbar-Eintrags, darunter ggf. ein kurzer Hinweis (z.B. Serie: nur Anzeige)
+.topbar-prefs__label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar-prefs__note {
+  color: $color-text-muted;
+  font-size: $font-xs;
+  font-weight: $font-weight-normal;
+}

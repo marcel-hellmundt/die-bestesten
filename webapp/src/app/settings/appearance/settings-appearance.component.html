@@ -44,8 +44,8 @@
     }
   </div>
   <p class="section-desc">
-    Was oben rechts in der Leiste steht. Abgewähltes findest du im Menü hinter deinem Profilbild. Gilt für dein Konto
-    auf allen Geräten. Auf dem Handy ist nur Platz für einen Eintrag.
+    Was oben rechts in der Leiste steht. Abgewähltes findest du im Menü hinter deinem Profilbild (außer der Serie —
+    sie ist nur eine Anzeige). Gilt für dein Konto auf allen Geräten. Auf dem Handy ist nur Platz für einen Eintrag.
   </p>
 
   <div class="topbar-prefs" role="table" aria-label="Einträge der Topbar">
@@ -64,7 +64,10 @@
               <img src="img/icons/lukat.png" alt="" />
             }
           </span>
-          {{ row.name }}
+          <span class="topbar-prefs__label">
+            {{ row.name }}
+            @if (row.note) { <small class="topbar-prefs__note">{{ row.note }}</small> }
+          </span>
         </span>
         @for (where of ['desktop', 'mobile']; track where) {
           <label class="topbar-prefs__cell" role="cell">

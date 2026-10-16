@@ -4,8 +4,8 @@
  * Erscheinungs-Einstellungen je Nutzer (Tabelle appearance_preference, globale DB) — wie die App für diesen Manager
  * aussieht, unabhängig vom Gerät. Bewusst getrennt von notification_preference (Benachrichtigungen, Einblendungen).
  * Bisher: welche Einträge rechts in der Topbar stehen, getrennt für Desktop und Handy
- * (topbar_{desktop|mobile}_{lukaten|karte|klebrigsten|achievements|benachrichtigungen}). Was nicht in der Topbar
- * steht, liegt im Benutzermenü. Gespeichert wird nur, was vom Standard abweichen kann; fehlt eine Zeile, gilt der
+ * (topbar_{desktop|mobile}_{lukaten|streak|karte|klebrigsten|achievements|benachrichtigungen}). Was nicht in der Topbar
+ * steht, liegt im Benutzermenü — außer streak (Online-Serie, nur Anzeige ohne Ziel-Seite): abgewählt ist es einfach weg. Gespeichert wird nur, was vom Standard abweichen kann; fehlt eine Zeile, gilt der
  * Standard aus appearanceDefaults(). Hell/Dunkel bleibt pro Gerät (localStorage, ThemeService).
  */
 trait AppearanceTrait
@@ -14,7 +14,7 @@ trait AppearanceTrait
     private function appearanceDefaults(): array
     {
         $defaults = [];
-        foreach (['lukaten', 'karte', 'klebrigsten', 'achievements', 'benachrichtigungen'] as $item) {
+        foreach (['lukaten', 'streak', 'karte', 'klebrigsten', 'achievements', 'benachrichtigungen'] as $item) {
             $defaults["topbar_desktop_$item"] = true;
             $defaults["topbar_mobile_$item"]  = $item === 'lukaten';
         }

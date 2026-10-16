@@ -200,6 +200,28 @@ trait StickerPackTrait
     }
 
     /**
+     * Länge der laufenden Online-Serie in Tagen (heute eingeschlossen): von $today rückwärts, solange es je Tag ein
+     * Tages-Pack gibt — dieselbe Zählung wie grantStreakStickerPack(); 0 bei Fehler.
+     */
+    private function currentStreakDays(string $managerId, string $today): int
+    {
+        try {
+            $q = $this->con->prepare("SELECT source_key FROM sticker_pack WHERE manager_id = ? AND source_key LIKE 'daily:%'");
+            $q->execute([$managerId]);
+            $keys = array_fill_keys($q->fetchAll(PDO::FETCH_COLUMN), true);
+            $day = new DateTime($today);
+            $days = 0;
+            while (isset($keys['daily:' . $day->format('Y-m-d')])) {
+                $days++;
+                $day->modify('-1 day');
+            }
+            return $days;
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
      * Status fürs Frontend (beim App-Start + Datumswechsel abgefragt): vergibt dabei das tägliche Pack
      * ("App öffnen"), liefert ungeöffnete Packs und die Sammlung der aktiven Saison.
      */
@@ -216,6 +238,8 @@ trait StickerPackTrait
         $this->grantStickerPack($managerId, $seasonId, 'daily', "daily:{$today}", null, $this->stickerConfig()['daily_pack_size']);
         $this->grantSpecialStickerPacks($managerId, $seasonId, $today);
         $this->grantStreakStickerPack($managerId, $seasonId, $today);
+        // laufende Online-Serie für die Topbar (Flamme + Anzahl); every = nach so vielen Tagen gibt es ein Streak-Pack
+        $state['streak'] = ['days' => $this->currentStreakDays($managerId, $today), 'every' => (int) $this->stickerConfig()['streak_days']];
 
         $packSql = fn(string $announced, string $club, string $kind = 'NULL') =>
             "SELECT sp.id, sp.source, sp.source_key, sp.size, sp.created_at, $announced AS announced, $club AS club_id, $kind AS pack_kind, l.name AS league_name
