@@ -119,6 +119,27 @@ export class LukatenOverviewComponent {
   /** Bank und Shop mit in den Stapel nehmen (was aus dem Umlauf abgeflossen ist) */
   showBank = signal(true);
   showShop = signal(true);
+  /**
+   * Total = Lukaten absolut gestapelt; Relativ = jeder Tag auf 100 % gestreckt — zeigt die Verteilung auch dann
+   * deutlich, wenn der Umlauf wächst. Pro Gerät gemerkt.
+   */
+  readonly CHART_MODES = [
+    { key: 'total' as const, label: 'Total' },
+    { key: 'relative' as const, label: 'Relativ' },
+  ];
+  chartMode = signal<'total' | 'relative'>(this.loadChartMode());
+  setChartMode(mode: 'total' | 'relative'): void {
+    this.chartMode.set(mode);
+    try { localStorage.setItem('lukaten-chart-mode', mode); } catch {}
+  }
+  private loadChartMode(): 'total' | 'relative' {
+    try {
+      return localStorage.getItem('lukaten-chart-mode') === 'relative' ? 'relative' : 'total';
+    } catch {
+      return 'total';
+    }
+  }
+
   /** Tag unter dem Mauszeiger (Index in days), null = letzter Tag */
   hoverIndex = signal<number | null>(null);
 
@@ -165,7 +186,15 @@ export class LukatenOverviewComponent {
       s.values.forEach((v, i) => { base[i] += Math.max(0, v); });
       return { series: s, lower, upper: [...base] };
     });
-    const max = this.niceMax(Math.max(1, ...base));
+    // Relativ: jeden Tag auf 100 % strecken (Anteil am Stapel des Tages; ein leerer Tag bleibt leer)
+    const relative = this.chartMode() === 'relative';
+    if (relative) {
+      for (const l of layers) {
+        l.lower = l.lower.map((v, i) => base[i] > 0 ? v / base[i] * 100 : 0);
+        l.upper = l.upper.map((v, i) => base[i] > 0 ? v / base[i] * 100 : 0);
+      }
+    }
+    const max = relative ? 100 : this.niceMax(Math.max(1, ...base));
     const width = this.chartWidth();
     const x = (i: number) => CHART.left + (i / (n - 1)) * (width - CHART.left - CHART.right);
     const y = (v: number) => CHART.top + (1 - v / max) * (CHART.height - CHART.top - CHART.bottom);
@@ -175,7 +204,10 @@ export class LukatenOverviewComponent {
       path: 'M' + l.upper.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('L')
         + 'L' + l.lower.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).reverse().join('L') + 'Z',
     }));
-    const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => ({ y: y(max * f), label: LukatenService.format(Math.round(max * f)) }));
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => ({
+      y: y(max * f),
+      label: relative ? `${Math.round(f * 100)} %` : LukatenService.format(Math.round(max * f)),
+    }));
     const months = h.days
       .map((day, i) => ({ day, i }))
       .filter(d => d.day.endsWith('-01'))
@@ -190,15 +222,19 @@ export class LukatenOverviewComponent {
     const i = Math.min(h.days.length - 1, Math.max(0, this.hoverIndex() ?? h.days.length - 1));
     const [year, month, day] = h.days[i].split('-');
     const series = this.chartSeries();
+    // Anteil am Stapel des Tages (wie im Relativ-Modus gezeichnet: Stände im Minus zählen als 0)
+    const stack = series.reduce((sum, s) => sum + Math.max(0, s.values[i]), 0);
+    const share = (v: number) => stack > 0 ? `${Math.round(Math.max(0, v) / stack * 100)} %` : '0 %';
+    const entry = (s: ChartSeries) => ({ key: s.key, label: s.label, color: s.color, value: s.values[i], share: share(s.values[i]) });
     return {
       index: i,
       label: `${day}.${month}.${year}`,
       x: this.chartAreas().x?.(i) ?? 0,
       // Tooltip links vom Zeiger, sobald er in der rechten Hälfte ist — sonst liefe er aus dem Chart
       flip: i > (h.days.length - 1) / 2,
-      values: series.map(s => ({ key: s.key, label: s.label, color: s.color, value: s.values[i] })),
+      values: series.map(entry),
       // für den Tooltip von oben nach unten, wie die Flächen im Chart liegen (Shop, Bank, dann die Konten)
-      topDown: series.map(s => ({ key: s.key, label: s.label, color: s.color, value: s.values[i] })).reverse(),
+      topDown: series.map(entry).reverse(),
       total: series.reduce((sum, s) => sum + s.values[i], 0),
     };
   });

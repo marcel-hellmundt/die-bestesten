@@ -248,3 +248,18 @@
 
   a { color: $color-accent; }
 }
+
+// Relativ-Modus: Anteil am Stapel des Tages hinter dem Betrag
+.history__share {
+  min-width: 3.2em;
+  text-align: right;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  font-variant-numeric: tabular-nums;
+}
+// im Tooltip (dunkle Kontrastfläche) gedämpfte Kontrastschrift statt Muted-Token
+.history__tip .history__share {
+  color: color-mix(in srgb, #{$color-contrast-text} 70%, transparent);
+}
+// in der Tooltip-Liste rückt der Betrag nach rechts — der Anteil steht dahinter
+.history__tip li b { margin-left: auto; }

@@ -43,8 +43,15 @@
   <!-- ── Verlauf: Lukaten je Tag seit dem Stichtag ── -->
   @if (history(); as h) {
     <div class="segmented-row">
-      <span class="chart-toggles__label">Im Stapel zeigen</span>
+      <!-- Total = absolut, Relativ = jeder Tag auf 100 % (Verteilung trotz wachsendem Umlauf) -->
+      <div class="segmented" role="group" aria-label="Darstellung">
+        @for (m of CHART_MODES; track m.key) {
+          <button class="segmented__option" [class.segmented__option--active]="chartMode() === m.key"
+                  (click)="setChartMode(m.key)">{{ m.label }}</button>
+        }
+      </div>
       <div class="chart-toggles">
+        <span class="chart-toggles__label">Im Stapel zeigen</span>
         <label><input type="checkbox" [checked]="showBank()" (change)="showBank.set($any($event.target).checked)" /> Bank</label>
         <label><input type="checkbox" [checked]="showShop()" (change)="showShop.set($any($event.target).checked)" /> Shop</label>
       </div>
@@ -86,6 +93,7 @@
                   <span class="history__dot" [style.background]="v.color"></span>
                   <span class="history__tip-name">{{ v.label }}</span>
                   <b [class.is-minus]="v.value < 0">{{ format(v.value) }}</b>
+                  @if (chartMode() === 'relative') { <span class="history__share">{{ v.share }}</span> }
                 </li>
               }
             </ul>
@@ -99,6 +107,7 @@
             <li>
               <span class="history__dot" [style.background]="v.color"></span>
               {{ v.label }} <b [class.is-minus]="v.value < 0">{{ format(v.value) }}</b>
+              @if (chartMode() === 'relative') { <span class="history__share">{{ v.share }}</span> }
             </li>
           }
         </ul>
@@ -106,7 +115,8 @@
       <p class="history__note">
         Stände am Tagesende seit dem {{ h.since.slice(8, 10) }}.{{ h.since.slice(5, 7) }}.{{ h.since.slice(0, 4) }}. Der Startbonus zählt ab dem ersten Tag der Saison.
         Tippgewinne sind auf den Tag des Anpfiffs gelegt, weil der Abschluss keinen Zeitstempel hat. Konten oder die
-        Bank im Minus zählen in der Fläche als 0, die Zahl in der Legende ist der echte Stand.
+        Bank im Minus zählen in der Fläche als 0, die Zahl in der Legende ist der echte Stand. Relativ: jeder Tag
+        auf 100 % gestreckt — Anteil am Stapel des Tages.
       </p>
     </div>
   }
