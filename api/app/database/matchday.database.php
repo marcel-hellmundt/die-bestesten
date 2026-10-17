@@ -253,7 +253,9 @@ trait MatchdayTrait
             $teamId   = $team['id'];
             $entries  = $lineupByTeam[$teamId] ?? [];
             $nominated = array_values(array_filter($entries, fn($e) => (bool) $e['nominated']));
-            $invalid   = empty($nominated) ? 1 : 0;
+            // ungültig = keine vollständige Aufstellung (weniger als 11 aufgestellt) — dann 0 Punkte, keine
+            // Spieltagseinnahmen, Strafe wie ungültig (gleiche Regel wie live, TeamRatingTrait::getLiveTeamRatings())
+            $invalid   = count($nominated) < 11 ? 1 : 0;
 
             $points = $goals = $assists = $redCards = $yellowRedCards = $cleanSheet = $sds = 0;
             $ptsGk  = $ptsDef = $ptsMid = $ptsFwd = $sdsDefender = 0;

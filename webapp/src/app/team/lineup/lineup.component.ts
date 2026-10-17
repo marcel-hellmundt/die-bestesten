@@ -157,6 +157,8 @@ export class LineupComponent {
     if (!lp.length) return null;
     return lp.filter(p => p.nominated).reduce((s, p) => s + (p.points ?? 0), 0);
   });
+  /** Ungültige Aufstellung (weniger als 11 aufgestellt, GET /team_lineup → invalid): keine Punkte, schwarzer Balken */
+  isInvalid = computed(() => !!this.state()?.data?.invalid);
   maxPoints = computed(() => {
     const lp = this.lineupPlayers();
     if (!lp.length) return null;

@@ -551,7 +551,8 @@ trait TeamRatingTrait
             // /liga/tabelle — dieselbe Zerlegung wie die Saisonwerte, nur für den laufenden Spieltag.
             $liveSources = $this->getSeasonPointSources([$matchday['id']], true);
             foreach ($ratings as &$r) {
-                $ls = $liveSources[$r['team_id']] ?? null;
+                // ungültige Aufstellung: keine Aufschlüsselung (es zählen ja keine Punkte)
+                $ls = $r['invalid'] ? null : ($liveSources[$r['team_id']] ?? null);
                 $r['points_goalkeeper'] = $ls['points_goalkeeper'] ?? 0;
                 $r['points_defender']   = $ls['points_defender']   ?? 0;
                 $r['points_midfielder'] = $ls['points_midfielder'] ?? 0;
@@ -679,24 +680,36 @@ trait TeamRatingTrait
         return $counts;
     }
 
+    /**
+     * Live-Punkte eines laufenden Spieltags aus player_rating × team_lineup. Alle Teams der Saison stehen drin; wer
+     * weniger als 11 aufgestellt hat, ist ungültig (invalid = 1) und bekommt 0 Punkte — dieselbe Regel wie beim
+     * Abschluss (finalizeMatchday()). Ungültige stehen hinter den gültigen.
+     */
     private function getLiveTeamRatings(string $matchdayId): array
     {
-        $lq = $this->con_league->prepare(
-            "SELECT tl.team_id, tl.player_id,
-                    t.team_name, t.color_primary AS color, t.season_id, m.manager_name
-             FROM team_lineup tl
-             JOIN team t ON t.id = tl.team_id
+        $sq = $this->con->prepare("SELECT season_id FROM matchday WHERE id = ?");
+        $sq->execute([$matchdayId]);
+        $seasonId = $sq->fetchColumn();
+        if (!$seasonId) return [];
+
+        $tq = $this->con_league->prepare(
+            "SELECT t.id AS team_id, t.team_name, t.color_primary AS color, t.season_id, m.manager_name
+             FROM team t
              JOIN manager m ON m.id = t.manager_id
-             WHERE tl.matchday_id = :matchday_id AND tl.nominated = 1"
+             WHERE t.season_id = ?"
+        );
+        $tq->execute([$seasonId]);
+        $teams = $tq->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($teams)) return [];
+
+        $lq = $this->con_league->prepare(
+            "SELECT team_id, player_id FROM team_lineup WHERE matchday_id = :matchday_id AND nominated = 1"
         );
         $lq->execute([':matchday_id' => $matchdayId]);
         $lineupRows = $lq->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($lineupRows))
-            return [];
-
         $playerIds = array_unique(array_column($lineupRows, 'player_id'));
-        $placeholders = implode(',', array_fill(0, count($playerIds), '?'));
+        $placeholders = implode(',', array_fill(0, max(1, count($playerIds)), '?'));
 
         $prq = $this->con->prepare(
             "SELECT player_id,
@@ -710,28 +723,34 @@ trait TeamRatingTrait
              FROM player_rating
              WHERE matchday_id = ? AND player_id IN ($placeholders)"
         );
-        $prq->execute(array_merge([$matchdayId], $playerIds));
+        $prq->execute(array_merge([$matchdayId], $playerIds ?: ['']));
         $ratingByPlayer = array_column($prq->fetchAll(PDO::FETCH_ASSOC), null, 'player_id');
 
+        $nominatedCount = array_count_values(array_column($lineupRows, 'team_id'));
         $teamMap = [];
+        foreach ($teams as $team) {
+            $tid = $team['team_id'];
+            $teamMap[$tid] = [
+                'team_id' => $tid,
+                'team_name' => $team['team_name'],
+                'color' => $this->resolveColor($team['color']),
+                'season_id' => $team['season_id'],
+                'manager_name' => $team['manager_name'],
+                'invalid' => ($nominatedCount[$tid] ?? 0) < 11 ? 1 : 0,
+                'points' => 0,
+                'goals' => 0,
+                'assists' => 0,
+                'red_cards' => 0,
+                'yellow_red_cards' => 0,
+                'clean_sheet' => 0,
+                'sds' => 0,
+                'fine' => 0.0,
+            ];
+        }
         foreach ($lineupRows as $row) {
             $tid = $row['team_id'];
             if (!isset($teamMap[$tid])) {
-                $teamMap[$tid] = [
-                    'team_id' => $tid,
-                    'team_name' => $row['team_name'],
-                    'color' => $this->resolveColor($row['color']),
-                    'season_id' => $row['season_id'],
-                    'manager_name' => $row['manager_name'],
-                    'points' => 0,
-                    'goals' => 0,
-                    'assists' => 0,
-                    'red_cards' => 0,
-                    'yellow_red_cards' => 0,
-                    'clean_sheet' => 0,
-                    'sds' => 0,
-                    'fine' => 0.0,
-                ];
+                continue; // Aufstellung eines Teams, das es in der Saison nicht (mehr) gibt
             }
             $pr = $ratingByPlayer[$row['player_id']] ?? null;
             if ($pr) {
@@ -745,8 +764,16 @@ trait TeamRatingTrait
             }
         }
 
+        // ungültig: keine Punkte und keine Tore/Vorlagen/Weißen Westen/SdS — Karten bleiben, wie beim Abschluss
+        foreach ($teamMap as &$t) {
+            if ($t['invalid']) {
+                $t['points'] = $t['goals'] = $t['assists'] = $t['clean_sheet'] = $t['sds'] = 0;
+            }
+        }
+        unset($t);
+
         $ratings = array_values($teamMap);
-        usort($ratings, fn($a, $b) => $b['points'] <=> $a['points']);
+        usort($ratings, fn($a, $b) => $a['invalid'] <=> $b['invalid'] ?: $b['points'] <=> $a['points']);
         return $ratings;
     }
 }

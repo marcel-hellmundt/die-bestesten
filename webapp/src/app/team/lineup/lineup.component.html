@@ -43,9 +43,12 @@
 
       @if (points() != null && showBreakdown()) {
         <div class="mobile-points">
-          <div class="points-bar">
-            <div class="points-bar__fill" [style.width.%]="pointsPercent()"></div>
-            <span class="points-bar__label">{{ points() }} Punkte</span>
+          <!-- ungültig (weniger als 11 aufgestellt): schwarzer Balken, es zählen keine Punkte -->
+          <div class="points-bar" [class.points-bar--invalid]="isInvalid()">
+            @if (!isInvalid()) {
+              <div class="points-bar__fill" [style.width.%]="pointsPercent()"></div>
+            }
+            <span class="points-bar__label">{{ isInvalid() ? 'Ungültig' : points() + ' Punkte' }}</span>
           </div>
         </div>
       }
@@ -231,9 +234,12 @@
       @if (points() != null && showBreakdown()) {
         <div class="sidebar-block desktop-points">
           <h3 class="sidebar-title">Punkte</h3>
-          <div class="points-bar">
-            <div class="points-bar__fill" [style.width.%]="pointsPercent()"></div>
-            <span class="points-bar__label">{{ points() }} Punkte</span>
+          <!-- ungültig (weniger als 11 aufgestellt): schwarzer Balken, es zählen keine Punkte -->
+          <div class="points-bar" [class.points-bar--invalid]="isInvalid()">
+            @if (!isInvalid()) {
+              <div class="points-bar__fill" [style.width.%]="pointsPercent()"></div>
+            }
+            <span class="points-bar__label">{{ isInvalid() ? 'Ungültig' : points() + ' Punkte' }}</span>
           </div>
         </div>
       }

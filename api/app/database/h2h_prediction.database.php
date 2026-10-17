@@ -552,8 +552,9 @@ trait H2HPredictionTrait
                     $mdId = $entry['matchday_id'];
                     // Ein aufgestelltes Team steht ab Anpfiff bei 0 Toren — auch ohne Bewertung.
                     if (!isset($liveAgg[$mdId][$tId])) {
-                        $liveAgg[$mdId][$tId] = ['goals' => 0, 'assists' => 0, 'sds_defender' => 0];
+                        $liveAgg[$mdId][$tId] = ['goals' => 0, 'assists' => 0, 'sds_defender' => 0, 'nominated' => 0];
                     }
+                    $liveAgg[$mdId][$tId]['nominated']++;
                     if (!$pr) continue;
                     $liveAgg[$mdId][$tId]['goals']   += (int) $pr['goals'];
                     $liveAgg[$mdId][$tId]['assists'] += (int) $pr['assists'];
@@ -571,7 +572,8 @@ trait H2HPredictionTrait
                                 'goals'        => $agg['goals'],
                                 'assists'      => $agg['assists'],
                                 'sds_defender' => $agg['sds_defender'],
-                                'invalid'      => false,
+                                // weniger als 11 aufgestellt = ungültig, wie beim Abschluss (finalizeMatchday())
+                                'invalid'      => $agg['nominated'] < 11,
                             ];
                         }
                     }

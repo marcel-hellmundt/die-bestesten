@@ -211,8 +211,9 @@ trait H2HTrait
                     // Ein aufgestelltes Team steht ab Anpfiff bei 0 Toren — auch solange noch
                     // keiner seiner Spieler eine Bewertung hat.
                     if (!isset($liveAgg[$tId][$mdId])) {
-                        $liveAgg[$tId][$mdId] = ['goals' => 0, 'assists' => 0, 'sds_defender' => 0];
+                        $liveAgg[$tId][$mdId] = ['goals' => 0, 'assists' => 0, 'sds_defender' => 0, 'nominated' => 0];
                     }
+                    $liveAgg[$tId][$mdId]['nominated']++;
                     if (!$pr) continue;
                     $liveAgg[$tId][$mdId]['goals']   += (int) $pr['goals'];
                     $liveAgg[$tId][$mdId]['assists'] += (int) $pr['assists'];
@@ -230,7 +231,8 @@ trait H2HTrait
                                 'goals'        => $agg['goals'],
                                 'assists'      => $agg['assists'],
                                 'sds_defender' => $agg['sds_defender'],
-                                'invalid'      => false,
+                                // weniger als 11 aufgestellt = ungültig, wie beim Abschluss (finalizeMatchday())
+                                'invalid'      => $agg['nominated'] < 11,
                             ];
                         }
                     }
@@ -688,8 +690,9 @@ trait H2HTrait
                         $tId = $entry['team_id'];
                         // Ein aufgestelltes Team steht ab Anpfiff bei 0 — auch ohne Bewertung.
                         if (!isset($liveAgg[$tId])) {
-                            $liveAgg[$tId] = ['points' => 0, 'goals' => 0, 'assists' => 0, 'sds_defender' => 0];
+                            $liveAgg[$tId] = ['points' => 0, 'goals' => 0, 'assists' => 0, 'sds_defender' => 0, 'nominated' => 0];
                         }
+                        $liveAgg[$tId]['nominated']++;
                         if (!$pr) continue;
                         $liveAgg[$tId]['points']  += (int) $pr['points'];
                         $liveAgg[$tId]['goals']   += (int) $pr['goals'];
@@ -700,13 +703,15 @@ trait H2HTrait
                     }
 
                     foreach ($liveAgg as $tId => $agg) {
+                        // weniger als 11 aufgestellt = ungültig, wie beim Abschluss (finalizeMatchday()): 0 Punkte
+                        $invalid = $agg['nominated'] < 11;
                         $ratingMap[$tId] = [
                             'team_id'      => $tId,
-                            'points'       => $agg['points'],
-                            'goals'        => $agg['goals'],
-                            'sds_defender' => $agg['sds_defender'],
-                            'assists'      => $agg['assists'],
-                            'invalid'      => 0,
+                            'points'       => $invalid ? 0 : $agg['points'],
+                            'goals'        => $invalid ? 0 : $agg['goals'],
+                            'sds_defender' => $invalid ? 0 : $agg['sds_defender'],
+                            'assists'      => $invalid ? 0 : $agg['assists'],
+                            'invalid'      => $invalid ? 1 : 0,
                         ];
                     }
                 }

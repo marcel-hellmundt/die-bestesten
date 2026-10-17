@@ -295,6 +295,17 @@ trait TeamLineupTrait
         $nominatedPoints = array_sum(array_map(fn($p) => $p['points'] ?? 0, $nominated));
         $maxPoints       = array_sum(array_map(fn($p) => $p['points'] ?? 0, array_merge($nominated, $bench)));
 
+        // Ungültig = weniger als 11 aufgestellt (wie finalizeMatchday()) — dann zählen keine Punkte. Bei abgeschlossenen
+        // Spieltagen gilt die gespeicherte Wertung (team_rating.invalid), damit ältere Wertungen so bleiben, wie sie waren.
+        $invalid = count($nominated) < 11;
+        if ($matchday['completed']) {
+            $iq = $this->con_league->prepare("SELECT invalid FROM team_rating WHERE team_id = ? AND matchday_id = ?");
+            $iq->execute([$teamId, $matchday['id']]);
+            $stored = $iq->fetchColumn();
+            if ($stored !== false) $invalid = (bool) $stored;
+        }
+        if ($invalid) $nominatedPoints = 0;
+
         return [
             'matchday'   => $matchday,
             'matchdays'  => $matchdays,
@@ -302,6 +313,7 @@ trait TeamLineupTrait
             'bench'      => $bench,
             'points'     => $nominatedPoints,
             'max_points' => $maxPoints,
+            'invalid'    => $invalid,
             // leere Plätze einer unvollständigen Aufstellung richten sich danach (siehe previousLineupFormation())
             'previous_formation' => count($nominated) < 11 ? $this->previousLineupFormation($teamId, $matchday['id']) : null,
         ];

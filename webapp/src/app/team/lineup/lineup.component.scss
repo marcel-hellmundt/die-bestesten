@@ -504,6 +504,18 @@ $mobile-nav-height: 64px;
     font-weight: $font-weight-semibold;
     color: #fff;
   }
+
+  // ungültige Aufstellung: dunkle Kontrastfläche statt Akzent-Füllung, "Ungültig" statt Punkten
+  &--invalid {
+    background: $color-contrast-bg;
+    border-color: $color-contrast-bg;
+
+    .points-bar__label {
+      color: $color-contrast-text;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+  }
 }
 
 .formations {
