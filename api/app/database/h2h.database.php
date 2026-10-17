@@ -924,6 +924,11 @@ trait H2HTrait
             'home_bench'   => $homeLineup['bench'],
             'away_lineup'  => $awayLineup['nominated'],
             'away_bench'   => $awayLineup['bench'],
+            // Formation am vorherigen Spieltag (nur bei unvollständiger Aufstellung) — dort sitzen die leeren Plätze
+            'home_previous_formation' => $matchday && count($homeLineup['nominated']) < 11
+                ? $this->previousLineupFormation($match['home_team_id'], $matchday['id']) : null,
+            'away_previous_formation' => $matchday && count($awayLineup['nominated']) < 11
+                ? $this->previousLineupFormation($match['away_team_id'], $matchday['id']) : null,
             'odds'         => ['home' => $oddsResult['home'], 'draw' => $oddsResult['draw'], 'away' => $oddsResult['away']],
             'odds_breakdown' => $includeOddsBreakdown ? $oddsResult['breakdown'] : null,
             'predictions'  => $this->getH2HPredictionState(

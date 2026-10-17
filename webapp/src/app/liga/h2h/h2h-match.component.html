@@ -166,22 +166,27 @@
   </div>
 
   <div class="mobile-pitch-wrap">
-    <div class="field">
+    <!-- Unvollständig (weniger als 11): Hinweis obenauf, Aufstellung samt leerer Plätze halbtransparent dahinter -->
+    <div class="field" [class.field--incomplete]="showSelectedInvalidHint()">
       @if (showSelectedInvalidHint()) {
         <div class="field-invalid-hint">
           <span class="field-invalid-hint__card">
             <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
-            <span>Keine gültige Aufstellung vorhanden</span>
+            <span>{{ incompleteLabel(selectedLineup()) }}</span>
           </span>
         </div>
-      } @else {
+      }
       @for (pos of pitchPositions; track pos) {
         <div class="field-section">
           @for (p of playersByPosition(pos); track p.player_id) {
             <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
           }
+          @if (showSelectedInvalidHint()) {
+            @for (i of emptySlots(selectedLineup(), pos); track i) {
+              <div class="field-player field-player--empty" aria-hidden="true"><div class="field-player__photo-wrap field-player__photo-wrap--empty"></div></div>
+            }
+          }
         </div>
-      }
       }
 
       <!-- Field markings -->
@@ -241,40 +246,48 @@
       </div>
 
       <div class="h2h-field">
-        <div class="h2h-field__half h2h-field__half--home">
+        <div class="h2h-field__half h2h-field__half--home" [class.h2h-field__half--incomplete]="showHomeInvalidHint()">
           @if (showHomeInvalidHint()) {
             <div class="field-invalid-hint">
               <span class="field-invalid-hint__card">
                 <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
-                <span>Keine gültige Aufstellung vorhanden</span>
+                <span>{{ incompleteLabel(homeLineup()) }}</span>
               </span>
             </div>
-          } @else {
+          }
           @for (pos of homeFieldPositions; track pos) {
             <div class="h2h-field__col">
               @for (p of positionPlayers(homeLineup(), pos); track p.player_id) {
                 <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
               }
+              @if (showHomeInvalidHint()) {
+                @for (i of emptySlots(homeLineup(), pos); track i) {
+                  <div class="field-player field-player--empty" aria-hidden="true"><div class="field-player__photo-wrap field-player__photo-wrap--empty"></div></div>
+                }
+              }
             </div>
           }
-          }
         </div>
-        <div class="h2h-field__half h2h-field__half--away">
+        <div class="h2h-field__half h2h-field__half--away" [class.h2h-field__half--incomplete]="showAwayInvalidHint()">
           @if (showAwayInvalidHint()) {
             <div class="field-invalid-hint">
               <span class="field-invalid-hint__card">
                 <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
-                <span>Keine gültige Aufstellung vorhanden</span>
+                <span>{{ incompleteLabel(awayLineup()) }}</span>
               </span>
             </div>
-          } @else {
+          }
           @for (pos of awayFieldPositions; track pos) {
             <div class="h2h-field__col">
               @for (p of positionPlayers(awayLineup(), pos); track p.player_id) {
                 <ng-container *ngTemplateOutlet="fieldPlayer; context: { p: p }"></ng-container>
               }
+              @if (showAwayInvalidHint()) {
+                @for (i of emptySlots(awayLineup(), pos); track i) {
+                  <div class="field-player field-player--empty" aria-hidden="true"><div class="field-player__photo-wrap field-player__photo-wrap--empty"></div></div>
+                }
+              }
             </div>
-          }
           }
         </div>
 

@@ -5,6 +5,7 @@ import { CdkDragMove } from '@angular/cdk/drag-drop';
 import { catchError, combineLatest, filter, interval, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
+import { VALID_FORMATIONS, completionFormation, incompleteLineupLabel } from '../../core/formation';
 
 interface LineupPlayer {
   id: string;
@@ -179,7 +180,10 @@ export class LineupComponent {
   // either way it's not something a stranger should see player-by-player; the owner still sees
   // it as-is (see canEdit's empty-slot bubbles) to fix it themselves.
   isLineupComplete = computed(() => this.nominated().length === 11);
+  // Fremde sehen eine unvollständige Aufstellung trotzdem — halbtransparent hinter dem Hinweis, mit leeren Plätzen —,
+  // damit klar ist, was fehlt (gewertet werden die aufgestellten Spieler, siehe incompleteLineupLabel())
   showInvalidLineupHint = computed(() => !this.isOwnTeam() && !this.isLineupComplete());
+  invalidLineupLabel = computed(() => incompleteLineupLabel(this.nominated().length));
 
   isEditable = computed(() => {
     const md = this.matchday();
@@ -222,16 +226,9 @@ export class LineupComponent {
     return new Date() >= new Date(md.kickoff_date);
   });
 
-  readonly validFormations = [
-    [1,3,4,3],[1,3,5,2],[1,4,3,3],[1,4,4,2],[1,4,5,1],[1,5,3,2],[1,5,4,1],
-  ];
+  readonly validFormations = VALID_FORMATIONS;
 
   readonly pitchPositions = ['FORWARD', 'MIDFIELDER', 'DEFENDER', 'GOALKEEPER'];
-
-  // Classic shape used to complete a partial/empty lineup into a full valid XI — only used
-  // as a tie-breaker below, never shown as-is if it would conflict with an already-nominated
-  // position count.
-  private readonly fallbackFormation = [1, 4, 4, 2];
 
   // While nothing is nominated yet, a click on a formation chip (see selectFormation()) picks
   // which empty-slot shape is scaffolded — otherwise the closest-to-4-4-2 default below applies.
@@ -240,10 +237,11 @@ export class LineupComponent {
   // Baseline slot layout so the field always shows enough empty placeholders to build a
   // complete, valid lineup from scratch (e.g. after a skipped matchday left everyone on the
   // bench) — without these, dropping a bench player would have nothing to swap with and
-  // silently do nothing. Picks, among the 7 valid formations that are still reachable from
-  // the current selection (i.e. >= the actually nominated count in every position), the one
-  // closest to the classic 4-4-2 default (or the manually picked one, if nothing is nominated
-  // yet). A fully/validly nominated lineup always matches itself exactly (0 excess anywhere,
+  // silently do nothing. Picks the manually chosen shape (only while nothing is nominated yet),
+  // otherwise completionFormation() (core/formation.ts): the previous matchday's formation if
+  // still reachable — a gap is usually a sold player whose slot was never refilled — else,
+  // among the 7 valid formations still reachable from the current selection (i.e. >= the
+  // actually nominated count in every position), the one closest to the classic 4-4-2. A fully/validly nominated lineup always matches itself exactly (0 excess anywhere,
   // e.g. 4-3-3 only ever shows 3 midfielder slots); an empty or partial lineup completes
   // towards a coherent 11-player formation instead of the per-position minimum across all
   // formations, which isn't itself a valid formation and used to show only 8 slots total
@@ -254,16 +252,9 @@ export class LineupComponent {
       const manual = this.manualEmptyFormation();
       if (manual) return manual;
     }
-    const compatible = this.validFormations.filter(f => f.every((v, i) => v >= cur[i]));
-    if (compatible.length === 0) return cur;
-    return compatible.reduce((best, f) =>
-      this.formationDistance(f) < this.formationDistance(best) ? f : best
-    );
+    // zuerst die Formation vom vorherigen Spieltag (meist fehlt ein verkaufter Spieler), sonst nächste an 4-4-2
+    return completionFormation(cur, this.state()?.data?.previous_formation ?? null);
   });
-
-  private formationDistance(f: number[]): number {
-    return f.reduce((sum, v, i) => sum + Math.abs(v - this.fallbackFormation[i]), 0);
-  }
 
   // Only meaningful as long as nothing is nominated yet — picking a starting shape for an
   // established lineup would just get silently overridden by the closest-match logic above,

@@ -7,6 +7,7 @@ import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { LukatenService } from '../../core/lukaten.service';
 import { TeamNavService } from '../../core/team-nav.service';
+import { POSITION_INDEX, completionFormation, incompleteLineupLabel, positionCounts } from '../../core/formation';
 
 @Component({
   selector: 'app-h2h-match',
@@ -589,6 +590,24 @@ export class H2HMatchComponent implements OnDestroy {
 
   positionPlayers(lineup: any[], pos: string): any[] {
     return lineup.filter(p => p.position === pos);
+  }
+
+  /**
+   * Unvollständige Aufstellung: so viele leere Plätze je Position, wie zur Formation fehlen, auf die sie hinausläuft
+   * (completionFormation(), dieselbe Regel wie im Lineup: vorheriger Spieltag, sonst nächste an 4-4-2) —
+   * halbtransparent hinter dem Hinweis.
+   */
+  emptySlots(lineup: any[], pos: string): number[] {
+    const counts = positionCounts(lineup);
+    const i = POSITION_INDEX[pos];
+    // zuerst die Formation vom vorherigen Spieltag (meist fehlt ein verkaufter Spieler), sonst nächste an 4-4-2
+    const previous = lineup === this.homeLineup() ? this.data()?.home_previous_formation : this.data()?.away_previous_formation;
+    const missing = Math.max(0, (completionFormation(counts, previous ?? null)[i] ?? 0) - counts[i]);
+    return Array.from({ length: missing }, (_, k) => k);
+  }
+
+  incompleteLabel(lineup: any[]): string {
+    return incompleteLineupLabel(lineup.length);
   }
 
   constructor() {

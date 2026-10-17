@@ -1010,13 +1010,18 @@ $mobile-nav-height: 64px;
   white-space: nowrap;
 }
 
-// Shown instead of the player grid for foreign viewers when the lineup isn't a complete valid
-// XI (mid-build, or gapped by a sale — see showInvalidLineupHint()) — the owner still sees the
-// actual (partial) lineup + empty slots to fix it themselves.
+// Foreign viewers, lineup not a complete XI (mid-build, or gapped by a sale — see showInvalidLineupHint()):
+// the hint sits on top, the partial lineup incl. empty slots stays visible but faded behind it
+// (.field--incomplete) so it's clear what's missing. The owner sees it unfaded to fix it.
+.field--incomplete .field-section {
+  opacity: 0.4;
+}
+
 .field-invalid-hint {
   position: absolute;
   inset: 0;
   z-index: 2; // über .field-lines (z-index: 1)
+  pointer-events: none; // die Spieler dahinter bleiben anklickbar
   display: flex;
   align-items: center;
   justify-content: center;

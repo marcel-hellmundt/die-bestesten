@@ -50,20 +50,21 @@
         </div>
       }
 
-      <div class="field" [class.field--editable]="canEdit()">
+      <div class="field" [class.field--editable]="canEdit()" [class.field--incomplete]="showInvalidLineupHint()">
 
         @if (formationError()) {
           <div class="formation-error">{{ formationError() }}</div>
         }
 
+        <!-- Unvollständig (weniger als 11): Hinweis obenauf, die Aufstellung samt leerer Plätze halbtransparent dahinter -->
         @if (showInvalidLineupHint()) {
           <div class="field-invalid-hint">
             <span class="field-invalid-hint__card">
               <img src="img/icons/warning.png" class="field-invalid-hint__icon" alt="" />
-              <span>Keine gültige Aufstellung vorhanden</span>
+              <span>{{ invalidLineupLabel() }}</span>
             </span>
           </div>
-        } @else {
+        }
         @for (pos of pitchPositions; track pos) {
           <div class="field-section">
             @for (p of getPlayersByPosition(pos); track p.id) {
@@ -144,7 +145,7 @@
                 </div>
               </a>
             }
-            @if (canEdit()) {
+            @if (canEdit() || showInvalidLineupHint()) {
               @for (i of emptySlotIndices(pos); track i) {
                 <div class="field-player field-player--empty empty-slot"
                      [attr.data-pos]="pos"
@@ -155,7 +156,6 @@
               }
             }
           </div>
-        }
         }
 
         <!-- Field markings -->

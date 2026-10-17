@@ -302,7 +302,56 @@ trait TeamLineupTrait
             'bench'      => $bench,
             'points'     => $nominatedPoints,
             'max_points' => $maxPoints,
+            // leere Plätze einer unvollständigen Aufstellung richten sich danach (siehe previousLineupFormation())
+            'previous_formation' => count($nominated) < 11 ? $this->previousLineupFormation($teamId, $matchday['id']) : null,
         ];
+    }
+
+    /**
+     * Formation der Aufstellung am vorherigen Spieltag als [TOR, ABW, MIT, STU] — nur, wenn dort genau 11 aufgestellt
+     * waren, sonst null. Grundlage für die leeren Plätze einer unvollständigen Aufstellung: verkauft ein Manager einen
+     * aufgestellten Spieler und passt danach nichts an, fehlt genau dieser Platz — bei 10 oder weniger Spielern ist
+     * sonst nicht eindeutig, welche Formation gemeint ist und wo jemand fehlt.
+     */
+    public function previousLineupFormation(string $teamId, string $matchdayId): ?array
+    {
+        $mq = $this->con->prepare(
+            "SELECT p.id, c.season_id, c.division_id FROM matchday c
+             JOIN matchday p ON p.season_id = c.season_id AND p.division_id = c.division_id AND p.number = c.number - 1
+             WHERE c.id = ? LIMIT 1"
+        );
+        $mq->execute([$matchdayId]);
+        $prev = $mq->fetch(PDO::FETCH_ASSOC);
+        if (!$prev) return null;
+
+        $lq = $this->con_league->prepare(
+            "SELECT player_id FROM team_lineup WHERE team_id = ? AND matchday_id = ? AND nominated = 1"
+        );
+        $lq->execute([$teamId, $prev['id']]);
+        $playerIds = $lq->fetchAll(PDO::FETCH_COLUMN);
+        if (count($playerIds) !== 11) return null;
+
+        // Position je Spieler aus seiner Saison-Zeile, die Zeile der Division des Spieltags bevorzugt
+        $ph = implode(',', array_fill(0, count($playerIds), '?'));
+        $pq = $this->con->prepare(
+            "SELECT player_id, position FROM player_in_season
+             WHERE season_id = ? AND player_id IN ($ph)
+             ORDER BY (division_id = ?) DESC"
+        );
+        $pq->execute(array_merge([$prev['season_id']], $playerIds, [$prev['division_id']]));
+        $positions = [];
+        foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $positions[$r['player_id']] ??= $r['position'];
+        }
+
+        $index = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
+        $counts = [0, 0, 0, 0];
+        foreach ($playerIds as $id) {
+            $i = $index[$positions[$id] ?? ''] ?? null;
+            if ($i === null) return null;
+            $counts[$i]++;
+        }
+        return $counts;
     }
 
     public function getPlayerLineup(string $playerId, string $seasonId): array

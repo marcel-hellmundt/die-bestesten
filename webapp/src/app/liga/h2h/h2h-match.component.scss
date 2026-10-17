@@ -1369,13 +1369,30 @@
   position: relative;
 }
 
-// Shown instead of a side's player columns for a neutral/opposing viewer when that team's
-// lineup isn't a complete valid XI (mid-build, or gapped by a sale) — see
-// showHomeInvalidHint()/showAwayInvalidHint()/showSelectedInvalidHint() in the component.
+// Unvollständige Aufstellung (weniger als 11, z. B. mitten im Aufstellen oder nach einem Verkauf) — see
+// showHomeInvalidHint()/showAwayInvalidHint()/showSelectedInvalidHint(): der Hinweis liegt obenauf, die
+// Aufstellung samt leerer Plätze bleibt halbtransparent dahinter sichtbar, damit klar ist, was fehlt.
+.field--incomplete .field-section,
+.h2h-field__half--incomplete .h2h-field__col {
+  opacity: 0.4;
+}
+
+// leerer Platz: gestrichelter Kreis in Größe des Spielerfotos (mobil wie Desktop)
+.field-player--empty {
+  pointer-events: none;
+}
+
+.field-player__photo-wrap--empty {
+  border: 2px dashed rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.12);
+  box-sizing: border-box;
+}
+
 .field-invalid-hint {
   position: absolute;
   inset: 0;
   z-index: 2; // über .field-lines/.h2h-field__lines (z-index: 1)
+  pointer-events: none; // die Spieler dahinter bleiben anklickbar
   display: flex;
   align-items: center;
   justify-content: center;
