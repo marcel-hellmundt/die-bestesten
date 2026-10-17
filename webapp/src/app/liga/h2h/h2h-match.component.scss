@@ -1391,7 +1391,9 @@
 .field-invalid-hint {
   position: absolute;
   inset: 0;
-  z-index: 2; // über .field-lines/.h2h-field__lines (z-index: 1)
+  // über den Spielerreihen (.field-section z-index 2, darin Stats z-index 3) und den Feldlinien — sonst liegen
+  // die halbtransparenten Spieler einer unvollständigen Aufstellung auf dem Handy über dem Hinweis
+  z-index: 4;
   pointer-events: none; // die Spieler dahinter bleiben anklickbar
   display: flex;
   align-items: center;
