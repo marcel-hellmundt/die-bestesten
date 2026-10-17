@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, effect, HostListener, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 import { catchError, combineLatest, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api.service';
@@ -406,6 +406,30 @@ export class RatingsDataComponent {
 
   teamLogoErrors = new Set<string>();
   onTeamLogoError(teamId: string): void { this.teamLogoErrors.add(teamId); }
+
+  // ── Vereinsleiste (Desktop) ──────────────────────────────────────
+  // Ist die Vereinsauswahl nach oben aus dem Bild gescrollt, erscheint unter dem gepinnten Sub-Menü eine schmale
+  // Leiste mit allen Vereinen (nur Logos), damit man ohne Zurückscrollen den Verein wechseln kann.
+  private clubGrid = viewChild<ElementRef<HTMLElement>>('clubGrid');
+  private clubStripAnchor = viewChild<ElementRef<HTMLElement>>('clubStripAnchor');
+  clubGridHidden = signal(false);
+
+  private clubStripEffect = effect((onCleanup) => {
+    const grid = this.clubGrid()?.nativeElement;
+    const anchor = this.clubStripAnchor()?.nativeElement;
+    if (!grid || !anchor) {
+      this.clubGridHidden.set(false);
+      return;
+    }
+    // Oberkante der Leiste (sticky top) — so weit von oben gilt die Auswahl als verdeckt
+    const top = parseFloat(getComputedStyle(anchor).top) || 0;
+    const observer = new IntersectionObserver(
+      ([entry]) => this.clubGridHidden.set(!entry.isIntersecting && entry.boundingClientRect.top < top),
+      { rootMargin: `-${top}px 0px 0px 0px` },
+    );
+    observer.observe(grid);
+    onCleanup(() => observer.disconnect());
+  });
 
   // ── Gemeinsames Eintragen (live) ─────────────────────────────────
   // Mehrere Manager tragen gleichzeitig ein (jeder Eintrag bringt Lukaten). Solange ein Verein offen ist, holt die

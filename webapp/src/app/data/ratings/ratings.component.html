@@ -125,7 +125,7 @@
 
   <!-- Bundesliga-Club-Auswahl -->
   @if (bundesligaClubs().length > 0) {
-    <div class="club-grid">
+    <div class="club-grid" #clubGrid>
       @for (club of bundesligaClubs(); track club.id) {
         <button
           class="club-tile"
@@ -171,6 +171,27 @@
           <span class="club-tile__name">{{ club.short_name || club.name }}</span>
         </button>
       }
+    </div>
+  }
+
+  <!-- Desktop: ist die Vereinsauswahl weggescrollt, bleibt eine schmale Leiste mit allen Vereinen oben gepinnt
+       (nimmt im Layout keinen Platz ein — der Anker ist 0 px hoch) -->
+  @if (selectedClubId() && bundesligaClubs().length > 0) {
+    <div class="club-strip-anchor" #clubStripAnchor>
+      <div class="club-strip" [class.club-strip--visible]="clubGridHidden()" [attr.aria-hidden]="!clubGridHidden()">
+        @for (club of bundesligaClubs(); track club.id) {
+          <button
+            class="club-tile club-tile--mini"
+            [class.club-tile--active]="selectedClubId() === club.id"
+            [ngClass]="clubStatusClass(club.id)"
+            [attr.title]="club.name"
+            [attr.tabindex]="clubGridHidden() ? null : -1"
+            (click)="selectClub(club.id)"
+          >
+            <img [src]="logoUrl(club)" class="club-tile__logo" [alt]="club.name" />
+          </button>
+        }
+      </div>
     </div>
   }
 
