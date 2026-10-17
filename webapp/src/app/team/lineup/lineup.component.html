@@ -183,10 +183,8 @@
 
       <!-- Mobile bench (card row below pitch, same card as the desktop sidebar) — stepped
            via the arrow buttons instead of finger-scrollable, so it doesn't fight with
-           dragging a chip onto the field. Hidden for foreign viewers alongside the field
-           hint (showInvalidLineupHint()) — the bank is only useful for building/fixing the
-           lineup, which only the owner can do. -->
-      @if (!showInvalidLineupHint()) {
+           dragging a chip onto the field. Also shown for an incomplete lineup (behind the
+           hint), so it's visible who could have filled the gap. -->
       <div class="mobile-bench">
         <span class="mobile-bench__label">Ersatzbank</span>
         <button
@@ -212,7 +210,6 @@
           aria-label="Weitere Bank-Spieler"
         >›</button>
       </div>
-      }
     </div>
 
     <!-- SIDEBAR -->
@@ -270,14 +267,12 @@
         </div>
       </div>
 
-      @if (!showInvalidLineupHint()) {
       <div class="sidebar-block desktop-bench">
         <h3 class="sidebar-title">Ersatzbank</h3>
         <div class="bench-list">
           <ng-container *ngTemplateOutlet="benchList"></ng-container>
         </div>
       </div>
-      }
 
     </div>
   </div>
