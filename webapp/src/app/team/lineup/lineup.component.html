@@ -220,12 +220,17 @@
         </div>
       }
 
+      <!-- Desktop: Pfeile links/rechts der Auswahl springen zum vorherigen/nächsten Spieltag -->
       <div class="matchday-select-wrap matchday-select-wrap--desktop">
+        <button class="nav-arrow" [disabled]="!prevMatchday()" (click)="goToMatchday(prevMatchday())"
+                aria-label="Vorheriger Spieltag">‹</button>
         <select class="matchday-select" (change)="selectedMatchdayId.set($any($event.target).value)">
           @for (md of matchdays(); track md.id) {
             <option [value]="md.id" [selected]="md.id === matchday().id">Sp. {{ md.number }}</option>
           }
         </select>
+        <button class="nav-arrow" [disabled]="!nextMatchday()" (click)="goToMatchday(nextMatchday())"
+                aria-label="Nächster Spieltag">›</button>
         @if (saving()) {
           <span class="saving-indicator">Speichern…</span>
         }

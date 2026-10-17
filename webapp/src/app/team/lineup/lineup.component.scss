@@ -907,9 +907,41 @@ $mobile-nav-height: 64px;
   }
 
   &--desktop {
+    gap: $space-2;
+
+    .matchday-select { width: auto; flex: 1; min-width: 0; }
+
     @media (max-width: $mobile-breakpoint) {
       display: none;
     }
+  }
+}
+
+// ‹ › neben der Spieltagsauswahl — wie auf /liga/spieltag
+.nav-arrow {
+  display: flex;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  font-size: $font-3xl;
+  line-height: 28px;
+  color: $color-text;
+  cursor: pointer;
+  transition:
+    border-color $transition-fast,
+    color $transition-fast;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    border-color: $color-text-muted;
+  }
+
+  &:disabled {
+    color: $color-border;
+    cursor: default;
   }
 }
 

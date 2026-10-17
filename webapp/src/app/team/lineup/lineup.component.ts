@@ -107,6 +107,20 @@ export class LineupComponent {
 
   matchday  = computed(() => this.state().data?.matchday  ?? null);
   matchdays = computed(() => (this.state().data?.matchdays ?? []) as any[]);
+
+  // Pfeile neben der Spieltagsauswahl (Desktop): Nachbarn nach Nummer unter den Spieltagen dieses Teams
+  private neighbourMatchday(step: 1 | -1): any | null {
+    const current = this.matchday();
+    if (!current) return null;
+    // number kommt als String aus der DB — numerisch vergleichen
+    return this.matchdays().find(md => +md.number === +current.number + step) ?? null;
+  }
+  prevMatchday = computed(() => this.neighbourMatchday(-1));
+  nextMatchday = computed(() => this.neighbourMatchday(1));
+
+  goToMatchday(md: any | null): void {
+    if (md) this.selectedMatchdayId.set(md.id);
+  }
   loading   = computed(() => this.state().loading);
   error     = computed(() => this.state().error);
 
