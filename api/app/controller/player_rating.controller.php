@@ -45,6 +45,13 @@ class PlayerRatingController extends _BaseController
             return ['status' => false, 'message' => 'matchday_id und club_id sind erforderlich'];
         }
 
+        // Gemeinsames Eintragen: nur Änderungen seit ?since (DB-Zeit aus dem letzten Abruf) + wer mitschaut
+        if ($this->id === 'live') {
+            $since = $this->params['since'] ?? null;
+            if ($since !== null && !preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d{1,6})?$/', $since)) $since = null;
+            return $this->db->getPlayerRatingsLive($matchdayId, $clubId, $GLOBALS['auth_manager_id'], $since);
+        }
+
         return $this->db->getPlayerRatingsByMatchdayAndClub($matchdayId, $clubId);
     }
 
@@ -192,16 +199,24 @@ class PlayerRatingController extends _BaseController
             return ['status' => false, 'message' => 'Spieltag ist abgeschlossen — Ratings gesperrt'];
         }
 
-        $body = $this->body();
-        $updated = $this->db->updatePlayerRating($this->id, $body, $GLOBALS['auth_manager_id']);
+        $body   = $this->body();
+        $result = $this->db->updatePlayerRating($this->id, $body, $GLOBALS['auth_manager_id']);
 
-        if (!$updated) {
+        if ($result['result'] === 'missing') {
             http_response_code(404);
-            return ['status' => false, 'message' => 'Rating nicht gefunden oder keine Änderung'];
+            return ['status' => false, 'message' => 'Rating nicht gefunden'];
         }
 
         $row = $this->db->getPlayerRatingById($this->id);
-        return ['status' => true, 'rating' => $row ?: null];
+
+        // Jemand war schneller ("first wins"): nichts geschrieben, aktueller Stand zurück
+        if ($result['result'] === 'conflict') {
+            http_response_code(409);
+            return ['status' => false, 'conflict' => true, 'by' => $result['by'], 'rating' => $row ?: null,
+                    'message' => 'Inzwischen von jemand anderem geändert'];
+        }
+
+        return ['status' => true, 'changed' => $result['result'] === 'updated', 'rating' => $row ?: null];
     }
 
     protected function delete(): mixed { return $this->methodNotAllowed(); }

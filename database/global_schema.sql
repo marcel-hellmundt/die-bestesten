@@ -147,13 +147,15 @@ CREATE TABLE IF NOT EXISTS player_rating (
     red_card BOOLEAN DEFAULT FALSE,             -- Rote Karte
     yellow_red_card BOOLEAN DEFAULT FALSE,      -- Gelb-Rote Karte
     points INT DEFAULT NULL,                    -- Punkte (kann aus anderen Werten berechnet werden)
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),  -- letzte Änderung (auch Anlegen) — GET /player_rating/live liefert nur Geändertes
     FOREIGN KEY (player_id) REFERENCES player(id),
     FOREIGN KEY (matchday_id) REFERENCES matchday(id),
     FOREIGN KEY (club_id) REFERENCES club(id),
     UNIQUE KEY uk_player_matchday (player_id, matchday_id),
     INDEX idx_player_id (player_id),
     INDEX idx_matchday_id (matchday_id),
-    INDEX idx_club_id (club_id)
+    INDEX idx_club_id (club_id),
+    INDEX idx_player_rating_updated (matchday_id, club_id, updated_at)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: division (reale Fußball-Spielklassen, z.B. 1. Bundesliga)
@@ -374,6 +376,16 @@ CREATE TABLE IF NOT EXISTS appearance_preference (
     pref_key   VARCHAR(50) NOT NULL,
     enabled    BOOL        NOT NULL DEFAULT 1,
     PRIMARY KEY (manager_id, pref_key),
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: rating_presence (wer gerade welchen Verein auf /daten/ratings offen hat — "schaut gerade mit")
+CREATE TABLE IF NOT EXISTS rating_presence (
+    manager_id  CHAR(36) NOT NULL PRIMARY KEY,  -- eine Zeile je Manager, bei jedem Abruf von GET /player_rating/live überschrieben
+    matchday_id CHAR(36) NOT NULL,
+    club_id     CHAR(36) NOT NULL,
+    seen_at     DATETIME NOT NULL,              -- letzter Abruf; mitschauend = innerhalb der letzten 15 s
+    INDEX idx_rating_presence_club (matchday_id, club_id, seen_at),
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

@@ -497,6 +497,90 @@
   gap: $space-4;
 }
 
+// Kopf des geöffneten Vereins + wer ihn gerade ebenfalls offen hat
+.club-live-head {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 28px;
+
+  &__logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-weight: $font-weight-semibold;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__viewers {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+}
+
+.viewer-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: -6px;
+  border-radius: $radius-full;
+  border: 2px solid $color-surface;
+  background: $color-surface-alt;
+  color: $color-text-muted;
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px $color-success;
+
+  &:first-child {
+    margin-left: 0;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+// Zeile, die gerade jemand anderes geändert hat — kurz aufleuchten
+@keyframes remote-change-flash {
+  from { background: color-mix(in srgb, $color-accent 22%, transparent); }
+  to { background: transparent; }
+}
+
+.rating-row--remote-change > td,
+.bench-card--remote-change {
+  animation: remote-change-flash 1.5s ease-out;
+}
+
+// Hinweis an der Zeile, z. B. "Schon eingetragen von Max" nach einem Konflikt
+.row-notice {
+  padding: 1px $space-2;
+  border-radius: $radius-full;
+  background: color-mix(in srgb, $color-warning 18%, transparent);
+  color: $color-text;
+  font-size: $font-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
 .completed-banner,
 .init-success {
   padding: $space-3 $space-4;

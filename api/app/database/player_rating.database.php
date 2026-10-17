@@ -5,9 +5,12 @@ trait PlayerRatingTrait
     /**
      * All player_ratings for a matchday, filtered for a club.
      * Returns player base info + position from player_in_season.
+     * $since (DB-Zeit 'Y-m-d H:i:s.u'): nur Zeilen, die sich danach geändert haben (player_rating.updated_at) — für
+     * GET /player_rating/live; ohne die Spalte (Migration) wird $since ignoriert und alles geliefert.
      */
-    public function getPlayerRatingsByMatchdayAndClub(string $matchdayId, string $clubId): array
+    public function getPlayerRatingsByMatchdayAndClub(string $matchdayId, string $clubId, ?string $since = null): array
     {
+        if ($since !== null && !$this->ratingUpdatedAtReady()) $since = null;
         $matchday = $this->getMatchdayById($matchdayId);
         $seasonId = $matchday ? $matchday['season_id'] : null;
 
@@ -20,6 +23,7 @@ trait PlayerRatingTrait
         }
         $divisionId = $divisionId ?? ($matchday['division_id'] ?? null);
         $divisionWhere = $divisionId !== null ? 'AND pis.division_id = :division_id' : '';
+        $sinceWhere    = $since !== null ? 'AND pr.updated_at > :since' : '';
 
         $query = $this->con->prepare("
             SELECT p.id            AS player_id,
@@ -52,6 +56,7 @@ trait PlayerRatingTrait
                 $divisionWhere
             WHERE pr.matchday_id = :matchday_id
               AND pr.club_id = :club_id
+              $sinceWhere
             ORDER BY starting_count DESC, pis.position ASC, pis.price DESC
         ");
         $params = [
@@ -60,8 +65,10 @@ trait PlayerRatingTrait
             ':season_id'   => $seasonId,
         ];
         if ($divisionId !== null) $params[':division_id'] = $divisionId;
+        if ($since !== null) $params[':since'] = $since;
         $query->execute($params);
         $ratings = $query->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($ratings)) return [];
 
         $contributorsByRating = $this->getContributorsForRatings(array_column($ratings, 'id'));
 
@@ -95,6 +102,64 @@ trait PlayerRatingTrait
         unset($r);
 
         return $ratings;
+    }
+
+    /** Gibt es player_rating.updated_at schon (Migration 2026-10-17_player_rating_live.sql)? Einmal je Request geprüft. */
+    private function ratingUpdatedAtReady(): bool
+    {
+        static $ready = null;
+        if ($ready === null) {
+            try {
+                $ready = (bool) $this->con->query("SHOW COLUMNS FROM player_rating LIKE 'updated_at'")->fetch();
+            } catch (\Throwable $e) {
+                $ready = false;
+            }
+        }
+        return $ready;
+    }
+
+    /** Wie lange ein Abruf als "schaut gerade mit" zählt (Webapp ruft alle 3 s ab) */
+    private function ratingPresenceSeconds(): int
+    {
+        return 15;
+    }
+
+    /**
+     * GET /player_rating/live — für das gemeinsame Eintragen auf /daten/ratings: Zeilen des Vereins, die sich seit
+     * $since geändert haben (ohne $since bzw. ohne Migration: alle), die DB-Zeit für den nächsten Abruf und wer den
+     * Verein gerade noch offen hat. Merkt sich dabei, dass $managerId diesen Verein gerade ansieht (rating_presence).
+     */
+    public function getPlayerRatingsLive(string $matchdayId, string $clubId, string $managerId, ?string $since): array
+    {
+        $serverTime = $this->con->query("SELECT NOW(6)")->fetchColumn();
+        $ratings    = $this->getPlayerRatingsByMatchdayAndClub($matchdayId, $clubId, $since);
+
+        $viewers = [];
+        try {
+            $this->con->prepare(
+                "INSERT INTO rating_presence (manager_id, matchday_id, club_id, seen_at) VALUES (?, ?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE matchday_id = VALUES(matchday_id), club_id = VALUES(club_id), seen_at = VALUES(seen_at)"
+            )->execute([$managerId, $matchdayId, $clubId]);
+            $vq = $this->con->prepare(
+                "SELECT rp.manager_id, m.manager_name FROM rating_presence rp
+                 JOIN manager m ON m.id = rp.manager_id
+                 WHERE rp.matchday_id = ? AND rp.club_id = ? AND rp.manager_id <> ?
+                   AND rp.seen_at >= NOW() - INTERVAL {$this->ratingPresenceSeconds()} SECOND
+                 ORDER BY m.manager_name"
+            );
+            $vq->execute([$matchdayId, $clubId, $managerId]);
+            $viewers = $vq->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            // Tabelle fehlt (Migration) → niemand schaut sichtbar mit
+        }
+
+        return [
+            'server_time' => $serverTime,
+            // full = alle Zeilen statt nur der geänderten (erster Abruf oder ohne Migration)
+            'full'        => $since === null || !$this->ratingUpdatedAtReady(),
+            'ratings'     => $ratings,
+            'viewers'     => $viewers,
+        ];
     }
 
     // Wem die Einträge einer Reihe von player_rating-Zeilen gehören — gruppiert je Zeile nach
@@ -671,72 +736,118 @@ trait PlayerRatingTrait
     }
 
     /**
-     * Updates a player_rating row (all editable fields).
+     * Updates a player_rating row (all editable fields) → ['result' => 'updated'|'unchanged'|'conflict'|'missing', 'by' => ?string].
+     *
+     * Gemeinsames Eintragen ("first wins"): $data['expected'] = {feld: Wert, auf dem die Änderung beruht}. Steht in der
+     * DB inzwischen etwas anderes (jemand war schneller), wird nichts geschrieben → 'conflict', 'by' = wer zuletzt
+     * etwas an der Zeile eingetragen hat. Die Zeile wird dafür in einer Transaktion gesperrt (SELECT … FOR UPDATE),
+     * damit zwei gleichzeitige Klicks nicht beide durchgehen. Ohne expected (ältere Clients) wie bisher.
      */
-    public function updatePlayerRating(string $id, array $data, string $managerId): bool
+    public function updatePlayerRating(string $id, array $data, string $managerId): array
     {
-        // Stand vor der Änderung — für die Zuordnung der Einträge (assignContribution()) und die SdS-Meldung
-        $rowQ = $this->con->prepare(
-            'SELECT grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card, player_id
-             FROM player_rating WHERE id = ? LIMIT 1'
-        );
-        $rowQ->execute([$id]);
-        $oldRow = $rowQ->fetch(PDO::FETCH_ASSOC) ?: null;
-
-        $oldSds = null;
-        if (array_key_exists('sds', $data) && $data['sds']) {
-            $oldSds = $oldRow ? (bool) $oldRow['sds'] : null;
-            $sdsPlayerId = $oldRow['player_id'] ?? null;
-        }
-
         $allowed = ['grade', 'participation', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'];
-        $sets    = [];
-        $params  = [':id' => $id];
+        $expected = is_array($data['expected'] ?? null) ? array_intersect_key($data['expected'], array_flip($allowed)) : [];
 
-        foreach ($allowed as $field) {
-            if (array_key_exists($field, $data)) {
-                $sets[]           = "$field = :$field";
-                $params[":$field"] = $data[$field];
+        $this->con->beginTransaction();
+        try {
+            // Stand vor der Änderung — für die Konfliktprüfung, die Zuordnung der Einträge (assignContribution()) und die SdS-Meldung
+            $rowQ = $this->con->prepare(
+                'SELECT grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card, player_id
+                 FROM player_rating WHERE id = ? LIMIT 1 FOR UPDATE'
+            );
+            $rowQ->execute([$id]);
+            $oldRow = $rowQ->fetch(PDO::FETCH_ASSOC) ?: null;
+            if (!$oldRow) {
+                $this->con->rollBack();
+                return ['result' => 'missing', 'by' => null];
             }
+
+            foreach ($expected as $field => $value) {
+                if ($this->ratingValueKey($field, $oldRow[$field]) !== $this->ratingValueKey($field, $value)) {
+                    $this->con->rollBack();
+                    return ['result' => 'conflict', 'by' => $this->lastRatingEditor($id)];
+                }
+            }
+
+            $sets   = [];
+            $params = [':id' => $id];
+            foreach ($allowed as $field) {
+                if (array_key_exists($field, $data)) {
+                    $sets[]            = "$field = :$field";
+                    $params[":$field"] = $data[$field];
+                }
+            }
+            if (empty($sets)) {
+                $this->con->rollBack();
+                return ['result' => 'unchanged', 'by' => null];
+            }
+
+            $query = $this->con->prepare('UPDATE player_rating SET ' . implode(', ', $sets) . ' WHERE id = :id');
+            $query->execute($params);
+            $updated = $query->rowCount() > 0;
+
+            // Always recalculate and persist points
+            $newPoints = $this->calculatePoints($id);
+            $this->con->prepare('UPDATE player_rating SET points = :p WHERE id = :id')
+                ->execute([':p' => $newPoints, ':id' => $id]);
+
+            // Einträge (maintainer_contribution) je berührter Art neu zuordnen: Ein Eintrag gehört dem, dessen Wert
+            // jetzt gilt — wer Einsatz oder Note korrigiert, übernimmt den Eintrag; bei der Statistik hat jeder
+            // einen, von dem eine gültige Angabe stammt; Speichern ohne Änderung zählt nicht; ein leerer Wert
+            // (zurückgesetzt, Statistik komplett auf 0) gehört niemandem.
+            $rowQ->execute([$id]);
+            $old = $this->contributionValues($oldRow);
+            $new = $this->contributionValues($rowQ->fetch(PDO::FETCH_ASSOC) ?: null);
+            $touched = [
+                'participation' => array_key_exists('participation', $data),
+                'note'          => array_key_exists('grade', $data),
+                'stats'         => (bool) array_intersect(['goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'], array_keys($data)),
+            ];
+            foreach ($touched as $type => $isTouched) {
+                if ($isTouched) $this->assignContribution($id, $managerId, $type, $old[$type], $new[$type]);
+            }
+
+            $this->con->commit();
+        } catch (\Throwable $e) {
+            if ($this->con->inTransaction()) $this->con->rollBack();
+            throw $e;
         }
 
-        if (empty($sets)) return false;
-
-        $query = $this->con->prepare(
-            'UPDATE player_rating SET ' . implode(', ', $sets) . ' WHERE id = :id'
-        );
-        $query->execute($params);
-        $updated = $query->rowCount() > 0;
-
-        // Always recalculate and persist points
-        $newPoints = $this->calculatePoints($id);
-        $this->con->prepare('UPDATE player_rating SET points = :p WHERE id = :id')
-            ->execute([':p' => $newPoints, ':id' => $id]);
-
-        // Einträge (maintainer_contribution) je berührter Art neu zuordnen: Ein Eintrag gehört dem, dessen Wert
-        // jetzt gilt — wer Einsatz oder Note korrigiert, übernimmt den Eintrag; bei der Statistik hat jeder
-        // einen, von dem eine gültige Angabe stammt; Speichern ohne Änderung zählt nicht; ein leerer Wert
-        // (zurückgesetzt, Statistik komplett auf 0) gehört niemandem.
-        $rowQ->execute([$id]);
-        $old = $this->contributionValues($oldRow);
-        $new = $this->contributionValues($rowQ->fetch(PDO::FETCH_ASSOC) ?: null);
-        $touched = [
-            'participation' => array_key_exists('participation', $data),
-            'note'          => array_key_exists('grade', $data),
-            'stats'         => (bool) array_intersect(['goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'], array_keys($data)),
-        ];
-        foreach ($touched as $type => $isTouched) {
-            if ($isTouched) $this->assignContribution($id, $managerId, $type, $old[$type], $new[$type]);
-        }
-
-        if (isset($oldSds) && $oldSds === false && !empty($sdsPlayerId)) {
+        if (array_key_exists('sds', $data) && $data['sds'] && !(bool) $oldRow['sds'] && !empty($oldRow['player_id'])) {
             $dnq = $this->con->prepare("SELECT displayname FROM player WHERE id = ? LIMIT 1");
-            $dnq->execute([$sdsPlayerId]);
+            $dnq->execute([$oldRow['player_id']]);
             $displayname = $dnq->fetchColumn() ?: 'Spieler';
-            $this->notifyWatchersPlayerSds($sdsPlayerId, $displayname);
+            $this->notifyWatchersPlayerSds($oldRow['player_id'], $displayname);
         }
 
-        return $updated;
+        return ['result' => $updated ? 'updated' : 'unchanged', 'by' => null];
+    }
+
+    /** Vergleichbare Form eines Rating-Werts (DB liefert Strings, der Client Zahlen/Booleans/null) */
+    private function ratingValueKey(string $field, $value): string
+    {
+        if ($value === null || $value === '') return '';
+        return match ($field) {
+            'grade'         => number_format((float) $value, 1, '.', ''),
+            'participation' => (string) $value,
+            default         => (string) (int) $value,   // goals, assists und die Ja/Nein-Felder
+        };
+    }
+
+    /** Wer zuletzt etwas an dieser Zeile eingetragen hat (Verlauf maintainer_contribution_log), sonst null */
+    private function lastRatingEditor(string $ratingId): ?string
+    {
+        try {
+            $q = $this->con->prepare(
+                "SELECT m.manager_name FROM maintainer_contribution_log l
+                 JOIN manager m ON m.id = l.manager_id
+                 WHERE l.player_rating_id = ? ORDER BY l.created_at DESC LIMIT 1"
+            );
+            $q->execute([$ratingId]);
+            return $q->fetchColumn() ?: null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     private function calculatePoints(string $id): int

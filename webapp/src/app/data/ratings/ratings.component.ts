@@ -11,6 +11,19 @@ import { POSITION_LABEL } from '../../core/constants';
 /** Eintragen ist ab 1 h vor dem Anpfiff freigeschaltet (wie PlayerRatingTrait::ratingsUnlockMinutes()) */
 const RATINGS_UNLOCK_MS = 60 * 60 * 1000;
 
+/** Gemeinsames Eintragen: so oft holt die Seite Änderungen anderer (GET /player_rating/live), solange ein Verein offen ist */
+const LIVE_POLL_MS = 3000;
+
+/** Felder einer Rating-Zeile, die eingetragen werden — gleiche Namen in API und Model */
+const RATING_FIELDS = ['grade', 'participation', 'goals', 'assists', 'clean_sheet', 'sds', 'red_card', 'yellow_red_card'] as const;
+
+interface RatingsLiveResponse {
+  server_time: string;
+  full: boolean;
+  ratings: any[];
+  viewers: { manager_id: string; manager_name: string }[];
+}
+
 interface Club {
   id: string;
   name: string;
@@ -362,6 +375,7 @@ export class RatingsDataComponent {
   selectMatchday(md: Matchday): void {
     this.selectedMatchday.set(md);
     this.selectedClubId.set(null);
+    this.liveSince = null;
     this.ratings.set([]);
     this.clubPlayers.set([]);
     this.initWarnings.set([]);
@@ -393,9 +407,190 @@ export class RatingsDataComponent {
   teamLogoErrors = new Set<string>();
   onTeamLogoError(teamId: string): void { this.teamLogoErrors.add(teamId); }
 
+  // ── Gemeinsames Eintragen (live) ─────────────────────────────────
+  // Mehrere Manager tragen gleichzeitig ein (jeder Eintrag bringt Lukaten). Solange ein Verein offen ist, holt die
+  // Seite alle LIVE_POLL_MS die Änderungen anderer (GET /player_rating/live, nur Geändertes seit dem letzten Abruf)
+  // und mischt sie ein; jede eigene Änderung schickt mit, auf welchem Wert sie beruht (expected) — war jemand
+  // schneller, antwortet die API mit 409 und dem aktuellen Stand ("first wins").
+
+  /** Wer denselben Verein gerade offen hat (ohne mich) */
+  viewers = signal<{ manager_id: string; manager_name: string }[]>([]);
+  /** Zeilen, die gerade jemand anderes geändert hat — kurz hervorgehoben */
+  remoteChanged = signal<ReadonlySet<string>>(new Set());
+  /** Hinweis an einer Zeile, z. B. "Schon eingetragen von Max" nach einem Konflikt */
+  rowNotices = signal<ReadonlyMap<string, string>>(new Map());
+  /** Zeilen mit eigenem, noch laufendem Speichern — das Polling überschreibt sie so lange nicht */
+  private pendingIds = new Set<string>();
+  private liveSince: string | null = null;
+  private tabVisible = signal(!document.hidden);
+  private onVisibility = () => this.tabVisible.set(!document.hidden);
+  private liveTimer: ReturnType<typeof setInterval> | null = null;
+  private liveBusy = false;
+
+  /** Läuft das Polling? Verein offen, Spieltag nicht abgeschlossen, darf eintragen, Tab sichtbar */
+  private liveActive = computed(() => {
+    const md = this.selectedMatchday();
+    const state = this.ratingsState();
+    return !!md && !md.completed && !!this.selectedClubId() && this.canEdit() && this.tabVisible()
+      && (state === 'ready' || state === 'no-ratings');
+  });
+
+  private liveEffect = effect((onCleanup) => {
+    if (!this.liveActive()) {
+      this.viewers.set([]);
+      return;
+    }
+    const key = `${this.selectedMatchday()!.id}|${this.selectedClubId()}`;
+    this.pollLive(key);
+    this.liveTimer = setInterval(() => this.pollLive(key), LIVE_POLL_MS);
+    onCleanup(() => {
+      if (this.liveTimer) clearInterval(this.liveTimer);
+      this.liveTimer = null;
+    });
+  });
+
+  private stopLive = (() => {
+    document.addEventListener('visibilitychange', this.onVisibility);
+    inject(DestroyRef).onDestroy(() => {
+      document.removeEventListener('visibilitychange', this.onVisibility);
+      if (this.liveTimer) clearInterval(this.liveTimer);
+    });
+  })();
+
+  private pollLive(key: string): void {
+    if (this.liveBusy) return; // vorheriger Abruf noch unterwegs
+    const [matchdayId, clubId] = key.split('|');
+    const since = this.liveSince ? `&since=${encodeURIComponent(this.liveSince)}` : '';
+    this.liveBusy = true;
+    this.api.get<RatingsLiveResponse>(`player_rating/live?matchday_id=${matchdayId}&club_id=${clubId}${since}`).subscribe({
+      next: (res) => {
+        this.liveBusy = false;
+        // inzwischen anderer Verein/Spieltag gewählt → Antwort verwerfen
+        if (this.selectedMatchday()?.id !== matchdayId || this.selectedClubId() !== clubId) return;
+        this.liveSince = res.server_time;
+        this.viewers.set(res.viewers ?? []);
+        this.mergeLiveRatings(res.ratings ?? [], clubId);
+      },
+      error: () => { this.liveBusy = false; },
+    });
+  }
+
+  /** Geänderte Zeilen anderer einmischen; eigene, noch speichernde Zeilen bleiben unberührt */
+  private mergeLiveRatings(rows: any[], clubId: string): void {
+    if (!rows.length) return;
+    const current = new Map(this.ratings().map((r) => [r.id, r]));
+    const changed: string[] = [];
+    const next = [...this.ratings()];
+    for (const row of rows) {
+      if (this.pendingIds.has(row.id)) continue;
+      const incoming = PlayerRating.from(row);
+      const existing = current.get(incoming.id);
+      if (!existing) {
+        next.push(incoming);
+        changed.push(incoming.id);
+      } else if (RATING_FIELDS.some((f) => (existing as any)[f] !== (incoming as any)[f]) || existing.points !== incoming.points) {
+        next[next.indexOf(existing)] = incoming;
+        changed.push(incoming.id);
+      }
+    }
+    if (!changed.length) return;
+
+    this.ratings.set(next);
+    // erst jetzt Zeilen da (jemand anderes hat den Verein angelegt) → wie nach dem eigenen Laden
+    if (this.ratingsState() === 'no-ratings') {
+      this.ratingsState.set('ready');
+      this.loadClubPlayers(clubId);
+    } else {
+      this.flashRemote(changed);
+    }
+    this.refreshClubStatuses();
+    this.refreshContributionSummary(true);
+  }
+
+  private flashRemote(ids: string[]): void {
+    this.remoteChanged.update((s) => new Set([...s, ...ids]));
+    setTimeout(() => this.remoteChanged.update((s) => {
+      const n = new Set(s);
+      ids.forEach((id) => n.delete(id));
+      return n;
+    }), 1500);
+  }
+
+  private showRowNotice(id: string, text: string): void {
+    this.rowNotices.update((m) => new Map(m).set(id, text));
+    setTimeout(() => this.rowNotices.update((m) => {
+      if (m.get(id) !== text) return m;
+      const n = new Map(m);
+      n.delete(id);
+      return n;
+    }), 4000);
+  }
+
+  rowNotice(id: string): string | null {
+    return this.rowNotices().get(id) ?? null;
+  }
+
+  /** Zeile durch den Stand vom Server ersetzen; lokale Zusatzfelder (Starts, Fantasy-Team) bleiben */
+  private applyServerRow(row: any): void {
+    if (!row) return;
+    this.ratings.update((list) =>
+      list.map((r) =>
+        r.id === row.id
+          ? PlayerRating.from({
+              ...row,
+              starting_count: r.starting_count,
+              team_id: r.team_id,
+              team_season_id: r.team_season_id,
+              team_nominated: r.team_nominated,
+            })
+          : r,
+      ),
+    );
+  }
+
+  /**
+   * Eine Rating-Zeile speichern. Schickt mit, auf welchem Stand die Änderung beruht (expected = die geänderten
+   * Felder, wie sie gerade angezeigt werden): hat jemand anderes inzwischen etwas eingetragen, antwortet die API
+   * mit 409 und dem aktuellen Stand — die Zeile springt darauf, mit Hinweis, wer schneller war.
+   */
+  private patchRating(ratingId: string, body: Record<string, any>, after?: () => void): void {
+    const row = this.ratings().find((r) => r.id === ratingId);
+    const expected: Record<string, any> = {};
+    if (row) {
+      for (const f of RATING_FIELDS) {
+        if (f in body) expected[f] = (row as any)[f];
+      }
+    }
+    this.pendingIds.add(ratingId);
+    this.api.patch<any>(`player_rating/${ratingId}`, { ...body, expected }).subscribe({
+      next: (res) => {
+        this.pendingIds.delete(ratingId);
+        this.applyServerRow(res.rating);
+        after?.();
+        this.refreshContributionSummary();
+      },
+      error: (err) => {
+        this.pendingIds.delete(ratingId);
+        if (err?.status === 409 && err.error?.rating) {
+          this.applyServerRow(err.error.rating);
+          this.showRowNotice(ratingId, err.error.by ? `Schon eingetragen von ${err.error.by}` : 'Inzwischen geändert');
+          this.refreshContributionSummary(true);
+        } else {
+          this.showRowNotice(ratingId, 'Speichern fehlgeschlagen');
+        }
+      },
+    });
+  }
+
+  viewerNames = computed(() => this.viewers().map((v) => v.manager_name).join(', '));
+  viewerPhotoFailed = signal<ReadonlySet<string>>(new Set());
+  onViewerPhotoError(id: string): void { this.viewerPhotoFailed.update((s) => new Set(s).add(id)); }
+
   selectClub(clubId: string): void {
     if (this.selectedClubId() === clubId) return;
     this.selectedClubId.set(clubId);
+    this.liveSince = null;
+    this.viewers.set([]);
     this.clubPlayers.set([]);
     this.initWarnings.set([]);
     this.initCreatedNames.set([]);
@@ -638,24 +833,7 @@ export class RatingsDataComponent {
     field: 'clean_sheet' | 'red_card' | 'yellow_red_card',
     current: boolean,
   ): void {
-    this.api.patch<any>(`player_rating/${ratingId}`, { [field]: current ? 0 : 1 }).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, { [field]: current ? 0 : 1 });
   }
 
   toggleCleanSheet(ratingId: string, current: boolean): void {
@@ -665,47 +843,13 @@ export class RatingsDataComponent {
   toggleRedCard(ratingId: string, current: boolean): void {
     const body: any = { red_card: current ? 0 : 1 };
     if (!current) body['yellow_red_card'] = 0;
-    this.api.patch<any>(`player_rating/${ratingId}`, body).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, body);
   }
 
   toggleYellowRedCard(ratingId: string, current: boolean): void {
     const body: any = { yellow_red_card: current ? 0 : 1 };
     if (!current) body['red_card'] = 0;
-    this.api.patch<any>(`player_rating/${ratingId}`, body).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, body);
   }
 
   toggleSds(ratingId: string, current: boolean): void {
@@ -715,24 +859,7 @@ export class RatingsDataComponent {
       return;
     }
     this.sdsError.set(null);
-    this.api.patch<any>(`player_rating/${ratingId}`, { sds: newVal ? 1 : 0 }).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, { sds: newVal ? 1 : 0 });
   }
 
   incrementGoals(ratingId: string, current: number): void {
@@ -764,47 +891,11 @@ export class RatingsDataComponent {
       red_card: 0,
       yellow_red_card: 0,
     };
-    this.api.patch<any>(`player_rating/${ratingId}`, reset).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        // Kein Bump erwartet (Reset senkt Zähler eher, als sie zu erhöhen) — refreshContribution-
-        // Summary() aktualisiert trotzdem live die Sidebar-Zahlen, ohne dafür extra zu navigieren.
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, reset);
   }
 
   private patchStat(ratingId: string, field: 'goals' | 'assists', value: number): void {
-    this.api.patch<any>(`player_rating/${ratingId}`, { [field]: value }).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, { [field]: value });
   }
 
   setParticipation(ratingId: string, value: 'starting' | 'substitute'): void {
@@ -826,25 +917,7 @@ export class RatingsDataComponent {
     // the resulting height delta shifts the viewport out from under the user mid-click-spree.
     // If they were scrolled to the bottom, snap back there once the DOM has actually updated.
     const wasAtBottom = this.isScrolledToBottom();
-    this.api.patch<any>(`player_rating/${ratingId}`, { participation: value }).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        if (wasAtBottom) this.scrollToBottomNextFrame();
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, { participation: value }, () => { if (wasAtBottom) this.scrollToBottomNextFrame(); });
   }
 
   private isScrolledToBottom(): boolean {
@@ -1012,24 +1085,7 @@ export class RatingsDataComponent {
       }
       newlyAssigned++;
       matched.push(player.displayname);
-      this.api.patch<any>(`player_rating/${player.id}`, { participation: 'starting' }).subscribe({
-        next: (res) => {
-          this.ratings.update((list) =>
-            list.map((r) =>
-              r.id === player.id
-                ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-                : r,
-            ),
-          );
-          this.refreshContributionSummary();
-        },
-      });
+      this.patchRating(player.id, { participation: 'starting' });
     }
 
     this.bulkResult.set({ matched, unmatched });
@@ -1112,46 +1168,12 @@ export class RatingsDataComponent {
 
   selectGrade(ratingId: string, grade: number): void {
     this.gradePickerRatingId.set(null);
-    this.api.patch<any>(`player_rating/${ratingId}`, { grade }).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, { grade });
   }
 
   clearGrade(ratingId: string): void {
     this.gradePickerRatingId.set(null);
-    this.api.patch<any>(`player_rating/${ratingId}`, { grade: null }).subscribe({
-      next: (res) => {
-        this.ratings.update((list) =>
-          list.map((r) =>
-            r.id === ratingId
-              ? PlayerRating.from({
-                  ...res.rating,
-                  starting_count: r.starting_count,
-                  team_id: r.team_id,
-                  team_season_id: r.team_season_id,
-                  team_nominated: r.team_nominated,
-                })
-              : r,
-          ),
-        );
-        this.refreshContributionSummary();
-      },
-    });
+    this.patchRating(ratingId, { grade: null });
   }
 
   range(n: number | null): number[] {

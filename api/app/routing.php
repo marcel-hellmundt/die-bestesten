@@ -531,6 +531,16 @@ class Routing
                     ],
                     [
                         'method' => 'GET',
+                        'path' => '/player_rating/live',
+                        'description' => 'Gemeinsames Eintragen auf /daten/ratings (Delta-Polling, die Webapp fragt alle 3 s, solange ein Verein offen, der Spieltag nicht abgeschlossen und der Tab sichtbar ist) → {server_time, full, ratings[], viewers[{manager_id,manager_name}]} — ratings = Zeilen des Vereins im Format von GET /player_rating, die sich seit since geändert haben (player_rating.updated_at > since; ohne since bzw. ohne Migration alle Zeilen, full=true); server_time = Zeitpunkt der DB (NOW(6)), den der Client beim nächsten Abruf als since mitschickt; vermerkt dabei, dass der Manager diesen Verein gerade offen hat (rating_presence) — viewers = andere Manager, die denselben Verein am selben Spieltag in den letzten 15 s abgefragt haben ([] ohne Migration) — Auth',
+                        'query_params' => [
+                            'matchday_id' => 'UUID des Spieltags (erforderlich)',
+                            'club_id' => 'UUID des Clubs (erforderlich)',
+                            'since' => 'optional: server_time des vorherigen Abrufs (YYYY-MM-DD HH:MM:SS[.ffffff])',
+                        ],
+                    ],
+                    [
+                        'method' => 'GET',
                         'path' => '/player_rating/best_xi',
                         'description' => 'Beste valide 11 für einen Spieltag (Formationen 343/352/433/442/451/532/541, maximale Gesamtpunkte) — gibt {formation, players[{player_id,displayname,position,points,grade,club_id,club_name,club_short_name}], total_points} zurück; free_agents_only=1 schließt Spieler in Fantasy-Teams aus — Auth',
                         'query_params' => [
@@ -568,7 +578,7 @@ class Routing
                     [
                         'method' => 'PATCH',
                         'path' => '/player_rating/:id',
-                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; points wird immer serverseitig berechnet; ordnet die Einträge der berührten Arten in maintainer_contribution neu zu (participation = Einsatz, note = Note, stats = Statistik). Grundsatz: Ein Eintrag gehört dem, dessen Wert jetzt gilt; Speichern ohne Änderung zählt nicht; ein leerer Wert gehört niemandem. Einsatz und Note haben einen Besitzer — ändert sich der Wert, geht der Eintrag an den über, der ihn geändert hat, und der Vorgänger verliert ihn; hat denselben Wert schon früher jemand so eingetragen (Verlauf maintainer_contribution_log), bleibt es dessen Eintrag. Bei der Statistik hat jeder Manager einen Eintrag, von dem mindestens eine gültige Angabe stammt (jedes Tor, jede Vorlage, Weiße Weste, SdS, jede Karte gehört dem, der sie als Erster eingetragen hat): trägt A das erste Tor ein und B das zweite, haben beide einen Eintrag. Für jeden Eintrag gibt es beim Spieltagsabschluss 1 Lukate — Contributor+',
+                        'description' => 'Einzelne Bewertung aktualisieren — Body: beliebige Kombination aus grade, participation, goals, assists, clean_sheet, sds, red_card, yellow_red_card; points wird immer serverseitig berechnet; ordnet die Einträge der berührten Arten in maintainer_contribution neu zu (participation = Einsatz, note = Note, stats = Statistik). Grundsatz: Ein Eintrag gehört dem, dessen Wert jetzt gilt; Speichern ohne Änderung zählt nicht; ein leerer Wert gehört niemandem. Einsatz und Note haben einen Besitzer — ändert sich der Wert, geht der Eintrag an den über, der ihn geändert hat, und der Vorgänger verliert ihn; hat denselben Wert schon früher jemand so eingetragen (Verlauf maintainer_contribution_log), bleibt es dessen Eintrag. Bei der Statistik hat jeder Manager einen Eintrag, von dem mindestens eine gültige Angabe stammt (jedes Tor, jede Vorlage, Weiße Weste, SdS, jede Karte gehört dem, der sie als Erster eingetragen hat): trägt A das erste Tor ein und B das zweite, haben beide einen Eintrag. Für jeden Eintrag gibt es beim Spieltagsabschluss 1 Lukate. Konfliktprüfung ("first wins"): optional expected:{feld: Wert, den der Client gerade anzeigt} — weicht der aktuelle Wert eines dieser Felder ab (jemand anderes war schneller), wird nichts geschrieben und die API antwortet 409 {conflict:true, by (Name des letzten Änderers aus maintainer_contribution_log oder null), rating (aktuelle Zeile)}; die Zeile wird dafür in einer Transaktion gesperrt gelesen (FOR UPDATE). Antwort sonst {status:true, changed (false = Speichern ohne Änderung), rating (aktuelle Zeile)}; 404 nur, wenn die Zeile fehlt — Contributor+',
                         'path_params' => [':id' => 'UUID der player_rating-Zeile'],
                     ],
                 ],
