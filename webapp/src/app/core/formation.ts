@@ -38,8 +38,8 @@ export function positionCounts(players: { position?: string | null }[]): number[
 }
 
 /**
- * Hinweis über einer unvollständigen Aufstellung (weniger als 11 aufgestellt). Gewertet wird ein Spieltag nur ohne
- * jeden aufgestellten Spieler als ungültig (finalizeMatchday) — mit 10 von 11 zählen die Punkte der aufgestellten.
+ * Hinweis über einer unvollständigen Aufstellung (weniger als 11 aufgestellt) — sie ist ungültig und bringt 0 Punkte,
+ * live wie beim Abschluss (finalizeMatchday()).
  */
 export function incompleteLineupLabel(nominated: number): string {
   return nominated === 0 ? 'Keine Aufstellung vorhanden' : `Unvollständige Aufstellung · ${nominated} von 11`;

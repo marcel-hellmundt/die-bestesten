@@ -122,16 +122,17 @@ trait SellTrait
      * matchday (e.g. carried over by ensureLineupEntriesForTeam()) would otherwise stay nominated and
      * could still get scored if that matchday completes before anyone happens to open the lineup page
      * (the only place that would lazily clean it up otherwise, see getTeamLineup()'s stale-player
-     * cleanup, kept as a secondary safety net). Deliberately does NOT touch the other nominated
-     * players of that matchday — if the player was nominated, the formation is left with a gap at
-     * their spot rather than resetting the whole lineup to the bench (a gap is harmless:
-     * isReachableFormation() only rejects counts that exceed a valid formation's max, never an
-     * undercount). Used by sellPlayer() and by acceptPlayerOffer() (direct offers).
+     * cleanup, kept as a secondary safety net). The other nominated players stay as they are; if the
+     * sold player was nominated, the gap is filled automatically from the bench (fillLineupGap()):
+     * the cheapest bench player of the same Mannschaftsteil moves into the same slot, so the lineup
+     * stays complete — fewer than 11 nominated would make it invalid (0 points, see
+     * finalizeMatchday()). Without a fitting bench player the gap stays. Used by sellPlayer() and by
+     * acceptPlayerOffer() (direct offers, incl. offered players of a swap).
      */
     public function removePlayerFromOpenLineups(string $teamId, string $playerId): void
     {
         $lq = $this->con_league->prepare(
-            "SELECT id, matchday_id FROM team_lineup
+            "SELECT id, matchday_id, nominated, position_index FROM team_lineup
              WHERE team_id = :tid AND player_id = :pid"
         );
         $lq->execute([':tid' => $teamId, ':pid' => $playerId]);
@@ -145,15 +146,79 @@ trait SellTrait
             $openMatchdayIds = array_flip($cq->fetchAll(PDO::FETCH_COLUMN));
 
             $toDelete = [];
+            $gaps     = [];
             foreach ($lineupEntries as $e) {
                 if (!isset($openMatchdayIds[$e['matchday_id']])) continue; // completed → historical, never touch
                 $toDelete[] = $e['id'];
+                if ((int) $e['nominated'] === 1) $gaps[] = $e;
             }
 
             if (!empty($toDelete)) {
                 $ph3 = implode(',', array_fill(0, count($toDelete), '?'));
                 $this->con_league->prepare("DELETE FROM team_lineup WHERE id IN ($ph3)")->execute($toDelete);
             }
+
+            // war er aufgestellt: Lücke aus der Bank füllen (eigener try — darf den Verkauf nie kippen)
+            foreach ($gaps as $gap) {
+                try {
+                    $this->fillLineupGap($teamId, $gap['matchday_id'], $playerId, $gap['position_index']);
+                } catch (\Throwable $ex) {
+                    error_log('fillLineupGap: ' . $ex->getMessage());
+                }
+            }
         }
+    }
+
+    /**
+     * Füllt den Platz eines verkauften, aufgestellten Spielers aus der Bank: unter den nicht aufgestellten Spielern
+     * des Teams an diesem Spieltag derjenige derselben Position (Mannschaftsteil) mit dem niedrigsten Marktwert
+     * (player_in_season der Saison des Spieltags, die Zeile seiner Division bevorzugt). Er übernimmt den Platz
+     * (position_index) des Verkauften. Gibt es keinen passenden Bankspieler, bleibt die Lücke.
+     * Gibt die player_id des Nachrückers zurück, sonst null.
+     */
+    private function fillLineupGap(string $teamId, string $matchdayId, string $soldPlayerId, $positionIndex): ?string
+    {
+        $mq = $this->con->prepare("SELECT season_id, division_id FROM matchday WHERE id = ?");
+        $mq->execute([$matchdayId]);
+        $md = $mq->fetch(PDO::FETCH_ASSOC);
+        if (!$md) return null;
+
+        $bq = $this->con_league->prepare(
+            "SELECT player_id FROM team_lineup WHERE team_id = ? AND matchday_id = ? AND nominated = 0"
+        );
+        $bq->execute([$teamId, $matchdayId]);
+        $benchIds = $bq->fetchAll(PDO::FETCH_COLUMN);
+        if (empty($benchIds)) return null;
+
+        // Position + Marktwert je Spieler aus seiner Saison-Zeile, die Zeile der Division des Spieltags bevorzugt
+        $ids = array_merge([$soldPlayerId], $benchIds);
+        $ph  = implode(',', array_fill(0, count($ids), '?'));
+        $pq  = $this->con->prepare(
+            "SELECT player_id, position, price FROM player_in_season
+             WHERE season_id = ? AND player_id IN ($ph)
+             ORDER BY (division_id = ?) DESC"
+        );
+        $pq->execute(array_merge([$md['season_id']], $ids, [$md['division_id']]));
+        $info = [];
+        foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $info[$r['player_id']] ??= $r;
+        }
+
+        $position = $info[$soldPlayerId]['position'] ?? null;
+        if ($position === null) return null;
+
+        $best = null;
+        foreach ($benchIds as $id) {
+            $c = $info[$id] ?? null;
+            if (!$c || $c['position'] !== $position) continue;
+            if ($best === null || (float) $c['price'] < (float) $best['price']) $best = $c;
+        }
+        if ($best === null) return null;
+
+        $this->con_league->prepare(
+            "UPDATE team_lineup SET nominated = 1, position_index = ?
+             WHERE team_id = ? AND matchday_id = ? AND player_id = ?"
+        )->execute([$positionIndex, $teamId, $matchdayId, $best['player_id']]);
+        return $best['player_id'];
     }
 }
