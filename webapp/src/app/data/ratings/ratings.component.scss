@@ -398,7 +398,7 @@
   gap: $space-1;
   padding: $space-2;
   border: 1px solid $color-border;
-  border-radius: $radius-lg;
+  border-radius: 0 0 $radius-lg $radius-lg; // oben bündig am Sub-Menü
   background: $color-surface;
   box-shadow: 0 4px 12px color-mix(in srgb, $color-text 12%, transparent);
   opacity: 0;
