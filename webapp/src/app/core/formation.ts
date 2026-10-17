@@ -44,3 +44,8 @@ export function positionCounts(players: { position?: string | null }[]): number[
 export function incompleteLineupLabel(nominated: number): string {
   return nominated === 0 ? 'Keine Aufstellung vorhanden' : `Unvollständige Aufstellung · ${nominated} von 11`;
 }
+
+/** Zeile unter dem Hinweis, wenn nur verkaufte Spieler fehlen: "Müller verkauft" bzw. "Müller, Kane verkauft" */
+export function soldPlayersLabel(names: string[]): string {
+  return `${names.join(', ')} verkauft`;
+}

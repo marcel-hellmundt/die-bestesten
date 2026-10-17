@@ -1400,16 +1400,33 @@
 
   &__card {
     display: inline-flex;
-    align-items: center;
-    gap: $space-2;
+    flex-direction: column;
     background: $color-surface;
     border: 1px solid $color-border;
     border-radius: $radius-md;
-    padding: $space-2 $space-3;
+    overflow: hidden;
     color: $color-text;
     font-size: $font-xs;
     font-weight: $font-weight-medium;
     text-align: left;
+  }
+
+  &__main {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: $space-2 $space-3;
+  }
+
+  // nur ein verkaufter Spieler fehlt: "<Name> verkauft" direkt darunter, hellgrau und etwas kleiner
+  &__sold {
+    padding: 2px $space-3;
+    background: $color-surface-alt;
+    border-top: 1px solid $color-border;
+    color: $color-text-muted;
+    font-size: 11px;
+    font-weight: $font-weight-normal;
+    text-align: center;
   }
 
   &__icon {

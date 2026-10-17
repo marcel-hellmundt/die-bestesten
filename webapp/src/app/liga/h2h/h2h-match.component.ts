@@ -7,7 +7,7 @@ import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { LukatenService } from '../../core/lukaten.service';
 import { TeamNavService } from '../../core/team-nav.service';
-import { POSITION_INDEX, completionFormation, incompleteLineupLabel, positionCounts } from '../../core/formation';
+import { POSITION_INDEX, completionFormation, incompleteLineupLabel, positionCounts, soldPlayersLabel } from '../../core/formation';
 
 @Component({
   selector: 'app-h2h-match',
@@ -609,6 +609,12 @@ export class H2HMatchComponent implements OnDestroy {
   incompleteLabel(lineup: any[]): string {
     return incompleteLineupLabel(lineup.length);
   }
+
+  // Fehlt nur ein verkaufter Spieler (sonst unverändert zum vorherigen Spieltag)? → "<Name> verkauft" unterm Hinweis
+  homeSoldPlayers = computed(() => (this.data()?.home_sold_players ?? []) as string[]);
+  awaySoldPlayers = computed(() => (this.data()?.away_sold_players ?? []) as string[]);
+  selectedSoldPlayers = computed(() => (this.selectedSide() === 'home' ? this.homeSoldPlayers() : this.awaySoldPlayers()));
+  soldLabel = soldPlayersLabel;
 
   constructor() {
     // Für cache.seasonName() in der "Bisherige Begegnungen"-Card — Begegnungen können aus

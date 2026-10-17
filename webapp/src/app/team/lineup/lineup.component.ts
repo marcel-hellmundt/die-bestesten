@@ -5,7 +5,7 @@ import { CdkDragMove } from '@angular/cdk/drag-drop';
 import { catchError, combineLatest, filter, interval, map, of, startWith, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
-import { VALID_FORMATIONS, completionFormation, incompleteLineupLabel } from '../../core/formation';
+import { VALID_FORMATIONS, completionFormation, incompleteLineupLabel, soldPlayersLabel } from '../../core/formation';
 
 interface LineupPlayer {
   id: string;
@@ -200,6 +200,9 @@ export class LineupComponent {
   // damit klar ist, was fehlt (gewertet werden die aufgestellten Spieler, siehe incompleteLineupLabel())
   showInvalidLineupHint = computed(() => !this.isOwnTeam() && !this.isLineupComplete());
   invalidLineupLabel = computed(() => incompleteLineupLabel(this.nominated().length));
+  /** Fehlt nur ein verkaufter Spieler (sonst unverändert zum vorherigen Spieltag)? → "<Name> verkauft" unter dem Hinweis */
+  soldPlayers = computed(() => (this.state()?.data?.sold_players ?? []) as string[]);
+  soldLabel = soldPlayersLabel;
 
   isEditable = computed(() => {
     const md = this.matchday();

@@ -306,6 +306,14 @@ trait TeamLineupTrait
         }
         if ($invalid) $nominatedPoints = 0;
 
+        $gap = count($nominated) < 11
+            ? $this->previousLineupGap(
+                $teamId, $matchday['id'],
+                array_column($nominated, 'position_index', 'id'),
+                array_merge(array_column($nominated, 'id'), array_column($bench, 'id'))
+            )
+            : ['formation' => null, 'sold' => []];
+
         return [
             'matchday'   => $matchday,
             'matchdays'  => $matchdays,
@@ -314,19 +322,25 @@ trait TeamLineupTrait
             'points'     => $nominatedPoints,
             'max_points' => $maxPoints,
             'invalid'    => $invalid,
-            // leere Plätze einer unvollständigen Aufstellung richten sich danach (siehe previousLineupFormation())
-            'previous_formation' => count($nominated) < 11 ? $this->previousLineupFormation($teamId, $matchday['id']) : null,
+            // unvollständige Aufstellung: Formation am vorherigen Spieltag (leere Plätze) und verkaufte Spieler (Hinweis)
+            'previous_formation' => $gap['formation'],
+            'sold_players'       => $gap['sold'],
         ];
     }
 
     /**
-     * Formation der Aufstellung am vorherigen Spieltag als [TOR, ABW, MIT, STU] — nur, wenn dort genau 11 aufgestellt
-     * waren, sonst null. Grundlage für die leeren Plätze einer unvollständigen Aufstellung: verkauft ein Manager einen
-     * aufgestellten Spieler und passt danach nichts an, fehlt genau dieser Platz — bei 10 oder weniger Spielern ist
-     * sonst nicht eindeutig, welche Formation gemeint ist und wo jemand fehlt.
+     * Vergleich einer unvollständigen Aufstellung (weniger als 11) mit dem vorherigen Spieltag → ['formation', 'sold']:
+     * - formation: [TOR, ABW, MIT, STU] der Aufstellung dort, nur wenn dort genau 11 standen (sonst null) — danach
+     *   richten sich die leeren Plätze; bei 10 oder weniger ist sonst nicht eindeutig, welche Formation gemeint ist.
+     * - sold: Namen der Spieler, die dort aufgestellt waren und jetzt fehlen, weil sie nicht mehr im Kader sind
+     *   (verkauft) — nur wenn alle jetzt Aufgestellten dort genauso standen (gleicher Platz, position_index), also
+     *   wirklich nur jemand weggefallen ist; sonst [].
+     * $nominated = [player_id => position_index] der jetzt Aufgestellten, $squadIds = alle Spieler im Kader des
+     * Spieltags (aufgestellt + Bank).
      */
-    public function previousLineupFormation(string $teamId, string $matchdayId): ?array
+    public function previousLineupGap(string $teamId, string $matchdayId, array $nominated, array $squadIds): array
     {
+        $none = ['formation' => null, 'sold' => []];
         $mq = $this->con->prepare(
             "SELECT p.id, c.season_id, c.division_id FROM matchday c
              JOIN matchday p ON p.season_id = c.season_id AND p.division_id = c.division_id AND p.number = c.number - 1
@@ -334,36 +348,59 @@ trait TeamLineupTrait
         );
         $mq->execute([$matchdayId]);
         $prev = $mq->fetch(PDO::FETCH_ASSOC);
-        if (!$prev) return null;
+        if (!$prev) return $none;
 
         $lq = $this->con_league->prepare(
-            "SELECT player_id FROM team_lineup WHERE team_id = ? AND matchday_id = ? AND nominated = 1"
+            "SELECT player_id, position_index FROM team_lineup WHERE team_id = ? AND matchday_id = ? AND nominated = 1"
         );
         $lq->execute([$teamId, $prev['id']]);
-        $playerIds = $lq->fetchAll(PDO::FETCH_COLUMN);
-        if (count($playerIds) !== 11) return null;
+        $prevSlots = array_column($lq->fetchAll(PDO::FETCH_ASSOC), 'position_index', 'player_id');
+        if (count($prevSlots) !== 11) return $none;
+        $playerIds = array_keys($prevSlots);
 
         // Position je Spieler aus seiner Saison-Zeile, die Zeile der Division des Spieltags bevorzugt
         $ph = implode(',', array_fill(0, count($playerIds), '?'));
         $pq = $this->con->prepare(
-            "SELECT player_id, position FROM player_in_season
-             WHERE season_id = ? AND player_id IN ($ph)
-             ORDER BY (division_id = ?) DESC"
+            "SELECT pis.player_id, pis.position, p.displayname
+             FROM player_in_season pis JOIN player p ON p.id = pis.player_id
+             WHERE pis.season_id = ? AND pis.player_id IN ($ph)
+             ORDER BY (pis.division_id = ?) DESC"
         );
         $pq->execute(array_merge([$prev['season_id']], $playerIds, [$prev['division_id']]));
-        $positions = [];
+        $positions = $names = [];
         foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $positions[$r['player_id']] ??= $r['position'];
+            $names[$r['player_id']] ??= $r['displayname'];
         }
 
         $index = ['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
         $counts = [0, 0, 0, 0];
         foreach ($playerIds as $id) {
             $i = $index[$positions[$id] ?? ''] ?? null;
-            if ($i === null) return null;
+            if ($i === null) return $none;
             $counts[$i]++;
         }
-        return $counts;
+
+        // nur jemand weggefallen? Jeder jetzt Aufgestellte stand dort auf demselben Platz …
+        $sold = [];
+        $unchanged = true;
+        foreach ($nominated as $id => $slot) {
+            if (!array_key_exists($id, $prevSlots) || (string) $prevSlots[$id] !== (string) $slot) {
+                $unchanged = false;
+                break;
+            }
+        }
+        // … und die Fehlenden sind nicht mehr im Kader
+        if ($unchanged) {
+            $squad = array_flip($squadIds);
+            foreach ($playerIds as $id) {
+                if (array_key_exists($id, $nominated)) continue;
+                if (isset($squad[$id])) { $sold = []; break; }
+                $sold[] = $names[$id] ?? '?';
+            }
+        }
+
+        return ['formation' => $counts, 'sold' => $sold];
     }
 
     public function getPlayerLineup(string $playerId, string $seasonId): array

@@ -902,6 +902,18 @@ trait H2HTrait
             $homeLineup['nominated'], $awayLineup['nominated'], $pickCounts, $eligibleManagerCount
         );
 
+        // Vergleich mit dem vorherigen Spieltag, nur bei unvollständiger Aufstellung (siehe previousLineupGap())
+        $gapOf = function (string $teamId, array $lineup) use ($matchday): array {
+            if (!$matchday || count($lineup['nominated']) >= 11) return ['formation' => null, 'sold' => []];
+            return $this->previousLineupGap(
+                $teamId, $matchday['id'],
+                array_column($lineup['nominated'], 'position_index', 'player_id'),
+                array_merge(array_column($lineup['nominated'], 'player_id'), array_column($lineup['bench'], 'player_id'))
+            );
+        };
+        $homeGap = $gapOf($match['home_team_id'], $homeLineup);
+        $awayGap = $gapOf($match['away_team_id'], $awayLineup);
+
         return [
             'match'        => [
                 'id'             => $match['id'],
@@ -929,11 +941,11 @@ trait H2HTrait
             'home_bench'   => $homeLineup['bench'],
             'away_lineup'  => $awayLineup['nominated'],
             'away_bench'   => $awayLineup['bench'],
-            // Formation am vorherigen Spieltag (nur bei unvollständiger Aufstellung) — dort sitzen die leeren Plätze
-            'home_previous_formation' => $matchday && count($homeLineup['nominated']) < 11
-                ? $this->previousLineupFormation($match['home_team_id'], $matchday['id']) : null,
-            'away_previous_formation' => $matchday && count($awayLineup['nominated']) < 11
-                ? $this->previousLineupFormation($match['away_team_id'], $matchday['id']) : null,
+            // unvollständige Aufstellung: Formation am vorherigen Spieltag (leere Plätze) + verkaufte Spieler (Hinweis)
+            'home_previous_formation' => $homeGap['formation'],
+            'away_previous_formation' => $awayGap['formation'],
+            'home_sold_players'       => $homeGap['sold'],
+            'away_sold_players'       => $awayGap['sold'],
             'odds'         => ['home' => $oddsResult['home'], 'draw' => $oddsResult['draw'], 'away' => $oddsResult['away']],
             'odds_breakdown' => $includeOddsBreakdown ? $oddsResult['breakdown'] : null,
             'predictions'  => $this->getH2HPredictionState(
