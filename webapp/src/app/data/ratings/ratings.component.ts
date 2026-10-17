@@ -21,7 +21,7 @@ interface RatingsLiveResponse {
   server_time: string;
   full: boolean;
   ratings: any[];
-  viewers: { manager_id: string; manager_name: string }[];
+  viewers: { manager_id: string; manager_name: string; club_id: string }[];
 }
 
 interface Club {
@@ -414,7 +414,16 @@ export class RatingsDataComponent {
   // schneller, antwortet die API mit 409 und dem aktuellen Stand ("first wins").
 
   /** Wer denselben Verein gerade offen hat (ohne mich) */
-  viewers = signal<{ manager_id: string; manager_name: string }[]>([]);
+  viewers = signal<{ manager_id: string; manager_name: string; club_id: string }[]>([]);
+  /** Mitschauende je Verein — kleine Fotos oben links in der Vereins-Kachel */
+  viewersByClub = computed(() => {
+    const map = new Map<string, { manager_id: string; manager_name: string }[]>();
+    for (const v of this.viewers()) {
+      if (!map.has(v.club_id)) map.set(v.club_id, []);
+      map.get(v.club_id)!.push(v);
+    }
+    return map;
+  });
   /** Zeilen, die gerade jemand anderes geändert hat — kurz hervorgehoben */
   remoteChanged = signal<ReadonlySet<string>>(new Set());
   /** Hinweis an einer Zeile, z. B. "Schon eingetragen von Max" nach einem Konflikt */
@@ -431,8 +440,9 @@ export class RatingsDataComponent {
   private liveActive = computed(() => {
     const md = this.selectedMatchday();
     const state = this.ratingsState();
-    return !!md && !md.completed && !!this.selectedClubId() && this.canEdit() && this.tabVisible()
-      && (state === 'ready' || state === 'no-ratings');
+    // ohne gewählten Verein (Vereinsauswahl) nur die Mitschauenden, mit Verein erst, wenn seine Ratings geladen sind
+    return !!md && !md.completed && this.canEdit() && this.tabVisible()
+      && (!this.selectedClubId() || state === 'ready' || state === 'no-ratings');
   });
 
   private liveEffect = effect((onCleanup) => {
@@ -440,7 +450,7 @@ export class RatingsDataComponent {
       this.viewers.set([]);
       return;
     }
-    const key = `${this.selectedMatchday()!.id}|${this.selectedClubId()}`;
+    const key = `${this.selectedMatchday()!.id}|${this.selectedClubId() ?? ''}`;
     this.pollLive(key);
     this.liveTimer = setInterval(() => this.pollLive(key), LIVE_POLL_MS);
     onCleanup(() => {
@@ -462,13 +472,15 @@ export class RatingsDataComponent {
     const [matchdayId, clubId] = key.split('|');
     const since = this.liveSince ? `&since=${encodeURIComponent(this.liveSince)}` : '';
     this.liveBusy = true;
-    this.api.get<RatingsLiveResponse>(`player_rating/live?matchday_id=${matchdayId}&club_id=${clubId}${since}`).subscribe({
+    const club = clubId ? `&club_id=${clubId}${since}` : '';
+    this.api.get<RatingsLiveResponse>(`player_rating/live?matchday_id=${matchdayId}${club}`).subscribe({
       next: (res) => {
         this.liveBusy = false;
         // inzwischen anderer Verein/Spieltag gewählt → Antwort verwerfen
-        if (this.selectedMatchday()?.id !== matchdayId || this.selectedClubId() !== clubId) return;
-        this.liveSince = res.server_time;
+        if (this.selectedMatchday()?.id !== matchdayId || (this.selectedClubId() ?? '') !== clubId) return;
         this.viewers.set(res.viewers ?? []);
+        if (!clubId) return;
+        this.liveSince = res.server_time;
         this.mergeLiveRatings(res.ratings ?? [], clubId);
       },
       error: () => { this.liveBusy = false; },
@@ -582,7 +594,6 @@ export class RatingsDataComponent {
     });
   }
 
-  viewerNames = computed(() => this.viewers().map((v) => v.manager_name).join(', '));
   viewerPhotoFailed = signal<ReadonlySet<string>>(new Set());
   onViewerPhotoError(id: string): void { this.viewerPhotoFailed.update((s) => new Set(s).add(id)); }
 
@@ -590,7 +601,6 @@ export class RatingsDataComponent {
     if (this.selectedClubId() === clubId) return;
     this.selectedClubId.set(clubId);
     this.liveSince = null;
-    this.viewers.set([]);
     this.clubPlayers.set([]);
     this.initWarnings.set([]);
     this.initCreatedNames.set([]);

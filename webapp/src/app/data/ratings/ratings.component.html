@@ -133,6 +133,20 @@
           [ngClass]="clubStatusClass(club.id)"
           (click)="selectClub(club.id)"
         >
+          <!-- wer diesen Verein gerade offen hat (GET /player_rating/live) -->
+          @if (viewersByClub().get(club.id); as clubViewers) {
+            <span class="club-tile__viewers">
+              @for (v of clubViewers; track v.manager_id) {
+                <span class="club-tile__viewer" [attr.title]="v.manager_name">
+                  @if (!viewerPhotoFailed().has(v.manager_id)) {
+                    <img [src]="contributorPhotoUrl(v.manager_id)" [alt]="v.manager_name" (error)="onViewerPhotoError(v.manager_id)" />
+                  } @else {
+                    {{ v.manager_name.charAt(0).toUpperCase() }}
+                  }
+                </span>
+              }
+            </span>
+          }
           @if (clubStats(club.id); as stats) {
             @if (stats.has_sds) {
               <img src="img/icons/sds.png" class="club-tile__sds" alt="SdS" />
@@ -163,26 +177,6 @@
   <!-- Ratings-Bereich -->
   @if (selectedClubId()) {
     <section class="ratings-section">
-      <!-- Kopf: Verein + wer ihn gerade ebenfalls offen hat (gemeinsames Eintragen, GET /player_rating/live) -->
-      @if (clubById(selectedClubId()); as club) {
-        <div class="club-live-head">
-          <img class="club-live-head__logo" [src]="logoUrl(club)" alt="" />
-          <span class="club-live-head__name">{{ club.name }}</span>
-          @if (viewers().length) {
-            <div class="club-live-head__viewers" [attr.title]="'Schauen gerade mit: ' + viewerNames()">
-              @for (v of viewers(); track v.manager_id) {
-                <span class="viewer-avatar" [attr.title]="v.manager_name">
-                  @if (!viewerPhotoFailed().has(v.manager_id)) {
-                    <img [src]="contributorPhotoUrl(v.manager_id)" [alt]="v.manager_name" (error)="onViewerPhotoError(v.manager_id)" />
-                  } @else {
-                    {{ v.manager_name.charAt(0).toUpperCase() }}
-                  }
-                </span>
-              }
-            </div>
-          }
-        </div>
-      }
       <!-- Completed-Banner -->
       @if (selectedMatchday()?.completed) {
         <div class="completed-banner">

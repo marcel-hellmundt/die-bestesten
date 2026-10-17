@@ -532,10 +532,10 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/player_rating/live',
-                        'description' => 'Gemeinsames Eintragen auf /daten/ratings (Delta-Polling, die Webapp fragt alle 3 s, solange ein Verein offen, der Spieltag nicht abgeschlossen und der Tab sichtbar ist) → {server_time, full, ratings[], viewers[{manager_id,manager_name}]} — ratings = Zeilen des Vereins im Format von GET /player_rating, die sich seit since geändert haben (player_rating.updated_at > since; ohne since bzw. ohne Migration alle Zeilen, full=true); server_time = Zeitpunkt der DB (NOW(6)), den der Client beim nächsten Abruf als since mitschickt; vermerkt dabei, dass der Manager diesen Verein gerade offen hat (rating_presence) — viewers = andere Manager, die denselben Verein am selben Spieltag in den letzten 15 s abgefragt haben ([] ohne Migration) — Auth',
+                        'description' => 'Gemeinsames Eintragen auf /daten/ratings (Delta-Polling, die Webapp fragt alle 3 s, solange ein Verein offen, der Spieltag nicht abgeschlossen und der Tab sichtbar ist) → {server_time, full, ratings[], viewers[{manager_id,manager_name,club_id}]} — ratings = Zeilen des Vereins im Format von GET /player_rating, die sich seit since geändert haben (player_rating.updated_at > since; ohne since bzw. ohne Migration alle Zeilen, full=true); server_time = Zeitpunkt der DB (NOW(6)), den der Client beim nächsten Abruf als since mitschickt; vermerkt dabei, dass der Manager diesen Verein gerade offen hat (rating_presence) ; ohne club_id (Vereinsauswahl) keine ratings und der eigene Eintrag dort wird gelöscht — viewers = alle anderen Manager, die an diesem Spieltag in den letzten 15 s einen Verein offen hatten, je mit club_id (Webapp: kleine Fotos in der Vereins-Kachel; [] ohne Migration) — Auth',
                         'query_params' => [
                             'matchday_id' => 'UUID des Spieltags (erforderlich)',
-                            'club_id' => 'UUID des Clubs (erforderlich)',
+                            'club_id' => 'UUID des offenen Clubs (optional — ohne: nur viewers)',
                             'since' => 'optional: server_time des vorherigen Abrufs (YYYY-MM-DD HH:MM:SS[.ffffff])',
                         ],
                     ],

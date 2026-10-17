@@ -40,16 +40,21 @@ class PlayerRatingController extends _BaseController
             return $this->db->getContributionSummaryForMatchday($matchdayId, $seasonScope);
         }
 
+        // Gemeinsames Eintragen: nur Änderungen seit ?since (DB-Zeit aus dem letzten Abruf) + wer welchen Verein offen hat;
+        // ohne club_id (Vereinsauswahl, noch kein Verein offen) nur die Mitschauenden
+        if ($this->id === 'live') {
+            if (!$matchdayId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'matchday_id ist erforderlich'];
+            }
+            $since = $this->params['since'] ?? null;
+            if ($since !== null && !preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d{1,6})?$/', $since)) $since = null;
+            return $this->db->getPlayerRatingsLive($matchdayId, $clubId ?: null, $GLOBALS['auth_manager_id'], $since);
+        }
+
         if (!$matchdayId || !$clubId) {
             http_response_code(400);
             return ['status' => false, 'message' => 'matchday_id und club_id sind erforderlich'];
-        }
-
-        // Gemeinsames Eintragen: nur Änderungen seit ?since (DB-Zeit aus dem letzten Abruf) + wer mitschaut
-        if ($this->id === 'live') {
-            $since = $this->params['since'] ?? null;
-            if ($since !== null && !preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d{1,6})?$/', $since)) $since = null;
-            return $this->db->getPlayerRatingsLive($matchdayId, $clubId, $GLOBALS['auth_manager_id'], $since);
         }
 
         return $this->db->getPlayerRatingsByMatchdayAndClub($matchdayId, $clubId);

@@ -456,6 +456,40 @@
     line-height: 1.2;
   }
 
+  // wer diesen Verein gerade offen hat — kleine Fotos nebeneinander oben links
+  &__viewers {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 22px; // Platz für das SdS-Symbol rechts
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    pointer-events: none;
+  }
+
+  &__viewer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    border-radius: $radius-full;
+    background: $color-surface-alt;
+    color: $color-text-muted;
+    font-size: 8px;
+    font-weight: $font-weight-semibold;
+    line-height: 1;
+    overflow: hidden;
+    pointer-events: auto;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
   &__sds {
     position: absolute;
     top: 4px;
@@ -495,68 +529,6 @@
   display: flex;
   flex-direction: column;
   gap: $space-4;
-}
-
-// Kopf des geöffneten Vereins + wer ihn gerade ebenfalls offen hat
-.club-live-head {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-  min-height: 28px;
-
-  &__logo {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-
-  &__name {
-    font-weight: $font-weight-semibold;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__viewers {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-  }
-}
-
-.viewer-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  margin-left: -6px;
-  border-radius: $radius-full;
-  border: 2px solid $color-surface;
-  background: $color-surface-alt;
-  color: $color-text-muted;
-  font-size: $font-xs;
-  font-weight: $font-weight-semibold;
-  overflow: hidden;
-  box-shadow: 0 0 0 1px $color-success;
-
-  &:first-child {
-    margin-left: 0;
-  }
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  @media (max-width: $mobile-breakpoint) {
-    width: 22px;
-    height: 22px;
-  }
 }
 
 // Zeile, die gerade jemand anderes geändert hat — kurz aufleuchten

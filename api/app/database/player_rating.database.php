@@ -129,25 +129,31 @@ trait PlayerRatingTrait
      * $since geändert haben (ohne $since bzw. ohne Migration: alle), die DB-Zeit für den nächsten Abruf und wer den
      * Verein gerade noch offen hat. Merkt sich dabei, dass $managerId diesen Verein gerade ansieht (rating_presence).
      */
-    public function getPlayerRatingsLive(string $matchdayId, string $clubId, string $managerId, ?string $since): array
+    // Ohne $clubId (Vereinsauswahl): keine Ratings, und der Manager hat keinen Verein mehr offen.
+    // viewers = alle anderen, die an diesem Spieltag gerade einen Verein offen haben, je mit club_id.
+    public function getPlayerRatingsLive(string $matchdayId, ?string $clubId, string $managerId, ?string $since): array
     {
         $serverTime = $this->con->query("SELECT NOW(6)")->fetchColumn();
-        $ratings    = $this->getPlayerRatingsByMatchdayAndClub($matchdayId, $clubId, $since);
+        $ratings    = $clubId ? $this->getPlayerRatingsByMatchdayAndClub($matchdayId, $clubId, $since) : [];
 
         $viewers = [];
         try {
-            $this->con->prepare(
-                "INSERT INTO rating_presence (manager_id, matchday_id, club_id, seen_at) VALUES (?, ?, ?, NOW())
-                 ON DUPLICATE KEY UPDATE matchday_id = VALUES(matchday_id), club_id = VALUES(club_id), seen_at = VALUES(seen_at)"
-            )->execute([$managerId, $matchdayId, $clubId]);
+            if ($clubId) {
+                $this->con->prepare(
+                    "INSERT INTO rating_presence (manager_id, matchday_id, club_id, seen_at) VALUES (?, ?, ?, NOW())
+                     ON DUPLICATE KEY UPDATE matchday_id = VALUES(matchday_id), club_id = VALUES(club_id), seen_at = VALUES(seen_at)"
+                )->execute([$managerId, $matchdayId, $clubId]);
+            } else {
+                $this->con->prepare("DELETE FROM rating_presence WHERE manager_id = ?")->execute([$managerId]);
+            }
             $vq = $this->con->prepare(
-                "SELECT rp.manager_id, m.manager_name FROM rating_presence rp
+                "SELECT rp.manager_id, m.manager_name, rp.club_id FROM rating_presence rp
                  JOIN manager m ON m.id = rp.manager_id
-                 WHERE rp.matchday_id = ? AND rp.club_id = ? AND rp.manager_id <> ?
+                 WHERE rp.matchday_id = ? AND rp.manager_id <> ?
                    AND rp.seen_at >= NOW() - INTERVAL {$this->ratingPresenceSeconds()} SECOND
                  ORDER BY m.manager_name"
             );
-            $vq->execute([$matchdayId, $clubId, $managerId]);
+            $vq->execute([$matchdayId, $managerId]);
             $viewers = $vq->fetchAll(PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
             // Tabelle fehlt (Migration) → niemand schaut sichtbar mit
