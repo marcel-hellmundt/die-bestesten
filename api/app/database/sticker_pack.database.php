@@ -599,22 +599,25 @@ trait StickerPackTrait
      * Öffnet ein eigenes, ungeöffnetes Pack: würfelt die Karten serverseitig (Gewicht = Marktwert^-α;
      * garantiert neu, solange Sticker fehlen: bei Meilenstein-/Spieltagsbester-Packs alle Karten, sonst die
      * erste; Sonder-Packs mind. min_epic Karten "episch oder besser"; Holo je Karte) und speichert sie.
+     * "Garantiert neu" bezieht sich auf die Sammlung zum Zeitpunkt der Ausgabe (sticker_pack.created_at), nicht
+     * des Öffnens: wer Packs ungeöffnet hortet, bekommt dadurch keine sicheren Lücken am Ende der Saison — was
+     * er inzwischen schon hat, kommt dann eben doppelt. is_new zeigt weiterhin, ob die Karte jetzt neu ist.
      * Rückgabe ['error' => HTTP-Code, 'message'] oder ['pack' => …, 'cards' => [{key, holo, is_new}]].
      */
     public function openStickerPack(string $managerId, string $packId): array
     {
         try {
             try {
-                $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, club_id, guaranteed_new, holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
+                $pq = $this->con->prepare("SELECT id, season_id, source, size, created_at, opened_at, club_id, guaranteed_new, holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
                 $pq->execute([$packId, $managerId]);
             } catch (\Throwable $e) {
                 // Spalte holo_min fehlt noch (migrate_sticker_pack_kind.sql)
-                $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, club_id, guaranteed_new, NULL AS holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
+                $pq = $this->con->prepare("SELECT id, season_id, source, size, created_at, opened_at, club_id, guaranteed_new, NULL AS holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
                 $pq->execute([$packId, $managerId]);
             }
         } catch (\Throwable $e) {
             // Spalten club_id/guaranteed_new fehlen noch (migrate_sticker_shop_pack.sql) → wie bisher
-            $pq = $this->con->prepare("SELECT id, season_id, source, size, opened_at, NULL AS club_id, NULL AS guaranteed_new, NULL AS holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
+            $pq = $this->con->prepare("SELECT id, season_id, source, size, created_at, opened_at, NULL AS club_id, NULL AS guaranteed_new, NULL AS holo_min FROM sticker_pack WHERE id = ? AND manager_id = ?");
             $pq->execute([$packId, $managerId]);
         }
         $pack = $pq->fetch(PDO::FETCH_ASSOC);
@@ -631,12 +634,21 @@ trait StickerPackTrait
             if (!$stickers) return ['error' => 409, 'message' => 'Verein ist nicht im Album'];
         }
 
+        // Sammlung jetzt (für is_new) und bei der Ausgabe des Packs (für die Garantie "neu") — Karten aus einem
+        // Tausch tragen den Tauschzeitpunkt als created_at. Abgegeben werden nur Doppelte, die Sammlung schrumpft
+        // durch Tausch also nicht; nur wenn genau das ältere Exemplar weggetauscht wurde, gilt der Sticker hier als
+        // damals fehlend (die Garantie fällt dann eher großzügig aus).
         $oq = $this->con->prepare(
-            "SELECT DISTINCT p.sticker_id FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id
-             WHERE p.manager_id = ? AND s.season_id = ?"
+            "SELECT p.sticker_id, MIN(p.created_at) <= ? AS at_grant FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id
+             WHERE p.manager_id = ? AND s.season_id = ? GROUP BY p.sticker_id"
         );
-        $oq->execute([$managerId, $pack['season_id']]);
-        $owned = array_fill_keys($oq->fetchAll(PDO::FETCH_COLUMN), true);
+        $oq->execute([$pack['created_at'], $managerId, $pack['season_id']]);
+        $owned = [];        // jetzt
+        $ownedAtGrant = []; // bei der Ausgabe des Packs
+        foreach ($oq->fetchAll(PDO::FETCH_ASSOC) as $o) {
+            $owned[$o['sticker_id']] = true;
+            if ((int) $o['at_grant']) $ownedAtGrant[$o['sticker_id']] = true;
+        }
 
         $cfg = $this->stickerConfig();
         $weights = array_map(fn($s) => pow(max((int) $s['price'], $cfg['min_price']), -$cfg['rarity_alpha']), $stickers);
@@ -659,8 +671,9 @@ trait StickerPackTrait
             }
             return count($weights) - 1;
         };
-        $drawMissing = function (bool $onlyEpic = false) use ($weights, $stickers, &$owned, $rand, $drawAny, $isEpic): int {
-            $ok = fn(int $i): bool => !isset($owned[$stickers[$i]['id']]) && (!$onlyEpic || $isEpic($i));
+        // "fehlend" = fehlte bei der Ausgabe des Packs (und ist in diesem Pack noch nicht gezogen)
+        $drawMissing = function (bool $onlyEpic = false) use ($weights, $stickers, &$ownedAtGrant, $rand, $drawAny, $isEpic): int {
+            $ok = fn(int $i): bool => !isset($ownedAtGrant[$stickers[$i]['id']]) && (!$onlyEpic || $isEpic($i));
             $missingTotal = 0.0;
             foreach ($weights as $i => $w) if ($ok($i)) $missingTotal += $w;
             if ($missingTotal <= 0) return $drawAny($onlyEpic);
@@ -692,6 +705,7 @@ trait StickerPackTrait
             $sticker = $stickers[$i];
             $isNew = !isset($owned[$sticker['id']]);
             $owned[$sticker['id']] = true;
+            $ownedAtGrant[$sticker['id']] = true;
             $h = $rand();
             $holo = $h < $cfg['holo_gold_chance'] ? 'gold'
                 : ($h < $cfg['holo_gold_chance'] + $cfg['holo_silver_chance'] ? 'silver' : null);
