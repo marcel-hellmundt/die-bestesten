@@ -23,13 +23,13 @@ trait StickerShopTrait
 
     /**
      * Lukaten-Angebote: je eine Pack-Art. Die Preise stehen in LukatenAccountTrait::lukatenAccountConfig()
-     * (pack_prices); der Shop liefert sie mit aus (GET /sticker/shop → prices), shop.model.ts enthält sie nur als
+     * (pack_prices × Faktor der Preisstufe der Woche, lukatenPackPrices()); der Shop liefert sie mit aus (GET /sticker/shop → prices), shop.model.ts enthält sie nur als
      * Rückfall. Keys bleiben stabil (bestehende Käufe), l-small = Normales Pack.
      */
     protected function stickerShopOffers(): array
     {
         $kinds  = $this->stickerPackKinds();
-        $prices = $this->lukatenAccountConfig()['pack_prices'];
+        $prices = $this->lukatenPackPrices();
         $offers = [];
         foreach (['l-small' => 'normal', 'l-big' => 'big', 'l-club' => 'club', 'l-special' => 'special'] as $key => $kind) {
             $offers[$key] = $kinds[$kind] + ['kind' => $kind, 'price' => $prices[$key]];

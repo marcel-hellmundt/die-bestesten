@@ -118,6 +118,25 @@ ergeben und das Tempo verdoppelt.
 | 550 | 4,99 € | 0,91 € |
 | 800 | 6,99 € | 0,87 € |
 
+**Preisstufen** (seit 2026-10-23, `getLukatenPriceLevel()`): Die Pack-Preise oben sind Grundpreise. Es gilt
+Grundpreis × Faktor, abhängig davon, wie viele Lukaten im Umlauf sind (alle Kontostände zusammen). So können am
+Saisonende gehortete Lukaten nicht übermäßig viele Packs kaufen.
+
+| Lukaten im Umlauf | Faktor | normal / big / Verein / Special |
+|---|---:|---|
+| bis 4.000 | ×1 | 100 / 200 / 300 / 300 |
+| 4.000–8.000 | ×1,25 | 125 / 250 / 375 / 375 |
+| 8.000–12.000 | ×1,5 | 150 / 300 / 450 / 450 |
+| ab 12.000 | ×2 | 200 / 400 / 600 / 600 |
+
+Die Stufe reagiert bewusst träge, damit ein fleißiges Wochenende den Preis nicht sofort hochtreibt: Eine neue
+Stufe gibt es nur montags (beim ersten Abruf der Woche, gespeichert in `lukaten_price_level`), maßgeblich ist das
+Mittel der 14 Tage davor, höchstens eine Stufe pro Woche, und zurück geht es erst 10 % unter der Schwelle. Im Shop
+stehen einfach die aktuellen Preise; `/verwaltung/lukaten` zeigt das Mittel im Chart, die Schwellen und eine
+Tabelle der Preise je Stufe. Stand beim Start: 2.712 im Umlauf, Zufluss netto rund 600 je Woche — ×1,25 etwa ab
+Mitte November, ×1,5 ab Januar, ×2 ab Februar, sofern sich das Kaufverhalten nicht ändert. Höhere Preise bremsen
+das Kaufen, der Umlauf wächst dann schneller: Die Stufe geht praktisch nur nach oben. Das ist gewollt.
+
 Die Euro-Pakete im Shop (Handvoll, Stapel, Kiste) sind deutlich günstiger als der Weg über gekaufte Lukaten: Die
 Kiste für 6,99 € enthält Packs im Wert von 1.500 Lukaten, das Bündel für denselben Preis bringt 800 (+88 %; Stapel +82 %,
 Handvoll +67 %, einzelnes Vereins- oder Special-Pack +50 % — der Vorteil steigt mit dem Betrag); ein normales
@@ -269,6 +288,12 @@ Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 - **Einsätze und Gewinne im Kontobuch buchen:** zwei Datenbanken ohne gemeinsame Transaktion, siehe
   Abschnitt 3.
 - **Holo-Veredelung und Wunschsticker:** Es soll nur Packs geben.
+- **Preisstufen nach dem eigenen Kontostand** (niedrigster Stand der letzten 14 Tage, ×1,5 ab 1.000 bis ×3 ab
+  5.000): trifft gezielt Horter, aber jeder Manager sähe andere Preise. Gewählt wurde die Stufe nach der Menge im
+  Umlauf, für alle gleich.
+- **Preisstufen sofort nach dem Umlauf** (ohne Wochen-Regel): Mit den ersten Schwellen (1.500 / 2.500 / 3.500)
+  wäre schon nach wenigen Spieltagen die höchste Stufe erreicht, und jede Gutschrift hätte die Preise sofort
+  verändert.
 
 Die ausführlichen Fassungen der früheren Varianten stehen in der Git-Historie dieser Datei (bis Commit
 `3913457` unter `docs/currency-split-concept.md`).

@@ -78,6 +78,15 @@
           @for (a of chartAreas().areas; track a.key) {
             <path class="history__area" [attr.d]="a.path" [attr.fill]="a.color" />
           }
+          <!-- Schwellen der Preisstufen + Mittel der letzten 14 Tage (Grundlage der Stufe) -->
+          @for (t of chartAreas().thresholds; track t.level) {
+            <line class="history__threshold" [class.is-active]="priceLevel()?.level === t.level"
+                  [attr.x1]="chart().left" [attr.x2]="chart().width - chart().right" [attr.y1]="t.y" [attr.y2]="t.y" />
+            <text class="history__threshold-label" [attr.x]="chart().width - chart().right - 4" [attr.y]="t.y - 4" text-anchor="end">{{ t.label }}</text>
+          }
+          @if (chartAreas().avgPath; as p) {
+            <path class="history__avg" [attr.d]="p" />
+          }
           @if (hoverIndex() !== null && chartDay(); as d) {
             <line class="history__cursor" [attr.x1]="d.x" [attr.x2]="d.x" [attr.y1]="chart().top" [attr.y2]="chart().height - chart().bottom" />
           }
@@ -87,6 +96,9 @@
         @if (hoverIndex() !== null && chartDay(); as d) {
           <div class="history__tip" [class.history__tip--flip]="d.flip" [style.left.px]="d.x" role="tooltip">
             <div class="history__tip-head"><span>{{ d.label }}</span><b>{{ format(d.total) }}</b></div>
+            @if (chartMode() === 'total' && d.avg !== null) {
+              <div class="history__tip-avg"><span class="history__avg-swatch"></span> Ø {{ priceLevel()?.days ?? 14 }} Tage im Umlauf <b>{{ format(d.avg) }}</b></div>
+            }
             <ul>
               @for (v of d.topDown; track v.key) {
                 <li>
@@ -103,6 +115,9 @@
       <!-- Legende: heutiger Stand -->
       @if (hoverIndex() === null && chartDay(); as d) {
         <ul class="history__legend">
+          @if (chartMode() === 'total' && d.avg !== null) {
+            <li><span class="history__avg-swatch"></span> Ø {{ priceLevel()?.days ?? 14 }} Tage im Umlauf <b>{{ format(d.avg) }}</b></li>
+          }
           @for (v of d.values; track v.key) {
             <li>
               <span class="history__dot" [style.background]="v.color"></span>
@@ -116,7 +131,8 @@
         Stände am Tagesende seit dem {{ h.since.slice(8, 10) }}.{{ h.since.slice(5, 7) }}.{{ h.since.slice(0, 4) }}. Der Startbonus zählt ab dem ersten Tag der Saison.
         Tippgewinne sind auf den Tag des Anpfiffs gelegt, weil der Abschluss keinen Zeitstempel hat. Konten oder die
         Bank im Minus zählen in der Fläche als 0, die Zahl in der Legende ist der echte Stand. Relativ: jeder Tag
-        auf 100 % gestreckt — Anteil am Stapel des Tages.
+        auf 100 % gestreckt — Anteil am Stapel des Tages. Gestrichelt: Lukaten im Umlauf im Mittel der letzten
+        {{ priceLevel()?.days ?? 14 }} Tage, waagerecht die Schwellen der Preisstufen.
       </p>
     </div>
   }
@@ -197,6 +213,51 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Preisstufen der Lukaten-Packs: Preise je Stufe, aktive Stufe hervorgehoben -->
+  @if (priceLevel(); as pl) {
+    <div class="card price-levels">
+      <div class="price-levels__head">
+        <h2 class="price-levels__title">Preisstufen der Lukaten-Packs</h2>
+        <span class="price-levels__now">
+          aktiv seit Montag {{ dateLabel(pl.week_start) }}: <b>Stufe {{ pl.level + 1 }} · {{ factorLabel(pl.factor) }}</b>
+        </span>
+      </div>
+      <div class="table-container">
+        <table class="data-table price-levels__table">
+          <thead>
+            <tr>
+              <th>Pack</th>
+              @for (l of pl.levels; track $index) {
+                <th class="col-value" [class.is-active]="$index === pl.level">
+                  <span class="price-levels__factor">{{ factorLabel(l.factor) }}</span>
+                  <small>{{ levelRange(l) }}</small>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of pl.packs; track p.key) {
+              <tr>
+                <td>{{ p.name }} <small class="price-levels__size">{{ p.size }} Sticker</small></td>
+                @for (price of p.prices; track $index) {
+                  <td class="col-value" [class.is-active]="$index === pl.level">{{ format(price) }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="price-levels__note">
+        Lukaten im Umlauf im Mittel der {{ pl.days }} Tage vor dem {{ dateLabel(pl.week_start) }}:
+        <b>{{ pl.avg_circulation === null ? '–' : format(pl.avg_circulation) }}</b>.
+        Mittel der letzten {{ pl.days }} Tage bis heute: <b>{{ pl.avg_now === null ? '–' : format(pl.avg_now) }}</b>
+        → ab nächstem Montag voraussichtlich <b>Stufe {{ pl.forecast + 1 }} · {{ factorLabel(pl.levels[pl.forecast].factor) }}</b>.
+        Neue Stufe nur montags, höchstens eine Stufe pro Woche, zurück erst {{ pl.down_margin * 100 }} % unter der Schwelle.
+        @if (!pl.stored) { <span class="is-minus">Tabelle lukaten_price_level fehlt (Migration) — die Stufe wird direkt aus dem Mittel gerechnet.</span> }
+      </p>
+    </div>
+  }
 
   <p class="overview-hint">
     Kontostand = Kontobuch (Startbonus, Einträge, Käufe, Packs) plus Tipps aus allen Ligen des Managers. Tipps

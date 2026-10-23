@@ -31,7 +31,14 @@ trait LukatenAccountTrait
             // Manager in einer Woche ohnehin zieht (rund 25). Mit 60 je Pack hätten Einträge das Tempo verdoppelt.
             // Leiter 100/200/300/300: direkt gegen Euro gibt es je Angebot +50 % (einzelnes Pack) bis +88 % (Kiste) mehr als
             // über gekaufte Lukaten, steigend mit dem Betrag (Vergleich: /verwaltung/ui-tests → Preise).
+            // Grundpreise — es gilt Grundpreis × Faktor der Preisstufe (price_levels), gerundet auf ganze Lukaten
             'pack_prices'   => ['l-small' => 100, 'l-big' => 200, 'l-club' => 300, 'l-special' => 300],
+            // Preisstufen nach der Menge im Umlauf (alle Kontostände zusammen): [ab Lukaten, Faktor]. Damit am Saisonende
+            // gehortete Lukaten nicht übermäßig viele Packs kaufen. Träge: neue Stufe nur montags, maßgeblich das Mittel
+            // der 14 Tage davor, höchstens eine Stufe pro Woche, zurück erst 10 % unter der Schwelle (getLukatenPriceLevel()).
+            'price_levels'            => [[0, 1.0], [4000, 1.25], [8000, 1.5], [12000, 2.0]],
+            'price_level_days'        => 14,
+            'price_level_down_margin' => 0.10,
             // Lukaten gegen Euro [Cent, Lukaten]: 1 Lukate ≈ 1 Cent, mit jedem größeren Bündel etwas mehr je Euro
             // (+0 / +6 / +10 / +14 %). Die Schlüssel sind fest (stehen in sticker_eur_purchase), lk-300 bringt 320.
             'eur_bundles'   => ['lk-200' => [199, 200], 'lk-300' => [299, 320], 'lk-550' => [499, 550], 'lk-800' => [699, 800]],
@@ -39,6 +46,7 @@ trait LukatenAccountTrait
     }
 
     private ?bool $lukatenReadyCache = null;
+    private ?array $lukatenPriceLevelCache = null;
     private ?array $lukatenSeasonCache = null;
     private array $lukatenLeagueCons = [];
     private array $lukatenSynced = [];
@@ -433,7 +441,10 @@ trait LukatenAccountTrait
             $totals['payouts'] += $parts['payouts'];
         }
         usort($accounts, fn($a, $b) => $b['balance'] <=> $a['balance'] ?: strcmp($a['manager_name'], $b['manager_name']));
-        return ['ready' => true, 'accounts' => $accounts, 'totals' => array_map(fn($v) => round($v, 2), $totals)];
+        return [
+            'ready' => true, 'accounts' => $accounts, 'totals' => array_map(fn($v) => round($v, 2), $totals),
+            'price_level' => $this->lukatenPriceLevelOverview(),
+        ];
     }
 
     /**
@@ -560,6 +571,141 @@ trait LukatenAccountTrait
         usort($managers, fn($a, $b) => end($b['balance']) <=> end($a['balance']) ?: strcmp($a['manager_name'], $b['manager_name']));
 
         return ['ready' => true, 'since' => $since, 'days' => $days, 'managers' => $managers, 'bank' => $running($bank), 'shop' => $running($shop)];
+    }
+
+    // ── Preisstufe der Lukaten-Packs ────────────────────────────────────────
+
+    /** Lukaten im Umlauf je Tag (Summe aller Konten am Tagesende) aus dem Verlauf: [Datum => Summe]. */
+    private function lukatenCirculationByDay(): array
+    {
+        $h = $this->getLukatenHistory();
+        if (!$h['ready']) return [];
+        $out = [];
+        foreach ($h['days'] as $i => $day) {
+            $sum = 0.0;
+            foreach ($h['managers'] as $m) $sum += $m['balance'][$i] ?? 0.0;
+            $out[$day] = round($sum, 2);
+        }
+        return $out;
+    }
+
+    /** Mittel der letzten $days Tagesstände vor $before (ohne diesen Tag); null ohne Daten. */
+    private function lukatenCirculationAvg(array $byDay, string $before, int $days): ?float
+    {
+        $values = [];
+        foreach ($byDay as $day => $v) if ($day < $before) $values[] = $v;
+        $values = array_slice($values, -$days);
+        return $values ? round(array_sum($values) / count($values), 2) : null;
+    }
+
+    /** Stufe, in die ein Umlauf von $avg fällt (höchste Schwelle ≤ $avg). */
+    private function lukatenLevelFor(float $avg): int
+    {
+        $level = 0;
+        foreach ($this->lukatenAccountConfig()['price_levels'] as $i => [$from]) if ($avg >= $from) $level = $i;
+        return $level;
+    }
+
+    /** Stufe der neuen Woche: höchstens eine Stufe pro Woche, zurück erst deutlich (down_margin) unter der Schwelle. */
+    private function lukatenNextLevel(int $prev, ?float $avg): int
+    {
+        if ($avg === null) return $prev;
+        $cfg = $this->lukatenAccountConfig();
+        $target = $this->lukatenLevelFor($avg);
+        if ($target > $prev) return $prev + 1;
+        if ($target < $prev && $avg < $cfg['price_levels'][$prev][0] * (1 - $cfg['price_level_down_margin'])) return $prev - 1;
+        return $prev;
+    }
+
+    /** Montag der laufenden Woche (YYYY-MM-DD). */
+    private function lukatenWeekStart(): string
+    {
+        return date('Y-m-d', strtotime('-' . ((int) date('N') - 1) . ' days'));
+    }
+
+    /**
+     * Preisstufe der laufenden Woche → {level, factor, week_start, avg_circulation, stored}. Beim ersten Abruf einer
+     * Woche aus dem Mittel der Lukaten im Umlauf über die 14 Tage davor festgelegt und gespeichert (lukaten_price_level),
+     * danach fest. Ohne die Tabelle (Migration) direkt aus dem Mittel, ohne Wochen-Regeln (stored = false).
+     */
+    public function getLukatenPriceLevel(): array
+    {
+        if ($this->lukatenPriceLevelCache !== null) return $this->lukatenPriceLevelCache;
+        $cfg  = $this->lukatenAccountConfig();
+        $week = $this->lukatenWeekStart();
+        $result = fn(int $level, ?float $avg, bool $stored) => $this->lukatenPriceLevelCache = [
+            'level' => $level, 'factor' => (float) $cfg['price_levels'][$level][1], 'week_start' => $week,
+            'avg_circulation' => $avg, 'stored' => $stored,
+        ];
+        if (!$this->lukatenLedgerReady()) return $result(0, null, false);
+
+        try {
+            $q = $this->con->prepare("SELECT level, avg_circulation FROM lukaten_price_level WHERE week_start = ?");
+            $q->execute([$week]);
+            $row = $q->fetch(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            if (!$this->lukatenFeatureMissing($e)) throw $e;
+            $avg = $this->lukatenCirculationAvg($this->lukatenCirculationByDay(), $week, $cfg['price_level_days']);
+            return $result($avg === null ? 0 : $this->lukatenLevelFor($avg), $avg, false);
+        }
+        if (!$row) {
+            $pq = $this->con->prepare("SELECT level FROM lukaten_price_level WHERE week_start < ? ORDER BY week_start DESC LIMIT 1");
+            $pq->execute([$week]);
+            $prev = $pq->fetchColumn();
+            $avg = $this->lukatenCirculationAvg($this->lukatenCirculationByDay(), $week, $cfg['price_level_days']);
+            $level = min(count($cfg['price_levels']) - 1, $this->lukatenNextLevel($prev === false ? 0 : (int) $prev, $avg));
+            // zwei gleichzeitige erste Abrufe: der erste gewinnt, danach für alle dieselbe Zeile
+            $this->con->prepare("INSERT IGNORE INTO lukaten_price_level (week_start, level, factor, avg_circulation) VALUES (?, ?, ?, ?)")
+                ->execute([$week, $level, $cfg['price_levels'][$level][1], $avg]);
+            $q->execute([$week]);
+            $row = $q->fetch(PDO::FETCH_ASSOC);
+        }
+        $level = min(count($cfg['price_levels']) - 1, max(0, (int) $row['level']));
+        return $result($level, $row['avg_circulation'] === null ? null : (float) $row['avg_circulation'], true);
+    }
+
+    /** Pack-Preise der laufenden Woche: Grundpreis × Faktor der Preisstufe, auf ganze Lukaten gerundet. */
+    protected function lukatenPackPrices(): array
+    {
+        $factor = $this->getLukatenPriceLevel()['factor'];
+        return array_map(fn($p) => (int) round($p * $factor), $this->lukatenAccountConfig()['pack_prices']);
+    }
+
+    /**
+     * Für /verwaltung/lukaten: aktuelle Stufe, alle Stufen mit den Preisen je Pack und die voraussichtliche Stufe ab
+     * nächstem Montag (aus dem Mittel der letzten 14 Tage bis heute).
+     */
+    private function lukatenPriceLevelOverview(): array
+    {
+        $cfg = $this->lukatenAccountConfig();
+        $current = $this->getLukatenPriceLevel();
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+        $avgNow = $this->lukatenCirculationAvg($this->lukatenCirculationByDay(), $tomorrow, $cfg['price_level_days']);
+        $levels = $cfg['price_levels'];
+        $kinds = $this->stickerPackKinds();
+        $packs = [];
+        foreach (['l-small' => 'normal', 'l-big' => 'big', 'l-club' => 'club', 'l-special' => 'special'] as $key => $kind) {
+            $base = $cfg['pack_prices'][$key];
+            $packs[] = [
+                'key' => $key, 'kind' => $kind, 'name' => $kinds[$kind]['name'], 'size' => $kinds[$kind]['size'], 'base' => $base,
+                'prices' => array_map(fn($l) => (int) round($base * $l[1]), $levels),
+            ];
+        }
+        return [
+            'level'           => $current['level'],
+            'factor'          => $current['factor'],
+            'week_start'      => $current['week_start'],
+            'avg_circulation' => $current['avg_circulation'],
+            'stored'          => $current['stored'],
+            'avg_now'         => $avgNow,
+            'forecast'        => $this->lukatenNextLevel($current['level'], $avgNow),
+            'days'            => $cfg['price_level_days'],
+            'down_margin'     => $cfg['price_level_down_margin'],
+            'levels'          => array_map(fn($l, $i) => [
+                'from' => $l[0], 'to' => isset($levels[$i + 1]) ? $levels[$i + 1][0] : null, 'factor' => (float) $l[1],
+            ], $levels, array_keys($levels)),
+            'packs'           => $packs,
+        ];
     }
 
     /**

@@ -15,8 +15,24 @@ interface LukatenAccountRow {
   bets: number;      // Tipps: Gewinne minus Einsätze
 }
 
+/** Preisstufe der Lukaten-Packs nach der Menge im Umlauf (GET /lukaten/overview → price_level) */
+interface PriceLevel {
+  level: number;                 // aktive Stufe (Index in levels)
+  factor: number;
+  week_start: string;            // Montag, seit dem sie gilt
+  avg_circulation: number | null; // Mittel der 14 Tage vor week_start — Grundlage der Stufe
+  stored: boolean;               // false = ohne Tabelle (Migration) direkt aus dem Mittel gerechnet
+  avg_now: number | null;        // Mittel der letzten 14 Tage bis heute
+  forecast: number;              // voraussichtliche Stufe ab nächstem Montag
+  days: number;
+  down_margin: number;
+  levels: { from: number; to: number | null; factor: number }[];
+  packs: { key: string; kind: string; name: string; size: number; base: number; prices: number[] }[];
+}
+
 interface LukatenOverview {
   ready: boolean;    // Kontobuch vorhanden (Migration)
+  price_level?: PriceLevel;
   accounts: LukatenAccountRow[];
   totals: {
     in_circulation: number; start: number; entries: number; eur: number; packs: number; bets: number;
@@ -86,6 +102,13 @@ export class LukatenOverviewComponent {
   /** undefined = lädt, null = Fehler */
   overview = signal<LukatenOverview | null | undefined>(undefined);
   accounts = computed(() => this.overview()?.accounts ?? []);
+  priceLevel = computed(() => this.overview()?.price_level ?? null);
+
+  factorLabel(f: number): string { return '×' + f.toLocaleString('de-DE', { maximumFractionDigits: 2 }); }
+  levelRange(l: { from: number; to: number | null }): string {
+    return l.to === null ? `ab ${this.format(l.from)}` : `${this.format(l.from)}–${this.format(l.to)}`;
+  }
+  dateLabel(iso: string): string { return `${iso.slice(8, 10)}.${iso.slice(5, 7)}.`; }
   totals = computed(() => this.overview()?.totals ?? null);
 
   /**
@@ -194,7 +217,10 @@ export class LukatenOverviewComponent {
         l.upper = l.upper.map((v, i) => base[i] > 0 ? v / base[i] * 100 : 0);
       }
     }
-    const max = relative ? 100 : this.niceMax(Math.max(1, ...base));
+    // Total: die nächste Schwelle der Preisstufen mit ins Bild nehmen, damit man sieht, wie weit sie noch weg ist
+    const top = Math.max(1, ...base);
+    const nextThreshold = (this.priceLevel()?.levels ?? []).map(l => l.from).find(f => f > top) ?? 0;
+    const max = relative ? 100 : this.niceMax(Math.max(top, nextThreshold));
     const width = this.chartWidth();
     const x = (i: number) => CHART.left + (i / (n - 1)) * (width - CHART.left - CHART.right);
     const y = (v: number) => CHART.top + (1 - v / max) * (CHART.height - CHART.top - CHART.bottom);
@@ -212,7 +238,28 @@ export class LukatenOverviewComponent {
       .map((day, i) => ({ day, i }))
       .filter(d => d.day.endsWith('-01'))
       .map(d => ({ x: x(d.i), label: MONTHS[+d.day.slice(5, 7) - 1] }));
-    return { areas, ticks, months, max, x };
+    // Im Umlauf, Mittel der letzten 14 Tage (Grundlage der Preisstufe) + Schwellen der Stufen — nur bei Total
+    const avg = this.circulationAvg();
+    const avgPath = !relative && avg.length
+      ? 'M' + avg.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('L')
+      : null;
+    const thresholds = relative ? [] : (this.priceLevel()?.levels ?? [])
+      .map((l, i) => ({ y: y(l.from), from: l.from, label: this.factorLabel(l.factor), level: i }))
+      .filter(t => t.from > 0 && t.from <= max);
+    return { areas, ticks, months, max, x, avgPath, thresholds };
+  });
+
+  /** Lukaten im Umlauf (alle Konten) je Tag, gemittelt über die letzten 14 Tage — so wie die Preisstufe rechnet */
+  circulationAvg = computed<number[]>(() => {
+    const h = this.history();
+    if (!h) return [];
+    const days = this.priceLevel()?.days ?? 14;
+    const circ = h.days.map((_, i) => h.managers.reduce((sum, m) => sum + m.balance[i], 0));
+    return circ.map((_, i) => {
+      const from = Math.max(0, i - days + 1);
+      const slice = circ.slice(from, i + 1);
+      return slice.reduce((a, b) => a + b, 0) / slice.length;
+    });
   });
 
   /** Tag, dessen Werte die Legende zeigt: unter dem Mauszeiger, sonst der letzte */
@@ -236,6 +283,7 @@ export class LukatenOverviewComponent {
       // für den Tooltip von oben nach unten, wie die Flächen im Chart liegen (Shop, Bank, dann die Konten)
       topDown: series.map(entry).reverse(),
       total: series.reduce((sum, s) => sum + s.values[i], 0),
+      avg: this.circulationAvg()[i] ?? null,
     };
   });
 

@@ -263,3 +263,98 @@
 }
 // in der Tooltip-Liste rückt der Betrag nach rechts — der Anteil steht dahinter
 .history__tip li b { margin-left: auto; }
+
+// ── Preisstufen: Mittel im Chart + Tabelle ──
+.history__avg {
+  fill: none;
+  stroke: $color-text;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  stroke-linejoin: round;
+}
+
+.history__threshold {
+  stroke: $color-text-muted;
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  opacity: 0.7;
+
+  &.is-active { stroke: $color-accent; opacity: 1; }
+}
+
+.history__threshold-label {
+  fill: $color-text-muted;
+  font-size: 11px;
+}
+
+.history__avg-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed $color-text;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+.history__tip-avg {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  margin-bottom: $space-1;
+  font-size: $font-xs;
+
+  b { margin-left: auto; }
+}
+
+.price-levels {
+  margin-top: $space-4;
+  padding: $space-4;
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: $space-2;
+    margin-bottom: $space-3;
+  }
+
+  &__title {
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+    margin: 0;
+  }
+
+  &__now { font-size: $font-sm; color: $color-text-muted; }
+
+  &__table {
+    th small {
+      display: block;
+      font-weight: $font-weight-normal;
+      color: $color-text-muted;
+      text-transform: none;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    th.is-active,
+    td.is-active {
+      background: color-mix(in srgb, $color-accent 14%, transparent);
+    }
+
+    td.is-active { font-weight: $font-weight-semibold; }
+  }
+
+  &__factor { font-size: $font-sm; }
+
+  &__size { color: $color-text-muted; margin-left: $space-1; }
+
+  &__note {
+    margin: $space-3 0 0;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    line-height: 1.5;
+
+    b { color: $color-text; }
+  }
+}

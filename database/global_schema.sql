@@ -589,6 +589,16 @@ CREATE TABLE IF NOT EXISTS lukaten_transaction (
     KEY idx_lukaten_transaction_source (source, season_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: lukaten_price_level — je Woche (ab Montag) die Preisstufe der Lukaten-Packs, festgelegt beim ersten Abruf
+-- der Woche aus dem Mittel der Lukaten im Umlauf über die 14 Tage davor (Migration: 2026-10-23_lukaten_price_level.sql)
+CREATE TABLE IF NOT EXISTS lukaten_price_level (
+    week_start      DATE          NOT NULL PRIMARY KEY,  -- Montag der Woche
+    level           TINYINT       NOT NULL,              -- Index in lukatenAccountConfig()['price_levels'], 0 = Grundpreise
+    factor          DECIMAL(4,2)  NOT NULL,              -- Faktor auf die Grundpreise, wie er in dieser Woche galt
+    avg_circulation DECIMAL(12,2) NULL,                  -- Mittel der Lukaten im Umlauf über die 14 Tage vor week_start
+    created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Tabelle: matchday_summary (Spieltags-Zusammenfassung je Manager und Liga, beim Spieltagsabschluss festgehalten;
 -- die Webapp blendet die noch nicht gesehenen der letzten Tage einmal groß ein — Migration: 2026-10-08_matchday_summary.sql)
 CREATE TABLE IF NOT EXISTS matchday_summary (
