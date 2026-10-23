@@ -1,4 +1,21 @@
-<div class="uc">
+<!-- Welche echten Sammlungen: aus, je Liga oder alle -->
+@if (history()?.leagues?.length) {
+  <div class="segmented-row">
+    <div class="segmented" role="tablist" aria-label="Echte Sammlungen">
+      @for (o of scopeOptions(); track o.key) {
+        <button class="segmented__option" [class.segmented__option--active]="scope() === o.key" (click)="setScope(o.key)">{{ o.label }}</button>
+      }
+    </div>
+    @if (realCurves().length) {
+      <label class="uc__toggle">
+        <input type="checkbox" [checked]="showManagers()" (change)="showManagers.set(!showManagers())" />
+        Einzelne Manager
+      </label>
+    }
+  </div>
+}
+
+<section class="card uc">
   <div class="uc__head">
     <div>
       <span class="uc__title">Verschiedene Sticker im Lauf der Saison</span>
@@ -7,12 +24,6 @@
         echt: Sammlungen aller Manager mit Album · Anteil am jeweiligen Album
       </small>
     </div>
-    @if (realCurves().length) {
-      <label class="uc__toggle">
-        <input type="checkbox" [checked]="showManagers()" (change)="showManagers.set(!showManagers())" />
-        Einzelne Manager
-      </label>
-    }
   </div>
 
   <div #box class="uc__box">
@@ -61,35 +72,52 @@
     @let r = readout();
     <div class="uc__readout">
       <div class="uc__day">{{ r.label }}@if (r.isToday) { <span class="uc__muted">· heute</span> } <span class="uc__muted">· Tag {{ r.day }}</span></div>
-      <div class="uc__rows">
+      <div class="uc__cards">
         @for (p of r.profiles; track p.key) {
-          <div class="uc__row">
-            <span class="uc__swatch uc__swatch--line" [attr.data-slot]="p.slot"></span>
-            <span class="uc__label">{{ p.label }} <span class="uc__muted">(Simulation)</span></span>
-            <span class="uc__value">{{ p.p50 * 100 | number:'1.0-0' }} %</span>
-            <span class="uc__range">{{ p.p10 * 100 | number:'1.0-0' }}–{{ p.p90 * 100 | number:'1.0-0' }} %</span>
+          <div class="uc__card">
+            <div class="uc__card-head">
+              <span class="uc__swatch uc__swatch--line" [attr.data-slot]="p.slot"></span>
+              <span class="uc__label">{{ p.label }}</span>
+            </div>
+            <div class="uc__card-body">
+              <span class="uc__value">{{ p.p50 * 100 | number:'1.0-0' }} %</span>
+              <span class="uc__range">Simulation · {{ p.p10 * 100 | number:'1.0-0' }}–{{ p.p90 * 100 | number:'1.0-0' }} %</span>
+            </div>
           </div>
         }
         @if (r.median !== null) {
-          <div class="uc__row uc__row--real">
-            <span class="uc__swatch uc__swatch--real"></span>
-            <span class="uc__label">Echt, Median</span>
-            <span class="uc__value">{{ r.median * 100 | number:'1.0-0' }} %</span>
-            <span class="uc__range"></span>
+          <div class="uc__card uc__card--real">
+            <div class="uc__card-head">
+              <span class="uc__swatch uc__swatch--real"></span>
+              <span class="uc__label">Echt, Median</span>
+            </div>
+            <div class="uc__card-body">
+              <span class="uc__value">{{ r.median * 100 | number:'1.0-0' }} %</span>
+              <span class="uc__range">{{ r.real?.length }} Manager</span>
+            </div>
           </div>
         }
       </div>
       @if (r.real; as real) {
-        <div class="uc__managers">
-          @for (m of real; track m.key) {
-            <div class="uc__mrow">
-              <span class="uc__swatch uc__swatch--manager"></span>
-              <span class="uc__label">{{ m.label }}</span>
-              <span class="uc__value">{{ m.share * 100 | number:'1.0-0' }} %</span>
-              <span class="uc__range">{{ m.unique }}/{{ r.total }}@if (m.trade || m.shop) { · <span [title]="'zuerst eingetauscht · zuerst aus gekauftem Pack'">{{ m.trade }} Tausch · {{ m.shop }} Shop</span> }</span>
-            </div>
-          }
-        </div>
+        @if (showManagers()) {
+          <div class="uc__cards uc__cards--managers">
+            @for (m of real; track m.key) {
+              <div class="uc__card uc__card--manager">
+                <div class="uc__card-head">
+                  <span class="uc__label">{{ m.label }}</span>
+                </div>
+                <div class="uc__card-body">
+                  <span class="uc__value">{{ m.share * 100 | number:'1.0-0' }} %</span>
+                  <span class="uc__range">{{ m.unique }}/{{ r.total }}</span>
+                </div>
+                @if (m.trade || m.shop) {
+                  <div class="uc__origin" title="davon zuerst eingetauscht · zuerst aus einem gekauften Pack">{{ m.trade }} Tausch · {{ m.shop }} Shop</div>
+                }
+              </div>
+            }
+          </div>
+        }
+      } @else if (scope() === 'off') {
       } @else if (history() === null) {
         <p class="uc__muted uc__note">Echte Sammlungen konnten nicht geladen werden.</p>
       } @else if (history() && !realCurves().length) {
@@ -97,4 +125,4 @@
       }
     </div>
   }
-</div>
+</section>

@@ -344,7 +344,7 @@ trait StickerPackTrait
     public function getStickerHistory(): array
     {
         $seasonId = $this->getActiveSeasonId();
-        $empty = ['season_id' => $seasonId, 'total' => 0, 'today' => date('Y-m-d'), 'managers' => []];
+        $empty = ['season_id' => $seasonId, 'total' => 0, 'today' => date('Y-m-d'), 'leagues' => [], 'managers' => []];
         if ($seasonId === null || !$this->stickerAlbumReady($seasonId)) return $empty;
 
         $t = $this->con->prepare("SELECT COUNT(*) FROM sticker WHERE season_id = ?");
@@ -359,7 +359,17 @@ trait StickerPackTrait
         $mq->execute();
         $managers = [];
         foreach ($mq->fetchAll(PDO::FETCH_ASSOC) as $m) {
-            $managers[$m['id']] = ['manager_id' => $m['id'], 'manager_name' => $m['manager_name'], 'days' => []];
+            $managers[$m['id']] = ['manager_id' => $m['id'], 'manager_name' => $m['manager_name'], 'league_ids' => [], 'days' => []];
+        }
+
+        // Ligen mit Album und wer darin aktiv ist — zum Filtern im Chart
+        $leagues = $this->con->query("SELECT id, slug, name FROM league WHERE sticker_enabled = 1 ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+        $lq = $this->con->query(
+            "SELECT ml.manager_id, ml.league_id FROM manager_league ml JOIN league l ON l.id = ml.league_id
+             WHERE ml.status = 'active' AND l.sticker_enabled = 1"
+        );
+        foreach ($lq->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            if (isset($managers[$r['manager_id']])) $managers[$r['manager_id']]['league_ids'][] = $r['league_id'];
         }
 
         // je Manager + Sticker das erste Exemplar und woher es kam, dann je Tag gezählt
@@ -406,6 +416,7 @@ trait StickerPackTrait
             'season_id' => $seasonId,
             'total'     => (int) $t->fetchColumn(),
             'today'     => date('Y-m-d'),
+            'leagues'   => $leagues,
             'managers'  => array_values(array_map(function ($m) {
                 $m['days'] = array_values($m['days']);
                 return $m;

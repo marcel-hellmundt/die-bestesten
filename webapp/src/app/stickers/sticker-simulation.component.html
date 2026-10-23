@@ -231,9 +231,7 @@
     </section>
 
     <!-- Verlauf: verschiedene Sticker je Tag — Simulation gegen die echten Sammlungen -->
-    <section class="card mc">
-      <app-unique-chart [days]="timeline().days" [start]="cutoffDate()" [profiles]="curves()" [runs]="curveRuns" [history]="history()" />
-    </section>
+    <app-unique-chart [days]="timeline().days" [start]="cutoffDate()" [profiles]="curves()" [runs]="curveRuns" [history]="history()" />
 
     <section class="card mc">
       <div class="mc__head">

@@ -6,9 +6,11 @@ export interface StickerHistory {
   season_id: string | null;
   total: number;
   today: string;
+  leagues?: { id: string; slug: string; name: string }[];
   managers: {
     manager_id: string;
     manager_name: string;
+    league_ids?: string[];
     days: { date: string; pack: number; shop: number; trade: number }[];
   }[];
 }
@@ -30,6 +32,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 /** Farbe je Profil (folgt dem Profil, nicht der Reihenfolge) — CSS-Variablen, im Dark Mode eigene Stufen */
 const PROFILE_SLOT: Record<string, number> = { active: 1, average: 2, inactive: 3 };
+/** Liga, deren Sammlungen anfangs gezeigt werden */
+const DEFAULT_LEAGUE_SLUG = 'diebestesten';
+const SCOPE_KEY = 'sticker-sim-real-scope';
 
 /**
  * Verschiedene Sticker im Lauf der Saison: simulierte Profile (Median + 10–90-%-Band, ohne Tauschen) gegen die echten
@@ -52,6 +57,30 @@ export class UniqueChartComponent {
   history = input<StickerHistory | null | undefined>(undefined);
 
   showManagers = signal(true);
+
+  /** Welche echten Sammlungen gezeigt werden: 'off', 'all' oder eine Liga-ID — pro Gerät gemerkt */
+  private scopeChoice = signal<string | null>(this.loadScope());
+  scopeOptions = computed(() => {
+    const leagues = this.history()?.leagues ?? [];
+    return [
+      { key: 'off', label: 'Aus' },
+      ...leagues.map(l => ({ key: l.id, label: l.name })),
+      ...(leagues.length > 1 ? [{ key: 'all', label: 'Alle Ligen' }] : []),
+    ];
+  });
+  /** Gewählt, sonst die Standard-Liga, sonst alle */
+  scope = computed(() => {
+    const options = this.scopeOptions(), choice = this.scopeChoice();
+    if (choice && options.some(o => o.key === choice)) return choice;
+    return this.history()?.leagues?.find(l => l.slug === DEFAULT_LEAGUE_SLUG)?.id ?? 'all';
+  });
+  setScope(key: string): void {
+    this.scopeChoice.set(key);
+    try { localStorage.setItem(SCOPE_KEY, key); } catch {}
+  }
+  private loadScope(): string | null {
+    try { return localStorage.getItem(SCOPE_KEY); } catch { return null; }
+  }
   /** Tag unter dem Zeiger; null = heute (bzw. Saisonende) */
   hoverDay = signal<number | null>(null);
 
@@ -79,17 +108,20 @@ export class UniqueChartComponent {
     return Math.round((new Date(date + 'T00:00:00').getTime() - start.getTime()) / DAY_MS);
   }
 
-  /** Letzter Tag mit echten Daten (heute), auf die Saison begrenzt; null = Saison noch nicht begonnen */
+  /** Heute (Datum der API, ohne sie das des Geräts), auf die Saison begrenzt; null = Saison noch nicht begonnen */
   today = computed(() => {
     const h = this.history();
-    const d = h ? this.dayOf(h.today) : null;
+    const local = new Date();
+    const iso = `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}-${String(local.getDate()).padStart(2, '0')}`;
+    const d = this.dayOf(h?.today ?? iso);
     return d === null || d < 0 ? null : Math.min(d, this.days());
   });
 
   realCurves = computed<RealCurve[]>(() => {
-    const h = this.history(), today = this.today();
-    if (!h || today === null) return [];
-    return h.managers.map(m => {
+    const h = this.history(), today = this.today(), scope = this.scope();
+    if (!h || today === null || scope === 'off') return [];
+    const members = h.managers.filter(m => scope === 'all' || (m.league_ids ?? []).includes(scope));
+    return members.map(m => {
       const add = (field: 'all' | 'shop' | 'trade') => {
         const perDay = new Array<number>(today + 1).fill(0);
         for (const d of m.days) {

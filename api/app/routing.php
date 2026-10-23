@@ -1435,7 +1435,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/sticker/history',
-                        'description' => 'Verlauf der Sammlungen der aktiven Saison für den Vergleich auf /klebrigsten/simulation → {season_id, total (Sticker im Album), today, managers:[{manager_id,manager_name,days:[{date,pack,shop,trade}]}]} — dieselben Manager wie GET /sticker/collectors (nach Name); days = je Tag, wie viele Sticker erstmals in die Sammlung kamen (frühestes Exemplar, das der Manager heute noch hat), aufgeteilt nach Herkunft dieses Exemplars: pack (Tages-/Event-Packs), shop (gekauftes Pack, Lukaten oder Euro), trade (eingetauscht); nur Tage mit Zugängen, aufsteigend; managers=[] solange das Album nicht eingefroren ist — Maintainer+',
+                        'description' => 'Verlauf der Sammlungen der aktiven Saison für den Vergleich auf /klebrigsten/simulation → {season_id, total (Sticker im Album), today, leagues:[{id,slug,name}] (Ligen mit Album), managers:[{manager_id,manager_name,league_ids (Ligen mit Album, in denen er aktiv ist),days:[{date,pack,shop,trade}]}]} — dieselben Manager wie GET /sticker/collectors (nach Name); days = je Tag, wie viele Sticker erstmals in die Sammlung kamen (frühestes Exemplar, das der Manager heute noch hat), aufgeteilt nach Herkunft dieses Exemplars: pack (Tages-/Event-Packs), shop (gekauftes Pack, Lukaten oder Euro), trade (eingetauscht); nur Tage mit Zugängen, aufsteigend; managers=[] solange das Album nicht eingefroren ist — Maintainer+',
                     ],
                     [
                         'method' => 'GET',
