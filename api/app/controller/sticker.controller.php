@@ -6,6 +6,7 @@
  *   GET  /sticker/album              — eingefrorenes Album der aktiven Saison (Auth)
  *   GET  /sticker/me                 — eigener Status: tägliches Pack vergeben, ungeöffnete Packs, Sammlung (Auth)
  *   GET  /sticker/collectors         — alle Manager mit Album + Fortschritt (Sammler-Rangliste, Auth)
+ *   GET  /sticker/history            — je Manager, wann wie viele Sticker erstmals dazukamen (Simulation, Maintainer+)
  *   GET  /sticker/collection/:id     — Sammlung eines anderen Managers (Auth)
  *   GET  /sticker/shop               — Shop: Hauptliga + Lukaten-Guthaben dort (Auth)
  *   POST /sticker/shop/buy           — Lukaten-Angebot kaufen → Pack ungeöffnet ins Album, Mail an Admins (Auth)
@@ -36,6 +37,10 @@ class StickerController extends _BaseController
         }
         if ($this->id === 'me' && $this->sub === null) {
             return $this->db->getMyStickerState($GLOBALS['auth_manager_id']);
+        }
+        if ($this->id === 'history' && $this->sub === null) {
+            if (!$this->isMaintainer()) return $this->forbidden();
+            return $this->db->getStickerHistory();
         }
         if ($this->id === 'collectors' && $this->sub === null) {
             return $this->db->getStickerCollectors($GLOBALS['auth_manager_id'], $this->isAdmin());

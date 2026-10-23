@@ -14,6 +14,7 @@ import { StickerShopComponent } from './shop/sticker-shop.component';
 import { StickerChipComponent } from './trade/sticker-chip.component';
 import { TradeDialogComponent } from './trade/trade-dialog.component';
 import { StickerTradesComponent } from './trade/sticker-trades.component';
+import { UniqueChartComponent } from './unique-chart/unique-chart.component';
 
 // "Die Klebrigsten" (Sticker-Album): /klebrigsten/sammelalbum (eigenes Album), /klebrigsten/klebebande
 // (alle Sammler, Klick → deren Album), /klebrigsten/tausch (Tauschbörse), /klebrigsten/shop (Lukaten/Euro → Packs)
@@ -39,7 +40,7 @@ const routes: Routes = [
   declarations: [
     StickersComponent, StickerAlbumComponent, AlbumOverviewComponent, AlbumClubPageComponent,
     StickerSimulationComponent, StickerCollectorsComponent, StickerShopComponent,
-    StickerChipComponent, TradeDialogComponent, StickerTradesComponent,
+    StickerChipComponent, TradeDialogComponent, StickerTradesComponent, UniqueChartComponent,
   ],
   imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule, StuckDirective],
 })

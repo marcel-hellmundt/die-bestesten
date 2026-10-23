@@ -1434,6 +1434,11 @@ class Routing
                     ],
                     [
                         'method' => 'GET',
+                        'path' => '/sticker/history',
+                        'description' => 'Verlauf der Sammlungen der aktiven Saison für den Vergleich auf /klebrigsten/simulation → {season_id, total (Sticker im Album), today, managers:[{manager_id,manager_name,days:[{date,pack,shop,trade}]}]} — dieselben Manager wie GET /sticker/collectors (nach Name); days = je Tag, wie viele Sticker erstmals in die Sammlung kamen (frühestes Exemplar, das der Manager heute noch hat), aufgeteilt nach Herkunft dieses Exemplars: pack (Tages-/Event-Packs), shop (gekauftes Pack, Lukaten oder Euro), trade (eingetauscht); nur Tage mit Zugängen, aufsteigend; managers=[] solange das Album nicht eingefroren ist — Maintainer+',
+                    ],
+                    [
+                        'method' => 'GET',
                         'path' => '/sticker/collectors',
                         'description' => 'Sammler-Rangliste der aktiven Saison: alle aktiven Manager mit Album (aktiv in mind. einer Liga mit sticker_enabled) → {season_id, total (Sticker im Album), collectors:[{manager_id,manager_name,have (verschiedene Sticker),pulled (alle gezogenen Karten inkl. Doppelter),silver,gold,trade_get,trade_give,unopened?,unopened_types?,packs?}]}, sortiert nach have absteigend, dann Name; trade_get = Doppelte dieses Sammlers, die dem eingeloggten Manager fehlen, trade_give = Doppelte des eingeloggten Managers, die diesem Sammler fehlen (beim eigenen Eintrag 0); unopened = Anzahl ungeöffneter Packs der aktiven Saison, unopened_types = [{type,count}] dieselben Packs nach Art (Shop-Packs: pack_kind normal|big|club|special, sonst source daily|milestone|matchday_best|admin), häufigste zuerst, packs = [{type,total,opened,cards}] (cards = aus den geöffneten Packs gezogene Karten) alle erhaltenen Packs der Saison je Art und davon geöffnete — alle drei nur für Admins enthalten (Indikator + Tooltip links, Chips "geöffnet/erhalten" rechts in der Klebebande); collectors=[] solange das Album nicht eingefroren ist — Auth',
                     ],

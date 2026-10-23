@@ -1,0 +1,100 @@
+<div class="uc">
+  <div class="uc__head">
+    <div>
+      <span class="uc__title">Verschiedene Sticker im Lauf der Saison</span>
+      <small class="uc__sub">
+        Simulation: Median und 10–90-%-Band aus je {{ runs() }} Saisons pro Profil, ohne Tauschen ·
+        echt: Sammlungen aller Manager mit Album · Anteil am jeweiligen Album
+      </small>
+    </div>
+    @if (realCurves().length) {
+      <label class="uc__toggle">
+        <input type="checkbox" [checked]="showManagers()" (change)="showManagers.set(!showManagers())" />
+        Einzelne Manager
+      </label>
+    }
+  </div>
+
+  <div #box class="uc__box">
+    @if (!profiles()) {
+      <p class="uc__state">Simulation läuft…</p>
+    } @else {
+      <svg #svg class="uc__chart" [attr.width]="chart().width" [attr.height]="chart().height" role="img"
+           aria-label="Verschiedene Sticker je Tag: Simulation je Profil und echte Sammlungen"
+           (mousemove)="onMove($event, svg)" (touchstart)="onMove($event, svg)" (touchmove)="onMove($event, svg)"
+           (mouseleave)="hoverDay.set(null)">
+        @for (t of geometry().ticks; track $index) {
+          <line class="uc__grid" [attr.x1]="chart().left" [attr.x2]="chart().width - chart().right" [attr.y1]="t.y" [attr.y2]="t.y" />
+          <text class="uc__axis" [attr.x]="chart().left - 6" [attr.y]="t.y + 4" text-anchor="end">{{ t.label }}</text>
+        }
+        @for (m of geometry().months; track $index) {
+          <text class="uc__axis" [attr.x]="m.x" [attr.y]="chart().height - 6" text-anchor="middle">{{ m.label }}</text>
+        }
+        @for (p of geometry().profiles; track p.key) {
+          <path class="uc__band" [attr.data-slot]="p.slot" [attr.d]="p.band" />
+        }
+        @for (p of geometry().profiles; track p.key) {
+          <path class="uc__median" [attr.data-slot]="p.slot" [attr.d]="p.median" />
+        }
+        @if (showManagers()) {
+          @for (m of geometry().managers; track m.key) {
+            <path class="uc__manager" [attr.d]="m.path" />
+          }
+        }
+        @if (geometry().median; as med) {
+          <path class="uc__real" [attr.d]="med" />
+        }
+        @if (geometry().today !== null) {
+          <line class="uc__today" [attr.x1]="geometry().today" [attr.x2]="geometry().today"
+                [attr.y1]="chart().top" [attr.y2]="chart().height - chart().bottom" />
+        }
+        @if (hoverDay() !== null) {
+          <line class="uc__cursor" [attr.x1]="readout().x" [attr.x2]="readout().x"
+                [attr.y1]="chart().top" [attr.y2]="chart().height - chart().bottom" />
+        }
+      </svg>
+    }
+  </div>
+
+  <!-- Werte des Tags unter dem Zeiger (sonst heute) — zugleich die Legende -->
+  @if (profiles()) {
+    @let r = readout();
+    <div class="uc__readout">
+      <div class="uc__day">{{ r.label }}@if (r.isToday) { <span class="uc__muted">· heute</span> } <span class="uc__muted">· Tag {{ r.day }}</span></div>
+      <div class="uc__rows">
+        @for (p of r.profiles; track p.key) {
+          <div class="uc__row">
+            <span class="uc__swatch uc__swatch--line" [attr.data-slot]="p.slot"></span>
+            <span class="uc__label">{{ p.label }} <span class="uc__muted">(Simulation)</span></span>
+            <span class="uc__value">{{ p.p50 * 100 | number:'1.0-0' }} %</span>
+            <span class="uc__range">{{ p.p10 * 100 | number:'1.0-0' }}–{{ p.p90 * 100 | number:'1.0-0' }} %</span>
+          </div>
+        }
+        @if (r.median !== null) {
+          <div class="uc__row uc__row--real">
+            <span class="uc__swatch uc__swatch--real"></span>
+            <span class="uc__label">Echt, Median</span>
+            <span class="uc__value">{{ r.median * 100 | number:'1.0-0' }} %</span>
+            <span class="uc__range"></span>
+          </div>
+        }
+      </div>
+      @if (r.real; as real) {
+        <div class="uc__managers">
+          @for (m of real; track m.key) {
+            <div class="uc__mrow">
+              <span class="uc__swatch uc__swatch--manager"></span>
+              <span class="uc__label">{{ m.label }}</span>
+              <span class="uc__value">{{ m.share * 100 | number:'1.0-0' }} %</span>
+              <span class="uc__range">{{ m.unique }}/{{ r.total }}@if (m.trade || m.shop) { · <span [title]="'zuerst eingetauscht · zuerst aus gekauftem Pack'">{{ m.trade }} Tausch · {{ m.shop }} Shop</span> }</span>
+            </div>
+          }
+        </div>
+      } @else if (history() === null) {
+        <p class="uc__muted uc__note">Echte Sammlungen konnten nicht geladen werden.</p>
+      } @else if (history() && !realCurves().length) {
+        <p class="uc__muted uc__note">Noch keine echten Sammlungen (Album nicht eingefroren oder Saison noch nicht begonnen).</p>
+      }
+    </div>
+  }
+</div>

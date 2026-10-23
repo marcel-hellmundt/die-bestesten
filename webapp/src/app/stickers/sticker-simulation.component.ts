@@ -1,7 +1,12 @@
-import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
+import { ApiService } from '../core/api.service';
 import {
   MIN_PRICE, ShopPlan, ShopTiming, SimParams, SimProfile, countsAtDay, holoAtDay, shopPlan, simulateSeason, stickerWeights,
+  uniqueCurve,
 } from './sticker-sim';
+import { ProfileCurve, StickerHistory } from './unique-chart/unique-chart.component';
 import { simulateLeague } from './sticker-trade-sim';
 import { StickerCardData, StickerHolo } from './sticker-card/sticker-card.component';
 import { ALBUM_SOURCE, StickerAlbumService } from './album/sticker-album.service';
@@ -27,6 +32,7 @@ interface McResult {
 })
 export class StickerSimulationComponent {
   private album = inject(StickerAlbumService);
+  private api = inject(ApiService);
 
   loading = this.album.loading;
   error   = this.album.error;
@@ -228,6 +234,27 @@ export class StickerSimulationComponent {
     const counts = this.counts();
     return stickers.reduce((n, s) => n + (counts[s.idx] > 0 ? 1 : 0), 0);
   }
+
+  // ── Verlauf: verschiedene Sticker je Tag, Simulation gegen echte Sammlungen ─
+  /** Echte Sammlungen (GET /sticker/history); undefined = lädt, null = Fehler */
+  history = toSignal(this.api.get<StickerHistory>('sticker/history').pipe(catchError(() => of(null))), { initialValue: undefined });
+  readonly curveRuns = 40;
+  /** Simulierter Verlauf je Profil — kurz nach der letzten Änderung neu berechnet (eine Rechnung dauert spürbar) */
+  curves = signal<ProfileCurve[] | null>(null);
+  private curveTimer: ReturnType<typeof setTimeout> | null = null;
+  private curveEffect = effect(onCleanup => {
+    const shared = this.shared(), profiles = this.profiles(), weights = this.weights();
+    const timeline = this.timeline(), clubOf = this.clubOf();
+    if (!weights.length) return;
+    this.curveTimer = setTimeout(() => {
+      this.curves.set(profiles.map(p => ({
+        key: p.key, label: p.label,
+        curve: uniqueCurve(paramsFor(shared, p), weights, timeline, this.curveRuns, clubOf),
+      })));
+    }, 400);
+    onCleanup(() => { if (this.curveTimer) clearTimeout(this.curveTimer); });
+  });
+  cutoffDate = computed(() => this.dateOf(0));
 
   // ── Monte-Carlo über viele Saisons (gleiche Parameter, verschiedene Seeds) ─
   readonly mcRuns = 200;

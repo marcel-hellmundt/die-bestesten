@@ -300,3 +300,30 @@ export function countsAtDay(packs: SimPack[], n: number, day: number): Uint16Arr
   }
   return counts;
 }
+
+/** Verlauf "verschiedene Sticker" über viele Saisons: je Tag 10/50/90-%-Quantil des Album-Anteils (0–1). */
+export interface UniqueCurve { p10: number[]; p50: number[]; p90: number[] }
+
+export function uniqueCurve(params: SimParams, weights: number[], timeline: Timeline, runs: number, clubOf?: ArrayLike<number>): UniqueCurve {
+  const n = weights.length, days = timeline.days;
+  // byDay[d][r] = Anteil am Ende von Tag d in Saison r
+  const byDay = Array.from({ length: days + 1 }, () => new Float32Array(runs));
+  for (let r = 0; r < runs; r++) {
+    const packs = simulateSeason(params, weights, timeline, 1000 + r * 7919, clubOf); // gleiche Seeds wie die Monte-Carlo-Tabellen
+    const seen = new Uint8Array(n);
+    let unique = 0, k = 0;
+    for (let d = 0; d <= days; d++) {
+      for (; k < packs.length && packs[k].day <= d; k++) {
+        for (const s of packs[k].stickers) if (!seen[s]) { seen[s] = 1; unique++; }
+      }
+      byDay[d][r] = n ? unique / n : 0;
+    }
+  }
+  const q = (arr: Float32Array, p: number) => arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
+  const out: UniqueCurve = { p10: [], p50: [], p90: [] };
+  for (const arr of byDay) {
+    arr.sort();
+    out.p10.push(q(arr, 0.1)); out.p50.push(q(arr, 0.5)); out.p90.push(q(arr, 0.9));
+  }
+  return out;
+}

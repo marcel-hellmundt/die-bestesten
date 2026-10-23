@@ -1,0 +1,180 @@
+@use '../../../styles/variables' as *;
+
+// Profilfarben (kategorial, geprüft auf Farbsehschwäche) — eigene Stufen für den Dark Mode
+:host {
+  display: block;
+  --uc-1: #2a78d6;
+  --uc-2: #eb6834;
+  --uc-3: #1baf7a;
+}
+
+:host-context([data-theme='dark']) {
+  --uc-1: #3987e5;
+  --uc-2: #d95926;
+  --uc-3: #199e70;
+}
+
+[data-slot='1'] { --uc: var(--uc-1); }
+[data-slot='2'] { --uc: var(--uc-2); }
+[data-slot='3'] { --uc: var(--uc-3); }
+
+.uc {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-3;
+  }
+
+  &__title {
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__sub {
+    display: block;
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  &__box {
+    width: 100%;
+    min-height: 280px;
+  }
+
+  &__state {
+    padding: $space-8 0;
+    text-align: center;
+    color: $color-text-muted;
+    font-size: $font-sm;
+  }
+
+  &__chart {
+    display: block;
+    touch-action: pan-y;
+  }
+
+  &__grid { stroke: $color-border; stroke-width: 1; }
+
+  &__axis {
+    fill: $color-text-muted;
+    font-size: 11px;
+  }
+
+  &__band {
+    fill: var(--uc);
+    fill-opacity: 0.14;
+    stroke: none;
+  }
+
+  &__median {
+    fill: none;
+    stroke: var(--uc);
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+
+  &__manager {
+    fill: none;
+    stroke: $color-text-muted;
+    stroke-opacity: 0.45;
+    stroke-width: 1;
+  }
+
+  &__real {
+    fill: none;
+    stroke: $color-text;
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+  }
+
+  &__today {
+    stroke: $color-text-muted;
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+  }
+
+  &__cursor {
+    stroke: $color-text;
+    stroke-width: 1;
+    stroke-opacity: 0.5;
+  }
+
+  // ── Werte des Tags / Legende ──
+  &__readout {
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    font-size: $font-xs;
+  }
+
+  &__day { font-weight: $font-weight-semibold; }
+
+  &__muted { color: $color-text-muted; font-weight: $font-weight-normal; }
+
+  &__note { margin: 0; }
+
+  &__rows,
+  &__managers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: $space-1 $space-4;
+  }
+
+  &__managers {
+    padding-top: $space-2;
+    border-top: 1px solid $color-border;
+  }
+
+  &__row,
+  &__mrow {
+    display: grid;
+    grid-template-columns: 16px 1fr auto auto;
+    align-items: center;
+    gap: $space-2;
+    min-width: 0;
+  }
+
+  &__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__value {
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__range {
+    color: $color-text-muted;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &__swatch {
+    display: inline-block;
+    width: 16px;
+    height: 2px;
+    border-radius: 1px;
+
+    &--line { background: var(--uc); }
+    &--real { height: 3px; background: $color-text; }
+    &--manager { height: 1px; background: $color-text-muted; }
+  }
+}

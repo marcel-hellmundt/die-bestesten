@@ -230,6 +230,11 @@
       <div class="stat"><span class="stat__value">{{ st.holoSilver }} · {{ st.holoGold }}</span><span class="stat__label">Holo Silber · Holo Gold</span></div>
     </section>
 
+    <!-- Verlauf: verschiedene Sticker je Tag — Simulation gegen die echten Sammlungen -->
+    <section class="card mc">
+      <app-unique-chart [days]="timeline().days" [start]="cutoffDate()" [profiles]="curves()" [runs]="curveRuns" [history]="history()" />
+    </section>
+
     <section class="card mc">
       <div class="mc__head">
         <span class="mc__title">Monte-Carlo: je Profil {{ mcRuns }} Saisons mit diesen Regeln</span>

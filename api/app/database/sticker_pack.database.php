@@ -335,6 +335,85 @@ trait StickerPackTrait
     }
 
     /**
+     * Verlauf der Sammlungen für den Vergleich mit der Simulation (/klebrigsten/simulation): je Manager mit Album
+     * (dieselben wie in der Sammler-Rangliste), an welchem Tag wie viele Sticker erstmals in seine Sammlung kamen.
+     * Erstmals = frühestes Exemplar, das er heute noch hat (abgegeben werden beim Tausch nur Doppelte; wurde genau
+     * das ältere Exemplar weggetauscht, zählt der Tag des jüngeren). by = woher dieses erste Exemplar kam: pack
+     * (Tages-/Event-Packs), shop (gekauftes Pack, Lukaten oder Euro) oder trade (eingetauscht).
+     */
+    public function getStickerHistory(): array
+    {
+        $seasonId = $this->getActiveSeasonId();
+        $empty = ['season_id' => $seasonId, 'total' => 0, 'today' => date('Y-m-d'), 'managers' => []];
+        if ($seasonId === null || !$this->stickerAlbumReady($seasonId)) return $empty;
+
+        $t = $this->con->prepare("SELECT COUNT(*) FROM sticker WHERE season_id = ?");
+        $t->execute([$seasonId]);
+        $mq = $this->con->prepare(
+            "SELECT m.id, m.manager_name FROM manager m
+             WHERE m.status = 'active'
+               AND EXISTS (SELECT 1 FROM manager_league ml JOIN league l ON l.id = ml.league_id
+                           WHERE ml.manager_id = m.id AND ml.status = 'active' AND l.sticker_enabled = 1)
+             ORDER BY m.manager_name"
+        );
+        $mq->execute();
+        $managers = [];
+        foreach ($mq->fetchAll(PDO::FETCH_ASSOC) as $m) {
+            $managers[$m['id']] = ['manager_id' => $m['id'], 'manager_name' => $m['manager_name'], 'days' => []];
+        }
+
+        // je Manager + Sticker das erste Exemplar und woher es kam, dann je Tag gezählt
+        $firsts = "SELECT p.manager_id, p.sticker_id, MIN(p.created_at) AS first_at
+                   FROM sticker_pull p JOIN sticker s ON s.id = p.sticker_id
+                   WHERE s.season_id = ? GROUP BY p.manager_id, p.sticker_id";
+        try {
+            $q = $this->con->prepare(
+                "SELECT x.manager_id, x.day, x.via, COUNT(*) AS n FROM (
+                     SELECT f.manager_id, f.sticker_id, DATE(f.first_at) AS day,
+                            CASE WHEN MAX(p2.trade_id IS NOT NULL) = 1 THEN 'trade'
+                                 WHEN MAX(sp.source = 'shop') = 1 THEN 'shop' ELSE 'pack' END AS via
+                     FROM ($firsts) f
+                     JOIN sticker_pull p2 ON p2.manager_id = f.manager_id AND p2.sticker_id = f.sticker_id AND p2.created_at = f.first_at
+                     LEFT JOIN sticker_pack sp ON sp.id = p2.pack_id
+                     GROUP BY f.manager_id, f.sticker_id, f.first_at
+                 ) x GROUP BY x.manager_id, x.day, x.via ORDER BY x.day"
+            );
+            $q->execute([$seasonId]);
+        } catch (\Throwable $e) {
+            // ohne Tausch-Spalte (migrate_sticker_trade.sql) — Herkunft dann nur Pack/Shop
+            $q = $this->con->prepare(
+                "SELECT x.manager_id, x.day, x.via, COUNT(*) AS n FROM (
+                     SELECT f.manager_id, f.sticker_id, DATE(f.first_at) AS day,
+                            CASE WHEN MAX(sp.source = 'shop') = 1 THEN 'shop' ELSE 'pack' END AS via
+                     FROM ($firsts) f
+                     JOIN sticker_pull p2 ON p2.manager_id = f.manager_id AND p2.sticker_id = f.sticker_id AND p2.created_at = f.first_at
+                     LEFT JOIN sticker_pack sp ON sp.id = p2.pack_id
+                     GROUP BY f.manager_id, f.sticker_id, f.first_at
+                 ) x GROUP BY x.manager_id, x.day, x.via ORDER BY x.day"
+            );
+            $q->execute([$seasonId]);
+        }
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            if (!isset($managers[$r['manager_id']])) continue;
+            $days = &$managers[$r['manager_id']]['days'];
+            $day = $r['day'];
+            if (!isset($days[$day])) $days[$day] = ['date' => $day, 'pack' => 0, 'shop' => 0, 'trade' => 0];
+            $days[$day][$r['via']] += (int) $r['n'];
+            unset($days);
+        }
+
+        return [
+            'season_id' => $seasonId,
+            'total'     => (int) $t->fetchColumn(),
+            'today'     => date('Y-m-d'),
+            'managers'  => array_values(array_map(function ($m) {
+                $m['days'] = array_values($m['days']);
+                return $m;
+            }, $managers)),
+        ];
+    }
+
+    /**
      * Alle Manager mit Album (aktiv in mind. einer Liga mit sticker_enabled) und ihr Fortschritt in der
      * aktiven Saison — für die Sammler-Rangliste; sortiert nach Anzahl verschiedener Sticker.
      * Mit $viewerId zusätzlich je Sammler die Tauschmöglichkeiten: trade_get = seine Doppelten, die dem
