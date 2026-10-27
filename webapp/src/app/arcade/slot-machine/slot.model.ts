@@ -1,6 +1,6 @@
 /**
  * Symbole auf den Walzen — die Schlüssel wie SlotTrait::slotConfig() im Backend (klassische Automaten-Namen),
- * angezeigt als Fußball-Icons (SYMBOL_ICONS); blank = Leerfeld, zeigt die Bank
+ * angezeigt als Fußball-Icons (SYMBOL_ICONS); blank = Leerfeld, zeigt einen Geist
  */
 export type SlotSymbol = 'seven' | 'bell' | 'plum' | 'orange' | 'lemon' | 'cherry' | 'blank';
 
@@ -51,7 +51,7 @@ export interface SlotSpinResult {
 }
 
 export const SYMBOL_NAMES: Record<SlotSymbol, string> = {
-  seven: 'Stern', bell: 'Kleeblatt', plum: 'Tor', orange: 'Vorlage', lemon: 'Weiße Weste', cherry: 'Geld', blank: 'Bank',
+  seven: 'Stern', bell: 'Kleeblatt', plum: 'Tor', orange: 'Vorlage', lemon: 'Weiße Weste', cherry: 'Geld', blank: 'Geist',
 };
 
 /**
