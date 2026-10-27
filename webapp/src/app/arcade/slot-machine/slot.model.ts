@@ -51,11 +51,13 @@ export interface SlotSpinResult {
 }
 
 export const SYMBOL_NAMES: Record<SlotSymbol, string> = {
-  seven: 'Pokal', bell: 'Medaille', plum: 'SdS', orange: 'Tor', lemon: 'Weiße Weste', cherry: 'Vorlage', blank: 'Bank',
+  seven: 'Stern', bell: 'Kleeblatt', plum: 'Medaille', orange: 'Tor', lemon: 'Weiße Weste', cherry: 'Vorlage', blank: 'Bank',
 };
 
-/** Bild je Symbol (public/img/icons/) */
-export const SYMBOL_ICONS: Record<SlotSymbol, string> = {
-  seven: 'img/icons/trophy.png', bell: 'img/icons/medal.png', plum: 'img/icons/sds.png', orange: 'img/icons/goal.png',
-  lemon: 'img/icons/clean_sheet.png', cherry: 'img/icons/assist.png', blank: 'img/icons/bench.png',
-};
+/**
+ * Bild je Symbol: public/img/slot/{Schlüssel}.png — eigener Ordner, damit die Bilder unabhängig von den übrigen
+ * Icons (z.B. in höherer Auflösung) ersetzt werden können; Dateiname = Symbol-Schlüssel
+ */
+export const SYMBOL_ICONS = Object.fromEntries(
+  (['seven', 'bell', 'plum', 'orange', 'lemon', 'cherry', 'blank'] as SlotSymbol[]).map(s => [s, `img/slot/${s}.png`]),
+) as Record<SlotSymbol, string>;
