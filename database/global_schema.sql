@@ -578,8 +578,8 @@ CREATE TABLE IF NOT EXISTS lukaten_transaction (
     id         CHAR(36)      NOT NULL PRIMARY KEY DEFAULT (UUID()),
     manager_id CHAR(36)      NOT NULL,
     amount     DECIMAL(10,2) NOT NULL,      -- + Gutschrift, − Ausgabe
-    source     VARCHAR(20)   NOT NULL,      -- season_bonus | entries | eur | eur_cancel | pack
-    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'season:{season_id}' (Startbonus, einer je Manager und Saison), 'entries:{matchday_id}' (Einträge eines Spieltags), 'eur:{purchase_id}' / 'eur_cancel:{purchase_id}' (Lukaten-Kauf / Storno, sticker_eur_purchase), 'pack:{pack_id}'
+    source     VARCHAR(20)   NOT NULL,      -- season_bonus | entries | eur | eur_cancel | pack | slot
+    source_key VARCHAR(120)  NOT NULL,      -- je Manager eindeutig → idempotent: 'season:{season_id}' (Startbonus, einer je Manager und Saison), 'entries:{matchday_id}' (Einträge eines Spieltags), 'eur:{purchase_id}' / 'eur_cancel:{purchase_id}' (Lukaten-Kauf / Storno, sticker_eur_purchase), 'pack:{pack_id}', 'slot:{spin_id}' (Dreh in der Spielhalle, Betrag = Gewinn − Einsatz)
     season_id  CHAR(36)      NULL,          -- Saison der Bewegung (nur zur Auswertung — das Konto ist saisonübergreifend)
     pack_id    CHAR(36)      NULL,          -- gekauftes Pack (source = pack)
     created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -597,6 +597,20 @@ CREATE TABLE IF NOT EXISTS lukaten_price_level (
     factor          DECIMAL(4,2)  NOT NULL,              -- Faktor auf die Grundpreise, wie er in dieser Woche galt
     avg_circulation DECIMAL(12,2) NULL,                  -- Mittel der Lukaten im Umlauf über die 14 Tage vor week_start
     created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tabelle: slot_spin — Spielhalle (einarmiger Bandit): je Dreh eine Zeile; gebucht wird er zusätzlich im Kontobuch
+-- (lukaten_transaction, source 'slot'), siehe SlotTrait (Migration: 2026-10-27_slot_spin.sql)
+CREATE TABLE IF NOT EXISTS slot_spin (
+    id         CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id CHAR(36)    NOT NULL,
+    stake      TINYINT     NOT NULL,           -- Einsatz in Lukaten (1–3)
+    stops      VARCHAR(20) NOT NULL,           -- gewürfelter Stopp je Walze, z.B. '3|17|9' (Walzen in SlotTrait::slotConfig())
+    win_key    VARCHAR(20) NULL,               -- Gewinnzeile der Gewinntabelle, NULL = kein Gewinn
+    payout     INT         NOT NULL DEFAULT 0, -- ausgezahlte Lukaten (0 ohne Gewinn)
+    created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    KEY idx_slot_spin_manager (manager_id, created_at)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Tabelle: matchday_summary (Spieltags-Zusammenfassung je Manager und Liga, beim Spieltagsabschluss festgehalten;

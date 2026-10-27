@@ -1,0 +1,474 @@
+@use '../../../styles/variables' as *;
+
+.arcade {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  padding: $space-4;
+
+  @media (max-width: $mobile-breakpoint) { padding: $space-3 0; } // seitlicher Rand kommt von der Shell
+}
+
+.is-minus { color: $color-danger; }
+
+.lukat-icon {
+  width: 14px;
+  height: 14px;
+  margin-left: 3px;
+  object-fit: contain;
+  vertical-align: -2px;
+}
+
+// Desktop: Automat links, Tabelle + Bilanz rechts; darunter untereinander
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
+  gap: $space-6;
+  align-items: start;
+
+  @media (max-width: 1000px) { grid-template-columns: minmax(0, 1fr); }
+}
+
+.machine-col,
+.side-col {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  min-width: 0;
+}
+
+.machine-col {
+  @media (max-width: 1000px) {
+    width: 100%;
+    max-width: 460px;
+    margin: 0 auto;
+  }
+}
+
+.hint {
+  margin: 0;
+  font-size: $font-xs;
+  color: $color-text-muted;
+  line-height: 1.5;
+
+  a { color: inherit; text-decoration: underline; }
+}
+
+// ── Der Automat — eigenständiges Motiv: feste Farben (Gehäuse rot/gold, Walzen weiß), in beiden Themes gleich ──
+.machine {
+  --cell: 92px;
+  --gold: #f6c453;
+  --gold-dark: #b7791f;
+
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-4 $space-5 $space-5;
+  border-radius: 28px 28px $radius-xl $radius-xl;
+  background:
+    radial-gradient(120% 60% at 50% 0%, #e0453a 0%, transparent 70%),
+    linear-gradient(180deg, #b3261e 0%, #7a1410 100%);
+  border: 4px solid var(--gold);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -6px 0 rgba(0, 0, 0, 0.25),
+    0 12px 30px rgba(0, 0, 0, 0.25);
+  color: #fff;
+
+  @media (max-width: $mobile-breakpoint) {
+    --cell: 76px;
+    padding: $space-3 $space-3 $space-4;
+  }
+
+  &__marquee {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $space-3;
+  }
+
+  &__name {
+    font-family: $font-display;
+    font-size: $font-xl;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-shadow: 0 2px 0 #5c0f0b;
+
+    @media (max-width: $mobile-breakpoint) { font-size: $font-lg; }
+  }
+
+  &__lamp {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+    animation: lamp 1.6s ease-in-out infinite;
+
+    &:last-child { animation-delay: -0.8s; }
+  }
+
+  // drei Walzen nebeneinander, sichtbar sind drei Reihen — gewertet die mittlere
+  &__window {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 6px;
+    border-radius: $radius-lg;
+    background: #2b0806;
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.6);
+  }
+
+  &__payline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 3px;
+    margin-top: -1.5px;
+    background: var(--gold);
+    opacity: 0.7;
+    pointer-events: none;
+    box-shadow: 0 0 6px var(--gold);
+    transition: opacity $transition-normal;
+  }
+
+  &__window--win &__payline {
+    opacity: 1;
+    animation: payline 0.5s ease-in-out 4;
+  }
+
+  &__display {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $space-3;
+  }
+
+  &__controls {
+    display: flex;
+    align-items: flex-end;
+    gap: $space-4;
+  }
+
+  &__error {
+    margin: 0;
+    padding: $space-2 $space-3;
+    border-radius: $radius-md;
+    background: rgba(0, 0, 0, 0.3);
+    font-size: $font-sm;
+    text-align: center;
+  }
+
+  &--celebrating {
+    animation: celebrate 0.35s ease-in-out 8;
+  }
+}
+
+.reel {
+  height: calc(var(--cell) * 3);
+  overflow: hidden;
+  border-radius: $radius-md;
+  background: linear-gradient(180deg, #cfcfcf 0%, #fff 22%, #fff 78%, #cfcfcf 100%);
+
+  &__strip {
+    transform: translateY(calc(var(--cell) * var(--offset) * -1));
+    // leichtes Überschwingen am Ende wie eine echte Walze, die einrastet
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.2, 0.75, 0.25, 1.06);
+    will-change: transform;
+  }
+
+  &__cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--cell);
+
+    img {
+      width: 64%;
+      height: 64%;
+      object-fit: contain;
+      user-select: none;
+      filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.2));
+    }
+  }
+}
+
+// beim Drehen leicht verwischt
+.machine__window--spinning .reel__cell img {
+  filter: blur(1.5px);
+}
+
+.display {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: #1a0504;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+
+  &__label {
+    font-size: $font-2xs;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  &__value {
+    font-family: $font-display;
+    font-size: $font-2xl;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    color: #ffd166;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @media (max-width: $mobile-breakpoint) { font-size: $font-xl; }
+  }
+
+  &--hit &__value {
+    color: #7dff9b;
+    text-shadow: 0 0 10px rgba(125, 255, 155, 0.6);
+  }
+}
+
+.stake {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  &__label {
+    font-size: $font-2xs;
+    font-weight: $font-weight-bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  // Umschalter in den Farben des Automaten (der Akzent wäre auf dem roten Gehäuse kaum zu sehen)
+  .segmented {
+    --seg-color: var(--gold);
+    background: #1a0504;
+    border-color: var(--gold-dark);
+  }
+
+  .segmented:not(.segmented--sliding) .segmented__option--active { background: var(--gold); }
+
+  .segmented__option {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: $font-weight-bold;
+
+    &:hover:not(.segmented__option--active) { color: #fff; }
+
+    &--active { color: #4a1d00; }
+  }
+}
+
+// großer runder Knopf zum Drehen
+.spin-btn {
+  flex: 1;
+  height: 56px;
+  border: none;
+  border-radius: $radius-full;
+  background: linear-gradient(180deg, #ffe08a 0%, var(--gold) 45%, var(--gold-dark) 100%);
+  box-shadow: 0 5px 0 #7a4a0c, 0 8px 16px rgba(0, 0, 0, 0.3);
+  color: #4a1d00;
+  font-family: $font-display;
+  font-size: $font-xl;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 80ms ease, box-shadow 80ms ease, filter $transition-fast;
+
+  &:hover:not(:disabled) { filter: brightness(1.06); }
+
+  &:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #7a4a0c, 0 3px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.6) brightness(0.85);
+  }
+
+  &:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
+}
+
+// ── Gewinntabelle + Bilanz ──
+.card-title {
+  margin: 0 0 $space-3;
+  font-size: $font-md;
+  font-weight: $font-weight-bold;
+}
+
+.paytable {
+  .data-table td,
+  .data-table th { white-space: nowrap; }
+
+  &__symbols {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+
+    img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    small {
+      margin-left: $space-1;
+      font-size: $font-xs;
+      color: $color-text-muted;
+    }
+  }
+
+  &__any {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-weight: $font-weight-bold;
+    color: $color-text-muted;
+  }
+
+  // Spalte des gewählten Einsatzes
+  &__active-col {
+    background: color-mix(in srgb, $color-accent 10%, transparent);
+    font-weight: $font-weight-bold;
+  }
+
+  &__jackpot {
+    color: $color-danger;
+    font-weight: 800;
+  }
+
+  &__hit td {
+    background: color-mix(in srgb, $color-success 18%, transparent);
+  }
+}
+
+.history {
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: $space-3;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @media (max-width: $mobile-breakpoint) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    li {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    span {
+      font-size: $font-xs;
+      color: $color-text-muted;
+    }
+
+    b {
+      font-size: $font-lg;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__title {
+    margin: $space-4 0 $space-2;
+    font-size: $font-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-muted;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.spin-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-1 0;
+  border-top: 1px solid $color-border;
+  font-size: $font-sm;
+  font-variant-numeric: tabular-nums;
+
+  &:first-child { border-top: none; }
+
+  &__symbols {
+    display: inline-flex;
+    gap: 2px;
+  }
+
+  &__cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: $radius-sm;
+    background: $color-surface-alt;
+
+    img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+    }
+  }
+
+  &__stake {
+    margin-left: auto;
+    color: $color-text-muted;
+  }
+
+  &__payout {
+    min-width: 48px;
+    text-align: right;
+    color: $color-text-muted;
+  }
+
+  &--win &__payout { color: $color-success; }
+}
+
+@keyframes lamp {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes payline {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes celebrate {
+  0%, 100% { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25), 0 12px 30px rgba(0, 0, 0, 0.25); }
+  50% { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25), 0 0 40px 8px var(--gold); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .machine__lamp,
+  .machine--celebrating,
+  .machine__window--win .machine__payline { animation: none; }
+  .machine__window--spinning .reel__cell img { filter: none; }
+}

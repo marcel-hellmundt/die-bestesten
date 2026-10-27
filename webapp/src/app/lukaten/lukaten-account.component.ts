@@ -7,7 +7,7 @@ import { PackInfo } from '../stickers/album/pack.model';
 import { PackKind } from '../stickers/shop/shop.model';
 
 type EntryType = 'participation' | 'note' | 'stats';
-type LukatenSource = 'season_bonus' | 'entries' | 'eur' | 'eur_cancel' | 'pack' | 'admin';
+type LukatenSource = 'season_bonus' | 'entries' | 'eur' | 'eur_cancel' | 'pack' | 'slot' | 'admin';
 
 interface LukatenTransaction {
   source: LukatenSource;
@@ -17,6 +17,7 @@ interface LukatenTransaction {
   matchday_number: number | null;  // Einträge: Spieltag
   pack_name: string | null;        // Pack-Kauf: Pack-Art
   club_name: string | null;        // Vereins-Pack: Verein
+  spins: number | null;            // Spielhalle: Drehs des Tages (je Tag eine Zeile)
 }
 
 /** Lukaten gegen Euro: ein Bündel */
@@ -50,7 +51,7 @@ interface EurResult {
 interface LukatenAccount {
   ready: boolean;
   balance: number | null;
-  totals?: { start: number; entries: number; eur: number; packs: number; stakes: number; payouts: number };
+  totals?: { start: number; entries: number; eur: number; packs: number; stakes: number; payouts: number; slot: number };
   /** Einträge auf noch nicht abgeschlossenen Spieltagen — werden beim Abschluss gebucht */
   pending_entries?: { count: number; by_type: Record<EntryType, number> };
   transactions?: LukatenTransaction[];
@@ -81,7 +82,7 @@ const COIN_STACKS: { x: number; y: number }[][] = [[1], [2], [2, 1], [3, 2, 1]].
 /**
  * /lukaten — die zentrale Stelle für Lukaten (siehe docs/lukaten-economy-concept.md): oben der Kontostand, darunter
  * auf Desktop zwei Spalten über die ganze Breite — links übereinander, woher Lukaten kommen (Einträge, Startbonus,
- * Kauf gegen Euro), rechts die Angebote, sie auszugeben (Sticker-Packs mit Pack-Cover und Preis, Bestico) —, zuletzt
+ * Kauf gegen Euro), rechts die Angebote, sie auszugeben (Sticker-Packs mit Pack-Cover und Preis, Bestico, Spielhalle) —, zuletzt
  * der Kontoauszug. Die Regeln zu den Einträgen stehen bewusst knapp da ("1 Eintrag = 1 Lukate"), die Einzelheiten
  * hinter "So wird gezählt".
  */
@@ -126,6 +127,7 @@ export class LukatenAccountComponent {
       { key: 'payouts', label: 'Tippgewinne', amount: t.payouts },
       { key: 'stakes', label: 'Tipp-Einsätze', amount: t.stakes },
       { key: 'packs', label: 'Sticker-Packs', amount: t.packs },
+      { key: 'slot', label: 'Spielhalle', amount: t.slot ?? 0 },
     ].filter(x => x.amount !== 0);
   });
 
@@ -240,6 +242,7 @@ export class LukatenAccountComponent {
       case 'eur':          return 'Lukaten gekauft';
       case 'eur_cancel':   return 'Kauf storniert';
       case 'pack':         return (t.pack_name ?? 'Sticker-Pack') + (t.club_name ? ` · ${t.club_name}` : '');
+      case 'slot':         return `Spielhalle · ${t.spins ?? 0} ${t.spins === 1 ? 'Dreh' : 'Drehs'}`;
       default:             return 'Buchung';
     }
   }

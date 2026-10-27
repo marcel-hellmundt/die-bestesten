@@ -1,0 +1,156 @@
+<div class="arcade">
+  <h1 class="page-title">Spielhalle</h1>
+
+  @if (state() === undefined) {
+    <p class="state-msg">Laden…</p>
+  } @else if (!state()) {
+    <p class="state-msg state-msg--error">Die Spielhalle konnte nicht geladen werden.</p>
+  } @else if (!ready()) {
+    <p class="state-msg">Die Spielhalle ist noch nicht eingerichtet.</p>
+  } @else {
+    <div class="columns">
+      <!-- ── Der Automat ── -->
+      <section class="machine-col">
+        <div class="machine" [class.machine--celebrating]="celebrating()">
+          <div class="machine__marquee">
+            <span class="machine__lamp"></span>
+            <span class="machine__name">Einarmiger Bandit</span>
+            <span class="machine__lamp"></span>
+          </div>
+
+          <div class="machine__window" [class.machine__window--spinning]="spinning()" [class.machine__window--win]="lastWin()">
+            @for (reel of reels(); track $index) {
+              <div class="reel">
+                <div class="reel__strip" [style.--offset]="offset(reel)" [style.transition-duration.ms]="reel.duration">
+                  @for (sym of reel.cells; track $index) {
+                    <div class="reel__cell">
+                      @if (sym !== 'blank') {
+                        <img [src]="'img/arcade/' + sym + '.svg'" [alt]="symbolName(sym)" draggable="false" />
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+            <span class="machine__payline" aria-hidden="true"></span>
+          </div>
+
+          <!-- Anzeige: Gewinn bzw. Kontostand -->
+          <div class="machine__display" aria-live="polite">
+            <div class="display">
+              <span class="display__label">Guthaben</span>
+              <span class="display__value">{{ format(balance()) }}</span>
+            </div>
+            <div class="display display--win" [class.display--hit]="lastWin()">
+              <span class="display__label">Gewinn</span>
+              <span class="display__value">
+                @if (spinning()) { … }
+                @else if (lastWin(); as w) { {{ w.jackpot ? 'Jackpot! ' : '' }}+{{ format(w.payout) }} }
+                @else if (lastSpun()) { 0 }
+                @else { – }
+              </span>
+            </div>
+          </div>
+
+          <div class="machine__controls">
+            <div class="stake">
+              <span class="stake__label">Einsatz</span>
+              <div class="segmented" role="group" aria-label="Einsatz in Lukaten">
+                @for (s of stakes(); track s) {
+                  <button type="button" class="segmented__option" [class.segmented__option--active]="stake() === s"
+                          [disabled]="spinning()" (click)="setStake(s)">
+                    {{ s }}<img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" />
+                  </button>
+                }
+              </div>
+            </div>
+            <button type="button" class="spin-btn" [disabled]="!canSpin()" (click)="spin()">
+              {{ spinning() ? 'Dreht…' : 'Drehen' }}
+            </button>
+          </div>
+
+          @if (error()) {
+            <p class="machine__error">{{ error() }}</p>
+          } @else if (!spinning() && (balance() ?? 0) < stake()) {
+            <p class="machine__error">Nicht genug Lukaten für diesen Einsatz.</p>
+          }
+        </div>
+        <p class="hint">
+          Gewertet wird die mittlere Reihe. Mit 3 Lukaten Einsatz zahlt der Jackpot {{ format(jackpot()?.payout) }} statt
+          {{ format((paytable()[0]?.multiplier ?? 0) * 3) }}. Gewinne landen sofort auf deinem
+          <a routerLink="/lukaten">Lukaten-Konto</a>.
+        </p>
+      </section>
+
+      <!-- ── Gewinntabelle + Bilanz ── -->
+      <section class="side-col">
+        <div class="card paytable">
+          <h2 class="card-title">Gewinntabelle</h2>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Gewinnlinie</th>
+                  @for (s of stakes(); track s) {
+                    <th class="col-value" [class.paytable__active-col]="stake() === s">{{ s }}<img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" /></th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (line of paytable(); track line.key) {
+                  <tr [class.paytable__hit]="lastWin()?.key === line.key">
+                    <td>
+                      <span class="paytable__symbols" [attr.title]="lineLabel(line)" [attr.aria-label]="lineLabel(line)">
+                        @for (sym of lineSymbols(line); track $index) {
+                          @if (sym) {
+                            <img [src]="'img/arcade/' + sym + '.svg'" alt="" />
+                          } @else {
+                            <span class="paytable__any">?</span>
+                          }
+                        }
+                        @if (line.match === 'any3') { <small>gemischt</small> }
+                      </span>
+                    </td>
+                    @for (s of stakes(); track s) {
+                      <td class="col-value" [class.paytable__active-col]="stake() === s" [class.paytable__jackpot]="isJackpotCell(line, s)">
+                        {{ format(payout(line, s)) }}
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card history">
+          <h2 class="card-title">Deine Bilanz</h2>
+          <ul class="history__stats">
+            <li><span>Drehs</span><b>{{ format(stats().spins) }}</b></li>
+            <li><span>Eingesetzt</span><b>{{ format(stats().staked) }}</b></li>
+            <li><span>Gewonnen</span><b>{{ format(stats().won) }}</b></li>
+            <li><span>Saldo</span><b [class.is-minus]="saldo() < 0">{{ formatSigned(saldo()) }}</b></li>
+          </ul>
+          @if (recent().length) {
+            <h3 class="history__title">Letzte Drehs</h3>
+            <ul class="history__list">
+              @for (r of recent(); track $index) {
+                <li class="spin-row" [class.spin-row--win]="r.payout > 0">
+                  <span class="spin-row__symbols">
+                    @for (sym of r.symbols; track $index) {
+                      <span class="spin-row__cell">
+                        @if (sym !== 'blank') { <img [src]="'img/arcade/' + sym + '.svg'" [alt]="symbolName(sym)" /> }
+                      </span>
+                    }
+                  </span>
+                  <span class="spin-row__stake">−{{ r.stake }}</span>
+                  <b class="spin-row__payout">{{ r.payout > 0 ? '+' + format(r.payout) : '–' }}</b>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</div>

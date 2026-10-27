@@ -5,7 +5,7 @@
  * Referenzpunkt: 1 Eintrag = 1 Lukate ≈ 1 Cent. Ein Konto je Manager, unabhängig von Liga und Saison.
  *
  * Kontostand = Kontobuch + Tipps − alte Shop-Käufe
- *   Kontobuch        lukaten_transaction (globale DB): Startbonus, Einträge, Euro-Käufe, Pack-Käufe — je Bewegung
+ *   Kontobuch        lukaten_transaction (globale DB): Startbonus, Einträge, Euro-Käufe, Pack-Käufe, Spielhalle — je Bewegung
  *                    eine Zeile, der Schlüssel (source_key) ist je Manager eindeutig und macht jede Buchung idempotent.
  *   Tipps            live aus h2h_prediction aller Ligen des Managers: −Einsätze + Einsatz × Quote der gewonnenen.
  *                    Bewusst nicht ins Kontobuch gespiegelt — Tipp-Tabelle (Liga-DB) und Kontobuch (globale DB)
@@ -341,11 +341,22 @@ trait LukatenAccountTrait
              LEFT JOIN season s ON s.id = lt.season_id
              LEFT JOIN sticker_pack sp ON sp.id = lt.pack_id
              LEFT JOIN club c ON c.id = sp.club_id
-             WHERE lt.manager_id = ?
+             WHERE lt.manager_id = ? AND lt.source != 'slot'
              ORDER BY lt.created_at DESC, lt.id DESC LIMIT 50"
         );
         $lq->execute([$managerId]);
         $rows = $lq->fetchAll(PDO::FETCH_ASSOC);
+        // Drehs in der Spielhalle: eine Buchung je Dreh — im Kontoauszug je Tag zu einer Zeile zusammengefasst
+        $gq = $this->con->prepare(
+            "SELECT 'slot' AS source, NULL AS source_key, SUM(amount) AS amount, MAX(created_at) AS created_at,
+                    NULL AS season_start, NULL AS pack_kind, NULL AS club_name, COUNT(*) AS spins
+             FROM lukaten_transaction WHERE manager_id = ? AND source = 'slot'
+             GROUP BY DATE(created_at) ORDER BY DATE(created_at) DESC LIMIT 50"
+        );
+        $gq->execute([$managerId]);
+        $rows = array_merge($rows, $gq->fetchAll(PDO::FETCH_ASSOC));
+        usort($rows, fn($a, $b) => strcmp((string) $b['created_at'], (string) $a['created_at']));
+        $rows = array_slice($rows, 0, 50);
 
         // der Spieltag steht bei Einträgen als ID im Buchungsschlüssel (entries:{matchday_id})
         $keyPart = fn(array $r, int $i) => explode(':', (string) $r['source_key'])[$i] ?? '';
@@ -367,6 +378,7 @@ trait LukatenAccountTrait
             'matchday_number' => $r['source'] === 'entries' && isset($mdNumbers[$keyPart($r, 1)]) ? (int) $mdNumbers[$keyPart($r, 1)] : null,
             'pack_name'       => $r['source'] === 'pack' ? ($kinds[$r['pack_kind']]['name'] ?? null) : null,
             'club_name'       => $r['club_name'],
+            'spins'           => isset($r['spins']) ? (int) $r['spins'] : null,
         ], $rows);
 
         $offers = $this->stickerShopOffers();
@@ -381,6 +393,7 @@ trait LukatenAccountTrait
                 'packs'   => ($bySource['pack'] ?? 0.0) - $parts['legacy_shop'],
                 'stakes'  => -$parts['stakes'],
                 'payouts' => $parts['payouts'],
+                'slot'    => $bySource['slot'] ?? 0.0,
             ],
             'pending_entries' => $this->lukatenPendingEntries($managerId),
             'transactions'    => $transactions,
@@ -419,7 +432,7 @@ trait LukatenAccountTrait
 
         $accounts = [];
         $totals = ['in_circulation' => 0.0, 'start' => 0.0, 'entries' => 0.0, 'eur' => 0.0, 'packs' => 0.0, 'bets' => 0.0,
-                   'stakes' => 0.0, 'payouts' => 0.0];
+                   'slot' => 0.0, 'stakes' => 0.0, 'payouts' => 0.0];
         foreach ($mq->fetchAll(PDO::FETCH_ASSOC) as $m) {
             $this->syncLukatenAccount($m['id']);
             $parts = $this->lukatenParts($m['id']);
@@ -434,10 +447,11 @@ trait LukatenAccountTrait
                 'eur'          => ($src['eur'] ?? 0.0) + ($src['eur_cancel'] ?? 0.0),
                 'packs'        => ($src['pack'] ?? 0.0) - $parts['legacy_shop'],
                 'bets'         => round($parts['payouts'] - $parts['stakes'], 2),
+                'slot'         => $src['slot'] ?? 0.0,
             ];
             $accounts[] = $row;
             $totals['in_circulation'] += $row['balance'];
-            foreach (['start', 'entries', 'eur', 'packs', 'bets'] as $k) $totals[$k] += $row[$k];
+            foreach (['start', 'entries', 'eur', 'packs', 'bets', 'slot'] as $k) $totals[$k] += $row[$k];
             $totals['stakes']  += $parts['stakes'];
             $totals['payouts'] += $parts['payouts'];
         }
@@ -463,7 +477,7 @@ trait LukatenAccountTrait
     public function getLukatenHistory(): array
     {
         $since = $this->lukatenAccountConfig()['since_season'];
-        if (!$this->lukatenLedgerReady()) return ['ready' => false, 'since' => $since, 'days' => [], 'managers' => [], 'bank' => [], 'shop' => []];
+        if (!$this->lukatenLedgerReady()) return ['ready' => false, 'since' => $since, 'days' => [], 'managers' => [], 'bank' => [], 'shop' => [], 'arcade' => []];
 
         $mq = $this->con->query(
             "SELECT DISTINCT m.id, m.manager_name FROM manager m
@@ -489,7 +503,8 @@ trait LukatenAccountTrait
         $delta = [];                                   // manager_id => [Tag-Index => Veränderung]
         $bank = array_fill(0, count($days), 0.0);
         $shop = array_fill(0, count($days), 0.0);
-        $add = function (string $managerId, int $i, float $amount) use (&$delta, $names): bool {
+        $arcade = array_fill(0, count($days), 0.0);
+        $add =function (string $managerId, int $i, float $amount) use (&$delta, $names): bool {
             if (!isset($names[$managerId])) return false;
             $delta[$managerId][$i] = ($delta[$managerId][$i] ?? 0.0) + $amount;
             return true;
@@ -501,7 +516,9 @@ trait LukatenAccountTrait
             // Startbonus: verteilt zum Saisonbeginn, auch wenn die Buchung später angelegt wurde
             $bonusDay = $r['source'] === 'season_bonus' ? ($seasonStart[$r['season_id']] ?? null) : null;
             $i = $at($bonusDay ?? $r['created_at']);
-            if ($add($r['manager_id'], $i, (float) $r['amount']) && $r['source'] === 'pack') $shop[$i] -= (float) $r['amount'];
+            if (!$add($r['manager_id'], $i, (float) $r['amount'])) continue;
+            if ($r['source'] === 'pack') $shop[$i] -= (float) $r['amount'];
+            if ($r['source'] === 'slot') $arcade[$i] -= (float) $r['amount'];
         }
 
         $seasonIds = array_keys($this->lukatenSeasons());
@@ -571,7 +588,8 @@ trait LukatenAccountTrait
         }
         usort($managers, fn($a, $b) => end($b['balance']) <=> end($a['balance']) ?: strcmp($a['manager_name'], $b['manager_name']));
 
-        return ['ready' => true, 'since' => $since, 'days' => $days, 'managers' => $managers, 'bank' => $running($bank), 'shop' => $running($shop)];
+        return ['ready' => true, 'since' => $since, 'days' => $days, 'managers' => $managers, 'bank' => $running($bank), 'shop' => $running($shop),
+                'arcade' => $running($arcade)];
     }
 
     // ── Preisstufe der Lukaten-Packs ────────────────────────────────────────

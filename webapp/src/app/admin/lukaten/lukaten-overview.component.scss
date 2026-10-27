@@ -40,6 +40,14 @@
 }
 
 // Shop: kleines Folienpack mit gezackter Naht statt Bild (eigenständiges Motiv, feste Farben)
+.arcade-avatar {
+  width: 22px;
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+}
+
 .shop-avatar {
   width: 16px;
   height: 22px;

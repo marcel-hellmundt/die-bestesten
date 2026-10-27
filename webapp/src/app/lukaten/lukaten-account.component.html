@@ -213,6 +213,24 @@
             </ul>
           }
         </a>
+
+        <a class="card offer" routerLink="/spielhalle">
+          <header class="offer__head">
+            <div>
+              <h3 class="offer__title">Spielhalle</h3>
+              <p class="offer__sub">Einarmiger Bandit: 1 bis 3 Lukaten setzen, drehen, Gewinn sofort auf dem Konto.</p>
+            </div>
+            <span class="offer__go">Zur Spielhalle</span>
+          </header>
+          @if (a.totals?.slot) {
+            <ul class="offer__stats">
+              <li>
+                <span>Bilanz</span>
+                <b [class.is-minus]="a.totals!.slot < 0">{{ formatSigned(a.totals!.slot) }}</b>
+              </li>
+            </ul>
+          }
+        </a>
       </section>
     </div>
 

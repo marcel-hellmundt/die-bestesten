@@ -13,6 +13,7 @@ interface LukatenAccountRow {
   eur: number;       // gegen Euro gekauft (Stornos abgezogen)
   packs: number;     // für Sticker-Packs ausgegeben (negativ)
   bets: number;      // Tipps: Gewinne minus Einsätze
+  slot?: number;     // Spielhalle: Gewinne minus Einsätze
 }
 
 /** Preisstufe der Lukaten-Packs nach der Menge im Umlauf (GET /lukaten/overview → price_level) */
@@ -36,6 +37,7 @@ interface LukatenOverview {
   accounts: LukatenAccountRow[];
   totals: {
     in_circulation: number; start: number; entries: number; eur: number; packs: number; bets: number;
+    slot?: number;     // Spielhalle: Gewinne minus Einsätze aller Konten
     stakes?: number;   // alle Einsätze dieser Konten, auch offene
     payouts?: number;  // alle ausgezahlten Tippgewinne
   } | null;
@@ -49,6 +51,7 @@ interface LukatenHistory {
   managers: { manager_id: string; manager_name: string; balance: number[] }[];
   bank: number[];
   shop: number[];
+  arcade?: number[]; // Spielhalle: Einsätze minus ausgezahlte Gewinne
 }
 
 /** Eine Fläche im Verlauf-Chart */
@@ -63,6 +66,7 @@ interface ChartSeries {
 const CHART = { height: 300, left: 48, right: 10, top: 12, bottom: 24 };
 const BANK_COLOR = '#7f8c8d';
 const SHOP_COLOR = '#0f766e';
+const ARCADE_COLOR = '#c0392b';
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
 /**
@@ -77,11 +81,11 @@ function managerShade(index: number, count: number): string {
 
 /** Gegenseite der Konten: wohin ausgegebene Lukaten gehen */
 interface CounterpartRow {
-  kind: 'bank' | 'shop';
+  kind: 'bank' | 'shop' | 'arcade';
   name: string;
   note: string;
   received: number;        // eingenommen
-  paid: number | null;     // ausgezahlt (der Shop zahlt nichts aus)
+  paid: number | null;     // ausgezahlt (der Shop zahlt nichts aus, die Spielhalle nur netto bekannt)
   balance: number;
 }
 
@@ -112,8 +116,9 @@ export class LukatenOverviewComponent {
   totals = computed(() => this.overview()?.totals ?? null);
 
   /**
-   * Bank = Gegenseite aller Tipps (Einsätze rein, Gewinne raus), Shop = für Sticker-Packs ausgegebene Lukaten.
-   * Zusammen mit "Im Umlauf" ergibt das alles, was je entstanden ist (Startbonus + Einträge + Gekauft).
+   * Bank = Gegenseite aller Tipps (Einsätze rein, Gewinne raus), Shop = für Sticker-Packs ausgegebene Lukaten,
+   * Spielhalle = Einsätze minus Gewinne am Automaten. Zusammen mit "Im Umlauf" ergibt das alles, was je entstanden
+   * ist (Startbonus + Einträge + Gekauft).
    */
   counterparts = computed<CounterpartRow[]>(() => {
     const t = this.totals();
@@ -122,6 +127,7 @@ export class LukatenOverviewComponent {
     return [
       { kind: 'bank', name: 'Bank', note: 'Gegenseite aller Tipps', received: stakes, paid: payouts, balance: stakes - payouts },
       { kind: 'shop', name: 'Shop', note: 'Sticker-Packs', received: -t.packs, paid: null, balance: -t.packs },
+      { kind: 'arcade', name: 'Spielhalle', note: 'Einsätze minus Gewinne', received: -(t.slot ?? 0), paid: null, balance: -(t.slot ?? 0) },
     ];
   });
 
@@ -139,9 +145,10 @@ export class LukatenOverviewComponent {
   // ── Verlauf: Lukaten je Tag seit dem Stichtag ──
   /** undefined = lädt, null = nicht verfügbar */
   history = signal<LukatenHistory | null | undefined>(undefined);
-  /** Bank und Shop mit in den Stapel nehmen (was aus dem Umlauf abgeflossen ist) */
+  /** Bank, Shop und Spielhalle mit in den Stapel nehmen (was aus dem Umlauf abgeflossen ist) */
   showBank = signal(true);
   showShop = signal(true);
+  showArcade = signal(true);
   /**
    * Total = Lukaten absolut gestapelt; Relativ = jeder Tag auf 100 % gestreckt — zeigt die Verteilung auch dann
    * deutlich, wenn der Umlauf wächst. Pro Gerät gemerkt.
@@ -183,7 +190,7 @@ export class LukatenOverviewComponent {
     this.destroyRef.onDestroy(() => this.resize?.disconnect());
   }
 
-  /** Flächen von unten nach oben: Konten (bzw. ihre Summe), dann Bank, dann Shop */
+  /** Flächen von unten nach oben: Konten (bzw. ihre Summe), dann Bank, Shop, Spielhalle */
   chartSeries = computed<ChartSeries[]>(() => {
     const h = this.history();
     if (!h) return [];
@@ -194,6 +201,7 @@ export class LukatenOverviewComponent {
     }));
     if (this.showBank()) series.push({ key: 'bank', label: 'Bank', color: BANK_COLOR, values: h.bank });
     if (this.showShop()) series.push({ key: 'shop', label: 'Shop', color: SHOP_COLOR, values: h.shop });
+    if (this.showArcade() && h.arcade) series.push({ key: 'arcade', label: 'Spielhalle', color: ARCADE_COLOR, values: h.arcade });
     return series;
   });
 
@@ -280,7 +288,7 @@ export class LukatenOverviewComponent {
       // Tooltip links vom Zeiger, sobald er in der rechten Hälfte ist — sonst liefe er aus dem Chart
       flip: i > (h.days.length - 1) / 2,
       values: series.map(entry),
-      // für den Tooltip von oben nach unten, wie die Flächen im Chart liegen (Shop, Bank, dann die Konten)
+      // für den Tooltip von oben nach unten, wie die Flächen im Chart liegen (Spielhalle, Shop, Bank, dann die Konten)
       topDown: series.map(entry).reverse(),
       total: series.reduce((sum, s) => sum + s.values[i], 0),
       avg: this.circulationAvg()[i] ?? null,

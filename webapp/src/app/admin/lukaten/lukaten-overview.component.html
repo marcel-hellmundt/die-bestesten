@@ -37,6 +37,11 @@
         <div class="stat-value">{{ signed(t.bets) }}</div>
         <div class="stat-desc">Gewinne minus Einsätze</div>
       </div>
+      <div class="stat-card">
+        <span class="stat-label stat-label--alizarin">Spielhalle</span>
+        <div class="stat-value">{{ signed(t.slot ?? 0) }}</div>
+        <div class="stat-desc">Gewinne minus Einsätze</div>
+      </div>
     </div>
   }
 
@@ -54,6 +59,7 @@
         <span class="chart-toggles__label">Im Stapel zeigen</span>
         <label><input type="checkbox" [checked]="showBank()" (change)="showBank.set($any($event.target).checked)" /> Bank</label>
         <label><input type="checkbox" [checked]="showShop()" (change)="showShop.set($any($event.target).checked)" /> Shop</label>
+        <label><input type="checkbox" [checked]="showArcade()" (change)="showArcade.set($any($event.target).checked)" /> Spielhalle</label>
       </div>
     </div>
     <div class="card history">
@@ -65,7 +71,7 @@
       </div>
       <div #chartBox class="history__box">
         <svg #chartSvg class="history__chart" [attr.width]="chart().width" [attr.height]="chart().height" role="img"
-             aria-label="Lukaten je Tag seit dem Stichtag, gestapelt nach Konten, Bank und Shop"
+             aria-label="Lukaten je Tag seit dem Stichtag, gestapelt nach Konten, Bank, Shop und Spielhalle"
              (mousemove)="onChartMove($event, chartSvg)" (touchmove)="onChartMove($event, chartSvg)"
              (mouseleave)="hoverIndex.set(null)">
           @for (t of chartAreas().ticks; track $index) {
@@ -147,6 +153,7 @@
           <th class="col-value hidden-mobile">Gekauft</th>
           <th class="col-value hidden-mobile">Packs</th>
           <th class="col-value">Tipps</th>
+          <th class="col-value hidden-mobile">Spielhalle</th>
           <th class="col-value">Kontostand</th>
         </tr>
       </thead>
@@ -165,10 +172,11 @@
             <td class="col-value hidden-mobile">{{ signed(a.eur) }}</td>
             <td class="col-value hidden-mobile">{{ signed(a.packs) }}</td>
             <td class="col-value" [class.is-minus]="a.bets < 0">{{ signed(a.bets) }}</td>
+            <td class="col-value hidden-mobile" [class.is-minus]="(a.slot ?? 0) < 0">{{ signed(a.slot ?? 0) }}</td>
             <td class="col-value" [class.is-minus]="a.balance < 0"><strong>{{ format(a.balance) }}</strong></td>
           </tr>
         } @empty {
-          <tr><td colspan="7" class="state-msg">Noch keine Konten.</td></tr>
+          <tr><td colspan="8" class="state-msg">Noch keine Konten.</td></tr>
         }
       </tbody>
     </table>
@@ -192,12 +200,16 @@
               <span class="manager-cell">
                 @if (c.kind === 'bank') {
                   <img class="manager-cell__photo manager-cell__photo--square" src="img/bestico/bank.png" alt="" />
+                } @else if (c.kind === 'arcade') {
+                  <span class="arcade-avatar" aria-hidden="true">🎰</span>
                 } @else {
                   <span class="shop-avatar" aria-hidden="true"></span>
                 }
                 <span class="counterparts__name">
                   @if (c.kind === 'shop') {
                     <a routerLink="/klebrigsten/shop">{{ c.name }}</a>
+                  } @else if (c.kind === 'arcade') {
+                    <a routerLink="/spielhalle">{{ c.name }}</a>
                   } @else {
                     {{ c.name }}
                   }
@@ -260,9 +272,9 @@
   }
 
   <p class="overview-hint">
-    Kontostand = Kontobuch (Startbonus, Einträge, Käufe, Packs) plus Tipps aus allen Ligen des Managers. Tipps
-    zählen ab dem Abgeben, also auch offene Einsätze, bei den Konten wie bei der Bank. Im Umlauf, Bank und Shop
-    zusammen ergeben alles, was je entstanden ist (Startbonus, Einträge, Gekauft).
+    Kontostand = Kontobuch (Startbonus, Einträge, Käufe, Packs, Spielhalle) plus Tipps aus allen Ligen des Managers. Tipps
+    zählen ab dem Abgeben, also auch offene Einsätze, bei den Konten wie bei der Bank. Im Umlauf, Bank, Shop und
+    Spielhalle zusammen ergeben alles, was je entstanden ist (Startbonus, Einträge, Gekauft).
     Regeln und Preise stehen unter <a routerLink="/lukaten">Lukaten</a>.
   </p>
 }
