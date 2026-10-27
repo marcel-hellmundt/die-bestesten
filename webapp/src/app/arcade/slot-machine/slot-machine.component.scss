@@ -227,6 +227,9 @@
       filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.2));
     }
   }
+
+  // Leerfeld (Bank) zahlt nie etwas — blasser als die Gewinnsymbole
+  &__blank { opacity: 0.45; }
 }
 
 // beim Drehen leicht verwischt
@@ -468,6 +471,8 @@
       object-fit: contain;
     }
   }
+
+  &__blank { opacity: 0.45; }
 
   &__stake {
     margin-left: auto;

@@ -2,7 +2,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { LukatenService } from '../../core/lukaten.service';
-import { SYMBOL_NAMES, SlotPayline, SlotSpinResult, SlotSpinRow, SlotState, SlotSymbol, SlotWin } from './slot.model';
+import { SYMBOL_ICONS, SYMBOL_NAMES, SlotPayline, SlotSpinResult, SlotSpinRow, SlotState, SlotSymbol, SlotWin } from './slot.model';
 
 /** So oft steht eine Walze hintereinander im Streifen — genug Vorlauf für die längste Drehung (siehe spinTarget) */
 const COPIES = 6;
@@ -198,6 +198,10 @@ export class SlotMachineComponent {
 
   symbolName(s: SlotSymbol): string {
     return SYMBOL_NAMES[s];
+  }
+
+  symbolSrc(s: SlotSymbol): string {
+    return SYMBOL_ICONS[s];
   }
 
   format(v: number | null | undefined): string {

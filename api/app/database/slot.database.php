@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Spielhalle: einarmiger Bandit — klassischer 3-Walzen-Automat mit Früchten. Einsatz 1, 2 oder 3 Lukaten vom
+ * Spielhalle: einarmiger Bandit — klassischer 3-Walzen-Automat. Die Symbol-Schlüssel sind die eines Früchte-Automaten,
+ * die Webapp zeigt sie als Fußball-Icons (Pokal, Medaille, SdS, Tor, Weiße Weste, Vorlage, Bank — slot.model.ts). Einsatz 1, 2 oder 3 Lukaten vom
  * Lukaten-Konto (LukatenAccountTrait), gewürfelt wird nur hier, ein Gewinn wird sofort gutgeschrieben.
  *
  * Jeder Dreh = eine Zeile slot_spin (Verlauf) + eine Buchung im Kontobuch: source 'slot', Schlüssel slot:{spin_id},
