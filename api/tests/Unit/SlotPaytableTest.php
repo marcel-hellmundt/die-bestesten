@@ -53,9 +53,9 @@ class SlotPaytableTest extends TestCase
         [$rtp1, $hit] = $this->rates(1);
         [$rtp2]       = $this->rates(2);
         [$rtp3]       = $this->rates(3);
-        $this->assertEqualsWithDelta(0.855, $rtp1, 0.001);
-        $this->assertEqualsWithDelta(0.855, $rtp2, 0.001);
-        $this->assertEqualsWithDelta(0.876, $rtp3, 0.001); // Jackpot-Bonus beim Höchsteinsatz
+        $this->assertEqualsWithDelta(0.852, $rtp1, 0.001);
+        $this->assertEqualsWithDelta(0.852, $rtp2, 0.001);
+        $this->assertEqualsWithDelta(0.873, $rtp3, 0.001); // Jackpot-Bonus beim Höchsteinsatz
         $this->assertEqualsWithDelta(0.227, $hit, 0.001);
     }
 

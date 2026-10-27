@@ -28,17 +28,20 @@ trait SlotTrait
                 ['plum', 'lemon', 'orange', 'bell', 'lemon', 'blank', 'cherry', 'orange', 'lemon', 'seven',
                  'plum', 'blank', 'lemon', 'orange', 'cherry', 'bell', 'lemon', 'orange', 'plum', 'blank'],
             ],
-            // Gewinnlinie = Mitte; es zählt die erste passende Zeile (höchste zuerst). multiplier × Einsatz;
-            // match: drei gleiche ('three'), drei beliebige aus symbols ('any3'), die ersten beiden von links ('left2')
+            // Gewinnlinie = Mitte; es zählt die erste passende Zeile, die Reihenfolge ist zugleich die der Gewinntabelle.
+            // multiplier × Einsatz; match: drei gleiche ('three'), drei beliebige aus symbols ('any3'), die ersten
+            // beiden von links ('left2'). cherry ist das Sondersymbol: am seltensten der vier unteren (2 Stopps), zahlt
+            // als einziges schon mit zwei von links; plum/orange/lemon sind eine Leiter (je seltener, desto mehr) und
+            // zahlen gemischt einen Trostgewinn.
             'paytable' => [
                 ['key' => 'seven3',  'match' => 'three', 'symbols' => ['seven'],  'multiplier' => 500],
                 ['key' => 'bell3',   'match' => 'three', 'symbols' => ['bell'],   'multiplier' => 80],
+                ['key' => 'cherry3', 'match' => 'three', 'symbols' => ['cherry'], 'multiplier' => 40],
+                ['key' => 'cherry2', 'match' => 'left2', 'symbols' => ['cherry'], 'multiplier' => 3],
                 ['key' => 'plum3',   'match' => 'three', 'symbols' => ['plum'],   'multiplier' => 20],
-                ['key' => 'orange3', 'match' => 'three', 'symbols' => ['orange'], 'multiplier' => 12],
-                ['key' => 'cherry3', 'match' => 'three', 'symbols' => ['cherry'], 'multiplier' => 10],
-                ['key' => 'lemon3',  'match' => 'three', 'symbols' => ['lemon'],  'multiplier' => 8],
+                ['key' => 'orange3', 'match' => 'three', 'symbols' => ['orange'], 'multiplier' => 11],
+                ['key' => 'lemon3',  'match' => 'three', 'symbols' => ['lemon'],  'multiplier' => 7],
                 ['key' => 'fruit3',  'match' => 'any3',  'symbols' => ['plum', 'orange', 'lemon'], 'multiplier' => 2],
-                ['key' => 'cherry2', 'match' => 'left2', 'symbols' => ['cherry'], 'multiplier' => 4],
             ],
             // Jackpot beim Höchsteinsatz überproportional: 3× seven mit 3 Lukaten zahlt 2000 statt 3 × 500
             'jackpot' => ['key' => 'seven3', 'stake' => 3, 'payout' => 2000],
