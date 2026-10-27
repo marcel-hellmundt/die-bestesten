@@ -1,5 +1,6 @@
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../auth/auth.service';
 import { LukatenService } from '../../core/lukaten.service';
 import { SYMBOL_NAMES, SlotPayline, SlotSpinResult, SlotSpinRow, SlotState, SlotSymbol, SlotWin } from './slot.model';
 
@@ -36,6 +37,15 @@ export class SlotMachineComponent {
   private lukaten = inject(LukatenService);
   private destroyRef = inject(DestroyRef);
 
+  readonly isAdmin = inject(AuthService).isAdmin();
+  /**
+   * Test-Drehs (nur Admin): gewürfelt wie echt, aber nichts gespeichert, kein Einsatz abgebucht, kein Gewinn
+   * gutgeschrieben. Ohne eingerichtete Spielhalle (Migration fehlt) für Admins immer an.
+   */
+  testMode = signal(false);
+  /** Bilanz der Test-Drehs dieses Besuchs */
+  testStats = signal({ spins: 0, staked: 0, won: 0 });
+
   /** undefined = lädt, null = Fehler */
   state = signal<SlotState | null | undefined>(undefined);
   ready = computed(() => this.state()?.ready ?? false);
@@ -55,7 +65,8 @@ export class SlotMachineComponent {
   recent = signal<SlotSpinRow[]>([]);
   stats = signal({ spins: 0, staked: 0, won: 0 });
 
-  canSpin = computed(() => this.ready() && !this.spinning() && (this.balance() ?? 0) >= this.stake());
+  canSpin = computed(() => (this.ready() || this.testMode()) && !this.spinning()
+    && (this.testMode() || (this.balance() ?? 0) >= this.stake()));
   stakes = computed(() => this.state()?.stakes ?? [1, 2, 3]);
   paytable = computed(() => this.state()?.paytable ?? []);
   jackpot = computed(() => this.state()?.jackpot ?? null);
@@ -80,9 +91,14 @@ export class SlotMachineComponent {
           return { strip, cells: [...strip].reverse(), pos: reel.length + (stops[i] ?? 0), duration: 0 };
         }));
         if (s.ready) this.lukaten.set(s.balance);
+        else if (this.isAdmin) this.testMode.set(true);
       },
       error: () => this.state.set(null),
     });
+  }
+
+  setTestMode(on: boolean): void {
+    if (!this.spinning() && this.ready()) this.testMode.set(on);
   }
 
   setStake(stake: number): void {
@@ -92,17 +108,18 @@ export class SlotMachineComponent {
   spin(): void {
     if (!this.canSpin()) return;
     const stake = this.stake();
+    const test = this.testMode();
     this.spinning.set(true);
     this.error.set(null);
     this.lastWin.set(null);
     this.lastSpun.set(false);
-    this.balance.update(b => (b ?? 0) - stake);
+    if (!test) this.balance.update(b => (b ?? 0) - stake);
 
-    this.api.post<SlotSpinResult>('slot/spin', { stake }).subscribe({
+    this.api.post<SlotSpinResult>('slot/spin', { stake, test }).subscribe({
       next: r => this.animate(r, stake),
       error: err => {
         this.spinning.set(false);
-        this.balance.update(b => (b ?? 0) + stake);
+        if (!test) this.balance.update(b => (b ?? 0) + stake);
         this.error.set(err?.error?.message ?? 'Der Dreh hat nicht geklappt');
       },
     });
@@ -124,13 +141,18 @@ export class SlotMachineComponent {
       this.spinning.set(false);
       this.lastSpun.set(true);
       this.lastWin.set(r.win);
-      this.balance.set(r.balance);
-      this.lukaten.set(r.balance);
-      this.recent.update(list => [{
-        stops: r.stops, symbols: r.symbols, stake, win_key: r.win?.key ?? null, payout: r.payout,
-        created_at: new Date().toISOString(),
-      }, ...list].slice(0, 10));
-      this.stats.update(s => ({ spins: s.spins + 1, staked: s.staked + stake, won: s.won + r.payout }));
+      if (r.test) {
+        // Test-Dreh: Konto, Verlauf und Bilanz bleiben unberührt
+        this.testStats.update(s => ({ spins: s.spins + 1, staked: s.staked + stake, won: s.won + r.payout }));
+      } else {
+        this.balance.set(r.balance);
+        this.lukaten.set(r.balance);
+        this.recent.update(list => [{
+          stops: r.stops, symbols: r.symbols, stake, win_key: r.win?.key ?? null, payout: r.payout,
+          created_at: new Date().toISOString(),
+        }, ...list].slice(0, 10));
+        this.stats.update(s => ({ spins: s.spins + 1, staked: s.staked + stake, won: s.won + r.payout }));
+      }
       if (r.win?.jackpot || r.win?.key === 'seven3') {
         this.celebrating.set(true);
         this.timers.push(setTimeout(() => this.celebrating.set(false), 3500));

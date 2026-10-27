@@ -132,12 +132,21 @@ trait SlotTrait
     /**
      * POST /slot/spin — einmal drehen. Kontostand prüfen und buchen unter dem Lock je Manager (derselbe wie Pack-Kauf
      * und Tipp-Einsatz), Dreh und Buchung in einer Transaktion.
-     * Rückgabe ['error' => HTTP-Code, 'message'] oder {stops, symbols, win, payout, balance}.
+     * $test (nur Admin, prüft der Controller): Test-Dreh — gewürfelt und ausgewertet wie echt, aber nichts geschrieben,
+     * kein Einsatz abgebucht, kein Gewinn gutgeschrieben; geht auch ohne Tabelle und ohne Guthaben.
+     * Rückgabe ['error' => HTTP-Code, 'message'] oder {stops, symbols, win, payout, balance, test}.
      */
-    public function spinSlot(string $managerId, int $stake): array
+    public function spinSlot(string $managerId, int $stake, bool $test = false): array
     {
         $cfg = $this->slotConfig();
         if (!in_array($stake, $cfg['stakes'], true)) return ['error' => 422, 'message' => 'Einsatz muss 1, 2 oder 3 Lukaten sein'];
+        if ($test) {
+            $stops   = array_map(fn($reel) => random_int(0, count($reel) - 1), $cfg['reels']);
+            $symbols = array_map(fn($i, $s) => $cfg['reels'][$i][$s], array_keys($stops), $stops);
+            $win     = $this->slotEvaluate($symbols, $stake);
+            $balance = $this->lukatenLedgerReady() ? $this->getLukatenBalance($managerId) : null;
+            return ['stops' => $stops, 'symbols' => $symbols, 'win' => $win, 'payout' => $win['payout'] ?? 0, 'balance' => $balance, 'test' => true];
+        }
         if (!$this->slotReady()) return ['error' => 409, 'message' => 'Die Spielhalle ist noch nicht eingerichtet'];
         if (!$this->lukatenLeagues($managerId)) return ['error' => 409, 'message' => 'Du spielst in keiner Liga'];
 
@@ -174,6 +183,6 @@ trait SlotTrait
             $this->con->prepare("SELECT RELEASE_LOCK(?)")->execute([$lock]);
         }
 
-        return ['stops' => $stops, 'symbols' => $symbols, 'win' => $win, 'payout' => $payout, 'balance' => $balanceAfter];
+        return ['stops' => $stops, 'symbols' => $symbols, 'win' => $win, 'payout' => $payout, 'balance' => $balanceAfter, 'test' => false];
     }
 }

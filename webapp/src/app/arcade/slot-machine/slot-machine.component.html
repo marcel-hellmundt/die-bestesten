@@ -5,9 +5,30 @@
     <p class="state-msg">Laden…</p>
   } @else if (!state()) {
     <p class="state-msg state-msg--error">Die Spielhalle konnte nicht geladen werden.</p>
-  } @else if (!ready()) {
+  } @else if (!ready() && !isAdmin) {
     <p class="state-msg">Die Spielhalle ist noch nicht eingerichtet.</p>
   } @else {
+    <!-- Admins: Test-Drehs ohne Buchung — ohne eingerichtete Spielhalle immer an -->
+    @if (isAdmin) {
+      <div class="test-bar" [class.test-bar--on]="testMode()">
+        <label class="test-bar__toggle">
+          <input type="checkbox" [checked]="testMode()" [disabled]="spinning() || !ready()"
+                 (change)="setTestMode($any($event.target).checked)" />
+          Test-Drehs
+        </label>
+        <span class="test-bar__note">
+          @if (!ready()) { Spielhalle noch nicht eingerichtet (Migration) — nur Test-Drehs. }
+          @else { Nichts wird gespeichert, kein Einsatz abgebucht, kein Gewinn gutgeschrieben. }
+        </span>
+        @if (testStats().spins) {
+          <span class="test-bar__stats">
+            {{ format(testStats().spins) }} Test-Drehs · {{ format(testStats().staked) }} gesetzt ·
+            {{ format(testStats().won) }} gewonnen ·
+            <b [class.is-minus]="testStats().won < testStats().staked">{{ formatSigned(testStats().won - testStats().staked) }}</b>
+          </span>
+        }
+      </div>
+    }
     <div class="columns">
       <!-- ── Der Automat ── -->
       <section class="machine-col">
@@ -42,7 +63,7 @@
               <span class="display__value">{{ format(balance()) }}</span>
             </div>
             <div class="display display--win" [class.display--hit]="lastWin()">
-              <span class="display__label">Gewinn</span>
+              <span class="display__label">{{ testMode() ? 'Gewinn (Test)' : 'Gewinn' }}</span>
               <span class="display__value">
                 @if (spinning()) { … }
                 @else if (lastWin(); as w) { {{ w.jackpot ? 'Jackpot! ' : '' }}+{{ format(w.payout) }} }
@@ -65,13 +86,13 @@
               </div>
             </div>
             <button type="button" class="spin-btn" [disabled]="!canSpin()" (click)="spin()">
-              {{ spinning() ? 'Dreht…' : 'Drehen' }}
+              {{ spinning() ? 'Dreht…' : testMode() ? 'Test-Dreh' : 'Drehen' }}
             </button>
           </div>
 
           @if (error()) {
             <p class="machine__error">{{ error() }}</p>
-          } @else if (!spinning() && (balance() ?? 0) < stake()) {
+          } @else if (!testMode() && !spinning() && (balance() ?? 0) < stake()) {
             <p class="machine__error">Nicht genug Lukaten für diesen Einsatz.</p>
           }
         </div>

@@ -54,6 +54,38 @@
   a { color: inherit; text-decoration: underline; }
 }
 
+// Admins: Test-Drehs an/aus, darunter die Bilanz der Test-Drehs dieses Besuchs
+.test-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-1 $space-4;
+  padding: $space-2 $space-4;
+  border: 1px dashed $color-border;
+  border-radius: $radius-md;
+  font-size: $font-sm;
+
+  &--on {
+    border-color: $color-warning;
+    background: color-mix(in srgb, $color-warning 12%, transparent);
+  }
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-2;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+  }
+
+  &__note { color: $color-text-muted; }
+
+  &__stats {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 // ── Der Automat — eigenständiges Motiv: feste Farben (Gehäuse rot/gold, Walzen weiß), in beiden Themes gleich ──
 .machine {
   --cell: 92px;

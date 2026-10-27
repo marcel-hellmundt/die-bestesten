@@ -43,7 +43,8 @@ export interface SlotSpinResult {
   symbols: SlotSymbol[];
   win: SlotWin | null;
   payout: number;
-  balance: number;
+  balance: number | null;
+  test: boolean; // Test-Dreh eines Admins: nichts gebucht
 }
 
 export const SYMBOL_NAMES: Record<SlotSymbol, string> = {

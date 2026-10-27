@@ -246,8 +246,8 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/slot/spin',
-                        'description' => 'Einmal drehen: Kontostand prüfen, je Walze einen Stopp würfeln, Gewinn auswerten, slot_spin + Buchung in einer Transaktion (Named Lock je Manager wie beim Pack-Kauf und Tipp-Einsatz) → {status, stops:[je Walze Index], symbols, win:{key,multiplier,payout,jackpot}|null, payout, balance (Kontostand danach)}; 400 ohne stake (Ganzzahl), 409 ohne Migration (2026-10-27_slot_spin.sql) oder ohne aktive Liga, 422 Einsatz nicht 1–3 oder nicht genug Lukaten — Auth',
-                        'body' => ['stake' => '1|2|3 — Einsatz in Lukaten'],
+                        'description' => 'Einmal drehen: Kontostand prüfen, je Walze einen Stopp würfeln, Gewinn auswerten, slot_spin + Buchung in einer Transaktion (Named Lock je Manager wie beim Pack-Kauf und Tipp-Einsatz) → {status, stops:[je Walze Index], symbols, win:{key,multiplier,payout,jackpot}|null, payout, balance (Kontostand danach), test}; test=true (nur Admin, sonst 403) = Test-Dreh: gewürfelt und ausgewertet wie echt, aber nichts gespeichert, kein Einsatz abgebucht, kein Gewinn gutgeschrieben (geht auch ohne Migration und ohne Guthaben, balance = unveränderter Kontostand); 400 ohne stake (Ganzzahl), 409 ohne Migration (2026-10-27_slot_spin.sql) oder ohne aktive Liga, 422 Einsatz nicht 1–3 oder nicht genug Lukaten — Auth',
+                        'body' => ['stake' => '1|2|3 — Einsatz in Lukaten', 'test' => 'bool (optional, nur Admin) — Test-Dreh ohne Buchung'],
                     ],
                 ],
             ]),
