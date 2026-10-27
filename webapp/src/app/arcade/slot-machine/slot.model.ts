@@ -51,7 +51,7 @@ export interface SlotSpinResult {
 }
 
 export const SYMBOL_NAMES: Record<SlotSymbol, string> = {
-  seven: 'Stern', bell: 'Kleeblatt', plum: 'Medaille', orange: 'Tor', lemon: 'Weiße Weste', cherry: 'Vorlage', blank: 'Bank',
+  seven: 'Stern', bell: 'Kleeblatt', plum: 'Tor', orange: 'Vorlage', lemon: 'Weiße Weste', cherry: 'Geld', blank: 'Bank',
 };
 
 /**
