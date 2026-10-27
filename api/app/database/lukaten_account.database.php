@@ -429,10 +429,18 @@ trait LukatenAccountTrait
              WHERE m.status = 'active' ORDER BY m.manager_name"
         );
         $sq = $this->con->prepare("SELECT source, SUM(amount) FROM lukaten_transaction WHERE manager_id = ? GROUP BY source");
+        // Spielhalle brutto: das Kontobuch kennt je Dreh nur Gewinn − Einsatz, Einsätze und Gewinne stehen in slot_spin
+        $slotSpins = [];
+        try {
+            $slotSpins = $this->con->query("SELECT manager_id, SUM(stake) AS stakes, SUM(payout) AS payouts FROM slot_spin GROUP BY manager_id")
+                ->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            // Tabelle fehlt (Migration 2026-10-27_slot_spin.sql) — dann gibt es auch keine Drehs
+        }
 
         $accounts = [];
         $totals = ['in_circulation' => 0.0, 'start' => 0.0, 'entries' => 0.0, 'eur' => 0.0, 'packs' => 0.0, 'bets' => 0.0,
-                   'slot' => 0.0, 'stakes' => 0.0, 'payouts' => 0.0];
+                   'slot' => 0.0, 'stakes' => 0.0, 'payouts' => 0.0, 'slot_stakes' => 0.0, 'slot_payouts' => 0.0];
         foreach ($mq->fetchAll(PDO::FETCH_ASSOC) as $m) {
             $this->syncLukatenAccount($m['id']);
             $parts = $this->lukatenParts($m['id']);
@@ -454,6 +462,8 @@ trait LukatenAccountTrait
             foreach (['start', 'entries', 'eur', 'packs', 'bets', 'slot'] as $k) $totals[$k] += $row[$k];
             $totals['stakes']  += $parts['stakes'];
             $totals['payouts'] += $parts['payouts'];
+            $totals['slot_stakes']  += (float) ($slotSpins[$m['id']]['stakes'] ?? 0);
+            $totals['slot_payouts'] += (float) ($slotSpins[$m['id']]['payouts'] ?? 0);
         }
         usort($accounts, fn($a, $b) => $b['balance'] <=> $a['balance'] ?: strcmp($a['manager_name'], $b['manager_name']));
         return [

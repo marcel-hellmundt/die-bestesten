@@ -38,6 +38,8 @@ interface LukatenOverview {
   totals: {
     in_circulation: number; start: number; entries: number; eur: number; packs: number; bets: number;
     slot?: number;     // Spielhalle: Gewinne minus Einsätze aller Konten
+    slot_stakes?: number;  // Spielhalle: alle Einsätze
+    slot_payouts?: number; // Spielhalle: alle ausgezahlten Gewinne
     stakes?: number;   // alle Einsätze dieser Konten, auch offene
     payouts?: number;  // alle ausgezahlten Tippgewinne
   } | null;
@@ -85,7 +87,7 @@ interface CounterpartRow {
   name: string;
   note: string;
   received: number;        // eingenommen
-  paid: number | null;     // ausgezahlt (der Shop zahlt nichts aus, die Spielhalle nur netto bekannt)
+  paid: number | null;     // ausgezahlt (der Shop zahlt nichts aus)
   balance: number;
 }
 
@@ -127,7 +129,7 @@ export class LukatenOverviewComponent {
     return [
       { kind: 'bank', name: 'Bank', note: 'Gegenseite aller Tipps', received: stakes, paid: payouts, balance: stakes - payouts },
       { kind: 'shop', name: 'Shop', note: 'Sticker-Packs', received: -t.packs, paid: null, balance: -t.packs },
-      { kind: 'arcade', name: 'Spielhalle', note: 'Einsätze minus Gewinne', received: -(t.slot ?? 0), paid: null, balance: -(t.slot ?? 0) },
+      { kind: 'arcade', name: 'Spielhalle', note: 'Einarmiger Bandit', received: t.slot_stakes ?? 0, paid: t.slot_payouts ?? 0, balance: -(t.slot ?? 0) },
     ];
   });
 
