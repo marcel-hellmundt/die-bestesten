@@ -234,11 +234,6 @@
   &__blank { opacity: 0.8; }
 }
 
-// beim Drehen leicht verwischt
-.machine__window--spinning .reel__cell img {
-  filter: blur(1.5px);
-}
-
 .display {
   display: flex;
   flex-direction: column;
@@ -509,5 +504,4 @@
   .machine__lamp,
   .machine--celebrating,
   .machine__window--win .machine__payline { animation: none; }
-  .machine__window--spinning .reel__cell img { filter: none; }
 }
