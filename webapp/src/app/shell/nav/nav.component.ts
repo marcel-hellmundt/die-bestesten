@@ -106,11 +106,11 @@ export class NavComponent {
 
   topGroups = computed<NavGroup[]>(() => [this.ligaGroup(), ...this.teamGroups(), this.marktGroup()]);
 
-  // Spielhalle für alle (auf dem Handy über /lukaten erreichbar), Datenbank ab Contributor, Verwaltung
+  // Spielo (/spielhalle) für alle (auf dem Handy über /lukaten erreichbar), Datenbank ab Contributor, Verwaltung
   // (Ligen, Manager, Achievements, Nutzung) nur Admin
   bottomGroups = computed<NavGroup[]>(() => {
     const items: NavItem[] = [
-      { label: 'Spielhalle', icon: 'spielhalle', route: '/spielhalle' },
+      { label: 'Spielo', icon: 'spielhalle', route: '/spielhalle' },
       ...(this.auth.isContributor() ? [{ label: 'Datenbank', icon: 'data', route: '/daten' }] : []),
       ...(this.auth.isAdmin() ? [{ label: 'Verwaltung', icon: 'admin', route: '/verwaltung' }] : []),
     ];
