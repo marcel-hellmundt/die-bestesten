@@ -19,7 +19,7 @@
   vertical-align: -2px;
 }
 
-// Desktop: Automat links, Tabelle + Bilanz rechts; darunter untereinander
+// Desktop: Automat links, Bilanz rechts; darunter untereinander
 .columns {
   display: grid;
   grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
@@ -338,59 +338,11 @@
   }
 }
 
-// ── Gewinntabelle + Bilanz ──
+// ── Bilanz ──
 .card-title {
   margin: 0 0 $space-3;
   font-size: $font-md;
   font-weight: $font-weight-bold;
-}
-
-.paytable {
-  .data-table td,
-  .data-table th { white-space: nowrap; }
-
-  &__symbols {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-
-    img {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
-    }
-
-    small {
-      margin-left: $space-1;
-      font-size: $font-xs;
-      color: $color-text-muted;
-    }
-  }
-
-  &__any {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    font-weight: $font-weight-bold;
-    color: $color-text-muted;
-  }
-
-  // Spalte des gewählten Einsatzes
-  &__active-col {
-    background: color-mix(in srgb, $color-accent 10%, transparent);
-    font-weight: $font-weight-bold;
-  }
-
-  &__jackpot {
-    color: $color-danger;
-    font-weight: 800;
-  }
-
-  &__hit td {
-    background: color-mix(in srgb, $color-success 18%, transparent);
-  }
 }
 
 .history {

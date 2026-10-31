@@ -101,47 +101,8 @@
         </p>
       </section>
 
-      <!-- ── Gewinntabelle + Bilanz ── -->
+      <!-- ── Bilanz ── -->
       <section class="side-col">
-        <div class="card paytable">
-          <h2 class="card-title">Gewinntabelle</h2>
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Gewinnlinie</th>
-                  @for (s of stakes(); track s) {
-                    <th class="col-value" [class.paytable__active-col]="stake() === s">{{ s }}<img class="lukat-icon" src="img/icons/lukat.png" alt="Lukaten" /></th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                @for (line of paytable(); track line.key) {
-                  <tr [class.paytable__hit]="lastWin()?.key === line.key">
-                    <td>
-                      <span class="paytable__symbols" [attr.title]="lineLabel(line)" [attr.aria-label]="lineLabel(line)">
-                        @for (sym of lineSymbols(line); track $index) {
-                          @if (sym) {
-                            <img [src]="symbolSrc(sym)" alt="" />
-                          } @else {
-                            <span class="paytable__any">?</span>
-                          }
-                        }
-                        @if (line.match === 'any3') { <small>gemischt</small> }
-                      </span>
-                    </td>
-                    @for (s of stakes(); track s) {
-                      <td class="col-value" [class.paytable__active-col]="stake() === s" [class.paytable__jackpot]="isJackpotCell(line, s)">
-                        {{ format(payout(line, s)) }}
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         <div class="card history">
           <h2 class="card-title">Deine Bilanz</h2>
           <ul class="history__stats">

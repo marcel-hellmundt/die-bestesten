@@ -2,7 +2,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { LukatenService } from '../../core/lukaten.service';
-import { SYMBOL_ICONS, SYMBOL_NAMES, SlotPayline, SlotSpinResult, SlotSpinRow, SlotState, SlotSymbol, SlotWin } from './slot.model';
+import { SYMBOL_ICONS, SYMBOL_NAMES, SlotSpinResult, SlotSpinRow, SlotState, SlotSymbol, SlotWin } from './slot.model';
 
 /** So oft steht eine Walze hintereinander im Streifen — genug Vorlauf für die längste Drehung (siehe spinTarget) */
 const COPIES = 6;
@@ -21,7 +21,7 @@ interface ReelView {
 /**
  * /spielhalle — einarmiger Bandit: drei Walzen mit Früchten, Einsatz 1–3 Lukaten vom Lukaten-Konto, gewürfelt wird
  * auf dem Server (POST /slot/spin), die Walzen drehen danach genau auf die gewürfelten Stopps. Gewinn und neuer
- * Kontostand erscheinen erst, wenn die letzte Walze steht. Gewinntabelle, eigene letzte Drehs und Bilanz daneben.
+ * Kontostand erscheinen erst, wenn die letzte Walze steht. Eigene letzte Drehs und Bilanz daneben.
  *
  * Der Streifen jeder Walze steht im DOM von unten nach oben (umgekehrt), damit die Symbole beim Drehen nach unten
  * fallen wie bei einem echten Automaten: ein größerer pos schiebt den Streifen nach unten.
@@ -166,34 +166,6 @@ export class SlotMachineComponent {
    */
   offset(reel: ReelView): number {
     return reel.strip.length - 2 - reel.pos;
-  }
-
-  /** Gewinn einer Zeile der Tabelle bei diesem Einsatz (Jackpot beim Höchsteinsatz) */
-  payout(line: SlotPayline, stake: number): number {
-    const j = this.jackpot();
-    return j && line.key === j.key && stake === j.stake ? j.payout : line.multiplier * stake;
-  }
-
-  isJackpotCell(line: SlotPayline, stake: number): boolean {
-    const j = this.jackpot();
-    return !!j && line.key === j.key && stake === j.stake;
-  }
-
-  /** Symbole einer Zeile für die Anzeige: drei gleiche, drei gemischte bzw. zwei von links + beliebig */
-  lineSymbols(line: SlotPayline): (SlotSymbol | null)[] {
-    switch (line.match) {
-      case 'three': return [line.symbols[0], line.symbols[0], line.symbols[0]];
-      case 'any3':  return line.symbols.slice(0, 3);
-      case 'left2': return [line.symbols[0], line.symbols[0], null];
-    }
-  }
-
-  lineLabel(line: SlotPayline): string {
-    switch (line.match) {
-      case 'three': return `3× ${SYMBOL_NAMES[line.symbols[0]]}`;
-      case 'any3':  return `3 beliebige aus ${line.symbols.map(s => SYMBOL_NAMES[s]).join(', ')}`;
-      case 'left2': return `2× ${SYMBOL_NAMES[line.symbols[0]]} von links`;
-    }
   }
 
   symbolName(s: SlotSymbol): string {
