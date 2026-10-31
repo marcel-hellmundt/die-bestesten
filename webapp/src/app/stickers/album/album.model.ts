@@ -105,7 +105,7 @@ export const DEFAULT_SHARED_PARAMS: SharedParams = {
   milestoneAllNew: true,
   bestPackSize: 5,
   bestAllNew: true,
-  rarityAlpha: 0.8,
+  rarityAlpha: 1,
   holoSilverChance: 0.01,   // 1 %  → bei ~1.000 Stickern pro Saison ≈ 10 Holo Silber
   holoGoldChance: 0.001,    // 0,1 % → ≈ 1 Holo Gold
   // Verhalten im Shop (nur Simulation, keine Regel): Start ohne Käufe

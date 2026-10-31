@@ -169,7 +169,7 @@
                   <td>
                     <span class="offer-name">
                       <b>{{ k.name }}</b>
-                      <small>{{ k.size }} Sticker, {{ k.guaranteedNew }} neu{{ k.holoMin ? ', ' + k.holoMin + ' Holo' : '' }}</small>
+                      <small>{{ k.size }} Sticker{{ k.guaranteedNew ? ', ' + k.guaranteedNew + ' neu' : '' }}{{ k.holoMin ? ', ' + k.holoMin + ' Holo' : '' }}</small>
                     </span>
                   </td>
                   <td class="num"><b>{{ n(k.price) }}</b></td>

@@ -14,8 +14,8 @@ trait StickerShopTrait
     protected function stickerPackKinds(): array
     {
         return [
-            'normal'  => ['name' => 'Normales Pack', 'size' => 3, 'guaranteed_new' => 1, 'holo_min' => 0, 'club' => false],
-            'big'     => ['name' => 'Big Pack',      'size' => 7, 'guaranteed_new' => 2, 'holo_min' => 0, 'club' => false],
+            'normal'  => ['name' => 'Normales Pack', 'size' => 3, 'guaranteed_new' => 0, 'holo_min' => 0, 'club' => false],
+            'big'     => ['name' => 'Big Pack',      'size' => 7, 'guaranteed_new' => 1, 'holo_min' => 0, 'club' => false],
             'club'    => ['name' => 'Vereins-Pack',  'size' => 5, 'guaranteed_new' => 5, 'holo_min' => 0, 'club' => true],
             'special' => ['name' => 'Special Pack',  'size' => 3, 'guaranteed_new' => 1, 'holo_min' => 1, 'club' => false],
         ];

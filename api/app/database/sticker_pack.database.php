@@ -34,7 +34,7 @@ trait StickerPackTrait
             'guarantee_new'           => true,    // 1. Sticker jedes Packs garantiert neu (solange welche fehlen)
             'milestone_all_new'       => true,    // Meilenstein-Pack: alle Sticker garantiert neu
             'matchday_best_all_new'   => true,    // Spieltagsbester-Pack: alle Sticker garantiert neu
-            'rarity_alpha'            => 0.8,     // Ziehgewicht = Marktwert^-α
+            'rarity_alpha'            => 1.0,     // Ziehgewicht = Marktwert^-α
             'holo_silver_chance'      => 0.01,    // je gezogenem Sticker
             'holo_gold_chance'        => 0.001,
             'min_price'               => 500_000, // Untergrenze der Gewichtung (wie MIN_PRICE im Frontend)

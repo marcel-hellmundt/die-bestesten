@@ -330,7 +330,8 @@ export class StickerShopComponent {
   /** Vorteile eines einzelnen Packs dieser Art */
   kindPerks(kind: PackKind): string[] {
     const k = PACK_KINDS[kind];
-    const perks = [`${k.size} Sticker`, k.guaranteedNew >= k.size ? 'alle garantiert neu' : `${k.guaranteedNew} garantiert neu`];
+    const perks = [`${k.size} Sticker`];
+    if (k.guaranteedNew > 0) perks.push(k.guaranteedNew >= k.size ? 'alle garantiert neu' : `${k.guaranteedNew} garantiert neu`);
     if (k.holoMin > 0) perks.push(`mind. ${k.holoMin} Holo-Karte`);
     if (k.club) perks.push('Verein frei wählbar');
     return perks;

@@ -18,8 +18,8 @@ export interface PackKindDef {
 
 /** Die festen Pack-Arten — Farbe je Art: normal Grün #6aba49, big Koralle #f26d53, club Gelb #fcc732, special Lila #8854d0. */
 export const PACK_KINDS: Record<PackKind, PackKindDef> = {
-  normal:  { kind: 'normal',  name: 'Normales Pack', short: 'Normal',  size: 3, guaranteedNew: 1, holoMin: 0, club: false },
-  big:     { kind: 'big',     name: 'Big Pack',      short: 'Big',     size: 7, guaranteedNew: 2, holoMin: 0, club: false },
+  normal:  { kind: 'normal',  name: 'Normales Pack', short: 'Normal',  size: 3, guaranteedNew: 0, holoMin: 0, club: false },
+  big:     { kind: 'big',     name: 'Big Pack',      short: 'Big',     size: 7, guaranteedNew: 1, holoMin: 0, club: false },
   club:    { kind: 'club',    name: 'Vereins-Pack',  short: 'Verein',  size: 5, guaranteedNew: 5, holoMin: 0, club: true },
   special: { kind: 'special', name: 'Special Pack',  short: 'Special', size: 3, guaranteedNew: 1, holoMin: 1, club: false },
 };
@@ -42,7 +42,7 @@ export interface ShopOffer {
 export const LUKATEN_OFFERS: ShopOffer[] = [
   { key: 'l-small',   currency: 'lukaten', name: PACK_KINDS.normal.name,  contents: { normal: 1 },  price: 100 },
   { key: 'l-big',     currency: 'lukaten', name: PACK_KINDS.big.name,     contents: { big: 1 },     price: 200, highlight: 'Beliebt' },
-  { key: 'l-club',    currency: 'lukaten', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 300 },
+  { key: 'l-club',    currency: 'lukaten', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 500 },
   { key: 'l-special', currency: 'lukaten', name: PACK_KINDS.special.name, contents: { special: 1 }, price: 300 },
 ];
 

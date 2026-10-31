@@ -100,9 +100,9 @@ Bewertung und Art zählt nur der erste.
 
 | Pack | Lukaten | Herleitung |
 |---|---:|---|
-| Normales Pack (3 Sticker, 1 neu) | 100 | ein ganzer Spieltag Einträge (rund 500 Lukaten) = 5 Packs |
-| Big Pack (7 Sticker, 2 neu) | 200 | doppelt, wie bisher |
-| Vereins-Pack (5 Sticker eines Vereins, alle neu) | 300 | dreifach |
+| Normales Pack (3 Sticker) | 100 | ein ganzer Spieltag Einträge (rund 500 Lukaten) = 5 Packs |
+| Big Pack (7 Sticker, 1 neu) | 200 | doppelt, wie bisher |
+| Vereins-Pack (5 Sticker eines Vereins, alle neu) | 500 | je neuer Karte so teuer wie das Big Pack: der schnellste Weg zu fehlenden Karten |
 | Special Pack (3 Sticker, mindestens 1 Holo) | 300 | dreifach |
 
 Maßstab ist das, was ein Manager ohnehin bekommt: Ein aktiver zieht ohne Lukaten rund 25 Sticker in der Woche
@@ -124,10 +124,10 @@ Saisonende gehortete Lukaten nicht übermäßig viele Packs kaufen.
 
 | Lukaten im Umlauf | Faktor | normal / big / Verein / Special |
 |---|---:|---|
-| bis 4.000 | ×1 | 100 / 200 / 300 / 300 |
-| 4.000–8.000 | ×1,25 | 125 / 250 / 375 / 375 |
-| 8.000–12.000 | ×1,5 | 150 / 300 / 450 / 450 |
-| ab 12.000 | ×2 | 200 / 400 / 600 / 600 |
+| bis 4.000 | ×1 | 100 / 200 / 500 / 300 |
+| 4.000–8.000 | ×1,25 | 125 / 250 / 625 / 375 |
+| 8.000–12.000 | ×1,5 | 150 / 300 / 750 / 450 |
+| ab 12.000 | ×2 | 200 / 400 / 1.000 / 600 |
 
 Die Stufe reagiert bewusst träge, damit ein fleißiges Wochenende den Preis nicht sofort hochtreibt: Eine neue
 Stufe gibt es nur montags (beim ersten Abruf der Woche, gespeichert in `lukaten_price_level`), maßgeblich ist das
@@ -138,8 +138,8 @@ Mitte November, ×1,5 ab Januar, ×2 ab Februar, sofern sich das Kaufverhalten n
 das Kaufen, der Umlauf wächst dann schneller: Die Stufe geht praktisch nur nach oben. Das ist gewollt.
 
 Die Euro-Pakete im Shop (Handvoll, Stapel, Kiste) sind deutlich günstiger als der Weg über gekaufte Lukaten: Die
-Kiste für 6,99 € enthält Packs im Wert von 1.500 Lukaten, das Bündel für denselben Preis bringt 800 (+88 %; Stapel +82 %,
-Handvoll +67 %, einzelnes Vereins- oder Special-Pack +50 % — der Vorteil steigt mit dem Betrag); ein normales
+Kiste für 6,99 € enthält Packs im Wert von 1.700 Lukaten, das Bündel für denselben Preis bringt 800 (+113 %; Stapel +82 %,
+Handvoll +67 %, einzelnes Vereins-Pack +150 %, Special-Pack +50 %); ein normales
 Pack kostet in der Handvoll 0,60 €, über gekaufte Lukaten rund 1 €. Gekaufte Lukaten sind damit fürs Tippen gedacht,
 Packs kauft man mit verdienten Lukaten oder direkt gegen Euro.
 
@@ -248,7 +248,7 @@ Nach dem Merge gibt es keinen einfachen Rückweg: Käufe stehen dann im Kontobuc
 
 Diese Werte stehen als Startwerte in `lukatenAccountConfig()`:
 
-1. Pack-Preise 100 / 200 / 300 / 300.
+1. Pack-Preise 100 / 200 / 500 / 300.
 2. Lukaten-Bündel 200 / 320 / 550 / 800 für 1,99 € / 2,99 € / 4,99 € / 6,99 €.
 3. Startbonus je Saison: 100.
 4. Gewinn-Obergrenze beim Tippen: aus. Wert festlegen, sobald `/verwaltung/lukaten` zeigt, wie viele Lukaten im

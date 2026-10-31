@@ -29,10 +29,11 @@ trait LukatenAccountTrait
             // Pack-Preise im Klebrigsten-Shop (Schlüssel wie StickerShopTrait::stickerShopOffers()). Maßstab: ein ganzer
             // Spieltag Einträge (rund 500 Lukaten) = 5 normale Packs, 15 Sticker — gut die Hälfte dessen, was ein aktiver
             // Manager in einer Woche ohnehin zieht (rund 25). Mit 60 je Pack hätten Einträge das Tempo verdoppelt.
-            // Leiter 100/200/300/300: direkt gegen Euro gibt es je Angebot +50 % (einzelnes Pack) bis +88 % (Kiste) mehr als
-            // über gekaufte Lukaten, steigend mit dem Betrag (Vergleich: /verwaltung/ui-tests → Preise).
+            // Leiter 100/200/500/300: das Vereins-Pack ist der schnellste Weg zu fehlenden Karten (5 garantiert neu aus einem
+            // gewählten Verein) und kostet deshalb je neuer Karte so viel wie das Big Pack. Direkt gegen Euro gibt es je
+            // Angebot +50 % (Special) bis +150 % (Vereins-Pack) mehr als über gekaufte Lukaten (Vergleich: /verwaltung/ui-tests → Preise).
             // Grundpreise — es gilt Grundpreis × Faktor der Preisstufe (price_levels), gerundet auf ganze Lukaten
-            'pack_prices'   => ['l-small' => 100, 'l-big' => 200, 'l-club' => 300, 'l-special' => 300],
+            'pack_prices'   => ['l-small' => 100, 'l-big' => 200, 'l-club' => 500, 'l-special' => 300],
             // Preisstufen nach der Menge im Umlauf (alle Kontostände zusammen): [ab Lukaten, Faktor]. Damit am Saisonende
             // gehortete Lukaten nicht übermäßig viele Packs kaufen. Träge: neue Stufe nur montags, maßgeblich das Mittel
             // der 14 Tage davor, höchstens eine Stufe pro Woche, zurück erst 10 % unter der Schwelle (getLukatenPriceLevel()).
