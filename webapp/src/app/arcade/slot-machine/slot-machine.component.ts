@@ -19,7 +19,7 @@ interface ReelView {
 }
 
 /**
- * /spielhalle — einarmiger Bandit: drei Walzen mit Früchten, Einsatz 1–3 Lukaten vom Lukaten-Konto, gewürfelt wird
+ * /spielo — einarmiger Bandit: drei Walzen mit Früchten, Einsatz 1–3 Lukaten vom Lukaten-Konto, gewürfelt wird
  * auf dem Server (POST /slot/spin), die Walzen drehen danach genau auf die gewürfelten Stopps. Gewinn und neuer
  * Kontostand erscheinen erst, wenn die letzte Walze steht. Eigene letzte Drehs und Bilanz daneben.
  *

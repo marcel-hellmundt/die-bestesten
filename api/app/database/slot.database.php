@@ -102,7 +102,7 @@ trait SlotTrait
     }
 
     /**
-     * GET /slot — der Automat für die Seite /spielhalle: {ready, balance, stakes, reels, paytable, jackpot,
+     * GET /slot — der Automat für die Seite /spielo: {ready, balance, stakes, reels, paytable, jackpot,
      * recent (letzte 10 Drehs), stats:{spins, staked, won}}. Ohne Tabelle oder Kontobuch ready=false.
      */
     public function getSlotState(string $managerId): array

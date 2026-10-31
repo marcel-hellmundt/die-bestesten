@@ -375,6 +375,12 @@
               }
             </a>
           }
+          <!-- nur auf dem Handy: die untere Leiste zeigt nur Liga/Team/Markt, am Desktop steht Spielo in der Sidebar -->
+          <a class="dropdown-item tb-hide-desktop" [class.dropdown-item--active]="currentUrl().startsWith('/spielo')"
+             routerLink="/spielo" (click)="closeDropdown()">
+            <app-icon name="spielhalle"></app-icon>
+            Spielo
+          </a>
           <a class="dropdown-item" [class.tb-hide-desktop]="tb('achievements', 'desktop')" [class.tb-hide-mobile]="tb('achievements', 'mobile')"
              [class.dropdown-item--active]="currentUrl().startsWith('/achievements')"
              routerLink="/achievements" (click)="closeDropdown()">
@@ -390,7 +396,7 @@
               <span class="dropdown-item-badge">{{ notifService.unreadCount() }}</span>
             }
           </a>
-          <hr class="dropdown-divider" [class.tb-hide-desktop]="!menuHas('desktop')" [class.tb-hide-mobile]="!menuHas('mobile')" />
+          <hr class="dropdown-divider" [class.tb-hide-desktop]="!menuHas('desktop')" />
           @if (isContributor()) {
             <a class="dropdown-item" [class.dropdown-item--active]="currentUrl().startsWith('/daten')" routerLink="/daten" (click)="closeDropdown()">
               <app-icon name="data"></app-icon>

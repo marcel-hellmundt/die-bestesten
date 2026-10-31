@@ -4,7 +4,7 @@
 -- Rein additiv: eine neue Tabelle, die der Code auf main nicht kennt. Ohne sie meldet GET /slot ready=false und
 -- POST /slot/spin 409.
 --
--- slot_spin: je Dreh eine Zeile (Verlauf + Bilanz auf /spielhalle). Gebucht wird der Dreh zusätzlich im Kontobuch
+-- slot_spin: je Dreh eine Zeile (Verlauf + Bilanz auf /spielo). Gebucht wird der Dreh zusätzlich im Kontobuch
 -- (lukaten_transaction, source 'slot', Schlüssel slot:{id}, Betrag = Gewinn − Einsatz).
 
 CREATE TABLE IF NOT EXISTS slot_spin (
