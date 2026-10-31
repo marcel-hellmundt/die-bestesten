@@ -31,7 +31,7 @@ trait LukatenAccountTrait
             // Manager in einer Woche ohnehin zieht (rund 25). Mit 60 je Pack hätten Einträge das Tempo verdoppelt.
             // Leiter 100/200/500/300: das Vereins-Pack ist der schnellste Weg zu fehlenden Karten (5 garantiert neu aus einem
             // gewählten Verein) und kostet deshalb je neuer Karte so viel wie das Big Pack. Direkt gegen Euro gibt es je
-            // Angebot +50 % (Special) bis +150 % (Vereins-Pack) mehr als über gekaufte Lukaten (Vergleich: /verwaltung/ui-tests → Preise).
+            // Angebot +50 % (Special) bis +113 % (Kiste) mehr als über gekaufte Lukaten (Vergleich: /verwaltung/ui-tests → Preise).
             // Grundpreise — es gilt Grundpreis × Faktor der Preisstufe (price_levels), gerundet auf ganze Lukaten
             'pack_prices'   => ['l-small' => 100, 'l-big' => 200, 'l-club' => 500, 'l-special' => 300],
             // Preisstufen nach der Menge im Umlauf (alle Kontostände zusammen): [ab Lukaten, Faktor]. Damit am Saisonende

@@ -70,7 +70,7 @@ export function packDrawRules(p: PackInfo): { size: number; guaranteed: number; 
     return { size: p.size, guaranteed: Math.min(s.guaranteedNew, p.size), holoMin: 0, epicMin: Math.min(s.epicMin, p.size) };
   }
   const r = packRules(p.source);
-  return { size: p.size, guaranteed: r.allNew ? p.size : (DEFAULT_SHARED_PARAMS.guaranteeNew ? 1 : 0), holoMin: 0, epicMin: 0 };
+  return { size: p.size, guaranteed: r.allNew ? p.size : p.source === 'daily' && !DEFAULT_SHARED_PARAMS.guaranteeNew ? 0 : 1, holoMin: 0, epicMin: 0 };
 }
 
 /** Beschriftung der Pack-Vorderseite: kleine Art-Zeile + große Überschrift. */

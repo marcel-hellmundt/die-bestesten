@@ -7,7 +7,7 @@ export type ShopTiming = 'start' | 'spread' | 'late';
 export interface SimParams {
   dailyPackSize: number;        // Sticker pro täglichem Login-Pack (0 = kein Daily)
   loginChance: number;          // 0–1, Wahrscheinlichkeit, sich an einem Tag einzuloggen
-  guaranteeNew: boolean;        // 1. Sticker jedes Packs garantiert neu (solange welche fehlen)
+  guaranteeNew: boolean;        // 1. Sticker des Tages-Packs garantiert neu (solange welche fehlen)
   milestoneInterval: number;    // Saisonpunkte-Abstand zwischen Meilenstein-Packs
   milestonePackSize: number;    // Sticker pro Meilenstein-Pack (0 = aus)
   milestoneAllNew: boolean;     // alle Sticker eines Meilenstein-Packs garantiert neu (solange welche fehlen)

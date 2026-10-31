@@ -26,7 +26,7 @@ trait StickerShopEurTrait
             'e-handful' => ['name' => 'Handvoll',     'price_cents' => 299, 'contents' => ['normal' => 5]],
             'e-stack'   => ['name' => 'Stapel',       'price_cents' => 499, 'contents' => ['normal' => 4, 'big' => 3]],
             'e-crate'   => ['name' => 'Kiste',        'price_cents' => 699, 'contents' => ['normal' => 3, 'big' => 3, 'special' => 1, 'club' => 1]],
-            'e-club'    => ['name' => 'Vereins-Pack', 'price_cents' => 199, 'contents' => ['club' => 1]],
+            'e-club'    => ['name' => 'Vereins-Pack', 'price_cents' => 299, 'contents' => ['club' => 1]],
             'e-special' => ['name' => 'Special Pack', 'price_cents' => 199, 'contents' => ['special' => 1]],
         ];
         $kinds = $this->stickerPackKinds();

@@ -99,7 +99,7 @@ export type SharedParams = Omit<SimParams, 'loginChance' | 'avgPoints' | 'bestCh
 // Echte Regeln — müssen zu StickerPackTrait::stickerConfig() im Backend passen (Test-Packs + Simulations-Start)
 export const DEFAULT_SHARED_PARAMS: SharedParams = {
   dailyPackSize: 3,
-  guaranteeNew: true,
+  guaranteeNew: false,
   milestoneInterval: 100,
   milestonePackSize: 3,
   milestoneAllNew: true,

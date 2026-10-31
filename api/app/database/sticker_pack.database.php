@@ -31,7 +31,8 @@ trait StickerPackTrait
             // mind. so viele Karten "episch oder besser" (Gewichtungs-Marktwert > epic_min_price) je Pack-Quelle
             'min_epic'                => ['birthday' => 1, 'christmas' => 1],
             'epic_min_price'          => 3_500_000, // = DEFAULT_TIER_THRESHOLDS.epic im Frontend (album.model.ts)
-            'guarantee_new'           => true,    // 1. Sticker jedes Packs garantiert neu (solange welche fehlen)
+            'guarantee_new'           => true,    // 1. Sticker garantiert neu (solange welche fehlen) — Streak-Pack u.a., nicht das Tages-Pack
+            'daily_guarantee_new'     => false,   // Tages-Pack: nichts garantiert neu
             'milestone_all_new'       => true,    // Meilenstein-Pack: alle Sticker garantiert neu
             'matchday_best_all_new'   => true,    // Spieltagsbester-Pack: alle Sticker garantiert neu
             'rarity_alpha'            => 1.0,     // Ziehgewicht = Marktwert^-α
@@ -687,8 +688,8 @@ trait StickerPackTrait
 
     /**
      * Öffnet ein eigenes, ungeöffnetes Pack: würfelt die Karten serverseitig (Gewicht = Marktwert^-α;
-     * garantiert neu, solange Sticker fehlen: bei Meilenstein-/Spieltagsbester-Packs alle Karten, sonst die
-     * erste; Sonder-Packs mind. min_epic Karten "episch oder besser"; Holo je Karte) und speichert sie.
+     * garantiert neu, solange Sticker fehlen: bei Meilenstein-/Spieltagsbester-Packs alle Karten, beim Tages-Pack
+     * keine, sonst die erste; Sonder-Packs mind. min_epic Karten "episch oder besser"; Holo je Karte) und speichert sie.
      * "Garantiert neu" bezieht sich auf die Sammlung zum Zeitpunkt der Ausgabe (sticker_pack.created_at), nicht
      * des Öffnens: wer Packs ungeöffnet hortet, bekommt dadurch keine sicheren Lücken am Ende der Saison — was
      * er inzwischen schon hat, kommt dann eben doppelt. is_new zeigt weiterhin, ob die Karte jetzt neu ist.
@@ -777,12 +778,13 @@ trait StickerPackTrait
         };
 
         // Wie viele Karten dieses Packs sind garantiert neu? Shop-Packs: je Angebot (guaranteed_new),
-        // Meilenstein/Spieltagsbester: alle, sonst die erste
+        // Meilenstein/Spieltagsbester: alle, Tages-Pack: keine, sonst die erste
         $allNew = ($pack['source'] === 'milestone' && $cfg['milestone_all_new'])
             || ($pack['source'] === 'matchday_best' && $cfg['matchday_best_all_new']);
         $guaranteed = $pack['guaranteed_new'] !== null
             ? (int) $pack['guaranteed_new']
-            : ($allNew ? (int) $pack['size'] : ($cfg['guarantee_new'] ? 1 : 0));
+            : ($allNew ? (int) $pack['size']
+                : ($cfg[$pack['source'] === 'daily' ? 'daily_guarantee_new' : 'guarantee_new'] ? 1 : 0));
 
         $cards = [];
         $epics = 0;

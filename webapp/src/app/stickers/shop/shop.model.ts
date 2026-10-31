@@ -58,7 +58,7 @@ export const EUR_BUNDLES: ShopOffer[] = [
 
 /** einzelne Packs gegen Euro (Impulskauf) */
 export const EUR_SINGLES: ShopOffer[] = [
-  { key: 'e-club',    currency: 'eur', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 1.99 },
+  { key: 'e-club',    currency: 'eur', name: PACK_KINDS.club.name,    contents: { club: 1 },    price: 2.99 },
   { key: 'e-special', currency: 'eur', name: PACK_KINDS.special.name, contents: { special: 1 }, price: 1.99 },
 ];
 
@@ -69,7 +69,7 @@ export const ALL_SHOP_OFFERS: ShopOffer[] = [...LUKATEN_OFFERS, EUR_STARTER, ...
  * "Wert" je Pack-Art in Euro für die Ersparnis-Anzeige: Normal wie in der Handvoll (2,99 € / 5),
  * Big nach Stickern (7 statt 3), Vereins-/Special-Pack = Einzelpreis.
  */
-const EUR_KIND_VALUE: Record<PackKind, number> = { normal: 0.6, big: 1.4, club: 1.99, special: 1.99 };
+const EUR_KIND_VALUE: Record<PackKind, number> = { normal: 0.6, big: 1.4, club: 2.99, special: 1.99 };
 
 /** [{kind, count}] in fester Reihenfolge */
 export function offerKinds(o: ShopOffer): { kind: PackKind; count: number }[] {
