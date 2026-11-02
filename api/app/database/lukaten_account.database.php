@@ -35,8 +35,8 @@ trait LukatenAccountTrait
             // Grundpreise — es gilt Grundpreis × Faktor der Preisstufe (price_levels), gerundet auf ganze Lukaten
             'pack_prices'   => ['l-small' => 100, 'l-big' => 200, 'l-club' => 500, 'l-special' => 300],
             // Preisstufen nach der Menge im Umlauf (alle Kontostände zusammen): [ab Lukaten, Faktor]. Damit am Saisonende
-            // gehortete Lukaten nicht übermäßig viele Packs kaufen. Träge: neue Stufe montags und nach jedem Spieltagsabschluss,
-            // maßgeblich das Mittel der letzten 7 Tagesstände, höchstens eine Stufe pro Woche, zurück erst 10 % unter der
+            // gehortete Lukaten nicht übermäßig viele Packs kaufen. Träge: neue Stufe täglich und nach jedem Spieltagsabschluss,
+            // maßgeblich das Mittel der letzten 7 Tagesstände, höchstens eine Stufe pro Tag, zurück erst 10 % unter der
             // Schwelle (getLukatenPriceLevel(), refreshLukatenPriceLevel()).
             'price_levels'            => [[0, 1.0], [4000, 1.25], [8000, 1.5], [12000, 2.0]],
             'price_level_days'        => 7,
@@ -636,7 +636,7 @@ trait LukatenAccountTrait
         return $level;
     }
 
-    /** Stufe der neuen Woche: höchstens eine Stufe pro Woche, zurück erst deutlich (down_margin) unter der Schwelle. */
+    /** Stufe des neuen Tags: höchstens eine Stufe pro Tag, zurück erst deutlich (down_margin) unter der Schwelle. */
     private function lukatenNextLevel(int $prev, ?float $avg): int
     {
         if ($avg === null) return $prev;
@@ -647,32 +647,26 @@ trait LukatenAccountTrait
         return $prev;
     }
 
-    /** Montag der laufenden Woche (YYYY-MM-DD). */
-    private function lukatenWeekStart(): string
-    {
-        return date('Y-m-d', strtotime('-' . ((int) date('N') - 1) . ' days'));
-    }
-
     /**
-     * Preisstufe der laufenden Woche → {level, factor, week_start, avg_circulation, set_at, stored}. Beim ersten Abruf
-     * einer Woche festgelegt und gespeichert (lukaten_price_level), danach fest — bis ein Spieltagsabschluss sie neu
-     * festlegt (refreshLukatenPriceLevel()). Ohne die Tabelle (Migration) direkt aus dem Mittel, ohne Wochen-Regeln
-     * (stored = false).
+     * Preisstufe von heute → {level, factor, day, avg_circulation, set_at, stored}. Beim ersten Abruf eines Tags
+     * festgelegt und gespeichert (lukaten_price_level, Spalte week_start = der Tag — bis 2026-11-02 war es der Montag
+     * der Woche), danach fest — bis ein Spieltagsabschluss sie neu festlegt (refreshLukatenPriceLevel()). Ohne die
+     * Tabelle (Migration) direkt aus dem Mittel, ohne die Schritt-Regeln (stored = false).
      */
     public function getLukatenPriceLevel(): array
     {
         if ($this->lukatenPriceLevelCache !== null) return $this->lukatenPriceLevelCache;
-        $cfg  = $this->lukatenAccountConfig();
-        $week = $this->lukatenWeekStart();
+        $cfg = $this->lukatenAccountConfig();
+        $day = date('Y-m-d');
         $result = fn(int $level, ?float $avg, ?string $setAt, bool $stored) => $this->lukatenPriceLevelCache = [
-            'level' => $level, 'factor' => (float) $cfg['price_levels'][$level][1], 'week_start' => $week,
+            'level' => $level, 'factor' => (float) $cfg['price_levels'][$level][1], 'day' => $day,
             'avg_circulation' => $avg, 'set_at' => $setAt, 'stored' => $stored,
         ];
         if (!$this->lukatenLedgerReady()) return $result(0, null, null, false);
 
         try {
             $q = $this->con->prepare("SELECT level, avg_circulation, created_at FROM lukaten_price_level WHERE week_start = ?");
-            $q->execute([$week]);
+            $q->execute([$day]);
             $row = $q->fetch(PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
             if (!$this->lukatenFeatureMissing($e)) throw $e;
@@ -680,11 +674,11 @@ trait LukatenAccountTrait
             return $result($avg === null ? 0 : $this->lukatenLevelFor($avg), $avg, null, false);
         }
         if (!$row) {
-            [$level, $avg] = $this->lukatenWeekLevel($week);
+            [$level, $avg] = $this->lukatenDayLevel($day);
             // zwei gleichzeitige erste Abrufe: der erste gewinnt, danach für alle dieselbe Zeile
             $this->con->prepare("INSERT IGNORE INTO lukaten_price_level (week_start, level, factor, avg_circulation) VALUES (?, ?, ?, ?)")
-                ->execute([$week, $level, $cfg['price_levels'][$level][1], $avg]);
-            $q->execute([$week]);
+                ->execute([$day, $level, $cfg['price_levels'][$level][1], $avg]);
+            $q->execute([$day]);
             $row = $q->fetch(PDO::FETCH_ASSOC);
         }
         $level = min(count($cfg['price_levels']) - 1, max(0, (int) $row['level']));
@@ -692,23 +686,23 @@ trait LukatenAccountTrait
     }
 
     /**
-     * Preisstufe der laufenden Woche jetzt neu festlegen und speichern — beim Spieltagsabschluss, denn dann kommen die
-     * meisten Lukaten dazu (Einträge, Tippgewinne); sonst würde es bis zum nächsten Montag dauern. Es gelten dieselben
-     * Regeln wie montags, gemessen an der Stufe der Vorwoche: auch mehrere Abschlüsse in einer Woche bewegen sie höchstens
-     * um eine Stufe. Ohne die Tabelle (Migration) nichts zu tun — die Stufe wird dann ohnehin bei jedem Abruf gerechnet.
+     * Preisstufe von heute jetzt neu festlegen und speichern — beim Spieltagsabschluss, denn dann kommen die meisten
+     * Lukaten dazu (Einträge, Tippgewinne); sonst zählten sie erst morgen. Gemessen an der Stufe des Vortags: auch
+     * mehrere Abschlüsse an einem Tag bewegen sie höchstens um eine Stufe. Ohne die Tabelle (Migration) nichts zu tun —
+     * die Stufe wird dann ohnehin bei jedem Abruf gerechnet.
      */
     public function refreshLukatenPriceLevel(): void
     {
         if (!$this->lukatenLedgerReady()) return;
-        $cfg  = $this->lukatenAccountConfig();
-        $week = $this->lukatenWeekStart();
-        [$level, $avg] = $this->lukatenWeekLevel($week);
+        $cfg = $this->lukatenAccountConfig();
+        $day = date('Y-m-d');
+        [$level, $avg] = $this->lukatenDayLevel($day);
         try {
             $this->con->prepare(
                 "INSERT INTO lukaten_price_level (week_start, level, factor, avg_circulation) VALUES (?, ?, ?, ?)
                  ON DUPLICATE KEY UPDATE level = VALUES(level), factor = VALUES(factor),
                      avg_circulation = VALUES(avg_circulation), created_at = NOW()"
-            )->execute([$week, $level, $cfg['price_levels'][$level][1], $avg]);
+            )->execute([$day, $level, $cfg['price_levels'][$level][1], $avg]);
         } catch (\Throwable $e) {
             if (!$this->lukatenFeatureMissing($e)) throw $e;
         }
@@ -716,15 +710,15 @@ trait LukatenAccountTrait
     }
 
     /**
-     * Stufe für die Woche ab $week nach den Wochen-Regeln (ausgehend von der Stufe der Vorwoche) → [level, avg]. Maßgeblich
-     * ist das Mittel der letzten 7 Tagesstände (price_level_days) bis heute einschließlich — montags früh also im Wesentlichen die Vorwochen, nach
-     * einem Spieltagsabschluss mit den dabei gutgeschriebenen Lukaten.
+     * Stufe für den Tag $day, ausgehend von der zuletzt festgelegten davor → [level, avg]. Maßgeblich ist das Mittel der
+     * letzten 7 Tagesstände (price_level_days) bis heute einschließlich — nach einem Spieltagsabschluss also mit den
+     * dabei gutgeschriebenen Lukaten.
      */
-    private function lukatenWeekLevel(string $week): array
+    private function lukatenDayLevel(string $day): array
     {
         $cfg = $this->lukatenAccountConfig();
         $pq = $this->con->prepare("SELECT level FROM lukaten_price_level WHERE week_start < ? ORDER BY week_start DESC LIMIT 1");
-        $pq->execute([$week]);
+        $pq->execute([$day]);
         $prev = $pq->fetchColumn();
         $avg = $this->lukatenCirculationAvg($this->lukatenCirculationByDay(), $this->lukatenTomorrow(), $cfg['price_level_days']);
         return [min(count($cfg['price_levels']) - 1, $this->lukatenNextLevel($prev === false ? 0 : (int) $prev, $avg)), $avg];
@@ -735,7 +729,7 @@ trait LukatenAccountTrait
         return date('Y-m-d', strtotime('+1 day'));
     }
 
-    /** Pack-Preise der laufenden Woche: Grundpreis × Faktor der Preisstufe, auf ganze Lukaten gerundet. */
+    /** Pack-Preise von heute: Grundpreis × Faktor der Preisstufe, auf ganze Lukaten gerundet. */
     protected function lukatenPackPrices(): array
     {
         $factor = $this->getLukatenPriceLevel()['factor'];
@@ -744,7 +738,7 @@ trait LukatenAccountTrait
 
     /**
      * Für /verwaltung/lukaten: aktuelle Stufe, alle Stufen mit den Preisen je Pack und die voraussichtliche Stufe ab
-     * nächstem Montag (aus dem Mittel der letzten 14 Tage bis heute).
+     * morgen (aus dem Mittel der letzten 7 Tage bis heute).
      */
     private function lukatenPriceLevelOverview(): array
     {
@@ -764,7 +758,7 @@ trait LukatenAccountTrait
         return [
             'level'           => $current['level'],
             'factor'          => $current['factor'],
-            'week_start'      => $current['week_start'],
+            'day'             => $current['day'],
             'avg_circulation' => $current['avg_circulation'],
             'set_at'          => $current['set_at'],
             'stored'          => $current['stored'],

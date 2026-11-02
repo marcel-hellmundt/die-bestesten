@@ -233,7 +233,7 @@
       <div class="price-levels__head">
         <h2 class="price-levels__title">Preisstufen der Lukaten-Packs</h2>
         <span class="price-levels__now">
-          aktiv seit {{ pl.set_at ? dateTimeLabel(pl.set_at) : 'Montag ' + dateLabel(pl.week_start) }}: <b>Stufe {{ pl.level + 1 }} · {{ factorLabel(pl.factor) }}</b>
+          aktiv seit {{ pl.set_at ? dateTimeLabel(pl.set_at) : dateLabel(pl.day) }}: <b>Stufe {{ pl.level + 1 }} · {{ factorLabel(pl.factor) }}</b>
         </span>
       </div>
       <div class="table-container">
@@ -265,8 +265,8 @@
         Lukaten im Umlauf im Mittel der letzten {{ pl.days }} Tage bei der Festlegung:
         <b>{{ pl.avg_circulation === null ? '–' : format(pl.avg_circulation) }}</b>.
         Mittel der letzten {{ pl.days }} Tage bis heute: <b>{{ pl.avg_now === null ? '–' : format(pl.avg_now) }}</b>
-        → ab nächstem Montag voraussichtlich <b>Stufe {{ pl.forecast + 1 }} · {{ factorLabel(pl.levels[pl.forecast].factor) }}</b>.
-        Neue Stufe montags und nach jedem Spieltagsabschluss, höchstens eine Stufe pro Woche, zurück erst
+        → ab morgen voraussichtlich <b>Stufe {{ pl.forecast + 1 }} · {{ factorLabel(pl.levels[pl.forecast].factor) }}</b>.
+        Neue Stufe täglich beim ersten Abruf und nach jedem Spieltagsabschluss, höchstens eine Stufe pro Tag, zurück erst
         {{ pl.down_margin * 100 }} % unter der Schwelle.
         @if (!pl.stored) { <span class="is-minus">Tabelle lukaten_price_level fehlt (Migration) — die Stufe wird direkt aus dem Mittel gerechnet.</span> }
       </p>

@@ -95,7 +95,7 @@ class MatchdayController extends _BaseController
             } catch (\Throwable $e) {
                 error_log('creditLukatenEntriesForMatchday: ' . $e->getMessage());
             }
-            // jetzt kommen die meisten Lukaten dazu → Preisstufe der Woche gleich neu festlegen, nicht erst nächsten Montag
+            // jetzt kommen die meisten Lukaten dazu → Preisstufe von heute gleich neu festlegen, nicht erst morgen
             try {
                 $this->db->refreshLukatenPriceLevel();
             } catch (\Throwable $e) {

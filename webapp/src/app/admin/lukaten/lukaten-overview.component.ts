@@ -20,12 +20,12 @@ interface LukatenAccountRow {
 interface PriceLevel {
   level: number;                 // aktive Stufe (Index in levels)
   factor: number;
-  week_start: string;            // Montag der laufenden Woche
+  day: string;                   // heute — die Stufe gilt je Tag
   avg_circulation: number | null; // Mittel der letzten `days` Tage bei der Festlegung — Grundlage der Stufe
-  set_at: string | null;         // festgelegt (montags beim ersten Abruf oder beim Spieltagsabschluss)
+  set_at: string | null;         // festgelegt (beim ersten Abruf des Tags oder beim Spieltagsabschluss)
   stored: boolean;               // false = ohne Tabelle (Migration) direkt aus dem Mittel gerechnet
   avg_now: number | null;        // Mittel der letzten `days` Tage bis heute
-  forecast: number;              // voraussichtliche Stufe ab nächstem Montag
+  forecast: number;              // voraussichtliche Stufe ab morgen
   days: number;
   down_margin: number;
   levels: { from: number; to: number | null; factor: number }[];

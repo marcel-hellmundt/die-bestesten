@@ -129,10 +129,11 @@ Saisonende gehortete Lukaten nicht übermäßig viele Packs kaufen.
 | 8.000–12.000 | ×1,5 | 150 / 300 / 750 / 450 |
 | ab 12.000 | ×2 | 200 / 400 / 1.000 / 600 |
 
-Die Stufe reagiert bewusst träge, damit ein fleißiges Wochenende den Preis nicht sofort hochtreibt: Eine neue
-Stufe gibt es montags (beim ersten Abruf der Woche, gespeichert in `lukaten_price_level`) und nach jedem
-Spieltagsabschluss (dann kommen die meisten Lukaten dazu — sonst wirkte das erst eine Woche später), maßgeblich ist
-das Mittel der letzten 7 Tagesstände, höchstens eine Stufe pro Woche, und zurück geht es erst 10 % unter der Schwelle. Im Shop
+Die Stufe reagiert bewusst träge, damit ein fleißiges Wochenende den Preis nicht sofort hochtreibt: Maßgeblich ist
+das Mittel der letzten 7 Tagesstände, festgelegt wird täglich (beim ersten Abruf des Tags, gespeichert in
+`lukaten_price_level`) und nach jedem Spieltagsabschluss (dann kommen die meisten Lukaten dazu), höchstens eine
+Stufe pro Tag, und zurück geht es erst 10 % unter der Schwelle. Bis 2026-11-02 galt die Stufe je Woche ab Montag —
+die Einträge eines Spieltags (meist montags abgeschlossen) wirkten so erst eine Woche später. Im Shop
 stehen einfach die aktuellen Preise; `/verwaltung/lukaten` zeigt das Mittel im Chart, die Schwellen und eine
 Tabelle der Preise je Stufe. Stand beim Start: 2.712 im Umlauf, Zufluss netto rund 600 je Woche — ×1,25 etwa ab
 Mitte November, ×1,5 ab Januar, ×2 ab Februar, sofern sich das Kaufverhalten nicht ändert. Höhere Preise bremsen

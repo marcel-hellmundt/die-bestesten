@@ -23,7 +23,7 @@ trait StickerShopTrait
 
     /**
      * Lukaten-Angebote: je eine Pack-Art. Die Preise stehen in LukatenAccountTrait::lukatenAccountConfig()
-     * (pack_prices × Faktor der Preisstufe der Woche, lukatenPackPrices()); der Shop liefert sie mit aus (GET /sticker/shop → prices), shop.model.ts enthält sie nur als
+     * (pack_prices × Faktor der Preisstufe des Tags, lukatenPackPrices()); der Shop liefert sie mit aus (GET /sticker/shop → prices), shop.model.ts enthält sie nur als
      * Rückfall. Keys bleiben stabil (bestehende Käufe), l-small = Normales Pack.
      */
     protected function stickerShopOffers(): array
