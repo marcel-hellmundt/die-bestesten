@@ -123,6 +123,32 @@ export class LukatenOverviewComponent {
   totals = computed(() => this.overview()?.totals ?? null);
 
   /**
+   * Die Kennzahlen oben, gruppiert: Hinein bringt Lukaten ins Spiel, Hinaus zieht sie ab (Bestico und Spielhalle
+   * können für die Manager auch positiv ausgehen). Hinein + Hinaus = Im Umlauf.
+   */
+  flowGroups = computed(() => {
+    const t = this.totals();
+    if (!t) return [];
+    const inflow = [
+      { label: 'Startbonus', color: 'asphalt', value: t.start, desc: 'je Manager und Saison' },
+      { label: 'Einträge', color: 'emerald', value: t.entries, desc: '1 Lukate je Eintrag, beim Abschluss' },
+      { label: 'Gekauft', color: 'river', value: t.eur, desc: 'gegen Euro' },
+    ];
+    const outflow = [
+      { label: 'Packs', color: 'amethyst', value: t.packs, desc: 'für Sticker-Packs ausgegeben' },
+      { label: 'Bestico', color: 'carrot', value: t.bets, desc: 'Tippgewinne minus Einsätze' },
+      { label: 'Spielhalle', color: 'alizarin', value: t.slot ?? 0, desc: 'Gewinne minus Einsätze' },
+    ];
+    const sum = (items: { value: number }[]) => items.reduce((s, i) => s + i.value, 0);
+    return [
+      { key: 'in', title: 'Hinein', hint: 'bringt Lukaten ins Spiel', items: inflow, sum: sum(inflow) },
+      { key: 'out', title: 'Hinaus', hint: 'zieht Lukaten ab — Bestico und Spielhalle auch mal umgekehrt', items: outflow, sum: sum(outflow) },
+    ];
+  });
+  inflow = computed(() => this.flowGroups()[0]?.sum ?? 0);
+  outflow = computed(() => this.flowGroups()[1]?.sum ?? 0);
+
+  /**
    * Bank = Gegenseite aller Tipps (Einsätze rein, Gewinne raus), Shop = für Sticker-Packs ausgegebene Lukaten,
    * Spielhalle = Einsätze minus Gewinne am Automaten. Zusammen mit "Im Umlauf" ergibt das alles, was je entstanden
    * ist (Startbonus + Einträge + Gekauft).

@@ -16,6 +16,107 @@
   }
 }
 
+// ── Kennzahlen: Im Umlauf allein, daneben Hinein und Hinaus mit je drei Werten ──
+.flow {
+  display: grid;
+  grid-template-columns: minmax(200px, 0.8fr) 1.6fr 1.6fr;
+  gap: $space-4;
+  margin-bottom: $space-6;
+
+  @media (max-width: 1300px) {
+    grid-template-columns: 1fr 1fr;
+    .flow__total { grid-column: 1 / -1; }
+  }
+  @media (max-width: $mobile-breakpoint) { grid-template-columns: 1fr; }
+
+  // Im Umlauf: das Wichtigste, größer und auf Akzentgrund
+  &__total {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: color-mix(in srgb, var(--flat-sunflower) 10%, #{$color-surface});
+    border-color: color-mix(in srgb, var(--flat-sunflower) 45%, #{$color-border});
+
+    .stat-label { align-self: flex-start; }
+    .stat-value { font-size: calc(#{$font-3xl} * 1.35); margin: $space-2 0; }
+    .stat-desc { text-align: center; }
+  }
+
+  &__equation {
+    margin-top: $space-2;
+    font-size: $font-xs;
+    color: $color-text-muted;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+
+    span { color: $color-text; font-weight: $font-weight-semibold; }
+    .is-minus { color: $color-danger; }
+  }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: $space-3;
+    padding: $space-4 $space-5;
+
+    @media (max-width: $mobile-breakpoint) { padding: $space-4; }
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-3;
+    padding-bottom: $space-2;
+    border-bottom: 1px solid $color-border;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: $font-md;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__hint {
+    font-size: $font-xs;
+    color: $color-text-muted;
+  }
+
+  &__sum {
+    font-size: $font-lg;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &__items {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  // drei Werte nebeneinander, durch feine Linien getrennt
+  &__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    padding: 0 $space-2;
+    text-align: center;
+
+    & + & { border-left: 1px solid $color-border; }
+
+    .stat-label { margin-bottom: $space-2; }
+    .stat-value { font-size: $font-2xl; white-space: nowrap; }
+
+    @media (max-width: $mobile-breakpoint) {
+      padding: 0 $space-1;
+      .stat-label { font-size: $font-xs; padding: 3px 8px; }
+      .stat-value { font-size: $font-lg; }
+    }
+  }
+
+  .is-minus { color: $color-danger; }
+}
+
 // ── Bank und Shop: Gegenseite der Konten ──
 .counterparts {
   margin-top: $space-4;
