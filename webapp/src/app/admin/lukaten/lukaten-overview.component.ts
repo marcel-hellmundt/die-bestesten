@@ -67,6 +67,8 @@ interface ChartSeries {
 
 /** Zeichenfläche des Verlauf-Charts in px — die Breite kommt vom Platz auf der Seite (1:1 gezeichnet, nicht skaliert) */
 const CHART = { height: 300, left: 48, right: 10, top: 12, bottom: 24 };
+/** Zeilen je Spalte im Tooltip, die unter Kopf und Mittel in die Höhe des Charts passen */
+const TIP_MAX_ROWS = 10;
 const BANK_COLOR = '#7f8c8d';
 const SHOP_COLOR = '#0f766e';
 const ARCADE_COLOR = '#c0392b';
@@ -295,6 +297,8 @@ export class LukatenOverviewComponent {
       values: series.map(entry),
       // für den Tooltip von oben nach unten, wie die Flächen im Chart liegen (Spielhalle, Shop, Bank, dann die Konten)
       topDown: series.map(entry).reverse(),
+      // so viele Zeilen je Spalte, dass der Tooltip in die Höhe des Charts passt — sonst eine Spalte mehr
+      tipRows: Math.ceil(series.length / Math.ceil(series.length / TIP_MAX_ROWS)),
       total: series.reduce((sum, s) => sum + s.values[i], 0),
       avg: this.circulationAvg()[i] ?? null,
     };

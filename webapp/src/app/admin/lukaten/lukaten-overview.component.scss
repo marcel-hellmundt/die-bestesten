@@ -147,10 +147,17 @@
 
     &--flip { transform: translateX(calc(-100% - 12px)); }
 
+    // von oben nach unten, dann die nächste Spalte (Zeilen je Spalte: tipRows) — der Tooltip wird dafür breiter
     ul {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(140px, auto);
       gap: 2px $space-4;
+
+      @media (max-width: $mobile-breakpoint) {
+        grid-auto-columns: minmax(110px, auto);
+        gap: 2px $space-2;
+      }
       margin: $space-1 0 0;
       padding: 0;
       list-style: none;
