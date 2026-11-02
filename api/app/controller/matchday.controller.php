@@ -95,6 +95,12 @@ class MatchdayController extends _BaseController
             } catch (\Throwable $e) {
                 error_log('creditLukatenEntriesForMatchday: ' . $e->getMessage());
             }
+            // jetzt kommen die meisten Lukaten dazu → Preisstufe der Woche gleich neu festlegen, nicht erst nächsten Montag
+            try {
+                $this->db->refreshLukatenPriceLevel();
+            } catch (\Throwable $e) {
+                error_log('refreshLukatenPriceLevel: ' . $e->getMessage());
+            }
             $achResult   = $this->db->evaluateAchievements(true);
             $achievements = $achResult['count'];
             $notificationIds = $this->db->createMatchdayCompletedNotifications($this->id, (int) $matchday['number']);

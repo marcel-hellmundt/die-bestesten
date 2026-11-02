@@ -84,7 +84,7 @@
           @for (a of chartAreas().areas; track a.key) {
             <path class="history__area" [attr.d]="a.path" [attr.fill]="a.color" />
           }
-          <!-- Schwellen der Preisstufen + Mittel der letzten 14 Tage (Grundlage der Stufe) -->
+          <!-- Schwellen der Preisstufen + Mittel der letzten 7 Tage (Grundlage der Stufe) -->
           @for (t of chartAreas().thresholds; track t.level) {
             <line class="history__threshold" [class.is-active]="priceLevel()?.level === t.level"
                   [attr.x1]="chart().left" [attr.x2]="chart().width - chart().right" [attr.y1]="t.y" [attr.y2]="t.y" />
@@ -103,7 +103,7 @@
           <div class="history__tip" [class.history__tip--flip]="d.flip" [style.left.px]="d.x" role="tooltip">
             <div class="history__tip-head"><span>{{ d.label }}</span><b>{{ format(d.total) }}</b></div>
             @if (chartMode() === 'total' && d.avg !== null) {
-              <div class="history__tip-avg"><span class="history__avg-swatch"></span> Ø {{ priceLevel()?.days ?? 14 }} Tage im Umlauf <b>{{ format(d.avg) }}</b></div>
+              <div class="history__tip-avg"><span class="history__avg-swatch"></span> Ø {{ priceLevel()?.days ?? 7 }} Tage im Umlauf <b>{{ format(d.avg) }}</b></div>
             }
             <ul>
               @for (v of d.topDown; track v.key) {
@@ -122,7 +122,7 @@
       @if (hoverIndex() === null && chartDay(); as d) {
         <ul class="history__legend">
           @if (chartMode() === 'total' && d.avg !== null) {
-            <li><span class="history__avg-swatch"></span> Ø {{ priceLevel()?.days ?? 14 }} Tage im Umlauf <b>{{ format(d.avg) }}</b></li>
+            <li><span class="history__avg-swatch"></span> Ø {{ priceLevel()?.days ?? 7 }} Tage im Umlauf <b>{{ format(d.avg) }}</b></li>
           }
           @for (v of d.values; track v.key) {
             <li>
@@ -138,7 +138,7 @@
         Tippgewinne sind auf den Tag des Anpfiffs gelegt, weil der Abschluss keinen Zeitstempel hat. Konten oder die
         Bank im Minus zählen in der Fläche als 0, die Zahl in der Legende ist der echte Stand. Relativ: jeder Tag
         auf 100 % gestreckt — Anteil am Stapel des Tages. Gestrichelt: Lukaten im Umlauf im Mittel der letzten
-        {{ priceLevel()?.days ?? 14 }} Tage, waagerecht die Schwellen der Preisstufen.
+        {{ priceLevel()?.days ?? 7 }} Tage, waagerecht die Schwellen der Preisstufen.
       </p>
     </div>
   }
@@ -232,7 +232,7 @@
       <div class="price-levels__head">
         <h2 class="price-levels__title">Preisstufen der Lukaten-Packs</h2>
         <span class="price-levels__now">
-          aktiv seit Montag {{ dateLabel(pl.week_start) }}: <b>Stufe {{ pl.level + 1 }} · {{ factorLabel(pl.factor) }}</b>
+          aktiv seit {{ pl.set_at ? dateTimeLabel(pl.set_at) : 'Montag ' + dateLabel(pl.week_start) }}: <b>Stufe {{ pl.level + 1 }} · {{ factorLabel(pl.factor) }}</b>
         </span>
       </div>
       <div class="table-container">
@@ -261,11 +261,12 @@
         </table>
       </div>
       <p class="price-levels__note">
-        Lukaten im Umlauf im Mittel der {{ pl.days }} Tage vor dem {{ dateLabel(pl.week_start) }}:
+        Lukaten im Umlauf im Mittel der letzten {{ pl.days }} Tage bei der Festlegung:
         <b>{{ pl.avg_circulation === null ? '–' : format(pl.avg_circulation) }}</b>.
         Mittel der letzten {{ pl.days }} Tage bis heute: <b>{{ pl.avg_now === null ? '–' : format(pl.avg_now) }}</b>
         → ab nächstem Montag voraussichtlich <b>Stufe {{ pl.forecast + 1 }} · {{ factorLabel(pl.levels[pl.forecast].factor) }}</b>.
-        Neue Stufe nur montags, höchstens eine Stufe pro Woche, zurück erst {{ pl.down_margin * 100 }} % unter der Schwelle.
+        Neue Stufe montags und nach jedem Spieltagsabschluss, höchstens eine Stufe pro Woche, zurück erst
+        {{ pl.down_margin * 100 }} % unter der Schwelle.
         @if (!pl.stored) { <span class="is-minus">Tabelle lukaten_price_level fehlt (Migration) — die Stufe wird direkt aus dem Mittel gerechnet.</span> }
       </p>
     </div>

@@ -20,10 +20,11 @@ interface LukatenAccountRow {
 interface PriceLevel {
   level: number;                 // aktive Stufe (Index in levels)
   factor: number;
-  week_start: string;            // Montag, seit dem sie gilt
-  avg_circulation: number | null; // Mittel der 14 Tage vor week_start — Grundlage der Stufe
+  week_start: string;            // Montag der laufenden Woche
+  avg_circulation: number | null; // Mittel der letzten `days` Tage bei der Festlegung — Grundlage der Stufe
+  set_at: string | null;         // festgelegt (montags beim ersten Abruf oder beim Spieltagsabschluss)
   stored: boolean;               // false = ohne Tabelle (Migration) direkt aus dem Mittel gerechnet
-  avg_now: number | null;        // Mittel der letzten 14 Tage bis heute
+  avg_now: number | null;        // Mittel der letzten `days` Tage bis heute
   forecast: number;              // voraussichtliche Stufe ab nächstem Montag
   days: number;
   down_margin: number;
@@ -115,6 +116,8 @@ export class LukatenOverviewComponent {
     return l.to === null ? `ab ${this.format(l.from)}` : `${this.format(l.from)}–${this.format(l.to)}`;
   }
   dateLabel(iso: string): string { return `${iso.slice(8, 10)}.${iso.slice(5, 7)}.`; }
+  /** "02.11., 14:05" aus einem DB-Zeitstempel */
+  dateTimeLabel(iso: string): string { return `${this.dateLabel(iso)}, ${iso.slice(11, 16)}`; }
   totals = computed(() => this.overview()?.totals ?? null);
 
   /**
@@ -248,7 +251,7 @@ export class LukatenOverviewComponent {
       .map((day, i) => ({ day, i }))
       .filter(d => d.day.endsWith('-01'))
       .map(d => ({ x: x(d.i), label: MONTHS[+d.day.slice(5, 7) - 1] }));
-    // Im Umlauf, Mittel der letzten 14 Tage (Grundlage der Preisstufe) + Schwellen der Stufen — nur bei Total
+    // Im Umlauf, Mittel der letzten 7 Tage (Grundlage der Preisstufe) + Schwellen der Stufen — nur bei Total
     const avg = this.circulationAvg();
     const avgPath = !relative && avg.length
       ? 'M' + avg.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('L')
@@ -259,11 +262,11 @@ export class LukatenOverviewComponent {
     return { areas, ticks, months, max, x, avgPath, thresholds };
   });
 
-  /** Lukaten im Umlauf (alle Konten) je Tag, gemittelt über die letzten 14 Tage — so wie die Preisstufe rechnet */
+  /** Lukaten im Umlauf (alle Konten) je Tag, gemittelt über die letzten 7 Tage — so wie die Preisstufe rechnet */
   circulationAvg = computed<number[]>(() => {
     const h = this.history();
     if (!h) return [];
-    const days = this.priceLevel()?.days ?? 14;
+    const days = this.priceLevel()?.days ?? 7;
     const circ = h.days.map((_, i) => h.managers.reduce((sum, m) => sum + m.balance[i], 0));
     return circ.map((_, i) => {
       const from = Math.max(0, i - days + 1);
