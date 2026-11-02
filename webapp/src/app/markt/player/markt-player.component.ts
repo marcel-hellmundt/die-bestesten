@@ -9,7 +9,7 @@ interface FreeAgent {
   id: string;
   displayname: string;
   position: string;
-  price: number;
+  price: number | null; // null = Mondpreis (noch kein Marktwert) — nicht kaufbar
   season_points: number;
   photo_uploaded: boolean;
   club_id: string;
@@ -287,6 +287,7 @@ export class MarktPlayerComponent {
     const el = this.eligibility();
     if (!p.current_team_id) return 'Spieler ist in keinem Team';
     if (p.current_team_id === this.cache.myTeamId()) return 'Das ist dein eigener Spieler';
+    if (p.price === null) return 'Mondpreis — der Spieler hat noch keinen Marktwert';
     if (!el) return 'Bedingungen werden geladen…';
     if (!el.enabled) return 'Direktangebote sind in dieser Liga deaktiviert';
     if (el.open_player_ids.includes(p.id)) return 'Du hast bereits ein offenes Angebot für diesen Spieler';
@@ -302,7 +303,12 @@ export class MarktPlayerComponent {
 
   // ── Gebot abgeben (Quick-Action) ───────────────────────────────────────────
   canBid(p: FreeAgent): boolean {
-    return !p.current_team_id && !!this.openWindow() && !!this.cache.myTeamId() && !p.soon_available;
+    return !p.current_team_id && !!this.openWindow() && !!this.cache.myTeamId() && !p.soon_available && p.price !== null;
+  }
+
+  bidTitle(p: FreeAgent): string {
+    if (p.price === null) return 'Mondpreis — der Spieler hat noch keinen Marktwert';
+    return p.soon_available ? 'Verfügbar ab der nächsten Transferphase' : 'Gebot abgeben';
   }
 
   selectedOfferPlayer = signal<FreeAgent | null>(null);
@@ -356,7 +362,7 @@ export class MarktPlayerComponent {
   offerMarketValue = computed(() => {
     if (this.offerMode() === 'direct') return this.directMarketValue();
     const p = this.selectedOfferPlayer();
-    return p ? this.dynamicPrice(p) : 0;
+    return p ? this.dynamicPrice(p) ?? 0 : 0;
   });
 
   offerPercentage = computed(() => {
@@ -432,7 +438,7 @@ export class MarktPlayerComponent {
     this.selectedOfferPlayer.set(p);
     this.offerSuccess.set(false);
     this.offerError.set(null);
-    this.setDigitsFromValue(this.dynamicPrice(p));
+    this.setDigitsFromValue(this.dynamicPrice(p) ?? 0);
     this.bottomSheet.open(this.offerSheet, { title: 'Gebot abgeben' });
   }
 
@@ -526,9 +532,12 @@ export class MarktPlayerComponent {
   }
   maxPrice       = signal<number | null>(null);
 
-  dynamicPrice(p: FreeAgent): number { return p.price + this.cache.pointsBonus() * p.season_points; }
+  /** Marktwert = Grundpreis + Punkte-Bonus; null = Mondpreis (kein Grundpreis, nicht kaufbar) */
+  dynamicPrice(p: FreeAgent): number | null {
+    return p.price === null ? null : p.price + this.cache.pointsBonus() * p.season_points;
+  }
 
-  maxDataPrice = computed(() => Math.max(0, ...this.players().map(p => this.dynamicPrice(p))));
+  maxDataPrice = computed(() => Math.max(0, ...this.players().map(p => this.dynamicPrice(p) ?? 0)));
 
   private clubsPageData = toSignal(
     toObservable(this.activeSeasonId).pipe(
@@ -603,14 +612,18 @@ export class MarktPlayerComponent {
       (!q            || p.displayname.toLowerCase().includes(q)) &&
       (pos.length === 0  || pos.includes(p.position)) &&
       (club.length === 0 || club.includes(p.club_id)) &&
-      (max === null || this.dynamicPrice(p) <= max) &&
+      (max === null || (this.dynamicPrice(p) ?? 0) <= max) &&
       (!newOnly || p.new_on_market)
     );
 
     return [...filtered].sort((a, b) => {
-      const cmp = col === 'price'
-        ? this.dynamicPrice(a) - this.dynamicPrice(b)
-        : a.season_points - b.season_points;
+      if (col === 'price') {
+        // Mondpreis (kein Marktwert) steht in beiden Richtungen hinten
+        const pa = this.dynamicPrice(a), pb = this.dynamicPrice(b);
+        if (pa === null || pb === null) return (pa === null ? 1 : 0) - (pb === null ? 1 : 0);
+        return dir === 'asc' ? pa - pb : pb - pa;
+      }
+      const cmp = a.season_points - b.season_points;
       return dir === 'asc' ? cmp : -cmp;
     });
   });

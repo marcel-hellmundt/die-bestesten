@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { StuckDirective } from '../core/stuck.directive';
+import { MoonPriceComponent } from '../core/moon-price.component';
 import { TeamDetailComponent } from './team-detail/team-detail.component';
 import { TeamOverviewComponent } from './overview/team-overview.component';
 import { SquadComponent } from './squad/squad.component';
@@ -25,6 +26,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [TeamDetailComponent, TeamOverviewComponent, SquadComponent, LineupComponent, FinancesComponent],
-  imports: [CommonModule, RouterModule.forChild(routes), DragDropModule, StuckDirective]
+  imports: [CommonModule, RouterModule.forChild(routes), DragDropModule, StuckDirective, MoonPriceComponent]
 })
 export class TeamModule {}

@@ -233,21 +233,13 @@ trait OfferTrait
         }
 
         // 3. Price snapshot = base price + points_in_season * points_bonus
-        // pis auf die Zeile der AKTUELLEN Division des Spielers eingeschränkt (Fragment A).
-        $pq = $this->con->prepare(
-            "SELECT COALESCE(pis.price, 0) FROM player_in_season pis
-             WHERE pis.player_id = :pid AND pis.season_id = :sid
-               AND pis.division_id = COALESCE(
-                     (SELECT cis.division_id
-                      FROM player_in_club pic
-                      JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
-                      WHERE pic.player_id = pis.player_id AND pic.to_date IS NULL
-                      LIMIT 1),
-                     pis.division_id)
-             LIMIT 1"
-        );
-        $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
-        $basePrice = (int) $pq->fetchColumn();
+        $basePrice = $this->getPlayerBasePrice($playerId, $seasonId);
+        if ($basePrice === null) {
+            // Mondpreis (noch kein Marktwert) — nicht kaufbar
+            http_response_code(409);
+            echo json_encode(['status' => false, 'message' => 'Spieler hat noch keinen Marktwert']);
+            exit;
+        }
 
         $ptq = $this->con->prepare(
             "SELECT COALESCE(SUM(pr.points), 0) FROM player_rating pr
@@ -406,8 +398,10 @@ trait OfferTrait
                     $winnerId     = null;
                     $winnerTeamId = null;
                     $winnerValue  = null;
+                    // Seit dem Gebot auf Mondpreis zurückgesetzt (kein Marktwert) → kein Zuschlag, alle Gebote verlieren
+                    $hasMarketValue = $this->getPlayerBasePrice($playerId, $window['season_id']) !== null;
 
-                    foreach ($bids as $bid) {
+                    foreach ($hasMarketValue ? $bids : [] as $bid) {
                         if ($this->isPlayerAlreadyInAnyTeam($playerId)) break;
                         if ($this->isPositionFull($bid['team_id'], $playerId)) continue;
                         // Budget vor dem Zuschlag erneut prüfen (Kontostand inkl. bereits in diesem

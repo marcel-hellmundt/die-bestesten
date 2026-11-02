@@ -65,6 +65,30 @@ trait BuyTrait
         return $count >= self::SQUAD_MAX[$position];
     }
 
+    /**
+     * Grundpreis (Marktwert ohne Punkte-Bonus) des Spielers in der Saison, auf die Zeile seiner aktuellen
+     * Division eingeschränkt (Fragment A). null = Mondpreis (noch kein Marktwert) oder keine Saison-Zeile —
+     * dann ist der Spieler nicht kaufbar.
+     */
+    public function getPlayerBasePrice(string $playerId, string $seasonId): ?int
+    {
+        $pq = $this->con->prepare(
+            "SELECT pis.price FROM player_in_season pis
+             WHERE pis.player_id = :pid AND pis.season_id = :sid
+               AND pis.division_id = COALESCE(
+                     (SELECT cis.division_id
+                      FROM player_in_club pic
+                      JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
+                      WHERE pic.player_id = pis.player_id AND pic.to_date IS NULL
+                      LIMIT 1),
+                     pis.division_id)
+             LIMIT 1"
+        );
+        $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
+        $price = $pq->fetchColumn();
+        return $price === false || $price === null ? null : (int) round((float) $price);
+    }
+
     public function buyPlayer(string $teamId, string $playerId, string $windowId): array
     {
         $wq = $this->con->prepare(
@@ -80,7 +104,7 @@ trait BuyTrait
 
         // pis auf die Zeile der AKTUELLEN Division des Spielers eingeschränkt (Fragment A).
         $pq = $this->con->prepare(
-            "SELECT COALESCE(pis.price, 0) AS price, p.displayname
+            "SELECT pis.price, p.displayname
              FROM player_in_season pis
              JOIN player p ON p.id = pis.player_id
              WHERE pis.player_id = :pid AND pis.season_id = :sid
@@ -95,6 +119,10 @@ trait BuyTrait
         );
         $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
         $ps          = $pq->fetch(PDO::FETCH_ASSOC);
+        // Mondpreis (noch kein Marktwert) → nicht kaufbar, sonst ginge der Spieler für 0 € weg
+        if (!$ps || $ps['price'] === null) {
+            return ['error' => 409, 'message' => 'Spieler hat noch keinen Marktwert'];
+        }
         $price       = (int) round((float) $ps['price']);
         $displayname = $ps['displayname'];
 

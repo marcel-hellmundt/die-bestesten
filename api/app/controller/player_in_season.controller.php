@@ -31,13 +31,19 @@ class PlayerInSeasonController extends _BaseController
         $seasonId   = $body['season_id']   ?? null;
         $divisionId = $body['division_id'] ?? null;
         $position   = $body['position']    ?? null;
-        $price      = isset($body['price']) ? (int) $body['price'] : null;
+        // price leer/null = Mondpreis (noch kein Marktwert, nicht kaufbar); ein angegebener Wert muss plausibel sein
+        $priceGiven = isset($body['price']) && $body['price'] !== '';
+        $price      = $this->db->normalizeMarketValue($body['price'] ?? null);
 
         $validPositions = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
-        if (!$playerId || !$seasonId || !$position || !$price || $price <= 0 || $price > 50_000_000) {
+        if (!$playerId || !$seasonId || !$position) {
             http_response_code(400);
-            return ['status' => false, 'message' => 'player_id, season_id, position and price (0 < price <= 50.000.000) required'];
+            return ['status' => false, 'message' => 'player_id, season_id and position required'];
+        }
+        if ($priceGiven && $price === null) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'price muss zwischen 0 und 50.000.000 liegen (leer lassen = Mondpreis)'];
         }
 
         if (!in_array($position, $validPositions, true)) {
@@ -129,9 +135,11 @@ class PlayerInSeasonController extends _BaseController
     {
         $body     = $this->body();
         $position = $body['position'] ?? null;
-        $price    = isset($body['price']) ? (int) $body['price'] : null;
+        // price fehlt = unverändert, price null/leer = zurück auf Mondpreis, sonst der neue Marktwert
+        $priceKey = array_key_exists('price', $body);
+        $price    = $priceKey ? $this->db->normalizeMarketValue($body['price']) : false;
 
-        if ($position === null && $price === null) {
+        if ($position === null && !$priceKey) {
             http_response_code(400);
             return ['status' => false, 'message' => 'position oder price erforderlich'];
         }
@@ -141,7 +149,7 @@ class PlayerInSeasonController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'Invalid position'];
         }
-        if ($price !== null && ($price <= 0 || $price > 50_000_000)) {
+        if ($priceKey && $price === null && $body['price'] !== null && $body['price'] !== '') {
             http_response_code(400);
             return ['status' => false, 'message' => 'price muss zwischen 0 und 50.000.000 liegen'];
         }

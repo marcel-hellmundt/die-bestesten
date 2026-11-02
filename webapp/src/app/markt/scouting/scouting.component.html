@@ -65,7 +65,7 @@
               @if (currentPrice(entry); as price) {
                 {{ price | number: '1.0-0' }} €
               } @else {
-                <span class="muted">–</span>
+                <app-moon-price />
               }
             </td>
             <td class="col-num col-points">{{ entry.season_points }}</td>

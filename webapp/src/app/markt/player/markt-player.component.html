@@ -207,7 +207,9 @@
                     }
                   </td>
                 }
-                <td class="col-num">{{ formatPriceShort(dynamicPrice(p)) }}</td>
+                <td class="col-num">
+                  @if (dynamicPrice(p); as price) { {{ formatPriceShort(price) }} } @else { <app-moon-price /> }
+                </td>
                 <td class="col-num col-points">{{ p.season_points }}</td>
                 @if (cache.myTeamId()) {
                   <td class="col-actions">
@@ -236,7 +238,7 @@
                         <button
                           class="offer-btn"
                           [disabled]="!canBid(p)"
-                          [title]="p.soon_available ? 'Verfügbar ab der nächsten Transferphase' : 'Gebot abgeben'"
+                          [title]="bidTitle(p)"
                           (click)="openOffer(p)"
                         >
                           <app-icon name="gavel" />

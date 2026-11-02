@@ -14,7 +14,7 @@ interface LineupPlayer {
   position_index: number | null;
   season_id: string;
   nominated: boolean;
-  price: number;
+  price: number | null; // null = Mondpreis (noch kein Marktwert)
   season_points: number;
   grade: any;
   points: any;

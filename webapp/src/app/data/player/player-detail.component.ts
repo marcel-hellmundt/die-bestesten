@@ -21,11 +21,13 @@ interface TeamHistoryEntry {
   is_drafted: boolean;
 }
 
+const SEASON_PRICE_ERROR = 'Preis muss zwischen 0 und 50.000.000 € liegen (leer lassen = Mondpreis)';
+
 interface PlayerInSeason {
   player_in_season_id: string;
   season_id: string;
   division_id: string;
-  price: number;
+  price: number | null; // null = Mondpreis (noch kein Marktwert)
   position: 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD';
   photo_uploaded: number;
   season_start: string;
@@ -287,7 +289,7 @@ export class PlayerDetailComponent {
   newSeasonId        = signal('');
   newSeasonDivisionId = signal('');
   newSeasonPosition  = signal<'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD'>('MIDFIELDER');
-  newSeasonPrice     = signal(0);
+  newSeasonPrice     = signal<number | null>(null); // leer = Mondpreis (noch kein Marktwert)
   addingSeasonRecord = signal(false);
   addSeasonError     = signal<string | null>(null);
 
@@ -316,12 +318,23 @@ export class PlayerDetailComponent {
     this.newSeasonDivisionId.set(this.availableDivisionsForNewSeason()[0]?.id ?? '');
   }
 
+  /** Preis im Formular: leer = Mondpreis, sonst wie im Backend 0 < Preis ≤ 50 Mio. */
+  validSeasonPrice(price: number | null): boolean {
+    return price === null || (price > 0 && price <= 50_000_000);
+  }
+
+  /** Eingabe eines Preisfelds: leer → null (Mondpreis) */
+  priceInput(event: Event): number | null {
+    const v = (event.target as HTMLInputElement).value;
+    return v === '' ? null : +v;
+  }
+
   openAddSeasonForm(): void {
     const seasonId = this.activeSeasonId() ?? this.availableSeasons()[0]?.id ?? '';
     this.newSeasonId.set(seasonId);
     this.newSeasonDivisionId.set(this.availableDivisionsForNewSeason()[0]?.id ?? '');
     this.newSeasonPosition.set('MIDFIELDER');
-    this.newSeasonPrice.set(0);
+    this.newSeasonPrice.set(null);
     this.addSeasonError.set(null);
     this.showAddSeasonForm.set(true);
   }
@@ -336,7 +349,7 @@ export class PlayerDetailComponent {
     const price      = this.newSeasonPrice();
     const divisionId = this.newSeasonDivisionId();
     if (!p || !this.newSeasonId() || !divisionId || this.addingSeasonRecord()) return;
-    if (!price || price <= 0) { this.addSeasonError.set('Preis muss > 0 sein'); return; }
+    if (!this.validSeasonPrice(price)) { this.addSeasonError.set(SEASON_PRICE_ERROR); return; }
 
     this.addingSeasonRecord.set(true);
     this.addSeasonError.set(null);
@@ -366,7 +379,7 @@ export class PlayerDetailComponent {
 
   editingSeason      = signal<PlayerInSeason | null>(null);
   editSeasonPosition = signal<'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD'>('MIDFIELDER');
-  editSeasonPrice    = signal(0);
+  editSeasonPrice    = signal<number | null>(null); // leer = zurück auf Mondpreis
   savingSeasonEdit   = signal(false);
   editSeasonError    = signal<string | null>(null);
 
@@ -374,7 +387,7 @@ export class PlayerDetailComponent {
     if (!this.isAdmin() || s.player_in_season_id !== this.currentDivisionSeasonEntry()?.player_in_season_id) return;
     this.editingSeason.set(s);
     this.editSeasonPosition.set(s.position);
-    this.editSeasonPrice.set(+s.price);
+    this.editSeasonPrice.set(s.price == null ? null : +s.price);
     this.editSeasonError.set(null);
     this.bottomSheet.open(this.editSeasonSheet, { title: 'Saison-Eintrag bearbeiten' });
   }
@@ -383,7 +396,7 @@ export class PlayerDetailComponent {
     const s     = this.editingSeason();
     const price = this.editSeasonPrice();
     if (!s || this.savingSeasonEdit()) return;
-    if (!price || price <= 0) { this.editSeasonError.set('Preis muss > 0 sein'); return; }
+    if (!this.validSeasonPrice(price)) { this.editSeasonError.set(SEASON_PRICE_ERROR); return; }
 
     this.savingSeasonEdit.set(true);
     this.editSeasonError.set(null);
@@ -618,6 +631,11 @@ export class PlayerDetailComponent {
   });
 
   isSoonAvailable = computed(() => !!this.currentDivisionSeasonEntry()?.soon_available);
+  /** Mondpreis: aktuelle Saison-Zeile ohne Marktwert → nicht kaufbar */
+  isMoonPrice = computed(() => {
+    const e = this.currentDivisionSeasonEntry();
+    return !!e && e.price == null;
+  });
 
   availableBudget = computed(() => this.myBudget() - (this.myOfferData().pending_sum ?? 0));
 
@@ -762,7 +780,7 @@ export class PlayerDetailComponent {
       no_season: 'Keine aktive Saison',
       not_owned: 'Spieler ist in keinem Team',
       own_player: 'Das ist dein eigener Spieler',
-      no_market_value: 'Für diese Saison ist kein Marktwert vorhanden',
+      no_market_value: 'Mondpreis — der Spieler hat noch keinen Marktwert',
       already_offered: 'Du hast bereits ein offenes Angebot für diesen Spieler',
       no_window: 'Keine offene oder kommende Transferphase geplant',
       position_full: 'Positionslimit voll',
@@ -802,7 +820,7 @@ export class PlayerDetailComponent {
   }
 
   openOffer(): void {
-    if (this.isSoonAvailable()) return;
+    if (this.isSoonAvailable() || this.isMoonPrice()) return;
     this.offerMode.set('market');
     this.offerSuccess.set(false);
     this.offerError.set(null);
@@ -1050,7 +1068,8 @@ export class PlayerDetailComponent {
     return price.toLocaleString('de-DE') + '€';
   }
 
-  formatPriceShort(price: number): string {
+  formatPriceShort(price: number | null): string {
+    if (price == null) return '–'; // Mondpreis — im Template steht dafür <app-moon-price>
     // 2 Nachkommastellen zwingend nötig, nicht 1: der Marktwert steigt pro Saisonpunkt um
     // 20.000 € (division.points_bonus), also in 0,02-Mio-Schritten — mit nur 1 Nachkommastelle
     // würden z.B. 1,82 Mio und 1,84 Mio beide auf "1,8 M" gerundet und wären ununterscheidbar.
@@ -1062,7 +1081,8 @@ export class PlayerDetailComponent {
   // Aktueller Marktwert einer Saison-Zeile: Grundpreis (player_in_season.price) zzgl. des durch
   // Saisonpunkte gestiegenen Anteils (division.points_bonus je Punkt) — gleiche Formel wie
   // marketValue() (aktuelle Saison) und die entsprechenden Berechnungen in Kader/Transfermarkt.
-  seasonMarketValue(s: { price: number | string; total_points: number | string }): number {
+  seasonMarketValue(s: { price: number | string | null; total_points: number | string }): number | null {
+    if (s.price == null) return null; // Mondpreis
     return Math.round(+s.price + +s.total_points * this.cache.pointsBonus());
   }
 
@@ -1273,7 +1293,7 @@ export class PlayerDetailComponent {
     const dataMap = new Map<string, PlayerInSeason>();
     for (const s of p.seasons) {
       const existing = dataMap.get(s.season_id);
-      if (!existing || +s.price > +existing.price) dataMap.set(s.season_id, s);
+      if (!existing || +(s.price ?? 0) > +(existing.price ?? 0)) dataMap.set(s.season_id, s);
     }
 
     // Use all seasons from cache to build a complete timeline with gaps
@@ -1287,7 +1307,7 @@ export class PlayerDetailComponent {
     const slots = allSeasons.filter(s => s.start_date >= minStart && s.start_date <= maxStart);
     if (slots.length === 0) return null;
 
-    const maxPrice = Math.max(...p.seasons.map(s => s.price), 1);
+    const maxPrice = Math.max(...p.seasons.map(s => +(s.price ?? 0)), 1); // Mondpreis = kein Balken
     const plotW = this.chartW - this.padL - this.padR;
     const plotH = this.chartH - this.padT - this.padB;
     const n     = slots.length;
@@ -1296,7 +1316,7 @@ export class PlayerDetailComponent {
 
     const bars = slots.map((season, i) => {
       const data   = dataMap.get(season.id);
-      const price  = data?.price ?? 0;
+      const price  = +(data?.price ?? 0);
       const barH   = price > 0 ? (price / maxPrice) * plotH : 0;
       const x      = this.padL + i * slotW + (slotW - barW) / 2;
       const y      = this.padT + plotH - barH;
@@ -1306,7 +1326,7 @@ export class PlayerDetailComponent {
         color:   data ? (POSITION_COLOR[data.position] ?? '#999') : 'transparent',
         label:   this.cache.seasonName(season.id),
         labelX,
-        tooltip: data ? this.formatPrice(data.price) : '',
+        tooltip: data ? (data.price == null ? '🌙 Mondpreis' : this.formatPrice(data.price)) : '',
       };
     });
 

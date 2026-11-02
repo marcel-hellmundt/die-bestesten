@@ -56,7 +56,7 @@ trait SellTrait
         );
         $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
         $ps          = $pq->fetch(PDO::FETCH_ASSOC);
-        $basePrice   = (float) $ps['price'];
+        $basePrice   = (float) $ps['price']; // Mondpreis (NULL) zählt als 0 — nur möglich, wenn ein Kaderspieler nachträglich zurückgesetzt wurde
         $displayname = $ps['displayname'];
 
         // 3. Season points
@@ -211,7 +211,10 @@ trait SellTrait
         foreach ($benchIds as $id) {
             $c = $info[$id] ?? null;
             if (!$c || $c['position'] !== $position) continue;
-            if ($best === null || (float) $c['price'] < (float) $best['price']) $best = $c;
+            // günstigster nach Marktwert; Mondpreis (NULL) zählt nicht als günstig, sondern kommt zuletzt dran
+            $cPrice    = $c['price'] === null ? INF : (float) $c['price'];
+            $bestPrice = $best === null ? null : ($best['price'] === null ? INF : (float) $best['price']);
+            if ($best === null || $cPrice < $bestPrice) $best = $c;
         }
         if ($best === null) return null;
 

@@ -10,6 +10,7 @@ import { BidsComponent } from './bids/bids.component';
 import { ScoutingComponent } from './scouting/scouting.component';
 import { IconModule } from '../shared/icon/icon.module';
 import { StuckDirective } from '../core/stuck.directive';
+import { MoonPriceComponent } from '../core/moon-price.component';
 
 const routes: Routes = [
   {
@@ -27,6 +28,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [MarktComponent, MarktPlayerComponent, TransfersComponent, TransferWindowDetailComponent, DirectDealCardComponent, BidsComponent, ScoutingComponent],
-  imports: [CommonModule, RouterModule.forChild(routes), IconModule, StuckDirective]
+  imports: [CommonModule, RouterModule.forChild(routes), IconModule, StuckDirective, MoonPriceComponent]
 })
 export class MarktModule {}

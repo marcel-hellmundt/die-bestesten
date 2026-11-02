@@ -30,16 +30,14 @@ class PlayerController extends _BaseController
 
         if ($this->id === 'create') {
             $body = $this->body();
-            foreach (['kicker_id', 'first_name', 'last_name', 'displayname', 'season_id', 'position', 'price'] as $f) {
+            foreach (['kicker_id', 'first_name', 'last_name', 'displayname', 'season_id', 'position'] as $f) {
                 if (!isset($body[$f])) {
                     http_response_code(400);
                     return ['message' => "$f fehlt"];
                 }
             }
-            if ((float) $body['price'] <= 0 || (float) $body['price'] > 50_000_000) {
-                http_response_code(400);
-                return ['message' => 'price muss zwischen 0 und 50.000.000 liegen'];
-            }
+            // ohne oder mit unrealistischem Marktwert (Platzhalter 999 Mio. des Datenanbieters) → Mondpreis (NULL)
+            $body['price'] = $this->db->normalizeMarketValue($body['price'] ?? null);
 
             // division_id ist optional, wenn club_id angegeben ist — dann wird sie daraus
             // hergeleitet (club_id ist selbst optional, da nicht jeder Anlass einen Verein kennt).
@@ -118,10 +116,9 @@ class PlayerController extends _BaseController
      * Notfall-Anlage für Admins: ein Spieler hat am Wochenende gespielt und Punkte geholt, ist
      * aber noch nicht vom externen CSV-Dienstleister importiert worden — ohne diesen Spieler in
      * player_rating lässt sich der Spieltag für sein Team nicht mit 11 Startern abschließen.
-     * kicker_id bleibt NULL (unbekannt); der Marktwert liegt bewusst weit über dem sonst
-     * erlaubten Maximum (0 < price <= 50.000.000), damit kein Manager den Spieler versehentlich
-     * für einen Spottpreis kauft, bevor der reguläre CSV-Import bzw. eine manuelle Korrektur via
-     * PATCH /player_in_season den echten Marktwert setzt.
+     * kicker_id bleibt NULL (unbekannt); der Marktwert bleibt leer (Mondpreis): der Spieler kann
+     * bewertet, aber nicht gekauft werden, bis der reguläre CSV-Import bzw. eine manuelle Korrektur
+     * via PATCH /player_in_season den echten Marktwert setzt.
      */
     private function createManual(): mixed
     {
@@ -168,7 +165,7 @@ class PlayerController extends _BaseController
             'season_id'   => $body['season_id'],
             'division_id' => $divisionId,
             'position'    => $body['position'],
-            'price'       => 99_000_000,
+            'price'       => null, // Mondpreis
             'club_id'     => $body['club_id'],
             'from_date'   => date('Y-m-d'),
         ]);

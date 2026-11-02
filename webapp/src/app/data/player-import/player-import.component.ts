@@ -66,24 +66,25 @@ export class PlayerImportDataComponent {
     return r.club_mismatch || r.club_unresolved || r.club_missing || r.division_mismatch;
   }
 
-  /** Einziger Blocker ist ein unrealistischer Marktwert (kein Club-/Spielklassen-Problem) — dafür gibt es
-   * keine Aktion in der App, nur eine neue CSV mit korrigiertem Marktwert kann das beheben. */
-  private isNoActionPossible(r: PlayerImportRow): boolean {
-    return r.price_too_high && !this.isBlocked(r);
+  /** Mondpreis: die CSV hat (noch) keinen echten Marktwert (leer oder Platzhalter über 50 Mio.) — der Server
+   * liefert csv_price dann null; die Zeile wird trotzdem importiert, der Spieler ist bis zu einer CSV mit
+   * Marktwert nicht kaufbar. Blockiert nichts mehr, wird nur in der eigenen Kachel "Mondpreis" gesammelt. */
+  isMoonPrice(r: PlayerImportRow): boolean {
+    return r.csv_price == null;
   }
 
   importableCount = computed(() => this.rows().filter((r) => r.importable).length);
   /** Matched rows that are not yet complete AND won't be fixed by the bulk "Weiter" button (club deviates from / can't be resolved against / doesn't belong to the CSV's division). */
   clubMismatchCount = computed(() => this.matchedRows().filter((r) => this.isBlocked(r)).length);
-  /** Matched OR brand-new (unmatched) rows blocked solely by an unrealistic CSV-Marktwert — waiting on a corrected CSV. */
+  /** Zeilen mit Mondpreis (gefunden oder neu) — Info: diese Spieler sind nach dem Import noch nicht kaufbar. */
   noActionCount = computed(
-    () => this.matchedRows().filter((r) => this.isNoActionPossible(r)).length + this.noActionUnmatchedRows().length
+    () => this.matchedRows().filter((r) => this.isMoonPrice(r)).length + this.noActionUnmatchedRows().length
   );
   /** Existing player_in_season entries whose position/price don't match the CSV. */
   positionPriceMismatchCount = computed(() => this.matchedRows().filter((r) => r.position_price_mismatch).length);
-  /** Same, minus rows blocked by an unrealistic Marktwert — those can't be bulk-corrected either. */
+  /** Same — inkl. Mondpreis (die Übernahme setzt den Preis dann auf leer bzw. von leer auf den CSV-Wert). */
   fixableMismatchCount = computed(
-    () => this.matchedRows().filter((r) => r.position_price_mismatch && !r.price_too_high).length
+    () => this.matchedRows().filter((r) => r.position_price_mismatch).length
   );
 
   // Which of the 8 summary cards is currently selected — drives which table (and row subset) is shown below.
@@ -94,7 +95,7 @@ export class PlayerImportDataComponent {
 
   /** player_in_season/Club/Position/Marktwert stimmen — unabhängig von Stammdaten/Foto (siehe isFullyComplete). */
   isRowComplete(r: PlayerImportRow): boolean {
-    return !r.club_mismatch && !r.club_missing && !r.division_mismatch && !r.price_too_high && r.already_in_season && !r.position_price_mismatch;
+    return !r.club_mismatch && !r.club_missing && !r.division_mismatch && r.already_in_season && !r.position_price_mismatch;
   }
 
   /** "Komplett fertig": zusätzlich zu isRowComplete auch alle Stammdaten UND ein Foto der laufenden Saison vorhanden. */
@@ -153,12 +154,12 @@ export class PlayerImportDataComponent {
 
   matchedRows = computed(() => this.rows().filter((r) => r.isMatched));
   unmatchedRows = computed(() => this.rows().filter((r) => !r.isMatched));
-  /** Unmatched rows shown under "Neu in CSV" — excludes rows whose only issue is Marktwert (those go to "Keine Aktion möglich"). */
-  newRows = computed(() => this.unmatchedRows().filter((r) => !r.price_too_high));
-  /** Unmatched rows shown under "Keine Aktion möglich" — brand-new player candidates blocked solely by unrealistic Marktwert. */
-  noActionUnmatchedRows = computed(() => this.unmatchedRows().filter((r) => r.price_too_high));
+  /** Unmatched rows shown under "Neu in CSV" — auch mit Mondpreis (werden ohne Marktwert angelegt). */
+  newRows = computed(() => this.unmatchedRows());
+  /** Neue Spieler mit Mondpreis — zusätzlich in der Kachel "Mondpreis" gelistet. */
+  noActionUnmatchedRows = computed(() => this.unmatchedRows().filter((r) => this.isMoonPrice(r)));
   creatableUnmatchedRows = computed(() =>
-    this.unmatchedRows().filter((r) => r.csv_position && r.csv_price && !r.hasDuplicateCandidate && !r.division_mismatch && !r.price_too_high)
+    this.unmatchedRows().filter((r) => r.csv_position && !r.hasDuplicateCandidate && !r.division_mismatch)
   );
 
   // Summary tiles above the tabs.
@@ -174,7 +175,7 @@ export class PlayerImportDataComponent {
       case 'importable': return rows.filter((r) => r.importable);
       case 'mismatch': return rows.filter((r) => r.position_price_mismatch);
       case 'blocked': return rows.filter((r) => this.isBlocked(r));
-      case 'noAction': return rows.filter((r) => this.isNoActionPossible(r));
+      case 'noAction': return rows.filter((r) => this.isMoonPrice(r));
       default: return [];
     }
   });
@@ -226,7 +227,7 @@ export class PlayerImportDataComponent {
   private rowGreenScore(r: PlayerImportRow): number {
     return (
       1 + // Spieler gefunden (immer wahr in dieser Tabelle)
-      (r.club_mismatch || r.club_unresolved || r.club_missing || r.division_mismatch || r.price_too_high ? 0 : 1) +
+      (r.club_mismatch || r.club_unresolved || r.club_missing || r.division_mismatch ? 0 : 1) +
       (r.already_in_season ? 1 : 0) +
       (r.already_in_season && !r.position_price_mismatch ? 1 : 0)
     );
@@ -399,7 +400,7 @@ export class PlayerImportDataComponent {
             club_mismatch: false,
             club_missing: false,
             club_confirmed: true,
-            importable: !r.already_in_season && !!r.csv_position && !!r.csv_price && r.csv_price > 0 && !r.division_mismatch,
+            importable: !r.already_in_season && !!r.csv_position && !r.division_mismatch, // ohne Marktwert = Mondpreis
           })));
         },
         error: () => {
@@ -422,7 +423,7 @@ export class PlayerImportDataComponent {
 
   createMissingPlayer(row: PlayerImportRow): void {
     const seasonId = this.seasonId();
-    if (!seasonId || !row.csv_position || !row.csv_price) return;
+    if (!seasonId || !row.csv_position) return; // ohne csv_price = Mondpreis
 
     this.creatingPlayers.update((s) => new Set([...s, row.kicker_id]));
     this.createPlayerErrors.update((m) => { const n = new Map(m); n.delete(row.kicker_id); return n; });
@@ -482,7 +483,7 @@ export class PlayerImportDataComponent {
 
   confirmFixAll(): void {
     this.matchedRows()
-      .filter((r) => r.position_price_mismatch && !r.price_too_high && !this.fixingMismatch().has(r.kicker_id))
+      .filter((r) => r.position_price_mismatch && !this.fixingMismatch().has(r.kicker_id))
       .forEach((r) => this.fixPositionPrice(r));
   }
 
@@ -493,7 +494,7 @@ export class PlayerImportDataComponent {
       .map((r) => ({
         player_id: r.matched_player_id!,
         position: r.csv_position!,
-        price: r.csv_price!,
+        price: r.csv_price, // null = Mondpreis
       }));
     if (!rows.length || !divisionId) return;
 

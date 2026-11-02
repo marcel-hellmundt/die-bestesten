@@ -71,7 +71,7 @@ export class ApiService {
     return this.postForm('player_in_season/preview_csv', formData);
   }
 
-  importPlayerSeasonRows(rows: { player_id: string; position: string; price: number }[], divisionId: string): Observable<any> {
+  importPlayerSeasonRows(rows: { player_id: string; position: string; price: number | null }[], divisionId: string): Observable<any> {
     return this.post('player_in_season/import_csv', { rows, division_id: divisionId });
   }
 

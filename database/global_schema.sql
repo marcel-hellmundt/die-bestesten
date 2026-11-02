@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS player_in_season (
     player_id CHAR(36) NOT NULL,                -- FK zu player.id
     season_id CHAR(36) NOT NULL,                -- FK zu season.id
     division_id CHAR(36) NOT NULL,              -- FK zu division.id — Division, in der Preis/Position dieser Zeile gelten
-    price DECIMAL(10,2) DEFAULT NULL,           -- Marktwert
+    price DECIMAL(10,2) DEFAULT NULL,           -- Marktwert; NULL = Mondpreis (noch kein Marktwert, nicht kaufbar)
     position ENUM('GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD') CHARACTER SET utf8mb4 DEFAULT NULL,  -- Position
     photo_uploaded BOOLEAN DEFAULT FALSE,       -- Gibt an, ob ein Foto für den Spieler in dieser Saison hochgeladen wurde
     last_updated DATETIME DEFAULT NULL,         -- Erstell-/Änderungszeitpunkt (Position/Preis); NULL = seit jeher unverändert (immer sichtbar) — steuert Markt-Sichtbarkeit während eines offenen Transferfensters

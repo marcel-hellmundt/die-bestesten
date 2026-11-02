@@ -130,7 +130,7 @@ trait PlayerInSeasonTrait
              WHERE pis.season_id = ?
                $divisionWhere
                AND pis.position IS NOT NULL
-               AND pis.price IS NOT NULL AND pis.price > 0
+               -- price NULL = Mondpreis (noch kein Marktwert): der Spieler steht mit drin, ist aber nicht kaufbar
                $exclusionClause
              GROUP BY p.id, p.displayname, pis.position, pis.price, pis.photo_uploaded, pis.last_updated, pis.division_id,
                       pic.club_id, c.name, c.short_name, c.logo_uploaded, cis_prev.position
@@ -153,7 +153,7 @@ trait PlayerInSeasonTrait
                 'id'                    => $r['id'],
                 'displayname'           => $r['displayname'],
                 'position'              => $r['position'],
-                'price'                 => (int) $r['price'],
+                'price'                 => $r['price'] !== null ? (int) $r['price'] : null,
                 'season_points'         => (int) $r['season_points'],
                 'photo_uploaded'        => (bool) $r['photo_uploaded'],
                 'club_id'               => $r['club_id'],
@@ -223,7 +223,8 @@ trait PlayerInSeasonTrait
         return $divisionId !== false ? $divisionId : $this->getLeagueDivisionId();
     }
 
-    public function createPlayerInSeason(string $id, string $playerId, string $seasonId, string $divisionId, string $position, int $price): void
+    /** $price null = Mondpreis (noch kein Marktwert, nicht kaufbar) */
+    public function createPlayerInSeason(string $id, string $playerId, string $seasonId, string $divisionId, string $position, ?int $price): void
     {
         $q = $this->con->prepare(
             "INSERT INTO player_in_season (id, player_id, season_id, division_id, position, price, last_updated)
@@ -258,7 +259,8 @@ trait PlayerInSeasonTrait
         return $out;
     }
 
-    public function updatePlayerInSeason(string $id, ?string $position, ?int $price): bool
+    /** $price: false = unverändert, null = zurück auf Mondpreis, sonst der neue Marktwert */
+    public function updatePlayerInSeason(string $id, ?string $position, int|null|false $price = false): bool
     {
         $sets   = [];
         $params = [':id' => $id];
@@ -267,7 +269,7 @@ trait PlayerInSeasonTrait
             $sets[] = 'position = :position';
             $params[':position'] = $position;
         }
-        if ($price !== null) {
+        if ($price !== false) {
             $sets[] = 'price = :price';
             $params[':price'] = $price;
         }
@@ -282,11 +284,21 @@ trait PlayerInSeasonTrait
 
     private const CSV_VALID_POSITIONS = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
 
-    // Sanity ceiling for a CSV market value — real prices never come close to this; catches
-    // CSV typos/garbage (e.g. a stray extra digit) before they can reach the DB. player_in_season.price
-    // is DECIMAL(10,2) and would throw on an out-of-range INSERT anyway, but relying on that error
-    // is unsafe: it aborts importCsvRows()'s whole loop, silently skipping every row after it.
-    private const PRICE_SANITY_MAX = 50_000_000;
+    // Obergrenze für einen echten Marktwert. Darüber steht ein Platzhalter des Datenanbieters (999 Mio. für
+    // "noch kein Marktwert") oder Müll — beides wird zum Mondpreis (NULL), statt die Zeile zu blockieren.
+    // player_in_season.price ist DECIMAL(10,2) und würde einen solchen Wert beim INSERT gar nicht annehmen.
+    public const PRICE_SANITY_MAX = 50_000_000;
+
+    /**
+     * Marktwert aus CSV/Formular: leer, 0, nicht numerisch oder über PRICE_SANITY_MAX → null (Mondpreis,
+     * noch kein Marktwert — der Spieler ist dann nicht kaufbar), sonst ganze Euro.
+     */
+    public function normalizeMarketValue(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || !is_numeric($value)) return null;
+        $price = (int) $value;
+        return $price > 0 && $price <= self::PRICE_SANITY_MAX ? $price : null;
+    }
 
     /**
      * Parses a bulk player-season-import CSV (semicolon-separated:
@@ -322,7 +334,7 @@ trait PlayerInSeasonTrait
 
             $kickerId = (int) substr($cols[0], 4);
             $position = in_array($cols[6], self::CSV_VALID_POSITIONS, true) ? $cols[6] : null;
-            $price    = is_numeric($cols[7]) ? (int) $cols[7] : null;
+            $rawPrice = is_numeric($cols[7]) ? (int) $cols[7] : null;
 
             $parsedRows[] = [
                 'kicker_id'   => $kickerId,
@@ -331,7 +343,8 @@ trait PlayerInSeasonTrait
                 'displayname' => $cols[3],
                 'club_name'   => $cols[5],
                 'position'    => $position,
-                'price'       => $price,
+                'raw_price'   => $rawPrice,
+                'price'       => $this->normalizeMarketValue($rawPrice), // null = Mondpreis
             ];
         }
         fclose($handle);
@@ -432,8 +445,9 @@ trait PlayerInSeasonTrait
             $masterData = $player ? ($masterDataMap[$player['id']] ?? null) : null;
 
             $alreadyInSeason = $existing !== null;
+            $existingPrice = $existing !== null && $existing['price'] !== null ? (int) $existing['price'] : null;
             $positionPriceMismatch = $existing !== null
-                && ($existing['position'] !== $r['position'] || (int) $existing['price'] !== $r['price']);
+                && ($existing['position'] !== $r['position'] || $existingPrice !== $r['price']);
             // Explicit conflict: both clubs known and different — the player might actually be at a
             // different (possibly out-of-league) club per our stale data and would become wrongly
             // purchasable.
@@ -457,9 +471,9 @@ trait PlayerInSeasonTrait
             // conflict, same convention as club_mismatch above.
             $clubDivisionId  = $club ? ($clubDivisionMap[$club['id']] ?? null) : null;
             $divisionMismatch = $clubDivisionId !== null && $clubDivisionId !== $divisionId;
-            // Unrealistic CSV market value (e.g. a stray extra digit) — block bulk-creation instead
-            // of letting the DB throw on it, which would silently abort every row after it.
-            $priceTooHigh = $r['price'] !== null && $r['price'] > self::PRICE_SANITY_MAX;
+            // Unrealistischer CSV-Marktwert (Platzhalter 999 Mio.) — blockiert nicht mehr, die Zeile wird mit
+            // Mondpreis (NULL) importiert; das Flag bleibt als Hinweis, woher der Mondpreis kommt
+            $priceTooHigh = $r['raw_price'] !== null && $r['raw_price'] > self::PRICE_SANITY_MAX;
 
             if ($club) {
                 $resolvedClubCount++;
@@ -479,10 +493,12 @@ trait PlayerInSeasonTrait
                 'matched_club_id'            => $club['id'] ?? null,
                 'club_logo_uploaded'         => $club ? (bool) $club['logo_uploaded'] : false,
                 'already_in_season'          => $alreadyInSeason,
-                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && $r['price'] > 0 && !$clubMismatch && !$clubUnresolved && !$clubMissing && !$divisionMismatch && !$priceTooHigh),
+                'csv_raw_price'              => $r['raw_price'],
+                'moon_price'                 => $r['price'] === null,
+                'importable'                 => (bool) ($player && !$alreadyInSeason && $r['position'] && !$clubMismatch && !$clubUnresolved && !$clubMissing && !$divisionMismatch),
                 'existing_player_in_season_id' => $existing['id'] ?? null,
                 'existing_position'          => $existing['position'] ?? null,
-                'existing_price'             => $existing !== null ? (int) $existing['price'] : null,
+                'existing_price'             => $existingPrice,
                 'position_price_mismatch'    => $positionPriceMismatch,
                 'current_player_in_club_id'  => $currentClub['player_in_club_id'] ?? null,
                 'current_club_id'            => $currentClub['club_id'] ?? null,
@@ -545,16 +561,11 @@ trait PlayerInSeasonTrait
         foreach ($rows as $row) {
             $playerId = $row['player_id'] ?? null;
             $position = $row['position']  ?? null;
-            $price    = isset($row['price']) ? (int) $row['price'] : null;
+            // leer, 0 oder unrealistisch → Mondpreis (NULL): der Spieler kommt ins Album/die Bewertungen, ist aber nicht kaufbar
+            $price    = $this->normalizeMarketValue($row['price'] ?? null);
 
-            if (!$playerId || !in_array($position, self::CSV_VALID_POSITIONS, true) || !$price || $price <= 0) {
+            if (!$playerId || !in_array($position, self::CSV_VALID_POSITIONS, true)) {
                 $skipped[] = ['player_id' => $playerId, 'reason' => 'invalid_row'];
-                continue;
-            }
-            if ($price > self::PRICE_SANITY_MAX) {
-                // Would also throw on INSERT (price is DECIMAL(10,2)) and abort every row after
-                // it in this loop — reject explicitly instead of relying on that.
-                $skipped[] = ['player_id' => $playerId, 'reason' => 'price_too_high'];
                 continue;
             }
             if (isset($existingSet[$playerId])) {

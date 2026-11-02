@@ -37,6 +37,10 @@ class BuyController extends _BaseController
         }
 
         $result = $this->db->buyPlayer($teamId, $playerId, $windowId);
+        if (isset($result['error'])) {
+            http_response_code($result['error']);
+            return ['status' => false, 'message' => $result['message']];
+        }
         return ['status' => true, 'price' => $result['price']];
     }
 

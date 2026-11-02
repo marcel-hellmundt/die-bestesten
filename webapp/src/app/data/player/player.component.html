@@ -86,8 +86,8 @@
   <div class="add-form" (keydown.enter)="!creatingPlayer() && submitCreatePlayer()">
     <p class="add-form-hint">
       Notfall-Mechanismus: der externe Datenlieferant kennt diesen Spieler noch nicht, obwohl er bereits gespielt und Punkte geholt hat.
-      Der Marktwert wird bewusst auf 99.000.000&nbsp;€ gesetzt, damit ihn kein Manager versehentlich kaufen kann, bis der reguläre CSV-Import
-      den echten Marktwert setzt (Saison: {{ activeSeasonId() ? cache.seasonName(activeSeasonId()!) : '—' }}).
+      Er bekommt noch keinen Marktwert (Mondpreis 🌙): er kann bewertet, aber von keinem Manager gekauft werden, bis der reguläre
+      CSV-Import den echten Marktwert setzt (Saison: {{ activeSeasonId() ? cache.seasonName(activeSeasonId()!) : '—' }}).
     </p>
     <div class="add-form-row">
       <div class="add-form-field">

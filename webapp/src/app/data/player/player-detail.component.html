@@ -228,9 +228,9 @@
             <button
               class="offer-btn"
               (click)="openOffer()"
-              [disabled]="positionLimitReached() || isSoonAvailable()"
-              [title]="isSoonAvailable() ? 'Verfügbar ab der nächsten Transferphase' : ''"
-            >{{ isSoonAvailable() ? 'Bald verfügbar' : (positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben') }}</button>
+              [disabled]="positionLimitReached() || isSoonAvailable() || isMoonPrice()"
+              [title]="isMoonPrice() ? 'Mondpreis — der Spieler hat noch keinen Marktwert' : (isSoonAvailable() ? 'Verfügbar ab der nächsten Transferphase' : '')"
+            >{{ isMoonPrice() ? '🌙 Noch kein Marktwert' : (isSoonAvailable() ? 'Bald verfügbar' : (positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben')) }}</button>
           }
           <button
             class="watch-btn"
@@ -611,8 +611,13 @@
                       >{{ positionLabel(s.position) }}</span
                     >
                   </td>
-                  <td class="col-price">{{ formatPriceShort(s.price) }}</td>
-                  <td class="col-price">{{ formatPriceShort(seasonMarketValue(s)) }}</td>
+                  @if (s.price == null) {
+                    <td class="col-price"><app-moon-price /></td>
+                    <td class="col-price"><app-moon-price /></td>
+                  } @else {
+                    <td class="col-price">{{ formatPriceShort(s.price) }}</td>
+                    <td class="col-price">{{ formatPriceShort(seasonMarketValue(s)) }}</td>
+                  }
                   <td class="col-points-season">{{ s.total_points }}</td>
                 </tr>
               }
@@ -658,8 +663,10 @@
                 type="number"
                 min="1"
                 step="100000"
-                [value]="newSeasonPrice()"
-                (input)="newSeasonPrice.set(+$any($event.target).value)"
+                placeholder="leer = 🌙"
+                title="Leer lassen = Mondpreis (noch kein Marktwert, nicht kaufbar)"
+                [value]="newSeasonPrice() ?? ''"
+                (input)="newSeasonPrice.set(priceInput($event))"
               />
             </div>
           </div>
@@ -667,7 +674,7 @@
             <p class="add-form-error">{{ addSeasonError() }}</p>
           }
           <div class="add-form-actions">
-            <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || !newSeasonDivisionId() || newSeasonPrice() <= 0">
+            <button class="btn-save" (click)="submitAddSeason()" [disabled]="addingSeasonRecord() || !newSeasonId() || !newSeasonDivisionId() || !validSeasonPrice(newSeasonPrice())">
               {{ addingSeasonRecord() ? 'Speichern…' : 'Speichern' }}
             </button>
             <button class="btn-cancel" (click)="cancelAddSeason()" [disabled]="addingSeasonRecord()">
@@ -1054,8 +1061,10 @@
           type="number"
           min="1"
           step="100000"
-          [value]="editSeasonPrice()"
-          (input)="editSeasonPrice.set(+$any($event.target).value)"
+          placeholder="leer = 🌙"
+          title="Leer lassen = Mondpreis (noch kein Marktwert, nicht kaufbar)"
+          [value]="editSeasonPrice() ?? ''"
+          (input)="editSeasonPrice.set(priceInput($event))"
         />
       </div>
     </div>
@@ -1063,7 +1072,7 @@
       <p class="add-form-error">{{ editSeasonError() }}</p>
     }
     <div class="add-form-actions">
-      <button class="btn-save" (click)="submitEditSeason()" [disabled]="savingSeasonEdit() || editSeasonPrice() <= 0">
+      <button class="btn-save" (click)="submitEditSeason()" [disabled]="savingSeasonEdit() || !validSeasonPrice(editSeasonPrice())">
         {{ savingSeasonEdit() ? 'Speichern…' : 'Speichern' }}
       </button>
       <button class="btn-cancel" (click)="bottomSheet.close()" [disabled]="savingSeasonEdit()">

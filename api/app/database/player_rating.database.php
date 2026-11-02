@@ -431,7 +431,7 @@ trait PlayerRatingTrait
              JOIN player_in_season pis ON pis.player_id = p.id AND pis.season_id = :season_id
                  $divisionWhere
              WHERE pic.club_id = :club_id AND pic.to_date IS NULL
-               AND pis.position IS NOT NULL AND pis.price IS NOT NULL AND pis.price > 0
+               AND pis.position IS NOT NULL -- auch Spieler mit Mondpreis (noch kein Marktwert) werden bewertet
              ORDER BY p.last_name ASC"
         );
         $params = [':club_id' => $clubId, ':season_id' => $seasonId];

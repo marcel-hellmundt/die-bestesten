@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { IconModule } from '../shared/icon/icon.module';
 import { StuckDirective } from '../core/stuck.directive';
+import { MoonPriceComponent } from '../core/moon-price.component';
 import { MaintainerGuard } from '../auth/maintainer.guard';
 import { ContributorGuard } from '../auth/contributor.guard';
 
@@ -72,6 +73,7 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     IconModule,
     StuckDirective,
+    MoonPriceComponent,
   ]
 })
 export class DataModule {}

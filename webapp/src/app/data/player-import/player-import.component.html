@@ -173,9 +173,9 @@
         <div class="stat-desc">von {{ rows().length }} Spielern</div>
       </div>
       <div class="stat-card stat-card--muted" [class.stat-card--selected]="selectedCard() === 'noAction'" (click)="selectedCard.set('noAction')">
-        <span class="stat-label" style="color: var(--flat-concrete)">Keine Aktion möglich</span>
+        <span class="stat-label" style="color: var(--flat-concrete)">Mondpreis 🌙</span>
         <div class="stat-value">{{ noActionCount() }}</div>
-        <div class="stat-desc">Marktwert unrealistisch — erst mit korrigierter CSV lösbar</div>
+        <div class="stat-desc">noch kein Marktwert — wird so importiert, bis dahin nicht kaufbar</div>
       </div>
       <div class="stat-card stat-card--muted" [class.stat-card--selected]="selectedCard() === 'missing'" (click)="selectedCard.set('missing')">
         <span class="stat-label" style="color: #6b7280">Fehlt in CSV</span>
@@ -263,7 +263,7 @@
                     —
                   }
                 </td>
-                <td>{{ r.csv_price != null ? (r.csv_price | number) + ' €' : '—' }}</td>
+                <td>@if (r.csv_price != null) { {{ r.csv_price | number }} € } @else { <app-moon-price /> }</td>
                 <td>
                   <div class="status-icons">
                     <span class="status-icon" data-tooltip="Spieler in Datenbank gefunden">
@@ -321,23 +321,19 @@
                     </span>
                     <span
                       class="status-icon"
-                      [class.status-icon--clickable]="r.position_price_mismatch && !r.price_too_high"
-                      (click)="r.position_price_mismatch && !r.price_too_high && fixPositionPrice(r)"
+                      [class.status-icon--clickable]="r.position_price_mismatch"
+                      (click)="r.position_price_mismatch && fixPositionPrice(r)"
                       [attr.data-tooltip]="
-                        r.price_too_high
-                          ? ('Marktwert unrealistisch: ' + (r.csv_price | number) + ' € (CSV) — blockiert die automatische Erstellung/Übernahme (Grenze 50.000.000 €)')
-                          : !r.already_in_season
+                        !r.already_in_season
                             ? 'Kein Saison-Eintrag vorhanden'
                             : fixingMismatch().has(r.kicker_id)
                               ? 'Wird aktualisiert…'
                               : r.position_price_mismatch
-                                ? ('Abweichung: ' + (r.existing_position ? POSITION_LABEL[r.existing_position] : '—') + ' / ' + (r.existing_price | number) + ' € (DB) vs. ' + (r.csv_position ? POSITION_LABEL[r.csv_position] : '—') + ' / ' + (r.csv_price | number) + ' € (CSV) — klicken zum Übernehmen')
+                                ? ('Abweichung: ' + (r.existing_position ? POSITION_LABEL[r.existing_position] : '—') + ' / ' + (r.existing_price != null ? (r.existing_price | number) + ' €' : '🌙') + ' (DB) vs. ' + (r.csv_position ? POSITION_LABEL[r.csv_position] : '—') + ' / ' + (r.csv_price != null ? (r.csv_price | number) + ' €' : '🌙') + ' (CSV) — klicken zum Übernehmen')
                                 : 'Position/Marktwert stimmen mit CSV überein'
                       "
                     >
-                      @if (r.price_too_high) {
-                        <img class="status-icon-img" src="img/icons/error.png" alt="Marktwert unrealistisch" />
-                      } @else if (!r.already_in_season) {
+                      @if (!r.already_in_season) {
                         <span class="status-icon__dash">—</span>
                       } @else {
                         <img
@@ -443,7 +439,7 @@
                     —
                   }
                 </td>
-                <td>{{ r.csv_price != null ? (r.csv_price | number) + ' €' : '—' }}</td>
+                <td>@if (r.csv_price != null) { {{ r.csv_price | number }} € } @else { <app-moon-price /> }</td>
                 <td class="mismatch-error">
                   <div class="row-issues">
                     @if (r.hasDuplicateCandidate) {
@@ -459,12 +455,9 @@
                     @if (r.division_mismatch) {
                       <span>Verein spielt laut unseren Daten in einer anderen Spielklasse</span>
                     }
-                    @if (r.price_too_high) {
-                      <span>Marktwert unrealistisch ({{ r.csv_price | number }} €)</span>
-                    }
                     <button
                       class="btn btn-primary btn-sm"
-                      [disabled]="creatingPlayers().has(r.kicker_id) || r.division_mismatch || r.price_too_high"
+                      [disabled]="creatingPlayers().has(r.kicker_id) || r.division_mismatch"
                       (click)="createMissingPlayer(r)"
                     >
                       {{ creatingPlayers().has(r.kicker_id) ? '…' : 'Spieler anlegen' }}

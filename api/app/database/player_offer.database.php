@@ -142,12 +142,13 @@ trait PlayerOfferTrait
      * Marktwert nach der Verkaufsformel (identisch zu sellPlayer(): Grundpreis der aktuellen
      * Division + Saisonpunkte * points_bonus, gerundet) — der Verkäufer erhält genau diesen Betrag,
      * wenn er an den Markt verkauft; als Mindestpreis für Direktangebote daher die maßgebliche Größe.
-     * Gibt null zurück, wenn der Spieler in dieser Saison keine player_in_season-Zeile hat.
+     * Gibt null zurück, wenn der Spieler in dieser Saison keine player_in_season-Zeile hat oder noch keinen
+     * Marktwert (Mondpreis, price NULL) — dann sind keine Direktangebote möglich (Grund no_market_value).
      */
     public function getPlayerMarketValueInfo(string $playerId, string $seasonId): ?array
     {
         $pq = $this->con->prepare(
-            "SELECT COALESCE(pis.price, 0) AS price, pis.position, p.displayname
+            "SELECT pis.price, pis.position, p.displayname
              FROM player_in_season pis
              JOIN player p ON p.id = pis.player_id
              WHERE pis.player_id = :pid AND pis.season_id = :sid
@@ -162,7 +163,7 @@ trait PlayerOfferTrait
         );
         $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
         $row = $pq->fetch(PDO::FETCH_ASSOC);
-        if (!$row) return null;
+        if (!$row || $row['price'] === null) return null;
 
         $ptq = $this->con->prepare(
             "SELECT COALESCE(SUM(pr.points), 0)
