@@ -105,16 +105,22 @@
             @if (chartMode() === 'total' && d.avg !== null) {
               <div class="history__tip-avg"><span class="history__avg-swatch"></span> Ø {{ priceLevel()?.days ?? 7 }} Tage im Umlauf <b>{{ format(d.avg) }}</b></div>
             }
-            <ul [style.grid-template-rows]="'repeat(' + d.tipRows + ', auto)'">
-              @for (v of d.topDown; track v.key) {
-                <li>
-                  <span class="history__dot" [style.background]="v.color"></span>
-                  <span class="history__tip-name">{{ v.label }}</span>
-                  <b [class.is-minus]="v.value < 0">{{ format(v.value) }}</b>
-                  @if (chartMode() === 'relative') { <span class="history__share">{{ v.share }}</span> }
-                </li>
+            <div class="history__tip-cols">
+              @for (list of [d.sides, d.accounts]; track $index) {
+                @if (list.length) {
+                  <ul>
+                    @for (v of list; track v.key) {
+                      <li>
+                        <span class="history__dot" [style.background]="v.color"></span>
+                        <span class="history__tip-name">{{ v.label }}</span>
+                        <b [class.is-minus]="v.value < 0">{{ format(v.value) }}</b>
+                        @if (chartMode() === 'relative') { <span class="history__share">{{ v.share }}</span> }
+                      </li>
+                    }
+                  </ul>
+                }
               }
-            </ul>
+            </div>
           </div>
         }
       </div>
