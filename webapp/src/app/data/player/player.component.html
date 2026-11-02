@@ -86,7 +86,7 @@
   <div class="add-form" (keydown.enter)="!creatingPlayer() && submitCreatePlayer()">
     <p class="add-form-hint">
       Notfall-Mechanismus: der externe Datenlieferant kennt diesen Spieler noch nicht, obwohl er bereits gespielt und Punkte geholt hat.
-      Er bekommt noch keinen Marktwert (Mondpreis 🌙): er kann bewertet, aber von keinem Manager gekauft werden, bis der reguläre
+      Er bekommt noch keinen Marktwert (Mondpreis {{ moon() }}): er kann bewertet, aber von keinem Manager gekauft werden, bis der reguläre
       CSV-Import den echten Marktwert setzt (Saison: {{ activeSeasonId() ? cache.seasonName(activeSeasonId()!) : '—' }}).
     </p>
     <div class="add-form-row">

@@ -230,7 +230,7 @@
               (click)="openOffer()"
               [disabled]="positionLimitReached() || isSoonAvailable() || isMoonPrice()"
               [title]="isMoonPrice() ? 'Mondpreis — der Spieler hat noch keinen Marktwert' : (isSoonAvailable() ? 'Verfügbar ab der nächsten Transferphase' : '')"
-            >{{ isMoonPrice() ? '🌙 Noch kein Marktwert' : (isSoonAvailable() ? 'Bald verfügbar' : (positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben')) }}</button>
+            >{{ isMoonPrice() ? moon() + ' Noch kein Marktwert' : (isSoonAvailable() ? 'Bald verfügbar' : (positionLimitReached() ? 'Positionslimit voll' : 'Gebot abgeben')) }}</button>
           }
           <button
             class="watch-btn"
@@ -663,7 +663,7 @@
                 type="number"
                 min="1"
                 step="100000"
-                placeholder="leer = 🌙"
+                placeholder="leer = {{ moon() }}"
                 title="Leer lassen = Mondpreis (noch kein Marktwert, nicht kaufbar)"
                 [value]="newSeasonPrice() ?? ''"
                 (input)="newSeasonPrice.set(priceInput($event))"
@@ -1061,7 +1061,7 @@
           type="number"
           min="1"
           step="100000"
-          placeholder="leer = 🌙"
+          placeholder="leer = {{ moon() }}"
           title="Leer lassen = Mondpreis (noch kein Marktwert, nicht kaufbar)"
           [value]="editSeasonPrice() ?? ''"
           (input)="editSeasonPrice.set(priceInput($event))"

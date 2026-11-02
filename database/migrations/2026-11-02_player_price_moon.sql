@@ -3,7 +3,7 @@
 --
 -- ERST NACH DEM DEPLOY AUF main AUSFÜHREN. Bis dahin behandelt der Code auf main ein NULL in
 -- player_in_season.price an mehreren Stellen als 0 € (z.B. POST /buy) — der Spieler wäre sonst für 0 € kaufbar.
--- Der neue Code (Branch player-without-price) lehnt Kauf/Gebot bei NULL ab und zeigt 🌙 an.
+-- Der neue Code (Branch player-without-price) lehnt Kauf/Gebot bei NULL ab und zeigt einen Mond an (hell 🌕, dunkel 🌑).
 --
 -- Hintergrund: Spieler ohne Marktwert des Datenanbieters (CSV: 999.000.000) bzw. per Notfall-Anlage
 -- (POST /player/create_manual: 99.000.000) bekamen bisher einen unrealistischen Platzhalter-Preis.

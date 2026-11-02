@@ -8,6 +8,7 @@ import { DataCacheService } from '../../core/data-cache.service';
 import { AuthService } from '../../auth/auth.service';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { POSITION_LABEL } from '../../core/constants';
+import { moonEmoji } from '../../core/moon-price.component';
 
 @Component({
   selector: 'app-data-player',
@@ -101,6 +102,9 @@ export class PlayerDataComponent {
     ),
     { initialValue: [] as { id: string; name: string }[] }
   );
+
+  /** Mond passend zum Theme (hell 🌕, dunkel 🌑) im Hinweis der Notfall-Anlage */
+  moon = moonEmoji();
 
   activeSeasonId = computed(() =>
     [...this.cache.seasons()].sort((a, b) => b.start_date.localeCompare(a.start_date))[0]?.id ?? null

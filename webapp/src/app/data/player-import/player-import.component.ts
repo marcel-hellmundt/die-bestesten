@@ -4,6 +4,7 @@ import { DataCacheService } from '../../core/data-cache.service';
 import { PlayerImportRow } from '../../core/models/player-import-row.model';
 import { MissingClubMember } from '../../core/models/missing-club-member.model';
 import { POSITION_COLOR, POSITION_LABEL } from '../../core/constants';
+import { moonEmoji } from '../../core/moon-price.component';
 
 interface ImportResult {
   created_count: number;
@@ -69,6 +70,9 @@ export class PlayerImportDataComponent {
   /** Mondpreis: die CSV hat (noch) keinen echten Marktwert (leer oder Platzhalter über 50 Mio.) — der Server
    * liefert csv_price dann null; die Zeile wird trotzdem importiert, der Spieler ist bis zu einer CSV mit
    * Marktwert nicht kaufbar. Blockiert nichts mehr, wird nur in der eigenen Kachel "Mondpreis" gesammelt. */
+  /** Mond passend zum Theme (hell 🌕, dunkel 🌑) */
+  moon = moonEmoji();
+
   isMoonPrice(r: PlayerImportRow): boolean {
     return r.csv_price == null;
   }

@@ -173,7 +173,7 @@
         <div class="stat-desc">von {{ rows().length }} Spielern</div>
       </div>
       <div class="stat-card stat-card--muted" [class.stat-card--selected]="selectedCard() === 'noAction'" (click)="selectedCard.set('noAction')">
-        <span class="stat-label" style="color: var(--flat-concrete)">Mondpreis 🌙</span>
+        <span class="stat-label" style="color: var(--flat-concrete)">Mondpreis {{ moon() }}</span>
         <div class="stat-value">{{ noActionCount() }}</div>
         <div class="stat-desc">noch kein Marktwert — wird so importiert, bis dahin nicht kaufbar</div>
       </div>
@@ -329,7 +329,7 @@
                             : fixingMismatch().has(r.kicker_id)
                               ? 'Wird aktualisiert…'
                               : r.position_price_mismatch
-                                ? ('Abweichung: ' + (r.existing_position ? POSITION_LABEL[r.existing_position] : '—') + ' / ' + (r.existing_price != null ? (r.existing_price | number) + ' €' : '🌙') + ' (DB) vs. ' + (r.csv_position ? POSITION_LABEL[r.csv_position] : '—') + ' / ' + (r.csv_price != null ? (r.csv_price | number) + ' €' : '🌙') + ' (CSV) — klicken zum Übernehmen')
+                                ? ('Abweichung: ' + (r.existing_position ? POSITION_LABEL[r.existing_position] : '—') + ' / ' + (r.existing_price != null ? (r.existing_price | number) + ' €' : moon()) + ' (DB) vs. ' + (r.csv_position ? POSITION_LABEL[r.csv_position] : '—') + ' / ' + (r.csv_price != null ? (r.csv_price | number) + ' €' : moon()) + ' (CSV) — klicken zum Übernehmen')
                                 : 'Position/Marktwert stimmen mit CSV überein'
                       "
                     >

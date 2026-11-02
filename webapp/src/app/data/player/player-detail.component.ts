@@ -5,6 +5,7 @@ import { BehaviorSubject, catchError, combineLatest, distinctUntilChanged, map, 
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../auth/auth.service';
 import { DataCacheService } from '../../core/data-cache.service';
+import { moonEmoji } from '../../core/moon-price.component';
 import { BottomSheetService } from '../../core/bottom-sheet.service';
 import { POSITION_COLOR, POSITION_LABEL } from '../../core/constants';
 
@@ -631,6 +632,8 @@ export class PlayerDetailComponent {
   });
 
   isSoonAvailable = computed(() => !!this.currentDivisionSeasonEntry()?.soon_available);
+  /** Mond passend zum Theme (hell 🌕, dunkel 🌑) für Texte rund um den Mondpreis */
+  moon = moonEmoji();
   /** Mondpreis: aktuelle Saison-Zeile ohne Marktwert → nicht kaufbar */
   isMoonPrice = computed(() => {
     const e = this.currentDivisionSeasonEntry();
@@ -1326,7 +1329,7 @@ export class PlayerDetailComponent {
         color:   data ? (POSITION_COLOR[data.position] ?? '#999') : 'transparent',
         label:   this.cache.seasonName(season.id),
         labelX,
-        tooltip: data ? (data.price == null ? '🌙 Mondpreis' : this.formatPrice(data.price)) : '',
+        tooltip: data ? (data.price == null ? this.moon() + ' Mondpreis' : this.formatPrice(data.price)) : '',
       };
     });
 
