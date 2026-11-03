@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Prüfungen rund um den Kauf eines vereinslosen Spielers — genutzt von Gebot und Auswertung
+ * (OfferTrait::submitOffer(), settleWindow()). Einen Direktkauf zum Grundpreis gibt es nicht mehr:
+ * POST /buy umging Auktion und Budget, und der Verkauf zahlt Grundpreis + Saisonpunkte × points_bonus.
+ */
 trait BuyTrait
 {
     public function isPlayerAlreadyInAnyTeam(string $playerId): bool
@@ -87,68 +92,5 @@ trait BuyTrait
         $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
         $price = $pq->fetchColumn();
         return $price === false || $price === null ? null : (int) round((float) $price);
-    }
-
-    public function buyPlayer(string $teamId, string $playerId, string $windowId): array
-    {
-        $wq = $this->con->prepare(
-            "SELECT tw.matchday_id, m.season_id
-             FROM transferwindow tw
-             JOIN matchday m ON m.id = tw.matchday_id
-             WHERE tw.id = :id LIMIT 1"
-        );
-        $wq->execute([':id' => $windowId]);
-        $window     = $wq->fetch(PDO::FETCH_ASSOC);
-        $matchdayId = $window['matchday_id'];
-        $seasonId   = $window['season_id'];
-
-        // pis auf die Zeile der AKTUELLEN Division des Spielers eingeschränkt (Fragment A).
-        $pq = $this->con->prepare(
-            "SELECT pis.price, p.displayname
-             FROM player_in_season pis
-             JOIN player p ON p.id = pis.player_id
-             WHERE pis.player_id = :pid AND pis.season_id = :sid
-               AND pis.division_id = COALESCE(
-                     (SELECT cis.division_id
-                      FROM player_in_club pic
-                      JOIN club_in_season cis ON cis.club_id = pic.club_id AND cis.season_id = pis.season_id
-                      WHERE pic.player_id = pis.player_id AND pic.to_date IS NULL
-                      LIMIT 1),
-                     pis.division_id)
-             LIMIT 1"
-        );
-        $pq->execute([':pid' => $playerId, ':sid' => $seasonId]);
-        $ps          = $pq->fetch(PDO::FETCH_ASSOC);
-        // Mondpreis (noch kein Marktwert) → nicht kaufbar, sonst ginge der Spieler für 0 € weg
-        if (!$ps || $ps['price'] === null) {
-            return ['error' => 409, 'message' => 'Spieler hat noch keinen Marktwert'];
-        }
-        $price       = (int) round((float) $ps['price']);
-        $displayname = $ps['displayname'];
-
-        $iq = $this->con_league->prepare(
-            "INSERT INTO player_in_team (team_id, player_id, from_matchday_id)
-             VALUES (:tid, :pid, :mid)"
-        );
-        $iq->execute([':tid' => $teamId, ':pid' => $playerId, ':mid' => $matchdayId]);
-
-        $tq = $this->con_league->prepare(
-            "INSERT INTO transaction (team_id, amount, reason, matchday_id)
-             VALUES (:tid, :amount, :reason, :mid)"
-        );
-        $tq->execute([
-            ':tid'    => $teamId,
-            ':amount' => -$price,
-            ':reason' => "Spielerkauf: $displayname",
-            ':mid'    => $matchdayId,
-        ]);
-
-        $tnq = $this->con_league->prepare("SELECT team_name FROM team WHERE id = ? LIMIT 1");
-        $tnq->execute([$teamId]);
-        $buyerTeamName = $tnq->fetchColumn() ?: 'Unbekanntes Team';
-
-        $this->notifyWatchersPlayerBought($playerId, $teamId, $displayname, $buyerTeamName);
-
-        return ['price' => $price];
     }
 }

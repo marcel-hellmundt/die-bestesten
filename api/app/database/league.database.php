@@ -649,7 +649,7 @@ trait LeagueTrait
 
     /**
      * Bulk pre-season draft assignment: assigns players to any number of teams of one league/season
-     * in a single request, replicating BuyTrait::buyPlayer()'s player_in_team + transaction writes
+     * in a single request, writing player_in_team + transaction like a won bid in OfferTrait::settleWindow()
      * (price = exact player_in_season.price) but without team-ownership/transferwindow checks, since
      * an admin is assigning arbitrary teams before any transfer window exists. Squad-limit and
      * duplicate-assignment violations are skipped with a reason instead of aborting the batch —
