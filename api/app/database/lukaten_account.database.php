@@ -54,13 +54,24 @@ trait LukatenAccountTrait
     private array $lukatenSynced = [];
 
     /**
-     * Name des Locks je Manager (GET_LOCK auf der globalen Verbindung): Pack-Kauf und Tipp-Einsatz prüfen erst den
-     * Kontostand und buchen dann — ohne Lock ließe sich dasselbe Guthaben parallel zweimal ausgeben.
+     * Führt $fn unter dem Lock je Manager aus (GET_LOCK auf der globalen Verbindung): Pack-Kauf, Tipp-Einsatz und
+     * Spielhalle prüfen erst den Kontostand und buchen dann — ohne Lock ließe sich dasselbe Guthaben parallel zweimal
+     * ausgeben. Kommt der Lock nicht innerhalb von 5 s zustande, läuft $fn nicht: Rückgabe ['error' => 409, 'message'].
      * MySQL-Lock-Namen sind auf 64 Zeichen begrenzt, deshalb gehasht.
      */
-    protected function lukatenLockName(string $managerId): string
+    protected function withLukatenLock(string $managerId, callable $fn): array
     {
-        return 'lukaten:' . md5($managerId);
+        $lock = 'lukaten:' . md5($managerId);
+        $q = $this->con->prepare("SELECT GET_LOCK(?, 5)");
+        $q->execute([$lock]);
+        if ((int) $q->fetchColumn() !== 1) {
+            return ['error' => 409, 'message' => 'Gerade läuft schon eine andere Buchung – bitte gleich noch einmal versuchen'];
+        }
+        try {
+            return $fn();
+        } finally {
+            $this->con->prepare("SELECT RELEASE_LOCK(?)")->execute([$lock]);
+        }
     }
 
     /** Kontobuch vorhanden? (Migration) — je Request einmal geprüft. */

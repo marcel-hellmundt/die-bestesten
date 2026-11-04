@@ -79,9 +79,7 @@ trait StickerShopTrait
             $clubId = null;
         }
 
-        $lock = $this->lukatenLockName($managerId);
-        $this->con->prepare("SELECT GET_LOCK(?, 5)")->execute([$lock]);
-        try {
+        $result = $this->withLukatenLock($managerId, function () use ($managerId, $offer, $offerKey, $seasonId, $clubId) {
             $budget = $this->getLukatenBalance($managerId);
             if ($budget + 1e-9 < $offer['price']) {
                 return ['error' => 422, 'message' => 'Nicht genug Lukaten (' . $this->formatLukaten($budget) . ' von ' . $offer['price'] . ')'];
@@ -101,10 +99,10 @@ trait StickerShopTrait
                 error_log('buyStickerShopOffer: ' . $e->getMessage());
                 return ['error' => 409, 'message' => 'Shop-Packs sind noch nicht eingerichtet'];
             }
-            $budgetAfter = round($budget - $offer['price'], 2);
-        } finally {
-            $this->con->prepare("SELECT RELEASE_LOCK(?)")->execute([$lock]);
-        }
+            return ['pack_id' => $packId, 'budget' => round($budget - $offer['price'], 2)];
+        });
+        if (isset($result['error'])) return $result;
+        ['pack_id' => $packId, 'budget' => $budgetAfter] = $result;
 
         $this->sendStickerShopAdminEmail($managerId, $offer, $clubName, $budgetAfter);
         $this->notifyAdminsOfStickerShop($managerId, $offer, $clubName, $budgetAfter);

@@ -154,9 +154,7 @@ trait SlotTrait
         if (!$this->slotReady()) return ['error' => 409, 'message' => 'Die Spielhalle ist noch nicht eingerichtet'];
         if (!$this->lukatenLeagues($managerId)) return ['error' => 409, 'message' => 'Du spielst in keiner Liga'];
 
-        $lock = $this->lukatenLockName($managerId);
-        $this->con->prepare("SELECT GET_LOCK(?, 5)")->execute([$lock]);
-        try {
+        return $this->withLukatenLock($managerId, function () use ($managerId, $stake, $cfg) {
             $balance = $this->getLukatenBalance($managerId);
             if ($balance + 1e-9 < $stake) {
                 return ['error' => 422, 'message' => 'Nicht genug Lukaten'];
@@ -182,11 +180,9 @@ trait SlotTrait
                 error_log('spinSlot: ' . $e->getMessage());
                 return ['error' => 409, 'message' => 'Der Dreh konnte nicht gebucht werden'];
             }
-            $balanceAfter = round($balance - $stake + $payout, 2);
-        } finally {
-            $this->con->prepare("SELECT RELEASE_LOCK(?)")->execute([$lock]);
-        }
 
-        return ['stops' => $stops, 'symbols' => $symbols, 'win' => $win, 'payout' => $payout, 'balance' => $balanceAfter, 'test' => false];
+            return ['stops' => $stops, 'symbols' => $symbols, 'win' => $win, 'payout' => $payout,
+                    'balance' => round($balance - $stake + $payout, 2), 'test' => false];
+        });
     }
 }

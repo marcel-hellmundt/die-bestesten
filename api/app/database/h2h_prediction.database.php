@@ -333,16 +333,16 @@ trait H2HPredictionTrait
             }
             // Lock je Manager (derselbe wie beim Pack-Kauf): Kontostand prüfen und Einsatz speichern
             // dürfen nicht parallel zu einer anderen Ausgabe laufen
-            $lock = $this->lukatenLockName($managerId);
-            $this->con->prepare("SELECT GET_LOCK(?, 5)")->execute([$lock]);
-            try {
+            $result = $this->withLukatenLock($managerId, function () use ($managerId, $matchId, $stake, $save) {
                 if ($stake > $this->getLukatenBalance($managerId, $matchId) + 1e-9) {
-                    http_response_code(422);
-                    return ['status' => false, 'message' => 'Einsatz übersteigt dein Lukaten-Guthaben'];
+                    return ['error' => 422, 'message' => 'Einsatz übersteigt dein Lukaten-Guthaben'];
                 }
                 $save();
-            } finally {
-                $this->con->prepare("SELECT RELEASE_LOCK(?)")->execute([$lock]);
+                return [];
+            });
+            if (isset($result['error'])) {
+                http_response_code($result['error']);
+                return ['status' => false, 'message' => $result['message']];
             }
         }
 
