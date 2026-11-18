@@ -1,8 +1,8 @@
-<!-- Verlauf der gefüllten Streak-Flamme (aktive Serie): Rot unten → Gelb oben; einmal für alle Zeilen -->
+<!-- Verlauf des Streak-Flammen-Umrisses (aktive Serie): Orange unten → Gelb oben; einmal für alle Zeilen -->
 <svg class="heatmap__streak-defs" aria-hidden="true">
   <defs>
     <linearGradient id="streak-flame-gradient" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#e03131" />
+      <stop offset="0" stop-color="#f76707" />
       <stop offset="1" stop-color="#fcc419" />
     </linearGradient>
   </defs>
@@ -181,20 +181,20 @@
         (mouseenter)="onRowLabelHover($event, m)"
         (mouseleave)="onCellLeave()"
       >
-        <!-- Online-Serie: Flamme + Tage in Folge — orange = heute schon verlängert, farblos = heute noch offen,
-             blass = keine Serie -->
+        <!-- Online-Serie: Tage in Folge + Flamme im Verlauf — gefüllt = heute schon verlängert, nur Umriss = heute
+             noch offen, blasser grauer Umriss = keine Serie -->
         <span class="heatmap__streak"
-              [class.heatmap__streak--pending]="m.streak && !m.streak_today"
               [class.heatmap__streak--none]="!m.streak"
               [attr.title]="streakTitle(m)">
-          @if (m.streak && m.streak_today) {
-            <svg class="heatmap__streak-flame" viewBox="0 0 24 24" aria-hidden="true">
+          <span class="heatmap__streak-days">{{ m.streak ?? 0 }}</span>
+          @if (m.streak) {
+            <svg class="heatmap__streak-flame" [class.heatmap__streak-flame--filled]="m.streak_today"
+                 viewBox="0 0 24 24" aria-hidden="true">
               <path [attr.d]="flamePath" />
             </svg>
           } @else {
             <app-icon name="flame" />
           }
-          <span class="heatmap__streak-days">{{ m.streak ?? 0 }}</span>
         </span>
         @let swatch = managerColor(m);
         <span class="heatmap__device-swatch" [class.heatmap__device-swatch--empty]="swatch === 'transparent'"

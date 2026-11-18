@@ -218,13 +218,13 @@
   }
 }
 
-// ganz links: Online-Serie — Flamme in der Farbe des Streak-Packs (festes Motiv, wie in der Topbar) + Tage
-// Icon links, Zahl rechtsbündig — so stehen Flammen und Zahlen untereinander bündig
+// ganz links: Online-Serie — Tage + Flamme
+// Zahl rechtsbündig, Flamme direkt dahinter — die Flamme ist immer gleich breit, so stehen beide untereinander bündig
 .heatmap__streak {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 2px;
   width: 36px; // gerade breit genug für Flamme + dreistellige Zahl
   margin-right: 4px; // etwas mehr Luft zum Geräte-Kästchen als zwischen Flamme und Zahl
@@ -235,9 +235,6 @@
   app-icon { display: flex; flex-shrink: 0; }
   ::ng-deep svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-  // heute noch nicht online: Serie läuft noch, lässt sich heute verlängern — Flamme farblos (Umriss)
-  &--pending app-icon { color: $color-text-muted; }
-
   // keine Serie: Flamme und 0 blass
   &--none {
     color: $color-text-muted;
@@ -247,18 +244,23 @@
   }
 }
 
-// aktive Serie (heute schon online): gefüllte Flamme mit Verlauf Rot → Gelb (festes Motiv, wie das Streak-Pack)
+// laufende Serie: Flamme im Verlauf Orange → Gelb (festes Motiv, wie das Streak-Pack) — nur Umriss, solange sie
+// sich heute noch verlängern lässt; gefüllt, sobald der Manager heute schon online war
 .heatmap__streak-flame {
   flex-shrink: 0;
   width: 14px;
   height: 14px;
 
   path {
-    fill: url(#streak-flame-gradient);
+    fill: none;
     stroke: url(#streak-flame-gradient);
-    stroke-width: 1.5;
+    stroke-width: 2;
+    stroke-linecap: round;
     stroke-linejoin: round;
   }
+
+  // nach der Grundregel — gleiche Spezifität, die spätere gewinnt
+  &--filled path { fill: url(#streak-flame-gradient); }
 }
 
 .heatmap__streak-days { text-align: right; }
