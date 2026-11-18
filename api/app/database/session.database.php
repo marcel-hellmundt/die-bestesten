@@ -469,7 +469,13 @@ trait SessionTrait
         // Absteigend nach Gesamtnutzung im Zeitraum, bei Gleichstand alphabetisch als stabiler
         // Tiebreaker (statt Zufallsreihenfolge durch array-Iteration).
         usort($result, fn($a, $b) => $b['_total'] <=> $a['_total'] ?: strcmp($a['manager_name'], $b['manager_name']));
-        foreach ($result as &$r) unset($r['_total']);
+        // Online-Serie je Manager (Tage in Folge mit Tages-Pack, StickerPackTrait) — Flamme links vom Namen
+        $streaks = $this->getStreakDaysForManagers(array_column($result, 'manager_id'));
+        foreach ($result as &$r) {
+            unset($r['_total']);
+            $r['streak']       = $streaks[$r['manager_id']]['days'] ?? 0;
+            $r['streak_today'] = $streaks[$r['manager_id']]['today'] ?? false;
+        }
         unset($r);
 
         // Gerade online: letzter Heartbeat (ended_at wird bei jedem authentifizierten Request verlängert,

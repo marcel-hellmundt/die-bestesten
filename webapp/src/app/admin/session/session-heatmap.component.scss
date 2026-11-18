@@ -142,7 +142,7 @@
 }
 
 .heatmap {
-  --row-label-width: 160px;
+  --row-label-width: 200px; // Serie + Kästchen + Name + Online-Punkt
   --col-max: 30px; // größte Spaltenbreite = größte Zellenhöhe (Zellen sind quadratisch)
   display: grid;
   grid-template-columns: var(--row-label-width) repeat(var(--col-count), minmax(0, 1fr));
@@ -216,6 +216,61 @@
     box-sizing: border-box;
     border: 1px solid $color-border;
   }
+}
+
+// ganz links: Online-Serie — Tage + Flamme
+// Zahl rechtsbündig, Flamme direkt dahinter — die Flamme ist immer gleich breit, so stehen beide untereinander bündig
+.heatmap__streak {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  width: 36px; // gerade breit genug für Flamme + dreistellige Zahl
+  margin-right: 4px; // etwas mehr Luft zum Geräte-Kästchen als zwischen Flamme und Zahl
+  font-size: $font-xs;
+  font-weight: $font-weight-semibold;
+  font-variant-numeric: tabular-nums;
+
+  app-icon { display: flex; flex-shrink: 0; }
+  ::ng-deep svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  // keine Serie: Flamme und 0 blass
+  &--none {
+    color: $color-text-muted;
+    opacity: 0.4;
+
+    app-icon { color: $color-text-muted; }
+  }
+}
+
+// laufende Serie: Flamme im Verlauf Orange → Gelb (festes Motiv, wie das Streak-Pack) — nur Umriss, solange sie
+// sich heute noch verlängern lässt; gefüllt, sobald der Manager heute schon online war
+.heatmap__streak-flame {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+
+  path {
+    fill: none;
+    stroke: url(#streak-flame-gradient);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  // nach der Grundregel — gleiche Spezifität, die spätere gewinnt
+  &--filled path { fill: url(#streak-flame-gradient); }
+}
+
+.heatmap__streak-days { text-align: right; }
+
+// nur Träger des Verlaufs — nicht display:none, sonst zeichnen manche Browser den Verlauf nicht
+.heatmap__streak-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 // rechts neben dem Namen: < 1 min seit dem letzten Heartbeat = voller grüner Punkt, 1–3 min = grüner Ring
@@ -380,13 +435,14 @@
   }
 
   .heatmap {
-    --row-label-width: 80px; // Kästchen + Profilbild + Online-Punkt
+    --row-label-width: 114px; // Serie + Kästchen + Profilbild + Online-Punkt
     --col-max: 64px; // mobil feste Zellenhöhe (32px) — Spalten dürfen die Breite ausnutzen
     gap: 0;
   }
 
   .heatmap__row-label { gap: 6px; padding-left: 0; padding-right: 0; }
   .heatmap__device-swatch { width: 14px; height: 14px; }
+  .heatmap__streak { width: 34px; margin-right: 2px; }
 
   .heatmap__col-label {
     font-size: 9px;

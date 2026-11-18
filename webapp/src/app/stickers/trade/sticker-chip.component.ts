@@ -3,7 +3,7 @@ import { StickerAlbumService } from '../album/sticker-album.service';
 import { POSITION_LABEL, Sticker, TIER_LABEL } from '../album/album.model';
 
 /**
- * Kleine Sticker-Kachel für Tauschangebote: Bild (Spielerfoto/Wappen/Stadion), Name, Verein,
+ * Kleine Sticker-Kachel für Tauschangebote: Bild (Spielerfoto/Wappen/Stadion), Name, Verein, Marktwert,
  * Rand in Seltenheitsfarbe. Braucht einen StickerAlbumService im Injector der Seite.
  */
 @Component({
@@ -21,6 +21,7 @@ import { POSITION_LABEL, Sticker, TIER_LABEL } from '../album/album.model';
         <span class="chip__meta">
           <img class="chip__logo" [src]="clubLogo()" alt="" />
           {{ s.kind === 'logo' ? 'Wappen' : s.kind === 'stadium' ? 'Stadion' : (s.position ? positionLabel[s.position] : '') }}
+          @if (marketValue(); as mv) { <span class="chip__value">· {{ mv }}</span> }
         </span>
       </span>
       @if (selected()) { <span class="chip__check" aria-hidden="true">✓</span> }
@@ -36,6 +37,12 @@ export class StickerChipComponent {
 
   image = computed(() => this.album.stickerImageUrl(this.sticker()));
   clubLogo = computed(() => this.album.clubLogoUrl(this.album.clubs()[this.sticker().clubIdx]));
+
+  // Eingefrorener Gewichtungs-Marktwert (Wappen/Stadion: fiktiver Wert nach Tabellenplatz) — je höher, desto seltener
+  marketValue = computed(() => {
+    const p = this.sticker().price;
+    return p ? (p / 1e6).toLocaleString('de-DE', { maximumFractionDigits: 2 }) + ' Mio' : null;
+  });
 
   readonly tierLabel = TIER_LABEL;
   readonly positionLabel = POSITION_LABEL;

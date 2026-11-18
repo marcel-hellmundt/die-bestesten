@@ -31,6 +31,14 @@ export class NotificationsComponent implements OnInit {
     return this.sanitizer.bypassSecurityTrustHtml(escaped.replace(/\n/g, '<br>'));
   }
 
+  /**
+   * Benachrichtigungen zu Sticker-Tauschangeboten (API: StickerTradeTrait::notifyStickerTrade(), Titel "… – {Name}")
+   * bekommen einen Link zur Tauschbörse — erkannt am Titel, da Benachrichtigungen keinen Typ haben.
+   */
+  isTradeNotification(n: AppNotification): boolean {
+    return /^(Neues Tauschangebot|Tauschangebot (angenommen|abgelehnt)) – /.test(n.title);
+  }
+
   // Mobile: zurück von der Detailansicht zur Liste (auf Desktop steht die Liste ohnehin daneben).
   back(): void {
     this.selected.set(null);

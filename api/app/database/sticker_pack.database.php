@@ -209,17 +209,54 @@ trait StickerPackTrait
         try {
             $q = $this->con->prepare("SELECT source_key FROM sticker_pack WHERE manager_id = ? AND source_key LIKE 'daily:%'");
             $q->execute([$managerId]);
-            $keys = array_fill_keys($q->fetchAll(PDO::FETCH_COLUMN), true);
-            $day = new DateTime($today);
-            $days = 0;
-            while (isset($keys['daily:' . $day->format('Y-m-d')])) {
-                $days++;
-                $day->modify('-1 day');
-            }
-            return $days;
+            return $this->countStreakDays(array_fill_keys($q->fetchAll(PDO::FETCH_COLUMN), true), $today);
         } catch (\Throwable $e) {
             return 0;
         }
+    }
+
+    /** Tage in Folge mit Tages-Pack ($dailyKeys = ['daily:Y-m-d' => true]), von $day rückwärts gezählt. */
+    private function countStreakDays(array $dailyKeys, string $day): int
+    {
+        $d = new DateTime($day);
+        $days = 0;
+        while (isset($dailyKeys['daily:' . $d->format('Y-m-d')])) {
+            $days++;
+            $d->modify('-1 day');
+        }
+        return $days;
+    }
+
+    /**
+     * Laufende Online-Serie mehrerer Manager auf einmal (Nutzungs-Übersicht der Admins):
+     * [manager_id => ['days' => Tage, 'today' => heute schon online]], gezählt wie currentStreakDays(). Wer heute noch
+     * nicht online war, dessen Serie läuft noch und lässt sich heute verlängern — dann zählt sie bis gestern und
+     * today ist false (die Topbar zeigt immer den eigenen Stand nach dem Abruf, dort ist heute schon dabei).
+     * days 0 ohne Tages-Packs bzw. wenn auch gestern keins dabei war.
+     */
+    public function getStreakDaysForManagers(array $managerIds): array
+    {
+        $result = array_fill_keys($managerIds, ['days' => 0, 'today' => false]);
+        if (!$managerIds) return $result;
+        try {
+            $in = implode(',', array_fill(0, count($managerIds), '?'));
+            $q = $this->con->prepare(
+                "SELECT manager_id, source_key FROM sticker_pack WHERE manager_id IN ($in) AND source_key LIKE 'daily:%'"
+            );
+            $q->execute(array_values($managerIds));
+            $keys = [];
+            foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) $keys[$r['manager_id']][$r['source_key']] = true;
+
+            $today     = (new DateTime('now', new DateTimeZone('Europe/Berlin')))->format('Y-m-d');
+            $yesterday = (new DateTime($today))->modify('-1 day')->format('Y-m-d');
+            foreach ($keys as $id => $k) {
+                $onlineToday = isset($k["daily:$today"]);
+                $result[$id] = ['days' => $this->countStreakDays($k, $onlineToday ? $today : $yesterday), 'today' => $onlineToday];
+            }
+        } catch (\Throwable $e) {
+            // ohne Sticker-Tabellen keine Serie
+        }
+        return $result;
     }
 
     /**
