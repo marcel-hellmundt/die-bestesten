@@ -92,6 +92,11 @@ class PlayerController extends _BaseController
             http_response_code(400);
             return ['status' => false, 'message' => 'season_id fehlt'];
         }
+        // Teil des Ablagepfads — und der Admin-Check unten muss genau die Zeile prüfen, deren Foto ersetzt wird
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $seasonId)) {
+            http_response_code(400);
+            return ['status' => false, 'message' => 'season_id ungültig'];
+        }
 
         if ($this->db->isPlayerPhotoUploaded($this->id, $seasonId) && !$this->isAdmin()) {
             http_response_code(403);

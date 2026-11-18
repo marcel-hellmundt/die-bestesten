@@ -19,6 +19,7 @@ require_once 'player_in_season.database.php';
 require_once 'manager.database.php';
 require_once 'team_rating.database.php';
 require_once 'password_reset.database.php';
+require_once 'auth_attempt.database.php';
 require_once 'award.database.php';
 require_once 'achievement_conditions.database.php';
 require_once 'achievement.database.php';
@@ -79,6 +80,7 @@ class Database
     use ManagerTrait;
     use TeamRatingTrait;
     use PasswordResetTrait;
+    use AuthAttemptTrait;
     use SearchTrait;
     use NotificationTrait;
     use WatchlistTrait;
@@ -154,8 +156,9 @@ class Database
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             return $pdo;
         } catch (PDOException $e) {
+            error_log('createConnection: ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['status' => false, 'message' => 'Database connection failed', 'error' => $e]);
+            echo json_encode(['status' => false, 'message' => 'Database connection failed']);
             exit;
         }
     }

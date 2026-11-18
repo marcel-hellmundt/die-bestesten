@@ -293,6 +293,19 @@ CREATE TABLE IF NOT EXISTS password_reset_token (
     FOREIGN KEY (manager_id) REFERENCES manager(id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: auth_attempt — Request-Limit für Login und Passwort-Reset (AuthAttemptTrait): je fehlgeschlagenem Login
+-- und je angefordertem Reset-Link eine Zeile; zu viele in kurzer Zeit sperren weitere Versuche vorübergehend
+-- (Migration: 2026-11-04_auth_attempt.sql)
+CREATE TABLE IF NOT EXISTS auth_attempt (
+    id         BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    kind       VARCHAR(10)  NOT NULL,  -- login (fehlgeschlagener Login) | reset (Reset-Link angefordert)
+    identifier VARCHAR(255) NOT NULL,  -- eingegebener Name bzw. E-Mail, klein geschrieben
+    ip         VARCHAR(45)  NOT NULL,
+    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_auth_attempt_identifier (kind, identifier, created_at),
+    INDEX idx_auth_attempt_ip (kind, ip, created_at)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Tabelle: manager_league (Ligamitgliedschaften eines Managers)
 CREATE TABLE IF NOT EXISTS manager_league (
     id         CHAR(36) NOT NULL DEFAULT (UUID()) PRIMARY KEY,

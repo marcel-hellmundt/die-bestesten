@@ -33,12 +33,12 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/auth',
-                        'description' => 'Login mit manager_name und password — auf einer Umgebung mit ADMIN_ONLY=true (.env, z.B. development) 403 {admin_only:true} für Manager ohne Admin-Rolle; dort liefert auch jeder authentifizierte Request 403 mit admin_only',
+                        'description' => 'Login mit manager_name und password — auf einer Umgebung mit ADMIN_ONLY=true (.env, z.B. development) 403 {admin_only:true} für Manager ohne Admin-Rolle; dort liefert auch jeder authentifizierte Request 403 mit admin_only; Request-Limit: ab 10 Fehlversuchen je Name/E-Mail oder 30 je IP in 15 Minuten 429 (Tabelle auth_attempt, ohne Migration kein Limit)',
                     ],
                     [
                         'method' => 'POST',
                         'path' => '/auth/password-reset-request',
-                        'description' => 'Passwort-Reset anfordern — Body: { email } — sendet Mail mit Reset-Link (1h gültig); gibt immer status:true zurück (kein E-Mail-Leak)',
+                        'description' => 'Passwort-Reset anfordern — Body: { email } — sendet Mail mit Reset-Link (1h gültig); gibt immer status:true zurück (kein E-Mail-Leak) — auch beim Request-Limit (3 je E-Mail oder 10 je IP pro Stunde), dann geht still keine Mail raus',
                     ],
                     [
                         'method' => 'POST',
@@ -48,7 +48,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/auth/switch-league',
-                        'description' => 'Liga wechseln — Body: { league_id }; gibt neues JWT mit geänderter league_id zurück; 403 wenn kein Zugang zur angeforderten Liga — Auth',
+                        'description' => 'Liga wechseln — Body: { league_id }; gibt neues JWT mit geänderter league_id zurück; 403 wenn kein Zugang zur angeforderten Liga oder der Account nicht aktiv ist — Auth',
                         'body' => ['league_id' => 'UUID der Ziel-Liga'],
                     ],
                 ],
@@ -1147,7 +1147,7 @@ class Routing
                     [
                         'method' => 'POST',
                         'path' => '/player/:id/photo',
-                        'description' => 'Spielerfoto hochladen (multipart/form-data, Feld "image", PNG; Body-Feld season_id) — setzt player_in_season.photo_uploaded für diese Saison — Maintainer+; 403 wenn bereits ein Foto für diese Saison existiert und der Aufrufer kein Admin ist (Überschreiben nur Admin)',
+                        'description' => 'Spielerfoto hochladen (multipart/form-data, Feld "image", PNG; Body-Feld season_id — UUID, sonst 400) — setzt player_in_season.photo_uploaded für diese Saison — Maintainer+; 403 wenn bereits ein Foto für diese Saison existiert und der Aufrufer kein Admin ist (Überschreiben nur Admin)',
                         'path_params' => [':id' => 'UUID des Spielers'],
                         'body' => ['season_id' => 'UUID der Saison'],
                     ],

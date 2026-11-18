@@ -69,7 +69,9 @@ export class LoginComponent {
         }
       },
       error: err => {
-        this.error   = err?.error?.admin_only ? ADMIN_ONLY_MESSAGE : 'Name oder Passwort inkorrekt';
+        this.error   = err?.error?.admin_only ? ADMIN_ONLY_MESSAGE
+          : err?.status === 429 ? (err.error?.message ?? 'Zu viele Fehlversuche – bitte später erneut versuchen')
+          : 'Name oder Passwort inkorrekt';
         this.loading = false;
         this.form.get('password')?.setValue('');
       }

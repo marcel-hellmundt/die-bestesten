@@ -30,6 +30,11 @@ export class TokenRefreshInterceptor implements HttpInterceptor {
           this.authService.logout();
           this.router.navigate(['/login'], { queryParams: { admin_only: 1 } });
         }
+        // Aus der Liga im Token entfernt (API prüft die Mitgliedschaft live) — neu anmelden, dann gibt es nur noch aktive Ligen
+        if (error instanceof HttpErrorResponse && error.status === 403 && error.error?.league_revoked && this.authService.getToken()) {
+          this.authService.logout();
+          this.router.navigate(['/login']);
+        }
         return throwError(() => error);
       })
     );

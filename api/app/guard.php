@@ -48,6 +48,7 @@ class Guard
                         $GLOBALS['auth_manager_id'] = $manager['id'];
                         $GLOBALS['auth_roles']      = $manager['roles'];
                         $leagueId = $decoded->league_id ?? null;
+                        if ($leagueId && !$this->db->isManagerInLeague($manager['id'], $leagueId)) $leagueId = null;
                         $GLOBALS['auth_league_id'] = $leagueId;
                         if ($leagueId) {
                             $this->db->switchLeagueConnection($leagueId);
@@ -84,8 +85,12 @@ class Guard
             $GLOBALS['auth_manager_id'] = $manager['id'];
             $GLOBALS['auth_roles']      = $manager['roles']; // array, e.g. ['maintainer', 'admin']
 
-            // Switch to the league DB from JWT (null = no active league)
+            // Switch to the league DB from JWT (null = no active league). The token outlives the membership
+            // (rolling refresh), so check it live — a manager removed from a league must not keep acting in it.
             $leagueId = $decoded->league_id ?? null;
+            if ($leagueId && !$this->db->isManagerInLeague($manager['id'], $leagueId)) {
+                return ['status' => false, 'code' => 403, 'message' => 'Kein Zugang mehr zu dieser Liga', 'league_revoked' => true];
+            }
             $GLOBALS['auth_league_id'] = $leagueId;
             if ($leagueId) {
                 $this->db->switchLeagueConnection($leagueId);

@@ -41,12 +41,20 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'Name oder Passwort fehlen'];
         }
 
+        // Request-Limit gegen Durchprobieren (je Name und je IP, siehe AuthAttemptTrait)
+        if ($this->db->isAuthAttemptLimited('login', $name)) {
+            http_response_code(429);
+            return ['status' => false, 'message' => 'Zu viele Fehlversuche – bitte in 15 Minuten erneut versuchen'];
+        }
+
         $manager = $this->db->getAuthManagerByNameOrEmail($name);
 
         if (!$manager || !password_verify($password, $manager['password'])) {
+            $this->db->recordAuthAttempt('login', $name);
             http_response_code(400);
             return ['status' => false, 'message' => 'Name oder Passwort inkorrekt'];
         }
+        $this->db->clearAuthAttempts('login', $name);
 
         if ($manager['status'] === 'deleted') {
             http_response_code(403);
@@ -121,6 +129,10 @@ class AuthController extends _BaseController
         }
 
         $manager = $this->db->getAuthManagerById($managerId);
+        if (!$manager || $manager['status'] !== 'active') {
+            http_response_code(403);
+            return ['status' => false, 'message' => 'Account ist nicht aktiv'];
+        }
         $token   = $this->buildJwt($manager, $leagueId);
         return ['token' => $token, 'league_id' => $leagueId];
     }
@@ -135,7 +147,12 @@ class AuthController extends _BaseController
             return ['status' => false, 'message' => 'E-Mail erforderlich'];
         }
 
-        // Always return success to not leak whether the email exists
+        // Always return success to not leak whether the email exists — also when the request limit
+        // (per address and per IP, see AuthAttemptTrait) is reached: then simply no mail goes out
+        if ($this->db->isAuthAttemptLimited('reset', $email)) {
+            return ['status' => true];
+        }
+        $this->db->recordAuthAttempt('reset', $email);
         $manager = $this->db->getManagerByEmail($email);
         if ($manager) {
             $token   = $this->db->createPasswordResetToken($manager['id']);

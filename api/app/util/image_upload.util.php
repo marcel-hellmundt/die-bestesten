@@ -16,9 +16,22 @@ class ImageUpload
         'image/webp' => 'imagecreatefromwebp',
     ];
 
+    // Path segments are built from URL ids and request fields — only plain names, never '.'/'..', so an
+    // upload can't climb out of its entity folder on the shared FTP account.
+    private static function isSafePath(string $relativePath): bool
+    {
+        foreach (explode('/', $relativePath) as $part) {
+            if ($part === '' || $part === '.' || $part === '..' || !preg_match('/^[A-Za-z0-9._-]+$/', $part)) return false;
+        }
+        return true;
+    }
+
     /** @param string $targetFormat 'png' or 'jpeg' */
     public static function store(array $file, string $relativePath, string $targetFormat): array
     {
+        if (!self::isSafePath($relativePath)) {
+            return ['status' => false, 'code' => 400, 'message' => 'Ungültiger Zielpfad'];
+        }
         if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
             return ['status' => false, 'code' => 400, 'message' => 'Keine Datei empfangen'];
         }
@@ -88,6 +101,9 @@ class ImageUpload
 
     public static function copy(string $sourceRelativePath, string $targetRelativePath): array
     {
+        if (!self::isSafePath($sourceRelativePath) || !self::isSafePath($targetRelativePath)) {
+            return ['status' => false, 'code' => 400, 'message' => 'Ungültiger Zielpfad'];
+        }
         $conn = self::connect();
         if (is_array($conn)) return $conn;
 

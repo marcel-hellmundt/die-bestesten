@@ -73,11 +73,12 @@ $controller->setRequest($request);
 try {
     echo json_encode($controller->getResponse());
 } catch (Throwable $e) {
+    // Details (SQL-Fehlertexte, Tabellen-/Spaltennamen) nur ins Server-Log und an Admins — alle anderen
+    // bekommen eine allgemeine Meldung
+    error_log(sprintf('%s %s: %s in %s:%d', $_SERVER['REQUEST_METHOD'], $path, $e->getMessage(), $e->getFile(), $e->getLine()));
     http_response_code(500);
-    echo json_encode([
-        'status'  => false,
-        'message' => $e->getMessage(),
-        'file'    => basename($e->getFile()),
-        'line'    => $e->getLine(),
-    ]);
+    $isAdmin = in_array('admin', $GLOBALS['auth_roles'] ?? [], true);
+    echo json_encode($isAdmin
+        ? ['status' => false, 'message' => $e->getMessage(), 'file' => basename($e->getFile()), 'line' => $e->getLine()]
+        : ['status' => false, 'message' => 'Interner Fehler']);
 }
