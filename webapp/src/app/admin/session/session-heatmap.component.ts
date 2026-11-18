@@ -25,6 +25,7 @@ interface HeatmapManager {
   mobile_seconds: Record<string, number>; // dieselben Buckets, nur Intervalle mobile/tablet, separat dedupliziert
   desktop_seconds: Record<string, number>; // dieselben Buckets, nur Intervalle desktop/unbekannt, separat dedupliziert
   streak?: number; // laufende Online-Serie (Tage in Folge mit Tages-Pack), 0 = keine
+  streak_today?: boolean; // heute schon online — false: Serie zählt bis gestern und lässt sich heute noch verlängern
 }
 
 interface HeatmapResponse {
@@ -247,6 +248,14 @@ export class SessionHeatmapComponent {
   /** Mobil statt Name: Profilbild — Manager ohne Foto bekommen die Initiale */
   photoFailed = signal<ReadonlySet<string>>(new Set());
   onPhotoError(id: string): void { this.photoFailed.update(s => new Set(s).add(id)); }
+
+  /** Tooltip der Online-Serie links vom Namen */
+  streakTitle(m: HeatmapManager): string {
+    const n = m.streak ?? 0;
+    if (!n) return 'Keine Online-Serie';
+    const days = n === 1 ? '1 Tag' : `${n} Tage`;
+    return m.streak_today ? `${days} in Folge online` : `${days} in Folge online — heute noch nicht, lässt sich heute noch verlängern`;
+  }
 
   /** Neben dem Namen: gerade online — < 1 min voller grüner Punkt, 1–3 min grüner Ring */
   private online = computed(() => new Map((this.data()?.online_managers ?? []).map(o => [o.manager_id, o.idle_seconds])));

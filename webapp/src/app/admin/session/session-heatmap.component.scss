@@ -232,6 +232,17 @@
 
   app-icon { display: flex; color: #fa8231; }
   ::ng-deep svg { width: 14px; height: 14px; }
+
+  // heute noch nicht online: Serie läuft noch, lässt sich heute verlängern — Flamme farblos
+  &--pending app-icon { color: $color-text-muted; }
+
+  // keine Serie: Flamme und 0 blass
+  &--none {
+    color: $color-text-muted;
+    opacity: 0.4;
+
+    app-icon { color: $color-text-muted; }
+  }
 }
 
 // rechts neben dem Namen: < 1 min seit dem letzten Heartbeat = voller grüner Punkt, 1–3 min = grüner Ring

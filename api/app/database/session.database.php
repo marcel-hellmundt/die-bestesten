@@ -473,7 +473,8 @@ trait SessionTrait
         $streaks = $this->getStreakDaysForManagers(array_column($result, 'manager_id'));
         foreach ($result as &$r) {
             unset($r['_total']);
-            $r['streak'] = $streaks[$r['manager_id']] ?? 0;
+            $r['streak']       = $streaks[$r['manager_id']]['days'] ?? 0;
+            $r['streak_today'] = $streaks[$r['manager_id']]['today'] ?? false;
         }
         unset($r);
 

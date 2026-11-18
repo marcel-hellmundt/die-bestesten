@@ -228,13 +228,15 @@ trait StickerPackTrait
     }
 
     /**
-     * Laufende Online-Serie mehrerer Manager auf einmal (Nutzungs-Übersicht der Admins): [manager_id => Tage], gezählt
-     * wie currentStreakDays(). Wer heute noch nicht online war, dessen Serie läuft noch — dann zählt sie bis gestern
-     * (die Topbar zeigt immer den eigenen Stand nach dem Abruf, dort ist heute schon dabei). 0 ohne Tages-Packs.
+     * Laufende Online-Serie mehrerer Manager auf einmal (Nutzungs-Übersicht der Admins):
+     * [manager_id => ['days' => Tage, 'today' => heute schon online]], gezählt wie currentStreakDays(). Wer heute noch
+     * nicht online war, dessen Serie läuft noch und lässt sich heute verlängern — dann zählt sie bis gestern und
+     * today ist false (die Topbar zeigt immer den eigenen Stand nach dem Abruf, dort ist heute schon dabei).
+     * days 0 ohne Tages-Packs bzw. wenn auch gestern keins dabei war.
      */
     public function getStreakDaysForManagers(array $managerIds): array
     {
-        $result = array_fill_keys($managerIds, 0);
+        $result = array_fill_keys($managerIds, ['days' => 0, 'today' => false]);
         if (!$managerIds) return $result;
         try {
             $in = implode(',', array_fill(0, count($managerIds), '?'));
@@ -248,7 +250,8 @@ trait StickerPackTrait
             $today     = (new DateTime('now', new DateTimeZone('Europe/Berlin')))->format('Y-m-d');
             $yesterday = (new DateTime($today))->modify('-1 day')->format('Y-m-d');
             foreach ($keys as $id => $k) {
-                $result[$id] = $this->countStreakDays($k, isset($k["daily:$today"]) ? $today : $yesterday);
+                $onlineToday = isset($k["daily:$today"]);
+                $result[$id] = ['days' => $this->countStreakDays($k, $onlineToday ? $today : $yesterday), 'today' => $onlineToday];
             }
         } catch (\Throwable $e) {
             // ohne Sticker-Tabellen keine Serie
