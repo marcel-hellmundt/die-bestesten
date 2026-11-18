@@ -24,6 +24,7 @@ interface HeatmapManager {
   buckets: Record<string, number>; // Bucket-Schlüssel (siehe RANGE_CONFIG) -> Sekunden gesamt (geräteübergreifend dedupliziert)
   mobile_seconds: Record<string, number>; // dieselben Buckets, nur Intervalle mobile/tablet, separat dedupliziert
   desktop_seconds: Record<string, number>; // dieselben Buckets, nur Intervalle desktop/unbekannt, separat dedupliziert
+  streak?: number; // laufende Online-Serie (Tage in Folge mit Tages-Pack), 0 = keine
 }
 
 interface HeatmapResponse {

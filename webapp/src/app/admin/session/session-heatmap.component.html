@@ -171,6 +171,11 @@
         (mouseenter)="onRowLabelHover($event, m)"
         (mouseleave)="onCellLeave()"
       >
+        <!-- Online-Serie: Flamme + Tage in Folge (ohne Serie bleibt der Platz frei, damit die Kästchen bündig stehen) -->
+        <span class="heatmap__streak"
+              [attr.title]="m.streak ? m.streak + (m.streak === 1 ? ' Tag' : ' Tage') + ' in Folge online' : null">
+          @if (m.streak) { <app-icon name="flame" /> {{ m.streak }} }
+        </span>
         @let swatch = managerColor(m);
         <span class="heatmap__device-swatch" [class.heatmap__device-swatch--empty]="swatch === 'transparent'"
               [style.background-color]="swatch"></span>
