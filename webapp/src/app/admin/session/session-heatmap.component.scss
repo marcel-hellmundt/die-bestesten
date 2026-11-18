@@ -226,13 +226,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 2px;
-  width: 38px;
+  width: 36px; // gerade breit genug für Flamme + dreistellige Zahl
+  margin-right: 4px; // etwas mehr Luft zum Geräte-Kästchen als zwischen Flamme und Zahl
   font-size: $font-xs;
   font-weight: $font-weight-semibold;
   font-variant-numeric: tabular-nums;
 
-  app-icon { display: flex; }
-  ::ng-deep svg { width: 14px; height: 14px; }
+  app-icon { display: flex; flex-shrink: 0; }
+  ::ng-deep svg { width: 14px; height: 14px; flex-shrink: 0; }
 
   // heute noch nicht online: Serie läuft noch, lässt sich heute verlängern — Flamme farblos (Umriss)
   &--pending app-icon { color: $color-text-muted; }
@@ -439,7 +440,7 @@
 
   .heatmap__row-label { gap: 6px; padding-left: 0; padding-right: 0; }
   .heatmap__device-swatch { width: 14px; height: 14px; }
-  .heatmap__streak { width: 30px; }
+  .heatmap__streak { width: 34px; margin-right: 2px; }
 
   .heatmap__col-label {
     font-size: 9px;
