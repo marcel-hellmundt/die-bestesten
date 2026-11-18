@@ -1,3 +1,13 @@
+<!-- Verlauf der gefüllten Streak-Flamme (aktive Serie): Rot unten → Gelb oben; einmal für alle Zeilen -->
+<svg class="heatmap__streak-defs" aria-hidden="true">
+  <defs>
+    <linearGradient id="streak-flame-gradient" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#e03131" />
+      <stop offset="1" stop-color="#fcc419" />
+    </linearGradient>
+  </defs>
+</svg>
+
 <h1 class="page-title">Nutzung</h1>
 <p class="page-subtitle">
   Näherungsweise Anwesenheitsdauer pro Manager — basiert auf aktiven Requests, misst also offen
@@ -177,7 +187,14 @@
               [class.heatmap__streak--pending]="m.streak && !m.streak_today"
               [class.heatmap__streak--none]="!m.streak"
               [attr.title]="streakTitle(m)">
-          <app-icon name="flame" /> {{ m.streak ?? 0 }}
+          @if (m.streak && m.streak_today) {
+            <svg class="heatmap__streak-flame" viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="flamePath" />
+            </svg>
+          } @else {
+            <app-icon name="flame" />
+          }
+          <span class="heatmap__streak-days">{{ m.streak ?? 0 }}</span>
         </span>
         @let swatch = managerColor(m);
         <span class="heatmap__device-swatch" [class.heatmap__device-swatch--empty]="swatch === 'transparent'"
