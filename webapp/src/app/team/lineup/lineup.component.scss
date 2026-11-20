@@ -101,9 +101,9 @@ $mobile-nav-height: 64px;
     // Pro: Form-Pille oben rechts am Foto (dunkel, damit sie auf dem Rasen und auf hellen Fotos lesbar bleibt)
     &__form {
       position: absolute;
-      top: -4px;
+      top: -6px; // 2px höher, damit die größere Pille gleich weit übers Foto ragt
       right: -14px;
-      padding: 1px 4px;
+      padding: 3px 4px;
       border-radius: $radius-full;
       background: rgba(0, 0, 0, 0.72);
       color: #fff;
