@@ -102,8 +102,8 @@ $mobile-nav-height: 64px;
     &__form {
       position: absolute;
       top: -6px; // 2px höher, damit die größere Pille gleich weit übers Foto ragt
-      right: -14px;
-      padding: 3px 4px;
+      right: -16px; // 2px weiter rechts, damit die breitere Pille gleich weit übers Foto ragt
+      padding: 3px 6px;
       border-radius: $radius-full;
       background: rgba(0, 0, 0, 0.72);
       color: #fff;
