@@ -10,6 +10,7 @@ import { SquadComponent } from './squad/squad.component';
 import { LineupComponent } from './lineup/lineup.component';
 import { FinancesComponent } from './finances/finances.component';
 import { IconModule } from '../shared/icon/icon.module';
+import { SegmentedDirective } from '../core/segmented.directive';
 
 const routes: Routes = [
   {
@@ -27,6 +28,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [TeamDetailComponent, TeamOverviewComponent, SquadComponent, LineupComponent, FinancesComponent],
-  imports: [CommonModule, RouterModule.forChild(routes), DragDropModule, StuckDirective, MoonPriceComponent, IconModule]
+  imports: [CommonModule, RouterModule.forChild(routes), DragDropModule, StuckDirective, MoonPriceComponent, IconModule, SegmentedDirective]
 })
 export class TeamModule {}

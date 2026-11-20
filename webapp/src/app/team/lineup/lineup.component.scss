@@ -586,25 +586,51 @@ $mobile-nav-height: 64px;
   }
 }
 
-// Pro: Form-Summe der Elf + Magic-Button — Desktop ganz oben in der Sidebar, mobil rechts in der oberen Zeile
+// Pro: Form-Umschalter, Form-Summe der Elf + Magic-Button — Desktop ganz oben in der Sidebar, mobil eigene Zeile
+// unter Spieltag/Formation
 .desktop-magic {
   @media (max-width: $mobile-breakpoint) { display: none; }
 }
 
 .mobile-magic {
-  margin-left: auto;
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: block;
+    margin-bottom: $space-3;
+  }
 }
 
+// links Umschalter, mittig die Summe, rechts der Button
 .magic-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: flex-end;
-  gap: $space-3;
+  gap: $space-2;
+
+  // so hoch wie der Magic-Button (40px, mobil 36px) — die Optionen füllen die Höhe
+  &__mode {
+    justify-self: start;
+    height: 40px;
+
+    @media (max-width: $mobile-breakpoint) { height: 36px; }
+  }
+
+  // Icon-Optionen des Umschalters: Icon mittig, Optionen gleich breit
+  &__mode-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 0 $space-3;
+
+    app-icon { display: flex; }
+  }
 
   &__sum {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
     line-height: 1.2;
   }
 

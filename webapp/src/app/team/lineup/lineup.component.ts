@@ -353,8 +353,37 @@ export class LineupComponent {
   /** Form gibt es nur für Pro (die API liefert form sonst gar nicht) — daran hängen Summe und Magic-Button */
   hasForm = computed(() => this.lineupPlayers().some(p => p.form != null));
 
+  /**
+   * Berechnung der Form, umschaltbar oben in der rechten Spalte: gewichtet = Wert der API (jüngster Spieltag ×5 …),
+   * linear = alle Spieltage gleich (aus form_points). Gilt für Pillen, Summe und Magic-Button; je Gerät gemerkt.
+   */
+  readonly FORM_MODES = [
+    { key: 'linear',   icon: 'bars-equal',  label: 'Linear: alle 5 Spieltage gleich gewichtet' },
+    { key: 'weighted', icon: 'bars-rising', label: 'Gewichtet: jüngster Spieltag ×5, davor ×4 …' },
+  ] as const;
+  private static readonly FORM_MODE_KEY = 'lineup_form_mode';
+  formMode = signal<'linear' | 'weighted'>(LineupComponent.loadFormMode());
+
+  private static loadFormMode(): 'linear' | 'weighted' {
+    try { return localStorage.getItem(LineupComponent.FORM_MODE_KEY) === 'linear' ? 'linear' : 'weighted'; }
+    catch { return 'weighted'; }
+  }
+
+  setFormMode(mode: 'linear' | 'weighted'): void {
+    this.formMode.set(mode);
+    try { localStorage.setItem(LineupComponent.FORM_MODE_KEY, mode); } catch { /* nur Komfort */ }
+  }
+
+  /** Form des Spielers im gewählten Modus (null ohne Form-Daten) */
+  formOf(p: LineupPlayer): number | null {
+    if (p.form == null) return null;
+    if (this.formMode() === 'weighted') return p.form;
+    const pts = p.form_points ?? [];
+    return pts.length ? Math.round(pts.reduce((s, f) => s + f.points, 0) / pts.length * 10) / 10 : null;
+  }
+
   /** Summe der Form der aufgestellten Spieler */
-  formSum = computed(() => this.nominated().reduce((s, p) => s + (p.form ?? 0), 0));
+  formSum = computed(() => this.nominated().reduce((s, p) => s + (this.formOf(p) ?? 0), 0));
 
   /**
    * Punktebeste Aufstellung nach Form: je erlaubter Formation pro Position die Spieler mit der besten Form (bei
@@ -365,14 +394,14 @@ export class LineupComponent {
     const byPos: Record<string, LineupPlayer[]> = { GOALKEEPER: [], DEFENDER: [], MIDFIELDER: [], FORWARD: [] };
     for (const p of this.lineupPlayers()) byPos[p.position]?.push(p);
     for (const list of Object.values(byPos)) {
-      list.sort((a, b) => (b.form ?? 0) - (a.form ?? 0) || (b.season_points ?? 0) - (a.season_points ?? 0));
+      list.sort((a, b) => (this.formOf(b) ?? 0) - (this.formOf(a) ?? 0) || (b.season_points ?? 0) - (a.season_points ?? 0));
     }
     const positions = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
     let best: { players: LineupPlayer[]; sum: number } | null = null;
     for (const f of this.validFormations) {
       if (positions.some((pos, i) => byPos[pos].length < f[i])) continue;
       const players = positions.flatMap((pos, i) => byPos[pos].slice(0, f[i]));
-      const sum = players.reduce((s, p) => s + (p.form ?? 0), 0);
+      const sum = players.reduce((s, p) => s + (this.formOf(p) ?? 0), 0);
       if (!best || sum > best.sum + 1e-9) best = { players, sum };
     }
     return best;
@@ -406,7 +435,10 @@ export class LineupComponent {
   /** Pro-Feature Form: Tooltip mit den einzelnen Spieltagen (jüngster zuerst) und der Gewichtung */
   formTitle(p: LineupPlayer): string {
     const days = (p.form_points ?? []).map(f => `ST ${f.number}: ${f.points}`).join(' · ');
-    return `Form: gewichteter Ø der letzten ${p.form_points?.length ?? 0} Spieltage (jüngster ×5, davor ×4 …)\n${days}`;
+    const n = p.form_points?.length ?? 0;
+    return this.formMode() === 'weighted'
+      ? `Form: gewichteter Ø der letzten ${n} Spieltage (jüngster ×5, davor ×4 …)\n${days}`
+      : `Form: Ø der letzten ${n} Spieltage (alle gleich gewichtet)\n${days}`;
   }
 
   participationLabel(p: string | null): string {

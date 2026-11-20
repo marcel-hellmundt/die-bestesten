@@ -40,12 +40,14 @@
           }
         </div>
 
-        @if (hasForm()) {
-          <div class="mobile-magic">
-            <ng-container *ngTemplateOutlet="magicBar"></ng-container>
-          </div>
-        }
       </div>
+
+      <!-- Pro, mobil: Form-Umschalter, Summe und Magic-Button in einer eigenen Zeile unter Spieltag/Formation -->
+      @if (hasForm()) {
+        <div class="mobile-magic">
+          <ng-container *ngTemplateOutlet="magicBar"></ng-container>
+        </div>
+      }
 
       @if (points() != null && showBreakdown()) {
         <div class="mobile-points">
@@ -101,7 +103,8 @@
                   }
                   <!-- Pro: Form = gewichteter Punkteschnitt der letzten 5 Spieltage (nur wenn die API sie liefert) -->
                   @if (p.form != null) {
-                    <span class="field-player__form" [class.field-player__form--neg]="p.form < 0" [title]="formTitle(p)">Ø {{ p.form | number:'1.1-1' }}</span>
+                    @let f = formOf(p) ?? 0;
+                    <span class="field-player__form" [class.field-player__form--neg]="f < 0" [title]="formTitle(p)">Ø {{ f | number:'1.1-1' }}</span>
                   }
                 </div>
                 @if (p.sds || p.goals || p.assists || p.clean_sheet || p.yellow_red_card || p.red_card) {
@@ -302,7 +305,16 @@
   <!-- Pro: Summe der Form der aufgestellten Elf + Magic-Button (punktebeste Aufstellung nach Form) -->
   <ng-template #magicBar>
     <div class="magic-bar">
-      <div class="magic-bar__sum" title="Summe der Form (gewichteter Ø der letzten 5 Spieltage) der aufgestellten Spieler">
+      <!-- Berechnung der Form: linear (alle 5 Spieltage gleich) oder gewichtet (jüngster ×5 …) -->
+      <div class="segmented magic-bar__mode" role="group" aria-label="Berechnung der Form">
+        @for (m of FORM_MODES; track m.key) {
+          <button type="button" class="segmented__option magic-bar__mode-option" [class.segmented__option--active]="formMode() === m.key"
+                  [title]="m.label" [attr.aria-label]="m.label" (click)="setFormMode(m.key)">
+            <app-icon [name]="m.icon" />
+          </button>
+        }
+      </div>
+      <div class="magic-bar__sum" title="Summe der Form der aufgestellten Spieler">
         <span class="magic-bar__label">Form der Elf</span>
         <span class="magic-bar__value">Ø {{ formSum() | number:'1.1-1' }}</span>
       </div>
@@ -380,7 +392,8 @@
         }
         <!-- Pro: Form ganz rechts, senkrecht mittig (die Card richtet ihre Kinder mittig aus) -->
         @if (p.form != null) {
-          <span class="bench-player__form" [class.bench-player__form--neg]="p.form < 0" [title]="formTitle(p)">Ø {{ p.form | number:'1.1-1' }}</span>
+          @let f = formOf(p) ?? 0;
+          <span class="bench-player__form" [class.bench-player__form--neg]="f < 0" [title]="formTitle(p)">Ø {{ f | number:'1.1-1' }}</span>
         }
       </a>
     }
