@@ -37,8 +37,10 @@ trait ManagerTrait
         );
         $q->execute();
         $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        $tiers = $this->getManagerTiers();
         foreach ($rows as &$row) {
             $row['stadiums_visited'] = (int) $row['stadiums_visited'];
+            $row['tier'] = $tiers[$row['id']] ?? 'free';
             $row['roles']   = $row['roles_csv'] ? explode(',', $row['roles_csv']) : [];
             $row['leagues'] = [];
             if ($row['league_data']) {
@@ -59,7 +61,11 @@ trait ManagerTrait
         );
         $q->execute([':id' => $id]);
         $manager = $q->fetch(PDO::FETCH_ASSOC);
-        if ($manager) $manager['roles'] = $this->getManagerRoles($id);
+        if ($manager) {
+            $manager['roles']        = $this->getManagerRoles($id);
+            $manager['tier']         = $this->getManagerTier($id);
+            $manager['entitlements'] = $this->tierEntitlements($manager['tier']);
+        }
         return $manager;
     }
 

@@ -84,6 +84,7 @@ class AuthController extends _BaseController
             'sub'          => $manager['id'],
             'manager_name' => $manager['manager_name'],
             'roles'        => $manager['roles'],
+            'tier'         => $manager['tier'] ?? 'free',
             'status'       => $manager['status'],
             'league_id'    => $leagueId,
             'iat'          => $now,

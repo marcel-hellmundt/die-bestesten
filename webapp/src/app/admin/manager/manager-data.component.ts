@@ -169,6 +169,33 @@ export class ManagerDataComponent {
     });
   }
 
+  // Tier (Free/Pro) — keine Rolle, sondern welche Features jemand nutzen darf (API: POST /manager/:id/tier)
+  tierTogglingState = signal<Record<string, boolean>>({});
+
+  isTierToggling(managerId: string): boolean {
+    return this.tierTogglingState()[managerId] ?? false;
+  }
+
+  togglePro(manager: any): void {
+    if (this.tierTogglingState()[manager.id]) return;
+    const tier = manager.tier === 'pro' ? 'free' : 'pro';
+    this.tierTogglingState.update((s) => ({ ...s, [manager.id]: true }));
+    const done = () => this.tierTogglingState.update((s) => {
+      const n = { ...s };
+      delete n[manager.id];
+      return n;
+    });
+    this.api.post<{ tier: string }>(`manager/${manager.id}/tier`, { tier }).subscribe({
+      next: (res) => {
+        this._managers.update((list) =>
+          list.map((m) => (m.id === manager.id ? { ...m, tier: res.tier } : m)),
+        );
+        done();
+      },
+      error: done,
+    });
+  }
+
   availableLeaguesFor(manager: any): any[] {
     const managerLeagueIds = new Set((manager.leagues ?? []).map((l: any) => l.id));
     return this.allLeagues().filter(l => !managerLeagueIds.has(l.id));

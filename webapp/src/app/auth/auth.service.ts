@@ -110,6 +110,19 @@ export class AuthService {
     return this.myRoleRank() >= ROLE_RANK['contributor'];
   }
 
+  /**
+   * Tier (Free/Pro) — keine Rolle, sondern welche Features jemand nutzen darf; ein Admin schaltet Pro je Manager an
+   * und aus. Kommt aus dem JWT, der Guard schickt bei einer Änderung sofort einen frischen Token. Welche Features
+   * Pro freischaltet (Entitlements), entscheidet die API (TierTrait::tierConfig(), GET /manager/me → entitlements).
+   */
+  getTier(): string {
+    return (this.getPayload()?.['tier'] as string) ?? 'free';
+  }
+
+  isPro(): boolean {
+    return this.getTier() === 'pro';
+  }
+
   getLeagueId(): string | null {
     return this._leagueId();
   }

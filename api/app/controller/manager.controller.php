@@ -172,6 +172,25 @@ class ManagerController extends _BaseController
             $this->db->setManagerRole($this->id, $role);
             return ['roles' => $this->db->getManagerRoles($this->id)];
         }
+
+        // Tier (Free/Pro) — keine Rolle, sondern welche Features jemand nutzen darf (TierTrait); 'free' nimmt Pro wieder weg
+        if ($this->id && $this->sub === 'tier') {
+            if (!$this->isAdmin()) { http_response_code(403); return ['status' => false, 'message' => 'Forbidden']; }
+            $tier = $this->body()['tier'] ?? null;
+            if (!in_array($tier, ['free', 'pro'], true)) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'Ungültiges Tier. Erlaubt: free, pro'];
+            }
+            if (!$this->db->getManagerById($this->id)) {
+                http_response_code(404);
+                return ['status' => false, 'message' => 'Manager not found'];
+            }
+            if (!$this->db->setManagerTier($this->id, $tier, $GLOBALS['auth_manager_id'])) {
+                http_response_code(409);
+                return ['status' => false, 'message' => 'Tiers sind noch nicht eingerichtet (Migration 2026-11-20_manager_tier.sql)'];
+            }
+            return ['tier' => $this->db->getManagerTier($this->id)];
+        }
         return $this->methodNotAllowed();
     }
 

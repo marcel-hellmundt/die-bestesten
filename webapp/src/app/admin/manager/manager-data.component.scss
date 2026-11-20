@@ -233,6 +233,11 @@
     background: color-mix(in srgb, var(--flat-alizarin) 18%, transparent);
     color: var(--flat-alizarin);
   }
+  // Tier, keine Rolle — eigene Farbe, die bei keiner Rolle vorkommt
+  &--pro {
+    background: color-mix(in srgb, var(--flat-amethyst) 18%, transparent);
+    color: var(--flat-amethyst);
+  }
 
   &--inactive {
     background: $color-surface;

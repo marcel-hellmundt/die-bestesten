@@ -77,6 +77,18 @@ abstract class _BaseController
         return $this->myRoleRank() >= self::ROLE_RANK['contributor'];
     }
 
+    /** Tier des eingeloggten Managers ('free' | 'pro', vom Guard gesetzt) — Features fragen hasEntitlement(). */
+    protected function myTier(): string
+    {
+        return $GLOBALS['auth_tier'] ?? 'free';
+    }
+
+    /** Darf der eingeloggte Manager dieses Feature nutzen? (Entitlements je Tier: TierTrait::tierConfig()) */
+    protected function hasEntitlement(string $entitlement): bool
+    {
+        return in_array($entitlement, $this->db->tierEntitlements($this->myTier()), true);
+    }
+
     protected function ownsTeam(string $teamId): bool
     {
         return $this->db->getTeamOwner($teamId) === ($GLOBALS['auth_manager_id'] ?? null);

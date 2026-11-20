@@ -964,7 +964,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/manager',
-                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, email, last_activity, stadiums_visited, roles[], leagues[{id,name}]}] — stadiums_visited = Anzahl per manager_stadium als besucht markierter Stadien — Admin',
+                        'description' => 'Alle Manager global mit Rollen und Ligen — [{id, manager_name, alias, status, email, last_activity, stadiums_visited, roles[], tier (free|pro), leagues[{id,name}]}] — stadiums_visited = Anzahl per manager_stadium als besucht markierter Stadien — Admin',
                     ],
                     [
                         'method' => 'POST',
@@ -980,7 +980,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/manager/me',
-                        'description' => 'Eigenes Profil abrufen (id, manager_name, first_name, alias, email, roles[], status)',
+                        'description' => 'Eigenes Profil abrufen (id, manager_name, first_name, alias, email, roles[], tier, entitlements[], status) — tier = free|pro (getrennt von den Rollen), entitlements = Features, die sein Tier freischaltet (TierTrait::tierConfig())',
                     ],
                     [
                         'method' => 'GET',
@@ -1003,6 +1003,12 @@ class Routing
                         'method' => 'POST',
                         'path' => '/manager/:id/roles',
                         'description' => 'Rolle setzen (Upsert — ersetzt eine evtl. vorhandene Rolle, max. 1 pro Manager, hierarchisch: admin ⊇ maintainer ⊇ contributor ⊇ manager) — Body: { role: "contributor"|"maintainer"|"admin" } — gibt aktualisierte roles[] zurück — Admin',
+                        'path_params' => [':id' => 'UUID des Managers'],
+                    ],
+                    [
+                        'method' => 'POST',
+                        'path' => '/manager/:id/tier',
+                        'description' => 'Tier setzen — keine Rolle, sondern welche Features jemand nutzen darf (TierTrait): Body: { tier: "free"|"pro" } → { tier }; free nimmt Pro wieder weg (löscht die Zeile in manager_tier), granted_by = der Admin; 400 unbekanntes Tier, 404 Manager unbekannt, 409 ohne Migration 2026-11-20_manager_tier.sql — Admin',
                         'path_params' => [':id' => 'UUID des Managers'],
                     ],
                     [

@@ -20,6 +20,7 @@ require_once 'manager.database.php';
 require_once 'team_rating.database.php';
 require_once 'password_reset.database.php';
 require_once 'auth_attempt.database.php';
+require_once 'tier.database.php';
 require_once 'award.database.php';
 require_once 'achievement_conditions.database.php';
 require_once 'achievement.database.php';
@@ -81,6 +82,7 @@ class Database
     use TeamRatingTrait;
     use PasswordResetTrait;
     use AuthAttemptTrait;
+    use TierTrait;
     use SearchTrait;
     use NotificationTrait;
     use WatchlistTrait;
@@ -384,7 +386,10 @@ class Database
         $query = $this->con->prepare("SELECT * FROM manager WHERE id = :id LIMIT 1");
         $query->execute([':id' => $id]);
         $manager = $query->fetch(PDO::FETCH_ASSOC);
-        if ($manager) $manager['roles'] = $this->fetchManagerRoles($manager['id']);
+        if ($manager) {
+            $manager['roles'] = $this->fetchManagerRoles($manager['id']);
+            $manager['tier']  = $this->getManagerTier($manager['id']);
+        }
         return $manager;
     }
 
@@ -402,7 +407,10 @@ class Database
         );
         $query->execute([':identifier' => $identifier]);
         $manager = $query->fetch(PDO::FETCH_ASSOC);
-        if ($manager) $manager['roles'] = $this->fetchManagerRoles($manager['id']);
+        if ($manager) {
+            $manager['roles'] = $this->fetchManagerRoles($manager['id']);
+            $manager['tier']  = $this->getManagerTier($manager['id']);
+        }
         return $manager;
     }
 

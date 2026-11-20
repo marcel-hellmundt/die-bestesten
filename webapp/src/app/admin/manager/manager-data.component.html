@@ -100,6 +100,7 @@
             <span class="sort-indicator">{{ sortCol() === 'roles' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
             Rollen
           </th>
+          <th>Tier</th>
           <th>Ligen</th>
           <th class="col-stadiums col-sortable hidden-mobile" (click)="sort('stadiums_visited')">
             <span class="sort-indicator">{{ sortCol() === 'stadiums_visited' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}</span>
@@ -167,6 +168,20 @@
                 }
                 <span class="role-badge role-badge--manager">{{ roleLabel['manager'] }}</span>
               </div>
+            </td>
+            <!-- Tier (Free/Pro): keine Rolle, sondern welche Features jemand nutzen darf — Admin schaltet Pro an/aus -->
+            <td class="col-tier" (click)="$event.stopPropagation()">
+              @if (isAdmin()) {
+                <button
+                  class="role-badge role-badge--pro"
+                  [class.role-badge--inactive]="m.tier !== 'pro'"
+                  [disabled]="isTierToggling(m.id)"
+                  [title]="m.tier === 'pro' ? 'Pro wieder wegnehmen' : 'Pro freischalten'"
+                  (click)="togglePro(m)"
+                >Pro</button>
+              } @else if (m.tier === 'pro') {
+                <span class="role-badge role-badge--pro">Pro</span>
+              }
             </td>
             <td class="col-leagues" (click)="$event.stopPropagation()">
               @for (league of m.leagues; track league.id) {

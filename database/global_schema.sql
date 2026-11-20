@@ -282,6 +282,17 @@ CREATE TABLE IF NOT EXISTS manager_role (
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Tabelle: manager_tier — Stufe eines Managers (Free/Pro), getrennt von den Rollen: Rollen regeln, was jemand
+-- verwalten darf, das Tier, welche Features er nutzen darf. Keine Zeile = Free; welche Features (Entitlements) ein
+-- Tier freischaltet, steht im Code (TierTrait::tierConfig()) (Migration: 2026-11-20_manager_tier.sql)
+CREATE TABLE IF NOT EXISTS manager_tier (
+    manager_id CHAR(36)    NOT NULL PRIMARY KEY,
+    tier       VARCHAR(20) NOT NULL,              -- pro
+    granted_by CHAR(36)    NULL,                  -- Admin, der es vergeben hat (kein FK)
+    granted_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Tabelle: password_reset_token
 CREATE TABLE IF NOT EXISTS password_reset_token (
     id         CHAR(36)    NOT NULL DEFAULT (UUID()) PRIMARY KEY,

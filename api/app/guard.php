@@ -47,6 +47,7 @@ class Guard
                     if ($manager && $manager['status'] === 'active') {
                         $GLOBALS['auth_manager_id'] = $manager['id'];
                         $GLOBALS['auth_roles']      = $manager['roles'];
+                        $GLOBALS['auth_tier']       = $manager['tier'];
                         $leagueId = $decoded->league_id ?? null;
                         if ($leagueId && !$this->db->isManagerInLeague($manager['id'], $leagueId)) $leagueId = null;
                         $GLOBALS['auth_league_id'] = $leagueId;
@@ -84,6 +85,7 @@ class Guard
 
             $GLOBALS['auth_manager_id'] = $manager['id'];
             $GLOBALS['auth_roles']      = $manager['roles']; // array, e.g. ['maintainer', 'admin']
+            $GLOBALS['auth_tier']       = $manager['tier'];  // 'free' | 'pro' (TierTrait) — getrennt von den Rollen
 
             // Switch to the league DB from JWT (null = no active league). The token outlives the membership
             // (rolling refresh), so check it live — a manager removed from a league must not keep acting in it.
@@ -116,14 +118,17 @@ class Guard
             // Refresh token if less than 3 days remaining (rolling window), OR immediately if
             // the manager's role changed since this token was issued (e.g. just promoted/demoted
             // by an admin) — keeps the frontend's cached JWT payload (nav visibility, isAdmin()
-            // etc.) in sync on the very next request instead of requiring a logout/login.
+            // etc.) in sync on the very next request instead of requiring a logout/login. Same for the tier
+            // (Pro switched on/off by an admin), so Pro features show up without a new login.
             $rolesChanged = ($decoded->roles ?? []) !== $manager['roles'];
-            if ($rolesChanged || ($decoded->exp - time()) < 60 * 60 * 24 * 3) {
+            $tierChanged  = ($decoded->tier ?? 'free') !== $manager['tier'];
+            if ($rolesChanged || $tierChanged || ($decoded->exp - time()) < 60 * 60 * 24 * 3) {
                 $now      = time();
                 $newToken = JWT::encode([
                     'sub'          => $manager['id'],
                     'manager_name' => $manager['manager_name'],
                     'roles'        => $manager['roles'],
+                    'tier'         => $manager['tier'],
                     'status'       => $manager['status'],
                     'league_id'    => $leagueId,
                     'iat'          => $now,
