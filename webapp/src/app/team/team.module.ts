@@ -9,6 +9,7 @@ import { TeamOverviewComponent } from './overview/team-overview.component';
 import { SquadComponent } from './squad/squad.component';
 import { LineupComponent } from './lineup/lineup.component';
 import { FinancesComponent } from './finances/finances.component';
+import { IconModule } from '../shared/icon/icon.module';
 
 const routes: Routes = [
   {
@@ -26,6 +27,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [TeamDetailComponent, TeamOverviewComponent, SquadComponent, LineupComponent, FinancesComponent],
-  imports: [CommonModule, RouterModule.forChild(routes), DragDropModule, StuckDirective, MoonPriceComponent]
+  imports: [CommonModule, RouterModule.forChild(routes), DragDropModule, StuckDirective, MoonPriceComponent, IconModule]
 })
 export class TeamModule {}

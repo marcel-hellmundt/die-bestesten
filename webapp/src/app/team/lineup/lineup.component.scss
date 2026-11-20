@@ -586,6 +586,71 @@ $mobile-nav-height: 64px;
   }
 }
 
+// Pro: Form-Summe der Elf + Magic-Button — Desktop ganz oben in der Sidebar, mobil rechts in der oberen Zeile
+.desktop-magic {
+  @media (max-width: $mobile-breakpoint) { display: none; }
+}
+
+.mobile-magic {
+  margin-left: auto;
+}
+
+.magic-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-3;
+
+  &__sum {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+  }
+
+  &__label {
+    font-size: 10px;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+  }
+
+  &__value {
+    font-size: $font-sm;
+    font-weight: $font-weight-bold;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// quadratischer Zauberstab-Button (1:1)
+.magic-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: $radius-md;
+  background: $color-accent;
+  color: #fff; // Farbe auf Akzent
+  cursor: pointer;
+  transition: background $transition-fast, opacity $transition-fast;
+
+  &:hover:not(:disabled) { background: $color-accent-hover; }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  app-icon { display: flex; }
+
+  @media (max-width: $mobile-breakpoint) { width: 36px; }
+}
+
 .mobile-points {
   display: none;
 

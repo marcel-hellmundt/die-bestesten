@@ -349,6 +349,60 @@ export class LineupComponent {
     return Math.round(+grade * 10);
   }
 
+  // ── Pro: Form-Summe + "Magic"-Aufstellung ─────────────────────────────────
+  /** Form gibt es nur für Pro (die API liefert form sonst gar nicht) — daran hängen Summe und Magic-Button */
+  hasForm = computed(() => this.lineupPlayers().some(p => p.form != null));
+
+  /** Summe der Form der aufgestellten Spieler */
+  formSum = computed(() => this.nominated().reduce((s, p) => s + (p.form ?? 0), 0));
+
+  /**
+   * Punktebeste Aufstellung nach Form: je erlaubter Formation pro Position die Spieler mit der besten Form (bei
+   * Gleichstand mehr Saisonpunkte), dann die Formation mit der höchsten Summe. null, wenn der Kader für keine
+   * Formation reicht.
+   */
+  bestFormLineup = computed(() => {
+    const byPos: Record<string, LineupPlayer[]> = { GOALKEEPER: [], DEFENDER: [], MIDFIELDER: [], FORWARD: [] };
+    for (const p of this.lineupPlayers()) byPos[p.position]?.push(p);
+    for (const list of Object.values(byPos)) {
+      list.sort((a, b) => (b.form ?? 0) - (a.form ?? 0) || (b.season_points ?? 0) - (a.season_points ?? 0));
+    }
+    const positions = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+    let best: { players: LineupPlayer[]; sum: number } | null = null;
+    for (const f of this.validFormations) {
+      if (positions.some((pos, i) => byPos[pos].length < f[i])) continue;
+      const players = positions.flatMap((pos, i) => byPos[pos].slice(0, f[i]));
+      const sum = players.reduce((s, p) => s + (p.form ?? 0), 0);
+      if (!best || sum > best.sum + 1e-9) best = { players, sum };
+    }
+    return best;
+  });
+
+  /** Steht die beste Aufstellung schon? (dann ist der Button ohne Wirkung) */
+  isBestLineup = computed(() => {
+    const best = this.bestFormLineup();
+    return !!best && this.nominated().length === 11 && Math.abs(best.sum - this.formSum()) < 1e-9;
+  });
+
+  /** Magic-Button: stellt die punktebeste Aufstellung nach Form auf und speichert sie */
+  applyBestLineup(): void {
+    const best = this.bestFormLineup();
+    if (!best || !this.canEdit()) return;
+    // Reihenfolge innerhalb der Position = Form absteigend (best.players ist je Position schon so sortiert)
+    const index = new Map<string, number>();
+    const perPos: Record<string, number> = {};
+    for (const p of best.players) {
+      index.set(p.id, perPos[p.position] ?? 0);
+      perPos[p.position] = (perPos[p.position] ?? 0) + 1;
+    }
+    this.lineupPlayers.update(ps => ps.map(p => ({
+      ...p,
+      nominated: index.has(p.id),
+      position_index: index.get(p.id) ?? null,
+    })));
+    this.saveLineup();
+  }
+
   /** Pro-Feature Form: Tooltip mit den einzelnen Spieltagen (jüngster zuerst) und der Gewichtung */
   formTitle(p: LineupPlayer): string {
     const days = (p.form_points ?? []).map(f => `ST ${f.number}: ${f.points}`).join(' · ');

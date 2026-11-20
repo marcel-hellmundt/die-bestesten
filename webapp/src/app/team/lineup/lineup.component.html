@@ -39,6 +39,12 @@
             <div class="mobile-formation__box" [class.mobile-formation__box--valid]="isFormationValid()">{{ formationLabel(formation()) }}</div>
           }
         </div>
+
+        @if (hasForm()) {
+          <div class="mobile-magic">
+            <ng-container *ngTemplateOutlet="magicBar"></ng-container>
+          </div>
+        }
       </div>
 
       @if (points() != null && showBreakdown()) {
@@ -219,6 +225,13 @@
     <!-- SIDEBAR -->
     <div class="lineup-sidebar">
 
+      <!-- Pro: Form-Summe der Elf + Magic-Button (Desktop ganz oben, mobil in der oberen Zeile) -->
+      @if (hasForm()) {
+        <div class="desktop-magic">
+          <ng-container *ngTemplateOutlet="magicBar"></ng-container>
+        </div>
+      }
+
       @if (countdown()) {
         <div class="kickoff-countdown desktop-countdown">
           <span class="countdown__time">{{ countdown() }}</span>
@@ -286,6 +299,25 @@
        own class (not scoped via a .mobile-bench ancestor selector) because CDK clones this
        element into a global drag preview outside any local DOM ancestry — an ancestor-scoped
        class would silently stop applying to the preview and fall back to the full card look. -->
+  <!-- Pro: Summe der Form der aufgestellten Elf + Magic-Button (punktebeste Aufstellung nach Form) -->
+  <ng-template #magicBar>
+    <div class="magic-bar">
+      <div class="magic-bar__sum" title="Summe der Form (gewichteter Ø der letzten 5 Spieltage) der aufgestellten Spieler">
+        <span class="magic-bar__label">Form der Elf</span>
+        <span class="magic-bar__value">Ø {{ formSum() | number:'1.1-1' }}</span>
+      </div>
+      @if (canEdit()) {
+        <button type="button" class="magic-btn"
+                [disabled]="!bestFormLineup() || isBestLineup() || saving()"
+                [title]="isBestLineup() ? 'Steht schon: die punktebeste Aufstellung nach Form'
+                  : 'Punktebeste Aufstellung nach Form aufstellen (Ø ' + ((bestFormLineup()?.sum ?? 0) | number:'1.1-1') + ')'"
+                (click)="applyBestLineup()">
+          <app-icon name="wand" />
+        </button>
+      }
+    </div>
+  </ng-template>
+
   <ng-template #benchList let-compact="compact">
     @for (p of bench(); track p.id) {
       <a class="bench-player"
