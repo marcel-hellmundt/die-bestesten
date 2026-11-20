@@ -650,3 +650,98 @@ CREATE TABLE IF NOT EXISTS rating_presence (
     INDEX idx_rating_presence_club (matchday_id, club_id, seen_at),
     FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+-- ── 2026-10-23_lukaten_price_level.sql  (2026-11-20) ────────────────────────────────────────────────
+
+-- Migration: Preisstufen der Sticker-Packs nach der Menge der Lukaten im Umlauf
+-- Ziel: GLOBALE DB (eine gemeinsame für dev + prod). Einmal ausführen.
+--
+-- Rein additiv: eine neue Tabelle, die der Code auf main nicht kennt. Ohne sie rechnet der neue Code die Stufe bei
+-- jedem Abruf direkt aus dem 14-Tage-Mittel (ohne "höchstens eine Stufe pro Woche" und ohne Abstand beim Absenken).
+--
+-- lukaten_price_level: je Woche (ab Montag) die geltende Preisstufe der Lukaten-Packs. Angelegt beim ersten Abruf
+-- der Woche aus dem Mittel der Lukaten im Umlauf über die 14 Tage davor (LukatenAccountTrait::getLukatenPriceLevel());
+-- danach fest, damit sich die Preise unter der Woche nicht ändern.
+
+CREATE TABLE IF NOT EXISTS lukaten_price_level (
+    week_start      DATE          NOT NULL PRIMARY KEY,  -- Montag der Woche
+    level           TINYINT       NOT NULL,              -- Index in lukatenAccountConfig()['price_levels'], 0 = Grundpreise
+    factor          DECIMAL(4,2)  NOT NULL,              -- Faktor auf die Grundpreise, wie er in dieser Woche galt
+    avg_circulation DECIMAL(12,2) NULL,                  -- Mittel der Lukaten im Umlauf über die 14 Tage vor week_start
+    created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+-- ── 2026-10-27_slot_spin.sql  (2026-11-20) ──────────────────────────────────────────────────────────
+
+-- Migration: Spielhalle — einarmiger Bandit (SlotTrait)
+-- Ziel: GLOBALE DB (eine gemeinsame für dev + prod). Einmal ausführen.
+--
+-- Rein additiv: eine neue Tabelle, die der Code auf main nicht kennt. Ohne sie meldet GET /slot ready=false und
+-- POST /slot/spin 409.
+--
+-- slot_spin: je Dreh eine Zeile (Verlauf + Bilanz auf /spielo). Gebucht wird der Dreh zusätzlich im Kontobuch
+-- (lukaten_transaction, source 'slot', Schlüssel slot:{id}, Betrag = Gewinn − Einsatz).
+
+CREATE TABLE IF NOT EXISTS slot_spin (
+    id         CHAR(36)    NOT NULL PRIMARY KEY DEFAULT (UUID()),
+    manager_id CHAR(36)    NOT NULL,
+    stake      TINYINT     NOT NULL,           -- Einsatz in Lukaten (1–3)
+    stops      VARCHAR(20) NOT NULL,           -- gewürfelter Stopp je Walze, z.B. '3|17|9' (Walzen in SlotTrait::slotConfig())
+    win_key    VARCHAR(20) NULL,               -- Gewinnzeile der Gewinntabelle, NULL = kein Gewinn
+    payout     INT         NOT NULL DEFAULT 0, -- ausgezahlte Lukaten (0 ohne Gewinn)
+    created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES manager(id) ON DELETE CASCADE,
+    KEY idx_slot_spin_manager (manager_id, created_at)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+
+-- ── 2026-11-02_player_price_moon.sql  (2026-11-20) ──────────────────────────────────────────────────
+
+-- Migration: Mondpreis — Platzhalter-Marktwerte auf NULL setzen
+-- Ziel: GLOBALE DB (eine gemeinsame für dev + prod). Einmal ausführen.
+--
+-- ERST NACH DEM DEPLOY AUF main AUSFÜHREN. Bis dahin behandelt der Code auf main ein NULL in
+-- player_in_season.price an mehreren Stellen als 0 € (z.B. POST /buy) — der Spieler wäre sonst für 0 € kaufbar.
+-- Der neue Code (Branch player-without-price) lehnt Kauf/Gebot bei NULL ab und zeigt einen Mond an (hell 🌕, dunkel 🌑).
+--
+-- Hintergrund: Spieler ohne Marktwert des Datenanbieters (CSV: 999.000.000) bzw. per Notfall-Anlage
+-- (POST /player/create_manual: 99.000.000) bekamen bisher einen unrealistischen Platzhalter-Preis.
+-- NULL = "noch kein Marktwert" (Mondpreis): nicht kaufbar, wird aber bewertet. Die Spalte erlaubt NULL bereits
+-- (price DECIMAL(10,2) DEFAULT NULL) — reine Datenbereinigung, keine Schemaänderung.
+
+-- 1) prüfen: welche Saison-Zeilen haben einen Platzhalter (über der Plausibilitätsgrenze 50 Mio.)?
+SELECT pis.id, p.displayname, s.start_date AS season_start, d.name AS division, pis.position, pis.price
+FROM player_in_season pis
+JOIN player p   ON p.id = pis.player_id
+JOIN season s   ON s.id = pis.season_id
+JOIN division d ON d.id = pis.division_id
+WHERE pis.price > 50000000
+ORDER BY s.start_date DESC, p.displayname;
+
+-- 2) bereinigen
+UPDATE player_in_season SET price = NULL WHERE price > 50000000;
+
+
+-- ── 2026-11-04_auth_attempt.sql  (2026-11-20) ───────────────────────────────────────────────────────
+
+-- Migration: Request-Limit für Login und Passwort-Reset
+-- Ziel: GLOBALE DB (eine gemeinsame für dev + prod). Einmal ausführen.
+--
+-- Rein additiv: eine neue Tabelle — der Code auf main kennt sie nicht und läuft unverändert weiter. Ohne diese
+-- Migration gibt es kein Limit, Login und Passwort-Reset funktionieren wie bisher (AuthAttemptTrait).
+--
+-- auth_attempt: je fehlgeschlagenem Login und je Anfrage eines Reset-Links eine Zeile. Zu viele davon in kurzer Zeit
+-- (je Name/E-Mail bzw. je IP) sperren weitere Versuche vorübergehend. Ein erfolgreicher Login löscht die
+-- Fehlversuche seines Namens; Zeilen älter als ein Tag räumt der Code beim Schreiben selbst weg.
+
+CREATE TABLE IF NOT EXISTS auth_attempt (
+    id         BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    kind       VARCHAR(10)  NOT NULL,  -- login (fehlgeschlagener Login) | reset (Reset-Link angefordert)
+    identifier VARCHAR(255) NOT NULL,  -- eingegebener Name bzw. E-Mail, klein geschrieben
+    ip         VARCHAR(45)  NOT NULL,
+    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_auth_attempt_identifier (kind, identifier, created_at),
+    INDEX idx_auth_attempt_ip (kind, ip, created_at)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
