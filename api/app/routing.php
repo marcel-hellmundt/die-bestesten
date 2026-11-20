@@ -914,9 +914,16 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team/:id',
-                        'description' => 'Ein Team per ID — enthält manager_name, alias, total_points, matchdays_played. Mit ?include_ratings=1 zusätzlich alle team_ratings sortiert nach matchday_number, je Spieltag inkl. sds_players:[{player_id,displayname,position,photo_season_id,grade,points,goals,assists,clean_sheet}] (aufgestellte Spieler dieses Teams mit SdS; photo_season_id null ohne Foto)',
+                        'description' => 'Ein Team per ID — enthält manager_name, alias, total_points, matchdays_played. Mit ?include_ratings=1 zusätzlich alle team_ratings sortiert nach matchday_number',
                         'path_params' => [':id' => 'UUID des Teams'],
                         'query_params' => ['include_ratings' => '1 → ratings[] anhängen'],
+                    ],
+                    [
+                        'method' => 'GET',
+                        'path' => '/team/:id/highlights',
+                        'description' => 'Spieler hinter den Icons eines Spieltags auf der Team-Übersicht (Tooltips über SdS, Toren, Vorlagen, Weißer Weste, Karten — die Webapp lädt sie erst beim Hover und merkt sie sich je Spieltag) → [{player_id,displayname,position,photo_season_id,grade,points,sds,goals,assists,clean_sheet,red_card,yellow_red_card}] — aufgestellte Spieler dieses Teams (team_lineup nominated=1) mit SdS, Tor, Vorlage, Weißer Weste oder Karte an dem Spieltag, nach Punkten absteigend; photo_season_id = Saison des Fotos (null ohne Foto); 400 ohne matchday_id, 404 Team unbekannt — Auth',
+                        'path_params' => [':id' => 'UUID des Teams'],
+                        'query_params' => ['matchday_id' => 'UUID des Spieltags (erforderlich)'],
                     ],
                     [
                         'method' => 'POST',

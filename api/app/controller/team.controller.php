@@ -66,6 +66,16 @@ class TeamController extends _BaseController
             return ['status' => false, 'message' => 'Team not found'];
         }
 
+        // GET /team/:id/highlights?matchday_id= — Spieler hinter den Icons eines Spieltags (Tooltip, erst beim Hover geladen)
+        if ($this->sub === 'highlights') {
+            $matchdayId = $this->params['matchday_id'] ?? null;
+            if (!$matchdayId) {
+                http_response_code(400);
+                return ['status' => false, 'message' => 'matchday_id required'];
+            }
+            return $this->db->getTeamHighlightPlayers($this->id, $matchdayId);
+        }
+
         if (isset($this->params['include_ratings'])) {
             $team['ratings'] = $this->db->getTeamRatings($this->id);
         }

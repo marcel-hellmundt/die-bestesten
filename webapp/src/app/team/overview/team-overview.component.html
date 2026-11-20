@@ -33,32 +33,38 @@
             <tr [class.row--invalid]="r.invalid" [class.row--first]="r.placement === 1">
               <td class="col-st"><a routerLink="/liga/spieltag" [queryParams]="{season_id: seasonId(), number: r.matchday_number}" class="matchday-link">{{ r.matchday_number }}</a></td>
               <td class="col-rank">{{ r.placement ?? '–' }}</td>
+              <!-- Hover/Tippen auf die Icons: Tooltip mit den Spielern dahinter (statTip, unten am Seitenende) -->
               <td class="col-icons">
-                <!-- Hover/Tippen: Tooltip mit den Spielern hinter den SdS (sdsTip, unten am Seitenende) -->
-                <span class="icons-wrap" [class.icons-wrap--hoverable]="r.sds_players?.length"
-                      (pointerenter)="hoverSdsTip($event, r)" (pointerleave)="hoverSdsTip($event, null)"
-                      (click)="toggleSdsTip($event, r)">
+                <span class="icons-wrap" [class.icons-wrap--hoverable]="hasStat(r, 'sds')"
+                      (pointerenter)="hoverTip($event, r, 'sds')" (pointerleave)="hoverTip($event, null, 'sds')"
+                      (click)="toggleTip($event, r, 'sds')">
                   @for (i of range(+r.sds); track i) {
                     <img src="/img/icons/sds.png" class="rating-icon" alt="SdS" />
                   }
                 </span>
               </td>
               <td class="col-icons hidden-mobile">
-                <span class="icons-wrap">
+                <span class="icons-wrap" [class.icons-wrap--hoverable]="hasStat(r, 'goals')"
+                      (pointerenter)="hoverTip($event, r, 'goals')" (pointerleave)="hoverTip($event, null, 'goals')"
+                      (click)="toggleTip($event, r, 'goals')">
                   @for (g of range(+r.goals); track g) {
                     <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" />
                   }
                 </span>
               </td>
               <td class="col-icons hidden-mobile">
-                <span class="icons-wrap">
+                <span class="icons-wrap" [class.icons-wrap--hoverable]="hasStat(r, 'assists')"
+                      (pointerenter)="hoverTip($event, r, 'assists')" (pointerleave)="hoverTip($event, null, 'assists')"
+                      (click)="toggleTip($event, r, 'assists')">
                   @for (a of range(+r.assists); track a) {
                     <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" />
                   }
                 </span>
               </td>
               <td class="col-icons-mobile">
-                <span class="icons-wrap">
+                <span class="icons-wrap" [class.icons-wrap--hoverable]="hasStat(r, 'goals_assists')"
+                      (pointerenter)="hoverTip($event, r, 'goals_assists')" (pointerleave)="hoverTip($event, null, 'goals_assists')"
+                      (click)="toggleTip($event, r, 'goals_assists')">
                   @for (g of range(+r.goals); track g) {
                     <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" />
                   }
@@ -67,9 +73,21 @@
                   }
                 </span>
               </td>
-              <td class="col-cs">@if (+r.clean_sheet) { ✓ }</td>
-              <td class="col-rc col-rc--yr">@if (+r.yellow_red_cards) { {{ r.yellow_red_cards }} }</td>
-              <td class="col-rc col-rc--red">@if (+r.red_cards) { {{ r.red_cards }} }</td>
+              <td class="col-cs">
+                <span class="icons-wrap" [class.icons-wrap--hoverable]="hasStat(r, 'clean_sheet')"
+                      (pointerenter)="hoverTip($event, r, 'clean_sheet')" (pointerleave)="hoverTip($event, null, 'clean_sheet')"
+                      (click)="toggleTip($event, r, 'clean_sheet')">@if (+r.clean_sheet) { ✓ }</span>
+              </td>
+              <td class="col-rc col-rc--yr">
+                <span class="icons-wrap" [class.icons-wrap--hoverable]="hasStat(r, 'yellow_red')"
+                      (pointerenter)="hoverTip($event, r, 'yellow_red')" (pointerleave)="hoverTip($event, null, 'yellow_red')"
+                      (click)="toggleTip($event, r, 'yellow_red')">@if (+r.yellow_red_cards) { {{ r.yellow_red_cards }} }</span>
+              </td>
+              <td class="col-rc col-rc--red">
+                <span class="icons-wrap" [class.icons-wrap--hoverable]="hasStat(r, 'red')"
+                      (pointerenter)="hoverTip($event, r, 'red')" (pointerleave)="hoverTip($event, null, 'red')"
+                      (click)="toggleTip($event, r, 'red')">@if (+r.red_cards) { {{ r.red_cards }} }</span>
+              </td>
               <td class="col-points">{{ r.points }}</td>
               @if (cache.finesEnabled()) {
                 <td class="col-fine" [class.col-fine--active]="r.fine > 0">
@@ -259,34 +277,43 @@
   </div>
   </div>
 
-  <!-- SdS-Tooltip: fest am Fenster positioniert, damit ihn die (mobil scrollbare) Tabelle nicht abschneidet -->
-  @if (sdsTip(); as t) {
-    <div class="sds-tip" [style.left.px]="t.left" [style.top.px]="t.top" [class.sds-tip--below]="t.below">
-      <span class="chart-tip__title">Spieler des Spieltags · Spieltag {{ t.rating.matchday_number }}</span>
-      @for (p of t.rating.sds_players; track p.player_id) {
-        <div class="sds-tip__player">
-          @if (playerPhotoUrl(p); as url) {
-            <img class="sds-tip__photo" [src]="url" alt="" />
-          } @else {
-            <img class="sds-tip__photo sds-tip__photo--placeholder" src="img/placeholders/player.png" alt="" />
+  <!-- Spieler-Tooltip: fest am Fenster positioniert, damit ihn die (mobil scrollbare) Tabelle nicht abschneidet -->
+  @if (statTip(); as t) {
+    <div class="stat-tip" [style.left.px]="t.left" [style.top.px]="t.top" [class.stat-tip--below]="t.below">
+      <span class="chart-tip__title">{{ tipTitle[t.kind] }} · Spieltag {{ t.rating.matchday_number }}</span>
+      @switch (tipState(t.rating)) {
+        @case ('loading') { <span class="chart-tip__muted">Lädt…</span> }
+        @case ('error') { <span class="chart-tip__warn">Konnte nicht geladen werden</span> }
+        @default {
+          @for (p of tipPlayers(t.rating, t.kind); track p.player_id) {
+            <div class="stat-tip__player">
+              @if (playerPhotoUrl(p); as url) {
+                <img class="stat-tip__photo" [src]="url" alt="" />
+              } @else {
+                <img class="stat-tip__photo stat-tip__photo--placeholder" src="img/placeholders/player.png" alt="" />
+              }
+              <div class="stat-tip__info">
+                <span class="stat-tip__name">
+                  {{ p.displayname }}
+                  @if (p.position) { <span class="stat-tip__pos">{{ positionLabel[p.position] }}</span> }
+                </span>
+                <span class="stat-tip__line">
+                  Note <b>{{ p.grade != null ? (p.grade | number:'1.1-1') : '–' }}</b> · <b>{{ p.points }}</b> Pkt.
+                </span>
+                <span class="stat-tip__stats">
+                  @if (p.sds) { <img src="/img/icons/sds.png" class="rating-icon" alt="SdS" /> }
+                  @for (g of range(p.goals); track g) { <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" /> }
+                  @for (a of range(p.assists); track a) { <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" /> }
+                  @if (p.clean_sheet) { <img src="/img/icons/clean_sheet.png" class="rating-icon" alt="Zu Null" /> }
+                  @if (p.yellow_red_card) { <span class="card-icon card-icon--yr card-icon--on" title="Gelb-Rote Karte"></span> }
+                  @if (p.red_card) { <span class="card-icon card-icon--red card-icon--on" title="Rote Karte"></span> }
+                </span>
+              </div>
+            </div>
+          } @empty {
+            <span class="chart-tip__muted">Keine Angaben</span>
           }
-          <div class="sds-tip__info">
-            <span class="sds-tip__name">
-              {{ p.displayname }}
-              @if (p.position) { <span class="sds-tip__pos">{{ positionLabel[p.position] }}</span> }
-            </span>
-            <span class="sds-tip__line">
-              Note <b>{{ p.grade != null ? (p.grade | number:'1.1-1') : '–' }}</b> · <b>{{ p.points }}</b> Pkt.
-            </span>
-            @if (p.goals || p.assists || p.clean_sheet) {
-              <span class="sds-tip__stats">
-                @for (g of range(p.goals); track g) { <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" /> }
-                @for (a of range(p.assists); track a) { <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" /> }
-                @if (p.clean_sheet) { <img src="/img/icons/clean_sheet.png" class="rating-icon" alt="Zu Null" /> }
-              </span>
-            }
-          </div>
-        </div>
+        }
       }
     </div>
   }

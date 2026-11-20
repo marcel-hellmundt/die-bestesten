@@ -1112,64 +1112,56 @@ trait ManagerTrait
         }
         unset($r);
 
-        $this->attachSdsPlayers($ratings, $teamId);
-
         return $ratings;
     }
 
     /**
-     * Je Spieltag mit SdS die Spieler dahinter (Tooltip über den SdS-Icons der Team-Seite): aufgestellte Spieler dieses
-     * Teams (team_lineup nominated=1) mit player_rating.sds = 1 an dem Spieltag → $r['sds_players'] =
-     * [{player_id, displayname, position, photo_season_id, grade, points, goals, assists, clean_sheet}];
-     * photo_season_id = Saison des Fotos (null ohne Foto). Spieltage ohne SdS bekommen [].
+     * GET /team/:id/highlights — die Spieler hinter den Icons eines Spieltags auf der Team-Übersicht (Tooltips über
+     * SdS, Toren, Vorlagen, Weißer Weste, Karten; die Webapp lädt sie erst beim Hover): aufgestellte Spieler dieses
+     * Teams (team_lineup nominated=1) mit SdS, Tor, Vorlage, Weißer Weste oder Karte an dem Spieltag →
+     * [{player_id, displayname, position, photo_season_id, grade, points, sds, goals, assists, clean_sheet, red_card,
+     * yellow_red_card}], nach Punkten absteigend; die Webapp filtert je Spalte. photo_season_id = Saison des Fotos
+     * (null ohne Foto).
      */
-    private function attachSdsPlayers(array &$ratings, string $teamId): void
+    public function getTeamHighlightPlayers(string $teamId, string $matchdayId): array
     {
-        foreach ($ratings as &$r) $r['sds_players'] = [];
-        unset($r);
-
-        $mdIds = array_values(array_unique(array_column(array_filter($ratings, fn($r) => (int) $r['sds'] > 0), 'matchday_id')));
-        if (!$mdIds) return;
-
-        $in = implode(',', array_fill(0, count($mdIds), '?'));
         $lq = $this->con_league->prepare(
-            "SELECT matchday_id, player_id FROM team_lineup WHERE team_id = ? AND nominated = 1 AND matchday_id IN ($in)"
+            "SELECT player_id FROM team_lineup WHERE team_id = ? AND matchday_id = ? AND nominated = 1"
         );
-        $lq->execute([$teamId, ...$mdIds]);
-        $nominated = [];
-        foreach ($lq->fetchAll(PDO::FETCH_ASSOC) as $l) $nominated[$l['matchday_id'] . '|' . $l['player_id']] = true;
-        if (!$nominated) return;
+        $lq->execute([$teamId, $matchdayId]);
+        $nominated = $lq->fetchAll(PDO::FETCH_COLUMN);
+        if (!$nominated) return [];
 
         // Position und Foto aus der Saison-Zeile der Division, in der der Spieltag gespielt wurde
+        $in = implode(',', array_fill(0, count($nominated), '?'));
         $pq = $this->con->prepare(
-            "SELECT pr.matchday_id, pr.player_id, p.displayname, pr.grade, pr.points, pr.goals, pr.assists, pr.clean_sheet,
+            "SELECT pr.player_id, p.displayname, pr.grade, pr.points, pr.sds, pr.goals, pr.assists,
+                    pr.clean_sheet, pr.red_card, pr.yellow_red_card,
                     pis.position, IF(pis.photo_uploaded = 1, m.season_id, NULL) AS photo_season_id
              FROM player_rating pr
              JOIN player p   ON p.id = pr.player_id
              JOIN matchday m ON m.id = pr.matchday_id
              LEFT JOIN player_in_season pis
                     ON pis.player_id = pr.player_id AND pis.season_id = m.season_id AND pis.division_id = m.division_id
-             WHERE pr.sds = 1 AND pr.matchday_id IN ($in)"
+             WHERE pr.matchday_id = ? AND pr.player_id IN ($in)
+               AND (pr.sds = 1 OR pr.goals > 0 OR pr.assists > 0 OR pr.clean_sheet = 1 OR pr.red_card = 1 OR pr.yellow_red_card = 1)
+             ORDER BY pr.points DESC"
         );
-        $pq->execute($mdIds);
-        $byMatchday = [];
-        foreach ($pq->fetchAll(PDO::FETCH_ASSOC) as $p) {
-            if (!isset($nominated[$p['matchday_id'] . '|' . $p['player_id']])) continue;
-            $byMatchday[$p['matchday_id']][] = [
-                'player_id'       => $p['player_id'],
-                'displayname'     => $p['displayname'],
-                'position'        => $p['position'],
-                'photo_season_id' => $p['photo_season_id'],
-                'grade'           => $p['grade'] !== null ? (float) $p['grade'] : null,
-                'points'          => (int) $p['points'],
-                'goals'           => (int) $p['goals'],
-                'assists'         => (int) $p['assists'],
-                'clean_sheet'     => (bool) $p['clean_sheet'],
-            ];
-        }
-
-        foreach ($ratings as &$r) $r['sds_players'] = $byMatchday[$r['matchday_id']] ?? [];
-        unset($r);
+        $pq->execute([$matchdayId, ...$nominated]);
+        return array_map(fn($p) => [
+            'player_id'       => $p['player_id'],
+            'displayname'     => $p['displayname'],
+            'position'        => $p['position'],
+            'photo_season_id' => $p['photo_season_id'],
+            'grade'           => $p['grade'] !== null ? (float) $p['grade'] : null,
+            'points'          => (int) $p['points'],
+            'sds'             => (bool) $p['sds'],
+            'goals'           => (int) $p['goals'],
+            'assists'         => (int) $p['assists'],
+            'clean_sheet'     => (bool) $p['clean_sheet'],
+            'red_card'        => (bool) $p['red_card'],
+            'yellow_red_card' => (bool) $p['yellow_red_card'],
+        ], $pq->fetchAll(PDO::FETCH_ASSOC));
     }
 
     public function updateManagerPassword(string $id, string $hashedPassword): bool

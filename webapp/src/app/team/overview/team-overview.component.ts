@@ -6,6 +6,9 @@ import { ApiService } from '../../core/api.service';
 import { DataCacheService } from '../../core/data-cache.service';
 import { environment } from '../../../environments/environment';
 
+/** Spalte der Spieltags-Tabelle, über deren Icons der Spieler-Tooltip aufgeht */
+type StatKind = 'sds' | 'goals' | 'assists' | 'goals_assists' | 'clean_sheet' | 'yellow_red' | 'red';
+
 @Component({
   selector: 'app-team-overview',
   standalone: false,
@@ -261,41 +264,96 @@ export class TeamOverviewComponent {
 
   hideTip(): void { this.tip.set(null); }
 
-  // ── SdS-Tooltip (Tabelle) ─────────────────────────────────────────────────
-  // Fest am Fenster positioniert (position: fixed), da die Tabelle mobil waagerecht scrollt und einen
-  // absolut positionierten Tooltip abschneiden würde. Desktop: Hover, mobil: Antippen (Tipp daneben/Scrollen schließt).
-  sdsTip = signal<{ rating: any; left: number; top: number; below: boolean } | null>(null);
+  // ── Spieler-Tooltip (Tabelle) ─────────────────────────────────────────────
+  // Hover/Tippen auf die Icons einer Spalte (SdS, Tore, Vorlagen, Weiße Weste, Karten) zeigt die Spieler dahinter.
+  // Geladen erst beim ersten Hover über einen Spieltag (GET /team/:id/highlights) und je Spieltag gemerkt — eine
+  // Abfrage liefert die Spieler aller Spalten der Zeile. Fest am Fenster positioniert (position: fixed), da die
+  // Tabelle mobil waagerecht scrollt und einen absolut positionierten Tooltip abschneiden würde.
+  // Desktop: Hover, mobil: Antippen (Tipp daneben/Scrollen schließt).
+  statTip = signal<{ rating: any; kind: StatKind; left: number; top: number; below: boolean } | null>(null);
+
+  /** Spieler je Spieltag (matchday_id): Liste, 'loading' oder 'error' */
+  private highlights = signal<Record<string, any[] | 'loading' | 'error'>>({});
 
   readonly positionLabel: Record<string, string> = { GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU' };
 
-  showSdsTip(event: Event, rating: any): void {
-    if (!rating.sds_players?.length) return;
-    const rect   = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    const half   = 130; // halbe Tooltip-Breite — bleibt seitlich im Fenster
-    const left   = Math.min(Math.max(rect.left + rect.width / 2, half + 8), window.innerWidth - half - 8);
-    const below  = rect.top < 60 + rating.sds_players.length * 56; // oben zu wenig Platz → unter der Zelle
-    this.sdsTip.set({ rating, left, top: below ? rect.bottom : rect.top, below });
+  readonly tipTitle: Record<StatKind, string> = {
+    sds: 'Spieler des Spieltags', goals: 'Tore', assists: 'Vorlagen', goals_assists: 'Tore und Vorlagen',
+    clean_sheet: 'Weiße Weste', yellow_red: 'Gelb-Rote Karten', red: 'Rote Karten',
+  };
+
+  /** Hat die Zeile in dieser Spalte überhaupt etwas (dann lässt sich der Tooltip öffnen)? */
+  hasStat(r: any, kind: StatKind): boolean {
+    switch (kind) {
+      case 'sds':           return +r.sds > 0;
+      case 'goals':         return +r.goals > 0;
+      case 'assists':       return +r.assists > 0;
+      case 'goals_assists': return +r.goals > 0 || +r.assists > 0;
+      case 'clean_sheet':   return +r.clean_sheet > 0;
+      case 'yellow_red':    return +r.yellow_red_cards > 0;
+      case 'red':           return +r.red_cards > 0;
+    }
   }
 
-  hideSdsTip(): void { this.sdsTip.set(null); }
+  tipState(r: any): any[] | 'loading' | 'error' { return this.highlights()[r.matchday_id] ?? 'loading'; }
+
+  tipPlayers(r: any, kind: StatKind): any[] {
+    const list = this.tipState(r);
+    if (!Array.isArray(list)) return [];
+    return list.filter(p => {
+      switch (kind) {
+        case 'sds':           return p.sds;
+        case 'goals':         return p.goals > 0;
+        case 'assists':       return p.assists > 0;
+        case 'goals_assists': return p.goals > 0 || p.assists > 0;
+        case 'clean_sheet':   return p.clean_sheet;
+        case 'yellow_red':    return p.yellow_red_card;
+        case 'red':           return p.red_card;
+      }
+    });
+  }
+
+  private loadHighlights(r: any): void {
+    const id = r.matchday_id, teamId = this.teamId();
+    const cached = this.highlights()[id];
+    if (!teamId || (cached && cached !== 'error')) return;
+    this.highlights.update(h => ({ ...h, [id]: 'loading' }));
+    this.api.get<any[]>(`team/${teamId}/highlights?matchday_id=${id}`).subscribe({
+      next: list => this.highlights.update(h => ({ ...h, [id]: list ?? [] })),
+      error: () => this.highlights.update(h => ({ ...h, [id]: 'error' })),
+    });
+  }
+
+  private showStatTip(event: Event, rating: any, kind: StatKind): void {
+    if (!this.hasStat(rating, kind)) return;
+    this.loadHighlights(rating);
+    const rect  = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const half  = 130; // halbe Tooltip-Breite — bleibt seitlich im Fenster
+    const left  = Math.min(Math.max(rect.left + rect.width / 2, half + 8), window.innerWidth - half - 8);
+    const below = rect.top < 220; // oben zu wenig Platz → unter der Zelle (Höhe steht vor dem Laden noch nicht fest)
+    this.statTip.set({ rating, kind, left, top: below ? rect.bottom : rect.top, below });
+  }
+
+  hideStatTip(): void { this.statTip.set(null); }
 
   /** Nur echte Maus: ein Antippen löst sonst erst ein simuliertes Betreten und gleich danach den Klick aus,
-   *  der Tooltip ginge sofort wieder zu. Touch läuft über toggleSdsTip(). */
-  hoverSdsTip(event: PointerEvent, rating: any | null): void {
+   *  der Tooltip ginge sofort wieder zu. Touch läuft über toggleTip(). */
+  hoverTip(event: PointerEvent, rating: any | null, kind: StatKind): void {
     if (event.pointerType !== 'mouse') return;
-    if (rating) this.showSdsTip(event, rating);
-    else this.hideSdsTip();
+    if (rating) this.showStatTip(event, rating, kind);
+    else this.hideStatTip();
   }
 
-  toggleSdsTip(event: Event, rating: any): void {
+  toggleTip(event: Event, rating: any, kind: StatKind): void {
     event.stopPropagation(); // sonst schließt der Dokument-Klick ihn sofort wieder
-    if (this.sdsTip()?.rating === rating) this.hideSdsTip();
-    else this.showSdsTip(event, rating);
+    const t = this.statTip();
+    if (t && t.rating === rating && t.kind === kind) this.hideStatTip();
+    else this.showStatTip(event, rating, kind);
   }
 
   @HostListener('document:click')
   @HostListener('window:scroll')
-  onOutsideOrScroll(): void { if (this.sdsTip()) this.hideSdsTip(); }
+  onOutsideOrScroll(): void { if (this.statTip()) this.hideStatTip(); }
 
   playerPhotoUrl(p: any): string | null {
     return p.photo_season_id ? `${environment.imageApiUrl}/player/${p.photo_season_id}/${p.player_id}.png` : null;

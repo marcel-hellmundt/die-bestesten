@@ -419,12 +419,12 @@
   gap: 2px;
   align-items: center;
 
-  // SdS mit Spielern dahinter: Tooltip per Hover/Tippen
+  // Icons mit Spielern dahinter: Tooltip per Hover/Tippen
   &--hoverable { cursor: pointer; }
 }
 
-// Tooltip der SdS-Spieler — gleiche Optik wie .chart-tip, aber fest am Fenster (siehe showSdsTip())
-.sds-tip {
+// Spieler-Tooltip der Tabelle — gleiche Optik wie .chart-tip, aber fest am Fenster (siehe showStatTip())
+.stat-tip {
   position: fixed;
   z-index: 50;
   transform: translate(-50%, calc(-100% - 6px));
