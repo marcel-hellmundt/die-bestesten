@@ -726,8 +726,12 @@ $mobile-nav-height: 64px;
     }
   }
 
-  // Pro: Form unter dem Namen (gewichteter Punkteschnitt der letzten 5 Spieltage)
+  // Pro: Form ganz rechts in der Card (gewichteter Punkteschnitt der letzten 5 Spieltage)
   &__form {
+    flex-shrink: 0;
+    margin-left: auto; // auch ohne __side ganz rechts
+    position: relative;
+    z-index: 1;
     font-size: $font-xs;
     font-weight: $font-weight-semibold;
     font-variant-numeric: tabular-nums;

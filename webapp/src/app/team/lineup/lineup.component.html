@@ -315,10 +315,6 @@
             <span class="bench-player__status" [ngClass]="participationClass(p.participation)">
               {{ participationLabel(p.participation) }}
             </span>
-            <!-- Pro: Form — eigenes Element, da der Status im kompakten Modus ausgeblendet ist -->
-            @if (p.form != null) {
-              <span class="bench-player__form" [class.bench-player__form--neg]="p.form < 0" [title]="formTitle(p)">Ø {{ p.form | number:'1.1-1' }}</span>
-            }
           </div>
         </div>
         @if (p.goals || p.assists || p.yellow_red_card || p.red_card || p.grade || p.points != null) {
@@ -349,6 +345,10 @@
               <span class="bench-player__points" [class.bench-player__points--neg]="p.points < 0">{{ p.points }}</span>
             }
           </div>
+        }
+        <!-- Pro: Form ganz rechts, senkrecht mittig (die Card richtet ihre Kinder mittig aus) -->
+        @if (p.form != null) {
+          <span class="bench-player__form" [class.bench-player__form--neg]="p.form < 0" [title]="formTitle(p)">Ø {{ p.form | number:'1.1-1' }}</span>
         }
       </a>
     }
