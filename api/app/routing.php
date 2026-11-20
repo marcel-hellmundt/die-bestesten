@@ -914,7 +914,7 @@ class Routing
                     [
                         'method' => 'GET',
                         'path' => '/team/:id',
-                        'description' => 'Ein Team per ID — enthält manager_name, alias, total_points, matchdays_played. Mit ?include_ratings=1 zusätzlich alle team_ratings sortiert nach matchday_number',
+                        'description' => 'Ein Team per ID — enthält manager_name, alias, total_points, matchdays_played. Mit ?include_ratings=1 zusätzlich alle team_ratings sortiert nach matchday_number, je Spieltag inkl. sds_players:[{player_id,displayname,position,photo_season_id,grade,points,goals,assists,clean_sheet}] (aufgestellte Spieler dieses Teams mit SdS; photo_season_id null ohne Foto)',
                         'path_params' => [':id' => 'UUID des Teams'],
                         'query_params' => ['include_ratings' => '1 → ratings[] anhängen'],
                     ],

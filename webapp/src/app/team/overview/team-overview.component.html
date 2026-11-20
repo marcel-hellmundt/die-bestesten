@@ -34,7 +34,10 @@
               <td class="col-st"><a routerLink="/liga/spieltag" [queryParams]="{season_id: seasonId(), number: r.matchday_number}" class="matchday-link">{{ r.matchday_number }}</a></td>
               <td class="col-rank">{{ r.placement ?? '–' }}</td>
               <td class="col-icons">
-                <span class="icons-wrap">
+                <!-- Hover/Tippen: Tooltip mit den Spielern hinter den SdS (sdsTip, unten am Seitenende) -->
+                <span class="icons-wrap" [class.icons-wrap--hoverable]="r.sds_players?.length"
+                      (pointerenter)="hoverSdsTip($event, r)" (pointerleave)="hoverSdsTip($event, null)"
+                      (click)="toggleSdsTip($event, r)">
                   @for (i of range(+r.sds); track i) {
                     <img src="/img/icons/sds.png" class="rating-icon" alt="SdS" />
                   }
@@ -255,4 +258,36 @@
     }
   </div>
   </div>
+
+  <!-- SdS-Tooltip: fest am Fenster positioniert, damit ihn die (mobil scrollbare) Tabelle nicht abschneidet -->
+  @if (sdsTip(); as t) {
+    <div class="sds-tip" [style.left.px]="t.left" [style.top.px]="t.top" [class.sds-tip--below]="t.below">
+      <span class="chart-tip__title">Spieler des Spieltags · Spieltag {{ t.rating.matchday_number }}</span>
+      @for (p of t.rating.sds_players; track p.player_id) {
+        <div class="sds-tip__player">
+          @if (playerPhotoUrl(p); as url) {
+            <img class="sds-tip__photo" [src]="url" alt="" />
+          } @else {
+            <img class="sds-tip__photo sds-tip__photo--placeholder" src="img/placeholders/player.png" alt="" />
+          }
+          <div class="sds-tip__info">
+            <span class="sds-tip__name">
+              {{ p.displayname }}
+              @if (p.position) { <span class="sds-tip__pos">{{ positionLabel[p.position] }}</span> }
+            </span>
+            <span class="sds-tip__line">
+              Note <b>{{ p.grade != null ? (p.grade | number:'1.1-1') : '–' }}</b> · <b>{{ p.points }}</b> Pkt.
+            </span>
+            @if (p.goals || p.assists || p.clean_sheet) {
+              <span class="sds-tip__stats">
+                @for (g of range(p.goals); track g) { <img src="/img/icons/goal.png" class="rating-icon" alt="Tor" /> }
+                @for (a of range(p.assists); track a) { <img src="/img/icons/assist.png" class="rating-icon" alt="Assist" /> }
+                @if (p.clean_sheet) { <img src="/img/icons/clean_sheet.png" class="rating-icon" alt="Zu Null" /> }
+              </span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
 }

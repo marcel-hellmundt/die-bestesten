@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, distinctUntilChanged, filter, map, of, startWith, switchMap } from 'rxjs';
@@ -260,6 +260,46 @@ export class TeamOverviewComponent {
   }
 
   hideTip(): void { this.tip.set(null); }
+
+  // ── SdS-Tooltip (Tabelle) ─────────────────────────────────────────────────
+  // Fest am Fenster positioniert (position: fixed), da die Tabelle mobil waagerecht scrollt und einen
+  // absolut positionierten Tooltip abschneiden würde. Desktop: Hover, mobil: Antippen (Tipp daneben/Scrollen schließt).
+  sdsTip = signal<{ rating: any; left: number; top: number; below: boolean } | null>(null);
+
+  readonly positionLabel: Record<string, string> = { GOALKEEPER: 'TOR', DEFENDER: 'ABW', MIDFIELDER: 'MIT', FORWARD: 'STU' };
+
+  showSdsTip(event: Event, rating: any): void {
+    if (!rating.sds_players?.length) return;
+    const rect   = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const half   = 130; // halbe Tooltip-Breite — bleibt seitlich im Fenster
+    const left   = Math.min(Math.max(rect.left + rect.width / 2, half + 8), window.innerWidth - half - 8);
+    const below  = rect.top < 60 + rating.sds_players.length * 56; // oben zu wenig Platz → unter der Zelle
+    this.sdsTip.set({ rating, left, top: below ? rect.bottom : rect.top, below });
+  }
+
+  hideSdsTip(): void { this.sdsTip.set(null); }
+
+  /** Nur echte Maus: ein Antippen löst sonst erst ein simuliertes Betreten und gleich danach den Klick aus,
+   *  der Tooltip ginge sofort wieder zu. Touch läuft über toggleSdsTip(). */
+  hoverSdsTip(event: PointerEvent, rating: any | null): void {
+    if (event.pointerType !== 'mouse') return;
+    if (rating) this.showSdsTip(event, rating);
+    else this.hideSdsTip();
+  }
+
+  toggleSdsTip(event: Event, rating: any): void {
+    event.stopPropagation(); // sonst schließt der Dokument-Klick ihn sofort wieder
+    if (this.sdsTip()?.rating === rating) this.hideSdsTip();
+    else this.showSdsTip(event, rating);
+  }
+
+  @HostListener('document:click')
+  @HostListener('window:scroll')
+  onOutsideOrScroll(): void { if (this.sdsTip()) this.hideSdsTip(); }
+
+  playerPhotoUrl(p: any): string | null {
+    return p.photo_season_id ? `${environment.imageApiUrl}/player/${p.photo_season_id}/${p.player_id}.png` : null;
+  }
 
   rankChangeLabel(change: number | null): string {
     if (change == null || change === 0) return '±0';
