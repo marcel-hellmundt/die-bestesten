@@ -16,7 +16,9 @@ trait TierTrait
     {
         return [
             'free' => [],
-            'pro'  => [], // Pro-Features folgen; je Feature ein Schlüssel, z.B. 'advanced_stats'
+            'pro'  => [
+                'lineup_form', // Aufstellung: gewichteter Punkteschnitt der letzten 5 Spieltage je Spieler (GET /team_lineup → form)
+            ],
         ];
     }
 

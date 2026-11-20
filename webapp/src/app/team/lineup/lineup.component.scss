@@ -86,6 +86,7 @@ $mobile-nav-height: 64px;
     min-width: 0;
 
     &__photo-wrap {
+      position: relative; // Anker für __form
       width: clamp(24px, 15cqi, 64px);
       height: clamp(24px, 15cqi, 64px);
       border-radius: 50%;
@@ -95,6 +96,25 @@ $mobile-nav-height: 64px;
         border: 2px dashed rgba(255, 255, 255, 0.55);
         background: rgba(255, 255, 255, 0.12);
       }
+    }
+
+    // Pro: Form-Pille oben rechts am Foto (dunkel, damit sie auf dem Rasen und auf hellen Fotos lesbar bleibt)
+    &__form {
+      position: absolute;
+      top: -4px;
+      right: -14px;
+      padding: 1px 4px;
+      border-radius: $radius-full;
+      background: rgba(0, 0, 0, 0.72);
+      color: #fff;
+      font-size: 10px;
+      font-weight: $font-weight-semibold;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.3;
+      white-space: nowrap;
+      pointer-events: auto;
+
+      &--neg { color: #fca5a5; }
     }
 
     &__stats {
@@ -704,6 +724,16 @@ $mobile-nav-height: 64px;
     &--none {
       color: $color-text-muted;
     }
+  }
+
+  // Pro: Form unter dem Namen (gewichteter Punkteschnitt der letzten 5 Spieltage)
+  &__form {
+    font-size: $font-xs;
+    font-weight: $font-weight-semibold;
+    font-variant-numeric: tabular-nums;
+    color: $color-text-muted;
+
+    &--neg { color: $color-danger; }
   }
 
   &__stats {

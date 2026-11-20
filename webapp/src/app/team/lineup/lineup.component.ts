@@ -28,6 +28,9 @@ interface LineupPlayer {
   has_rating: boolean;
   is_new?: boolean;        // am vorherigen Spieltag noch nicht im Kader
   photo_uploaded: boolean;
+  // Pro (Entitlement lineup_form): gewichteter Punkteschnitt der letzten 5 Spieltage — fehlt ohne Pro ganz
+  form?: number | null;
+  form_points?: { number: number; points: number }[]; // jüngster Spieltag zuerst
 }
 
 @Component({
@@ -344,6 +347,12 @@ export class LineupComponent {
 
   gradeInt(grade: any): number {
     return Math.round(+grade * 10);
+  }
+
+  /** Pro-Feature Form: Tooltip mit den einzelnen Spieltagen (jüngster zuerst) und der Gewichtung */
+  formTitle(p: LineupPlayer): string {
+    const days = (p.form_points ?? []).map(f => `ST ${f.number}: ${f.points}`).join(' · ');
+    return `Form: gewichteter Ø der letzten ${p.form_points?.length ?? 0} Spieltage (jüngster ×5, davor ×4 …)\n${days}`;
   }
 
   participationLabel(p: string | null): string {

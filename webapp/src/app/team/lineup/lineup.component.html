@@ -93,6 +93,10 @@
                   } @else {
                     <img class="field-player__photo field-player__photo--placeholder" src="img/placeholders/player.png" alt="" />
                   }
+                  <!-- Pro: Form = gewichteter Punkteschnitt der letzten 5 Spieltage (nur wenn die API sie liefert) -->
+                  @if (p.form != null) {
+                    <span class="field-player__form" [class.field-player__form--neg]="p.form < 0" [title]="formTitle(p)">Ø {{ p.form | number:'1.1-1' }}</span>
+                  }
                 </div>
                 @if (p.sds || p.goals || p.assists || p.clean_sheet || p.yellow_red_card || p.red_card) {
                   <div class="field-player__stats">
@@ -311,6 +315,10 @@
             <span class="bench-player__status" [ngClass]="participationClass(p.participation)">
               {{ participationLabel(p.participation) }}
             </span>
+            <!-- Pro: Form — eigenes Element, da der Status im kompakten Modus ausgeblendet ist -->
+            @if (p.form != null) {
+              <span class="bench-player__form" [class.bench-player__form--neg]="p.form < 0" [title]="formTitle(p)">Ø {{ p.form | number:'1.1-1' }}</span>
+            }
           </div>
         </div>
         @if (p.goals || p.assists || p.yellow_red_card || p.red_card || p.grade || p.points != null) {

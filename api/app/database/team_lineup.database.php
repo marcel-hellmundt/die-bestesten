@@ -2,7 +2,72 @@
 
 trait TeamLineupTrait
 {
-    public function getTeamLineup(string $teamId, ?string $matchdayId = null): array|false
+    /**
+     * Konfiguration der Form (Pro-Feature lineup_form): die letzten form_matchdays abgeschlossenen Spieltage vor dem
+     * angezeigten, gewichtet vom jüngsten abwärts (form_weights[0] = letzter Spieltag).
+     */
+    protected function lineupFormConfig(): array
+    {
+        return ['form_matchdays' => 5, 'form_weights' => [5, 4, 3, 2, 1]];
+    }
+
+    /**
+     * Form je Spieler (Pro-Feature lineup_form): gewichteter Punkteschnitt der letzten abgeschlossenen Spieltage vor
+     * $beforeNumber in Saison + Division der Liga — jüngster Spieltag × 5, davor × 4, … (lineupFormConfig()), geteilt
+     * durch die Summe der Gewichte. Ohne Bewertung an einem Spieltag (kein Einsatz) zählt er mit 0 Punkten. Gibt es
+     * weniger Spieltage (Saisonanfang), wird über die vorhandenen gerechnet; ohne einen: leer.
+     * Rückgabe [player_id => ['form' => float, 'form_points' => [{number, points}]]] (jüngster Spieltag zuerst).
+     */
+    private function lineupFormForPlayers(array $playerIds, string $seasonId, int $beforeNumber): array
+    {
+        if (!$playerIds) return [];
+        $cfg = $this->lineupFormConfig();
+
+        $divisionId = $this->getLeagueDivisionId();
+        if ($divisionId !== null) {
+            $mq = $this->con->prepare(
+                "SELECT id, number FROM matchday
+                 WHERE season_id = ? AND division_id = ? AND completed = 1 AND number < ?
+                 ORDER BY number DESC LIMIT " . (int) $cfg['form_matchdays']
+            );
+            $mq->execute([$seasonId, $divisionId, $beforeNumber]);
+        } else {
+            $mq = $this->con->prepare(
+                "SELECT m.id, m.number FROM matchday m JOIN division d ON d.id = m.division_id
+                 WHERE m.season_id = ? AND d.level = 1 AND LOWER(d.country_id) = 'de' AND m.completed = 1 AND m.number < ?
+                 ORDER BY m.number DESC LIMIT " . (int) $cfg['form_matchdays']
+            );
+            $mq->execute([$seasonId, $beforeNumber]);
+        }
+        $recent = $mq->fetchAll(PDO::FETCH_ASSOC); // jüngster zuerst
+        if (!$recent) return [];
+
+        $mph = implode(',', array_fill(0, count($recent), '?'));
+        $pph = implode(',', array_fill(0, count($playerIds), '?'));
+        $rq  = $this->con->prepare(
+            "SELECT player_id, matchday_id, points FROM player_rating WHERE matchday_id IN ($mph) AND player_id IN ($pph)"
+        );
+        $rq->execute([...array_column($recent, 'id'), ...$playerIds]);
+        $points = [];
+        foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $r) $points[$r['player_id']][$r['matchday_id']] = (int) $r['points'];
+
+        $result = [];
+        foreach ($playerIds as $pid) {
+            $sum = 0; $weights = 0; $list = [];
+            foreach ($recent as $i => $md) {
+                $w   = $cfg['form_weights'][$i] ?? 1;
+                $pts = $points[$pid][$md['id']] ?? 0;
+                $sum += $w * $pts;
+                $weights += $w;
+                $list[] = ['number' => (int) $md['number'], 'points' => $pts];
+            }
+            $result[$pid] = ['form' => round($sum / $weights, 1), 'form_points' => $list];
+        }
+        return $result;
+    }
+
+    /** $withForm: Pro-Feature lineup_form (Controller prüft das Entitlement) — je Spieler form + form_points. */
+    public function getTeamLineup(string $teamId, ?string $matchdayId = null, bool $withForm = false): array|false
     {
         // Get team's season_id
         $teamQ = $this->con_league->prepare("SELECT season_id FROM team WHERE id = :id LIMIT 1");
@@ -222,6 +287,9 @@ trait TeamLineupTrait
             $previousSquad = array_flip($prevQ->fetchAll(PDO::FETCH_COLUMN));
         }
 
+        // Form (Pro): nur berechnet, wenn der Betrachter das Entitlement hat — sonst fehlt das Feld ganz
+        $formMap = $withForm ? $this->lineupFormForPlayers($playerIds, $seasonId, (int) $matchday['number']) : [];
+
         // Merge lineup meta + ratings into player data
         $posOrder =['GOALKEEPER' => 0, 'DEFENDER' => 1, 'MIDFIELDER' => 2, 'FORWARD' => 3];
         $nominated = [];
@@ -244,6 +312,10 @@ trait TeamLineupTrait
             $player['red_card']        = (int)($rating['red_card'] ?? 0);
             $player['yellow_red_card'] = (int)($rating['yellow_red_card'] ?? 0);
             $player['participation']   = $rating['participation'] ?? null;
+            if ($withForm) {
+                $player['form']        = $formMap[$e['player_id']]['form'] ?? null;
+                $player['form_points'] = $formMap[$e['player_id']]['form_points'] ?? [];
+            }
 
             if ($e['nominated']) {
                 $nominated[] = $player;

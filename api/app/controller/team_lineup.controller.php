@@ -20,7 +20,8 @@ class TeamLineupController extends _BaseController
             return ['status' => false, 'message' => 'team_id required'];
         }
 
-        $result = $this->db->getTeamLineup($teamId, $matchdayId ?: null);
+        // Pro-Feature: Form je Spieler nur für Betrachter mit dem Entitlement (TierTrait)
+        $result = $this->db->getTeamLineup($teamId, $matchdayId ?: null, $this->hasEntitlement('lineup_form'));
         if ($result === false) {
             http_response_code(404);
             return ['status' => false, 'message' => 'Team not found'];
