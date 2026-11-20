@@ -447,6 +447,13 @@
     display: flex;
     align-items: center;
     gap: $space-2;
+
+    // mehrere Spieler: graue Linie dazwischen, über die ganze Tooltip-Breite (über das Padding hinweg)
+    & + & {
+      margin: 0 (-$space-3);
+      padding: $space-2 $space-3 0;
+      border-top: 1px solid $color-border;
+    }
   }
 
   &__photo {
