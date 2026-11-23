@@ -901,6 +901,9 @@
                       @for (i of range(r.assists); track i) {
                         <img src="img/icons/assist.png" class="rating-icon" alt="Assist" title="Vorlage" />
                       }
+                      @if (+r.clean_sheet) {
+                        <img src="img/icons/clean_sheet.png" class="rating-icon" alt="Weiße Weste" title="Weiße Weste" />
+                      }
                       @if (+r.yellow_red_card) {
                         <span class="card-chip card-chip--yr" title="Gelb-Rot"></span>
                       } @else if (+r.red_card) {
