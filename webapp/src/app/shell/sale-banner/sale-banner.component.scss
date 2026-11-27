@@ -1,9 +1,9 @@
 @use '../../../styles/variables' as *;
 
-// Leuchtreklame-Schreibschrift nur fürs Banner — selbst gehostet (public/font, SIL OFL), lädt erst, wenn es erscheint
+// Neonröhren-Schrift ("Tilt Neon") nur fürs Banner — selbst gehostet (public/font, SIL OFL), lädt erst, wenn es erscheint
 @font-face {
-  font-family: 'Pacifico';
-  src: url('/font/pacifico.ttf') format('truetype');
+  font-family: 'Tilt Neon';
+  src: url('/font/tilt-neon.ttf') format('truetype');
   font-weight: normal;
   font-display: swap;
 }
@@ -69,14 +69,20 @@ $cyan: #2de2e6;
 
 .sale__title {
   margin: 8px 0 4px;
-  padding: 0 8px 8px; // Schreibschrift: Unterlängen und Schwünge nicht abschneiden
-  font-family: 'Pacifico', $font-display;
-  font-size: clamp(48px, 15vw, 72px);
+  font-family: 'Tilt Neon', $font-display;
+  font-size: clamp(40px, 12.5vw, 60px);
   font-weight: normal;
   line-height: 1.1;
-  text-transform: lowercase;
-  color: $yellow;
-  text-shadow: 0 0 6px rgba($yellow, 0.8), 0 0 18px rgba($pink, 0.9), 3px 3px 0 $pink;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  // Leuchtreklame: helle Röhre, gelbes Glühen, pinker Hof
+  color: #fffbe0;
+  text-shadow:
+    0 0 4px $yellow,
+    0 0 10px $yellow,
+    0 0 22px rgba($yellow, 0.8),
+    0 0 40px rgba($pink, 0.9),
+    0 0 70px rgba($pink, 0.6);
   transform: rotate(-4deg);
   animation: flicker 4s linear infinite;
 }
