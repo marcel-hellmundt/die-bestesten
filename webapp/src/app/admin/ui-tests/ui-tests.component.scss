@@ -7,3 +7,34 @@
   line-height: 1.6;
   color: $color-text-muted;
 }
+
+.sale-test {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  max-width: 640px;
+  padding: $space-5;
+
+  @media (max-width: $mobile-breakpoint) { padding: $space-4; }
+
+  &__title { margin: 0; font-size: $font-xl; }
+  &__text { margin: 0; font-size: $font-sm; line-height: 1.6; color: $color-text-muted; }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space-2 $space-3;
+  }
+
+  &__note { flex: 1 1 220px; font-size: $font-xs; color: $color-text-muted; }
+
+  &__toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: $space-3;
+    cursor: pointer;
+
+    small { display: block; margin-top: 2px; font-size: $font-xs; color: $color-text-muted; }
+  }
+}

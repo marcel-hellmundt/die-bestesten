@@ -40,6 +40,7 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   }
 
   &__main {
+    grid-column: 1;
     display: flex;
     flex-direction: column;
     gap: $space-5;
@@ -1054,4 +1055,87 @@ $side-wide: 1100px;  // ab hier "So funktioniert's" als Spalte links neben den A
   font-size: $font-sm;
   text-align: center;
   color: $color-text;
+}
+
+// ── Nacht-Sale "Peitschig" (Sa + So 2–3 Uhr) ──────────────────────────────
+// Eigenständiges Motiv (Neon bei Nacht, wie das Banner in der Shell) — feste Farben in Hell und Dunkel.
+$sale-night: #14072b;
+$sale-pink: #ff2d95;
+$sale-yellow: #ffe14d;
+
+.sale-card {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-4 $space-5;
+  border: 2px solid $sale-pink;
+  border-radius: $radius-lg;
+  color: #fff;
+  background: radial-gradient(circle at 0% 0%, color-mix(in srgb, #{$sale-pink} 45%, transparent), transparent 60%), $sale-night;
+  box-shadow: 0 0 16px color-mix(in srgb, #{$sale-pink} 45%, transparent);
+
+  @media (max-width: $mobile-breakpoint) { gap: $space-3; padding: $space-3 $space-4; }
+
+  &__moon { font-size: 32px; line-height: 1; }
+
+  &__text { flex: 1; min-width: 0; }
+
+  &__title {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 28px;
+    font-weight: 800;
+    font-style: italic;
+    line-height: 1;
+    color: $sale-yellow;
+    text-shadow: 2px 2px 0 $sale-pink;
+  }
+
+  &__deals {
+    margin: $space-1 0 0;
+    font-size: $font-md;
+    b { color: $sale-yellow; }
+  }
+
+  &__timer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-family: $font-display;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    color: $sale-yellow;
+
+    small {
+      font-family: $font-body;
+      font-size: $font-xs;
+      font-weight: normal;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #fff;
+      opacity: 0.8;
+    }
+  }
+
+  &__hint { margin: $space-1 0 0; font-size: $font-xs; opacity: 0.8; }
+}
+
+// alter Preis klein + durchgestrichen, daneben der Rabatt
+.was {
+  margin-left: 4px;
+  font-size: $font-xs;
+  color: $color-text-muted;
+}
+
+.sale-pct {
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: $radius-full;
+  background: $sale-pink;
+  color: #fff;
+  font-size: 11px;
+  font-weight: $font-weight-bold;
+  white-space: nowrap;
 }

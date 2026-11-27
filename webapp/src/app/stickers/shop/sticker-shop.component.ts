@@ -1,4 +1,4 @@
-import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -27,8 +27,19 @@ interface EurPending {
 interface ShopState {
   budget: number | null;              // null ohne Sticker-Album oder ohne Kontobuch
   lukaten_available?: boolean;        // Lukaten-Käufe möglich
-  prices?: Record<string, number>;    // Preis je Lukaten-Angebot (offer key → Lukaten)
-  eur?: { available: boolean; paypal_me: string; starter_available: boolean; pending: EurPending[] };
+  prices?: Record<string, number>;    // Preis je Lukaten-Angebot (offer key → Lukaten) — im Nacht-Sale rabattiert
+  regular_prices?: Record<string, number>; // dieselben ohne Sale
+  eur?: {
+    available: boolean; paypal_me: string; starter_available: boolean; pending: EurPending[];
+    prices?: Record<string, number>;          // Cent je Euro-Angebot — im Nacht-Sale rabattiert
+    regular_prices?: Record<string, number>;  // dieselben ohne Sale
+  };
+}
+
+/** Server-Preis (+ regulärer Preis, falls der Sale ihn senkt) auf ein Angebot aus shop.model.ts legen. */
+function withPrice(o: ShopOffer, price: number | undefined, regular: number | undefined): ShopOffer {
+  if (price == null) return o;
+  return { ...o, price, regularPrice: regular != null && regular > price ? regular : undefined };
 }
 
 /** Admin-Liste GET /sticker/shop/purchases. */
@@ -97,9 +108,6 @@ export class StickerShopComponent {
   private status = inject(StickerStatusService);
   private lukaten = inject(LukatenService);
 
-  readonly eurBundles = EUR_BUNDLES;
-  readonly eurSingles = EUR_SINGLES;
-  readonly starter = EUR_STARTER;
   readonly kinds = PACK_KINDS;
   readonly stickerCount = stickerCount;
   readonly packsOf = packsOf;
@@ -130,9 +138,36 @@ export class StickerShopComponent {
   lukatenAvailable = computed(() => this.shop()?.lukaten_available ?? false);
   /** Lukaten-Angebote mit den Preisen des Servers — shop.model.ts ist nur der Rückfall */
   lukatenOffers = computed<ShopOffer[]>(() => {
-    const prices = this.shop()?.prices;
-    return LUKATEN_OFFERS.map(o => prices?.[o.key] != null ? { ...o, price: prices[o.key] } : o);
+    const s = this.shop();
+    const pct = this.status.salePreview()?.lukaten_pct;
+    return LUKATEN_OFFERS.map(o => this.previewPrice(
+      withPrice(o, s?.prices?.[o.key], s?.regular_prices?.[o.key]), pct, p => Math.round(p)));
   });
+  /** Euro-Angebote mit den Preisen des Servers (Cent → Euro) — shop.model.ts ist nur der Rückfall */
+  private eurOffer(o: ShopOffer): ShopOffer {
+    const e = this.shop()?.eur;
+    const cents = e?.prices?.[o.key], regular = e?.regular_prices?.[o.key];
+    const offer = withPrice(o, cents != null ? cents / 100 : undefined, regular != null ? regular / 100 : undefined);
+    return this.previewPrice(offer, this.status.salePreview()?.eur_pct, p => Math.round(p * 100) / 100);
+  }
+  /** Admin-Vorschau des Sales: Rabattpreis nur zum Ansehen hier ausgerechnet (wie im Backend gerundet) */
+  private previewPrice(o: ShopOffer, pct: number | undefined, round: (p: number) => number): ShopOffer {
+    if (!pct || o.regularPrice) return o;
+    return { ...o, price: round(o.price * (100 - pct) / 100), regularPrice: o.price };
+  }
+  /** Sale nur als Admin-Vorschau → Kaufen gesperrt (der Server verlangt den echten Preis) */
+  readonly salePreviewOnly = computed(() => !!this.status.salePreview());
+  eurBundles = computed(() => EUR_BUNDLES.map(o => this.eurOffer(o)));
+  eurSingles = computed(() => EUR_SINGLES.map(o => this.eurOffer(o)));
+  starter    = computed(() => this.eurOffer(EUR_STARTER));
+
+  // ── Nacht-Sale "Peitschig" (Sa + So 2–3 Uhr): Card oben, rabattierte Preise kommen vom Server ──
+  readonly sale = this.status.sale;
+  readonly saleActive = this.status.saleActive;
+  /** Rabatt eines Angebots in % (0 ohne Sale) */
+  salePct(o: ShopOffer): number {
+    return o.regularPrice ? Math.round((1 - o.price / o.regularPrice) * 100) : 0;
+  }
 
   // ── Euro ──
   eurAvailable     = computed(() => this.shop()?.eur?.available ?? false);
@@ -173,7 +208,8 @@ export class StickerShopComponent {
 
   /** Euro: Ersparnis gegenüber dem Wert der enthaltenen Packs (0 bei Einzel-Packs) */
   savingPct(o: ShopOffer): number {
-    return Math.max(0, Math.round((1 - o.price / offerValueEur(o)) * 100));
+    // ohne Nacht-Sale gerechnet — der Sale-Rabatt steht extra dabei
+    return Math.max(0, Math.round((1 - (o.regularPrice ?? o.price) / offerValueEur(o)) * 100));
   }
 
   // ── Vereins-Pack: Vereine mit Fortschritt, fast komplette zuerst ──
@@ -212,6 +248,13 @@ export class StickerShopComponent {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.status.announcePaused.set(false));
+    // Sale beginnt/endet, während der Shop offen ist → Preise neu holen (bezahlt wird, was der Server dann sagt)
+    let lastSale: boolean | null = null;
+    effect(() => {
+      const active = this.saleActive();
+      if (lastSale !== null && active !== lastSale) untracked(() => this.reloadTick.update(n => n + 1));
+      lastSale = active;
+    });
   }
 
   // ── Kaufen ──
@@ -223,7 +266,7 @@ export class StickerShopComponent {
 
   canBuy = computed(() => {
     const o = this.confirming();
-    if (!o || this.buying() || this.bought()) return false;
+    if (!o || this.buying() || this.bought() || this.salePreviewOnly()) return false;
     if (hasClub(o) && !this.pickedClubId()) return false;
     if (o.currency === 'eur') {
       return this.eurAvailable() && !this.eurBlocked() && (!o.once || this.starterAvailable());

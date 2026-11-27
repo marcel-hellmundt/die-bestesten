@@ -47,6 +47,26 @@
   <span class="page-title__sub">Mehr Packs – mit Lukaten oder mit Euro</span>
 </h1>
 
+<!-- Nacht-Sale "Peitschig" (Sa + So 2–3 Uhr): solange er läuft, oben über den Angeboten -->
+@if (saleActive() && sale(); as s) {
+  <section class="sale-card" aria-live="polite">
+    <span class="sale-card__moon" aria-hidden="true">🌙</span>
+    <div class="sale-card__text">
+      <h2 class="sale-card__title">Peitschig!</h2>
+      <p class="sale-card__deals">
+        <b>−{{ s.eur_pct }} %</b> auf Euro · <b>−{{ s.lukaten_pct }} %</b> auf Lukaten
+      </p>
+      @if (salePreviewOnly()) {
+        <p class="sale-card__hint">Vorschau (UI-Test) – Kaufen ist gesperrt, der Server verlangt gerade den normalen Preis.</p>
+      }
+    </div>
+    <div class="sale-card__timer">
+      <small>noch</small>
+      <app-sale-countdown [until]="s.ends_at" />
+    </div>
+  </section>
+}
+
 <div class="shop__main">
   <!-- Desktop: "So funktioniert's" links (Schritte untereinander), Angebote rechts -->
   <div class="shop__body">
@@ -89,6 +109,7 @@
               <span class="price">
                 <img class="lukat-icon" src="img/icons/lukat.png" alt="" />
                 <b>{{ o.price }}</b> Lukaten
+                @if (o.regularPrice) { <s class="was">{{ o.regularPrice }}</s> <span class="sale-pct">−{{ salePct(o) }} %</span> }
               </span>
               <button type="button" class="btn btn-primary btn-sm" [disabled]="loading() || !lukatenAvailable() || miss > 0" (click)="open(o)">
                 Kaufen
@@ -127,24 +148,27 @@
     <!-- Starter: einmal pro Saison, bester Einstieg -->
     <article class="starter">
       <div class="starter__stage">
-        <ng-container *ngTemplateOutlet="packTpl; context: { $implicit: starter, club: null }" />
+        <ng-container *ngTemplateOutlet="packTpl; context: { $implicit: starter(), club: null }" />
       </div>
       <div class="starter__info">
-        <span class="starter__tag">{{ starter.highlight }} pro Saison</span>
-        <h3 class="starter__name">{{ starter.name }}: {{ packsOf(starter) }} normale Packs für {{ formatEur(starter.price) }}</h3>
+        <span class="starter__tag">{{ starter().highlight }} pro Saison</span>
+        <h3 class="starter__name">{{ starter().name }}: {{ packsOf(starter()) }} normale Packs für {{ formatEur(starter().price) }}</h3>
         <span class="starter__meta">
-          {{ stickerCount(starter) }} Sticker · statt <s>{{ formatEur(offerValueEur(starter)) }}</s>
-          <span class="saving">−{{ savingPct(starter) }} %</span>
+          {{ stickerCount(starter()) }} Sticker · statt <s>{{ formatEur(offerValueEur(starter())) }}</s>
+          <span class="saving">−{{ savingPct(starter()) }} %</span>
         </span>
+        @if (starter().regularPrice; as was) {
+          <span class="starter__meta">Heute Nacht: <s class="was">{{ formatEur(was) }}</s> <span class="sale-pct">−{{ salePct(starter()) }} %</span></span>
+        }
       </div>
-      <button type="button" class="btn btn-primary starter__btn" [disabled]="!starterAvailable() || eurBlocked()" (click)="open(starter)">
-        {{ starterAvailable() ? formatEur(starter.price) : 'Schon geholt' }}
+      <button type="button" class="btn btn-primary starter__btn" [disabled]="!starterAvailable() || eurBlocked()" (click)="open(starter())">
+        {{ starterAvailable() ? formatEur(starter().price) : 'Schon geholt' }}
       </button>
     </article>
 
     <!-- Kombis: Inhalt je Pack-Art + Ersparnis gegenüber dem Einzelwert -->
     <div class="offers">
-      @for (o of eurBundles; track o.key) {
+      @for (o of eurBundles(); track o.key) {
         <article class="offer" [class.offer--highlight]="o.highlight">
           @if (o.highlight) { <span class="offer__ribbon">{{ o.highlight }}</span> }
           <div class="offer__stage">
@@ -164,7 +188,9 @@
             <div class="offer__buy">
               <span class="price">
                 <b>{{ formatEur(o.price) }}</b>
-                @if (savingPct(o) > 0) { <s>{{ formatEur(offerValueEur(o)) }}</s> }
+                @if (o.regularPrice) {
+                  <s class="was">{{ formatEur(o.regularPrice) }}</s> <span class="sale-pct">−{{ salePct(o) }} %</span>
+                } @else if (savingPct(o) > 0) { <s>{{ formatEur(offerValueEur(o)) }}</s> }
               </span>
               <button type="button" class="btn btn-primary btn-sm" [disabled]="eurBlocked()" (click)="open(o)">Kaufen</button>
             </div>
@@ -179,7 +205,7 @@
 
     <!-- Einzelne Packs -->
     <div class="singles">
-      @for (o of eurSingles; track o.key) {
+      @for (o of eurSingles(); track o.key) {
         @let k = kindOf(o);
         <article class="single">
           <div class="single__stage">
@@ -188,6 +214,9 @@
           <div class="single__info">
             <h3 class="offer__name">{{ o.name }}</h3>
             <span class="offer__note">{{ kindPerks(k).join(' · ') }}</span>
+            @if (o.regularPrice) {
+              <span class="offer__note">statt <s class="was">{{ formatEur(o.regularPrice) }}</s> <span class="sale-pct">−{{ salePct(o) }} %</span></span>
+            }
           </div>
           <button type="button" class="btn btn-primary btn-sm single__btn" [disabled]="eurBlocked()" (click)="open(o)">
             {{ formatEur(o.price) }}
@@ -385,7 +414,10 @@
               <dt>{{ x.count }}× {{ kinds[x.kind].name }}</dt><dd>{{ x.count * kinds[x.kind].size }} Sticker</dd>
             }
             <dt class="confirm__total">{{ packsOf(o) }} {{ packsOf(o) === 1 ? 'Pack' : 'Packs' }} · {{ stickerCount(o) }} Sticker</dt>
-            <dd class="confirm__total">{{ formatEur(o.price) }}</dd>
+            <dd class="confirm__total">
+              @if (o.regularPrice) { <s class="was">{{ formatEur(o.regularPrice) }}</s> }
+              {{ formatEur(o.price) }}
+            </dd>
           </dl>
           @if (buyError()) { <span class="confirm__error">{{ buyError() }}</span> }
           <div class="confirm__actions">

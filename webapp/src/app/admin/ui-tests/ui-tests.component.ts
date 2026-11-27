@@ -1,15 +1,18 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
+import { StickerStatusService } from '../../core/sticker-status.service';
+import { isSaleBannerDismissed, resetSaleBannerDismissed } from '../../shell/sale-banner/sale-banner.component';
 
-type UiTest = 'spieltag' | 'packs' | 'preise';
+type UiTest = 'spieltag' | 'packs' | 'preise' | 'sale';
 
 /** Die Test-Oberflächen — eine neue kommt hier als weitere Option dazu (+ ihr Baustein im Template). */
 const TESTS: { key: UiTest; label: string }[] = [
   { key: 'spieltag', label: 'Spieltags-Abschluss' },
   { key: 'packs', label: 'Sticker-Packs' },
   { key: 'preise', label: 'Preise' },
+  { key: 'sale', label: 'Nacht-Sale' },
 ];
 
 /**
@@ -19,6 +22,7 @@ const TESTS: { key: UiTest; label: string }[] = [
  *   Spieltags-Abschluss — Vorschau der Spieltags-Zusammenfassung (admin/matchday-summary)
  *   Sticker-Packs       — alle Pack-Designs zum Aufreißen (stickers/packs, PackGalleryModule)
  *   Preise              — Preis-Dreieck Euro / Lukaten / Sticker mit Was-wäre-wenn (admin/price-triangle)
+ *   Nacht-Sale          — Banner "Peitschig" zeigen, Sale im Shop simulieren (nur dieser Tab, Kaufen gesperrt)
  */
 @Component({
   selector: 'app-ui-tests',
@@ -39,5 +43,15 @@ export class UiTestsComponent {
 
   setView(key: UiTest): void {
     this.router.navigate([], { relativeTo: this.route, queryParams: { test: key }, replaceUrl: true });
+  }
+
+  // ── Nacht-Sale ──
+  readonly stickers = inject(StickerStatusService);
+  /** echtes Fenster vom Server (laufend bzw. nächstes), unabhängig von der Vorschau */
+  realSale = computed(() => this.stickers.state()?.sale ?? null);
+  bannerDismissed = signal(isSaleBannerDismissed());
+  resetBanner(): void {
+    resetSaleBannerDismissed();
+    this.bannerDismissed.set(false);
   }
 }

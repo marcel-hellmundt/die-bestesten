@@ -30,7 +30,11 @@ trait StickerShopEurTrait
             'e-special' => ['name' => 'Special Pack', 'price_cents' => 199, 'contents' => ['special' => 1]],
         ];
         $kinds = $this->stickerPackKinds();
+        $sale  = $this->stickerSaleInfo();
         foreach ($offers as &$o) {
+            // price_cents = was jetzt bezahlt wird (im Nacht-Sale rabattiert, StickerShopTrait::stickerSaleInfo())
+            $o['regular_price_cents'] = $o['price_cents'];
+            if ($sale['active']) $o['price_cents'] = $this->stickerSalePrice($o['price_cents'], $sale['eur_pct']);
             $o['once']    = $o['once'] ?? false;
             $o['club']    = isset($o['contents']['club']);
             $o['packs']   = array_sum($o['contents']);

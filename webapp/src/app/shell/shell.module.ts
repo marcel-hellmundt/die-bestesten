@@ -13,6 +13,8 @@ import { CreateTeamComponent } from './create-team/create-team.component';
 import { StickerSharedModule } from '../stickers/sticker-shared.module';
 import { MatchdaySummaryComponent } from './matchday-summary/matchday-summary.component';
 import { FitTextDirective } from '../core/fit-text.directive';
+import { SaleBannerComponent } from './sale-banner/sale-banner.component';
+import { SaleCountdownComponent } from '../core/sale-countdown.component';
 
 const routes: Routes = [
   {
@@ -39,11 +41,12 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent, CreateTeamComponent, MatchdaySummaryComponent],
+  declarations: [ShellComponent, NavComponent, TopbarComponent, IconComponent, AchievementNotificationComponent, BottomSheetComponent, CreateTeamComponent, MatchdaySummaryComponent, SaleBannerComponent],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
     StickerSharedModule, // "Die Klebrigsten": globale Ankündigung neuer Packs
+    SaleCountdownComponent, // Countdown im Nacht-Sale-Banner
     FitTextDirective,    // Geburtstags-Hinweis im Benutzermenü passt sich einer Zeile an
   ]
 })

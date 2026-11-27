@@ -31,6 +31,7 @@ export interface ShopOffer {
   name: string;
   contents: Partial<Record<PackKind, number>>;  // Pack-Art → Anzahl
   price: number;          // Lukaten bzw. Euro
+  regularPrice?: number;  // Preis ohne Nacht-Sale (nur gesetzt, solange der Sale läuft und günstiger macht)
   once?: boolean;         // nur einmal pro Saison
   highlight?: string;     // Band, z.B. "Beliebt"
 }

@@ -30,11 +30,57 @@ trait StickerShopTrait
     {
         $kinds  = $this->stickerPackKinds();
         $prices = $this->lukatenPackPrices();
+        $sale   = $this->stickerSaleInfo();
         $offers = [];
         foreach (['l-small' => 'normal', 'l-big' => 'big', 'l-club' => 'club', 'l-special' => 'special'] as $key => $kind) {
-            $offers[$key] = $kinds[$kind] + ['kind' => $kind, 'price' => $prices[$key]];
+            // price = was jetzt bezahlt wird (im Sale rabattiert), regular_price = Preis ohne Sale
+            $price = $sale['active'] ? $this->stickerSalePrice($prices[$key], $sale['lukaten_pct']) : $prices[$key];
+            $offers[$key] = $kinds[$kind] + ['kind' => $kind, 'price' => $price, 'regular_price' => $prices[$key]];
         }
         return $offers;
+    }
+
+    /**
+     * Nacht-Sale ("Peitschig"): jede Nacht von 2 bis 3 Uhr deutscher Zeit gibt es im Sticker-Shop Rabatt auf die
+     * Lukaten-Preise der Packs und auf die Euro-Angebote — nicht auf die Lukaten-Bündel gegen Euro (/lukaten).
+     * Hier an einer Stelle.
+     */
+    protected function stickerSaleConfig(): array
+    {
+        // weekdays = ISO-Wochentage des Fensters (6 = Samstag, 7 = Sonntag): die Nächte Fr→Sa und Sa→So
+        return ['timezone' => 'Europe/Berlin', 'weekdays' => [6, 7], 'start_hour' => 2, 'end_hour' => 3,
+                'lukaten_pct' => 10, 'eur_pct' => 20];
+    }
+
+    /**
+     * Läuft der Sale gerade? → {active, starts_at, ends_at, lukaten_pct, eur_pct}; starts_at/ends_at (ISO 8601 mit
+     * Zeitzone) = das laufende bzw. nächste Fenster — die Webapp zählt damit den Countdown herunter und blendet die
+     * Hinweise zum richtigen Zeitpunkt ein, auch wenn die Seite schon vorher offen war.
+     */
+    public function stickerSaleInfo(): array
+    {
+        $cfg   = $this->stickerSaleConfig();
+        $now   = new DateTimeImmutable('now', new DateTimeZone($cfg['timezone']));
+        // das laufende bzw. nächste Fenster: heute oder einer der folgenden Tage, an einem Sale-Wochentag
+        for ($d = 0; $d <= 7; $d++) {
+            $day   = $now->modify("+{$d} day");
+            $start = $day->setTime($cfg['start_hour'], 0);
+            $end   = $day->setTime($cfg['end_hour'], 0);
+            if ($now < $end && in_array((int) $day->format('N'), $cfg['weekdays'], true)) break;
+        }
+        return [
+            'active'      => $now >= $start && $now < $end,
+            'starts_at'   => $start->format(DATE_ATOM),
+            'ends_at'     => $end->format(DATE_ATOM),
+            'lukaten_pct' => $cfg['lukaten_pct'],
+            'eur_pct'     => $cfg['eur_pct'],
+        ];
+    }
+
+    /** Preis nach Rabatt, auf ganze Einheiten (Lukaten bzw. Cent) gerundet. */
+    protected function stickerSalePrice(int $price, int $pct): int
+    {
+        return (int) round($price * (100 - $pct) / 100);
     }
 
     /** Ein Shop-Pack der Pack-Art $kind anlegen (ungeöffnet) — Rückgabe: Pack-ID. */
@@ -297,11 +343,19 @@ trait StickerShopTrait
         $bundles = $this->lukatenEurBundles();
         $eur['pending'] = array_values(array_filter($eur['pending'], fn($p) => !isset($bundles[$p['offer_key']])));
 
+        $offers    = $this->stickerShopOffers();
+        $eurOffers = $this->stickerShopEurOffers();
+        // Preise = was jetzt bezahlt wird (im Sale rabattiert); regular_* = ohne Sale, für den durchgestrichenen Preis
+        $eur['prices']         = array_map(fn($o) => $o['price_cents'], $eurOffers);
+        $eur['regular_prices'] = array_map(fn($o) => $o['regular_price_cents'], $eurOffers);
+
         return [
             'budget'            => $budget,
             'lukaten_available' => $budget !== null,
-            'prices'            => array_map(fn($o) => $o['price'], $this->stickerShopOffers()),
+            'prices'            => array_map(fn($o) => $o['price'], $offers),
+            'regular_prices'    => array_map(fn($o) => $o['regular_price'], $offers),
             'eur'               => $eur,
+            'sale'              => $this->stickerSaleInfo(),
         ];
     }
 }

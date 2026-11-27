@@ -10,6 +10,7 @@ import { AlbumOverviewComponent } from './album/album-overview.component';
 import { AlbumClubPageComponent } from './album/album-club-page.component';
 import { StickerSimulationComponent } from './sticker-simulation.component';
 import { StickerSharedModule } from './sticker-shared.module';
+import { SaleCountdownComponent } from '../core/sale-countdown.component';
 import { StickerCollectorsComponent } from './collectors/sticker-collectors.component';
 import { StickerShopComponent } from './shop/sticker-shop.component';
 import { StickerChipComponent } from './trade/sticker-chip.component';
@@ -43,6 +44,6 @@ const routes: Routes = [
     StickerSimulationComponent, StickerCollectorsComponent, StickerShopComponent,
     StickerChipComponent, TradeDialogComponent, StickerTradesComponent, UniqueChartComponent,
   ],
-  imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule, StuckDirective, SegmentedDirective],
+  imports: [CommonModule, RouterModule.forChild(routes), StickerSharedModule, StuckDirective, SegmentedDirective, SaleCountdownComponent],
 })
 export class StickersModule {}

@@ -23,6 +23,43 @@
   @case ('preise') {
     <app-price-triangle />
   }
+  @case ('sale') {
+    <!-- Nacht-Sale "Peitschig": Banner + Shop ansehen, ohne bis Samstag 2 Uhr zu warten -->
+    <section class="card sale-test">
+      <h2 class="sale-test__title">Nacht-Sale „Peitschig“</h2>
+      <p class="sale-test__text">
+        Echt läuft er in den Nächten Fr→Sa und Sa→So von 2 bis 3 Uhr.
+        @if (realSale(); as s) {
+          @if (stickers.saleActive() && !stickers.salePreview()) { <b>Läuft gerade</b>, bis {{ s.ends_at | date:'HH:mm' }} Uhr. }
+          @else { Nächster: {{ s.starts_at | date:'EEEE, dd.MM., HH:mm' }} Uhr. }
+        }
+      </p>
+
+      <div class="sale-test__row">
+        <button type="button" class="btn btn-primary" (click)="stickers.saleBannerPreview.set(true)">Banner zeigen</button>
+        <span class="sale-test__note">Erscheint auch, wenn du es schon weggeklickt hast; Wegklicken merkt sich hier nichts.</span>
+      </div>
+
+      <label class="sale-test__toggle">
+        <span class="toggle">
+          <input type="checkbox" class="toggle__input" [checked]="!!stickers.salePreview()"
+                 (change)="stickers.setSalePreview($any($event.target).checked)" />
+          <span class="toggle__track"></span>
+        </span>
+        <span>
+          Sale im Shop simulieren
+          <small>Sale-Card und Rabattpreise im <a routerLink="/klebrigsten/shop">Shop</a>, nur in diesem Tab bis zum Neuladen. Kaufen ist dabei gesperrt.</small>
+        </span>
+      </label>
+
+      <div class="sale-test__row">
+        <button type="button" class="btn btn-ghost" [disabled]="!bannerDismissed()" (click)="resetBanner()">Banner wieder scharf schalten</button>
+        <span class="sale-test__note">
+          {{ bannerDismissed() ? 'Auf diesem Gerät weggeklickt — zurücksetzen, um den echten Ablauf beim nächsten Sale zu sehen.' : 'Auf diesem Gerät noch nicht weggeklickt.' }}
+        </span>
+      </div>
+    </section>
+  }
   @default {
     <app-matchday-summary-preview />
   }

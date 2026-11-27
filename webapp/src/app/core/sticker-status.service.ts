@@ -42,6 +42,16 @@ export interface StickerState {
   trades_incoming?: number;
   /** laufende Online-Serie (Tage in Folge mit Tages-Pack, heute eingeschlossen); every = Streak-Pack alle so viele Tage */
   streak?: { days: number; every: number };
+  /** Nacht-Sale im Shop (Sa + So 2–3 Uhr): laufendes bzw. nächstes Fenster, siehe GET /sticker/shop → sale */
+  sale?: StickerSale;
+}
+
+export interface StickerSale {
+  active: boolean;
+  starts_at: string;    // ISO 8601 mit Zeitzone
+  ends_at: string;
+  lukaten_pct: number;  // Rabatt auf Lukaten-Preise in %
+  eur_pct: number;      // Rabatt auf Euro-Preise in %
 }
 
 /** Response von GET /sticker/collectors (Sammler-Rangliste). */
@@ -147,6 +157,51 @@ export class StickerStatusService {
   readonly tradesIncoming = computed(() => this.state()?.trades_incoming ?? 0);
   /** Online-Serie für die Topbar — null ohne Album (dort gibt es keine Tages-Packs, also keine Serie) */
   readonly streak = computed(() => this.state()?.streak ?? null);
+
+  /**
+   * Nacht-Sale: Fenster vom Server, "läuft gerade" rechnet der Client selbst aus den Zeitpunkten — so schaltet
+   * es pünktlich um 2 bzw. 3 Uhr, auch wenn die Seite schon vorher offen war (Timer auf Beginn und Ende).
+   */
+  private saleClock = signal(Date.now());
+  private realSaleActive = computed(() => {
+    const s = this.state()?.sale, now = this.saleClock();
+    return !!s && now >= Date.parse(s.starts_at) && now < Date.parse(s.ends_at);
+  });
+
+  /**
+   * Admin-Vorschau (/verwaltung/ui-tests → Nacht-Sale): Sale-Card + Rabattpreise im Shop, als liefe der Sale
+   * (Fenster: jetzt + 1 Stunde). Nur in diesem Tab, nichts gespeichert — gekauft wird weiter zum echten Preis,
+   * deshalb sperrt der Shop in der Vorschau den Kauf.
+   */
+  readonly salePreview = signal<StickerSale | null>(null);
+  /** Admin-Vorschau des großen Banners — zeigt es auch, wenn es schon weggeklickt wurde, und merkt sich nichts */
+  readonly saleBannerPreview = signal(false);
+
+  readonly sale = computed(() => this.salePreview() ?? this.state()?.sale ?? null);
+  readonly saleActive = computed(() => !!this.salePreview() || this.realSaleActive());
+
+  setSalePreview(on: boolean): void {
+    const s = this.state()?.sale;
+    this.salePreview.set(!on ? null : {
+      active: true,
+      starts_at: new Date().toISOString(),
+      ends_at: new Date(Date.now() + 3600_000).toISOString(),
+      lukaten_pct: s?.lukaten_pct ?? 10,
+      eur_pct: s?.eur_pct ?? 20,
+    });
+  }
+  private saleTimers: ReturnType<typeof setTimeout>[] = [];
+
+  private scheduleSale(s: StickerSale | undefined): void {
+    this.saleTimers.forEach(clearTimeout);
+    this.saleTimers = [];
+    this.saleClock.set(Date.now());
+    if (!s) return;
+    for (const at of [Date.parse(s.starts_at), Date.parse(s.ends_at)]) {
+      const ms = at - Date.now();
+      if (ms > 0 && ms < 2 ** 31 - 1) this.saleTimers.push(setTimeout(() => this.saleClock.set(Date.now()), ms + 50));
+    }
+  }
   /** Große Pack-Einblendung zurückhalten (z.B. solange der Bezahl-Dialog eines Euro-Kaufs offen ist). */
   readonly announcePaused = signal(false);
   /** Die große Pack-Einblendung ist gerade offen — andere Einblendungen (Spieltags-Zusammenfassung) warten so lange. */
@@ -164,6 +219,7 @@ export class StickerStatusService {
   constructor() {
     document.addEventListener('visibilitychange', () => {
       this.tabVisible.set(!document.hidden);
+      this.saleClock.set(Date.now()); // Timer laufen im Hintergrund gedrosselt — beim Zurückkommen neu prüfen
       // Tageswechsel im Hintergrund verpasst → jetzt nachholen
       if (!document.hidden && this.started && this.today() !== this.lastDay) this.refresh();
     });
@@ -181,7 +237,7 @@ export class StickerStatusService {
     if (!this.auth.getToken()) return;
     this.lastDay = this.today();
     this.api.get<StickerState>('sticker/me').subscribe({
-      next: s => this.state.set(s),
+      next: s => { this.state.set(s); this.scheduleSale(s.sale); },
       error: () => {}, // z.B. API ohne Sticker-Migration — Feature bleibt dann einfach aus
     });
   }

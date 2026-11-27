@@ -330,6 +330,8 @@ trait StickerPackTrait
         $state['collection']      = $this->getStickerCollection($managerId, $seasonId);
         $state['ignored_days']    = $this->stickerIgnoredDays($managerId);
         $state['trades_incoming'] = $this->countIncomingStickerTrades($managerId, $seasonId);
+        // Nacht-Sale im Shop (StickerShopTrait::stickerSaleInfo()) — für die Einblendung "Peitschig" auf jeder Seite
+        $state['sale'] = $this->stickerSaleInfo();
         return $state;
     }
 
