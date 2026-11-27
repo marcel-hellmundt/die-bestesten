@@ -1,5 +1,13 @@
 @use '../../../styles/variables' as *;
 
+// Leuchtreklame-Schreibschrift nur fürs Banner — selbst gehostet (public/font, SIL OFL), lädt erst, wenn es erscheint
+@font-face {
+  font-family: 'Pacifico';
+  src: url('/font/pacifico.ttf') format('truetype');
+  font-weight: normal;
+  font-display: swap;
+}
+
 // Eigenständiges Motiv (Neon-Kneipe bei Nacht) — bewusst feste Farben, sieht in Hell und Dunkel gleich aus.
 $night: #14072b;
 $pink: #ff2d95;
@@ -61,11 +69,12 @@ $cyan: #2de2e6;
 
 .sale__title {
   margin: 8px 0 4px;
-  font-family: $font-display;
-  font-size: clamp(44px, 14vw, 64px);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  padding: 0 8px 8px; // Schreibschrift: Unterlängen und Schwünge nicht abschneiden
+  font-family: 'Pacifico', $font-display;
+  font-size: clamp(48px, 15vw, 72px);
+  font-weight: normal;
+  line-height: 1.1;
+  text-transform: lowercase;
   color: $yellow;
   text-shadow: 0 0 6px rgba($yellow, 0.8), 0 0 18px rgba($pink, 0.9), 3px 3px 0 $pink;
   transform: rotate(-4deg);
@@ -78,9 +87,11 @@ $cyan: #2de2e6;
   font-weight: 600;
 }
 
+// links Lukaten, rechts Euro — der Euro-Deal ist der größere und fällt mehr auf
 .sale__deals {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1.4fr;
+  align-items: center;
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -88,24 +99,34 @@ $cyan: #2de2e6;
 .deal {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 2px;
-  padding: 14px 8px;
+  padding: 12px 8px;
   border-radius: 16px;
-  background: $pink;
-  transform: rotate(-2deg);
 
   &--lukaten {
     background: $cyan;
     color: $night;
+    transform: rotate(-3deg);
+  }
+
+  &--eur {
+    padding: 18px 8px;
+    background: $pink;
     transform: rotate(2deg);
+    box-shadow: 0 0 20px rgba($pink, 0.6);
+
+    .deal__pct { font-size: 48px; }
+    .deal__label { font-size: $font-md; }
   }
 }
 
 .deal__pct {
   font-family: $font-display;
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.05;
+  white-space: nowrap;
 }
 
 .deal__label {

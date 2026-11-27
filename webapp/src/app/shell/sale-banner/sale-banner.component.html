@@ -4,17 +4,17 @@
       <button type="button" class="sale__close" (click)="dismiss()" aria-label="Schließen">✕</button>
 
       <span class="sale__moon" aria-hidden="true">🌙</span>
-      <h2 class="sale__title" id="sale-title">Peitschig</h2>
+      <h2 class="sale__title" id="sale-title">peitschig</h2>
       <p class="sale__lead">Nachtrabatt im Sticker-Shop – nur jetzt!</p>
 
       <div class="sale__deals">
-        <div class="deal">
-          <b class="deal__pct">−{{ s.eur_pct }} %</b>
-          <span class="deal__label">auf Euro-Preise</span>
-        </div>
         <div class="deal deal--lukaten">
           <b class="deal__pct">−{{ s.lukaten_pct }} %</b>
           <span class="deal__label">auf Lukaten-Preise</span>
+        </div>
+        <div class="deal deal--eur">
+          <b class="deal__pct">−{{ s.eur_pct }} %</b>
+          <span class="deal__label">auf Euro-Preise</span>
         </div>
       </div>
 
